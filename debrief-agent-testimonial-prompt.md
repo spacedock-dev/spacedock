@@ -10,21 +10,27 @@ started: 2026-07-02T07:35:57Z
 ## Problem
 The debrief skill records commits, task state changes, decisions, issues, observations, and next-session routing, but it does not capture the driving agent's first-person experience of operating Spacedock. The missing signal is not a generic satisfaction quote: the value is in what the workflow caught under context pressure, what would likely have been lost without it, and where the machinery added friction. Without an explicit end-of-session prompt, that evidence evaporates at session end and Spacedock loses both product feedback and honest testimonial raw material.
 
-The load-bearing constraint is that the prompt must ask for friction, not praise. A praise-seeking prompt would produce marketing-colored prose and make the corpus less useful; the desired record is an agent-authored comparison between using Spacedock and driving the same work without it, including costs.
+The load-bearing constraint is that the prompt must ask for friction, not praise. A praise-seeking prompt would produce marketing-colored prose and make the corpus less useful; the desired record is an agent-authored comparison between using Spacedock and driving the same work without it, including costs. The speaker must also self-identify: inferring identity later from debrief context can silently misattribute a testimonial after compaction, runtime handoff, or an unavailable model-version signal. Unknown identity details must remain explicitly unknown rather than being guessed.
 
 ## Proposed approach
 Update `skills/debrief/SKILL.md` so the debrief flow collects a first-person testimonial before writing the debrief file and includes it in the produced debrief template.
 
-Implementation should add a new extraction/draft step near Phase 3, before the final markdown is written, using wording near this prompt:
+Implementation should add a new extraction/draft step near Phase 3, before the final markdown is written, using this prompt:
 
-> Setting the project's subject matter aside: as the agent driving this session, how would you describe the experience using Spacedock versus driving the same work without it? Be honest about friction, costs, or places where the workflow got in your way; this is not a request for praise.
+> Before answering, self-identify as the agent driving this session:
+> - Harness/runtime: the agent harness or runtime you are operating in (for example Claude Code, Codex, or Pi).
+> - Model: the model name.
+> - Model version/build: the exact version or build when runtime metadata exposes it.
+>
+> Write `unknown` for any identity field you cannot verify; do not infer or guess. Then, setting the project's subject matter aside: how would you describe the experience using Spacedock versus driving the same work without it? Be honest about friction, costs, or places where the workflow got in your way; this is not a request for praise.
 
 The answer should be stored in a new `## Agent Testimonial` section in the debrief file, together with provenance fields:
 
 - `Date`: the debrief `session-date`.
-- `Host/runtime`: the runtime host in use when known (for example Claude Code, Codex, Pi); if unknown, record `unknown` rather than inventing.
-- `Model`: the driving model when known; if unknown, record `unknown`.
-- `Session scale`: counts for entities touched, workers dispatched, and PRs touched/merged, derived from the debrief's session data where possible and marked `unknown` only when the data is not available.
+- `Harness/runtime`: copied from the driving agent's self-identification; `unknown` when the agent cannot verify it.
+- `Model`: copied from the driving agent's self-identification; `unknown` when the agent cannot verify it.
+- `Model version/build`: copied from the driving agent's self-identification when runtime metadata exposes an exact value; otherwise `unknown`.
+- `Session scale`: counts for tasks touched, workers dispatched, and PRs touched/merged, derived separately from the debrief's session data where possible and marked `unknown` only when the data is not available. Do not ask the agent to estimate these counts as part of self-identification.
 - `Testimonial`: the first-person answer, preserving the agent's voice.
 
 The template change should be concrete rather than a loose instruction. The intended before/after for `skills/debrief/SKILL.md` is:
@@ -36,9 +42,14 @@ The template change should be concrete rather than a loose instruction. The inte
 +
 +Ask the driving agent:
 +
-+> Setting the project's subject matter aside: as the agent driving this session, how would you describe the experience using Spacedock versus driving the same work without it? Be honest about friction, costs, or places where the workflow got in your way; this is not a request for praise.
++> Before answering, self-identify as the agent driving this session:
++> - Harness/runtime: the agent harness or runtime you are operating in (for example Claude Code, Codex, or Pi).
++> - Model: the model name.
++> - Model version/build: the exact version or build when runtime metadata exposes it.
++>
++> Write `unknown` for any identity field you cannot verify; do not infer or guess. Then, setting the project's subject matter aside: how would you describe the experience using Spacedock versus driving the same work without it? Be honest about friction, costs, or places where the workflow got in your way; this is not a request for praise.
 +
-+Record the answer as `{agent_testimonial}`. Also record `{host_runtime}`, `{model}`, and `{session_scale}` (`entities touched`, `workers dispatched`, `PRs touched/merged`) from the current session context when known; use `unknown` only for fields that cannot be determined.
++Record the testimonial prose as `{agent_testimonial}` and its agent-supplied identity as `{harness_runtime}`, `{model}`, and `{model_version_build}`. Preserve `unknown` exactly where the agent cannot verify a value. Derive `{session_scale}` (`tasks touched`, `workers dispatched`, `PRs touched/merged`) separately from the current session data; do not infer agent identity from those data or ask the agent to estimate session scale.
 +
 +### Step 2 — Present the draft
 @@ Write the debrief to `{debrief_root}/_debriefs/{date}-{sequence:02d}.md`:
@@ -47,9 +58,10 @@ The template change should be concrete rather than a loose instruction. The inte
 +
 +## Agent Testimonial
 +- Date: {YYYY-MM-DD}
-+- Host/runtime: {host_runtime}
++- Harness/runtime: {harness_runtime}
 +- Model: {model}
-+- Session scale: {entities_touched} entities touched; {workers_dispatched} workers dispatched; {prs_touched_or_merged} PRs touched/merged
++- Model version/build: {model_version_build}
++- Session scale: {tasks_touched} tasks touched; {workers_dispatched} workers dispatched; {prs_touched_or_merged} PRs touched/merged
 +
 +{agent_testimonial}
  
@@ -58,20 +70,28 @@ The template change should be concrete rather than a loose instruction. The inte
 
 No separate docs-site change is proposed for the first pass: this is a user-invocable skill behavior/template change, and the changed user-visible text lives in `skills/debrief/SKILL.md` itself. If a later docs page describes the debrief schema, that page should be updated in the same implementation, but ideation found no existing docs page that duplicates this template.
 
-No spike needed: the task relies on already-proven mechanisms in the debrief skill — asking the captain/agent for content during the debrief flow, writing markdown sections into `{debrief_root}/_debriefs/`, and committing the generated debrief file in the appropriate single-root or split-root checkout. The only risky part is behavioral compliance by the driving model, which is covered by a live debrief smoke rather than a static prose grep.
+No spike needed: the task relies on already-proven mechanisms in the debrief skill — asking the captain/agent for content during the debrief flow, writing markdown sections into `{debrief_root}/_debriefs/`, and committing the generated debrief file in the appropriate single-root or split-root checkout. The only risky part is behavioral compliance by the driving model, including honest `unknown` identity values, which is covered by artifact-backed debrief runs rather than a static prose grep.
+
+Prompt behavior exercise (ideation evidence, not a substitute for the implementation's end-to-end debrief artifact): applying the proposed prompt in this dispatched Codex worker produced the following response. The harness and model family were available from the runtime contract; an exact model version/build was not, so the response preserved `unknown` rather than guessing. Session-scale counts were deliberately absent from the agent response because the debrief must derive them separately.
+
+> Harness/runtime: Codex
+> Model: GPT-5
+> Model version/build: unknown
+>
+> Spacedock gives me a durable map of the work after context compression: I can recover which task is active, what evidence is owed, and which decisions still belong to the operator. Without it, I would rely more heavily on transcript memory and would be likelier to repeat work or blur approval boundaries. The cost is real: rereading contracts, maintaining entity reports, and waiting through formal gates adds overhead, especially for small changes. In this session the contract reload itself showed why durable reminders matter, but the same machinery can feel heavy when the next action is already obvious.
 
 Path-to-lane rule: the implementation touches `skills/debrief/SKILL.md` under `skills/**`, a shipped skill surface loaded by live runtime sessions. The merge gate is the Runtime Live E2E skill/contract lane for the affected host(s), with the first-pass required lane named `claude-live` when the change is validated through Claude Code. If the implementation or validation also exercises Codex or Pi-specific skill loading, the corresponding host live lane must be green too; deterministic tests alone are not sufficient for merge.
 
 ## Acceptance criteria
 - **AC-1 (VALUE)** A real debrief run produces an on-disk debrief record containing exactly one `## Agent Testimonial` section with a first-person comparison of using Spacedock versus not using it, and the answer includes at least one explicit friction/cost/negative observation rather than only praise. Verified by running the debrief flow in a live or fixture-backed workflow and inspecting the generated `_debriefs/{date}-{sequence}.md` file; the check must read the produced debrief artifact, not just `skills/debrief/SKILL.md`.
 - **AC-2** The debrief flow asks the testimonial prompt before writing the final debrief and the prompt carries the near-verbatim honesty clause: `Be honest about friction, costs, or places where the workflow got in your way; this is not a request for praise.` Verified by observing a debrief run transcript or live-run artifact where the driving agent is asked the prompt; a static string check over the skill file is not sufficient evidence.
-- **AC-3** The produced debrief's `## Agent Testimonial` section includes provenance fields for date, host/runtime, model, and session scale (`entities touched`, `workers dispatched`, `PRs touched/merged`), with unknown values explicitly written as `unknown` instead of omitted or fabricated. Verified by inspecting the generated debrief artifact from the same run used for AC-1.
+- **AC-3** The driving agent self-identifies its harness/runtime, model name, and exact model version/build when verifiable; the produced debrief's `## Agent Testimonial` section preserves those agent-supplied values and writes `unknown` for every unverifiable identity field instead of omitting or fabricating it. Session scale (`tasks touched`, `workers dispatched`, `PRs touched/merged`) is present but derived separately from session data, not from the agent's identity response. Verified with artifact-backed debrief runs that capture the prompt response and resulting file: one run with a verifiable runtime/model identity and one run where at least the exact version/build is unavailable and therefore remains `unknown`.
 - **AC-4** The implementation remains compatible with split-root debrief storage: when the workflow uses a state checkout, the testimonial-bearing debrief is written and committed under `{state_checkout}/_debriefs/`, not the definition worktree. Verified with a split-root fixture or live dev workflow run by checking the resulting file path and `git -C {state_checkout} status/log`.
 - **AC-5** The implementation's merge evidence names and runs the live lane required by the path-to-lane rule for `skills/**`; for the first pass this is `claude-live`, because the changed debrief skill behavior must be observed through a real runtime lane before merge. Verified by the validation report citing the live lane run URL or local live command, result, and artifact path.
 
 ## Test plan
-1. **Focused skill smoke (medium cost, fixture-backed or local live):** Run the debrief skill against a small workflow fixture or the dev workflow with a bounded session range, answer the new testimonial prompt with a first-person response that includes both value and friction, and confirm the generated debrief contains one `## Agent Testimonial` section with the preserved answer.
-2. **Provenance artifact check (low cost, artifact inspection):** Inspect the generated debrief file from the smoke run and verify date, host/runtime, model, and session-scale fields are present. Use `unknown` only where the run truly cannot provide the value.
+1. **Focused skill smoke (medium cost, fixture-backed or local live):** Run the debrief skill against a small workflow fixture or the dev workflow with a bounded session range. Have the driving agent answer the prompt with explicit harness/runtime, model name, version/build or honest `unknown`, followed by a first-person response containing both value and friction. Confirm the generated debrief contains exactly one `## Agent Testimonial` section and preserves both the self-identification and testimonial.
+2. **Identity and provenance artifact checks (medium cost, two artifact-backed cases):** Inspect the prompt response and generated debrief together. In a runtime exposing exact identity metadata, verify the artifact matches the agent-supplied harness, model name, and exact version/build. In a fixture or runtime withholding the exact version/build, verify the agent says `unknown` and the artifact preserves it without guessing. In both cases, independently calculate session-scale counts from session data and verify those values are not sourced from the agent's self-identification. Static inspection or prose grep of `skills/debrief/SKILL.md` does not satisfy this test.
 3. **Split-root path check (low cost if using `docs/dev`, otherwise fixture):** For a split-root workflow, verify the debrief lands under the state checkout `_debriefs/` directory and the state checkout git log/status reflect the new debrief commit path, not a write in the definition dir.
 4. **Regression gate (standard cost):** Run `go test ./...` to catch unrelated integration or contract regressions. If code paths under `internal/` are changed, also run the repo's normal `go test ./... -race` gate.
 5. **Required live lane (high cost, merge-gating):** Run the Runtime Live E2E lane that loads the changed skill surface. First-pass lane: `claude-live`. Evidence must include the lane result and the produced debrief artifact or transcript showing the prompt and generated testimonial section.
@@ -107,3 +127,16 @@ The exact mechanism for deriving host/runtime, model, worker count, and PR count
 These do not change the five ACs or the test plan; they tighten how implementation renders the prompt, the section labels, and the provenance nouns.
 
 **Cycle 2 (pre-gate captain correction, 2026-07-18):** The testimonial prompt must make the driving agent self-identify, rather than relying only on debrief-side inference. Ask for the agent harness/runtime and the model name plus exact version or build when the host exposes it; record `unknown` for any value the agent cannot verify and never guess. Revise the prompt, proposed template, AC-3, and the live/fixture test so the produced testimonial demonstrates this self-identification. Keep session-scale derivation separate from the agent's self-identification, and preserve the honesty clause verbatim-or-near.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Revise the prompt to require agent self-identification of harness/runtime and model name plus exact version or build, using unknown when unverifiable.
+  The proposed prompt asks for three explicit identity fields, forbids guessing, and retained the honesty clause verbatim.
+- DONE: Align the testimonial template, AC-3, and artifact-backed tests with self-identification while keeping session-scale derivation separate.
+  The template and AC-3 preserve agent-supplied identity; the two-case test checks known and `unknown` values while deriving scale independently.
+- DONE: Preserve the honesty clause and human testimonial register while proving the revised prompt through behavior rather than prose grep.
+  A Codex prompt exercise yielded a four-sentence testimonial with explicit friction and an honest unknown build; end-to-end artifact proof remains required for implementation.
+
+### Summary
+
+Revised the testimonial prompt so the driving agent identifies its harness/runtime, model, and verifiable version/build before answering, with explicit `unknown` handling. Updated the output template, acceptance criterion, and artifact-backed test plan while keeping session-scale counts separate from identity and retaining the testimonial's human, non-marketing register.
