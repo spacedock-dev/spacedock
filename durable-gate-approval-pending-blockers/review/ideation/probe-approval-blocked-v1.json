@@ -1,0 +1,10 @@
+{
+  "type": "Probe",
+  "version": "experimental-1",
+  "id": "probe:3k:approval-blocked",
+  "question": "Does this change preserve approval while dispatch is blocked?",
+  "revision": "sha256:f1e48757a76bd7bee93aac0c0485e021e94ae9e0590b45de9fad48aef671bb4a",
+  "createdBy": "person:captain",
+  "createdFrom": "first-use-suggestion",
+  "carry": "next-attempt"
+}

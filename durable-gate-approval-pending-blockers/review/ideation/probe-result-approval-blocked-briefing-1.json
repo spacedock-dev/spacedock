@@ -1,0 +1,55 @@
+{
+  "type": "ProbeResult",
+  "version": "experimental-1",
+  "id": "probe-result:3k:approval-blocked:briefing-1",
+  "recordedAt": "2026-07-18T15:12:05Z",
+  "briefing": {
+    "id": "briefing:docs-dev:3k:ideation:attempt-1:revision-1",
+    "digest": "sha256:edb0c8377d141ab9fd2e12700799b31ae0d0b3803b66c9585ca47c7616bffd68"
+  },
+  "probe": {
+    "id": "probe:3k:approval-blocked",
+    "question": "Does this change preserve approval while dispatch is blocked?",
+    "revision": "sha256:f1e48757a76bd7bee93aac0c0485e021e94ae9e0590b45de9fad48aef671bb4a"
+  },
+  "requestedBy": {
+    "principal": "person:captain",
+    "harness": "Codex",
+    "model": "GPT-5",
+    "modelRevision": "not-exposed"
+  },
+  "answeredBy": {
+    "principal": "agent:subspace-probe-responder",
+    "run": "/root/subspace_3k_probe_responder_1",
+    "harness": "Codex",
+    "model": "GPT-5",
+    "modelRevision": "not-exposed",
+    "freshRun": true
+  },
+  "outcome": "answer",
+  "answer": "Yes. The design durably stores the approval while keeping its application pending until dispatch blockers clear.",
+  "citations": [
+    {
+      "artifact": "artifact:gate-resolution-frontmatter-contract",
+      "path": "../../gate-resolution-frontmatter-contract.md",
+      "lineStart": 155,
+      "lineEnd": 175,
+      "claim": "The example records an approve Resolution, a pending application, and an unsatisfied blocker."
+    },
+    {
+      "artifact": "artifact:gate-resolution-frontmatter-contract",
+      "path": "../../gate-resolution-frontmatter-contract.md",
+      "lineStart": 313,
+      "lineEnd": 318,
+      "claim": "Closing stores the exact Resolution without advancing status or dispatch, and failed prerequisites fail closed."
+    },
+    {
+      "artifact": "artifact:gate-resolution-frontmatter-contract",
+      "path": "../../gate-resolution-frontmatter-contract.md",
+      "lineStart": 319,
+      "lineEnd": 327,
+      "claim": "Dispatch preparation happens later, and eligibility requires every blocker to be satisfied."
+    }
+  ],
+  "limitation": "The listed artifacts establish the proposed contract, but contain no implementation or test evidence proving runtime enforcement."
+}
