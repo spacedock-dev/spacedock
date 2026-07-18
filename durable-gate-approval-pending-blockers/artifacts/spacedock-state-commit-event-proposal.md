@@ -154,6 +154,20 @@ state history. A temporary Subspace briefing or an FO-authored presentation
 file is not a gate event. The committed record must carry `gate_attempt_id`,
 task ID, stage, round, artifact digest, decision, actor, and timestamp.
 
+`feedback.cycle_recorded` is the durable route edge between a rejected gate
+result and the stage run that receives its rework. Its structured payload must
+carry the feedback cycle, rejected `gate_attempt_id`, source stage and
+`stage_run_id`, target stage, and the routed finding reference and digest. When
+the matching `task.stage_entered` event is projected, the projector binds that
+new target `stage_run_id` to the feedback event. The relationship is explicit;
+the reducer must not infer rework merely from a repeated stage name, report
+prose, or the current workflow definition's `feedback-to` value.
+
+This extends an existing event rather than adding a second stage-result event.
+The rejected result remains `gate.resolution_recorded`; the feedback event says
+where that result was routed. A cycle-3 escalation records no target stage run
+and therefore cannot masquerade as dispatched rework.
+
 ## Explicit receipts for external side effects
 
 Tree changes cannot prove that an external side effect occurred. A transition
@@ -238,6 +252,8 @@ Each task snapshot should contain:
 - worktree and referenced product head;
 - latest Stage Report reference and digest;
 - current gate attempt, decision, and artifact digest;
+- active feedback route, including its source gate result, cycle, source and
+  target stage runs, routed finding reference, and resolution state;
 - dispatch attempts and durable receipts, if recorded;
 - completion, verdict, and merge reference;
 - conflicts, stale approvals, and invalid transitions.
@@ -270,6 +286,30 @@ to commit the next stage before a worker exists. The revised sequence is:
 
 A failed spawn may receive a committed failure receipt while the approval
 remains pending for retry.
+
+### Rejected result routed to rework
+
+A rejected Resolution is a durable completed gate result even when workflow
+routing changes the task's current lifecycle stage. On
+`feedback.cycle_recorded`, the reducer opens an active feedback route linked to
+the rejected `gate_attempt_id`. On the matching `task.stage_entered`, it binds
+the target `stage_run_id` and computes a `feedback_rework` condition alongside
+the ordinary current stage.
+
+For example, after validation rejects cycle 1 and routes to implementation,
+the snapshot still has `stage: implementation`, while its structured context
+identifies `condition: feedback_rework`, `feedback_cycle: 1`,
+`feedback_from_stage: validation`, and the rejected gate attempt. Text status
+must render the same distinction, such as `implementation (rework: validation
+rejected, cycle 1)`. It must not collapse the row to bare `implementation` plus
+an unchanged score.
+
+The active route survives restart and remains attached through remediation and
+the resulting re-review. A later committed gate Resolution supersedes it: a
+pass closes the active route; another rejection closes the prior route and
+opens the next cycle. Historical gate and feedback events remain replayable in
+all cases. Re-entering a stage without a linked feedback event is an ordinary
+stage run and must not be labeled rework.
 
 ## Runtime overlay and reconciliation
 
@@ -376,7 +416,10 @@ or runtime observation.
 3. Implement Git DAG projection and the pure reducer.
 4. Persist gate Resolution records with stable `gate_attempt_id` and artifact
    digest.
-5. Derive `approved_pending_dispatch` without runtime instrumentation.
+5. Persist structured feedback-cycle route edges and bind rework stage runs to
+   their rejected gate attempts.
+6. Derive `approved_pending_dispatch` and `feedback_rework` without runtime
+   instrumentation.
 
 ### Phase 2: Add dispatch identity and selected receipts
 
@@ -419,6 +462,11 @@ instrumentation and Phase 3 Zaphod work may proceed in parallel.
    dispatch, or merge a task.
 10. **Privacy:** event fixtures contain identifiers, digests, and references but
     no prompt, transcript, or review body.
+11. **Rejected rework:** a validation rejection routed to implementation
+    projects the current stage as implementation plus durable
+    `feedback_rework` context naming the validation gate and cycle; rebuilding
+    after restart produces the same text and JSON, while an ordinary repeated
+    implementation stage does not acquire that context.
 
 ## Open questions
 
