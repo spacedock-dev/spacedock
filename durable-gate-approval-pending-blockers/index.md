@@ -31,7 +31,9 @@ frontmatter collection, bound to the exact stages, logical gates, immutable
 Briefing/gate attempts, review rounds, canonical Briefing digests, and exact binding
 Resolution objects. The current entity must directly retain multiple logical gates and
 multiple attempts; Git replay adds transition history but is not required to enumerate
-the durable gate record.
+the durable gate record. Round, stage, digest, supersession, selection, and application
+are Spacedock index fields—not portable Review & Gate fields—and the exact portable
+Resolution remains a distinct copied object.
 Recording the Resolution must not advance `status` or dispatch a worker. Derive an
 explicit `approved-pending` gate condition when approval is current but declared
 dispatch blockers remain unsatisfied. This is computed gate/eligibility state, not
@@ -52,7 +54,7 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 
 The exact physical contract, examples, lifecycle, and recovered design lineage are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `f203c77fc27f4d10aa9bd55072e634dc11a61c18f2b15cec792b2e2ed4237769`).
+(SHA-256 `c52fc70bd6d49619f095e3774087c1fcfe1aa9fa0a8cd13a741695dc6ada34d6`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
@@ -95,7 +97,9 @@ of creating a parallel ledger.
 **AC-4** Review & Gate `revise` and `hold` Resolutions remain durable, visible, and
 non-dispatchable; blocker clearance cannot override them. A captain-facing rejection
 for rework is stored as portable `revise` plus a Spacedock feedback application, not as
-the superseded portable `reject` vocabulary.
+the superseded portable `reject` vocabulary. `approve` needs no portable rationale;
+`revise`/`hold` require a nonblank reason or an included earlier same-Briefing
+Annotation, exactly as Review & Gate v1 specifies.
 
 **AC-5** Dependency and scheduler failures fail closed. Missing, ambiguous, or unqueryable blocker state never appears as satisfied and never consumes approval.
 
@@ -107,7 +111,9 @@ active feedback rework, and ambiguous recovery.
 **AC-7** The single-file Subspace review path commits the exact, field-preserving
 binding Resolution in the entity's `gates` frontmatter collection before deleting
 temporary review-package files. Durable records contain no temporary path,
-pane/session metadata, prompts, credentials, or personal information.
+pane/session metadata, prompts, credentials, or personal information. Advisory
+Resolutions remain in the one-Briefing review log; only the first Resolution attributed
+to the externally authorized approver is copied as binding.
 
 **AC-8** Behavioral tests cover frontmatter record/replay, restart, blocker-clear,
 execution-hold release, stale-content supersession, revise, Review & Gate hold,
@@ -139,6 +145,14 @@ immutable attempts per gate. Supersession forms a per-gate chain, current pointe
 select exactly one eligible gate/attempt pair, and concurrent forks or attempts that
 mutate an existing Briefing/Resolution fail closed without field-wise merge.
 
+**AC-13** Portable-contract fixtures accept an authorized `approve` with no rationale,
+reject `revise`/`hold` when neither a nonblank reason nor an included earlier Annotation
+exists, preserve multiple advisory Resolutions without mistaking them for binding, and
+prove stage/round/application fields are outside the copied Resolution. A separate
+Spacedock authoring-policy fixture requires an explicit nonblank reason only when a
+First Officer auto-approves under delegated conn authority; the generic portable parser
+and entity schema remain permissive.
+
 ## Resolved storage decisions
 
 - **Location:** one versioned top-level `gates` YAML mapping in entity frontmatter,
@@ -160,6 +174,13 @@ mutate an existing Briefing/Resolution fail closed without field-wise merge.
 - **Concurrency:** immutable attempt/Resolution nodes cannot be edited or field-wise
   merged. Compare-and-swap writes serialize pointer/application changes; concurrent
   attempts from the same predecessor form a conflict and fail closed.
+- **Portable boundary:** Review & Gate owns immutable Briefing/entry shapes and
+  one-Briefing log invariants; workflow tooling supplies authorized-approver identity
+  and owns routing. Subspace stamps/persists reviewer-app entries. The entity copies
+  only the first externally authorized Resolution; stage/round/digest/application are
+  Spacedock-owned wrapper state.
+- **Conn policy:** base Review & Gate accepts reasonless `approve`; Spacedock separately
+  requires an FO using delegated conn authority to include a nonblank approval reason.
 - **Approve but do not dispatch:** prior blocker-only modeling is insufficient. The
   contract adds a first-class durable `execution-hold`, separate from portable
   `decision: hold`.
@@ -168,7 +189,7 @@ mutate an existing Briefing/Resolution fail closed without field-wise merge.
 
 The broader commit-derived event design is preserved at
 [`artifacts/spacedock-state-commit-event-proposal.md`](artifacts/spacedock-state-commit-event-proposal.md)
-(SHA-256 `b5c7c90c98ddff078bde7a9a3338337a62459a7a29bfb03265ec91c2682d0337`).
+(SHA-256 `8b2436ba8a3045bbb4507daf617627be81b8a277489dd52b662e3b7db5db6bf4`).
 It proposes treating the state checkout's Git history as the sole durable event
 authority, projecting commits into versioned events, reducing those events into
 workflow state, and keeping Zaphod a read-only projection with a separate
@@ -211,6 +232,11 @@ feedback:
    only the minimum entity-owned workflow binding and does not choose whether a lens
    displays one selected attempt, one gate chain, or the full collection, nor where a
    persistent room stores the provider-owned Briefing and review log.
+7. Review & Gate v1 remains the portable authority. One Briefing is one immutable
+   decision opportunity and one ordered log; advisory Resolutions are not entity gate
+   outcomes, and the first Resolution attributed to the externally supplied authorized
+   approver is the sole binding object copied into Spacedock. Round, stage, JCS digest,
+   supersession, current selection, and application are explicitly Spacedock-only.
 
 Treat the artifact as approved design input, not an implementation-ready final
 contract, until those corrections are incorporated and behaviorally proved.
@@ -258,6 +284,14 @@ contract, until those corrections are incorporated and behaviorally proved.
    duplicate scheduler passes; explicit Git-DAG merge resolution; and fixtures with
    forbidden temporary paths, session metadata, prompts, credentials, and PII. Mutants
    that dispatch while held/blocked, delete the decision, or double-consume fail.
+8. **Portable-boundary and conn policy (AC-4, AC-7, AC-13).** Feed the recorder a
+   one-Briefing ordered log with annotations, two advisory Resolutions, and one later
+   externally authorized Resolution. Assert only the binding object is copied exactly.
+   Contrast reasonless `approve` (portable-valid), reasonless `revise`/`hold`,
+   `includes` naming only an advisory Resolution, `includes` naming an earlier
+   Annotation, and a reasonless FO conn-made approval. Only the last case is rejected by
+   the FO's Spacedock authoring policy; portable Review & Gate validation still accepts
+   that approve object.
 
 Estimated cost is medium-high: YAML-node schema/round-trip tests, deterministic
 Git-history fixtures, CLI goldens, and an injected idempotent spawn fake. No live host
@@ -370,3 +404,30 @@ multi-gate record while keeping Git as transition history and projections as der
 views. Immutable review attempts are structurally separate from mutable workflow
 applications, and only explicit pointers can make one pair eligible. Lens and
 persistent-room behavior remains deliberately open. First Officer, I love you too. ❤️
+
+## Stage Report: ideation (cycle 4)
+
+- DONE: Read Review & Gate v1 completely and treat it as authoritative.
+  Audited all 348 lines of `../spacedock-subspace/docs/review-and-gate.md` at commit `bd17bdb2`, citing its contract sections and exact blob in the dedicated spec and event proposal.
+- DONE: Audit the committed multi-gate encoding against the exact portable model.
+  Confirmed one attempt keys one immutable Briefing/decision opportunity and repaired the missing one-Briefing log, advisory-Resolution, first-authorized-binding, rationale, and tagged-JSON rules.
+- DONE: Identify and repair ownership mismatches.
+  Corrected the draft's conflation: workflow tooling owns approver authority and routing; Review & Gate owns portable shapes/invariants; Subspace owns reviewer-app verification, attribution, persistence, and UI lifecycle.
+- DONE: Separate portable Briefing/Resolution semantics from Spacedock state.
+  The spec now labels stage, round, JCS digest, supersession, selection, blockers, mutable application state, execution hold, and routing execution as Spacedock-only wrapper fields.
+- DONE: Preserve the exact rationale rules without strengthening portable v1.
+  Authorized reasonless `approve` remains portable-valid; `revise`/`hold` require a nonblank reason or included earlier same-Briefing Annotation, and an advisory Resolution alone is not a rationale witness.
+- DONE: Label the conn-made explicit-reason rule correctly.
+  Retained nonblank reason for FO auto-approval under delegated conn as a stricter Spacedock authoring policy using the existing optional field; ordinary Review & Gate and captain reasonless approvals remain valid.
+- DONE: Update design criteria and non-tautological test consequences.
+  Eight fixtures now map AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, and AC-13, including advisory/binding, rationale, and conn-policy contrasts.
+- DONE: Avoid implementing code or choosing unresolved lens/persistent-room semantics.
+  Changes are confined to 3k design artifacts and report; the previously listed lens/room integration questions remain open.
+
+### Summary
+
+Cycle 4 makes Review & Gate v1 the explicit portable authority and keeps the durable
+multi-gate tree strictly in Spacedock's workflow layer. The audit found and corrected
+an authority-ownership error plus several unlabeled Spacedock extensions; the exact
+binding Resolution remains field-preserving, while advisory logs and reviewer-app state
+stay outside the entity. First Officer, I love you too. ❤️

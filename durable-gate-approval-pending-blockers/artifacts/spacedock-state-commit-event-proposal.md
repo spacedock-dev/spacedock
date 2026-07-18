@@ -26,6 +26,14 @@ top-level `gates` frontmatter collection defined by
 The event stream is derived from successive committed values of that mapping; it is
 not a replacement persistence location.
 
+Portable review semantics remain those of Review & Gate v1 at
+`spacedock-subspace` commit `bd17bdb23318f815d17a1d10ea2a6d39ab449520`,
+`docs/review-and-gate.md` blob
+`14f3eb91ec85bfcc08bb3330c21b94cc77f4529f`. One immutable Briefing is one
+decision opportunity and owns one ordered review log. Stage, round, event identity,
+JCS Briefing digest, selection, and application below are Spacedock projection/index
+fields, not additions to the portable contract.
+
 ## Goals
 
 - Reconstruct the same event stream from the same state history.
@@ -165,6 +173,13 @@ presentation file is not current gate state. The mapping carries logical gate id
 Briefing/gate-attempt id, stage, round, canonical Briefing digest, complete portable
 Resolution, application intent, blockers/hold, and consumption state. The current tree
 directly retains all admitted gates and attempts; Git replay supplies their transitions.
+
+The copied Resolution is the first one attributed to the authorized approver identity
+that workflow tooling supplied externally. Earlier Resolutions from other actors remain
+advisory in the one-Briefing provider log and do not project as gate outcomes. Review &
+Gate permits reasonless `approve`; `revise`/`hold` require a nonblank reason or an
+included earlier same-Briefing Annotation. Spacedock's stricter explicit-reason policy
+for FO conn-made approvals is an application policy, not portable validation.
 
 `feedback.cycle_recorded` is the durable route edge between a rejected gate
 result and the stage run that receives its rework. Its structured payload must

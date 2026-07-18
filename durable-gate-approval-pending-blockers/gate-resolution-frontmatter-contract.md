@@ -24,11 +24,44 @@ Two earlier decisions still hold:
    `Resolution` identities. Portable decisions are `approve`, `revise`, and `hold`;
    workflow rejection for rework is `revise` plus a Spacedock feedback application.
 
+The authoritative source for this proposal is the complete
+`../spacedock-subspace/docs/review-and-gate.md` contract at that commit, especially
+§1 “Scope and ownership,” §2 “Model,” §3 “Decisions,” §5 “Review entries,” §7
+“Review log,” and §8 “Versioning and serialization.” The `gates` tree below is a
+Spacedock workflow index over those portable objects; it is not a change to Review &
+Gate v1.
+
 The smallest representation that satisfies the original requirement is one plural
 top-level `gates` mapping. It contains a collection of logical gates, every binding
 resolved attempt for each gate, and explicit current-selection pointers. Git commits
 remain the audit trail of mutations and the source for projected events, but replay is
 not required merely to enumerate prior gates or attempts.
+
+## Review & Gate v1 boundary and audit corrections
+
+The source audit fixes these boundaries:
+
+- One immutable portable `Briefing` is one decision opportunity. A different question,
+  artifact revision set, or decision opportunity receives a new Briefing id. A
+  Spacedock “attempt” is an index entry keyed by that exact id; it is not a second
+  portable object type.
+- One logical ordered portable review log belongs to one Briefing. It may contain many
+  advisory Resolutions from other actors, but at most one binding Resolution: the first
+  Resolution attributed to the externally authorized approver. The entity copies only
+  that binding Resolution; it does not collapse advisory entries into it.
+- Workflow tooling owns the authorized-approver identity and routing interpretation.
+  The Subspace reviewer app receives that authority externally, stamps attribution,
+  maintains entry order, and identifies the first matching Resolution. The prior draft
+  imprecisely assigned “binding-authority determination” to Subspace alone.
+- `approve` needs no portable rationale. `revise` and `hold` require a nonblank `reason`
+  or an `includes` reference to at least one earlier Annotation in the same Briefing.
+  An included advisory Resolution alone is not the required rationale witness.
+- Round, workflow stage, supersession, current selection, blockers, mutable application
+  status, and routing execution are not portable Review & Gate fields. Every such field
+  below is Spacedock-owned metadata outside the copied Resolution.
+- Tagged JSON defines Review & Gate's portable semantics. The YAML `resolution` node
+  below is a semantic transcription of the exact JSON object for entity storage; YAML
+  syntax, ordering, and scalar presentation do not create a different portable format.
 
 ## Physical representation
 
@@ -66,7 +99,6 @@ gates:
             by: person:captain
             at: 2026-07-17T09:00:00Z
             decision: approve
-            includes: []
       applications:
         - attempt: briefing:3k-ideation-r1
           id: application:3k-ideation-r1
@@ -114,7 +146,6 @@ gates:
             by: person:captain
             at: 2026-07-18T10:30:00Z
             decision: approve
-            includes: []
       applications:
         - attempt: briefing:3k-validation-r1
           id: application:3k-validation-r1
@@ -162,6 +193,11 @@ mapping through `yaml.Node`; the legacy scalar-only `ParseFrontmatter` view may 
 
 ## Field contract
 
+The layer boundary is structural: `gates`, logical-gate identity, stage, round, digest,
+supersession, selection, and every `applications[]` field are Spacedock-owned.
+`attempts[].id` copies the portable `Briefing.id`; `attempts[].resolution` is the only
+copied portable object.
+
 | Field | Required | Meaning |
 |---|---:|---|
 | `gates.version` | yes | Integer `1`; unsupported versions fail closed. |
@@ -191,11 +227,30 @@ when present, `includes`, and any valid additive version-1 fields. Its `briefing
 equal the containing attempt id. Review & Gate attribution and binding authority are
 validated before recording; the `by` string does not self-assert authority.
 
+The portable review log may contain annotations and advisory Resolutions before the
+binding entry. Those entries remain in their one-Briefing log. The recorder accepts
+only the first Resolution attributed to the externally supplied authorized approver as
+`attempts[].resolution`, rejects a second claimed binding Resolution for that Briefing,
+and never derives binding from an entry's contents. An `approve` object may omit both
+`reason` and `includes`, as the two approving examples do. A `revise` or `hold` without
+a nonblank reason is accepted only when `includes` names at least one earlier Annotation
+in that same ordered log.
+
 `reviewed-digest` is SHA-256 over RFC 8785 JSON Canonicalization Scheme bytes of the
 exact Review & Gate `Briefing`. The Briefing carries its immutable question, artifact
-ids and revisions, routing context, criteria, and evidence. The recorder resolves and
-verifies each artifact revision before accepting the Resolution. Changed gate-defining
-input requires a new Briefing id, digest, and attempt.
+ids and revisions, routing context, criteria, and evidence. The Subspace reviewer app
+resolves and verifies each Artifact revision before opening, as Review & Gate §4
+requires. Separately, the Spacedock recorder verifies the exact Briefing identity and
+digest it is binding, and the consumer compares that digest with the reconstructed
+workflow decision opportunity. Changed gate-defining input requires a new Briefing id,
+digest, and attempt.
+
+That whole-Briefing JCS digest is a **Spacedock-only binding constraint**, not a Review &
+Gate v1 field or canonicalization rule. Review & Gate separately requires each Artifact
+`rev` to hash its unnormalized raw bytes and requires the reviewer app to resolve and
+verify artifacts before opening. Spacedock stores the additional Briefing digest so it
+can compare the workflow's reconstructed decision opportunity before consumption; it
+must not present JCS as portable Review & Gate behavior.
 
 ## Identity, selection, and supersession invariants
 
@@ -228,6 +283,13 @@ input requires a new Briefing id, digest, and attempt.
    and application state `not-applicable`; an approved execution hold remains
    `decision: approve`, action `advance`, state `pending`, with an active
    `execution-hold`.
+
+`records[].stage`, `attempts[].round`, `attempts[].reviewed-digest`, and
+`attempts[].supersedes` are all Spacedock index fields. They do not enter the copied
+portable Resolution and do not imply that Review & Gate has portable stage, round,
+history, or mutable review status. A changed question, artifact revision set, or
+decision opportunity always creates a new Briefing/attempt id even if Spacedock's
+logical gate and round label stay otherwise related.
 
 ## Application transitions and separate operations
 
@@ -276,14 +338,21 @@ that check.
   forbidden. Until resolution, status reports conflict and dispatch eligibility is
   false.
 
-## Subspace versus entity ownership
+## Portable contract, Subspace app, and entity ownership
 
 The entity deliberately does not become a second Review & Gate database.
 
-Subspace/Review & Gate owns the exact Briefing, artifact resolution, the ordered
-portable log, annotations, advisory Resolutions, binding-authority determination, and
-review UI/runtime material. Whether a future persistent room or lens is the durable
-home and navigation surface for those objects is not settled here.
+The Review & Gate contract owns the immutable Briefing, portable object shapes, the
+logical one-Briefing review log, and their invariants. Workflow tooling—including
+Spacedock—owns workflow position, the externally authorized-approver identity, and
+routing interpretation/execution.
+
+The Subspace reviewer app owns resource resolution and verification, cached display
+bytes, authentication and attribution stamping, drafts/edits, selector placement,
+reconciliation, interaction mode, concrete review-log persistence, and UI closure. It
+matches entries to the authorized identity supplied by workflow tooling; it does not
+mint its own workflow authority. Whether a future persistent room or lens is the
+durable home and navigation surface for app-owned objects is not settled here.
 
 Spacedock's entity record owns only the workflow binding needed after the review
 invocation ends: logical gate/stage identity, Briefing id and canonical digest, the
@@ -295,6 +364,22 @@ If a binding Resolution relies on `includes` rather than a typed reason, the ids
 exact in the entity while the referenced entries remain in the provider-owned review
 log. Loss of that log makes rationale evidence unavailable; it does not authorize the
 entity to synthesize annotation bodies.
+
+## Spacedock-only policy constraints
+
+The multi-gate index, whole-Briefing digest, application state machine, and
+approve-but-do-not-dispatch execution hold are all Spacedock constraints layered around
+portable Review & Gate v1.
+
+Spacedock retains a stricter authoring rule: a First Officer exercising delegated conn
+authority must give an explicit nonblank `reason` for an auto-approval. This is also
+**Spacedock-only**. Base Review & Gate v1 permits `approve` with no rationale. The
+conn-made Resolution uses the already-valid optional `reason` member; generic Review &
+Gate validation must still accept an authorized reasonless `approve`, and a captain's
+ordinary reasonless approval remains valid. Enforcement belongs to the First Officer's
+Spacedock authoring path when it exercises the conn, not to the generic Review & Gate
+parser or entity schema. The entity preserves the resulting reason; no new portable
+field is invented.
 
 ## Commit-derived events and projections
 
