@@ -1,206 +1,238 @@
-# Ask once, verify the next revision
+# Remember resolved concerns across a changing spec
 
 Status: companion proposal for `3k` ideation review
 Date: 2026-07-18
 
-## Product promise
+## The problem
+
+The captain described the hard case:
+
+> “but what's more tricky is for a particular instance of spec that is evolving through conversation. I'd ask a bunch of questions to confirm capability or details, but sometimes a resolved concern drifts with later changes, and right now it is still easier to re-read the spec to confirm.”
+
+The core value is concern memory. A person asks one question about one revision, gets an
+evidence-backed answer, and sees when a later revision changes or weakens that answer.
+The person should not need to re-read the whole spec.
 
 > Ask once. The next revision shows whether your concern was addressed.
 
-The first version should reach that payoff before it offers configuration. A user asks
-one useful question, sends the work back, and sees the same question answered against
-the next revision. The product shows the old answer, the new answer, and the evidence
-that changed.
+A Probe may cause an author to improve the spec. Automatic incorporation is useful but
+optional. The product succeeds when it preserves and rechecks the resolved concern.
 
-## First-use experience
+## Before presentation: publication checks
 
-The ensign finishes the work and publishes the decision surface. The user sees:
+General project or team questions run before presentation. The publisher also searches
+the candidate for contradictions that the current change introduced.
+
+If a check reveals a contradiction or an obvious self-revision, the publisher returns
+the finding and citations to the author. It does not present avoidable inconsistency to
+the reviewer. If the evidence reveals a genuine human choice, the publisher presents
+that choice explicitly and leaves it unresolved.
+
+Personal common questions may come from a skill or profile. A personal question remains
+personal unless its owner deliberately shares it. These checks improve a candidate
+before review; they do not replace the instance-specific concern memory below.
+
+## During and after presentation: one persistent question
+
+An instance-specific **Probe** is exactly one question attached to a Subspace review
+room and spec lineage. It persists across later Review & Gate Briefings in that lineage.
+It is not a multi-question lens and is not portable Review & Gate `Context`.
+
+The first useful interaction stays small:
 
 ```text
-Ready for your decision
+Ready for review
 
-What do you need to know before deciding?
-[Does this change preserve approval while dispatch is blocked?          ]
+What do you need to confirm?
+[Using the concrete YAML, trace 3k from a revised ideation gate through a second
+ ideation attempt and then two validation attempts, and show where each resolved
+ Briefing, Resolution, and workflow application remains durable.]
 
 [Ask]
 ```
 
-The field accepts the suggested question or free-form text. The first screen offers
-one question, not a review setup form.
+Subspace answers against the exact presented Briefing. A later Briefing in the same
+lineage automatically triggers a new result for every previously answered Probe.
+Questions that merely match a general or personal preset stay lazy until someone asks
+them for this lineage.
 
-After the user selects **Ask**, the surface says `Checking this revision…`. Subspace
-starts a fresh responder and returns a short attributed answer with citations:
+## Probe and ProbeResult
+
+A Probe record has a stable id, spec-lineage id, exact question, revision, creator, and
+time. Editing the question appends a new Probe revision; it never rewrites the prior
+question.
+
+Each immutable **ProbeResult** binds:
+
+- the exact Probe id, revision, and question;
+- the exact Briefing id and digest;
+- `requested-by` principal, harness, and model;
+- `answered-by` responder, fresh harness run, and model version;
+- an answer or `insufficient-evidence` outcome;
+- verified citations or evidence;
+- explicit limitations; and
+- an immutable result id and recorded time.
+
+A ProbeResult reports what the evidence supports. It contains no recommendation,
+decision, binding flag, advisory Resolution, or gate verdict. It never claims that the
+reviewer should approve, reject, or revise.
+
+## Provider-owned serialization
+
+The review provider owns Probes and ProbeResults. A room may serialize them as an
+append-only `probes.jsonl`:
+
+```json
+{"type":"Probe","id":"probe:3k-durability-trace","revision":1,"spec-lineage":"spec:3k-gate-design","question":"Using the concrete YAML, trace 3k from a revised ideation gate through a second ideation attempt and then two validation attempts, and show where each resolved Briefing, Resolution, and workflow application remains durable.","created-by":"person:captain","at":"2026-07-18T12:00:00Z"}
+{"type":"ProbeResult","id":"probe-result:3k-durability-trace:b1","probe":{"id":"probe:3k-durability-trace","revision":1},"question":"Using the concrete YAML, trace 3k from a revised ideation gate through a second ideation attempt and then two validation attempts, and show where each resolved Briefing, Resolution, and workflow application remains durable.","briefing":{"id":"briefing:3k-design-b1","digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"outcome":"answered","answer":"The YAML preserves four closed attempts and keeps each resolved Briefing and Resolution beside its workflow application.","citations":["gate-resolution-frontmatter-contract.md#physical-representation"],"limitations":["Design trace only; no binary behavior was executed."],"requested-by":{"principal":"person:captain","harness":"subspace-web","model":"human"},"answered-by":{"principal":"agent:reviewer-1","harness":"codex","model":"gpt-5.5","run":"run:fresh-1"},"at":"2026-07-18T12:01:00Z"}
+```
+
+An equivalent provider store may use another durable format if it preserves append-only
+record identity, immutable revisions, exact bindings, and replay. Git is one backend;
+Git commits and paths are not Probe semantics.
+
+Comparisons are derived from immutable ProbeResults. A provider may cache a comparison,
+but it can always rebuild it and must not treat the cache as authority.
+
+## Concrete ProbeResult
+
+For the question above, a short narrative result could read:
 
 ```text
-Yes. The change records approval before it checks dispatch blockers.
+Answer
+
+The YAML preserves four closed attempts under two logical gates.
+
+1. Ideation attempt 1 freezes Briefing 1a beside a revise Resolution. Its consumed
+   feedback application points to backlog.
+2. Ideation attempt 2 freezes Briefing 2b beside an approve Resolution. Its advance
+   application is consumed and points to implementation.
+3. Validation attempt 1 freezes Briefing 1a beside a revise Resolution. Its consumed
+   feedback application points back to implementation.
+4. Validation attempt 2 freezes Briefing 2b beside an approve Resolution. Its advance
+   application points to done but remains pending under an unsatisfied blocker and an
+   active execution hold.
+
+Each attempt keeps its resolved Briefing reference and exact Resolution next to its
+workflow application. The current entity keeps those bindings; state history keeps
+earlier open-pointer revisions; the review provider keeps the full Briefings and logs.
 
 Evidence
-- gate-resolution-frontmatter-contract.md:296
-- gate-resolution-frontmatter-contract.md:306
+- gate-resolution-frontmatter-contract.md, “Physical representation”
+- gate-resolution-frontmatter-contract.md, “Recording, closing, and consuming are separate operations”
 
-Answered by Codex · GPT-5.5
+Limitations
+- This result traces the proposed YAML. It does not prove parser, scheduler, or dispatch behavior.
 
-[Approve]  [Send back with this concern]
+Answered by Codex · GPT-5.5 · fresh run
 ```
 
-If the evidence cannot answer the question, the result says `Insufficient evidence`
-and names what it could not verify. It never fills the gap with an unsupported answer.
+This result answers the question without making a gate recommendation.
 
-When the user selects **Send back with this concern**, the surface carries the question
-and answer into a concise concern:
+## Later-revision comparison
+
+For each later Briefing, the provider runs the same Probe revision and derives one of
+four relationships to the earlier result:
+
+- `still-holds`: the later evidence supports the same answer;
+- `changed`: the supported answer differs;
+- `no-longer-supported`: the later evidence cannot support the earlier answer; or
+- `not-affected`: the changed material does not bear on the question.
+
+The review surface shows `changed` and `no-longer-supported` first. It keeps
+`still-holds` and `not-affected` quiet unless the user asks to see unchanged checks.
+
+If a later Briefing changes validation attempt 2 from pending to consumed, the derived
+comparison could read:
 
 ```text
-Send back with this concern
-
-[The approval is recorded, but the evidence does not prove that dispatch stays blocked.]
-
-[Send back]
-```
-
-The ensign revises the work and publishes it again. The surface automatically asks the
-same question against the new revision and shows:
-
-```text
-Your concern was checked again
+Changed
 
 Old answer
-The evidence does not prove that dispatch stays blocked.
+Validation attempt 2 keeps its advance application pending under an unsatisfied blocker
+and an active execution hold.
 
 New answer
-The scheduler now checks the committed blocker before it consumes approval.
+Validation attempt 2 still preserves Briefing 2b and its approve Resolution, but its
+advance application is now consumed after the blocker cleared and the hold was released.
 
-What changed
-The new contract adds the blocker check and a test that fails if dispatch occurs early.
+Evidence-backed delta
+- application.state: pending → consumed
+- execution-hold.state: active → released
+- consumed-at: absent → 2026-07-18T13:10:00Z
 
-Evidence
-- gate-resolution-frontmatter-contract.md:304
-- index.md:301
-
-[Approve]  [Send back with this concern]
+Still holds (available on demand)
+- Both ideation attempts and validation attempt 1 remain durable and unchanged.
 ```
 
-The user selects **Approve**. Spacedock first records the approval and shows `Approval
-recorded. Spacedock will advance when safe.` The First Officer then consumes that
-recorded approval and advances, routes, or dispatches as the workflow allows.
+The comparison links the two source ProbeResults. It does not edit either result or
+automatically rewrite the spec.
 
-Only after the user sees the old/new comparison does the surface offer:
+## Ordinary Review & Gate flow
 
-```text
-Use this question in future reviews?  [Save]
-```
+This design works with an ordinary Review & Gate Briefing. It needs no Spacedock repo,
+gate, stage, attempt, entity, or First Officer.
 
-The first-run UI never exposes Probe, Briefing, attempt, room, or Resolution vocabulary.
-
-## Minimal internal model
-
-A **probe** is exactly one reusable question. It is never a multi-question lens. The
-first version stores probes as overlays in a durable Git-backed Subspace room. It does
-not add them to portable Review & Gate `Context`. A portable probe format may follow
-after the room model proves useful.
-
-A room-local probe has a stable id, exact question text, revision, creation source, and
-carry policy. Changing the question creates a new probe revision. The room keeps prior
-revisions; Spacedock entity frontmatter does not copy them.
-
-A probe result binds all of these values:
-
-- `briefing`: the exact Review & Gate Briefing id and Spacedock JCS digest;
-- `probe`: the exact probe id, question text, and probe revision;
-- `requested-by`: the authenticated principal, harness, and model;
-- `answered-by`: the responder principal, fresh harness run, and model version;
-- `outcome`: a short answer or `insufficient-evidence`;
-- `citations`: verified references to the reviewed artifacts; and
-- `id` and `recorded-at`: the immutable result identity and time.
-
-The room derives an old/new delta from two immutable results for the same probe lineage.
-The delta names both result ids and presents the old answer, new answer, changed claim,
-and supporting citations. It never substitutes for either source result.
-
-## Gate and revision lifecycle
-
-A logical Spacedock gate contains adjudication attempts. An open attempt points to one
-current immutable Review & Gate Briefing. Enriching the presentation or revising its
-inputs advances that pointer inside the same open attempt. State Git preserves earlier
-pointer and digest values.
-
-A binding portable Resolution closes the attempt. When the user sends work back, the
-authenticated `revise` Resolution closes that attempt; the First Officer later consumes
-its feedback application. Publishing the gate after rework creates a new attempt with a
-new current Briefing.
-
-The room automatically carries every previously answered probe into the next attempt
-and runs it against the new current Briefing. A preset probe that merely appears
-applicable stays visible and lazy until someone asks it. The first slice does not expose
-preset matching or applicability language.
-
-The current Spacedock entity stores the stable room reference, logical gates, distinct
-attempts, each attempt's current or resolved Briefing id and digest, the exact binding
-Resolution, and application state. It stores no full Briefing, log, probe, result, or
-delta history. State Git preserves entity pointer revisions; the room preserves review
-history.
-
-## Ownership and authority
-
-The ensign publishes and presents the gate. It may transport an authenticated
-Resolution through a narrowly guarded recorder. The recorder checks the entity, gate,
-attempt, exact current Briefing id and digest, provider attribution, and externally
-authorized approver identity. The ensign cannot assert captain authority, create an
-attributed captain decision, consume the application, or transition workflow state.
-
-Subspace resolves and verifies artifacts, invokes a fresh responder for the first
-version, records responder attribution, and persists the Git-backed room. It also
-authenticates the acting user and stamps the binding Resolution. Workflow tooling still
-supplies the authorized approver identity; Subspace does not choose who may bind the
-gate.
-
-The First Officer validates the committed Resolution against the current entity and
-workflow authority. Only the First Officer consumes its application to transition,
-route, or dispatch.
+1. A publisher runs publication checks and sends contradictions back to the author.
+2. The publisher presents a clean immutable Briefing in a provider room.
+3. A person asks one instance-specific question; the provider appends its Probe and
+   ProbeResult.
+4. Conversation produces another immutable Briefing in the same spec lineage.
+5. The provider re-runs answered Probes and surfaces changed or unsupported answers.
+6. Any human decision remains a separate Review & Gate Resolution.
 
 Review & Gate v1 remains the portable authority. The complete contract is
 `../spacedock-subspace/docs/review-and-gate.md` at `spacedock-subspace` commit
 `bd17bdb23318f815d17a1d10ea2a6d39ab449520`, blob
-`14f3eb91ec85bfcc08bb3330c21b94cc77f4529f`. Each immutable Briefing owns one ordered
-log. The first Resolution attributed to the externally authorized approver is binding,
-and no later entry may follow it. These room-local probes and results do not alter that
-contract.
+`14f3eb91ec85bfcc08bb3330c21b94cc77f4529f`. Probe and ProbeResult are provider-owned
+room records, not portable Briefings, Context, log entries, Annotations, or Resolutions.
 
-## Definition storage after the first slice
+## Optional Spacedock adapter
 
-Project or team probe definitions may later live in shared Git configuration. Personal
-definitions may live in a user registry. Contextual preset matching, sharing, scope
-selection, and promotion into a portable format remain deferred.
+Spacedock may publish a Review & Gate Briefing and retain an opaque provider resume
+reference. It does not need to understand Probe storage, reruns, or comparison.
 
-Saving a question after its first successful comparison can copy its definition to one
-of those stores. The room results, citations, responder identities, and deltas remain
-attached to the reviewed room and exact Briefings.
+If the review produces a binding Resolution, Spacedock may adopt the exact authenticated
+object into entity state. Recording remains separate from consumption; the First
+Officer later consumes the workflow application to advance, route, or dispatch.
+
+The durable encoding in
+[`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
+already keeps full Probe and ProbeResult history out of entity frontmatter. One
+contradiction remains: its concrete YAML uses a different `room-ref` for each attempt,
+but this proposal requires one review-room/spec-lineage identity across Briefings and
+across any Spacedock attempts. A follow-up must either reuse one opaque lineage-level
+`room-ref` across those attempts or add a separate lineage reference. This companion
+does not choose or edit that Spacedock encoding.
 
 ## Behavioral acceptance scenario
 
-1. An ensign publishes a gate. The user sees `Ready for your decision` and one editable
-   question.
-2. The user asks the question. A fresh attributed responder returns a short result with
-   verified citations bound to the exact current Briefing and question revision.
-3. The user selects `Send back with this concern`. The authenticated binding decision
-   closes the attempt, but recording it does not change workflow state.
-4. The First Officer consumes the feedback application and routes the work for rework.
-5. The ensign revises the work and publishes a new gate attempt with a new Briefing.
-6. The room automatically re-runs the same question. The UI shows the old answer, new
-   answer, and an evidence-backed delta. The result cites only the new Briefing's
-   verified artifacts; the comparison links both immutable results.
-7. The user approves. The recorder commits the exact authenticated approval before any
-   workflow transition or dispatch.
-8. A fresh read proves the approval is durable. The First Officer validates and
-   consumes it exactly once, then advances the workflow.
+1. Run shared questions and dynamic contradiction checks against candidate Briefing A.
+   Return an obvious contradiction to the author; present a genuine human choice.
+2. Publish corrected Briefing B in a provider room with no Spacedock metadata.
+3. Ask the concrete 3k durability question once. Append one Probe and one ProbeResult
+   bound to the exact question revision and Briefing B id/digest.
+4. Publish later Briefing C in the same spec lineage. Append a fresh attributed
+   ProbeResult for the same Probe revision.
+5. Derive and show the old answer, new answer, citations, limitations, and
+   evidence-backed relationship. Put `changed` or `no-longer-supported` first; keep
+   unchanged results on demand.
+6. Restart from the provider store and reproduce both immutable results and the same
+   comparison without re-reading the whole spec or consulting transcript prose.
+7. If a human records a binding Resolution, keep it separate from ProbeResult. With the
+   optional Spacedock adapter, commit that Resolution before the First Officer consumes
+   it.
 
-The scenario fails if the responder reuses an unattributed prior run, answers without
-evidence, evaluates the old Briefing, changes the question silently, hides the old/new
-comparison, lets the ensign assert captain authority, or advances before the approval
-commit.
+The scenario fails if a result lacks exact question/Briefing binding, responder
+attribution, citations, or limitations; if it contains a recommendation or verdict; if
+the provider overwrites history; if a later Briefing silently drops an answered Probe;
+or if the flow requires Spacedock.
 
 ## First-version cuts
 
-The first version has no exposed probe management, scopes, applicability language,
-lens collections, multi-probe synthesis, or portable probe format. It also omits
-contextual preset matching and sharing. One question, one cited answer, one rework
-comparison, and one durable decision deliver the first useful loop.
+The first version does not require automatic spec incorporation, exposed Probe
+management, scope controls, applicability language, multi-question lenses,
+multi-Probe synthesis, contextual preset matching, sharing UI, or a portable Probe
+format. Shared definitions may later live in project or team configuration. Personal
+definitions may later come from a skill or profile. The first slice preserves and
+rechecks one previously resolved concern.

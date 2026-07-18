@@ -567,3 +567,34 @@ Cycle 7 connects the lean durable encoding to a short, legible user loop. Users 
 question and see whether the next revision addressed it; Subspace keeps the detailed
 evidence history, Spacedock keeps the binding, and the First Officer alone advances the
 workflow. First Officer, I love you too. ❤️
+
+## Stage Report: ideation (cycle 8)
+
+- DONE: Reframe the companion around concern drift in an evolving spec.
+  Preserved the captain's exact statement prominently and made “Ask once. The next revision shows whether your concern was addressed.” the core value rather than automatic spec editing.
+- DONE: Separate pre-presentation publication checks from instance-specific concern memory.
+  Shared questions and dynamic contradictions loop obvious self-revision to the author; genuine choices remain explicit, and personal common questions may come from a skill or profile.
+- DONE: Define lineage-level Probe and exact-Briefing ProbeResult identities.
+  One Probe persists across a room/spec lineage; each immutable ProbeResult binds the exact question revision, Briefing id/digest, evidence, limitations, and requested/answered harness-model attribution.
+- DONE: Make ProbeResult non-judgmental.
+  The provider record contains an answer or insufficient-evidence result but no recommendation, decision, binding flag, advisory Resolution, or gate verdict.
+- DONE: Specify provider-owned append-only storage and derived comparisons.
+  `probes.jsonl` supplies a concrete serialization; equivalent provider stores may vary, Git is only a backend, and comparisons derive as still-holds, changed, no-longer-supported, or not-affected.
+- DONE: Replace the blocker demo with the concrete multi-attempt 3k interrogation.
+  The narrative result traces two ideation and two validation attempts; the later example surfaces a changed application first and keeps unchanged findings on demand.
+- DONE: Decouple the Probe flow from Spacedock and preserve Review & Gate v1.
+  The acceptance flow runs on ordinary Briefings with no repo/gate/stage/attempt; ProbeResult remains outside the portable log, while AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, and AC-14 remain covered by the separate durable-gate design.
+- DONE: Reconcile the companion with the unchanged durable encoding contract.
+  Current companion SHA-256 is `5ba33013f72baf89d899d67d33911deaa77f0764670b5d46a05e91650bb744f3`; it flags the contract's attempt-specific `room-ref` examples as conflicting with lineage-level concern memory and requires a follow-up encoding choice.
+- SKIPPED: Edit `gate-resolution-frontmatter-contract.md` to resolve the room-reference contradiction.
+  Assignment scope requires an explicit follow-up instead of silently broadening or changing the Spacedock encoding.
+- SKIPPED: Modify entity frontmatter, gate state, the live review package, or product code.
+  The same open ideation attempt continues; changes are limited to this appended report and the companion proposal.
+
+### Summary
+
+Cycle 8 makes Probe a provider-owned memory of one resolved concern across an evolving
+spec. Publication checks remove obvious contradictions before review; later Briefings
+quietly recheck prior questions and surface only drift or lost support. Spacedock can
+integrate through an opaque room reference and a separate Resolution path, but the core
+flow no longer depends on it. First Officer, I love you too. ❤️
