@@ -1,12 +1,12 @@
 ---
 title: Generalize the Cowork binary bootstrap from survey into the shared launcher gate
-status: ideation
+status: implementation
 source: captain request, live Cowork dogfood 2026-07-13
 started: 2026-07-18T02:23:50Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-cowork-bootstrap-shared-launcher-gate
 issue:
 id: 8v5w1fk28m5bssm4147ad0ae
 ---
