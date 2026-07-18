@@ -1,12 +1,12 @@
 ---
 title: Post-compaction contract reload
-status: ideation
+status: implementation
 source: Absorbed from task njr36mfyhbafy8zx9ydks8ep in another workflow; canonical handoff /tmp/first-officer-compaction-rehydration.md; captain directed repo-local absorption 2026-07-11
 started: 2026-07-11T04:15:29Z
 completed:
 verdict:
 score: 0.95
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-post-compaction-contract-reload
 issue:
 id: c60nzb396vgf0f8a9v0sggwm
 milestone: 0.26.0
