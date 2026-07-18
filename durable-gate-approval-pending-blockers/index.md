@@ -5,6 +5,23 @@ score: "0.80"
 source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
 started: 2026-07-18T08:58:53Z
+gates:
+  version: 1
+  current:
+    gate: gate:docs-dev:3k:ideation
+    attempt: gate-attempt:3k-ideation-1
+  records:
+    - id: gate:docs-dev:3k:ideation
+      stage: ideation
+      current-attempt: gate-attempt:3k-ideation-1
+      attempts:
+        - id: gate-attempt:3k-ideation-1
+          sequence: 1
+          state: open
+          current-briefing:
+            id: briefing:docs-dev:3k:ideation:attempt-1:revision-1
+            digest: sha256:edb0c8377d141ab9fd2e12700799b31ae0d0b3803b66c9585ca47c7616bffd68
+            room-ref: "./review/ideation"
 ---
 
 # Persist gate approval while dispatch blockers remain
