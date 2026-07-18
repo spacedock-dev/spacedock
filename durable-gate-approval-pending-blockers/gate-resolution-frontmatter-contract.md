@@ -13,6 +13,12 @@ ownership,” §2 “Model,” §3 “Decisions,” §5 “Review entries,” §
 and §8 “Versioning and serialization.” The entity tree below indexes selected
 portable objects; it does not change Review & Gate v1.
 
+The companion [`gate-review-probes.md`](gate-review-probes.md) defines the first-use
+question, rework comparison, and room-local result flow. This contract encodes only the
+stable room reference and durable Spacedock gate binding. It does not copy Briefings,
+logs, probes, results, citations, responder attribution, or deltas into entity
+frontmatter.
+
 Closed Spacedock PR #474 (`iamcxa/status-apply-gate`, commits
 `685fe7bcda4a51b8e2c06da52e80c079f62ac8e0` through
 `5dee22831856db65db2acfefee0849c5f990f5d1`) supplied the retained physical direction:
@@ -230,7 +236,9 @@ portable format.
 package path, UI session id, or new portable Review & Gate field. This proposal does not
 define room storage/navigation semantics; it only requires the reference to remain
 stable if Spacedock needs to retrieve prior Briefings, logs, lenses, assessments, or
-deltas after temporary review files are removed.
+deltas after temporary review files are removed. The same room may own one-question
+probe overlays and their exact-Briefing results. Those overlays are not portable Review
+& Gate `Context` and add no fields to this encoding.
 
 The whole-Briefing JCS digest, stage, attempt hierarchy, pointer selection, application
 state, and routing are **Spacedock-only**. Review & Gate v1 separately requires each
@@ -260,7 +268,9 @@ digest, portable round/stage, mutable review status, lens, or routing executor.
    changes `open` to `closed`, preserves the Resolution, and creates one application.
 7. A closed attempt has exactly one `resolved-briefing`, Resolution, and application.
    It never gains another Briefing/Resolution or reopens. Gate re-entry creates a new
-   chained attempt.
+   chained attempt. After rework, the room may carry a previously answered question to
+   the new attempt and re-run it against the new Briefing; entity state records only the
+   new attempt and current Briefing binding.
 8. `approve` may omit portable rationale. `revise` and `hold` require a nonblank reason
    or an included earlier Annotation in the same Briefing log. `revise` maps to a
    Spacedock feedback application; `hold` maps to `action: none`, `not-applicable`.
@@ -336,14 +346,22 @@ execution hold, and expected lifecycle stage.
 Review & Gate owns immutable portable object shapes and one-Briefing log invariants.
 Workflow tooling owns workflow position, externally authorized-approver identity, and
 routing interpretation/execution. The Subspace reviewer app/room owns full Briefings,
-resource verification, attribution, per-Briefing logs, lenses, assessments, deltas,
-concrete persistence, reconciliation, interaction mode, and UI closure.
+resource verification, attribution, per-Briefing logs, room-local probes, exact-
+Briefing results, citations, responder identity, lenses, assessments, deltas, concrete
+persistence, reconciliation, interaction mode, and UI closure.
 
 The entity owns only the lean durable workflow index: logical gates, distinct
 Spacedock attempts, current or frozen Briefing references/digests, exact adopted
 Resolution, blockers/holds/routes, and application state. Prompts, transcripts,
 temporary paths, pane/session ids, credentials, and private observations do not enter
 it.
+
+An ensign may publish and present a gate and transport Subspace's authenticated
+Resolution through a recorder that checks the exact current Briefing and externally
+authorized identity. The recorder cannot grant captain authority or change workflow
+state. Subspace authenticates and stamps the acting approver but does not choose the
+authorized approver. The First Officer validates the committed Resolution and alone
+consumes its application to transition, route, or dispatch.
 
 Spacedock retains a stricter authoring rule for a First Officer exercising delegated
 conn authority: its auto-approval must contain a nonblank `reason`. This is

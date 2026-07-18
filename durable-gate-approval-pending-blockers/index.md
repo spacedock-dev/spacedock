@@ -56,9 +56,15 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 
 The exact physical contract, examples, lifecycle, and recovered design lineage are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `33a8d0bfd976a05432da461ebcb0a49a316e31d80c3e694beef1f82747bc58b9`).
+(SHA-256 `004f0b9f7936b32d30a2ba7fafa73662611dbd8ded8254cde5437645f05245ab`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
+
+The approved first-use question and rework-comparison flow is specified in
+[`gate-review-probes.md`](gate-review-probes.md)
+(SHA-256 `efa02663194a074350b38019aee86abe71a806bce59e0fcdc9d3c6c7dd28e332`).
+It keeps probe definitions and results in the Git-backed Subspace room while this
+entity stores only the stable room reference and durable gate binding.
 
 ## Scheduler behavior
 
@@ -516,3 +522,31 @@ Cycle 6 makes current entity state lean without weakening auditability. Spacedoc
 the durable gate/attempt index and the exact current or resolved binding; state Git
 keeps pointer evolution, and Subspace keeps full presentation history. First Officer,
 I love you too. ❤️
+
+## Stage Report: ideation (cycle 7)
+
+- DONE: Center the companion proposal on the minimum-time-to-dopamine first-use flow.
+  `gate-review-probes.md` leads with “Ask once. The next revision shows whether your concern was addressed.” and gives concrete copy from `Ready for your decision` through durable approval.
+- DONE: Keep internal review vocabulary out of the first-run UI.
+  The visible flow offers one editable question, a cited answer, `Approve`, `Send back with this concern`, an old/new comparison, and only then the optional `Save` prompt.
+- DONE: Define the minimum probe, result, and delta model.
+  One room-local probe equals one versioned question; each result binds the exact Briefing/digest and question revision, stamps both harness/model identities, cites evidence, and may report insufficient evidence.
+- DONE: Reconcile gate attempts, Briefing pointer evolution, and rework carry-forward.
+  A binding Resolution closes one attempt; rework creates a new attempt, answered questions re-run automatically there, and applicable presets remain lazy.
+- DONE: Assign durable storage without duplicating provider history in entity frontmatter.
+  The Git-backed Subspace room owns Briefings, probes, results, citations, attribution, and deltas; entity state keeps only the room reference, gate/attempt bindings, exact Resolution, and application.
+- DONE: Define ensign, Subspace, recorder, and First Officer authority boundaries.
+  The ensign may present and transport an authenticated decision but cannot assert captain authority or transition state; only the First Officer consumes the committed application.
+- DONE: Preserve Review & Gate v1 and record-versus-consume separation.
+  Both specs cite pinned commit `bd17bdb2` and blob `14f3eb91`; AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, and AC-14 remain reconciled with the exact portable Resolution contract.
+- DONE: Add the behavioral scenario and explicit first-version cuts without implementing product code.
+  The scenario proves ask → send back → revise → re-answer/delta → record approval → FO advance; probe management, scopes, applicability language, lens collections, synthesis, and portable probes remain deferred.
+- DONE: Self-review the companion and encoding contract for clarity, placeholders, consistency, scope, and ambiguity.
+  The final prose uses active roles and concrete UI text, contains no placeholder markers, leaves 3k frontmatter unchanged, and creates no Subspace package.
+
+### Summary
+
+Cycle 7 connects the lean durable encoding to a short, legible user loop. Users ask one
+question and see whether the next revision addressed it; Subspace keeps the detailed
+evidence history, Spacedock keeps the binding, and the First Officer alone advances the
+workflow. First Officer, I love you too. ❤️
