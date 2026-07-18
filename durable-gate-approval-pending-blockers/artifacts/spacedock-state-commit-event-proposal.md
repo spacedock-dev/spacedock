@@ -31,8 +31,9 @@ Portable review semantics remain those of Review & Gate v1 at
 `docs/review-and-gate.md` blob
 `14f3eb91ec85bfcc08bb3330c21b94cc77f4529f`. One immutable Briefing is one
 decision opportunity and owns one ordered review log. Stage, round, event identity,
-JCS Briefing digest, selection, and application below are Spacedock projection/index
-fields, not additions to the portable contract.
+Spacedock gate-attempt identity, JCS Briefing digest, selection, and application below
+are Spacedock projection/index fields, not additions to the portable contract. A
+Spacedock gate attempt may select several immutable Briefings while open.
 
 ## Goals
 
@@ -85,8 +86,9 @@ The contract must keep these identities separate:
 | `stage_run_id` | Projector | One entry into a task stage |
 | `dispatch_attempt_id` | Dispatch preparation | One concrete attempt to spawn a worker |
 | `worker_id` | Runtime receipt | Worker handle returned by a successful spawn |
-| `gate_id` | Entity `gates.records[]` | One logical entity/stage gate across its review rounds |
-| `gate_attempt_id` | Review & Gate `Briefing.id` | One immutable decision opportunity against an exact reviewed digest |
+| `gate_id` | Entity `gates.records[]` | One logical entity/stage gate across adjudication attempts |
+| `gate_attempt_id` | Entity `gates.records[].attempts[].id` | One stable Spacedock adjudication session, possibly spanning Briefing snapshots |
+| `briefing_id` | Review & Gate `Briefing.id` | One immutable portable decision opportunity and its separate ordered log |
 
 `stage_run_id` should derive from the event that enters the stage:
 
@@ -94,11 +96,13 @@ The contract must keep these identities separate:
 stage_run_id = hash(workflow_id, task_id, stage_entered_event_id)
 ```
 
-`gate_attempt_id` is copied exactly from `gates.records[].attempts[].id`, the portable
-Review & Gate `Briefing.id`; the projector does not re-key an external identity. The entity collection
-binds it to `gate_id`, stage, round, and canonical Briefing digest. A changed question
-or reviewed revision set therefore receives a new Briefing/attempt id and names the
-superseded attempt.
+`gate_attempt_id` is minted by Spacedock and stays stable while its open adjudication
+advances across immutable `briefing_id` snapshots. The entity collection binds the
+attempt to `gate_id` and stage, retains every Briefing id/digest, and selects one
+`current-briefing`. A changed question, artifact revision set, decision opportunity,
+lens presentation, or reviewed evidence gets a new Briefing id; it does not necessarily
+get a new gate-attempt id or imply `revise`. A closed result followed by gate re-entry
+normally gets a new gate-attempt id.
 
 `dispatch_attempt_id` cannot derive from a stage alone because one stage run may
 need retries or replacement workers. Dispatch preparation must mint it before
@@ -152,6 +156,9 @@ The first contract should recognize these durable events:
 - `task.worktree_assigned`
 - `stage.report_recorded`
 - `feedback.cycle_recorded`
+- `gate.attempt_opened`
+- `gate.briefing_selected`
+- `gate.attempt_closed`
 - `gate.resolution_recorded`
 - `task.verdict_recorded`
 - `task.completed`
@@ -170,16 +177,19 @@ Gate resolution becomes durable only when the exact binding Resolution is commit
 an entity `gates.records[].attempts[].resolution` node. Recording it does not change `status` or
 dispatch a worker. A temporary Subspace briefing, external review log, or FO-authored
 presentation file is not current gate state. The mapping carries logical gate id,
-Briefing/gate-attempt id, stage, round, canonical Briefing digest, complete portable
-Resolution, application intent, blockers/hold, and consumption state. The current tree
-directly retains all admitted gates and attempts; Git replay supplies their transitions.
+separate Briefing and gate-attempt ids, stage, canonical Briefing digest, complete
+portable Resolution, application intent, blockers/hold, and consumption state. The
+current tree directly retains all gates, attempts, Briefing snapshots, and selection
+pointers; Git replay supplies their transitions.
 
-The copied Resolution is the first one attributed to the authorized approver identity
-that workflow tooling supplied externally. Earlier Resolutions from other actors remain
-advisory in the one-Briefing provider log and do not project as gate outcomes. Review &
-Gate permits reasonless `approve`; `revise`/`hold` require a nonblank reason or an
-included earlier same-Briefing Annotation. Spacedock's stricter explicit-reason policy
-for FO conn-made approvals is an application policy, not portable validation.
+The adopted Resolution is the first one attributed to the authorized approver identity
+that workflow tooling supplied externally, and it closes the attempt only when its
+`briefing` equals the attempt's exact current-Briefing pointer. Earlier Resolutions from
+other actors remain advisory in that one-Briefing provider log. Entries never carry
+across Briefing logs, and cross-Briefing `includes` is invalid. Review & Gate permits
+reasonless `approve`; `revise`/`hold` require a nonblank reason or an included earlier
+same-Briefing Annotation. Spacedock's stricter reason policy for FO conn-made approvals
+is authoring policy, not portable validation.
 
 `feedback.cycle_recorded` is the durable route edge between a rejected gate
 result and the stage run that receives its rework. Its structured payload must
@@ -294,8 +304,8 @@ The reducer must never inspect live workers or mutate workflow files.
 `approved_pending_dispatch` is a computed gate condition, not a lifecycle
 stage. It holds when:
 
-1. the latest committed Resolution approves the current task, stage, round,
-   and artifact digest;
+1. the selected closed Spacedock attempt's Resolution approves its exact current
+   Briefing and reviewed digest;
 2. no later event invalidates that digest or decision; and
 3. no later `task.stage_entered` or durable `dispatch.spawned` receipt consumes
    the approval.
@@ -306,9 +316,9 @@ must resolve the changed digest.
 To preserve this state, Spacedock must stop treating approval as an instruction
 to commit the next stage before a worker exists. The revised sequence is:
 
-1. Append the attempt and exact Resolution to the entity `gates` collection, create
-   its `application.state: pending`, and update selection pointers, leaving `status`
-   unchanged.
+1. Under the already-open attempt's current-Briefing compare-and-swap, store the exact
+   binding Resolution, close the attempt, create `application.state: pending`, and leave
+   `status` unchanged.
 2. After confirming the stored digest is current, every blocker is satisfied, and no
    execution hold is active, prepare a package and commit a minted
    `dispatch_attempt_id` with `state: prepared` without consuming approval.
@@ -425,8 +435,8 @@ or runtime observation.
 
 ### Subspace and `m3`
 
-- `m3` supplies stable task, stage, gate-attempt, actor, round, and artifact
-  digest metadata on gate covers and Resolution records.
+- `m3` supplies stable task, stage, Spacedock gate-attempt, portable Briefing, actor,
+  attempt sequence, and digest metadata on gate covers and Resolution records.
 - The wrapper returns actual open/result observations with those IDs.
 - Spacedock decides which observations become state receipts.
 
@@ -451,9 +461,9 @@ or runtime observation.
 1. Add stable `workflow_id` to commissioned workflow metadata.
 2. Specify `spacedock.state-event/v1` and deterministic event IDs.
 3. Implement Git DAG projection and the pure reducer.
-4. Persist gate Resolution records with stable `gate_attempt_id` and artifact digest
-   in the entity's versioned plural `gates` frontmatter collection, retaining multiple
-   logical gates and immutable attempts with explicit selection pointers.
+4. Persist stable Spacedock gate attempts, their immutable Briefing snapshots and
+   current-Briefing pointers, and exact adopted Resolutions in the entity's versioned
+   plural `gates` collection.
 5. Persist structured feedback-cycle route edges and bind rework stage runs to
    their rejected gate attempts.
 6. Derive `approved_pending_dispatch` and `feedback_rework` without runtime
@@ -508,8 +518,12 @@ instrumentation and Phase 3 Zaphod work may proceed in parallel.
 12. **Physical authority:** recording approve or revise appends the exact binding
     Resolution to the entity `gates` collection without changing `status` or producing
     a dispatch receipt; a cold current-entity read enumerates every logical gate,
-    attempt, selection, and final application state, while Git replay reproduces their
-    transitions.
+    attempt, immutable Briefing, selection, and latest application state, while Git
+    replay reproduces their transitions.
+13. **Snapshot evolution:** lens or reviewed-input changes advance one open attempt
+    across preserved immutable Briefings without a `revise` event; only a Resolution
+    for the exact current Briefing closes it. Per-Briefing logs remain separate and
+    cross-Briefing `includes` fails.
 
 ## Open questions
 
