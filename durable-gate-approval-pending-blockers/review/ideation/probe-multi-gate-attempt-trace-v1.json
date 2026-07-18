@@ -1,0 +1,10 @@
+{
+  "type": "Probe",
+  "version": "experimental-1",
+  "id": "probe:3k:multi-gate-attempt-trace",
+  "question": "Using the concrete YAML, trace 3k from a revised ideation gate through a second ideation attempt and then two validation attempts, and show where each resolved Briefing, Resolution, and workflow application remains durable.",
+  "revision": "sha256:7b57caadd922c2824500d60350c82c9fd6ea0cce41db8660fdd54ed028ec8f44",
+  "createdBy": "person:captain",
+  "createdFrom": "design-interrogation",
+  "carry": "next-attempt"
+}
