@@ -1,0 +1,90 @@
+{
+  "type": "ProbeResult",
+  "version": "experimental-1",
+  "id": "probe-result:3k:multi-gate-attempt-trace:briefing-1",
+  "recordedAt": "2026-07-18T15:21:47Z",
+  "briefing": {
+    "id": "briefing:docs-dev:3k:ideation:attempt-1:revision-1",
+    "digest": "sha256:edb0c8377d141ab9fd2e12700799b31ae0d0b3803b66c9585ca47c7616bffd68"
+  },
+  "probe": {
+    "id": "probe:3k:multi-gate-attempt-trace",
+    "question": "Using the concrete YAML, trace 3k from a revised ideation gate through a second ideation attempt and then two validation attempts, and show where each resolved Briefing, Resolution, and workflow application remains durable.",
+    "revision": "sha256:7b57caadd922c2824500d60350c82c9fd6ea0cce41db8660fdd54ed028ec8f44"
+  },
+  "requestedBy": {
+    "principal": "person:captain",
+    "harness": "Codex",
+    "model": "GPT-5",
+    "modelRevision": "not-exposed"
+  },
+  "answeredBy": {
+    "principal": "agent:subspace-probe-responder",
+    "run": "/root/subspace_3k_probe_responder_2",
+    "harness": "Codex",
+    "model": "GPT-5",
+    "modelRevision": "not-exposed",
+    "freshRun": true
+  },
+  "outcome": "answer",
+  "trace": [
+    "Ideation attempt 1 freezes briefing:3k-ideation-1a, preserves the captain's revise Resolution, and records consumed feedback to backlog.",
+    "Ideation attempt 2 chains to attempt 1, freezes briefing:3k-ideation-2b, preserves the approve Resolution, and records a consumed advance to implementation.",
+    "Validation attempt 1 freezes briefing:3k-validation-1a, preserves the revise Resolution, and records consumed feedback to implementation.",
+    "Validation attempt 2 freezes briefing:3k-validation-2b and its approve Resolution, while the advance-to-done application remains pending because its blocker is unsatisfied and its execution hold is active."
+  ],
+  "ownership": {
+    "entityFrontmatter": "Logical gates and attempts, current or frozen Briefing bindings, exact adopted Resolutions, and mutable application, blocker, and hold state.",
+    "stateGit": "Earlier open-attempt Briefing pointer and digest values plus intermediate application observations that current frontmatter no longer repeats.",
+    "subspaceRoom": "Complete immutable Briefings and separate logs, probes and results, citations, responder attribution, assessments, and old/new deltas."
+  },
+  "citations": [
+    {
+      "artifact": "artifact:gate-resolution-frontmatter-contract",
+      "path": "../../gate-resolution-frontmatter-contract.md",
+      "lineStart": 55,
+      "lineEnd": 115,
+      "claim": "Both ideation attempts and their frozen Briefings, Resolutions, and consumed applications."
+    },
+    {
+      "artifact": "artifact:gate-resolution-frontmatter-contract",
+      "path": "../../gate-resolution-frontmatter-contract.md",
+      "lineStart": 116,
+      "lineEnd": 182,
+      "claim": "Both validation attempts and the pending blocked and held final approval."
+    },
+    {
+      "artifact": "artifact:gate-resolution-frontmatter-contract",
+      "path": "../../gate-resolution-frontmatter-contract.md",
+      "lineStart": 185,
+      "lineEnd": 207,
+      "claim": "Current-frontmatter retention, state Git pointer history, and Subspace room ownership."
+    },
+    {
+      "artifact": "artifact:gate-resolution-frontmatter-contract",
+      "path": "../../gate-resolution-frontmatter-contract.md",
+      "lineStart": 306,
+      "lineEnd": 327,
+      "claim": "Presentation, close, observe, prepare, and consume are separate durable operations."
+    },
+    {
+      "artifact": "artifact:gate-review-probes",
+      "path": "../../gate-review-probes.md",
+      "lineStart": 136,
+      "lineEnd": 158,
+      "claim": "Entity and room ownership plus First Officer-only consumption authority."
+    },
+    {
+      "artifact": "artifact:gate-resolution-frontmatter-contract",
+      "path": "../../gate-resolution-frontmatter-contract.md",
+      "lineStart": 373,
+      "lineEnd": 386,
+      "claim": "Commit-derived history and intentionally unresolved room integration semantics."
+    }
+  ],
+  "ambiguities": [
+    "The contract leaves room persistence, navigation, and conflict behavior undefined; room-ref is only an optional stable provider reference.",
+    "The consume operation requires a durable receipt, but the illustrative consumed applications show timestamps and dispatch identity without an explicit receipt field.",
+    "The YAML is illustrative contract evidence, not evidence of actual state commits containing the four example attempts."
+  ]
+}
