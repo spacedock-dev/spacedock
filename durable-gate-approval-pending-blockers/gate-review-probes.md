@@ -60,7 +60,10 @@ them for this lineage.
 
 A Probe record has a stable id, spec-lineage id, exact question, revision, creator, and
 time. Editing the question appends a new Probe revision; it never rewrites the prior
-question.
+question. The newest revision is the only active revision for automatic runs against
+future Briefings. Prior revisions and their ProbeResults remain immutable and
+replayable. If a reviewer wants the old question to remain active beside the edited
+question, the provider creates a separate Probe identity.
 
 Each immutable **ProbeResult** binds:
 
@@ -68,10 +71,15 @@ Each immutable **ProbeResult** binds:
 - the exact Briefing id and digest;
 - `requested-by` principal, harness, and model;
 - `answered-by` responder, fresh harness run, and model version;
-- an answer or `insufficient-evidence` outcome;
-- verified citations or evidence;
+- `outcome`: `answered` or `insufficient-evidence`;
+- `answer`: a nonempty string for `answered`, or JSON `null` for
+  `insufficient-evidence`;
+- ordered verified evidence, including citations;
 - explicit limitations; and
 - an immutable result id and recorded time.
+
+`evidence` and `limitations` are required arrays, even when empty. This fixed shape
+makes later canonical comparison reproducible across providers.
 
 A ProbeResult reports what the evidence supports. It contains no recommendation,
 decision, binding flag, advisory Resolution, or gate verdict. It never claims that the
@@ -84,15 +92,16 @@ append-only `probes.jsonl`:
 
 ```json
 {"type":"Probe","id":"probe:3k-durability-trace","revision":1,"spec-lineage":"spec:3k-gate-design","question":"Using the concrete YAML, trace 3k from a revised ideation gate through a second ideation attempt and then two validation attempts, and show where each resolved Briefing, Resolution, and workflow application remains durable.","created-by":"person:captain","at":"2026-07-18T12:00:00Z"}
-{"type":"ProbeResult","id":"probe-result:3k-durability-trace:b1","probe":{"id":"probe:3k-durability-trace","revision":1},"question":"Using the concrete YAML, trace 3k from a revised ideation gate through a second ideation attempt and then two validation attempts, and show where each resolved Briefing, Resolution, and workflow application remains durable.","briefing":{"id":"briefing:3k-design-b1","digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"outcome":"answered","answer":"The YAML preserves four closed attempts and keeps each resolved Briefing and Resolution beside its workflow application.","citations":["gate-resolution-frontmatter-contract.md#physical-representation"],"limitations":["Design trace only; no binary behavior was executed."],"requested-by":{"principal":"person:captain","harness":"subspace-web","model":"human"},"answered-by":{"principal":"agent:reviewer-1","harness":"codex","model":"gpt-5.5","run":"run:fresh-1"},"at":"2026-07-18T12:01:00Z"}
+{"type":"ProbeResult","id":"probe-result:3k-durability-trace:b1","probe":{"id":"probe:3k-durability-trace","revision":1},"question":"Using the concrete YAML, trace 3k from a revised ideation gate through a second ideation attempt and then two validation attempts, and show where each resolved Briefing, Resolution, and workflow application remains durable.","briefing":{"id":"briefing:3k-design-b1","digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"outcome":"answered","answer":"The YAML preserves four closed attempts and keeps each resolved Briefing and Resolution beside its workflow application.","evidence":[{"citation":"gate-resolution-frontmatter-contract.md#physical-representation"}],"limitations":["Design trace only; no binary behavior was executed."],"requested-by":{"principal":"person:captain","harness":"subspace-web","model":"human"},"answered-by":{"principal":"agent:reviewer-1","harness":"codex","model":"gpt-5.5","run":"run:fresh-1"},"at":"2026-07-18T12:01:00Z"}
 ```
 
 An equivalent provider store may use another durable format if it preserves append-only
 record identity, immutable revisions, exact bindings, and replay. Git is one backend;
 Git commits and paths are not Probe semantics.
 
-Comparisons are derived from immutable ProbeResults. A provider may cache a comparison,
-but it can always rebuild it and must not treat the cache as authority.
+Comparisons are derived from immutable ProbeResults. A provider may persist or cache a
+comparison, but it can always rebuild it and must not treat the derived record as
+authority.
 
 ## Concrete ProbeResult
 
@@ -131,16 +140,28 @@ This result answers the question without making a gate recommendation.
 
 ## Later-revision comparison
 
-For each later Briefing, the provider runs the same Probe revision and derives one of
-four relationships to the earlier result:
+For each later Briefing, the provider runs the active Probe revision and compares that
+result with the preceding result for the same Probe id and revision. Comparator
+`probe-result-comparison/v1` derives exactly one of three relationships:
 
 - `still-holds`: the later evidence supports the same answer;
 - `changed`: the supported answer differs;
-- `no-longer-supported`: the later evidence cannot support the earlier answer; or
-- `not-affected`: the changed material does not bear on the question.
+- `no-longer-supported`: the later evidence cannot support the earlier answer.
+
+The comparator applies these rules in order:
+
+1. If the prior outcome is `answered` and the current outcome is
+   `insufficient-evidence`, return `no-longer-supported`.
+2. Otherwise, project each result to `{answer, evidence, limitations}` and serialize it
+   as RFC 8785 canonical JSON. If the bytes match, return `still-holds`.
+3. Otherwise, return `changed`.
+
+Strings remain exact, and array order remains significant under RFC 8785. The same
+immutable inputs and comparator version therefore reproduce the same relationship.
+This mechanical relationship contains no recommendation or advice.
 
 The review surface shows `changed` and `no-longer-supported` first. It keeps
-`still-holds` and `not-affected` quiet unless the user asks to see unchanged checks.
+`still-holds` quiet unless the user asks to see unchanged checks.
 
 If a later Briefing changes validation attempt 2 from pending to consumed, the derived
 comparison could read:
@@ -198,12 +219,10 @@ Officer later consumes the workflow application to advance, route, or dispatch.
 
 The durable encoding in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-already keeps full Probe and ProbeResult history out of entity frontmatter. One
-contradiction remains: its concrete YAML uses a different `room-ref` for each attempt,
-but this proposal requires one review-room/spec-lineage identity across Briefings and
-across any Spacedock attempts. A follow-up must either reuse one opaque lineage-level
-`room-ref` across those attempts or add a separate lineage reference. This companion
-does not choose or edit that Spacedock encoding.
+keeps full Probe and ProbeResult history out of entity frontmatter. Its concrete YAML
+reuses one optional opaque `room-ref` across the ideation and validation attempts in the
+same spec lineage. The reference is not attempt identity, and Spacedock need not
+interpret Probe storage.
 
 ## Behavioral acceptance scenario
 
@@ -214,12 +233,17 @@ does not choose or edit that Spacedock encoding.
    bound to the exact question revision and Briefing B id/digest.
 4. Publish later Briefing C in the same spec lineage. Append a fresh attributed
    ProbeResult for the same Probe revision.
-5. Derive and show the old answer, new answer, citations, limitations, and
-   evidence-backed relationship. Put `changed` or `no-longer-supported` first; keep
-   unchanged results on demand.
+5. Apply `probe-result-comparison/v1` to immutable result pairs. Prove identical
+   answer/evidence/limitations returns `still-holds`; a current insufficient result
+   after a prior answered result returns `no-longer-supported`; and every other
+   difference returns `changed`. Show changed or unsupported results first and keep
+   `still-holds` on demand.
 6. Restart from the provider store and reproduce both immutable results and the same
    comparison without re-reading the whole spec or consulting transcript prose.
-7. If a human records a binding Resolution, keep it separate from ProbeResult. With the
+7. Edit the Probe question. Prove only its newest revision runs against Briefing D and
+   the old revision remains replayable; keeping both questions active creates a second
+   Probe id.
+8. If a human records a binding Resolution, keep it separate from ProbeResult. With the
    optional Spacedock adapter, commit that Resolution before the First Officer consumes
    it.
 
@@ -233,6 +257,7 @@ or if the flow requires Spacedock.
 The first version does not require automatic spec incorporation, exposed Probe
 management, scope controls, applicability language, multi-question lenses,
 multi-Probe synthesis, contextual preset matching, sharing UI, or a portable Probe
-format. Shared definitions may later live in project or team configuration. Personal
+format. It also defers semantic equivalence beyond exact v1 canonical comparison.
+Shared definitions may later live in project or team configuration. Personal
 definitions may later come from a skill or profile. The first slice preserves and
 rechecks one previously resolved concern.

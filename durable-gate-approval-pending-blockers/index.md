@@ -598,3 +598,33 @@ spec. Publication checks remove obvious contradictions before review; later Brie
 quietly recheck prior questions and surface only drift or lost support. Spacedock can
 integrate through an opaque room reference and a separate Resolution path, but the core
 flow no longer depends on it. First Officer, I love you too. ❤️
+
+## Stage Report: ideation (cycle 9)
+
+- DONE: Make `room-ref` an optional opaque provider reference to one review-room/spec-lineage.
+  All four closed attempts and the open-attempt example reuse `subspace-room:3k-gate-design`; the prose excludes attempt identity and requires no Spacedock interpretation of Probe storage.
+- DONE: Split application eligibility by binding decision and action.
+  Common pointer/digest/pending/blocker/hold/stage guards apply first; `advance` requires `approve`, `feedback` requires `revise` plus target/cycle/finding context, and `hold` remains non-applicable.
+- DONE: Make the consumed feedback YAML examples valid under the lifecycle prose.
+  Both feedback examples retain target, cycle, finding reference/digest, and `consumed-at`; feedback-only routing may omit a dispatch identity because it performs no worker spawn.
+- DONE: Resolve Probe editing policy.
+  The newest Probe revision alone runs automatically on future Briefings; prior revisions/results remain immutable, and a separately active old question receives another Probe id.
+- DONE: Define a deterministic, non-judgmental three-state comparison.
+  `probe-result-comparison/v1` applies unsupported precedence, then RFC 8785 equality over answer/evidence/limitations, then changed; persisted or cached comparisons remain derived.
+- DONE: Preserve the standalone Review & Gate flow and settled product framing.
+  The captain quote, realistic multi-attempt question, non-judgmental ProbeResult, exact Briefing binding, and no-Spacedock path remain intact.
+- DONE: Reconcile the two artifacts and remove the resolved room-reference contradiction.
+  Companion SHA-256: `47e278ffad0c07be0e8f3993a7980faa588911045b9bba6f063458cf5bab3d1b`; encoding-contract SHA-256: `f056e50d1b3225ebe5269f935652985677678c665aa40ddd4c86276543ded52c`.
+- DONE: Run the required adversarial internal-consistency loop.
+  Pass 1's mechanical checks passed, but its prose attack exposed undefined null-versus-absent answer canonicalization; after the self-revision, pass 2 passed one shared room, four decision/action examples, three comparator states, and four precedence branches.
+- DONE: Preserve acceptance-criteria evidence after the revision.
+  AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, and AC-14 remain evidenced by the durable gate design and its contrast fixtures.
+- SKIPPED: Modify entity frontmatter, live gate state, review artifacts, briefing packages, or product code.
+  The assignment limits this revision to the two owned design artifacts and this appended report.
+
+### Summary
+
+Cycle 9 clears the publication blockers without coupling concern memory to Spacedock.
+One opaque room reference spans the lineage, application eligibility now matches each
+portable decision, and a versioned mechanical comparator reproduces concern drift
+without advice or verdicts. First Officer, I love you too. ❤️
