@@ -1,8 +1,8 @@
 ---
 title: Generalize the Cowork binary bootstrap from survey into the shared launcher gate
-status: backlog
+status: ideation
 source: captain request, live Cowork dogfood 2026-07-13
-started:
+started: 2026-07-18T02:23:50Z
 completed:
 verdict:
 score:
