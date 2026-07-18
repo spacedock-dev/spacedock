@@ -122,6 +122,12 @@ Runs at terminal, supersede, or fresh-dispatch cleanup boundaries after any requ
 
 - → **Claude:** PRESENT — `spacedock dispatch reconcile` (drift classes and per-class remedy are in the adapter's named binding). · **Codex:** ABSENT. · **Pi:** ABSENT.
 
+## «post-compact-notice»: deliver the post-compaction reload reminder
+
+Invoke `«post-compact-notice»`() after a host compaction to fire the shared-core reload rule; failure-open to a manual captain cue.
+
+- → **Codex:** PRESENT (UI-only) — `.codex-plugin` `PostCompact` (`manual|auto`) `systemMessage`, not model context. · **Claude:** `SessionStart(compact)`, SPLIT to `cdbhzxc`. · **Pi:** ABSENT.
+
 ## «dispatch.build»(): assemble the initial-dispatch artifact the spawn call consumes
 
 The ONLY initial-dispatch path: route input through `spacedock dispatch build`, forward its output to `«worker.spawn»` verbatim. Manual prompt/`name` assembly is a protocol violation outside the break-glass block.

@@ -159,6 +159,13 @@ Ask the human before dispatch when requirements are materially ambiguous, a desi
 
 Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. A captain's correction to one entity's mechanism narrows scope, not the session: re-shape the affected entity and keep driving the unaffected ones; hold the corrected entity from advancing until the re-shape folds, then surface it for review — never park it silently. Report state once on idle or at a gate, not repeatedly while waiting.
 
+## Compaction continuity (host-neutral)
+
+Two FO judgment rules, no controller; the compacted summary is never authoritative.
+
+- **Before compaction:** suggest it only at a durable, recoverable boundary — FO workflow/report changes committed, no received completion / gate / transition / archive / merge awaiting reconciliation, unresolved workers rediscoverable from the live roster. Else finish that first, then optionally: "state is durable at a clean boundary; now is a safe time to compact." Non-blocking, triggered by a captain cue or apparent pressure, never a token threshold.
+- **After compaction** (signalled by `«post-compact-notice»` where PRESENT, else a captain cue): before the next workflow effect, reread the authoritative contract — this `SKILL.md`, `first-officer-shared-core.md`, and the active host runtime adapter — then `«state.boot»()`, a fresh `status`, live-roster reconcile where available, and verify any newer committed `## Stage Report`.
+
 ## Working Principles
 
 **Prefer a code gate over a prose-only rule.** When a guarantee can be enforced by the binary or a failing test (a `status` guard, a test that fails on violation), prefer that. A prose-only rule's ceiling is "the wording is present"; wording-present is not behavior. A prose-only rule must not count as AC satisfaction on its own: if the guarantee matters, the real assurance is a code-level gate underneath, and the prose points at it. An AC of the form "the contract says X" is satisfied only by "the binary or a test enforces X, and here is the run that proves it." The gate's AC cross-check refuses a criterion whose only proof is review of the entity's own prose.

@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/codex_post_compact_notice.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

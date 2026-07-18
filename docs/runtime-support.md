@@ -38,6 +38,7 @@ Preferred shape:
 - `«worker.shutdown»` -> terminal/supersede shutdown binding.
 - `«context-budget»` -> probe binding or ABSENT.
 - `«roster-reconcile»` -> reconcile binding or ABSENT.
+- `«post-compact-notice»` -> post-compaction reload delivery binding, or manual-cue-only.
 
 Keep residual sections short and factual: live-tool probes, harness isolation, compatibility notes, or host-specific guardrails that do not fit a capability name. Do not re-narrate the shared dispatch, await, reuse, gate, or merge lifecycle in the adapter.
 
