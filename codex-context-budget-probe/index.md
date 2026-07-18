@@ -338,3 +338,33 @@ Product code and dependency files are unchanged by this retry. This report is co
 ### Summary
 
 The native-index redesign is implemented in `0cc72300`. The production gate now turns a roster path into one exact child through Codex's read-only local state, opens only that child's canonical rollout for fresh active-window tokens, and fresh-dispatches on every missing, locked, ambiguous, stale, inconsistent, malformed, or unsafe evidence condition. The measured live path completed in 0.27 seconds versus the recorded roughly 30-second / 978-file / 1.1-GiB replay baseline.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Reproduce the native-index identity, WAL/read-only, fail-closed, scaling, and live bounded-path behavior for AC-1 through AC-3, AC-5, and AC-6.
+  Fresh focused tests passed, including zero/one/two exact index rows, completed-edge eligibility, configuration precedence, committed-WAL visibility, rejected writes, lock/schema/path failures, the 978-file fixture, command goldens, and fresh-dispatch routing. Fresh `go test ./... -count=1` and `go test ./... -race -count=1` both passed across all 18 packages. An independently queried live row bound parent `019f7007-8fba-7503-8c44-5ebf9a7cc945` plus `/root/spacedock_ensign_codex_context_budget_probe_validation` to child `019f73c8-e14c-7a51-9519-47f086d037cf`; the built command returned that exact child with `source:"session-jsonl"`, a fresh `70437 / 258400` projection, and `reuse_ok:true` in 0.05 seconds.
+- FAILED: AC-4's selected-log reader does not drop every valid unknown record; it has an undocumented 1 MiB line limit that lets transcript-content size control an otherwise valid budget decision.
+  Detached audit `/tmp/spacedock-bc-validation-audit.gAMx4u/worktree` added one valid `response_item` line just over 1 MiB between exact metadata and a fresh valid `token_count`. `TestValidationReadBudgetDropsLargeUnknownRecord` failed with `unavailable: record`. The current live selected rollout's largest line was 47,160 bytes, so the observed path remains green, but the promised JSONL format has no 1 MiB record limit and the direction explicitly requires unknown selected-log records to be dropped. This is a material outcome defect affecting AC-4: a supported valid record can suppress reuse even though the allowlisted identity and token evidence are complete.
+- FAILED: AC-1's claimed instrumented file-access count does not observe all ordinary file reads.
+  The detached audit inserted an `os.ReadFile` of one content-bearing decoy into the production path. `TestReadBudgetOpensOnlyIndexSelectedRolloutAmong978Files` still passed because it counts only `openSelectedRollout` and `runIndexBindingQuery`. This is a material evidence defect at AC-1's exact proof boundary: the task's primary no-replay invariant can regress through an uninstrumented file API while its named scaling discriminator stays green.
+
+### Verification
+
+- `go test ./internal/codexsession ./internal/dispatch -run 'Test(ReadBudget|LookupIndex|ResolveSQLite|CodexContextBudget)' -count=1 -v` — exit 0.
+- `go test ./... -count=1` — exit 0 across all 18 packages.
+- `go test ./... -race -count=1` — exit 0 across all 18 packages.
+- Built production command with independently supplied live parent/worker identity — exact child match, exit 0, 0.05 seconds.
+- Detached large-unknown-record audit — exit 1 with `unavailable: record`, proving the size-boundary defect.
+- Detached uninstrumented-decoy-read audit — the 978-file discriminator remained green, proving the evidence gap.
+- `git diff --check` — clean; the assigned code worktree remained unmodified. `gofmt -d ./cmd ./internal` reports only the pre-existing fixture alignment in `internal/release/journeydelta.go.orig`, not a task change.
+
+### Recommendation
+
+REJECTED. Bounce back to implementation with two narrow corrections:
+
+1. Make the selected-log reader discard a valid over-1-MiB unknown record without retaining its content or relaxing fail-closed handling for malformed or target-relevant known records; add the reproduced size-boundary case.
+2. Strengthen AC-1's access observation so an additional decoy read through an ordinary file API makes the 978-file discriminator fail, then rerun the detached adversarial edit.
+
+### Summary
+
+The native read-only index, exact identity binding, fail-closed routing, and live 0.05-second path all work. Validation rejects this cycle because the selected reader has an undocumented content-size failure boundary and the primary one-file regression test cannot currently detect a decoy read outside its single hook.
