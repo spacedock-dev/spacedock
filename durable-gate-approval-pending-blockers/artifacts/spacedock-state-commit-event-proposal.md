@@ -21,7 +21,7 @@ commit. The projector remains the sole source of durable events.
 This design gives Spacedock one durable authority: state Git history.
 
 For gate state, the tree authority inside each commit is the entity's versioned
-top-level `gate` frontmatter mapping defined by
+top-level `gates` frontmatter collection defined by
 [`../gate-resolution-frontmatter-contract.md`](../gate-resolution-frontmatter-contract.md).
 The event stream is derived from successive committed values of that mapping; it is
 not a replacement persistence location.
@@ -55,7 +55,7 @@ The system has three distinct sources:
 
 1. **State commits** are the durable workflow authority. They record task
    creation, field changes, stage reports, feedback cycles, the entity's structured
-   `gate` frontmatter mapping, completion, verdicts, and explicit receipts.
+   `gates` frontmatter collection, completion, verdicts, and explicit receipts.
 2. **Product commits** prove code integration and merge ancestry. State may
    reference an exact product commit, but state cannot prove that commit exists
    or has the claimed ancestry without inspecting the product repository.
@@ -77,7 +77,7 @@ The contract must keep these identities separate:
 | `stage_run_id` | Projector | One entry into a task stage |
 | `dispatch_attempt_id` | Dispatch preparation | One concrete attempt to spawn a worker |
 | `worker_id` | Runtime receipt | Worker handle returned by a successful spawn |
-| `gate_id` | Entity `gate` mapping | One logical gate for one entity's occupancy at a gated stage |
+| `gate_id` | Entity `gates.records[]` | One logical entity/stage gate across its review rounds |
 | `gate_attempt_id` | Review & Gate `Briefing.id` | One immutable decision opportunity against an exact reviewed digest |
 
 `stage_run_id` should derive from the event that enters the stage:
@@ -86,8 +86,8 @@ The contract must keep these identities separate:
 stage_run_id = hash(workflow_id, task_id, stage_entered_event_id)
 ```
 
-`gate_attempt_id` is copied exactly from `gate.attempt.id`, the portable Review & Gate
-`Briefing.id`; the projector does not re-key an external identity. The entity mapping
+`gate_attempt_id` is copied exactly from `gates.records[].attempts[].id`, the portable
+Review & Gate `Briefing.id`; the projector does not re-key an external identity. The entity collection
 binds it to `gate_id`, stage, round, and canonical Briefing digest. A changed question
 or reviewed revision set therefore receives a new Briefing/attempt id and names the
 superseded attempt.
@@ -151,19 +151,20 @@ The first contract should recognize these durable events:
 - `task.archived`
 
 The projector should parse structured frontmatter and committed decision-log
-records. In particular, it parses the complete old/new entity `gate` YAML nodes; a
+records. In particular, it parses the complete old/new entity `gates` YAML trees; a
 temporary review log is evidence input, never current Spacedock state. It should treat
 narrative prose as an opaque artifact. For example,
 `stage.report_recorded` should carry the heading, stage, digest, and source
 lines; it should not pretend to understand free-form claims unless the Stage
 Report grammar supplies structured checklist results.
 
-Gate resolution becomes durable only when the binding Resolution is committed in the
-entity's `gate.attempt.resolution` mapping. Recording it does not change `status` or
+Gate resolution becomes durable only when the exact binding Resolution is committed in
+an entity `gates.records[].attempts[].resolution` node. Recording it does not change `status` or
 dispatch a worker. A temporary Subspace briefing, external review log, or FO-authored
 presentation file is not current gate state. The mapping carries logical gate id,
-Briefing/gate-attempt id, stage, round, canonical Briefing digest, Resolution id,
-decision, actor, timestamp, application intent, blockers/hold, and consumption state.
+Briefing/gate-attempt id, stage, round, canonical Briefing digest, complete portable
+Resolution, application intent, blockers/hold, and consumption state. The current tree
+directly retains all admitted gates and attempts; Git replay supplies their transitions.
 
 `feedback.cycle_recorded` is the durable route edge between a rejected gate
 result and the stage run that receives its rework. Its structured payload must
@@ -290,8 +291,9 @@ must resolve the changed digest.
 To preserve this state, Spacedock must stop treating approval as an instruction
 to commit the next stage before a worker exists. The revised sequence is:
 
-1. Commit the entity `gate` mapping with the Resolution and
-   `consumption.state: pending`, leaving `status` unchanged.
+1. Append the attempt and exact Resolution to the entity `gates` collection, create
+   its `application.state: pending`, and update selection pointers, leaving `status`
+   unchanged.
 2. After confirming the stored digest is current, every blocker is satisfied, and no
    execution hold is active, prepare a package and commit a minted
    `dispatch_attempt_id` with `state: prepared` without consuming approval.
@@ -434,8 +436,9 @@ or runtime observation.
 1. Add stable `workflow_id` to commissioned workflow metadata.
 2. Specify `spacedock.state-event/v1` and deterministic event IDs.
 3. Implement Git DAG projection and the pure reducer.
-4. Persist gate Resolution records with stable `gate_attempt_id` and artifact
-   digest in the entity's versioned `gate` frontmatter mapping.
+4. Persist gate Resolution records with stable `gate_attempt_id` and artifact digest
+   in the entity's versioned plural `gates` frontmatter collection, retaining multiple
+   logical gates and immutable attempts with explicit selection pointers.
 5. Persist structured feedback-cycle route edges and bind rework stage runs to
    their rejected gate attempts.
 6. Derive `approved_pending_dispatch` and `feedback_rework` without runtime
@@ -487,10 +490,11 @@ instrumentation and Phase 3 Zaphod work may proceed in parallel.
     `feedback_rework` context naming the validation gate and cycle; rebuilding
     after restart produces the same text and JSON, while an ordinary repeated
     implementation stage does not acquire that context.
-12. **Physical authority:** recording approve or revise writes the exact entity
-    `gate` mapping without changing `status` or producing a dispatch receipt; deleting
-    every projection cache and replaying Git reproduces the same gate/application
-    snapshot.
+12. **Physical authority:** recording approve or revise appends the exact binding
+    Resolution to the entity `gates` collection without changing `status` or producing
+    a dispatch receipt; a cold current-entity read enumerates every logical gate,
+    attempt, selection, and final application state, while Git replay reproduces their
+    transitions.
 
 ## Open questions
 
@@ -509,7 +513,7 @@ instrumentation and Phase 3 Zaphod work may proceed in parallel.
 ## Recommendation
 
 Implement Phase 1 in Spacedock before adding a Zaphod ledger reader. Treat the
-committed entity `gate` mapping as current gate truth, the state commit graph as its
-history, and the event projector/reducer as replayable public interpretations. Add
+committed entity `gates` collection as directly readable gate truth, the state commit
+graph as transition history, and the event projector/reducer as replayable public interpretations. Add
 runtime receipts only for external facts that must survive restart. Keep Zaphod a
 read-only projection of that truth.

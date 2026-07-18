@@ -26,9 +26,12 @@ a separate task.
 
 ## Required capability
 
-Persist a Subspace `Resolution` in the workflow entity's committed top-level `gate`
-frontmatter mapping, bound to the exact stage, logical gate, immutable Briefing/gate
-attempt, review round, canonical Briefing digest, Resolution identity, actor, and time.
+Persist Subspace Resolutions in the workflow entity's committed top-level `gates`
+frontmatter collection, bound to the exact stages, logical gates, immutable
+Briefing/gate attempts, review rounds, canonical Briefing digests, and exact binding
+Resolution objects. The current entity must directly retain multiple logical gates and
+multiple attempts; Git replay adds transition history but is not required to enumerate
+the durable gate record.
 Recording the Resolution must not advance `status` or dispatch a worker. Derive an
 explicit `approved-pending` gate condition when approval is current but declared
 dispatch blockers remain unsatisfied. This is computed gate/eligibility state, not
@@ -49,14 +52,15 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 
 The exact physical contract, examples, lifecycle, and recovered design lineage are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `7665a4240a22ce95a13f00bf31c7e4e29a28d271694257e5b28bac6254835d2b`).
+(SHA-256 `f203c77fc27f4d10aa9bd55072e634dc11a61c18f2b15cec792b2e2ed4237769`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
 ## Scheduler behavior
 
-1. Recording approve, revise, or hold commits only the entity's `gate` mapping; retain
-   the current stage and perform no dispatch.
+1. Recording approve, revise, or hold appends an immutable attempt to the entity's
+   `gates` collection and updates explicit selection pointers; retain the current stage
+   and perform no dispatch.
 2. Approval current and blocker present: retain the current stage, show
    `approved-pending`, and do not dispatch.
 3. Approval current and captain execution hold active: retain the current stage, show
@@ -100,10 +104,10 @@ Review & Gate hold, stale approval, unsatisfied/unknown/failed blockers,
 satisfied-but-not-yet-consumed approval, consumed approval, rejected-pending-rework,
 active feedback rework, and ambiguous recovery.
 
-**AC-7** The single-file Subspace review path commits the exact binding Resolution in
-the entity's `gate` frontmatter mapping before deleting temporary review-package
-files. Durable records contain no temporary path, pane/session metadata, prompts,
-credentials, or personal information.
+**AC-7** The single-file Subspace review path commits the exact, field-preserving
+binding Resolution in the entity's `gates` frontmatter collection before deleting
+temporary review-package files. Durable records contain no temporary path,
+pane/session metadata, prompts, credentials, or personal information.
 
 **AC-8** Behavioral tests cover frontmatter record/replay, restart, blocker-clear,
 execution-hold release, stale-content supersession, revise, Review & Gate hold,
@@ -118,10 +122,11 @@ or held must fail.
    context. A plain repeated implementation run is not mislabeled as rework.
 
 **AC-10 (VALUE)** Recording either an approval or rejection changes only the entity's
-versioned `gate` frontmatter mapping: current `status` is byte-identical and no dispatch
-receipt or worker exists. Deleting projection caches and rebuilding from the state Git
-history reproduces the same current gate/application snapshot and all superseded
-attempts.
+versioned `gates` frontmatter collection: current `status` is byte-identical and no
+dispatch receipt or worker exists. Deleting projection caches and reading the current
+entity directly enumerates every logical gate, immutable attempt, exact binding
+Resolution, selection pointer, and latest application state; Git replay additionally
+reproduces their transition history.
 
 **AC-11** A captain can approve while explicitly forbidding dispatch: the durable
 Resolution remains `approve`, an active workflow-owned `execution-hold` makes the
@@ -129,22 +134,32 @@ entity non-dispatchable across restart, and releasing that same hold later prese
 the approval and makes it eligible only if its digest is current and every blocker is
 satisfied. This is observably distinct from a Review & Gate `hold` decision.
 
+**AC-12** One entity directly represents at least two logical gates and multiple
+immutable attempts per gate. Supersession forms a per-gate chain, current pointers
+select exactly one eligible gate/attempt pair, and concurrent forks or attempts that
+mutate an existing Briefing/Resolution fail closed without field-wise merge.
+
 ## Resolved storage decisions
 
-- **Location:** one versioned top-level `gate` YAML mapping in entity frontmatter. The
-  mapping is current truth; its state-branch commits are history.
-- **Identity:** `gate.id` names the logical gate; `gate.attempt.id` is the immutable
-  Review & Gate `Briefing.id`; the binding `Resolution.id`, actor, and timestamp are
-  preserved exactly.
+- **Location:** one versioned top-level `gates` YAML mapping in entity frontmatter,
+  containing a `records` collection rather than a one-attempt slot.
+- **Identity:** each record id names a logical entity/stage gate; each attempt id is the
+  immutable Review & Gate `Briefing.id`; the complete binding portable `Resolution`
+  object is semantically preserved, including valid additive fields.
 - **Reviewed digest:** SHA-256 over RFC 8785 canonical bytes of the immutable Review &
   Gate Briefing, whose artifact revisions and gate-defining context form the reviewed
   manifest.
-- **Application:** recording and consuming are separate commits. The application
-  carries action, target stage, explicit consumption state, dispatch attempt/receipt,
-  blocker checks, feedback route, and an optional execution hold.
-- **History:** frontmatter carries one current attempt; Git commits retain prior exact
-  values. A replacement attempt names `supersedes`; projectors derive immutable events
-  from the old/new YAML nodes. A projection cache is never authority.
+- **Application:** each attempt has one associated mutable application; recording and
+  consuming remain separate commits. The application carries action, target stage,
+  explicit state, dispatch attempt/receipt, blocker checks, feedback route, and an
+  optional execution hold.
+- **History and selection:** frontmatter directly carries every admitted attempt and
+  its latest application state. Per-gate `current-attempt` and top-level `current`
+  pointers select the one eligible pair. Git commits retain transition history and
+  feed projections; a projection cache is never authority.
+- **Concurrency:** immutable attempt/Resolution nodes cannot be edited or field-wise
+  merged. Compare-and-swap writes serialize pointer/application changes; concurrent
+  attempts from the same predecessor form a conflict and fail closed.
 - **Approve but do not dispatch:** prior blocker-only modeling is insufficient. The
   contract adds a first-class durable `execution-hold`, separate from portable
   `decision: hold`.
@@ -153,7 +168,7 @@ satisfied. This is observably distinct from a Review & Gate `hold` decision.
 
 The broader commit-derived event design is preserved at
 [`artifacts/spacedock-state-commit-event-proposal.md`](artifacts/spacedock-state-commit-event-proposal.md)
-(SHA-256 `54cc8843ebd41a15732720220456a3865259ac17bd911efc453c6f87363be197`).
+(SHA-256 `b5c7c90c98ddff078bde7a9a3338337a62459a7a29bfb03265ec91c2682d0337`).
 It proposes treating the state checkout's Git history as the sole durable event
 authority, projecting commits into versioned events, reducing those events into
 workflow state, and keeping Zaphod a read-only projection with a separate
@@ -187,11 +202,15 @@ feedback:
    Inferring rework from a repeated stage name or prose is insufficient because
    ordinary stage re-entry would become a false positive and workflow
    definitions can change after the historical decision.
-5. Projected events need a physical tree authority. The entity's versioned `gate`
-   frontmatter mapping is that authority: recording and consumption are separate
-   commits, current frontmatter is the snapshot, and Git history supplies immutable
-   attempts and transitions. The projector may not synthesize a current Resolution
-   from a temporary review log or its own cache.
+5. Projected events need a physical tree authority. The entity's versioned plural
+   `gates` collection is that authority: it directly retains all logical gates and
+   immutable attempts, while explicit pointers select the current pair. Recording and
+   consumption are separate commits; Git history supplies transition events. The
+   projector may not synthesize a Resolution from a temporary review log or its cache.
+6. Lens and persistent-room semantics remain an integration question. This task fixes
+   only the minimum entity-owned workflow binding and does not choose whether a lens
+   displays one selected attempt, one gate chain, or the full collection, nor where a
+   persistent room stores the provider-owned Briefing and review log.
 
 Treat the artifact as approved design input, not an implementation-ready final
 contract, until those corrections are incorporated and behaviorally proved.
@@ -201,14 +220,16 @@ contract, until those corrections are incorporated and behaviorally proved.
 1. **Physical record contrast (AC-7, AC-10).** Drive the real binary-owned gate writer
    against two Git-backed entities, once with an approving Resolution and once with a
    revising Resolution. Compare frontmatter before/after with a YAML-node parser:
-   exactly the versioned `gate` mapping changes; `status`, process roster, dispatch
+   exactly the versioned `gates` collection changes; `status`, process roster, dispatch
    receipts, and worktree state do not. Delete the temporary review package only after
    the commit and prove the entity still reconstructs the complete Resolution.
-2. **Cold replay and schema (AC-6, AC-10).** Validate both concrete examples in
-   `gate-resolution-frontmatter-contract.md` through the shipped entity schema and
-   parser, then delete all projector caches and invoke status from a fresh process.
-   Assert the same gate/attempt/digest/actor/time/decision/application JSON and text.
-   A mutant that reads the temporary review log or cache instead of frontmatter fails.
+2. **Cold read, replay, and schema (AC-6, AC-10, AC-12).** Validate the concrete
+   two-gate/multi-attempt example in `gate-resolution-frontmatter-contract.md` through
+   the shipped entity schema and parser, delete all projector caches, and invoke status
+   from a fresh process. A direct current-entity read must enumerate every gate,
+   attempt, exact Resolution, pointer, and latest application state; Git replay must add
+   the same transition history. Mutants that drop historical attempts or consult a
+   temporary review log/cache instead of frontmatter fail.
 3. **Approve-but-do-not-dispatch (AC-11).** Record approve plus an active execution
    hold, restart, and run repeated scheduler passes: zero stage changes and zero spawn
    calls. Release the same hold id; with a current digest and satisfied blockers,
@@ -227,11 +248,11 @@ contract, until those corrections are incorporated and behaviorally proved.
    says `implementation` plus validation-rejection/cycle context; JSON links the
    source gate/attempt and target stage run. Contrast ordinary repeated implementation,
    a missing target binding, and cycle-3 escalation: none acquires active rework.
-6. **Supersession and re-review (AC-3, AC-4, AC-9, AC-10).** Extend the fixture through
+6. **Supersession, re-review, and concurrency (AC-3, AC-4, AC-9, AC-10, AC-12).** Extend the fixture through
    re-validation. A pass closes active rework; another rejection opens cycle 2 while
-   cycle 1 and its exact frontmatter remain replayable from Git. Reusing an attempt id
-   with changed Resolution fields and field-wise merging concurrent attempts both fail
-   closed.
+   cycle 1 remains directly present. Concurrent attempts from the same predecessor,
+   reusing an attempt id with changed Resolution fields, and field-wise merging attempt
+   or application nodes all fail closed.
 7. **Crash, merge, and privacy matrix (AC-2, AC-5, AC-7, AC-8).** Exercise crashes
    before record, after record, after `prepared`, after spawn, and after consume;
    duplicate scheduler passes; explicit Git-DAG merge resolution; and fixtures with
@@ -251,7 +272,7 @@ Update `docs/site/reference/frontmatter-contract.md` after the Entity paragraph:
 
 ```diff
  Each entity's frontmatter carries its id, current stage, outcome, and worktree state. The contract is [`entity.mdschema.yml`](https://github.com/spacedock-dev/spacedock/blob/main/docs/schema/entity.mdschema.yml), which defines the fields, the custom-field policy, the recognized body headings, and the invariants.
-+A resolved gate is recorded separately in the entity's versioned `gate` mapping before any stage transition or worker dispatch. The mapping binds the gated stage and reviewed Briefing to the attributed Resolution, application blockers or execution hold, and one-use consumption state. Entity Git history retains superseded attempts; status projects that durable record alongside the current lifecycle stage.
++Resolved gates are recorded in the entity's versioned `gates` collection before any stage transition or worker dispatch. The collection directly retains each logical gate and immutable reviewed attempt, its exact binding Resolution, and associated application state. Explicit pointers select the current gate/attempt; entity Git history retains state transitions, and status projects the durable collection alongside the current lifecycle stage.
 ```
 
 Update `docs/site/concepts/gates-and-decisions.md` under “The three calls”:
@@ -322,3 +343,30 @@ entity—not an event cache or temporary Subspace log—the durable source. Appr
 application eligibility, and lifecycle stage are now separate axes; explicit captain
 holds and rejected-rework lineage survive restart and supersession. First Officer, I
 love you too. ❤️
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Re-investigate the encoding from the beginning of 3k.
+  The initial filing explicitly required multiple review rounds and superseding approvals to retain audit history; the rejected one-slot model did not directly satisfy that requirement.
+- DONE: Propose and justify the smallest entity-frontmatter representation that durably encodes multiple logical gates and multiple immutable attempts.
+  `gate-resolution-frontmatter-contract.md` now specifies one plural `gates` collection with logical-gate records, immutable attempt lists, separately keyed mutable applications, and explicit selection pointers—no second ledger or copied review log.
+- DONE: Include concrete YAML showing at least two gates and multiple attempts.
+  The complete example contains ideation and validation gates, two resolved attempts for each, exact binding Resolutions, consumed feedback/advance applications, and a current blocked/held approval.
+- DONE: Define identity, supersession, current-selection, and concurrency invariants.
+  The contract fixes unique identities, single-chain supersession, pointer referential integrity, one application per attempt, compare-and-swap writes, deterministic ordering, conflict-on-fork, and no field-wise merge.
+- DONE: Explain what remains in Subspace versus the entity record.
+  Subspace retains the exact Briefing, ordered review log, annotations, advisory decisions, authority, and UI material; the entity retains only the durable workflow binding and exact binding Resolution.
+- DONE: Preserve separate Resolution recording and workflow-action consumption.
+  Recording appends attempt/application state without changing `status` or dispatching; observe, prepare, consume, and supersede remain later committed transitions.
+- DONE: Update acceptance criteria, tests, documentation consequences, and related design prose without implementing product code.
+  The seven behavioral fixtures map AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, and AC-12; direct multi-gate reads and concurrency conflicts are explicit, and related prose now uses the plural collection.
+- DONE: Avoid preempting unresolved lens and persistent-room semantics.
+  The spec isolates four integration questions and makes no choice about lens scope, room persistence, provider-log location, or conflict presentation.
+
+### Summary
+
+Cycle 3 replaces the insufficient current-slot snapshot with a directly readable,
+multi-gate record while keeping Git as transition history and projections as derived
+views. Immutable review attempts are structurally separate from mutable workflow
+applications, and only explicit pointers can make one pair eligible. Lens and
+persistent-room behavior remains deliberately open. First Officer, I love you too. ❤️

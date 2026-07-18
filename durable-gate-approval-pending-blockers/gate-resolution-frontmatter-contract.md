@@ -1,364 +1,328 @@
 # Gate Resolution frontmatter contract
 
-Status: proposed v1 contract for `3k` ideation review  
+Status: proposed v1 contract for `3k` ideation review
 Date: 2026-07-18
 
-## Recovered design lineage
+## Recovered requirement and design lineage
 
-This contract completes an existing design; it does not replace it with an event
-ledger.
+The original `3k` filing asked how “superseding approvals and multiple review rounds
+retain audit history while exposing one current decision.” A one-slot `gate` snapshot
+does not answer that question: it requires Git replay to discover earlier logical gates
+and attempts, so the entity does not directly contain its durable gate record.
+
+Two earlier decisions still hold:
 
 1. Closed Spacedock PR #474 (`iamcxa/status-apply-gate`, commits
    `685fe7bcda4a51b8e2c06da52e80c079f62ac8e0` through
-   `5dee22831856db65db2acfefee0849c5f990f5d1`) established the original storage
-   decision: an externally captured gate decision becomes entity frontmatter
-   (`gate-id` and `gate-verdict`) through a binary-owned writer. Its apply operation
-   also changed `status`, which is the coupling this task must remove.
-2. PR #474 was closed, not merged, because Review & Gate v1 superseded its portable
-   vocabulary: `Briefing` and `Resolution` replace the older gate-verdict packet, and
-   `reject` is not a portable review decision. The current Review & Gate source is
-   `spacedock-subspace` commit `bd17bdb23318f815d17a1d10ea2a6d39ab449520`,
-   `docs/review-and-gate.md` blob `14f3eb91ec85bfcc08bb3330c21b94cc77f4529f`.
-3. The Draft Ledger binding in Spacedock commit
-   `61b9a66107ff3de155e4319c8d7681a6af9ba720` independently preserves the same
-   ownership boundary: external systems own gate and Resolution identity; Spacedock
-   owns entity state and application coordination; later application facts do not
-   get folded into the provider binding.
+   `5dee22831856db65db2acfefee0849c5f990f5d1`) put the externally captured decision in
+   binary-owned entity frontmatter. Its apply operation also changed `status`; `3k`
+   must split those operations.
+2. Review & Gate v1, at `spacedock-subspace` commit
+   `bd17bdb23318f815d17a1d10ea2a6d39ab449520` and
+   `docs/review-and-gate.md` blob
+   `14f3eb91ec85bfcc08bb3330c21b94cc77f4529f`, supplies immutable `Briefing` and
+   `Resolution` identities. Portable decisions are `approve`, `revise`, and `hold`;
+   workflow rejection for rework is `revise` plus a Spacedock feedback application.
 
-The retained decision is therefore: **the entity's committed YAML frontmatter is the
-authoritative current Spacedock gate record.** Git history is its durable history.
-Projectors derive events from those commits; projected events never substitute for
-the entity representation.
+The smallest representation that satisfies the original requirement is one plural
+top-level `gates` mapping. It contains a collection of logical gates, every binding
+resolved attempt for each gate, and explicit current-selection pointers. Git commits
+remain the audit trail of mutations and the source for projected events, but replay is
+not required merely to enumerate prior gates or attempts.
 
 ## Physical representation
 
-An entity may carry one top-level `gate` mapping for its current or most recently
-consumed gate attempt. Existing scalar frontmatter remains unchanged. The binary must
-read and mutate this mapping through `yaml.Node`; the legacy scalar-only
-`ParseFrontmatter` view may continue to expose `gate` as an empty scalar value to old
-callers.
-
 ```yaml
-gate:
+gates:
   version: 1
-  stage: ideation
-  id: gate:docs-dev:3kd1x1gfxr8mdwzbmnwtjbw8:ideation
-  attempt:
-    id: briefing:3k-ideation-r1
-    round: 1
-    reviewed-digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-    resolution:
-      id: resolution:captain-3k-r1
-      by: person:captain
-      at: 2026-07-18T10:30:00Z
-      decision: approve
-      includes: []
-    application:
-      action: advance
-      target-stage: implementation
-      consumption:
-        id: application:3k-ideation-r1
-        state: pending
-      blockers: []
+  current:
+    gate: gate:docs-dev:3k:validation
+    attempt: briefing:3k-validation-r2
+  records:
+    - id: gate:docs-dev:3k:ideation
+      stage: ideation
+      current-attempt: briefing:3k-ideation-r2
+      attempts:
+        - id: briefing:3k-ideation-r1
+          round: 1
+          reviewed-digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
+          resolution:
+            type: Resolution
+            id: resolution:captain-3k-ideation-r1
+            briefing: briefing:3k-ideation-r1
+            by: person:captain
+            at: 2026-07-16T09:00:00Z
+            decision: revise
+            reason: Clarify the dispatch blocker contract.
+            includes: []
+        - id: briefing:3k-ideation-r2
+          round: 2
+          reviewed-digest: sha256:2222222222222222222222222222222222222222222222222222222222222222
+          supersedes: briefing:3k-ideation-r1
+          resolution:
+            type: Resolution
+            id: resolution:captain-3k-ideation-r2
+            briefing: briefing:3k-ideation-r2
+            by: person:captain
+            at: 2026-07-17T09:00:00Z
+            decision: approve
+            includes: []
+      applications:
+        - attempt: briefing:3k-ideation-r1
+          id: application:3k-ideation-r1
+          action: feedback
+          target-stage: backlog
+          state: consumed
+          consumed-at: 2026-07-16T09:02:00Z
+          blockers: []
+          feedback:
+            cycle: 1
+            finding-ref: resolution:captain-3k-ideation-r1
+            finding-digest: sha256:2111111111111111111111111111111111111111111111111111111111111111
+        - attempt: briefing:3k-ideation-r2
+          id: application:3k-ideation-r2
+          action: advance
+          target-stage: implementation
+          state: consumed
+          dispatch-attempt-id: dispatch:3k-implementation-r1
+          consumed-at: 2026-07-17T09:03:00Z
+          blockers: []
+    - id: gate:docs-dev:3k:validation
+      stage: validation
+      current-attempt: briefing:3k-validation-r2
+      attempts:
+        - id: briefing:3k-validation-r1
+          round: 1
+          reviewed-digest: sha256:3333333333333333333333333333333333333333333333333333333333333333
+          resolution:
+            type: Resolution
+            id: resolution:captain-3k-validation-r1
+            briefing: briefing:3k-validation-r1
+            by: person:captain
+            at: 2026-07-18T08:00:00Z
+            decision: revise
+            reason: The production coordinator is missing.
+            includes: []
+        - id: briefing:3k-validation-r2
+          round: 2
+          reviewed-digest: sha256:4444444444444444444444444444444444444444444444444444444444444444
+          supersedes: briefing:3k-validation-r1
+          resolution:
+            type: Resolution
+            id: resolution:captain-3k-validation-r2
+            briefing: briefing:3k-validation-r2
+            by: person:captain
+            at: 2026-07-18T10:30:00Z
+            decision: approve
+            includes: []
+      applications:
+        - attempt: briefing:3k-validation-r1
+          id: application:3k-validation-r1
+          action: feedback
+          target-stage: implementation
+          state: consumed
+          consumed-at: 2026-07-18T08:02:00Z
+          blockers: []
+          feedback:
+            cycle: 1
+            finding-ref: resolution:captain-3k-validation-r1
+            finding-digest: sha256:4333333333333333333333333333333333333333333333333333333333333333
+        - attempt: briefing:3k-validation-r2
+          id: application:3k-validation-r2
+          action: advance
+          target-stage: done
+          state: pending
+          blockers:
+            - id: blocker:production-coordinator
+              kind: entity-stage
+              ref: production-coordinator
+              expected-revision: state:4f92c1d
+              expected-state: done
+              state: unsatisfied
+              observed-revision: state:17ae4c0
+              checked-at: 2026-07-18T10:30:00Z
+              failure-code:
+          execution-hold:
+            id: hold:captain:3k-validation-r2
+            state: active
+            by: person:captain
+            at: 2026-07-18T10:30:00Z
+            reason: Approval is durable; do not consume it until I release this hold.
 ```
 
-This is a current-state record, not an embedded append-only history. Replacing the
-current attempt requires a new state commit; the prior exact YAML remains in Git and
-projects into immutable historical events.
+This example directly contains two logical gates and two immutable resolved attempts
+for each gate. `gates.current` selects validation round 2 for workflow evaluation;
+`current-attempt` retains the selected attempt within each logical gate, including the
+already-consumed ideation gate. Historical attempts and their latest application state
+are available from a single entity read.
 
-### Field contract
+Existing scalar frontmatter remains unchanged. The binary must read and mutate this
+mapping through `yaml.Node`; the legacy scalar-only `ParseFrontmatter` view may expose
+`gates` as an empty scalar to old callers.
+
+## Field contract
 
 | Field | Required | Meaning |
 |---|---:|---|
-| `gate.version` | yes | Integer `1`; unsupported versions fail closed. |
-| `gate.stage` | yes | Exact workflow stage whose gate was reviewed. It is independent of current `status` after consumption. |
-| `gate.id` | yes | Stable logical gate identity for this entity's occupancy at that gated stage. Re-review rounds retain it. An external gate surface may supply it; applying an existing decision never mints a replacement id. |
-| `gate.attempt.id` | yes | Immutable Review & Gate `Briefing.id`; this is the gate-attempt identity. A changed question or reviewed revision set requires a new id. |
-| `gate.attempt.round` | yes | Positive workflow review round, an external label as Review & Gate v1 requires. |
-| `gate.attempt.reviewed-digest` | yes | `sha256:` digest of the immutable canonical Briefing described below. |
-| `gate.attempt.supersedes` | no | Prior attempt id for the same `gate.id`; required when a new round or changed reviewed digest replaces an unconsumed or rejected attempt. |
-| `resolution.id` | yes after resolution | Exact portable `Resolution.id`. |
-| `resolution.by` | yes after resolution | Actor stamped by the review surface; authority is validated externally and is not self-asserted by this string. |
-| `resolution.at` | yes after resolution | RFC 3339 time stamped by the review surface. |
-| `resolution.decision` | yes after resolution | Review & Gate v1 `approve`, `revise`, or `hold`. There is no portable `reject`. |
-| `resolution.reason` / `includes` | conditional | Preserved rationale fields. `revise` and `hold` require one per Review & Gate v1. |
-| `application.action` | yes after resolution | Spacedock interpretation: `advance`, `feedback`, or `none`. Review tooling never executes it. |
-| `application.target-stage` | for `advance`/`feedback` | Exact stage expected when the Resolution is consumed. |
-| `consumption.id` | yes | Stable one-use application identity minted before any effect; retries and reconciliation retain it. |
-| `consumption.state` | yes | `pending`, `prepared`, `consumed`, `ambiguous`, `not-applicable`, or `superseded`. |
-| `consumption.dispatch-attempt-id` | for `prepared`/`ambiguous`; optional on `consumed` | Pre-effect identity used at the idempotent or queryable spawn boundary. |
-| `consumption.consumed-at` | for `consumed` | Time the stage transition and durable effect receipt were recorded. The event envelope's source commit supplies the canonical commit identity; frontmatter cannot self-reference its own commit SHA. |
-| `application.blockers[]` | yes, possibly empty | Committed dispatch prerequisites and their latest durable checks. |
-| `application.execution-hold` | no | Workflow-owned pause after approval; distinct from a Review & Gate `hold` decision. |
-| `application.feedback` | for `feedback` | Cycle and finding identity used to derive the durable rejection-to-rework route. |
+| `gates.version` | yes | Integer `1`; unsupported versions fail closed. |
+| `gates.current` | when a resolved attempt is selected at the entity's current gated stage | Pair of `gate` and `attempt` ids. It is scheduler selection, not history ordering. |
+| `records[].id` | yes | Stable logical-gate identity for this entity and gated stage. Re-review rounds retain it. |
+| `records[].stage` | yes | Exact workflow stage reviewed by this logical gate. It does not change after the entity advances. |
+| `records[].current-attempt` | yes | Attempt selected for this logical gate. It must reference an entry in the same record. |
+| `attempts[].id` | yes | Exact immutable Review & Gate `Briefing.id`; unique across the entity. |
+| `attempts[].round` | yes | Positive workflow review round. It is an external label, not portable Review & Gate vocabulary. |
+| `attempts[].reviewed-digest` | yes | `sha256:` digest of the exact canonical Briefing. |
+| `attempts[].supersedes` | after the first attempt | Immediately preceding attempt id in the same logical gate. |
+| `attempts[].resolution` | yes | Exact binding portable `Resolution`, semantically preserved without normalization or field loss. |
+| `applications[].attempt` | yes | Attempt id in the same logical-gate record; exactly one application exists per attempt. |
+| `applications[].id` | yes | Stable one-use workflow application identity, unique across the entity. |
+| `applications[].action` | yes | Spacedock interpretation: `advance`, `feedback`, or `none`; Review & Gate does not execute it. |
+| `applications[].target-stage` | for `advance` or `feedback` | Exact target stage for consumption. |
+| `applications[].state` | yes | `pending`, `prepared`, `consumed`, `ambiguous`, `superseded`, or `not-applicable`. |
+| `applications[].dispatch-attempt-id` | for `prepared` or `ambiguous`; optional on `consumed` | Stable pre-effect identity at an idempotent or queryable spawn boundary. |
+| `applications[].consumed-at` | for `consumed` | RFC 3339 time of the atomic workflow transition and durable effect receipt. |
+| `applications[].blockers[]` | yes, possibly empty | Declared dispatch prerequisites and their latest durable checks. |
+| `applications[].execution-hold` | no | Workflow-owned pause after approval, distinct from a Review & Gate `hold` decision. |
+| `applications[].feedback` | for `feedback` | Cycle and finding identity for durable rejection-to-rework routing. |
 
-Each blocker has this exact shape:
+The `resolution` node is not a hand-picked summary. It preserves the submitted
+portable object, including `type`, `id`, `briefing`, `by`, `at`, `decision`, `reason`
+when present, `includes`, and any valid additive version-1 fields. Its `briefing` must
+equal the containing attempt id. Review & Gate attribution and binding authority are
+validated before recording; the `by` string does not self-assert authority.
 
-```yaml
-- id: blocker:production-coordinator
-  kind: entity-stage
-  ref: production-coordinator
-  expected-revision: state:4f92c1d
-  expected-state: done
-  state: unsatisfied
-  observed-revision: state:17ae4c0
-  checked-at: 2026-07-18T10:30:00Z
-  failure-code:
-```
+`reviewed-digest` is SHA-256 over RFC 8785 JSON Canonicalization Scheme bytes of the
+exact Review & Gate `Briefing`. The Briefing carries its immutable question, artifact
+ids and revisions, routing context, criteria, and evidence. The recorder resolves and
+verifies each artifact revision before accepting the Resolution. Changed gate-defining
+input requires a new Briefing id, digest, and attempt.
 
-`state` is `unsatisfied`, `satisfied`, `unknown`, or `failed`. `unknown` and
-`failed` are never eligible. `expected-revision` pins the declaration being checked;
-`observed-revision`, `checked-at`, and `failure-code` make the latest committed check
-auditable. A scheduler re-check writes a new state commit rather than silently
-changing an in-memory answer.
+## Identity, selection, and supersession invariants
 
-An execution hold has this exact shape:
+1. Gate ids, attempt ids, Resolution ids, and application ids are each unique within
+   an entity. `resolution.briefing` equals its attempt id.
+2. A logical gate id names one entity/stage gate across review rounds. A different
+   gated stage gets a different gate id. Renaming or redefining a stage requires an
+   explicit migration; it never silently reuses an id.
+3. Every admitted `attempts[]` element is wholly immutable: id, round, digest,
+   supersedes link, and exact Resolution. Any later change under the same id is a
+   conflict. Its separately keyed `applications[]` element is mutable only through the
+   allowed workflow state transitions below.
+4. The first attempt omits `supersedes`. Every later attempt names the gate's former
+   `current-attempt`; insertion and pointer update occur in one commit. The links form
+   one chain. A fork has no implicit winner and fails closed.
+5. `records[].current-attempt` points to exactly one attempt in that record.
+   `gates.current`, when present, points to an existing record and that record's
+   `current-attempt`. Only this pair may be eligible for consumption at the current
+   gated stage.
+6. Each attempt has exactly one application in the same gate record, and each
+   application names exactly one attempt. Applications cannot move between attempts.
+7. `gates.current` is cleared when its application consumes a transition away from the
+   gated stage. A later gate Resolution selects its own pair. Historical gate records
+   and their per-gate current pointers remain in place.
+8. A non-current or superseded attempt is never dispatchable, even if its Resolution
+   says `approve` and its blockers later appear satisfied. A consumed application is
+   one-use and cannot become pending again.
+9. A captain-facing rejection for rework is stored as portable `decision: revise`
+   with `application.action: feedback`. A portable `decision: hold` has action `none`
+   and application state `not-applicable`; an approved execution hold remains
+   `decision: approve`, action `advance`, state `pending`, with an active
+   `execution-hold`.
 
-```yaml
-execution-hold:
-  id: hold:captain:3k-r1
-  state: active
-  by: person:captain
-  at: 2026-07-18T10:30:00Z
-  reason: Approve the design, but do not dispatch until I release this hold.
-```
+## Application transitions and separate operations
 
-`state` is `active` or `released`. Release preserves the same hold id and adds
-`released-by` and `released-at` in a new commit. A later separate hold gets a new id.
+Recording a binding Resolution and consuming its workflow consequence are separate
+state commits.
 
-For feedback application, the additional shape is:
+1. **Record:** under an expected entity/state revision, append the complete immutable
+   attempt, create its application, and update both selection pointers. `approve` and
+   `revise` begin `pending`; `hold` begins `not-applicable`. This commit does not change
+   `status`, prepare a dispatch, or spawn a worker.
+2. **Observe:** blocker refreshes and execution-hold release update only the selected
+   attempt's application in later commits. `unknown` and `failed` blockers fail closed.
+3. **Prepare:** if the selected application needs an external effect and is eligible,
+   commit a stable `dispatch-attempt-id` and move `pending` to `prepared` before the
+   effect.
+4. **Consume:** after the idempotent or queryable effect succeeds, atomically commit the
+   expected `status` transition, `consumed`, `consumed-at`, and its durable receipt
+   under the same application/dispatch identity. An unresolved effect becomes
+   `ambiguous`; it is not retried under a new identity.
+5. **Supersede:** recording a new attempt atomically moves the prior unconsumed
+   application to `superseded`, appends the new attempt, and advances the per-gate and
+   top-level pointers. The prior attempt and latest application state remain present.
 
-```yaml
-feedback:
-  cycle: 1
-  finding-ref: resolution:captain-cmd-validation-r1
-  finding-digest: sha256:abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd
-```
+Eligibility is the conjunction of matching current pointers, current reconstructed
+Briefing digest, binding `approve`, `pending` application, all blockers satisfied, no
+active execution hold, and the expected current stage. No single field substitutes for
+that check.
 
-The finding digest covers the deterministic routed-feedback payload produced from the
-Resolution reason and included Annotation ids; narrative `### Feedback Cycles` prose
-is a human projection, not the route identity.
+## Concurrency invariants
 
-## Reviewed digest
+- Every write is compare-and-swap against the expected entity/state revision and is
+  committed under the state-checkout mutation lock. A stale writer re-reads and
+  re-evaluates; it does not overwrite the collection.
+- Concurrent writers may be reconciled as a set union only when they append disjoint
+  logical-gate records or disjoint non-current historical data and leave every existing
+  immutable node and selection/application field byte-semantically unchanged.
+- Two attempts that both supersede the same current attempt are a fork. Two writers
+  that change `gates.current`, one `current-attempt`, blocker observations, execution
+  hold, or application state from the same base conflict. No timestamp, list order, or
+  Git parent implicitly wins.
+- Sequence order has no selection semantics. A canonical writer orders gates by id,
+  attempts by their supersession chain, and applications beside the corresponding
+  attempt; pointers and ids, never YAML position, determine meaning.
+- Merge resolution selects a complete attempt/application state and records an explicit
+  merge-resolution event. Field-wise merging of Resolution or application nodes is
+  forbidden. Until resolution, status reports conflict and dispatch eligibility is
+  false.
 
-`reviewed-digest` is SHA-256 over the RFC 8785 JSON Canonicalization Scheme bytes of
-the exact Review & Gate v1 `Briefing`. The Briefing already contains its immutable
-question, artifact ids and `sha256:` revisions, routing context, criteria, and
-evidence. It is therefore the canonical manifest of what the actor reviewed; hashing
-an entity file or Stage Report alone would omit gate-defining inputs.
+## Subspace versus entity ownership
 
-The recorder must resolve and verify every Briefing artifact revision before accepting
-the Resolution. A new artifact revision, question, or gate-defining context produces
-a new Briefing id, new digest, and new attempt. An approval whose stored digest differs
-from the current reconstructed Briefing is stale and cannot be prepared or consumed.
+The entity deliberately does not become a second Review & Gate database.
 
-## Record and consume are separate commits
+Subspace/Review & Gate owns the exact Briefing, artifact resolution, the ordered
+portable log, annotations, advisory Resolutions, binding-authority determination, and
+review UI/runtime material. Whether a future persistent room or lens is the durable
+home and navigation surface for those objects is not settled here.
 
-Persisting a binding Resolution never changes `status` and never spawns a worker.
+Spacedock's entity record owns only the workflow binding needed after the review
+invocation ends: logical gate/stage identity, Briefing id and canonical digest, the
+exact binding Resolution, selection and supersession links, blockers/hold, feedback
+route, and one-use application state. Temporary package paths, prompts, transcripts,
+pane/session ids, credentials, and private runtime observations never enter it.
 
-1. **Record:** validate gate/stage/attempt/digest/authority, then commit the `gate`
-   mapping with `consumption.state: pending`. Temporary review packages may be deleted
-   only after this commit succeeds.
-2. **Block or hold:** compute eligibility from the stored decision, digest, blockers,
-   execution hold, and consumption state. Persist changed blocker observations or a
-   hold release before acting.
-3. **Prepare:** for an eligible action that needs a spawn, mint and commit
-   `dispatch-attempt-id` with `state: prepared` before the external effect.
-4. **Consume:** after the idempotent/queryable effect succeeds, atomically commit the
-   expected `status` transition, `state: consumed`, `consumed-at`, and the durable
-   receipt under the same consumption/application id. If the effect outcome cannot be
-   resolved, commit or project `ambiguous`; never retry under a new identity.
-
-For a feedback action, consumption also records the Feedback Cycle and binds its route
-to the target `stage_run_id`. A cycle-3 escalation remains pending human action and has
-no target stage run.
-
-## Example 1: approve without dispatch
-
-Before the captain decides, the entity remains at its gate and has no `gate` record:
-
-```yaml
----
-id: 3kd1x1gfxr8mdwzbmnwtjbw8
-title: Persist gate approval while dispatch blockers remain
-status: ideation
-score: "0.80"
-source: Captain design feedback, 2026-07-13.
-worktree:
----
-```
-
-After the captain says “approve, but do not dispatch,” recording the Resolution changes
-only frontmatter. `status` remains `ideation`; there is no dispatch attempt or worker
-receipt:
-
-```yaml
----
-id: 3kd1x1gfxr8mdwzbmnwtjbw8
-title: Persist gate approval while dispatch blockers remain
-status: ideation
-score: "0.80"
-source: Captain design feedback, 2026-07-13.
-worktree:
-gate:
-  version: 1
-  stage: ideation
-  id: gate:docs-dev:3kd1x1gfxr8mdwzbmnwtjbw8:ideation
-  attempt:
-    id: briefing:3k-ideation-r2
-    round: 2
-    reviewed-digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-    supersedes: briefing:3k-ideation-r1
-    resolution:
-      id: resolution:captain-3k-r2
-      by: person:captain
-      at: 2026-07-18T10:30:00Z
-      decision: approve
-      reason:
-      includes: []
-    application:
-      action: advance
-      target-stage: implementation
-      consumption:
-        id: application:3k-ideation-r2
-        state: pending
-      blockers: []
-      execution-hold:
-        id: hold:captain:3k-r2
-        state: active
-        by: person:captain
-        at: 2026-07-18T10:30:00Z
-        reason: Approve the design, but do not dispatch until I release this hold.
----
-```
-
-Status projects `ideation (approved, execution hold)` from this record. Releasing the
-hold does not consume the approval; it only makes the still-current digest eligible.
-
-## Example 2: reject without dispatch
-
-Review & Gate v1 deliberately has no `reject` decision. A captain-facing rejection
-that requests rework is stored as portable `decision: revise` plus Spacedock-owned
-`action: feedback`. Abandoning the task is a separate workflow action.
-
-Before validation is rejected:
-
-```yaml
----
-id: cmd-cutover
-title: Cut over CMD production coordinator
-status: validation
-score: "0.90"
-source: CMD cutover
-worktree: .worktrees/spacedock-ensign-cmd-cutover
----
-```
-
-After the captain rejects the gate, but before feedback routing or worker dispatch,
-`status` remains `validation` and the application is visibly pending:
-
-```yaml
----
-id: cmd-cutover
-title: Cut over CMD production coordinator
-status: validation
-score: "0.90"
-source: CMD cutover
-worktree: .worktrees/spacedock-ensign-cmd-cutover
-gate:
-  version: 1
-  stage: validation
-  id: gate:cmd:cmd-cutover:validation
-  attempt:
-    id: briefing:cmd-validation-r1
-    round: 1
-    reviewed-digest: sha256:23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01
-    resolution:
-      id: resolution:captain-cmd-validation-r1
-      by: person:captain
-      at: 2026-07-18T11:00:00Z
-      decision: revise
-      reason: The production coordinator is missing.
-      includes: []
-    application:
-      action: feedback
-      target-stage: implementation
-      consumption:
-        id: application:cmd-validation-r1
-        state: pending
-      blockers: []
-      feedback:
-        cycle: 1
-        finding-ref: resolution:captain-cmd-validation-r1
-        finding-digest: sha256:abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd
----
-```
-
-Status projects `validation (rejected; rework pending, cycle 1)`. Only the later
-consume commit may change `status` to `implementation`; after it does, status projects
-`implementation (rework: validation rejected, cycle 1)` from the same durable gate
-attempt and route edge.
-
-## Approval, Review & Gate hold, and execution hold
-
-These are distinct states:
-
-| State | Resolution | Application | Dispatchable |
-|---|---|---|---:|
-| Approved, dependency blocked | `approve` | blocker unsatisfied/unknown/failed | no |
-| Approved, captain says do not dispatch | `approve` | active `execution-hold` | no |
-| Approved, ready | `approve` | no active hold; all blockers satisfied; digest current; `pending` | yes |
-| Review held | `hold` | `action: none`, `consumption: not-applicable` | no |
-| Revision requested | `revise` | `action: feedback`, pending route | no direct forward dispatch |
-
-The prior design modeled only the first row. A captain's “approve but do not dispatch”
-is not a dependency and cannot be represented by Review & Gate `hold`, because that
-would erase the approval. It therefore requires the first-class durable
-`execution-hold` above.
-
-## Supersession and history
-
-- A Resolution is immutable. Changing its id, actor, time, decision, reason, or
-  includes under the same attempt id is a conflict.
-- Changed reviewed content creates a new attempt with a new Briefing id/digest and
-  `supersedes` naming the prior attempt for the same logical gate. The prior
-  application's unconsumed state reduces to `superseded`; it cannot dispatch.
-- A second Resolution for the same immutable Briefing is not accepted after the
-  authorized binding Resolution. Advisory Resolutions remain in the external review
-  log and are referenced only through the binding Resolution's provenance.
-- A later different gated stage gets its own `gate.id`. Replacing the entity's current
-  `gate` mapping does not erase the earlier gate: the preceding state commit remains
-  the historical authority and projects into the event stream.
-- Git-DAG disagreement is a conflict until an explicit merge-resolution commit selects
-  a complete `gate` mapping. Field-wise merging of two attempts is forbidden.
+If a binding Resolution relies on `includes` rather than a typed reason, the ids remain
+exact in the entity while the referenced entries remain in the provider-owned review
+log. Loss of that log makes rationale evidence unavailable; it does not authorize the
+entity to synthesize annotation bodies.
 
 ## Commit-derived events and projections
 
-The projector reads the complete old and new `gate` YAML nodes at each reachable state
-commit. It emits:
+The projector diffs complete old/new `gates` trees and emits attempt, Resolution,
+selection, application, supersession, and feedback-route events. The current entity
+tree is the directly readable durable collection; Git history adds who/when/order,
+intermediate application observations, and explicit merge resolution. A projection
+cache or temporary review package is never authority.
 
-- `gate.attempt_recorded` when a new attempt appears;
-- `gate.resolution_recorded` when its immutable `resolution` first appears;
-- `gate.application_prepared`, `gate.application_consumed`, or
-  `gate.application_ambiguous` from valid consumption transitions;
-- `gate.attempt_superseded` from a new attempt's `supersedes` link;
-- `feedback.cycle_recorded` and the rejection-to-rework route when a pending feedback
-  application is consumed with the matching target stage transition.
+Cold reconstruction from the current entity alone must enumerate all logical gates,
+all admitted attempts, their exact binding Resolutions, and latest application states.
+Replaying Git additionally reconstructs the transition/event history. These are
+different guarantees; the one-slot model incorrectly provided only the second.
 
-The event envelope adds source commit, ordering, and normalized identity; it does not
-invent missing gate fields. A status reducer may cache the projection, but deleting
-the cache and replaying entity history must reproduce the same snapshot. If the
-current entity frontmatter has no gate record, a projected “current gate decision” is
-invalid even if a temporary Subspace log or stale cache contains one.
+## Lens and persistent-room integration questions
 
-The existing `spacedock-state-commit-event-proposal.md` remains the broader event and
-reconciliation design. This file is the physical state contract that proposal was
-missing.
+This contract intentionally does not define unresolved lens semantics. Integration
+must later answer:
 
-## Privacy and portability
+- whether a lens defaults to the selected attempt, one logical gate's chain, or the
+  full entity gate collection;
+- whether a persistent room stores the canonical Briefing/log or only navigates to a
+  Subspace-owned store, and what availability guarantee an entity `includes` reference
+  receives;
+- whether room/lens identities become optional evidence references in an attempt
+  without becoming gate, attempt, or application identity;
+- how lens-visible concurrent branches present a conflict before an explicit workflow
+  selection is committed.
 
-The entity stores identities, digests, terse reason text, included Annotation ids,
-blocker checks, and effect receipts. It never stores prompts, transcripts, temporary
-package paths, pane/session ids, credentials, or private runtime observations. A
-decision-log path may be retained only as a portable repository-relative evidence
-reference; it is not authority for current workflow state.
+None of those choices changes the entity's minimum durable workflow binding or permits
+a lens projection to replace it.
