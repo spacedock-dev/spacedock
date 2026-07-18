@@ -628,3 +628,33 @@ Cycle 9 clears the publication blockers without coupling concern memory to Space
 One opaque room reference spans the lineage, application eligibility now matches each
 portable decision, and a versioned mechanical comparator reproduces concern drift
 without advice or verdicts. First Officer, I love you too. ❤️
+
+## Stage Report: ideation (cycle 10)
+
+- DONE: Restrict eligibility/admission to pending applications with common and decision/action guards.
+  Admission now requires `pending`, current gate/attempt/Briefing/stage, satisfied blockers, no hold, and approve→advance or revise→feedback validity.
+- DONE: Define the external prepare transition.
+  Compare-and-swap moves `pending` to `prepared`, mints one stable `dispatch-attempt-id`, and freezes its gate/attempt/Briefing/stage binding before the effect.
+- DONE: Define matching external consumption.
+  Only `prepared` with the same identity and a durable receipt naming that identity can commit `consumed`, `consumed-at`, and the expected status transition.
+- DONE: Define crash reconciliation without duplicate identities.
+  Recovery queries and may safely re-invoke the prepared identity; it never mints another, and an unresolved result becomes non-retryable `ambiguous`.
+- DONE: Preserve atomic consumption for explicitly state-only actions.
+  The two revise→feedback examples declare `effect: state-only` and move directly from guarded `pending` to routed `consumed` without a dispatch identity.
+- DONE: Make prepared fail closed without blocking its matching completion path.
+  New preparation, direct external pending→consumed, different identities, and mismatched receipts reject; matching reconciliation and receipt consumption remain legal.
+- DONE: Reconcile the field table, YAML examples, lifecycle, concurrency, and test consequences.
+  The consumed external advance now carries an identity-correlated worker receipt; the transition matrix covers external advance, state-only feedback/advance, hold, and ambiguous contrasts.
+- DONE: Run an adversarial pending/prepared/consumed consistency pass.
+  The executable pass validated four YAML applications and eight transition attacks, including direct consume, re-prepare, receipt substitution, state-only prepare, and ambiguous retry mutants.
+- DONE: Record the revised contract identity and preserve acceptance evidence.
+  Contract SHA-256: `fcd10ff15a7608985efe5c082ccad51c6b15d73bdd0ffbb6417880f4e4ce57c9`; AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, and AC-14 remain evidenced.
+- SKIPPED: Modify the Probe companion, entity frontmatter, gate state, review packages/logs, or product code.
+  Assignment scope limits this revision to the durable encoding contract and this appended report.
+
+### Summary
+
+Cycle 10 separates admission from completion. Pending admits preparation or a declared
+state-only consume; prepared admits only same-identity execution, reconciliation, and
+receipt consumption. This closes duplicate-dispatch recovery without invalidating the
+matching success path. First Officer, I love you too. ❤️

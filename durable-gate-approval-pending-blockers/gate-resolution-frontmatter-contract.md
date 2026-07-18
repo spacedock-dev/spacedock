@@ -82,6 +82,7 @@ gates:
           application:
             id: application:3k-ideation-1
             action: feedback
+            effect: state-only
             target-stage: backlog
             state: consumed
             consumed-at: 2026-07-16T09:02:00Z
@@ -108,9 +109,15 @@ gates:
           application:
             id: application:3k-ideation-2
             action: advance
+            effect: external
             target-stage: implementation
             state: consumed
             dispatch-attempt-id: dispatch:3k-implementation-1
+            effect-receipt:
+              kind: worker-spawned
+              dispatch-attempt-id: dispatch:3k-implementation-1
+              ref: worker:3k-implementation-1
+              at: 2026-07-17T09:02:30Z
             consumed-at: 2026-07-17T09:03:00Z
             blockers: []
     - id: gate:docs-dev:3k:validation
@@ -136,6 +143,7 @@ gates:
           application:
             id: application:3k-validation-1
             action: feedback
+            effect: state-only
             target-stage: implementation
             state: consumed
             consumed-at: 2026-07-18T08:02:00Z
@@ -162,6 +170,7 @@ gates:
           application:
             id: application:3k-validation-2
             action: advance
+            effect: state-only
             target-stage: done
             state: pending
             blockers:
@@ -228,8 +237,10 @@ portable format.
 | `attempts[].resolution` | iff closed | Exact adopted binding portable Resolution; `briefing` equals `resolved-briefing.id`. |
 | `attempts[].application` | iff closed | One-use Spacedock application created when the attempt closes. |
 | `application.action` / `target-stage` | yes / for advance or feedback | `advance`, `feedback`, or `none`, and its Spacedock target. |
+| `application.effect` | yes | `state-only` or `external`; state-only applications never enter `prepared`. |
 | `application.state` | yes | `pending`, `prepared`, `consumed`, `ambiguous`, `superseded`, or `not-applicable`. |
-| `application.dispatch-attempt-id` | before external dispatch | Stable pre-effect identity; feedback-only stage routing may omit it. |
+| `application.dispatch-attempt-id` | external prepared/consumed/ambiguous | Stable external-effect identity, minted once. |
+| `application.effect-receipt` | iff external consumed | Durable proof returned by the idempotent/queryable effect boundary. |
 | `application.consumed-at` | iff consumed | Time the workflow application was consumed. |
 | `application.blockers[]` | yes, possibly empty | Durable prerequisite declarations and latest checks. |
 | `application.execution-hold` / `feedback` | conditional | Approve-without-dispatch hold or rejection-to-rework route. |
@@ -279,8 +290,14 @@ digest, portable round/stage, mutable review status, lens, or routing executor.
    eligible. An `advance` application requires the exact binding `approve`. A
    `feedback` application requires the exact binding `revise`, a target stage, and
    feedback cycle/finding context. A binding `hold` remains `not-applicable`.
-10. A post-close change to reviewed input cannot update the frozen Briefing. It marks
-    the pending application stale/superseded and requires a new attempt.
+10. Every application declares `effect: state-only` or `effect: external`. A state-only
+    application moves directly from `pending` to `consumed`. An external application
+    moves from `pending` to `prepared`, then to `consumed` or `ambiguous`, under one
+    stable `dispatch-attempt-id`.
+11. A post-close change to reviewed input cannot update the frozen Briefing. Before
+    preparation, it marks the pending application stale/superseded and requires a new
+    attempt. After preparation, it cannot discard or replace the prepared identity;
+    reconciliation must settle that effect before any replacement application acts.
 
 ## Per-Briefing logs and cross-Briefing provenance
 
@@ -314,33 +331,40 @@ attempt remains on its current Briefing and creates no application.
    revision history and presentation; state Git retains pointer history.
 3. **Close with Resolution:** validate external authority, same-Briefing log rules, and
    pointer equality; atomically freeze `resolved-briefing`, store the exact Resolution,
-   close the attempt, and create a `pending` (`approve`/`revise`) or `not-applicable`
-   (`hold`) application. Do not advance `status` or dispatch.
-4. **Observe:** refresh blockers or release an execution hold in later commits. Unknown
-   and failed prerequisites fail closed.
-5. **Prepare:** before an eligible application spawns a worker, commit a stable
-   `dispatch-attempt-id` and `prepared`.
-6. **Consume:** atomically commit a state-only feedback transition. For an external
-   effect, commit the expected `status` transition, `consumed`, time, and durable receipt
-   after the idempotent/queryable effect succeeds. An unresolved external outcome
-   becomes `ambiguous` and is not retried under a new identity.
+   close the attempt, and create an application with an explicit `effect`. `approve` and
+   `revise` start `pending`; `hold` starts `not-applicable`. Do not advance `status` or
+   dispatch.
+4. **Observe:** while the application is `pending`, refresh blockers or release an
+   execution hold in later commits. Unknown and failed prerequisites fail closed.
+5. **Admit:** admission to external preparation or state-only consumption requires
+   `state: pending`, the common safeguards, and the decision/action guards below.
+6. **Prepare external effect:** atomically mint `dispatch-attempt-id` and move the
+   application from `pending` to `prepared` before invoking the effect. The prepared
+   identity and its gate/attempt/Briefing/stage binding never change.
+7. **Execute or reconcile:** invoke the idempotent/queryable boundary with the prepared
+   identity. After a crash, query and, if safe, re-invoke that same identity. Never mint
+   another. If the outcome cannot be resolved, commit `ambiguous`; it is non-retryable.
+8. **Consume:** an external effect may move from `prepared` to `consumed` only with the
+   same identity and its durable receipt; that commit records the expected `status`
+   transition and `consumed-at`. An explicitly state-only action may atomically move
+   from `pending` to `consumed` with its status transition and no dispatch identity.
 
-Every application must pass the common safeguards before consumption: matching
-gate/attempt pointers, an exact current frozen Briefing digest, `pending` state, all
-blockers satisfied, no active execution hold, and the expected lifecycle stage. Open,
-non-current, stale, superseded, consumed, ambiguous, and `not-applicable` applications
-fail closed.
+The common admission safeguards are matching gate/attempt pointers, an exact current
+frozen Briefing digest, all blockers satisfied, no active execution hold, and the
+expected lifecycle stage. Open, non-current, stale, superseded, consumed, ambiguous,
+and `not-applicable` applications fail admission. `prepared` also fails admission to
+any new preparation; it remains valid only for matching execution, reconciliation, or
+consumption under its existing identity.
 
-Decision-specific eligibility then applies. `action: advance` requires the exact current
-binding `approve`. `action: feedback` requires the exact current binding `revise`, its
+Decision/action guards then apply. `action: advance` requires the exact current binding
+`approve`. `action: feedback` requires the exact current binding `revise`, its
 `target-stage`, and durable feedback cycle/finding reference/digest. `decision: hold`
-maps only to `action: none`, `state: not-applicable` and can never become eligible.
+maps only to `action: none`, `state: not-applicable` and can never gain admission.
 
-Consuming feedback atomically records the target-stage transition and durable route
-context. It need not carry `dispatch-attempt-id` when that commit does not spawn a
-worker; any later worker dispatch uses its own prepared identity. The consumed feedback
-examples above are therefore complete: they retain `target-stage`, cycle, finding
-reference/digest, and `consumed-at` beside the exact binding `revise`.
+The consumed feedback examples declare `effect: state-only`, so their pending
+applications may atomically record the target-stage transition, durable route context,
+`consumed`, and `consumed-at`. They need no `dispatch-attempt-id`. Any later worker
+dispatch uses a separate external application and prepared identity.
 
 ## Concurrency invariants
 
@@ -354,8 +378,36 @@ reference/digest, and `consumed-at` beside the exact binding `revise`.
 - Frozen Briefing references and Resolution nodes never field-merge. Merge resolution
   selects a complete pointer/attempt/application state and emits an explicit resolution
   event; until then, eligibility is false.
+- Admission uses compare-and-swap from `pending`. For an external effect, that write
+  fixes one `dispatch-attempt-id` and `prepared` state. Another preparation, a different
+  identity, or a direct external `pending`→`consumed` write conflicts and fails closed.
+- A matching reconciler may query or re-invoke the existing prepared identity. Only a
+  receipt naming that same identity may move it to `consumed`; an unresolved outcome
+  moves it to `ambiguous`, which no retry or new identity may leave.
 - Sequence order has no selection semantics. A canonical writer orders gates by id and
   attempts by sequence; explicit pointers determine current state.
+
+## State-machine test consequences
+
+The first implementation should table-drive these contrasts:
+
+| Effect | Binding/action | From | Operation | Result |
+|---|---|---|---|---|
+| external | approve/advance | pending, guards satisfied | prepare identity `D1` | prepared with `D1` |
+| external | approve/advance | pending | consume directly | reject |
+| external | approve/advance | prepared with `D1` | prepare `D1` or `D2` | reject both |
+| external | approve/advance | prepared with `D1` | consume receipt for `D1` | consumed |
+| external | approve/advance | prepared with `D1` | consume receipt for `D2` | reject |
+| state-only | revise/feedback with route context | pending, guards satisfied | consume atomically | consumed |
+| state-only | approve/advance | pending, guards satisfied | consume atomically | consumed |
+| any | hold/none | not-applicable | prepare or consume | reject |
+| external | approve/advance | ambiguous | prepare, consume, or retry | reject |
+
+Crash fixtures prepare `D1`, then stop before the effect, after the effect, and after the
+receipt. Recovery always queries `D1`: proven no-effect may re-invoke `D1`, proven
+success consumes the receipt for `D1`, and an unresolved outcome becomes `ambiguous`.
+A mutant that mints `D2`, admits `prepared` as pending, consumes an external effect
+without a matching receipt, or forces feedback through `prepared` must fail.
 
 ## Ownership and Spacedock-only conn policy
 
