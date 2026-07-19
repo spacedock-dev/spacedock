@@ -1,7 +1,7 @@
 ---
 id: rt8eywbyf3d7nyc9bsmrymnq
 title: Codex fresh dispatch must isolate parent turns
-status: implementation
+status: validation
 source: "/tmp/spacedock-codex-fresh-dispatch-incident.md; captain-requested legitimacy check and filing, 2026-07-19"
 started: 2026-07-19T09:05:43Z
 completed:
