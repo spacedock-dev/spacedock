@@ -18,6 +18,7 @@ var runtimeBindingCapabilities = []string{
 	"worker.shutdown",
 	"context-budget",
 	"roster-reconcile",
+	"post-compact-notice",
 }
 
 func TestCodexAndPiFirstOfficerRuntimeBindingBlocks(t *testing.T) {

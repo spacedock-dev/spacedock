@@ -124,9 +124,9 @@ Runs at terminal, supersede, or fresh-dispatch cleanup boundaries after any requ
 
 ## «post-compact-notice»: deliver the post-compaction reload reminder
 
-Invoke `«post-compact-notice»`() after a host compaction to fire the shared-core reload rule; failure-open to a manual captain cue.
+Invoke `«post-compact-notice»`() after a host compaction to fire the shared-core reload rule; failure-open to a manual captain cue. The runtime adapter owns the concrete present/absent delivery binding.
 
-- → **Codex:** PRESENT (UI-only) — `.codex-plugin` `PostCompact` (`manual|auto`) `systemMessage`, not model context. · **Claude:** `SessionStart(compact)`, SPLIT to `cdbhzxc`. · **Pi:** ABSENT.
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
 
 ## «dispatch.build»(): assemble the initial-dispatch artifact the spawn call consumes
 

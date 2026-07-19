@@ -24,6 +24,7 @@ Do not infer capabilities from a Codex version name. Do not infer that the turn-
 - `«worker.shutdown»`: `«worker.shutdown»` remains unresolved until probed. Durable workflow state remains authoritative. `«addressable-worker»` may carry cooperative preservation text when present.
 - `«context-budget»`: ABSENT; its reuse condition is satisfied because Codex has no bound context-budget probe.
 - `«roster-reconcile»`: `«roster-reconcile»` may provide active/completed task-path reads when bound. `list_agents(path_prefix?)` provides attribution, stale-cohort classification, debugging, and cleanup targeting.
+- `«post-compact-notice»`: PRESENT (UI-only). Bundled `.codex-plugin` `PostCompact` hook (`manual|auto`) runs `${PLUGIN_ROOT}/hooks/codex_post_compact_notice.sh`, emitting the reload-reminder `systemMessage` — captain UI, not model context (probe), so it degrades to the manual cue. Failure-open.
 
 When `«async-dispatch»` is live, async idle monitoring MUST call `wait_agent(timeout_ms: 300000)` as the long-task default: dispatched work can outlast Codex's short default. Five minutes reduces normal timeout churn; it cannot correct conceptual misuse of idle monitoring when captain-authorized active-scope work is ready. This is Spacedock's per-call policy and does not change Codex's global configuration.
 
