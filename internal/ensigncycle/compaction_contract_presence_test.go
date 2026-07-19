@@ -1,24 +1,32 @@
-// ABOUTME: Contract-presence guard binding the AC-1/AC-2 offline oracles to the shipped
-// ABOUTME: shared-core rule, so the acceptance gate fails if the compaction rule is deleted.
+// ABOUTME: AC-1 contract-SHAPE presence check — asserts first-officer-shared-core.md ships the
+// ABOUTME: "## Compaction continuity" rule with both clauses, host-neutral. Makes NO runtime-behavior claim.
 package ensigncycle
 
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
 
-// TestCompactionContinuityRuleShipped is a contract-presence regression guard, NOT
-// behavioral proof of the value ACs. The AC-1 timing oracle and the AC-2 reload oracle
-// (compaction_timing_test.go, compaction_reload_test.go) run over hand-authored fixtures,
-// so on their own they stay green even if the "## Compaction continuity" rule were
-// removed from first-officer-shared-core.md. This guard closes that gap by asserting the
-// shipped rule and its load-bearing clauses are present: deleting the rule turns the
-// offline acceptance gate RED. It proves the rule SHIPS with the requirements the oracles
-// encode; it does NOT prove the FO obeys the rule at runtime — that behavioral linkage is
-// an unenforced judgment-rule property observable only in a live FO run, outside this gate.
-func TestCompactionContinuityRuleShipped(t *testing.T) {
+// TestCompactionContinuityRuleShippedInContractShape is a CONTRACT-SHAPE check for AC-1,
+// and only that. It reads the shipped first-officer-shared-core.md and asserts the
+// "## Compaction continuity" rule is present with both required clauses — a before-compaction
+// durable-boundary suggest, and an after-compaction reread-and-reconcile that names the three
+// reread targets — and that the rule names no host (host-neutral).
+//
+// It asserts the CONTRACT SHAPE only. It makes NO runtime-behavior claim: it does not assert
+// the FO produces exactly one suggestion, nor that the next workflow effect occurs only after
+// the reads. The linkage from this prose to a live FO is an unenforced judgment-rule property
+// (the design ships two judgment rules, no controller); its proof is the out-of-scope live
+// compaction scenario, not this test. This is a contract-shape check for a contract-shape AC —
+// not a prose guard dressed as behavioral proof.
+//
+// The shared-core byte ratchet is enforced by the existing internal/contractlint startup_collapse
+// (TestStartupRecipeCollapsedAndLeaner, ceiling preChangeSharedCoreBytes), which AC-1 names as the
+// byte-ceiling ratchet; it is not re-implemented here.
+func TestCompactionContinuityRuleShippedInContractShape(t *testing.T) {
 	root := postCompactRepoRoot(t)
 	path := filepath.Join(root, "skills", "first-officer", "references", "first-officer-shared-core.md")
 	body, err := os.ReadFile(path)
@@ -28,34 +36,48 @@ func TestCompactionContinuityRuleShipped(t *testing.T) {
 
 	section := extractMarkdownSection(string(body), "## Compaction continuity")
 	if section == "" {
-		t.Fatalf("shared-core is missing the '## Compaction continuity' rule — the AC-1/AC-2 oracles would be false-green without it")
+		t.Fatalf("shared-core is missing the '## Compaction continuity' rule")
 	}
 
-	// Load-bearing clauses the AC-1 (before-compaction timing) and AC-2 (after-compaction
-	// reload) oracles depend on. Each is a requirement the oracle encodes; if the shipped
-	// rule drops it, the corresponding oracle no longer reflects the contract.
+	// Both required clauses ship, keyed on their load-bearing phrases. This asserts the
+	// rule SHIPS with these clauses (contract shape); it is NOT a claim the FO obeys them.
 	clauses := []struct {
-		ac, phrase string
+		clause, phrase string
 	}{
-		{"AC-1", "durable, recoverable boundary"},     // safe-to-compact timing condition
-		{"AC-1", "safe time to compact"},              // the non-blocking suggestion itself
-		{"AC-2", "reread the authoritative contract"}, // reload trigger
-		{"AC-2", "first-officer-shared-core.md"},      // one of the three reread targets
-		{"AC-2", "active host runtime adapter"},       // the host-adapter reread target
-		{"AC-2", "«post-compact-notice»"},             // the per-host delivery binding link
-		{"AC-2", "never authoritative"},               // the compacted summary is not the contract
+		{"before-compaction durable-boundary suggest", "**Before compaction:**"},
+		{"before-compaction durable-boundary suggest", "durable, recoverable boundary"},
+		{"before-compaction durable-boundary suggest", "safe time to compact"},
+		{"after-compaction reread-and-reconcile", "**After compaction**"},
+		{"after-compaction reread-and-reconcile", "reread the authoritative contract"},
+		{"after-compaction reread target", "SKILL.md"},
+		{"after-compaction reread target", "first-officer-shared-core.md"},
+		{"after-compaction reread target", "active host runtime adapter"},
+		{"after-compaction reconcile-before-effect", "before the next workflow effect"},
+		{"compacted summary is not the contract", "never authoritative"},
+		{"per-host delivery binding link", "«post-compact-notice»"},
 	}
 	for _, c := range clauses {
 		if !strings.Contains(section, c.phrase) {
-			t.Errorf("%s: the '## Compaction continuity' rule is missing load-bearing clause %q; the offline oracle would no longer bind to the shipped contract", c.ac, c.phrase)
+			t.Errorf("the '## Compaction continuity' rule is missing the %s clause phrase %q", c.clause, c.phrase)
 		}
 	}
+
+	// Host-neutral: the rule names no host inside its own text (0 host-specific terms).
+	// Host-specific delivery lives in the fo-dispatch-core «post-compact-notice» binding,
+	// not in this rule.
+	if m := hostNameRe.FindString(section); m != "" {
+		t.Errorf("the '## Compaction continuity' rule names host %q — the rule must be host-neutral", m)
+	}
 }
+
+// hostNameRe matches a host NAME as a whole word. Naming a host inside the host-neutral
+// compaction-continuity rule would couple the rule to a host mechanism.
+var hostNameRe = regexp.MustCompile(`\b(Codex|Claude|Pi)\b`)
 
 // extractMarkdownSection returns the body of the section whose heading begins with
 // heading, up to the next same-or-higher-level heading, or "" if absent. It bounds the
 // clause checks to the rule's own span so a phrase elsewhere in the file cannot satisfy
-// the guard.
+// the check.
 func extractMarkdownSection(doc, heading string) string {
 	lines := strings.Split(doc, "\n")
 	start := -1
