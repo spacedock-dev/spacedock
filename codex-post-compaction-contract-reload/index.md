@@ -10,7 +10,7 @@ worktree: .worktrees/spacedock-ensign-codex-post-compaction-contract-reload
 issue:
 id: c60nzb396vgf0f8a9v0sggwm
 milestone: 0.26.0
-mod-block:
+mod-block: merge:pr-merge
 gates:
     version: 1
     current:
