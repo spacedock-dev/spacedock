@@ -39,6 +39,8 @@ This is not a work breakdown: the ensign already reads the body, commits before 
 
 Advancing a completed worker. The gate-presentation spine (checklist review, AC cross-check, "not a stopping point", gated-stage decisions) is in the boot-resident core's `## Completion and Gates`; the reuse machinery it defers to lives here. A completed worker is reusable only when still addressable through a live runtime handle AND all reuse conditions below pass. Otherwise dispatch fresh.
 
+**Freshness invariant.** A fresh dispatch creates a new worker handle with no inherited parent turns. Runtime adapters enforce that boundary with the host's spawn mechanism. This invariant does not change stage selection: a reusable worker may still advance through `«addressable-worker»` when every reuse condition passes and the next stage does not declare `fresh: true`.
+
 **Reuse conditions** (all must hold — if any fails, dispatch fresh):
 0. `«context-budget»()` — if it reports the worker over budget, or the probe is unavailable, dispatch fresh (fail-safe — never silent-reuse on an absent reading). When `«context-budget»` is ABSENT on the host, this condition is satisfied.
 1. `«addressable-worker»` is PRESENT on the host and exposes a live, reusable handle to the completed worker (its reuse-advance handle), addressed via the `«worker-identity»` schema's worker address. When `«addressable-worker»` is ABSENT, this condition fails and the FO dispatches fresh.

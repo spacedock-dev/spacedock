@@ -16,21 +16,17 @@ type CodexMultiAgentV2Identity struct {
 }
 
 type CodexMultiAgentV2Spawn struct {
-	TaskName  string
-	Message   string
-	ForkTurns string
-	Identity  CodexMultiAgentV2Identity
+	TaskName string
+	Message  string
+	Identity CodexMultiAgentV2Identity
 }
 
 func (s CodexMultiAgentV2Spawn) ToolArgs() map[string]string {
-	args := map[string]string{
-		"task_name": s.TaskName,
-		"message":   s.Message,
+	return map[string]string{
+		"task_name":  s.TaskName,
+		"message":    s.Message,
+		"fork_turns": "none",
 	}
-	if s.ForkTurns != "" {
-		args["fork_turns"] = s.ForkTurns
-	}
-	return args
 }
 
 func CodexMultiAgentV2SpawnInput(raw []byte) (CodexMultiAgentV2Spawn, error) {
