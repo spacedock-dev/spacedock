@@ -17,7 +17,7 @@ import (
 // shipped rule and its load-bearing clauses are present: deleting the rule turns the
 // offline acceptance gate RED. It proves the rule SHIPS with the requirements the oracles
 // encode; it does NOT prove the FO obeys the rule at runtime — that behavioral linkage is
-// the opt-in live path (test plan item 4), outside this offline gate.
+// an unenforced judgment-rule property observable only in a live FO run, outside this gate.
 func TestCompactionContinuityRuleShipped(t *testing.T) {
 	root := postCompactRepoRoot(t)
 	path := filepath.Join(root, "skills", "first-officer", "references", "first-officer-shared-core.md")

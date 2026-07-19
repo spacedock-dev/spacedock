@@ -103,7 +103,8 @@ func newCompactionRepo(t *testing.T) string {
 // hand-authored captain message, the oracle counts exactly one non-blocking suggestion
 // and accepts its timing. The captain message is a fixture, not an FO run — this proves
 // the oracle's mechanics, not that the shipped FO emits the suggestion. That behavioral
-// linkage is the opt-in live path (test plan item 4), outside the offline gate.
+// linkage is a judgment-rule property (the design ships two judgment rules, no
+// controller) observable only in a live FO run; no committed test asserts it.
 func TestCompactionTimingOracleAcceptsDurableBoundary(t *testing.T) {
 	repo := newCompactionRepo(t)
 	boundary := compactionBoundary{workItems: []boundaryWorkItem{
@@ -124,7 +125,8 @@ func TestCompactionTimingOracleAcceptsDurableBoundary(t *testing.T) {
 // unsafe case: with an unconsumed worker completion awaiting reconciliation and a
 // hand-authored message carrying zero suggestions, the oracle accepts. Like its durable
 // sibling this characterizes the oracle over a fixture message; it is not a shipped-FO
-// run and does not prove the FO stays silent — that is the opt-in live path.
+// run and does not prove the FO stays silent — that is an unenforced judgment-rule
+// property observable only in a live FO run.
 func TestCompactionTimingOracleAcceptsSilentUnsafeBoundary(t *testing.T) {
 	repo := newCompactionRepo(t)
 	boundary := compactionBoundary{

@@ -134,7 +134,8 @@ func goodReloadReplay() string {
 // authoritative reads, a fresh status, roster reconcile, and a Stage Report OID check,
 // all before the first mutation) the oracle accepts. The stream is a fixture, not an FO
 // run — this proves the oracle's ordering mechanics, not that the shipped FO produces
-// such a stream. That behavioral linkage is the opt-in live path (test plan item 4).
+// such a stream. That behavioral linkage is an unenforced judgment-rule property
+// observable only in a live FO run; no committed test asserts it.
 func TestReloadOracleAcceptsCompliantReplay(t *testing.T) {
 	if err := assertReloadBeforeEffect(goodReloadReplay()); err != nil {
 		t.Fatalf("compliant post-compaction reload replay must pass the oracle: %v", err)
