@@ -12,7 +12,7 @@ issue:
 milestone: 0.26.0
 group: binary-ux
 mod-block:
-pr: "#526"
+pr: pr-merge:526
 ---
 
 Make `spacedock dispatch build --help` describe every supported input form, its
