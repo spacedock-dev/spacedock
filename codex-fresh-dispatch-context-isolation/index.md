@@ -10,6 +10,7 @@ score: "0.92"
 worktree: .worktrees/spacedock-ensign-codex-fresh-dispatch-context-isolation
 issue:
 sprint:
+mod-block: merge:pr-merge
 ---
 
 ## Problem
