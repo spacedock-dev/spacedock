@@ -219,12 +219,54 @@ func TestCodexPostCompactHookFiresFromUnrelatedCwdViaPluginRoot(t *testing.T) {
 	}
 }
 
-// TestCodexPostCompactHookHarmlessAbsenceMatrix is AC-4: across the present-ok,
-// absent, disabled, and failing states the binding creates no Spacedock state file,
-// spawns no background process, and mutates no workflow. Offline, the provable
-// invariant is that the shipped hook is a stdout-only script that invokes no
-// spacedock binary and writes nothing, so every degraded state is inert.
-func TestCodexPostCompactHookHarmlessAbsenceMatrix(t *testing.T) {
+// assertShippedHookIsStdoutOnlyHeredoc is AC-4's strict source allowlist: the only
+// executable construct permitted in the shipped hook is a single `cat <<'DELIM'`
+// heredoc that writes to stdout; every other line must be the shebang, a comment, or
+// blank. This is an allowlist, not a denylist of a few mutation verbs — a redirection
+// (>, >>), a pipe, a background launch (&), or any command other than the stdout
+// heredoc (touch/mkdir/tee/git/…) fails it, so a write through any filesystem root or a
+// leaked background process cannot hide behind an unlisted verb.
+func assertShippedHookIsStdoutOnlyHeredoc(t *testing.T, script string) {
+	t.Helper()
+	heredocOpen := regexp.MustCompile(`^cat <<'([A-Za-z_][A-Za-z0-9_]*)'$`)
+	lines := strings.Split(script, "\n")
+	sawEmitter := false
+	for i := 0; i < len(lines); i++ {
+		trimmed := strings.TrimSpace(strings.TrimRight(lines[i], "\r"))
+		switch {
+		case trimmed == "" || strings.HasPrefix(trimmed, "#"):
+			// blank line, shebang, or comment
+		case heredocOpen.MatchString(trimmed):
+			if sawEmitter {
+				t.Fatalf("shipped hook has more than one command; only a single stdout-only cat heredoc is allowed")
+			}
+			sawEmitter = true
+			delim := heredocOpen.FindStringSubmatch(trimmed)[1]
+			// The heredoc body is emitted data, not code; skip to its terminator.
+			for i++; i < len(lines); i++ {
+				if strings.TrimRight(lines[i], "\r") == delim {
+					break
+				}
+			}
+		default:
+			t.Fatalf("shipped hook contains a non-allowlisted line %q — a post-compact notice must be a stdout-only cat heredoc (no other command, no redirection, no pipe, no background launch)", trimmed)
+		}
+	}
+	if !sawEmitter {
+		t.Fatalf("shipped hook has no stdout-only cat heredoc emitter")
+	}
+}
+
+// TestCodexPostCompactHookScriptIsInert is AC-4 (offline scope): the shipped Codex
+// PostCompact hook script is a stdout-only notice that writes nothing. It proves ONLY
+// the shipped script's inertness — NOT host-level failure-open (that compaction
+// continues, the next captain turn proceeds, or that Codex does not abort after a
+// failing hook); that host-runtime behavior is the out-of-scope live followup. The
+// proof has two halves: a strict source allowlist (stdout-only cat heredoc, which also
+// forecloses a background launch) and a behavioral run with every reachable filesystem
+// root — cwd, HOME, CODEX_HOME, ${PLUGIN_ROOT}, TMPDIR — pointed at a fresh empty dir,
+// asserting each stays empty and stdout is exactly the one systemMessage.
+func TestCodexPostCompactHookScriptIsInert(t *testing.T) {
 	root, group := loadShippedPostCompactHook(t)
 	command := resolveHookCommand(t, root, group.Hooks[0].Command)
 
@@ -232,46 +274,49 @@ func TestCodexPostCompactHookHarmlessAbsenceMatrix(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read shipped hook script: %v", err)
 	}
-	script := string(scriptBytes)
-	// The hook must not reach for the workflow: no mutation command and no file
-	// redirection. A captain-facing UI cue only. ("spacedock:first-officer" appears
-	// in the reminder text, so the ban is on mutation verbs, not the bare word.)
-	for _, banned := range []string{"status --set", "state commit", "dispatch build", "spawn_agent", ">"} {
-		if strings.Contains(script, banned) {
-			t.Errorf("shipped hook script contains %q — a post-compact notice must not touch workflow state or write files", banned)
-		}
+	assertShippedHookIsStdoutOnlyHeredoc(t, string(scriptBytes))
+
+	// Isolate every filesystem root the hook could reach to a fresh empty temp dir,
+	// including ${PLUGIN_ROOT} (a decoy: the real script runs by absolute path, so a
+	// write to $PLUGIN_ROOT/… would land in the empty dir and be caught). The prior
+	// test inspected only HOME/cwd; here a write through any root is observable.
+	roots := map[string]string{
+		"cwd":         t.TempDir(),
+		"HOME":        t.TempDir(),
+		"CODEX_HOME":  t.TempDir(),
+		"PLUGIN_ROOT": t.TempDir(),
+		"TMPDIR":      t.TempDir(),
+	}
+	cmd := exec.Command(command)
+	cmd.Dir = roots["cwd"]
+	cmd.Env = append(os.Environ(),
+		"HOME="+roots["HOME"],
+		"CODEX_HOME="+roots["CODEX_HOME"],
+		"PLUGIN_ROOT="+roots["PLUGIN_ROOT"],
+		"TMPDIR="+roots["TMPDIR"],
+	)
+	cmd.Stdin = strings.NewReader(`{"hook_event_name":"PostCompact","trigger":"auto"}`)
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("shipped hook exited non-zero in isolation: %v", err)
 	}
 
-	cases := []struct {
-		name    string
-		handler []string // argv run in place of the hook; nil means "absent/disabled — nothing runs"
-	}{
-		{name: "present-ok", handler: []string{command}},
-		{name: "absent", handler: nil},
-		{name: "disabled", handler: nil},
-		{name: "failing", handler: []string{"sh", "-c", "exit 3"}},
+	var decoded map[string]json.RawMessage
+	if err := json.Unmarshal(out, &decoded); err != nil {
+		t.Fatalf("hook stdout is not the single systemMessage JSON: %v\nstdout: %q", err, out)
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			home := t.TempDir()
-			work := t.TempDir()
-			if tc.handler != nil {
-				cmd := exec.Command(tc.handler[0], tc.handler[1:]...)
-				cmd.Dir = work
-				cmd.Env = append(os.Environ(), "HOME="+home, "CODEX_HOME="+home)
-				cmd.Stdin = strings.NewReader(`{"hook_event_name":"PostCompact","trigger":"auto"}`)
-				_ = cmd.Run() // a nonzero exit (failing) must still be harmless — do not fail the test on it
-			}
-			for label, dir := range map[string]string{"HOME": home, "cwd": work} {
-				entries, err := os.ReadDir(dir)
-				if err != nil {
-					t.Fatalf("read %s: %v", label, err)
-				}
-				if len(entries) != 0 {
-					t.Errorf("%s: the %s hook state left %d entr(ies) in %s — the binding must create no state file or process", tc.name, label, len(entries), label)
-				}
-			}
-		})
+	if _, ok := decoded["systemMessage"]; !ok || len(decoded) != 1 {
+		t.Fatalf("hook stdout must be exactly one systemMessage key, got %v", decoded)
+	}
+
+	for label, dir := range roots {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			t.Fatalf("read %s root: %v", label, err)
+		}
+		if len(entries) != 0 {
+			t.Errorf("%s root is not empty after the hook ran (%d entr(ies)) — the shipped hook must write nothing", label, len(entries))
+		}
 	}
 }
 
