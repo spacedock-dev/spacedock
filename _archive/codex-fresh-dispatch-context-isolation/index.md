@@ -1,17 +1,18 @@
 ---
 id: rt8eywbyf3d7nyc9bsmrymnq
 title: Codex fresh dispatch must isolate parent turns
-status: validation
+status: done
 source: "/tmp/spacedock-codex-fresh-dispatch-incident.md; captain-requested legitimacy check and filing, 2026-07-19"
 started: 2026-07-19T09:05:43Z
-completed:
-verdict:
+completed: 2026-07-19T14:31:10Z
+verdict: passed
 score: "0.92"
 worktree: .worktrees/spacedock-ensign-codex-fresh-dispatch-context-isolation
 issue:
 sprint:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:532
+archived: 2026-07-19T14:31:10Z
 ---
 
 ## Problem
