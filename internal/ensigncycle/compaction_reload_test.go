@@ -1,5 +1,5 @@
-// ABOUTME: Offline fixture for Rule 2 (post-compaction reload) — a split-root replay
-// ABOUTME: oracle asserting the authoritative reads precede the first workflow effect.
+// ABOUTME: Offline acceptance-oracle fixture for Rule 2 (post-compaction reload) — a split-root
+// ABOUTME: replay oracle asserting authoritative reads precede the first effect; proves the oracle bites, not FO behavior.
 package ensigncycle
 
 import (
@@ -129,9 +129,15 @@ func goodReloadReplay() string {
 	})
 }
 
-func TestReloadBeforeEffectGoodReplayPasses(t *testing.T) {
+// TestReloadOracleAcceptsCompliantReplay characterizes the AC-2 acceptance ORACLE, not
+// shipped-FO behavior: over a hand-authored compliant tool-call stream (the three
+// authoritative reads, a fresh status, roster reconcile, and a Stage Report OID check,
+// all before the first mutation) the oracle accepts. The stream is a fixture, not an FO
+// run — this proves the oracle's ordering mechanics, not that the shipped FO produces
+// such a stream. That behavioral linkage is the opt-in live path (test plan item 4).
+func TestReloadOracleAcceptsCompliantReplay(t *testing.T) {
 	if err := assertReloadBeforeEffect(goodReloadReplay()); err != nil {
-		t.Fatalf("compliant post-compaction reload replay must pass: %v", err)
+		t.Fatalf("compliant post-compaction reload replay must pass the oracle: %v", err)
 	}
 }
 

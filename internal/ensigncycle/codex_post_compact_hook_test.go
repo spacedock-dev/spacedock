@@ -89,6 +89,31 @@ func loadShippedPostCompactHook(t *testing.T) (root string, group codexHookGroup
 	return root, groups[0]
 }
 
+// pluginRootToken is the plugin-root variable Codex substitutes into a hook command
+// string before it exec's the command (there is no shell). Verified against a live
+// Codex 0.144.x CLI (artifacts/codex-0.144.4-plugin-hooks-spike.md): the brace form
+// ${PLUGIN_ROOT} is replaced with the materialized plugin directory, so a bundled
+// script referenced as ${PLUGIN_ROOT}/hooks/x.sh resolves to an absolute path
+// independent of the session cwd. The bare relative form ./hooks/x.sh is NOT
+// plugin-root-relative: Codex resolves it against the session cwd (the operator's
+// project), so it fails whenever the FO runs in any repo other than the plugin's own.
+const pluginRootToken = "${PLUGIN_ROOT}"
+
+// resolveHookCommand mirrors Codex's command resolution: the shipped command MUST be
+// plugin-root-absolute via ${PLUGIN_ROOT}; the token is then substituted with the real
+// plugin root. It FAILS on a cwd-relative command — the exact defect where the notice
+// would not fire from any session cwd other than the plugin repo. Because it substitutes
+// ${PLUGIN_ROOT} rather than joining a bare relative path onto the plugin root, a
+// cwd-relative command can no longer masquerade as resolvable in the offline gate.
+func resolveHookCommand(t *testing.T, root, command string) string {
+	t.Helper()
+	if !strings.HasPrefix(command, pluginRootToken+"/") {
+		t.Fatalf("hook command %q must be plugin-root-absolute (%s/...); a cwd-relative command resolves against the session cwd, not the plugin root, so the notice would not fire whenever the FO operates outside the plugin repo", command, pluginRootToken)
+	}
+	rel := strings.TrimPrefix(command, pluginRootToken+"/")
+	return filepath.Join(root, filepath.FromSlash(rel))
+}
+
 // TestCodexPostCompactHookMatchesManualAndAuto proves AC-3's configuration half:
 // the shipped PostCompact matcher fires for both compaction sources.
 func TestCodexPostCompactHookMatchesManualAndAuto(t *testing.T) {
@@ -113,7 +138,7 @@ func TestCodexPostCompactHookMatchesManualAndAuto(t *testing.T) {
 func TestCodexPostCompactHookEmitsOneSystemMessagePerEvent(t *testing.T) {
 	root, group := loadShippedPostCompactHook(t)
 
-	command := filepath.Join(root, filepath.FromSlash(strings.TrimPrefix(group.Hooks[0].Command, "./")))
+	command := resolveHookCommand(t, root, group.Hooks[0].Command)
 	info, err := os.Stat(command)
 	if err != nil {
 		t.Fatalf("shipped hook command %q not found: %v", command, err)
@@ -125,7 +150,7 @@ func TestCodexPostCompactHookEmitsOneSystemMessagePerEvent(t *testing.T) {
 	var firstMessage string
 	for i, source := range []string{"manual", "auto"} {
 		payload := `{"hook_event_name":"PostCompact","trigger":"` + source + `"}`
-		out := runShippedHook(t, command, payload)
+		out := runShippedHook(t, root, command, payload)
 
 		var decoded map[string]json.RawMessage
 		if err := json.Unmarshal([]byte(out), &decoded); err != nil {
@@ -151,6 +176,49 @@ func TestCodexPostCompactHookEmitsOneSystemMessagePerEvent(t *testing.T) {
 	}
 }
 
+// TestCodexPostCompactHookFiresFromUnrelatedCwdViaPluginRoot is the M1 regression: the
+// shipped command must be plugin-root-absolute so it fires from ANY session cwd. It
+// proves the defect concretely — the cwd-relative form (./hooks/<script>) does not
+// resolve from an unrelated project directory, while the ${PLUGIN_ROOT}-resolved
+// absolute form emits the systemMessage there.
+func TestCodexPostCompactHookFiresFromUnrelatedCwdViaPluginRoot(t *testing.T) {
+	root, group := loadShippedPostCompactHook(t)
+
+	if !strings.HasPrefix(group.Hooks[0].Command, pluginRootToken+"/") {
+		t.Fatalf("shipped hook command %q must begin with %s/ so Codex resolves it to the plugin root, not the session cwd", group.Hooks[0].Command, pluginRootToken)
+	}
+
+	absolute := resolveHookCommand(t, root, group.Hooks[0].Command)
+	unrelated := t.TempDir() // a project dir that is NOT the plugin repo and has no ./hooks/
+	payload := `{"hook_event_name":"PostCompact","trigger":"manual"}`
+
+	// Negative: the cwd-relative form Codex would exec from the session cwd cannot find
+	// the script from an unrelated cwd — the exact failure the plugin-root form avoids.
+	relative := "./hooks/" + filepath.Base(absolute)
+	relCmd := exec.Command(relative)
+	relCmd.Dir = unrelated
+	relCmd.Stdin = strings.NewReader(payload)
+	if _, err := relCmd.Output(); err == nil {
+		t.Fatalf("cwd-relative command %q unexpectedly resolved from an unrelated cwd; the plugin-root form would be untested", relative)
+	}
+
+	// Positive: the plugin-root-absolute command fires from the same unrelated cwd.
+	out := runShippedHook(t, root, absolute, payload)
+	var decoded map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(out), &decoded); err != nil {
+		t.Fatalf("hook stdout is not valid JSON from an unrelated cwd: %v\nstdout: %q", err, out)
+	}
+	var message string
+	if err := json.Unmarshal(decoded["systemMessage"], &message); err != nil {
+		t.Fatalf("hook output from an unrelated cwd has no string systemMessage: %v", err)
+	}
+	for _, phrase := range requiredNoticePhrases {
+		if !strings.Contains(message, phrase) {
+			t.Errorf("systemMessage from an unrelated cwd is missing required phrase %q\nmessage: %q", phrase, message)
+		}
+	}
+}
+
 // TestCodexPostCompactHookHarmlessAbsenceMatrix is AC-4: across the present-ok,
 // absent, disabled, and failing states the binding creates no Spacedock state file,
 // spawns no background process, and mutates no workflow. Offline, the provable
@@ -158,7 +226,7 @@ func TestCodexPostCompactHookEmitsOneSystemMessagePerEvent(t *testing.T) {
 // spacedock binary and writes nothing, so every degraded state is inert.
 func TestCodexPostCompactHookHarmlessAbsenceMatrix(t *testing.T) {
 	root, group := loadShippedPostCompactHook(t)
-	command := filepath.Join(root, filepath.FromSlash(strings.TrimPrefix(group.Hooks[0].Command, "./")))
+	command := resolveHookCommand(t, root, group.Hooks[0].Command)
 
 	scriptBytes, err := os.ReadFile(command)
 	if err != nil {
@@ -207,13 +275,17 @@ func TestCodexPostCompactHookHarmlessAbsenceMatrix(t *testing.T) {
 	}
 }
 
-// runShippedHook runs the hook command in an isolated temp dir and returns its
-// stdout, asserting a zero exit and that it created nothing on disk.
-func runShippedHook(t *testing.T, command, stdinPayload string) string {
+// runShippedHook runs the resolved hook command from an UNRELATED project directory
+// (a fresh temp dir that is not the plugin repo and has no local ./hooks/), with
+// PLUGIN_ROOT set as Codex sets it, and returns its stdout — asserting a zero exit and
+// that it created nothing on disk. Running from an unrelated cwd is what exposes the
+// cwd-relative resolution defect: only a plugin-root-absolute command fires here.
+func runShippedHook(t *testing.T, root, command, stdinPayload string) string {
 	t.Helper()
 	work := t.TempDir()
 	cmd := exec.Command(command)
 	cmd.Dir = work
+	cmd.Env = append(os.Environ(), "PLUGIN_ROOT="+root)
 	cmd.Stdin = strings.NewReader(stdinPayload)
 	out, err := cmd.Output()
 	if err != nil {

@@ -1,5 +1,5 @@
-// ABOUTME: Offline fixture for Rule 1 (safe-to-compact timing) — pairs a durable and
-// ABOUTME: an unrecoverable boundary with real commit OIDs and proves the suggestion timing.
+// ABOUTME: Offline acceptance-oracle fixture for Rule 1 (safe-to-compact timing) — pairs
+// ABOUTME: durable/unrecoverable boundaries with real commit OIDs; proves the oracle bites, not FO behavior.
 package ensigncycle
 
 import (
@@ -97,10 +97,14 @@ func newCompactionRepo(t *testing.T) string {
 	return repo
 }
 
-// TestCompactionSafeBoundarySuggestsOnce is AC-1's durable case: both FO-owned changes
-// are committed (real OIDs), nothing awaits reconciliation, and the FO emits exactly
-// one non-blocking safe-to-compact suggestion.
-func TestCompactionSafeBoundarySuggestsOnce(t *testing.T) {
+// TestCompactionTimingOracleAcceptsDurableBoundary characterizes the AC-1 acceptance
+// ORACLE, not shipped-FO behavior: given a durable boundary (both FO-owned changes
+// committed with real OIDs, nothing awaiting reconciliation) and a compliant
+// hand-authored captain message, the oracle counts exactly one non-blocking suggestion
+// and accepts its timing. The captain message is a fixture, not an FO run — this proves
+// the oracle's mechanics, not that the shipped FO emits the suggestion. That behavioral
+// linkage is the opt-in live path (test plan item 4), outside the offline gate.
+func TestCompactionTimingOracleAcceptsDurableBoundary(t *testing.T) {
 	repo := newCompactionRepo(t)
 	boundary := compactionBoundary{workItems: []boundaryWorkItem{
 		commitWorkItem(t, repo, "entity.md", "status: implementation\n"),
@@ -116,9 +120,12 @@ func TestCompactionSafeBoundarySuggestsOnce(t *testing.T) {
 	}
 }
 
-// TestCompactionUnsafeBoundaryStaysSilent is AC-1's unsafe case: an unconsumed worker
-// completion awaits reconciliation, so the FO emits zero suggestions.
-func TestCompactionUnsafeBoundaryStaysSilent(t *testing.T) {
+// TestCompactionTimingOracleAcceptsSilentUnsafeBoundary is the AC-1 oracle's paired
+// unsafe case: with an unconsumed worker completion awaiting reconciliation and a
+// hand-authored message carrying zero suggestions, the oracle accepts. Like its durable
+// sibling this characterizes the oracle over a fixture message; it is not a shipped-FO
+// run and does not prove the FO stays silent — that is the opt-in live path.
+func TestCompactionTimingOracleAcceptsSilentUnsafeBoundary(t *testing.T) {
 	repo := newCompactionRepo(t)
 	boundary := compactionBoundary{
 		workItems:             []boundaryWorkItem{commitWorkItem(t, repo, "entity.md", "status: implementation\n")},

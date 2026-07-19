@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./hooks/codex_post_compact_notice.sh"
+            "command": "${PLUGIN_ROOT}/hooks/codex_post_compact_notice.sh"
           }
         ]
       }
