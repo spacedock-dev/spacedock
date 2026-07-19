@@ -311,3 +311,16 @@ Direction (a) HELP-ONLY, as ideated: rewrote only `printBuildUsage` so `dispatch
 ### Summary
 
 VERDICT: PASSED. Independently reviewed commit 6b4d0156 against AC-1/AC-2/AC-3. All three ACs have valid, reproduced evidence. AC-3 is genuinely load-bearing: I broke a rendered example and confirmed the help-example test fails with exit 2 and the exact trio-required error, then restored. Direction-(a) integrity holds — only `printBuildUsage` changed; the four parser/input-mode functions are byte-unchanged, no third request form, no envelope redesign. gofmt/vet clean; dispatch tests + `-race` green; `go test ./...` green except the declared pre-existing environmental `internal/cli` Codex-host config-read failure (denied read of `~/.codex/config.toml`, touches no dispatch code). No material findings; no deferred risks.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: REVERT the brittle help-OUTPUT grep in internal/dispatch/help_test.go — TestDispatchBuildHelpBeforeRequiredFlags no longer asserts the nine request-flag strings, the exact rule-fragment wording, or the two example command lines; restored to its origin/main routing-guard form. `git diff origin/main -- internal/dispatch/help_test.go` is empty.
+  Commit ca15d6dd (1 file, 18 deletions), done via `git checkout origin/main -- internal/dispatch/help_test.go` for an exact match. The test again asserts only help renders (exit 0, empty stderr, `Usage:` + stdin-JSON field names) and does NOT print `requires --workflow-dir`.
+- DONE: Keep AC-2 (TestDispatchBuildAdvanceInputMode) and AC-3 (TestDispatchBuildHelpExamplesParse) intact in build_input_mode_test.go; do NOT add any replacement help-content grep.
+  build_input_mode_test.go untouched (both funcs present at lines 71 and 132); dispatch.go printBuildUsage rewrite untouched. Branch diff vs origin/main is now only dispatch.go (+53/-9) and build_input_mode_test.go (+223); help_test.go dropped out. No prose guard added.
+- DONE: Verify + ship — gofmt/vet clean; dispatch tests + -race green; committed on spacedock-ensign/dispatch-build-help-input-mode-drift and pushed (updates PR #526).
+  `gofmt -l internal/dispatch/` empty; `go vet ./internal/dispatch/` clean; `go test -count=1 ./internal/dispatch/` and `go test -race -count=1 ./internal/dispatch/` both green. Pushed 6b4d0156..ca15d6dd.
+
+### Summary
+
+Targeted revert per the 2026-07-19 captain objection: removed the prose-grep block that TestDispatchBuildHelpBeforeRequiredFlags added over `dispatch build --help` output (nine flag names, three rule fragments, two verbatim example command lines). That grep tested wording not behavior, was redundant with AC-3 which already executes those exact examples against the real parser, and contradicted AC-1's own "not by grepping source prose" clause. Restored the test to its origin/main routing-guard form (empty diff vs origin/main). The printBuildUsage help text and the AC-2/AC-3 behavioral tests are unchanged; no replacement help-content grep was added.
