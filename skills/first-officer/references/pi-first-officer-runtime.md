@@ -12,7 +12,6 @@ This file defines how the shared first-officer core executes on Pi. The shared c
 - `«worker.shutdown»`: For `pi-subagents`, a completed child invocation needs no mailbox shutdown; mark the worker complete/closed in first-officer memory. For `pi-agent-teams`, map teardown to `member_shutdown` or `team_done` according to the active adapter lifecycle.
 - `«context-budget»`: ABSENT; its reuse condition is satisfied for Pi.
 - `«roster-reconcile»`: ABSENT; Pi relies on durable entity state and adapter-held worker identity, not a shared roster sweep.
-- `«post-compact-notice»`: ABSENT; no known Pi compaction-hook surface, so a manual captain cue triggers the shared-core reload rule.
 
 The build artifact carries the entity slug/name, entity path, workflow directory, target stage, stage definition fetch command, worktree path when applicable, completion checklist, and completion-signal wording. It must not be replaced by a locally composed assignment. The model stamped through `«worker-identity»` is a Pi-native value used by `«reuse.model-match»`.
 

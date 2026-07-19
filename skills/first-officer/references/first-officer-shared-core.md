@@ -163,8 +163,8 @@ Don't ask permission for a step the contract already allows (the reversible-work
 
 Two FO judgment rules, no controller; the compacted summary is never authoritative.
 
-- **Before compaction:** suggest it only at a durable, recoverable boundary — FO workflow/report changes committed, no received completion / gate / transition / archive / merge awaiting reconciliation, unresolved workers rediscoverable from the live roster. Else finish that first, then optionally: "state is durable at a clean boundary; now is a safe time to compact." Non-blocking, triggered by a captain cue or apparent pressure, never a token threshold.
-- **After compaction** (signalled by `«post-compact-notice»` where PRESENT, else a captain cue): before the next workflow effect, reread the authoritative contract — this `SKILL.md`, `first-officer-shared-core.md`, and the active host runtime adapter — then `«state.boot»()`, a fresh `status`, live-roster reconcile where available, and verify any newer committed `## Stage Report`.
+- **Before compaction:** context pressure — a host warning or the captain's cue — triggers seeking a durable boundary, not compacting in place: reach a recoverable point (state committed and pushed, no in-flight mutation, no open gate), then name it safe to compact. Pressure alone never compacts mid-flight; a durable boundary without pressure invites nothing. Dense boundaries keep harness auto-compaction survivable in long sessions.
+- **After compaction** (a harness compaction notice where present, else a captain cue): before the next workflow effect, reread the authoritative contract — this `SKILL.md`, `first-officer-shared-core.md`, and the active host runtime adapter — then `«state.boot»()`, a fresh `status`, live-roster reconcile where available, and verify any newer committed `## Stage Report`.
 
 ## Working Principles
 

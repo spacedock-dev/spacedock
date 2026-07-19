@@ -105,10 +105,6 @@ This is the Claude realization of `«context-budget»()` (also used by feedback 
 
 In bare mode, the feedback rejection flow is sequential: dispatch fix agent (wait for completion), then dispatch reviewer (wait for completion), then present at gate. With the background back-channel, the fix agent and reviewer can interact via messaging — keep the reviewer alive when entering the flow.
 
-## Claude binding: «post-compact-notice»()
-
-Model-context delivery via `SessionStart(compact)`, owned by task `cdbhzxc` — not designed here. Until it ships, a manual captain cue triggers the reload rule; failure-open.
-
 ## Claude binding: «roster-reconcile»()
 
 On Claude, invoke this binding before `«dispatch.next-action»()` and at the caller boundaries it names:

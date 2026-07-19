@@ -1,4 +1,4 @@
-// ABOUTME: Offline fixture for the Codex «post-compact-notice» binding — parses the
+// ABOUTME: Offline fixture for the Codex PostCompact reload-reminder hook — parses the
 // ABOUTME: shipped .codex-plugin hook config, drives manual|auto, and proves harmless absence.
 package ensigncycle
 

@@ -42,7 +42,7 @@ var (
 // runtimeBoundCapabilities are the capabilities whose per-host binding is delegated to the
 // runtime adapters' `## Runtime implementation` blocks via a kind-only `→ **runtime-binding**`
 // arrow in the core; they carry no per-host `→` coverage in fo-dispatch-core.md itself.
-var runtimeBoundCapabilities = []string{"worker.spawn", "worker.shutdown", "post-compact-notice"}
+var runtimeBoundCapabilities = []string{"worker.spawn", "worker.shutdown"}
 
 func isRuntimeBoundCapability(name string) bool {
 	for _, c := range runtimeBoundCapabilities {
