@@ -19,8 +19,8 @@ gates:
           sequence: 1
           state: open
           current-briefing:
-            id: briefing:docs-dev:3k:ideation:attempt-1:revision-6
-            digest: sha256:b37c1bedbd2c3d48e2f9be0dcbf8bb0ac2b0b11c89e1e81fa4b327c43f285928
+            id: briefing:docs-dev:3k:ideation:attempt-1:revision-7
+            digest: sha256:9b1106ac34f4dfa1221304f998beb4c34acb3878b2faf648289e95a48f8d50f2
             room-ref: "./review/ideation"
 ---
 
