@@ -287,3 +287,19 @@ Ideation closes the #414 gap with one invariant: every Codex spawn is isolated,
 and every deliberate continuation reuses a handle through `followup_task`. The
 plan ships the fix on `main` as v0.25.1, cherry-picks it onto `next`, republishes
 the edge plugin deliberately, and proves the patch-tag job leaves 0.26 untouched.
+
+## Stage Report: implementation
+
+- DONE: Every fresh Codex spawn emits exactly fork_turns="none", with unsafe helper input unable to change it; focused adapter tests include a mutation that would expose conditional omission.
+  Commit `2148c80c` removes `ForkTurns`; table tests prove absent, `"all"`, numeric, and future-override helper fields all yield the same exact three-argument map.
+- DONE: Live Codex evidence proves parent-canary absence on a fresh handle while deliberate followup_task reuse preserves the existing handle and context.
+  `implementation-live-evidence.md` records exit 0, literal `"fork_turns":"none"`, exact-canary absence, one child thread reused across two triggered turns, and SHA-256 evidence hashes.
+- DONE: The implementation is a self-contained patch suitable for main and clean cherry-pick to next, with release guards proving v0.25.1 cannot rewind the 0.26 prerelease line.
+  Rebased commit `2148c80c` changes five files; full and race suites pass, release guard tests pass, and the CLI decision for v0.25.1 versus 0.26.0-pre1 prints `skip`.
+
+### Summary
+
+Codex fresh dispatch now has one executable invariant: `ToolArgs` always emits
+`fork_turns: "none"`, and no mutable adapter field can override it. Minimal
+contract alignment keeps deliberate continuity on `followup_task`; the shipped
+patch contains no bespoke live harness.
