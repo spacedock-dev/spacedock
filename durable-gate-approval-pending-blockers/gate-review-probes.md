@@ -18,6 +18,32 @@ The person should not need to re-read the whole spec.
 A Probe may cause an author to improve the spec. Automatic incorporation is useful but
 optional. The product succeeds when it preserves and rechecks the resolved concern.
 
+## First-use journey
+
+The First Officer offers Subspace only when captain input would improve a design before
+the gate recommendation:
+
+> This design would benefit from your input before I can recommend it at the gate.
+> Normally I would relay your comments to the ensign. Would you like to try Subspace
+> so the ensign can show you the complete design, receive your annotations directly,
+> and revise it before I bring it back for approval? [Y/n]
+
+If the captain answers yes, the gate-attempt ensign probes for `subspace-tui` and the
+Subspace review skill. It offers the exact missing install/configuration command, then
+explains that this review does not advance the workflow or dispatch a worker. The
+ensign assembles the complete immutable Briefing and binds provider-owned Probe history
+as supporting `Reference` context. It launches that explicit package through the one
+ensign-facing command specified in `gate-resolution-frontmatter-contract.md`.
+
+The ensign, not the First Officer, receives annotations, revises the design, reruns the
+affected Probes, and durably captures the provider log and Resolution. The First
+Officer then validates and records the exact current-Briefing binding and brings the
+revised gate to the captain. If approved and eligible, the First Officer can apply it
+immediately through the existing workflow path.
+
+If the captain answers no, nothing changes: the First Officer presents the normal gate
+review, relays comments to the ensign, and returns with the revision.
+
 ## Before presentation: publication checks
 
 General project or team questions run before presentation. The publisher also searches

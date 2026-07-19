@@ -1,0 +1,86 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:3k:ideation:attempt-1:revision-6",
+  "question": "Does the simplified 3k design now define the minimum first-use journey, ownership boundary, durable schema, and Go helper seam needed for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-resolution-frontmatter-contract",
+      "uri": "../../../gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e33c452f40d2bab607f24f4bfc9b2d72c0fc925f14f0390bf049066e61256874"
+    },
+    {
+      "id": "artifact:gate-review-probes",
+      "uri": "../../../gate-review-probes.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c80f6d408f323fb11a358553dfa4d909ec5b0071dea44e04fdb18068f7275489"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design",
+          "to": "stage:backlog"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Park the decision",
+          "to": "tasking:park"
+        }
+      ]
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:first-use",
+      "text": "A captain who accepts the exact Subspace offer reaches the complete design through one ensign-facing command, returns annotations directly to that ensign, and sees the revised gate before any workflow state advances."
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:minimal-application",
+      "text": "The first gate application contains no dispatch identity or effect receipt; existing workflow transition and dispatch state remains authoritative for external effects."
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:ownership",
+      "text": "The gate-attempt ensign owns complete Briefing and Probe presentation plus durable provider Resolution capture; the First Officer owns binding validation, entity gate-state recording, and later application."
+    },
+    {
+      "type": "Reference",
+      "id": "reference:probe-records",
+      "label": "Provider-owned Probe and exact-Briefing ProbeResult history (supporting context, not an approved Artifact)",
+      "mediaType": "application/x-ndjson",
+      "rev": "sha256:83b65e4fcae5612992d0bdc74784de8cb355b313c88acfa06020487533be5468",
+      "uri": "../probes.jsonl"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:previous-briefing",
+      "label": "Predecessor before the cycle-1 captain annotations were folded",
+      "mediaType": "application/json",
+      "rev": "sha256:bde80ea783ae431da09e77cbdcbcca34a06c0b9b3f892db7f77efe38818b38fe",
+      "uri": "../briefing-5/briefing.json"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:cycle-1-feedback",
+      "label": "Task record containing the six captain annotations and observed presentation friction",
+      "mediaType": "text/markdown",
+      "rev": "git:8cf7ec99",
+      "uri": "../../../index.md"
+    }
+  ]
+}
