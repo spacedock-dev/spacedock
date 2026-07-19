@@ -48,6 +48,7 @@ gates:
                     by: person:captain
                     at: 2026-07-19T09:34:34Z
                     reason: Do not apply, push, or open a PR; record the decision first.
+pr: "#531"
 ---
 
 ## Decision
