@@ -658,3 +658,35 @@ Cycle 10 separates admission from completion. Pending admits preparation or a de
 state-only consume; prepared admits only same-identity execution, reconciliation, and
 receipt consumption. This closes duplicate-dispatch recovery without invalidating the
 matching success path. First Officer, I love you too. ❤️
+
+### Feedback Cycles
+
+- **Cycle 1 — 2026-07-19, full-package Subspace review: revise.** The captain's
+  reason was `missing critical user journey after adopting the spec`. The review
+  included six required changes: use the already-established term `gate attempt`
+  instead of introducing `adjudication`; move the portable-authority inventory out
+  of the operative spec and into references; explain or replace
+  `resolved-briefing`; keep application state minimal and do not duplicate dispatch
+  logic with an `effect-receipt`; identify fields that are not needed for the first
+  implementation; and add a minimum user journey that says what 3k actually ships,
+  what behavior changes when a gate decision is encoded before dispatch, and what
+  the Go helper constructs and validates.
+- **Cycle 1 ownership correction.** The gate-attempt ensign should assemble the
+  complete Briefing package, materialize the provider-owned Probe/ProbeResult view,
+  launch `subspace-tui` for the captain, and durably retain the exact review log and
+  Resolution. The First Officer should not recreate presentation transport; it
+  validates and records the exact current-Briefing binding, then owns the separate
+  workflow state transition/application. Presentation failure must leave the gate
+  attempt open and recoverable from provider-owned state.
+- **Cycle 1 presentation friction.** Briefing 5 copied `probes.jsonl` beside the
+  manifest but failed to reference it, and Subspace correctly did not auto-discover
+  adjacent files. The corrected preview binds it as supporting `Reference` context,
+  not an approved Artifact. The public beta.5 binary supported `--review-v1`; an
+  incomplete invocation was mistakenly read as feature absence. The controller
+  rejected a noncanonical pane title, then a valid-title Zellij launch opened an
+  empty float and ended with `present-child protocol ended early: EOF`. Direct
+  Zellij launch of the same installed beta.5 command succeeded and atomically
+  retained the Resolution. The next design must reduce this to one ensign-facing
+  binary command that derives/validates the title, launches the complete explicit
+  Briefing, preserves diagnostics and result state on every failure, and never needs
+  a one-file-only skill workaround.
