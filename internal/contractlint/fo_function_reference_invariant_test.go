@@ -12,12 +12,7 @@ import (
 	"testing"
 )
 
-// foFunctionReferenceBaselineBytes is the ceiling for the combined FO instruction surface
-// (foFunctionReferencePaths); the surface must stay strictly below it. It ratchets down as the
-// surface is collapsed and is raised only for a deliberate contract addition — here the
-// host-neutral «post-compact-notice» capability delegated from fo-dispatch-core.md to its
-// per-host bindings in the three runtime adapters' `## Runtime implementation`.
-const foFunctionReferenceBaselineBytes = 123100
+const foFunctionReferenceBaselineBytes = 122400
 
 var foFunctionReferencePaths = []string{
 	"skills/first-officer/SKILL.md",
@@ -109,7 +104,7 @@ func TestFOFunctionReferenceClassifierDiscriminates(t *testing.T) {
 func TestFOFunctionPromptSurfaceShrinks(t *testing.T) {
 	_, got := foPromptMetrics(t)
 	if got >= foFunctionReferenceBaselineBytes {
-		t.Fatalf("FO prompt surface = %d bytes, want strictly below FO-surface baseline %d", got, foFunctionReferenceBaselineBytes)
+		t.Fatalf("FO prompt surface = %d bytes, want strictly below post-#495 baseline %d", got, foFunctionReferenceBaselineBytes)
 	}
 }
 
