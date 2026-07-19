@@ -26,8 +26,9 @@ gate:
 > so the ensign can show you the complete design, receive your annotations directly,
 > and revise it before I bring it back for approval? [Y/n]
 
-On yes, the gate-attempt ensign checks for `subspace-tui` and the Subspace review
-skill. Missing pieces produce the exact relevant action:
+On yes, the First Officer uses `followup_task` on the still-addressable gate-attempt
+ensign. That same ensign checks for `subspace-tui` and the Subspace review skill.
+Missing pieces produce the exact relevant action:
 
 ```sh
 brew install spacedock-dev/tap/subspace-beta
@@ -39,8 +40,9 @@ codex plugin marketplace add spacedock-dev/marketplace
 codex plugin add subspace@spacedock
 ```
 
-The ensign assembles the complete Briefing, binds provider-owned Probe history as
-supporting `Reference` context, and invokes one command:
+The ensign assembles the complete Briefing, binds a frozen snapshot of the available
+provider-owned Probe input and history as supporting `Reference` context, and invokes
+one command:
 
 ```sh
 ${SPACEDOCK_BIN:-spacedock} gate review 3k \
@@ -51,9 +53,28 @@ ${SPACEDOCK_BIN:-spacedock} gate review 3k \
 
 Before opening the review, the command says that workflow state will not advance. It
 validates the explicit Briefing and its referenced resources, derives the canonical
-pane title, launches `subspace-tui`, and durably retains its review log and returned
-Resolution in the provider room. A launch or controller failure preserves the package,
-diagnostics, and attempt for retry. The command never changes entity frontmatter.
+pane title, and runs `subspace-tui` as one blocking child process. Creating a Zellij
+pane or session is only launch progress; it never means the review completed. The
+command succeeds only after the TUI exits, the returned log and Resolution validate,
+and the provider atomically retains them. A launch, controller, child-exit, validation,
+or retention failure preserves the package, diagnostics, and attempt for retry. The
+command never changes entity frontmatter.
+
+The gate-attempt ensign remains unresolved and addressable for that whole blocking
+call. The First Officer must wait with `wait_agent({timeout_ms:300000})`; if the wait
+times out while the ensign is still active, the First Officer waits again rather than
+treating the timeout as completion or failure. Only after the command returns and the
+ensign reports the retained result does the First Officer resume gate handling. This
+uses the existing `followup_task` and worker-wait lifecycle rather than adding a
+presentation worker type.
+
+The Briefing never references a provider file that the run will append. Its frozen
+Probe snapshot is immutable input only. The provider writes the fresh exact-Briefing
+ProbeResult and derived comparison outside the Briefing package, keyed by Briefing id,
+then joins those records to the presentation by that id. Appending provider history
+therefore cannot invalidate the Briefing digest. Until Subspace renders that joined
+result itself, the ensign presents a separate semantic-delta summary alongside the
+review; implementing ProbeResult/comparison UI is not part of 3k.
 
 The ensign receives the annotations directly, revises the design, reruns affected
 Probes, and publishes another immutable Briefing in the same open gate attempt. The
@@ -266,9 +287,10 @@ reimplement:
 
 - `gate review` validates one explicit complete Briefing, including every Artifact and
   supporting Reference revision; derives the canonical title; probes the binary and
-  review skill; launches the provider; and atomically retains diagnostics, log, and
-  returned Resolution. It never authors design content, decides which References
-  belong, interprets annotations, or mutates workflow state.
+  review skill; runs one blocking provider child; and atomically retains diagnostics,
+  log, and returned Resolution after child exit. Pane creation is not success. It never
+  authors design content, decides which References belong, interprets annotations, or
+  mutates workflow state.
 - the gate recorder parses the exact provider result, verifies authorized identity,
   current Briefing id/digest and log rules, constructs the closed attempt plus minimal
   application, and commits only `gates`. It never changes `status` or dispatches.
@@ -297,11 +319,13 @@ The first tests must exercise outcomes, not prose:
 4. The existing transition/dispatch fake observes exactly one action when a pending
    approval becomes eligible and none on repeated passes; the gate schema contains no
    parallel dispatch identity or receipt.
-5. `gate review` fixture tests prove an explicit supporting `Reference` is presented,
+5. `gate review` fixture tests prove a frozen supporting `Reference` is presented,
    missing binary/skill output contains the exact install action, title derivation is
-   canonical, and every launch/controller failure leaves package diagnostics and
-   Resolution state recoverable. A direct-Zellij fixture reaches the same retained
-   result through the one command.
+   canonical, and every launch/controller/child/validation/retention failure leaves
+   package diagnostics and Resolution state recoverable. Mutants that complete on pane
+   creation, let the ensign resolve before TUI exit, or append through a digest-bound
+   live Reference fail. A direct-Zellij fixture reaches the same retained result
+   through the one blocking command.
 6. Provider fixtures accept reasonless `approve`, reject invalid `revise`/`hold`
    rationale and cross-Briefing includes, preserve advisory decisions, and bind only
    the authorized current-Briefing Resolution.

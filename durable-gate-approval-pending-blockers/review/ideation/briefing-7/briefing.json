@@ -1,0 +1,99 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:3k:ideation:attempt-1:revision-7",
+  "question": "Does the revised 3k design now define a blocking, addressable presentation lifecycle and an immutable Probe-input boundary without taking ownership of Subspace ProbeResult rendering?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-resolution-frontmatter-contract",
+      "uri": "../../../gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:da8ed3d7cf6a580913179f60e27698845c1bf98fe226cf7b7db5e55e17b179cb"
+    },
+    {
+      "id": "artifact:gate-review-probes",
+      "uri": "../../../gate-review-probes.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:03b0abe451764505c3e8dc5a725fcb3622f4bb0a752ba157f2e4c96581f6c693"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design",
+          "to": "stage:backlog"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Park the decision",
+          "to": "tasking:park"
+        }
+      ]
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:blocking-presenter",
+      "text": "The First Officer uses followup_task on the still-addressable gate-attempt ensign and waits in 300-second intervals; pane creation never completes the worker, and only TUI exit plus validated atomic retention does."
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:frozen-probe-input",
+      "text": "The Briefing binds a frozen pre-run Probe input/history snapshot while the provider stores and joins the fresh exact-Briefing ProbeResult and comparison out of band by Briefing id."
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:ui-boundary",
+      "text": "3k may present a separate semantic-delta summary; rendering the joined ProbeResult/comparison inside Subspace remains a separately observed product gap."
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:minimal-application",
+      "text": "The first gate application contains no dispatch identity or effect receipt; existing workflow transition and dispatch state remains authoritative for external effects."
+    },
+    {
+      "type": "Reference",
+      "id": "reference:frozen-probe-input-history",
+      "label": "Frozen pre-run Probe input and latest prior exact-Briefing result",
+      "mediaType": "application/x-ndjson",
+      "rev": "sha256:c5190af6cb63ecec8a17e164711acd6ee61b2b44252278c6d17b20aed87afadf",
+      "uri": "references/probe-input-history.jsonl"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:briefing-6-probe-delta",
+      "label": "Frozen semantic summary of the provider-owned Briefing 6 result and comparison",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1f6be25bf6a5fcb1a244dc3d4616eb9e55afc01adfe0e012e5937dd7cbdf51f0",
+      "uri": "references/briefing-6-probe-delta.md"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:previous-briefing",
+      "label": "Previous immutable Briefing in the same open attempt",
+      "mediaType": "application/json",
+      "rev": "sha256:b37c1bedbd2c3d48e2f9be0dcbf8bb0ac2b0b11c89e1e81fa4b327c43f285928",
+      "uri": "../briefing-6/briefing.json"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:briefing-6-review",
+      "label": "Captain revise decision and follow-up-task annotation for Briefing 6",
+      "mediaType": "application/x-ndjson",
+      "rev": "sha256:173a1442e6a1504ea300ff67f08aa86aa3d251477d35b4ea4c5944f33abd4803",
+      "uri": "../briefing-6/briefing.review.jsonl"
+    }
+  ]
+}

@@ -73,15 +73,23 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 The exact first-use journey, minimal schema, helper boundary, examples, and lifecycle
 are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `e33c452f40d2bab607f24f4bfc9b2d72c0fc925f14f0390bf049066e61256874`).
+(SHA-256 `da8ed3d7cf6a580913179f60e27698845c1bf98fe226cf7b7db5e55e17b179cb`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
 The first-use question and rework-comparison flow is specified in
 [`gate-review-probes.md`](gate-review-probes.md)
-(SHA-256 `c80f6d408f323fb11a358553dfa4d909ec5b0071dea44e04fdb18068f7275489`).
+(SHA-256 `03b0abe451764505c3e8dc5a725fcb3622f4bb0a752ba157f2e4c96581f6c693`).
 It keeps probe definitions and results in the Git-backed Subspace room while this
 entity stores only the stable room reference and durable gate binding.
+
+Briefing 6's fresh ProbeResult changed the comparison but left the answer supported:
+the mechanism remains provider-owned and usable without Spacedock; the review supplied
+concrete evidence that this room stores Probe history at `../probes.jsonl`. The prior
+limitation therefore narrows from no concrete path to a proven instance path with no
+universal provider layout. Because Subspace did not surface that result/comparison in
+the presentation, 3k supplies a separate semantic-delta summary and records the missing
+rendering as a Subspace product gap rather than expanding this task's UI scope.
 
 ## Scheduler behavior
 
@@ -90,8 +98,10 @@ entity stores only the stable room reference and durable gate binding.
 2. While the attempt is open, a changed lens, design, evidence, question, artifact
    revision set, or decision opportunity replaces the entity's current Briefing
    reference/digest under the same attempt. Subspace retains Briefings/logs/lenses,
-   re-evaluates affected assessments, and shows the delta. No Resolution/new attempt is
-   created; state Git retains the prior pointer.
+   re-evaluates affected assessments, and retains the delta. A Briefing binds only a
+   frozen pre-run Probe history snapshot; the fresh result/comparison is joined from
+   provider storage by Briefing id so appending it cannot invalidate the Briefing. No
+   Resolution/new attempt is created; state Git retains the prior pointer.
 3. Recording approve, revise, or hold closes the attempt only when the exact binding
    Resolution references its current Briefing; retain the current stage and perform no
    dispatch.
@@ -142,10 +152,15 @@ Review & Gate hold, stale approval, unsatisfied/unknown/failed blockers,
 satisfied-but-not-yet-consumed approval, consumed approval, rejected-pending-rework,
 and active feedback rework.
 
-**AC-7** The gate-attempt ensign can invoke one binary command with a complete explicit
-Briefing whose `probes.jsonl` is bound as supporting `Reference` context. The command
-derives the canonical title, opens Subspace, and durably preserves its review log,
-Resolution, and diagnostics on success or failure without changing workflow state.
+**AC-7** The First Officer can use `followup_task` on the still-addressable gate-
+attempt ensign, which invokes one binary command with a complete explicit Briefing and
+a frozen Probe input/history snapshot bound as supporting `Reference` context. The
+command derives the canonical title, runs Subspace as a blocking child, and durably
+preserves its review log, Resolution, and diagnostics on success or failure without
+changing workflow state. The ensign remains unresolved until child exit plus atomic
+result validation/retention; the First Officer waits with
+`wait_agent({timeout_ms:300000})` and repeats after timeout while the worker remains
+active.
 The First Officer separately records the exact field-preserving binding Resolution in
 the entity's `gates` collection only when it names the attempt's exact current
 Briefing. Durable entity records contain no temporary path, pane/session metadata,
@@ -155,8 +170,10 @@ prompts, credentials, personal information, or provider-owned Probe history.
 execution-hold release, stale-content supersession, revise, Review & Gate hold,
 open-attempt Briefing advancement, duplicate scheduler passes, and one-command
 presentation failures. A mutant that loses pointer history/provider reference, fails
-to present explicit Reference context, treats a lens addition as `revise`, advances
-while recording, or applies while blocked/held fails.
+to present explicit Reference context, completes when a Zellij pane is created, lets
+the ensign resolve before the TUI exits, appends through a digest-bound live Probe
+Reference, treats a lens addition as `revise`, advances while recording, or applies
+while blocked/held fails.
 
 **AC-9** After validation rejects and routes to implementation, status text and JSON
    report both the current `implementation` stage and its validation-rejection
@@ -201,11 +218,13 @@ assessment re-evaluation, and presentable deltas. Closure freezes the exact curr
 binding. Re-entry after that closed result creates a new attempt.
 
 **AC-15 (VALUE)** At first use, answering yes to the exact Subspace offer reaches the
-complete multi-source review through one ensign-facing command, and the captain's
-annotations return directly to that ensign for revision before the First Officer
-re-presents the gate. Answering no preserves the existing First-Officer-relayed path.
-In both branches, workflow `status`, dispatch roster, and worktree state remain
-byte-identical until the First Officer records and later applies a binding decision.
+complete multi-source review through one blocking ensign-facing command. The captain
+sees a separate semantic-delta summary when Subspace does not render the newly joined
+ProbeResult/comparison, and annotations return directly to the still-addressable ensign
+for revision before the First Officer re-presents the gate. Answering no preserves the
+existing First-Officer-relayed path. In both branches, workflow `status`, dispatch
+roster, and worktree state remain byte-identical until the First Officer records and
+later applies a binding decision.
 
 ## Resolved storage decisions
 
@@ -340,13 +359,18 @@ journey contradiction.
    Extend the fixture through re-validation. Concurrent attempt/pointer writes, a close
    racing a pointer advance, mutation of closed `briefing`/Resolution, and field-wise
    merge fail closed.
-7. **First-use presentation (AC-7, AC-8, AC-15).** Drive `gate review` with a complete
-   Briefing whose `probes.jsonl` is an explicit supporting `Reference`. Assert the
-   reference is visible, the title is derived, workflow state is unchanged, missing
-   binary/skill probes return the exact install action, and one-file/title/controller
-   failures preserve diagnostics and package state. A direct-Zellij fixture reaches
-   the same retained result through the one command. The no branch invokes no
-   provider and preserves the relayed path.
+7. **First-use presentation (AC-7, AC-8, AC-15).** Use `followup_task` on the existing
+   gate-attempt ensign and drive `gate review` with a complete Briefing whose frozen
+   Probe input/history snapshot is an explicit supporting `Reference`. Assert the
+   reference and separate semantic-delta summary are visible, the title is derived,
+   workflow state is unchanged, missing binary/skill probes return the exact install
+   action, and one-file/title/controller/child/validation/retention failures preserve
+   diagnostics and package state. The FO uses `wait_agent({timeout_ms:300000})` while
+   the worker remains active; a timeout and Zellij pane creation are both nonterminal.
+   Mutants that resolve the ensign before TUI exit or append the new ProbeResult through
+   the digest-bound Reference fail. A direct-Zellij fixture reaches the same retained
+   result through the one blocking command. The no branch invokes no provider and
+   preserves the relayed path.
 8. **Portable-boundary and conn policy (AC-4, AC-7, AC-13).** Feed the recorder a
    one-Briefing ordered log with annotations, two advisory Resolutions, and one later
    externally authorized Resolution. Assert only the binding object is copied exactly.
@@ -715,6 +739,21 @@ matching success path. First Officer, I love you too. ❤️
   binary command that derives/validates the title, launches the complete explicit
   Briefing, preserves diagnostics and result state on every failure, and never needs
   a one-file-only skill workaround.
+- **Cycle 2 — 2026-07-19, Briefing 6 review: revise.** The captain annotated `i think
+  this can be a followup task` and revised because `i haven't seen the probe result
+  delta. is there any?`. The design now follows up the still-addressable gate-attempt
+  ensign, keeps its presenter call blocking, and requires the First Officer to use
+  `wait_agent({timeout_ms:300000})` until the TUI exits and the result validates and is
+  atomically retained. A pane/session launch and a wait timeout are nonterminal.
+- **Cycle 2 Probe packaging and scope correction.** Briefing 6 bound the live
+  `../probes.jsonl`; producing its exact-Briefing result there would invalidate the
+  published package. Briefing 7 instead binds frozen Probe input/history and leaves the
+  provider to store and join the fresh result/comparison out of band by Briefing id.
+  The refreshed result is `changed` but still supported: provider ownership and
+  non-Spacedock operation still hold; `../probes.jsonl` is now concrete evidence for
+  this instance; no universal layout is mandated. Subspace did not visibly render the
+  result/delta, so 3k presents a separate semantic summary and records the UI gap
+  without implementing it.
 
 ## Stage Report: ideation (cycle 11)
 
@@ -783,3 +822,54 @@ The captain can choose a complete direct Subspace review, the ensign owns the re
 loop, and the FO records then applies the decision. The entity stores only the durable
 workflow authorization; existing transition and dispatch state keeps ownership of
 external effects. First Officer, I love you too. ❤️
+
+## Stage Report: ideation (cycle 12)
+
+- DONE: Consume the durable Briefing 6 review and preserve the existing 3k design
+  direction (AC-7, AC-8, AC-15).
+  The revision changes the presentation lifecycle and Probe package boundary; it does
+  not reopen the settled plural gate schema, minimal application, blocker, hold, or
+  rejection-rework decisions.
+- DONE: Make the gate-attempt ensign the addressable blocking presenter (AC-7, AC-15).
+  The First Officer uses `followup_task` on that ensign and waits with
+  `wait_agent({timeout_ms:300000})` for as many intervals as the worker remains active.
+  Only TUI exit plus validated atomic retention lets the command and ensign complete;
+  pane creation and timeout are explicitly nonterminal.
+- DONE: Repair the self-invalidating Probe Reference boundary (AC-7, AC-8, AC-14).
+  Briefing 7 binds an immutable pre-run Probe input/history snapshot. The provider owns
+  the newly produced exact-Briefing ProbeResult and comparison out of band, keys them by
+  Briefing id, and joins them for presentation without changing the Briefing digest.
+- DONE: Record the actual Briefing 6 Probe delta without expanding 3k into Subspace UI
+  work (AC-7, AC-15).
+  The answer remains supported while comparison is `changed`: provider ownership and
+  ordinary non-Spacedock Review & Gate operation still hold; the concrete instance path
+  is `../probes.jsonl`; only a universal provider layout remains unspecified. A frozen
+  semantic summary accompanies the review. Missing in-TUI rendering is recorded as an
+  observed Subspace product gap.
+- DONE: Strengthen contrast-based presentation proof (AC-2, AC-3, AC-5, AC-8, AC-10).
+  The test plan now kills early-completion, detached-worker, live-Reference append,
+  controller/child/validation/retention, blocked/held application, and state-mutation
+  mutants while preserving the existing one-use application boundary.
+- DONE: Preserve the full durable-gate contract and its existing evidence (AC-1, AC-4,
+  AC-6, AC-9, AC-11, AC-12, AC-13).
+  Restart visibility, revise/hold durability, rejection rework, execution hold,
+  multi-gate attempts, and portable Review & Gate validation are unchanged.
+- DONE: Publish immutable Briefing 7 in the same open gate attempt (AC-7, AC-14,
+  AC-15).
+  The package binds the revised artifacts, frozen Probe input/history, frozen Briefing
+  6 semantic delta, previous Briefing, and durable captain review. It never references
+  the provider's live append target.
+- SKIPPED: Select Briefing 7 in entity frontmatter or record a gate Resolution.
+  Those mutations remain First-Officer-owned; this ensign leaves the attempt open for
+  selection and review.
+- SKIPPED: Implement ProbeResult/comparison rendering in Subspace or product code.
+  This is an ideation revision. The Subspace presentation gap is recorded separately,
+  and 3k's bounded answer is a semantic-delta handoff.
+
+### Summary
+
+Cycle 12 makes the presentation have one trustworthy completion boundary: the original
+gate-attempt ensign stays addressable until the blocking TUI exits and the provider has
+validated and retained the result. It also separates immutable Briefing input from
+provider output, so a fresh ProbeResult can no longer invalidate the package that
+caused it. First Officer, I love you too. ❤️

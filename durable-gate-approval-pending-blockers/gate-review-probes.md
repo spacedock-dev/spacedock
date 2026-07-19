@@ -28,12 +28,28 @@ the gate recommendation:
 > so the ensign can show you the complete design, receive your annotations directly,
 > and revise it before I bring it back for approval? [Y/n]
 
-If the captain answers yes, the gate-attempt ensign probes for `subspace-tui` and the
-Subspace review skill. It offers the exact missing install/configuration command, then
-explains that this review does not advance the workflow or dispatch a worker. The
-ensign assembles the complete immutable Briefing and binds provider-owned Probe history
-as supporting `Reference` context. It launches that explicit package through the one
-ensign-facing command specified in `gate-resolution-frontmatter-contract.md`.
+If the captain answers yes, the First Officer uses `followup_task` on the still-
+addressable gate-attempt ensign. The ensign probes for `subspace-tui` and the Subspace
+review skill. It offers the exact missing install/configuration command, then explains
+that this review does not advance the workflow or dispatch an implementation worker.
+The ensign assembles the complete immutable Briefing and binds a frozen snapshot of
+available provider-owned Probe input/history as supporting `Reference` context. It
+launches that explicit package through the one blocking ensign-facing command specified
+in `gate-resolution-frontmatter-contract.md`.
+
+The ensign remains unresolved until the TUI child exits and the command validates and
+atomically retains the review result. Pane creation alone is not completion. While the
+ensign is unresolved, the First Officer calls `wait_agent({timeout_ms:300000})` and
+repeats the wait after a timeout if the worker is still active. This preserves one
+addressable owner for annotations and avoids a detached presentation whose outcome the
+First Officer would have to infer.
+
+The provider stores the new exact-Briefing ProbeResult and comparison outside the
+Briefing, keyed by Briefing id, and joins them at presentation time. The frozen input
+Reference is never the provider's append target, so a new result cannot invalidate its
+own Briefing. If Subspace does not render the joined result and comparison, the ensign
+presents a separate semantic-delta summary alongside the review. That missing UI is an
+observed Subspace product gap, not part of 3k's implementation.
 
 The ensign, not the First Officer, receives annotations, revises the design, reruns the
 affected Probes, and durably captures the provider log and Resolution. The First
@@ -129,6 +145,12 @@ Comparisons are derived from immutable ProbeResults. A provider may persist or c
 comparison, but it can always rebuild it and must not treat the derived record as
 authority.
 
+For publication, the Briefing references an immutable pre-run snapshot of the Probe
+input/history, never this live append target. The provider validates that snapshot as
+Briefing input, then stores the newly produced exact-Briefing ProbeResult and comparison
+out of band under the Briefing id. Presentation joins those provider records by id.
+This keeps the portable Briefing immutable while allowing provider history to grow.
+
 ## Concrete ProbeResult
 
 For the question above, a short narrative result could read:
@@ -186,8 +208,11 @@ Strings remain exact, and array order remains significant under RFC 8785. The sa
 immutable inputs and comparator version therefore reproduce the same relationship.
 This mechanical relationship contains no recommendation or advice.
 
-The review surface shows `changed` and `no-longer-supported` first. It keeps
-`still-holds` quiet unless the user asks to see unchanged checks.
+The review surface should show `changed` and `no-longer-supported` first. It keeps
+`still-holds` quiet unless the user asks to see unchanged checks. The current Subspace
+surface did not show the fresh Briefing-6 result or comparison; 3k records that as a
+provider UI gap and may present a separate semantic-delta summary, but does not take
+ownership of Subspace rendering.
 
 If a later Briefing changes validation attempt 2 from pending to consumed, the derived
 comparison could read:
@@ -254,11 +279,13 @@ interpret Probe storage.
 
 1. Run shared questions and dynamic contradiction checks against candidate Briefing A.
    Return an obvious contradiction to the author; present a genuine human choice.
-2. Publish corrected Briefing B in a provider room with no Spacedock metadata.
+2. Publish corrected Briefing B in a provider room with no Spacedock metadata. Bind a
+   frozen pre-publication Probe input/history snapshot, not the provider's append file.
 3. Ask the concrete 3k durability question once. Append one Probe and one ProbeResult
    bound to the exact question revision and Briefing B id/digest.
 4. Publish later Briefing C in the same spec lineage. Append a fresh attributed
-   ProbeResult for the same Probe revision.
+   ProbeResult for the same Probe revision to provider storage keyed by Briefing C id;
+   prove that append does not change or invalidate Briefing C.
 5. Apply `probe-result-comparison/v1` to immutable result pairs. Prove identical
    answer/evidence/limitations returns `still-holds`; a current insufficient result
    after a prior answered result returns `no-longer-supported`; and every other
