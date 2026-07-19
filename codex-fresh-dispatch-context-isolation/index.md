@@ -303,3 +303,30 @@ Codex fresh dispatch now has one executable invariant: `ToolArgs` always emits
 `fork_turns: "none"`, and no mutable adapter field can override it. Minimal
 contract alignment keeps deliberate continuity on `followup_task`; the shipped
 patch contains no bespoke live harness.
+
+## Stage Report: validation
+
+- DONE: Adversarially verify the small adapter invariant: every fresh spawn emits exact fork_turns="none", unsafe helper fields cannot override it, and the compact test fails under a realistic conditional-omission mutation.
+  Focused tests passed all absent/`"all"`/numeric/override rows; a throwaway mutation restoring mutable `ForkTurns` plus conditional omission failed all four rows and the structural field guard.
+- DONE: Validate the retained one-off Codex evidence for both boundaries: parent canary absent on a fresh child, and followup_task preserves the existing handle/context without shipping a bespoke live harness.
+  All three recorded SHA-256 hashes match raw artifacts; spawn used exact `"none"`, the child rollout lacked the exact parent canary, and one child thread handled two turns and recalled `CHILD_CONTINUITY_ONEOFF_6D42`.
+- FAILED: Cross-check all six acceptance criteria, including automate-beta-release replacement evidence and the v0.25.1-to-next propagation/no-rewind release proof; report missing evidence as FAILED rather than inferring it.
+  AC-2 passes, but AC-1/3/4 lack their specified integrated FO/stage evidence and AC-5/6 promised durable release state does not exist.
+- FAILED: **AC-1 (VALUE): Fresh Codex dispatch inherits zero parent turns.**
+  Adapter output and the direct one-off host probe pass, but no live run records a generated dispatch artifact's bytes, the FO-issued spawn arguments, and its child result as one reproducible observation.
+- DONE: **AC-2: Unsafe fork output is unrepresentable in the Codex adapter.**
+  Commit `2148c80c` removes the field, emits one exact three-key map, ignores unsafe helper JSON, and the conditional-omission adversarial mutation fails.
+- FAILED: **AC-3: Fresh isolation is an invocation rule, not a default assumption.**
+  The executable adapter and direct host probe agree, but the instruction-driven First Officer binding has no recorded live invocation; contract text alone is expressly insufficient.
+- FAILED: **AC-4: Deliberate continuity keeps the existing worker and context.**
+  The one-off proves raw `followup_task` continuity, but not an eligible stage advancement plus feedback re-review and a `fresh: true` transition; the live rejection-flow run abstained because no structured validation spawn/follow-up handle was correlatable.
+- FAILED: **AC-5: `automate-beta-release` has independent replacement evidence.**
+  Its durable entity ends with validation cycle 2 from the inherited validator; there is no replacement spawn record/report/state commit produced from an isolated generated artifact, though its worktree is clean.
+- FAILED: **AC-6: Stable 0.25 and edge 0.26 both retain the fix without an edge rewind.**
+  After fetch, neither `origin/main` (`235e7636`) nor `origin/next` (`53beac31`) contains `2148c80c`, remote `v0.25.1` is absent, and both remote adapters remain unsafe; only the existing CLI guard returns `skip` for next's `0.26.0-pre1` manifest.
+- FAILED: Run applicable regression gates at exact source SHA `2148c80c`.
+  Full and race suites pass, but `TestLiveCodexSharedScenarios` times out at 10m during `filing`; `gofmt -w ./cmd ./internal` also reformats unrelated upstream `internal/release/journeydelta.go` (reverted to preserve the clean task worktree).
+
+### Summary
+
+Validation verdict: **REJECTED**. AC-1/3/4 have material evidence defects at the exact integrated FO/stage observation boundaries, while AC-5/6 are material outcome defects because the replacement validation and promised release/propagation state are absent; no implementation repair was made. The adapter mechanism itself is strong and mutation-resistant, the retained lower-level Codex one-off is legitimate, and there are no deferred risks asserted from missing proof.
