@@ -1,9 +1,9 @@
 ---
 id: 2690fpqe9pkn917am6bt6eqs
 title: Make dispatch-build help match its input-mode parser
-status: backlog
+status: ideation
 source: "FO dogfood, 2026-07-19: 0.26.0-pre0 help advertised stdin JSON plus --advance but the same invocation selected flag/file mode and rejected stdin."
-started:
+started: 2026-07-19T05:04:28Z
 completed:
 verdict:
 score: "0.65"
