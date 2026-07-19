@@ -93,14 +93,14 @@ Implement the invariant at the narrowest executable seam:
    no inherited parent turns. Preserve the existing reuse decision and
    `followup_task` route. A stage without `fresh: true` may still advance on the
    same handle when all reuse conditions pass.
-4. Add adapter and live behavior tests. Unit tests close every adapter escape;
-   a Codex live scenario proves the instruction-driven First Officer sends the
-   safe argument and the fresh child lacks a parent-only canary.
+4. Add one compact adapter test that closes every adapter escape. Retain a
+   one-off Codex canary probe as host-behavior evidence; do not add a bespoke
+   live harness for this three-key map invariant.
 
 No spike is needed. The incident proves the unsafe explicit-`all` outcome, and
-current upstream Codex source proves that `"none"` selects no fork. The live
-scenario remains required because Spacedock's First Officer is instruction-
-driven; adapter tests alone cannot prove the model-issued call.
+current upstream Codex source proves that `"none"` selects no fork. The retained
+one-off probe confirms that behavior on the live host and separately confirms
+that `followup_task` preserves an existing worker's context.
 
 ## Why this is the smallest sufficient mechanism
 
@@ -112,12 +112,13 @@ driven; adapter tests alone cannot prove the model-issued call.
   continuity. The extra setting would weaken AC-1.
 - Marking every implementation stage `fresh: true` changes workflow reuse
   policy, not spawn semantics. It would increase cost and still leave any other
-  fresh spawn vulnerable. AC-4 preserves the existing stage policy.
-- Contract wording alone cannot prove behavior. The adapter tests and live
-  canary serve AC-1; the prose makes the instruction-driven call match the
-  executable invariant.
-- Rerunning only the affected validation repairs one report but leaves every
-  later fresh dispatch exposed. AC-5 requires the rerun after AC-1 ships.
+  fresh spawn vulnerable. AC-3 preserves the existing stage policy.
+- Contract wording alone cannot prove behavior. The compact adapter test proves
+  the shipped map invariant, while the retained one-off canary proves the live
+  host meaning of `"none"`; no second lifecycle harness is needed.
+- Replacing the incident's `automate-beta-release` validation is follow-up work
+  in that workflow after this fix is available. It is not part of this adapter
+  patch's acceptance boundary.
 
 The `per-host-stage-model-override` task is compatible, not duplicative. Its
 current design forces `"none"` only when model or effort overrides need it and
@@ -126,43 +127,28 @@ forward overrides onto this invariant and must not restore a mutable fork mode.
 
 ## Acceptance criteria
 
-- **AC-1 (VALUE): Fresh Codex dispatch inherits zero parent turns.** The actual
-  `spawn_agent` call contains exactly
-  `fork_turns: "none"`; the generated dispatch artifact omits a unique
-  parent-only canary, and the child reports no canary in its initial context.
-  Verified by unit tests for plain and override-bearing build envelopes plus a
-  Codex live scenario that records the call arguments, dispatch-file bytes, and
-  child result. A new handle alone fails this AC.
+- **AC-1 (VALUE): Every Spacedock Codex fresh-spawn payload is explicitly
+  isolated.** `ToolArgs` contains exactly `fork_turns: "none"` for plain and
+  override-bearing helper envelopes. Verified by exact map equality in the
+  compact adapter test and by the retained one-off Codex probe, where the actual
+  spawn used `"none"` and the child rollout lacked the exact parent-only canary.
 - **AC-2: Unsafe fork output is unrepresentable in the Codex adapter.**
-  `CodexMultiAgentV2Spawn` exposes no fork-mode field, and every `ToolArgs` map
-  contains exactly `"fork_turns": "none"`. Verified by table-driven tests that
-  feed absent, `"all"`, and numeric `fork_turns` fields in helper JSON and assert
-  the same safe output; an adversarial test mutation that restores conditional
-  omission must fail.
-- **AC-3: Fresh isolation is an invocation rule, not a default assumption.** The
-  host-neutral core defines
-  fresh as a new handle with no inherited parent turns, and the Codex binding
-  supplies `"none"` on every spawn. Verified by AC-1's live behavior. Reading or
-  grepping the contract does not satisfy this AC.
-- **AC-4: Deliberate continuity keeps the existing worker and context.** An
-  eligible non-fresh stage advancement and a feedback re-review use
-  `followup_task` with the captured handle; a `fresh: true` transition uses a
-  different handle with zero inherited parent turns. Verified by one live or
-  durable structured scenario containing both paths. No implementation stage
-  becomes globally fresh.
-- **AC-5: `automate-beta-release` has independent replacement evidence.** A new
-  validator is spawned with `"none"` from only its
-  generated dispatch artifact. Its durable report records the replacement run
-  and retains any valid original findings instead of discarding them solely
-  because the first validator inherited context. Verified by the new worker's
-  spawn record, report, state-checkout commit, and clean worktree status.
-- **AC-6: Stable 0.25 and edge 0.26 both retain the fix without an edge rewind.**
-  The fix lands on `main`, ships in annotated `v0.25.1`, and is integrated onto
-  `next` while `next` keeps its 0.26 manifest, gate line, calendar lineage, and
-  branch-exclusive commits. Verified by tests at both branch tips, exact patch
-  equivalence, `edge-advance-decision v0.25.1` returning `skip` against
-  `0.26.0-pre1`, and the remote `next` tip remaining unchanged by the patch-tag
-  release job.
+  `CodexMultiAgentV2Spawn` exposes no `ForkTurns` field, and absent, `"all"`, or
+  numeric helper fields cannot change the three-key output map. Verified by the
+  same table test plus a reflection guard; restoring conditional omission or a
+  mutable field makes the test fail.
+- **AC-3: Fresh isolation does not change deliberate continuity or stage
+  selection.** The host-neutral contract defines a fresh handle as inheriting no
+  parent turns, the Codex binding supplies `"none"`, and eligible reuse remains
+  on `followup_task`; no stage becomes globally fresh. Verified by the focused
+  diff and the retained one-off probe, whose follow-up addressed the same task
+  and thread and recalled its prior-turn marker.
+- **AC-4: The patch is pre-merge release-safe without claiming post-merge
+  publication state.** The self-contained commit passes focused, full, race, and
+  existing no-rewind release guards; `edge-advance-decision` returns `skip` for
+  v0.25.1 against 0.26.0-pre1. Landing on `main`, cherry-picking to `next`,
+  publishing edge, cutting the annotated tag, and observing remote branch tips
+  are post-merge release ceremony, not implementation acceptance.
 
 ## Scope
 
@@ -210,67 +196,57 @@ true. It must not expose `fork_turns` as a user setting.
 
 ### Adapter and contract tests — small
 
-- Replace the omission assertion in `codex_v2_adapter_test.go` with exact map
-  equality including `"fork_turns": "none"`.
-- Add table rows for plain envelopes, future model/effort override envelopes,
-  and helper JSON containing absent, `"all"`, or numeric fork fields. Every row
-  yields the same isolation value. The test should remain compatible whether
-  the model-override task lands before or after this fix.
-- Remove the adapter's mutable `ForkTurns` member. Compile failures in callers
-  expose any hidden override path.
+- Assert exact three-key map equality including `"fork_turns": "none"` for
+  plain, future-override, absent-fork, `"all"`, and numeric helper envelopes.
+- Remove the adapter's mutable `ForkTurns` member and retain the reflection guard
+  that fails if an override channel returns. A conditional-omission mutation
+  must fail the same compact table.
 - Update contractlint only for structural host-binding placement. Do not count a
   prose substring assertion as isolation proof.
 
-### Codex live behavior — medium, required
+### One-off Codex behavior evidence — retained, not a permanent harness
 
-- Add a focused fresh-dispatch scenario to the existing Codex live harness. Put
-  a unique canary in the root conversation, keep it out of the generated
-  dispatch file, advance to a `fresh: true` stage, and capture the actual
-  `spawn_agent` arguments.
-- Assert a new handle, exact `fork_turns: "none"`, canary absence from the
-  dispatch-file bytes, and canary absence from the child's initial context
-  report. Include an unsafe fixture or mutation using `"all"` to prove the
-  canary detector turns red.
-- In the same or a focused companion scenario, advance one eligible non-fresh
-  stage with `followup_task` and prove the handle stays constant. Reuse evidence
-  prevents a global-fresh implementation from false-passing.
-- Rerun `TestLiveCodexSharedScenarios` after the focused scenario so existing
-  rejection-flow reuse stays green.
+- Retain `implementation-live-evidence.md`: the actual spawn arguments contain
+  exact `"none"`, the child rollout omits the exact parent-only canary, and
+  `followup_task` reaches the same task/thread for a second turn that recalls its
+  prior marker.
+- Keep the raw artifact hashes for auditability. Do not add or restore a bespoke
+  fresh-isolation workflow, rollout parser, or live-runner scenario.
 
-### Regression gates — medium
+### Regression gates — small
 
 - Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
-- Run focused adapter, contractlint, live fresh-isolation, and reviewer-reuse
-  tests. Record exit status, exact source SHA, durable state, and clean status.
-- Run the affected `automate-beta-release` validation again from its owning
-  repository with a new isolated worker. Preserve both the original finding and
-  the replacement evidence in its durable report.
+- Run focused adapter and contractlint tests plus
+  `TestEdgeAdvanceDecision`/`TestEdgeAdvancePatchDoesNotRegressNext`; record the
+  exact source SHA and clean status.
+- Treat the `automate-beta-release` replacement validation as a separate
+  follow-up in its owning workflow after this fix lands.
 
 ## 0.25.1 release and 0.26 propagation plan
 
-1. Land one self-contained fix commit on `main`. Run the deterministic and Codex
-   live gates on that commit.
-2. Propagate only the fix to a branch based on `origin/next` with
-   `git cherry-pick -x <main-fix-commit>`. This avoids copying the 0.25.1 manifest
-   stamp onto the 0.26 line. Run the same focused and full deterministic tests at
-   the resulting `next` SHA, then push by fast-forward.
-3. Run the deliberate `next-publish` path after the 0.26 fix lands so edge plugin
-   users receive the corrected contract. Record the resulting `next` SHA and
-   confirm its manifest remains `0.26.0-pre1` or later.
-4. Cut `v0.25.1` from `main` by `docs/releasing.md`: stamp `0.25.1`, push the
-   release commit to `main`, green Runtime Live E2E for that exact SHA, and create
-   an annotated tag on that SHA.
-5. Before pushing the tag, run the existing release guards, especially
-   `TestEdgeAdvanceDecision`'s exact `v0.25.1` versus `0.26.0-pre1` equality case
-   and `TestEdgeAdvancePatchDoesNotRegressNext`. The decision must be `skip`.
-6. Record `origin/next` before the tag push and after the `edge-advance` job. The
-   SHAs must match. The patch job must not merge the 0.25.1 tree, restamp the
-   0.26 manifests, bump its calendar key, or create a new pre0 tag. The earlier
-   explicit cherry-pick and `next-publish` are the propagation path.
+### Pre-merge proof — this task's acceptance boundary
 
-Estimated complexity: small code change, medium live and release verification.
-No release-workflow change is planned because the existing strict-greater
-decision guard already contains the exact 0.25.1/0.26.0-pre1 regression case.
+1. Keep one self-contained fix commit based on current `origin/main`.
+2. Run focused, full, race, and existing release-guard tests. The exact
+   `v0.25.1` versus `0.26.0-pre1` decision must be `skip`, and
+   `TestEdgeAdvancePatchDoesNotRegressNext` must keep the simulated `next` tip
+   byte-identical.
+3. Retain the one-off live canary/reuse evidence without checking a new harness
+   into the product patch.
+
+### Post-merge release ceremony — explicitly not implementation acceptance
+
+1. Land the fix on `main`, then propagate only that fix to a branch based on
+   `origin/next` with `git cherry-pick -x <main-fix-commit>`. Run the required
+   tests there and publish the updated edge plugin through `next-publish`.
+2. Cut `v0.25.1` from `main` per `docs/releasing.md`: stamp the release, green
+   Runtime Live E2E for the exact release SHA, and create the annotated tag.
+3. Record `origin/next` before and after the tag's `edge-advance` job. The tips
+   must match because the equality decision skips; the deliberate cherry-pick
+   and `next-publish` are the propagation path.
+
+No release-workflow change is planned. The existing strict-greater decision
+guard already covers the exact v0.25.1/0.26.0-pre1 no-rewind case.
 
 ### Feedback Cycles
 
@@ -334,3 +310,19 @@ patch contains no bespoke live harness.
 ### Summary
 
 Validation verdict: **REJECTED**. AC-1/3/4 have material evidence defects at the exact integrated FO/stage observation boundaries, while AC-5/6 are material outcome defects because the replacement validation and promised release/propagation state are absent; no implementation repair was made. The adapter mechanism itself is strong and mutation-resistant, the retained lower-level Codex one-off is legitimate, and there are no deferred risks asserted from missing proof.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Narrow the acceptance criteria and test plan to the simple shipped invariant plus retained one-off live evidence; do not add or restore a bespoke live harness.
+  Four reduced ACs now cover the exact adapter map, removal of unsafe state, unchanged reuse policy, and pre-merge release guards; the test plan explicitly retains the one-off instead of shipping a harness.
+- DONE: Remove or split the unrelated automate-beta-release replacement requirement, and distinguish pre-merge no-rewind proof from the post-merge 0.25.1/next publication ceremony.
+  Beta replacement is named as owning-workflow follow-up, while the release plan separates this task's deterministic no-rewind proof from later main/next/tag operations.
+- DONE: Keep commit 2148c80c behavior unchanged unless the contract reshaping exposes a real defect; rerun only checks required by the resulting changes and report the reduced evidence boundary clearly.
+  Code HEAD remains clean at `2148c80c`; only the entity changed, and `status --read --json` plus entity `diff --check` verified the 312-line reshaped contract before this appended report.
+
+### Summary
+
+Cycle 2 resolves the validation rejection by aligning the entity with the
+captain's intended small patch and equivalent small permanent test. No product
+code or test harness changed; remote publication and incident-workflow repair
+remain explicit follow-up ceremony after merge.
