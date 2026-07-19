@@ -1,6 +1,6 @@
 ---
 title: Post-compaction contract reload
-status: validation
+status: implementation
 source: Absorbed from task njr36mfyhbafy8zx9ydks8ep in another workflow; canonical handoff /tmp/first-officer-compaction-rehydration.md; captain directed repo-local absorption 2026-07-11
 started: 2026-07-11T04:15:29Z
 completed:
@@ -201,6 +201,7 @@ Also out of scope for this entity: the Claude `SessionStart(compact)` model-cont
 - Cycle 3: REJECTED (fresh isolated Codex adversarial re-validation of candidate `433b10c3`, 2026-07-19) — one material evidence defect; AC-1/AC-2 shape mutations bit and AC-3's shipped unrelated-cwd hook smoke passed. Escalated to the captain instead of another automatic feedback round.
   - **M3 (AC-4 evidence mechanism).** `TestCodexPostCompactHookHarmlessAbsenceMatrix` directly runs `sh -c 'exit 3'`, discards that result itself, and never invokes a host hook runner. It proves only that the fixture and six-line script leave its temp HOME/cwd empty; it cannot observe AC-4's promised continuation of compaction and the next captain turn after a host sees a non-zero hook, nor establish that claim "on any host." Reset the evidence boundary: either narrow AC-4 to the shipped Codex binding's independently observable no-write/absence shape, or prove continuation with a canonical/live host runner. Do not repair this by adding another self-authored continuation oracle.
 - Cycle 3 resolution (captain decision, 2026-07-19): ACCEPTED with the host-continuation proof deferred to live experience. The review found no observed Codex break or outcome defect; the shipped hook's success path and no-write/absence boundary are proven. Proceed to merge without adding a synthetic continuation harness.
+- Cycle 3: REJECTED (captain + roborev job 278 codex lens, 2026-07-19) — the AC-4 test `TestCodexPostCompactHookHarmlessAbsenceMatrix` (codex_post_compact_hook_test.go) is tautological/false-green for AC-4's BEHAVIORAL claim: `absent`/`disabled` run nothing; the `failing` case runs `sh -c 'exit 3'` (tests harness tolerance of a nonzero exit, NOT the shipped hook's failure behavior); it checks only temp HOME+cwd (denylist omits touch/mkdir/tee/git; `${PLUGIN_ROOT}` writes / background processes undetected). It never invokes a host hook runner nor observes host-level failure-open (compaction continuing, the next captain turn, no blocked-stop/automatic-turn/abort) — it would pass even if Codex aborted after a failing hook. Round 3 = escalation point; the captain diagnosed and directed the fix: extend the already-approved option-(b) re-scope to AC-4 — narrow the test + AC-4 claim to the honestly-observed inertness of the shipped stdout-only script (strict allowlist, isolated `${PLUGIN_ROOT}`, all permitted roots inspected), and move the host-level failure-open BEHAVIOR to the out-of-scope live followup (alongside AC-1/AC-2). Narrow or remove the test; do not retain it as proof of failure-open behavior.
 
 ## Stage Report: ideation (cycle 3)
 
