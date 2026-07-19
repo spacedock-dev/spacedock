@@ -1,6 +1,6 @@
 ---
 title: Post-compaction contract reload
-status: validation
+status: implementation
 source: Absorbed from task njr36mfyhbafy8zx9ydks8ep in another workflow; canonical handoff /tmp/first-officer-compaction-rehydration.md; captain directed repo-local absorption 2026-07-11
 started: 2026-07-11T04:15:29Z
 completed:
@@ -143,6 +143,12 @@ Also out of scope for this entity: the Claude `SessionStart(compact)` model-cont
 **Cycle 3 (captain scope reset, 2026-07-17).** The controller design was rejected as unnecessary. The intended product is exactly two hints: recommend compaction only at an already-durable boundary, then remind the post-compaction FO to reread its authoritative contract and reconcile durable state. This body replaces the rejected design rather than repairing it.
 
 **Cycle 4 (captain host-neutral reframe, 2026-07-18).** The two hints were reframed from Codex-specific to host-neutral FO rules at the shared-core level, inherited by every runtime adapter. Post-compaction DELIVERY became a per-host binding `«post-compact-notice»` mirroring `«context-budget»`'s PRESENT/ABSENT discipline: Codex = captain-facing UI warning + manual cue (proven via the 0.144.4 probe); Pi = manual cue. The Claude `SessionStart(compact)` model-context delivery was SPLIT to `claude-post-compaction-contract-reload` (id `cdbhzxc`), referenced here but not designed. Two hints, no controller; the superseded-controller artifact reference is preserved.
+
+### Feedback Cycles (validation rejection rounds)
+
+- Cycle 1: REJECTED (Codex FO review, relayed by captain, 2026-07-19) — send back before push. All repo tests (incl. `go test ./... -race`) pass; the rejection is about runtime correctness and false-positive acceptance evidence. Two material findings, routed to implementation:
+  - **M1 (runtime correctness).** `hooks.json` invokes the PostCompact script via cwd-relative `./hooks/codex_post_compact_notice.sh`. Codex runs plugin hooks from the session cwd (the operator's project), not the plugin root, so the hook fails whenever the FO operates on any non-Spacedock repo (the normal case). The offline test masked the defect by resolving `./hooks/...` against the plugin repo root. Fix: reference the script via the supplied `PLUGIN_ROOT`, and test from an unrelated project directory so the cwd-relative failure is caught.
+  - **M2 (false-green evidence).** The AC-1/AC-2 fixtures hand-author both the input state and the expected transcript/message, so they exercise their own oracle rather than the shipped FO contract — they stay green even if the shared-core contract rules are removed. Fix: use captured/live fixture-backed FO behavior, or substantially narrow the AC-1/AC-2 evidence claims.
 
 ## Stage Report: ideation (cycle 3)
 
