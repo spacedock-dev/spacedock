@@ -59,6 +59,7 @@ func TestCodexToolNamesStayInRuntimeBindingSection(t *testing.T) {
 
 	for _, want := range []string{
 		"`spawn_agent(task_name,message,fork_turns)`",
+		"`spawn_agent(task_name,message,fork_turns=\"none\")`",
 		"`send_message(target,message)`",
 		"`followup_task(target,message)`",
 		"`wait_agent(timeout_ms)`",

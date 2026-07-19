@@ -1,58 +1,38 @@
 package dispatch
 
 import (
-	"encoding/json"
-	"strings"
+	"reflect"
 	"testing"
 )
 
-func TestCodexMultiAgentV2SpawnInputMapsBuildOutput(t *testing.T) {
-	helperPrompt := "Read /tmp/spacedock-dispatch/spacedock-ensign-status-validate-determinism-implementation.md and treat its content as your assignment."
-	raw := []byte(`{
-		"schema_version": 2,
-		"subagent_type": "general",
-		"description": "implementation worker",
-		"fetch_commands": [],
-		"dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-status-validate-determinism-implementation.md",
-		"prompt": ` + mustJSON(t, helperPrompt) + `,
-		"model": "haiku",
-		"name": "spacedock-ensign-status-validate-determinism-implementation"
-	}`)
-
-	spawn, err := CodexMultiAgentV2SpawnInput(raw)
-	if err != nil {
-		t.Fatalf("CodexMultiAgentV2SpawnInput: %v", err)
+func TestCodexMultiAgentV2SpawnInputAlwaysIsolatesFreshDispatch(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  string
+	}{
+		{name: "absent", raw: `{"prompt":"pointer","name":"spacedock-ensign-task-validation"}`},
+		{name: "all", raw: `{"prompt":"pointer","name":"spacedock-ensign-task-validation","fork_turns":"all"}`},
+		{name: "numeric", raw: `{"prompt":"pointer","name":"spacedock-ensign-task-validation","fork_turns":3}`},
+		{name: "future overrides", raw: `{"prompt":"pointer","name":"spacedock-ensign-task-validation","model":"gpt-5.5","reasoning_effort":"high"}`},
 	}
-
-	if spawn.TaskName != "spacedock_ensign_status_validate_determinism_implementation" {
-		t.Fatalf("task_name = %q", spawn.TaskName)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			spawn, err := CodexMultiAgentV2SpawnInput([]byte(tc.raw))
+			if err != nil {
+				t.Fatalf("CodexMultiAgentV2SpawnInput: %v", err)
+			}
+			wantArgs := map[string]string{
+				"task_name":  "spacedock_ensign_task_validation",
+				"message":    "pointer",
+				"fork_turns": "none",
+			}
+			if got := spawn.ToolArgs(); !reflect.DeepEqual(got, wantArgs) {
+				t.Fatalf("tool args = %#v, want %#v", got, wantArgs)
+			}
+		})
 	}
-	if spawn.Message != helperPrompt {
-		t.Fatalf("message was not byte-identical to helper prompt:\nwant %q\ngot  %q", helperPrompt, spawn.Message)
-	}
-	if spawn.ForkTurns != "" {
-		t.Fatalf("fork_turns should be omitted by default, got %q", spawn.ForkTurns)
-	}
-	if spawn.Identity.Name != "spacedock-ensign-status-validate-determinism-implementation" ||
-		spawn.Identity.Slug != "status-validate-determinism" ||
-		spawn.Identity.Stage != "implementation" {
-		t.Fatalf("identity did not preserve helper mapping: %+v", spawn.Identity)
-	}
-
-	encoded, err := json.Marshal(spawn.ToolArgs())
-	if err != nil {
-		t.Fatalf("marshal tool args: %v", err)
-	}
-	body := string(encoded)
-	for _, want := range []string{`"task_name"`, `"message"`} {
-		if !strings.Contains(body, want) {
-			t.Fatalf("tool args missing %s: %s", want, body)
-		}
-	}
-	for _, banned := range []string{`"description"`, `"subagent_type"`, `"model"`, `"name"`} {
-		if strings.Contains(body, banned) {
-			t.Fatalf("tool args should omit unsupported helper field %q: %s", banned, body)
-		}
+	if _, mutable := reflect.TypeOf(CodexMultiAgentV2Spawn{}).FieldByName("ForkTurns"); mutable {
+		t.Fatal("CodexMultiAgentV2Spawn must not expose a mutable ForkTurns field")
 	}
 }
 
@@ -66,13 +46,4 @@ func TestCodexMultiAgentV2SpawnInputRejectsSanitizedCollision(t *testing.T) {
 	if _, err := CodexMultiAgentV2SpawnInputWithSeen(second, seen); err == nil {
 		t.Fatal("expected sanitized task_name collision to fail")
 	}
-}
-
-func mustJSON(t *testing.T, v string) string {
-	t.Helper()
-	raw, err := json.Marshal(v)
-	if err != nil {
-		t.Fatalf("marshal test JSON: %v", err)
-	}
-	return string(raw)
 }
