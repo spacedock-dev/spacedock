@@ -1,11 +1,11 @@
 ---
 id: 2690fpqe9pkn917am6bt6eqs
 title: Make dispatch-build help match its input-mode parser
-status: validation
+status: done
 source: "FO dogfood, 2026-07-19: 0.26.0-pre0 help advertised stdin JSON plus --advance but the same invocation selected flag/file mode and rejected stdin."
 started: 2026-07-19T05:04:28Z
-completed:
-verdict:
+completed: 2026-07-19T10:33:55Z
+verdict: passed
 score: "0.65"
 worktree: .worktrees/spacedock-ensign-dispatch-build-help-input-mode-drift
 issue:
@@ -13,6 +13,7 @@ milestone: 0.26.0
 group: binary-ux
 mod-block:
 pr: pr-merge:526
+archived: 2026-07-19T10:33:55Z
 ---
 
 Make `spacedock dispatch build --help` describe every supported input form, its
