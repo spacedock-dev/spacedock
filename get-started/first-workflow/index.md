@@ -2,7 +2,7 @@
 title: "Your first workflow"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-07-19 10:33:48"
+last_updated: "2026-07-19 14:30:36"
 ---
 
 # Your first workflow
