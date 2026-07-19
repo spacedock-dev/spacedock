@@ -1,7 +1,7 @@
 ---
 id: rt8eywbyf3d7nyc9bsmrymnq
 title: Codex fresh dispatch must isolate parent turns
-status: validation
+status: implementation
 source: "/tmp/spacedock-codex-fresh-dispatch-incident.md; captain-requested legitimacy check and filing, 2026-07-19"
 started: 2026-07-19T09:05:43Z
 completed:
@@ -271,6 +271,10 @@ true. It must not expose `fork_turns` as a user setting.
 Estimated complexity: small code change, medium live and release verification.
 No release-workflow change is planned because the existing strict-greater
 decision guard already contains the exact 0.25.1/0.26.0-pre1 regression case.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED (fresh Codex validation, 2026-07-19) — the adapter invariant and its compact adversarial test pass, and the retained one-off live evidence is legitimate. Rejection comes from the entity contract demanding a large integrated live journey, unrelated `automate-beta-release` replacement work, and already-consumed release state before this small patch can merge. Captain direction is “simple fix, equivalent simple test.” Route to implementation to narrow ACs and the test plan to the shipped adapter boundary plus one-off live evidence; split unrelated replacement work and treat actual 0.25.1/next publication as the post-merge release ceremony guarded by the existing no-rewind checks. Do not restore a bespoke live harness.
 
 ## Stage Report: ideation
 
