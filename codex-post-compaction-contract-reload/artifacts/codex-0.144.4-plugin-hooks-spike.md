@@ -31,16 +31,14 @@ no shell, no quote-stripping**. Verified: `touch /abs/path` fires; `sh -c "..."`
 `... | tee ...`, `echo ... > file`, `touch "/quoted path"`, and a `command`
 array all fail (quotes stay literal, shell operators are inert). Therefore a
 hook that must emit multi-word prose cannot be an inline command; it must be a
-**bundled script referenced by a relative path** (`./scripts/x.sh`) that prints
-the JSON. This is exactly the pattern the curated OpenAI plugins use — `replayio`
-and `figma` ship `hooks.json` with `"command": "./scripts/<name>.sh"` and the
-script in `./scripts/`. Their real-world use is the strongest evidence that
-relative-to-plugin-root command resolution works in normal (TUI) operation.
-(In headless `codex exec` the process cwd is the invoking repo, so a relative
-command does not resolve to the plugin root there; the wiring still fires — the
-`SessionStart` hook is logged — only the relative script is not found. Every
-other link is proven: key parses, `hooks.json` parses, the engine runs the hook,
-trust gates it.)
+**bundled script**. That script MUST be referenced by a plugin-root-absolute path
+via the `${PLUGIN_ROOT}` token Codex substitutes (see the next section), NOT by a
+bare relative path. The curated OpenAI plugins (`replayio`, `figma`) ship
+`"command": "./scripts/<name>.sh"`, but a bare relative command resolves against
+the **session cwd** — the operator's project — not the plugin root; it fires only
+when the session cwd happens to be the plugin directory (as it is not when the FO
+operates on any other repo, the normal shipped usage). Proven below: from an
+unrelated cwd `./hooks/x.sh` does NOT fire while `${PLUGIN_ROOT}/hooks/x.sh` does.
 
 ## Hook output contract
 
@@ -61,3 +59,47 @@ OpenAI's own curated plugins ship hooks. So the Spacedock plugin must ship the
 it. This is consistent with the failure-open design: if a future Codex removes
 or gates plugin hooks, the binding degrades to the manual captain cue and nothing
 is blocked.
+
+## Command path resolution: `${PLUGIN_ROOT}` (M1 fix, verified codex-cli 0.144.6)
+
+The validation review (round 1) rejected the first cut because the shipped
+`hooks.json` referenced the script by the cwd-relative path
+`./hooks/codex_post_compact_notice.sh`. Codex exec's a hook command from the
+**session cwd** (the operator's project the FO is working on), so the relative
+path fails to resolve whenever the FO operates on any repo other than the plugin's
+own — the normal, shipped usage. The earlier offline test masked this by resolving
+`./hooks/...` against the plugin repo root itself.
+
+Reproduced against a live `codex-cli 0.144.6` CLI, marketplace-installed local
+plugin, SessionStart hook fired via `codex exec --dangerously-bypass-hook-trust`
+from an UNRELATED cwd (a temp dir that is not the plugin and has no `./hooks/`).
+The bundled script recorded `argv0` and the plugin-root env vars Codex exposes:
+
+| hook `command`                     | result from unrelated cwd |
+|------------------------------------|---------------------------|
+| `<abs>/hooks/mark.sh` (control)    | FIRED                     |
+| `./hooks/mark.sh`                  | no-fire (the defect)      |
+| `${PLUGIN_ROOT}/hooks/mark.sh`     | FIRED                     |
+| `$PLUGIN_ROOT/hooks/mark.sh`       | no-fire (no shell — bare `$VAR` is not expanded) |
+| `${CODEX_PLUGIN_ROOT}/hooks/mark.sh` | no-fire (not a substituted token; env var unset) |
+| `${CLAUDE_PLUGIN_ROOT}/hooks/mark.sh` | FIRED                  |
+
+Findings:
+
+- Codex **template-substitutes the brace forms `${PLUGIN_ROOT}` and
+  `${CLAUDE_PLUGIN_ROOT}`** in the command string before the no-shell exec,
+  replacing them with the materialized plugin directory
+  (`~/.codex/plugins/cache/<marketplace>/<plugin>/<version>`). The bare `$VAR`
+  form is not expanded (there is no shell).
+- The child process environment has `PLUGIN_ROOT` and `CLAUDE_PLUGIN_ROOT` set to
+  the plugin dir; `CODEX_PLUGIN_ROOT` is unset.
+- `${PLUGIN_ROOT}` is the neutral, documented token. The shipped hook now uses
+  `${PLUGIN_ROOT}/hooks/codex_post_compact_notice.sh`, which resolves to an
+  absolute path under the plugin install dir independent of session cwd.
+
+The offline fixture (`codex_post_compact_hook_test.go`) was corrected to mirror
+this: `resolveHookCommand` requires the `${PLUGIN_ROOT}/` prefix and substitutes
+it — it FAILS on a bare cwd-relative command — and
+`TestCodexPostCompactHookFiresFromUnrelatedCwdViaPluginRoot` runs the resolved
+command from an unrelated temp-dir cwd (with `PLUGIN_ROOT` set) and asserts the
+`systemMessage`, while proving the `./hooks/<script>` form does not resolve there.
