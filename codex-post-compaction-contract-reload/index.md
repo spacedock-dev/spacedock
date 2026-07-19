@@ -1,6 +1,6 @@
 ---
 title: Post-compaction contract reload
-status: implementation
+status: ideation
 source: Absorbed from task njr36mfyhbafy8zx9ydks8ep in another workflow; canonical handoff /tmp/first-officer-compaction-rehydration.md; captain directed repo-local absorption 2026-07-11
 started: 2026-07-11T04:15:29Z
 completed:
@@ -150,6 +150,7 @@ Also out of scope for this entity: the Claude `SessionStart(compact)` model-cont
   - **M1 (runtime correctness).** `hooks.json` invokes the PostCompact script via cwd-relative `./hooks/codex_post_compact_notice.sh`. Codex runs plugin hooks from the session cwd (the operator's project), not the plugin root, so the hook fails whenever the FO operates on any non-Spacedock repo (the normal case). The offline test masked the defect by resolving `./hooks/...` against the plugin repo root. Fix: reference the script via the supplied `PLUGIN_ROOT`, and test from an unrelated project directory so the cwd-relative failure is caught.
   - **M2 (false-green evidence).** The AC-1/AC-2 fixtures hand-author both the input state and the expected transcript/message, so they exercise their own oracle rather than the shipped FO contract — they stay green even if the shared-core contract rules are removed. Fix: use captured/live fixture-backed FO behavior, or substantially narrow the AC-1/AC-2 evidence claims.
 - Cycle 2: REJECTED (Codex FO re-review, 2026-07-19) — M1 is resolved by live Codex 0.144.6 evidence: `${PLUGIN_ROOT}/hooks/...` fires from an unrelated cwd and the old `./hooks/...` form does not. M2 remains material. `TestCompactionContinuityRuleShipped` is an instruction-prose grep, which `AGENTS.md` explicitly disallows as a substitute for behavior; the timing and reload suites still feed hand-authored compliant answers into hand-authored validators. Renaming them “oracles” and declaring the behavioral linkage unenforced is honest, but it does not make the behavioral first sentences of AC-1/AC-2 pass. The validation report therefore overclaims both ACs. The branch is also disproportionate: 757 added lines, including 419 lines of synthetic timing/reload/presence tests, for 13 lines of FO contract. Preserve the live-proven hook fix and a small hook/config smoke. Remove the synthetic oracle/presence machinery; then either (a) capture actual FO behavior with the durable evidence required by `AGENTS.md`, or (b) rewrite AC-1/AC-2 themselves as contract-shape requirements and stop claiming runtime behavior. Do not add another prose guard.
+- Cycle 2 resolution (captain decision, 2026-07-19): chose option (b) — re-scope AC-1/AC-2 as contract-shape requirements and stop claiming runtime behavior. Routed to ideation (cycle 5) to rewrite the ACs and slim the deliverable: keep the live-proven `${PLUGIN_ROOT}` hook + a small hook/config smoke + contract-shape checks; strip the ~419 lines of synthetic timing/reload/presence machinery; behavioral proof of the judgment rules is an explicit out-of-scope followup (a live compaction shared-scenario).
 
 ## Stage Report: ideation (cycle 3)
 
