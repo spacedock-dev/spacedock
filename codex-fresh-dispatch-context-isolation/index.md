@@ -326,3 +326,24 @@ Cycle 2 resolves the validation rejection by aligning the entity with the
 captain's intended small patch and equivalent small permanent test. No product
 code or test harness changed; remote publication and incident-workflow repair
 remain explicit follow-up ceremony after merge.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Re-review the exact small adapter invariant and compact mutation-resistant test at unchanged code SHA 2148c80c; reject any path that can omit or override fork_turns="none".
+  Exact-map and reflection tests pass; a throwaway restoration of mutable `ForkTurns` plus conditional omission fails all four table rows and the field guard.
+- DONE: Verify the retained one-off evidence honestly supports only fresh child isolation and same-handle followup continuity, with no permanent bespoke harness or broader behavioral claim.
+  The three hashes match; raw records show one exact `"none"` spawn, zero exact parent-canary hits in the child, one follow-up, two activities on the same child thread, and no harness file in commit `2148c80c`.
+- DONE: Cross-check the four revised acceptance criteria and confirm release proof is correctly split between pre-merge no-rewind guards and post-merge main/next/tag ceremony.
+  All four revised ACs pass; remote landing, propagation, publication, tag cutting, and the separate `automate-beta-release` replacement remain explicitly outside this pre-merge gate.
+- DONE: **AC-1 (VALUE): Every Spacedock Codex fresh-spawn payload is explicitly isolated.**
+  Plain, absent, `"all"`, numeric, and future-override envelopes all produce the exact three-key map with `"fork_turns":"none"`; the retained host probe observes matching child isolation.
+- DONE: **AC-2: Unsafe fork output is unrepresentable in the Codex adapter.**
+  `CodexMultiAgentV2Spawn` has no fork field, helper JSON cannot override output, and the realistic conditional-omission mutation reds the compact permanent test.
+- DONE: **AC-3: Fresh isolation does not change deliberate continuity or stage selection.**
+  The five-file diff changes no workflow stage declarations, while the retained follow-up reaches the same task/thread for a second turn and recalls its prior marker.
+- DONE: **AC-4: The patch is pre-merge release-safe without claiming post-merge publication state.**
+  Focused, contractlint, full, and race tests pass at `2148c80c`; no-rewind tests pass and the real CLI returns `skip` for v0.25.1 against next's 0.26.0-pre1 manifest.
+
+### Summary
+
+Validation verdict: **PASSED** at unchanged clean code SHA `2148c80c`. The revised contract now matches the shipped small adapter invariant and simple permanent test, and the retained one-off is used only for its legitimate host-level claims; there are no material or deferred findings. One unrelated polish issue remains outside the patch: whole-tree `gofmt -w` realigns fields in upstream `internal/release/journeydelta.go`, while every changed Go file is format-clean.
