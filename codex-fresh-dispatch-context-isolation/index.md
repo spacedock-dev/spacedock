@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-codex-fresh-dispatch-context-isolation
 issue:
 sprint:
 mod-block: merge:pr-merge
-pr: "#532"
+pr: pr-merge:532
 ---
 
 ## Problem
