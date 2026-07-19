@@ -11,6 +11,7 @@ worktree: .worktrees/spacedock-ensign-dispatch-build-help-input-mode-drift
 issue:
 milestone: 0.26.0
 group: binary-ux
+mod-block: merge:pr-merge
 ---
 
 Make `spacedock dispatch build --help` describe every supported input form, its
