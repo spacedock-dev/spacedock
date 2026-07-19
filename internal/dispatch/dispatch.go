@@ -289,26 +289,61 @@ Usage:
 
 func printBuildUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
-  spacedock dispatch build --workflow-dir DIR
+  spacedock dispatch build --workflow-dir DIR < request.json                                                   (stdin mode)
+  spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE [flags]   (flag/file mode)
+  spacedock dispatch build --print-schema
+  spacedock dispatch build --validate-only FILE
 
-Build an ensign dispatch artifact from stdin JSON and write the JSON envelope to stdout.
+Build an ensign dispatch artifact and write the JSON envelope to stdout. The
+request comes from a JSON object on stdin OR from flags/files. The two are
+selected by the rule below and never merged.
+
+Input mode selection:
+  If ANY request flag is present the request is read from flags/files and stdin
+  is IGNORED (flag/file mode); otherwise the request is read as a JSON object on
+  stdin (stdin JSON mode). Request flags:
+    --entity-path  --stage  --checklist-file  --scope-notes-file
+    --feedback-context-file  --team-name  --bare-mode  --feedback-reflow  --advance
+  Flag/file mode requires --entity-path, --stage, and --checklist-file; any
+  request flag with one of the three missing fails:
+    error: flag/file input requires --entity-path, --stage, and --checklist-file
+  Because --advance is a request flag, piping JSON on stdin together with
+  --advance is NOT accepted -- it selects flag/file mode and ignores the piped
+  JSON. Pass a reuse-advance request in flag/file form (see the --advance
+  example below).
 
 Flags:
-  --workflow-dir DIR   Workflow definition directory containing README.md.
-  --host HOST          Override the runtime host (claude|codex|pi). Defaults to the detected runtime.
-  --team-name NAME     Select the legacy TeamCreate-registry dispatch shape. On host=claude, auto-team is the default — omit this unless you mean legacy team mode.
-  --bare-mode          Emit the bare sequential shape (no name, no team_name, no run_in_background).
-  --advance            Emit a reuse-advance pointer message for a live worker instead of a spawn envelope. Incompatible with --bare-mode.
+  --workflow-dir DIR            Workflow definition directory containing README.md (both modes).
+  --host HOST                   Override the runtime host (claude|codex|pi). Defaults to the detected runtime (both modes).
+  --entity-path FILE            Entity file for this dispatch (flag/file mode).
+  --stage STAGE                 Stage name to dispatch (flag/file mode).
+  --checklist-file FILE         File of checklist lines, one per line (flag/file mode).
+  --scope-notes-file FILE       Optional scope-notes file (flag/file mode).
+  --feedback-context-file FILE  Optional feedback-context file; required with --feedback-reflow (flag/file mode).
+  --team-name NAME              Select the legacy TeamCreate-registry dispatch shape. On host=claude, auto-team is the default — omit this unless you mean legacy team mode.
+  --bare-mode                   Emit the bare sequential shape (no name, no team_name, no run_in_background).
+  --feedback-reflow             Route a rejection back to its feedback-to target stage; requires --feedback-context-file.
+  --advance                     Emit a reuse-advance pointer message for a live worker instead of a spawn envelope. Incompatible with --bare-mode.
+  --print-schema                Print the stdin request JSON schema and exit.
+  --validate-only FILE          Validate a request JSON file without writing a dispatch; exit 0 on success.
 
-Stdin JSON fields:
+Stdin JSON request fields (stdin JSON mode):
   schema_version  Dispatch schema version. The current supported value is 2.
   entity_path     Path to the entity file for this dispatch.
   workflow_dir    Workflow directory for the dispatch request.
   stage           Stage name to dispatch.
   checklist       Array of checklist strings for the dispatched worker.
+  (optional: team_name, scope_notes, feedback_context, bare_mode, is_feedback_reflow, advance, host)
 
-Example:
+Examples:
+  stdin JSON mode:
   {"schema_version":2,"entity_path":"thing.md","workflow_dir":".","stage":"implementation","checklist":["DONE: run tests"]}
+
+  flag/file mode:
+  spacedock dispatch build --workflow-dir . --entity-path thing.md --stage implementation --checklist-file impl.checklist
+
+  reuse-advance (flag/file mode):
+  spacedock dispatch build --workflow-dir . --entity-path thing.md --stage validation --checklist-file validation.checklist --advance
 `)
 }
 

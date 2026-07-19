@@ -27,6 +27,24 @@ func TestDispatchBuildHelpBeforeRequiredFlags(t *testing.T) {
 				"workflow_dir",
 				"stage",
 				"checklist",
+				// Every request flag that selects flag/file mode is documented.
+				"--entity-path",
+				"--stage",
+				"--checklist-file",
+				"--scope-notes-file",
+				"--feedback-context-file",
+				"--team-name",
+				"--bare-mode",
+				"--feedback-reflow",
+				"--advance",
+				// The exact stdin-vs-flag/file selection rule and the
+				// stdin+--advance rejection are spelled out.
+				"is IGNORED (flag/file mode)",
+				"requires --entity-path, --stage, and --checklist-file",
+				"--advance is NOT accepted",
+				// The accepted flag/file and reuse-advance example command lines.
+				"spacedock dispatch build --workflow-dir . --entity-path thing.md --stage implementation --checklist-file impl.checklist",
+				"spacedock dispatch build --workflow-dir . --entity-path thing.md --stage validation --checklist-file validation.checklist --advance",
 			)
 			assertNotContains(t, res.stdout, "requires --workflow-dir")
 		})
