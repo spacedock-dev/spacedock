@@ -22,7 +22,7 @@ gates:
           state: open
           briefing:
             id: briefing:z7-ideation-1
-            digest: sha256:f8a918e9f5315d352b700b5c0a79e9d9a34087cbc311073ec3631968776cc937
+            digest: sha256:f4fefb0b7be0d57c933fe27d71aa90235e6b01faef2301f916db22a8f0065b47
 ---
 
 "Prefer a code gate over a prose-only rule" is a standing instruction to convert any guarantee into enforcement code — unscoped by stakes, it produced presence tests and unasked CI/lint infra, and it degrades worse in non-dev workflows where every check is new infra. Replace it with the falsifiability ladder: shipped system guards → existing mechanical checks → falsifiable exercise (replay, source-check, adversarial skeptic) → captain judgment → build new machinery (last, consent-gated). Same edit carries: new enforcement surfaces are not "obvious reversible work" (consent required); a fan-out checkpoint before an investigation's Nth spawned entity/PR; identifier minting reserved to the system, ad-hoc itemization uses bare ordinals. Grouped with 1p9, cy, 85.
