@@ -125,3 +125,24 @@ Absorbs `contractlint-pi-runtime-semantics-retirement` — the pi split is mecha
 ### Summary
 
 Designed the retirement of the codex and pi runtime-semantics phrase checks (three files, ten functions, ~121 prose literals) into value-computing tests. Each runtime-meaning claim routes to one of three independent sources — a spacedock-emitted Go struct/const (bind, reconcile pattern), the already-live `dispatch build --host pi` fixture, or a gated live host lane — with pure prose-greps deleted and only structural-absence/containment residue retained (each keeping its discriminator). Verified inline that every proposed binding matches its source and passes today; the one divergence found (`member_spawn` in the pi doc but not in `teams.go`, a substrate-native token) is routed to the live lane rather than silently patched.
+
+## Stage Report: implementation
+
+- DONE: Committed assertions that assert runtime MEANING via an adapter-prose literal go 121 -> 0 across the three named files (tolerance 0 — this is a hard number, not a target), each replaced by a Go-source binding, an existing build fixture, or an existing live lane.
+  Runtime-meaning positive-presence literals 47 -> 0. All 7 surviving assertion sites are AC-1-whitelisted residue: 2 set-equality bindings, 1 Go-computed-token binding, 1 `strings.Count` section-uniqueness, 3 absence/containment guards. Total literal entries 121 -> 45. Commit `0e6699aa`.
+- DONE: Retained structural checks each carry a discriminator (a structural check with no discriminator is the tautology this task exists to remove); net committed test-function count stays within +/-2.
+  3 bindings + 3 structural guards + 3 discriminators = 9 committed functions replacing 10 (delta -1). 9/9 planted divergences red, 0 false greens: ToolArgs key rename, ToolArgs key drop, `fork_turns` value change, 2 `TeamsAction` renames, `SubagentStageDispatch` context value, its `json:"context"` tag, a core capability heading rename, a pi adapter bullet drop.
+- DONE: `git diff --stat` touches only internal/contractlint/** and test support — no skills/** doc bodies; the known member_spawn doc-only divergence is RECORDED as a finding routed to the live pi lane, never folded into a struct binding to make a check pass.
+  3 files changed, all under `internal/contractlint/`; zero `skills/**` edits. `member_spawn` is deliberately excluded from `piEmittedRuntimeTokens` with the reason in-code and routed to `pi_live_runner_test.go`.
+
+### Tolerance
+
+Declared line delta was "near-flat to negative". Actual across the three files: 449 -> 547 lines, **+98 (exceeded)**. Split: executable code +19 (387 -> 406, near-flat as declared); comments +72 (30 -> 102). The comment growth carries the AC-3 claim-to-owner citations (which retired assert now lives in which lane or fixture) and the discriminator rationale, matching the existing convention in `reconcile_class_binding_test.go` / `capability_binding_test.go`. Decision: **RECONFIRM** — the two hard tolerances (runtime-meaning count 0, function count +/-2) both hold; the overage is documentation an acceptance criterion asks for. Not re-scoped, not parked.
+
+### Findings
+
+`pi_live_runner_test.go` — the owner this task routes pi substrate-native tokens to — is RED on this machine: `Cannot find module '@earendil-works/pi-coding-agent'` when loading the local `pi-subagents` extension. Pre-existing and unrelated to this diff: the identical failure reproduces on the unmodified `main` checkout. The routed claims are therefore owned-but-unexercisable here until the local pi-subagents install is repaired.
+
+### Summary
+
+Retired the codex and pi runtime-semantics phrase checks by routing each runtime-meaning claim to a source that can diverge from the prose: the Codex spawn signature to `ToolArgs()` (arg names and the `fork_turns` default), the Pi runtime tokens to `TeamsAction`'s emitters and `SubagentStageDispatch` (context key read from its JSON tag, not typed), and the capability set to three-way equality across the codex block, the pi block, and `fo-dispatch-core.md`'s headings — retiring the hardcoded slice. Substrate-native tokens keep their meaning in the gated live lanes and their prose asserts are deleted with the lane cited. What remains is structural (host-neutrality, negative-contrast, no-step-ordinal, section containment), each now driven through a shared predicate that a discriminator control exercises with planted pass/red inputs. Verification: `go test ./...` and `go test ./... -race` green; codex live lane green (9/9 scenarios, 1298s); pi live lane red for a pre-existing environment reason recorded above. The adapter docs are untouched.
