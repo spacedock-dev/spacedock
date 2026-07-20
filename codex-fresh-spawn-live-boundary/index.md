@@ -10,7 +10,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-codex-fresh-spawn-live-boundary
 issue:
 id: 6cc3rvfd44y6x3352hh21v8b
-mod-block: merge:pr-merge
+mod-block:
 pr: "#534"
 ---
 
@@ -84,6 +84,7 @@ No public workflow or release documentation changes and no new user setting. The
 - Cycle 2: REJECTED by the captain at the ideation gate on 2026-07-20 as overbuilt. The proposed public `spacedock dispatch guard-codex-spawn` command, process fixture, configuration smoke test, and 100+ LOC estimate turn a one-field boundary predicate into a subsystem. Return to ideation and produce the smallest change on the already-proven `PreToolUse` hook path. Reuse existing live output as evidence and provide manual release-test instructions; add no harness or generalized policy surface. Give a gross changed-LOC estimate by file before implementation and stop if the minimal hook cannot parse and deny safely.
 - Cycle 3: CORRECTED by the captain on 2026-07-20. The cited `spawn_agent` call was generic research rather than a Spacedock dispatch, so the entire fresh-spawn/PreToolUse premise was false. Replace it with the archived c6 post-compaction defect: `SessionStart(compact)` model context gated by inherited `SPACEDOCK_BIN`, with the PostCompact captain cue retained only as a timing fallback.
 - Validation cycle 1: REJECTED for evidence/gate completion only. The captain ran the `/tmp` installed-plugin runbook and reported that marked launch, bare launch, marked resume, and bare resume all passed. The only remaining blocker is the repository-wide formatting gate: `gofmt` requires three field-alignment spaces in unchanged `internal/release/journeydelta.go`. Route only that mechanical correction to implementation, then re-run the same validator; add no product mechanism or test infrastructure.
+- Validation cycle 2: REJECTED by the captain after PR #534 opened. The Codex runtime contract must not narrate hook plumbing, and the ineffective PostCompact fallback must be removed rather than documented. Delete the runtime hook paragraph, the `PostCompact` registration and script, and the legacy 344-line PostCompact test file. Keep only the four-line `SessionStart(compact)` hook. Add no replacement test: the captain's real 4/4 marked/bare launch-and-resume run is the proof, per the 0260 live-drive and cheapest-check rules.
 
 ## Superseded stage reports
 
