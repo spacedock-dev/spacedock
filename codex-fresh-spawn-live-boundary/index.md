@@ -10,7 +10,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-codex-fresh-spawn-live-boundary
 issue:
 id: 6cc3rvfd44y6x3352hh21v8b
-mod-block:
+mod-block: merge:pr-merge
 pr: "#534"
 ---
 
