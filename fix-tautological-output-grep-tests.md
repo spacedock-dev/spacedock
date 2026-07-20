@@ -10,6 +10,22 @@ score:
 worktree:
 sprint: 0260-proportionality
 group: test-cleanups
+gates:
+  version: 1
+  current:
+    gate: gate:docs-dev:ht:ideation
+    attempt: gate-attempt:ht-ideation-1
+  records:
+    - id: gate:docs-dev:ht:ideation
+      stage: ideation
+      current-attempt: gate-attempt:ht-ideation-1
+      attempts:
+        - id: gate-attempt:ht-ideation-1
+          sequence: 1
+          state: open
+          briefing:
+            id: briefing:ht-ideation-1
+            digest: sha256:76cdb9a28249d62818c0beac1b36f8134326b1ae185ee43f8a5d0f3183f88259
 ---
 
 Fix (narrow to observed behavior, or remove relying on the sibling behavioral test) the 8 confirmed tautological output-grep tests. Each is verified redundant/prose by adversarial refutation — the behavioral coverage it claims is already provided by a named sibling.
