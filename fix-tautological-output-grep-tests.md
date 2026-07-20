@@ -57,6 +57,8 @@ Per-test fix: six deletions (the whole test is covered by a named behavioral sib
 | 6 | `TestHelpListsNewVerbs` (`cli/verbs_test.go`) | delete | `TestNewVerbMintsInDiscoveredWorkflow` (drives `new`, mints id, `--validate` clean) + `TestCompletionShells` (drives `completion`, exit-code + script-content contract). |
 | 7+8 | `TestFilingReadmeTaskTemplateRoundTripsThroughNew` required-list loop (`ensigncycle/filing_readme_template_test.go`) | narrow | Remove the loop's tautological entries: `title:` / `status:` (test 7 — re-verified by the `literal template creates entity and mints id` sub-test at :47-67, which drives `new` and asserts the created entity preserves them) and the five `##` headings (test 8 — a mirror grep over the test's OWN `filingReadme()` fixture at `shared_fixtures_test.go:318`). The loop's only non-tautological member `---\n` duplicates the adjacent `HasPrefix(template, "---\n")`, so the whole loop is removed; the structural `HasPrefix` + no-`id:` checks (:40-45) and both sub-tests stay. |
 
+**Expected surface:** 6 `_test.go` files (`cli/cli_test.go`, `cli/pi_frontdoor_test.go`, `cli/state_commit_test.go`, `cli/verbs_test.go`, `dispatch/build_team_name_advisory_test.go`, `ensigncycle/filing_readme_template_test.go`), six test deletions + two narrowings, roughly −135 / +0 LOC (removal-only; the narrowings delete assertions and add none), no production code and no non-test files.
+
 ## Out of scope
 
 The 4 assertion-free/mirror tests (owned by `tautological-test-fixes`); the contractlint prose-backstop concern (owned by `contractlint-prose-function-backstop-retirement` + `contractlint-mixed-structural-boundary`). NOTE: a `.md`-prose-grep sweep the same session found the non-contractlint packages CLEAN, so the third-shape debt is this CLI-output-grep set, not a codebase-wide markdown problem.
@@ -72,7 +74,7 @@ Verified by: the six delete + two narrow edits land exactly as described in Prop
 
 ## Test plan
 
-- Surface: Go unit tests only. No fixture, CLI, or live-workflow additions. Cost: low — edits to 5 `_test.go` files plus one `go test` run; the mutation matrix is a handful of throwaway one-line source edits, each reverted after observing RED.
+- Surface: Go unit tests only. No fixture, CLI, or live-workflow additions. Cost: low — edits to 6 `_test.go` files plus one `go test` run; the mutation matrix is a handful of throwaway one-line source edits, each reverted after observing RED.
 - Mutation matrix (AC-1 proof, run once in implementation; each mutation reverted immediately):
   1. bare `spacedock` prints bytes ≠ `--help` → `TestTopLevelHelpFormsAreIdentical` RED.
   2. drop a `live child talkback` / `durable marker probe` line from `doctor --host pi` → `TestPiDoctorReportsMissingAndHealthyRuntime` RED.
