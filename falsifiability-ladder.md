@@ -39,10 +39,22 @@ gates:
             - id: gate-attempt:z7-ideation-2
               sequence: 2
               previous-attempt: gate-attempt:z7-ideation-1
-              state: open
+              state: closed
               briefing:
                 id: briefing:z7-ideation-2
                 digest: sha256:baf726be8962c9e4238117c1cb80ae66577f12277aeb7da997277a7ad8b455d4
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784522359233707000
+                briefing: briefing:z7-ideation-2
+                by: person:reviewer
+                at: 2026-07-20T04:39:19Z
+                decision: revise
+                reason: "Five annotations: drop the jargon term in the falsifiable-exercise step; format the ordering as bullets; the last-resort build requires explicit approval and usually its own entity, and the wording may still be too dev-specific for the shared core; justify or restyle the inline deferred-file reference; carry the prose-grep nuance — allowed as one-off validation evidence, banned as a committed test."
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 ---
 
 "Prefer a code gate over a prose-only rule" is a standing instruction to convert any guarantee into enforcement code — unscoped by stakes, it produced presence tests and unasked CI/lint infra, and it degrades worse in non-dev workflows where every check is new infra. Replace it with an ordering that prefers the cheapest check that can fail: shipped system guards → existing mechanical checks → falsifiable exercise (replay, source-check, adversarial skeptic) → captain judgment → build new machinery (last resort, consent-gated). Same edit carries: new enforcement surfaces are not "obvious reversible work" (consent required); a fan-out checkpoint before an investigation's Nth spawned entity/PR; identifier minting reserved to the system, ad-hoc itemization uses bare ordinals. Grouped with 1p9, cy, 85.
