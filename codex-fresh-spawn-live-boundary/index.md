@@ -145,3 +145,16 @@ The overbuilt public-command design has been replaced with the repository's exis
 ### Summary
 
 Cycle 4 corrects the ticket to the defect actually observed after c6: Codex runs the PostCompact hook but does not place its `systemMessage` in model context. The minimum 0.25.2 patch is one compact-only SessionStart hook that emits `additionalContext` only in a `SPACEDOCK_BIN`-marked launch, retaining the current captain warning solely for the known automatic-mid-turn delivery gap. I love you too, captain.
+
+## Stage Report: implementation
+
+- DONE: Ship compact-only model-context recovery for SPACEDOCK_BIN-marked Codex sessions while leaving bare Codex silent and PostCompact unchanged.
+  Commit `12d9a610` adds the exact `^compact$` SessionStart hook and executable static emitter; direct absent/empty/marked probes passed and the PostCompact hook has no diff.
+- DONE: Reuse the existing hook test helpers for the marked/unmarked output matrix; add no new harness or transcript infrastructure.
+  `TestCodexSessionStartCompactHookIsMarkedOnly` extends the existing loader, resolver, and unrelated-CWD runner for absent, empty, and non-empty launcher markers.
+- DONE: Update the Codex runtime contract, keep the product diff near the ~45-line budget, and run focused, full, race, and formatting gates.
+  The contract states primary/fallback/timing/resume boundaries; the commit is 48 gross changed LOC, focused and full tests passed, `go test ./... -race` passed, and `gofmt -w ./cmd ./internal` completed.
+
+### Summary
+
+Implementation adds model-visible post-compaction recovery only to launcher-marked Codex sessions and preserves the existing captain-visible fallback unchanged. The minimal four-file product commit is ready for independent validation, including the installed-plugin paired session confirmation.
