@@ -8,6 +8,22 @@ verdict:
 worktree:
 sprint: 0260-proportionality
 group: test-cleanups
+gates:
+  version: 1
+  current:
+    gate: gate:docs-dev:0qe:ideation
+    attempt: gate-attempt:0qe-ideation-1
+  records:
+    - id: gate:docs-dev:0qe:ideation
+      stage: ideation
+      current-attempt: gate-attempt:0qe-ideation-1
+      attempts:
+        - id: gate-attempt:0qe-ideation-1
+          sequence: 1
+          state: open
+          briefing:
+            id: briefing:0qe-ideation-1
+            digest: sha256:10581a261293596e17f359b840d8f610f431141daadb4f09763d5185fe674670
 ---
 
 Single-fixture design proof for AC-2: gate must reject when means-only AC is paired with regressed end-value.
