@@ -1,7 +1,7 @@
 ---
 id: hthnpaag41m1jaxb6mxwj3y2
 title: Fix 8 confirmed tautological output-grep tests (the third shape)
-status: implementation
+status: validation
 source: "Verified sweep 2026-07-19 (25 candidate files → 17 triaged → adversarial verify → 8 confirmed, 9 refuted). The 'third shape': a test with a real t.Fatalf/Errorf sink AND hand-written literals asserting rendered command/help/doc OUTPUT WORDING that no machine consumer parses — distinct from the assertion-free + mirror shapes in tautological-test-fixes. Triggered by a brittle help-output grep shipped on PR #516... wait, PR #526 (dispatch build --help) that passed 4 lenient reviews; already fixed there. Distinguishing rule: does a machine consumer parse the string, and would a real behavior change (not a rewording) flip it?"
 started: 2026-07-20T03:29:35Z
 completed:
