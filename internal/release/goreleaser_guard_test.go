@@ -1,8 +1,6 @@
 package release
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -121,21 +119,6 @@ func parseCaskXattrHooks(config string) []string {
 	return hooks
 }
 
-var errUnguardedCaskXattrHook = errors.New("homebrew cask xattr hook is unguarded")
-
-func validateCaskXattrHooks(config string) error {
-	hooks := parseCaskXattrHooks(config)
-	if len(hooks) == 0 {
-		return fmt.Errorf("parsed no xattr post-install hooks from .goreleaser.yaml; the guard check has nothing to bind")
-	}
-	for i, hook := range hooks {
-		if !strings.Contains(hook, "OS.mac?") {
-			return fmt.Errorf("%w: hook #%d runs /usr/bin/xattr without an OS.mac? guard; it will abort a linux `brew install`:\n%s", errUnguardedCaskXattrHook, i, hook)
-		}
-	}
-	return nil
-}
-
 // TestCaskXattrHookGuardedForLinux locks the fix for the linux `brew install`
 // failure: every cask post-install hook that runs the macOS-only /usr/bin/xattr
 // must guard it with OS.mac?, so the quarantine strip is a no-op on linux rather
@@ -143,22 +126,14 @@ func validateCaskXattrHooks(config string) error {
 // (stable + edge) ships such a hook, so the parsed set must be non-empty and
 // every member guarded.
 func TestCaskXattrHookGuardedForLinux(t *testing.T) {
-	if err := validateCaskXattrHooks(readGoreleaserConfig(t)); err != nil {
-		t.Fatal(err)
+	hooks := parseCaskXattrHooks(readGoreleaserConfig(t))
+	if len(hooks) == 0 {
+		t.Fatal("parsed no xattr post-install hooks from .goreleaser.yaml; the guard check has nothing to bind")
 	}
-}
-
-// TestCaskXattrGuardRejectsUnguardedHook proves the guard is load-bearing: an
-// xattr hook with its OS.mac? guard stripped (the pre-fix shape that broke linux)
-// must fail the check.
-func TestCaskXattrGuardRejectsUnguardedHook(t *testing.T) {
-	config := readGoreleaserConfig(t)
-	adversarial := strings.ReplaceAll(config, "OS.mac?", "true")
-	if adversarial == config {
-		t.Fatal("no OS.mac? token in .goreleaser.yaml to strip; the load-bearing check cannot bind")
-	}
-	if err := validateCaskXattrHooks(adversarial); !errors.Is(err, errUnguardedCaskXattrHook) {
-		t.Fatalf("xattr hook validation did not reject the stripped config as unguarded: %v", err)
+	for i, hook := range hooks {
+		if !strings.Contains(hook, "OS.mac?") {
+			t.Errorf("homebrew_casks xattr hook #%d runs /usr/bin/xattr without an OS.mac? guard; it will abort a linux `brew install`:\n%s", i, hook)
+		}
 	}
 }
 
