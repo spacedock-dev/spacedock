@@ -1,7 +1,7 @@
 ---
 id: 85z12f0ywkzy47akg9gwh6hm
 title: "merge-guard arm phase has no keep-moving clause: armed reads as a stopping point"
-status: implementation
+status: validation
 source: "FO self-diagnosis, 2026-07-08 live session. After the captain approved three validation gates and said \"push it,\" the FO ran `spacedock merge guard <slug> --verdict passed` for each entity, which only ARMS the merge (sets mod-block=merge:pr-merge) — then stopped to read the pr-merge.md hook file instead of immediately constructing and presenting the PR draft in the same turn. Before finishing even one entity's draft, the FO got pulled into an unrelated task and the arm sat untouched. When the captain later asked \"what did you do when I said push it,\" the honest answer was: armed three entities, pushed nothing."
 started: 2026-07-20T03:29:40Z
 completed:
