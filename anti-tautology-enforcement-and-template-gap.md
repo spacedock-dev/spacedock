@@ -14,3 +14,11 @@ group: test-cleanups
 ---
 
 Design and land a standing mechanism (not just reactive review) against tautological tests, and bring the commission-skill templates that scaffold new workflows up to docs/dev's own Proof-policy bar so new workflows don't inherit the gap.
+
+## Scope trim (0260 re-lock 2026-07-20)
+
+This entity owns the CONTRACT half only: the falsifiable-evidence rule (AC evidence must be
+able to fail; "show the change that makes it fail") and removal of "5/5 passed is
+sufficient" so gates read assertion content. The commission-template half of the original
+scope moves to the template group (proof-policy-shipped-scaffolding and
+template-rigor-propagation) — one owner per surface, no duplicate delivery.
