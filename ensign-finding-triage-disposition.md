@@ -7,6 +7,36 @@ score: "0.7"
 sprint: 0260-proportionality
 group: triage
 started: 2026-07-20T05:04:07Z
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:02av:ideation
+        attempt: gate-attempt:02av-ideation-1
+    records:
+        - id: gate:docs-dev:02av:ideation
+          stage: ideation
+          current-attempt: gate-attempt:02av-ideation-1
+          attempts:
+            - id: gate-attempt:02av-ideation-1
+              sequence: 1
+              state: closed
+              briefing:
+                id: briefing:02av-ideation-1-chat
+                digest: sha256:36fa6dd8cb3e8af49598143eb81e4e9b71e7048084dd85d70193fc7abd05e6e2
+                note: chat presentation; digest is the entity content immediately before this record was written
+              resolution:
+                type: Resolution
+                id: resolution:captain-chat-02av-ideation-1
+                briefing: briefing:02av-ideation-1-chat
+                by: person:captain
+                at: 2026-07-20T06:38:56Z
+                decision: approve
+                reason: "Approved in chat after reading the full proposal: cycle-3 placement rework — the triage rule delivered at the trigger (feedback-rejection-flow standing block riding the routed feedback context, plus the docs/dev/README.md implementation stage-def bullet), ensign-shared-core unchanged with zero always-loaded delta; rule text, decline-as-findings-field convention, and the AC-narrowing design-reset clause as previously approved-shaped."
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+              note: "Two earlier chat revise rounds (trigger-by-reference finding qualification; placement rework) closed before this entity's gates recording began; they are documented in the cycle-2 and cycle-3 stage reports."
 ---
 
 `ensign-shared-core` contains zero guidance on consuming review findings — the exact actor that dutifully fixes a symlink edge case in a prototype has no rule to consult, and no disposition short of fixing exists for a substantively-correct-but-disproportionate finding. This adds the generic consumption rule (classify each finding against the workflow's committed finding-triage taxonomy AND the entity's own value ACs before fixing) and the decline disposition (a correct-but-disproportionate finding gets a recorded decline, not a dutiful fix), with the decline recorded as a field on the same `### Feedback Cycles` correction-round entry the gate already reads. The dev instance anchors on the committed taxonomy — the `validation` stage-def release-scope classification plus `.roborev.toml`'s four-field evidence record (this workflow's port of spacedock-subspace's triage). Anchor correction from the seed: the stakes member is **parked**, so triage keys on per-entity value ACs and the committed taxonomy, not a workflow stakes field. **Placement (captain rework, cycle 3):** the generic rule is delivered *at the trigger* — a standing block in the feedback delivery path (`feedback-rejection-flow`, carried into the routed worker's feedback context) plus the `docs/dev/README.md` implementation stage-def bullet for in-stage rounds — not the always-loaded `ensign-shared-core`, which a worker not consuming findings never needs.
