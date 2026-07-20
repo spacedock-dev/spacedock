@@ -1,7 +1,7 @@
 ---
 id: z7sfm93ccddg7x2tycp1smwy
 title: Prefer the cheapest check that can fail — replaces "code gate over prose rule", with new-check consent, fan-out surfacing, and the no-minting authoring rule
-status: validation
+status: done
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.75"
 sprint: 0260-proportionality
@@ -146,6 +146,9 @@ gates:
                 record: "Captain ruling, sprint-wide, recorded BEFORE this entity's implementation dispatch because it materially amends the approved surface. A committed ratchet (TestFOFunctionPromptSurfaceShrinks, internal/contractlint/fo_function_reference_invariant_test.go) caps the total bytes of 13 first-officer contract files at 122634; the measured total on the rebased main is 122231, leaving 402 bytes of headroom. This entity's approved surface adds roughly +3000 bytes to three of those measured files, so it cannot land as approved. The ruling: every ratcheted member funds its own additions with an offsetting trim of at least equal size, taken from the files it already touches wherever possible. Alternatives considered and rejected: raising the baseline (editing a check so the change passes is the anti-pattern this sprint removes), and a shared offsetting trim of the dead legacy skill (creates an unmodelled multi-member seam on one file). The approved DESIGN is unchanged — the amendment adds a funding obligation, it does not alter the clause content the captain approved. If the entity cannot fund itself without weakening the contract, that is a recorded finding and a captain decision, not a licence to overrun. Note the sprint index's stated mitigation (prefer lazy-loaded references over boot-resident lines) does NOT satisfy this check: the measured set includes the deferred cores fo-dispatch-core.md and claude-fo-dispatch.md, not only boot-resident files."
 worktree: .worktrees/spacedock-ensign-falsifiability-ladder
 pr: pr-merge:540
+verdict: passed
+completed: 2026-07-20T17:00:53Z
+archived: 2026-07-20T17:00:53Z
 ---
 
 "Prefer a code gate over a prose-only rule" is a standing instruction to convert any guarantee into enforcement code — unscoped by stakes, it produced presence tests and unasked CI/lint infra, and it degrades worse in non-dev workflows where every check is new infra. Replace it with an ordering that prefers the cheapest check that can fail: shipped system guards → existing mechanical checks → falsifiable exercise (replay, source-check, adversarial skeptic) → captain judgment → build a new check or enforcement process (last resort, explicit approval). Same edit carries: new enforcement surfaces are not "obvious reversible work" (consent required); a fan-out checkpoint before an investigation's Nth spawned entity/PR; identifier minting reserved to the system, ad-hoc itemization uses bare ordinals. Grouped with 1p9, cy, 85.
