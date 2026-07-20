@@ -712,7 +712,18 @@ jobs:
             fail(`expected pi-subagents 0.35.1, got ${subagentsPackage.version}`);
           }
 
-          const piAIRoot = path.join(process.env.GLOBAL_NPM_ROOT, '@earendil-works/pi-ai');
+          // pi-ai is usually vendored nested under pi-coding-agent (npm does not hoist it
+          // to the global root); check the nested copy pi actually loads first, then the
+          // top-level global root. The /compat export is ESM-only (import condition), so
+          // probe it with a dynamic import, never require.resolve.
+          const piAICandidates = [
+            path.join(agentRoot, 'node_modules', '@earendil-works', 'pi-ai'),
+            path.join(process.env.GLOBAL_NPM_ROOT, '@earendil-works/pi-ai'),
+          ];
+          const piAIRoot = piAICandidates.find((candidate) => fs.existsSync(path.join(candidate, 'package.json')));
+          if (!piAIRoot) {
+            fail(`cannot locate @earendil-works/pi-ai under pi-coding-agent ${agentPackage.version} (checked ${piAICandidates.join(', ')})`);
+          }
           const piAIPackage = readPackage(piAIRoot);
           const compatExport = piAIPackage.exports && piAIPackage.exports['./compat'] && piAIPackage.exports['./compat'].import;
           if (!compatExport) {
