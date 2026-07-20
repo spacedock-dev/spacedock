@@ -1,11 +1,11 @@
 ---
 id: hthnpaag41m1jaxb6mxwj3y2
 title: Fix 8 confirmed tautological output-grep tests (the third shape)
-status: validation
+status: done
 source: "Verified sweep 2026-07-19 (25 candidate files → 17 triaged → adversarial verify → 8 confirmed, 9 refuted). The 'third shape': a test with a real t.Fatalf/Errorf sink AND hand-written literals asserting rendered command/help/doc OUTPUT WORDING that no machine consumer parses — distinct from the assertion-free + mirror shapes in tautological-test-fixes. Triggered by a brittle help-output grep shipped on PR #516... wait, PR #526 (dispatch build --help) that passed 4 lenient reviews; already fixed there. Distinguishing rule: does a machine consumer parse the string, and would a real behavior change (not a rewording) flip it?"
 started: 2026-07-20T03:29:35Z
-completed:
-verdict:
+completed: 2026-07-20T13:49:49Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-fix-tautological-output-grep-tests
 sprint: 0260-proportionality
@@ -61,8 +61,9 @@ gates:
                 target-stage: implementation
                 state: consumed
               note: "Subspace advisory float, captain at the keyboard as person:reviewer."
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:535
+archived: 2026-07-20T13:49:49Z
 ---
 
 Fix (narrow to observed behavior, or remove relying on the sibling behavioral test) the 8 confirmed tautological output-grep tests. Each is verified redundant/prose by adversarial refutation — the behavioral coverage it claims is already provided by a named sibling.
