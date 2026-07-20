@@ -9,6 +9,8 @@ completed:
 verdict:
 worktree:
 issue:
+sprint: 0260-proportionality
+group: template
 ---
 
 The dev-workflow README now states the proof policy bluntly (commit `f8b257cf`): a string/substring/regex match over any instruction file the model reads NEVER satisfies a behavioral acceptance criterion; the one test is "does the expected value come from a source OTHER than the file under test?" — if not, it is a tautology that proves nothing. That fix lives only in THIS workflow's README. Port the same principle to the **shipped dev-shape scaffolding** so it governs every newly commissioned workflow and the universal FO/ensign contracts, not just this one.
