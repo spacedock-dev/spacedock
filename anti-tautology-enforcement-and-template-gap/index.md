@@ -254,3 +254,15 @@ Earlier medium (unbounded grep licence) closed — the fix drew no finding. Four
 This branch was rebased between the first correction and this one. My commits were rewritten: `2245554f`→`b9197ac9` and `014fe501`→`3b3a8fa3`, and the branch point moved from `972129ac` to `5dac2d6a`. Any SHA cited in the earlier report sections is stale. Current branch: `b9197ac9`, `3b3a8fa3`, `b7ec01c6`. The Merge-base caveat section above has been corrected in place because it named a command (`git diff 972129ac`) that now returns a wrong answer rather than an error — actively misleading, so left uncorrected it would have sent a validator to a false conclusion.
 
 `go test ./...` after both accepts: EXIT=0, 15 packages ok, 0 FAIL, ratchet `TestFOFunctionPromptSurfaceShrinks` included. Captain's Edit C ruling re-verified byte-for-byte after these edits: 326 bytes, `diff` against the approved text empty.
+
+### Bounding clause revised on captain clarification (supersedes the first fix)
+
+The bounding clause shipped in `3b3a8fa3` said a one-off grep "cannot satisfy a behavioral acceptance criterion." That wording is withdrawn. It came from the roborev finding via an FO instruction that was later corrected as too restrictive — recorded plainly here rather than smoothed over, because the trail should show the correction.
+
+Two things were wrong with it. It banned legitimate evidence: a grep run at validation time IS sound evidence that something exists or is absent, and a validator can reproduce it. And it invited the wrong workaround — relabelling a claim "non-behavioral" to make a weak grep admissible, which is the failure the rule exists to prevent, reached by a different road.
+
+Revised in `178b8c4d`. The boundary is now honesty of evidence rather than category: presence or absence is an existence fact and a grep establishes it soundly when that fact is itself the claim; when the claim is about what a program or an agent does, the words being present says nothing about that, so the grep is misleading and the claim must be re-expressed in a form that can be exercised rather than evidenced by a grep that cannot bear it. Committing any such grep as a test remains banned — that half is carried by the captain's verbatim ruling immediately preceding the clause, not restated.
+
+Verified: the string "behavioral acceptance criterion" no longer appears anywhere in `docs/dev/README.md` (count 0), and the captain's Edit C ruling is still byte-identical at 326 bytes (`diff` against the approved text, empty). What would make this fix fail: a reading under which an existence-fact grep is inadmissible, or one under which a grep may stand as proof of runtime behavior. Neither survives the clause as written.
+
+`go test ./...`: EXIT=0, 15 packages ok, 0 FAIL, ratchet `TestFOFunctionPromptSurfaceShrinks` included. Surface unchanged against `5dac2d6a`: 2 files, 6 insertions, 5 deletions, net +1 line. Branch: `b9197ac9`, `3b3a8fa3`, `b7ec01c6`, `178b8c4d`. The Edit D audit-scope reconciliation and both declines are unchanged by this revision.
