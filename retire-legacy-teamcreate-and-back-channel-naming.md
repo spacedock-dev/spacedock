@@ -21,6 +21,18 @@ Two contract-surface cleanups, captain-directed:
 
 2. **"Back-channel" naming.** The contract names inter-agent messaging "back-channel" throughout (`## Worker Back-Channel` in claude-fo-dispatch.md, Codex "mailbox back-channel", Pi "contact_supervisor/intercom back-channel", «addressable-worker» prose). Captain direction: do not name it "back-channel" — name it for what it is, e.g. "inter-agent communication" (final term chosen at ideation).
 
+## Degraded Mode retirement — split to `9q4`, but this task must not land blind to it
+
+The captain asked (2026-07-21) whether this task should also retire Degraded Mode. A two-seat adversarial scope review says the retirement belongs in its own entity — `9q4` (dispatch-failure-retry-rung) — because the defect is the missing retry rung BELOW the trigger, not the trigger alone, and because this task's own `## Out of scope` promises no behavior change to dispatch or messaging. Two findings from that review bind THIS task regardless:
+
+1. **This task deletes the repo's only retry rung.** `using-legacy-claude-team/SKILL.md:50` — «legacy-team.recover» rung 1, "Attempt one new TeamCreate with a fresh name" — is the sole try-once-before-degrading step anywhere in the contract. Retiring this file without `9q4` landing together or first leaves the contract with strictly ZERO retry surface, which is a regression, not a cleanup. Sequence them.
+
+2. **VERIFY BARE-MODE REACHABILITY BEFORE DELETING THE LEGACY-OVERRIDE LINE.** A review seat claims the `e3z`-proven bare-mode entry (ToolSearch-no-match → bare) was inverted into the legacy-override at `claude-fo-dispatch.md:9`, which this task deletes — and that clause (3) of the Degraded Mode trigger is the only remaining route into `bare_mode: true`. That reading is CONTESTED: `claude-fo-dispatch.md:7` carries an independent `SendMessage`-availability probe that falls back to "fresh one-shot dispatch" without touching the legacy line. The two are not obviously the same state (`«addressable-worker» ABSENT` vs. the `bare_mode: true` build flag). **Resolve this at ideation with a live no-team drive, not by reading.** `e3z` proved bare mode reachable through the pre-retirement contract; nothing yet proves it reachable through the post-retirement one, and the coverage vacuum below means CI will not catch a mistake.
+
+3. **`internal/claudeteam/claudeteam.go:68-79` (`BareModeAdvisory`)** instructs the FO to run `ToolSearch select:TeamCreate` on every bare dispatch lacking recent team evidence. After this retirement that names a tool which no longer exists, on the legitimate bare path — a required co-edit, and Go source, so it widens this task beyond prose.
+
+4. **No oracle exists in either direction.** `TestLiveDegradedBareRecovery` is `//go:build live` and appears in ZERO CI `-run` filters; `.github/workflows/runtime-live-e2e.yml:111` sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, so the teams-unavailable branch never runs in CI.
+
 ## Proposed approach
 
 {Ideation fills this in. Expected shape: delete the legacy-override line and the using-legacy-claude-team skill; update the FO-surface file list and reference-closure expectations in contractlint; rename the concept across claude-fo-dispatch.md, fo-dispatch-core.md capability prose, and the codex/pi adapter bullets. Both ratchets must account for the surface shrink honestly.}
@@ -43,8 +55,10 @@ Verified by: `TestFOFunctionPromptSurfaceShrinks` / checkpoint-metrics byte coun
 Verified by: review-time grep over the FO surface cited as evidence (no committed prose-grep, per proof policy).
 
 **AC-4 - The FO-surface ratchet baseline is re-tightened to the post-retirement measured value (zero-slack convention).**
-This task carries the F1 mitigation from `codex-post-compaction-contract-reload` (archived, validation cycle 7): with 204 B of slack at baseline 122634, the scratch-proven inert-heading escape (122584 B) passes every mechanical gate, leaving the review-time grep as the only guard for inert-prose reintroduction. Re-tightening here closes it mechanically.
+This task carries the F1 mitigation from `codex-post-compaction-contract-reload` (archived, validation cycle 7): the scratch-proven inert-heading escape passes every mechanical gate whenever slack exists, leaving the review-time grep as the only guard for inert-prose reintroduction. Re-tightening here closes it mechanically.
 Verified by: `foFunctionReferenceBaselineBytes` equals measured+1 after the retirement lands; `TestFOFunctionPromptSurfaceShrinks` green at zero slack.
+
+*Figures updated 2026-07-21 — the "204 B of slack at baseline 122634" this AC originally cited is stale.* Main measures **122126** against baseline **122634** (507 B of usable headroom under the strictly-below gate). Member `bw` re-baselined to **123323** on 2026-07-20 as a captain-approved governance decision after a duplication scan across all 13 measured files recovered only 110 B; that branch is complete but unmerged, so re-measure at implementation rather than trusting either number here. Retiring `using-legacy-claude-team/SKILL.md` alone removes **14065 B** from the measured surface.
 
 ## Test plan
 
