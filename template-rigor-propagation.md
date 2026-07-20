@@ -13,3 +13,15 @@ Every rigor cap in the ecosystem is post-incident scar tissue stuck in the repo 
 ## Problem
 
 {Ideation fills in. Evidence: audit findings "no propagation loop from evolved READMEs back into the template"; "the commission interview identifies workflow SHAPE but never asks rigor LEVEL"; semantic adversarial pass triplicated with divergent wording. Depends on stakes-declaration-read-through and the ladder/triage clauses landing first so the template propagates final wording. Note: zaphod README was EPERM-blocked on read — refit there needs the permission resolved.}
+
+## Scope reduction (0260 re-lock 2026-07-20)
+
+Sheds two pieces: (1) the stakes-ontology scaffold — per the reduced stakes framing, the
+template scaffolds a declared-posture section only for workflows that want one, carrying
+existing-declaration reach, not a new concept; (2) the project AGENTS.md router scaffold +
+maintenance — deferred to a followup after the packet channel proves out (the ingestion
+canary showed Claude does not read AGENTS.md, so the router serves codex ad-hoc sessions
+only for now). Absorbs the commission-template half trimmed from
+anti-tautology-enforcement-and-template-gap. Core kept: existing scar-tissue propagation
+(materiality taxonomy, AC split, small-change fast path, "Verified by: grep" fix) + refit
+carries content.
