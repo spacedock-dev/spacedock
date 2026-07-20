@@ -3,7 +3,7 @@ title: One-command gate review presentation with atomic result retention
 status: backlog
 source: "Split from the gate-recorder task (3k), captain-approved 2026-07-21. The subspace-coupled presentation half; 3k cycles 11-12 are its banked design history."
 id: xbatj4hxtxw9t83vvmfem27f
-sprint: 0270-durable-decisions
+sprint: durable-decisions
 group: recorder
 ---
 
