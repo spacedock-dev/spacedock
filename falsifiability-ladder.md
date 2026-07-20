@@ -58,10 +58,22 @@ gates:
             - id: gate-attempt:z7-ideation-3
               sequence: 3
               previous-attempt: gate-attempt:z7-ideation-2
-              state: open
+              state: closed
               briefing:
                 id: briefing:z7-ideation-3
                 digest: sha256:da21cb40ecfe9aa1e1c32bbdcd70d49217d4af696251914e50bbfd2e8fa5fcf3
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784523600509859000
+                briefing: briefing:z7-ideation-3
+                by: person:reviewer
+                at: 2026-07-20T05:00:00Z
+                decision: revise
+                reason: "Annotation on the ACs: a few scenarios need real testing — fixtures that lure the expensive action and observe it — but NOT as a committed test suite; what are the options; and coverage must include gpt-5.6-sol. Budget re-baseline question rolls forward undecided."
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 ---
 
 "Prefer a code gate over a prose-only rule" is a standing instruction to convert any guarantee into enforcement code — unscoped by stakes, it produced presence tests and unasked CI/lint infra, and it degrades worse in non-dev workflows where every check is new infra. Replace it with an ordering that prefers the cheapest check that can fail: shipped system guards → existing mechanical checks → falsifiable exercise (replay, source-check, adversarial skeptic) → captain judgment → build a new check or enforcement process (last resort, explicit approval). Same edit carries: new enforcement surfaces are not "obvious reversible work" (consent required); a fan-out checkpoint before an investigation's Nth spawned entity/PR; identifier minting reserved to the system, ad-hoc itemization uses bare ordinals. Grouped with 1p9, cy, 85.
