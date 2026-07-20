@@ -1,5 +1,5 @@
 ---
-title: Persist gate approval while dispatch blockers remain
+title: Gate recorder — durable gates records with binary-owned writes
 status: ideation
 score: "0.80"
 source: "Captain design feedback, 2026-07-13."
@@ -25,6 +25,19 @@ gates:
 ---
 
 # Persist gate approval while dispatch blockers remain
+
+## Scope cut (captain-approved, 2026-07-21)
+
+This task grew four products in one coat (12 cycles, 15 ACs, two companion specs). It now narrows to ONE: the gate recorder and its record schema — the binary that owns every `gates:` frontmatter write (open / rebind-while-open / close-with-resolution / supersede / consume), the record invariants (one pending application per record, pointer agreement, frozen closures), snapshot-bound digests, and the status surfacing of recorded gate state. Retained ACs: 1, 4, 6 (record-state subset), 10, 12, 13, 14. This half is production-proven as a hand-run convention across eight entities in 0260 shaping (see `production-evidence-2026-07-20-fo-dry-run.md` and the 0260 closure findings: `--set` re-serialization, a self-conflicting attempt pointer, stale applications, the advisory-digest hole, entity-cannot-self-bind) — the recorder mechanizes a proven shape.
+
+Moved out, one owner per concern:
+
+- **Blockers, execution holds, and dispatch eligibility** (ACs 2, 3, 5, 11 + the eligibility subset of AC-6; scheduler rules 4-6 and 10's guard beyond convention) → `gate-blockers-and-eligibility`. The original seed concern — and the one part the production dry run never exercised (all eight recorded approvals had zero declared blockers). Sequenced after the recorder; its gate re-examines live need.
+- **The presentation journey** (ACs 7 and 15; the one-command `gate review` blocking presenter, atomic result retention, briefing packages, probe-snapshot binding, provider id-mapping adapter; the probes companion spec rides along as convention) → `gate-review-presentation-command`. Subspace-coupled — sequenced with the subspace-tui surface, interim ritual per the 0260 shaping debrief.
+- **Rejection-rework route context** (AC-9; the durable route edge) → DEFERRED, no task: the feedback-cycle prose convention just shipped in 0260; the binary edge waits for observed drift, per the escalation ordering.
+- AC-8's behavioral-test mutants split with their owners.
+
+Spec-level coupling retained here: this task keeps ownership of `gate-resolution-frontmatter-contract.md`; the presentation task's id-mapping rule (provider envelope briefing id normalized to the attempt briefing id after digest validation) is SPECIFIED in that contract and implemented in the presentation task. The open gate attempt's briefing must be rebound to this post-cut content before its next presentation (open-attempt rebinding, scheduler rule 2).
 
 ## Problem
 
