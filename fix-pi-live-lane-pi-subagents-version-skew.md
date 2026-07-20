@@ -4,8 +4,8 @@ title: Restore pi-live lane green by resolving the pi-subagents/pi-coding-agent 
 status: implementation
 source: c6 validation cycle-7 live-lane triage, 2026-07-20
 started: 2026-07-20T13:56:42Z
-completed:
-verdict:
+completed: 2026-07-20T14:19:37Z
+verdict: implemented
 score:
 worktree: .worktrees/spacedock-ensign-fix-pi-live-lane-pi-subagents-version-skew
 issue:
@@ -19,11 +19,11 @@ The pi-live CI lane is deterministically red for every commit, including main, d
 
 ## Proposed approach
 
-{Ideation fills this in. Candidates: pin `pi-subagents@0.34.0` in the pi-live lane setup until pi-coding-agent vendors the `/compat` export; or bump pi-coding-agent when a release with the export ships; or both (pin now, unpin on bump).}
+Bump only the pi-live job to Node 24, install exact pinned Pi substrate tarballs (`@earendil-works/pi-coding-agent@0.80.10`, `pi-subagents@0.35.1`, `pi-intercom@0.6.0`) after checking their recorded npm `dist.integrity` sha512 values, and add a fast compatibility guard for the pi-ai `/compat` export required by pi-subagents 0.35.x.
 
 ## Out of scope
 
-{Ideation fills this in. Likely: any change to Pi runtime behavior itself — this is CI lane infrastructure.}
+Pi runtime behavior changes and unrelated live lanes' Node versions.
 
 ## Acceptance criteria
 
@@ -37,4 +37,11 @@ Verified by: the lane setup declares the pinned/bumped versions with a comment s
 
 ## Test plan
 
-{Ideation fills this in. Expected: one pi-live lane run on a branch + one on main post-merge; no offline test surface.}
+- `go test ./...`
+- `go test ./... -race`
+- Local npm smoke of the pinned tarball/integrity flow and pi-ai `/compat` guard using temporary install prefixes.
+- Primary live evidence remains the PR pi-live run, then a main pi-live run after merge.
+
+### Summary
+
+Implemented the pi-live workflow fix: Node 24 for the Pi lane, exact pinned Pi substrate versions with recorded sha512 integrity checks before install, installed tarballs instead of bare latest selectors, and a deterministic compatibility guard that fails fast if pi-subagents cannot use the pi-ai `/compat` export. Updated release workflow guard tests to enforce the new pinned/integrity-based install contract.
