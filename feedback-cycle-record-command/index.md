@@ -11,6 +11,22 @@ worktree:
 issue:
 sprint: 0260-proportionality
 group: reframe
+gates:
+  version: 1
+  current:
+    gate: gate:docs-dev:bw:ideation
+    attempt: gate-attempt:bw-ideation-1
+  records:
+    - id: gate:docs-dev:bw:ideation
+      stage: ideation
+      current-attempt: gate-attempt:bw-ideation-1
+      attempts:
+        - id: gate-attempt:bw-ideation-1
+          sequence: 1
+          state: open
+          briefing:
+            id: briefing:bw-ideation-1
+            digest: sha256:3dcd7a42c4ee7899f8c074e646a284baf77d15cfeb198e3bf1a7e8bf852d8afa
 ---
 
 Turn the feedback-rejection correction loop from a prose-only cycle count into a measured, calibrated loop. At ideation the entity declares an **expected surface** as part of the captain-approved design; every correction round records its **actuals** into durable `### Feedback Cycles` state; the **deviation** of actuals from the captain-approved estimate is **narrated** at each re-dispatch decision point and gate presentation. The banked 3-cycle escalation survives as the backstop hard stop, now driven by the declared threshold rather than a blind count. A new `status --record-feedback-cycle` command owns the append + count + actuals + escalation marker as the measurement substrate — but **narration, not a dispatch-time wall, is the guard.**
