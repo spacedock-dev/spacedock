@@ -1,0 +1,165 @@
+
+======================================================================
+REMEDY ANALYSIS: fo-contract
+======================================================================
+--- remedies ---
+* Smallest sufficient mechanism (both directions) [prose-rule] @ /Users/clkao/.claude/plugins/cache/spacedock-edge/spacedock/0.26.0-pre1/skills/f
+    classes: scope-drift, unasked-ci-approval-infra
+    efficacy: Wording-present-only for the observed incidents. It explicitly exempts the commissioned path ('Commissioned workflow dispatch is mandatory... in-house execution is not a lower rung'), so inside a running workflow — where all three projects' incidents happened — it governs nothing
+* Mechanism-to-value re-anchor in «gate.ac-cross-check» [prose-rule] @ /Users/clkao/.claude/plugins/cache/spacedock-edge/spacedock/0.26.0-pre1/skills/f
+    classes: test-infra-bloat, scope-drift
+    efficacy: Conditionally real but usually dormant. Its own guard says it 'bites only when' a paired value-measuring AC exists — and ACs are authored in the same ideation stage by the same crew, with nothing requiring a cost/leanness/proportionality AC. 'Built comprehensive PTY test harness'
+* AC evidence discipline (citation per AC, external-proof bar) [prose-rule] @ /Users/clkao/.claude/plugins/cache/spacedock-edge/spacedock/0.26.0-pre1/skills/f
+    classes: tautological-tests
+    efficacy: One-sided, and therefore backfires. It verifies only the PASSING direction — 'here is the run that proves it' is a green run; nothing in the FO loop, gate flow, or AC scan ever requires observing the failing/negative case (the only negative-case language in the system is the opt-
+* Present-gate pedantry tiering (Material/Polish + rule 7 'No format-pedantry asides') [prose-rule] @ /Users/clkao/.claude/plugins/cache/spacedock-edge/spacedock/0.26.0-pre1/skills/p
+    classes: review-pedantry
+    efficacy: Real but narrow: it governs how the FO RENDERS findings to the captain, not how findings are DISPOSITIONED. It only de-fangs format/wording pedantry. A substantively-correct edge case (the symlink finding) classifies as Material ('fact-corrections... claims contradicted by the co
+* Feedback cycle-3 escalation [prose-rule] @ /Users/clkao/.claude/plugins/cache/spacedock-edge/spacedock/0.26.0-pre1/skills/f
+    classes: review-pedantry, scope-drift
+    efficacy: Bounds only RUNAWAY loops. Two full cycles of pedantic rework are contract-legal before any human sees it, and the observed incidents were cycle-1 over-compliance (agent simply did what the reviewer said), which this never touches.
+* «dispatch.checklist» cap: ≤3 linchpins, no padding [prose-rule] @ /Users/clkao/.claude/plugins/cache/spacedock-edge/spacedock/0.26.0-pre1/skills/f
+    classes: test-infra-bloat, scope-drift
+    efficacy: Real at its layer and probably the healthiest clause in the contract, but its layer is thin: it caps what the FO ASKS for, not what the ensign BUILDS to satisfy a signal. 'Smoke test passes end-to-end' is one compliant linchpin that an ensign can legally satisfy with a full PTY h
+* Single-entity bounded scope + one-workflow «engage» scope [prose-rule] @ /Users/clkao/.claude/plugins/cache/spacedock-edge/spacedock/0.26.0-pre1/skills/f
+    classes: scope-drift
+    efficacy: Genuine containment WHEN the session is launched that way. Interactive sessions and ordinary engage loops — where the flake-to-4-PRs drift occurred — have no equivalent bound; nothing caps how many followup entities or PRs one investigation may spawn inside a legal event loop.
+* Opt-in proof disciplines + 'high-stakes surfaces' scoping [template-scaffold] @ /Users/clkao/.claude/plugins/cache/spacedock-edge/spacedock/0.26.0-pre1/skills/c
+    classes: test-infra-bloat, unasked-ci-approval-infra, tautological-tests
+    efficacy: This is the ONLY proportionality lever in the entire system, and it is (a) a one-time commission-time choice buried mid-template, (b) workflow-wide — once folded into the validation stage every entity gets the same bar with no per-entity dial, and (c) subordinate to the boot-resi
+* FO self-evidence bar ('Hold your own gate... to the bar you impose on workers') [prose-rule] @ /Users/clkao/.claude/plugins/cache/spacedock-edge/spacedock/0.26.0-pre1/skills/f
+    classes: tautological-tests
+    efficacy: Marginal as a remedy (it polices check EXECUTION, not check CONTENT — a vacuous green satisfies it completely) and net-negative for scope: its flake clause ('a relevant check that flakes is re-run to green (serial, isolated), never skipped'; the known-flake label 'is a hypothesis
+--- ACTIVE DRIVERS (push toward over-building) ---
+! 'Prefer a code gate over a prose-only rule' (first-officer-shared-core.md:164): 'if the guarantee matters, the real assurance is a code-level gate underneath' and an AC 'is satisfied only by: the binary or a test enforces X, and here is the run that proves it'. Unscoped by project maturity or cost, this is a standing instruction to convert any guarantee that 'matters' into enforcement code — for a
+! Gate REJECT on missing/prose-only evidence (first-officer-shared-core.md:88 'an AC with no evidence whose natural place was this stage is a REJECT'; :164 'the AC cross-check refuses a criterion whose only proof is review of the entity's own prose'): at the gate, absent executable evidence bounces the entity back to implementation, whose cheapest compliant response is to author a test that passes. 
+! Ensign proof rules (ensign-shared-core.md:26-28): 'Prove by exercising, not by re-reading... A substring search is not proof of behavior' plus 'No hidden machine dependencies... Anything needed to run or verify must be declared and present in the repo'. For interactive/terminal deliverables, 'running the behavior and observing the outcome' implies terminal automation, and the repo-presence rule pu
+! The flake clause of the FO self-evidence bar (first-officer-shared-core.md:167-169): 'a relevant check that flakes is re-run to green (serial, isolated), never skipped' and a prior 'known flake' label is only 'a hypothesis to confirm against this run'. No depth bound, no cost ceiling, no sanctioned 'file it and move on' path — the one-flake-investigation-to-4-open-PRs incident is this clause plus 
+! Keep-moving cadence + 'not a stopping point' (first-officer-shared-core.md:174-177 and :76): 'advance and dispatch the next stage before yielding... want me to advance + dispatch? is the violation'; 'independent followups to file + ideate' dispatch in parallel; a completed non-gated stage MUST be advanced before the turn ends. This removes the natural pause where a human would cap scope, and names
+! 'Do obvious reversible work without ceremony' + 'Don't ask permission for a step the contract already allows' (first-officer-shared-core.md:160,183): adding a CI workflow file, an approval mod, or a test harness is reversible work the contract nowhere reserves to the captain, so no one asks (class 2).
+! Present-gate Material tier definition (present-gate/SKILL.md:39): Material includes 'fact-corrections, contract violations, missing AC evidence, claims contradicted by the codebase' — any technically-correct reviewer edge case (the symlink case) classifies as Material and therefore gate-blocking-by-default, with fix-now or file-a-followup as the only exits (class 4).
+--- GAPS ---
+- No rigor/maturity dial anywhere — confirmed by grep across the whole 0.26.0-pre1 skills tree (zero hits for rigor/maturity/proportional/dial; 'prototype' appears nowhere). No frontmatter field, stage property, or boot-record key can express 'this is a prototype/spike', so the code-gate rule, AC evid
+- No non-vacuity check on tests: the entire evidence discipline verifies the passing run only. Nothing ever requires observing the failing/negative case except the opt-in live-scenario clause in the dev template. A test that cannot fail is first-class AC evidence.
+- The report protocol actively hides test content from the gate: 'Do not paste full test output — 5/5 passed is sufficient' (ensign-shared-core.md:85) means the FO and captain judge test evidence by count, making tautological tests undetectable at the gate by design.
+- No disposition for 'correct but not worth it': reviewer findings can be fixed, tiered Polish (format-only), or filed as followups. There is no decline verdict for a substantively-correct-but-disproportionate finding short of the captain manually overriding at a gate.
+- Smallest-sufficient-mechanism is unverified and self-exempting: no gate, scan, or binary checks the one-line justification, and the clause disclaims the commissioned path. The contract's own thesis — 'a prose-only rule's ceiling is: the wording is present' — applies to every one of its anti-over-eng
+- No cost/effort accounting: no clause ever asks what a stage cost relative to its value. The only 'budget' in the system is the context-token probe for worker reuse. Nothing would flag 4 PRs from one flake, or a harness larger than the prototype it tests, as anomalous.
+- No cap or captain checkpoint on entity/PR fan-out: filing followups is named as sanctioned parallel work (keep-moving), with no threshold that forces surfacing 'this investigation has spawned N units' before dispatching them.
+--- notes --- The contract is engineered almost exclusively against UNDER-verification — vacuous prose proofs, fake greens, self-approval, premature reaping, stalling between stages. Every shipped code mechanism (status --ac-scan, --checklist, dispatch build, context-budget, reconcile) serves evidence-production or momentum; every anti-over-engineering guard is prose-only, and two of the four (smallest-sufficient-mechanism, mechanism-to-value re-anchor) carry explicit self-exemptions or dormancy guards. The observed incidents are therefore mostly NOT agents violating the contract — classes 1 (PTY harness), 
+
+======================================================================
+REMEDY ANALYSIS: workflow-readmes
+======================================================================
+--- remedies ---
+* Trace-every-mechanism-to-value + 90-minute stop rule + terminal-multiplexer architecture review [prose-rule] @ /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/README.md:80 (Proof po
+    classes: test-infra-bloat, scope-drift
+    efficacy: Strong wording, incident-specific, and given teeth by ideation's requirement to name the value AC / simplest alternative per mechanism (a gate-checkable artifact). But prose-only: no code gate, the 90-minute timer has no mechanical clock, and it only exists in this one repo — not
+* Prose-grep ban + instruction-file read quarantine (contractlint) [code-gate] @ /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/README.md:76,79 + inte
+    classes: tautological-tests
+    efficacy: Actually bites: the quarantine is enforced by a real detector test in internal/contractlint, and the README records concrete catches (#262 test-strength holes, '1x'/'external-tracker-checkpoint' self-referential ACs). The strongest remedy in the set — prose rule backed by a code 
+* .roborev.toml review_guidelines: maturity posture + test proof gate + materiality output rule + anti-instruction-parroting [config] @ /Users/clkao/git/spacedock-research/spacedock-v1/.roborev.toml (lines 2, 6, 16-2
+    classes: tautological-tests, review-pedantry, test-infra-bloat
+    efficacy: Bites: config is injected into every panel run, and the output-placement rule is mechanically enforced by roborev's pass/fail semantics — the one place where 'only material blocks' is a machine behavior, not a plea. Repo-local though; other projects' roborev configs don't inherit
+* Two-axis finding classification: only material findings block the gate or consume a feedback cycle [in-flight-draft] @ /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/README.md:146-152 (unc
+    classes: review-pedantry
+    efficacy: Directly targets pedantic feedback consumption (findings blocking gates and burning feedback cycles regardless of materiality). Depends on validator compliance, but the separated output format gives the FO a checkable artifact, and it mirrors the mechanically-enforced roborev con
+* No PR machinery rule [prose-rule] @ zaphod docs/agent-rail-dev/README.md, '## Workflow-specific rules' first bullet 
+    classes: unasked-ci-approval-infra
+    efficacy: Strong: a worker adding PR/CI infra now contradicts explicit README text plus the absence of the mod. The clearest infra-addition policy in any of the three READMEs — and it exists only because the workflow was hand-edited; the template's default is the opposite (pr-merge install
+* Offline/interactive AC split — CL is the validator for interactive ACs [prose-rule] @ zaphod docs/agent-rail-dev/README.md, ideation Outputs + validation stage (recov
+    classes: test-infra-bloat
+    efficacy: Structurally load-bearing despite being prose: the AC split is a required ideation output the gate reviews, so a task plan that automates interactive validation is visible as a violation at design time, before any harness is built. Post-incident scar tissue that directly answers 
+* Park-for-demo is correct posture [prose-rule] @ zaphod docs/agent-rail-dev/README.md, '## Workflow-specific rules' (recovered fr
+    classes: test-infra-bloat, unasked-ci-approval-infra
+    efficacy: Plausibly bites because it legitimizes the otherwise-uncomfortable idle state the FO would engineer around; prose-only and zaphod-only. This posture clause is a template-worthy invention that never propagated back to the template.
+* Detached adversarial audit scoped to four high-stakes surfaces, routine changes exempt [prose-rule] @ /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/README.md:77,156
+    classes: tautological-tests, review-pedantry
+    efficacy: Bites: recorded real catches (#262, 7h AC-3), and the explicit exemption clause caps audit-everywhere pedantry. The surface list is the closest thing spacedock-v1 has to a rigor-posture declaration — but it is scoped to audits, not to test depth or infra generally.
+* Value-measuring AC requirement + per-mechanism justification at ideation [prose-rule] @ /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/README.md:102,107; ech
+    classes: scope-drift, test-infra-bloat
+    efficacy: Moderate-to-strong: produces gate-checkable artifacts at ideation (the cheapest interception point), and the gate AC cross-check can reject violations. Still prose, and it presumes a conscientious ideation-gate reviewer.
+* Roborev correction round limit + captain-only defer acceptance [prose-rule] @ /Users/clkao/git/spacedock-research/spacedock-subspace/docs/dev/README.md:176-19
+    classes: review-pedantry
+    efficacy: Semi-mechanical — rounds are countable against machine artifacts (panel results), so 'stopped after 3' is auditable. But the counting rules are intricate enough to be their own compliance burden, and the rule lives inside an already-heavy Roborev section.
+* Four-field release-scope triage before any finding classification (subspace implementation) [prose-rule] @ /Users/clkao/git/spacedock-research/spacedock-subspace/docs/dev/README.md:128-13
+    classes: review-pedantry
+    efficacy: Moderate: the required structured record makes skipped triage visible, and it stops the reflexive fix-everything response to review output. Prose-enforced; effectiveness depends on the FO checking that triages exist.
+* Spike discipline binds infra too + live-e2e-before-merge for output-shape changes [prose-rule] @ zaphod docs/agent-rail-dev/README.md, '## Workflow-specific rules' (recovered fr
+    classes: test-infra-bloat, scope-drift
+    efficacy: Moderate: closes the 'infra tasks are exempt from spike discipline' loophole that fed the harness incident, and the real-session requirement removes the excuse for simulating the terminal. Prose-only.
+* Mechanism-failure vs product-defect rejection classification with design-reset routing [prose-rule] @ /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/README.md:145 (validat
+    classes: test-infra-bloat, review-pedantry
+    efficacy: Moderate: targets the sunk-cost loop where feedback cycles keep repairing a doomed harness. Prose; requires the validator to recognize a mechanism failure as such.
+* 'Out of scope' section in the task template [template-scaffold] @ skills/commission/references/templates/development.md:152-154 (dev template); pr
+    classes: scope-drift
+    efficacy: Cheap and universal (the only anti-over-engineering scaffold the template actually ships), but it only bites when ideation fills it honestly and validation checks the boundary — nothing enforces either.
+* Opt-in proof disciplines menu in the dev template [template-scaffold] @ skills/commission/references/templates/development.md:91-97
+    classes: tautological-tests, review-pedantry
+    efficacy: Wording-present-only as calibration: no commission interview question asks about mission maturity or rigor, so in practice the commissioning agent picks silently (and in batch mode infers defaults). The menu raises rigor; it cannot lower it — there is no counterpart menu of rigor
+* README-edit nudge + 'review stages' walk with stretch-bullet scan [template-scaffold] @ skills/commission/SKILL.md:562-648 (Phase 3, Step 1/1a)
+    classes: scope-drift
+    efficacy: Partial: a real UI flow that could carry rigor-posture injection, but the stretch-bullet scan targets vagueness, not rigor calibration — nothing in the walk asks 'how much testing does this project want' or 'what infra is off-limits'.
+--- ACTIVE DRIVERS (push toward over-building) ---
+! Semantic adversarial pass — spacedock-v1 README uncommitted diff (validation, lines 139-144) and spacedock-subspace README (implementation, lines 120-127): a mandatory five-bullet matrix ('every representation and lifecycle phase', 'every input path', Unicode/EOF/size/visibility/layout boundaries) applies to EVERY change with no size or materiality threshold — on a one-line diff it prescribes boun
+! spacedock-subspace Roborev exit machinery (README lines 145-190): mandatory quick-panel wait + branch_final panel + Medium severity floor + full synthesis/disposition recording in the stage report for every task of an MVP-stage local web app — the ceremony itself models 'more process infra is normal here', and the correction-round counting rules are their own pedantic-compliance surface.
+! Task Template 'Verified by: grep / test name / file path / command' — dev template line 146, subspace README line 266, zaphod template: lists grep FIRST as the example proof, actively modeling the exact prose-grep tautology the ecosystem's Proof policy bans (spacedock-v1's evolved template fixed this to 'something outside this task body ... that can fail'; the template and the other two READMEs di
+! spacedock-v1 validation Outputs list (~15 nested bullets, lines 132-152 including the in-flight additions) applies uniformly to all diffs with no small-change fast path — a compliant validator on a trivial task will over-produce; the 'spot-check principle' covers infra cost, not checklist proportionality.
+! User-global CLAUDE.md ('Tests MUST comprehensively cover ALL functionality'; TDD for EVERY feature or bugfix) is inherited by every dispatched worker and directly contradicts spacedock-v1's 'pick the smallest test surface that proves the claim' — a worker resolving that conflict conservatively over-tests prototypes.
+! FO-contract clause cited at spacedock-v1 README line 74, 'prefer a code gate over a prose-only rule': read expansively by a worker, it licenses building enforcement/CI/check infrastructure nobody asked for — the README nowhere bounds WHO may add a code gate or WHEN a prose rule is enough.
+--- GAPS ---
+- No README declares an overall project maturity/rigor posture in one findable place. Rigor is inferable only from accumulated Proof-policy bullets and per-stage Bad lists; a fresh worker asking 'how much engineering does this project want?' has no single answer. The only explicit maturity declaration
+- The commission interview (Q1 mission/entity, Q2 stages, Q3 seeds) and trait detection identify workflow SHAPE (development/experiment/refinement) but never ask rigor LEVEL — so a freshly commissioned README contains zero anti-over-engineering content beyond the Out-of-scope template section. The inc
+- The dev template's proof-discipline menu only RAISES rigor; there is no rigor-capping counterpart menu (harness-simplicity / mechanism-to-value rule, no-CI-until-asked, park-for-human-demo, materiality gating of review findings). Every rigor cap in the ecosystem — the 90-minute rule, No-PR-machinery
+- No propagation loop from evolved READMEs back into the template: spacedock-v1's mechanism-to-value trace, zaphod's interactive/offline AC split, and the materiality taxonomy are template-worthy post-incident inventions that exist only where the incident already happened. Refit updates scaffolding ve
+- zaphod's README (as of the Jul 7 snapshot) has no review-feedback materiality policy — validation rejects with 'concrete findings' but nothing says which findings may block or consume a feedback cycle, leaving it exposed to incident class 4 that spacedock-v1 (in-flight) and subspace both patched.
+- Proportionality rules are prose-only everywhere: only the tautology bans have partial code/config gates (contractlint detector, roborev test-proof-gate + output rule). Nothing mechanically detects an unasked coordination layer, enforces the 90-minute stop, or gates infra addition.
+- Validation/review checklists lack a small-change fast path in all three READMEs — the natural home would be a diff-size or blast-radius tier mirroring the detached-audit's 'routine changes exempt' clause, applied to the whole validation Output list.
+- Natural homes for the missing declarations exist and are already scaffolded: the template's '## Workflow-specific rules' section (workflow-level posture: maturity, default test depth, infra-addition policy, review-finding priority), per-stage Good/Bad bullets (stage-level realization — the establish
+--- notes --- Artifacts examined: (1) /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/README.md working tree + uncommitted diff; (2) zaphod docs/agent-rail-dev/README.md — the live file is OS-permission-blocked (EPERM even unsandboxed), so content was recovered from the fullest Read result in Claude session transcripts (~/.claude/projects/-Users-clkao-git-zaphod/faf79a1b-....jsonl, 2026-07-07 snapshot, commissioned-by spacedock@0.24.0-pre2, 12.9KB — a Jul 17 transcript shows only partial reads, so the file may have evolved since); (3) /Users/clkao/git/spacedock-research/spacedock-subspace/docs/dev
+
+======================================================================
+REMEDY ANALYSIS: roborev-remedy
+======================================================================
+--- remedies ---
+* Release-scope triage + Review Findings output rule (spacedock-v1 roborev config) [in-flight-draft] @ /Users/clkao/git/spacedock-research/spacedock-v1/.roborev.toml lines 34-56 ('Fin
+    classes: review-pedantry, scope-drift
+    efficacy: This is the one remedy that actually bites, and it bites at the right joint: roborev derives pass/fail from '## Review Findings' presence (verdict -> 'roborev wait' exit 1 -> blocking loop signal), so a correctly-deferred symlink-in-a-prototype finding never reaches the ensign as
+* Committed release-scope triage (spacedock-subspace roborev config) [config] @ /Users/clkao/git/spacedock-research/spacedock-subspace/.roborev.toml, 'Finding e
+    classes: review-pedantry, scope-drift
+    efficacy: Active and versioned — the more mature sibling of the v1 draft. The explicit false-positive suppressions (localhost auth, tiny-terminal cosmetics, deprecated-surface shims) are the highest-value part because they name concrete pedantry classes rather than asking the reviewer to r
+* Two-axis finding classification at the validation gate (defect kind x release scope) [in-flight-draft] @ git diff docs/dev/README.md, new lines 146-152 of /Users/clkao/git/spacedock-res
+    classes: review-pedantry, scope-drift
+    efficacy: This is the only remedy wired into the workflow loop itself: REJECTED is the trigger for spacedock:feedback-rejection-flow, so redefining what may cause REJECTED (and what may 'consume a feedback cycle') directly starves the fix-routing loop of pedantic findings — a fresh validat
+* Gate-presentation Material/Polish tiering + no-format-pedantry rule [template-scaffold] @ /Users/clkao/git/spacedock-research/spacedock-v1/skills/present-gate/SKILL.md li
+    classes: review-pedantry
+    efficacy: Committed and shipped in the plugin, loaded at every gate presentation, so it reliably shapes what the captain is asked to decide on and stops polish findings from being framed as rejection grounds. It does nothing about an ensign fixing findings pre-gate — it is a display-layer 
+* Feedback-cycle budget with cycle-3 human escalation [prose-rule] @ /Users/clkao/git/spacedock-research/spacedock-v1/skills/feedback-rejection-flow/
+    classes: review-pedantry, scope-drift
+    efficacy: Committed and part of the shipped FO flow; a real backstop, but a blunt one — it caps pedantry-driven churn at ~3 rounds rather than preventing round 1, and it does not inspect whether the routed findings were material.
+* Roborev-setup skill design: convergence budget, no fix/refine, min-severity, expected-red exclusion [in-flight-draft] @ /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/robor
+    classes: review-pedantry, scope-drift, test-infra-bloat
+    efficacy: Design-stage only (a state entity for a skill not yet shipped as skills/roborev-setup/). Its budget mechanism is the closest thing to an ensign-side stop, but it caps rounds rather than classifying findings — within budget, a failing verdict still gets dutifully fixed. Notably th
+* Agent-collaboration review loop spec (audience-separated annotations, signed atomic change request) [in-flight-draft] @ /Users/clkao/git/spacedock-research/spacedock-v1/docs/specs/agent-collaboration-
+    classes: review-pedantry, scope-drift
+    efficacy: Zero current efficacy — explicitly a proposal ('Status: ... a future review loop'), no code, no schema, and the spec itself documents that the Subspace TUI still renders raw JSON instead of resolving References. As a design it is the strongest consumption-side answer: the contrib
+* Deferred-risk record discipline (trigger / why-outside-promise / promotion condition) [prose-rule] @ /Users/clkao/git/spacedock-research/spacedock-v1/.roborev.toml line 48, docs/dev
+    classes: review-pedantry, scope-drift
+    efficacy: Psychologically important — it lets a conscientious agent defer without feeling it 'suppressed a real observation' — but nothing consumes the record: no tracker, entity field, or FO loop step ever revisits a promotion condition, so deferred risks live only in gate messages and re
+--- ACTIVE DRIVERS (push toward over-building) ---
+! The 'semantic adversarial pass' — now duplicated verbatim in .roborev.toml (lines 24-32) AND the docs/dev/README.md validation diff (new lines 139-144) — is a pedantry GENERATOR: it instructs the reviewer/validator to build a matrix of Unicode/EOF/size/visibility/layout boundary variants and to 'add one scaling or over-limit test when that risk exists' during validation. The classification tiers e
+! Roborev's own verdict mechanics: any entry under '## Review Findings' fails the job, 'roborev wait' exits 1 on a failed verdict, and 'roborev refine' is an 'iterative review-fix loop until all reviews pass' — a code-level driver of dutiful fixing that the remedies can only steer by controlling what lands under that heading. The roborev-setup draft bans refine/agent-hook in Spacedock workflows for 
+! The Test proof gate (.roborev.toml lines 16-22) auto-escalates test-strength findings to 'a Material evidence defect even when another test covers the happy path' on a very broad surface list (any 'required acceptance, release, CI, compatibility, or detached-audit surface'), partially undoing the release-scope triage for test findings.
+! 'Classification ... never suppresses a real observation' plus mandatory non-blocking reporting of every deferred risk keeps pedantic findings continuously in front of agents that have no consumption rule for them.
+! The user-global ~/.claude/CLAUDE.md pushes workers hard toward fixing every reported finding: 'Tests MUST comprehensively cover ALL functionality', 'ALL TEST FAILURES ARE YOUR RESPONSIBILITY', 'Fix broken things immediately when you find them', 'NEVER skip steps or take shortcuts' — an ensign holding both this and a reviewer finding has no licensed way to not fix it.
+! spacedock-subspace's post-commit hook panel (hook_review_panel = 'quick') reviews every commit, generating a continuous finding stream; its instructions carry the Material-only output rule, but the hook itself guarantees pedantry has a delivery channel on every commit.
+--- GAPS ---
+- No ensign-side consumption rule anywhere: /Users/clkao/git/spacedock-research/spacedock-v1/skills/ensign/references/ensign-shared-core.md contains zero guidance on triaging review findings before fixing them. The exact actor in the incident class — the ensign that dutifully fixes a symlink edge case
+- No re-triage on misclassification: if the reviewer model ignores the output rule and puts a deferred risk under '## Review Findings', the verdict fails, and nothing in feedback-rejection-flow or the FO contract requires checking that a REJECTED/failing verdict cites a material finding before routing
+- The classification is not machine-readable: material-vs-deferred exists only as markdown-heading placement in the reviewer's narrative. Roborev has severity (--min-severity) but no release-scope field, no schema, and no lint verifying the four-field triage was performed — the config even has to expl
+- The two live-fire pieces are not committed: spacedock-v1/.roborev.toml is untracked (absent from worktrees where implementation ensigns run branch reviews; one 'git clean' from gone) and the docs/dev/README.md validation-stage classification is an unstaged diff (dispatched fresh validators reading c
+- Deferred risks have no afterlife: promotion conditions are recorded in prose summaries but no mechanism (entity field, backlog task, tracker query) ever revisits them.
+- The semantic adversarial pass and the release-scope triage text are now triplicated (v1 toml, subspace toml, README) with divergent wording — drift risk, and the README copy turns a reviewer calibration into a validator work instruction (including 'add one scaling test'), re-importing pedantry into 
+- The agent-collaboration spec's core protections (audience separation, signed outward request) are unimplemented, and the spec itself records that the Subspace TUI still fails to resolve References into readable views — so today a maintainer steering a review sees raw JSON, the condition under which 
+- No prototype/maturity signal reaches the reviewer: the v1 config asserts 'compatibility-first' posture repo-wide; nothing lets a task or entity declare 'this is a spike/prototype — apply deferred-risk defaults', so the reviewer must infer maturity per-diff.
+--- notes --- Design summary: the in-flight remedy is a classification-and-routing scheme, not a suppression scheme. It defines four finding classes (Material / Deferred risk / Polish / Needs decision) with a mandatory four-field evidence record (released user+workflow, observable harm, violated AC/boundary, trigger evidence), decouples severity from release scope, and then exploits roborev's verdict mechanics: since roborev fails a job on any '## Review Findings' entry, the config's output rule ('put ONLY material findings ... there') converts the prose classification into an exit-code difference. That is 
