@@ -22,19 +22,19 @@ The [official Codex hooks reference](https://learn.chatgpt.com/docs/hooks) defin
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — A compacted First Officer launched through `spacedock codex` receives a model-visible reload instruction, while a bare Codex session receives none.** On a paired installed-plugin confirmation, compact one session launched with `spacedock codex` and one launched with bare `codex`. The marked session's `SessionStart(compact)` output must contain the exact `hookSpecificOutput.additionalContext` reload instruction and the next model turn must be able to act on it. The bare session must produce no hook output. Compare this with the current-session baseline, where `PostCompact.systemMessage` was visible only to the UI/event stream and the model resumed without reload.
+**AC-1 (VALUE) — A compacted First Officer launched or resumed through Spacedock receives and acts on model-visible reload context, while the equivalent bare Codex paths remain silent.** The captain's real installed-plugin 4/4 run is the behavioral proof: marked launch injected and the next model acted on recovery context; bare launch stayed silent; marked resume injected; bare resume stayed silent. The independent red baseline is current parent session `codex:019f7d9a-5b06-75a0-a04a-02b0b2ccd6a2`, where the UI-only PostCompact notice did not reach the model and reasoning resumed without reload.
 
-**AC-2 — Injection is gated only by the inherited launcher marker and only on `compact`.** With non-empty `SPACEDOCK_BIN`, the hook exits `0` and emits exactly one valid `SessionStart` `additionalContext` object. With the marker absent or empty, it exits `0` with empty stdout. `startup`, `resume`, and `clear` do not match the hook group. The hook adds no `systemMessage`, performs no mutation, and introduces no CLI or workflow setting.
+**AC-2 — The shipped recovery surface is exactly one compact-only, launcher-gated SessionStart hook.** Root `hooks.json` contains one `SessionStart` group with matcher `^compact$`; its four-line script exits `0` with no output unless inherited `SPACEDOCK_BIN` is non-empty, then emits one static `hookSpecificOutput.additionalContext` object. Verify the exact on-disk registration/script shape at the candidate SHA; the captain's 4/4 run is the sole proof that this shape produces the marked/bare behavior.
 
-**AC-3 — Resume behavior is explicit.** `spacedock codex resume` re-establishes `SPACEDOCK_BIN`, so a later `SessionStart(compact)` is eligible for injection. Bare `codex resume` has no marker and remains silent, even when the resumed thread originally ran through Spacedock. Users who need the recovery guarantee must resume through the launcher; no session-provenance inference is added.
+**AC-3 — Resume behavior follows the launcher boundary without inferred provenance.** `spacedock codex resume` re-establishes `SPACEDOCK_BIN`; bare `codex resume` does not, even when the resumed thread originally ran through Spacedock. The marked-resume and bare-resume halves of the captain's same 4/4 run verify this boundary; no additional test or session-provenance mechanism is required.
 
-**AC-4 — Automatic mid-turn compaction retains a named timing limitation and a captain-visible fallback.** Keep the existing `PostCompact.systemMessage` hook unchanged as a fallback cue. [Codex issue #28736](https://github.com/openai/codex/issues/28736) reports that automatic mid-turn `SessionStart(compact)` context may be queued until the next user turn and may be duplicated, so v0.25.2 must not claim an immediate pre-effect reload for that path. [Issue #28633](https://github.com/openai/codex/issues/28633) separately prevents durable correlation of compaction hook receipts. The captain warning remains useful when the primary context is delayed, but it is not model-visible proof.
+**AC-4 — The ineffective fallback and its proof scar tissue are absent.** The PostCompact registration and script, both Codex runtime hook-narration lines, and the entire legacy PostCompact hook test file do not exist at the candidate SHA; no replacement test, fixture, parser, assertion, or harness is added. Verify this by the deletion commit and candidate diff. [Codex issue #28736](https://github.com/openai/codex/issues/28736) remains a known automatic-mid-turn delivery limitation, not a reason to retain a UI-only workaround; v0.25.2 claims only the behavior observed in the captain's 4/4 run.
 
-**AC-5 — v0.25.2 ships the scoped fix on the stable line without rewinding `next`.** Verify the exact release-candidate SHA with the focused hook check, the paired manual confirmation, and required Go/full/race gates; cut annotated `v0.25.2` from `main` and retain the change on `next` through the documented propagation path.
+**AC-5 — v0.25.2 ships the scoped fix on the stable line without rewinding `next`.** Verify the exact release-candidate SHA with the already-completed 4/4 run, formatting/full/race gates, deletion accounting, and diff check; cut annotated `v0.25.2` from `main` and retain the change on `next` through the documented propagation path.
 
 ## Scope guard
 
-Do not add a generic spawn guard, `PreToolUse` matcher, fork policy, JSON parser, process controller, transcript harness, or public CLI. Do not change dispatch, model/effort routing, worker continuity, or PostCompact behavior. This ticket owns only model-visible post-compaction recovery in Spacedock-launched Codex sessions.
+Keep only the four-line `SessionStart(compact)` hook and its registration. Remove the PostCompact registration/script, runtime hook narration, and full legacy hook test file. Do not replace them with a committed test, fixture, parser, assertion, transcript harness, process controller, public CLI, generic spawn guard, or fork policy. Do not change dispatch, model/effort routing, worker continuity, or launcher semantics.
 
 ## Evidence and mechanism decision
 
@@ -42,41 +42,43 @@ The current session supplies the red behavior: its JSONL records `context_compac
 
 The launcher already supplies the needed boundary marker. `internal/cli/frontdoor.go` removes any inherited `SPACEDOCK_BIN` and sets it to the resolved launcher binary for `spacedock codex`; hook commands inherit that environment. Bare `codex` has no marker. This existing contract distinguishes the two launch paths without new state or provenance machinery.
 
-**Decision: PROCEED with one `SessionStart(compact)` hook gated by non-empty `SPACEDOCK_BIN`.** When marked, it emits model-visible `additionalContext`; when unmarked, it exits successfully with no output. Keep the existing PostCompact captain cue only because the documented automatic-mid-turn timing gap can delay the primary signal.
+**Decision: retain only one `SessionStart(compact)` hook gated by non-empty `SPACEDOCK_BIN`; delete the entire PostCompact path and its test/narration scar tissue.** When marked, the hook emits model-visible `additionalContext`; when unmarked, it exits successfully with no output. The captain's real installed-plugin 4/4 run already proves the live boundary, so a committed offline oracle would add maintenance weight without closing a remaining evidence gap. This follows the 0260 cheapest-check-that-can-fail ordering: use the existing falsifiable live exercise and on-disk deletion evidence rather than manufacturing new rigor.
+
+No further spike is needed. The 4/4 run has already exercised plugin loading, model-visible delivery, marker gating, and both resume paths. Candidate source/diff inspection proves the negative deliverable. Automatic mid-turn timing remains upstream issue #28736 and is not modeled or worked around here.
 
 ## Implementation design
 
-1. Extend root `hooks.json` with one `SessionStart` group whose matcher is exactly `^compact$` and whose single command is `${PLUGIN_ROOT}/hooks/codex_session_start_compact.sh`.
-2. Add that tiny POSIX shell hook. If `SPACEDOCK_BIN` is absent or empty, exit `0` before writing stdout. Otherwise emit one static JSON object with `hookSpecificOutput.hookEventName` equal to `SessionStart` and `hookSpecificOutput.additionalContext` instructing the First Officer to reread the authoritative `spacedock:first-officer` contract and reconcile durable workflow state with live worker state before the next workflow effect.
-3. Do not parse stdin: the exact hook matcher owns the `compact` source selection and the output is static. Do not add a dependency, fallback interpreter, mutation response, or failure-closed policy.
-4. Leave `hooks/codex_post_compact_notice.sh` and its matcher unchanged. Its `systemMessage` remains the captain-visible fallback, never the model-visible success signal.
-5. In `skills/first-officer/references/codex-first-officer-runtime.md`, replace the current captain-interaction sentence with one concise contract: the `SessionStart(compact)` context is primary only when `SPACEDOCK_BIN` is present; the PostCompact warning is the captain fallback for delayed automatic delivery; `spacedock codex resume` preserves eligibility while bare `codex resume` does not.
+1. Root `hooks.json` retains one `SessionStart` group whose matcher is exactly `^compact$` and whose command is `${PLUGIN_ROOT}/hooks/codex_session_start_compact.sh`.
+2. The four-line POSIX hook remains static: absent or empty `SPACEDOCK_BIN` exits `0` before stdout; a non-empty marker emits one `SessionStart` `hookSpecificOutput.additionalContext` object. It does not parse stdin or add a dependency.
+3. Delete the PostCompact matcher and `hooks/codex_post_compact_notice.sh`. There is no captain-visible fallback in the shipped plugin.
+4. Delete `internal/ensigncycle/codex_post_compact_hook_test.go` in full and add no replacement test or proof machinery. The captain's 4/4 live exercise owns the behavioral claim.
+5. Delete the Codex runtime hook narration without replacement. The First Officer contract states behavior, not plugin plumbing.
 
-The two hooks may both fire around a compaction but address different audiences. PostCompact warns the captain immediately when the host surfaces it. SessionStart provides the model-visible instruction when Codex delivers the compact-source start event. Neither calls the other, and neither claims to repair the host timing defect.
+## Actual changed-LOC accounting
 
-## Gross changed-LOC budget before implementation
+Accepted cleanup commit `2be84f73` is deletion-only: 363 deletions and zero insertions.
 
-| File | Gross changed LOC | Essential line categories |
-| --- | ---: | --- |
-| `hooks.json` | ~10 | One `SessionStart` group, exact compact matcher, one plugin-root command. |
-| `hooks/codex_session_start_compact.sh` | ~9 | Shebang, one environment gate, one static JSON output. |
-| `internal/ensigncycle/codex_post_compact_hook_test.go` | ~24 | Extend the existing hook loader/runner checks for matcher shape and marked/unmarked stdout; no new harness. |
-| `skills/first-officer/references/codex-first-officer-runtime.md` | ~2 | Replace one captain-interaction sentence with the scoped primary/fallback/resume contract. |
-| **Total** | **~45** | No CLI, Go production package, parser, process fixture, transcript machinery, or public docs. |
+| File in `2be84f73` | Insertions | Deletions |
+| --- | ---: | ---: |
+| `hooks.json` | 0 | 11 |
+| `hooks/codex_post_compact_notice.sh` | 0 | 6 |
+| `internal/ensigncycle/codex_post_compact_hook_test.go` | 0 | 344 |
+| `skills/first-officer/references/codex-first-officer-runtime.md` | 0 | 2 |
+| **Cleanup total** | **0** | **363** |
 
-The executable mode bit for the new hook is required but is not LOC. If implementation needs materially more than this budget, return to ideation instead of adding infrastructure.
+The complete candidate against `origin/main` is 10 insertions and 331 deletions, net **−321 lines**: the retained SessionStart registration/script and a six-line formatting correction are outweighed by removal of the old PostCompact registration/script, runtime narration, and baseline version of the legacy test. This negative delta is the 0260 proportionality result; no replacement proof surface exists.
 
 ## Test plan
 
-- Extend the existing `internal/ensigncycle/codex_post_compact_hook_test.go` fixture helpers just enough to locate the new `SessionStart` command and invoke it from an unrelated cwd. With `SPACEDOCK_BIN=/absolute/spacedock`, require exit `0` and parse the exact single `hookSpecificOutput.additionalContext` shape. With the variable absent and with it explicitly empty, require exit `0`, empty stdout, and no stderr. Assert the matcher is compact-only. Do not add a new process harness or transcript fixture.
-- During implementation, the same gate may be checked with a disposable direct pipe: invoke the hook once under `env -u SPACEDOCK_BIN` and once with a non-empty marker. Input may be the existing SessionStart fixture shape; the script intentionally ignores it because `hooks.json` performs source routing.
-- Manually install the candidate plugin and perform the paired value confirmation. In a `spacedock codex` session, seed a unique reload sentinel, run `/compact`, and ask the next model turn to report the injected recovery instruction and perform the required reread/reconciliation before an effect. In a separate bare `codex` session, repeat the same prompts and require no injected recovery instruction; a visible PostCompact warning is allowed because it is the fallback audience.
-- Confirm the resume boundary once: a session resumed through `spacedock codex resume` remains eligible on its next compact event; the equivalent bare `codex resume` path is silent. Record that the matcher does not inject merely on startup or resume.
-- Do not use automatic mid-turn compaction as proof of immediate delivery. If exercised, record delayed or duplicate delivery as upstream issue #28736 behavior and use the existing captain warning to prompt the manual reload. Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` on the release-candidate SHA.
+- Use the captain's already-completed installed-plugin 4/4 run as the sole behavioral proof for AC-1 through AC-3: marked launch injects and acts, bare launch stays silent, marked resume injects, and bare resume stays silent. Do not repeat, simulate, or request this run and do not translate it into a committed test.
+- Verify AC-2 and AC-4's on-disk shape at the exact candidate SHA: only the compact-source SessionStart registration and four-line gated script remain; the PostCompact registration/script, runtime narration, and entire legacy hook test file are absent; no replacement test, fixture, parser, assertion, or harness exists.
+- Verify proportionality with `git show --numstat 2be84f73` and `git diff --numstat origin/main..HEAD`: the cleanup commit is 0 insertions/363 deletions and the full candidate is 10 insertions/331 deletions, net −321.
+- Run `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check origin/main..HEAD` on the release-candidate SHA. These existing repository gates verify build hygiene; none is a substitute for the captain's live behavioral evidence.
+- Do not claim immediate automatic-mid-turn delivery. Issue #28736 is an upstream limitation outside the accepted 4/4 boundary, with no PostCompact fallback or new workaround in scope.
 
 ## Documentation delta
 
-No public workflow or release documentation changes and no new user setting. The only contract edit is the concise Codex runtime-reference sentence described above. It must distinguish model-visible SessionStart context from the captain-visible PostCompact fallback and state the launcher-resume boundary without claiming that v0.25.2 fixes automatic-mid-turn delivery timing.
+No public workflow or release documentation changes and no new user setting. Delete the two Codex runtime hook-narration lines and add no replacement wording: the First Officer contract must not describe SessionStart/PostCompact plumbing. Resume behavior is proven by the captain's live run, not narrated into the runtime contract.
 
 ## Feedback Cycles
 
@@ -85,6 +87,7 @@ No public workflow or release documentation changes and no new user setting. The
 - Cycle 3: CORRECTED by the captain on 2026-07-20. The cited `spawn_agent` call was generic research rather than a Spacedock dispatch, so the entire fresh-spawn/PreToolUse premise was false. Replace it with the archived c6 post-compaction defect: `SessionStart(compact)` model context gated by inherited `SPACEDOCK_BIN`, with the PostCompact captain cue retained only as a timing fallback.
 - Validation cycle 1: REJECTED for evidence/gate completion only. The captain ran the `/tmp` installed-plugin runbook and reported that marked launch, bare launch, marked resume, and bare resume all passed. The only remaining blocker is the repository-wide formatting gate: `gofmt` requires three field-alignment spaces in unchanged `internal/release/journeydelta.go`. Route only that mechanical correction to implementation, then re-run the same validator; add no product mechanism or test infrastructure.
 - Validation cycle 2: REJECTED by the captain after PR #534 opened. The Codex runtime contract must not narrate hook plumbing, and the ineffective PostCompact fallback must be removed rather than documented. Delete the runtime hook paragraph, the `PostCompact` registration and script, and the legacy 344-line PostCompact test file. Keep only the four-line `SessionStart(compact)` hook. Add no replacement test: the captain's real 4/4 marked/bare launch-and-resume run is the proof, per the 0260 live-drive and cheapest-check rules.
+- Validation cycle 3: REJECTED for specification reconciliation only. Product commit `2be84f73` correctly performs the approved 363-line deletion with no insertions, all gates pass, and the captain's 4/4 run remains sufficient; the authoritative AC-4, scope, design, test, documentation, and LOC sections still demanded the rejected fallback/test shape and must be brought into agreement without another product change or test.
 
 ## Superseded stage reports
 
@@ -249,3 +252,16 @@ Cycle 3 removes the ineffective captain-warning path and all offline test scar t
 ### Summary
 
 **Recommendation: REJECTED for one material evidence/specification defect only.** Product commit `2be84f73` exactly implements the latest captain feedback, the retained SessionStart mechanism has real 4/4 behavioral evidence, and every existing repository gate is green; there is no product outcome defect and no deferred-risk or polish finding. Reconcile the state body so AC-4, Scope guard, decision/design, test plan, and documentation delta all describe deletion of the ineffective PostCompact path and reliance on the real run, without changing product code or adding proof machinery.
+
+## Stage Report: ideation (cycle 5)
+
+- DONE: Reconcile AC-4, scope guard, decision/design, test plan, documentation delta, and LOC accounting to the captain-approved deletion of PostCompact, runtime narration, and the entire legacy hook test file.
+  The authoritative body now requires the deletion-only shape from commit `2be84f73`, records its 0-insertion/363-deletion correction and the candidate's net −321-line delta, and contains no fallback or runtime-narration requirement.
+- DONE: Make the real 4/4 marked/bare launch-and-resume session the sole behavioral proof; require no committed hook test, fixture, parser, assertion, or replacement harness.
+  AC-1 through AC-3 and the test plan rely only on the captain's completed marked launch, bare launch, marked resume, and bare resume outcomes; AC-4 makes absence of replacement proof machinery an explicit on-disk property.
+- DONE: Preserve the historical stage reports and feedback trail, append a concise ideation reconciliation report, and change no product file.
+  All prior reports remain unchanged above, validation cycle 3 is recorded in the feedback trail, and this cycle modifies only the shared state entity.
+
+### Summary
+
+The task contract now matches the accepted product: one four-line, marker-gated `SessionStart(compact)` hook and no PostCompact fallback, runtime plumbing narration, or committed hook test. The existing real 4/4 Codex run is the behavioral proof, while deletion accounting and ordinary repository gates provide proportional static/build evidence without new infrastructure.
