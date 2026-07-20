@@ -356,3 +356,7 @@ Five wording annotations, design unchanged. Swept "seam" (testing jargon) and "m
 ### Summary
 
 Designed the captain's lure-scenario testing into the test plan: a four-scenario catalog of seeded fixtures that bait the expensive/wrong move (infra build, AC-narrowing, minting, mechanism climb), run live and observed, never committed as a suite — the same legal shape as the prose-grep ruling. Presented four options weighed by this entity's own ordering, recommending 1+2 combined with 3 as the durable home and 4 declined under the clause's own consent rule (the ordering declines building a new CI lane unasked). Cross-model coverage (Claude + codex/`gpt-5.6-sol`) is a run-recipe parameter, not a suite matrix. AC-1/AC-4/AC-5 and the estimate line now carry scenario-evidence language. Two items stay on the spine: option 3's home entity (slug not locatable this session — confirm at packaging) and the unresolved boot-resident budget question.
+
+## Catalog addendum (captain decision, 2026-07-20)
+
+The lure catalog gains scenario five by captain merge: the reviewer-side trap from the archived `ac2-design-proof-fixture` — a fixture task whose means-AC is satisfied while its measured end value regressed; the gate reviewer must reject. The built fixture spec lives in that archive entry; it runs under the same catalog recipe (validation-time + pre-cut, both runtimes).
