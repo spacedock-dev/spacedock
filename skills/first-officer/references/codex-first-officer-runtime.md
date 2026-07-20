@@ -51,5 +51,3 @@ Feedback rejection is the load-bearing exception to casual fresh dispatch. When 
 ## Captain Interaction
 
 The captain is the user of the Codex session. Communicate gate results, clarifications, and status directly in the conversation.
-
-The bundled `.codex-plugin` `PostCompact` hook emits a captain-visible reload-reminder `systemMessage` — captain UI, not model context (probe) — degrading to a manual captain cue; failure-open.

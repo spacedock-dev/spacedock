@@ -1,12 +1,12 @@
 {
   "hooks": {
-    "PostCompact": [
+    "SessionStart": [
       {
-        "matcher": "manual|auto",
+        "matcher": "^compact$",
         "hooks": [
           {
             "type": "command",
-            "command": "${PLUGIN_ROOT}/hooks/codex_post_compact_notice.sh"
+            "command": "${PLUGIN_ROOT}/hooks/codex_session_start_compact.sh"
           }
         ]
       }
