@@ -1,6 +1,6 @@
 ---
 title: Restore Codex FO contract after compaction
-status: implementation
+status: validation
 source: "Captain-directed v0.25.2 follow-up, 2026-07-20; live FO escape after v0.25.1 / archived rt8 / PR #532"
 score: "1.0"
 milestone: 0.25.2
