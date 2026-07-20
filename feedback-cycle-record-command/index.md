@@ -26,7 +26,7 @@ gates:
           state: open
           briefing:
             id: briefing:bw-ideation-1
-            digest: sha256:bd0c6e5e798df56bbc8ab461a2f0fd5f5fad274c664d3567e02be48f0b92b8aa
+            digest: sha256:51b38d47a1b15d0ea7b34d4908d20d257ae3e39f5bc587839075a78466d10167
 ---
 
 Turn the feedback-rejection correction loop from a prose-only cycle count into a measured, calibrated loop. At ideation the entity declares an **expected surface** as part of the captain-approved design; every correction round records its **actuals** into durable `### Feedback Cycles` state; the **deviation** of actuals from the captain-approved estimate is **narrated** at each re-dispatch decision point. A new `status --record-feedback-cycle` command owns the append + count + actuals + deviation + the stdout round-state line.
