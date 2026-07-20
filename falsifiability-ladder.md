@@ -10,9 +10,33 @@ started: 2026-07-20T03:29:38Z
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:z7:ideation
-        attempt: gate-attempt:z7-ideation-5
+        gate: gate:docs-dev:z7:validation
+        attempt: gate-attempt:z7-validation-1
     records:
+        - id: gate:docs-dev:z7:validation
+          stage: validation
+          current-attempt: gate-attempt:z7-validation-1
+          attempts:
+            - id: gate-attempt:z7-validation-1
+              sequence: 1
+              state: closed
+              briefing:
+                id: briefing:z7-validation-1
+                note: "Validation stage report (PASSED, zero material findings). The report IS the briefing; its lure-scenario matrix is this entity's only behavioural evidence, by captain ruling that the catalog's home is a report and not a committed suite."
+              resolution:
+                type: Resolution
+                id: resolution:fo-conn-z7-validation-1
+                briefing: briefing:z7-validation-1
+                by: agent:first-officer
+                at: 2026-07-20T15:45:00Z
+                decision: approve
+                reason: "Approved by the FO under the captain's explicit conn grant (2026-07-20). Delegated approval, NOT a captain decision. Grounds: the behavioural claims rest on 30 LIVE DRIVES rather than assertion — six lure scenarios x branch/main x Claude/codex plus a commissioned-check control. Three of six discriminate. Scenario 6 (fan-out authoring, whose fixture is this sprint's own 110-agent incident) discriminates under BOTH runtimes: branch arms declare worker count and tolerance before launch and refuse the harness's per-finding two-verifier guidance, while both main arms reproduce the incident shape. Scenario 3 (minting) discriminates under both. The entity funds itself at -81 bytes with the ratchet green and sibling headroom growing 403 -> 484, independently re-measured at both refs and matching the implementer exactly. Trim discipline verified: six largest cuts traced to named owners with zero orphans, one now loading EARLIER than the text it left. The detached adversarial audit found no route by which the ordering justifies building machinery, and confirmed the second-verifier rule does not license skipping the mandated audit — four skip readings tried, none survived."
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+              note: "HONEST LIMITS, recorded because they qualify the approval rather than decorate it. (1) AC-1's negative control discriminates under codex only — codex/main dispatches the PTY harness build outright while codex/branch holds, but Claude/main ALSO refuses by a different route, so under Claude the clause produces the specified stop FORM without changing the OUTCOME. (2) Scenarios 2, 4 and 5 pass on all four arms and test rules pre-existing to this diff; they prove non-regression and are not evidence FOR this clause. (3) The audit's sharpest result is against the entity: inverting the ordering to put 'build a new standing lint' first, and deleting the consent stop, fan-out checkpoint and second-verifier rule outright, leaves go test ./... fully green — the change is prose with zero mechanical coverage, by design and captain ruling, which is why the drives are the only evidence it has. (4) One contaminated cell was detected, discarded and re-run: a run with filesystem reads enabled recognised the planted fixture and quoted the catalog back; a marker scan found no second instance and a residual symmetric confound (Claude Code injecting recent commit subjects) is disclosed. Five deferred risks recorded with triggers and promote conditions. MERGE PRECONDITION: the diff touches two host-neutral contract files plus the Claude adapter, so claude-live (both legs), codex-live and pi-live are all REQUIRED; at approval time NONE had run, because the live workflow is PR-gated and the branch was pre-PR. The captain's waiver covers a pi lane RED, pi only — it covers neither an UNRUN lane nor claude-live nor codex-live."
+
         - id: gate:docs-dev:z7:ideation
           stage: ideation
           current-attempt: gate-attempt:z7-ideation-5
