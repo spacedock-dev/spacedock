@@ -19,10 +19,23 @@ gates:
       attempts:
         - id: gate-attempt:z7-ideation-1
           sequence: 1
-          state: open
+          state: closed
           briefing:
             id: briefing:z7-ideation-1
             digest: sha256:f4fefb0b7be0d57c933fe27d71aa90235e6b01faef2301f916db22a8f0065b47
+          resolution:
+            type: Resolution
+            id: resolution:actor-1784520766469687000
+            briefing: briefing:z7-ideation-1
+            by: person:reviewer
+            at: 2026-07-20T04:12:46Z
+            decision: revise
+            reason: "Annotation on the clause headline: do not invent new terminology — the named ladder/rungs/climb concept is itself minted vocabulary; express the ordering rule in plain language."
+          application:
+            action: feedback
+            target-stage: ideation
+            state: pending
+          note: "Subspace advisory float; captain annotation included (annotation:captain-1784520762311801000, TextQuoteSelector on the clause opening). In-stage revision routed to the live worker; next attempt opens at re-presentation."
 ---
 
 "Prefer a code gate over a prose-only rule" is a standing instruction to convert any guarantee into enforcement code — unscoped by stakes, it produced presence tests and unasked CI/lint infra, and it degrades worse in non-dev workflows where every check is new infra. Replace it with the falsifiability ladder: shipped system guards → existing mechanical checks → falsifiable exercise (replay, source-check, adversarial skeptic) → captain judgment → build new machinery (last, consent-gated). Same edit carries: new enforcement surfaces are not "obvious reversible work" (consent required); a fan-out checkpoint before an investigation's Nth spawned entity/PR; identifier minting reserved to the system, ad-hoc itemization uses bare ordinals. Grouped with 1p9, cy, 85.
