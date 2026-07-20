@@ -333,3 +333,58 @@ Shipped the alternative the captain selected, exactly as verified and no wider: 
 ### Summary
 
 Fixed the one accepted finding: the conflict instruction was attributed to `«merge.guard»`'s `block:` bullet, but the guard never performs the merge, so it now rides the sentence describing the hook path that does. Force of the instruction is unchanged and the probe result is unaffected. The re-homing came in cheaper than the placement it replaced — the entity now measures net −24 bytes against its base, returning headroom rather than consuming it, with the suite green and the ratchet passing. Both declines are recorded with grounds and zero-line diffs. The lead decline matters beyond bookkeeping: roborev independently and cold reached the same conclusion as the parked paragraph, which is textual corroboration that the gap is real even though the behavioral probes returned null — evidence that the instrument was too weak rather than that the claim was false, carried by name to `probe-armed-parking-under-context-pressure` and explicitly not treated as grounds to un-park.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Each shipped AC verified with evidence you REPRODUCE. AC-1 is a behavioral claim about the `merge: local` --no-ff conflict path: re-run the blind A/B yourself rather than accepting the recorded 0/3 vs 3/3, and report your own numbers.
+  Re-ran it, pre-registered before any reader (`probe-v2/PRE-REGISTRATION.md`, throwaway dir). **My numbers: BEFORE 0/3 surface-and-stop (2/3 hand-resolve, 1/3 loop back), AFTER 3/3 surface-and-stop, 3/3 HIGH confidence.** Baseline moved; prediction met. Material discovery: the recorded 3/3-vs-0/3 was run against the PARKED 843-byte paragraph, not the shipped text — `cmp` puts cycle 2's arm B and the shipped file apart at char 435. This re-run is the first test of the text that actually ships, and it replicates.
+- DONE: AC-2 is the byte claim: re-measure the FO prompt surface and confirm net <= 0 against main with the ratchet green.
+  Measured two independent ways, agreeing exactly: my own `git show | wc -c` sum over the 13 ratcheted paths gives main 122231 / HEAD 122207; `TestFOFunctionReferenceCheckpointMetrics` (`-count=1`, uncached) reports 122207. **Net −24, ceiling 122634, ratchet PASS.** Full offline lane re-run uncached: `go test ./... -count=1` → 17 packages ok, zero FAIL.
+- DONE: The payload substitution is honestly recorded and cannot mislead a later reader.
+  Strongest evidence is independent-source, not self-referential: entity line 130 vs the frozen `review/ideation/briefing-1.md:62` is a byte-for-byte `diff` match, 447 bytes, exit 0. The briefing was committed 2026-07-20 12:45 (2c9f205d) and never touched again; the substitution landed 22:04 — so the original claim is genuinely preserved, not rewritten. Corroborated behaviorally: 2 fresh readers given only the entity body both picked the shipped text, both flagged the parked paragraph as NOT shipped citing the quarantine heading, both answered NO to "did it deliver everything," and both named the two production incidents as still unaddressed. The substitution reads as a recorded retreat, not a clean pass.
+- DONE: The conflict blocker is attributed to the actor that actually performs the merge (the hook path), not to «merge.guard». Confirm the placement is correct and the instruction still reads as binding where it now sits.
+  Detached adversarial audit (throwaway `scratchpad/audit/`, `git show`-extracted copies, never the worktree) ran the misattribution attack and returned HELD: the sentence opens "«merge.guard» never invokes «hooks.run»("merge") and never local-merges", and "surface it and stop" is a bare imperative binding the document's addressee, whose nearest finite governor is "the FO invokes". Confirmed behaviorally rather than by reading: 3/3 AFTER readers quoted that sentence as governing and acted as the FO; none concluded the guard handles the conflict. Binding force intact.
+- DONE: Detached adversarial audit on a THROWAWAY checkout.
+  Ran on extracted copies, never the worktree. Misattribution attack HELD; information-loss attack HELD (all four trimmed concepts survive verbatim in the section heading, verified directly). Two attacks landed and are recorded as D3/D4 below.
+- DONE: Required lanes are a function of the diff. Derive and state the mapping.
+  Diff touches `skills/**/references/**` — a host-neutral FO contract — so per `docs/dev/README.md:78` the mapping is `offline` + every host lane (`claude-live`, `codex-live`, `pi-live`). **`offline` RUN and GREEN** (the cycle-1 red is fixed; the regression was the parked clause's bytes). **The three live lanes have NOT RUN**: `git ls-remote --heads origin` is empty and no PR exists, so CI has had nothing to run. This is an unmet merge precondition, stated plainly and not called green. The pi waiver covers a pi *red*, not an unrun lane.
+- DONE: Classify on both axes; only material findings block. Record deferred risks with exact trigger and promote condition.
+  Below. No material finding survives.
+
+### Evidence classification (which of my evidence is which)
+
+- **Existence facts — prove only that we wrote it:** the `+2/−2` diff shape; the prefix comparisons; the heading-contains-concept check. Cited as bookkeeping, never as proof of behavior.
+- **Independent-source facts — can diverge, can fail:** the byte totals against a ceiling constant fixed before this change; the verbatim-preservation `diff` against an immutable briefing committed nine hours earlier by a different commit.
+- **Behavioral-proxy evidence — readers acted, arms separated, could have gone either way:** the 6-reader blind A/B and the 2-reader entity-comprehension test.
+- **Absent:** production-drive evidence. No observed live FO drive backs any claim here.
+
+### Material findings
+
+None.
+
+### Deferred risks (recorded, not blocking)
+
+- **D3 — the stop is turn-local; the Mod-Block Guard recovery path re-arms.** After a surface-and-stop there is no merge commit and no FINALIZE sentinel, so a later boot hits `mod-block=merge:*`, "Check what `«hooks.run»("merge")` left, then re-run `«merge.guard»`", and the guard returns armed again. Not an AC-1 violation — the FO has already reached the captain, which is what AC-1 requires — and the Mod-Block Guard text is untouched by this diff, so the risk is inherited, not introduced. Git itself refuses a re-merge on an unmerged tree, so it fails safe. Trigger: a boot boundary after an unresolved conflict. Promote on an observed drive where an FO re-invokes the merge hook onto a still-conflicted tree.
+- **D4 — prose-only rule with no enforcing check.** The audit built an adversarial edit that defeats the guarantee while changing zero words: relocate the em-dash clause to the end of the sentence so it attaches to the `merge: pr` branch, which cannot produce a local conflict. Nothing described in either file catches it. This is real and is the honest ceiling of a contract-prose change; adding machinery was declined twice on proportionality grounds and this dispatch forbids it. Trigger: a future edit to that sentence. Promote on an observed live drive where the shipped instruction fails to produce surface-and-stop.
+- **D2 (carried forward, re-corroborated) — Mod-Block Guard circularity.** 3/3 of my BEFORE readers cited the boot-scoped Mod-Block Guard clause as a mid-turn rule, independently replicating cycle 1's D2. Unchanged trigger and promote condition.
+
+### Polish
+
+- "The original criteria are preserved verbatim below" (line 117) is plural, but only original AC-1 is preserved; original AC-2 (`briefing-1.md:66`) appears nowhere in the entity. Derivative — the briefing scopes AC-2 as counting "only paired with AC-1" — so its non-delivery follows, but the sentence is literally false as written.
+- "byte-identical to `fo-merge-core.md`" (line 98) overstates. The *prefixes* are byte-identical — verified over 288 and 165 bytes — but both quoted lines end in `…` elisions of unchanged tails. Both blind readers independently flagged this as a copy hazard.
+- Cycle 1's polish note points a later copier at "the entity body (line 99)"; line 99 is now blank and the shipped text is line 100. Stale by one line, and it lands adjacent to the right block, not on the parked paragraph (line 111). The note lives inside an append-only prior stage report and should not be rewritten.
+- AC-1's "Known limit" bullet understates its own evidence: the recorded 6/6 restraint null did not replicate here (2/3 BEFORE readers proposed hand-resolving, 0/3 AFTER). Erring against its own interest; recorded, no change requested.
+
+### On the declined `done-when` finding
+
+I did not re-open it and I produce no evidence that would. The evidence that would reopen it is an observed drive in which an FO terminates its turn at armed; my probe examined the conflict path, and no reader in either arm parked at armed — the BEFORE arm's failure mode was the opposite, over-continuing into hand-resolution. That is a further small data point that careful readers do not park, and it cuts with the park decision, not against it. I concur with declining the 80-120 byte `done-when` amendment on the FO's stated ground: re-introducing a captain-parked payload in smaller type on unchanged null evidence is decision-by-attrition.
+
+### Recommendation
+
+**PASSED**, with one unmet merge precondition the captain must decide on.
+
+Both shipped ACs verified with evidence I reproduced, and AC-1 verified against the shipped text for the first time — the recorded probe had tested the parked paragraph instead. The substitution holds as a recorded retreat: the original claim survives byte-identical against an immutable independent source, and two blind readers both concluded the entity did not deliver what it set out to. The change returns 24 bytes of ratchet headroom. The blocker is not in the deliverable: the three required live lanes have not run because the branch is unpushed, which no local validation can satisfy.
+
+### Summary
+
+Re-ran AC-1's blind A/B from a pre-registration written before any reader and got 3/3 surface-and-stop on the after-text against 0/3 on the before-text, replicating the recorded separation — and found that the recorded run had tested the parked 843-byte paragraph rather than the shipped clause, so this is the first evidence that the text actually shipping moves the baseline. Reproduced AC-2 two independent ways that agree exactly: net −24 bytes, ratchet green, full suite green uncached. The payload substitution survives its hardest test — the original AC-1 is byte-identical to the frozen ideation briefing committed nine hours before the substitution, and two fresh readers given only the entity body both identified the shipped text correctly, flagged the parked paragraph as unshippable, and answered NO to whether the task delivered what it set out to. The detached adversarial audit held on misattribution and information loss and landed two attacks, both recorded as deferred risks: the stop is turn-local and the Mod-Block Guard recovery re-arms, and a zero-word relocation of the clause would defeat it with nothing to catch it. Four polish items recorded, none blocking. The three required live lanes remain unrun because the branch is unpushed — stated as an unmet merge precondition rather than waved through.
