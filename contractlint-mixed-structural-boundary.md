@@ -6,6 +6,7 @@ score: 0.30
 id: b71p9hwyyscckemmer2v3mbb
 sprint: 0260-proportionality
 group: contract-cleanups
+sprint-readiness: defer
 ---
 
 ## Problem
