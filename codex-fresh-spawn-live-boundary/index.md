@@ -182,3 +182,14 @@ Implementation adds model-visible post-compaction recovery only to launcher-mark
 ### Summary
 
 No product outcome defect was found in AC-2 through AC-4 or the scoped mechanism; the semantic matrix is exact, static, bounded, stdout-only, and preserves the prior fallback. **Recommendation: REJECTED at the current release gate for evidence/gate defects only**: the material AC-1 installed-plugin marked/bare and resume confirmation is still captain-pending, and the required repository-wide formatting gate is not clean because of an unrelated base-branch file. Re-run the two outstanding gates without changing this scoped implementation; AC-5 remains release-owned after they pass.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Apply only the gofmt field-alignment correction in internal/release/journeydelta.go and commit it with no other product changes.
+  Commit `620e9761` changes only the three `JourneyDelta` field alignments reported by validation; `12d9a610..620e9761` is one file, 3 insertions and 3 deletions.
+- DONE: Run gofmt, focused hook tests, go test ./..., and go test ./... -race; report exact results and updated diff size.
+  `gofmt -d ./cmd ./internal` is empty; focused hooks, full tests, and race tests pass. The candidate is now 5 files, 48 insertions and 6 deletions (54 gross LOC) from `ddf51d53`.
+
+### Summary
+
+Cycle 2 clears the sole formatting-gate rejection with a separate six-gross-line commit and leaves the SessionStart implementation, tests, output, and runtime contract byte-for-byte unchanged. The captain reports the installed marked/bare launch and resume runbook also passed, so candidate `620e9761` is ready for fresh validation.
