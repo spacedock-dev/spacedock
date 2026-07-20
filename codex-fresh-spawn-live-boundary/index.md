@@ -1,13 +1,13 @@
 ---
-title: Enforce Codex fresh-spawn isolation at the live FO boundary
-status: ideation
+title: Restore Codex FO contract after compaction
+status: implementation
 source: "Captain-directed v0.25.2 follow-up, 2026-07-20; live FO escape after v0.25.1 / archived rt8 / PR #532"
 score: "1.0"
 milestone: 0.25.2
 started: 2026-07-20T04:01:57Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-fresh-spawn-live-boundary
 issue:
 id: 6cc3rvfd44y6x3352hh21v8b
 ---
