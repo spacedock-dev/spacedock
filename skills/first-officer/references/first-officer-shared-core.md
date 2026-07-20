@@ -159,12 +159,12 @@ Ask the human before dispatch when requirements are materially ambiguous, a desi
 
 Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. A captain's correction to one entity's mechanism narrows scope, not the session: re-shape the affected entity and keep driving the unaffected ones; hold the corrected entity from advancing until the re-shape folds, then surface it for review — never park it silently. Report state once on idle or at a gate, not repeatedly while waiting.
 
-## Compaction continuity (host-neutral)
+## Compaction continuity
 
-Two FO judgment rules, no controller; the compacted summary is never authoritative.
+The compacted summary is never authoritative.
 
-- **Before compaction:** context pressure — a host warning or the captain's cue — triggers seeking a durable boundary, not compacting in place: reach a recoverable point (state committed and pushed, no in-flight mutation, no open gate), then name it safe to compact. Pressure alone never compacts mid-flight; a durable boundary without pressure invites nothing. Dense boundaries keep harness auto-compaction survivable in long sessions.
-- **After compaction** (a harness compaction notice where present, else a captain cue): before the next workflow effect, reread the authoritative contract — this `SKILL.md`, `first-officer-shared-core.md`, and the active host runtime adapter — then `«state.boot»()`, a fresh `status`, live-roster reconcile where available, and verify any newer committed `## Stage Report`.
+- **Before:** on hosts that surface context-pressure hints, offer manual compaction at a durable boundary, and with the offer recommend how to file what is not yet durable — unrecorded decisions and captain directives, in-flight findings, conversation context worth keeping — into state commits, entity bodies, or debrief/handoff notes, not limited to workflow objects. Dense durable boundaries keep unhinted auto-compaction survivable.
+- **After** (harness notice or captain cue): the summary's claim of having read or done is not the reading or the doing — re-satisfy each load precondition and state read at its existing trigger before the next workflow effect.
 
 ## Working Principles
 

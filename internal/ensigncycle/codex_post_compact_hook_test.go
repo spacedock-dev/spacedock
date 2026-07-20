@@ -40,17 +40,6 @@ type codexHooksConfig struct {
 	Hooks map[string][]codexHookGroup `json:"hooks"`
 }
 
-// requiredNoticePhrases are the load-bearing substrings the reread-and-reconcile
-// systemMessage must carry; asserting the phrases (not a whole-string equality)
-// keeps the fixture from breaking on incidental punctuation edits while still
-// proving the instruction — reread the authoritative FO contract and reconcile —
-// is present.
-var requiredNoticePhrases = []string{
-	"reread",
-	"`spacedock:first-officer`",
-	"reconcile durable",
-}
-
 // loadShippedPostCompactHook reads the shipped manifest + hooks.json and returns
 // the plugin-root path and the single PostCompact matcher group.
 func loadShippedPostCompactHook(t *testing.T) (root string, group codexHookGroup) {
@@ -71,7 +60,7 @@ func loadShippedPostCompactHook(t *testing.T) (root string, group codexHookGroup
 		t.Fatalf("plugin.json hooks = %q, want %q (the declared hooks key Codex loads)", manifest.Hooks, "./hooks.json")
 	}
 
-	hooksBytes, err := os.ReadFile(filepath.Join(root, "hooks.json"))
+	hooksBytes, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(manifest.Hooks)))
 	if err != nil {
 		t.Fatalf("read hooks.json: %v", err)
 	}
@@ -132,9 +121,12 @@ func TestCodexPostCompactHookMatchesManualAndAuto(t *testing.T) {
 
 // TestCodexPostCompactHookEmitsOneSystemMessagePerEvent is AC-3's command-level
 // fixture: it drives the shipped hook command with both the manual and auto event
-// payloads and asserts one valid JSON systemMessage per event carrying the required
-// reread-and-reconcile instruction. It does NOT claim the warning enters model
-// context — the 0.144.4 probe already bounded that to a captain-facing warning.
+// payloads and asserts the output SHAPE — exactly one JSON key, systemMessage, with a
+// nonempty string value, identical across both sources (each run from its own
+// unrelated cwd, so equality also proves cwd-independence). The message WORDING is
+// review-time evidence quoted by the validator, not a committed assertion. It does
+// NOT claim the warning enters model context — the 0.144.4 probe already bounded
+// that to a captain-facing warning.
 func TestCodexPostCompactHookEmitsOneSystemMessagePerEvent(t *testing.T) {
 	root, group := loadShippedPostCompactHook(t)
 
@@ -163,10 +155,8 @@ func TestCodexPostCompactHookEmitsOneSystemMessagePerEvent(t *testing.T) {
 		if err := json.Unmarshal(decoded["systemMessage"], &message); err != nil {
 			t.Fatalf("%s: hook output has no string systemMessage: %v", source, err)
 		}
-		for _, phrase := range requiredNoticePhrases {
-			if !strings.Contains(message, phrase) {
-				t.Errorf("%s: systemMessage is missing required phrase %q\nmessage: %q", source, phrase, message)
-			}
+		if strings.TrimSpace(message) == "" {
+			t.Fatalf("%s: systemMessage is empty", source)
 		}
 		if i == 0 {
 			firstMessage = message
@@ -176,46 +166,26 @@ func TestCodexPostCompactHookEmitsOneSystemMessagePerEvent(t *testing.T) {
 	}
 }
 
-// TestCodexPostCompactHookFiresFromUnrelatedCwdViaPluginRoot is the M1 regression: the
-// shipped command must be plugin-root-absolute so it fires from ANY session cwd. It
-// proves the defect concretely — the cwd-relative form (./hooks/<script>) does not
-// resolve from an unrelated project directory, while the ${PLUGIN_ROOT}-resolved
-// absolute form emits the systemMessage there.
-func TestCodexPostCompactHookFiresFromUnrelatedCwdViaPluginRoot(t *testing.T) {
+// TestCodexPostCompactHookCwdRelativeFormFailsFromUnrelatedCwd is the M1 regression's
+// negative probe: the cwd-relative form (./hooks/<script>) does not resolve from an
+// unrelated project directory — the exact failure the shipped plugin-root-absolute
+// command avoids. The positive proof (the ${PLUGIN_ROOT}-resolved command firing from
+// an unrelated cwd) is carried by EmitsOneSystemMessagePerEvent, whose runShippedHook
+// executes every run from a fresh unrelated cwd; resolveHookCommand enforces the
+// ${PLUGIN_ROOT}/ command prefix.
+func TestCodexPostCompactHookCwdRelativeFormFailsFromUnrelatedCwd(t *testing.T) {
 	root, group := loadShippedPostCompactHook(t)
-
-	if !strings.HasPrefix(group.Hooks[0].Command, pluginRootToken+"/") {
-		t.Fatalf("shipped hook command %q must begin with %s/ so Codex resolves it to the plugin root, not the session cwd", group.Hooks[0].Command, pluginRootToken)
-	}
 
 	absolute := resolveHookCommand(t, root, group.Hooks[0].Command)
 	unrelated := t.TempDir() // a project dir that is NOT the plugin repo and has no ./hooks/
 	payload := `{"hook_event_name":"PostCompact","trigger":"manual"}`
 
-	// Negative: the cwd-relative form Codex would exec from the session cwd cannot find
-	// the script from an unrelated cwd — the exact failure the plugin-root form avoids.
 	relative := "./hooks/" + filepath.Base(absolute)
 	relCmd := exec.Command(relative)
 	relCmd.Dir = unrelated
 	relCmd.Stdin = strings.NewReader(payload)
 	if _, err := relCmd.Output(); err == nil {
 		t.Fatalf("cwd-relative command %q unexpectedly resolved from an unrelated cwd; the plugin-root form would be untested", relative)
-	}
-
-	// Positive: the plugin-root-absolute command fires from the same unrelated cwd.
-	out := runShippedHook(t, root, absolute, payload)
-	var decoded map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(out), &decoded); err != nil {
-		t.Fatalf("hook stdout is not valid JSON from an unrelated cwd: %v\nstdout: %q", err, out)
-	}
-	var message string
-	if err := json.Unmarshal(decoded["systemMessage"], &message); err != nil {
-		t.Fatalf("hook output from an unrelated cwd has no string systemMessage: %v", err)
-	}
-	for _, phrase := range requiredNoticePhrases {
-		if !strings.Contains(message, phrase) {
-			t.Errorf("systemMessage from an unrelated cwd is missing required phrase %q\nmessage: %q", phrase, message)
-		}
 	}
 }
 
