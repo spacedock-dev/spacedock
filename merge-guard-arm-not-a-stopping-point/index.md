@@ -10,16 +10,16 @@ score:
 worktree:
 issue:
 sprint: 0260-proportionality
-group: ladder
+group: verification
 gates:
   version: 1
   current:
     gate: gate:docs-dev:85:ideation
-    attempt: gate-attempt:85-ideation-1
+    attempt: gate-attempt:85-ideation-2
   records:
     - id: gate:docs-dev:85:ideation
       stage: ideation
-      current-attempt: gate-attempt:85-ideation-1
+      current-attempt: gate-attempt:85-ideation-2
       attempts:
         - id: gate-attempt:85-ideation-1
           sequence: 1
@@ -38,8 +38,29 @@ gates:
           application:
             action: advance
             target-stage: implementation
+            state: superseded
+          note: "Subspace advisory float, captain at the keyboard as person:reviewer; the resolution reason directs appending a declared expected surface to the body — applied post-approval as part of the approval's own terms, not drift. Superseded by attempt 2 (captain-approved staff-review vocabulary sweep); the approval itself stands."
+        - id: gate-attempt:85-ideation-2
+          sequence: 2
+          previous-attempt: gate-attempt:85-ideation-1
+          state: closed
+          briefing:
+            id: briefing:85-ideation-2-chat
+            digest: sha256:cff3a819597e625058429c606ac788046316d0e0e31f72941f210e493b2394ba
+            note: chat presentation; digest is the entity content after the captain-approved staff-review sweep was applied
+          resolution:
+            type: Resolution
+            id: resolution:captain-chat-85-ideation-2
+            briefing: briefing:85-ideation-2-chat
+            by: person:captain
+            at: 2026-07-20T10:23:28Z
+            decision: approve
+            reason: "Staff-review sweep, captain-approved in chat: the banned coined vocabulary removed from the group field and four body spots (plain 'captain judgment' / 'check ordering' wording; group regrouped to verification). No design change."
+          application:
+            action: advance
+            target-stage: implementation
             state: pending
-          note: "Subspace advisory float, captain at the keyboard as person:reviewer; the resolution reason directs appending a declared expected surface to the body — applied post-approval as part of the approval's own terms, not drift."
+          note: "FO applied the sweep directly under the captain's edit-directly grant; codex finding 5 and fable delta finding 19."
 ---
 
 **Problem:** `skills/first-officer/references/fo-merge-core.md`'s `«merge.guard»` capability describes the phase-invocation mechanics ("invoke it directly per phase; its own stdout/stderr name the FO's next action") but never states that an "armed" result is not a stopping point. Contrast `fo-dispatch-core.md`, which is explicit for stage completions: "Implementation completion is not a stopping point... The FO does not park a completed implementation and wait." The merge ceremony is exactly as sequential and stateful as the dispatch stage sequence (arm → invoke hook → finalize), but only the dispatch side carries the "keep moving" clause. The asymmetry reads as an invitation to treat "armed" as a natural pause.
@@ -82,7 +103,7 @@ One added clause in `«merge.guard»`, immediately after the `→ shipped` bulle
 ## Acceptance criteria
 
 **AC-1 (value — behavior at the armed transition).** Given the armed-state scenario (captain has granted the push; `«merge.guard» <slug>` returns armed and names the merge hook as next action), the merge-core contract sanctions exactly two FO next-moves — invoke the merge hook this turn, or halt at the presented captain PR gate — and admits NO reading in which ending the turn at armed, or re-asking for the granted push, is legitimate.
-- Test: falsifiability-ladder judgment rung (adversarial read-through), not new machinery. A skeptic, given only the merge-core contract and the armed stdout, tries to justify parking at armed / re-asking permission; against the after-text it fails, against the before-text it succeeds. The "before" arm is already established by production — two real FOs parked (2026-07-08; session 6d175b2f). Cheap optional replay: hand the same armed prompt to a fresh reader-as-FO under each text and record proceed-to-hook vs end-turn.
+- Test: captain-judgment check (adversarial read-through), not new machinery. A skeptic, given only the merge-core contract and the armed stdout, tries to justify parking at armed / re-asking permission; against the after-text it fails, against the before-text it succeeds. The "before" arm is already established by production — two real FOs parked (2026-07-08; session 6d175b2f). Cheap optional replay: hand the same armed prompt to a fresh reader-as-FO under each text and record proceed-to-hook vs end-turn.
 - Baseline that can move the wrong way: the two parking incidents. If the clause is mis-placed (added as narrative but the arm→hook turn boundary left unbound), the skeptic still finds the park-license and AC-1 fails.
 
 **AC-2 (mechanism — serves AC-1).** `«merge.guard»` in `fo-merge-core.md` carries the keep-moving clause above, attached to the armed result at the arm→hook transition and structurally mirroring the stage-completion clause in `first-officer-shared-core.md`.
@@ -91,11 +112,11 @@ One added clause in `«merge.guard»`, immediately after the `→ shipped` bulle
 
 ## Spike
 
-No spike needed: the fix mirrors an in-force keep-moving clause (`first-officer-shared-core.md`'s stage-completion "not a stopping point") into an already-loaded contract file (`fo-merge-core.md`, the merge module the FO reads at merge time). No new mechanism, on-disk format, runtime handoff, or CLI/command-surface change — `spacedock merge guard` behavior is unchanged, and the edited contract file is itself the doc, so there is no separate docs-site diff. Enforcement is judgment-rung per this sprint's falsifiability ladder (gate read-through / captain catch), not built machinery.
+No spike needed: the fix mirrors an in-force keep-moving clause (`first-officer-shared-core.md`'s stage-completion "not a stopping point") into an already-loaded contract file (`fo-merge-core.md`, the merge module the FO reads at merge time). No new mechanism, on-disk format, runtime handoff, or CLI/command-surface change — `spacedock merge guard` behavior is unchanged, and the edited contract file is itself the doc, so there is no separate docs-site diff. Enforcement is captain judgment per this sprint's check ordering (gate read-through / captain catch), not built machinery.
 
 ## Lane / merge note
 
-The edit lands in `fo-merge-core.md`; the parallel ladder entity edits `first-officer-shared-core.md` — different files, trivial merge. The clause cross-references the shared-core stage-completion clause by concept, not line number, so a ladder-side move of that clause does not dangle the reference.
+The edit lands in `fo-merge-core.md`; the parallel check-ordering task (z7) edits `first-officer-shared-core.md` — different files, trivial merge. The clause cross-references the shared-core stage-completion clause by concept, not line number, so a z7-side move of that clause does not dangle the reference.
 
 ## Stage Report: ideation
 
@@ -110,4 +131,4 @@ The edit lands in `fo-merge-core.md`; the parallel ladder entity edits `first-of
 
 ### Summary
 
-Confirmed the seed spec and pinned it to a gate-ready ideation: a single keep-moving clause added to `fo-merge-core.md`'s `«merge.guard»` making an armed result not a turn-end, with verbatim before/after wording placed after the `→ shipped` bullet and no deletions. Value AC-1 measures the behavior (no contract reading licenses parking at armed or re-asking a granted push) against the two real parking incidents as baseline, proved at the falsifiability-ladder judgment rung — no new machinery, consistent with this sprint's thesis. Edit is in a different file from the parallel ladder entity, so the merge is trivial.
+Confirmed the seed spec and pinned it to a gate-ready ideation: a single keep-moving clause added to `fo-merge-core.md`'s `«merge.guard»` making an armed result not a turn-end, with verbatim before/after wording placed after the `→ shipped` bullet and no deletions. Value AC-1 measures the behavior (no contract reading licenses parking at armed or re-asking a granted push) against the two real parking incidents as baseline, proved at the captain-judgment level — no new machinery, consistent with this sprint's thesis. Edit is in a different file from the parallel check-ordering task (z7), so the merge is trivial.
