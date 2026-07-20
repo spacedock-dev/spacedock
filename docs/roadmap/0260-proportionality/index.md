@@ -44,6 +44,7 @@ An ensign, reviewer, or FO holding a finding, an AC, or an urge to build infrast
 - **Leanness (inherited from 0250):** net contract-byte delta vs the 0.25 baseline is measured; additions prefer lazy-loaded references over boot-resident lines.
 - **Live-drive proof rule (inherited from 0250, verbatim):** every behavioral claim is proven by a live drive observing the behavior — never a prose-grep over the contract the change writes. The incident records in `_evidence/` are the replay fixtures.
 - **Bare-ordinal itemization:** no minted reference schemes in sprint docs or entity bodies; sanctioned identifiers only (entity ids/slugs, AC-N, session:ordinal).
+- **Captain rulings (2026-07-20, via gate annotations):** every gated ideation declares a written expected surface + tolerance; no minted terminology (plain words; system ids only where the notation binds them); a new check/enforcement process needs explicit captain approval and normally its own entity; prose-greps are one-off validation evidence, never committed tests.
 - **This sprint practices its own thesis.** Shaping and driving decisions are held to the same ordering: a proposed new check names the cheapest level that can falsify it; a disproportionate-but-correct idea gets a recorded decline.
 
 ## Gate approvals — 3k notation (Commander: read this)
