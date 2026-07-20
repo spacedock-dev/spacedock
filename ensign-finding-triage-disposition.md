@@ -273,3 +273,16 @@ This is the design the composition proved out, kept whole so the park costs no d
 ### Feedback Cycles
 
 - 2026-07-20T16:20:45Z — captain design-reset, recorded before any further dispatch (the landed convention's own rule): PARK this entity's implementation before landing — bw lands alone in wave 3. Reframe at ideation: record round dispositions, including the decline, as ADVISORY resolutions under the gate-recorder model (see the 3k scope cut of 2026-07-21) instead of the findings field on the entry; the finding-triage rule TEXT stays approved-shaped, only the record/delivery mechanism reframes. surface 0 landed vs estimate ~17 lines (held before landing); AC unchanged.
+
+## Reframe brief (captain-directed, 2026-07-21)
+
+The triage rule text, the three-class taxonomy, the AC-narrowing design-reset clause, and the Case A/B spike all stand unchanged. What reframes is the RECORD AND DELIVERY mechanism, from a findings field on the prose entry to the gate-recorder model (see the 3k scope cut, 2026-07-21 — its contract doc is the design authority):
+
+- A correction round's reviewed snapshot is a briefing (digest-bound); the reviewer's findings are annotations with selectors; the round's verdict is the reviewer's ADVISORY resolution — advisory is load-bearing: a round can never advance status.
+- The ensign's triage is the ensign's OWN advisory resolution whose includes name the declined findings with class and why-not-material — the decline becomes a first-class, provider-preservable object instead of a prose fragment.
+- A design-reset or AC-narrowing event graduates to a BINDING resolution — a real gate attempt, captain-owned. The loop structurally cannot self-approve a reframe.
+- Storage per the recorder's principles: round records live in the entity's review room (append-only, the probes.jsonl pattern), frontmatter carries the pointer, the body's `### Feedback Cycles` line survives as the human-readable projection. Surface/estimate/AC-drift stay Spacedock-side fields riding the record.
+
+The boundary question this ideation MUST answer (not assumed): does this entity own only the TRIAGE semantics (rule text + decline-as-advisory-resolution shape), with the generic rounds-record plumbing (round briefings, room layout, projection) as bw's deferred-machinery successor or its own task — or does it absorb the plumbing? Do not re-grow one entity into four products; the 3k split is the cautionary precedent.
+
+Design inputs at reframe time: bw's LANDED wording (never ideation-time quotes), the 0260 Commander run's real hand-authored `### Feedback Cycles` entries as drift evidence and fixtures, and 3k's post-cut approved contract. Hard dependency: 3k's gate. Sprint membership and the index DoD line-36 disposition are a captain decision recorded separately.
