@@ -1,6 +1,6 @@
 ---
 id: bwr6j6edkmfx5sbz73cr2952
-title: spacedock status --record-feedback-cycle — binary-owned feedback-cycle count + 3-cycle escalation guard
+title: Feedback-cycle record and design-reset gate — binary-owned count, diff-growth refusal, reframe routing
 status: backlog
 source: "captain (2026-06-04) — forked from xa (feedback-guarantee-binary-gate) per the roadmap-the-decision + separate-build-task call. xa's ideation determined Candidate 1 (3-cycle escalation) is mechanizable via a dedicated cycle-record command (a spike disproved a --set status guard) and Candidate 2 (budget-probe) is not. This task SHIPS the Candidate-1 guard; xa closed as a roadmap decision."
 score: "0.30"
@@ -56,3 +56,21 @@ Verified by: a section-scoped presence oracle over the `feedback-rejection-flow`
 ## Notes
 
 Siblings: xa (`feedback-guarantee-binary-gate`, archived — the determination + grounding) and gq (`feedback-nonhappy-live-coverage` — the live half: proves the FO escalates when the guard refuses). Provenance: a9 (`feedback-rejection-flow-skill-extraction`) detached audit, 2026-06-04.
+
+## Merged scope: design-reset routing (absorbed from feedback-design-reset-routing, 0260 re-lock 2026-07-20)
+
+The cycle-record command is the substrate; the sprint value it serves is the reframe gate.
+A rejection whose findings indict the mechanism's architecture — or a repair cycle that
+grows the diff — must halt at a design-reset decision (park / re-scope / escalate) instead
+of dispatching another repair. Cycle-counting alone provably fails: every observed runaway
+loop was contract-legal round by round. Merged deliverable: (1) the cycle-record command as
+grounded above; (2) a refusal gate — dispatch build (or the record command) refuses a repair
+dispatch at cycle >= 2 with diff growth vs the prior cycle unless a recorded reframe
+decision exists in the entity; (3) the routing prose in feedback-rejection-flow that makes
+the design-reset decision the sanctioned exit. Evidence: e6j 2-defect fix -> 10 roborev
+cycles, 26 files/+3,373, PR closed (codex:019f5fe6); dp one-paragraph fix -> 4-cycle ladder,
+discarded (6d175b2f, ab6c437e); 7h harness repaired twice before park (codex:019f5160:499);
+419-line synthetic proof under "AC-1/AC-2 remain unproven" pressure (bef9653f:251-509). The
+7h postmortem's "feedback-loop exception" drafted this rule in-session and it never left the
+session. Kills all four HIGH incidents in the 0260 forensics corpus
+(_evidence/0260-agent-derail-forensics/synthesis.md).
