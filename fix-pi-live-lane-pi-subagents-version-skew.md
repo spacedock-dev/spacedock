@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-fix-pi-live-lane-pi-subagents-version-skew
 issue:
 mod-block: merge:pr-merge
-pr: "#538"
+pr: pr-merge:538
 ---
 
 The pi-live CI lane is deterministically red for every commit, including main, due to an upstream extension version skew. Until it is fixed, no PR can satisfy the every-host-lane merge requirement on pi-live.
