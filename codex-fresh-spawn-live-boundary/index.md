@@ -158,3 +158,26 @@ Cycle 4 corrects the ticket to the defect actually observed after c6: Codex runs
 ### Summary
 
 Implementation adds model-visible post-compaction recovery only to launcher-marked Codex sessions and preserves the existing captain-visible fallback unchanged. The minimal four-file product commit is ready for independent validation, including the installed-plugin paired session confirmation.
+
+## Stage Report: validation
+
+- SKIPPED: AC-1 (VALUE) — A compacted First Officer launched through `spacedock codex` receives a model-visible reload instruction, while a bare Codex session receives none.
+  Commit `12d9a610` passes the offline marked/bare command boundary and current official schema review, but the required paired installed-plugin `/compact` plus next-model-turn confirmation remains captain-run and was not simulated; archived Codex 0.144.4 evidence proves only the red baseline (`PostCompact.systemMessage` UI-only, model replied `NONE`).
+- DONE: AC-2 — Injection is gated only by the inherited launcher marker and only on `compact`.
+  The focused test and direct probe reproduced absent=`0/0B`, empty=`0/0B`, and marked=`0/242B` with zero stderr; marked output is exactly one valid `SessionStart` `hookSpecificOutput.additionalContext` object, has no `systemMessage`, and `hooks.json` uses the exact `^compact$` matcher.
+- DONE: AC-3 — Resume behavior is explicit.
+  `TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume` passed and proves `spacedock codex resume` replaces a stale marker with the resolved launcher and forwards it through safehouse; bare `codex resume` never crosses launcher code, while its installed-plugin compact confirmation remains part of the captain-run AC-1 pair.
+- DONE: AC-4 — Automatic mid-turn compaction retains a named timing limitation and a captain-visible fallback.
+  `hooks/codex_post_compact_notice.sh` and `internal/cli/frontdoor.go` have zero diff from base `ddf51d53`; the runtime contract names delayed automatic delivery, keeps the PostCompact captain fallback, and does not claim an immediate reload.
+- SKIPPED: AC-5 — v0.25.2 ships the scoped fix on the stable line without rewinding `next`.
+  Exact candidate SHA is `12d9a610725e39515aea59f77bedec8dad519f94`; tag cutting, stable-line merge, `next` propagation, and the paired installed-plugin release confirmation are release/captain operations outside this validation assignment.
+- DONE: Confirm exact SessionStart additionalContext schema, compact-only matcher, SPACEDOCK_BIN gating, unchanged PostCompact fallback, and no new infrastructure or unrelated behavior.
+  Official Codex hook documentation matches the shipped schema and source matcher; the 48-gross-line four-file diff adds no CLI, parser, controller, provenance state, transcript harness, dependency, or workflow setting, and `git diff --check` passes.
+- DONE: Run the required focused, full, and race gates from the worktree and report exact pass/fail results.
+  Focused ensigncycle hook matrix passed; focused CLI resume-marker test passed; `go test ./...` passed; `go test ./... -race` passed; changed Go file `internal/ensigncycle/codex_post_compact_hook_test.go` is gofmt-clean; code worktree remained clean.
+- FAILED: Run the required formatting gate from the worktree and report exact pass/fail results.
+  `gofmt -d ./cmd ./internal` exits `1` on field alignment in `internal/release/journeydelta.go`; that file has zero diff from base `ddf51d53` and is unrelated to this candidate, so validation preserved it and reports the baseline blocker instead of modifying implementation.
+
+### Summary
+
+No product outcome defect was found in AC-2 through AC-4 or the scoped mechanism; the semantic matrix is exact, static, bounded, stdout-only, and preserves the prior fallback. **Recommendation: REJECTED at the current release gate for evidence/gate defects only**: the material AC-1 installed-plugin marked/bare and resume confirmation is still captain-pending, and the required repository-wide formatting gate is not clean because of an unrelated base-branch file. Re-run the two outstanding gates without changing this scoped implementation; AC-5 remains release-owned after they pass.
