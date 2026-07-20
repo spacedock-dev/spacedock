@@ -6,22 +6,24 @@ source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
 started: 2026-07-18T08:58:53Z
 gates:
-  version: 1
-  current:
-    gate: gate:docs-dev:3k:ideation
-    attempt: gate-attempt:3k-ideation-1
-  records:
-    - id: gate:docs-dev:3k:ideation
-      stage: ideation
-      current-attempt: gate-attempt:3k-ideation-1
-      attempts:
-        - id: gate-attempt:3k-ideation-1
-          sequence: 1
-          state: open
-          current-briefing:
-            id: briefing:docs-dev:3k:ideation:attempt-1:revision-7
-            digest: sha256:9b1106ac34f4dfa1221304f998beb4c34acb3878b2faf648289e95a48f8d50f2
-            room-ref: "./review/ideation"
+    version: 1
+    current:
+        gate: gate:docs-dev:3k:ideation
+        attempt: gate-attempt:3k-ideation-1
+    records:
+        - id: gate:docs-dev:3k:ideation
+          stage: ideation
+          current-attempt: gate-attempt:3k-ideation-1
+          attempts:
+            - id: gate-attempt:3k-ideation-1
+              sequence: 1
+              state: open
+              current-briefing:
+                id: briefing:docs-dev:3k:ideation:attempt-1:revision-7
+                digest: sha256:9b1106ac34f4dfa1221304f998beb4c34acb3878b2faf648289e95a48f8d50f2
+                room-ref: "./review/ideation"
+sprint: 0270-durable-decisions
+group: recorder
 ---
 
 # Persist gate approval while dispatch blockers remain
