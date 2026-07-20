@@ -1,5 +1,5 @@
 ---
-title: "Split Codex runtime semantics from contractlint phrase checks into live or fixture behavior tests"
+title: Contractlint runtime-semantics retirement — codex and pi phrase checks become behavior tests
 status: backlog
 source: "Contractlint antipattern sweep, 2026-07-11: codex_multi_agent_v2_contract_test.go and Codex portions of runtime_binding_block_test.go assert runtime meaning from host-adapter prose."
 score: 0.34
@@ -31,3 +31,7 @@ Verified by: focused contractlint inventory/test results showing no runtime mean
 ## Test plan
 
 Inventory assertions by claim before edits. Add the smallest behavior test per claim, run focused Codex live tests serially when a live claim changes, then run `go test ./...` and `go test ./... -race`.
+
+## Merged scope (adopted cross-review re-lock, 2026-07-20)
+
+Absorbs `contractlint-pi-runtime-semantics-retirement` — the pi split is mechanically identical to the codex split; one member retires both runtime-semantics phrase checks into live/fixture behavior tests.

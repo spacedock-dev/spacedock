@@ -4,9 +4,9 @@ status: backlog
 source: "Contractlint antipattern sweep, 2026-07-11: internal/contractlint/fo_write_core_mutation_gate_test.go executes policy parsed from the instruction file it polices."
 score: 0.31
 id: fw2sd7w5aq6wzjgchvpm1vns
-sprint: 0260-proportionality
-group: contract-cleanups
-sprint-readiness: defer
+sprint:
+group:
+sprint-readiness:
 ---
 
 ## Problem

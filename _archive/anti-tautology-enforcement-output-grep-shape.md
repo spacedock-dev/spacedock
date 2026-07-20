@@ -8,8 +8,8 @@ completed:
 verdict:
 score:
 worktree:
-sprint: 0260-proportionality
-group: test-cleanups
+sprint:
+group:
 ---
 
 Add a standing mechanism against the output/prose-grep third shape, and make the review lens that already catches it (roborev codex) a reliable backstop — because prose rules against prose-grep are themselves prose and were applied leniently 4x this session.
@@ -46,3 +46,7 @@ Overlaps `anti-tautology-enforcement-and-template-gap` (same enforcement family,
 ## Acceptance criteria
 
 **AC-1** — {ideation defines: a standing check or required-review-lens that fails/flags a newly-introduced output/prose-grep test which a real behavior change cannot break, verified against a fixture that the mechanism flags and a legitimate output-behavior assertion it does not.}
+
+## Archived (adopted cross-review re-lock, 2026-07-20)
+
+Merged into `anti-tautology-enforcement-and-template-gap` — scope carried there; this entity ships nothing separately.

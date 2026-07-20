@@ -4,9 +4,9 @@ status: backlog
 source: "Contractlint antipattern sweep, 2026-07-11: mixed checks in boot_resident_closure, first_officer_eager_references, fn_consolidation_structure, legacy_teamcreate_layering, dispatch_recovery_value_binding, reconcile_class_binding, and structural_checks."
 score: 0.30
 id: b71p9hwyyscckemmer2v3mbb
-sprint: 0260-proportionality
-group: contract-cleanups
-sprint-readiness: defer
+sprint:
+group:
+sprint-readiness:
 ---
 
 ## Problem

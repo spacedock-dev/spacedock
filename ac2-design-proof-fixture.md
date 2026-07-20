@@ -36,3 +36,7 @@ Under re-anchor rule: AC-1 fails because AC-2 failed.
 Expected gate decision: REJECT.
 
 This entity is the fixture for real-agent design proof. It will be processed at the ideation gate to observe whether the FO agent correctly applies the re-anchor rule and rejects this means-only + regressed-value combination.
+
+## Merged scope (adopted cross-review re-lock, 2026-07-20)
+
+Absorbs `ac2-reanchor-scenario-falsifiable` — strengthening the PR-441 AC-2 re-anchor live scenario so it can fail on the regression it polices serves the same end as this fixture (the means-only-AC / regressed-end-value detection actually detecting); one member, one falsifiability outcome. Banked ideation here is not re-ideated; the absorbed scope folds in at this entity's gate.

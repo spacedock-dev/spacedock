@@ -25,3 +25,7 @@ only for now). Absorbs the commission-template half trimmed from
 anti-tautology-enforcement-and-template-gap. Core kept: existing scar-tissue propagation
 (materiality taxonomy, AC split, small-change fast path, "Verified by: grep" fix) + refit
 carries content.
+
+## Merged scope (adopted cross-review re-lock, 2026-07-20)
+
+Absorbs `proof-policy-shipped-scaffolding` — porting the proof policy (no tautological string-match over LLM-ingested files) into the shipped dev-shape scaffolding is one slice of this entity's propagation payload, not a separate delivery.

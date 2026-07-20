@@ -10,9 +10,9 @@ worktree:
 issue:
 milestone: 0.26.0
 id: 3a9acywe2trdxswhjtszh23z
-sprint: 0260-proportionality
-group: test-cleanups
-sprint-readiness: defer
+sprint:
+group:
+sprint-readiness:
 ---
 
 ## Problem

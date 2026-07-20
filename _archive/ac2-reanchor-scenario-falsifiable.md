@@ -4,8 +4,8 @@ status: backlog
 score: 0.4
 source: "pre-tag spot-audit of #441/#442, 2026-06-30. Real major, verified non-ship-blocker (the gate-on-end-value prose shipped fine; only its behavioral PROOF is vacuous). Test-strength follow-up."
 id: w07c8xz91q2yze26b7ft1vka
-sprint: 0260-proportionality
-group: test-cleanups
+sprint:
+group:
 ---
 
 `internal/livescenario/ac2_reanchor.go` (#441's sole behavioral proof of the AC-cross-check re-anchor rule) is non-falsifiable for the change it ships: the runbook (line 30) hands the FO the rule AND the verdict, so deleting the actual deliverable clause (`first-officer-shared-core.md:105`) leaves the test green; the durable-state clauses (before==after, status: ideation) are satisfied identically by a correct REJECT and an incorrect APPROVE (a gate-held FO with no conn writes no verdict either way); and the only discriminating clauses grade on transcript phrasing (the banned steerable-by-narration class per the README proof policy).
