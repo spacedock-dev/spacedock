@@ -184,3 +184,31 @@ If the captain reads Edit D as new enforcement rather than an existing-mechanism
 ### Summary
 
 Resolved the gate-vs-no-gate contradiction once: no new standing automated prose-gate; the mirror/output-grep shapes route to review-time discipline (the existing detached adversarial audit) plus three contract-prose edits, with the losing automated-gate proposal recorded and rejected on the captain's cheapest-check ordering, the cannot-compute-an-independent-value / over-fire+under-catch grounds, and the new-enforcement-needs-its-own-entity rule. The load-bearing mechanism was spiked live (mirror-assertion stays green under a production-function mutation while an independent-literal control goes red), seeding the VALUE AC. Deliverable is decision + ~7 lines of contract prose across two instruction files, 0 product code and 0 new committed tests/gates (AC-4 makes that negative deliverable a git-state check); Edit D (widening the audit trigger to AC provenance) is the one edit flagged for explicit captain consent at the gate.
+
+## Stage Report: implementation
+
+- DONE: Edits A-D land as the approved decision + contract prose: A removes the "5/5 passed is sufficient" shortcut from skills/ensign/references/ensign-shared-core.md:85; B adds the falsifiable-evidence rule to docs/dev/README.md's Proof policy and sharpens the AC-template `Verified by` line; C appends the captain's prose-grep ruling verbatim; D appends the audit-trigger widening to the detached-adversarial-audit bullet. Edit D is CAPTAIN-APPROVED — see the entity's edit-d-resolution record.
+  Commit `2245554f` on `spacedock-ensign/anti-tautology-enforcement-and-template-gap`. A at `ensign-shared-core.md:85` (sentence replaced, not added); B as a new Proof-policy bullet after the prose-grep bullet plus the `Verified by` clause at the AC template; C appended to the prose-grep bullet verbatim from `## Documentation changes`; D appended to the existing detached-audit bullet, wording as approved (AC-provenance form, not byte-identity).
+- DONE: AC-4's negative deliverable holds and is proven by git state, not assertion: the shipped diff adds zero *_test.go, zero new gate/lint/CI lane, and touches only the two named instruction files. Edit D adds prose to an EXISTING audit's trigger — it must not become a new mechanism.
+  `git diff --name-only` vs merge base returns exactly `docs/dev/README.md` and `skills/ensign/references/ensign-shared-core.md`; `--diff-filter=A` × `_test.go` = 0; files matching `\.go$|\.ya?ml$|contractlint|testlint` = 0. `--stat`: 2 files, 5 insertions, 4 deletions (net +1 line). Edit D touched no file other than the README bullet it extends.
+- DONE: The decision record names a single decision, its losing side, and three grounds — and the mutation exercise that seeded the VALUE AC is reproducible from the record (mirror-assertion stays green under a production-function mutation while the independent-literal control goes red).
+  Rerun from the record, throwaway package, not committed (see `### Reproducing the value exercise`): baseline both PASS; after mutating `Greeting()` `"hello"`→`"HELLO"`, `TestGreetingMirror` **PASS** (the hole) and `TestGreetingControl` **FAIL** `got "HELLO" want "hello"`. `## Decision: gate vs no gate` (body, unchanged this stage) carries one decision, names the losing AST/lint-or-required-roborev proposal, and gives the three grounds.
+
+### Reproducing the value exercise
+
+A throwaway Go module outside the worktree, three files, ~15 lines. `greet.go` exports `Greeting() string { return "hello" }`. `greet_test.go` holds the pair: `TestGreetingMirror` takes `want := Greeting()` then asserts `Greeting() == want` (expected value derived from the same package's production function — the AC-provenance shape Edit D now triggers the audit on); `TestGreetingControl` asserts `Greeting() == "hello"` against an independent literal. Run `go test ./... -v`, edit the return to `"HELLO"`, run again.
+
+What this asserts and what would make it fail: it asserts the mutation divergence, so it fails if the mirror test goes red (the shape is not actually tautological) or the control stays green (the mutation did not reach the assertion). Both would refute the no-gate decision's premise; neither happened. Observed line cite was `greet_test.go:16`, not the `:17` recorded at ideation — same failure, different line because my file carries two comment lines in different positions. Line numbers are an artifact of the throwaway; the green/red divergence is the claim.
+
+### Edit A's falsifiability anchor (report-distinguishability)
+
+The two tests above, written as report evidence under each protocol:
+
+- OLD ("`5/5 passed` is sufficient"): both render as `2/2 passed` — one string, no way for a gate to tell the tautology from the real test.
+- NEW (this commit): control → "asserts `Greeting()` returns the literal `hello`; mutating the production function to return `HELLO` makes it fail." Mirror → "asserts `Greeting()` equals `Greeting()`; **no change to the production function makes it fail** — the mutation left it green."
+
+Identical under the old protocol, distinguishable under the new one, and the mirror line cannot name a falsifying change at all. That inability is the tell Edit A hands the gate.
+
+### Summary
+
+Applied Edits A-D as contract prose across the two declared instruction files and nothing else: commit `2245554f`, 2 files, net +1 line, against a declared surface of ~7 net prose lines at 2× tolerance. The hard self-check did not trip — no Go source, no test, no gate, lint, or CI lane, no third instruction file — and Edit D stayed inside its narrow captain-approved scope, widening when the existing detached audit fires rather than creating a mechanism. Evidence is a rerun mutation exercise and git state, both one-off; the presence greps for the edited strings are recorded here as validation-time evidence and are deliberately not committed, per the ruling Edit C ships. `internal/contractlint` passes, including `TestFOFunctionPromptSurfaceShrinks` — confirming neither edited file sits under the first-officer byte ratchet.
