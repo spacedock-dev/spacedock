@@ -228,3 +228,24 @@ Cycle 2 clears the sole formatting-gate rejection with a separate six-gross-line
 ### Summary
 
 Cycle 3 removes the ineffective captain-warning path and all offline test scar tissue, leaving the real 4/4 marked/bare launch-and-resume session as behavioral proof. The product is now the four-line marker-gated SessionStart hook plus its registration, with no runtime plumbing narration or replacement harness.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: AC-1 (VALUE) — A compacted First Officer launched through `spacedock codex` receives a model-visible reload instruction, while a bare Codex session receives none.
+  The captain's real installed-plugin 4/4 run remains the behavioral proof: marked launch injected and acted on recovery context, while bare launch stayed silent; no replacement fixture or harness was created or requested.
+- DONE: AC-2 — Injection is gated only by the inherited launcher marker and only on `compact`.
+  Candidate `2be84f73a1c20de29f0dda95c262a925f7876946` retains only one `SessionStart` group with matcher `^compact$` and the same executable four-line `SPACEDOCK_BIN`-gated script; the captain's marked/bare results prove the observable boundary.
+- DONE: AC-3 — Resume behavior is explicit.
+  The captain's same real run proved marked resume injected and bare resume stayed silent; the deletion commit does not touch launcher behavior.
+- FAILED: AC-4 — Automatic mid-turn compaction retains a named timing limitation and a captain-visible fallback.
+  The authoritative AC still requires keeping `PostCompact.systemMessage` unchanged, while accepted captain feedback requires and commit `2be84f73` performs its complete deletion; Scope guard, implementation design, test plan, and documentation delta carry the same stale contradiction.
+- SKIPPED: AC-5 — v0.25.2 ships the scoped fix on the stable line without rewinding `next`.
+  Candidate verification is otherwise complete, but release/tag/`next` propagation cannot proceed against an internally contradictory acceptance contract.
+- DONE: Confirm the branch deletes the full PostCompact path, runtime narration, and legacy hook test file with no replacement test or proof machinery.
+  Commit `2be84f73` is four-file deletion-only rework: 363 deletions, zero insertions; it removes the registration, six-line script, full 344-line test file, and two runtime-narration lines, with no other files or replacement test names in the commit.
+- DONE: Use the captain's real 4/4 Codex run as behavioral proof; verify only the remaining SessionStart registration/script and run the repository's existing formatting, full, and race gates.
+  `gofmt -d ./cmd ./internal` was empty; `gofmt -w ./cmd ./internal` left the worktree clean; `go test ./...`, `go test ./... -race`, and `git diff --check origin/main..HEAD` passed.
+
+### Summary
+
+**Recommendation: REJECTED for one material evidence/specification defect only.** Product commit `2be84f73` exactly implements the latest captain feedback, the retained SessionStart mechanism has real 4/4 behavioral evidence, and every existing repository gate is green; there is no product outcome defect and no deferred-risk or polish finding. Reconcile the state body so AC-4, Scope guard, decision/design, test plan, and documentation delta all describe deletion of the ineffective PostCompact path and reliance on the real run, without changing product code or adding proof machinery.
