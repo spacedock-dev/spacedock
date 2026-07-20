@@ -75,10 +75,10 @@ Ideation approvals from shaping are recorded durably in each entity's `gates:` f
 **Shape — Shaping FO**
 - [x] **Scope-lock** with the captain — locked 2026-07-20 full-roster, then **re-locked same day** under the sprint's own essence test: two merges (`ve`→`bw`, `1p9`→`z7`), the stakes reduction, and seven `sprint-readiness: defer` stamps (`fw` `1w` `h6` `b7` `3a` `xaz` `cy`)
 - [x] **Carve** — 23 members stamped (`sprint` / `group`), 5 new entities filed with evidence citations, index.md written
-- [ ] **Ideate** each gated member — riskiest mechanism first (stakes read-through spike leads)
-- [ ] **⚠️ Preflight staff review (sprint-wide)** — independent reviewer, refute the sprint as a whole → `staff-review.md`
-- [ ] **Present ideation gates** — AC cross-check per member; approvals recorded in 3k notation *(captain decides)*
-- [ ] **Package** — `dispatch-sprint-execution.md` (cold-boot Commander package)
+- [x] **Ideate** each gated member — riskiest mechanism first (stakes read-through spike leads) — all nine driving ideations complete 2026-07-20
+- [ ] **⚠️ Preflight staff review (sprint-wide)** — independent reviewer, refute the sprint as a whole → `staff-review.md` — the adopted codex cross-review is the first pass (see the second re-lock); whether it satisfies this box is the captain's call
+- [x] **Present ideation gates** — AC cross-check per member; approvals recorded in 3k notation *(captain decides)* — all closed-approved with pending advances; 0qe merged into z7, js6 parked
+- [x] **Package** — `dispatch-sprint-execution.md` (cold-boot Commander package)
 
 **Drive — Commander (separate cold-booted session)**
 - [ ] Implementation → validation → done per member; detached adversarial audit for high-stakes surfaces
