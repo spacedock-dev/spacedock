@@ -14,9 +14,32 @@ group: test-cleanups
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:az:ideation
-        attempt: gate-attempt:az-ideation-1
+        gate: gate:docs-dev:az:validation
+        attempt: gate-attempt:az-validation-1
     records:
+        - id: gate:docs-dev:az:validation
+          stage: validation
+          current-attempt: gate-attempt:az-validation-1
+          attempts:
+            - id: gate-attempt:az-validation-1
+              sequence: 1
+              state: closed
+              briefing:
+                id: briefing:az-validation-1
+                note: "Validation stage report (PASSED, zero material findings), read in full by the FO before resolving. The report IS the briefing."
+              resolution:
+                type: Resolution
+                id: resolution:fo-conn-az-validation-1
+                briefing: briefing:az-validation-1
+                by: agent:first-officer
+                at: 2026-07-20T14:25:00Z
+                decision: approve
+                reason: "Approved by the FO under the captain's explicit conn grant (2026-07-20). Delegated approval, NOT a captain decision — recorded as agent:first-officer so the trail does not overstate its authority. Grounds: all four ACs verified against evidence the validator REPRODUCED rather than cited — the mirror/control mutation exercise rebuilt from scratch and extended to a 3-mutation matrix, AC-4's git state recomputed against a merge base that had moved again, the Edit C span diffed against an approved text in a different file (two values that can diverge). The captain's Edit C ruling is byte-identical and the shipped boundary is the honesty framing the captain corrected to, not the FO's earlier over-restrictive formulation: legitimate existence/absence evidence preserved, committed greps still banned, and no relabelling escape because the clause keys on what the evidence can establish rather than on how the claim is labelled. Edit D reads as a conditioned widening (provenance fires wherever such an AC appears, covering that AC alone), inside the captain's approved scope, not an always-on audit. Zero material findings; four deferred risks and four polish items recorded with triggers and promote conditions."
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+              note: "MERGE PRECONDITION, not a deliverable defect: this diff touches skills/ensign/references/ensign-shared-core.md, which skills/ensign/SKILL.md loads unconditionally for EVERY host, making it the host-neutral ensign contract rather than one adapter. Under the dev README's required-lane rule every host lane is REQUIRED green before merge — claude-live, codex-live, pi-live — with the captain's pi-red waiver covering pi ONLY. At approval time the lanes were UNRUN, not green. The validator explicitly refused to discharge them by analogy with sibling member ht, which merged on deterministic lanes alone after PROVING (go vet -tags live) that its test-only diff could not affect live-tagged compilation; that proof does not transfer to a change in the shipped ensign contract the lanes actually load. The FO accepts that correction."
         - id: gate:docs-dev:az:ideation
           stage: ideation
           current-attempt: gate-attempt:az-ideation-1
