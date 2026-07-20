@@ -12,6 +12,7 @@ milestone: 0.26.0
 id: xazfg0zej10pzthyaj14v9kq
 sprint: 0260-proportionality
 group: test-cleanups
+sprint-readiness: defer
 ---
 
 ## Problem
