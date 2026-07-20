@@ -15,8 +15,6 @@ The terminal merge-and-cleanup ceremony, the mod-block guard that protects it, a
 - **block:** `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten.
 - → **shipped**: `` `spacedock merge guard <slug>` `` — invoke it directly per phase (via `${SPACEDOCK_BIN:-spacedock}`, per the launcher invariant above).
 
-**An armed result is not a stopping point.** Armed is a valid return from one `«merge.guard»` invocation, not a valid end to the FO's turn: the armed result names `«hooks.run»("merge")` as the next action, and the FO invokes it in the SAME turn — opening and presenting the captain-gated PR under `merge: pr`, or running the `--no-ff` merge under `merge: local` — not a later one. Parking an armed merge, or re-asking the captain for a push already granted, is the contract violation, exactly as stopping after a completion-only stage report is (the stage-completion keep-moving clause in `first-officer-shared-core.md`). The only legitimate halts after arming are contract-defined: a `«halt.rebase-conflict»`, an in-flight `mod-block` the guard directs you to resume, or — under `merge: pr` — the captain's decision on the presented PR.
-
 At the terminal boundary, invoke `«worker.shutdown»()` for the entity's worker cohort: derive the cohort, cooperatively shut each member down (best-effort, fire-and-forget through the runtime binding), then drop them from session memory. This is mandatory whether the merge ran locally or via a PR host. A runtime may add further teardown, such as bounded team-registry cleanup, in its binding.
 
 ### Worktree removal safety
