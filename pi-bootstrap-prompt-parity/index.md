@@ -131,3 +131,24 @@ The stopgap (commit `081d6819`, branch `spacedock-ensign/pi-bootstrap-prompt-sto
 - `.pi/extensions/spacedock.ts` — the extension file (shipped by `eq` #406) that hosts the context hook.
 - `obra/superpowers` `.pi/extensions/superpowers.ts` — the reference pattern (session_start/session_compact/agent_end/context hooks; bootstrap injection; de-duplication).
 - `spacedock-ensign/pi-bootstrap-prompt-stopgap` branch (commit `081d6819) — the stopgap this task supersedes.
+
+## Spike validation (2026-07-20, FO session — mechanism proven, pitfalls documented)
+
+A throwaway extension (`/tmp/pi-ext-spike/compact-reinject.ts`, driven headlessly over RPC mode) validated every mechanism this task's design depends on. This is spike evidence, not the deliverable; the implementation dispatches fresh from these findings.
+
+**Proven live:**
+
+- `session_start` arms, the `context` hook injects the bootstrap, `agent_end` suppresses (the entity's exact pattern).
+- `ctx.compact()` runs `session_before_compact` → compaction completes → `session_compact` fires (`tokensBefore=11363` observed).
+- **AC-2's core property holds:** after compaction, the `context` hook re-injects the bootstrap. Verified structurally (`before_provider_request` payload contains the marker) and behaviorally (the post-compaction agent quoted the bootstrap verbatim).
+- Extension edits between `--continue` runs took effect immediately (reload-on-resume); `/reload` covers live sessions (docs).
+
+**Implementation pitfalls (each cost a spike iteration — do not rediscover):**
+
+1. **De-dup structurally, never by raw substring.** The compaction *summary text mentions the marker string*, so `messages.some(m => JSON.stringify(m).includes(marker))` suppresses re-injection in exactly the case it is needed. De-dup on message shape instead: role `user`, text starts with `<EXTREMELY_IMPORTANT>`, contains the marker.
+2. **Compaction needs `keepRecentTokens` (default 20000) of history** or `prepareCompaction` returns nothing ("Nothing to compact (session too small)"). Live tests must set a small `compaction.keepRecentTokens` in project `.pi/settings.json` and pass `--approve` — non-interactive `-p` ignores project settings without a trust decision.
+3. **Headless timing:** a `-p` run exits at turn end and aborts in-flight compaction ("Compaction cancelled"); compacting while the agent streams aborts the active turn ("Request was aborted"). **RPC mode (`--mode rpc`) is the correct live harness** — the process stays alive across prompts so turn-end-triggered compaction completes.
+4. **Verify via `before_provider_request`, not model self-report** — the model once answered "no marker" with the marker present in payload (flaky self-inspection; structural check is deterministic).
+5. `session_compact` re-trigger right after a completed compaction hits "Already compacted"/"session too small" — the test driver must add history between compactions.
+
+**Test assets from the spike (reusable as the live-test scaffold):** the extension pattern + an RPC driver script (`spawn pi -a --mode rpc -e <ext> -c`, JSONL prompts, wait on `agent_end` events).
