@@ -36,3 +36,125 @@ weight of the mechanism; (4) sized for the lazy-loaded reference file per the le
 constraint. Also per the re-lock: the fan-out checkpoint in this entity's scope REDUCES to
 a prose clause (surface before the Nth spawned entity/PR of one investigation) — no counter
 binary; a counter is speculative machinery against this sprint's own thesis.
+
+## Proposed approach
+
+One edit to the FO contract, split so the reframe of the core principle stays boot-resident (it shapes every session's default) and every elaboration lazy-loads. Target files: `skills/first-officer/references/first-officer-shared-core.md` (boot-resident, the most-read region) and `skills/first-officer/references/fo-dispatch-core.md` (deferred, read before first dispatch — the natural home for triggers that fire at a dispatch/spawn/prompt-authoring decision). No new binary, flag, counter, or lint: the fan-out checkpoint and the minting clause are judgment-rung prose, per the re-lock and the four calibration examples.
+
+### Boot-resident wording (first-officer-shared-core.md)
+
+1. Replace the retired clause at the "Working Principles" head (currently `**Prefer a code gate over a prose-only rule.**`, 669 bytes) with the ladder. The reframe preserves the retired clause's load-bearing payload — "wording-present is not behavior" and "a prose-only rule is not AC satisfaction on its own" — and de-escalates only the DEFAULT: building machinery drops from the preferred move to the last rung.
+
+BEFORE:
+
+```text
+**Prefer a code gate over a prose-only rule.** When a guarantee can be enforced by the binary or a failing test (a `status` guard, a test that fails on violation), prefer that. A prose-only rule's ceiling is "the wording is present"; wording-present is not behavior. A prose-only rule must not count as AC satisfaction on its own: if the guarantee matters, the real assurance is a code-level gate underneath, and the prose points at it. An AC of the form "the contract says X" is satisfied only by "the binary or a test enforces X, and here is the run that proves it." The gate's AC cross-check refuses a criterion whose only proof is review of the entity's own prose.
+```
+
+AFTER:
+
+```text
+**Climb the falsifiability ladder; building new machinery is its top rung, not the default.** A guarantee earns trust by being able to FAIL — wording-present is not behavior. Reach for the cheapest rung that can falsify the claim: (1) a guard the system already ships; (2) an existing mechanical check; (3) a falsifiable exercise — replay the behavior, check a claim against its source, or let an adversarial skeptic try to break it; (4) captain judgment. Only when none of these can falsify it do you (5) build new machinery — the last rung, and a new enforcement surface is not obvious reversible work, so it is consent-gated (`fo-dispatch-core.md`). A prose-only rule still does not satisfy an AC on its own: "the contract says X" is met only by a rung-1–3 run that could have failed. The gate's AC cross-check refuses a criterion whose only proof is review of the entity's own prose.
+```
+
+2. Carve the consent stop into the "Do obvious reversible work without ceremony" posture bullet (currently 177 bytes) — the forensics named this exact line a clause-level driver ("CI/harness addition reserved to no one", synthesis.md:39), so the carve-out must sit AT the driver, not only in the deferred detail.
+
+BEFORE:
+
+```text
+**Do obvious reversible work without ceremony** — reversible steps the contract allows just happen; reserve asking for choices that are hard to reverse or genuinely matter.
+```
+
+AFTER:
+
+```text
+**Do obvious reversible work without ceremony** — reversible steps the contract allows just happen; reserve asking for choices that are hard to reverse or genuinely matter. But standing up a NEW enforcement surface (check, harness, CI job, lint) is never in this class: it is the ladder's consent-gated top rung, not ceremony-free work (`fo-dispatch-core.md`).
+```
+
+3. Add one FO-posture bullet for the bare-ordinal / no-minting rule. It stays boot-resident because the calibration datum is that minting is a DEFAULT under authoring pressure (four same-session recurrences by the rule's own author): the rule must be visible where prompts and captain-facing prose are WRITTEN, not only where artifacts are reviewed. The three-forms detail lazy-loads.
+
+NEW (insert as a `**FO posture:**` bullet):
+
+```text
+**Author in the system's vocabulary; don't mint your own.** Ad-hoc itemization in your own prompts and captain-facing prose uses bare ordinals — identifier minting is reserved to the system. This binds what you WRITE, not just what you review: a scheme minted in a dispatch prompt becomes every downstream artifact's vocabulary (the three forms it refuses: `fo-dispatch-core.md`).
+```
+
+### Deferred wording (fo-dispatch-core.md, at the dispatch-decision region near `«dispatch.next-action»`)
+
+All four blocks are NEW, added to the module already read before first dispatch — so each is present exactly when its trigger (an infra-build dispatch, the Nth spawn, a prompt authored, a climb decision) is evaluated.
+
+```text
+**Consent stop before building a new enforcement surface.** A ready action whose deliverable is a NEW check, test harness, CI job, or lint (not running one that already exists) is the falsifiability ladder's top rung: do not dispatch it as obvious reversible work. Surface it to the captain first and dispatch only on a declared yes — the license hangs off the captain wanting it, never an inference that it would help. This holds hardest in non-dev workflows, where every mechanical check is new infra.
+
+**Fan-out checkpoint.** Before spawning the Nth entity or opening the Nth PR of a SINGLE investigation (a flake chase, a review-rework, a refactor sweep), stop and surface the running count and the cap question to the captain rather than spawning again. Keep-moving speeds independent, already-scoped work; it does not authorize an unbounded spawn chain off one thread. This is a prose checkpoint on the FO's judgment — there is no counter binary.
+
+**Language-minting, the three forms.** The bare-ordinal rule (`first-officer-shared-core.md`, FO posture) refuses three forms, each manufacturing the appearance of structure where evidence is thin: (a) a FRESH identifier scheme (lettered/numbered labels, coined codes) a reader then needs a legend to decode; (b) SANCTIONED-VOCABULARY OVERLOADING — an existing system term (`-cycleN`, a gate id) applied to a thing it does not denote, reading as legitimate while corrupting the term; (c) a COINED COMPOUND ABSTRACTION gluing a real claim to a label so a choice sounds like a derivation. Test (c) by asking the bare question the coinage dresses up — for a kept item, "which observed failure does this kill, and is the killer already in place?" — and act on that answer.
+
+**Climbing for adversarial verification — judgment calls only.** "Independent adversarial verification" justifies a second agent only for a JUDGMENT CALL; a DETERMINISTIC FACT is settled by running the check that owns it, not a second opinion. And N agents reaching the same answer is one confirmation observed N times, not N independent confidences — agreement among spawned workers raises cost, not confidence. (Session thoroughness — "Ultracode is on" — already raises the answer's bar, never the mechanism's weight; see the smallest-sufficient clause.)
+```
+
+### Byte accounting (riskiest-path spike — done, measured)
+
+The riskiest ideation-stage path was proving the wording FITS a lean budget with the bulk deferred. Measured against the current file:
+
+| Addition | Placement | Bytes |
+|---|---|---|
+| Falsifiability ladder (replaces 669-byte clause) | boot-resident | +227 |
+| Consent carve-out on "obvious reversible work" (was 177) | boot-resident | +186 |
+| Bare-ordinal / no-minting posture bullet | boot-resident | +383 |
+| Consent stop + fan-out + minting three-forms + adversarial-verification sharpening | deferred (fo-dispatch-core.md) | +2299 |
+| **Boot-resident subtotal** | | **+796** |
+| **Deferred subtotal** | | **+2299** |
+| **Total contract delta** | | **+3095** |
+
+74% of the addition lazy-loads; boot-resident growth is confined to the ladder (a replacement, not a pure add), a carve-out co-located with its named driver, and a terse authoring rule whose visibility the calibration datum requires. No format round-trip, runtime handoff, or new flag is involved — the mechanism is prose the FO reads — so the behavioral claims (the consent stop is obeyed; a minting occasion is declined) are validation-owned live drives, not an ideation spike; fixtures named below.
+
+### Generic vs dev-specific (required axis)
+
+Generic contract prose (all boot + deferred wording above): the ladder rungs, the consent stop, the fan-out checkpoint, and the minting clause name no dev-only object as load-bearing. Rung 3 reads "check a claim against its source" (a citation source-check in a research workflow, a fact-check in a writing workflow) as naturally as "replay the behavior" (a test in dev); rung 5 "new machinery" is any new check/harness/validator, not specifically CI. The forensics confirm the generic frame: "in a research workflow the same disease yields citation-padding; the clause degrades WORSE outside dev because every mechanical check is new infra" (synthesis.md:37).
+
+Dev-template / repo realizations (NOT in this entity's diff): the concrete enforcement examples (a `status` guard, a failing Go test), the dev-workflow README/template summaries that name the principle, and any repo check hook are the `template` group's and the driving session's job. The minting clause gets NO lint machinery — it is judgment-rung, because a lettered list in a fixed reference table is fine and only minting-under-argument-pressure is the harm; a prose-grep cannot discriminate the two and would itself be the fabricated-rigor pattern this sprint retires.
+
+### Mechanism justification (value AC served / simplest alternative / why insufficient)
+
+1. Falsifiability ladder — serves AC-1, AC-3. Alt: just delete the retired clause and lean on existing proof-discipline. Insufficient: deletion drops the "wording-present is not behavior / prose-only is not AC satisfaction" payload that legitimately catches fabricated-prose ACs; the ladder keeps it while de-escalating the build-machinery default. Alt: a stakes threshold ("gate only high-stakes"). Insufficient: stakes live in a parked member; the ladder is stakes-agnostic and needs no ontology.
+2. Consent stop (deferred) + boot carve-out — serves AC-1. Alt: mention "consent-gated" only inside rung 5. Insufficient: the observed failure (incident 1) is that infra-building gets DISPATCHED as obvious reversible work; the stop must fire at the dispatch decision and the named driver line must be carved, or the driver keeps firing.
+3. Fan-out checkpoint (prose) — serves AC-5. Alt: a counter binary that blocks at N. Insufficient / over-reach: that is new enforcement infra to enforce "don't over-build infra" — speculative machinery against the sprint's own thesis (re-lock decision); a prose checkpoint on FO judgment is the proportionate rung.
+4. Minting clause (boot rule + deferred three-forms) — serves AC-4. Alt: a contractlint prose-grep for minted labels. Insufficient: that is the fabricated-rigor pattern being retired, and minting is a judgment call a grep cannot discriminate. Alt: police downstream worker artifacts. Insufficient: catches it one propagation too late — a prompt-minted scheme becomes every downstream artifact's vocabulary, so the clause must bind the authoring source.
+
+### Downstream propagation (doc-diff)
+
+In scope (this workflow's own README): `docs/dev/README.md:74` names "prefer a code gate over a prose-only rule" — rename to "climb the falsifiability ladder (new machinery is the top rung, not the default)". Delegated to the `template` group (template layer, per the sprint layer map): `skills/commission/references/templates/development.md:88` and `experiment.md:120` carry the same phrase and rename identically when `template` lands.
+
+## Acceptance criteria
+
+AC-1 (value — the reason the entity exists). Under the implemented contract, an FO handed the process-control-harness ideation brief (incident 1 shape: a PTY/process-control harness mandated for a disposable smoke test) HALTS at the consent stop and surfaces the build to the captain before dispatching it; under `main` the same brief dispatches the harness build with no stop. Test: two live FO drives (branch vs `main`) over the same seeded brief; observe stop-and-surface vs dispatch. Baseline that can move the wrong way: `main` is the negative control — if the branch also dispatches, AC-1 fails. Fixture: `_evidence/0260-agent-derail-forensics/` incident 1 (zaphod PTY session).
+
+AC-2 (value — leanness). The boot-resident file (`first-officer-shared-core.md`) net byte delta vs `main` is within budget (target ≤ +800; measured draft +796), the ladder occupies the retired clause's slot, and every non-boot addition (consent stop, fan-out checkpoint, minting three-forms, adversarial-verification sharpening) lands in `fo-dispatch-core.md`, not boot-resident. Test: `wc -c` / `git diff --stat` of the boot file branch vs `main`, plus a placement audit asserting each named block appears in `fo-dispatch-core.md` and NOT in the boot file. Baseline that can move the wrong way: boot bytes can balloon past budget.
+
+AC-3 (mechanism — ladder is generic). The ladder states the five rungs with "build new machinery" last and consent-gated, preserves "wording-present is not behavior" and "prose-only is not AC satisfaction", and reads cleanly for a non-dev workflow — no dev-only term is load-bearing in the rungs. Test: AC-1's drive exercises the top rung; the ideation-gate reviewer's generic read-through confirms rung 3 maps to a citation source-check and rung 5 to any new validator. Paired with AC-1.
+
+AC-4 (mechanism — minting clause). The clause binds the FO's OWN prompts and captain-facing prose (not downstream review), names all three forms (fresh identifier scheme; sanctioned-vocabulary overloading; coined compound abstraction), and is judgment-rung (no lint). Test: a live-drive replay of the recorded "essence of reach" occasion (body example 4) — under the branch the FO applies the bare kill-test question and parks the member; under `main` it coins the abstraction and keeps it. Deterministic corroborator: a source-check that this entity and the sprint index carry no minted scheme (bare ordinals only). Baseline that can move the wrong way: `main` mints and keeps.
+
+AC-5 (mechanism — fan-out checkpoint + folded sharpenings). A prose fan-out checkpoint surfaces before the Nth spawned entity/PR of one investigation with no counter binary; the two folded smallest-sufficient sharpenings (adversarial verification justifies a second agent for judgment calls only, not deterministic facts; N agents are one confirmation observed N times, not N confidences) sit at the climb/spawn decision point in `fo-dispatch-core.md`; the Ultracode/thoroughness sharpening is recorded as already covered by the existing smallest-sufficient clause (no new bytes). Test: a wording/placement audit (the clauses are present in `fo-dispatch-core.md`; the implementation diff touches only `.md` files — no new CLI/flag/counter — confirming "no counter binary"); optional fan-out replay against the ab6c437e flake→4-PR incident showing the checkpoint surfaces by the 2nd/3rd PR.
+
+## Test plan
+
+What verifies. Behavioral claims are proven by live FO drives over the two contract versions (branch vs `main`) using the `_evidence/` incident records as fixtures — never a prose-grep over the contract this change writes (0260 live-drive rule). AC-1 and AC-4 are the two behavioral drives; AC-2 and AC-5 are cheap on-disk/diff checks; AC-3 is a reviewer read-through plus AC-1's drive.
+
+Cost / complexity. AC-2 (byte + placement audit) and AC-5 (wording/placement audit): cheap, seconds, `wc -c` + `grep` + a read of the implementation diff. AC-1: medium — two live FO drives seeded with the harness brief; the expensive-but-decisive proof, owned by validation. AC-4: medium and softer — an authoring-tendency replay is noisier than the consent stop, so it carries the deterministic source-check corroborator; the "essence of reach" occasion is the sharpest fixture because its baseline outcome (coin-and-keep vs bare-question-and-park) is recorded and observable. No fixture Go test or CLI golden is added — there is no new command surface, and the minting clause is judgment-rung by design.
+
+Spike / riskiest path. Done in ideation: the concrete before/after wording is drafted and byte-measured (boot +796, deferred +2299, 74% lazy-loaded) — the design fits a lean budget with the bulk deferred. No format round-trip, runtime handoff, or tool-flag support is in play (the mechanism is prose the FO reads at boot / at first dispatch), so "no round-trip spike needed"; the behavioral mechanisms (a prose consent stop is actually obeyed; a minting occasion is actually declined) are validation-owned live drives per AC-1 and AC-4, with fixtures named in `_evidence/`.
+
+## Stage Report: ideation
+
+- DONE: Riskiest path first — ladder replacement drafted as concrete before/after contract wording under the leanness constraint; net byte delta measured, lazy-loaded placement named for every addition
+  Before/after in Proposed approach; measured boot-resident +796, deferred +2299 (74% lazy-loaded); each addition's file/trigger named in the byte-accounting table.
+- DONE: GENERIC vs DEV-SPECIFIC explicit — ladder, consent, fan-out-checkpoint, minting clauses are generic contract prose; enforcement examples and check hooks are dev-template/repo realizations; no lint machinery for the minting clause (judgment-rung)
+  "Generic vs dev-specific" section: rung 3 = source-check (research) / replay (dev); dev examples + README/template summaries delegated to `template`; minting is judgment-rung per the four calibration examples.
+- DONE: The minting clause binds the FO's OWN prompts and prose and covers all three observed forms (fresh identifier schemes, sanctioned-vocabulary overloading, coined compound abstractions)
+  Boot posture bullet + deferred three-forms block; bound to authoring not review per the calibration datum; AC-4 replays the "essence of reach" occasion.
+
+### Summary
+
+Filled the ideation deliverable: Proposed approach with concrete before/after wording for the boot-resident ladder (replacing the 669-byte code-gate clause), the consent carve-out on the "obvious reversible work" driver line, the bare-ordinal/no-minting posture rule, and the deferred block (consent stop, fan-out checkpoint, minting three-forms, adversarial-verification sharpening) in `fo-dispatch-core.md`. Riskiest path exercised: wording byte-measured (+796 boot / +2299 deferred, 74% lazy-loaded). Five ACs — AC-1 (consent-stop replay) and AC-2 (leanness byte/placement) measure end-values against baselines that can move the wrong way; AC-3/4/5 are mechanism ACs paired to them. Key decisions: fan-out and minting are judgment-rung prose (no counter binary, no lint) per the re-lock and calibration datum; behavioral claims are validation-owned live drives, not an ideation spike, since the mechanism is prose the FO reads. Downstream: `docs/dev/README.md:74` rename in scope; the two template summaries delegated to the `template` group.
