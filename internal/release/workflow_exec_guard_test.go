@@ -59,22 +59,31 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 		return fmt.Errorf("runtime-live-e2e.yml Pi live job is missing its OpenAI secret, required flag, or CI-E2E-PI environment")
 	}
 	if workflowHasExecutableCommandContaining(workflow, `npm config get min-release-age`) || workflowHasExecutableCommandContaining(workflow, `npm config set min-release-age`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job uses obsolete min-release-age probing instead of npm --before")
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job uses obsolete min-release-age probing instead of exact pins")
 	}
-	if !workflowHasExecutableCommandContaining(workflow, `NPM_BEFORE="$(node -e 'console.log(new Date(Date.now() - 24*60*60*1000).toISOString())')"`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not compute an npm --before age-gate timestamp")
+	if !hasExecutableYAMLLine(workflow, `node-version: "24"`) {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not run on Node 24 for pi-coding-agent's >=22.19 engine")
 	}
-	if !workflowHasExecutableCommandContaining(workflow, `npm install -g @earendil-works/pi-coding-agent --before="$NPM_BEFORE" --ignore-scripts --no-audit --no-fund --omit=dev`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not install the scoped Pi CLI with npm --before and safer npm flags")
+	if !workflowHasExecutableCommandContaining(workflow, `PI_CODING_AGENT_VERSION="0.80.10"`) || !workflowHasExecutableCommandContaining(workflow, `PI_CODING_AGENT_INTEGRITY="sha512-aL4apbupCHiVLSXASXvRzH4Q2vmtfrDa+0s909CJuVu/GgGylbDzr7oyF1mPmip5E+VxYYxKWmph4hV04wUcQg=="`) || !workflowHasExecutableCommandContaining(workflow, `PI_SUBAGENTS_VERSION="0.35.1"`) || !workflowHasExecutableCommandContaining(workflow, `PI_SUBAGENTS_INTEGRITY="sha512-nIH6liO541FZ1RoeEu58Ligd59tiNw0/ODPgHh7uvx9Dk4UpWH08F84/l1+hXCzUgC85OCmyVtngWkZjcK94Cg=="`) || !workflowHasExecutableCommandContaining(workflow, `PI_INTERCOM_VERSION="0.6.0"`) || !workflowHasExecutableCommandContaining(workflow, `PI_INTERCOM_INTEGRITY="sha512-OFPh/DXfPhUUSDLTRJiFPEvw00fOA/spjsxUcXiuCHvb2ZkRL02G8Q91mTd+3d42A9AK8BSmbD0+8imFPuHGoQ=="`) {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not declare exact Pi substrate version and integrity pins")
 	}
-	if workflowHasExecutableCommandContaining(workflow, "npm install -g pi-coding-agent") || workflowHasExecutableCommandContaining(workflow, "npm install -g \"pi-coding-agent@") {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job installs the wrong unscoped Pi CLI package")
+	if !workflowHasExecutableCommandContaining(workflow, `verified_pack "@earendil-works/pi-coding-agent@$PI_CODING_AGENT_VERSION" "$PI_CODING_AGENT_INTEGRITY"`) || !workflowHasExecutableCommandContaining(workflow, `verified_pack "pi-subagents@$PI_SUBAGENTS_VERSION" "$PI_SUBAGENTS_INTEGRITY"`) || !workflowHasExecutableCommandContaining(workflow, `verified_pack "pi-intercom@$PI_INTERCOM_VERSION" "$PI_INTERCOM_INTEGRITY"`) {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not verify pinned npm tarball integrity before install")
 	}
-	if !workflowHasExecutableCommandContaining(workflow, `npm install --prefix "$pi_npm_root" pi-subagents pi-intercom --before="$NPM_BEFORE" --ignore-scripts --no-audit --no-fund --omit=dev`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not directly install required Pi substrates with npm --before and safer npm flags")
+	if !workflowHasExecutableCommandContaining(workflow, `npm install -g "$pi_coding_agent_tgz" --ignore-scripts --no-audit --no-fund --omit=dev`) {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not install the verified scoped Pi CLI tarball with safer npm flags")
 	}
-	if !workflowHasExecutableCommandContaining(workflow, `test -x "$(command -v pi)"`) || !workflowHasExecutableCommandContaining(workflow, `p.name !== '@earendil-works/pi-coding-agent'`) || !workflowHasExecutableCommandContaining(workflow, `p.bin.pi !== 'dist/cli.js'`) || !workflowHasExecutableCommandContaining(workflow, `p.name !== 'pi-subagents'`) || !workflowHasExecutableCommandContaining(workflow, `p.name !== 'pi-intercom'`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-subagents/src/extension/index.ts"`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-subagents/src/intercom/intercom-bridge.ts"`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"`) || !workflowHasExecutableCommandContaining(workflow, `echo "PI_INTERCOM_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-intercom" >> "$GITHUB_ENV"`) {
+	if workflowHasExecutableCommandContaining(workflow, "npm install -g pi-coding-agent") || workflowHasExecutableCommandContaining(workflow, "npm install -g @earendil-works/pi-coding-agent --before") || workflowHasExecutableCommandContaining(workflow, "npm install -g @earendil-works/pi-coding-agent@") {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job installs the Pi CLI via an unpinned or unverified registry selector")
+	}
+	if !workflowHasExecutableCommandContaining(workflow, `"$pi_subagents_tgz"`) || !workflowHasExecutableCommandContaining(workflow, `"$pi_intercom_tgz"`) || !workflowHasExecutableCommandContaining(workflow, `--ignore-scripts --no-audit --no-fund --omit=dev`) {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not install required verified Pi substrate tarballs with safer npm flags")
+	}
+	if !workflowHasExecutableCommandContaining(workflow, `test -x "$(command -v pi)"`) || !workflowHasExecutableCommandContaining(workflow, `p.name !== '@earendil-works/pi-coding-agent'`) || !workflowHasExecutableCommandContaining(workflow, `p.version !== '$PI_CODING_AGENT_VERSION'`) || !workflowHasExecutableCommandContaining(workflow, `p.bin.pi !== 'dist/cli.js'`) || !workflowHasExecutableCommandContaining(workflow, `p.name !== 'pi-subagents'`) || !workflowHasExecutableCommandContaining(workflow, `p.version !== '$PI_SUBAGENTS_VERSION'`) || !workflowHasExecutableCommandContaining(workflow, `p.name !== 'pi-intercom'`) || !workflowHasExecutableCommandContaining(workflow, `p.version !== '$PI_INTERCOM_VERSION'`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-subagents/src/extension/index.ts"`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-subagents/src/intercom/intercom-bridge.ts"`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"`) || !workflowHasExecutableCommandContaining(workflow, `echo "PI_INTERCOM_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-intercom" >> "$GITHUB_ENV"`) {
 		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not verify installed Pi package names, versions, bin, resource paths, and intercom package env")
+	}
+	if !workflowHasExecutableCommandContaining(workflow, `compatExport`) || !workflowHasExecutableCommandContaining(workflow, `@earendil-works/pi-ai/compat`) {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not fail fast on Pi substrate compatibility skew")
 	}
 	if !workflowHasExecutableCommandContaining(workflow, `spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE"`) {
 		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not verify current-checkout Spacedock skills")

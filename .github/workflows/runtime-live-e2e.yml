@@ -612,35 +612,122 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Install Pi CLI and substrates
         run: |
-          npm --version
-          NPM_BEFORE="$(node -e 'console.log(new Date(Date.now() - 24*60*60*1000).toISOString())')"
-          echo "Using npm --before age gate for pi-live installs: $NPM_BEFORE"
+          set -euo pipefail
 
-          npm install -g @earendil-works/pi-coding-agent --before="$NPM_BEFORE" --ignore-scripts --no-audit --no-fund --omit=dev
+          npm --version
+          node --version
+
+          # Compatibility pins: pi-coding-agent 0.80.x requires Node >=22.19 and
+          # provides @earendil-works/pi-ai/compat, which pi-subagents 0.35.x loads.
+          # Keep these exact pins together; do not let npm's engine-aware resolver
+          # fall back to legacy-node20 pi-coding-agent while pi-subagents floats new.
+          PI_CODING_AGENT_VERSION="0.80.10"
+          PI_CODING_AGENT_INTEGRITY="sha512-aL4apbupCHiVLSXASXvRzH4Q2vmtfrDa+0s909CJuVu/GgGylbDzr7oyF1mPmip5E+VxYYxKWmph4hV04wUcQg=="
+          PI_SUBAGENTS_VERSION="0.35.1"
+          PI_SUBAGENTS_INTEGRITY="sha512-nIH6liO541FZ1RoeEu58Ligd59tiNw0/ODPgHh7uvx9Dk4UpWH08F84/l1+hXCzUgC85OCmyVtngWkZjcK94Cg=="
+          PI_INTERCOM_VERSION="0.6.0"
+          PI_INTERCOM_INTEGRITY="sha512-OFPh/DXfPhUUSDLTRJiFPEvw00fOA/spjsxUcXiuCHvb2ZkRL02G8Q91mTd+3d42A9AK8BSmbD0+8imFPuHGoQ=="
+
+          pack_dir="$RUNNER_TEMP/pi-live-npm-packs"
+          mkdir -p "$pack_dir"
+          verified_pack() {
+            local spec="$1"
+            local expected_integrity="$2"
+            local pack_json actual_integrity filename
+            pack_json="$(npm pack "$spec" --pack-destination "$pack_dir" --ignore-scripts --json)"
+            actual_integrity="$(printf '%s' "$pack_json" | node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8'))[0]; process.stdout.write(p.integrity)")"
+            filename="$(printf '%s' "$pack_json" | node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8'))[0]; process.stdout.write(p.filename)")"
+            if [ "$actual_integrity" != "$expected_integrity" ]; then
+              echo "integrity mismatch for $spec: expected $expected_integrity got $actual_integrity" >&2
+              exit 1
+            fi
+            printf '%s/%s\n' "$pack_dir" "$filename"
+          }
+
+          pi_coding_agent_tgz="$(verified_pack "@earendil-works/pi-coding-agent@$PI_CODING_AGENT_VERSION" "$PI_CODING_AGENT_INTEGRITY")"
+          pi_subagents_tgz="$(verified_pack "pi-subagents@$PI_SUBAGENTS_VERSION" "$PI_SUBAGENTS_INTEGRITY")"
+          pi_intercom_tgz="$(verified_pack "pi-intercom@$PI_INTERCOM_VERSION" "$PI_INTERCOM_INTEGRITY")"
+
+          npm install -g "$pi_coding_agent_tgz" --ignore-scripts --no-audit --no-fund --omit=dev
           command -v pi
           test -x "$(command -v pi)"
           pi --version
           global_npm_root="$(npm root -g)"
-          node -e "const p=require('$global_npm_root/@earendil-works/pi-coding-agent/package.json'); if (p.name !== '@earendil-works/pi-coding-agent') throw new Error('unexpected Pi package name '+p.name); if (!p.bin || p.bin.pi !== 'dist/cli.js') throw new Error('unexpected Pi bin '+JSON.stringify(p.bin)); console.log('verified '+p.name+'@'+p.version+' bin pi='+p.bin.pi)"
+          node -e "const p=require('$global_npm_root/@earendil-works/pi-coding-agent/package.json'); if (p.name !== '@earendil-works/pi-coding-agent') throw new Error('unexpected Pi package name '+p.name); if (p.version !== '$PI_CODING_AGENT_VERSION') throw new Error('unexpected Pi version '+p.version); if (!p.bin || p.bin.pi !== 'dist/cli.js') throw new Error('unexpected Pi bin '+JSON.stringify(p.bin)); console.log('verified '+p.name+'@'+p.version+' bin pi='+p.bin.pi)"
 
           pi_npm_root="$HOME/.pi/agent/npm"
           mkdir -p "$pi_npm_root"
           npm install --prefix "$pi_npm_root" \
-            pi-subagents \
-            pi-intercom \
-            --before="$NPM_BEFORE" --ignore-scripts --no-audit --no-fund --omit=dev
-          node -e "const p=require('$pi_npm_root/node_modules/pi-subagents/package.json'); if (p.name !== 'pi-subagents') throw new Error('unexpected pi-subagents package name '+p.name); console.log('verified '+p.name+'@'+p.version)"
-          node -e "const p=require('$pi_npm_root/node_modules/pi-intercom/package.json'); if (p.name !== 'pi-intercom') throw new Error('unexpected pi-intercom package name '+p.name); console.log('verified '+p.name+'@'+p.version)"
+            "$pi_subagents_tgz" \
+            "$pi_intercom_tgz" \
+            --ignore-scripts --no-audit --no-fund --omit=dev
+          node -e "const p=require('$pi_npm_root/node_modules/pi-subagents/package.json'); if (p.name !== 'pi-subagents') throw new Error('unexpected pi-subagents package name '+p.name); if (p.version !== '$PI_SUBAGENTS_VERSION') throw new Error('unexpected pi-subagents version '+p.version); console.log('verified '+p.name+'@'+p.version)"
+          node -e "const p=require('$pi_npm_root/node_modules/pi-intercom/package.json'); if (p.name !== 'pi-intercom') throw new Error('unexpected pi-intercom package name '+p.name); if (p.version !== '$PI_INTERCOM_VERSION') throw new Error('unexpected pi-intercom version '+p.version); console.log('verified '+p.name+'@'+p.version)"
           test -f "$pi_npm_root/node_modules/pi-subagents/src/extension/index.ts"
           test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"
           test -f "$pi_npm_root/node_modules/pi-subagents/src/intercom/intercom-bridge.ts"
           test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"
           echo "PI_SUBAGENTS_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-subagents" >> "$GITHUB_ENV"
           echo "PI_INTERCOM_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-intercom" >> "$GITHUB_ENV"
+
+      - name: Guard Pi substrate compatibility
+        run: |
+          set -euo pipefail
+
+          global_npm_root="$(npm root -g)"
+          pi_npm_root="$HOME/.pi/agent/npm"
+          GLOBAL_NPM_ROOT="$global_npm_root" \
+          PI_AGENT_ROOT="$global_npm_root/@earendil-works/pi-coding-agent" \
+          PI_SUBAGENTS_ROOT="$pi_npm_root/node_modules/pi-subagents" \
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { pathToFileURL } = require('url');
+
+          function readPackage(root) {
+            return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+          }
+          function fail(message) {
+            console.error(`Pi substrate compatibility guard failed: ${message}`);
+            process.exit(1);
+          }
+
+          const nodeVersion = process.versions.node.split('.').map(Number);
+          if (nodeVersion[0] < 22 || (nodeVersion[0] === 22 && nodeVersion[1] < 19)) {
+            fail(`Node ${process.versions.node} does not satisfy pi-coding-agent's >=22.19.0 engine requirement`);
+          }
+
+          const agentRoot = process.env.PI_AGENT_ROOT;
+          const subagentsRoot = process.env.PI_SUBAGENTS_ROOT;
+          const agentPackage = readPackage(agentRoot);
+          const subagentsPackage = readPackage(subagentsRoot);
+          if (agentPackage.version !== '0.80.10') {
+            fail(`expected @earendil-works/pi-coding-agent 0.80.10, got ${agentPackage.version}`);
+          }
+          if (subagentsPackage.version !== '0.35.1') {
+            fail(`expected pi-subagents 0.35.1, got ${subagentsPackage.version}`);
+          }
+
+          const piAIRoot = path.join(process.env.GLOBAL_NPM_ROOT, '@earendil-works/pi-ai');
+          const piAIPackage = readPackage(piAIRoot);
+          const compatExport = piAIPackage.exports && piAIPackage.exports['./compat'] && piAIPackage.exports['./compat'].import;
+          if (!compatExport) {
+            fail(`pi-subagents ${subagentsPackage.version} requires @earendil-works/pi-ai/compat, but @earendil-works/pi-ai ${piAIPackage.version} from pi-coding-agent ${agentPackage.version} does not declare that export`);
+          }
+          const compatPath = path.join(piAIRoot, compatExport);
+          if (!fs.existsSync(compatPath)) {
+            fail(`@earendil-works/pi-ai/compat resolves to missing file ${compatPath}`);
+          }
+          import(pathToFileURL(compatPath).href).then(() => {
+            console.log(`verified pi-subagents ${subagentsPackage.version} is paired with @earendil-works/pi-ai ${piAIPackage.version}: ${compatPath}`);
+          }).catch((error) => {
+            fail(`@earendil-works/pi-ai/compat exists but failed to load: ${error.message}`);
+          });
+          NODE
 
       - name: Build spacedock binary
         run: |
