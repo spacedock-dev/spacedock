@@ -1,11 +1,11 @@
 ---
 id: 02avdajaz0q3hnjwycm5fq45
 title: Ensigns triage review findings against declared stakes before fixing — decline disposition for correct-but-disproportionate findings
-status: implementation
+status: ideation
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.7"
-sprint: 0260-proportionality
-group: triage
+sprint:
+group:
 started: 2026-07-20T05:04:07Z
 gates:
     version: 1
@@ -37,7 +37,7 @@ gates:
                 target-stage: implementation
                 state: consumed
               note: "Two earlier chat revise rounds (trigger-by-reference finding qualification; placement rework) closed before this entity's gates recording began; they are documented in the cycle-2 and cycle-3 stage reports."
-worktree: .worktrees/spacedock-ensign-feedback-cycle-record-command
+worktree:
 sprint-readiness: defer
 ---
 
