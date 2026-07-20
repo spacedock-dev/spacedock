@@ -9,6 +9,8 @@ verdict:
 score:
 worktree:
 issue:
+sprint: 0260-proportionality
+group: test-cleanups
 ---
 
 Design and land a standing mechanism (not just reactive review) against tautological tests, and bring the commission-skill templates that scaffold new workflows up to docs/dev's own Proof-policy bar so new workflows don't inherit the gap.
