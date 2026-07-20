@@ -1,11 +1,12 @@
 ---
 id: 2ae8r33r18g0w0g21559yc57
 title: Dev template ships the rigor scar tissue and refit propagates it to commissioned workflows
-status: backlog
+status: ideation
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.6"
 sprint: 0260-proportionality
 group: template
+started: 2026-07-20T06:40:51Z
 ---
 
 Every rigor cap in the ecosystem is post-incident scar tissue stuck in the repo where the incident happened: zaphod's no-PR-machinery rule and offline/interactive AC split, spacedock-v1's mechanism-to-value trace and materiality taxonomy. The shipped commission template contains none of them, its proof-discipline menu can only raise rigor, its interview never asks rigor level, and its "Verified by: grep" example models the exact tautology the Proof policy bans. Refit refreshes scaffolding version, not accumulated content. Template gains: `## Stakes` scaffold + interview question, materiality taxonomy, AC split, small-change fast path, size-gated semantic adversarial pass, fixed Verified-by example; refit gains content propagation so the three commissioned workflows receive the delta. Grouped with `ey`.
