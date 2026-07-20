@@ -1,6 +1,6 @@
 ---
 id: z7sfm93ccddg7x2tycp1smwy
-title: Prefer the cheapest check that can fail — replaces "code gate over prose rule", with new-machinery consent, fan-out surfacing, and the no-minting authoring rule
+title: Prefer the cheapest check that can fail — replaces "code gate over prose rule", with new-check consent, fan-out surfacing, and the no-minting authoring rule
 status: ideation
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.75"
@@ -11,11 +11,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:z7:ideation
-        attempt: gate-attempt:z7-ideation-2
+        attempt: gate-attempt:z7-ideation-3
     records:
         - id: gate:docs-dev:z7:ideation
           stage: ideation
-          current-attempt: gate-attempt:z7-ideation-2
+          current-attempt: gate-attempt:z7-ideation-3
           attempts:
             - id: gate-attempt:z7-ideation-1
               sequence: 1
@@ -55,6 +55,13 @@ gates:
                 action: feedback
                 target-stage: ideation
                 state: pending
+            - id: gate-attempt:z7-ideation-3
+              sequence: 3
+              previous-attempt: gate-attempt:z7-ideation-2
+              state: open
+              briefing:
+                id: briefing:z7-ideation-3
+                digest: sha256:da21cb40ecfe9aa1e1c32bbdcd70d49217d4af696251914e50bbfd2e8fa5fcf3
 ---
 
 "Prefer a code gate over a prose-only rule" is a standing instruction to convert any guarantee into enforcement code — unscoped by stakes, it produced presence tests and unasked CI/lint infra, and it degrades worse in non-dev workflows where every check is new infra. Replace it with an ordering that prefers the cheapest check that can fail: shipped system guards → existing mechanical checks → falsifiable exercise (replay, source-check, adversarial skeptic) → captain judgment → build a new check or enforcement process (last resort, explicit approval). Same edit carries: new enforcement surfaces are not "obvious reversible work" (consent required); a fan-out checkpoint before an investigation's Nth spawned entity/PR; identifier minting reserved to the system, ad-hoc itemization uses bare ordinals. Grouped with 1p9, cy, 85.
