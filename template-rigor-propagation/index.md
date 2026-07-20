@@ -7,6 +7,37 @@ score: "0.6"
 sprint: 0260-proportionality
 group: template
 started: 2026-07-20T06:40:51Z
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:2ae:ideation
+        attempt: gate-attempt:2ae-ideation-1
+    records:
+        - id: gate:docs-dev:2ae:ideation
+          stage: ideation
+          current-attempt: gate-attempt:2ae-ideation-1
+          attempts:
+            - id: gate-attempt:2ae-ideation-1
+              sequence: 1
+              state: closed
+              briefing:
+                id: briefing:single-file:b567c1211ed3a2257a92f1725c2e93bc
+                digest: sha256:4760be51f28b83d92b5671119ab26916113c4b470d44603377a2a88cc2800448
+                room-ref: review/ideation/briefing-1/gate-summary.md
+                note: Subspace advisory float (single-file, working-copy skill launcher); the artifact is the gate summary with the frozen entity snapshot appended
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784539060005018000
+                briefing: briefing:single-file:b567c1211ed3a2257a92f1725c2e93bc
+                by: person:reviewer
+                at: 2026-07-20T09:17:40Z
+                decision: approve
+                reason: "on validation gate, present the refitted delta on the workflow readme for human review"
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+              note: "The resolution reason is a binding captain instruction for the VALIDATION gate: its presentation must include the refit diff against the workflow README for human review. Carry into the Commander package. bw's Feedback Cycles format stays deferred (surfaced in the briefing, no annotation overriding it)."
 ---
 
 Every rigor cap in the ecosystem is post-incident scar tissue stuck in the repo where the incident happened: zaphod's no-PR-machinery rule and offline/interactive AC split, spacedock-v1's mechanism-to-value trace and materiality taxonomy. The shipped commission template contains none of them, its proof-discipline menu can only raise rigor, its interview never asks rigor level, and its "Verified by: grep" example models the exact tautology the Proof policy bans. Refit refreshes scaffolding version, not accumulated content. Template gains: `## Stakes` scaffold + interview question, materiality taxonomy, AC split, small-change fast path, size-gated semantic adversarial pass, fixed Verified-by example; refit gains content propagation so the three commissioned workflows receive the delta. Grouped with `ey`.
