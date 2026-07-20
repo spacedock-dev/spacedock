@@ -1,6 +1,7 @@
 package release
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -120,6 +121,8 @@ func parseCaskXattrHooks(config string) []string {
 	return hooks
 }
 
+var errUnguardedCaskXattrHook = errors.New("homebrew cask xattr hook is unguarded")
+
 func validateCaskXattrHooks(config string) error {
 	hooks := parseCaskXattrHooks(config)
 	if len(hooks) == 0 {
@@ -127,7 +130,7 @@ func validateCaskXattrHooks(config string) error {
 	}
 	for i, hook := range hooks {
 		if !strings.Contains(hook, "OS.mac?") {
-			return fmt.Errorf("homebrew_casks xattr hook #%d runs /usr/bin/xattr without an OS.mac? guard; it will abort a linux `brew install`:\n%s", i, hook)
+			return fmt.Errorf("%w: hook #%d runs /usr/bin/xattr without an OS.mac? guard; it will abort a linux `brew install`:\n%s", errUnguardedCaskXattrHook, i, hook)
 		}
 	}
 	return nil
@@ -154,12 +157,8 @@ func TestCaskXattrGuardRejectsUnguardedHook(t *testing.T) {
 	if adversarial == config {
 		t.Fatal("no OS.mac? token in .goreleaser.yaml to strip; the load-bearing check cannot bind")
 	}
-	err := validateCaskXattrHooks(adversarial)
-	if err == nil {
-		t.Fatal("xattr hook validation accepted a config with its OS.mac? guards stripped")
-	}
-	if !strings.Contains(err.Error(), "without an OS.mac? guard") {
-		t.Fatalf("xattr hook validation rejected the adversarial config for the wrong reason: %v", err)
+	if err := validateCaskXattrHooks(adversarial); !errors.Is(err, errUnguardedCaskXattrHook) {
+		t.Fatalf("xattr hook validation did not reject the stripped config as unguarded: %v", err)
 	}
 }
 
