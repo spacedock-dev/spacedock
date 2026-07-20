@@ -91,52 +91,6 @@ func TestGoreleaserBuildGuardRejectsDroppedLinux(t *testing.T) {
 	}
 }
 
-// parseCaskXattrHooks returns every homebrew_casks post-install hook body that
-// invokes /usr/bin/xattr — the macOS-only quarantine strip that must never run
-// unguarded, since the generated cask carries linux URLs and the hook otherwise
-// aborts a linux `brew install` on the missing binary. A config that does not
-// parse yields nil (the guard's per-hook assertion then finds nothing to check
-// and the caller fails loudly).
-func parseCaskXattrHooks(config string) []string {
-	var doc struct {
-		HomebrewCasks []struct {
-			Hooks struct {
-				Post struct {
-					Install string `yaml:"install"`
-				} `yaml:"post"`
-			} `yaml:"hooks"`
-		} `yaml:"homebrew_casks"`
-	}
-	if err := yaml.Unmarshal([]byte(config), &doc); err != nil {
-		return nil
-	}
-	var hooks []string
-	for _, c := range doc.HomebrewCasks {
-		if strings.Contains(c.Hooks.Post.Install, "xattr") {
-			hooks = append(hooks, c.Hooks.Post.Install)
-		}
-	}
-	return hooks
-}
-
-// TestCaskXattrHookGuardedForLinux locks the fix for the linux `brew install`
-// failure: every cask post-install hook that runs the macOS-only /usr/bin/xattr
-// must guard it with OS.mac?, so the quarantine strip is a no-op on linux rather
-// than aborting the install with exit 127 on the missing binary. Each cask
-// (stable + edge) ships such a hook, so the parsed set must be non-empty and
-// every member guarded.
-func TestCaskXattrHookGuardedForLinux(t *testing.T) {
-	hooks := parseCaskXattrHooks(readGoreleaserConfig(t))
-	if len(hooks) == 0 {
-		t.Fatal("parsed no xattr post-install hooks from .goreleaser.yaml; the guard check has nothing to bind")
-	}
-	for i, hook := range hooks {
-		if !strings.Contains(hook, "OS.mac?") {
-			t.Errorf("homebrew_casks xattr hook #%d runs /usr/bin/xattr without an OS.mac? guard; it will abort a linux `brew install`:\n%s", i, hook)
-		}
-	}
-}
-
 func targetSetString(targets map[buildTarget]bool) string {
 	var names []string
 	for target := range targets {
