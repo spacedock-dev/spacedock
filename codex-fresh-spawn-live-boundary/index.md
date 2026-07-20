@@ -1,10 +1,10 @@
 ---
 title: Enforce Codex fresh-spawn isolation at the live FO boundary
-status: backlog
+status: ideation
 source: "Captain-directed v0.25.2 follow-up, 2026-07-20; live FO escape after v0.25.1 / archived rt8 / PR #532"
 score: "1.0"
 milestone: 0.25.2
-started:
+started: 2026-07-20T04:01:57Z
 completed:
 verdict:
 worktree:
