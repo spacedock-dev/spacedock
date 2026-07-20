@@ -42,6 +42,23 @@ Verified by: the lane setup declares the pinned/bumped versions with a comment s
 - Local npm smoke of the pinned tarball/integrity flow and pi-ai `/compat` guard using temporary install prefixes.
 - Primary live evidence remains the PR pi-live run, then a main pi-live run after merge.
 
+## Stage Report
+
+Stage: implementation
+
 ### Summary
 
 Implemented the pi-live workflow fix: Node 24 for the Pi lane, exact pinned Pi substrate versions with recorded sha512 integrity checks before install, installed tarballs instead of bare latest selectors, and a deterministic compatibility guard that fails fast if pi-subagents cannot use the pi-ai `/compat` export. Updated release workflow guard tests to enforce the new pinned/integrity-based install contract.
+
+### Dispatch checklist
+
+- DONE — Engines-safe Node runtime for the pinned pi-coding-agent: the pi-live job now uses `actions/setup-node` with `node-version: "24"`, satisfying `@earendil-works/pi-coding-agent@0.80.10`'s `>=22.19.0` engine requirement and preventing Node 20 legacy fallback.
+- DONE — Exact-version pins with sha512 `dist.integrity` verification, no bare-latest selectors: the install step pins `@earendil-works/pi-coding-agent@0.80.10`, `pi-subagents@0.35.1`, and `pi-intercom@0.6.0`, records their sha512 integrities, verifies `npm pack` output before install, and installs only the verified tarballs.
+- DONE — Deterministic fail-fast compat guard for the pi-ai `/compat` export: the new guard checks Node version, pinned package versions, the `@earendil-works/pi-ai` `./compat` export declaration/file, and dynamically imports the compat module before running the live smoke.
+
+### Validation
+
+- DONE — `gofmt -w ./cmd ./internal`: completed with no formatting diff outside the intended Go test updates.
+- DONE — `go test ./...`: passed.
+- DONE — `go test ./... -race`: passed.
+- DONE — Local npm smoke: passed for the pinned tarball/integrity flow and pi-ai `/compat` guard using temporary install prefixes.
