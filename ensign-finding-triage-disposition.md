@@ -25,7 +25,7 @@ Two layers, cleanly separated (checklist item 2). The **generic** consumption ru
 
 ### Generic consumption rule (lands in `ensign-shared-core`, workflow-agnostic)
 
-Review findings are inputs to triage, not a fix list. Before changing anything in response to a reviewer, staff review, or automated panel, the ensign classifies each finding against the workflow's declared finding-triage taxonomy (where the workflow declares one) and this entity's own value acceptance criteria:
+Review findings are inputs to triage, not a fix list. A **review finding** is the output of a review instance the active stage's definition declares — the panels, audits, or validators it names, carried to the ensign in the dispatch packet — or feedback the first officer explicitly routes to the ensign as a review outcome. A direct instruction from the captain is not a finding: it is an order to follow or a decision to seek, never something to triage away. The shared contract qualifies the trigger by *reference* (the stage definition), not by enumerating reviewer types it cannot know — the dev instance's stage-defs are where the concrete panels/audits/validators are named. Before changing anything in response to such a finding, the ensign classifies each against the workflow's declared finding-triage taxonomy (where one is declared) and this entity's own value acceptance criteria:
 
 - **Material** — breaks a value AC, or a declared non-negotiable boundary (safety, security, data-integrity, compatibility) reachable through the supported workflow → **fix it**.
 - **Correct-but-disproportionate** (deferred risk or polish) — substantively right, but no value AC breaks and its trigger is outside the supported/promised workflow → **record a decline; do not fix**. The decline is the licensed disposition, not a dodge: name the finding, its class, and why it is not material (no value AC at risk; trigger outside the promise; the condition that would promote it to material).
@@ -87,7 +87,7 @@ The consumption rule names the twin explicitly: narrowing a value AC to make a f
 > ```markdown
 > ## Consuming review findings
 >
-> Review findings are inputs to triage, not a fix list. Before changing anything in response to a reviewer, staff review, or automated panel, classify each finding against the workflow's declared finding-triage taxonomy (where one is declared) and this entity's own value acceptance criteria:
+> Review findings are inputs to triage, not a fix list. A **review finding** is the output of a review instance the active stage's definition declares — the panels, audits, or validators it names, carried to you in the dispatch packet — or feedback the first officer explicitly routes to you as a review outcome. A direct instruction from the captain is not a finding: it is an order to follow or a decision to seek, never something to triage away. Before changing anything in response to such a finding, classify each against the workflow's declared finding-triage taxonomy (where one is declared) and this entity's own value acceptance criteria:
 >
 > - **Material** — breaks a value AC, or a declared non-negotiable boundary (safety, security, data-integrity, compatibility) reachable through the supported workflow. Fix it.
 > - **Correct-but-disproportionate** (deferred risk or polish) — substantively right, but no value AC breaks and its trigger is outside the supported/promised workflow. Record a decline; do not fix it. The decline is your licensed disposition, not a dodge: name the finding, its class, and why it is not material (no value AC at risk; trigger outside the promise; the condition that would promote it to material).
@@ -125,7 +125,7 @@ Verified by: a validation-stage landing-placement audit (like bw's AC-7) — rea
 
 ## Expected surface + tolerance (declared, per captain ruling)
 
-- `skills/ensign/references/ensign-shared-core.md`: +1 section, ~13 lines (the generic rule + decline disposition + AC-narrowing clause).
+- `skills/ensign/references/ensign-shared-core.md`: +1 section, ~15 lines (the generic rule + the by-reference trigger definition + captain-direction exclusion + decline disposition + AC-narrowing clause).
 - `docs/dev/README.md`: +1 bullet in the `implementation` stage-def, ~4 lines.
 - 1 fixture entity (+ its two seeded four-field findings) and 1 offline check for AC-2.
 - **0 Go source files, 0 product LOC.** The `findings` field is an addition to bw's `### Feedback Cycles` entry, coordinated at the shared gate, not new machinery.
@@ -143,3 +143,12 @@ Verified by: a validation-stage landing-placement audit (like bw's AC-7) — rea
 ### Summary
 
 Ideated the ensign finding-consumption rule + decline disposition as a prose change to fleet-loaded `ensign-shared-core` (generic) plus a `docs/dev/README.md` implementation bullet (dev instance), correcting the seed's parked-stakes anchor to per-entity value ACs + the committed taxonomy. The decline is one convention, not a second shape: a `findings` field on the sibling bw member's existing `### Feedback Cycles` entry, adjacent to its `AC {unchanged|narrowed}` field, so the two opposite moves under review pressure (decline a finding / narrow the claim) sit side by side — the rule makes declining legal and names narrowing an AC as an illegal-for-the-ensign, captain-visible design-reset. The riskiest assumption (four-field taxonomy suffices without a stakes field) was exercised against the real archived symlink finding and a material control and discriminates correctly; a new FO enforcement check is held out of scope per the captain ruling.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Qualify the generic rule's trigger by reference, not enumeration (sole captain gate ask; rest approved-shaped as-is).
+  The generic consumption rule and its `ensign-shared-core` doc-diff now define a **review finding** as the output of a review instance the ACTIVE STAGE'S DEFINITION declares (panels/audits/validators named there, carried in the dispatch packet) OR feedback the FO explicitly routes as a review outcome; a direct captain instruction is explicitly excluded (an order to follow / a decision to seek, never a finding to triage). The shared contract references the stage-def instead of enumerating reviewer types; the dev stage-defs remain where concrete instances are named. Estimate updated to ~15 skill lines, inside the declared 2× tolerance; no other change.
+
+### Summary
+
+Folded the single captain ask into the generic rule and its concrete before/after diff: the finding trigger is now defined by reference to the active stage's definition (plus explicit FO-routed feedback), with captain direction excluded, replacing the unqualified "reviewer / staff review / automated panel" enumeration. Surface grew ~2 lines (well within tolerance); the rest of the design — the decline-as-`findings`-field convention, the AC-narrowing sibling, the spike, and the AC set — is unchanged.
