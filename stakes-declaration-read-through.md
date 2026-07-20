@@ -7,6 +7,24 @@ score: "0.9"
 sprint: 0260-proportionality
 group: stakes
 started: 2026-07-20T01:44:22Z
+gates:
+  version: 1
+  current:
+    gate: gate:docs-dev:js6:ideation
+    attempt: gate-attempt:js6-ideation-1
+  records:
+    - id: gate:docs-dev:js6:ideation
+      stage: ideation
+      current-attempt: gate-attempt:js6-ideation-1
+      attempts:
+        - id: gate-attempt:js6-ideation-1
+          sequence: 1
+          state: open
+          briefing:
+            id: briefing:js6-ideation-1a
+            digest: sha256:6984a7e9a1809cfd9b34eafdcdf7b158c13fe23ae2088f3ce707781a7f3eaefa
+            room-ref: "/tmp/js6-ideation-briefing.md"
+          note: "Captain reviewed via Subspace advisory float 2026-07-20 and took the leave-open (hold) action: decision held for captain/FO discussion of three fundamentals — declaration governance/evolution/default semantics, read cost (answered: zero added roundtrips), and stage-differential stakes. No resolution recorded; attempt remains open; revised briefing to follow the discussion."
 ---
 
 No rigor dial exists anywhere in the system: "prototype" has zero hits across the skills tree, so workers and reviewers default to maximum rigor regardless of what the project wants. The workflow README declares stakes (who depends on this, what a defect costs, derived test-depth/infra/materiality policies); the boot record exposes it; dispatch build injects it verbatim into worker packets and review context so an ensign or reviewer can cite it. The contract requires the declaration exists and flows — it never sets the value.
