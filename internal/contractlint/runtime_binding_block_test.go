@@ -147,9 +147,9 @@ func piEmittedRuntimeTokens(t *testing.T) []piEmittedRuntimeToken {
 	}
 }
 
-// codeSpanRe matches one `backticked` span. Comparing whole spans rather than raw
-// substrings is load-bearing: ordinary prose ("we delegate the work") satisfied a
-// `strings.Contains` check for `delegate`, binding nothing.
+// codeSpanRe matches one `backticked` span. Whole spans, not raw substrings:
+// ordinary prose ("we delegate the work") satisfied a `strings.Contains` check for
+// `delegate`, binding nothing.
 var codeSpanRe = regexp.MustCompile("`([^`]+)`")
 
 func codeSpans(section string) map[string]bool {
@@ -161,8 +161,11 @@ func codeSpans(section string) map[string]bool {
 }
 
 // TestPiEmittedRuntimeTokensBindGoSource binds every Pi runtime token Spacedock
-// emits to the Pi FO adapter's runtime-binding block; either side moving alone
-// reds. The wrapper's absent `acceptance` field is proven by
+// emits to the Pi FO adapter's runtime-binding block. The binding is ONE-WAY:
+// renaming an emitter or dropping the token from the doc reds, but the adapter may
+// name a token Spacedock never emits and stay green — which is why `member_spawn`
+// needs the uncovered record below rather than this test. The wrapper's absent
+// `acceptance` field is proven by
 // piruntime.TestSubagentStageDispatchAddsOnlyPiTransportFields and the built
 // artifact by internal/dispatch/build_pi_host_test.go; neither is restated here.
 func TestPiEmittedRuntimeTokensBindGoSource(t *testing.T) {
@@ -199,29 +202,36 @@ func piTokenBindingViolations(spans map[string]bool, tokens []piEmittedRuntimeTo
 // inside their adapter's binding sections — absence-guard vocabularies saying
 // nothing about what a tool MEANS, only where its name may appear.
 //
-// UNCOVERED RUNTIME TOKENS (roborev job 328 finding 4b; captain ruling 2026-07-20).
-// Tokens marked UNCOVERED have NO owner anywhere in this repo: no Go emitter, no
-// build fixture, no live-lane assertion. Each was verified by grepping every
-// non-contractlint Go file. Their prose checks are DELETED rather than retained: a
-// phrase check for a token nothing exercises proves only that we wrote the word,
-// which is the fabricated rigor this entity exists to remove. 0.26.0 ships these
-// gaps knowingly — the entries still bound WHERE the names may appear, but nothing
-// proves WHAT they do. Follow-up: record-uncovered-runtime-tokens.
+// UNCOVERED RUNTIME TOKENS (roborev job 328 finding 4b; validation cycle 1;
+// captain ruling 2026-07-20). NINE tokens this entity retired have NO owner: no Go
+// string literal outside internal/contractlint names them at all. Enumerated by
+// script, not by hand — three successive hand-audits each missed a different one.
+//
+//	contact_supervisor  interrupt_agent  list_agents  member_spawn  send_message
+//	need_decision  timeout_ms  path_prefix  cwd: <resolved repo root>
+//
+// Their prose checks are DELETED, not retained: a phrase check for a token nothing
+// exercises proves only that we wrote the word. 0.26.0 ships these gaps knowingly.
+// Follow-up: record-uncovered-runtime-tokens.
+//
+// `subagent` and `intercom` are NAMED by Go source but not asserted by it — the
+// hits are the `pi-subagents`/`pi-intercom` package names, the unrelated
+// `subagent_type` field, and dispatch prose. Named is not owned.
 var (
 	codexToolTokens = []string{
 		"spawn_agent(",    // bound by TestCodexSpawnSignatureBindsToolArgs
 		"send_message(",   // UNCOVERED
 		"followup_task(",  // ensigncycle/shared_reviewer_reuse{,_table}_test.go
-		"wait_agent(",     // ensigncycle/codex_single_run_test.go, codex_dispatch_evidence_test.go
+		"wait_agent(",     // ensigncycle/codex_dispatch_evidence_test.go
 		"list_agents(",    // UNCOVERED
 		"send_input",      // ensigncycle/shared_reviewer_reuse_table_test.go (reuse transcript fixtures)
 		"SendMessage",     // Claude team tool; banned here, owned by the Claude lanes
 		"interrupt_agent", // UNCOVERED
 	}
 	piSubstrateNativeTokens = []string{
-		"subagent(",                 // UNCOVERED as an assertion — appears only as PROMPT text in the pi live lanes
-		"intercom(",                 // UNCOVERED
-		"member_spawn",              // UNCOVERED — absent from teams.go AND from all of internal/ensigncycle
+		"subagent(",                 // named, not asserted
+		"intercom(",                 // named, not asserted
+		"member_spawn",              // UNCOVERED
 		"cwd: <resolved repo root>", // UNCOVERED
 		"acceptance",                // piruntime.TestSubagentStageDispatchAddsOnlyPiTransportFields (absence)
 	}
@@ -248,10 +258,8 @@ func toolTokenContainmentViolations(span string, tokens []string) []string {
 // TestRuntimeToolTokensStayInBindingSections is the section-scoping containment
 // guard: host tool names live only where the adapter binds them, so prose
 // elsewhere stays readable by a cold agent on any host. It asserts where a name
-// may appear, never what the tool does — the Codex spawn call is bound by
-// TestCodexSpawnSignatureBindsToolArgs and the Pi tokens by
-// TestPiEmittedRuntimeTokensBindGoSource. Several substrate-native tools have no
-// owner at all; the per-token annotations on the vocabularies below say which.
+// may appear, never what the tool does; the vocabularies above annotate which
+// tools are bound, which are merely named, and which nothing covers.
 func TestRuntimeToolTokensStayInBindingSections(t *testing.T) {
 	codexText := readRepoFile(t, codexFORuntimeRel)
 	_, outsideProbe := extractMarkdownSection(t, codexText, "## Live Tool Surface Probe")
@@ -326,9 +334,7 @@ func TestToolTokenContainmentGuardDiscriminates(t *testing.T) {
 
 // TestRuntimeBindingGuardsDiscriminate is the non-vacuity control for the three
 // bindings' extractors. Every RED case below is an input the earlier extractors
-// ACCEPTED: unparseable signature text silently skipped, a duplicate declaration
-// collapsed by set comparison, and a token matched as a substring of ordinary
-// prose. A regression restoring any of those tolerances fails here.
+// ACCEPTED; a regression restoring any of those tolerances fails here.
 func TestRuntimeBindingGuardsDiscriminate(t *testing.T) {
 	emitted := map[string]string{"task_name": "w", "message": "m", "fork_turns": "none"}
 	goodSig := "`spawn_agent(task_name,message,fork_turns=\"none\")`"

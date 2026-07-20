@@ -25,8 +25,6 @@ type codexSpawnArg struct {
 	hasDefault  bool
 }
 
-// codexSpawnArgs parses atomically: every comma-delimited entry must match a whole
-// argument, so empty entries and stray characters are errors, not skipped text.
 func codexSpawnArgs(argList string) ([]codexSpawnArg, error) {
 	var out []codexSpawnArg
 	for _, entry := range strings.Split(argList, ",") {
@@ -127,9 +125,7 @@ func TestFeedbackRejectionFlowStaysHostNeutral(t *testing.T) {
 }
 
 // TestHostNeutralGuardDiscriminates is the non-vacuity control: capability-only
-// prose PASSES, a host name and each shape of host tool name RED. An emptied
-// vocabulary or a predicate that stopped comparing fails here rather than waving
-// through a shared skill that has drifted host-specific.
+// prose PASSES, a host name and each shape of host tool name RED.
 func TestHostNeutralGuardDiscriminates(t *testing.T) {
 	pass := []struct{ why, text string }{
 		{"capability-only prose", "Re-run the reviewer through `«addressable-worker»` and wait for `«completion-signal»`.\n"},

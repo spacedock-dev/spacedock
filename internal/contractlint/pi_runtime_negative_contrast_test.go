@@ -23,10 +23,8 @@ var stepOrdinalPhrases = []string{
 // its own host; it must not define itself by what another host lacks. A blanket
 // host-name ban is deliberately not used — the Pi FO adapter legitimately names
 // hosts in transport prose — so each entry is a phrase the sweep actually removed.
-// These are absence guards, asserting nothing about what an adapter MEANS; the
-// runtime-meaning claims are bound by the three binding tests and
-// internal/dispatch/build_pi_host_test.go, and the unowned ones are listed under
-// UNCOVERED RUNTIME TOKENS in runtime_binding_block_test.go.
+// Absence guards only; the runtime-meaning claims are bound by the three binding
+// tests, and the unowned ones are listed under UNCOVERED RUNTIME TOKENS.
 var negativeContrastPhrases = map[string][]string{
 	codexEnsignRel: {
 		"Claude",
@@ -55,11 +53,9 @@ var stepOrdinalFiles = []string{piFORuntimeRel}
 
 // lifecycleHeadings are the per-adapter lifecycle sections the runtime-binding-block
 // migration folded into `## Runtime implementation`; a re-introduced one gives a cold
-// agent two competing lifecycle stories. This guard was deleted once on the reasoning
-// that a divergent re-introduced block would red the capability-set equality. That was
-// WRONG and shipped unverified: the capability set is extracted from the `## Runtime
-// implementation` section alone and never sees a sibling section, so re-adding
-// `## Awaiting Completion` red nothing. Restored, with a discriminator case.
+// agent two competing lifecycle stories. Deleted once on the unverified reasoning that
+// the capability-set equality subsumed it — wrong, because that set is extracted from
+// `## Runtime implementation` alone and never sees a sibling section.
 var lifecycleHeadings = map[string][]string{
 	codexFORuntimeRel: {
 		"## Dispatch\n",
@@ -114,9 +110,7 @@ func TestRuntimeAdaptersAvoidNegativeContrastAndStepOrdinals(t *testing.T) {
 
 // TestRuntimeAdapterAbsenceGuardsDiscriminate is the non-vacuity control:
 // positive-binding adapter prose PASSES, while a re-introduced host-contrast
-// sentence and a re-introduced step ordinal each RED. An emptied table or a
-// predicate that stopped comparing fails here rather than waving through an
-// adapter that has drifted back to defining itself by another host's gaps.
+// sentence, step ordinal, and lifecycle section each RED.
 func TestRuntimeAdapterAbsenceGuardsDiscriminate(t *testing.T) {
 	pass := []struct {
 		why, text, kind string
