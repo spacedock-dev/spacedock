@@ -22,13 +22,13 @@ Ideation must identify the smallest executable enforcement seam. If Spacedock ca
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — An instruction-driven Codex First Officer cannot execute a fresh Spacedock worker spawn that inherits parent turns.** Verify this with one integrated live record joining the generated dispatch artifact, each exact FO-issued spawn input, the boundary decision, and child-visible context. Omitted, `"all"`, and numeric `fork_turns` inputs must be denied before child creation; exact `"none"` must be allowed and its child must lack the parent canary. Disabling the guard must allow an unsafe spawn and expose the canary, turning the proof red.
+**AC-1 (VALUE) — An instruction-driven Codex First Officer cannot execute a fresh Spacedock worker spawn that inherits parent turns.** Verify this with one integrated live record joining the helper-generated dispatch artifact, its exact `"none"` FO spawn, the boundary decision, and child-visible context, plus controlled direct FO attempts with omitted, `"all"`, and numeric `fork_turns`. Unsafe attempts must be denied before child creation; exact `"none"` must be allowed and its child must lack the parent canary. Compare with the archived ineffective-guard baseline where `"all"` executed and exposed the canary, so the value can move red.
 
 **AC-2 — The guard decides only from the isolation field and never rewrites tool input.** Exact `"none"` is allowed with the FO-issued argument object unchanged. Missing, `"all"`, numeric, non-string, or malformed input is denied. Repeat allowed and denied cases with `model`, `reasoning_effort`, `service_tier`, and arbitrary unknown fields; those fields must not affect the decision and must reach the child unchanged on an allowed call.
 
 **AC-3 — Deliberate continuity remains exclusively `followup_task` on the existing worker handle.** Verify this in the AC-1 live journey: the fresh child lacks the parent canary, then `followup_task` reaches that exact child and the child recalls its own first-turn marker. A second spawn is not continuity.
 
-**AC-4 — Adapter maps, contract wording, hook structure, and raw host probes remain supporting evidence.** They cannot substitute for the AC-1 join. The supported launch must load and trust the guard, malformed input must exit `2` and block, and release validation must positively observe the guard decision. A missing, disabled, untrusted, or failed hook invalidates the release claim instead of narrowing the acceptance boundary.
+**AC-4 — Adapter maps, contract wording, hook structure, and raw host probes remain supporting evidence.** They cannot substitute for the AC-1 join. The supported launch must load and trust the guard; malformed input or an unavailable JSON interpreter must exit `2` and block; release validation must positively observe the guard decision. A missing, disabled, untrusted, or otherwise failed hook invalidates the release claim instead of narrowing the acceptance boundary.
 
 **AC-5 — v0.25.2 ships the fix on the stable line without rewinding `next`.** Verify the exact release candidate SHA with required Go/full/race gates and AC-1 through AC-3 live evidence, cut annotated `v0.25.2` from `main`, and retain the invariant on `next` through the documented propagation path.
 
@@ -48,12 +48,23 @@ A second disposable probe exercised the cheaper fail-closed decision on that sam
 
 ## Implementation design
 
-1. Add a plugin `PreToolUse` binding for the runtime-verified canonical `agentsspawn_agent` name. Route it to a small public `spacedock dispatch guard-codex-spawn` command rather than a plugin-private script. Add aliases only when a live host proves a different canonical name.
-2. Have the command parse the hook envelope and require an object `tool_input` whose `fork_turns` value is the exact string `"none"`. Emit documented `permissionDecision: "allow"` without `updatedInput` for that single valid case. Emit `permissionDecision: "deny"` for omission, `"all"`, numeric strings, non-string values, and every other value. Exit `2` with a concise reason when the envelope itself cannot be parsed so malformed input also blocks.
-3. Leave the existing Codex adapter and First Officer request at explicit `fork_turns: "none"`. The guard is unconditional: it must not depend on whether model or effort overrides are present, and it must never repair or retry a rejected call.
+1. Extend the existing root `hooks.json` with one `PreToolUse` matcher group for the live-verified canonical `^agentsspawn_agent$`. Like the shipped PostCompact hook, its single command is a plugin-root-absolute executable: `${PLUGIN_ROOT}/hooks/codex_fresh_spawn_guard.sh`.
+2. Add that one POSIX shell hook. Before reading stdin, it checks `python3` availability and exits `2` with a concise blocking reason when unavailable. It then `exec`s one embedded Python-stdlib JSON predicate over the original stdin: require an object envelope and object `tool_input`; emit documented `permissionDecision: "allow"` with no `updatedInput` only when `fork_turns` is the exact string `"none"`; emit `permissionDecision: "deny"` for missing or every other value; exit `2` for malformed JSON or invalid envelope shape.
+3. Do not change the helper, Codex adapter, CLI routing, or any Go package. They already request exact `fork_turns: "none"`; the escaped defect was a direct FO call. The guard is unconditional, never repairs or retries a rejected call, and never reads model/effort fields.
 4. Keep worker continuity unchanged: only `followup_task` may address an existing handle. No workflow field, CLI flag, helper option, or host-specific fork choice is introduced.
 
-This is the smallest behavior-owning design because it decides immediately before the live spawn executes and uses the runtime behavior the spike proved. A Go command gives the plugin a stable, testable command surface; a private script is cheaper but recreates the plugin-script migration problem. A deny-only predicate avoids the unsupported rewrite mechanism and cannot drop `e3g` fields; reconstructing or mutating the input is more complex and already failed live. Explicit denial is cheaper than a general agent harness and stronger than adapter/prose checks. Failing closed on malformed input protects AC-1; trusting host defaults, a hook error, or FO self-correction is cheaper but reproduces the escaped defect.
+This is the smallest behavior-owning design because it adds one matcher and one script on the live seam already proved. POSIX `grep`/`sed` matching is fewer lines but cannot safely distinguish JSON keys, types, escapes, duplicates, and nesting. `jq` adds an undeclared binary dependency. A standalone Python shebang cannot turn a missing interpreter into the documented blocking exit, while the shell wrapper can. A public `spacedock` subcommand, generalized policy engine, process fixture, or configuration-test framework adds a subsystem for a one-field predicate. Rewriting input is both larger and proven ineffective. The deny-only hook serves AC-1 directly and leaves `e3g` fields untouched for AC-2.
+
+## Gross changed-LOC budget before implementation
+
+| File | Gross changed LOC | Essential line categories |
+| --- | ---: | --- |
+| `hooks.json` | ~11 | One event group, exact canonical matcher, one plugin-root-absolute command. |
+| `hooks/codex_fresh_spawn_guard.sh` | ~30 | Shebang/comments; Python availability check with exit `2`; JSON envelope/type validation; exact-`"none"` predicate; allow/deny serialization. |
+| `skills/first-officer/references/codex-first-officer-runtime.md` | ~2 | Replace one runtime-binding line with the exact guard promise below. |
+| **Total** | **~43** | No helper, adapter, CLI, Go package, fixture, harness, or public docs changes. |
+
+The executable mode bit for the new hook is required but is not LOC. If implementation materially exceeds this budget, stop and return to design rather than growing a policy subsystem.
 
 ## Coordination with `per-host-stage-model-override` (`e3g`)
 
@@ -61,19 +72,18 @@ The two changes compose at the final input object. `e3g` may supply `model`, `re
 
 ## Test plan
 
-- Add table tests for omitted, `"all"`, numeric strings, JSON numbers, non-string values, arbitrary strings, and exact `"none"`. Assert only exact `"none"` returns allow; all other valid envelopes return deny. Add malformed JSON and non-object-input cases that exercise exit-code-2 blocking. Mutating any unsafe case to allow must fail.
-- For exact `"none"`, assert the command emits no `updatedInput` and does not inspect or reconstruct unrelated fields. Repeat with `model`, `reasoning_effort`, `service_tier`, and unknown keys. For unsafe values, prove the decision remains deny with the same unrelated fields present.
-- Add a narrow hook/configuration smoke test proving the plugin invokes the public binary command for exact canonical `agentsspawn_agent`. Add a process-level fixture proving allow/deny JSON and exit behavior. Treat these only as routing/mechanism evidence, not AC-1 evidence.
-- Run the shortest disposable integrated captain probe below. Retain only its review artifact and JSONL as release evidence; do not productize the probe. The enabled run must join generated artifact, exact arguments, guard decisions, absence of children for denied calls, allowed-child canary absence, and same-handle follow-up. With the guard disabled, an unsafe call must execute and expose the parent canary.
+- Before implementation completion, directly pipe a disposable stdin matrix into the shipped hook from an unrelated cwd; do not commit the driver. Exact `"none"` must exit `0` with allow and no `updatedInput`. Missing, `"all"`, numeric strings, JSON numbers, null, and arbitrary strings must exit `0` with deny. Malformed JSON, non-object envelopes, non-object `tool_input`, and a `PATH` without `python3` must exit `2`. Repeat safe and unsafe inputs carrying `model`, `reasoning_effort`, `service_tier`, and unknown keys; decisions must depend only on `fork_turns`.
+- Reuse cycle 2's live probe as the mechanism spike: session `019f7dd1-f012-7e32-9b14-c1e9278390c5` already proves the canonical matcher denies omission/`"all"`/numeric and allows exact `"none"`; child session `019f7dd2-590e-7cd0-a6ea-f9729b8aefaf` proves canary absence and same-handle continuity. Do not add a committed harness, process fixture, generalized policy engine, or configuration smoke-test framework.
+- Run the manual release journey below against the installed candidate plugin. This is the only new live proof and must join helper artifact, exact FO calls, guard decisions, child context, and same-handle continuity. Compare it with the archived ineffective-guard `"all"` baseline rather than disabling the candidate guard.
 - On the release-candidate SHA run focused tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; then perform the existing `main` tag and `next` propagation checks for AC-5.
 
 ## Shortest captain re-probe
 
-Launch one disposable trusted-hook session matching canonical `agentsspawn_agent` and seed `PARENT_ONLY_CANARY_<random>`. Make the FO consume generated dispatch artifacts for omission, `"all"`, numeric, and exact `"none"`, then call `followup_task` on the allowed child's handle. Pass only if one record joins each artifact to its exact FO call and guard decision; unsafe calls are denied with no child; exact `"none"` is allowed unchanged; the child reports the parent canary absent; and that same child recalls its first-turn marker. Repeat the unsafe case once with the guard disabled; it must execute and the child must see the canary. Any missing join fails AC-1.
+Install the release candidate through the supported Codex plugin launch and trust the bundled hook; `/hooks` must show it active. Seed `PARENT_ONLY_CANARY_<random>`. First have the FO consume a normal helper-generated dispatch artifact: its exact spawn must contain `fork_turns: "none"`, the guard must allow it unchanged, and the child must report the canary absent plus a unique marker. Use `followup_task` on that handle and require the marker. Then direct the same FO to attempt omission, `"all"`, and numeric `"1"` exactly once each; the JSONL must show three hook-blocked calls and no child handles. Retain that one JSONL and artifact as release evidence and compare its unsafe outcomes with the archived ineffective-guard baseline where `"all"` executed and exposed the canary. Any missing join fails AC-1.
 
 ## Documentation delta
 
-No public workflow or release documentation changes: fresh isolation is already the promised behavior, and no user-selectable setting is added. Update only `skills/first-officer/references/codex-first-officer-runtime.md` to say that the FO requests exact `fork_turns: "none"`, the plugin boundary guard rejects every other or missing value immediately before execution without rewriting other arguments, and continuity uses `followup_task` exclusively. Do not describe the guard as shipped until AC-1 passes on the release candidate.
+No public workflow or release documentation changes: fresh isolation is already the promised behavior, and no user-selectable setting is added. In `skills/first-officer/references/codex-first-officer-runtime.md`, replace the current `«worker.spawn»` sentence ending `Every spawn is a fresh dispatch; deliberate continuity uses followup_task with the existing handle.` with: `Every spawn is a fresh dispatch. The bundled PreToolUse guard allows worker creation only when the live input carries exact fork_turns="none"; missing or any other value is denied without rewriting model, reasoning_effort, service_tier, or unknown fields. Deliberate continuity uses followup_task with the existing handle.` Keep the surrounding helper-message and task-name instructions unchanged. Do not describe the guard as shipped until AC-1 passes on the release candidate.
 
 ## Stage Report: ideation
 
@@ -107,3 +117,16 @@ The ideation found the correct narrow boundary but proved it is not presently en
 ### Summary
 
 Cycle 2 overturns the earlier blocker: input rewriting is ignored on the namespaced collaboration path, but `permissionDecision: "deny"` reliably blocks unsafe spawns. The smallest viable design is therefore a public binary-backed, fail-closed guard that allows only exact `fork_turns: "none"`, leaves all other arguments untouched, and preserves continuity solely through `followup_task`.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Replace the public-command subsystem design with the smallest safe enforcement on the already-proven PreToolUse boundary.
+  The design now adds only one `hooks.json` matcher and one plugin-root shell hook with an embedded Python-stdlib predicate; it changes no helper, adapter, CLI, Go package, or fork-mode surface.
+- DONE: Give a gross changed-LOC estimate by file before implementation; identify every line category that is essential.
+  The pre-implementation budget is ~43 gross LOC across `hooks.json` (~11), `hooks/codex_fresh_spawn_guard.sh` (~30), and one runtime-reference line replacement (~2), with each parsing, fail-closed, decision, binding, and documentation category named.
+- DONE: Reuse existing live probe output and provide manual release-test instructions; add no permanent harness, generalized policy engine, process fixture, or configuration smoke-test framework.
+  Cycle 2's parent/child sessions remain the mechanism proof; the release plan adds one disposable installed-plugin journey joining the normal helper artifact, exact safe/unsafe calls, guard decisions, child canary absence, and same-handle marker recall.
+
+### Summary
+
+The overbuilt public-command design has been replaced with the repository's existing direct plugin-hook pattern. A single fail-closed shell hook safely delegates JSON parsing to Python's standard library, blocks if Python or the envelope is unavailable, allows only exact `fork_turns: "none"`, and stays within a ~43-gross-LOC implementation budget with no permanent test infrastructure.
