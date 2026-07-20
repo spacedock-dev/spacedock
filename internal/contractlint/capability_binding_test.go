@@ -18,7 +18,7 @@ func dispatchCorePath(t *testing.T) string {
 }
 
 // capabilityHosts: legacy core → lines still present before the runtime-binding-block
-// migration MUST name all three. New lifecycle capabilities are host-neutral here and
+// migration MUST name all three. New runtime-bound capabilities are host-neutral here and
 // are bound from runtime adapter `## Runtime implementation` blocks instead.
 var capabilityHosts = []string{"Claude", "Codex", "Pi"}
 
@@ -39,8 +39,18 @@ var (
 	hostWordRe = regexp.MustCompile(`(?i)\b(` + strings.Join(capabilityHosts, "|") + `)\b`)
 )
 
-func isRuntimeBoundLifecycleCapability(name string) bool {
-	return name == "worker.spawn" || name == "worker.shutdown"
+// runtimeBoundCapabilities are the capabilities whose per-host binding is delegated to the
+// runtime adapters' `## Runtime implementation` blocks via a kind-only `→ **runtime-binding**`
+// arrow in the core; they carry no per-host `→` coverage in fo-dispatch-core.md itself.
+var runtimeBoundCapabilities = []string{"worker.spawn", "worker.shutdown"}
+
+func isRuntimeBoundCapability(name string) bool {
+	for _, c := range runtimeBoundCapabilities {
+		if c == name {
+			return true
+		}
+	}
+	return false
 }
 
 // fnBlock returns a «fn»'s definition body (heading to next `## `), including its → line.
@@ -99,7 +109,7 @@ func TestCapabilityBinding(t *testing.T) {
 	// «dispatch.next-action», whose → **prose** line names no host).
 	defined := map[string]bool{}
 	for _, m := range fnHeadingRe.FindAllStringSubmatch(data, -1) {
-		if isRuntimeBoundLifecycleCapability(m[1]) || len(hostsBoundByArrow(fnBlock(t, data, m[1]))) > 0 {
+		if isRuntimeBoundCapability(m[1]) || len(hostsBoundByArrow(fnBlock(t, data, m[1]))) > 0 {
 			defined[m[1]] = true
 		}
 	}
@@ -136,7 +146,7 @@ func TestCapabilityBinding(t *testing.T) {
 
 	// Per-host coverage: every legacy core-bound capability «fn»'s → line binds all three hosts.
 	for name := range defined {
-		if isRuntimeBoundLifecycleCapability(name) {
+		if isRuntimeBoundCapability(name) {
 			continue
 		}
 		bound := hostsBoundByArrow(fnBlock(t, data, name))
@@ -148,7 +158,7 @@ func TestCapabilityBinding(t *testing.T) {
 	}
 }
 
-// workerLifecycleArrowViolations applies the host-neutral arrow policy to one worker-lifecycle
+// runtimeBoundArrowViolations applies the host-neutral arrow policy to one runtime-bound
 // capability block: every `- → ` arrow MUST be the kind-only `→ **runtime-binding**` pointer (any
 // other arrow — a per-host `→ **Claude:**`, a `→ **shipped**` — reds), the runtime-binding arrow
 // MUST name no host in ANY form (neither a `**Host:**` bold token NOR a prose host name like "on
@@ -158,7 +168,7 @@ func TestCapabilityBinding(t *testing.T) {
 // It returns one message per violation; the real guard and its discriminator both drive it, so a
 // regression that re-bans the kind-only arrow, admits a prose host name, or stops banning a
 // per-host token reds the control.
-func workerLifecycleArrowViolations(block, name string) []string {
+func runtimeBoundArrowViolations(block, name string) []string {
 	var out []string
 	for _, line := range strings.Split(block, "\n") {
 		trimmed := strings.TrimSpace(line)
@@ -184,29 +194,29 @@ func workerLifecycleArrowViolations(block, name string) []string {
 	return out
 }
 
-func TestDispatchCoreDefinesWorkerLifecycleCapabilities(t *testing.T) {
+func TestDispatchCoreDefinesRuntimeBoundCapabilities(t *testing.T) {
 	raw, err := os.ReadFile(dispatchCorePath(t))
 	if err != nil {
 		t.Fatalf("read dispatch core: %v", err)
 	}
 	data := string(raw)
-	for _, name := range []string{"worker.spawn", "worker.shutdown"} {
+	for _, name := range runtimeBoundCapabilities {
 		block := fnBlock(t, data, name)
-		for _, msg := range workerLifecycleArrowViolations(block, name) {
+		for _, msg := range runtimeBoundArrowViolations(block, name) {
 			t.Error(msg)
 		}
 	}
 }
 
-// TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates is the non-vacuity control for the
-// loosened arrow policy. It drives the same workerLifecycleArrowViolations the real guard uses
+// TestDispatchCoreRuntimeBoundArrowGuardDiscriminates is the non-vacuity control for the
+// runtime-bound arrow policy. It drives the same runtimeBoundArrowViolations the real guard uses
 // against planted blocks: the legitimate kind-only runtime-binding arrow PASSES and a no-arrow
 // block PASSES, while a per-host arrow, a `→ **shipped**` arrow, the `**Claude:**`-token smuggle,
 // and — the audit-driven addition — a runtime-binding arrow that names a host in PROSE ("on
 // Claude/Codex/Pi, ...") each RED. The prose-host cases prove the strengthened guard bites the
 // hole the bold-token-only check left open; a loosening that over-permits (admits a prose host
 // name or drops the per-host ban) or over-restricts (re-bans the kind-only arrow) fails here.
-func TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates(t *testing.T) {
+func TestDispatchCoreRuntimeBoundArrowGuardDiscriminates(t *testing.T) {
 	pass := []struct {
 		why, block string
 	}{
@@ -214,7 +224,7 @@ func TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates(t *testing.T) {
 		{"no arrow at all", "body only, no arrow\n"},
 	}
 	for _, c := range pass {
-		if v := workerLifecycleArrowViolations(c.block, "worker.spawn"); len(v) != 0 {
+		if v := runtimeBoundArrowViolations(c.block, "worker.spawn"); len(v) != 0 {
 			t.Fatalf("control: the %s block was wrongly flagged: %v", c.why, v)
 		}
 	}
@@ -229,7 +239,7 @@ func TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates(t *testing.T) {
 		{"runtime-binding arrow naming a host in prose (Pi)", "body\n- → **runtime-binding**: on Pi, use subagent()\n"},
 	}
 	for _, c := range red {
-		if v := workerLifecycleArrowViolations(c.block, "worker.spawn"); len(v) == 0 {
+		if v := runtimeBoundArrowViolations(c.block, "worker.spawn"); len(v) == 0 {
 			t.Fatalf("control: the %s was not flagged — the loosening lost a guard", c.why)
 		}
 	}

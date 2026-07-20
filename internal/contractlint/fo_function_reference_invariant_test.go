@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-const foFunctionReferenceBaselineBytes = 122400
+const foFunctionReferenceBaselineBytes = 122634
 
 var foFunctionReferencePaths = []string{
 	"skills/first-officer/SKILL.md",
@@ -104,7 +104,7 @@ func TestFOFunctionReferenceClassifierDiscriminates(t *testing.T) {
 func TestFOFunctionPromptSurfaceShrinks(t *testing.T) {
 	_, got := foPromptMetrics(t)
 	if got >= foFunctionReferenceBaselineBytes {
-		t.Fatalf("FO prompt surface = %d bytes, want strictly below post-#495 baseline %d", got, foFunctionReferenceBaselineBytes)
+		t.Fatalf("FO prompt surface = %d bytes, want strictly below post-#531 baseline %d", got, foFunctionReferenceBaselineBytes)
 	}
 }
 

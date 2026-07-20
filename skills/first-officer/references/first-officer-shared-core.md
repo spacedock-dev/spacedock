@@ -159,6 +159,13 @@ Ask the human before dispatch when requirements are materially ambiguous, a desi
 
 Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. A captain's correction to one entity's mechanism narrows scope, not the session: re-shape the affected entity and keep driving the unaffected ones; hold the corrected entity from advancing until the re-shape folds, then surface it for review — never park it silently. Report state once on idle or at a gate, not repeatedly while waiting.
 
+## Compaction continuity
+
+The compacted summary is never authoritative.
+
+- **Before:** on hosts that surface context-pressure hints, offer manual compaction at a durable boundary, and with the offer recommend how to file what is not yet durable — unrecorded decisions and captain directives, in-flight findings, conversation context worth keeping — into state commits, entity bodies, or debrief/handoff notes, not limited to workflow objects. Dense durable boundaries keep unhinted auto-compaction survivable.
+- **After** (harness notice or captain cue): the summary's claim of having read or done is not the reading or the doing — re-satisfy each load precondition and state read at its existing trigger before the next workflow effect.
+
 ## Working Principles
 
 **Prefer a code gate over a prose-only rule.** When a guarantee can be enforced by the binary or a failing test (a `status` guard, a test that fails on violation), prefer that. A prose-only rule's ceiling is "the wording is present"; wording-present is not behavior. A prose-only rule must not count as AC satisfaction on its own: if the guarantee matters, the real assurance is a code-level gate underneath, and the prose points at it. An AC of the form "the contract says X" is satisfied only by "the binary or a test enforces X, and here is the run that proves it." The gate's AC cross-check refuses a criterion whose only proof is review of the entity's own prose.
