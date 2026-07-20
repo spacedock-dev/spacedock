@@ -47,7 +47,7 @@ gates:
           briefing:
             id: briefing:85-ideation-2-chat
             digest: sha256:cff3a819597e625058429c606ac788046316d0e0e31f72941f210e493b2394ba
-            note: chat presentation; digest is the entity content after the captain-approved staff-review sweep was applied
+            note: "chat presentation; ADVISORY digest — it hashes the working file at recording time (sweep applied, this attempt's own record excluded), which no single committed tree reproduces because an entity cannot self-bind its gates record. For drift checking, diff the entity BODY against the state commit that introduced this attempt; do not re-hash the current file."
           resolution:
             type: Resolution
             id: resolution:captain-chat-85-ideation-2
