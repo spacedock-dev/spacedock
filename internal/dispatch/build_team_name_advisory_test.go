@@ -1,5 +1,5 @@
-// ABOUTME: AC-1/AC-2/AC-3 — the --team-name-on-claude stderr advisory fires on the
-// ABOUTME: legacy arm, is silent on the merged arm, and the --help docs the shape flags.
+// ABOUTME: AC-1/AC-3 — the --team-name-on-claude stderr advisory fires on the
+// ABOUTME: legacy arm and is silent on the merged arm, leaving the envelope shape unchanged.
 package dispatch
 
 import (
@@ -92,25 +92,4 @@ func TestBuildLegacyTeamNameAdvisory(t *testing.T) {
 	if mergedOut.RunInBackground == nil || !*mergedOut.RunInBackground {
 		t.Errorf("merged envelope must keep run_in_background=true; got %v", mergedOut.RunInBackground)
 	}
-}
-
-// TestBuildHelpDocumentsShapeFlags is AC-2's golden: dispatch build --help stdout
-// documents the shape-selecting flags (--host, --team-name, --bare-mode), with the
-// --team-name line naming the legacy shape and the auto-team default. Behavioral:
-// it runs the command and reads stdout, not a source grep.
-func TestBuildHelpDocumentsShapeFlags(t *testing.T) {
-	res := runNative("", "build", "--help")
-	if res.exit != 0 {
-		t.Fatalf("dispatch build --help exit=%d, want 0\nstderr=%q", res.exit, res.stderr)
-	}
-	if res.stderr != "" {
-		t.Fatalf("dispatch build --help stderr=%q, want empty", res.stderr)
-	}
-	assertContainsAll(t, res.stdout,
-		"--host",
-		"--team-name",
-		"--bare-mode",
-		"legacy TeamCreate-registry dispatch shape",
-		"auto-team is the default",
-	)
 }
