@@ -293,3 +293,25 @@ The script is a one-off validation artifact and is deliberately NOT committed, p
 **Follow-up entity updated** to the true nine-token set, retitled, with the named-not-asserted pair recorded as a weaker case.
 
 **Surface — DIFF-NEGATIVE as constrained.** 715 -> 711, **-4**. Absorbed by cutting the restatement validation identified: the duplicated "anchors are load-bearing" explanation across `codexSpawnArgs`, `codeSpanRe` and the binding control; the repeated "an emptied table fails here" rationale across two discriminator comments; and the UNCOVERED rationale's restatement of the captain ruling. Against the `main` baseline: 449 -> 711, +262 (was +266). Both HARD tolerances unchanged and re-checked: runtime-meaning literal-in-adapter-prose assertions **0**, committed test-function count **10 vs 10 baseline, delta 0**. `go test ./...` and `go test ./... -race` both exit 0; pi lane is `//go:build live` and outside `./...`, so the waiver masks nothing.
+
+### Review findings (roborev re-review)
+
+Final hardening round. Comment and prose only; no test logic changed. Divergences not re-run, per instruction.
+
+**FO closed the hardening cycle here, and I agree.** I checked both deferred mediums against the promote condition — does it break a value AC on a normal supported path — and neither does. AC-2's verification clause is "reds when its independent source is mutated away from the doc"; validation already confirmed that (rename and drop mutations red). Deferral 1 needs two coincident edits, and deferral 2's token swap leaves the doc unchanged, so it is not a mutation *away from the doc* at all. Neither is a regression against `main`, which had the same weaknesses in hardcoded form. They are hardening of code this entity introduced. No pushback.
+
+**ACCEPT 1 — the fourth false claim-to-owner, and it was bigger than reported.** Confirmed: `ToolArgs()` has no production caller, so calling it "the Go surface Spacedock emits" presented declaration agreement as wire evidence. Before writing the fix I checked the pi side, because confining a fix to codex and missing pi is exactly what happened in round 2 — and it has the SAME defect: none of `TeamsDelegateAction`, `TeamsDirectMessageAction`, `TeamsShutdownAction`, `TeamsDoneAction`, `SubagentStageDispatch` has a production caller either. I extended the same accept to the pi comments rather than shipping a half-fix of a defect class that has now bitten four times. Still comment-only.
+
+What the bindings actually establish, now stated in both places: the adapter's spelled signature/token agrees with what Go DECLARES. The two sides can still move independently, so the bindings red on real divergence — but nothing here observes runtime behavior. Residue flagged, not fixed: the identifiers `piEmittedRuntimeToken`, `piEmittedRuntimeTokens` and `TestPiEmittedRuntimeTokensBindGoSource` still say "Emitted", and the entity's own AC-2 and approach text say `ToolArgs()` "emits". Renaming is code change and AC rewriting is scope I was not granted, so both are recorded here for the follow-up rather than done.
+
+**ACCEPT 2 — record scope widened.** "Pi's model-space binding is provider/model strings" added, with why the obvious candidate does not own it: `TestBuildPiHostIgnoresModelWithNote` proves a claude-enum model is dropped with a note, not what Pi's model space IS. The record now states its own coverage plainly — it enumerates unowned TOKENS, and unowned retired SEMANTIC claims (validation's deferred risk 3, roughly a dozen) are tracked in the follow-up. I did not attempt to enumerate the dozen.
+
+**DEFERRED — recorded, not implemented.** All five are hardening of code this entity introduced. They are real, and two are genuine false-green paths:
+
+1. MEDIUM (`codex_multi_agent_v2_contract_test.go`) — the default is checked only when spelled, so dropping `fork_turns="none"` can pass while the generic probe signature remains. Trigger: an adapter edit dropping the default with a probe signature left. Promote on an observed doc/code divergence shipping because of it.
+2. MEDIUM (`runtime_binding_block_test.go`) — pi tokens validate as an unassociated set, so swapping `delegate` and `message_dm` between constructors, or reusing one token for several, passes. Trigger: a constructor rename preserving the set. Promote on an observed swap shipping green.
+3. LOW — `TestRuntimeBindingGuardsDiscriminate` does not exercise the `setEqual` branch.
+4. LOW — an unterminated `spawn_agent(` is ignored when other valid signatures exist.
+5. LOW — `TestHostNeutralGuardDiscriminates`'s empty-document case adds no discrimination.
+
+**Surface — NEUTRAL as constrained.** 711 -> 711, delta 0; against `main` 449 -> 711, +262. The accepts cost 11 lines, absorbed from restatement (the substrate-native paragraph duplicating the UNCOVERED block, the ordering rationale, the no-blanket-ban explanation, and three one-line overruns). Both HARD tolerances unchanged: runtime-meaning literals **0**, test-function count **10 vs 10**. `go test ./...` and `-race` both exit 0.

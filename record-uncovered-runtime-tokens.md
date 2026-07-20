@@ -33,7 +33,16 @@ Set corrected at validation cycle 1 by a mechanical enumeration (three prior han
 
 `subagent` and `intercom` are NAMED by Go source but not asserted by it — the hits are the `pi-subagents`/`pi-intercom` package names, the unrelated `subagent_type` field, and dispatch prose. Named is not owned, but they are a weaker case than the nine above.
 
-Two agent-facing Pi instructions are also unowned: "non-fresh resume is only an explicit manual/debug exception" and "file verification remains the completion gate" are document-only. ("Fresh redispatch remains the default" IS bound, via `SubagentStageDispatch`'s `context: "fresh"`.)
+## Unowned retired SEMANTIC claims (second class, not yet enumerated)
+
+The token table above is complete. A SECOND class is not: retired *sentences* with no owner. Roughly a dozen exist; enumerating them is part of this entity's work. Known members:
+
+- "Pi's model-space binding is provider/model strings" — `TestBuildPiHostIgnoresModelWithNote` proves a claude-enum model is dropped with a note, not what Pi's model space IS.
+- "file verification remains the completion gate" and "non-fresh resume is only an explicit manual/debug exception" — document-only instructions. ("Fresh redispatch remains the default" IS bound, via `SubagentStageDispatch`'s `context: "fresh"`.)
+
+## Naming and AC residue carried from the parent
+
+The parent's bindings are doc-to-Go-DECLARATION agreement, not wire evidence: neither `CodexMultiAgentV2Spawn.ToolArgs()` nor any of the five `piruntime` constructors has a production caller. The code comments now say so, but three identifiers (`piEmittedRuntimeToken`, `piEmittedRuntimeTokens`, `TestPiEmittedRuntimeTokensBindGoSource`) and the parent's AC-2/approach prose still say "emits". Correct the naming and the AC wording here.
 
 ## Proposed approach
 
