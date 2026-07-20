@@ -1,51 +1,51 @@
 ---
 id: azh879wdzm72ysxg16hbg39q
 title: Falsifiable-test estate — contract evidence rule and the automated-gate decision, resolved once
-status: ideation
+status: implementation
 source: "Two related findings from this session's audit work, not yet designed: (1) docs/dev's own Proof policy ('no prose-grep over instruction files', the detached adversarial audit, the AC template's 'Verified by: ... something outside this task body ... that can fail' clause) only catches tautology reactively, at high-stakes-surface merge time via human/reviewer judgment -- there is no standing, automatic check against the mirror-assertion / no-op-assertion patterns that four real tests in this repo turned out to have. (2) The commission-skill templates that scaffold NEW workflows do not carry equivalent discipline for GO TEST CODE tautology (as opposed to instruction-file/prose tautology, which is entity ey / proof-policy-shipped-scaffolding's separate, pre-existing scope -- see OVERLAP NOTE below): skills/commission/references/templates/development.md's AC template stub and skills/commission/SKILL.md's base AC template both lack docs/dev's own 'outside this task body'/'that can fail' clauses. Reference: github.com/kenn-io/middleman skills/testing-without-tautologies/SKILL.md. A design workflow + an independent fable review ran this session and both converged (mechanism choice, scope, sequencing all hold per fable's independent check) on: NO automated hard AST gate for mirror-assertions (an internal/testlint check for the OTHER pattern, assertion-free tests, is its own sibling entity: testlint-assertion-free-gate) -- instead extend the existing detached-adversarial-audit trigger to fire on AC PROVENANCE ('any AC whose expected value is derived from the same package's production functions or constants'), not the originally-drafted broader 'equality/byte-identity check' wording fable found would over-fire on nearly every unit test in this repo. Concrete diffs exist for docs/dev/README.md's Proof policy + pr-merge gate rule, development.md, and SKILL.md. CORRECTED accounting (fable caught this): internal/status/boot_probe_parity_test.go is NOT a stampID mirror-assertion instance -- it mirrors a different production CONSTANT (teamStateNeutralHint), not a function call; the confirmed mirror-assertion-via-shared-function count is 2 (native_new_test.go, zz_independent_parity_test.go), already covered under the separate tautological-test-fixes entity, don't double-count here. OVERLAP NOTE, UNRESOLVED -- flagging for the captain, not silently resolving: entity ey (proof-policy-shipped-scaffolding, filed 2026-06-04, pre-existing) targets the SAME file (skills/commission/references/templates/development.md) for a related-but-distinct concern -- porting the INSTRUCTION-FILE/prose tautology test (not code-test tautology) to shipped scaffolding, plus first-officer-shared-core.md and ensign-shared-core.md, with a heavier behavioral AC (a live scenario proving a validator REJECTS a presence-only proof). This entity's development.md diff and ey's development.md target could collide if ideated independently without coordination. Captain has not yet said how to reconcile (fold together, sequence, or keep fully separate with a coordination note in each) -- do not dispatch this entity's ideation until that's decided."
 started: 2026-07-20T04:53:02Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-anti-tautology-enforcement-and-template-gap
 issue:
 sprint: 0260-proportionality
 group: test-cleanups
 gates:
-  version: 1
-  current:
-    gate: gate:docs-dev:az:ideation
-    attempt: gate-attempt:az-ideation-1
-  records:
-    - id: gate:docs-dev:az:ideation
-      stage: ideation
-      current-attempt: gate-attempt:az-ideation-1
-      attempts:
-        - id: gate-attempt:az-ideation-1
-          sequence: 1
-          state: closed
-          briefing:
-            id: briefing:docs-dev:az:ideation:attempt-1:revision-4
-            digest: sha256:610fcfab5250d0d23eb7ed01f10eb702657b05b7be0692b194819715dff5bdc4
-            room-ref: "./review/ideation/briefing-1"
-          resolution:
-            type: Resolution
-            id: resolution:captain-chat-az-ideation-1
-            briefing: briefing:docs-dev:az:ideation:attempt-1:revision-4
-            by: person:captain
-            at: 2026-07-20T05:40:00Z
-            decision: approve
-            reason: "Approved in chat after the specifics review (landing files + line counts). Edit D (the audit-trigger widening) is NOT covered by this approval — it awaits its own explicit yes/no per the new-enforcement consent rule."
-          application:
-            action: advance
-            target-stage: implementation
-            state: pending
-          note: "Captain hold via float 2026-07-20 (resolution:actor-1784524247673759000): the FO gate summary was session-jargon dense and unreadable without full context. Attempt open; plain-language rewrite via the comm-officer before re-presentation."
-          edit-d-resolution:
-            decision: approved
-            by: person:captain
-            at: 2026-07-20T12:21:26Z
-            record: "Edit D (the existing detached audit ALSO fires whenever a test's expected answer comes from the same code being tested) — EXPLICIT captain yes, given to the Commander in chat when the contradiction was surfaced. This satisfies the attempt resolution's standing condition that Edit D 'awaits its own explicit yes/no per the new-enforcement consent rule'. Scope of the yes: a trigger widening of the EXISTING detached audit, contract prose only — no new tool, test, gate, lint, or CI lane, so AC-4's zero-new-enforcement criterion still holds. az ships Edits A-D across the two named instruction files. Supersedes the earlier reading that derived consent from the blanket 'agree with all recommendations' staff-review ruling plus a flag-if-not; a consent-gated edit needs a direct answer, which this record now carries."
+    version: 1
+    current:
+        gate: gate:docs-dev:az:ideation
+        attempt: gate-attempt:az-ideation-1
+    records:
+        - id: gate:docs-dev:az:ideation
+          stage: ideation
+          current-attempt: gate-attempt:az-ideation-1
+          attempts:
+            - id: gate-attempt:az-ideation-1
+              sequence: 1
+              state: closed
+              briefing:
+                id: briefing:docs-dev:az:ideation:attempt-1:revision-4
+                digest: sha256:610fcfab5250d0d23eb7ed01f10eb702657b05b7be0692b194819715dff5bdc4
+                room-ref: "./review/ideation/briefing-1"
+              resolution:
+                type: Resolution
+                id: resolution:captain-chat-az-ideation-1
+                briefing: briefing:docs-dev:az:ideation:attempt-1:revision-4
+                by: person:captain
+                at: 2026-07-20T05:40:00Z
+                decision: approve
+                reason: "Approved in chat after the specifics review (landing files + line counts). Edit D (the audit-trigger widening) is NOT covered by this approval — it awaits its own explicit yes/no per the new-enforcement consent rule."
+              application:
+                action: advance
+                target-stage: implementation
+                state: consumed
+              note: "Captain hold via float 2026-07-20 (resolution:actor-1784524247673759000): the FO gate summary was session-jargon dense and unreadable without full context. Attempt open; plain-language rewrite via the comm-officer before re-presentation."
+              edit-d-resolution:
+                decision: approved
+                by: person:captain
+                at: 2026-07-20T12:21:26Z
+                record: "Edit D (the existing detached audit ALSO fires whenever a test's expected answer comes from the same code being tested) — EXPLICIT captain yes, given to the Commander in chat when the contradiction was surfaced. This satisfies the attempt resolution's standing condition that Edit D 'awaits its own explicit yes/no per the new-enforcement consent rule'. Scope of the yes: a trigger widening of the EXISTING detached audit, contract prose only — no new tool, test, gate, lint, or CI lane, so AC-4's zero-new-enforcement criterion still holds. az ships Edits A-D across the two named instruction files. Supersedes the earlier reading that derived consent from the blanket 'agree with all recommendations' staff-review ruling plus a flag-if-not; a consent-gated edit needs a direct answer, which this record now carries."
 ---
 
 Design and land a standing mechanism (not just reactive review) against tautological tests, and bring the commission-skill templates that scaffold new workflows up to docs/dev's own Proof-policy bar so new workflows don't inherit the gap.
