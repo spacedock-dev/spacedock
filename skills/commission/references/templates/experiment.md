@@ -117,7 +117,7 @@ Terminal state for hypotheses that failed at any tier (`smoke`, `analysis`, or `
 
 ## Workflow-specific rules
 
-The FO/ensign operating contract already governs generic stage semantics and proof discipline — prefer a code gate over a prose-only rule, prove by exercising rather than re-reading, fix success criteria before gathering evidence. Experiments inherit these rules from the contract their FO loads at boot; the rules below add only the experiment-shape specifics.
+The FO/ensign operating contract already governs generic stage semantics and proof discipline: prefer the cheapest check that can fail — a shipped guard's run, an existing mechanical check, a one-off falsifiable exercise recorded in the report, then the captain's judgment — with new standing enforcement as the last resort rather than the default; prove by exercising rather than re-reading; fix success criteria before gathering evidence. Experiments inherit these rules from the contract their FO loads at boot; the rules below add only the experiment-shape specifics.
 
 - **Falsifiable hypothesis, criteria fixed first.** The hypothesis must be falsifiable and its accept/reject success criteria must be written down before any evidence is gathered, so the verdict cannot be rationalized after seeing results.
 - **Tier-gating.** Evidence promotes through `smoke → run → analysis → holdout` and a tier never skips: smoke fails fast before the run is burned, analysis applies the criteria as written, and a decisive smoke or analysis can reject without continuing.

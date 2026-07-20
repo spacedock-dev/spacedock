@@ -423,7 +423,7 @@ Generated IDs make concurrent and offline creation safer because creators do not
 {A sentence describing who sets this status and what it means for an {entity_label} to be in this stage.}
 
 - **Inputs:** {What the worker reads to do this stage's work — be specific to the mission}
-- **Outputs:** {What the worker produces — be specific to the mission. Keep bullets concise and verifiable — these become checklist items at dispatch time. Focus on non-obvious requirements that catch skipping, not obvious actions like "write code." Stage-output bullets become checklist items at dispatch; any entity-level end-state properties the stage produces belong under the entity body's `## Acceptance criteria` heading, not in the stage Outputs.}
+- **Outputs:** {What the worker produces — be specific to the mission. Keep bullets concise and verifiable — these become checklist items at dispatch time. Focus on non-obvious requirements that catch skipping, not obvious actions like "write code." Stage-output bullets become checklist items at dispatch; any entity-level end-state properties the stage produces belong under the entity body's `## Acceptance criteria` heading, not in the stage Outputs. A stage whose rounds consume review findings (implementation with in-stage review rounds, validation, review, evaluation) may carry a triage-before-fixing bullet: classify each review finding as material (fix), correct-but-disproportionate (record a decline, do not fix), or needs-decision (escalate) before acting — so a reviewer's non-material finding does not force a dutiful fix.}
 - **Good:** {Quality criteria for work done in this stage}
 - **Bad:** {Anti-patterns to avoid in this stage}
 
@@ -465,7 +465,7 @@ Brief description of this {entity_label} and what it aims to achieve.
 Each AC names a property of the finished entity (not a stage action) and how it is verified.
 
 **AC-1 — {End-state property.}**
-Verified by: {grep / test name / file path / command a future reader can reproduce.}
+Verified by: {test name / command output or exit code / file the change produces / resulting on-disk state — something outside this {entity_label} body that a future reader can reproduce and that can fail; name the concrete change that would make it fail.}
 ```
 
 ## Commit Discipline
