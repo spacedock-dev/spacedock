@@ -9,6 +9,8 @@ verdict:
 score:
 worktree:
 issue:
+sprint: 0260-proportionality
+group: ladder
 ---
 
 The smallest-sufficient-mechanism principle (`references/fo-smallest-sufficient-mechanism.md`) already bans "Ultracode is on" as a justification for climbing the action-weight ladder, and the FO still walked past it: triggered by the session's Ultracode directive ("use the Workflow tool on every substantive task"), it spawned two parallel general-purpose agents inside a Workflow call to verify whether two Go functions shared code — a fact a single `grep`/`Read` pass settles unambiguously, with only one correct answer either way. The existing "independent adversarial verification" justification bullet is loose enough to rationalize this: it doesn't distinguish a judgment call (where a second independent read can catch something the first missed) from a deterministic fact (where a second read of the same files finds the same thing, adding cost with no added confidence). Four concrete tightenings, sized for the lazy-loaded reference file (not the boot-resident core), consistent with this sprint's leanness discipline:
