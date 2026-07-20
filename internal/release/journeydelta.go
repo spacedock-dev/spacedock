@@ -59,9 +59,9 @@ func deltaKeyString(k journeyDeltaKey) string {
 // PR run's fresh observation against the previously published release's
 // latest-by-captured_at baseline for the same scenario/runtime/model.
 type JourneyDelta struct {
-	ScenarioID     string
-	Runtime        string
-	Model          string
+	ScenarioID      string
+	Runtime         string
+	Model           string
 	HasBaseline     bool
 	BaselineRunURL  string
 	TurnsDelta      int
