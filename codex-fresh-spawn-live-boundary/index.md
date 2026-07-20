@@ -1,6 +1,6 @@
 ---
 title: Restore Codex FO contract after compaction
-status: validation
+status: implementation
 source: "Captain-directed v0.25.2 follow-up, 2026-07-20; live FO escape after v0.25.1 / archived rt8 / PR #532"
 score: "1.0"
 milestone: 0.25.2
@@ -81,6 +81,7 @@ No public workflow or release documentation changes and no new user setting. The
 - Cycle 1: REJECTED by the captain at the ideation gate on 2026-07-20. Do not treat ignored input rewriting as the terminal seam result. Exercise the existing fail-closed `PreToolUse` decision on the observed namespaced spawn: reject missing, `"all"`, and numeric `fork_turns`; allow exact `"none"`; verify child context and same-handle `followup_task` with existing logs or one disposable captain probe. Add no permanent test infrastructure. If denial is also ignored, retain the upstream blocker with that stronger evidence.
 - Cycle 2: REJECTED by the captain at the ideation gate on 2026-07-20 as overbuilt. The proposed public `spacedock dispatch guard-codex-spawn` command, process fixture, configuration smoke test, and 100+ LOC estimate turn a one-field boundary predicate into a subsystem. Return to ideation and produce the smallest change on the already-proven `PreToolUse` hook path. Reuse existing live output as evidence and provide manual release-test instructions; add no harness or generalized policy surface. Give a gross changed-LOC estimate by file before implementation and stop if the minimal hook cannot parse and deny safely.
 - Cycle 3: CORRECTED by the captain on 2026-07-20. The cited `spawn_agent` call was generic research rather than a Spacedock dispatch, so the entire fresh-spawn/PreToolUse premise was false. Replace it with the archived c6 post-compaction defect: `SessionStart(compact)` model context gated by inherited `SPACEDOCK_BIN`, with the PostCompact captain cue retained only as a timing fallback.
+- Validation cycle 1: REJECTED for evidence/gate completion only. The captain ran the `/tmp` installed-plugin runbook and reported that marked launch, bare launch, marked resume, and bare resume all passed. The only remaining blocker is the repository-wide formatting gate: `gofmt` requires three field-alignment spaces in unchanged `internal/release/journeydelta.go`. Route only that mechanical correction to implementation, then re-run the same validator; add no product mechanism or test infrastructure.
 
 ## Superseded stage reports
 
