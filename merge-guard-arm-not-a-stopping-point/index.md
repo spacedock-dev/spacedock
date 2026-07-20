@@ -221,6 +221,23 @@ Validated the one-clause merge-guard change and found three material problems. R
 
 ### Feedback Cycles
 
+- Cycle 2 (2026-07-20, third roborev round) — **decision: STOP THE REPAIR CYCLE. Residual finding declined here and routed to follow-up.**
+
+  **The finding, for the third time.** Roborev job 322, its second review, and now its third have each independently flagged the same gap: `«merge.guard»`'s `done-when` bullet ("or `«merge.guard»` left it armed/blocked with its next step named in its own output") licenses terminating at armed, so an FO may stop before running the merge hook. Each read was cold, and the third one sharpens the earlier two: the permission lives in the `done-when` clause specifically, not in the section generally.
+
+  **Why it is not repaired here.** Three grounds, in order of weight.
+  1. This is the captain's parked payload. The paragraph making exactly this claim was parked on 2026-07-20 on two recorded grounds, and neither has been overturned: no probe moved its baseline (3/3 before-text readers already proceed correctly, twice measured), and it cannot fund itself — 843 bytes against a ceiling that, even after this entity returned 24 bytes and z7 returned 161, leaves roughly 587. The full paragraph still does not fit.
+  2. Continuing would BE the runaway repair loop this sprint exists to stop. This entity has now run three implementation cycles and three review rounds on a two-line contract change. The forensic record's four HIGH-severity incidents were all contract-legal one round at a time; each individual round looked justified. Recognising the shape and halting is the behavior 0260 is buying, and an FO that repairs a fourth time because the reviewer asked a third time has learned nothing from the sprint it is driving.
+  3. The evidence is genuinely split and the split is informative, not a stalemate to break by fiat. Three adversarial TEXTUAL reads say the wording permits the wrong action; two behavioral probes say careful readers do not take it. Both are true. The reconciliation — that the failure needs context pressure to appear, which no probe so far reproduces — is a research question with an entity already filed for it.
+
+  **Where it goes instead.** `probe-armed-parking-under-context-pressure` (hjb4z38k1f70yj1psb3yeaap). The three cold roborev reads are corroborating evidence for that task and materially strengthen the "our instrument was too weak" reading over "the claim is false". Recorded there by name rather than left in a review comment.
+
+  **What was NOT done, deliberately.** An affordable miniature of the parked clause (a `done-when` amendment of roughly 80-120 bytes) is technically within budget now that this entity runs at -24. It was not taken: re-introducing a captain-parked payload in smaller type, on the same null behavioral evidence, is the decision-by-attrition this sprint prices — the reviewer asking three times is not new evidence about FO behavior. Surfaced to the captain as a live option rather than actioned or buried; if the captain wants it, it is one small cycle, and the option is recorded here so the choice stays open and visible.
+
+  **Promote-to-material condition.** An observed live drive in which an FO terminates its turn at an armed result, citing the `done-when` bullet. That is the evidence two probes could not produce, and it would reopen this immediately.
+
+
+
 - Cycle 1 (2026-07-20, validation REJECTED, routed to implementation) — **captain decision: RE-ANCHOR AC-1, then decide.**
 
   **Findings routed.** M1 (outcome): the offline lane reds on `TestFOFunctionPromptSurfaceShrinks` — FO prompt surface 123283 bytes against a 122634 ceiling, with the entire 853-byte regression attributable to this clause alone; the branch base measures 122430 and passes, so headroom was 203 bytes and the clause needs 853. M2 (outcome): the narrowed halt list is exhaustive in form but does not cover a `git merge --no-ff` conflict, which the same sentence mandates under `merge: local` — `«halt.rebase-conflict»` fires on exactly three triggers and that is none of them, so the path has no licensed halt while the anti-force ban sits inside a halt that never fires. M3 (evidence): a blind A/B replay of AC-1's own probe showed no baseline movement — 3/3 before-text readers chose proceed-this-turn at high confidence, citing text already in force — so the value AC is unproven rather than disproven. D1 and D2 recorded as deferred risks; D1 folds into M2's rewrite.
