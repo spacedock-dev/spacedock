@@ -7,7 +7,7 @@ started: 2026-07-20T13:56:42Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-fix-pi-live-lane-pi-subagents-version-skew
 issue:
 ---
 
