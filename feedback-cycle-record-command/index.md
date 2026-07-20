@@ -66,7 +66,7 @@ gates:
           briefing:
             id: briefing:bw-ideation-3-chat
             digest: sha256:837779a0b96ebddc7e695106109a6026034c28337686a73bba3d8d18f2ff8c6f
-            note: chat presentation; digest is the entity content after the captain-approved staff-review folds were applied
+            note: "chat presentation; ADVISORY digest — it hashes the working file at recording time (body folds applied, this attempt's own record excluded), which no single committed tree reproduces because an entity cannot self-bind its gates record. For drift checking, diff the entity BODY against the state commit that introduced this attempt; do not re-hash the current file."
           resolution:
             type: Resolution
             id: resolution:captain-chat-bw-ideation-3
