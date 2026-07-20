@@ -1,6 +1,6 @@
 ---
 title: Contractlint runtime-semantics retirement — codex and pi phrase checks become behavior tests
-status: validation
+status: implementation
 source: "Contractlint antipattern sweep, 2026-07-11: codex_multi_agent_v2_contract_test.go and Codex portions of runtime_binding_block_test.go assert runtime meaning from host-adapter prose."
 score: 0.34
 id: 8413fc05vpp8116k54x8br15
@@ -166,6 +166,16 @@ Declared line delta was "near-flat to negative". Actual across the three files: 
   **Grounds for reconfirm.** The overage is almost entirely FO- and captain-MANDATED content, not scope creep: four discriminator controls the repo requires for every retained structural guard (~130 lines), the lifecycle guard the FO ordered restored after its removal proved unjustified, the atomic parser fixing finding 1, and the captain-mandated uncovered-token record. The original estimate's real defect is that it never priced discriminators, which this repo mandates as the non-vacuity partner for exactly the structural guards this entity retains. Both HARD tolerances — the ones that actually encode the value — hold exactly: runtime-meaning literals 0 (all 8 remaining assertion sites re-audited) and committed test-function count 10 vs a 10 baseline, delta 0. No byte-ratchet consequence: this diff is Go test code under internal/contractlint, not the measured instruction-file set.
 
   **Why not park or re-scope.** The mechanism is sound and its value AC is delivered; the growth is the price of repairs that were ordered, not of a widening design. Whether every added line is genuinely required is a question for an independent validator against the ACs, not for the FO to adjudicate line-by-line — so it advances to validation with this deviation named, rather than being absorbed silently or re-cut on FO judgment.
+
+- Cycle 3 (2026-07-20, validation REJECTED) — **ESCALATED to the captain at the cycle-3 threshold, per the feedback flow. Captain decision: FOLD IN THE FIX, BUT ENUMERATE MECHANICALLY.**
+
+  **Why this was escalated rather than repaired.** The feedback flow escalates at cycle 3 instead of running another round, and the reason bit here: the material finding is the THIRD appearance of one defect class in this member. (1) Roborev found five codex tokens cited to a lane that did not contain them. (2) The repair corrected the codex side and missed the pi side; the implementer self-caught two more. (3) Validation now finds `contact_supervisor` still asserted to be owned by the pi live lane while having no owner in any Go file repo-wide, absent from the UNCOVERED block, with the in-code block carrying seven entries against a narrative claiming six. Every one of those fixes was a hand-audit, and every hand-audit missed something different. The recurring item is not the citations; it is the METHOD for verifying them. Repairing a third time by the same means invites a fourth miss.
+
+  **What validation confirmed, so the block is narrow.** The value this entity exists for is delivered and independently proven: both hard tolerances hold exactly (runtime-meaning literals 0 across 8 remaining sites; test-function count 10 vs a 10 baseline, delta 0), 27/30 planted divergences red on the repaired cut, 7 confirmed GREEN on the pre-repair cut and RED now, and every Go-source mutation `main` waved through now reds. The validator also independently judged the FO's deferred question and found the +266 growth genuinely required, attributing it block by block and identifying only ~20 lines of restatement as trimmable — "no padding wearing a mandate's clothes". Nothing about the mechanism is wrong and no test needs changing.
+
+  **The decision.** Fold the repair in rather than re-dispatching a full cycle, AND replace the hand-audit with a mechanical enumeration: every retired token checked against a repo-wide Go-source grep by script, with the script output pasted as the evidence. The captain's honesty ruling made the accurate record the price of the deletions, so an under-enumerated record leaves a mandated deliverable partly undelivered — and an entity whose thesis is that citations must be true cannot ship a false one. Re-validation is scoped to the changed claim, not the whole member: re-verifying the 30 divergences a second time would be the reflexive re-run this sprint prices.
+
+  **Constraint recorded:** the repair must be diff-NEGATIVE. It is comment and prose only, and ~20 lines of identified restatement are available to absorb it.
 
 ### Summary
 
