@@ -62,11 +62,9 @@ func repeatedMembers(xs []string) []string {
 // core doc rather than a re-typed slice. It also holds the shared
 // feedback-rejection skill to capabilities the core actually defines.
 //
-// Multiplicity is checked before set equality. DECLARATION ORDER IS NOT ENFORCED:
-// the retired check pinned each adapter to an ordered slice, but bullet order
-// carries no runtime meaning — a doc author may reorder for readability without
-// any capability changing. Duplication is different: a repeated or conflicting
-// declaration is a real defect set equality cannot see, so it reds explicitly.
+// Multiplicity is checked before set equality. DECLARATION ORDER IS NOT ENFORCED —
+// the retired check pinned an ordered slice, but bullet order carries no runtime
+// meaning. Duplication does, and set equality cannot see it, so it reds explicitly.
 func TestRuntimeCapabilitySetAgreesAcrossCoreAndAdapters(t *testing.T) {
 	headings := capabilityHeadings(t)
 	if len(headings) == 0 {
@@ -112,19 +110,19 @@ func TestRuntimeCapabilitySetAgreesAcrossCoreAndAdapters(t *testing.T) {
 	}
 }
 
-// piEmittedRuntimeToken is one runtime token Spacedock's Go code emits for Pi,
-// paired with the source that emits it.
+// piEmittedRuntimeToken is one runtime token Spacedock's Go code DECLARES for Pi,
+// paired with the constructor that declares it. "Emitted" in these identifiers
+// overstates it: none of the five constructors has a production caller, so this is
+// doc-to-Go-declaration agreement, not wire evidence — the same scope limit as the
+// Codex spawn binding.
 type piEmittedRuntimeToken struct {
 	token, source string
 }
 
-// piEmittedRuntimeTokens computes the Pi runtime tokens Spacedock emits by calling
-// the emitters rather than re-typing their strings. Substrate-native tokens Pi
-// owns but Spacedock never emits — `subagent(`, `intercom(`, `member_spawn` — are
-// deliberately absent: `member_spawn` appears in the Pi FO adapter with no
-// `teams.go` counterpart, and widening the binding to swallow it would be the
-// make-it-pass move this entity exists to remove. It has no owner elsewhere
-// either; see UNCOVERED RUNTIME TOKENS below.
+// piEmittedRuntimeTokens computes the Pi runtime tokens by calling the
+// constructors rather than re-typing their strings. Substrate-native tokens are
+// deliberately absent — widening the binding to swallow `member_spawn` would be the
+// make-it-pass move this entity exists to remove; see UNCOVERED RUNTIME TOKENS.
 func piEmittedRuntimeTokens(t *testing.T) []piEmittedRuntimeToken {
 	t.Helper()
 	wrapper := piruntime.SubagentStageDispatch("assignment", "implementation", "label")
@@ -147,9 +145,8 @@ func piEmittedRuntimeTokens(t *testing.T) []piEmittedRuntimeToken {
 	}
 }
 
-// codeSpanRe matches one `backticked` span. Whole spans, not raw substrings:
-// ordinary prose ("we delegate the work") satisfied a `strings.Contains` check for
-// `delegate`, binding nothing.
+// codeSpanRe matches one `backticked` span. Whole spans, not raw substrings: prose
+// ("we delegate the work") satisfied a `Contains` check for `delegate`, binding nothing.
 var codeSpanRe = regexp.MustCompile("`([^`]+)`")
 
 func codeSpans(section string) map[string]bool {
@@ -160,11 +157,11 @@ func codeSpans(section string) map[string]bool {
 	return out
 }
 
-// TestPiEmittedRuntimeTokensBindGoSource binds every Pi runtime token Spacedock
-// emits to the Pi FO adapter's runtime-binding block. The binding is ONE-WAY:
-// renaming an emitter or dropping the token from the doc reds, but the adapter may
-// name a token Spacedock never emits and stay green — which is why `member_spawn`
-// needs the uncovered record below rather than this test. The wrapper's absent
+// TestPiEmittedRuntimeTokensBindGoSource binds every Pi runtime token Spacedock's
+// Go source declares to the Pi FO adapter's runtime-binding block. The binding is
+// ONE-WAY: renaming a constructor's token or dropping it from the doc reds, but the
+// adapter may name a token Go never declares and stay green — which is why
+// `member_spawn` needs the uncovered record below. The wrapper's absent
 // `acceptance` field is proven by
 // piruntime.TestSubagentStageDispatchAddsOnlyPiTransportFields and the built
 // artifact by internal/dispatch/build_pi_host_test.go; neither is restated here.
@@ -212,6 +209,12 @@ func piTokenBindingViolations(spans map[string]bool, tokens []piEmittedRuntimeTo
 //
 // Their prose checks are DELETED, not retained: a phrase check for a token nothing
 // exercises proves only that we wrote the word. 0.26.0 ships these gaps knowingly.
+//
+// SCOPE OF THIS RECORD: it enumerates unowned TOKENS only. This entity also retired
+// unowned SEMANTIC sentences, which this list does not cover — for example "Pi's
+// model-space binding is provider/model strings", now protected by nothing
+// (TestBuildPiHostIgnoresModelWithNote proves a claude-enum model is dropped with a
+// note, not what Pi's model space IS). Those are tracked in the follow-up, not here.
 // Follow-up: record-uncovered-runtime-tokens.
 //
 // `subagent` and `intercom` are NAMED by Go source but not asserted by it — the
@@ -256,10 +259,9 @@ func toolTokenContainmentViolations(span string, tokens []string) []string {
 }
 
 // TestRuntimeToolTokensStayInBindingSections is the section-scoping containment
-// guard: host tool names live only where the adapter binds them, so prose
-// elsewhere stays readable by a cold agent on any host. It asserts where a name
-// may appear, never what the tool does; the vocabularies above annotate which
-// tools are bound, which are merely named, and which nothing covers.
+// guard: host tool names live only where the adapter binds them, so prose elsewhere
+// stays readable by a cold agent on any host. It asserts where a name may appear,
+// never what the tool does; the vocabularies above annotate coverage per token.
 func TestRuntimeToolTokensStayInBindingSections(t *testing.T) {
 	codexText := readRepoFile(t, codexFORuntimeRel)
 	_, outsideProbe := extractMarkdownSection(t, codexText, "## Live Tool Surface Probe")

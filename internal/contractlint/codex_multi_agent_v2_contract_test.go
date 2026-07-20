@@ -13,8 +13,7 @@ import (
 
 // codexSpawnCallRe captures a `spawn_agent(...)` arg list; codexSpawnArgRe matches
 // ONE whole `name` / `name="value"` entry. The anchors are load-bearing: an
-// unanchored scan skips unparseable text, so `spawn_agent(task_name,,message)`
-// still yielded the expected name set and passed.
+// unanchored scan skips unparseable text, so `spawn_agent(task_name,,message)` passed.
 var (
 	codexSpawnCallRe = regexp.MustCompile(`spawn_agent\(([^)]*)\)`)
 	codexSpawnArgRe  = regexp.MustCompile(`^([a-z_]+)(?:="([^"]*)")?$`)
@@ -39,9 +38,9 @@ func codexSpawnArgs(argList string) ([]codexSpawnArg, error) {
 }
 
 // codexSpawnSignatureViolations holds every `spawn_agent(...)` signature the
-// adapter spells out to the arg shape the Go emitter produces: the arg-NAME set
-// must equal the ToolArgs keys, and a spelled-out default must equal the emitted
-// value. Either side moving alone reds.
+// adapter spells out to the arg shape `ToolArgs` DECLARES: the arg-NAME set must
+// equal its keys, and a spelled-out default must equal its value. Either side
+// moving alone reds.
 func codexSpawnSignatureViolations(text string, toolArgs map[string]string) []string {
 	calls := codexSpawnCallRe.FindAllStringSubmatch(text, -1)
 	if len(calls) == 0 {
@@ -76,10 +75,12 @@ func codexSpawnSignatureViolations(text string, toolArgs map[string]string) []st
 }
 
 // TestCodexSpawnSignatureBindsToolArgs binds the Codex FO adapter's spawn
-// signature to `dispatch.CodexMultiAgentV2Spawn.ToolArgs()`, the Go surface
-// Spacedock emits for a Codex spawn. The adapter's other tool names have no
-// Spacedock-emitted source; where each is really exercised (and where nothing
-// exercises it) is annotated on codexToolTokens in runtime_binding_block_test.go.
+// signature to the arg shape `dispatch.CodexMultiAgentV2Spawn.ToolArgs()`
+// declares. Scope of the claim: `ToolArgs` has NO production caller, so this is
+// doc-to-Go-declaration agreement, NOT evidence of what a Codex spawn puts on the
+// wire. It still reds on real divergence — the two sides can move independently —
+// but nothing here observes runtime behavior. The adapter's other tool names are
+// annotated on codexToolTokens in runtime_binding_block_test.go.
 func TestCodexSpawnSignatureBindsToolArgs(t *testing.T) {
 	emitted := dispatch.CodexMultiAgentV2Spawn{TaskName: "spacedock_worker", Message: "assignment"}.ToolArgs()
 	if len(emitted) == 0 {

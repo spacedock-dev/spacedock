@@ -20,11 +20,9 @@ var stepOrdinalPhrases = []string{
 
 // negativeContrastPhrases are the "this host is not that host" smell phrases the
 // runtime-support positive-binding sweep removed, per adapter. An adapter may name
-// its own host; it must not define itself by what another host lacks. A blanket
-// host-name ban is deliberately not used — the Pi FO adapter legitimately names
-// hosts in transport prose — so each entry is a phrase the sweep actually removed.
-// Absence guards only; the runtime-meaning claims are bound by the three binding
-// tests, and the unowned ones are listed under UNCOVERED RUNTIME TOKENS.
+// its own host; it must not define itself by what another host lacks. No blanket
+// host-name ban — the Pi FO adapter legitimately names hosts in transport prose —
+// so each entry is a phrase the sweep actually removed. Absence guards only.
 var negativeContrastPhrases = map[string][]string{
 	codexEnsignRel: {
 		"Claude",
@@ -54,8 +52,7 @@ var stepOrdinalFiles = []string{piFORuntimeRel}
 // lifecycleHeadings are the per-adapter lifecycle sections the runtime-binding-block
 // migration folded into `## Runtime implementation`; a re-introduced one gives a cold
 // agent two competing lifecycle stories. Deleted once on the unverified reasoning that
-// the capability-set equality subsumed it — wrong, because that set is extracted from
-// `## Runtime implementation` alone and never sees a sibling section.
+// the capability-set equality subsumed it — wrong: that set never sees a sibling section.
 var lifecycleHeadings = map[string][]string{
 	codexFORuntimeRel: {
 		"## Dispatch\n",
