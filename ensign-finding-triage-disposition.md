@@ -4,7 +4,7 @@ title: Ensigns triage review findings against declared stakes before fixing — 
 status: ideation
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.7"
-sprint: 0270-durable-decisions
+sprint: durable-decisions
 group: recorder
 started: 2026-07-20T05:04:07Z
 gates:
