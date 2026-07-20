@@ -1,6 +1,6 @@
 ---
 title: Contractlint runtime-semantics retirement — codex and pi phrase checks become behavior tests
-status: validation
+status: done
 source: "Contractlint antipattern sweep, 2026-07-11: codex_multi_agent_v2_contract_test.go and Codex portions of runtime_binding_block_test.go assert runtime meaning from host-adapter prose."
 score: 0.34
 id: 8413fc05vpp8116k54x8br15
@@ -60,6 +60,9 @@ gates:
                 state: consumed
 worktree: .worktrees/spacedock-ensign-contractlint-codex-runtime-semantics-retirement
 pr: pr-merge:539
+verdict: passed
+completed: 2026-07-20T15:33:33Z
+archived: 2026-07-20T15:33:33Z
 ---
 
 ## Problem
