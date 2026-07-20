@@ -1,7 +1,7 @@
 ---
 id: 02avdajaz0q3hnjwycm5fq45
 title: Ensigns triage review findings against declared stakes before fixing — decline disposition for correct-but-disproportionate findings
-status: ideation
+status: implementation
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.7"
 sprint: 0260-proportionality
@@ -35,8 +35,9 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
               note: "Two earlier chat revise rounds (trigger-by-reference finding qualification; placement rework) closed before this entity's gates recording began; they are documented in the cycle-2 and cycle-3 stage reports."
+worktree: .worktrees/spacedock-ensign-feedback-cycle-record-command
 ---
 
 `ensign-shared-core` contains zero guidance on consuming review findings — the exact actor that dutifully fixes a symlink edge case in a prototype has no rule to consult, and no disposition short of fixing exists for a substantively-correct-but-disproportionate finding. This adds the generic consumption rule (classify each finding against the workflow's committed finding-triage taxonomy AND the entity's own value ACs before fixing) and the decline disposition (a correct-but-disproportionate finding gets a recorded decline, not a dutiful fix), with the decline recorded as a field on the same `### Feedback Cycles` correction-round entry the gate already reads. The dev instance anchors on the committed taxonomy — the `validation` stage-def release-scope classification plus `.roborev.toml`'s four-field evidence record (this workflow's port of spacedock-subspace's triage). Anchor correction from the seed: the stakes member is **parked**, so triage keys on per-entity value ACs and the committed taxonomy, not a workflow stakes field. **Placement (captain rework, cycle 3):** the generic rule is delivered *at the trigger* — a standing block in the feedback delivery path (`feedback-rejection-flow`, carried into the routed worker's feedback context) plus the `docs/dev/README.md` implementation stage-def bullet for in-stage rounds — not the always-loaded `ensign-shared-core`, which a worker not consuming findings never needs.
