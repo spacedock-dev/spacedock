@@ -8,6 +8,8 @@ completed:
 verdict:
 score:
 worktree:
+sprint: 0260-proportionality
+group: test-cleanups
 ---
 
 Fix (narrow to observed behavior, or remove relying on the sibling behavioral test) the 8 confirmed tautological output-grep tests. Each is verified redundant/prose by adversarial refutation — the behavioral coverage it claims is already provided by a named sibling.
