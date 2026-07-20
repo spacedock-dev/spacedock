@@ -61,6 +61,8 @@ gates:
                 target-stage: implementation
                 state: consumed
               note: "Subspace advisory float, captain at the keyboard as person:reviewer."
+mod-block: merge:pr-merge
+pr: "#535"
 ---
 
 Fix (narrow to observed behavior, or remove relying on the sibling behavioral test) the 8 confirmed tautological output-grep tests. Each is verified redundant/prose by adversarial refutation — the behavioral coverage it claims is already provided by a named sibling.
