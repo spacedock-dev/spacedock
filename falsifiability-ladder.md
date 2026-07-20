@@ -15,7 +15,7 @@ gates:
     records:
         - id: gate:docs-dev:z7:ideation
           stage: ideation
-          current-attempt: gate-attempt:z7-ideation-3
+          current-attempt: gate-attempt:z7-ideation-4
           attempts:
             - id: gate-attempt:z7-ideation-1
               sequence: 1
@@ -73,6 +73,26 @@ gates:
               application:
                 action: feedback
                 target-stage: ideation
+                state: pending
+            - id: gate-attempt:z7-ideation-4
+              sequence: 4
+              previous-attempt: gate-attempt:z7-ideation-3
+              state: closed
+              briefing:
+                id: briefing:z7-ideation-4-chat
+                digest: sha256:e30d6bddfd4bdb525c40bf852f498caa6876346bc2486deb1c2fbb2ff462798d
+                note: chat presentation; digest is the entity content immediately before this record was written
+              resolution:
+                type: Resolution
+                id: resolution:captain-chat-z7-ideation-4
+                briefing: briefing:z7-ideation-4-chat
+                by: person:captain
+                at: 2026-07-20T05:30:00Z
+                decision: approve
+                reason: "Approved in chat: the cycle-5 design including the lure-scenario catalog and option recommendation; boot-resident budget re-baselined to +1055 — the authoring rule stays boot-resident."
+              application:
+                action: advance
+                target-stage: implementation
                 state: pending
 ---
 
