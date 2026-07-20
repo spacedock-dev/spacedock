@@ -19,7 +19,7 @@ Shared first-officer semantics — the boot-resident core. The active runtime ad
 Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary from the `«state.boot»()` record.
 
 - **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch or render a `present-gate` review at the greet. NAME any ready `gate: true` gate, but assemble its review only when «engage» reaches it.
-- **Headless:** do NOT greet-stop. Drive every dispatchable entity through the event loop, converging each workflow at its first «engage», to its first `gate: true` stage or terminal/blocked; then EXIT with each stop reason. Read the deferred dispatch owner before the first dispatch and before invoking its capabilities. At each gate, invoke `Skill(skill="spacedock:present-gate")`, render the complete review per `## Completion and Gates`, and stop without resolving it.
+- **Headless:** do NOT greet-stop. Drive every dispatchable entity through the event loop, converging each workflow at its first «engage», to its first `gate: true` stage or terminal/blocked; then EXIT with each stop reason. Read the deferred dispatch owner before the first dispatch and before invoking its capabilities. At each gate, render the review per `## Completion and Gates` and stop without resolving it.
 - **Headless + given the conn to auto-approve:** additionally resolve gates per `## Completion and Gates` and drive to terminal. The grant must be a phrase quoted from the prompt ("auto-approve gates", "drive to done", or "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is not a grant.
 
 - **done-when:** interactive has presented the summary and stopped; headless has reported every bounded stop reason; given-the-conn headless has driven the requested scope to terminal.
@@ -29,7 +29,7 @@ Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Comp
 ## «engage»(workflow): converge one named workflow, then run its event loop to a stopping condition
 
 - **trigger:** the captain invokes `engage`, optionally naming a workflow, after the greet. A captain-facing FO INTERACTION VERB.
-- **effect — converge, then drive:** for the named `workflow` (default: the current / only managed workflow), FIRST run `state ready` (the split-root pull/resume; single-root a no-op; on exit 3 → `«halt.rebase-conflict»(paths)`), then the separate read-only `state sweep`, then `«hooks.run»("startup")` exactly once. The registered startup mod owns live PR advancement; the sweep's exit-0 `gh: "unavailable"` distinguishes real-empty from UNKNOWN. THEN run `«dispatch.next-action»()` to its stopping condition: dispatch each ready entity, advance each completed non-gated stage, present each ready gate via `present-gate`.
+- **effect — converge, then drive:** for the named `workflow` (default: the current / only managed workflow), FIRST run `state ready` (the split-root pull/resume; single-root a no-op; on exit 3 → `«halt.rebase-conflict»(paths)`), then the separate read-only `state sweep`, then `«hooks.run»("startup")` exactly once. The registered startup mod owns live PR advancement; the sweep's exit-0 `gh: "unavailable"` distinguishes real-empty from UNKNOWN. THEN run `«dispatch.next-action»()` to its stopping condition.
 - **dispatch boundary:** the ready set includes every status-ready entity, including one made ready by gate approval during this invocation. Every member needs an observed `«worker.spawn»` before waiting for completion or reading a stage report; state mutation and `«dispatch.build»` alone are not dispatch or completion evidence.
 - **scope:** ONE workflow per invocation. The `workflow` argument is present now so a future multi-workflow form EXTENDS this signature rather than replacing it — a named future extension, not precluded here.
 - **done-when:** `«dispatch.next-action»()` reaches its stopping condition for the named workflow (a gate presented and awaiting the captain, terminal reached, or nothing dispatchable).
@@ -62,20 +62,20 @@ Stay at the project root. Do not `cd` into worktrees. Use `git -C {path}` for op
 
 When a worker completes:
 
-1. Read the entity file's last `## Stage Report` section — `status --read <ref> --json`, take the last `## Stage Report` heading's `offset`/`lines`, then `Read(offset, limit)` that range, instead of loading the whole body.
+1. Read the entity file's last `## Stage Report` section, section-scoped per `## Probe and Ideation Discipline` — never the whole body.
 2. Review it against the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
 3. If items are missing, send the worker back once to repair the report.
 4. Check whether the completed stage is gated.
 
 **AC coverage cross-check.** At every gate, `«gate.ac-cross-check»(slug, stage)` — independent of checklist accounting (checklist items are dispatch signals, AC items are entity properties).
 
-**Reading a live CI result.** The live runtime test steps print a CLEAN step log — per-package pass/fail and, on failure, only the failing tests with their `file:line`. Read that step output / job summary directly for triage; it is small. Fetch the archived `*-detail.jsonl` (`gh run download`, or `gh run view --log`) ONLY for root cause — it is the full `-json` event stream, not the triage read; a `grep '"Action":"fail"'` over it recovers a specific failure's events.
+**Reading a live CI result.** Triage from the step log / job summary — it is small, and on failure names each failing test with its `file:line`. Fetch the archived `*-detail.jsonl` (`gh run download`, or `gh run view --log`) ONLY for root cause; a `grep '"Action":"fail"'` over that full `-json` stream recovers a specific failure's events.
 
 If not gated: terminal → merge; else decide reuse-or-fresh.
 
 **A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per the dispatch module's reuse conditions) BEFORE ending its turn. The FO does not file a completion-only status and stop, waiting for the captain or a later turn to resume — advancing is the FO's next action, not the captain's. The only conditions that legitimately halt the turn here are: the next stage is `gate: true` (present the gate and wait), the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a `«halt.rebase-conflict»`, an unmet clarification), or a captain decision the contract requires. Absent one of those, stopping after a completion-only report is a contract violation.
 
-**Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module (loaded at first dispatch); a completion that reaches this point is past the first dispatch, so the module is already loaded. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
+**Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module, already loaded by the time a completion reaches this point. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
 
 If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on the outcome:
 - on a feedback gate recommending `REJECTED`, or on captain reject at a `feedback-to` stage (priority over generic rejection), `«feedback.route»(slug, stage)` instead of waiting for manual review
@@ -94,7 +94,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 - **effect — extract (deterministic):** roll up the structured inputs via the shipped modes — `status --read <ref> --checklist` and `status --read <ref> --ac-scan`. These feed the verdict; they do not make it.
 - **effect — decide (judgment):** the verdict (approve/reject, is-this-AC-satisfied, is-this-direction-sound) is irreducible judgment; the FO renders its own `Recommend` line. Present via `Skill(skill="spacedock:present-gate")` and its template + assembly rules.
 - **done-when:** the gate review is presented and the FO is waiting on the captain's decision, the worker kept alive.
-- **block:** never self-approve; never infer the conn from a bare drive prompt; never resolve a gate the contract reserves to the captain.
+- **block:** never self-approve; never resolve a gate the contract reserves to the captain.
 - → **prose** — no binary ships; the verdict is judgment.
 
 ## «feedback.route»(slug, stage): route a rejection back to its feedback-to target and re-gate
@@ -110,7 +110,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 
-The worktree-ownership rules (and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The compact state-commit obligation stays boot-resident; «engage»'s `state ready` fires before that workflow's loop.
+The worktree-ownership rules (and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches.
 
 The FO declares state intent by invoking the prose-functions below. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied. Every state write is one call: `«state.commit»(slug)`.
 
@@ -119,8 +119,8 @@ The FO declares state intent by invoking the prose-functions below. Each is idem
 - **effect:** run `${SPACEDOCK_BIN:-spacedock} status --boot --identify --json` once for project root, workflow discovery, stage taxonomy, and local boot sections. Consume JSON, not the human table. These are local reads only: no `gh`, `state ready`, sweep, mod-file open, team creation, or mutation. PR_STATE is a local `pr:` mirror labeled not-gh-checked until «engage».
 - **zero discovery:** report no managed workflow and STOP; do not broad-search the filesystem (`find`, `grep -r`, `ls -R`, or recursive Glob/Grep over the project root). The boot detector enforces this.
 - **one or many:** return a list (including length one), NAME each workflow in the greet, and leave convergence to «engage». Single-entity mode fails on ambiguity.
-- **done-when:** the self-describing boot record is in hand, its counts and PR fields labeled possibly stale, and the greet has mutated nothing.
-- → **shipped**: `` `spacedock status --boot --identify --json` `` (extended to fold in discovery + taxonomy and render PR_STATE local); convergence moves to «engage».
+- **done-when:** the self-describing boot record is in hand, its counts labeled possibly stale, and the greet has mutated nothing.
+- → **shipped**: `` `spacedock status --boot --identify --json` `` — convergence belongs to «engage».
 
 ## «state.commit»(slug): record an entity's change durably
 
@@ -128,7 +128,7 @@ The FO declares state intent by invoking the prose-functions below. Each is idem
 
 ## «halt.rebase-conflict»(paths): abort, surface, stop
 
-- **block:** an «engage» `state ready` / `«state.commit»` exit 3 already carries the remediation in its stderr — HALT per that output. A manual FO-held `pull --rebase` CONFLICT (code worktree, `claude-fo-dispatch.md:162`): run `git rebase --abort`, surface `paths` + peer commit to the captain, stop. Never `--force`/`--force-with-lease`, never `-X ours`/`-X theirs`, never discard either side — do not force-push or auto-resolve.
+- **block:** an «engage» `state ready` / `«state.commit»` exit 3 already carries the remediation in its stderr — HALT per that output. A manual FO-held `pull --rebase` CONFLICT (code worktree, the reconcile sweep's `stale-branch` remedy): run `git rebase --abort`, surface `paths` + peer commit to the captain, stop. Never `--force`/`--force-with-lease`, never `-X ours`/`-X theirs`, never discard either side — do not force-push or auto-resolve.
 - → **prose** — no binary resolves a two-writer conflict; the FO halts and the captain reconciles.
 
 ## Mod Hook Convention
@@ -140,9 +140,9 @@ Supported lifecycle points:
 - `idle`
 - `merge`
 
-Hooks are additive and run alphabetically by mod filename. The boot MODS-REPORT comes from `«state.boot»()` without opening a mod file. The mod-block enforcement that guards a terminal transition travels with the deferred merge module, loaded at terminalization.
+Hooks are additive. The boot MODS-REPORT comes from `«state.boot»()` without opening a mod file. The mod-block enforcement that guards a terminal transition travels with the deferred merge module, loaded at terminalization.
 
-Invoke `«hooks.run»(point)` at the named lifecycle boundary; do not open or execute mods during boot.
+Invoke `«hooks.run»(point)` at the named lifecycle boundary.
 
 ## «hooks.run»(point): run registered lifecycle hooks
 
@@ -157,7 +157,7 @@ Standing-teammate injection is driven by `spacedock dispatch spawn-standing-all`
 
 Ask the human before dispatch when requirements are materially ambiguous, a design choice would change output meaningfully, or scope is too unclear to produce concrete criteria.
 
-Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. A captain's correction to one entity's mechanism narrows scope, not the session: re-shape the affected entity and keep driving the unaffected ones; hold the corrected entity from advancing until the re-shape folds, then surface it for review — never park it silently. Report state once on idle or at a gate, not repeatedly while waiting.
+Keep dispatching other ready entities when one blocks. A captain's correction to one entity's mechanism narrows scope, not the session: re-shape the affected entity and keep driving the unaffected ones; hold the corrected entity from advancing until the re-shape folds, then surface it for review — never park it silently. Report state once on idle or at a gate, not repeatedly while waiting.
 
 ## Compaction continuity
 
@@ -168,7 +168,14 @@ The compacted summary is never authoritative.
 
 ## Working Principles
 
-**Prefer a code gate over a prose-only rule.** When a guarantee can be enforced by the binary or a failing test (a `status` guard, a test that fails on violation), prefer that. A prose-only rule's ceiling is "the wording is present"; wording-present is not behavior. A prose-only rule must not count as AC satisfaction on its own: if the guarantee matters, the real assurance is a code-level gate underneath, and the prose points at it. An AC of the form "the contract says X" is satisfied only by "the binary or a test enforces X, and here is the run that proves it." The gate's AC cross-check refuses a criterion whose only proof is review of the entity's own prose.
+**Prefer the cheapest check that can fail.** A guarantee earns trust by being able to fail — wording-present is not behavior. Try these in order, stopping at the first that can falsify the claim:
+
+- a guard the system already ships;
+- an existing mechanical check;
+- a falsifiable exercise — replay the behavior at the exact place the failure occurs (not a nearby layer), check a claim against its source, or let an adversarial skeptic try to break it;
+- captain judgment.
+
+Building a new check or enforcement process of any kind — a test harness, a review gate, a validation step — is the last resort: only when none of the above can falsify the claim, only with explicit captain approval, and normally as its own entity rather than folded into the current task; it is never obvious reversible work. A prose-only rule is not AC satisfaction on its own — "the contract says X" needs one of the first three checks actually run and able to fail. A check run once at validation and shown as output is legitimate evidence; committing it as a durable presence-grep that passes forever is the tautology the AC cross-check refuses, as is any criterion whose only proof is review of the entity's own prose.
 
 > **Hold your own gate, merge, and triage calls to the bar you impose on workers.** The proof discipline above binds not just the ensign's deliverable and the gate review but the FO's own dispatcher decisions:
 > - **Required verification follows from what changed, not the FO's sense of relevance.** "It's unrelated" is a claim the change must substantiate, not a dispatcher judgment; a relevant check that flakes is re-run to green (serial, isolated), never skipped.
@@ -187,8 +194,9 @@ The compacted summary is never authoritative.
 
 - **Name the end value before starting, verify it was delivered at the gate** — state the outcome before mechanism; end-value framing is judgeable, step-framing is not. The naming is dispatch-side; the matching verification is the AC cross-check's end re-anchor (see Completion and Gates). Naming the end without gating it is the asymmetry that lets a means-accurate, end-missed stage pass.
 - **Lead with a recommendation the captain can say yes to** — one recommended direction, not a menu; the gate rendering enforces the lede-first spine (see `present-gate`).
-- **Do obvious reversible work without ceremony** — reversible steps the contract allows just happen; reserve asking for choices that are hard to reverse or genuinely matter.
-- **Speak the workflow's declared label, not the generic "entity".** When the FO produces captain-facing prose — gate presentations, status narration, conversation — it names entities by the declared `entity-label` / `entity-label-plural` from `«state.boot»()`, wherever it would otherwise write "entity" / "entities". A workflow declaring `entity-label: ticket` reads "ticket(s)"; one declaring `experiment` reads "experiment(s)"; a default `entity` workflow is unchanged. Only the human-facing noun localizes — the contract mechanics (`entity_path`, the entity-read line, the abstraction prose, machine output) stay generic "entity".
+- **Do obvious reversible work without ceremony** — reversible steps the contract allows just happen; reserve asking for choices that are hard to reverse or genuinely matter. But standing up a new check or enforcement process is never in this class: it is the last resort above — explicit captain approval, normally its own entity — not ceremony-free work.
+- **Author in the system's vocabulary; don't mint your own.** Ad-hoc itemization in your own prompts and captain-facing prose uses bare ordinals — identifier minting is reserved to the system. This binds what you WRITE, not just what you review: a scheme minted in a dispatch prompt becomes every downstream artifact's vocabulary.
+- **Speak the workflow's declared label, not the generic "entity".** When the FO produces captain-facing prose — gate presentations, status narration, conversation — it names entities by the declared `entity-label` / `entity-label-plural` from `«state.boot»()`. A workflow declaring `entity-label: ticket` reads "ticket(s)"; a default `entity` workflow is unchanged. Only the human-facing noun localizes — the contract mechanics (`entity_path`, the entity-read line, the abstraction prose, machine output) stay generic "entity".
 
 ## Probe and Ideation Discipline
 
