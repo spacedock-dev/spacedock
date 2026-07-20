@@ -1,66 +1,66 @@
 ---
 id: 85z12f0ywkzy47akg9gwh6hm
 title: "merge-guard arm phase has no keep-moving clause: armed reads as a stopping point"
-status: ideation
+status: implementation
 source: "FO self-diagnosis, 2026-07-08 live session. After the captain approved three validation gates and said \"push it,\" the FO ran `spacedock merge guard <slug> --verdict passed` for each entity, which only ARMS the merge (sets mod-block=merge:pr-merge) — then stopped to read the pr-merge.md hook file instead of immediately constructing and presenting the PR draft in the same turn. Before finishing even one entity's draft, the FO got pulled into an unrelated task and the arm sat untouched. When the captain later asked \"what did you do when I said push it,\" the honest answer was: armed three entities, pushed nothing."
 started: 2026-07-20T03:29:40Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-merge-guard-arm-not-a-stopping-point
 issue:
 sprint: 0260-proportionality
 group: verification
 gates:
-  version: 1
-  current:
-    gate: gate:docs-dev:85:ideation
-    attempt: gate-attempt:85-ideation-2
-  records:
-    - id: gate:docs-dev:85:ideation
-      stage: ideation
-      current-attempt: gate-attempt:85-ideation-2
-      attempts:
-        - id: gate-attempt:85-ideation-1
-          sequence: 1
-          state: closed
-          briefing:
-            id: briefing:85-ideation-1
-            digest: sha256:843de43172a64d695f0423dc81a357fd4b3af6c3c5653623e02480ffbe4983e7
-          resolution:
-            type: Resolution
-            id: resolution:actor-1784520391265880000
-            briefing: briefing:85-ideation-1
-            by: person:reviewer
-            at: 2026-07-20T04:06:31Z
-            decision: approve
-            reason: "based on our new principle, write a estimated change, so future stage can refer to it to judge deviation"
-          application:
-            action: advance
-            target-stage: implementation
-            state: superseded
-          note: "Subspace advisory float, captain at the keyboard as person:reviewer; the resolution reason directs appending a declared expected surface to the body — applied post-approval as part of the approval's own terms, not drift. Superseded by attempt 2 (captain-approved staff-review vocabulary sweep); the approval itself stands."
-        - id: gate-attempt:85-ideation-2
-          sequence: 2
-          previous-attempt: gate-attempt:85-ideation-1
-          state: closed
-          briefing:
-            id: briefing:85-ideation-2-chat
-            digest: sha256:cff3a819597e625058429c606ac788046316d0e0e31f72941f210e493b2394ba
-            note: "chat presentation; ADVISORY digest — it hashes the working file at recording time (sweep applied, this attempt's own record excluded), which no single committed tree reproduces because an entity cannot self-bind its gates record. For drift checking, diff the entity BODY against the state commit that introduced this attempt; do not re-hash the current file."
-          resolution:
-            type: Resolution
-            id: resolution:captain-chat-85-ideation-2
-            briefing: briefing:85-ideation-2-chat
-            by: person:captain
-            at: 2026-07-20T10:23:28Z
-            decision: approve
-            reason: "Staff-review sweep, captain-approved in chat: the banned coined vocabulary removed from the group field and four body spots (plain 'captain judgment' / 'check ordering' wording; group regrouped to verification). No design change."
-          application:
-            action: advance
-            target-stage: implementation
-            state: pending
-          note: "FO applied the sweep directly under the captain's edit-directly grant; codex finding 5 and fable delta finding 19."
+    version: 1
+    current:
+        gate: gate:docs-dev:85:ideation
+        attempt: gate-attempt:85-ideation-2
+    records:
+        - id: gate:docs-dev:85:ideation
+          stage: ideation
+          current-attempt: gate-attempt:85-ideation-2
+          attempts:
+            - id: gate-attempt:85-ideation-1
+              sequence: 1
+              state: closed
+              briefing:
+                id: briefing:85-ideation-1
+                digest: sha256:843de43172a64d695f0423dc81a357fd4b3af6c3c5653623e02480ffbe4983e7
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784520391265880000
+                briefing: briefing:85-ideation-1
+                by: person:reviewer
+                at: 2026-07-20T04:06:31Z
+                decision: approve
+                reason: "based on our new principle, write a estimated change, so future stage can refer to it to judge deviation"
+              application:
+                action: advance
+                target-stage: implementation
+                state: superseded
+              note: "Subspace advisory float, captain at the keyboard as person:reviewer; the resolution reason directs appending a declared expected surface to the body — applied post-approval as part of the approval's own terms, not drift. Superseded by attempt 2 (captain-approved staff-review vocabulary sweep); the approval itself stands."
+            - id: gate-attempt:85-ideation-2
+              sequence: 2
+              previous-attempt: gate-attempt:85-ideation-1
+              state: closed
+              briefing:
+                id: briefing:85-ideation-2-chat
+                digest: sha256:cff3a819597e625058429c606ac788046316d0e0e31f72941f210e493b2394ba
+                note: "chat presentation; ADVISORY digest — it hashes the working file at recording time (sweep applied, this attempt's own record excluded), which no single committed tree reproduces because an entity cannot self-bind its gates record. For drift checking, diff the entity BODY against the state commit that introduced this attempt; do not re-hash the current file."
+              resolution:
+                type: Resolution
+                id: resolution:captain-chat-85-ideation-2
+                briefing: briefing:85-ideation-2-chat
+                by: person:captain
+                at: 2026-07-20T10:23:28Z
+                decision: approve
+                reason: "Staff-review sweep, captain-approved in chat: the banned coined vocabulary removed from the group field and four body spots (plain 'captain judgment' / 'check ordering' wording; group regrouped to verification). No design change."
+              application:
+                action: advance
+                target-stage: implementation
+                state: consumed
+              note: "FO applied the sweep directly under the captain's edit-directly grant; codex finding 5 and fable delta finding 19."
 ---
 
 **Problem:** `skills/first-officer/references/fo-merge-core.md`'s `«merge.guard»` capability describes the phase-invocation mechanics ("invoke it directly per phase; its own stdout/stderr name the FO's next action") but never states that an "armed" result is not a stopping point. Contrast `fo-dispatch-core.md`, which is explicit for stage completions: "Implementation completion is not a stopping point... The FO does not park a completed implementation and wait." The merge ceremony is exactly as sequential and stateful as the dispatch stage sequence (arm → invoke hook → finalize), but only the dispatch side carries the "keep moving" clause. The asymmetry reads as an invitation to treat "armed" as a natural pause.
