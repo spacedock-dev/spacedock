@@ -11,6 +11,22 @@ worktree:
 issue:
 sprint: 0260-proportionality
 group: ladder
+gates:
+  version: 1
+  current:
+    gate: gate:docs-dev:85:ideation
+    attempt: gate-attempt:85-ideation-1
+  records:
+    - id: gate:docs-dev:85:ideation
+      stage: ideation
+      current-attempt: gate-attempt:85-ideation-1
+      attempts:
+        - id: gate-attempt:85-ideation-1
+          sequence: 1
+          state: open
+          briefing:
+            id: briefing:85-ideation-1
+            digest: sha256:843de43172a64d695f0423dc81a357fd4b3af6c3c5653623e02480ffbe4983e7
 ---
 
 **Problem:** `skills/first-officer/references/fo-merge-core.md`'s `«merge.guard»` capability describes the phase-invocation mechanics ("invoke it directly per phase; its own stdout/stderr name the FO's next action") but never states that an "armed" result is not a stopping point. Contrast `fo-dispatch-core.md`, which is explicit for stage completions: "Implementation completion is not a stopping point... The FO does not park a completed implementation and wait." The merge ceremony is exactly as sequential and stateful as the dispatch stage sequence (arm → invoke hook → finalize), but only the dispatch side carries the "keep moving" clause. The asymmetry reads as an invitation to treat "armed" as a natural pause.
