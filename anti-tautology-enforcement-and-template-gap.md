@@ -28,6 +28,7 @@ gates:
             id: briefing:docs-dev:az:ideation:attempt-1
             digest: sha256:ceaf9cbab19f6ef166e4f90b37b6a6c536b4066e9e7d6f414022e3ad05f3164a
             room-ref: "/tmp/az-briefing-1"
+          note: "Captain hold via float 2026-07-20 (resolution:actor-1784524247673759000): the FO gate summary was session-jargon dense and unreadable without full context. Attempt open; plain-language rewrite via the comm-officer before re-presentation."
 ---
 
 Design and land a standing mechanism (not just reactive review) against tautological tests, and bring the commission-skill templates that scaffold new workflows up to docs/dev's own Proof-policy bar so new workflows don't inherit the gap.
