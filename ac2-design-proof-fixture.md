@@ -24,6 +24,7 @@ gates:
           briefing:
             id: briefing:0qe-ideation-1
             digest: sha256:10581a261293596e17f359b840d8f610f431141daadb4f09763d5185fe674670
+          note: "Captain hold via float, 2026-07-20 (resolution:actor-1784524018982597000): the FO briefing lacked orientation — no plain statement of what the entity is or what AC-2 refers to. Attempt stays open; re-present with real context or fold into the lure-scenario catalog per the pending captain choice."
 ---
 
 Single-fixture design proof for AC-2: gate must reject when means-only AC is paired with regressed end-value.
