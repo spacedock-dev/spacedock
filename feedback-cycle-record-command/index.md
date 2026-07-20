@@ -35,6 +35,8 @@ Turn the feedback-rejection correction loop from a prose-only cycle count into a
 
 ## First cut vs deferred
 
+**Expected surface (this entity's own ideation estimate, in the form the convention it ships asks for):** ~2 Go files in `internal/status` (1 new handler `feedback_cycle.go` + the `--record-feedback-cycle` flag branch in `native_runner.go`) + 1 new test file, ~150 LOC source / ~200 LOC test; 2 skill-prose files (`feedback-rejection-flow`, `first-officer-shared-core`), ~6 lines swapped; 1 dev-README line. Declared tolerance: 2× — reconfirm or reframe if implementation crosses ~4 Go files / ~400 changed lines, or if the skill-prose file count grows.
+
 **First cut (this entity):**
 - The record command core: append a `### Feedback Cycles` entry, section-scoped count, per-round actuals + deviation vs the declared estimate, and the stdout round-state line.
 - The two skill-prose swaps: `feedback-rejection-flow` steps (invoke the command, read the narration, weigh a design-reset decision) and the `first-officer-shared-core` `«feedback.route»` lines.
@@ -46,13 +48,13 @@ Turn the feedback-rejection correction loop from a prose-only cycle count into a
 - The `present-gate` surface-deviation evidence line.
 - The template ideation-scaffold `Outputs` propagation (owned by the `template` member).
 - The CLI docs page for the command.
-- The enforcement half of AC-drift: treating an AC-weakening edit as a design-reset event requiring captain sign-off (the paperwork-twin backstop; see `### AC-drift detection`).
+- The enforcement half of AC-drift: treating an AC-weakening edit as a design-reset event requiring captain sign-off (the AC-narrowing backstop; see `### AC-drift detection`).
 
 ## Problem
 
 - **The runaway loops were contract-legal round by round.** All four HIGH incidents in the 0260 forensics (`_evidence/0260-agent-derail-forensics/synthesis.md`) — e6j (2-defect fix → 10 roborev cycles, 26 files / +3,373, PR closed), dp (one-paragraph fix → 4-cycle ladder, discarded, ~38.5h), task-91 (16 roborev panels, own round-limit bypassed), 7h (harness repaired twice before park) — passed every round against the only baseline available: the prior round's accident. No single round screamed. The baseline has to be the entity's own captain-approved intent, not the last cycle's overrun.
-- **The paperwork twin: AC-narrowing under validation pressure** (synthesis addendum, 2026-07-20, the 0.25.1 release). When validation correctly found a value claim unproven, the task narrowed its AC until a weaker claim passed — a real rejection converted into a paperwork pass; the failure then reproduced live. The gate cross-check compares against the CURRENT AC text, so silent narrowing defeats it by construction. A calibrated loop must make AC-drift across rounds machine-visible, the same way it makes surface-growth visible.
-- **In-stage rounds have no ledger.** `### Feedback Cycles` tracks only cross-stage gate bounces (dp, 7h). e6j's 10 roborev cycles and task-91's 16 panels were in-stage (roborev-at-end-of-implementation, never crossing a gate), so cycle tracking never saw them. Both loop shapes must land in one ledger.
+- **AC-narrowing under validation pressure** (synthesis addendum, 2026-07-20, the 0.25.1 release; the addendum calls it repair-forward's paperwork twin). When validation correctly found a value claim unproven, the task narrowed its AC until a weaker claim passed — a real rejection converted into a paperwork pass; the failure then reproduced live. The gate cross-check compares against the CURRENT AC text, so silent narrowing defeats it by construction. A calibrated loop must make AC-drift across rounds machine-visible, the same way it makes surface-growth visible.
+- **In-stage rounds have no durable record.** `### Feedback Cycles` tracks only cross-stage gate bounces (dp, 7h). e6j's 10 roborev cycles and task-91's 16 panels were in-stage (roborev-at-end-of-implementation, never crossing a gate), so cycle tracking never saw them. Both loop shapes must land in one section.
 - **xa's determination stands** (`_archive/feedback-guarantee-binary-gate`): the cycle count IS durable on-disk state (section-scoped count deterministic and tamper-evident — spike: ~25 lines, ignores a `Cycle N` line in a sibling section); a `--set status={feedback-to-target}` guard FALSE-FIRES (the disambiguating `is_feedback_reflow` lives on the dispatch-build input path, `build.go:299`, not as a `--set` field or durable state); the correct hook is the cycle-record WRITE, unambiguously a bounce event.
 - The prose-only guarantee's ceiling is "the wording is present"; its drift mode is the infinite reject→re-implement→reject loop.
 
@@ -70,14 +72,14 @@ Turn the feedback-rejection correction loop from a prose-only cycle count into a
 
 - **Surface unit:** files touched / LOC.
 - **Actuals capture:** the record command reads the entity's `worktree:` and runs `git diff --numstat {merge-base}..HEAD` — cumulative surface of the entity's work vs its branch point, deterministic, no new round-store (roborev has none; rounds are Git-versioned — spike-proven below). A generic `--surface {files,loc}` override lets a non-dev caller pass actuals.
-- **roborev round hook:** the in-stage roborev loop invokes the record command when it re-panels after material findings, so in-stage rounds land in the same `### Feedback Cycles` ledger as cross-stage bounces.
+- **roborev round hook:** the in-stage roborev loop invokes the record command when it re-panels after material findings, so in-stage rounds land in the same `### Feedback Cycles` section as cross-stage bounces.
 
 ### Both loop shapes, one record (trigger paths named)
 
 - **Cross-stage feedback bounce** (dp, 7h): triggered by the FO's `feedback-rejection-flow` when a gate recommends REJECTED and routes to the `feedback-to` target — the FO invokes the record command. Generic; lands in the skill.
 - **In-stage review round** (e6j's 10 roborev cycles, task-91's 16 panels): triggered by the implementation-stage roborev loop re-paneling after material findings within one stage — the loop driver invokes the record command per re-panel. Dev realization; lands in the implementation-stage roborev-loop prose.
 
-Both write the same section: `### Feedback Cycles` becomes the single durable ledger of correction rounds. Making in-stage roborev rounds record here is precisely what would have surfaced e6j at all.
+Both write the same section: `### Feedback Cycles` becomes the single durable record of correction rounds. Making in-stage roborev rounds record here is precisely what would have surfaced e6j at all.
 
 ### The record command (first cut)
 
@@ -100,7 +102,7 @@ When the narrated deviation crosses tolerance, the FO weighs a **design-reset de
 
 ### AC-drift detection (recommended for the first cut — the gate's ask #4)
 
-The record command already reads the entity body and writes a per-round entry. Riding that, each entry also stamps a **digest of the `## Acceptance criteria` section** (normalized text → short hash), and the round-state line flags **`AC CHANGED since cycle 1`** when the digest differs from the first recorded round's. This makes the paperwork-twin (AC-narrowing under validation pressure, synthesis addendum) machine-visible from two durable entries — exactly the pattern surface-deviation uses.
+The record command already reads the entity body and writes a per-round entry. Riding that, each entry also stamps a **digest of the `## Acceptance criteria` section** (normalized text → short hash), and the round-state line flags **`AC CHANGED since cycle 1`** when the digest differs from the first recorded round's. This makes AC-narrowing under validation pressure (synthesis addendum) machine-visible from two durable entries — exactly the pattern surface-deviation uses.
 
 **Recommendation: include the DETECTION+NARRATION in the first cut; defer the ENFORCEMENT.** Reasoning:
 - It is the narration half of the fix, and the gate's own logic ships cheap detection first, enforcement only if ignored. The two derail directions (grow-diff, narrow-AC) then get symmetric detection from the same command.
@@ -227,3 +229,14 @@ Reframed the entity to the captain's 2026-07-20 estimate-then-calibrate directio
 ### Summary
 
 Applied the gate bounce: shrank to the narration-first core (record command + two skill swaps + one ideation baseline line), moved the hard backstop / present-gate line / template propagation / CLI page to a deferred set with an explicit `## First cut vs deferred` split, and restructured AC-1..AC-5 as directed. On the AC-narrowing question I recommend including the AC-drift digest as a severable AC-6 in the first cut (cheap detection, same narration class, covers the fresh 0.25.1 paperwork-twin) while deferring its enforcement half; reasoning recorded in the body and above. The e6j value AC and the spike are unchanged.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Append the explicit written surface estimate (pre-gate captain directive), practicing the convention this entity ships.
+  Added the **Expected surface** line under `## First cut vs deferred` with this entity's own first-cut numbers (~2 Go files + 1 test file, ~150 LOC source / ~200 LOC test; 2 skill-prose files, ~6 lines; 1 dev-README line) and a declared 2× tolerance.
+- DONE: Terminology sweep for coined vocabulary.
+  Replaced my coined "ledger" with plain "record"/"section" (3 design-body sites); demoted "paperwork twin" from a load-bearing label to a single attributed quote of the synthesis addendum, using plain "AC-narrowing under validation pressure" everywhere it does work. Kept existing system vocabulary as-is ("round-state line", "### Feedback Cycles"). Historical cycle-1/cycle-2 stage reports left verbatim.
+
+### Summary
+
+Pre-gate polish only: appended the written surface-estimate line in the standard form (the entity now declares its own baseline, eating its own dog food) and swept coined vocabulary out of the design body. No design change.
