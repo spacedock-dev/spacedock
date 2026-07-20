@@ -304,3 +304,35 @@ Pre-gate polish only: appended the written surface-estimate line in the standard
 ### Summary
 
 Applied the REVISE. The design now ships a documented entry-format convention (prose + a fixture), not a command — the honest application of this entity's own cheapest-check-first ordering, converging with the codex cross-review and the captain. The command and all binary / schema / CLI machinery are deferred behind observed format-drift. Added AC-7 (core-vs-dev landing audit) with concrete `docs/dev/README.md` diffs, and AC-6 (generic in-stage-round coverage). ACs renumbered to the prose-only scope; the e6j value proof is now a fixture + offline check (no product code), directly validated by the spike. Estimate updated to 0 Go LOC.
+
+## Stage Report: implementation
+
+- DONE: ONE composed `### Feedback Cycles` entry format lands in skills/feedback-rejection-flow/SKILL.md carrying BOTH members' fields: bw's declared surface / estimate / per-round actuals / AC-drift AND 02av's findings disposition — including the all-declines case, which must render as a real recorded state and not as an empty field.
+  `## Feedback Cycles entry` (commit ee4a23cf) specifies one line per round: `- Cycle {N}: {verdict} — {reviewer/loop}; surface {actuals} vs estimate {declared} ({P}%); findings {none | {F} fixed, {D} declined: <ref · class · why not material · promotes when>}; AC {unchanged | narrowed: <note>}`, with `findings none` (nothing arrived) held distinct from an all-declines round's `0 fixed` plus every decline named.
+- DONE: Both members' contract prose lands in the files each declared and NOWHERE else.
+  `git diff --numstat HEAD~1` = 3 files, +33/-8: `docs/dev/README.md` (+3), `feedback-rejection-flow/SKILL.md` (+28/-6), `first-officer-shared-core.md` (+2/-2). `skills/ensign/references/ensign-shared-core.md` untouched — 02av's always-loaded delta is zero.
+- FAILED: BYTE-FUNDED and suite-green: `go test ./...` passes INCLUDING TestFOFunctionPromptSurfaceShrinks, with per-file byte accounting recorded.
+  `go test ./...` is green on every suite EXCEPT the ratchet: surface = 125,564 bytes against baseline 122,634. Accounting below; the residual 2,903 bytes are not fundable from these files without deleting meaning, so this is reported rather than absorbed. Baseline constant untouched; no prose relocated to an unmeasured file.
+
+### Byte accounting (per file, per member)
+
+| File | Before | After | Δ |
+|---|---|---|---|
+| `skills/feedback-rejection-flow/SKILL.md` | 2,741 | 5,970 | +3,229 |
+| `skills/first-officer/references/first-officer-shared-core.md` | 26,298 | 26,483 | +185 |
+| `docs/dev/README.md` (unmeasured) | 27,533 | 29,551 | +2,018 |
+| **Measured total** | **122,150** | **125,564** | **+3,414** |
+
+Within the skill: frontmatter description + intro **trimmed −248** (self-funding: the description no longer re-enumerates the procedure the numbered steps carry, which also retires the fable staff-review finding that it prescribed the superseded rule); steps 2-3 +358; `## Feedback Cycles entry` +899; `## Finding-triage block` +2,032; the findings-routing amendment +160. **bw's measured net +1,194; 02av's +2,192.** Headroom was 483, so bw alone overruns by 711 and the composed change by 2,903.
+
+Trim search, run before cutting anything: a sentence-level duplication scan across all 13 ratcheted files recovers **110 bytes** in total (one shutdown-sweep sentence shared by `using-legacy-claude-team` and `claude-fo-dispatch`). The measured set is already deduplicated by prior leanness sprints; the remaining candidates in `first-officer-shared-core.md` are all either bound by contractlint literals or landed by live sibling members this sprint. Two honest reductions were taken instead: the −248 above, and removing the dev `git diff --numstat` one-liner from the generic skill (an AC-7 layering leak the ideation doc-diff had proposed — the one-liner and the files/LOC unit now live only in `docs/dev/README.md`).
+
+### Live-lane reconciliation (no fixture or assertion edited)
+
+The shipped `feedback-3-cycle-escalation` scenario asserts `^- Cycle \d+:` entries plus an escalation-to-human handoff, both section-scoped. Leading the entry with `- Cycle {N}:` rather than a timestamp satisfies the new convention and that assertion at once, and it gives the reader the round ordinal the deviation arithmetic and the cycle-3 backstop both need. Exercised, not asserted: a one-off test fed a three-entry conforming body to the real `assertThirdCycleEscalation` — PASS — and the same body with the handoff clause removed — RED, so the pass is not vacuous. The one-off was deleted, not committed.
+
+Two reconciliations against the ideation doc-diff, both recorded rather than silent: the cycle-3 escalation clause is KEPT in the flow (the ideation "after" text dropped it; AC-3 defers the escalation *machinery*, not the shipped prose rule, and both the live lane and the contractlint anchor read it), and the dev one-liner is out of the skill per AC-7.
+
+### Summary
+
+Landed the composed convention as prose in the three declared files — 0 Go, 0 product LOC, surface 33 added lines against a ~35-line combined estimate. One entry shape carries surface deviation and findings disposition as adjacent fields, so the healthy response to review pressure (a recorded decline) and the pathological one (a narrowed AC) sit side by side in one record. The change does NOT fund itself: it needs 2,903 bytes the ratcheted files cannot give up without losing meaning, which is a captain call on re-baselining or re-scoping — I did not touch the baseline, relocate prose to dodge the check, or force a trim.
