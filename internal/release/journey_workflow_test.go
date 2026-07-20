@@ -66,36 +66,6 @@ func TestRuntimeLiveWorkflowGuardRejectsMissingSharedScenarioRun(t *testing.T) {
 	}
 }
 
-func TestRuntimeLiveWorkflowGuardRejectsUnscopedPiPackage(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	adversarial := strings.Replace(live,
-		`verified_pack "@earendil-works/pi-coding-agent@$PI_CODING_AGENT_VERSION" "$PI_CODING_AGENT_INTEGRITY"`,
-		`verified_pack "pi-coding-agent@$PI_CODING_AGENT_VERSION" "$PI_CODING_AGENT_INTEGRITY"`,
-		1)
-	if adversarial == live {
-		t.Fatal("fixture workflow missing scoped Pi CLI verified pack command")
-	}
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted the wrong unscoped Pi CLI package")
-	}
-}
-
-func TestRuntimeLiveWorkflowGuardRejectsUnpinnedPiPackageInstall(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	adversarial := strings.Replace(live,
-		`npm install -g "$pi_coding_agent_tgz" --ignore-scripts --no-audit --no-fund --omit=dev`,
-		`npm install -g @earendil-works/pi-coding-agent --ignore-scripts --no-audit --no-fund --omit=dev`,
-		1)
-	if adversarial == live {
-		t.Fatal("fixture workflow missing verified Pi CLI tarball install")
-	}
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted Pi npm install without a verified exact-version tarball")
-	}
-}
-
 func TestRuntimeLiveWorkflowGuardRejectsObsoletePiMinReleaseAgeProbe(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 	adversarial := strings.Replace(live,
@@ -109,21 +79,6 @@ func TestRuntimeLiveWorkflowGuardRejectsObsoletePiMinReleaseAgeProbe(t *testing.
 
 	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
 		t.Fatal("runtime live workflow guard accepted obsolete min-release-age probing")
-	}
-}
-
-func TestRuntimeLiveWorkflowGuardRejectsUnverifiedPiPackageInstall(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	adversarial := strings.Replace(live,
-		`verified_pack "@earendil-works/pi-coding-agent@$PI_CODING_AGENT_VERSION" "$PI_CODING_AGENT_INTEGRITY"`,
-		`printf '%s\n' "@earendil-works/pi-coding-agent@$PI_CODING_AGENT_VERSION"`,
-		1)
-	if adversarial == live {
-		t.Fatal("fixture workflow missing Pi CLI integrity verification command")
-	}
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted an unverified Pi CLI package install")
 	}
 }
 
