@@ -369,3 +369,27 @@ mechanical option because the sprint requires the contract to carry the declarat
 ever setting its value; the frontmatter/levels alternatives are named but recorded as
 losing. A concrete doc diff for the dev README (`## Stakes` section + a Reading-sections
 mechanism note) is in the body for implementation to apply.
+
+## Stage Report: ideation (cycle 2)
+
+Revised against captain gate feedback (three design questions). Problem, approach, ACs, and
+test plan updated together per the ideation stage rules.
+
+- DONE: Q1 — lifecycle/governance and the `none declared` default designed explicitly
+  Added `### Mechanism` "Governance" (the declaration is a captain-declared fact — FO may scaffold the heading, value changes only with captain sign-off, no agent infers/rewrites; convention not a code author-gate, which is out of scope) and "The `none declared` default is explicit" (the marker carries its own directive: apply stage-def rigor and no more, do not infer project stakes, ask the captain to declare — caps inference at the written stage-def rigor instead of reinstating silent max-rigor). Reflected in the Problem corollary, the README note doc-diff, and new AC-5 (presence-toggle swaps section↔directive marker).
+- DONE: Q2 — read cost confirmed as a one-liner in Mechanism
+  Added "Read cost — no extra roundtrip for any consumer": inline at build time (no `show-stakes` fetch line), boot rides the existing `--boot` read (verified: the `--boot` path already parses `definitionDir/README.md` for the stage taxonomy — `internal/status/handlers.go:438`), reviewers inline. Net added tool calls: zero.
+- DONE: Q3 — stage-differential decided, losing alternatives named
+  Decision: uniform workflow-level declaration; per-stage depth stays in the stage definitions (already carried via the `show-stage-def` fetch line) and the declaration's derived-policy prose composes with them (spike carve-out). Losing: per-stage-aware injection (duplicates + couples to the stage taxonomy + splits the source) and a per-stage table in the declaration (bloats a workflow fact, carried into stages it does not apply to). Pinned by AC-1(d): the block is byte-identical across ideation and validation. Dev `## Stakes` derived-policy updated to state the composition.
+
+### Summary
+
+Cycle-2 revision addresses all three captain questions without enlarging the surface: the
+governance and default semantics are convention + a self-documenting `none declared` marker
+(no new code gate), read cost is confirmed zero-extra-roundtrip against the actual boot code
+path, and the stage-differential resolves to uniform injection with per-stage rigor left in
+its existing home (the stage definitions). ACs grew by one (AC-5, the presence-toggle) and
+AC-1 gained a stage-invariance clause; both are behavioral (branch selection driven by the
+README's section presence), not prose-greps. No mechanism, spike result, or the two-axis
+recommendation changed — the additions are default/governance/stage-composition semantics the
+original design implied but had not stated.
