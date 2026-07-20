@@ -242,3 +242,29 @@ Delivery mechanism unchanged from the approved design: the block heads the `--fe
 ### Summary
 
 Landed the consumption rule and decline disposition at the trigger — a standing block in the feedback delivery path plus the `docs/dev/README.md` in-stage bullet — with `ensign-shared-core` untouched, so the always-loaded contract gains nothing, as designed. The decline is a field on bw's correction-round entry, not a second section: an all-declines round now has a real recorded state instead of an empty field, which is the case this entity exists for. The one unmet criterion is byte funding: +2,192 measured bytes with no honest trim available in the ratcheted files, which needs a captain decision (re-baseline, or promote the deferred `dispatch build` block that would carry the rule at zero FO-loaded cost) rather than a trim that deletes meaning.
+
+## Park record (captain decision, 2026-07-21)
+
+**PARKED for this train — a redesign candidate, not a rejection.** The rule and its all-declines requirement stand as gated; only the delivery mechanism is in question. The implementation was landed, suite-green on every check except the byte ratchet, and then withdrawn from the branch when the captain shipped the sibling `bw` alone.
+
+**Reason.** The deliverable is correct and validated in design, but its standing block costs ~2.0 KB on a ratcheted contract surface whose total recoverable redundancy measured 110 bytes across all 13 files. The captain identified a better home: **3k's advisory gate-resolution record**, where the findings disposition becomes per-entity structured metadata rather than always-loaded contract prose. That reframes the cost — a per-entity record carries no standing prompt-surface weight at all, which is the objection this member could not answer by trimming.
+
+**What the withdrawal removed** (commit 457b910d on `spacedock-ensign/feedback-cycle-record-command`, reverting the parts of ee4a23cf this member owned): the `## Finding-triage block` standing section and its findings-routing amendment in `skills/feedback-rejection-flow/SKILL.md`; the `findings` clause in the entry format and the all-declines spec prose; the implementation stage-def triage bullet in `docs/dev/README.md`. `skills/ensign/references/ensign-shared-core.md` was never touched, so the zero-always-loaded-delta criterion held throughout.
+
+### Specification preserved for a 3k-based redesign
+
+This is the design the composition proved out, kept whole so the park costs no design work. A redesign implements this record, not this prose.
+
+**The disposition field, on the correction-round entry** — sibling to bw's `AC {unchanged | narrowed}`, so the healthy response to review pressure and the pathological one sit adjacent in one record:
+
+    findings {none | {F} fixed, {D} declined: <ref · class · why not material · promotes when>}
+
+**The all-declines semantics** — the case this member exists for. `findings none` means no finding arrived. An all-declines round records `0 fixed` and names each decline with its class, why it is not material, and its promote condition. "Nothing was found" and "everything found was declined" are different facts and must never render alike; an all-declines round is the ideal outcome and must leave a real recorded state, not an empty or absent field.
+
+**The recording extension** — a round records an entry whenever it produces a disposition, fixes **or** declines, not only when it triggers another pass. Without this an all-declines round leaves no record at all.
+
+**The rule text** (validated whole, and it passed every contractlint anchor, host-neutrality, and ordered-procedure check while it was on the branch): review findings are inputs to triage, not a fix list; a review finding is defined **by reference** — the output of a review instance the active stage's definition declares, or feedback the first officer explicitly routes as a review outcome — and a direct captain instruction is explicitly NOT a finding but an order to follow or a decision to seek; classification runs against the workflow's declared taxonomy where one exists plus the entity's own value ACs; **material** (breaks a value AC or a declared non-negotiable boundary reachable through the supported workflow) is fixed; **correct-but-disproportionate** gets a recorded decline naming the finding, its class, why it is not material, and what would promote it; **needs decision** escalates to the first officer rather than being resolved privately; a finding neither fixed nor recorded is not triaged; and **narrowing an acceptance criterion to make a finding or rejection pass is not a licensed disposition** — it is a design-reset event requiring the captain's sign-off, recorded so it is captain-visible, never a task-internal edit.
+
+**Dev-instance anchor** (unchanged): the committed taxonomy is the `validation` stage-def release-scope classification plus `.roborev.toml`'s four-field evidence record — released user and workflow; observable harm; affected value AC or non-negotiable boundary; trigger evidence. The spike's Case A (the archived symlink finding → declinable) and Case B (a value-AC break → material) remain the AC-2 fixture seed and still discriminate without a stakes field.
+
+**Carried forward unchanged:** AC-1's live replay (a decline path with zero product LOC against incident 13's non-zero dutiful fix), AC-2's offline classification check, and the out-of-scope boundaries — no FO enforcement check, no schema or lint, no second record section, no stakes dependency. AC-3's landing-placement audit is the one criterion a 3k-based redesign would restate, since the delivery surface is exactly what changes.
