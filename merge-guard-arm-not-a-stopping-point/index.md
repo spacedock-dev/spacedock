@@ -132,3 +132,16 @@ The edit lands in `fo-merge-core.md`; the parallel check-ordering task (z7) edit
 ### Summary
 
 Confirmed the seed spec and pinned it to a gate-ready ideation: a single keep-moving clause added to `fo-merge-core.md`'s `«merge.guard»` making an armed result not a turn-end, with verbatim before/after wording placed after the `→ shipped` bullet and no deletions. Value AC-1 measures the behavior (no contract reading licenses parking at armed or re-asking a granted push) against the two real parking incidents as baseline, proved at the captain-judgment level — no new machinery, consistent with this sprint's thesis. Edit is in a different file from the parallel check-ordering task (z7), so the merge is trivial.
+
+## Stage Report: implementation
+
+- DONE: The keep-moving clause lands in the «merge.guard» capability of skills/first-officer/references/fo-merge-core.md, word-for-word from the entity body's "**After**" block, placed immediately after the `→ shipped` bullet.
+  Commit fb3058c6 on `spacedock-ensign/merge-guard-arm-not-a-stopping-point`; clause is `fo-merge-core.md:18`, directly after the `→ shipped` bullet (line 16) and before the `«worker.shutdown»()` paragraph. Verbatim confirmed by `diff` of entity line 99 (leading indent stripped) against shipped line 18: byte-for-byte identical, exit 0.
+- DONE: `git diff origin/main` for this branch adds only that clause: zero deletions, zero rewrites of existing bullets (this is AC-2's own test, not a style preference).
+  `git diff --numstat main` (this branch's base commit 972129ac) = `2	0	skills/first-officer/references/fo-merge-core.md` — one file, 2 insertions, 0 deletions. The wider `git diff origin/main` also lists 6 sprint-0260 files (.roborev.toml, docs/dev/README.md, docs/roadmap/0260-proportionality/*) — those are pre-existing commits already on local `main`, the branch base, not this branch's work; `git diff --numstat main` isolates it.
+- DONE: The stage report states the ACTUAL surface (files touched, lines added/deleted) against the declared 1 file / ~2 lines added / no deletions.
+  Actual: 1 file, +2 / -0 (the clause paragraph plus its blank separator). Declared: 1 file, ~2 lines added, no deletions. Exact match — 1.0x of declared surface, well inside the default 2x tolerance. No re-scope, park, or escalation needed.
+
+### Summary
+
+Added the one clause verbatim to `«merge.guard»` in `fo-merge-core.md` at the pinned site; nothing else touched. AC-2's mechanism test holds exactly (1 file, +2/-0, no bullet rewritten, done-when left intact per the ideation's "Why not edit the done-when instead?"). AC-1's adversarial read-through was run against the after-text: the four park-licenses a skeptic can build from the file alone — done-when's "left it armed... with its next step named", effect's "Invoke it once per phase", the mod-block guard's "on boot means a merge is mid-flight" (a crash-recovery path, not a sanction), and "captain-gated PR" read as permission-before-opening — each fails against the clause, which binds the turn boundary separately from the per-invocation done-when and names the only legitimate halt as the captain's decision on an already-presented PR. Two sanctioned next-moves remain, as AC-1 requires. No new mechanism, check, or terminology introduced.
