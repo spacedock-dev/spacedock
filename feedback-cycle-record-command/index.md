@@ -1,10 +1,10 @@
 ---
 id: bwr6j6edkmfx5sbz73cr2952
 title: Feedback-cycle record and design-reset gate — binary-owned count, diff-growth refusal, reframe routing
-status: backlog
+status: ideation
 source: "captain (2026-06-04) — forked from xa (feedback-guarantee-binary-gate) per the roadmap-the-decision + separate-build-task call. xa's ideation determined Candidate 1 (3-cycle escalation) is mechanizable via a dedicated cycle-record command (a spike disproved a --set status guard) and Candidate 2 (budget-probe) is not. This task SHIPS the Candidate-1 guard; xa closed as a roadmap decision."
 score: "0.30"
-started:
+started: 2026-07-20T03:29:33Z
 completed:
 verdict:
 worktree:
