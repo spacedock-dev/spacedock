@@ -355,7 +355,33 @@ What remains is rule text with no padding left in it: the entry format itself, t
 ### Feedback Cycles
 
 - Cycle 1: RE-SCOPE — captain, on the implementation stop; surface 3 files/15 lines vs estimate 3 files/~17 lines (88%); AC unchanged — the composed-entry scope was re-cut by captain decision (02av parked), not narrowed under review pressure; every AC of this entity stands as gated.
+- Cycle 2: RECONFIRM — captain, on the escalated byte-ratchet stop; surface 4 files/18 lines vs estimate 3 files/~17 lines (106%); AC unchanged — the estimate holds; the single Go-file line is the ratchet baseline the captain approved re-setting, not scope growth.
 
 ### Summary
 
 Re-scoped to bw alone and re-measured, as directed. Withdrawing 02av's fields took the overrun from 2,903 bytes to 206 — the re-scope recovered 94% of it, which is what the team lead predicted. The convention now ships as the correction-round record it was gated as: declared estimate, per-round actuals, deviation against that estimate, AC-drift, and a recorded design-reset decision past tolerance. The `- Cycle {N}:` leading form is unchanged, so the shipped 3-cycle escalation lane still reads a conforming entry with no fixture or assertion edited. The entry above is this entity practicing its own convention on the round that produced it.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: `foFunctionReferenceBaselineBytes` in internal/contractlint/fo_function_reference_invariant_test.go is raised to accommodate the measured surface with a small working margin, in its own commit whose message states what grew and why the estate's budget is being re-set rather than the change trimmed — one constant, nothing else in that file, no other Go file touched.
+  Commit f2c5a40e, `1 file changed, 1 insertion(+), 1 deletion(-)`: 122,634 → 123,323. Margin 507 bytes of usable headroom under the strictly-below comparison — the number main carries today (122,634 − 1 − 122,126), so the ratchet re-arms at unchanged tension and funds this member's landing only, not a next train.
+- DONE: The `«feedback.route»` edit in first-officer-shared-core.md is verified against z7's LANDED text (z7 merged as PR #540; the branch has been rebased onto it), not the pre-merge copy it was authored against — re-anchor if z7's final round moved that section.
+  No re-anchor needed, and this is not a rebase-clean inference: `git show 45f54678 -- .../first-officer-shared-core.md` has hunks at `@@ -94,7` (`«gate.assemble-verdict»` block line) and `@@ -106,11` (State Management) that BRACKET the `«feedback.route»` section without touching it, so the two lines the edit rewrites are the same two lines z7 landed. z7 did not touch `feedback-rejection-flow/SKILL.md` at all. Semantically the edit sits with rather than against z7's landed "Prefer the cheapest check that can fail" ordering — this cut is prose plus a reader, with the command deferred, which is that ordering applied.
+- DONE: `go test ./...` passes including TestFOFunctionPromptSurfaceShrinks, and the stage report records the final measured surface, the new baseline, the margin, and that the 0-Go self-check tripped and was resolved by an escalated captain decision.
+  `go test ./...` exit 0, 15 packages ok, no FAIL. `TestFOFunctionPromptSurfaceShrinks` PASS; the same assertion was RED at 122,815 vs 122,634 before the constant moved, so the pass is not vacuous — it fails again the moment the surface exceeds 123,322.
+
+### Final measurement
+
+Measured FO prompt surface **122,815** (`FO_FUNCTION_METRICS addresses=0 bytes=122815`); main measures 122,126, so this member's net is **+689** (skill +547, shared-core +142). New baseline **123,323**; largest passing value 123,322; **margin 507**.
+
+Final surface against the declared "~3 prose files, ~17 lines, 0 Go": `git diff --numstat main...HEAD` = **4 files, +18/−8** — `docs/dev/README.md` +2, `feedback-rejection-flow/SKILL.md` +13/−5, `first-officer-shared-core.md` +2/−2, and `fo_function_reference_invariant_test.go` +1/−1. Prose 3 files / 17 lines, exactly as declared; the fourth file and the eighteenth line are the baseline constant.
+
+### The 0-Go self-check: tripped, escalated, approved
+
+This member declared 0 Go LOC, and touching a Go file trips that self-check. It tripped, and that is the check doing its job — it exists to force a recorded decision before Go code enters a prose-only member, not to be waived by whoever is holding the keyboard. The sequence: the prior ensign hit the ratchet twice and STOPPED both times with numbers rather than shaving rule text (cycle 1, 2,903 bytes over; cycle 2, 206 over after the 02av re-scope recovered 94% of it), the FO escalated it as a call about the estate's budget, and the captain approved re-setting the baseline. Grounds recorded in f2c5a40e: the ratchet already collected its value this sprint — four members funded themselves, ~3,400 bytes of genuine redundancy harvested, one unaffordable payload killed, one delivery re-homed — and a duplication scan across all 13 measured files then returned only 110 bytes, because the seam is already harvested. The residual buys no leanness; closing it means cutting rule text. Governance, not gaming.
+
+Nothing else moved: no new committed check, gate, or lint; no test logic; no minted terminology; 02av's parked material untouched. The one residue left deliberately, per the one-constant instruction: the failure message still calls the number the "post-#531 baseline", which is now a stale label.
+
+### Summary
+
+Raised the ratchet baseline to 123,323 in its own commit (f2c5a40e) with the grounds in the message, verified the `«feedback.route»` edit against z7's landed text by reading z7's actual hunks rather than trusting a clean rebase, and confirmed `go test ./...` green with the ratchet included. The four preserved properties survive untouched — the `- Cycle {N}:` leading form that satisfies both the convention and the shipped `feedback-3-cycle-escalation` assertion, the cycle-3 escalation clause, the dev one-liner staying out of the generic skill per AC-7, and the sentence pinning deviation to the approved estimate rather than the prior round. The `### Feedback Cycles` entry above records this round as a RECONFIRM, so the entity keeps practicing its own convention on the round that produced it.
