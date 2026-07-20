@@ -3,7 +3,7 @@ title: Approved-pending blockers, execution holds, and dispatch eligibility for 
 status: backlog
 source: "Split from the gate-recorder task (3k), captain-approved 2026-07-21. Carries 3k's original seed concern (captain design feedback 2026-07-13: an approval evaporated while its dispatch stayed blocked)."
 id: h1y616vjh64wc961z5t1031d
-sprint: 0270-durable-decisions
+sprint: durable-decisions
 group: recorder
 ---
 
