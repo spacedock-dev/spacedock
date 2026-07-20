@@ -6,6 +6,8 @@ started: 2026-06-29T00:00:00Z
 completed:
 verdict:
 worktree:
+sprint: 0260-proportionality
+group: test-cleanups
 ---
 
 Single-fixture design proof for AC-2: gate must reject when means-only AC is paired with regressed end-value.
