@@ -158,3 +158,33 @@ Three findings. One accepted and fixed; two declined with a zero-line diff.
 ### Final surface
 
 **6 `_test.go` files, +8 / -145 (net -137)** against the declared 6 files / six deletions + two narrowings / ~-135/+0. Inside the default 2x tolerance; no reconfirm/re-scope/park/escalate. The only added non-comment line in the whole branch is the renamed `func TestStateCommitHaltStderrCarriesPeerCommit(t *testing.T) {`, which replaces the removed old signature — `git diff main -- . | grep '^+[^+]' | grep -v '^+\s*//'` returns that one line. Still no production code, no non-test file, no new assertion, test, check, gate, or lint. `go test ./...` green across all 17 packages after the rename.
+
+## Stage Report: validation
+
+- DONE: Every AC-N is verified with evidence you REPRODUCE yourself. Re-run the mutation matrix independently — for each of the 10 rows, seed the named one-line break at the named file:line, observe the named sibling go RED with the quoted failure, revert, observe GREEN
+  10/10 reproduced from a clean `db34be27` tree by an independently written driver (seed → `go test <pkg> -run '^<Sibling>$' -count=1` → `git checkout --` → re-run): 10/10 mutants RED, 10/10 reverts GREEN, `git status --short` empty after. Every named `file:line` matched the expected source text (the driver hard-fails on seed mismatch), so the cited locations are accurate. AC-1 holds: no behavior mutation survives.
+- DONE: Run the offline lane (`go test ./...` and `go test ./... -race`) and report the result; also confirm the FO prompt-surface ratchet test still passes
+  `go test ./... -count=1` green (15 packages with tests + 2 without); `go test ./... -race -count=1` green, same 17. No package broke on a helper or fixture the deleted tests carried. `TestFOFunctionPromptSurfaceShrinks` + `TestFOFunctionReferenceInvariant` + `TestFOFunctionReferenceCheckpointMetrics` PASS (run explicitly, not inferred). AC-2's targeted lane `./internal/cli/... ./internal/dispatch/... ./internal/ensigncycle/...` green. Captain's pi-lane-red waiver cited but not needed — nothing red anywhere.
+- DONE: Check that BOTH roborev declines are properly RECORDED with grounds and promote-to-material conditions, and that the accepted rename left no stale reference to the old test name
+  Both recorded with lettered grounds and an explicit promote-to-material condition. Decline 1's factual claim reproduces exactly: `grep -rl 'bare_mode\|--bare-mode\|BareMode' internal --include='*_test.go'` → 24 files, `build_pi_host_test.go` drives `host: pi`. Decline 2's reproduces exactly: `state_sync.go:228-229` are the SOLE production emitters and `state_ready_test.go:115,118` the SOLE surviving assertions. Rename clean — no reference to the old name survives; the two `CarriesRemediationAndPeerCommit` hits are `TestStateReadyHaltStderrCarriesRemediationAndPeerCommit`, a different test whose name is still accurate. The `state_ready_test.go:115` next-train observation is recorded and untouched.
+
+### Surface and claim checks
+
+`git diff --numstat main...HEAD` → exactly the 6 declared `_test.go` paths, 8 insertions / 145 deletions; the only added non-comment line is the renamed func signature. No production code, no non-test file, no added assertion. Two entity claims independently confirmed rather than taken on trust: the deleted `TestRuntimeSupportDocsKeep…` was a pure `os.ReadFile` grep over `docs/runtime-support.md` invoking zero production code, and the filing-template README parsed by the narrowed test is the test's own `filingReadme()` fixture written into `t.TempDir()` — so the removed heading assertions had zero production coverage.
+
+### Deferred risk (does not block)
+
+**Top-level help CONTENT has no surviving guard.** Measured, not assumed: five seeded edits to `topLevelHelp` (`internal/cli/help.go`) — drop the `new` row, drop the `completion` row, drop the `Setup` group header, reorder the group headers, inject the banned jargon `META` — all SURVIVE a full `go test ./... -count=1` on the branch. Confirmed as a real delta: restoring `main`'s `cli_test.go`/`verbs_test.go` against the same seed turns `TestTopLevelHelpGroupedJargonFree` RED. Counter-datum: dropping the `merge guard` row IS caught, by the surviving `internal/cli/merge_test.go:106`. Why deferred, not material: AC-1 scopes to behavior mutations, and none of the five changes any behavior — the commands keep working, and matrix rows 6a/6b prove `new` and `completion` are themselves pinned behaviorally; no machine consumer parses this help. This is the measured form of the already-adjudicated roborev decline 1, attached as numbers rather than reversed. Promote-to-material: an observed help-content regression that reaches a user, or a machine consumer begins parsing top-level help.
+
+### Polish (does not block)
+
+- Matrix row 6a's recorded failure quote is not byte-reproducible. The seed "`cli.go:328` `new` alias forwards `--nope`" does not pin where `--nope` goes; my placement yields `verbs_test.go:30: new exit=1 stderr="Error: --new requires a slug argument"` rather than the recorded `verbs_test.go:33: new stdout = …`. Same sibling, same RED, under-determined transcript.
+- Two retained siblings are themselves the third shape: `merge_test.go:106` (help-row grep) and `dispatch/help_test.go:10` (help-content grep). Correctly outside the declared 8 — noting for the next-train ledger beside the already-recorded `state_ready_test.go:115`.
+
+### Recommendation: PASSED
+
+Material findings: none.
+
+### Summary
+
+Re-ran the AC-1 mutation matrix independently rather than accepting the recorded table: all 10 rows reproduce, mutant RED and revert GREEN, from a clean tree that stayed clean. No behavior mutation survives the deletions, so no real regression coverage was dropped and the central question this stage exists to answer is settled in the implementation's favor. Both offline lanes (`./...` and `./... -race`) are green across all 17 packages and the FO prompt-surface ratchet still passes; both roborev declines are honestly recorded with grounds and promote conditions, and each decline's load-bearing factual claim reproduces exactly. The one substantive residual — top-level help content is now unguarded, proven by five surviving seeded edits — is a wording-drift deferred risk under AC-1's own behavior/rewording line, already adjudicated at the approved gate; recorded with its exact trigger and promote condition rather than reopened.
