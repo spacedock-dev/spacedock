@@ -88,19 +88,21 @@ Both treat the arm→hook transition as a stopping point (park the arm, or re-as
 
 ### What ships
 
-Two edits to the same `«merge.guard»` capability in `skills/first-officer/references/fo-merge-core.md`: the `block:` bullet gains the conflict blocker, and the `effect:` bullet drops a restatement of its own heading to fund it.
+Two edits in `skills/first-officer/references/fo-merge-core.md`: the "## Merge and Cleanup" paragraph — which describes the HOOK path, where the merge actually runs — gains the conflict instruction, and `«merge.guard»`'s `effect:` bullet drops a restatement of its own heading to fund it.
 
 **Before:**
 
+    `«merge.guard»` never invokes `«hooks.run»("merge")` and never local-merges. When armed, the FO invokes `«hooks.run»("merge")`: the `merge: local` registration performs `--no-ff merge`; `merge: pr` opens the captain-gated PR. …
     - **effect:** drive the terminal merge-finalize ceremony — auto-arm, block on an open PR, finalize on a merge sentinel, then archive (including the path-scoped archive commit) — the same under both `merge:` policies. Invoke it once per phase. …
-    - **block:** `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten.
 
 **After** (this is the shipped text, byte-identical to `fo-merge-core.md`):
 
+    `«merge.guard»` never invokes `«hooks.run»("merge")` and never local-merges. When armed, the FO invokes `«hooks.run»("merge")`: the `merge: local` registration performs `--no-ff merge` — on conflict, surface it and stop, never auto-resolve; `merge: pr` opens the captain-gated PR. …
     - **effect:** drive the terminal merge-finalize ceremony (including the path-scoped archive commit), the same under both `merge:` policies. Invoke it once per phase. …
-    - **block:** `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten. A `--no-ff` merge conflict is a blocker: surface it and stop, never auto-resolve.
 
-**Surface:** 1 file, +2/−2 lines, **net +1 byte** of FO prompt surface (122231 → 122232 against a 122634 ceiling). The `effect:` trim is genuine: the heading directly above it already reads "auto-arm → block-on-open-PR → finalize-on-merge-sentinel, then archive", so the bullet restated it verbatim in substance.
+**Attribution matters here and was gotten wrong once.** The instruction first shipped in `«merge.guard»`'s `block:` bullet, which describes when the GUARD refuses. But the same file states that `«merge.guard»` never invokes the merge hook and never local-merges — the `merge: local` registration performs the `--no-ff merge`. A conflict is therefore something the FO hits on the hook path, not something the guard blocks on. It now sits on the sentence that describes that path. See "Review findings (roborev, substituted payload)".
+
+**Surface:** 1 file, +2/−2 lines, **net −24 bytes** of FO prompt surface (122231 → 122207 against a 122634 ceiling) — the change returns headroom rather than spending it. The `effect:` trim is genuine: the heading directly above it already reads "auto-arm → block-on-open-PR → finalize-on-merge-sentinel, then archive", so the bullet restated it verbatim in substance.
 
 ### PARKED — NOT SHIPPED — do not carry this forward
 
@@ -118,7 +120,7 @@ These describe WHAT SHIPS. They are NARROWER than the criteria this entity was a
 - Test: blind A/B read-through, baseline established by production-shaped readers, no new machinery. RUN in implementation cycle 2 — 3 readers per arm, pre-registered coding rule. Before-text 0/3 surfaced to the captain (3/3 looped back to `«merge.guard»`, citing the boot-time Mod-Block Guard clause); after-text 3/3 surfaced and stopped. Baseline moved.
 - Known limit, recorded rather than hidden: the same probe returned a NULL on the force-restraint dimension — 6/6 readers across both arms already refused to auto-resolve. The restraint half of the bullet is therefore belt-and-braces, not evidence-backed.
 
-**AC-2 (mechanism — serves AC-1).** `«merge.guard»`'s `block:` bullet in `fo-merge-core.md` names a `--no-ff` merge conflict as a blocker to surface and stop on, and the change pays its own way on the FO prompt-surface ratchet.
+**AC-2 (mechanism — serves AC-1).** `fo-merge-core.md` directs the FO to surface a `--no-ff` merge conflict and stop, attached to the HOOK path that performs the merge (not to `«merge.guard»`, which never local-merges), and the change pays its own way on the FO prompt-surface ratchet.
 - Test: `go test ./...` green including `TestFOFunctionPromptSurfaceShrinks`, with the FO surface total recorded before and after. Net cost must be ≤ the 81-byte `effect:` trim that funds it.
 
 ### Original value claim — NOT DELIVERED
@@ -287,3 +289,30 @@ Declared at ideation: 1 file (`fo-merge-core.md`), ~2 lines added, no deletions.
 ### Summary
 
 Shipped the alternative the captain selected, exactly as verified and no wider: the `«merge.guard»` `block:` bullet now names a `--no-ff` merge conflict as a blocker to surface and stop on, funded by trimming the `effect:` bullet's verbatim restatement of the heading directly above it. Rebased onto current main before measuring, because the base had moved from 122430 to 122231 and the old figure no longer applied; the shipped state measures net +1 byte with the full suite green. The originally approved payload is parked and recorded as a design-reset event rather than tidied away: the original AC-1 is preserved verbatim as NOT DELIVERED, with both grounds (no probe moved its baseline; it could not fund its 844 bytes), the explicit caveat that a careful-reader probe structurally cannot detect the context-pressure failure both production incidents actually exhibited, and the two incidents recorded as still unaddressed. Follow-up work is referenced as `probe-armed-parking-under-context-pressure`.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: ACCEPTED — re-home the conflict clause from `«merge.guard»`'s `block:` bullet to the hook path that performs the merge.
+  The finding was right and it was my line. `fo-merge-core.md:7` states that `«merge.guard»` never invokes `«hooks.run»("merge")` and never local-merges; the `merge: local` registration performs the `--no-ff merge`. A conflict there is not something the guard blocks on, so the `block:` bullet — which describes when the guard refuses — was the wrong owner. The instruction now rides the sentence that describes the hook path, unchanged in force: "on conflict, surface it and stop, never auto-resolve". Commit on branch; shipped text mirrored byte-identically into "### What ships".
+- DONE: Stay byte-neutral or better; re-measure and confirm the ratchet.
+  Better. Base 122231, shipped **122207 — net −24 bytes**, so the change now returns headroom instead of spending it (the re-homed wording is 57 bytes against the 81-byte `effect:` trim that funds it; the previous placement cost 82). `TestFOFunctionPromptSurfaceShrinks` PASS. `go test ./...` green: 17 packages, zero FAIL. Main had not moved (still bdf39f01), so no rebase was needed; confirmed rather than assumed.
+- DONE: Record the two declines.
+  Both below, with grounds, promote conditions, and zero-line diffs.
+
+### Review findings (roborev, substituted payload)
+
+**ACCEPTED — misattribution.** See the cycle-4 checklist item above. Precision defect, not behavioral: the 3/3 after-text probe result stands, because what readers acted on was the instruction to surface and stop, not the bullet it hung from. But a reader taking the old placement at face value would conclude the guard handles the conflict, and it demonstrably does not.
+
+**DECLINED 1 — "the contract allows an armed guard result to appear to be a stopping condition; a normal local merge could therefore halt after arming."** This is the parked payload restated. Not reinstated: the parking decision stands on both recorded grounds, and neither has changed — no probe moved its baseline, and it cannot fund its 843 bytes. Diff contribution: zero lines.
+
+  **But this is new evidence and it belongs on the record.** Roborev reached that conclusion INDEPENDENTLY and cold, reading only the current contract text, with no knowledge that the paragraph existed or had been parked. That is a third independent read finding the gap real — after the seed's two production incidents.
+
+  What it corroborates, precisely, because the distinction is the point: the probes asked readers to ACT ("what do you do next?") and 3/3 acted correctly — behavioral evidence, and it was NULL. Roborev asked whether the TEXT is ambiguous and found that it is — textual evidence, and it is POSITIVE. Both are true at once. Together they support the reading that **the instrument was too weak**, not that the claim is false: a careful reader resolves the ambiguity correctly, so a careful-reader probe cannot surface it as a behavior failure. The failure needs context pressure to appear, which is what the two production incidents had and no probe so far has reproduced.
+
+  This is corroborating evidence for `probe-armed-parking-under-context-pressure` and should be carried into it. It is NOT grounds to reverse the park — it strengthens the case that the problem is real while leaving both parking grounds untouched.
+
+**DECLINED 2 — "add behavioral smoke tests for armed continuation and conflict termination."** Same disposition as the identical proposal in roborev's first review of this branch, on the same grounds: a new committed check needs explicit captain approval and normally its own entity; standing up merge-workflow smoke harnesses for a two-line contract edit is the scope inversion this sprint prices; and the cheapest check that can fail already exists — the dev workflow requires a live drive before a contract change is marked PASSED. Promote to material on an observed live drive where the shipped instruction fails to produce surface-and-stop on a `--no-ff` conflict. Diff contribution: zero lines.
+
+### Summary
+
+Fixed the one accepted finding: the conflict instruction was attributed to `«merge.guard»`'s `block:` bullet, but the guard never performs the merge, so it now rides the sentence describing the hook path that does. Force of the instruction is unchanged and the probe result is unaffected. The re-homing came in cheaper than the placement it replaced — the entity now measures net −24 bytes against its base, returning headroom rather than consuming it, with the suite green and the ratchet passing. Both declines are recorded with grounds and zero-line diffs. The lead decline matters beyond bookkeeping: roborev independently and cold reached the same conclusion as the parked paragraph, which is textual corroboration that the gap is real even though the behavioral probes returned null — evidence that the instrument was too weak rather than that the claim was false, carried by name to `probe-armed-parking-under-context-pressure` and explicitly not treated as grounds to un-park.
