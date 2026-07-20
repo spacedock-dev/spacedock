@@ -1,7 +1,7 @@
 ---
 id: 2686bggef0qz5hsrft2aks0t
 title: Restore pi-live lane green by resolving the pi-subagents/pi-coding-agent version skew
-status: implementation
+status: validation
 source: c6 validation cycle-7 live-lane triage, 2026-07-20
 started: 2026-07-20T13:56:42Z
 completed:
