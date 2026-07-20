@@ -10,6 +10,8 @@ verdict:
 worktree: .worktrees/spacedock-ensign-codex-fresh-spawn-live-boundary
 issue:
 id: 6cc3rvfd44y6x3352hh21v8b
+mod-block: merge:pr-merge
+pr: "#534"
 ---
 
 The title and source are historical frontmatter. Captain review withdrew the generic fresh-spawn premise: the cited direct `spawn_agent` call was ad-hoc research, not a Spacedock worker dispatch, so it is not evidence that the v0.25.1 dispatch boundary failed. No global `PreToolUse` fork guard belongs in this ticket.
