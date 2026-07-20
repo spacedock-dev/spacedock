@@ -15,3 +15,14 @@ group: ladder
 {Ideation fills in. Evidence: 11-phrase contract-presence test (bef9653f:496-509) as the clause's cheapest compliant response; flake→4 open PRs (ab6c437e); ProfileLeaseV1 minted for a throwaway smoke test; "I dressed it up to make it sound principled" (bef9653f:507). Subject to the 0250 leanness constraint: net contract bytes measured, lazy-loaded over boot-resident.}
 
 Live propagation example for the identifier clause (0260 shaping session, 2026-07-20): the FO's dispatch prompt for a personal-instructions audit itemized the audit dimensions as "A. … B. … C. … D. …"; the worker faithfully propagated those letters into its report ("Class: A + C" in the summary table, "## A." section headers), which then required a legend to read — caught by the captain, fixed by a revision round. The clause must therefore bind DISPATCH PROMPTS, not just captain-facing output: a scheme minted in a prompt becomes the vocabulary of every downstream artifact, and policing outputs alone catches it one propagation too late. This occurred in the same session that codified the rule, by the FO that codified it — minting is a default behavior under itemization pressure, not an occasional lapse.
+
+## Folded scope: smallest-sufficient-mechanism sharpening (absorbed from smallest-sufficient-mechanism-deterministic-fact-gate, 0260 re-lock 2026-07-20)
+
+Same contract region, one edit: the four tightenings from the absorbed entity ride this
+edit — (1) discriminate judgment calls from deterministic facts in the "independent
+adversarial verification" justification; (2) the "N agents != N confidence" corollary;
+(3) a session thoroughness directive (Ultracode) raises the bar on the answer, never the
+weight of the mechanism; (4) sized for the lazy-loaded reference file per the leanness
+constraint. Also per the re-lock: the fan-out checkpoint in this entity's scope REDUCES to
+a prose clause (surface before the Nth spawned entity/PR of one investigation) — no counter
+binary; a counter is speculative machinery against this sprint's own thesis.
