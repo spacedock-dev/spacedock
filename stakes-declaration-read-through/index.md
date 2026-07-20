@@ -1,33 +1,44 @@
 ---
 id: js6vwx74s0yg3vb88rekfkf8
 title: Stakes declaration read-through — a declared `## Stakes` reaches every dispatch packet and reviewer context
-status: ideation
+status: backlog
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.9"
 sprint: 0260-proportionality
 group: stakes
 started: 2026-07-20T01:44:22Z
 gates:
-  version: 1
-  current:
-    gate: gate:docs-dev:js6:ideation
-    attempt: gate-attempt:js6-ideation-1
-  records:
-    - id: gate:docs-dev:js6:ideation
-      stage: ideation
-      current-attempt: gate-attempt:js6-ideation-1
-      attempts:
-        - id: gate-attempt:js6-ideation-1
-          sequence: 1
-          state: open
-          briefing:
-            id: briefing:js6-ideation-1a
-            digest: sha256:6984a7e9a1809cfd9b34eafdcdf7b158c13fe23ae2088f3ce707781a7f3eaefa
-            room-ref: "./review/ideation"
-          note: "Captain reviewed via Subspace advisory float 2026-07-20 and took the leave-open (hold) action: decision held for captain/FO discussion of three fundamentals — declaration governance/evolution/default semantics, read cost (answered: zero added roundtrips), and stage-differential stakes. No resolution recorded; attempt remains open; revised briefing to follow the discussion."
+    version: 1
+    current:
+        gate: gate:docs-dev:js6:ideation
+        attempt: gate-attempt:js6-ideation-1
+    records:
+        - id: gate:docs-dev:js6:ideation
+          stage: ideation
+          current-attempt: gate-attempt:js6-ideation-1
+          attempts:
+            - id: gate-attempt:js6-ideation-1
+              sequence: 1
+              state: closed
+              briefing:
+                id: briefing:js6-ideation-1a
+                digest: sha256:6984a7e9a1809cfd9b34eafdcdf7b158c13fe23ae2088f3ce707781a7f3eaefa
+                room-ref: "./review/ideation"
+              resolution:
+                type: Resolution
+                id: resolution:captain-js6-ideation-1a-hold
+                briefing: briefing:js6-ideation-1a
+                by: person:captain
+                at: 2026-07-20T03:05:44Z
+                decision: hold
+                reason: Parked at the sprint re-lock essence test — the read-through's would-be consumers are already served (validators read per-entity value ACs; roborev injects its config posture line); spike evidence banked in the entity body for revival.
+              application:
+                action: none
+                state: not-applicable
+sprint-readiness: defer
 ---
 
-No rigor dial exists anywhere in the system: "prototype" has zero hits across the skills tree, so workers and reviewers default to maximum rigor regardless of what the project wants. The workflow README declares stakes (who depends on this, what a defect costs, derived test-depth/infra/materiality policies); the boot record exposes it; dispatch build injects it verbatim into worker packets and review context so an ensign or reviewer can cite it. The contract requires the declaration exists and flows — it never sets the value.
+A workflow's declared rigor posture never reaches the agents who make rigor decisions. The workflow READMEs already grew that posture — the high-stakes surface list, the proof policy, the workflow rules — but a dispatched worker or reviewer never sees the README, so they default to maximum rigor regardless of what the project already declared. This read-through gives the EXISTING declared posture reach: the boot record exposes it and `dispatch build` injects it verbatim into every worker packet and review context, so an ensign or reviewer can cite the posture the repo already declared. It mints no new stakes concept and sets no value — it carries what is already there, and where nothing is declared it injects nothing and says so.
 
 ## Problem
 
@@ -43,24 +54,23 @@ codex:019f5160-8969-75c1-a79c-244148b40a0e:472-523), a symlink-edge-case rejecti
 prototype (spacedock_subspace codex:019f63c6), and the audit's own finding that no
 frontmatter field, stage property, or boot-record key can carry a stakes signal.
 
-The fix is a single declared stakes signal that *reaches* the agents who make rigor
-decisions. This entity is the substrate the rest of the `stakes` group and the `triage`,
-`ladder`, and `template` groups cite: the read-through that carries a workflow's declared
-`## Stakes` from one source into the boot record and every dispatch packet, verbatim. It
-delivers the *flow*, not the value — the contract requires the declaration exists and is
-carried; it never decides what a project's stakes are — with one deliberate exception. A
-corollary the design must honor: the *absence* of a declaration resolves to a single fixed,
-system-declared default — **prototype-grade** (smallest sufficient test surface; no new
-enforcement infra without consent; lean triage). That default is a constant, never a per-diff
-agent inference; boot and every gate presentation carry a one-line visible nag until a
-declaration exists, so absence is loud and gets fixed rather than silently reinstating the
-max-rigor inference this field exists to stop.
+The fix is to give the posture the repo *already declared* reach to the agents who make rigor
+decisions — not a new signal. This entity is the substrate the `triage`, `ladder`, and
+`template` groups cite: the read-through that carries a workflow's existing declared-posture
+section from one source into the boot record and every dispatch packet, verbatim. It delivers
+the *flow*, not the value — it carries what the workflow declared and decides nothing. Where a
+workflow declares no posture section, the read-through injects nothing and labels the absence
+explicitly; the stage definitions and the committed finding-triage govern, exactly as they do
+today. (This reduction supersedes the earlier captain ruling of a fixed prototype-grade default
+plus a nag: the sprint re-lock, 2026-07-20, cut the stakes member from minting a new ontology
+to a read-through of existing declared posture, so absence needs no injected directive — the
+existing stage-def-plus-triage behavior already IS the default.)
 
 Two questions had to be settled before designing the flow, and both rest on unverified
-mechanisms, so they were spiked first (see **Spike results**): does a `## Stakes` section
-round-trip verbatim through the shipped README parser that boot and dispatch already use,
-and does a Claude worker actually receive an AGENTS.md digest (the assumed router channel)
-without it being planted in the packet?
+mechanisms, so they were spiked first (see **Spike results**): does an authored posture
+section round-trip verbatim through the shipped README parser that boot and dispatch already
+use, and does a Claude worker actually receive an AGENTS.md digest (the assumed router
+channel) without it being planted in the packet?
 
 ## Spike results
 
@@ -104,64 +114,55 @@ digest, is the substrate.
 
 ### Recommendation on the two design axes
 
-**Placement — a prose `## Stakes` section in the workflow README (not frontmatter, not
-both).** A stakes declaration is inherently multi-paragraph prose (who depends on this,
-what a defect costs, the derived test-depth/infra/materiality policy). A section carries
-that natively and is carried *verbatim* into a packet by the already-proven section
-extractor. The boot record exposes the section body as a JSON string, so it is machine-
-readable without a second representation.
+**Placement — a prose declared-posture *section* in the workflow README (not frontmatter).**
+A rigor posture is inherently multi-paragraph prose (which surfaces are promised, what a
+defect costs, what is outside the promise). A section carries that natively and is carried
+*verbatim* into a packet by the already-proven section extractor (Spike result 1). The boot
+record exposes the section body as a JSON string, so it is machine-readable without a second
+representation.
 
-- *Losing alternative — README frontmatter `stakes:` scalar.* It is trivially machine-read
+- *Losing alternative — a README frontmatter scalar.* It is trivially machine-read
   (`ParseFrontmatter` already parses README frontmatter), but a YAML scalar mangles multi-
   paragraph prose (escaping, block-scalar clutter, no markdown), and "carried verbatim into
-  the packet" is section-native, not scalar-native. The sprint's own artifacts name a
-  `## Stakes` *section* throughout. It loses on fidelity.
-- *Losing alternative — both (a machine flag in frontmatter plus the prose section).* It
-  loses to YAGNI and divergence risk: no consumer needs a machine-parseable stakes *level*
-  yet (the field is cited as text by triage/ladder/template), and two representations of one
-  fact in one README is exactly the divergence the sprint's "one source, never a fourth
-  copy" rule fights. Adopt frontmatter only if and when a consumer needs a typed level; the
-  section does not preclude adding one later.
+  the packet" is section-native, not scalar-native. It loses on fidelity, and nothing needs a
+  typed field yet; a section does not preclude adding one later.
 
-**Shape — an opinionated four-part declaration, NOT a bare level label and NOT a free-form
-hint.** The declaration carries four labeled parts (captain ruling): (a) who depends / what
-breaks; (b) promised surfaces — the high-stakes list; (c) the most-expensive defect classes;
-(d) what is explicitly outside the promise. The contract still "requires the declaration
-exists and flows, never sets the value": the four parts are *facts the project declares*, and
-rigor is *derived* by the reader's materiality triage against them — the system sets no rigor
-level. The one system-set behavior is the undeclared default (prototype-grade), which is a
-fixed constant, not an inference.
+**Content — a consolidation of the workflow's EXISTING declared posture, not a new stakes
+ontology.** The section carries what the repo already grew (the Proof policy's high-stakes
+surface list and defect-cost framing, the workflow rules), distilled into one readable place
+so it can travel. It is a restatement with a pointer to the authority, not an invented fact:
+the read-through gives existing declarations reach, it does not mint a rigor taxonomy. This is
+the sprint re-lock's reduction (2026-07-20) — "reach for declarations the repos already grew,
+not a new stakes ontology" — and it is why the cycle-2 four-part worked example survives here
+only as the *shape of the consolidation*, no longer as a new concept the contract introduces.
 
-- *Losing alternative — a bare level label (`prototype|production|critical`).* It loses on the
-  evidence: a "high" label does nothing for a high-stakes repo's actual failure mode. The 0260
-  HIGH incidents in spacedock_v1 were fabricated rigor (false-green presence tests) and rigor
-  spent on *unpromised* surfaces — a bare "high" would have *endorsed* both. The four-part
-  shape is exactly what lets materiality triage and the falsifiability rule bite AT high
-  stakes: (b) says which surfaces earn depth, (c) names the defect class a test must actually
-  catch, (d) says where NOT to spend rigor. A label carries none of that.
-- *Losing alternative — a free-form prose hint (cycle-2's design).* It loses on structure: an
-  unlabeled paragraph is readable but gives the downstream triage/ladder consumers no stable
-  parts to key on — "is this finding on a promised surface?" and "is this the costliest defect
-  class?" become re-derivations per reader. The four labeled parts are still prose (no enum,
-  no per-level machinery), so the "never sets the value" and leanness constraints hold, while
-  the structure makes the field usable by the groups that cite it.
+- *Losing alternative — minting a new stakes ontology (a `## Stakes` fact with its own
+  taxonomy, cycle-2's direction).* Rejected at the re-lock: the cycle-2 worked example proved
+  the ontology was nearly all restatement of declarations the repo already had, so a new
+  concept added a fourth divergent copy to maintain for no new information.
+- *Losing alternative — reading the raw `## Proof policy` section verbatim (no consolidation).*
+  Loses on packet weight and mixing: Proof policy is long and interleaves posture with CI-lane
+  mechanics, so carrying it whole bloats every packet and buries the posture. A short
+  consolidation that points back to Proof policy travels lean and stays readable.
 
 ### Mechanism
 
 One source, read by two code paths that must never diverge:
 
-1. **Source of truth:** the workflow README's `## Stakes` section (`docs/dev/README.md` for
-   this workflow). Declared once.
-2. **Boot channel:** `status --boot` reads the README's `## Stakes` section via the existing
-   heading-map extractor and exposes its body under a `stakes` key in `--boot --json` (and a
-   `STAKES:` line in the text form). Absent section → an explicit `none declared` value, so
-   absence is visible, never silent. Read from the same `definitionDir/README.md` boot
-   already opens.
-3. **Packet channel:** `dispatch build` extracts the same `## Stakes` section and injects it
-   **inline verbatim** as a block in every worker packet (`internal/dispatch/build.go`
-   prompt-`parts` assembly), placed with the assignment header so it frames the work.
-   Absent → the same `none declared` marker. This reaches ensigns and every dispatched
-   reviewer (staff-review, validation) uniformly.
+1. **Source of truth:** the workflow README's declared-posture section — heading `## Rigor
+   posture` (`docs/dev/README.md` for this workflow). Declared once; the extractor is heading-
+   agnostic (Spike result 1 proved it on an arbitrary section), so the heading is the one
+   small convention.
+2. **Boot channel:** `status --boot` reads the README's `## Rigor posture` section via the
+   existing heading-map extractor and exposes its body under a `rigor_posture` key in
+   `--boot --json` (and a `RIGOR_POSTURE:` line in the text form). No section → `none declared`
+   plus a one-line label (`stage definitions and committed finding-triage govern`), so absence
+   is explicit, never silent. Read from the same `definitionDir/README.md` boot already opens.
+3. **Packet channel:** `dispatch build` extracts the same `## Rigor posture` section and
+   injects it **inline verbatim** as a block in every worker packet (`internal/dispatch/build.go`
+   prompt-`parts` assembly), placed with the assignment header so it frames the work. No
+   section → nothing is injected except the same one-line explicit-absence label. This reaches
+   ensigns and every dispatched reviewer (staff-review, validation) uniformly.
 
 **Read cost — no extra roundtrip for any consumer.** The packet block is assembled inline at
 `dispatch build` time (build already reads the workflow README for the stage/frontmatter
@@ -171,38 +172,27 @@ there is deliberately no `show-stakes` fetch line. Boot rides the existing `--bo
 the FO pays no extra command. Every dispatched reviewer gets it inline in its own packet. Net
 added tool calls across all consumers: zero.
 
-**Governance — the declaration is captain-only; it evolves at ceremonies, not on drift.** The
-`## Stakes` value is set and changed only by the captain. No worker, reviewer, or FO infers,
-escalates, or rewrites it. Three parts:
+**Governance — existing README ownership, plus a sanctioned drift flag.** The posture section
+lives in the workflow README and is owned and changed exactly as the rest of that authored
+process doc is — no new sign-off apparatus, write-classifier carve-out, or ceremony
+re-affirmation. (The reduction dropped all of that: the earlier captain-only-plus-ceremony
+design was tied to a *minted* `## Stakes` fact; a read-through of declarations the repo already
+owns does not need a new authority layer.) The one governance mechanism that survives is the
+**stakes-drift flag**: when a worker or reviewer hits evidence that contradicts the declared
+posture, it does NOT re-grade on its own — it triages the finding under the DECLARED posture
+anyway and raises a drift flag carrying the contradicting evidence, which the FO surfaces at
+the gate for a human decision. That keeps the anti-inference guarantee (no silent agent
+re-grading) while giving contradicting evidence a sanctioned path instead of a private
+judgment call.
 
-- *Edit authority (captain-only).* Recommended enforcement: carve `## Stakes` out of the FO's
-  README write authority in the write classifier, so an FO write that touches the section is
-  refused rather than trusted (the FO position). Named alternative the gate decides between:
-  FO-proposes-captain-approves — the FO may draft a change but it is inert until the captain
-  signs off, recorded like a durable gate decision. Either way an FO may scaffold the empty
-  heading at commission/refit; neither lets an agent set the value. The write-classifier change
-  is a small FO-contract surface; whether it ships with this entity or as the adjacent triage/
-  template work is the gate's call (probe 1 surfaces both for captain judgment).
-- *Evolution is event-triggered, never timed.* Re-affirmation happens at lifecycle ceremonies
-  — the sprint scope-lock line and the release cut — where the captain re-confirms the
-  declaration still holds. No TTL, no staleness timer; a declaration does not "expire".
-- *Stakes-drift flag (sanctioned).* When a worker or reviewer hits evidence that contradicts
-  the declaration, it does NOT re-grade stakes on its own. It triages the finding under the
-  DECLARED stakes anyway, and raises a `stakes-drift` flag carrying the contradicting evidence.
-  The FO surfaces the flag at the gate; only the captain then edits the declaration. This keeps
-  the anti-inference guarantee (no silent agent re-grading) while giving contradicting evidence
-  a sanctioned path instead of a private judgment call.
-
-**The undeclared default is prototype-grade, and it nags.** A workflow with no `## Stakes`
-section resolves to one fixed, system-declared default — *prototype-grade: smallest sufficient
-test surface; no new enforcement infrastructure without explicit consent; lean finding-triage*
-— carried verbatim in the `none declared` marker in both the packet and boot. This is a
-constant the system sets, not a per-diff inference, so it never reintroduces the max-rigor
-guessing disease. Because a lean default on a surface that actually deserved rigor is a real
-risk, the absence is made *loud*: boot emits a one-line `STAKES: none declared` nag and every
-gate presentation carries the same one-liner until a declaration exists (the gate nag is
-surfaced by present-gate reading the boot `stakes` field). The nag turns "forgot to declare"
-into a visible, self-clearing prompt.
+**The undeclared default injects nothing and says so.** A workflow with no `## Rigor posture`
+section resolves to the behavior that *already happens today*: nothing is injected, the boot
+`rigor_posture` is `none declared` with the one-line label, and the stage definitions plus the
+committed finding-triage govern. There is no injected rigor directive and no nag — the earlier
+prototype-grade-default-plus-nag ruling was superseded by the re-lock, because a read-through
+has nothing to assert where the repo declared nothing, and the existing stage-def-plus-triage
+behavior IS the default. Absence is still *explicit* (the label), so a reader can tell "no
+posture declared" from "posture declared as empty".
 
 **Stage-differential stakes — uniform injection because stakes *parameterizes* stage rules,
 it does not replace them.** The declaration is injected uniformly into every stage's packet,
@@ -484,3 +474,19 @@ The two-axis recommendation is unchanged on placement (prose section) and sharpe
 (four-part, replacing the free-form hint). One open item is surfaced honestly for the gate: whether
 the captain-only write-classifier carve-out ships here or adjacent (probe 1). Briefing-2a and
 three fresh ProbeResults bound to its digest are in `review/ideation/`.
+
+## Parked (0260 re-lock, 2026-07-20)
+
+Captain decision: hold, parked. The direction trail, kept honest: filed as a new
+`## Stakes` ontology; reduced to an existing-posture read-through when the worked example
+proved the ontology was restatement; parked when the bare kill-test ("which observed
+failure does this kill, and is the killer already in place?") showed its consumers already
+served — validators anchor materiality on per-entity value ACs and the release promise
+(committed triage), and roborev's config already injects its posture line into every
+review. Banked for revival: the Spike results above (byte-identical section round-trip
+through the shipped parser; measured zero-baseline packet; AGENTS.md-ingestion canary
+null with positive control). If a later member's ideation surfaces a genuinely unreached
+consumer, this entity revives with its riskiest mechanisms pre-proven. The one residue —
+consolidating the dev README's scattered posture declarations into a single section — is
+an ordinary process-doc edit needing no entity; it rides template-group work or the next
+README touch.
