@@ -336,3 +336,26 @@ Two reconciliations against the ideation doc-diff, both recorded rather than sil
 ### Summary
 
 Landed the composed convention as prose in the three declared files — 0 Go, 0 product LOC, surface 33 added lines against a ~35-line combined estimate. One entry shape carries surface deviation and findings disposition as adjacent fields, so the healthy response to review pressure (a recorded decline) and the pathological one (a narrowed AC) sit side by side in one record. The change does NOT fund itself: it needs 2,903 bytes the ratcheted files cannot give up without losing meaning, which is a captain call on re-baselining or re-scoping — I did not touch the baseline, relocate prose to dodge the check, or force a trim.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: ONE composed `### Feedback Cycles` entry format lands in skills/feedback-rejection-flow/SKILL.md carrying bw's declared surface / estimate / per-round actuals / AC-drift.
+  Re-cut to this entity's own fields after the captain parked 02av (commit 457b910d): `- Cycle {N}: {verdict} — {reviewer/loop}; surface {actuals} vs estimate {declared} ({P}%); AC {unchanged | narrowed: <note>}`. The `findings` disposition clause and the all-declines prose were withdrawn with the member that owned them; the design for both is preserved in 02av's body for a 3k-based redesign.
+- DONE: bw's contract prose lands in the files it declared and NOWHERE else.
+  `git diff --numstat HEAD~2` = 3 files, +15/-7: `docs/dev/README.md` (+2), `feedback-rejection-flow/SKILL.md` (+13/-5), `first-officer-shared-core.md` (+2/-2). 0 Go, 0 product LOC. Against the declared ~17 lines across 3 prose files, inside the 2× tolerance.
+- FAILED: BYTE-FUNDED and suite-green: `go test ./...` passes INCLUDING TestFOFunctionPromptSurfaceShrinks, with per-file byte accounting recorded.
+  Every suite green except the ratchet: surface **122,839** vs baseline 122,634 — **206 bytes over**. bw's measured net is **+689** (skill +547, shared-core +142) against 483 of headroom.
+
+### Byte accounting after the re-scope
+
+Removing 02av's contributions recovered 2,725 measured bytes (the standing block, the routing amendment, the `findings` clause, and the all-declines prose), taking the composed +3,414 down to +689. One further reduction was taken on layering grounds, not to buy bytes: the boot-resident `«feedback.route»` effect line no longer re-lists the entry's fields, since the skill owns the format and that file states it references this procedure by name (−38).
+
+What remains is rule text with no padding left in it: the entry format itself, the deviation-vs-approved-estimate rule and the one sentence saying why the baseline is the estimate and not the prior round (the entity's central finding — without it a reader re-baselines to the prior round, which is the exact failure e6j had), the tolerance default, the design-reset decision and its no-automatic-re-dispatch clause, and the ideation expected-surface line. Per the captain's instruction I did not shave into that to close 206 bytes, and did not touch the baseline constant. The residual is a call about the estate's budget.
+
+### Feedback Cycles
+
+- Cycle 1: RE-SCOPE — captain, on the implementation stop; surface 3 files/15 lines vs estimate 3 files/~17 lines (88%); AC unchanged — the composed-entry scope was re-cut by captain decision (02av parked), not narrowed under review pressure; every AC of this entity stands as gated.
+
+### Summary
+
+Re-scoped to bw alone and re-measured, as directed. Withdrawing 02av's fields took the overrun from 2,903 bytes to 206 — the re-scope recovered 94% of it, which is what the team lead predicted. The convention now ships as the correction-round record it was gated as: declared estimate, per-round actuals, deviation against that estimate, AC-drift, and a recorded design-reset decision past tolerance. The `- Cycle {N}:` leading form is unchanged, so the shipped 3-cycle escalation lane still reads a conforming entry with no fixture or assertion edited. The entry above is this entity practicing its own convention on the round that produced it.
