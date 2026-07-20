@@ -119,6 +119,33 @@ func TestCodexPostCompactHookMatchesManualAndAuto(t *testing.T) {
 	}
 }
 
+func TestCodexSessionStartCompactHookIsMarkedOnly(t *testing.T) {
+	root, _ := loadShippedPostCompactHook(t)
+	hooksBytes, err := os.ReadFile(filepath.Join(root, "hooks.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cfg codexHooksConfig
+	if err := json.Unmarshal(hooksBytes, &cfg); err != nil {
+		t.Fatal(err)
+	}
+	groups := cfg.Hooks["SessionStart"]
+	if len(groups) != 1 || groups[0].Matcher != "^compact$" || len(groups[0].Hooks) != 1 {
+		t.Fatalf("SessionStart compact hook = %+v", groups)
+	}
+	command := resolveHookCommand(t, root, groups[0].Hooks[0].Command)
+	want := "{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Spacedock: reread the authoritative `spacedock:first-officer` contract and reconcile durable workflow state with live worker state before the next workflow effect.\"}}\n"
+	if got := runShippedHook(t, root, command, `{}`); got != "" {
+		t.Fatalf("absent marker stdout = %q", got)
+	}
+	if got := runShippedHook(t, root, command, `{}`, "SPACEDOCK_BIN="); got != "" {
+		t.Fatalf("empty marker stdout = %q", got)
+	}
+	if got := runShippedHook(t, root, command, `{}`, "SPACEDOCK_BIN=/absolute/spacedock"); got != want || !json.Valid([]byte(got)) {
+		t.Fatalf("marked stdout = %q, want exact valid JSON %q", got, want)
+	}
+}
+
 // TestCodexPostCompactHookEmitsOneSystemMessagePerEvent is AC-3's command-level
 // fixture: it drives the shipped hook command with both the manual and auto event
 // payloads and asserts the output SHAPE — exactly one JSON key, systemMessage, with a
@@ -295,12 +322,12 @@ func TestCodexPostCompactHookScriptIsInert(t *testing.T) {
 // PLUGIN_ROOT set as Codex sets it, and returns its stdout — asserting a zero exit and
 // that it created nothing on disk. Running from an unrelated cwd is what exposes the
 // cwd-relative resolution defect: only a plugin-root-absolute command fires here.
-func runShippedHook(t *testing.T, root, command, stdinPayload string) string {
+func runShippedHook(t *testing.T, root, command, stdinPayload string, env ...string) string {
 	t.Helper()
 	work := t.TempDir()
 	cmd := exec.Command(command)
 	cmd.Dir = work
-	cmd.Env = append(os.Environ(), "PLUGIN_ROOT="+root)
+	cmd.Env = append([]string{"PATH=" + os.Getenv("PATH"), "PLUGIN_ROOT=" + root}, env...)
 	cmd.Stdin = strings.NewReader(stdinPayload)
 	out, err := cmd.Output()
 	if err != nil {

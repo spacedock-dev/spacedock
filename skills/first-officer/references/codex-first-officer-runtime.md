@@ -52,4 +52,4 @@ Feedback rejection is the load-bearing exception to casual fresh dispatch. When 
 
 The captain is the user of the Codex session. Communicate gate results, clarifications, and status directly in the conversation.
 
-The bundled `.codex-plugin` `PostCompact` hook emits a captain-visible reload-reminder `systemMessage` — captain UI, not model context (probe) — degrading to a manual captain cue; failure-open.
+With non-empty `SPACEDOCK_BIN`, `.codex-plugin` `SessionStart(compact)` supplies model-visible reload context; unmarked sessions stay silent. Automatic mid-turn delivery may be delayed, so `PostCompact` `systemMessage` remains the captain fallback. `spacedock codex resume` restores the marker; bare `codex resume` does not, even for a formerly marked thread. Both hooks fail open.
