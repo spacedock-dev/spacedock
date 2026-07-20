@@ -15,7 +15,7 @@ An ensign, reviewer, or FO holding a finding, an AC, or an urge to build infrast
 - A rejection whose findings indict the mechanism's architecture — or a repair cycle that grows the diff — halts at a design-reset decision instead of dispatching repair (`reframe` group).
 - An ensign triages review findings against stakes before fixing; a correct-but-disproportionate finding gets a recorded decline, not a dutiful fix (`triage` group).
 - "Prefer the cheapest check that can fail" replaces "prefer a code gate over a prose-only rule": try in order — a shipped system guard, an existing mechanical check, a falsifiable exercise, captain judgment — and build new machinery only as a consent-gated last resort. New enforcement surfaces are not "obvious reversible work"; an investigation surfaces its running fan-out before the Nth spawn; identifier minting is reserved to the system, ad-hoc itemization uses bare ordinals (`verification` group).
-- The tautological-test estate is fixed and gated against recurrence; contractlint's prose-phrase checks retire in favor of behavior tests (`test-cleanups`, `contract-cleanups` groups).
+- The tautological-test estate is fixed and review evidence must name what can fail; contractlint's prose-phrase checks retire in favor of behavior tests (`test-cleanups`, `contract-cleanups` groups).
 - The dev template ships the scar tissue (Stakes scaffold, materiality taxonomy, offline/interactive AC split, small-change fast path, fixed Verified-by example) and refit propagates content, so the next commissioned workflow starts protected (`template` group).
 
 ## Layer map
@@ -23,20 +23,20 @@ An ensign, reviewer, or FO holding a finding, an AC, or an urge to build infrast
 | Layer | What lands there |
 |---|---|
 | Spacedock contract (skills + binary) | reframe routing + the narration-first cycle-record core; ensign finding-consumption rule + decline disposition; the cheapest-check-that-can-fail ordering + infra consent + fan-out surfacing + bare-ordinal rule; "5/5 passed is sufficient" removal |
-| Dev template + refit | declared-posture section scaffold (only for workflows that want one — the parked read-through's residue); materiality taxonomy; AC split; small-change fast path; size-gated semantic adversarial pass; Verified-by example fix; refit content propagation; project AGENTS.md router scaffold + maintenance |
+| Dev template + refit | declared-posture section scaffold (only for workflows that want one — the parked read-through's residue); materiality taxonomy; AC split; small-change fast path; size-gated semantic adversarial pass; Verified-by example fix; refit content propagation |
 | Project AGENTS.md / CLAUDE.md (router layer — parked with the stakes member; revives with it) | one-line stakes digest + pointer to the workflow README as process authority; auto-loaded into ad-hoc sessions the README never reaches. Source of truth stays the README `## Stakes` — one source, three channels (AGENTS.md digest, dispatch packet, roborev config); never a fourth divergent copy. AGENTS.md-first for codex coverage; Claude ingestion verified by canary, not assumed |
-| Repo-local (this repo) | testlint/contractlint changes; the 8 tautological-test fixes; roborev config alignment; refresh the stale AGENTS.md `## Priorities` (bootstrap-era "do not add PR or mod behavior" still shipping to every agent) |
+| Repo-local (this repo) | contractlint test changes; the 8 tautological-test fixes |
 | CL's personal CLAUDE.md | out of sprint scope — separate audit in flight; carve-out drafted for CL to apply by hand |
 
 ## Definition of Done
 
 `v0.26.0` ships when, merged to `main` and proven by checks that can fail:
 
-- Replaying the archived e6j cycle history (26 files / +3,373 on a 2-defect fix, 10 cycles) against the new feedback flow halts at a design-reset decision by cycle 2; the dispatch-refusal guard has a unit test fed that fixture shape.
+- Replaying the archived e6j cycle history (26 files / +3,373 on a 2-defect fix, 10 cycles) against the new feedback flow surfaces the deviation by round 2 and records a reconfirm / re-scope / park / escalate decision before any further repair dispatch; a live replay proves the decision is recorded before a third dispatch. Prose-only — no refusal command or unit-tested guard ships this train (staff-review fold, captain-approved 2026-07-20).
 - A seeded correct-but-disproportionate finding against a low-stakes fixture entity produces a recorded decline and a zero-line diff in live replay.
 - A replayed ideation brief mandating a process-control harness (the 7h PTY shape) trips the consent stop before dispatch.
-- testlint fails red on the reverted 11-phrase contract-presence test and passes green on `main`; the 8 confirmed tautological output-grep tests are fixed; gate review reads new-test assertion content, not pass counts.
-- The runtime-semantics contractlint retirements land (prose-phrase checks replaced by live/fixture behavior tests); the remaining four retirements carry `sprint-readiness: defer` for the next train.
+- The 8 confirmed tautological output-grep tests are fixed; review reports state what each new or changed test asserts and the change that would make it fail; a one-off validation exercise proves the distinction (seeded break goes red, revert goes green); recurrence is guarded by the existing detached audit under the Edit D trigger resolution recorded in az's gate record — no new committed lint, gate, or standing tool (staff-review fold: the earlier testlint claim was owned by no member and contradicted az's approved zero-new-enforcement criterion).
+- The runtime-semantics contractlint retirements land (prose-phrase checks replaced by live/fixture behavior tests); the remaining four retirements are next-train backlog outside this sprint's membership query (their headers carry no sprint label, per the second re-lock).
 - A scratch workflow commissioned from the updated template contains the materiality taxonomy and the fixed Verified-by example; a refit dry-run against a commissioned README shows the content delta arriving.
 
 ## Constraints
@@ -44,7 +44,7 @@ An ensign, reviewer, or FO holding a finding, an AC, or an urge to build infrast
 - **Leanness (inherited from 0250):** net contract-byte delta vs the 0.25 baseline is measured; additions prefer lazy-loaded references over boot-resident lines.
 - **Live-drive proof rule (inherited from 0250, verbatim):** every behavioral claim is proven by a live drive observing the behavior — never a prose-grep over the contract the change writes. The incident records in `_evidence/` are the replay fixtures.
 - **Bare-ordinal itemization:** no minted reference schemes in sprint docs or entity bodies; sanctioned identifiers only (entity ids/slugs, AC-N, session:ordinal).
-- **Sprint operating directives (captain, 2026-07-20 — bind every FO session driving this sprint, including post-compaction and the Commander):** (1) assume the intended behavior of this sprint's members directly while shaping and driving — the gate-approval notation (the 3k contract dry-run), the declared-estimate discipline, the no-minting rule, the cheapest-check ordering, and the finding-triage posture apply to the FO's own conduct before they ship; (2) present gates through the Subspace review float with the full design included as an artifact (single-file wrapper today at /tmp/subspace-present-float-skill; move to briefing packages — briefing.json + separate gate-summary and entity artifacts — when the wrapper supports them), recording resolutions in the entity's gates frontmatter.
+- **Sprint operating directives (captain, 2026-07-20 — bind every FO session driving this sprint, including post-compaction and the Commander):** (1) assume the intended behavior of this sprint's members directly while shaping and driving — the gate-approval notation (the 3k contract dry-run), the declared-estimate discipline, the no-minting rule, the cheapest-check ordering, and the finding-triage posture apply to the FO's own conduct before they ship; (2) present gates through the Subspace review float with the full design included in the presented artifact (working ritual: the subspace-r-working-copy skill in spacedock-subspace/.agents/skills — exact-tip local build, probe with a throwaway file BEFORE the real gate; see the shaping debrief's float findings 12-13; move to multi-artifact briefing packages when the TUI supports them), recording resolutions in the entity's gates frontmatter.
 - **Captain rulings (2026-07-20, via gate annotations):** every gated ideation declares a written expected surface + tolerance; no minted terminology (plain words; system ids only where the notation binds them); a new check/enforcement process needs explicit captain approval and normally its own entity; prose-greps are one-off validation evidence, never committed tests.
 - **This sprint practices its own thesis.** Shaping and driving decisions are held to the same ordering: a proposed new check names the cheapest level that can falsify it; a disproportionate-but-correct idea gets a recorded decline.
 
@@ -61,7 +61,7 @@ Ideation approvals from shaping are recorded durably in each entity's `gates:` f
 - `stakes` is parked (see Goal) — no member blocks on it; the `triage` rule cites the committed finding-triage taxonomy directly.
 - `reframe` leads: `bw` carries the merged design-reset scope (kills all four HIGH incidents).
 - `triage`, `verification`, `template` are unblocked and parallel; `z7` carries the folded smallest-sufficient sharpening plus five recorded live examples of language-minting for its identifier/abstraction clause — the fifth being its own former name.
-- `test-cleanups` and the driving `contract-cleanups` pair are independent and fully parallel; the banked `0qe` ideation is not re-ideated — its overlap with `w0` is judged at its gate.
+- `test-cleanups` and the driving `contract-cleanups` member (`841`) are independent and fully parallel; `0qe` was merged into `z7`'s catalog at its gate.
 
 ## Out of scope
 
@@ -69,12 +69,16 @@ Ideation approvals from shaping are recorded durably in each entity's `gates:` f
 - Direct edits to zaphod / spacedock-subspace repos — their READMEs receive the delta via refit under their own workflows after `template` lands.
 - Implementing 3k itself (notation used as convention only).
 - `mzk` (shared-GitHub-state ownership tracing) — real, different theme, stays in backlog.
+- Project AGENTS.md router scaffold + maintenance — deferred by the template member until the packet channel proves out.
+- Roborev production-side alignment and the stale AGENTS.md `## Priorities` refresh — unowned this train; next-train candidates (staff-review fold).
+- The four remaining contractlint retirements — next-train backlog, no sprint label.
+- `internal/livescenario/ac2_reanchor.go` repair (the committed live check that cannot fail) — re-filed as its own next-train task per the staff review; the archive stub's "scope carried there" note is corrected.
 
 ## Lifecycle checklist
 
 **Shape — Shaping FO**
 - [x] **Scope-lock** with the captain — locked 2026-07-20 full-roster, then **re-locked same day** under the sprint's own essence test: two merges (`ve`→`bw`, `1p9`→`z7`), the stakes reduction, and seven `sprint-readiness: defer` stamps (`fw` `1w` `h6` `b7` `3a` `xaz` `cy`)
-- [x] **Carve** — 23 members stamped (`sprint` / `group`), 5 new entities filed with evidence citations, index.md written
+- [x] **Carve** — 23 members stamped (`sprint` / `group`), 5 new entities filed with evidence citations, index.md written *(first-lock history; the current drivable set is eight members — the re-locks merged and unstamped the rest)*
 - [x] **Ideate** each gated member — riskiest mechanism first (stakes read-through spike leads) — all nine driving ideations complete 2026-07-20
 - [ ] **⚠️ Preflight staff review (sprint-wide)** — independent reviewer, refute the sprint as a whole → `staff-review.md` — the adopted codex cross-review is the first pass (see the second re-lock); whether it satisfies this box is the captain's call
 - [x] **Present ideation gates** — AC cross-check per member; approvals recorded in 3k notation *(captain decides)* — all closed-approved with pending advances; 0qe merged into z7, js6 parked
