@@ -16,7 +16,7 @@ The startup boot read is an FO-internal read; consume it as JSON: `status --boot
 
 The spawn call (fo-dispatch-core.md `## Dispatch Adapter`) is the Agent tool. **Use Agent() for initial dispatch** — SendMessage is only for advancing a reused agent to its next stage. **NEVER use `subagent_type="first-officer"`** — that clones yourself instead of dispatching a worker.
 
-**Declare a scripted fan-out before launching it.** When agents are queued by a plan or script rather than by one `Agent()` call you make now — a workflow harness, a batch spawn, a per-finding verifier lane — state the expected agent count, the tolerance, and why that spend is economically reasonable BEFORE launch. A running script reaches no Nth spawn for the fan-out checkpoint to stop at.
+**Declare a scripted fan-out before launching it.** When agents are queued by a plan or script rather than by one `Agent()` call you make now — a workflow harness, a batch spawn, a per-finding verifier lane — state the expected worker count, the tolerance, and why that spend is economically reasonable BEFORE launch. A running script reaches no Nth spawn for the fan-out checkpoint to stop at.
 
 **No pre-dispatch filesystem probe.** Do NOT run any filesystem check against `~/.claude/teams/` before `Agent()`. The auto-team `config.json` is written by Claude Code after the spawn, so a pre-dispatch probe reads nothing. Dispatch directly and let `Agent()` surface any error.
 
@@ -103,7 +103,7 @@ This is the Claude realization of `«context-budget»()` (also used by feedback 
 
 ## Feedback Rejection Flow (bare mode)
 
-In bare mode, the feedback rejection flow is sequential: dispatch fix agent (wait for completion), then dispatch reviewer (wait for completion), then present at gate. With the background back-channel, the fix agent and reviewer can interact via messaging — keep the reviewer alive when entering the flow.
+In bare mode, the feedback rejection flow is sequential: dispatch fix agent (wait for completion), then dispatch reviewer (wait for completion), then present at gate. With the background back-channel, the fix agent and reviewer can interact via messaging.
 
 ## Claude binding: «roster-reconcile»()
 
