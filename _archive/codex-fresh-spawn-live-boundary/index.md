@@ -1,17 +1,18 @@
 ---
 title: Restore Codex FO contract after compaction
-status: validation
+status: done
 source: "Captain-directed v0.25.2 follow-up, 2026-07-20; live FO escape after v0.25.1 / archived rt8 / PR #532"
 score: "1.0"
 milestone: 0.25.2
 started: 2026-07-20T04:01:57Z
-completed:
-verdict:
+completed: 2026-07-20T13:55:36Z
+verdict: passed
 worktree: .worktrees/spacedock-ensign-codex-fresh-spawn-live-boundary
 issue:
 id: 6cc3rvfd44y6x3352hh21v8b
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:534
+archived: 2026-07-20T13:55:36Z
 ---
 
 The title and source are historical frontmatter. Captain review withdrew the generic fresh-spawn premise: the cited direct `spawn_agent` call was ad-hoc research, not a Spacedock worker dispatch, so it is not evidence that the v0.25.1 dispatch boundary failed. No global `PreToolUse` fork guard belongs in this ticket.
