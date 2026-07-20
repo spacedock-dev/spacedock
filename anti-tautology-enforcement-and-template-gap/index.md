@@ -41,6 +41,11 @@ gates:
             target-stage: implementation
             state: pending
           note: "Captain hold via float 2026-07-20 (resolution:actor-1784524247673759000): the FO gate summary was session-jargon dense and unreadable without full context. Attempt open; plain-language rewrite via the comm-officer before re-presentation."
+          edit-d-resolution:
+            decision: approved
+            by: person:captain
+            at: 2026-07-20T10:23:28Z
+            record: "Edit D (the existing detached audit ALSO fires whenever a test's expected answer comes from the same code being tested) approved as part of the captain's 'agree with all recommendations' ruling in the staff-review decision round, where the recommendation named Edit D as the recurrence guard in plain words; the FO stated this reading aloud with a flag-if-not, and the sprint index DoD now references this record. No new tool — a trigger widening of the existing audit only."
 ---
 
 Design and land a standing mechanism (not just reactive review) against tautological tests, and bring the commission-skill templates that scaffold new workflows up to docs/dev's own Proof-policy bar so new workflows don't inherit the gap.
