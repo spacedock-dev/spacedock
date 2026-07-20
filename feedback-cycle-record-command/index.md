@@ -23,10 +23,23 @@ gates:
       attempts:
         - id: gate-attempt:bw-ideation-1
           sequence: 1
-          state: open
+          state: closed
           briefing:
             id: briefing:bw-ideation-1
             digest: sha256:51b38d47a1b15d0ea7b34d4908d20d257ae3e39f5bc587839075a78466d10167
+          resolution:
+            type: Resolution
+            id: resolution:actor-1784521963753201000
+            briefing: briefing:bw-ideation-1
+            by: person:reviewer
+            at: 2026-07-20T04:32:43Z
+            decision: revise
+            reason: "Four annotations: (1) briefing packaging should use separate artifacts (FO-side, 3k experiment); (2) is the new record command needed at all — apply the cheapest-check ordering; (3) add a final landing-spot review AC (core vs dev-specific) and propose the dev README change; (4) roborev-shaped in-stage AC coverage."
+          application:
+            action: feedback
+            target-stage: ideation
+            state: pending
+          note: "Subspace advisory float; four captain annotations included by id in the resolution. Annotation 1 is FO-owned (briefing packaging), 2-4 routed to the worker; next attempt opens at re-presentation."
 ---
 
 Turn the feedback-rejection correction loop from a prose-only cycle count into a measured, calibrated loop. At ideation the entity declares an **expected surface** as part of the captain-approved design; every correction round records its **actuals** into durable `### Feedback Cycles` state; the **deviation** of actuals from the captain-approved estimate is **narrated** at each re-dispatch decision point. A new `status --record-feedback-cycle` command owns the append + count + actuals + deviation + the stdout round-state line.
