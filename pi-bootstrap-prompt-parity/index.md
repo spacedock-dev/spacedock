@@ -152,3 +152,13 @@ A throwaway extension (`/tmp/pi-ext-spike/compact-reinject.ts`, driven headlessl
 5. `session_compact` re-trigger right after a completed compaction hits "Already compacted"/"session too small" — the test driver must add history between compactions.
 
 **Test assets from the spike (reusable as the live-test scaffold):** the extension pattern + an RPC driver script (`spawn pi -a --mode rpc -e <ext> -c`, JSONL prompts, wait on `agent_end` events).
+
+## Dispatch scope (captain-directed fast track, 2026-07-21)
+
+Captain: "dispatch the parity so we don't need to hand inject this extension" — ideation rode this dispatch (design spike-validated above; same precedent as fix-pi-live-lane).
+
+- Deliverable: extend the repo's `.pi/extensions/spacedock.ts` (currently `resources_discover` only) with the designed behavior — arm on `session_start`, re-arm on `session_compact`, suppress on `agent_end`, inject via the `context` hook, structural de-dup, insert after the leading compaction summary.
+- Reference implementation (dogfooded, verified live in this FO session): `~/.pi/agent/extensions/spacedock-compact-reinject.ts`. Spike artifacts: `/tmp/pi-ext-spike/` (`compact-reinject.ts`, `rpc-driver2.mjs`, `injection.log`). Live-cycle proof: `/tmp/spacedock-compact-reinject.log`.
+- Bootstrap prompt mirrors the shipped FO contract per the closed questions; the stopgap text is a starting point, not gospel.
+- Test via the RPC harness approach (pitfalls above) — never `pi -p` for compaction, never compact mid-stream. Do NOT grep instruction prose in tests (same trap class as the wiped workflow-guard prose-greps); verify extension effects.
+- Hand-over-hand: stage report must note that the captain deletes `~/.pi/agent/extensions/spacedock-compact-reinject.ts` once the shipped version is verified loaded.
