@@ -4,6 +4,8 @@ status: backlog
 source: "Contractlint antipattern sweep, 2026-07-11: internal/contractlint/reuse_advance_pointer_test.go treats instruction call-shape prose as runtime proof."
 score: 0.29
 id: 1wd14erf3dm632qx6yrzvfqw
+sprint: 0260-proportionality
+group: contract-cleanups
 ---
 
 ## Problem
