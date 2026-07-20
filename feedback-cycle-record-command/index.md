@@ -1,6 +1,6 @@
 ---
 id: bwr6j6edkmfx5sbz73cr2952
-title: Feedback-cycle record and design-reset gate — binary-owned count, diff-growth refusal, reframe routing
+title: Feedback-cycle record convention and design-reset decision — declared estimate, per-round actuals, recorded reframe
 status: ideation
 source: "captain (2026-06-04) — forked from xa (feedback-guarantee-binary-gate) per the roadmap-the-decision + separate-build-task call. xa's ideation determined Candidate 1 (3-cycle escalation) is mechanizable via a dedicated cycle-record command (a spike disproved a --set status guard) and Candidate 2 (budget-probe) is not. This task SHIPS the Candidate-1 guard; xa closed as a roadmap decision."
 score: "0.30"
@@ -15,11 +15,11 @@ gates:
   version: 1
   current:
     gate: gate:docs-dev:bw:ideation
-    attempt: gate-attempt:bw-ideation-2
+    attempt: gate-attempt:bw-ideation-3
   records:
     - id: gate:docs-dev:bw:ideation
       stage: ideation
-      current-attempt: gate-attempt:bw-ideation-2
+      current-attempt: gate-attempt:bw-ideation-3
       attempts:
         - id: gate-attempt:bw-ideation-1
           sequence: 1
@@ -38,7 +38,7 @@ gates:
           application:
             action: feedback
             target-stage: ideation
-            state: pending
+            state: consumed
           note: "Subspace advisory float; four captain annotations included by id in the resolution. Annotation 1 is FO-owned (briefing packaging), 2-4 routed to the worker; next attempt opens at re-presentation."
         - id: gate-attempt:bw-ideation-2
           sequence: 2
@@ -57,21 +57,42 @@ gates:
           application:
             action: advance
             target-stage: implementation
+            state: superseded
+          note: "Subspace advisory float, no annotations; third presentation (prose-only convention) approved. Superseded by attempt 3 (captain-approved staff-review folds); the approval itself stands."
+        - id: gate-attempt:bw-ideation-3
+          sequence: 3
+          previous-attempt: gate-attempt:bw-ideation-2
+          state: closed
+          briefing:
+            id: briefing:bw-ideation-3-chat
+            digest: sha256:837779a0b96ebddc7e695106109a6026034c28337686a73bba3d8d18f2ff8c6f
+            note: chat presentation; digest is the entity content after the captain-approved staff-review folds were applied
+          resolution:
+            type: Resolution
+            id: resolution:captain-chat-bw-ideation-3
+            briefing: briefing:bw-ideation-3-chat
+            by: person:captain
+            at: 2026-07-20T10:18:41Z
+            decision: approve
+            reason: "Staff-review folds, captain-approved in chat with the concrete strengthened wording shown: past-tolerance deviation requires a recorded reconfirm/re-scope/park/escalate decision before further repair dispatch (no automatic re-dispatch); tolerance default named as 2x unless the entity declares otherwise; the testlint arm struck from AC-1 (one-off script, no committed check); the skill frontmatter description line added to the declared surface; title corrected to the prose-only convention the body ships."
+          application:
+            action: advance
+            target-stage: implementation
             state: pending
-          note: "Subspace advisory float, no annotations; third presentation (prose-only convention) approved."
+          note: "FO applied the folds directly under the captain's edit-directly grant; codex staff review finding 1 and fable delta findings 8-10."
 ---
 
 Turn the feedback-rejection correction loop from a prose-only cycle count into a measured, calibrated loop. At ideation the entity declares an **expected surface** as part of the captain-approved design; every correction round records its **actuals** into the durable `### Feedback Cycles` section in a documented entry format; the **deviation** of actuals from the captain-approved estimate is **narrated** at each re-dispatch decision point, so the runaway loop becomes visible against the estimate rather than legal against the prior round.
 
-**The first cut is a documented entry-format convention — prose, not a command.** Applying this entity's own ordering (the cheapest check that can fail; build new machinery last, consent-gated), the calibration value ships with zero new code: the `### Feedback Cycles` entry format is specified in the skill and dev-README prose; the FO and the in-stage review loop hand-append a conforming entry per round (actuals from a documented one-line `git diff --numstat`); deviation is arithmetic any reader does from the estimate and an entry. The `status --record-feedback-cycle` command, its in-binary git capture, AC-digest hashing, and the escalation backstop are **deferred machinery** — shipped only when live drives show hand-authored entries drifting from the format (which the format itself makes checkable). Three independent sources converged on this: the codex cross-review, this entity's own ordering, and the captain's gate annotation; and no falsifiable capability the convention lacks was found (see Problem). Hard dispatch-refusal on raw diff growth stays demoted for good — it false-refuses a legitimately growing fix, and a non-zero `dispatch build` exit is read by the FO as an infra failure that triggers Break-Glass **manual** dispatch (`fo-dispatch-core.md:145`), so a build-side refusal is routed around, not honored. The frontmatter `title:` still names "diff-growth refusal" / "command"; the body is authoritative.
+**The first cut is a documented entry-format convention — prose, not a command.** Applying this entity's own ordering (the cheapest check that can fail; build new machinery last, consent-gated), the calibration value ships with zero new code: the `### Feedback Cycles` entry format is specified in the skill and dev-README prose; the FO and the in-stage review loop hand-append a conforming entry per round (actuals from a documented one-line `git diff --numstat`); deviation is arithmetic any reader does from the estimate and an entry. The `status --record-feedback-cycle` command, its in-binary git capture, AC-digest hashing, and the escalation backstop are **deferred machinery** — shipped only when live drives show hand-authored entries drifting from the format (which the format itself makes checkable). Three independent sources converged on this: the codex cross-review, this entity's own ordering, and the captain's gate annotation; and no falsifiable capability the convention lacks was found (see Problem). Hard dispatch-refusal on raw diff growth stays demoted for good — it false-refuses a legitimately growing fix, and a non-zero `dispatch build` exit is read by the FO as an infra failure that triggers Break-Glass **manual** dispatch (`fo-dispatch-core.md:145`), so a build-side refusal is routed around, not honored.
 
 ## First cut vs deferred
 
-**Expected surface (first cut, prose-only — this entity practicing the convention it ships):** ~3 prose files — `feedback-rejection-flow` (steps 2-3 + the entry-format spec, ~9 lines), `first-officer-shared-core` (`«feedback.route»` effect/done-when, ~2 lines), `docs/dev/README.md` (ideation expected-surface line + the implementation in-stage-round convention, ~5 lines); plus 1 fixture entity and 1 offline deviation/AC-drift check (the spike, formalized) for AC-1/AC-5/AC-6. **0 Go source files, 0 product LOC.** Declared tolerance: 2× — and a hard self-check: any Go/product code appearing in the first cut, or a fourth doc file, trips a reconfirm, because deferring the command IS the point.
+**Expected surface (first cut, prose-only — this entity practicing the convention it ships):** ~3 prose files — `feedback-rejection-flow` (frontmatter description + steps 2-3 + the entry-format spec, ~10 lines), `first-officer-shared-core` (`«feedback.route»` effect/done-when, ~2 lines), `docs/dev/README.md` (ideation expected-surface line + the implementation in-stage-round convention, ~5 lines); plus 1 fixture entity and 1 offline deviation/AC-drift check (the spike, formalized) for AC-1/AC-5/AC-6. **0 Go source files, 0 product LOC.** Declared tolerance: 2× — and a hard self-check: any Go/product code appearing in the first cut, or a fourth doc file, trips a reconfirm, because deferring the command IS the point.
 
 **First cut (this entity), all prose + a fixture:**
 - The documented `### Feedback Cycles` **entry-format convention**: each round appends `- {timestamp} — {reviewer/loop} {verdict}; surface {files}/{LOC} vs estimate {declared} ({P}%); AC {unchanged | narrowed: <note>}`. Specified in the skill and dev-README prose.
-- The two skill-prose swaps: `feedback-rejection-flow` steps (hand-append a conforming entry; read the deviation + AC-drift; weigh a design-reset decision) and the `first-officer-shared-core` `«feedback.route»` lines.
+- The two skill-prose swaps: `feedback-rejection-flow` steps (hand-append a conforming entry; read the deviation + AC-drift; record a design-reset decision past tolerance) and the `first-officer-shared-core` `«feedback.route»` lines.
 - The `docs/dev/README.md` changes: the ideation expected-surface line, and the implementation in-stage-round convention (in-stage review rounds append a conforming entry; the documented `git diff --numstat` one-liner for actuals).
 - A fixture entity + an offline check proving deviation and AC-drift are computable from two conforming entries (AC-1 / AC-5 / AC-6).
 
@@ -96,8 +117,8 @@ Turn the feedback-rejection correction loop from a prose-only cycle count into a
 
 1. **Declare expected surface at ideation.** The gated design states the surface it expects to touch, in the workflow's own unit — dev: "~x files, ~y LOC"; a research workflow: "~10 external docs". Captain-approved at the ideation gate → this is the baseline.
 2. **Record per-round actuals in a conforming entry.** Every correction round (whatever the loop shape) appends one `### Feedback Cycles` entry carrying its actuals, the declared estimate, the deviation%, and an AC-drift note.
-3. **Deviation vs the declared baseline** (not the prior cycle), beyond a **declared tolerance** (contract default, entity may override), is **narrated** and prompts a **reconfirm-or-reframe** judgment at the decision point.
-4. **Narration is the guard.** The round state — deviation% and AC-drift, read from the entries — is what the FO looks at where it decides whether to re-dispatch. Awareness at the decision point, not a wall.
+3. **Deviation vs the declared baseline** (not the prior cycle), beyond a **declared tolerance** (default 2× unless the entity declares otherwise), is **narrated** and requires a **recorded decision** — reconfirm / re-scope / park / escalate — **before any further repair dispatch**. No automatic re-dispatch while that decision is absent. (Captain-approved strengthen, staff-review fold 2026-07-20.)
+4. **Narration is the guard.** The deviation% and AC-drift, read from the entries, are what the FO looks at where it decides whether to re-dispatch; past tolerance, the recorded decision above is required before the next dispatch. The enforcement machinery stays deferred.
 5. **Escalation is the backstop — DEFERRED.** A hard stop ships only if live drives show narration being ignored.
 
 ### Dev-specific realization (lands in dev prose: `docs/dev/README.md` + the template)
@@ -169,7 +190,7 @@ The generic clauses must land in the fleet-loaded skill prose and the dev specif
 ## Acceptance criteria
 
 **AC-1 (VALUE) — Fed the archived e6j per-round surface shape as conforming `### Feedback Cycles` entries (2-file / 40-LOC estimate; round-2 actuals from e6j's history), the deviation prescribed by the documented format and arithmetic reads ≥ 200% of estimate at round 2 — surfacing the runaway two rounds before e6j's real history did.**
-Verified by: a checked-in fixture entity (estimate + round-1 / round-2 entries) and an offline check (the spike, formalized as a small script or testlint case) that applies the documented deviation arithmetic and asserts ≥ 200% at round 2; the check fails if an entry omits actuals/estimate or the arithmetic is mis-specified. Independent baseline that moved the wrong way: e6j's real 10-round / 26-file history. This is the outcome the entity exists for — the runaway made visible at round 2, by prose + a reader, no code.
+Verified by: a checked-in fixture entity (estimate + round-1 / round-2 entries) and an offline check (the spike, formalized as a one-off script whose output lands in the validation report — no committed check) that applies the documented deviation arithmetic and asserts ≥ 200% at round 2; the check fails if an entry omits actuals/estimate or the arithmetic is mis-specified. Independent baseline that moved the wrong way: e6j's real 10-round / 26-file history. This is the outcome the entity exists for — the runaway made visible at round 2, by prose + a reader, no code.
 
 **AC-2 — The `### Feedback Cycles` entry-format convention is specified in the skill and dev-README prose and is sufficient for a reader to compute deviation vs the ideation baseline from the estimate and one entry.**
 Verified by: a one-off prose grep run DURING validation (output pasted into the validation report, not committed as a test) confirming `feedback-rejection-flow` and `docs/dev/README.md` specify the format fields (actuals, estimate, deviation%, AC-drift note) and the `git diff --numstat` one-liner; plus the AC-1 fixture demonstrating a reader computing deviation from a conforming entry. Per the captain's prose-grep ruling, a grep over prose the implementer wrote cannot fail independently, so it is validation-time evidence, not a checked-in test. Serves AC-1.
@@ -204,7 +225,9 @@ Verified by: a validation-stage landing-placement audit — read/grep the two su
 > - Before (step 2): `2. Track cycles in `### Feedback Cycles` in the entity body.`
 > - After: `2. Append one `### Feedback Cycles` entry for this round in the format: `- {timestamp} — {reviewer/loop} {verdict}; surface {actuals} vs estimate {declared} ({P}%); AC {unchanged | narrowed: <note>}`. Capture the surface actuals with the workflow's documented one-liner (dev: `git diff --numstat "$(git merge-base main HEAD)"..HEAD`).`
 > - Before (step 3): `3. On cycle 3, escalate to the human instead of another round.`
-> - After: `3. Read the deviation% and AC-drift from the two most recent entries. When deviation is beyond the declared tolerance, or the AC narrowed, weigh a design-reset decision (reconfirm / re-scope / park / escalate) instead of an automatic next round.`
+> - After: `3. Read the deviation% and AC-drift from the two most recent entries. When deviation is beyond the declared tolerance, or the AC narrowed, record a design-reset decision — reconfirm / re-scope / park / escalate — before any further round; no automatic re-dispatch while that decision is absent.`
+> - Before (frontmatter description, line 3): `… track `### Feedback Cycles`, escalate on cycle 3 …`
+> - After: `… append conforming `### Feedback Cycles` entries; past tolerance, record a design-reset decision before another round …`
 
 **`skills/first-officer/references/first-officer-shared-core.md:102-103`** — the `«feedback.route»` effect/done-when:
 
@@ -217,7 +240,7 @@ Verified by: a validation-stage landing-placement audit — read/grep the two su
 
 **`docs/dev/README.md`** — implementation stage-def (add one bullet after the design-reset bullet, line 123):
 
-> `- When an in-stage review round (a roborev re-panel, a detached-audit pass, or any similar in-stage reviewer loop) returns material findings that trigger another pass, first append a conforming `### Feedback Cycles` entry: `- {timestamp} — {reviewer} {verdict}; surface {files}/{LOC} vs estimate {declared} ({P}%); AC {unchanged | narrowed: <note>}` — actuals from `git diff --numstat "$(git merge-base main HEAD)"..HEAD`. Read the deviation vs the ideation estimate from the entry; beyond the declared tolerance, weigh a design reset (see the bullet above) instead of another automatic pass. This is the same convention the cross-stage feedback flow uses; in-stage and cross-stage rounds share one section.`
+> `- When an in-stage review round (a roborev re-panel, a detached-audit pass, or any similar in-stage reviewer loop) returns material findings that trigger another pass, first append a conforming `### Feedback Cycles` entry: `- {timestamp} — {reviewer} {verdict}; surface {files}/{LOC} vs estimate {declared} ({P}%); AC {unchanged | narrowed: <note>}` — actuals from `git diff --numstat "$(git merge-base main HEAD)"..HEAD`. Read the deviation vs the ideation estimate from the entry; beyond the declared tolerance, record a design-reset decision (see the bullet above) before another pass. This is the same convention the cross-stage feedback flow uses; in-stage and cross-stage rounds share one section.`
 
 Deferred doc changes (not proposed here): the `present-gate` evidence line, the template `Outputs` propagation, and a CLI docs page (no CLI surface until the command ships).
 
