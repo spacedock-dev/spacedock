@@ -433,3 +433,34 @@ Two attempted trims were REVERTED because `TestFODeferredDispatchOwnerLoadsBefor
 ### Summary
 
 The ordering clause replaces the retired code-gate clause in the boot-resident Working Principles; the consent stop, fan-out checkpoint (with the authoring-moment amendment) and second-verifier sharpening land as prose inside existing sections of the deferred dispatch core; the Claude runtime carries the pre-launch fan-out declaration; and the dev README's proof header stops mandating the binary-or-test-only satisfier. The entity funds itself and then some — net -161 bytes across the 13 ratcheted files, so it returns 161 bytes of headroom to its siblings rather than consuming any. The deferred consent stop was written tighter than the ideation draft (it restated the boot clause nearly whole) and the Ultracode sharpening ships no new bytes, per AC-5.
+
+### Review findings (roborev)
+
+Correction within implementation; no stage advance. Commit `be1573a0` on `spacedock-ensign/falsifiability-ladder` (branch rebased onto `bdf39f01`, sibling PR #535).
+
+- ACCEPTED (M2) — the fan-out checkpoint was unenforceable: "the Nth spawn" named no threshold, so it permitted both checkpointing before every spawn and never checkpointing. Rewritten to the second shape the lead preferred: the investigation declares its expected count, tolerance, and economic reasonableness BEFORE THE FIRST spawn, and the checkpoint fires when the next spawn would exceed the declared count. The authoring-moment amendment now rides the same rule instead of sitting beside it — a scripted fan-out declares the same numbers before launch. Still judgment against a declared number; no counter mechanism.
+- ACCEPTED (M3) — my trim promised a resolution the sweep does not deliver. `claude-fo-dispatch.md` now states the capability boundary at both ends: the reconcile sweep resolves the roster interactively and degrades to git-only headless, where reading the `subagents/agent-*.meta.json` roster is NOT IMPLEMENTED, so an empty `drift[]` on a headless run is not evidence of a clean roster. The literal paths stay out; the boundary is the load-bearing part.
+- ACCEPTED (Low 2, severity raised) — read literally, "a new check or enforcement process of any kind ... a validation step" made an ensign's ordinary unit test need captain approval, which would make this workflow's own proof policy unusable. Both the boot clause and the deferred consent stop are now scoped to NEW STANDING enforcement (a lint, a review gate, a CI lane, a recurring validation step, a harness that becomes a second implementation), with an explicit carve-out: writing a test that exercises the behavior in hand is ordinary work the proof policy already requires.
+- ACCEPTED (Low 1) — restored the no-counter rationale: the second dispatch failure is tracked by the FO's own observation, not a mechanism.
+- DECLINE UPHELD (M1), proof recorded. Every element roborev listed survives at a named owner loaded at or before the filing moment, all in `skills/first-officer/references/fo-write-core.md` `## ID Styles`, which `first-officer-shared-core.md:47` loads "immediately before the first FO-authored mutation" — and new entity files are item 2 of that file's own write scope (`fo-write-core.md:23`), so the load precedes filing by construction. Per element: sequential → `--next-id` previews, `spacedock new` mints (`fo-write-core.md:37`); sd-b32 full candidate at write time → `new <slug> --id-seed` mints, `--next-id --id-seed` previews (`:38`), and "`spacedock new` closes that window: it mints the id and atomically writes the stamped entity in one call" (`:41`); slug style omits a derived id → "files it with a blank `id`; `--next-id` is n/a" (`:39`); staleness warning → "a preview, not a reservation — a peer's filing between the preview and the write can shift it, so a hand-assembled file can land a stale id" (`:41`), restated boot-resident at `claude-first-officer-runtime.md:37`. Nothing restored; no element is orphaned.
+
+Two MORE trims were reverted this round because committed checks red on them — `TestFOFunctionNormalizationPreservationSuite` binds "not stage actions" in `fo-dispatch-core.md`, and `TestProseFunctionCatastropheClausesSurvive` binds "do not force-push or auto-resolve" in the shared core. Four reverts across two rounds, every one caught by a check rather than by review of the prose.
+
+### Byte accounting after review fixes
+
+The four accepts cost +655 bytes and put the set 92 over the ceiling — the suite went RED, not merely non-negative. Funded by further trims of duplicated prose in the same three files: the model→context window mapping (the binary owns and tests it in `internal/dispatch`; the contract restated it), the reconcile Backstop paragraph, the one-shot-fallback and single-entity blocking restatements, the standing-injection verbatim-discipline restatement, and two tail clauses that repeated their own preceding sentence.
+
+| File | Net vs pre-change |
+|---|---|
+| `first-officer-shared-core.md` | +304 |
+| `fo-dispatch-core.md` | +880 |
+| `claude-fo-dispatch.md` | -1302 |
+| **Measured-set total** | 122231 -> 122113 = **-118** |
+
+`go test ./...` exit 0, including TestFOFunctionPromptSurfaceShrinks and TestStartupRecipeCollapsedAndLeaner. `^## ` headings in `fo-dispatch-core.md` byte-identical to pre-change; the codex and pi runtime files are not in the diff (4 files, all `.md`).
+
+### Finding dispositions
+
+1. Standing-teammate idempotency contradiction — CONFIRMED REAL by the team lead, who hit it at boot. Pre-existing and outside this surface; filed as a follow-up by the lead. Not fixed here, as directed.
+2. "rung" residue in the smallest-sufficient and keep-moving clauses — reasoning upheld, not overridden. `in-house execution is not a lower rung` is asserted verbatim by `TestFODeferredDispatchOwnerLoadsBeforeUse` and `internal/ensigncycle/shared_smallest_mechanism_test.go:41` greps `cheaper rung`. Cross-member decision; left in place.
+3. README:74 re-anchored against az's LANDED text (`origin/spacedock-ensign/anti-tautology-enforcement-and-template-gap`, PR #536). Coherent and complementary, no contradiction: az's new bullet — "Evidence must be able to fail ... each AC's cited evidence names the concrete change that would flip it" — is the author-side obligation, and my line 74 names which check to reach for ("the cheapest check that can fail ... a shipped guard's run, an existing mechanical check, or a one-off falsifiable exercise recorded in the report"). Same can-fail spine. az's "a static check counts only when it tests a real value against an independent source that can diverge" agrees with the boot clause's refusal of a committed presence-grep that passes forever. az did not touch line 74 on its branch, so the merge stays line-disjoint.
