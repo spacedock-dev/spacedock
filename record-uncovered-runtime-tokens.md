@@ -1,5 +1,5 @@
 ---
-title: Six runtime tokens named in the host adapters have no owner — close or delete them
+title: Nine runtime tokens named in the host adapters have no owner — close or delete them
 status: backlog
 source: "roborev job 328 finding 4b on entity 8413fc05vp (contractlint runtime-semantics retirement); captain ruling 2026-07-20: delete the prose check and record the gap rather than retain a phrase check for a token nothing exercises."
 started:
@@ -11,20 +11,27 @@ issue:
 id: y7deh2nsk5hh3a0zx1mf9j06
 ---
 
-Six runtime tokens named in the Codex and Pi host adapters have no owner anywhere in the repo — no Go emitter, no build fixture, no live-lane assertion. Their prose checks were deleted (not retained) under the captain ruling of 2026-07-20, because a phrase check for a token nothing exercises proves only that we wrote the word. 0.26.0 ships these gaps knowingly; this entity tracks closing them.
+Nine runtime tokens named in the Codex and Pi host adapters have no owner anywhere in the repo — no Go emitter, no build fixture, no live-lane assertion. Their prose checks were deleted (not retained) under the captain ruling of 2026-07-20, because a phrase check for a token nothing exercises proves only that we wrote the word. 0.26.0 ships these gaps knowingly; this entity tracks closing them.
 
 ## Problem
 
 The contractlint runtime-semantics retirement routed each runtime-meaning claim to an independent source. Six tokens had no such source. They are recorded inline as `UNCOVERED` annotations on `codexToolTokens` / `piSubstrateNativeTokens` in `internal/contractlint/runtime_binding_block_test.go`; containment still bounds WHERE each name may appear, but nothing proves WHAT it does.
 
+Set corrected at validation cycle 1 by a mechanical enumeration (three prior hand-audits each missed a different token). NINE tokens have no owner:
+
 | Token | Adapter | State |
 | --- | --- | --- |
-| `send_message` | codex-first-officer-runtime.md | no assertion anywhere |
-| `list_agents` | codex-first-officer-runtime.md | no assertion anywhere |
-| `interrupt_agent` | codex-first-officer-runtime.md | no assertion anywhere |
+| `send_message` | codex-first-officer-runtime.md | no Go string literal names it |
+| `list_agents` | codex-first-officer-runtime.md | no Go string literal names it |
+| `interrupt_agent` | codex-first-officer-runtime.md | no Go string literal names it |
+| `timeout_ms` | codex-first-officer-runtime.md | arg of `wait_agent(timeout_ms)`; the tool is owned, the arg is not |
+| `path_prefix` | codex-first-officer-runtime.md | arg of `list_agents(path_prefix?)`; neither is owned |
 | `member_spawn` | pi-first-officer-runtime.md | absent from `teams.go` AND all of `internal/ensigncycle` |
-| `intercom(` | pi-first-officer-runtime.md | no assertion anywhere |
-| `subagent(` | pi-first-officer-runtime.md | appears only as PROMPT text in the pi live lanes, never asserted |
+| `cwd: <resolved repo root>` | pi-first-officer-runtime.md | no Go string literal names it |
+| `contact_supervisor` | pi-ensign-runtime.md | no Go string literal names it |
+| `need_decision` | pi-ensign-runtime.md | the `reason:` value paired with `contact_supervisor` |
+
+`subagent` and `intercom` are NAMED by Go source but not asserted by it — the hits are the `pi-subagents`/`pi-intercom` package names, the unrelated `subagent_type` field, and dispatch prose. Named is not owned, but they are a weaker case than the nine above.
 
 Two agent-facing Pi instructions are also unowned: "non-fresh resume is only an explicit manual/debug exception" and "file verification remains the completion gate" are document-only. ("Fresh redispatch remains the default" IS bound, via `SubagentStageDispatch`'s `context: "fresh"`.)
 

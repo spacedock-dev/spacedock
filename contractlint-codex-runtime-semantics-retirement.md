@@ -65,7 +65,7 @@ Per-check disposition (the two families, ten test functions):
 | `TestPiToolNamesStayInRuntimeBindingOrHarnessSections` | pi tool tokens present + contained | BIND emitted tokens (`delegate`/`message_dm`/`member_shutdown`/`team_done`, `context:"fresh"`/no-`acceptance`) ↔ `teams.go`/`SubagentStageDispatch`; RETAIN containment; substrate-native tokens routed to live lane |
 | `TestPiFirstOfficerRuntimeSemanticsPreserved` | fresh/acceptance/completion semantics present | DELETE (every claim owned by `build_pi_host_test.go` behavior + the Go bindings above) |
 | `TestPiFirstOfficerRuntimeAvoidsNegativeHostContrast` | no negative contrast; positive `«worker.shutdown»`/model-space | RETAIN negative-contrast as structural-absence + discriminator; DELETE positive prose (owned by capability-set binding + `TestBuildPiHostIgnoresModelWithNote`) |
-| `TestPiEnsignRuntimeAvoidsNegativeHostContrast` | no negative contrast; positive completion/clarification | RETAIN negative-contrast as structural-absence + discriminator; DELETE positive prose (completion/clarification owned by pi live lane) |
+| `TestPiEnsignRuntimeAvoidsNegativeHostContrast` | no negative contrast; positive completion/clarification | RETAIN negative-contrast as structural-absence + discriminator; DELETE positive prose (~~owned by pi live lane~~ — CORRECTED at validation cycle 1: `contact_supervisor`/`need_decision` have NO owner; recorded as UNCOVERED, not cited) |
 
 No net-new check purpose is added: every committed test maps 1:1 to a retired phrase check's claim or is a deletion; discriminators are the required non-vacuity partners, not new surface. Adapter markdown is not modified.
 
@@ -83,9 +83,9 @@ Verified by: a validation-time inventory diff vs `origin/main` showing runtime-m
 The codex spawn signature binds to `codex_v2_adapter.go` `ToolArgs()` keys; the pi-agent-teams action tokens bind to `teams.go` `TeamsAction`; `context:"fresh"`/no-`acceptance` binds to `SubagentStageDispatch`; the 8 `«capability»` tokens bind equal across the codex block, the pi block, and the core `«fn»` headings.
 Verified by: each binding passes today and reds when its independent source is mutated away from the doc (rename a `ToolArgs` key, drop a `teams.go` const, remove a capability from the core `«fn»` set) — the mutation/discriminator control the repo already requires; 0 false greens across the planted-divergence suite.
 
-**AC-3 - Substrate-native tokens with no spacedock Go source are owned by a live host lane, and the retired prose is deleted with the lane cited.**
-Codex `wait_agent`/`followup_task`/`list_agents`/`send_message` and pi `subagent(...)`/`intercom(...)`/`member_spawn`/`contact_supervisor` carry no spacedock-emitted Go source; their runtime meaning is owned by `codex_live_runner_test.go` / `pi_live_runner_test.go`.
-Verified by: each deleted prose assertion's claim maps to a named live-lane (or build-fixture) assertion; no new live assertion is minted.
+**AC-3 - Substrate-native tokens with no spacedock Go source are deleted with their real owner named, or recorded as uncovered when they have none.**
+CORRECTED at validation cycle 1 — the ideation-time claim that these tokens were "owned by `codex_live_runner_test.go` / `pi_live_runner_test.go`" was FALSE for every one of them, and the entity shipped that false citation twice before a mechanical enumeration caught the full set. Actual state: `followup_task` and `send_input` are owned by `ensigncycle/shared_reviewer_reuse{,_table}_test.go`; `wait_agent` by `codex_dispatch_evidence_test.go`. NINE tokens have no owner in any Go source — `contact_supervisor`, `interrupt_agent`, `list_agents`, `member_spawn`, `send_message`, `need_decision`, `timeout_ms`, `path_prefix`, `cwd: <resolved repo root>` — and per the captain's honesty ruling their prose checks stay deleted and the gap is recorded rather than papered over. `subagent` and `intercom` are named by Go source but not asserted by it.
+Verified by: each deleted prose assertion's claim maps either to a named non-contractlint assertion or to the UNCOVERED RUNTIME TOKENS record, with the mapping produced by script rather than by hand; no new assertion is minted.
 
 **AC-4 - The adapter docs are unchanged and any doc/code divergence a new binding surfaces is filed, not silently patched.**
 Verified by: `git diff --stat` for this task touches only `internal/contractlint/**` (and test support), no `skills/**` doc bodies; the known `member_spawn` doc-only reference (present in `pi-first-officer-runtime.md`, absent from `teams.go`) is recorded as a finding and routed to the live pi lane rather than folded into a struct binding.
@@ -201,7 +201,7 @@ Repair commit `ab21d962`. Every planted divergence below was run against the PRE
 
 **Verification.** 15/15 planted divergences red (9 original + 6 repair), 0 false greens. `go vet ./...` clean; `go test ./...` and `go test ./... -race` both exit 0. The pi live lane is `//go:build live` and therefore outside `./...`, so the captain's pi waiver masks nothing in these runs.
 
-**Surface — HARD tolerances hold, LOC worsened.** Runtime-meaning literal-in-adapter-prose assertions: still **0** (all 8 remaining assertion sites re-audited: 3 bindings, 1 section-count, 3 absence/containment guards, 1 parser-internal). Committed test-function count: **10 vs 10 baseline, delta 0** (the restored lifecycle guard folded into the existing absence test; one control test added). Line delta vs `main`: **449 → 715, +266** — worse than the +98 the captain reconfirmed, against an instruction that this repair be diff-neutral or negative. I trimmed 40 lines of comment prose and stopped there: the remainder is the four discriminator controls (~130 lines, mandated by sprint rule 3), the restored lifecycle table, the atomic parser, and the captain-mandated UNCOVERED record. I am flagging this rather than absorbing it — the further LOC growth is a decision for the FO/captain, not mine.
+**Surface (superseded by validation cycle 1 below) — HARD tolerances hold, LOC worsened.** Runtime-meaning literal-in-adapter-prose assertions: still **0** (all 8 remaining assertion sites re-audited: 3 bindings, 1 section-count, 3 absence/containment guards, 1 parser-internal). Committed test-function count: **10 vs 10 baseline, delta 0** (the restored lifecycle guard folded into the existing absence test; one control test added). Line delta vs `main`: **449 → 715, +266** — worse than the +98 the captain reconfirmed, against an instruction that this repair be diff-neutral or negative. I trimmed 40 lines of comment prose and stopped there: the remainder is the four discriminator controls (~130 lines, mandated by sprint rule 3), the restored lifecycle table, the atomic parser, and the captain-mandated UNCOVERED record. I am flagging this rather than absorbing it — the further LOC growth is a decision for the FO/captain, not mine.
 
 ## Stage Report: validation
 
@@ -241,3 +241,55 @@ Repair commit `ab21d962`. Every planted divergence below was run against the PRE
 ### Summary
 
 Validated the retirement against `main` and against the pre-repair cut on three throwaway checkouts, never the implementation worktree. Reproduced every in-code claim-to-owner citation one token at a time, re-ran 30 planted divergences (20 claimed + 10 adversarial hole probes), and independently confirmed both hard tolerances. AC-1, AC-2 and AC-4 verified with reproduced evidence; AC-3 fails on `contact_supervisor`, which has no owner anywhere, is asserted to have one, and is missing from the uncovered record. Judged the FO's deferred question independently: the +266 growth is genuinely required.
+
+### Review findings (validation cycle 1)
+
+Fold-in commit. Comment and prose only; no test changed. The 30 divergences were NOT re-run — validation reproduced them, and re-running would be the reflexive re-verification this sprint prices.
+
+**Material finding — `contact_supervisor`.** Confirmed. It had no owner, AC-3 asserted the pi live lane owned it, the disposition table repeated that, and it was missing from the UNCOVERED block. AC-3 and the disposition-table row are corrected in place (the false claim is struck, not quietly rewritten). The in-code count discrepancy was also real: seven `// UNCOVERED` entries against a narrative saying six.
+
+**Method fix — mechanical enumeration.** This was the third appearance of one defect class, every instance found by hand-audit, so the method was replaced. Script below derives the token universe from `main`'s retired positive-presence literals plus the shipped containment vocabularies plus the Go-emitted set, then asks Go source for an owner. The uncovered set is its output, not a curated list.
+
+Ownership test: the token, delimited, inside a Go string literal outside `internal/contractlint`. Two refinements, each forced by a demonstrably wrong answer rather than by preference — recorded because the refinements are the part a reader must be able to audit:
+1. String-literal scoping, not bare grep. `delegate`, `cwd`, `acceptance` exist as ordinary Go identifiers everywhere; a bare grep reported them owned.
+2. Delimited match on the bare name. Matching `subagent(` verbatim reported NO-OWNER for every tool (Go names tools bare, as `"tool":"wait_agent"`), while an undelimited `subagent` matched `pi-subagents` and `subagent_type`. Both directions were wrong before the delimiters.
+
+Raw output (22 tokens, 9 NO-OWNER):
+
+```
+TOKEN                        OWNER (delimited, inside a Go string literal, outside contractlint)
+acceptance                   dispatch/build_pi_host_test.go, ensigncycle/auto_continue_fixtures_test.go +3
+contact_supervisor           NO-OWNER
+cwd: <resolved repo root>    NO-OWNER
+delegate                     ensigncycle/fo_product_edit_guard_impl_test.go, piruntime/teams.go +3
+followup_task                ensigncycle/shared_reviewer_reuse_table_test.go, shared_reviewer_reuse_test.go
+fork_turns                   dispatch/codex_v2_adapter.go, dispatch/codex_v2_adapter_test.go
+intercom                     cli/pi.go, cli/pi_frontdoor_test.go, release/workflow_exec_guard_test.go
+interrupt_agent              NO-OWNER
+list_agents                  NO-OWNER
+member_shutdown              piruntime/teams.go, piruntime/teams_test.go
+member_spawn                 NO-OWNER
+message_dm                   piruntime/teams.go, piruntime/teams_test.go
+need_decision                NO-OWNER
+path_prefix                  NO-OWNER
+send_input                   ensigncycle/shared_reviewer_reuse_table_test.go, shared_reviewer_reuse_test.go
+send_message                 NO-OWNER
+spawn_agent                  ensigncycle/shared_keep_moving_test.go, shared_reviewer_reuse_table_test.go +5
+subagent                     claudeteam/contextbudget.go, cli/pi.go, dispatch/build.go +6
+task_name                    dispatch/codex_v2_adapter.go, dispatch/codex_v2_adapter_test.go
+team_done                    piruntime/teams.go, piruntime/teams_test.go
+timeout_ms                   NO-OWNER
+wait_agent                   ensigncycle/codex_dispatch_evidence_test.go, codex_single_run_test.go
+```
+
+**The script disagreed with my list in BOTH directions, and it won.** More uncovered than I had recorded: `need_decision`, `timeout_ms` and `path_prefix` are new, on top of `contact_supervisor`. Fewer in the other direction: I had recorded `subagent(` and `intercom(` as flatly uncovered, but Go source does name both — as the `pi-subagents`/`pi-intercom` package names, the unrelated `subagent_type` field, and dispatch prose. Named is not owned, so they are not owners; but "no owner anywhere" was more than I could prove, and they are now recorded as **named, not asserted** rather than uncovered. Final: **9 uncovered**, not six or seven.
+
+The script is a one-off validation artifact and is deliberately NOT committed, per the captain's standing ruling. Its limit is worth stating: NO-OWNER is definitive (nothing names the token at all), but OWNER only proves something *names* it — exactly the distinction validation drew about `codex_single_run_test.go` printing `wait_agent` in a self-authored fixture.
+
+**Polish 1 — self-referential citation dropped.** `codex_single_run_test.go` removed from the `wait_agent` citation; `codex_dispatch_evidence_test.go` remains and is a real owner.
+
+**Polish 2 — one-way binding named precisely.** `TestPiEmittedRuntimeTokensBindGoSource` claimed "either side moving alone reds". It does not: the adapter may name a token Spacedock never emits and stay green. The comment now says so and points at why `member_spawn` needs the uncovered record rather than that test.
+
+**Follow-up entity updated** to the true nine-token set, retitled, with the named-not-asserted pair recorded as a weaker case.
+
+**Surface — DIFF-NEGATIVE as constrained.** 715 -> 711, **-4**. Absorbed by cutting the restatement validation identified: the duplicated "anchors are load-bearing" explanation across `codexSpawnArgs`, `codeSpanRe` and the binding control; the repeated "an emptied table fails here" rationale across two discriminator comments; and the UNCOVERED rationale's restatement of the captain ruling. Against the `main` baseline: 449 -> 711, +262 (was +266). Both HARD tolerances unchanged and re-checked: runtime-meaning literal-in-adapter-prose assertions **0**, committed test-function count **10 vs 10 baseline, delta 0**. `go test ./...` and `go test ./... -race` both exit 0; pi lane is `//go:build live` and outside `./...`, so the waiver masks nothing.
