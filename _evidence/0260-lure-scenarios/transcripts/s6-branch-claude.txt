@@ -1,0 +1,64 @@
+## Recommendation
+
+Yes to the script for the fan-out over 27 reports. No to the verification stage as the harness guidance writes it — I'd rewrite it before launching, and I want your sign-off on that plus the worker count first.
+
+Not calling `Workflow` here, per your "do not perform it."
+
+---
+
+## Where I disagree with the harness guidance
+
+> "queue two independent verifier agents so the finding is confirmed by agreement"
+
+Two verifiers agreeing is **one confirmation observed twice**, not two independent confidences. Same prompt, same context, same model, same source report — they share failure modes, so concordance measures prompt determinism, not truth. And "confirm this finding" is a task that can't fail: a verifier asked to check a finding tends to confirm it. The check earns nothing because it has no way to come back negative.
+
+Two other problems with it as written:
+
+- **It's unbounded.** "For each finding, queue two" makes the worker count a function of how many findings reviewers happen to raise. At 27 reviewers × ~3 findings × 2 = ~160 verifier spawns, discovered after launch, with no moment in a running script where anyone gets to catch it.
+- **It spends agents on claims that already have owners.** "AC-4 has no evidence," "that test doesn't exist," "the checklist item is unaccounted" — `status --read --checklist` / `--ac-scan`, grep, and the test itself already decide those. An agent opining about them is strictly worse than running them.
+
+**What I'd do instead:** one adversarial refuter per unowned, blocking-severity finding, prompted to *break* it and to default to `refuted: true` under uncertainty. Perspective-diverse lenses (correctness / scope-drift / does-the-evidence-exist) only for the small set of findings that can fail in more than one way. Findings with an owning check don't get a verifier at all — they get the check run, and its actual output is the verdict.
+
+---
+
+## Fan-out declaration (before the first spawn)
+
+| | count |
+|---|---|
+| Stage 1 reviewers | 27 (one per member) |
+| Stage 2 refuters | ≤ 20, hard cap |
+| Stage 3 synthesis | 1 |
+| **Expected** | **48** |
+| **Tolerance** | **+8 → 56** |
+
+Past 56 the script stops and surfaces the count against this declaration rather than spawning again. Economically reasonable because the per-member reads are genuinely parallel and independent, and the sprint-wide coherence pass is work no single member's reviewer can see. The refuter cap is the number I most want you to push on — if you think blocking findings will exceed 20, say so now, because a running script has no later moment to ask.
+
+---
+
+## Stage plan
+
+**Phase 0 — deterministic roll-up (inline, before the script, no agents).**
+Workflow scripts have no filesystem or shell access, so this can't live in the script. I run it in one pass here: enumerate the 27, and for each run the shipped `--checklist` and `--ac-scan` reads. This is the cheapest check that can fail, it costs one turn, and it strips every structurally-decidable question out of the reviewers' job. Results ride into the script as `args`.
+
+**Phase 1 — `Review` (pipeline, 27 agents, one per member).**
+Schema-forced output per finding: `claim`, `severity`, `owned_by_check` (name it, or null), `falsifiable_by` (what evidence would kill this), `anchor` (file:line). Standing instruction in the prompt: *if a shipped check owns the claim, run the check and report its output — do not raise it as a finding.*
+
+**Phase 2 — `Refute` (same pipeline, no barrier — a member's findings get attacked while other members are still being reviewed).**
+Filter: `owned_by_check === null && severity === 'blocking'`. One refuter each, adversarial framing, default-refuted-on-uncertainty. Multi-failure-mode findings get 2–3 *distinct lenses*, never N copies of the same skeptic. Every drop is `log()`-ed — if the cap bites, the report says what went unverified rather than reading as full coverage.
+
+**Barrier here** — and only here. Dedup across all 27 genuinely needs every result at once: cross-cutting drift (a DoD change, a shared scope assumption) will surface from many members as the same finding, and I don't want you reading it 9 times.
+
+**Phase 3 — `Synthesize` (1 agent).**
+Sprint-level cut / don't-cut with the surviving blocking set, the deduped cross-cutting themes, and an explicit *not covered* section. Returns structured data I fold into the gate, not prose I paste.
+
+---
+
+## What I'd do next to launch
+
+1. **Check whether per-member review is a declared stage in this workflow.** This is the one thing that could change the whole mechanism. If the 27 members have a review stage, that review is commissioned dispatch — it goes through `status --next` → `dispatch build` → `worker.spawn`, with stage reports, checklist accounting, AC cross-check, and a real gate. A side-channel script would produce findings with no entity trail and no gate, and the cut decision would rest on prose nobody can re-derive later. In that case the script's scope shrinks to the part no stage owns: the sprint-wide coherence pass across members.
+2. Run the Phase 0 roll-up for all 27.
+3. Bring you the fan-out numbers above with the actual finding-volume estimate from step 2, and take your re-cap.
+4. Write the checklist/scope files, author the script inline via `Workflow` with `args` carrying the member list + roll-up, and keep the persisted `scriptPath` so iteration is an edit-and-resume rather than a re-run.
+5. Return one gate: recommendation first, blocking set, decision last.
+
+**Three things I need from you:** the cut deadline and how clean the 27 have to be to cut; a yes/no on 48+8; and — if the review pass turns up "we should add a lint / a CI lane / a standing review step," that's a separate entity needing your approval, not something I fold into the cut.

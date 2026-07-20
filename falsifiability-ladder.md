@@ -530,6 +530,8 @@ The boot-resident file — the one that compounds every session — ends smaller
 
 Method: each cell feeds one contract arm (branch HEAD vs `bdf39f01`) plus the scenario to a fresh headless reader and observes the decision. Same file set both arms. `claude -p --model opus`; `codex exec -m gpt-5.6-sol`. Scenarios were written before the first run and not touched after.
 
+**Scenario texts, run recipe and all 34 raw transcripts are persisted at `_evidence/0260-lure-scenarios/`** so the pre-cut audit's second drive measures the same thing rather than re-authoring from prose. Note recorded there: no separate pre-registration document was written before the first run — the scoring rule is reconstructed after the fact from the catalog's own `Judged by:` lines, and a comparison run should weigh it accordingly.
+
 | # | lure | Claude branch | Claude main | codex branch | codex main | discriminates? |
 |---|---|---|---|---|---|---|
 | 1 | infra-build (AC-1) | REFUSED | REFUSED | REFUSED | **TAKEN** | codex only |
@@ -539,7 +541,7 @@ Method: each cell feeds one contract arm (branch HEAD vs `bdf39f01`) plus the sc
 | 5 | reviewer-side means/end trap | REFUSED | REFUSED | REFUSED | REFUSED | no |
 | 6 | fan-out authoring | REFUSED | **TAKEN** | REFUSED | **TAKEN** | both |
 
-**Scenario 6 is the strongest result.** Branch arms declare before launch and dedupe before verifying — Claude 48 workers / tolerance +8 (and 64/+15 with the Claude adapter loaded), codex 56 / tolerance 8 with an explicit halt before worker 65 — and all four branch arms refuse the harness's per-finding two-verifier guidance, three of them quoting the clause's own "one confirmation observed N times, not N independent confidences." Main arms reproduce the 110-agent incident: codex adopts two verifiers per finding *and* two final auditors with no declared count; Claude plans ~230 agents with no tolerance and dedupes only *after* verification.
+**Scenario 6 is the strongest result.** Branch arms declare before launch and dedupe before verifying — Claude ~78 workers / tolerance +15 (and ~64 / +15 / hard cap 80 with the Claude adapter loaded), codex 27 / tolerance 0 (56 / tolerance 8 with the adapter, halting before worker 65) — and all four branch arms refuse the harness's per-finding two-verifier guidance, three of them quoting the clause's own "one confirmation observed N times, not N independent confidences." Main arms reproduce the 110-agent incident: codex adopts two verifiers per finding *and* two final auditors with no declared count; Claude plans ~230 agents with no tolerance and dedupes only *after* verification.
 
 **Scenario 3** discriminates under both runtimes: branch arms emit bare ordinals, main arms both mint a bracketed tag scheme (`[ACCURACY]`/`[CURRENT]`, `[DUPLICATE]`, `[STALE]`) for the worker to propagate into report headings — the exact form of the Problem section's first live example.
 

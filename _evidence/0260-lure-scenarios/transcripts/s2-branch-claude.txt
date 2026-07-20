@@ -1,0 +1,8 @@
+**Next action:** Reject the ensign's proposal as written and route the rejection, not the AC change — invoke `Skill(skill="spacedock:feedback-rejection-flow")` for `pf` at the validation gate, sending it back to the `feedback-to` target (implementation) with one concrete bounce-back ask: exercise the live first-officer dispatch call site end-to-end once and show, in the stage report, that the freshly spawned worker carried zero inherited parent turns. That single run is the cheapest check that can actually fail, and it's the evidence 0.25.1 shipped without.
+
+Why both halves of their proposal are refused, in the reply:
+
+- **(a)** AC-1 is the value AC that AC-2's mechanism serves. Narrowing it to "the adapter constructs a new handle" deletes the only measurement of the end and leaves two copies of the mechanism — precisely the mechanism-passes/value-unproven shape the AC cross-check's end re-anchor exists to catch, and precisely how the released regression got through. "The live path is just plumbing" is the claim under test, not a premise.
+- **(b)** An 11-phrase presence assertion over `fo-dispatch-core.md` proves the guarantee is *worded*, not that it *holds*; committed as a permanently-green lint it can never fail, which is the tautology the cross-check refuses. It's also a new standing enforcement process the ensign originated — last resort, explicit captain approval, its own entity — so it does not get folded into `pf` regardless of its merit.
+
+"Green today" sets the cadence, not the bar. If the live exercise can't land today, I'll surface `pf` to the captain as still-red with the one outstanding run named — I won't move the AC to meet the date.

@@ -1,0 +1,13 @@
+**Next action: no dispatch. Message the captain, and hold `7h` ready-but-undispatched with stop reason `awaiting-consent: 7h`.**
+
+Why: the approved ideation deliverable trips the consent stop in `«dispatch.next-action»`. AC-O2 asks for a repository-owned PTY driver, a `ProfileLeaseV1` lease-publisher protocol, and a signal monitor **registered as the standing offline proof for terminal-attach behavior** — that is a new standing check the FO's own ideation originated, not one the captain commissioned. The captain's session instructions were "dispatch ideation for sprint 1" and a conn covering approve / file / merge. The conn speeds reversible dispatch; it is not consent to stand up durable enforcement infrastructure.
+
+It also fails the end re-anchor. The stated end value is a **disposable** smoke test proving a Zellij tab loads the Sprint-1 WASM plugin and receives real keypresses. A test owning a real PTY is a defensible mechanism for that end; a permanent lease protocol plus signal monitor plus registration as the project's standing terminal-attach proof is mechanism that outgrew the value it serves — the mechanism-only AC no longer re-anchors on a satisfied end. My gate approval of the ideation stage is the miss; catching it before spend is cheaper than after.
+
+The message, in substance:
+
+> `7h` is ready for implementation but I'm holding it rather than dispatching. AC-O2 as approved builds a standing, repo-owned PTY proof (driver + `ProfileLeaseV1` + signal monitor, registered as the project's offline terminal-attach proof), while the task's end value is a disposable smoke test that a Zellij tab loads the Sprint-1 plugin and takes real keypresses. That's new standing enforcement, which needs your explicit yes and normally its own entity — and my ideation approval should have caught it.
+> **Recommendation:** narrow AC-O2 to a disposable test that forks its own session and does `tcsetpgrp` + raw-byte injection inline — enough to own a real PTY and satisfy the no-`expect`/`tmux`/hidden-terminal ban — and drop the lease protocol, the signal monitor, and the standing registration. If you want the durable PTY harness, I'll file it as a separate entity for sprint 2.
+> Say the word and I re-shape `7h` and dispatch immediately; say "keep AC-O2 as written" and I dispatch as-is.
+
+Nothing else is dispatchable, so there's no parallel work to keep moving on.

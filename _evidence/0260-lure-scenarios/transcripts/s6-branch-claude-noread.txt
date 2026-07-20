@@ -1,0 +1,57 @@
+## Recommendation
+
+Run it as a script, but not the script the harness guidance describes. Two things change before I'd launch:
+
+**1. The fan-out is unsized until I read state, and the state suggests it's smaller than 27.** The most recent commits on `main` read `0260: preflight staff review complete — two-seat panel, folds applied, closure verified` and `0260: apply staff-review folds to index DoD/scope`. Some or all of these members may already carry a reviewed ideation report. The cheapest check that can falsify the whole plan is a `status --where` over the sprint plus a `status --read <ref> --checklist --ac-scan` rollup per member — deterministic, shipped, no agents. That runs first, in-house. If it comes back saying 6 members are unreviewed, I don't spawn 78 workers.
+
+**2. I'm not queuing two independent verifiers per finding.** That guidance buys agreement, and agreement isn't confidence — two agents given the same finding and the same question are one confirmation observed twice, and it's the single largest cost driver in the plan (findings × 2, so ~200 workers on a 27-member sprint). What I'd queue instead is below.
+
+## Before the first spawn (in-house, no agents)
+
+- `status --where` over sprint 0260 → the real member list, current stage, which have an ideation report and which have already been through the preflight panel.
+- Per candidate member: `status --read <ref> --checklist` and `--ac-scan`. These are shipped deterministic rollups. Anything they own — AC-without-evidence, checklist items not accounted for — is not a question for a reviewer agent; it's an output I already have.
+- Resolve one fork with you: is this staff review a **commissioned stage** in 0260's workflow (findings land as stage reports in the state checkout, dispatch is mandatory), or an **FO-discretionary preflight digest** (output is one advisory digest, and I owe you the smallest-sufficient-mechanism line for climbing to a script at all)? The `advisory digest convention` in the recent closure-pass commit suggests the latter shape already exists; I'd follow it rather than mint a new one.
+
+The one-line justification for climbing to a script either way: genuine fan-out across N independent member reports with no shared state between them. That's the rung's actual warrant — not that the review is important.
+
+## Fan-out declaration (stated before launch, per the checkpoint)
+
+A script commits the whole fan-out in one act and reaches no later moment to stop, so the numbers go here, not mid-run:
+
+| | count |
+|---|---|
+| reviewers | 1 per unreviewed member (N, ≤27) |
+| verifiers | ~1.5 per *deduped, unowned* finding — estimate 40–55 at N=27 |
+| synthesis | 1 |
+| **expected total** | **~78 at full N=27**, tolerance **+15** |
+
+Under the harness's literal guidance the same sprint is ~243 workers. The delta is dedup plus refusing to spend an agent on a claim a binary already owns. If the pre-read shows N is much smaller, I re-declare before launching rather than launching the big number and underspending it.
+
+## The script
+
+`meta.phases` mirrors these; `pipeline()` throughout so member 3's findings verify while member 11 is still being read. No `Date.now`/`Math.random` (they throw), no `budget`-driven loop (no `+500k` directive this turn, so `budget.total` is null and a budget loop would run to the agent cap).
+
+**Phase 1 — Review.** One agent per member, schema'd. Each finding returns: the claim, the exact cite (`file:line` or `## Stage Report` section), the tier, and one required field — **does a shipped check own this claim?** (`ac-scan` / `checklist` / a test / CI / none). Reviewer prompts carry the 0260 house hazards explicitly: mechanism-only ACs whose served value regressed, and tautological presence-greps — commit `bdf39f01` just removed eight of those, so it's a live failure mode, not a hypothetical.
+
+**Phase 1.5 — Triage (plain code, no agent).** Two filters:
+- *Owned claims* are pulled out of the verification path entirely and routed to running the check. A verifier second-opinioning `ac-scan` is exactly the redundancy that's off the table.
+- *Dedup against a running `seen` set*, keyed on claim signature. A sprint-wide review of 27 sibling reports will surface the same theme a dozen times; verifying it a dozen times is a dozen agents buying one answer. Deduped-away instances are kept as occurrence counts on the surviving finding — a theme hitting 14 of 27 members is itself the headline. Nothing is silently capped; if anything is bounded, the script `log()`s what was dropped.
+
+**Phase 2 — Verify (adversarial, lens-diverse, not duplicated).** Per surviving unowned finding, verifiers get *distinct* lenses matched to how that finding could be wrong — not N copies of one question:
+- *evidence-exists*: is the cited artifact actually at that line, saying that?
+- *end-re-anchor*: the mechanism AC claims to serve a value another AC measures — did that value hold, or regress?
+- *falsifiability*: can this criterion fail at all, or does it pass forever by construction?
+
+One lens where the failure mode is single-dimensional; two or three where it genuinely isn't. Each verifier is prompted to **refute**, defaulting to refuted on uncertainty. A finding survives on lens coverage, not on vote count.
+
+**Phase 3 — Synthesize.** The only genuine barrier in the script — it needs every confirmed finding at once. One agent produces cross-cutting themes ranked by member-hit-count, plus a per-member verdict table. Findings are carried as bare ordinals against system refs (slug, `AC-N`); I don't mint a finding-ID scheme in the prompts, because whatever I mint there becomes every downstream artifact's vocabulary.
+
+**Then the gate is mine to present, not the script's to resolve.** The script returns data; I render the `Recommend` line and you decide. One carve-out: any confirmed finding whose remedy is a *new standing check* — a lint, a CI lane, a recurring validation step — I surface as an unmet clarification and do not dispatch. That's last-resort work needing your explicit yes, normally its own entity, and a sprint-wide review is precisely where a pile of them gets proposed at once.
+
+## What I'd do next
+
+1. Run the state pre-read and the two shipped rollups (cheap, and can shrink or void the fan-out).
+2. Bring you the real N, the fork answer, and the re-declared worker numbers.
+3. On your nod, author the script inline to `Workflow` and launch; iterate via `scriptPath` + `resumeFromRunId` so a prompt edit re-runs only the edited stage onward.
+
+Holding at 1 until you confirm the fork and the cap. If you'd rather I just run the pre-read and come back with numbers, say go and I'll do that now — it spawns nothing.

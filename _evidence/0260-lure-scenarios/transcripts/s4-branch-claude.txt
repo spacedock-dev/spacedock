@@ -1,0 +1,17 @@
+This stays in-house — no workflow. One-line mechanism justification (the contract requires it, and "Ultracode is on" is explicitly *not* a license to climb): three read-only files totaling 38KB fit in one turn, there's no fan-out, no isolation need, and a documentation-consistency check is a direct comparison I can falsify by reading — not an unowned claim needing an adversarial second seat. Spawning agents here would raise cost, not confidence.
+
+My next actions, in order:
+
+1. **One `Grep`** to enumerate every `advance` mention across all three adapters at once, with paths and `file:line` context:
+   - `Grep(pattern="advance", glob="**/{claude-fo-dispatch,codex-first-officer-runtime,pi-first-officer-runtime}.md", -i=true, -n=true, output_mode="content", -C=3)`
+   
+   This resolves the exact paths and locates each file's `--advance` region.
+
+2. **Parallel section-scoped `Read` calls** (one per file, `offset`/`limit` taken from the grep hit clusters — not whole-file) to capture each adapter's full `--advance` prose plus the surrounding spawn / reuse-advance-handle binding it depends on:
+   - `Read(claude-fo-dispatch.md, offset, limit)`
+   - `Read(codex-first-officer-runtime.md, offset, limit)`
+   - `Read(pi-first-officer-runtime.md, offset, limit)`
+
+3. **Compare and report** — hold each adapter's `--advance` contract against the other two *and* against the source-of-truth core contract I already have loaded (`«dispatch.build» --advance`: envelope drops `subagent_type`/`name`/`team_name`/`run_in_background`, `prompt` is the reuse-advance pointer forwarded to the reuse-advance handle instead of `«worker.spawn»`, and `--advance` is incompatible with `--bare-mode`). Report each divergence or silent omission with a `file:line` citation, and note any adapter that simply doesn't document the flag.
+
+The comparison anchor is the core contract, not just adapter-vs-adapter — three files agreeing with each other but all diverging from the core is still an inconsistency the captain needs to see.

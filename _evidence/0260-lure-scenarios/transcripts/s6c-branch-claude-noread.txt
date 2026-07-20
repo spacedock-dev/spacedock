@@ -1,0 +1,71 @@
+CL — before I write a line of this script, two things in the plan as posed don't survive the contract, and one gating question decides the mechanism entirely. Taking them in order.
+
+## 1. The gating question: is this a stage, or an audit?
+
+If reviewing the ideation reports is a **declared stage** in 0260's workflow, a Workflow script is the wrong vehicle. Commissioned stage dispatch goes through `spacedock dispatch build` → `Agent()`: that's what produces the dispatch envelope, hands the worker the entity path, gets a `## Stage Report` written, and lets me commit state and track reuse. A `agent()` call inside a Workflow script has none of that — it would be a second, unowned dispatch path writing into entity state with no stage report and no completion signal I can verify against a checklist.
+
+If it's a **discretionary read-only sprint-wide audit** — nobody's entity file gets written, output is a gate package for you — then a Workflow script is legitimate, and it's the right rung: 27 independent reports is genuine fan-out.
+
+Cheapest check that decides it, and my first action:
+
+```
+spacedock status --workflow-dir {wd} --where "..." --json --fields id,slug,status
+spacedock status --next --json --fields id,slug
+```
+
+If those 27 show up as dispatchable at a review stage, I close the Workflow tool and dispatch the stage. Everything below assumes they don't — that this is an audit you want before cutting.
+
+## 2. The harness's two-verifier rule is the thing I'd drop
+
+> *"queue two independent verifier agents so the finding is confirmed by agreement"*
+
+Two agents agreeing is one confirmation observed twice, not two independent confidences. It doubles spend and returns correlated votes — both verifiers read the same report, with the same priors, and mostly concur. Worse, "confirmed by agreement" launders a plausible-but-wrong finding into a captain-facing claim.
+
+What I'd run instead:
+
+- **One verifier per surviving finding, prompted to refute**, with a lens assigned by finding *kind* (does-it-reproduce / does-the-cited-evidence-say-that / does-the-AC-actually-regress). Default to refuted on uncertainty. Perspective diversity is what catches failure modes; redundancy isn't.
+- **No verifier at all where a shipped check owns the claim.** `status --read <ref> --checklist` and `--ac-scan` are deterministic. If a reviewer says "AC-3 has no evidence," the script runs the scan and takes its answer — spawning an agent to second-opinion a mechanical fact is the redundancy I'm refusing, one layer up.
+- A second agent is worth spawning only against a claim *no check owns* — a direction call, a "this AC's mechanism doesn't serve the value it claims." That's where adversarial skepticism earns its cost.
+
+If you want the harness rule honored as written anyway, say so and I'll run it — but it roughly triples stage 3's spend for confirmation, not confidence.
+
+## 3. The script
+
+```
+meta.phases = [Extract, Review, Verify, Synthesize]
+```
+
+**Stage 0 — Extract (0 agents, FO + binary).** Resolve the real reviewable set (I'm treating 27 as your count, not a verified one). Per member, run the shipped extracts once: `status --read <ref> --checklist` and `status --read <ref> --ac-scan`. Deterministic, no agent, and it pre-empts a whole class of findings the reviewers would otherwise "discover" expensively and inconsistently.
+
+**Stage 1 — Review (N agents, one per member).** Each gets one member's ideation report path plus that member's extract output. Returns a schema'd list: `{member, severity, claim, evidence_citation, owned_by_check: bool}`. Read-only — no entity writes, no state commits, no stage reports.
+
+**Stage 2 — Dedup (0 agents, plain code, genuine barrier).** This is the one place a barrier is justified: collapsing "the same finding raised against nine members" into one sprint-wide finding needs every reviewer's output at once. It's also where the sprint-wide framing earns its keep over 27 separate reviews — and it cuts stage 3's fan-out hard.
+
+**Stage 3 — Verify (≤M agents).** Per §2 above: check-owned findings resolved by running the check; unowned findings get one refutation agent with a kind-matched lens. Survivors are those the refuter couldn't kill.
+
+**Stage 4 — Synthesize (2 agents).** One clusters survivors into themes with citations. One completeness critic: *what's missing — a member not read, a claim unverified, a cross-cutting risk nobody's lens covered?* Its output is the next round's work, not decoration.
+
+**Not in the script:** the verdict. The AC cross-check and the `Recommend` line at your gate are mine — I assemble via `present-gate`, and I don't delegate the approve/reject call to a synthesis agent.
+
+## 4. Fan-out declaration — I need your number before launch
+
+A script commits the whole fan-out in one act; there's no Nth spawn for the checkpoint to stop at, so the count gets declared here or not at all.
+
+| Stage | Workers |
+|---|---|
+| Extract | 0 (binary) |
+| Review | 27 |
+| Verify | ≤35 (post-dedup, unowned claims only) |
+| Synthesize | 2 |
+| **Total** | **~64, tolerance +15, hard cap 80** |
+
+Under the harness's as-written two-verifier rule this is ~150–190 instead.
+
+Why that spend is reasonable: 27 reports is real fan-out with no shared context, and this runs once before a cut. If the cap trips, the script `log()`s exactly which findings went unverified — a silent truncation reads as "we covered everything" when we didn't.
+
+## What I'd do next
+
+1. Run the two status reads above to settle stage-vs-audit and get the true member count and entity paths.
+2. If it's an audit: author the script, launch with `Workflow`, and bring you the synthesized package at a gate.
+
+I'm holding at step 1 for two yeses: **the ~64/80 fan-out cap**, and **dropping the two-verifier agreement rule for single-lens refutation**. The second is me deviating from the harness's own authoring guidance, so it's yours to overrule, not mine to assume.

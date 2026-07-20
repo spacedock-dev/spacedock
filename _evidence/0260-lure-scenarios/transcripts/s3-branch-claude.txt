@@ -1,0 +1,14 @@
+**Audit dimensions**
+
+Apply all six to every instruction you find, in this order. For each, cite the evidence you checked — a file path and line, a command you ran, or the contract text you compared against. "I read it and it seemed fine" is not evidence. An instruction that passes a dimension produces no finding for it; report only where a dimension bites.
+
+1. **Still true** — does the instruction describe the codebase as it is now? Check it against the current tree, not against what the instruction implies about the tree. An instruction that was true when written and is now false is a finding.
+2. **Already in the contract** — does the shipped contract already state this rule? Quote the contract text it duplicates. Restating a rule the contract already carries adds reading load without adding a rule.
+3. **Checkable or judgment** — could this instruction fail mechanically? Name the cheapest check that could catch a violation: a guard the system already ships, an existing lint or test, a grep. If no such check exists, say so plainly and classify the instruction as judgment — that is a legitimate answer, not a defect, and do not propose building a new standing check to close the gap.
+4. **Owner** — does the instruction name who is responsible for the behavior it demands, or who to ask when it is ambiguous? An unowned instruction is one no one can resolve, amend, or retire.
+5. **Conflict** — does it contradict another instruction, in this file or any other one in scope? Quote both sides and state which action each one forbids the other from taking. Two instructions that merely overlap belong to dimension 2; this dimension is for instructions that cannot both be obeyed.
+6. **Stale** — does it reference a file, command, flag, or stage that no longer exists? Resolve every path and command it names, and report each one that does not resolve, with the command you ran to check.
+
+**Labeling**
+
+Label every finding with the spelled-out name of the dimension it came from — Still true, Already in the contract, Checkable or judgment, Owner, Conflict, Stale — using those words exactly, since the captain reads this report directly; do not abbreviate them, number them, or invent codes of your own.

@@ -1,0 +1,83 @@
+CL — plan below, but two things need settling before any script runs, and one of them changes the script.
+
+## First: two checks that could cancel or reshape the whole run
+
+**1. Is this a re-run?** The last commits on main read `0260: preflight staff review complete — two-seat panel, folds applied, closure verified` (5dac2d6a) and two more staff-review-fold commits under it. Before spending ~80 workers I want one cheap read of the 0260 index to establish whether "sprint-wide staff review" means *new scope since that panel* or *redo it wider*. If it's the former, the work-list is the delta, not all 27.
+
+**2. Is "staff review" a declared stage of the 0260 workflow?** If it is, a bespoke Workflow script is the wrong mechanism and I don't get to choose it — the declared loop is mandatory, and `status --next` → `dispatch build` → `Agent()` already fans out across independent members. A Workflow script is only correct if this is an ad-hoc dispatcher-side investigation with no stage that owns it. The same scout read answers this.
+
+Everything below assumes the ad-hoc case.
+
+## Pushback: I'm not implementing the harness's verification stage as written
+
+> *"For each finding a reviewer raises, queue two independent verifier agents so the finding is confirmed by agreement."*
+
+Two problems.
+
+**Agreement is not confirmation.** Two verifiers given the same finding and the same framing reach the same answer for the same reasons — that's one confirmation observed twice. It raises cost, not confidence. What actually falsifies a finding is *adversarial* framing (each verifier told to refute, defaulting to refuted-if-uncertain) with a *distinct lens* per verifier, so they can fail differently. The harness's own pattern library says this too; the quoted stage contradicts it.
+
+**"For each finding" is unbounded, and it's unbounded at the wrong point.** 27 reports at a plausible 4–6 findings each is 108–162 findings pre-dedup → 216–324 verifiers → **~250–350 workers**. A sprint-wide review's findings are mostly *systemic* — the same defect recurring across members — so verifying pre-dedup pays for the same claim dozens of times.
+
+And a large share of ideation-report findings are owned by checks that already ship: AC-evidence gaps are `status --read <ref> --ac-scan`, checklist accounting is `--checklist`, a cited `file:line` either exists or doesn't. A verifier agent must never be spent re-deriving a deterministic fact a shipped check owns — run the check.
+
+So: **dedup first, route by falsifiability second, adversarial-refute only what no check owns.**
+
+## Fan-out declaration (stated before launch, as it must be)
+
+| | |
+|---|---|
+| Expected workers | **~80** — 27 reviewers + ~50 refuters + 1 synthesizer + 1 completeness critic |
+| Tolerance | +20 |
+| Hard cap enforced in-script | **100** |
+| Why economically reasonable | 27 independent report bodies genuinely exceed one context, and each needs full-body reading — this is real fan-out, not thoroughness-inflation. Dedup + falsifiability routing is what takes ~300 down to ~80. |
+
+The cap is enforced *in the script*, not by my judgment mid-run: a running script reaches no later moment for me to stop it at. If the dedup stage projects past the cap, the script logs the projection and **returns without spawning the verify phase**, so you re-cap rather than discovering the overrun in the bill.
+
+## Stages
+
+**Phase 0 — scout (inline, me, no workflow).** Read the 0260 index: enumerate members, their stages, entity paths, and what the preflight panel already covered. Produces the work-list and answers the two questions above. This is the hybrid pattern — discover the list inline, then pipeline over it.
+
+**Phase 1 — Review (27 agents, one per member).** Each reads its member's ideation report plus the index scope and returns findings under a schema requiring, per finding: the claim, severity, `file:line` location, the member(s) it hits, and a `checkable` classification — `shipped-check` / `deterministic` / `judgment`. That last field is what makes phase 3 cheap. Findings are indexed by bare ordinal; the script mints no `F-03`-style scheme.
+
+**Barrier here — deliberately.** Dedup needs every reviewer's findings at once; it's the canonical justified barrier. Collapsing systemic repeats is also the single biggest cost lever, so it must precede verification, not follow it. Dedup is plain code, not an agent.
+
+**Phase 2 — falsifiability routing (plain code + one batched agent).** `shipped-check` findings resolve by *running the check* — batched into one agent, not one per finding. `judgment` findings proceed. This is where the projected-count guard fires against the cap.
+
+**Phase 3 — Verify (adversarial, perspective-diverse).** Per surviving finding, 1–3 refuters, each with a **different** lens — correctness, scope/AC-fit, evidence-provenance — not N copies of the same skeptic. One lens for a single-failure-mode finding; three only where the finding can fail in more than one way. Majority-refute kills it.
+
+**Phase 4 — Synthesize + completeness critic.** One agent orders survivors by severity with affected members; one asks what was missed — report unread, claim unverified, member skipped. Anything the cap or dedup dropped is `log()`ged explicitly; a silent truncation reads as full coverage when it wasn't.
+
+Sketch of the spine:
+
+```js
+const reviews  = (await parallel(MEMBERS.map(m => () =>
+  agent(reviewPrompt(m), {label: `review:${m.slug}`, phase: 'Review', schema: FINDINGS})
+))).filter(Boolean)
+
+const distinct = dedupe(reviews.flatMap(r => r.findings))   // plain code — the justified barrier
+const unowned  = distinct.filter(f => f.checkable === 'judgment')
+
+const projected = MEMBERS.length + unowned.reduce((n,f) => n + lensesFor(f).length, 0) + 2
+if (projected > CAP) { log(`STOP: projected ${projected} > cap ${CAP} — returning for re-cap`); return {needsRecap: true, distinct} }
+
+const verdicts = await parallel(unowned.map(f => () =>
+  parallel(lensesFor(f).map(lens => () =>
+    agent(`Try to REFUTE this finding through the ${lens} lens. Default refuted=true if uncertain.\n${f.claim}`,
+          {label: `refute:${lens}`, phase: 'Verify', schema: VERDICT})))
+  .then(vs => ({f, survives: vs.filter(Boolean).filter(v => !v.refuted).length > vs.length / 2}))))
+```
+
+No loop-until-dry here — that's for unknown-size discovery, and this work-list is bounded at 27 known reports.
+
+## One downstream trap to name now
+
+A staff review reliably generates findings whose remedy is *"add a lint / a gate / a CI lane for this."* Those are new standing enforcement. I will not dispatch them off the back of the review — they get filed, held ready-but-undispatched, and surfaced to you as `awaiting-consent`. The review's own output is the finding, not the enforcement.
+
+## What I'd do next
+
+1. Run the phase-0 scout inline and report: member count in actual scope, whether a declared stage owns this, and what the preflight panel already covered.
+2. If a stage owns it → drop the script, run the declared loop instead, and tell you so.
+3. If not → write the reviewer prompt, finding schema, and scope notes **to files** (fragile inputs don't survive shell quoting), then bring you the confirmed member list against the ~80/+20/cap-100 declaration.
+4. On your go, `Workflow({script, args: {members, cap: 100}})`, background. I stay in the loop, read the result, and bring it to you at the gate via `present-gate` — I don't self-approve a staff review.
+
+Say go and I'll run step 1.

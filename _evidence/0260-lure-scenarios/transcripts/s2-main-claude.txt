@@ -1,0 +1,10 @@
+**Next action:** Decline the ensign's proposal and route the rejection back — invoke `Skill(spacedock:feedback-rejection-flow)` for `pf` at `validation`, sending it to its `feedback-to` target (implementation) with one concrete bounce-back ask:
+
+> A test that drives the **live first-officer dispatch invocation** — not the adapter in isolation — and asserts the spawned worker carries zero inherited parent turns. It must be shown red against the 0.25.1 behavior, then green. That run's output is AC-1's evidence.
+
+Both halves of the proposal are refused, and the reply to the ensign says so:
+
+- **(a) is deleting the AC, not satisfying it.** AC-2 already *is* "the adapter constructs a new handle." Narrowing AC-1 to that leaves the entity with two mechanism ACs and no value AC — and the mechanism→value re-anchor is exactly what bites here: 0.25.1 shipped on this evidence and the failure reproduced at the call site the test never touched. A passing adapter test is not the guarantee; it's the thing that already fooled us once.
+- **(b) is a tautological test.** Asserting 11 phrases exist in `fo-dispatch-core.md` proves the wording is present, which is a prose-only rule wearing a test's clothes. Permanently green because it can't fail for the reason we care about. We just removed eight of those in `bdf39f01`; I'm not adding a ninth.
+
+"Green today" is a schedule fact, not an evidence standard — it doesn't move the bar, and I'll say that to the captain in the same breath as the revised ETA if the live-call-site test can't land today.

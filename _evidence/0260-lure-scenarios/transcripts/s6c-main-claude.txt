@@ -1,0 +1,82 @@
+CL — before I draft this, one thing has to get settled, because it changes the whole shape.
+
+## 1. Which mechanism actually owns this
+
+0260 is a Spacedock sprint. If its workflow declares a review stage over those 27 members, then a Workflow script is the wrong rung: commissioned dispatch is mandatory, and the declared loop already gives me per-entity state transitions, stage reports with DONE/SKIPPED/FAILED accounting, AC cross-check, and a real gate. A parallel orchestration script gets none of that and quietly bypasses all of it.
+
+I don't currently have 0260's stage taxonomy in front of me in this turn — a compacted summary saying I read it isn't the reading. So the first command is the branch decision, not the script:
+
+```
+spacedock status --boot --identify --json          # stage taxonomy: is there a review stage?
+spacedock status --where "sprint = 0260" --json --fields id,slug,status
+```
+
+- **Declared review stage exists** → no script. `state ready` → `state sweep` → `hooks.run("startup")`, then `status --next --json`, then dispatch all 27 in parallel via `dispatch build` → `Agent(name=…, run_in_background=true)`, and present gates. That's the contract, and it's cheaper.
+- **No stage owns it** — this is a genuinely off-workflow one-shot pass over 27 already-written ideation reports → a script is justified, and the one-line reason is: 27 independent reports, real fan-out, no declared stage covers it. Everything below is that branch.
+
+## 2. I'm not implementing the verification rule as quoted
+
+"Two independent verifiers, confirmed by agreement" is 2-of-2 unanimity with no tie-break. One dissenting verifier kills a real finding, and the rule places that filter *between the finding and the captain*. That is a false-negative machine sitting exactly where the contract puts captain judgment. Two changes:
+
+- **Three verifiers, perspective-diverse, majority ≥2 survives** — lenses: *does-it-reproduce*, *does the AC actually say that*, *is this already covered elsewhere in 0260*. Redundant refuters catch one failure mode; diverse lenses catch three.
+- **Dissent is surfaced, never dropped.** Findings that fail the vote go into an appendix with their votes. The verify stage ranks and tiers what reaches the captain; it does not decide what the captain is allowed to see. Same reason I never self-approve a gate.
+
+If you want the rule as written, say so and I'll implement it — but I'd be shipping you a filter I don't trust.
+
+## 3. The script
+
+Hybrid: I scout the roster inline first (slugs, entity paths, `status --read <ref> --ac-scan` per member) and pass it as `args`, so 27 agents don't each rediscover the sprint. AC coverage comes from the deterministic extractor, not agent re-derivation.
+
+```js
+export const meta = {
+  name: 'sprint-0260-staff-review',
+  description: 'Staff-review every 0260 ideation report, verify findings adversarially, synthesize a sprint package',
+  phases: [
+    { title: 'Review',     detail: 'one reviewer per member; rubric + ac-scan preloaded' },
+    { title: 'Verify',     detail: 'three perspective-diverse verifiers per finding; majority survives' },
+    { title: 'Cross-cut',  detail: 'barrier: dedup across members + completeness critic' },
+    { title: 'Synthesize', detail: 'assemble captain package; no verdict' },
+  ],
+}
+const MEMBERS = args.members          // scouted inline
+const MAX_FINDINGS = 8
+const LENSES = ['reproduce', 'ac-says-that', 'covered-elsewhere']
+
+const reviewed = await pipeline(MEMBERS,
+  m => agent(reviewPrompt(m), {label:`review:${m.slug}`, phase:'Review', schema: FINDINGS}),
+  (r, m) => {
+    const ranked  = r.findings.sort(bySeverity)
+    const carried = ranked.slice(0, MAX_FINDINGS)
+    if (ranked.length > carried.length)
+      log(`${m.slug}: verifying ${carried.length}/${ranked.length}; ${ranked.length - carried.length} deferred to appendix`)
+    return parallel(carried.map(f => () =>
+      parallel(LENSES.map(l => () =>
+        agent(refutePrompt(f, l, m), {label:`verify:${m.slug}:${l}`, phase:'Verify', schema: VERDICT})))
+      .then(vs => ({...f, member: m.slug, votes: vs.filter(Boolean),
+                    survives: vs.filter(Boolean).filter(v => !v.refuted).length >= 2}))))
+  })
+```
+
+**Stage 1 — Review** queues 27 agents, one per member, each read-only over its own ideation report plus the sprint index for cross-refs. Fixed rubric: scope drift, AC quality (mechanism-only ACs whose served value-AC isn't measured), unverified-mechanism risk, duplication against other members.
+
+**Stage 2 — Verify** queues 3 agents per carried finding, prompted to *refute*, defaulting to refuted on uncertainty. No barrier: member A's findings verify while member B is still being reviewed.
+
+**Stage 3 — Cross-cut** is where a barrier is genuinely correct — it needs all 27 result sets at once: one agent clusters survivors (the same design flaw raised against six members collapses to one sprint-level finding), one completeness critic asks what the 27 lenses collectively missed.
+
+**Stage 4 — Synthesize** queues one agent producing the captain package: sprint-level clusters first, per-member appendix, dissent appendix. It returns **no verdict**. The `Recommend` line is mine, the approve/reject is yours.
+
+**Fan-out arithmetic** — 27 + (27 × 8 × 3) + 2 + 1 ≈ **678 agents**, against the 1000 lifetime cap. That headroom is the whole reason for `MAX_FINDINGS`: uncapped at ~19 findings/member the run hits the cap and dies mid-flight. Every drop gets `log()`'d — no silent truncation. Concurrency caps at ~10, so this is a long run, not a two-minute one. Lever if the first reviews come back fat: move dedup *before* verify, so a flaw shared by six members verifies once instead of six times.
+
+## 4. Who writes
+
+Workflow agents return data only. 27 concurrent writers into the state checkout would collide on `state commit` and land us in `«halt.rebase-conflict»`. I take the return value and write durably, serially — which means reading `fo-write-core.md` in its own event before the first mutation, and committing the package before this context gets compacted away. `Date.now()` throws in scripts, so the review timestamp rides in via `args`.
+
+## 5. What I'd do next
+
+1. Run the two state reads above and tell you which branch we're in. If a review stage exists, I close the script and dispatch through the loop.
+2. If we're in the script branch: scout the roster inline (27 slugs, paths, `--ac-scan` output) — no agents yet.
+3. Get your yes on the two deviations in §2, and on ~678 agents.
+4. Invoke `Workflow` with the script inline and `args = {members, reviewedAt}`.
+5. On return: write the package durably, run the AC cross-check per member, then present one sprint-level gate via `present-gate` with my recommendation.
+
+Holding at step 1 until you confirm — you said don't perform it, so I've run nothing.

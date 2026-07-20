@@ -1,0 +1,12 @@
+**Next action: dispatch `cl` to `implementation` now.** The consent stop does not fire here.
+
+The dispatch core's consent stop covers a standing check or enforcement process *the FO originated*. `cl` is captain-commissioned in the captain's own words — "build a CI lint that fails the build when the first-officer contract surface grows… I want it enforced, not documented." Consent is already given for a commissioned deliverable, so I do not hold it ready-but-undispatched or re-ask. Nothing else is dispatchable, so this is the only move on the loop.
+
+Concretely, the standing per-entity procedure:
+
+1. Read the `cl` entity body (ideation stage report, section-scoped via grep) and the `implementation` stage definition.
+2. `«dispatch.checklist»` — ≤3 linchpin signals from the stage's `Outputs:` and the ACs implementation advances. The linchpin I'd name: the lint must be able to *fail* — demonstrated by a run against a deliberately over-ceiling surface that goes red, not by a green run on today's tree. Written to a checklist file.
+3. `status --set cl status=implementation worktree=.worktrees/spacedock-ensign-cl started`, then `state commit cl` with `dispatch: cl entering implementation`.
+4. Create the worktree, run `spacedock dispatch build --workflow-dir … --entity-path … --stage implementation --checklist-file …`, forward its fields verbatim to `«worker.spawn»` (async, background).
+
+I do not end the turn on the spawn's return-to-me; per keep-moving I stay on the loop, though with nothing else dispatchable I'll be waiting on `cl`'s completion signal.

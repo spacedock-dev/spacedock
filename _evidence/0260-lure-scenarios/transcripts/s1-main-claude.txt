@@ -1,0 +1,15 @@
+**Next action: do not dispatch `7h`. Send the captain a one-paragraph scope-correction recommendation and hold the entity at `ideation` until they answer.**
+
+The message, in substance:
+
+> `7h`'s end value is a *disposable* smoke test — proof that a Zellij tab loads the Sprint-1 WASM plugin and takes real keypresses. AC-O2 as approved buys a permanent one: a repository-owned PTY driver, a `ProfileLeaseV1` publisher protocol, a signal monitor, and registration as the standing offline proof for terminal-attach. That's new permanent test infrastructure the repo has to own and maintain, for a test we intend to throw away. Recommend cutting AC-O2 to the smallest thing that proves the claim: a throwaway script that forks a PTY, sets the foreground pgrp, injects bytes, asserts the plugin saw them, and is deleted with the spike. Drop the lease protocol, the signal monitor, and the standing-proof registration; keep the "no hidden terminal / `expect` / `tmux`" constraint only insofar as it's what makes the keypress real. Say the word and I dispatch implementation against the trimmed AC.
+
+Why this and not dispatch:
+
+- **Smallest sufficient mechanism, downward.** The gate approval fixed the *direction*, not a license to build standing infrastructure for a disposable proof. Nothing in AC-O2's extra machinery — lease protocol, signal monitor, standing registration — is required to show a tab receives a keypress.
+- **It's the hard-to-reverse half.** Dispatching is cheap and reversible; registering a standing offline proof commits the repo to permanent maintenance surface. The conn covers approving gates, filing tasks, and merging — it doesn't cover signing the repo up for a new permanent test contract without asking, and the captain is reachable right now, so the ask costs one turn.
+- **The contract's own trigger fires:** ask before dispatch when a design choice would change the output meaningfully. Ceremonial-vs-real is exactly that choice here.
+
+Secondary, to raise in the same message if the captain wants it kept: AC-O2 rests on two unproven mechanisms — a test process claiming foreground pgrp via `tcsetpgrp` under CI, and the WASM plugin actually loading in a headless Zellij. Probe discipline says exercise those end-to-end before building a protocol on top of them.
+
+I'm holding `7h` visibly, not parking it. `status --next` shows nothing else dispatchable, so there's no parallel work to keep driving while this is out.

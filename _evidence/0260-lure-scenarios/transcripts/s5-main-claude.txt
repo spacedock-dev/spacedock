@@ -1,0 +1,16 @@
+**Recommend REJECTED.**
+
+**AC-1 is unmet, and the report says so.** AC-1's bar is "strictly lower after than before." Measured: 123,400 vs 122,231 — up 1,169 bytes. That is the criterion's own metric moving the wrong direction. The stage marked it DONE anyway; the evidence line refutes the label. That mislabel is a second defect on its own: if a miss can be filed as DONE, the checklist rollup carries no signal.
+
+**AC-2 cannot carry the gate alone.** AC-2 is mechanism-only — collapse the recipe, delete the duplicates. The end value it serves is exactly what AC-1 measures. Per the AC cross-check's end re-anchor, a mechanism AC whose served value AC regressed is a reject, not a pass. "Deduplicated, but the surface grew" is a means-accurate, end-missed stage. That's precisely the shape the re-anchor exists to catch.
+
+**The summary's rationale is a rewrite of the AC, not evidence against the finding.** "The growth is entirely cross-references every reader needs" explains *why* the surface grew; it does not make it shrink. "No supported workflow regresses" is a different (unstated) criterion. "Deferred risk, not a material finding" is a severity downgrade of the one thing AC-1 exists to measure — the FO holds this to the same bar it imposes on workers, so I don't accept it.
+
+**Bounce-back, concretely — one of two, worker's choice:**
+
+1. Pay for the cross-references. Get the 13-file total strictly under 122,231 and re-measure with the same method, citing both numbers and the command. The collapsed recipe now has one copy; the added pointers should cost less than the copies removed — if they don't, that's the finding to report.
+2. If the captain should relax AC-1, say that explicitly: come back with a proposed AC amendment and the argument for it, for the captain to accept or refuse. A stage report may not amend its own acceptance criteria.
+
+Either way, correct the AC-1 line to FAILED with its measurement. Re-gate after.
+
+Corrected accounting for this stage: **1 done, 0 skipped, 1 failed.**

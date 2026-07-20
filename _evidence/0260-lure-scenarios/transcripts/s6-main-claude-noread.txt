@@ -1,0 +1,67 @@
+## The short version
+
+The fan-out is justified — 27 independent ideation reports is genuine fan-out, and that's one of the three reasons the contract lets me climb to a workflow. But I'm not launching it yet, for one reason, and I'm not implementing the verification stage as the harness guidance describes it, for another.
+
+## Blocker before anything queues
+
+The git log says this already happened:
+
+```
+5dac2d6a 0260: preflight staff review complete — two-seat panel, folds applied, closure verified
+9b0e5104 0260: commit the codex staff-review seat; closure-pass residues
+477b66b4 0260: fable seat delta report — second panel seat of the preflight staff review
+```
+
+A two-seat staff review of 0260 is committed as complete with closure verified. Before I spend ~230 agents I need to know which of these you're asking for:
+
+- **a re-run over the same surface** — then the right shape is a *delta* review scoped to what changed since `5dac2d6a`, not a sprint-wide sweep, and most of the script below is waste;
+- **the per-member ideation-report pass the preflight panel didn't cover** — then the sweep is right as drafted.
+
+I'm treating the commit message as a hypothesis to confirm against this run, not a verdict — but it's cheap to confirm and expensive to ignore. That's the one thing I'd block on.
+
+Second, related check: if the 0260 workflow **declares a review stage per member**, then commissioned dispatch is mandatory and the harness script is the wrong mechanism entirely — the declared loop already fixed it. A parallel script would produce findings outside the entity bodies, where the gate's AC cross-check can't read them. The script is only correct if this sweep has no declared stage; and even then, its output has to land back in entity state, not stay in the workflow's return value.
+
+## The script, assuming the sweep is warranted
+
+**Inline first (not in the script):** resolve the work-list with `status --where`/`--json` — 27 rows of `{slug, path, current_stage}` — and pass it as `args`. Scouting doesn't need an agent.
+
+**Phase 1 — Review.** Queues 27 agents, one per member. Each reads that member's ideation report plus the sprint index and returns structured findings: `{file, line, claim, severity, evidence_citation, check_kind}`. The load-bearing field is `check_kind`: the reviewer classifies each finding as **deterministic** (settled by re-opening a cited artifact or re-running a cited command — "AC-4 has no evidence in the stage report", "this command exits 1") or **judgment** (direction, scope, contract design).
+
+**Phase 2 — Verify.** Runs as a pipeline stage, no barrier, so member 1's findings verify while member 27 is still being read. Routes on `check_kind`:
+- deterministic → **one** cheap checker at low effort; re-open the citation, return the quote or the exit status.
+- judgment → **three** seats, each prompted to *refute*, defaulting to refuted when uncertain, each on a distinct lens: contract-correctness / does-the-mechanism-serve-the-stated-end-value / does-it-reproduce-in-the-artifact. Survives on ≥2 of 3 non-refuted. A null agent (skipped or died) counts as refuted and gets logged.
+
+**Phase 3 — Sweep.** A real barrier, and the only one. Needs every member's results at once to (a) collapse one cross-cutting defect surfaced by eight members into one finding, (b) name what *no* report covers — a per-member reviewer structurally can't see a sprint-level gap, (c) run the end-value re-anchor: any member whose AC is "the contract says X" fails unless a binary or test enforces X and the run is cited.
+
+**Phase 4 — Digest.** One agent drafts the ranked captain-facing digest: confirmed findings severity-first, **refuted findings named with why** (you should see what was killed, not a silently filtered list), and coverage accounting — 27/27 reviewed, N raised, M confirmed, K refuted, anything a cap dropped logged explicitly.
+
+```js
+const reviewed = await pipeline(members,
+  m       => agent(reviewPrompt(m), {label: `review:${m.slug}`, phase: 'Review', schema: FINDINGS}),
+  (r, m)  => parallel(r.findings.map(f => () => verify(f, m))),   // routed by check_kind
+)
+const swept  = await agent(sweepPrompt(reviewed.flat().filter(Boolean)), {phase: 'Sweep', schema: SWEEP})
+return await agent(digestPrompt(swept), {phase: 'Digest', schema: DIGEST})
+```
+
+## Where I depart from the harness guidance, and why
+
+The guidance says two independent verifiers per finding, confirmed by agreement. I'd not do that, on three grounds:
+
+1. **Two is an even panel.** A 1–1 split has no resolution rule, so in practice I break the tie — which makes me the verifier of my own review. That's the thing the panel existed to prevent.
+2. **Agreement is the wrong test, and identical prompts are not independent.** Two verifiers asked "is this finding right?" are correlated; they agree on plausible-but-wrong findings and launder them into the digest. Refutation-default with diverse lenses kills those; mere agreement ratifies them. The harness's own quality patterns say this — refute-by-default, perspective-diverse over N identical seats.
+3. **Uniform application is escalation without cause.** Two agents arguing over whether line 41 says what the finding claims is the reflexive double-check; the artifact is the arbiter and one read settles it. Spending the panel there means underspending it on the direction calls, which are the only findings a panel can actually improve.
+
+Cost is roughly a wash — ~200 verify agents either way, ~230 total, well under the 1000 cap, ~10–16 concurrent. This isn't a cheaper plan, it's a better-allocated one.
+
+If you'd rather I follow the guidance verbatim, say so and I'll run it as written — but I'd want that on the record as your call, not mine.
+
+## What I do next, in order
+
+1. Get your answer on delta-vs-sweep, and confirm whether 0260 declares a per-member review stage.
+2. Scout the work-list inline; write the reviewer checklist and scope notes to files (fragile inputs don't survive shell quoting).
+3. Invoke `Workflow` with the script inline and the work-list as `args`.
+4. On return: read `fo-write-core.md` in its own event — I haven't loaded it this session and it gates my first mutation — then fold confirmed findings into the entity bodies and `state commit`.
+5. Assemble the sprint gate and present it via `present-gate`, digest routed through `comm-officer` if it's live. A 3–0 panel is evidence, not an approval; the verdict is mine to recommend and yours to make. I don't resolve it.
+
+Nothing is queued. Give me the answer on #1 and I'll launch.

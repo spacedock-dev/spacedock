@@ -1,0 +1,27 @@
+**Part 1 — the audit-dimension section:**
+
+## Audit dimensions
+
+Apply all six to every instruction you find. They are independent: one instruction can fail more than one, and each failure is its own finding. An instruction that passes all six produces no finding. No finding without a citation — every one carries the instruction's `file:line` and the evidence's `file:line`.
+
+**1. ACCURACY — is it still true of the current codebase?**
+Read the code the instruction describes and check the claim against it. File when the instruction asserts behavior, a layout, or a convention the code no longer has; cite the code that contradicts it. If the thing it names doesn't exist at all, that is dimension 6, not this one.
+
+**2. DUPLICATE — does the shipped contract already state it?**
+Search the contract for the same rule and quote the line with its `file:line`. Verbatim restatement, paraphrase, and weakened restatement all count. An instruction that *narrows* or *overrides* the contract is not a duplicate — say so and leave it standing.
+
+**3. CHECKABLE — mechanically checkable, or judgment only?**
+For each instruction, name the check that would fail when it is violated (a test, lint rule, `spacedock` guard, hook, CI step) and whether that check exists today. Three outcomes: checkable and checked; checkable but unchecked — name the check that should exist; judgment-only — say what a reviewer would have to decide unaided. Judgment-only is not automatically a defect; checkable-but-unchecked is the actionable case.
+
+**4. OWNER — does it name who it binds?**
+Say which actor must act: captain, FO, ensign, hook, or human author. File when the actor is absent or ambiguous — "we", "someone", bare passive voice — and name the actor the text most likely means.
+
+**5. CONFLICT — does it contradict another instruction?**
+Compare across all instruction files, not just within one. A conflict is two instructions that cannot both be satisfied in the same situation: file it once, cite both sides, and describe the concrete situation that triggers the collision. The same rule stated twice with the same meaning is dimension 2, not this one.
+
+**6. STALE — does it reference a retired file, command, flag, or stage?**
+Resolve every referent it names — path, command, flag, skill, stage, hook point — against the repo and against the live command surface and stage taxonomy. File when a referent does not resolve; name the current replacement, or state "no replacement found". Referent missing belongs here; referent present but behaving differently belongs to dimension 1.
+
+**Part 2 — the labeling sentence:**
+
+Label every finding with its dimension tag as the first token of its heading — `[ACCURACY]`, `[DUPLICATE]`, `[CHECKABLE]`, `[OWNER]`, `[CONFLICT]`, `[STALE]` — followed by the instruction's `file:line`, so that an instruction failing three dimensions appears as three separately tagged findings and the captain can sort the report and act one dimension at a time.

@@ -1,0 +1,15 @@
+Doing this in-house, not via `Workflow`/`Agent`: 38KB across three known files with a single grep anchor is one context's worth of reading — no fan-out to discover, no isolation needed, and a second opinion on "does the prose match" adds nothing a direct read doesn't already settle. Thoroughness here is in the comparison, not the mechanism.
+
+Order of calls:
+
+1. **One parallel block:**
+   - `Glob("**/{claude-fo-dispatch,codex-first-officer-runtime,pi-first-officer-runtime}.md")` — resolve the three paths.
+   - `Bash("${SPACEDOCK_BIN:-spacedock} dispatch build --help")` — the shipped flag surface is the reference the adapters are checked *against*, per prefer-a-code-gate. Adapter-vs-adapter agreement on a wrong contract is still wrong.
+
+2. **`Grep(pattern="--advance|advance mode|reuse-advance", output_mode="content", -n, -C=6)`** scoped to those three paths — gives me every mention with enough surrounding text to see whether each states the four contract points the dispatch core fixes: no `subagent_type`/`name`/`team_name`/`run_in_background` in the envelope, `prompt` is the reuse-advance pointer, it routes to the reuse-advance handle rather than `«worker.spawn»`, and it's incompatible with `--bare-mode`.
+
+3. **Targeted `Read(offset, limit)`** on each `## Runtime implementation` block the grep anchors — only the spans that bind the reuse-advance handle, since absence is the likely defect here (a file that never says `--advance` won't show in the grep, so I check each adapter's binding section directly rather than inferring from hit counts).
+
+4. Report: a four-point × three-adapter matrix against the `--help` output, naming each omission or contradiction as a documentation defect with `file:line`.
+
+Nothing here mutates state, so no write-core read is triggered.

@@ -1,0 +1,53 @@
+## Mechanism check first
+
+27 independent ideation reports is genuine fan-out — one context can't hold them and they don't interact until synthesis. A workflow is the right rung; in-house serial review isn't. No agent mutates files here, so no `isolation: 'worktree'` (it's ~200-500ms + disk per agent for nothing).
+
+Not launching it — you said draft only. Two things need your call before I do.
+
+## The plan
+
+**Phase 0 — scout inline (me, before the script):** `${SPACEDOCK_BIN:-spacedock} status --where … --json --fields id,slug,status` to resolve the 27 slugs and entity paths, plus the 0260 stage definition so the reviewers share one rubric. That work-list goes in as `args` — the script shouldn't be guessing what the members are.
+
+**Phase 1 — Review. Queues 27 agents, one per member.** Each reads its ideation report and entity body, returns schema-forced findings: `{slug, anchor (entity path + heading), claim, severity, evidence_citation, what_would_refute}`. A finding with no citation is rejected at the schema — an uncited claim isn't a finding, and the citation is also the cheapest thing for a verifier to kill.
+
+Each reviewer runs three lenses, not one: direction soundness, **AC coverage** (every `**AC-N**` has evidence, and each mechanism-only AC re-anchors on a satisfied value AC), and cut-readiness. The AC lens matters because a prose-only "the contract says X" is not AC satisfaction — it needs a binary or test enforcing X.
+
+**Phase 2 — barrier: dedup across all 27.** This is the one place a barrier is genuinely earned (cross-item merge before expensive downstream work). Reasons below.
+
+**Phase 3 — Verify. Queues N verifiers per *unique* finding**, each prompted to refute, each on a distinct lens: (a) does the cited evidence actually say that, (b) does it reproduce against the current tree, (c) is the severity right.
+
+**Phase 4 — Synthesize.** One agent folds survivors into the gate package: cut-blocking vs. advisory, ranked, each with its verdict and vote split.
+
+```js
+const reviews = (await parallel(MEMBERS.map(m => () =>
+  agent(reviewPrompt(m), {phase: 'Review', schema: FINDINGS}))))
+  .filter(Boolean).flatMap(r => r.findings)
+
+const unique = dedupeByAnchorAndClaim(reviews)      // ← barrier justified here
+log(`${reviews.length} raw → ${unique.length} unique`)
+
+const judged = await parallel(unique.map(f => () =>
+  parallel(LENSES.map(lens => () =>
+    agent(refutePrompt(f, lens), {phase: 'Verify', schema: VERDICT})))
+    .then(vs => ({f, votes: vs.filter(Boolean)}))))
+```
+
+## Two things I'd change about the harness guidance
+
+**1. Two verifiers can't render a majority.** "Confirmed by agreement" over two votes has three outcomes, and the guidance only names two. On a 1–1 split I'd be silently deciding for you:
+
+- split → drop: a real finding dies because one skeptic didn't like it. Pre-cut, that ships the bug.
+- split → confirm: the verify stage becomes a no-op for anything one verifier likes.
+
+Neither is a call I should make on my own inside a script you can't see running. **Recommend three verifiers, majority refute kills** — the cost is one extra agent per finding. If you want it held at two, then the tie rule has to be written down and visible: a 1–1 split surfaces as PLAUSIBLE rather than CONFIRMED, never silently dropped.
+
+**2. Two identical verifiers is redundancy, not independence.** The guidance's stated goal is independent adversarial verification; running the same prompt twice mostly measures sampling noise. The lens split above is what actually buys independence, and it's what makes the third vote worth its cost rather than a tiebreak formality.
+
+**And the fan-out math is why dedup moves before verify.** 27 reviewers at ~5 findings each × 3 verifiers ≈ 430 agents — fine. At ~12 findings each it's ~970 verifiers, and the workflow's hard 1000-agent cap kills the run mid-flight, leaving a half-verified review that *looks* complete. Deduping first collapses the cross-member findings that would otherwise get verified 27 times over. If anything still gets bounded, the script `log()`s what was dropped — a silent truncation reads as "we covered everything."
+
+## What I'd do next
+
+1. Run the Phase 0 scout (read-only, no mutation) to get the real 27-member work-list and the shared rubric.
+2. **Your call on verifier count** — I recommend 3-with-majority; say the word and I'll write it that way.
+3. Launch `Workflow({script, args: <work-list>})`.
+4. Bring the synthesized package to the gate via `present-gate`. The cut decision is yours — I don't self-approve a sprint cut, and the verdict lines will carry the vote splits so you can see which findings were unanimous and which squeaked through.
