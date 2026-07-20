@@ -1,101 +1,121 @@
+// ABOUTME: Structural-absence guard — runtime adapters carry no negative host-contrast
+// ABOUTME: wording and no mutable absolute step ordinals, with its non-vacuity control.
 package contractlint
 
 import (
-	"os"
-	"path/filepath"
+	"fmt"
 	"strings"
 	"testing"
 )
 
-// TestPiFirstOfficerRuntimeAvoidsNegativeHostContrast is the Pi FO equivalent of
-// TestCodexFirstOfficerRuntimeAvoidsNegativeHostContrast. It guards
-// skills/first-officer/references/pi-first-officer-runtime.md against the
-// negative host-contrast wording that the runtime-support.md positive-binding
-// sweep removed (see the pi-fo-runtime-runtime-support-compliance entity).
-//
-// A blanket "Claude" substring ban is intentionally NOT used: the Pi FO adapter
-// legitimately names "Claude" in a transport instruction (line 16: "without
-// rewriting it into Claude syntax"), comparative technical contrast (lines
-// 30/36: model-resolution delegation), and a runtime-support.md-conformant
-// teardown note (line 66: "Do not emulate Claude team deletion"). This test
-// instead bans the specific smell phrases the sweep removed, and asserts the
-// positive Pi bindings that replaced them — binding two independent values (the
-// runtime-support.md principle and the adapter text), not a prose-grep tautology.
-func TestPiFirstOfficerRuntimeAvoidsNegativeHostContrast(t *testing.T) {
-	root := repoRoot(t)
-	rel := filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md")
-	data, err := os.ReadFile(filepath.Join(root, rel))
-	if err != nil {
-		t.Fatalf("read %s: %v", rel, err)
-	}
-	text := string(data)
+// stepOrdinalPhrases are the absolute step-number couplings an adapter must not
+// carry: a step ordinal goes stale the moment the referenced procedure is
+// renumbered, so adapters name capabilities instead.
+var stepOrdinalPhrases = []string{
+	"Dispatch step",
+	"Event Loop step",
+	"Merge-and-Cleanup step",
+	"step 10",
+}
 
-	for _, banned := range []string{
+// negativeContrastPhrases are the "this host is not that host" smell phrases the
+// runtime-support positive-binding sweep removed, per adapter. An adapter may name
+// its own host and draw a technical comparison; it must not define itself by what
+// another host lacks. A blanket host-name ban is deliberately not used — the Pi FO
+// adapter legitimately names hosts in transport prose — so each entry is a phrase
+// the sweep actually removed.
+//
+// These are absence guards; they assert nothing about what an adapter MEANS. The
+// runtime-meaning claims these files once carried are bound by
+// TestRuntimeCapabilitySetAgreesAcrossCoreAndAdapters,
+// TestCodexSpawnSignatureBindsToolArgs, TestPiEmittedRuntimeTokensBindGoSource,
+// internal/dispatch/build_pi_host_test.go, and the gated live lanes in
+// internal/ensigncycle.
+var negativeContrastPhrases = map[string][]string{
+	codexEnsignRel: {
+		"Claude",
+		"another host",
+		"Codex declares none",
+		"Do not reconstruct",
+		"Do not send follow-up",
+	},
+	piFORuntimeRel: {
 		"does not expose Claude Code team-tool signatures",
 		"Do not call or ask workers to call Claude team tools",
 		"Pi has no such enum",
 		"Claude-centric enum",
 		"no Claude-centric",
-		"Merge-and-Cleanup step 10",
-		"Merge-and-Cleanup step",
-	} {
-		if strings.Contains(text, banned) {
-			t.Errorf("%s contains negative host-contrast wording %q", rel, banned)
+		"Do not create teams",
+		"Codex declares none",
+	},
+	piEnsignRel: {
+		"Do not assume Claude team tools",
+		"Claude team tools exist in Pi",
+	},
+}
+
+// stepOrdinalFiles are the adapters held to the no-absolute-step-ordinal rule.
+var stepOrdinalFiles = []string{piFORuntimeRel}
+
+func proseAbsenceViolations(text string, banned []string, kind string) []string {
+	var out []string
+	for _, phrase := range banned {
+		if strings.Contains(text, phrase) {
+			out = append(out, fmt.Sprintf("contains %s %q", kind, phrase))
 		}
 	}
+	return out
+}
 
-	for _, want := range []string{
-		// FIX 2 — the «worker.shutdown» capability binding replaced the mutable
-		// step-number coupling ("Merge-and-Cleanup step 10").
-		"`«worker.shutdown»`",
-		// FIX 3 — the positive Pi model-space binding replaced the Claude-centric
-		// enum contrast.
-		"Pi's model-space binding is provider/model strings",
-	} {
-		if !strings.Contains(text, want) {
-			t.Errorf("%s missing positive Pi capability wording %q", rel, want)
+// TestRuntimeAdaptersAvoidNegativeContrastAndStepOrdinals holds the Codex and Pi
+// adapters to two structural absences: no negative host-contrast wording, and no
+// absolute step ordinal coupling an adapter to a numbered procedure.
+func TestRuntimeAdaptersAvoidNegativeContrastAndStepOrdinals(t *testing.T) {
+	if len(negativeContrastPhrases) == 0 || len(stepOrdinalPhrases) == 0 {
+		t.Fatal("banned-phrase tables are empty — the guards would pass vacuously")
+	}
+	for rel, banned := range negativeContrastPhrases {
+		for _, msg := range proseAbsenceViolations(readRepoFile(t, rel), banned, "negative host-contrast wording") {
+			t.Errorf("%s %s", rel, msg)
+		}
+	}
+	for _, rel := range stepOrdinalFiles {
+		for _, msg := range proseAbsenceViolations(readRepoFile(t, rel), stepOrdinalPhrases, "mutable absolute step ordinal") {
+			t.Errorf("%s %s", rel, msg)
 		}
 	}
 }
 
-// TestPiEnsignRuntimeAvoidsNegativeHostContrast is the Pi ensign equivalent of
-// TestCodexEnsignRuntimeAvoidsNegativeHostContrast. The Pi ensign adapter is a
-// compact binding block keyed by the Pi-specific concerns (clarification,
-// completion signal); the shared ensign core owns the rest. The adapter has zero
-// legitimate "Claude" mentions, so a targeted phrase ban is safe here: it passes
-// today and would catch a re-introduced negative host-contrast sentence. The
-// positive assertions pin the binding-block bullets so the host-specific Pi
-// completion and clarification bindings survive the shared-core duplication trim.
-func TestPiEnsignRuntimeAvoidsNegativeHostContrast(t *testing.T) {
-	root := repoRoot(t)
-	rel := filepath.Join("skills", "ensign", "references", "pi-ensign-runtime.md")
-	data, err := os.ReadFile(filepath.Join(root, rel))
-	if err != nil {
-		t.Fatalf("read %s: %v", rel, err)
+// TestRuntimeAdapterAbsenceGuardsDiscriminate is the non-vacuity control:
+// positive-binding adapter prose PASSES, while a re-introduced host-contrast
+// sentence and a re-introduced step ordinal each RED. An emptied table or a
+// predicate that stopped comparing fails here rather than waving through an
+// adapter that has drifted back to defining itself by another host's gaps.
+func TestRuntimeAdapterAbsenceGuardsDiscriminate(t *testing.T) {
+	pass := []struct {
+		why, text, kind string
+		banned          []string
+	}{
+		{"positive Codex ensign binding", "`«context-budget»` is unavailable unless a future probe binds it.\n", "negative host-contrast wording", negativeContrastPhrases[codexEnsignRel]},
+		{"capability-named teardown", "Teardown runs through `«worker.shutdown»`.\n", "mutable absolute step ordinal", stepOrdinalPhrases},
 	}
-	text := string(data)
-
-	for _, banned := range []string{
-		"Do not assume Claude team tools",
-		"Claude team tools exist in Pi",
-	} {
-		if strings.Contains(text, banned) {
-			t.Errorf("%s contains negative host-contrast wording %q", rel, banned)
+	for _, c := range pass {
+		if v := proseAbsenceViolations(c.text, c.banned, c.kind); len(v) != 0 {
+			t.Fatalf("control: the %s was wrongly flagged: %v", c.why, v)
 		}
 	}
 
-	for _, want := range []string{
-		// The completion-signal binding bullet — the Pi-specific completion signal
-		// the shared core does not carry.
-		"- `Completion signal` ->",
-		"Completion is reported by the worker's final result in the Pi turn or by the active Pi adapter's task-completion notification.",
-		// The clarification binding bullet — the Pi-specific contact_supervisor
-		// surface the shared core does not carry.
-		"- `Clarification` ->",
-		"contact_supervisor` with `reason: \"need_decision\"`",
-	} {
-		if !strings.Contains(text, want) {
-			t.Errorf("%s missing positive Pi ensign binding wording %q", rel, want)
+	red := []struct {
+		why, text, kind string
+		banned          []string
+	}{
+		{"re-introduced host-contrast sentence", "The context budget is unavailable here; Codex declares none.\n", "negative host-contrast wording", negativeContrastPhrases[codexEnsignRel]},
+		{"re-introduced enum contrast", "Pi has no such enum, so pass the model string through.\n", "negative host-contrast wording", negativeContrastPhrases[piFORuntimeRel]},
+		{"re-introduced step ordinal", "Tear the worker down at Merge-and-Cleanup step 10.\n", "mutable absolute step ordinal", stepOrdinalPhrases},
+	}
+	for _, c := range red {
+		if v := proseAbsenceViolations(c.text, c.banned, c.kind); len(v) == 0 {
+			t.Fatalf("control: the %s was not flagged — the guard stopped biting", c.why)
 		}
 	}
 }
