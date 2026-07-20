@@ -212,3 +212,21 @@ Identical under the old protocol, distinguishable under the new one, and the mir
 ### Summary
 
 Applied Edits A-D as contract prose across the two declared instruction files and nothing else: commit `2245554f`, 2 files, net +1 line, against a declared surface of ~7 net prose lines at 2× tolerance. The hard self-check did not trip — no Go source, no test, no gate, lint, or CI lane, no third instruction file — and Edit D stayed inside its narrow captain-approved scope, widening when the existing detached audit fires rather than creating a mechanism. Evidence is a rerun mutation exercise and git state, both one-off; the presence greps for the edited strings are recorded here as validation-time evidence and are deliberately not committed, per the ruling Edit C ships. `internal/contractlint` passes, including `TestFOFunctionPromptSurfaceShrinks` — confirming neither edited file sits under the first-officer byte ratchet.
+
+### Review findings (roborev)
+
+- MEDIUM, accepted and fixed — `docs/dev/README.md:76`, Edit C. The appended captain ruling called pasted grep output "legitimate external evidence for that run" without bounding what it may be evidence FOR; a reader landing on the ruling could take it as licence for a grep to satisfy a behavioral AC. Moving a self-derived check out of CI and onto the page changes its permanence, not the independence of its expected value.
+  Fixed ADDITIVELY in `014fe501`. The captain's ruling is untouched — verified byte-for-byte, not by eye: extracted the shipped span and `diff`'d it against the approved Edit C text in this entity's `## Documentation changes`, 326 bytes each, identical. The bounding clause follows it as separate prose: the grep is structural or inventory evidence only (present or absent) and can neither satisfy a behavioral acceptance criterion nor serve as the independent source the falsifiable-evidence rule requires, because its expected value still comes from the file under test. It states a boundary the verbatim sentence does not, so no restatement was needed and no captain question arose.
+  What would make this fix fail: an edit that makes the licence unbounded again, or any change to the 326-byte ruling span — the `diff` above goes non-empty. Surface unchanged at net +1 line (the clause extends the same line), still 2 files.
+
+### Merge-base caveat for validation (read before running AC-4's check)
+
+AC-4 says to verify by `git diff --name-only` against "the merge base." Run literally as `git merge-base HEAD origin/main` that returns `c92fa644` and reports **7 files, 478 insertions** — and would look like a blown surface. It is not. `972129ac` and its sprint-setup ancestors are LOCAL-ONLY commits not yet on `origin/main` (`git merge-base --is-ancestor 972129ac origin/main` → false), so that span sweeps in `.roborev.toml`, four `docs/roadmap/0260-proportionality/*` files, and other members' sprint scaffolding.
+
+The correct baseline for this entity is the branch point `972129ac`. Against it: **2 files** — `docs/dev/README.md`, `skills/ensign/references/ensign-shared-core.md` — 5 insertions, 4 deletions, net +1 line; `--diff-filter=A` × `_test.go` = 0; files matching `\.go$|\.ya?ml$|contractlint|testlint` = 0. AC-4 holds. Use `git diff 972129ac --name-only`.
+
+### Required CI lanes for this diff
+
+This diff touches `skills/**/references/**` (`ensign-shared-core.md`), which under `docs/dev/README.md:78` makes the host live lanes REQUIRED green before merge — not optional, and a flake there is grounds to re-run to green, never to skip. Captain waiver in force: the **pi** lane's red is WAIVED for this train. That waiver covers **pi only** and must not be stretched over a failure in any other lane; a non-pi red is a real blocker. Flagging here so validation does not rediscover it late.
+
+Local `go test ./...` after the fix: EXIT=0, 15 packages ok, 0 FAIL, including `TestFOFunctionPromptSurfaceShrinks` (the FO byte ratchet) — neither edited file is under that cap and both stay out of `first-officer/**`.
