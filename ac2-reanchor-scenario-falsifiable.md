@@ -1,5 +1,5 @@
 ---
-title: Strengthen the #441 AC-2 re-anchor live scenario — it cannot fail on the regression it polices
+title: Strengthen the PR-441 AC-2 re-anchor live scenario — it cannot fail on the regression it polices #441 AC-2 re-anchor live scenario — it cannot fail on the regression it polices
 status: backlog
 score: 0.4
 source: "pre-tag spot-audit of #441/#442, 2026-06-30. Real major, verified non-ship-blocker (the gate-on-end-value prose shipped fine; only its behavioral PROOF is vacuous). Test-strength follow-up."
