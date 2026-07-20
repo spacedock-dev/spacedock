@@ -1,16 +1,17 @@
 ---
 id: 2686bggef0qz5hsrft2aks0t
 title: Restore pi-live lane green by resolving the pi-subagents/pi-coding-agent version skew
-status: validation
+status: done
 source: c6 validation cycle-7 live-lane triage, 2026-07-20
 started: 2026-07-20T13:56:42Z
-completed:
-verdict:
+completed: 2026-07-20T16:10:09Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-fix-pi-live-lane-pi-subagents-version-skew
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:538
+archived: 2026-07-20T16:10:09Z
 ---
 
 The pi-live CI lane is deterministically red for every commit, including main, due to an upstream extension version skew. Until it is fixed, no PR can satisfy the every-host-lane merge requirement on pi-live.
