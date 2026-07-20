@@ -22,4 +22,4 @@ Remove the rule/verdict from the runbook (don't supply the answer), and grade on
 
 ## Archived (adopted cross-review re-lock, 2026-07-20)
 
-Merged into `ac2-design-proof-fixture` — scope carried there; this entity ships nothing separately.
+Merged into `ac2-design-proof-fixture`; that entity was itself archived into the check-ordering task's lure catalog carrying ONLY the reviewer-side fixture — the Go-scenario repair this entity owned (`internal/livescenario/ac2_reanchor.go` stays green when its own deliverable clause is deleted) was NOT carried anywhere. Correction recorded 2026-07-20 (preflight staff review): the repair is re-filed as its own backlog task, `ac2-reanchor-live-scenario-repair`.
