@@ -65,6 +65,8 @@ Both treat the arm→hook transition as a stopping point (park the arm, or re-as
 
 One added clause in `«merge.guard»`, immediately after the `→ shipped` bullet. No deletions; the existing effect/done-when/block/shipped bullets are unchanged.
 
+**Expected surface:** 1 file (`skills/first-officer/references/fo-merge-core.md`), ~1 clause / ~2 lines added (the bolded paragraph plus its blank separator), no deletions, no other files touched.
+
 **Before** (`fo-merge-core.md`, `«merge.guard»` — nothing binds the FO's turn boundary; the done-when's "left it armed/blocked with its next step named" reads as an acceptable turn end):
 
     - **done-when:** the entity is archived terminal, or `«merge.guard»` left it armed/blocked with its next step named in its own output.
