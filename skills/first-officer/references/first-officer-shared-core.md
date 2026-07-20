@@ -99,7 +99,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 
 ## «feedback.route»(slug, stage): route a rejection back to its feedback-to target and re-gate
 
-- **effect:** invoke `Skill(skill="spacedock:feedback-rejection-flow")` and follow it — read the `feedback-to` target, append a conforming `### Feedback Cycles` entry (actuals, estimate, deviation, findings disposition, AC-drift) and read the round state, escalate on cycle 3, consult the budget probe, route the triage block and findings back to the target stage, re-run the reviewer, re-enter the gate flow.
+- **effect:** invoke `Skill(skill="spacedock:feedback-rejection-flow")` and follow it — read the `feedback-to` target, append a conforming `### Feedback Cycles` entry and read the round state, escalate on cycle 3, consult the budget probe, route findings back to the target stage, re-run the reviewer, re-enter the gate flow.
 - **done-when:** the rejection has been routed to its `feedback-to` target stage and re-gated, escalated at cycle 3, or held on a recorded design-reset decision past tolerance.
 - **block:** the routing decision is judgment-adjacent — the skill, not a binary, owns it.
 - → **prose**; the `feedback-rejection-flow` skill is the body.
