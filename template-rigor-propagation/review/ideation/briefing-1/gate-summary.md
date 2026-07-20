@@ -1,3 +1,27 @@
+# Gate review: Dev template ships the rigor scar tissue and refit propagates it (2ae) — ideation
+
+**What you are looking at:** the ideation result for the LAST of the nine 0260 sprint tasks. It packages the sprint's already-approved rules into the commission template, so the next workflow you commission starts protected — and fixes refit so already-commissioned workflows receive that content when refreshed. The full task body, including every before/after diff, is below the divider.
+
+**Chosen direction:** two prose changes, no code. (1) Fill the commission template's existing homes with six settled pieces carried word-for-word from the approved siblings — the fixed Verified-by example (ht), the no-prose-grep rule, the "cheapest check that can fail" rename (z7), the three-class finding triage (02av), the offline/interactive AC split, the small-change fast path — echoed into the experiment template and commission skill so wording stops diverging. (2) Sharpen refit's regenerate-and-diff step so it re-emits the template's workflow-independent sections; today it propagates only the version stamp.
+
+**Recommend approve.**
+
+**The proof that matters:** the riskiest claim — that refit can carry content, not just a version bump — was exercised end-to-end before design. A README commissioned from today's template, refreshed by today's refit, diffs at 2 lines (the version stamp only — the reported disease, reproduced). Regenerated from the updated template, it diffs at 13 content lines across 4 hunks. Mechanism is plain `diff`; the measured pair becomes the validation fixture.
+
+**Checklist:** 3 done, 0 skipped, 0 failed — before/after diffs for all eight pieces each naming the value AC it serves; the spike above; declared surface + tolerance.
+
+**Acceptance criteria:** two value ACs measure against baselines that can move the wrong way (a `main`-commissioned README ships 0 scar-tissue pieces and at least 1 banned grep example; today's refit surfaces 0 content lines). AC-3 is the paired mechanism check: word-for-word against each sibling source, four files only, zero new tests/gates/lints. I verified all five cited source lines against the live files before this review.
+
+**Declared surface:** 4 files (`development.md`, `experiment.md`, commission `SKILL.md`, refit `SKILL.md`), ~18 net prose lines, 0 product code, tolerance 2×, hard self-check on any code, any new enforcement, a fifth file, or non-verbatim re-drafting.
+
+**One call surfaced for you, not assumed:** bw's Feedback Cycles entry FORMAT is not shipped in the template — the sprint re-lock deferred it until live drives show narration ignored, so the template references the record by name only. Annotate here if you want the format line included now; my recommendation is keep it deferred.
+
+**Decision:** approve = this task's approval is recorded with a pending advance to implementation (the Commander session applies it), the worker is released, and shaping moves to the sprint-wide preflight check and the Commander package. Revise = annotate what to change. Hold = keep it open for discussion.
+
+---
+
+# Full task body (frozen snapshot at gate time)
+
 ---
 id: 2ae8r33r18g0w0g21559yc57
 title: Dev template ships the rigor scar tissue and refit propagates it to commissioned workflows
