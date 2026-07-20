@@ -1,6 +1,6 @@
 ---
 title: Contractlint runtime-semantics retirement — codex and pi phrase checks become behavior tests
-status: ideation
+status: implementation
 source: "Contractlint antipattern sweep, 2026-07-11: codex_multi_agent_v2_contract_test.go and Codex portions of runtime_binding_block_test.go assert runtime meaning from host-adapter prose."
 score: 0.34
 id: 8413fc05vpp8116k54x8br15
@@ -8,33 +8,34 @@ sprint: 0260-proportionality
 group: contract-cleanups
 started: 2026-07-20T05:04:09Z
 gates:
-  version: 1
-  current:
-    gate: gate:docs-dev:841:ideation
-    attempt: gate-attempt:841-ideation-1
-  records:
-    - id: gate:docs-dev:841:ideation
-      stage: ideation
-      current-attempt: gate-attempt:841-ideation-1
-      attempts:
-        - id: gate-attempt:841-ideation-1
-          sequence: 1
-          state: closed
-          briefing:
-            id: briefing:841-ideation-1-chat
-            digest: sha256:7b46c619b5f83efe557122fb3a5e2e016f13c75500713be226851984bd1515c5
-            note: chat presentation (per-check disposition + binding counts); digest is the entity content immediately before this record
-          resolution:
-            type: Resolution
-            id: resolution:captain-chat-841-ideation-1
-            briefing: briefing:841-ideation-1-chat
-            by: person:captain
-            at: 2026-07-20T05:40:00Z
-            decision: approve
-          application:
-            action: advance
-            target-stage: implementation
-            state: pending
+    version: 1
+    current:
+        gate: gate:docs-dev:841:ideation
+        attempt: gate-attempt:841-ideation-1
+    records:
+        - id: gate:docs-dev:841:ideation
+          stage: ideation
+          current-attempt: gate-attempt:841-ideation-1
+          attempts:
+            - id: gate-attempt:841-ideation-1
+              sequence: 1
+              state: closed
+              briefing:
+                id: briefing:841-ideation-1-chat
+                digest: sha256:7b46c619b5f83efe557122fb3a5e2e016f13c75500713be226851984bd1515c5
+                note: chat presentation (per-check disposition + binding counts); digest is the entity content immediately before this record
+              resolution:
+                type: Resolution
+                id: resolution:captain-chat-841-ideation-1
+                briefing: briefing:841-ideation-1-chat
+                by: person:captain
+                at: 2026-07-20T05:40:00Z
+                decision: approve
+              application:
+                action: advance
+                target-stage: implementation
+                state: consumed
+worktree: .worktrees/spacedock-ensign-contractlint-codex-runtime-semantics-retirement
 ---
 
 ## Problem
