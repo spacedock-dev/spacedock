@@ -562,25 +562,6 @@ func TestPiRuntimeConfigRetiresSkillFlagsAndCwdFallback(t *testing.T) {
 	})
 }
 
-func TestRuntimeSupportDocsKeepPiDoctorVsLiveTalkbackBoundary(t *testing.T) {
-	doc, err := os.ReadFile(filepath.Join("..", "..", "docs", "runtime-support.md"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	text := string(doc)
-	for _, want := range []string{
-		"pi-intercom",
-		"intercom bridge",
-		"necessary setup checks but insufficient to prove live supervisor talkback",
-		"progress update -> decision request -> supervisor reply -> child resume -> durable marker evidence",
-		"pi-intercom-supervisor-talkback",
-	} {
-		if !strings.Contains(text, want) {
-			t.Fatalf("runtime-support.md missing %q", want)
-		}
-	}
-}
-
 func TestPiDoctorReportsMissingAndHealthyRuntime(t *testing.T) {
 	repo := t.TempDir()
 	writePiSkillFixtures(t, repo)

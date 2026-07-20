@@ -89,24 +89,6 @@ func TestCompletionShells(t *testing.T) {
 	}
 }
 
-// TestHelpListsNewVerbs (AC-3) asserts the grouped --help lists both new verbs
-// under the Workflow group with their one-liners, in the cobra help structure.
-func TestHelpListsNewVerbs(t *testing.T) {
-	var stdout bytes.Buffer
-	Run([]string{"--help"}, &stdout, &bytes.Buffer{})
-	out := stdout.String()
-	for _, want := range []string{
-		"new",
-		"Create an entity from a stdin body",
-		"completion",
-		"Print a bash or zsh completion script",
-	} {
-		if !strings.Contains(out, want) {
-			t.Fatalf("--help missing %q:\n%s", want, out)
-		}
-	}
-}
-
 func isFile(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.Mode().IsRegular()

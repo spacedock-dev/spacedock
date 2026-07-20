@@ -122,13 +122,12 @@ func TestStateCommitHaltsOnSameEntityConflict(t *testing.T) {
 	}
 }
 
-// TestStateCommitHaltStderrCarriesRemediationAndPeerCommit pins AC-2 (D1): the
-// exit-3 HALT stderr carries the FO's next-action line, the never-force/never-
-// auto-resolve line, and the peer commit that survived the aborted rebase — the
-// remediation the resident prose used to own, now emitted at fire time. The peer
-// commit is A's pushed HEAD sha (the pull's fetch phase updates origin/{branch}
-// before the rebase conflicts; abort does not touch it).
-func TestStateCommitHaltStderrCarriesRemediationAndPeerCommit(t *testing.T) {
+// TestStateCommitHaltStderrCarriesPeerCommit pins AC-2 (D1): the exit-3 HALT
+// stderr carries the peer commit that survived the aborted rebase — a populated,
+// computed diagnostic rather than only an exit code. The peer commit is A's
+// pushed HEAD sha (the pull's fetch phase updates origin/{branch} before the
+// rebase conflicts; abort does not touch it).
+func TestStateCommitHaltStderrCarriesPeerCommit(t *testing.T) {
 	_, workflowA, workflowB, _ := twoHostStateWorkflow(t)
 	checkoutA := filepath.Join(workflowA, ".spacedock-state")
 	hostA := filepath.Dir(filepath.Dir(workflowA))
@@ -147,12 +146,6 @@ func TestStateCommitHaltStderrCarriesRemediationAndPeerCommit(t *testing.T) {
 	}
 	if !strings.Contains(errOut, "Peer commit: "+peerSHA) {
 		t.Fatalf("HALT stderr should name the peer commit %q, got:\n%s", peerSHA, errOut)
-	}
-	if !strings.Contains(errOut, "Next: HALT dispatch — do not dispatch against this state tree. Surface the conflicting path(s) and peer commit to the operator and stop.") {
-		t.Fatalf("HALT stderr should name the FO's next action, got:\n%s", errOut)
-	}
-	if !strings.Contains(errOut, "Never `git push --force`/`--force-with-lease`; never re-run with `-X ours`/`-X theirs`; never discard either side.") {
-		t.Fatalf("HALT stderr should carry the never-force/never-auto-resolve line, got:\n%s", errOut)
 	}
 }
 

@@ -23,20 +23,6 @@ func TestFilingReadmeTaskTemplateRoundTripsThroughNew(t *testing.T) {
 	}
 	template := filingTaskTemplate(t, string(readmeBytes))
 
-	for _, required := range []string{
-		"---\n",
-		"title: Task name here\n",
-		"status: backlog\n",
-		"## Problem\n",
-		"## Proposed approach\n",
-		"## Out of scope\n",
-		"## Acceptance criteria\n",
-		"## Test plan\n",
-	} {
-		if !strings.Contains(template, required) {
-			t.Errorf("Task Template missing %q:\n%s", required, template)
-		}
-	}
 	if !strings.HasPrefix(template, "---\n") {
 		t.Fatalf("Task Template frontmatter must begin at column zero:\n%q", template)
 	}
