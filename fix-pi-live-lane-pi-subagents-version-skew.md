@@ -4,9 +4,9 @@ title: Restore pi-live lane green by resolving the pi-subagents/pi-coding-agent 
 status: validation
 source: c6 validation cycle-7 live-lane triage, 2026-07-20
 started: 2026-07-20T13:56:42Z
-completed:
-verdict:
-score:
+completed: 2026-07-20T14:41:04Z
+verdict: PASSED
+score: 1
 worktree: .worktrees/spacedock-ensign-fix-pi-live-lane-pi-subagents-version-skew
 issue:
 ---
@@ -62,3 +62,29 @@ Implemented the pi-live workflow fix: Node 24 for the Pi lane, exact pinned Pi s
 - DONE — `go test ./...`: passed.
 - DONE — `go test ./... -race`: passed.
 - DONE — Local npm smoke: passed for the pinned tarball/integrity flow and pi-ai `/compat` guard using temporary install prefixes.
+
+Stage: validation
+
+### Summary
+
+Validated implementation commit `158927c13fe3db3398bfbca8f0b1d970b6166f3d` for the pi-live version-skew fix. Recommendation: **PASSED** for the offline validation gate. AC-2 is satisfied by exact pinned versions, recorded sha512 integrities, install-step compatibility comments, and a fail-fast `/compat` guard before the live smoke. AC-1 remains intentionally reserved for the FO's post-merge main-branch pi-live run.
+
+### Acceptance criteria evidence
+
+- **AC-1 (VALUE) - The pi-live lane is green on main.** Not independently verified in this validation stage; dispatch explicitly assigns post-merge main evidence to the FO. This does not block this offline validation gate.
+- **AC-2 - The version constraint is explicit and evergreen, not incidental.** PASS. Static review of `.github/workflows/runtime-live-e2e.yml` confirms the pi-live job uses Node 24, declares exact pins for `@earendil-works/pi-coding-agent@0.80.10`, `pi-subagents@0.35.1`, and `pi-intercom@0.6.0`, records sha512 integrity strings in-file, verifies `npm pack` integrity before installing tarballs, contains the compatibility comment naming `@earendil-works/pi-ai/compat` and the Node engine requirement, and runs `Guard Pi substrate compatibility` before `Run live Pi front-door smoke`.
+
+### Validation
+
+- PASS — `gofmt -w ./cmd ./internal && git diff --check && git status --short`: no output; worktree remained clean.
+- PASS — `go test ./...`: all packages passed on this run.
+- PASS — `go test ./... -race`: all packages passed on this run.
+- PASS — Detached adversarial audit on hidden throwaway checkout `.adversarial-audit`: corrupted `PI_SUBAGENTS_INTEGRITY`, then ran `go test ./internal/release -run TestWorkflowsPreserveAndPublishJourneyCosts -count=1`; the guard failed with `runtime-live-e2e.yml Pi live job does not declare exact Pi substrate version and integrity pins`, proving the deliverable's guard catches a material integrity-pin regression. Throwaway checkout was removed after the audit.
+
+### Reviewer findings
+
+No material findings. The offline guard is static by design for the workflow contract, but the adversarial audit confirms it is not a self-referential spelling-only acceptance of the implemented file.
+
+### Deferred risks
+
+- AC-1 live evidence is pending the FO-owned post-merge main pi-live run. Promotion condition: if the PR or main pi-live run still fails at Pi extension load or substrate compatibility after merge, reopen as material against AC-1.
