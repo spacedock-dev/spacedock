@@ -8,6 +8,8 @@ completed:
 verdict:
 score:
 worktree:
+sprint: 0260-proportionality
+group: test-cleanups
 ---
 
 Add a standing mechanism against the output/prose-grep third shape, and make the review lens that already catches it (roborev codex) a reliable backstop — because prose rules against prose-grep are themselves prose and were applied leniently 4x this session.
