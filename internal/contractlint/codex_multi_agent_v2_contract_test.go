@@ -11,19 +11,39 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
 )
 
-// codexSpawnCallRe captures the arg list of a `spawn_agent(...)` shape in adapter
-// prose; codexSpawnArgRe splits it into `name` / `name="value"` entries.
+// codexSpawnCallRe captures a `spawn_agent(...)` arg list; codexSpawnArgRe matches
+// ONE whole `name` / `name="value"` entry. The anchors are load-bearing: an
+// unanchored scan skips unparseable text, so `spawn_agent(task_name,,message)`
+// still yielded the expected name set and passed.
 var (
 	codexSpawnCallRe = regexp.MustCompile(`spawn_agent\(([^)]*)\)`)
-	codexSpawnArgRe  = regexp.MustCompile(`([a-z_]+)(?:="([^"]*)")?`)
+	codexSpawnArgRe  = regexp.MustCompile(`^([a-z_]+)(?:="([^"]*)")?$`)
 )
+
+type codexSpawnArg struct {
+	name, value string
+	hasDefault  bool
+}
+
+// codexSpawnArgs parses atomically: every comma-delimited entry must match a whole
+// argument, so empty entries and stray characters are errors, not skipped text.
+func codexSpawnArgs(argList string) ([]codexSpawnArg, error) {
+	var out []codexSpawnArg
+	for _, entry := range strings.Split(argList, ",") {
+		trimmed := strings.TrimSpace(entry)
+		m := codexSpawnArgRe.FindStringSubmatch(trimmed)
+		if m == nil {
+			return nil, fmt.Errorf("unparseable argument %q", trimmed)
+		}
+		out = append(out, codexSpawnArg{name: m[1], value: m[2], hasDefault: strings.Contains(trimmed, "=")})
+	}
+	return out, nil
+}
 
 // codexSpawnSignatureViolations holds every `spawn_agent(...)` signature the
 // adapter spells out to the arg shape the Go emitter produces: the arg-NAME set
-// must equal the ToolArgs keys, and a default the signature spells out
-// (`fork_turns="none"`) must equal the emitted value. The sides are independent —
-// renaming a ToolArgs key or changing the emitted fork_turns value reds without
-// the doc moving, and a doc edit reds without the Go moving.
+// must equal the ToolArgs keys, and a spelled-out default must equal the emitted
+// value. Either side moving alone reds.
 func codexSpawnSignatureViolations(text string, toolArgs map[string]string) []string {
 	calls := codexSpawnCallRe.FindAllStringSubmatch(text, -1)
 	if len(calls) == 0 {
@@ -35,11 +55,19 @@ func codexSpawnSignatureViolations(text string, toolArgs map[string]string) []st
 	}
 	var out []string
 	for _, call := range calls {
+		args, err := codexSpawnArgs(call[1])
+		if err != nil {
+			out = append(out, fmt.Sprintf("signature %q is malformed: %v", call[0], err))
+			continue
+		}
 		names := map[string]bool{}
-		for _, arg := range codexSpawnArgRe.FindAllStringSubmatch(call[1], -1) {
-			names[arg[1]] = true
-			if emitted, ok := toolArgs[arg[1]]; arg[2] != "" && ok && emitted != arg[2] {
-				out = append(out, fmt.Sprintf("signature %q spells default %s=%q but the Go emitter produces %q", call[0], arg[1], arg[2], emitted))
+		for _, arg := range args {
+			if names[arg.name] {
+				out = append(out, fmt.Sprintf("signature %q declares argument %q twice", call[0], arg.name))
+			}
+			names[arg.name] = true
+			if emitted, ok := toolArgs[arg.name]; arg.hasDefault && ok && emitted != arg.value {
+				out = append(out, fmt.Sprintf("signature %q spells default %s=%q but the Go emitter produces %q", call[0], arg.name, arg.value, emitted))
 			}
 		}
 		if !setEqual(names, wanted) {
@@ -51,10 +79,9 @@ func codexSpawnSignatureViolations(text string, toolArgs map[string]string) []st
 
 // TestCodexSpawnSignatureBindsToolArgs binds the Codex FO adapter's spawn
 // signature to `dispatch.CodexMultiAgentV2Spawn.ToolArgs()`, the Go surface
-// Spacedock emits for a Codex spawn. The other Codex tools the adapter names
-// (`send_message`, `followup_task`, `wait_agent`, `list_agents`,
-// `interrupt_agent`) have no Spacedock-emitted Go source; their runtime meaning is
-// owned by internal/ensigncycle/codex_live_runner_test.go.
+// Spacedock emits for a Codex spawn. The adapter's other tool names have no
+// Spacedock-emitted source; where each is really exercised (and where nothing
+// exercises it) is annotated on codexToolTokens in runtime_binding_block_test.go.
 func TestCodexSpawnSignatureBindsToolArgs(t *testing.T) {
 	emitted := dispatch.CodexMultiAgentV2Spawn{TaskName: "spacedock_worker", Message: "assignment"}.ToolArgs()
 	if len(emitted) == 0 {
@@ -65,10 +92,8 @@ func TestCodexSpawnSignatureBindsToolArgs(t *testing.T) {
 	}
 }
 
-// hostNeutralBannedTokens are the host names and host-specific tool names a
-// SHARED skill must never carry. It is a structural-absence vocabulary: it asserts
-// nothing about meaning, only that the skill speaks in `«capability»` terms every
-// host adapter can bind.
+// hostNeutralBannedTokens are the host and host-tool names a SHARED skill must
+// never carry — a structural-absence vocabulary, asserting nothing about meaning.
 var hostNeutralBannedTokens = []string{
 	"Codex",
 	"Claude",
@@ -94,8 +119,7 @@ func hostNeutralViolations(text string) []string {
 
 // TestFeedbackRejectionFlowStaysHostNeutral keeps the shared feedback-rejection
 // skill free of host and host-tool names. What its `«capability»` vocabulary MEANS
-// is bound by TestRuntimeCapabilitySetAgreesAcrossCoreAndAdapters, which requires
-// every capability the skill references to exist in the dispatch core.
+// is bound by TestRuntimeCapabilitySetAgreesAcrossCoreAndAdapters.
 func TestFeedbackRejectionFlowStaysHostNeutral(t *testing.T) {
 	for _, msg := range hostNeutralViolations(readRepoFile(t, feedbackFlowRel)) {
 		t.Errorf("%s %s", feedbackFlowRel, msg)

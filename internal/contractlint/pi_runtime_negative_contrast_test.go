@@ -20,17 +20,13 @@ var stepOrdinalPhrases = []string{
 
 // negativeContrastPhrases are the "this host is not that host" smell phrases the
 // runtime-support positive-binding sweep removed, per adapter. An adapter may name
-// its own host and draw a technical comparison; it must not define itself by what
-// another host lacks. A blanket host-name ban is deliberately not used — the Pi FO
-// adapter legitimately names hosts in transport prose — so each entry is a phrase
-// the sweep actually removed.
-//
-// These are absence guards; they assert nothing about what an adapter MEANS. The
-// runtime-meaning claims these files once carried are bound by
-// TestRuntimeCapabilitySetAgreesAcrossCoreAndAdapters,
-// TestCodexSpawnSignatureBindsToolArgs, TestPiEmittedRuntimeTokensBindGoSource,
-// internal/dispatch/build_pi_host_test.go, and the gated live lanes in
-// internal/ensigncycle.
+// its own host; it must not define itself by what another host lacks. A blanket
+// host-name ban is deliberately not used — the Pi FO adapter legitimately names
+// hosts in transport prose — so each entry is a phrase the sweep actually removed.
+// These are absence guards, asserting nothing about what an adapter MEANS; the
+// runtime-meaning claims are bound by the three binding tests and
+// internal/dispatch/build_pi_host_test.go, and the unowned ones are listed under
+// UNCOVERED RUNTIME TOKENS in runtime_binding_block_test.go.
 var negativeContrastPhrases = map[string][]string{
 	codexEnsignRel: {
 		"Claude",
@@ -57,6 +53,30 @@ var negativeContrastPhrases = map[string][]string{
 // stepOrdinalFiles are the adapters held to the no-absolute-step-ordinal rule.
 var stepOrdinalFiles = []string{piFORuntimeRel}
 
+// lifecycleHeadings are the per-adapter lifecycle sections the runtime-binding-block
+// migration folded into `## Runtime implementation`; a re-introduced one gives a cold
+// agent two competing lifecycle stories. This guard was deleted once on the reasoning
+// that a divergent re-introduced block would red the capability-set equality. That was
+// WRONG and shipped unverified: the capability set is extracted from the `## Runtime
+// implementation` section alone and never sees a sibling section, so re-adding
+// `## Awaiting Completion` red nothing. Restored, with a discriminator case.
+var lifecycleHeadings = map[string][]string{
+	codexFORuntimeRel: {
+		"## Dispatch\n",
+		"## Awaiting Completion\n",
+		"## Reuse And Feedback Routing\n",
+	},
+	piFORuntimeRel: {
+		"## Runtime Shape\n",
+		"## Dispatch\n",
+		"## Awaiting Completion\n",
+		"## Follow-up and Reuse\n",
+		"## Shutdown\n",
+		"### Model Resolution\n",
+		"### Canonical Model Space\n",
+	},
+}
+
 func proseAbsenceViolations(text string, banned []string, kind string) []string {
 	var out []string
 	for _, phrase := range banned {
@@ -68,10 +88,11 @@ func proseAbsenceViolations(text string, banned []string, kind string) []string 
 }
 
 // TestRuntimeAdaptersAvoidNegativeContrastAndStepOrdinals holds the Codex and Pi
-// adapters to two structural absences: no negative host-contrast wording, and no
-// absolute step ordinal coupling an adapter to a numbered procedure.
+// adapters to three structural absences: no negative host-contrast wording, no
+// absolute step ordinal coupling an adapter to a numbered procedure, and no
+// re-introduced lifecycle section competing with the runtime-binding block.
 func TestRuntimeAdaptersAvoidNegativeContrastAndStepOrdinals(t *testing.T) {
-	if len(negativeContrastPhrases) == 0 || len(stepOrdinalPhrases) == 0 {
+	if len(negativeContrastPhrases) == 0 || len(stepOrdinalPhrases) == 0 || len(lifecycleHeadings) == 0 {
 		t.Fatal("banned-phrase tables are empty — the guards would pass vacuously")
 	}
 	for rel, banned := range negativeContrastPhrases {
@@ -81,6 +102,11 @@ func TestRuntimeAdaptersAvoidNegativeContrastAndStepOrdinals(t *testing.T) {
 	}
 	for _, rel := range stepOrdinalFiles {
 		for _, msg := range proseAbsenceViolations(readRepoFile(t, rel), stepOrdinalPhrases, "mutable absolute step ordinal") {
+			t.Errorf("%s %s", rel, msg)
+		}
+	}
+	for rel, banned := range lifecycleHeadings {
+		for _, msg := range proseAbsenceViolations(readRepoFile(t, rel), banned, "retired lifecycle heading") {
 			t.Errorf("%s %s", rel, msg)
 		}
 	}
@@ -112,6 +138,7 @@ func TestRuntimeAdapterAbsenceGuardsDiscriminate(t *testing.T) {
 		{"re-introduced host-contrast sentence", "The context budget is unavailable here; Codex declares none.\n", "negative host-contrast wording", negativeContrastPhrases[codexEnsignRel]},
 		{"re-introduced enum contrast", "Pi has no such enum, so pass the model string through.\n", "negative host-contrast wording", negativeContrastPhrases[piFORuntimeRel]},
 		{"re-introduced step ordinal", "Tear the worker down at Merge-and-Cleanup step 10.\n", "mutable absolute step ordinal", stepOrdinalPhrases},
+		{"re-introduced lifecycle section", "## Awaiting Completion\n\nPoll the worker until it reports.\n", "retired lifecycle heading", lifecycleHeadings[codexFORuntimeRel]},
 	}
 	for _, c := range red {
 		if v := proseAbsenceViolations(c.text, c.banned, c.kind); len(v) == 0 {
