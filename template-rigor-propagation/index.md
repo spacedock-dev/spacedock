@@ -44,8 +44,8 @@ gates:
               state: closed
               briefing:
                 id: briefing:2ae-ideation-2-chat
-                digest: sha256:73d52527f12644ec3252e96414bb63d3cb7e44f57c8392ca9884cd218a7d4183
-                note: chat presentation; digest is the entity content after the captain-approved staff-review folds were applied
+                digest: sha256:1f71f711733bec3fe6d6d6a243c818767938cdc78388dab2cca5056ef32f3132
+                note: "chat presentation; ADVISORY digest — it hashes the working file at recording time (body folds applied, this attempt's own record excluded), which no single committed tree reproduces because an entity cannot self-bind its gates record. For drift checking, diff the entity BODY against the state commit that introduced this attempt; do not re-hash the current file. Digest refreshed once in the same fold round after the closure pass caught a residual cross-reference (Piece 6's placement parenthetical)."
               resolution:
                 type: Resolution
                 id: resolution:captain-chat-2ae-ideation-2
@@ -165,7 +165,7 @@ Alt: rely on the mechanism-to-value trace to catch harness-building. Insufficien
 
 ### Piece 6 — Small-change fast path. Serves AC-1.
 
-`development.md`, add to the `### `validation`` stage-def (after Piece 4's bullet):
+`development.md`, add to the `### `validation`` stage-def (after the existing sentence — Piece 4 now lands in the implementation stage-def):
 
 > `- **Small-change fast path.** Scale the validation checks to the diff's blast radius. A routine, low-blast-radius change (a doc line, a one-line fix, a rename) does not need the full checklist or the detached adversarial audit — the same "routine changes exempt" carve-out the audit already grants, applied to validation as a whole. Match the rigor to the change; a trivial diff over-validated is its own waste.`
 
