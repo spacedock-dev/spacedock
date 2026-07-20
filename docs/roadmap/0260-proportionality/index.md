@@ -10,7 +10,7 @@
 
 An ensign, reviewer, or FO holding a finding, an AC, or an urge to build infrastructure has a declared answer to "how much rigor does this project want?" — and the loop that couldn't reframe now can:
 
-- A workflow's existing declared posture (its high-stakes surface list, proof policy, workflow rules) reaches every dispatch packet and reviewer context verbatim — reach for declarations the repos already grew, not a new stakes ontology; absence injects nothing and the stage definitions + committed finding-triage govern (`stakes` group, reduced at re-lock).
+- ~~The stakes/posture member~~ — **parked** (captain hold, 2026-07-20, after the re-lock's essence test): its would-be consumers are already served — validators anchor materiality on per-entity value ACs + the committed finding-triage, and roborev injects its config posture line. The read-through's riskiest mechanisms are spike-proven and banked in the parked entity for revival if a later member surfaces a genuinely unreached consumer. Direction trail preserved in the entity; the residual README posture-consolidation edit rides the `template` group.
 - A rejection whose findings indict the mechanism's architecture — or a repair cycle that grows the diff — halts at a design-reset decision instead of dispatching repair (`reframe` group).
 - An ensign triages review findings against stakes before fixing; a correct-but-disproportionate finding gets a recorded decline, not a dutiful fix (`triage` group).
 - The falsifiability ladder replaces "prefer a code gate over a prose-only rule": shipped system guards → existing mechanical checks → falsifiable exercise → captain judgment → build new machinery (last, consent-gated). New enforcement surfaces are not "obvious reversible work"; investigations hit a fan-out checkpoint; identifier minting is reserved to the system, ad-hoc itemization uses bare ordinals (`ladder` group).
@@ -31,7 +31,6 @@ An ensign, reviewer, or FO holding a finding, an AC, or an urge to build infrast
 
 `v0.26.0` ships when, merged to `main` and proven by checks that can fail:
 
-- A live `dispatch build` run for this workflow emits the declared-posture section verbatim in the packet, and `status --boot --json` exposes it; a posture-less fixture workflow injects nothing and says so explicitly.
 - Replaying the archived e6j cycle history (26 files / +3,373 on a 2-defect fix, 10 cycles) against the new feedback flow halts at a design-reset decision by cycle 2; the dispatch-refusal guard has a unit test fed that fixture shape.
 - A seeded correct-but-disproportionate finding against a low-stakes fixture entity produces a recorded decline and a zero-line diff in live replay.
 - A replayed ideation brief mandating a process-control harness (the 7h PTY shape) trips the consent stop before dispatch.
@@ -56,9 +55,9 @@ Ideation approvals from shaping are recorded durably in each entity's `gates:` f
 
 ## Sequencing
 
-- `stakes` (reduced) is the substrate: the read-through mechanism is spiked and proven (byte-identical section round-trip; AGENTS.md-ingestion canary null); other groups cite the declared posture it carries.
-- `reframe` is independent and runs in parallel; `bw` now carries the merged design-reset scope (kills all four HIGH incidents).
-- `triage`, `ladder`, `template` declare blockers on the stakes entity in their gate applications; `z7` carries the folded smallest-sufficient sharpening.
+- `stakes` is parked (see Goal) — no member blocks on it; the `triage` rule cites the committed finding-triage taxonomy directly.
+- `reframe` leads: `bw` carries the merged design-reset scope (kills all four HIGH incidents).
+- `triage`, `ladder`, `template` are unblocked and parallel; `z7` carries the folded smallest-sufficient sharpening plus four recorded live examples of language-minting for its identifier/abstraction clause.
 - `test-cleanups` and the driving `contract-cleanups` pair are independent and fully parallel; the banked `0qe` ideation is not re-ideated — its overlap with `w0` is judged at its gate.
 
 ## Out of scope
