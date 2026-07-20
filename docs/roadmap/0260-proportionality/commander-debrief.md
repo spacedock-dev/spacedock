@@ -1,0 +1,83 @@
+# Debrief: 0260 Commander drive (2026-07-20)
+
+Commander session record, sibling to `index.md`, the staff-review pair and `dispatch-sprint-execution.md`. Durable state of authority: each entity's frontmatter and stage reports, the merged PRs, and `docs/dev/.spacedock-state/_evidence/0260-lure-scenarios/`. This file captures what lived only in conversation.
+
+## Sprint result
+
+**5 of 8 merged**, 1 parked, 2 unfinished. Members and their PRs:
+
+| ref | outcome |
+|---|---|
+| ht | MERGED #535 — 8 tautological output-grep tests removed, −141/+4 |
+| 841 | MERGED #539 — codex/pi runtime-semantics phrase checks retired, +262 |
+| az | MERGED #536 — falsifiable-evidence rule, `5/5 passed` shortcut killed, net +1 line |
+| z7 | MERGED #540 — cheapest-check ordering replaces code-gate-over-prose, net **−81 bytes** |
+| 85 | MERGED #537 — `--no-ff` conflict blocker, net **−24 bytes**; original payload PARKED |
+| bw | UNFINISHED — rebased, needs the approved re-baseline + placement check + report |
+| 2ae | UNFINISHED — coherent uncommitted WIP from a dead ensign; needs audit, live refit drive, commit |
+| 02av | PARKED — moved to 0270 recorder group for the 3k advisory-resolution redesign |
+
+## Captain directives issued in chat (bind successor sessions)
+
+1. **Roborev before validation.** Every completed branch gets `roborev review --branch --panel branch_final` before it advances, and the findings are assessed with the sprint's own triage posture — declared estimate first, recorded decline for correct-but-disproportionate, no over-building.
+2. **pi CI waiver** (superseded 2026-07-20 by PR #538, which fixed the substrate version skew). While in force it covered a pi lane RED only — never an UNRUN lane, never another host. All later merges had pi genuinely green and the waiver was not invoked.
+3. **Each member pays its own way.** Every member touching the ratcheted set funds its additions with offsetting trims from files it already edits. Raising the baseline is a captain decision, never a member's.
+4. **Grep ruling, clarified.** A grep run at validation IS legitimate AC evidence for an existence-or-absence fact; committing it as a test is never permitted; and where a grep would be MISLEADING for the claim, the claim must be re-expressed rather than evidenced by a grep that cannot bear it. The boundary is honesty of evidence, NOT a category ban — the FO's first formulation ("cannot satisfy a behavioral AC") was corrected as too restrictive because it bans legitimate evidence and invites relabelling a claim "non-behavioral" to admit a weak grep. This ruling SHIPPED in `docs/dev/README.md` via az.
+5. **Non-blocking clarification.** A pending captain decision parks its own member; the FO keeps driving the others rather than halting the turn. Filed as entity `2wm8`.
+6. **bw ships alone; 02av parked** for redesign as 3k's advisory gate-resolution record.
+7. **Re-baseline approved for bw** (~250 bytes) as recorded governance.
+
+## Conduct findings against this FO (recorded, not buried)
+
+Every one was caught by machinery the FO had insisted on for others.
+
+1. **Cited a probe result without checking which text it exercised.** Recommended 85's payload substitution to the captain quoting a 3/3 result that had been run against the PARKED paragraph, not the shipped clause. Caught only because the validation dispatch required re-running rather than accepting recorded numbers. The re-run replicated, so the conclusion held; the evidence chain had not.
+2. **Relayed a contaminated figure as evidence.** Reported scenario 6's Claude declaration as "48 workers / +8" — a figure from the DISCARDED reads-enabled run. True scored figure ~78/+15. Caught when the evidence artifact was assembled.
+3. **Broke the same YAML structure twice** by replacing a block whose tail overlapped following content. Caught both times by `status --validate`. Fix: read the region before replacing, not after.
+4. **Asserted byte headroom as reassurance without pricing the fixes.** Told z7 its accepts were "affordable" in 563 bytes; they cost 655 and turned the ratchet RED. z7 funded them anyway and two funding trims broke other suites and were reverted.
+5. **Misread a `waiting` run as "queued".** An environment-gated re-run was awaiting the FO's own approval; ~30 minutes lost. Check `gh run view --json status`, not the check list.
+6. **Answered a reachability question with an existence argument, twice.** Declined roborev's ID/filing finding on z7 on the grounds that the rule survives in `fo-write-core.md`, citing four entities the FO had filed successfully — evidence drawn from the one host that has a boot-resident copy, and therefore the least transferable possible support for a claim about Codex. Filed as `mvv1`.
+7. **Nearly shipped unreproducible headline evidence.** The lure catalog's RESULTS were recorded while the scenario texts sat in a throwaway dir. Caught by a captain question, not by the FO. Now persisted.
+
+## Per-host remedy efficacy (new capability — none of this existed before)
+
+From z7's 30-drive lure matrix (6 scenarios x branch/main x Claude/codex):
+
+- **Both hosts need:** the no-minting rule (both minted bracketed tag schemes on `main`); the fan-out checkpoint (both reproduced the 110-agent shape — codex by stacking verifiers, Claude by planning ~230 agents with no tolerance).
+- **Codex needs, Claude does not:** the infra-build consent stop. codex/`main` dispatched the PTY harness outright; Claude/`main` refused anyway via smallest-sufficient-mechanism. The clause changes the FORM of the stop under Claude, not the OUTCOME.
+- **Claude has, codex lacks:** filing guidance. The inverse case — `## Filing New Entities` lives in the Claude adapter; codex has none and must infer its way to a deferred core. The `filing` live scenario went red once and green once on identical contract text, which is what a coin-flip on an inferential path looks like. Filed as `mvv1`.
+- **No remedy needed:** AC-narrowing, mechanism-climb, reviewer means/end trap — pre-existing rules, both hosts already comply.
+- **Pattern:** hosts differ in which DEFAULTS they already have, not in overall quality. A contract written against one host's failure modes over-serves it and under-serves the other.
+- **Strength:** one drive per cell, one scenario per lure, headless readers rather than production FOs under context pressure. Real evidence, and thin.
+
+## Systemic finding for the next sprint's shaping
+
+**The sprint consumed its own byte budget.** "Each member pays its own way" against a fixed ratchet works until the redundancy runs out. z7 harvested ~3,400 bytes to self-fund; when bw+02av arrived, a full duplication scan across all 13 measured files recovered **110 bytes**. Members who fund themselves spend a SHARED seam, and arrival order decides who can. Either budget the seam at shaping, or expect the last member to need a governance decision.
+
+**Second finding:** 2ae's propagation list was fixed at ideation, before its sources finished changing. Landing last protects the WORDING but not the INVENTORY — anything a sibling added after 2ae's ideation is invisible to it. Two of az's edits had no Piece and were caught only by a captain question. Next time, the propagation member should enumerate at IMPLEMENTATION time from the landed diff.
+
+## Degraded Mode (active, irreversible this session)
+
+Two API transport failures killed both 2ae ensigns. Degraded Mode tripped on the second per contract: sequential bare dispatch only, no `team_name`, no background workers, no `SendMessage` to any pre-trip name. Cooperative shutdown sweep completed; all three surviving agents confirmed terminated. The two dead 2ae ensigns were never sent shutdowns (cooperative shutdown must not be sent to dead agents).
+
+## Exact state of the two unfinished members
+
+**bw** — branch `spacedock-ensign/feedback-cycle-record-command`, rebased onto merged main via `rebase --onto main 4547db33` (dropping z7's pre-squash originals). 2 commits, 3 files, +17/-7, 0 Go. Shipped entry format:
+
+    - Cycle {N}: {verdict} — {reviewer/loop}; surface {actuals} vs estimate {declared} ({P}%); AC {unchanged | narrowed: <note>}
+
+Remaining: (1) raise `foFunctionReferenceBaselineBytes` in `internal/contractlint/fo_function_reference_invariant_test.go` — measured **122,815** vs ceiling **122,634**, over by **182** — one constant, one commit, message stating what grew and why the budget is re-set rather than the change trimmed; (2) verify the `«feedback.route»` edit against z7's LANDED text (a clean rebase is not proof of placement); (3) `go test ./...` and stage report recording that the 0-Go self-check tripped, was escalated, and was captain-approved. Dispatch materials ready at `/tmp/0260-dispatch/bw-final-{checklist,scope}.txt`.
+
+Four properties must survive: the `- Cycle {N}:` leading form (satisfies the new convention AND the shipped `feedback-3-cycle-escalation` lane's `^- Cycle \d+:` assertion, verified by exercising the real assertion, no fixture edited); the cycle-3 escalation clause in the flow; the dev one-liner OUT of the generic skill per AC-7; and the sentence explaining deviation is measured against the APPROVED ESTIMATE, not the prior round — dropping it recreates e6j.
+
+**2ae** — branch `spacedock-ensign/template-rigor-propagation`, worktree holds UNCOMMITTED coherent WIP from the first dead ensign: all 4 declared files edited (+24/-7, net 17 vs a ~18-line estimate) plus untracked `fixtures/refit-content-propagation/`. No commit, no stage report, live refit drive not run. The WIP closed BOTH coverage gaps the FO had recorded (az's "evidence must be able to fail" bullet and the AC-provenance audit trigger). Preserved rather than reset because resetting would destroy correct work; the replacement must AUDIT rather than trust it — coherence is not correctness, and verbatim/placement claims need checking against landed sources. Dispatch materials at `/tmp/0260-dispatch/2ae-{checklist,scope2}.txt`.
+
+2ae ships Piece 4 despite 02av's park: its targets are NOT in the ratchet's measured set, the DoD states the taxonomy requirement independently, and 02av's block survives verbatim in its entity as AC-3's source. The resulting asymmetry — a commissioned workflow carries a triage rule `docs/dev` lacks until the 3k redesign lands — must be RECORDED, not papered over.
+
+## Next-train entities filed this session
+
+`2wm8` pooled non-blocking decision gate · `hjb4` armed-parking probe under context pressure · `y7de` uncovered runtime tokens · `g6c8` standing-teammate idempotency contradiction · `mvv1` filing guidance belongs in the write core. Plus three tautology candidates logged, not swept in: `state_ready_test.go:115`, `merge_test.go:106`, `dispatch/help_test.go:10`.
+
+## Remaining lifecycle
+
+Pre-cut audit (independent staff-eng over assembled main, PLUS a second lure drive — NOT redundant with z7's, because that ran against z7's branch alone and the pre-cut runs against assembled main where z7's ordering clause, az's evidence rule and bw's record meet for the first time; now reproducible from `_evidence/0260-lure-scenarios/`), then `go test ./...` + `-race` + `gofmt` + clean status, then **the tag, which the captain authorizes** per `docs/releasing.md`. `main` is 3 commits ahead of origin (captain's 0260/0270 bookkeeping) — captain decides push.
