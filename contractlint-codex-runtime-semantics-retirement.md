@@ -315,3 +315,48 @@ What the bindings actually establish, now stated in both places: the adapter's s
 5. LOW — `TestHostNeutralGuardDiscriminates`'s empty-document case adds no discrimination.
 
 **Surface — NEUTRAL as constrained.** 711 -> 711, delta 0; against `main` 449 -> 711, +262. The accepts cost 11 lines, absorbed from restatement (the substrate-native paragraph duplicating the UNCOVERED block, the ordering rationale, the no-blanket-ban explanation, and three one-line overruns). Both HARD tolerances unchanged: runtime-meaning literals **0**, test-function count **10 vs 10**. `go test ./...` and `-race` both exit 0.
+
+## Stage Report: validation (cycle 2)
+
+Scoped to what changed since cycle 1, per the FO's cycle-3 scoping decision. The 30 divergences and the hard-tolerance derivations were NOT re-run — cycle 1 established them.
+
+- DONE: The mechanical enumeration is sound and its output is what shipped — re-derive the uncovered set independently.
+  Re-derived by a deliberately different method (Python lexer extracting Go string literals with comment skipping, token universe pulled mechanically from `main`'s three retired files, my own delimiter rules) and got **exactly the same nine**. No tenth.
+- DONE: `contact_supervisor` — AC-3 citation and disposition-table claim corrected, count resolved.
+  AC-3 rewritten naming the false claim as false; table row 68 carries `~~owned by pi live lane~~` — struck, not quietly rewritten. Count resolved to nine. Present in the in-code UNCOVERED block. One prose residue recorded as polish below.
+- DONE: The two later accepts — declaration-not-wire scope on both sides, and the widened record scope.
+  Factual basis verified independently: `ToolArgs()` has zero production callers (definition, one unit test, the contractlint binding); all five pi constructors have zero non-test callers. Both accepts land as described.
+- DONE: Surface and suites confirmed, not re-derived.
+  711 lines (167+139+405); +262 vs `main` (575/313); −4 since `dc9c6194`. Test-function count **10 vs 10, delta 0**; runtime-meaning literal-in-adapter-prose assertions **0** (8 sites re-inventoried). `go test ./...` exit 0, `-race` exit 0, `go vet ./...` exit 0.
+
+### What the independent enumeration found
+
+Same nine: `contact_supervisor`, `interrupt_agent`, `list_agents`, `member_spawn`, `send_message`, `need_decision`, `timeout_ms`, `path_prefix`, `cwd: <resolved repo root>`.
+
+Both retractions independently confirmed. `subagent` is named in Go string literals outside contractlint (`claudeteam/contextbudget.go`, `cli/pi.go`, +8) and `intercom` likewise (`cli/pi.go`, `cli/pi_frontdoor_test.go`, +1). "Named, not asserted" is the correct characterisation and the earlier "no owner anywhere" did claim more than could be shown.
+
+Both mechanism corrections independently confirmed necessary, not preference. Bare-name matching does report `delegate` (5 files), `acceptance` (6) and `cwd` owned as ordinary Go identifiers, so string-literal scoping is required; and delimiters are what separate `subagent` from `pi-subagents` and `subagent_type`.
+
+I probed where a tenth would most likely hide — the argument names and action values BOTH enumerations discarded as noise. `target`, `message`, `none`, `fresh`, `list`, `reply` are all owned. The method's stated limit (NO-OWNER definitive, OWNER only proves naming) is the right limit and matches what cycle 1 found about `codex_single_run_test.go`.
+
+### Deferrals — no reopen, and deferral 2 has better grounds than were recorded
+
+I tested both mediums rather than accept the closure on assertion, on a throwaway checkout.
+
+Deferral 1 reproduces: dropping the spelled `fork_turns="none"` from the doc AND changing the Go value passes green. But it needs two coincident edits, and the Go-only mutation — which is precisely AC-2's verification clause, "reds when its independent source is mutated away from the doc" — still REDS. AC-2 is not broken on a supported path. Correctly deferred.
+
+Deferral 2 reproduces in contractlint: swapping `delegate` and `message_dm` between constructors leaves the set unchanged and passes. **But `internal/piruntime/teams_test.go` REDS on that swap**, so there is no path on which the regression ships green — the repo catches it, just not here. That is stronger ground for the closure than either the FO or the implementer recorded, and it is the reason I do not reopen. Neither medium is material.
+
+### Findings
+
+**Polish 1 — the corrected false claim survives in one more place.** `## Proposed approach` route 3 (line 51) still reads that `list_agents` / `send_message` / `member_spawn` / `contact_supervisor` "have their runtime meaning owned by the gated live lanes". AC-3 and the disposition table were corrected; this third instance was not. It is the same sentence my cycle-1 material finding was about, now superseded two sections later by an explicitly-marked correction, so it does not mislead a reader of the whole entity and it touches no shipped code. Fold it; do not spend a cycle on it. Calling it material after the cited instances were fixed would be moving the goalposts.
+
+**Deferred risk (new) — `progress_update` and `interview_request` have no owner and no record.** Both are Pi back-channel `reason` values with real runtime meaning, named in `pi-ensign-runtime.md`, with zero hits in any Go string literal. They are NOT this entity's gap: I verified they were never asserted by any of `main`'s three retired files (0 hits in each), so they sit outside the retired universe this record covers. Trigger: a reader treats the nine-token record as the complete set of unowned Pi runtime tokens. Promote condition: if `record-uncovered-runtime-tokens` widens scope past this entity's retired set, these two belong in it.
+
+### Recommendation
+
+**PASSED.** The material finding is closed, and closed by the right instrument — I could not break the mechanical enumeration by a method built to disagree with it, and it corrected the implementer in both directions, which a hand-audit had not managed in three attempts. The two later accepts are factually grounded and the pi-side extension was the right call; the comment fix is precise rather than a blanket hedge, keeping "either side moving alone reds" on the Codex binding where `setEqual` makes it true and dropping it from the one-way pi binding where it was not. Both hard tolerances hold, surface is neutral-to-negative across both rounds, and both suites are green. One polish residue and one new deferred risk, neither blocking.
+
+### Summary
+
+Scoped re-validation of the cycle-1 fold-in and the subsequent roborev round. Re-derived the uncovered-token set independently with a different implementation and a mechanically-derived universe, reproduced the same nine, confirmed both retractions and both mechanism corrections, and found no tenth including in the noise-filtered argument names. Verified the production-caller claim underlying both declaration-not-wire accepts. Tested both deferred false-green paths empirically and upheld the closure — deferral 2 on firmer ground than was recorded, since `piruntime/teams_test.go` already catches the swap.
