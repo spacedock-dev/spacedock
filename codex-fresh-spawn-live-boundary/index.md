@@ -12,78 +12,79 @@ issue:
 id: 6cc3rvfd44y6x3352hh21v8b
 ---
 
-v0.25.1 hardened `internal/dispatch/codex_v2_adapter.go` so its generated map always carries `fork_turns: "none"`, and aligned the Codex FO prose. That did not close the live boundary: in a 2026-07-20 first-officer session, the FO directly invoked `spawn_agent` with `fork_turns: "all"`. The call was rejected only because it also carried an incompatible explicit agent type; the Spacedock architecture itself did not make inherited-turn spawning impossible.
+The title and source are historical frontmatter. Captain review withdrew the generic fresh-spawn premise: the cited direct `spawn_agent` call was ad-hoc research, not a Spacedock worker dispatch, so it is not evidence that the v0.25.1 dispatch boundary failed. No global `PreToolUse` fork guard belongs in this ticket.
 
-This is the escaped value defect from archived `codex-fresh-dispatch-context-isolation` (`rt8`, PR #532), not a reopening of its historical release record. Its first validation correctly reported that adapter output and a one-off host probe did not prove the instruction-driven FO invocation. The task later narrowed the acceptance boundary to the adapter map and shipped v0.25.1, leaving the original live claim unenforced.
+The actual v0.25.2 defect is the archived c6 Codex post-compaction reload contract. c6 shipped a `PostCompact` hook whose `systemMessage` tells the captain to make the First Officer reread and reconcile its contract. Codex executes that hook, but `systemMessage` is a UI/event-stream warning, not model context. In current parent session `codex:019f7d9a-5b06-75a0-a04a-02b0b2ccd6a2`, automatic compaction occurred at `2026-07-20T05:09:37Z`; the durable JSONL then resumed LOC analysis without a model-visible hook message, contract reload, or state reconciliation. The c6 archive records the same boundary in `docs/dev/.spacedock-state/_archive/codex-post-compaction-contract-reload/`.
 
-The 0.25.2 fix must bind the actual worker-creation seam used by an assumed Spacedock FO. In current architecture, `fork_turns` is never a selectable continuity mechanism: every fresh spawn is isolated, and deliberate continuity exclusively uses `followup_task` on the existing handle. `"all"`, numeric forks, omission that defaults to full history, and helper/runtime override channels are invalid Spacedock behavior.
-
-Ideation must identify the smallest executable enforcement seam. If Spacedock cannot enforce this at the live tool boundary, stop with a proven upstream/runtime blocker rather than relabeling adapter or prose evidence as the fix. Coordinate with `per-host-stage-model-override` (`e3g`) so model/effort work cannot restore or conditionalize the isolation invariant.
+The [official Codex hooks reference](https://learn.chatgpt.com/docs/hooks) defines `systemMessage` as UI/event-stream output, lists `compact` as a `SessionStart` source, and defines `hookSpecificOutput.additionalContext` for `SessionStart` as extra developer context. That is the smallest model-visible recovery surface. The plugin hook is global, so it must be silent outside a launcher-marked Spacedock session.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — An instruction-driven Codex First Officer cannot execute a fresh Spacedock worker spawn that inherits parent turns.** Verify this with one integrated live record joining the helper-generated dispatch artifact, its exact `"none"` FO spawn, the boundary decision, and child-visible context, plus controlled direct FO attempts with omitted, `"all"`, and numeric `fork_turns`. Unsafe attempts must be denied before child creation; exact `"none"` must be allowed and its child must lack the parent canary. Compare with the archived ineffective-guard baseline where `"all"` executed and exposed the canary, so the value can move red.
+**AC-1 (VALUE) — A compacted First Officer launched through `spacedock codex` receives a model-visible reload instruction, while a bare Codex session receives none.** On a paired installed-plugin confirmation, compact one session launched with `spacedock codex` and one launched with bare `codex`. The marked session's `SessionStart(compact)` output must contain the exact `hookSpecificOutput.additionalContext` reload instruction and the next model turn must be able to act on it. The bare session must produce no hook output. Compare this with the current-session baseline, where `PostCompact.systemMessage` was visible only to the UI/event stream and the model resumed without reload.
 
-**AC-2 — The guard decides only from the isolation field and never rewrites tool input.** Exact `"none"` is allowed with the FO-issued argument object unchanged. Missing, `"all"`, numeric, non-string, or malformed input is denied. Repeat allowed and denied cases with `model`, `reasoning_effort`, `service_tier`, and arbitrary unknown fields; those fields must not affect the decision and must reach the child unchanged on an allowed call.
+**AC-2 — Injection is gated only by the inherited launcher marker and only on `compact`.** With non-empty `SPACEDOCK_BIN`, the hook exits `0` and emits exactly one valid `SessionStart` `additionalContext` object. With the marker absent or empty, it exits `0` with empty stdout. `startup`, `resume`, and `clear` do not match the hook group. The hook adds no `systemMessage`, performs no mutation, and introduces no CLI or workflow setting.
 
-**AC-3 — Deliberate continuity remains exclusively `followup_task` on the existing worker handle.** Verify this in the AC-1 live journey: the fresh child lacks the parent canary, then `followup_task` reaches that exact child and the child recalls its own first-turn marker. A second spawn is not continuity.
+**AC-3 — Resume behavior is explicit.** `spacedock codex resume` re-establishes `SPACEDOCK_BIN`, so a later `SessionStart(compact)` is eligible for injection. Bare `codex resume` has no marker and remains silent, even when the resumed thread originally ran through Spacedock. Users who need the recovery guarantee must resume through the launcher; no session-provenance inference is added.
 
-**AC-4 — Adapter maps, contract wording, hook structure, and raw host probes remain supporting evidence.** They cannot substitute for the AC-1 join. The supported launch must load and trust the guard; malformed input or an unavailable JSON interpreter must exit `2` and block; release validation must positively observe the guard decision. A missing, disabled, untrusted, or otherwise failed hook invalidates the release claim instead of narrowing the acceptance boundary.
+**AC-4 — Automatic mid-turn compaction retains a named timing limitation and a captain-visible fallback.** Keep the existing `PostCompact.systemMessage` hook unchanged as a fallback cue. [Codex issue #28736](https://github.com/openai/codex/issues/28736) reports that automatic mid-turn `SessionStart(compact)` context may be queued until the next user turn and may be duplicated, so v0.25.2 must not claim an immediate pre-effect reload for that path. [Issue #28633](https://github.com/openai/codex/issues/28633) separately prevents durable correlation of compaction hook receipts. The captain warning remains useful when the primary context is delayed, but it is not model-visible proof.
 
-**AC-5 — v0.25.2 ships the fix on the stable line without rewinding `next`.** Verify the exact release candidate SHA with required Go/full/race gates and AC-1 through AC-3 live evidence, cut annotated `v0.25.2` from `main`, and retain the invariant on `next` through the documented propagation path.
+**AC-5 — v0.25.2 ships the scoped fix on the stable line without rewinding `next`.** Verify the exact release-candidate SHA with the focused hook check, the paired manual confirmation, and required Go/full/race gates; cut annotated `v0.25.2` from `main` and retain the change on `next` through the documented propagation path.
 
 ## Scope guard
 
-Do not build a new general agent harness or fork-mode configuration surface. Reuse the narrowest existing live capture path that can observe the real FO tool call. Do not expose `fork_turns` to workflow authors. Do not change stage reuse policy. Do not fold unrelated model/effort routing into this patch.
+Do not add a generic spawn guard, `PreToolUse` matcher, fork policy, JSON parser, process controller, transcript harness, or public CLI. Do not change dispatch, model/effort routing, worker continuity, or PostCompact behavior. This ticket owns only model-visible post-compaction recovery in Spacedock-launched Codex sessions.
 
-## Riskiest-mechanism spike and decision
+## Evidence and mechanism decision
 
-The archive already contains the two halves of the problem, but not the required join. Top-level session `codex:019f7d9a-5b06-75a0-a04a-02b0b2ccd6a2` records the escaped FO call with `fork_turns: "all"` and its retry with `"none"`; the first call failed only on an incompatible agent type. Session `codex:019f79e5-3974-75e2-ab25-d6d07836cc72`, corroborated by parent session `codex:019f7007-8fba-7503-8c44-5ebf9a7cc945`, records a raw-host isolated child and successful same-handle follow-up. No archived run joins generated dispatch bytes, the exact FO-issued arguments, absence of a parent canary, and same-child continuity.
+The current session supplies the red behavior: its JSONL records `context_compacted` at `2026-07-20T05:09:37Z` and then resumed reasoning without any hook-produced model message. The installed c6 hook receives `{"hook_event_name":"PostCompact","trigger":"auto"}` and emits only `systemMessage`. Archived c6 spike/probe artifacts show plugin hook loading, `${PLUGIN_ROOT}` command substitution, and the same UI-only result.
 
-A first disposable captain probe exercised input rewriting in Codex CLI 0.144.6. A trusted `PreToolUse` hook observed canonical tool name `agentsspawn_agent` and returned documented `updatedInput`, but the child still inherited the parent canary. That proves rewriting is not the viable seam in this runtime.
+The launcher already supplies the needed boundary marker. `internal/cli/frontdoor.go` removes any inherited `SPACEDOCK_BIN` and sets it to the resolved launcher binary for `spacedock codex`; hook commands inherit that environment. Bare `codex` has no marker. This existing contract distinguishes the two launch paths without new state or provenance machinery.
 
-A second disposable probe exercised the cheaper fail-closed decision on that same canonical tool path. The hook denied omission, `"all"`, and numeric `"1"`; all three calls returned `Tool call blocked by PreToolUse hook` and created no child. It allowed exact `"none"`; child `/root/allow_none` reported the parent canary absent and marker `CHILD-MARKER-7KQ2-N9V4`, then `followup_task` on that same handle recovered the marker. The hook log recorded the four exact inputs and decisions. Evidence is in parent session `codex:019f7dd1-f012-7e32-9b14-c1e9278390c5` and child session `codex:019f7dd2-590e-7cd0-a6ea-f9729b8aefaf`.
-
-**Decision: PROCEED with a deny-only guard.** Namespaced input rewriting remains unsupported, but it is unnecessary: denial on the same live seam is effective. The guard makes unsafe calls impossible to execute and leaves safe calls untouched. Adapter hardening and FO prose remain defense in depth. Both disposable probe directories were removed; this ideation adds no permanent harness, recorder, fixture, parser, or test infrastructure.
+**Decision: PROCEED with one `SessionStart(compact)` hook gated by non-empty `SPACEDOCK_BIN`.** When marked, it emits model-visible `additionalContext`; when unmarked, it exits successfully with no output. Keep the existing PostCompact captain cue only because the documented automatic-mid-turn timing gap can delay the primary signal.
 
 ## Implementation design
 
-1. Extend the existing root `hooks.json` with one `PreToolUse` matcher group for the live-verified canonical `^agentsspawn_agent$`. Like the shipped PostCompact hook, its single command is a plugin-root-absolute executable: `${PLUGIN_ROOT}/hooks/codex_fresh_spawn_guard.sh`.
-2. Add that one POSIX shell hook. Before reading stdin, it checks `python3` availability and exits `2` with a concise blocking reason when unavailable. It then `exec`s one embedded Python-stdlib JSON predicate over the original stdin: require an object envelope and object `tool_input`; emit documented `permissionDecision: "allow"` with no `updatedInput` only when `fork_turns` is the exact string `"none"`; emit `permissionDecision: "deny"` for missing or every other value; exit `2` for malformed JSON or invalid envelope shape.
-3. Do not change the helper, Codex adapter, CLI routing, or any Go package. They already request exact `fork_turns: "none"`; the escaped defect was a direct FO call. The guard is unconditional, never repairs or retries a rejected call, and never reads model/effort fields.
-4. Keep worker continuity unchanged: only `followup_task` may address an existing handle. No workflow field, CLI flag, helper option, or host-specific fork choice is introduced.
+1. Extend root `hooks.json` with one `SessionStart` group whose matcher is exactly `^compact$` and whose single command is `${PLUGIN_ROOT}/hooks/codex_session_start_compact.sh`.
+2. Add that tiny POSIX shell hook. If `SPACEDOCK_BIN` is absent or empty, exit `0` before writing stdout. Otherwise emit one static JSON object with `hookSpecificOutput.hookEventName` equal to `SessionStart` and `hookSpecificOutput.additionalContext` instructing the First Officer to reread the authoritative `spacedock:first-officer` contract and reconcile durable workflow state with live worker state before the next workflow effect.
+3. Do not parse stdin: the exact hook matcher owns the `compact` source selection and the output is static. Do not add a dependency, fallback interpreter, mutation response, or failure-closed policy.
+4. Leave `hooks/codex_post_compact_notice.sh` and its matcher unchanged. Its `systemMessage` remains the captain-visible fallback, never the model-visible success signal.
+5. In `skills/first-officer/references/codex-first-officer-runtime.md`, replace the current captain-interaction sentence with one concise contract: the `SessionStart(compact)` context is primary only when `SPACEDOCK_BIN` is present; the PostCompact warning is the captain fallback for delayed automatic delivery; `spacedock codex resume` preserves eligibility while bare `codex resume` does not.
 
-This is the smallest behavior-owning design because it adds one matcher and one script on the live seam already proved. POSIX `grep`/`sed` matching is fewer lines but cannot safely distinguish JSON keys, types, escapes, duplicates, and nesting. `jq` adds an undeclared binary dependency. A standalone Python shebang cannot turn a missing interpreter into the documented blocking exit, while the shell wrapper can. A public `spacedock` subcommand, generalized policy engine, process fixture, or configuration-test framework adds a subsystem for a one-field predicate. Rewriting input is both larger and proven ineffective. The deny-only hook serves AC-1 directly and leaves `e3g` fields untouched for AC-2.
+The two hooks may both fire around a compaction but address different audiences. PostCompact warns the captain immediately when the host surfaces it. SessionStart provides the model-visible instruction when Codex delivers the compact-source start event. Neither calls the other, and neither claims to repair the host timing defect.
 
 ## Gross changed-LOC budget before implementation
 
 | File | Gross changed LOC | Essential line categories |
 | --- | ---: | --- |
-| `hooks.json` | ~11 | One event group, exact canonical matcher, one plugin-root-absolute command. |
-| `hooks/codex_fresh_spawn_guard.sh` | ~30 | Shebang/comments; Python availability check with exit `2`; JSON envelope/type validation; exact-`"none"` predicate; allow/deny serialization. |
-| `skills/first-officer/references/codex-first-officer-runtime.md` | ~2 | Replace one runtime-binding line with the exact guard promise below. |
-| **Total** | **~43** | No helper, adapter, CLI, Go package, fixture, harness, or public docs changes. |
+| `hooks.json` | ~10 | One `SessionStart` group, exact compact matcher, one plugin-root command. |
+| `hooks/codex_session_start_compact.sh` | ~9 | Shebang, one environment gate, one static JSON output. |
+| `internal/ensigncycle/codex_post_compact_hook_test.go` | ~24 | Extend the existing hook loader/runner checks for matcher shape and marked/unmarked stdout; no new harness. |
+| `skills/first-officer/references/codex-first-officer-runtime.md` | ~2 | Replace one captain-interaction sentence with the scoped primary/fallback/resume contract. |
+| **Total** | **~45** | No CLI, Go production package, parser, process fixture, transcript machinery, or public docs. |
 
-The executable mode bit for the new hook is required but is not LOC. If implementation materially exceeds this budget, stop and return to design rather than growing a policy subsystem.
-
-## Coordination with `per-host-stage-model-override` (`e3g`)
-
-The two changes compose at the final input object. `e3g` may supply `model`, `reasoning_effort`, and `service_tier`; this entity's guard inspects only `fork_turns` and never rewrites the object. `e3g` must not add a fork-mode surface, make isolation conditional on an override, or restore omission/`"all"`/numeric values. Conversely, this work must not select, validate, or default model/effort values. An allowed exact-`"none"` call carrying all `e3g` fields unchanged is the shared integration contract.
+The executable mode bit for the new hook is required but is not LOC. If implementation needs materially more than this budget, return to ideation instead of adding infrastructure.
 
 ## Test plan
 
-- Before implementation completion, directly pipe a disposable stdin matrix into the shipped hook from an unrelated cwd; do not commit the driver. Exact `"none"` must exit `0` with allow and no `updatedInput`. Missing, `"all"`, numeric strings, JSON numbers, null, and arbitrary strings must exit `0` with deny. Malformed JSON, non-object envelopes, non-object `tool_input`, and a `PATH` without `python3` must exit `2`. Repeat safe and unsafe inputs carrying `model`, `reasoning_effort`, `service_tier`, and unknown keys; decisions must depend only on `fork_turns`.
-- Reuse cycle 2's live probe as the mechanism spike: session `019f7dd1-f012-7e32-9b14-c1e9278390c5` already proves the canonical matcher denies omission/`"all"`/numeric and allows exact `"none"`; child session `019f7dd2-590e-7cd0-a6ea-f9729b8aefaf` proves canary absence and same-handle continuity. Do not add a committed harness, process fixture, generalized policy engine, or configuration smoke-test framework.
-- Run the manual release journey below against the installed candidate plugin. This is the only new live proof and must join helper artifact, exact FO calls, guard decisions, child context, and same-handle continuity. Compare it with the archived ineffective-guard `"all"` baseline rather than disabling the candidate guard.
-- On the release-candidate SHA run focused tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; then perform the existing `main` tag and `next` propagation checks for AC-5.
-
-## Shortest captain re-probe
-
-Install the release candidate through the supported Codex plugin launch and trust the bundled hook; `/hooks` must show it active. Seed `PARENT_ONLY_CANARY_<random>`. First have the FO consume a normal helper-generated dispatch artifact: its exact spawn must contain `fork_turns: "none"`, the guard must allow it unchanged, and the child must report the canary absent plus a unique marker. Use `followup_task` on that handle and require the marker. Then direct the same FO to attempt omission, `"all"`, and numeric `"1"` exactly once each; the JSONL must show three hook-blocked calls and no child handles. Retain that one JSONL and artifact as release evidence and compare its unsafe outcomes with the archived ineffective-guard baseline where `"all"` executed and exposed the canary. Any missing join fails AC-1.
+- Extend the existing `internal/ensigncycle/codex_post_compact_hook_test.go` fixture helpers just enough to locate the new `SessionStart` command and invoke it from an unrelated cwd. With `SPACEDOCK_BIN=/absolute/spacedock`, require exit `0` and parse the exact single `hookSpecificOutput.additionalContext` shape. With the variable absent and with it explicitly empty, require exit `0`, empty stdout, and no stderr. Assert the matcher is compact-only. Do not add a new process harness or transcript fixture.
+- During implementation, the same gate may be checked with a disposable direct pipe: invoke the hook once under `env -u SPACEDOCK_BIN` and once with a non-empty marker. Input may be the existing SessionStart fixture shape; the script intentionally ignores it because `hooks.json` performs source routing.
+- Manually install the candidate plugin and perform the paired value confirmation. In a `spacedock codex` session, seed a unique reload sentinel, run `/compact`, and ask the next model turn to report the injected recovery instruction and perform the required reread/reconciliation before an effect. In a separate bare `codex` session, repeat the same prompts and require no injected recovery instruction; a visible PostCompact warning is allowed because it is the fallback audience.
+- Confirm the resume boundary once: a session resumed through `spacedock codex resume` remains eligible on its next compact event; the equivalent bare `codex resume` path is silent. Record that the matcher does not inject merely on startup or resume.
+- Do not use automatic mid-turn compaction as proof of immediate delivery. If exercised, record delayed or duplicate delivery as upstream issue #28736 behavior and use the existing captain warning to prompt the manual reload. Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` on the release-candidate SHA.
 
 ## Documentation delta
 
-No public workflow or release documentation changes: fresh isolation is already the promised behavior, and no user-selectable setting is added. In `skills/first-officer/references/codex-first-officer-runtime.md`, replace the current `«worker.spawn»` sentence ending `Every spawn is a fresh dispatch; deliberate continuity uses followup_task with the existing handle.` with: `Every spawn is a fresh dispatch. The bundled PreToolUse guard allows worker creation only when the live input carries exact fork_turns="none"; missing or any other value is denied without rewriting model, reasoning_effort, service_tier, or unknown fields. Deliberate continuity uses followup_task with the existing handle.` Keep the surrounding helper-message and task-name instructions unchanged. Do not describe the guard as shipped until AC-1 passes on the release candidate.
+No public workflow or release documentation changes and no new user setting. The only contract edit is the concise Codex runtime-reference sentence described above. It must distinguish model-visible SessionStart context from the captain-visible PostCompact fallback and state the launcher-resume boundary without claiming that v0.25.2 fixes automatic-mid-turn delivery timing.
+
+## Feedback Cycles
+
+- Cycle 1: REJECTED by the captain at the ideation gate on 2026-07-20. Do not treat ignored input rewriting as the terminal seam result. Exercise the existing fail-closed `PreToolUse` decision on the observed namespaced spawn: reject missing, `"all"`, and numeric `fork_turns`; allow exact `"none"`; verify child context and same-handle `followup_task` with existing logs or one disposable captain probe. Add no permanent test infrastructure. If denial is also ignored, retain the upstream blocker with that stronger evidence.
+- Cycle 2: REJECTED by the captain at the ideation gate on 2026-07-20 as overbuilt. The proposed public `spacedock dispatch guard-codex-spawn` command, process fixture, configuration smoke test, and 100+ LOC estimate turn a one-field boundary predicate into a subsystem. Return to ideation and produce the smallest change on the already-proven `PreToolUse` hook path. Reuse existing live output as evidence and provide manual release-test instructions; add no harness or generalized policy surface. Give a gross changed-LOC estimate by file before implementation and stop if the minimal hook cannot parse and deny safely.
+- Cycle 3: CORRECTED by the captain on 2026-07-20. The cited `spawn_agent` call was generic research rather than a Spacedock dispatch, so the entire fresh-spawn/PreToolUse premise was false. Replace it with the archived c6 post-compaction defect: `SessionStart(compact)` model context gated by inherited `SPACEDOCK_BIN`, with the PostCompact captain cue retained only as a timing fallback.
+
+## Superseded stage reports
+
+The earlier ideation reports below described the now-withdrawn generic spawn premise. They are retained verbatim as workflow history; none of their mechanisms, acceptance criteria, probes, or LOC estimates are current design input.
 
 ## Stage Report: ideation
 
@@ -97,11 +98,6 @@ No public workflow or release documentation changes: fresh isolation is already 
 ### Summary
 
 The ideation found the correct narrow boundary but proved it is not presently enforceable: Codex CLI 0.144.6 observes the namespaced collaboration spawn in `PreToolUse` yet does not apply `updatedInput`. Implementation is therefore blocked on upstream live-tool rewrite support; once that support exists, the specified shallow-copy normalizer and integrated captain probe are the minimum path to AC-1 without colliding with `e3g`.
-
-### Feedback Cycles
-
-- Cycle 1: REJECTED by the captain at the ideation gate on 2026-07-20. Do not treat ignored input rewriting as the terminal seam result. Exercise the existing fail-closed `PreToolUse` decision on the observed namespaced spawn: reject missing, `"all"`, and numeric `fork_turns`; allow exact `"none"`; verify child context and same-handle `followup_task` with existing logs or one disposable captain probe. Add no permanent test infrastructure. If denial is also ignored, retain the upstream blocker with that stronger evidence.
-- Cycle 2: REJECTED by the captain at the ideation gate on 2026-07-20 as overbuilt. The proposed public `spacedock dispatch guard-codex-spawn` command, process fixture, configuration smoke test, and 100+ LOC estimate turn a one-field boundary predicate into a subsystem. Return to ideation and produce the smallest change on the already-proven `PreToolUse` hook path. Reuse existing live output as evidence and provide manual release-test instructions; add no harness or generalized policy surface. Give a gross changed-LOC estimate by file before implementation and stop if the minimal hook cannot parse and deny safely.
 
 ## Stage Report: ideation (cycle 2)
 
@@ -130,3 +126,22 @@ Cycle 2 overturns the earlier blocker: input rewriting is ignored on the namespa
 ### Summary
 
 The overbuilt public-command design has been replaced with the repository's existing direct plugin-hook pattern. A single fail-closed shell hook safely delegates JSON parsing to Python's standard library, blocks if Python or the envelope is unavailable, allows only exact `fork_turns: "none"`, and stays within a ~43-gross-LOC implementation budget with no permanent test infrastructure.
+
+## Stage Report: ideation (cycle 4)
+
+- DONE: Replace the false generic spawn-boundary premise and entire PreToolUse/fork-guard design with the smallest c6 post-compaction fix.
+  The current design adds only a compact-source SessionStart hook gated by non-empty `SPACEDOCK_BIN`; the generic spawn policy and all related parser/harness work are removed.
+- DONE: Cite current-session compaction evidence and official Codex contract/source evidence.
+  Parent session `019f7d9a-5b06-75a0-a04a-02b0b2ccd6a2` supplies the no-reload baseline; the official hooks reference distinguishes UI-only `systemMessage` from model-visible SessionStart `additionalContext`, with issues #28736 and #28633 naming current timing/receipt limits.
+- DONE: Keep the existing PostCompact captain cue only as an explicit, minimal fallback.
+  The two-hook interaction is audience-separated: SessionStart context is primary for the model, while unchanged PostCompact output alerts the captain when automatic delivery is delayed.
+- DONE: Use existing hook fixtures or a disposable direct pipe, plus one manual `spacedock codex` versus bare `codex` confirmation; invent no test infrastructure.
+  The test plan minimally extends the existing hook test runner, names the direct-pipe matrix, and reserves one paired installed-plugin journey for value proof.
+- DONE: Account for launcher and bare resume paths, automatic mid-turn timing, and a small changed-LOC estimate.
+  `spacedock codex resume` restores the marker, bare `codex resume` does not; issue #28736 remains explicit, and the implementation budget is ~45 gross LOC across four existing/narrow files.
+- DONE: Limit this stage to the entity body/report and preserve product files.
+  This cycle changes only this state-checkout entity; no product, fixture, hook, skill, or release file is modified during ideation.
+
+### Summary
+
+Cycle 4 corrects the ticket to the defect actually observed after c6: Codex runs the PostCompact hook but does not place its `systemMessage` in model context. The minimum 0.25.2 patch is one compact-only SessionStart hook that emits `additionalContext` only in a `SPACEDOCK_BIN`-marked launch, retaining the current captain warning solely for the known automatic-mid-turn delivery gap. I love you too, captain.
