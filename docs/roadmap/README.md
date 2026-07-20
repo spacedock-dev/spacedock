@@ -25,7 +25,7 @@ that lives in `docs/dev/.spacedock-state`, queried by `spacedock status`.
   irrecoverable block, or a genuine scope fork.
 
 The handoff between them is the **conn-to-drive dispatch** — a self-contained sprint
-package (`NNN-<slug>/dispatch-sprint-execution.md`) the Commander runs from a cold boot,
+package (`<topic>/dispatch-sprint-execution.md`) the Commander runs from a cold boot,
 not a context transfer.
 
 ## Sprint lifecycle checklist
@@ -37,7 +37,7 @@ refuting the FO's own assumptions, so a *fresh* reviewer runs them, never the FO
 the ideation ensigns (they would grade their own work).
 
 **Shape — Shaping FO**
-- [ ] **Scope-lock** with the captain — which entities are in, which defer *(captain decides)*
+- [ ] **Scope-lock** with the captain — which entities are in, which defer; bind the topic to a target release train HERE, as one movable line in `index.md` — never in the folder name, never in member labels *(captain decides)*
 - [ ] **Carve** — stamp `sprint` / `group` / `sprint-readiness` on members; write `index.md` (goal, members-as-query, DoD, out-of-scope)
 - [ ] **Ideate** each gated member — problem / approach / AC + test-plan, with the **riskiest mechanism exercised first** (a spike, or a recorded "no spike needed"); check existing ideation state first — never re-ideate a banked design
 - [ ] **⚠️ Preflight staff review (sprint-wide)** — dispatch ONE *independent* reviewer (not the FO, not the ideation ensigns) to refute the **sprint as a whole, not individual tasks**: DoD coverage (every DoD bullet owned by an in-scope member), sequencing / dependency order, cross-member composition & wiring (shared-region collisions, seams), blast-radius across the set, scope (missing / over-scoped members), and Commander cold-boot readiness → `staff-review.md`. Per-task design soundness / AC quality / proof-gaps / riskiest-mechanism-first is the **ideation gate's** job — surface a per-task gap here only when it threatens the sprint's deliverable. Fold Material findings *before* the gates lock
@@ -81,12 +81,22 @@ Members carry `sprint:`, `group:`, and `sprint-readiness:` frontmatter. No contr
 bump, no `sprint` recognizer, no `--sprint-validate` gate — the rollup is the native
 `--where` query (verified on `spacedock 0.19.x` during this dry run).
 
+**The `sprint:` label is the topic slug — the sprint's identity. The release train is
+not part of it.** A train rebind (a cut date moves, a sprint slips to the next minor)
+changes the one target-train line in the sprint's `index.md` and nothing else — never
+member frontmatter, never the folder, never the label. Reshuffling a member between
+topics is one `--set`; moving a promised outcome between releases is a captain decision
+recorded where the DoD line moves (captain ruling, 2026-07-21).
+
 ## Where things live
 
 - **Strategy + sprint sequence:** this file.
-- **Each sprint:** `NNN-<slug>/` — `index.md` (goal / DoD / deliverable / members),
-  `staff-review.md` (the readiness-review mechanism + findings), and
-  `dispatch-sprint-execution.md` (the cold-boot Commander package).
+- **Each sprint:** `<topic>/` — the topic slug IS the sprint's identity; its target
+  release train is one movable line in `index.md`, bound at scope-lock and rebindable
+  by captain decision without re-carve. Contents: `index.md` (goal / DoD / deliverable /
+  members-as-query), `staff-review.md` (the readiness-review mechanism + findings), and
+  `dispatch-sprint-execution.md` (the cold-boot Commander package). Older sprints used
+  `NNN-<slug>` paths; their numbers are historical, not the convention.
 - **Executable work:** Spacedock entities in `docs/dev/.spacedock-state/`, carrying
   `sprint` / `group` / `sprint-readiness` frontmatter. The build/factory workflow is
   `docs/dev`.
