@@ -4,6 +4,8 @@ status: backlog
 source: "Contractlint antipattern sweep, 2026-07-11: pi_runtime_negative_contrast_test.go and Pi portions of runtime_binding_block_test.go infer live semantics from instruction prose."
 score: 0.28
 id: sgepgtm1qtjz527pyg0bee7n
+sprint: 0260-proportionality
+group: contract-cleanups
 ---
 
 ## Problem
