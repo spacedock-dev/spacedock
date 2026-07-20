@@ -4,6 +4,8 @@ status: backlog
 source: "Contractlint antipattern sweep, 2026-07-11: internal/contractlint/prose_function_backstop_test.go checks rebase and reuse-diagnostic wording rather than a safety outcome."
 score: 0.27
 id: h6fxjt306rxwdzjsrv1cchrs
+sprint: 0260-proportionality
+group: contract-cleanups
 ---
 
 ## Problem
