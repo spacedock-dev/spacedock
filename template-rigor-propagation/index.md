@@ -11,11 +11,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:2ae:ideation
-        attempt: gate-attempt:2ae-ideation-1
+        attempt: gate-attempt:2ae-ideation-2
     records:
         - id: gate:docs-dev:2ae:ideation
           stage: ideation
-          current-attempt: gate-attempt:2ae-ideation-1
+          current-attempt: gate-attempt:2ae-ideation-2
           attempts:
             - id: gate-attempt:2ae-ideation-1
               sequence: 1
@@ -36,8 +36,29 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
+                state: superseded
+              note: "The resolution reason is a binding captain instruction for the VALIDATION gate: its presentation must include the refit diff against the workflow README for human review. Carry into the Commander package. bw's Feedback Cycles format stays deferred (surfaced in the briefing, no annotation overriding it). Superseded by attempt 2 (captain-approved staff-review folds); the approval and the validation-gate instruction both stand."
+            - id: gate-attempt:2ae-ideation-2
+              sequence: 2
+              previous-attempt: gate-attempt:2ae-ideation-1
+              state: closed
+              briefing:
+                id: briefing:2ae-ideation-2-chat
+                digest: sha256:73d52527f12644ec3252e96414bb63d3cb7e44f57c8392ca9884cd218a7d4183
+                note: chat presentation; digest is the entity content after the captain-approved staff-review folds were applied
+              resolution:
+                type: Resolution
+                id: resolution:captain-chat-2ae-ideation-2
+                briefing: briefing:2ae-ideation-2-chat
+                by: person:captain
+                at: 2026-07-20T10:20:31Z
+                decision: approve
+                reason: "Staff-review folds, captain-approved in chat: Piece 4 restored word-for-word to 02av's approved block (the compressed sentences returned) and moved from the validation to the implementation stage-def mirroring 02av's dev placement; the commission-skill pattern sentence names implementation-with-review-rounds stages; AC-2 reworded to a live refit-skill dry-run (a dispatched agent drives Phase 3b; validator-performed regeneration proves nothing about the skill); Pieces 1-3 re-anchor against landed sibling text at implementation."
+              application:
+                action: advance
+                target-stage: implementation
                 state: pending
-              note: "The resolution reason is a binding captain instruction for the VALIDATION gate: its presentation must include the refit diff against the workflow README for human review. Carry into the Commander package. bw's Feedback Cycles format stays deferred (surfaced in the briefing, no annotation overriding it)."
+              note: "FO applied the folds directly under the captain's edit-directly grant; fable delta findings 4-6 and the codex finding-4 wave-4 sharpening. The attempt-1 validation-gate instruction (refit README delta presented for human review) carries forward unchanged."
 ---
 
 Every rigor cap in the ecosystem is post-incident scar tissue stuck in the repo where the incident happened: zaphod's no-PR-machinery rule and offline/interactive AC split, spacedock-v1's mechanism-to-value trace and materiality taxonomy. The shipped commission template contains none of them, its proof-discipline menu can only raise rigor, its interview never asks rigor level, and its "Verified by: grep" example models the exact tautology the Proof policy bans. Refit refreshes scaffolding version, not accumulated content. Template gains: `## Stakes` scaffold + interview question, materiality taxonomy, AC split, small-change fast path, size-gated semantic adversarial pass, fixed Verified-by example; refit gains content propagation so the three commissioned workflows receive the delta. Grouped with `ey`.
@@ -88,7 +109,7 @@ The pieces and their verbatim sources:
 
 ## Documentation changes (concrete before/after — ideation proposes, implementation applies)
 
-Each piece names the value AC it serves, the simplest alternative, and why that alternative is insufficient.
+Each piece names the value AC it serves, the simplest alternative, and why that alternative is insufficient. The Before/After texts for Pieces 1-3 quote the sibling sources as of ideation; implementation re-anchors each against the LANDED post-z7/az/02av wording before applying — the landed text is the verbatim source, not these quotes (staff-review fold; the Commander package's wave 4 states the same rule).
 
 ### Piece 1 — Verified-by example fix (ht). Serves AC-1.
 
@@ -118,17 +139,19 @@ The parenthetical is z7's exact downstream-propagation wording (`falsifiability-
 
 ### Piece 4 — Materiality taxonomy (02av's stage-def-bullet pattern). Serves AC-1.
 
-`development.md`, add to the `### `validation`` stage-def (after the existing sentence, ~line 80) a bullet carrying 02av's three classes verbatim (`ensign-finding-triage-disposition.md:137-139`):
+`development.md`, add to the `### `implementation`` stage-def (mirroring 02av's dev placement — in-stage reviewer rounds happen during implementation, which is where the dutiful-fix incidents lived) a bullet carrying 02av's three classes verbatim (`ensign-finding-triage-disposition.md:137-143`):
 
 > `- When consuming a review round's findings, triage before fixing:`
 > `  - **Material** — breaks a value AC, or a declared non-negotiable boundary (safety, security, data-integrity, compatibility) reachable through the supported workflow. Fix it.`
-> `  - **Correct-but-disproportionate** (deferred risk or polish) — substantively right, but no value AC breaks and its trigger is outside the supported/promised workflow. Record a decline; do not fix it. Name the finding, its class, and why it is not material.`
+> `  - **Correct-but-disproportionate** (deferred risk or polish) — substantively right, but no value AC breaks and its trigger is outside the supported/promised workflow. Record a decline; do not fix it. The decline is your licensed disposition, not a dodge: name the finding, its class, and why it is not material (no value AC at risk; trigger outside the promise; the condition that would promote it to material).`
 > `  - **Needs decision** — a genuine product or compatibility fork. Escalate to the first officer; do not resolve it privately.`
-> `  Record the disposition in the entity's `### Feedback Cycles` record so the gate sees it. Narrowing a value AC to make a finding pass is not a licensed disposition — it is a design-reset event for the captain, recorded so it is captain-visible.`
+> `  Record the disposition — which findings were fixed as material, which were declined and why — in the entity's `### Feedback Cycles` record so the gate sees it. A finding you neither fix nor record is not triaged. **Narrowing an acceptance criterion to make a finding or rejection pass is not a licensed disposition.** Declining a disproportionate finding and narrowing the claim it targets are opposite moves under the same pressure: the first leaves the product unchanged and is yours to make; the second weakens the value the entity promised and is a design-reset event requiring the captain's sign-off, recorded so it is captain-visible — never a task-internal edit.`
+
+(Wording above is word-for-word from 02av's approved block per AC-3; staff-review fold 2026-07-20 restored the sentences an earlier draft compressed and moved the bullet from the validation stage-def to implementation.)
 
 And `skills/commission/SKILL.md` §2a stage-generation guidance (the `### {stage_name}` Outputs bullet block, ~line 426), add one sentence propagating the PATTERN to non-dev workflows:
 
-> `- After the existing "Stage-output bullets become checklist items…" sentence, add: A review-flavored stage (validation, review, evaluation) may carry a triage-before-fixing bullet: classify each review finding as material (fix), correct-but-disproportionate (record a decline, do not fix), or needs-decision (escalate) before acting — so a reviewer's non-material finding does not force a dutiful fix.`
+> `- After the existing "Stage-output bullets become checklist items…" sentence, add: A stage whose rounds consume review findings (implementation with in-stage review rounds, validation, review, evaluation) may carry a triage-before-fixing bullet: classify each review finding as material (fix), correct-but-disproportionate (record a decline, do not fix), or needs-decision (escalate) before acting — so a reviewer's non-material finding does not force a dutiful fix.`
 
 Alt: ship only the dev bullet. Insufficient: 02av's charter for the template group is to propagate the stage-def-bullet PATTERN to non-dev workflows, which is the `SKILL.md` guidance, not just the dev file.
 
@@ -191,7 +214,7 @@ Verified by: a live commission drive on a scratch mission ("a personal-site deve
 
 **AC-2 (VALUE) — Refit propagates CONTENT, not just the version stamp: a refit dry-run against a README commissioned from the pre-scar-tissue template surfaces the scar-tissue sections as an additive content diff, whereas today's refit surfaces only the `commissioned-by:` line.**
 The number that moves the wrong way: content lines in the refit diff beyond the version stamp — 0 today, >0 after (the spike measured 2 control vs 13 propagated).
-Verified by: the refit dry-run replay (the spike formalized) at validation — regenerate the commissioned fixture README from the updated template and `diff`; assert the diff contains the materiality-taxonomy and fixed-Verified-by hunks AND that the version-only control diff contains only the stamp line. Independent baseline that can move wrong: the version-only control (today's behavior) surfacing 0 content lines. This is the DoD line "a refit dry-run against a commissioned README shows the content delta arriving." One-off drive recorded in the report, not a committed test.
+Verified by: a live refit dry-run at validation — a dispatched agent DRIVING `skills/refit/SKILL.md` Phase 3b (not the validator regenerating by hand) against the commissioned fixture README; assert the emitted diff contains the materiality-taxonomy and fixed-Verified-by hunks AND that the version-only control diff contains only the stamp line. The claim under test is the refit skill's own behavior after Piece 8 — validator-performed regeneration would reproduce the ideation spike and prove nothing about the skill (staff-review fold, per the live-drive proof rule). Independent baseline that can move wrong: the version-only control (today's behavior) surfacing 0 content lines. This is the DoD line "a refit dry-run against a commissioned README shows the content delta arriving." One-off drive recorded in the report, not a committed test.
 
 **AC-3 (mechanism — the pieces land verbatim, no divergence, no minted terms, no new enforcement).** Each of the seven doc-diff pieces is applied to its named file; z7's cheapest-check clause, 02av's three-class taxonomy, ht's Verified-by wording, and `docs/dev/README.md:76`'s no-prose-grep bullet appear in the template WORD-FOR-WORD against their sibling source (the anti-divergence property this entity exists to protect); the shipped diff adds zero `*_test.go`, zero lint/CI/gate, and touches only `development.md`, `experiment.md`, `skills/commission/SKILL.md`, and `skills/refit/SKILL.md`.
 Verified by: a one-off validation comparison of each shipped piece against its cited sibling line (output pasted into the report, not a committed grep — per the captain's prose-grep ruling); plus `git diff --name-only` showing the four-file set and no added test/gate. Paired with AC-1/AC-2 (this is the means; those measure the value). A divergent re-draft, a fifth touched file, or any new committed check fails it.
@@ -199,7 +222,7 @@ Verified by: a one-off validation comparison of each shipped piece against its c
 ## Test plan
 
 - **AC-1 value drive (live commission) → medium.** Two live `commission` drives (branch vs `main`) on one scratch mission; compare the generated READMEs and count scar-tissue pieces / banned examples. Commission is an LLM skill, so this is a live behavioral drive observed once at validation, not a committed test. Owned by validation per the live-drive proof rule.
-- **AC-2 refit dry-run replay → low.** The spike formalized: regenerate the fixture README from the updated template, `diff`, assert content hunks present and the control is version-only. Cheap, seconds, `diff` + line-count. The `_evidence`/scratch fixtures seed it.
+- **AC-2 live refit dry-run → medium.** A dispatched agent drives the updated refit skill Phase 3b against the fixture README; assert content hunks present and the control is version-only. One live skill drive at validation; the spike's fixtures seed it.
 - **AC-3 verbatim + git-state check → low.** A one-off read comparing each shipped piece to its sibling source, and `git diff --name-only` for the four-file set with no added test/gate. Output pasted, never committed.
 - **No Go/product code, no new committed test, gate, or lint in this cut.** The deliverable is template + skill prose; the negative deliverable (no new enforcement) is the point and is a git-state check (AC-3). High-stakes note: the commission template and refit skill are shipped scaffolding (a high-stakes surface per the Proof policy), so the detached adversarial audit applies at validation before merge.
 
