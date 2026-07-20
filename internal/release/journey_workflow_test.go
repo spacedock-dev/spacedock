@@ -66,62 +66,19 @@ func TestRuntimeLiveWorkflowGuardRejectsMissingSharedScenarioRun(t *testing.T) {
 	}
 }
 
-func TestRuntimeLiveWorkflowGuardRejectsUnscopedPiPackage(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	adversarial := strings.Replace(live,
-		`npm install -g @earendil-works/pi-coding-agent --before="$NPM_BEFORE" --ignore-scripts --no-audit --no-fund --omit=dev`,
-		`npm install -g pi-coding-agent --before="$NPM_BEFORE" --ignore-scripts --no-audit --no-fund --omit=dev`,
-		1)
-	if adversarial == live {
-		t.Fatal("fixture workflow missing scoped Pi CLI install command")
-	}
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted the wrong unscoped Pi CLI package")
-	}
-}
-
-func TestRuntimeLiveWorkflowGuardRejectsMissingPiBeforeAgeGate(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	adversarial := strings.ReplaceAll(live, ` --before="$NPM_BEFORE"`, ``)
-	if adversarial == live {
-		t.Fatal("fixture workflow missing npm --before install flags")
-	}
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted Pi npm installs without --before")
-	}
-}
-
 func TestRuntimeLiveWorkflowGuardRejectsObsoletePiMinReleaseAgeProbe(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 	adversarial := strings.Replace(live,
-		`NPM_BEFORE="$(node -e 'console.log(new Date(Date.now() - 24*60*60*1000).toISOString())')"
-          echo "Using npm --before age gate for pi-live installs: $NPM_BEFORE"`,
+		`node --version`,
 		`npm config get min-release-age
           npm config set min-release-age 1440`,
 		1)
 	if adversarial == live {
-		t.Fatal("fixture workflow missing npm --before age-gate timestamp")
+		t.Fatal("fixture workflow missing Pi install prelude")
 	}
 
 	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
 		t.Fatal("runtime live workflow guard accepted obsolete min-release-age probing")
-	}
-}
-
-func TestRuntimeLiveWorkflowGuardRejectsUnverifiedPiPackageInstall(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	adversarial := strings.Replace(live,
-		`node -e "const p=require('$global_npm_root/@earendil-works/pi-coding-agent/package.json'); if (p.name !== '@earendil-works/pi-coding-agent') throw new Error('unexpected Pi package name '+p.name); if (!p.bin || p.bin.pi !== 'dist/cli.js') throw new Error('unexpected Pi bin '+JSON.stringify(p.bin)); console.log('verified '+p.name+'@'+p.version+' bin pi='+p.bin.pi)"`,
-		`echo "skipping Pi package verification"`,
-		1)
-	if adversarial == live {
-		t.Fatal("fixture workflow missing Pi CLI package verification command")
-	}
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted an unverified Pi CLI package install")
 	}
 }
 

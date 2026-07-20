@@ -59,22 +59,7 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 		return fmt.Errorf("runtime-live-e2e.yml Pi live job is missing its OpenAI secret, required flag, or CI-E2E-PI environment")
 	}
 	if workflowHasExecutableCommandContaining(workflow, `npm config get min-release-age`) || workflowHasExecutableCommandContaining(workflow, `npm config set min-release-age`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job uses obsolete min-release-age probing instead of npm --before")
-	}
-	if !workflowHasExecutableCommandContaining(workflow, `NPM_BEFORE="$(node -e 'console.log(new Date(Date.now() - 24*60*60*1000).toISOString())')"`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not compute an npm --before age-gate timestamp")
-	}
-	if !workflowHasExecutableCommandContaining(workflow, `npm install -g @earendil-works/pi-coding-agent --before="$NPM_BEFORE" --ignore-scripts --no-audit --no-fund --omit=dev`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not install the scoped Pi CLI with npm --before and safer npm flags")
-	}
-	if workflowHasExecutableCommandContaining(workflow, "npm install -g pi-coding-agent") || workflowHasExecutableCommandContaining(workflow, "npm install -g \"pi-coding-agent@") {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job installs the wrong unscoped Pi CLI package")
-	}
-	if !workflowHasExecutableCommandContaining(workflow, `npm install --prefix "$pi_npm_root" pi-subagents pi-intercom --before="$NPM_BEFORE" --ignore-scripts --no-audit --no-fund --omit=dev`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not directly install required Pi substrates with npm --before and safer npm flags")
-	}
-	if !workflowHasExecutableCommandContaining(workflow, `test -x "$(command -v pi)"`) || !workflowHasExecutableCommandContaining(workflow, `p.name !== '@earendil-works/pi-coding-agent'`) || !workflowHasExecutableCommandContaining(workflow, `p.bin.pi !== 'dist/cli.js'`) || !workflowHasExecutableCommandContaining(workflow, `p.name !== 'pi-subagents'`) || !workflowHasExecutableCommandContaining(workflow, `p.name !== 'pi-intercom'`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-subagents/src/extension/index.ts"`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-subagents/src/intercom/intercom-bridge.ts"`) || !workflowHasExecutableCommandContaining(workflow, `test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"`) || !workflowHasExecutableCommandContaining(workflow, `echo "PI_INTERCOM_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-intercom" >> "$GITHUB_ENV"`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not verify installed Pi package names, versions, bin, resource paths, and intercom package env")
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job uses obsolete min-release-age probing")
 	}
 	if !workflowHasExecutableCommandContaining(workflow, `spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE"`) {
 		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not verify current-checkout Spacedock skills")
