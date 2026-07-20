@@ -4,7 +4,7 @@ The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly,
 
 ## Dispatch
 
-**Standing-teammate injection.** Before the first worker dispatch, inject the workflow's declared standing teammates via the runtime adapter's standing-injection call (it forwards each returned spawn spec to the spawn call with the same verbatim discipline as `«dispatch.build»` output). Idempotent (already-alive members omitted), a no-op when none is declared or the runtime has no shared-teammate surface. Lifetime is the adapter's. Read each teammate's routing usage from its mod.
+**Standing-teammate injection.** Before the first worker dispatch, inject the workflow's declared standing teammates via the runtime adapter's standing-injection call, forwarding each returned spawn spec verbatim. Idempotent (already-alive members omitted), a no-op when none is declared or the runtime has no shared-teammate surface. Lifetime is the adapter's. Read each teammate's routing usage from its mod.
 
 For each entity reported by `status --next`:
 
@@ -19,12 +19,12 @@ For each entity reported by `status --next`:
    Omit `worktree=...` for non-worktree stages. Bare `started` auto-fills a UTC ISO 8601 timestamp (skipped if already set).
 6. Commit the state transition on main: `dispatch: {slug} entering {next_stage}`.
 7. Create the worktree on first dispatch to a worktree stage.
-8. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (the helper assembles the assignment; `--feedback-context-file` when the stage has `feedback-to`).
+8. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`).
 9. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case.
 
 A feedback-stage worker checks and reports on what was produced; it does not silently take over the prior stage.
 
-**Routing through a standing prose-polisher.** When composing drafts for captain review (PR bodies, gate-review summaries, long narrative entity-body sections, debrief content), the FO MAY route through a live standing prose-polisher (convention: `comm-officer`). Best-effort, non-blocking regardless of duration; if absent, proceed un-polished. Read the polisher's usage (when to polish, the polish modes) from its mod.
+**Routing through a standing prose-polisher.** When composing drafts for captain review, the FO MAY route through a live standing prose-polisher (convention: `comm-officer`). Best-effort, non-blocking regardless of duration; if absent, proceed un-polished. Read the polisher's usage (when to polish, the polish modes) from its mod.
 
 ## «dispatch.checklist»(entity, stage): assemble dispatch linchpins
 
@@ -37,18 +37,18 @@ This is not a work breakdown: the ensign already reads the body, commits before 
 
 ## Reuse and Fresh Dispatch
 
-Advancing a completed worker. The gate-presentation spine (checklist review, AC cross-check, "not a stopping point", gated-stage decisions) is in the boot-resident core's `## Completion and Gates`; the reuse machinery it defers to lives here. A completed worker is reusable only when still addressable through a live runtime handle AND all reuse conditions below pass. Otherwise dispatch fresh.
+Advancing a completed worker. The gate-presentation spine is in the boot-resident core's `## Completion and Gates`; the reuse rules it defers to live here.
 
-**Freshness invariant.** A fresh dispatch creates a new worker handle with no inherited parent turns. Runtime adapters enforce that boundary with the host's spawn mechanism. This invariant does not change stage selection: a reusable worker may still advance through `«addressable-worker»` when every reuse condition passes and the next stage does not declare `fresh: true`.
+**Freshness invariant.** A fresh dispatch creates a new worker handle with no inherited parent turns. Runtime adapters enforce that boundary with the host's spawn mechanism. It does not change stage selection — the conditions below do.
 
 **Reuse conditions** (all must hold — if any fails, dispatch fresh):
 0. `«context-budget»()` — if it reports the worker over budget, or the probe is unavailable, dispatch fresh (fail-safe — never silent-reuse on an absent reading). When `«context-budget»` is ABSENT on the host, this condition is satisfied.
-1. `«addressable-worker»` is PRESENT on the host and exposes a live, reusable handle to the completed worker (its reuse-advance handle), addressed via the `«worker-identity»` schema's worker address. When `«addressable-worker»` is ABSENT, this condition fails and the FO dispatches fresh.
+1. `«addressable-worker»` is PRESENT on the host and exposes a live, reusable handle to the completed worker (its reuse-advance handle), addressed via the `«worker-identity»` schema's worker address. ABSENT fails this condition.
 2. Next stage does NOT have `fresh: true`.
 3. Reuse-routing matches the entity's worktree state — if `worktree:` is set, route the next stage into the same worktree; if `worktree:` is empty and the next stage declares `worktree: true`, dispatch fresh so the new worktree's first agent is born inside it.
 4. `«reuse.model-match»` — the reused worker's stamped model matches `next_stage.effective_model`.
 
-**If reuse:** Keep the agent alive. Update frontmatter on main (`${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Build the advancement with `«dispatch.build»` in advance mode (`--advance`, same checklist-file discipline; `--feedback-context-file` when routing rejection findings) and send the emitted `prompt` through the runtime adapter's reuse-advance handle (its live-worker messaging call). On non-zero helper exit only, fall back to the adapter's manual advance template (the break-glass rule).
+**If reuse:** Keep the agent alive. Update frontmatter on main (`${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Build the advancement with `«dispatch.build» --advance` and send the emitted `prompt` through the runtime adapter's reuse-advance handle (its live-worker messaging call). On non-zero helper exit only, fall back to the adapter's manual advance template (the break-glass rule).
 
 **If fresh dispatch:** If the next stage's `feedback-to` points at the completed stage, keep that agent alive while addressable and reuse-eligible; otherwise invoke `«worker.shutdown»` when the host binds it. Then run `status --next` and dispatch the next stage.
 
@@ -70,7 +70,7 @@ Advancing a completed worker. The gate-presentation spine (checklist review, AC 
 
 ### Split-Root Worktree Contract
 
-When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), a worktree stage isolates **the deliverable work product only**. Entities live in a separate, non-branched state checkout a main-repo worktree does not contain; the entity body and stage reports are committed there at the entity's state-checkout path, **never** a worktree copy — the dispatch helper hands workers that path even under a worktree stage. The worktree's "commits MUST be on this branch" applies to deliverable artifacts only. The `pr:`-mirrored-on-`main` exception is unaffected.
+When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), a worktree stage isolates **the deliverable work product only**. Entities live in a separate, non-branched state checkout a main-repo worktree does not contain; the entity body and stage reports are committed there at the entity's state-checkout path, **never** a worktree copy — the dispatch helper hands workers that path even under a worktree stage. The worktree's "commits MUST be on this branch" applies to deliverable artifacts only.
 
 ## Worker Resolution
 
@@ -80,7 +80,7 @@ Split worker identity into:
 
 ## Dispatch Adapter
 
-Runtime adapters bind the capability `«fn»`s below in their `## Runtime implementation` blocks; the `→` lines here carry legacy host coverage this core still owns. `«addressable-worker»` is the organizing capability — its presence makes a worker reusable; when ABSENT, fresh one-shot dispatch is the only path. `«worker.spawn»` handles initial dispatch; the reuse-advance handle only advances a reused agent.
+Runtime adapters bind the capability `«fn»`s below in their `## Runtime implementation` blocks; the `→` lines here carry legacy host coverage this core still owns. `«addressable-worker»` is the organizing capability: its presence makes a worker reusable. `«worker.spawn»` handles initial dispatch; the reuse-advance handle only advances a reused agent.
 
 ## «worker.spawn»: create the initial worker from a `«dispatch.build»` artifact
 
@@ -145,13 +145,13 @@ The ONLY initial-dispatch path: route input through `spacedock dispatch build`, 
 - **block:** on non-zero exit (or missing binary) ONLY — read stderr, report the helper failure to the captain, then use the adapter's Break-Glass Manual Dispatch template (stage definition inlined verbatim; conditional `model` slot per `«worker-identity»`'s canonical model space). A zero-exit run is never a break-glass trigger.
 - → **shipped**: `` `spacedock dispatch build` `` — invoke it directly per the effect above.
 
-`«dispatch.build»` serves initial dispatch (spawn envelope) and reuse advance (`--advance`: a pointer message for the reuse-advance handle, no spawn fields). When `«async-dispatch»` blocks, dispatch one entity at a time and process each completion inline.
+When `«async-dispatch»` blocks, dispatch one entity at a time and process each completion inline.
 
 ## Event Loop
 
 After each agent completion, run `«dispatch.next-action»()` (skeleton below).
 
-These are FO-internal scheduling reads — consume them as `--json` (compact, byte-stable, every value a string), not the padded human table a token proxy can mangle; `--fields` narrows to the keys needed. Envelopes: `status`/`--where` → `{"command":"status","entities":[…]}`; `--next` → `{"command":"next","dispatchable":[{"id","slug","current","next","worktree"},…]}`. The captain-facing state display (shared-core) still forwards the human table verbatim.
+These are FO-internal scheduling reads — consume them as `--json` (compact, byte-stable, every value a string), not the padded human table a token proxy can mangle; `--fields` narrows to the keys needed. Envelopes: `status`/`--where` → `{"command":"status","entities":[…]}`; `--next` → `{"command":"next","dispatchable":[…]}`. The captain-facing state display (shared-core) still forwards the human table verbatim.
 
 ## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration
 
@@ -162,7 +162,13 @@ When PRESENT, invoke `«roster-reconcile»()` before the inbound-message drain. 
 2. **Run `status --next --json --fields id,slug`** — Dispatch any newly ready entity in `dispatchable` (each row carries the fixed `id,slug,current,next,worktree` plus named frontmatter keys; `--fields` is additive over those five, the computed dispatch columns are not projectable).
 3. **If nothing is dispatchable** — After the first empty `status --next`, invoke `«hooks.run»("idle")` exactly once, then `«roster-reconcile»()` when PRESENT, then the second `status --next`. Dispatch anything newly unblocked; otherwise end the iteration.
 
-- **done-when:** a ready entity is dispatched, a mod-block's pending action is resumed, or nothing is dispatchable and the iteration ends.
+- **done-when:** a ready entity is dispatched, a mod-block's pending action is resumed, a ready entity is held at the consent stop above, or nothing is dispatchable and the iteration ends.
 - → **prose** (deterministic mechanism, binary pending — NOT judgment-owned), becomes `` `spacedock dispatch next-action` `` — no driver binary backs it yet (descoped to roadmap 0222); the FO hand-follows the deterministic skeleton above and does not probe for the unshipped command (runtime-support.md's `→ prose` trichotomy).
+
+**Consent stop before dispatching new standing enforcement.** A ready action whose deliverable is a NEW STANDING check or enforcement process the FO ORIGINATED — a lint, a review gate, a CI lane, a recurring validation step — is the last resort of the boot-resident ordering, never obvious reversible work. Consent is already given for a deliverable the captain commissioned, for running a check that already exists, and for writing a test for the behavior in hand; none of those stop. Otherwise do not dispatch: hold the entity ready-but-undispatched, surface it as an unmet clarification, and carry `awaiting-consent: {slug}` as the iteration's stop reason — headless EXITs with it, interactive waits. The license hangs off the captain wanting it, never an inference that it would help; it bites hardest in non-dev workflows, where every check is new process.
+
+**Fan-out checkpoint.** A SINGLE investigation that will dispatch more than one worker (a flake chase, a review-rework, a refactor sweep) declares BEFORE its first spawn how many WORKERS it expects, the tolerance, and why that spend is economically reasonable — dispatched workers are the counted unit, whether they file entities or open PRs. The checkpoint fires when the next spawn would take the running count past expected-plus-tolerance: stop, surface the count against the declaration, and let the captain re-cap rather than spawning again. It binds equally to a plan that commits the fan-out in one act — a workflow script or batch spawn declares the same numbers before launch, since a running script reaches no later moment to catch. Keep-moving speeds independent, already-scoped work; it does not authorize an unbounded spawn chain off one thread. Judgment against a declared number, not a counter binary.
+
+**A second verifier attacks an unowned claim; it never re-runs an owned check.** "Independent adversarial verification" does not justify a second agent to re-run a check that already ran green or to second-opinion a deterministic fact a shipped check owns — run that check instead. It DOES justify one to attack a claim no check owns: adversarial skepticism and a mandated detached audit are that falsifiable exercise, not the redundancy this refuses. And N agents reaching the same answer is one confirmation observed N times, not N independent confidences — agreement raises cost, not confidence.
 
 Repeat the skeleton after each completion until the captain ends the session or, in single-entity mode, the target entity is resolved.
