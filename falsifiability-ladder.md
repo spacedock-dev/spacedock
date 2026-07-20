@@ -1,41 +1,41 @@
 ---
 id: z7sfm93ccddg7x2tycp1smwy
-title: Falsifiability ladder replaces "code gate over prose rule" — with infra consent, fan-out checkpoint, and bare-ordinal itemization
+title: Prefer the cheapest check that can fail — replaces "code gate over prose rule", with new-machinery consent, fan-out surfacing, and the no-minting authoring rule
 status: ideation
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.75"
 sprint: 0260-proportionality
-group: ladder
+group: verification
 started: 2026-07-20T03:29:38Z
 gates:
-  version: 1
-  current:
-    gate: gate:docs-dev:z7:ideation
-    attempt: gate-attempt:z7-ideation-1
-  records:
-    - id: gate:docs-dev:z7:ideation
-      stage: ideation
-      current-attempt: gate-attempt:z7-ideation-1
-      attempts:
-        - id: gate-attempt:z7-ideation-1
-          sequence: 1
-          state: closed
-          briefing:
-            id: briefing:z7-ideation-1
-            digest: sha256:f4fefb0b7be0d57c933fe27d71aa90235e6b01faef2301f916db22a8f0065b47
-          resolution:
-            type: Resolution
-            id: resolution:actor-1784520766469687000
-            briefing: briefing:z7-ideation-1
-            by: person:reviewer
-            at: 2026-07-20T04:12:46Z
-            decision: revise
-            reason: "Annotation on the clause headline: do not invent new terminology — the named ladder/rungs/climb concept is itself minted vocabulary; express the ordering rule in plain language."
-          application:
-            action: feedback
-            target-stage: ideation
-            state: pending
-          note: "Subspace advisory float; captain annotation included (annotation:captain-1784520762311801000, TextQuoteSelector on the clause opening). In-stage revision routed to the live worker; next attempt opens at re-presentation."
+    version: 1
+    current:
+        gate: gate:docs-dev:z7:ideation
+        attempt: gate-attempt:z7-ideation-1
+    records:
+        - id: gate:docs-dev:z7:ideation
+          stage: ideation
+          current-attempt: gate-attempt:z7-ideation-1
+          attempts:
+            - id: gate-attempt:z7-ideation-1
+              sequence: 1
+              state: closed
+              briefing:
+                id: briefing:z7-ideation-1
+                digest: sha256:f4fefb0b7be0d57c933fe27d71aa90235e6b01faef2301f916db22a8f0065b47
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784520766469687000
+                briefing: briefing:z7-ideation-1
+                by: person:reviewer
+                at: 2026-07-20T04:12:46Z
+                decision: revise
+                reason: "Annotation on the clause headline: do not invent new terminology — the named ladder/rungs/climb concept is itself minted vocabulary; express the ordering rule in plain language."
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
+              note: "Subspace advisory float; captain annotation included (annotation:captain-1784520762311801000, TextQuoteSelector on the clause opening). In-stage revision routed to the live worker; next attempt opens at re-presentation."
 ---
 
 "Prefer a code gate over a prose-only rule" is a standing instruction to convert any guarantee into enforcement code — unscoped by stakes, it produced presence tests and unasked CI/lint infra, and it degrades worse in non-dev workflows where every check is new infra. Replace it with an ordering that prefers the cheapest check that can fail: shipped system guards → existing mechanical checks → falsifiable exercise (replay, source-check, adversarial skeptic) → captain judgment → build new machinery (last resort, consent-gated). Same edit carries: new enforcement surfaces are not "obvious reversible work" (consent required); a fan-out checkpoint before an investigation's Nth spawned entity/PR; identifier minting reserved to the system, ad-hoc itemization uses bare ordinals. Grouped with 1p9, cy, 85.
@@ -156,6 +156,8 @@ Dev-template / repo realizations (NOT in this entity's diff): the concrete enfor
 ### Downstream propagation (doc-diff)
 
 In scope (this workflow's own README): `docs/dev/README.md:74` names "prefer a code gate over a prose-only rule" — rename to "prefer the cheapest check that can fail (new machinery is the last resort, not the default)". Delegated to the `template` group (template layer, per the sprint layer map): `skills/commission/references/templates/development.md:88` and `experiment.md:120` carry the same phrase and rename identically when `template` lands.
+
+**Expected surface:** 2 contract files — `skills/first-officer/references/first-officer-shared-core.md` (boot-resident, ~+645 bytes: the ordering clause replacing the retired clause, the consent carve-out, the authoring bullet) and `skills/first-officer/references/fo-dispatch-core.md` (deferred, ~+1512 bytes: consent stop, fan-out checkpoint, second-verifier sharpening) — plus a 1-line rename in `docs/dev/README.md`. Prose only, no code; ~+2157 bytes total. Declared tolerance: reconfirm or reframe if boot-resident crosses the +800 budget, a third contract file is touched, or any addition requires a code/lint mechanism (the design is judgment-level prose by construction).
 
 ## Acceptance criteria
 
