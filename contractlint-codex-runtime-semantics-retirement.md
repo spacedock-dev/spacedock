@@ -59,7 +59,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 worktree: .worktrees/spacedock-ensign-contractlint-codex-runtime-semantics-retirement
-pr: "#539"
+pr: pr-merge:539
 ---
 
 ## Problem
