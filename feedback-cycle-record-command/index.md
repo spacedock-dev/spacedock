@@ -15,11 +15,11 @@ gates:
   version: 1
   current:
     gate: gate:docs-dev:bw:ideation
-    attempt: gate-attempt:bw-ideation-1
+    attempt: gate-attempt:bw-ideation-2
   records:
     - id: gate:docs-dev:bw:ideation
       stage: ideation
-      current-attempt: gate-attempt:bw-ideation-1
+      current-attempt: gate-attempt:bw-ideation-2
       attempts:
         - id: gate-attempt:bw-ideation-1
           sequence: 1
@@ -40,6 +40,13 @@ gates:
             target-stage: ideation
             state: pending
           note: "Subspace advisory float; four captain annotations included by id in the resolution. Annotation 1 is FO-owned (briefing packaging), 2-4 routed to the worker; next attempt opens at re-presentation."
+        - id: gate-attempt:bw-ideation-2
+          sequence: 2
+          previous-attempt: gate-attempt:bw-ideation-1
+          state: open
+          briefing:
+            id: briefing:bw-ideation-2
+            digest: sha256:520f84901aae2b1e9fc0c78eaaf974cbec3a8b8cbb82db3d8eb7fecb9a778a6d
 ---
 
 Turn the feedback-rejection correction loop from a prose-only cycle count into a measured, calibrated loop. At ideation the entity declares an **expected surface** as part of the captain-approved design; every correction round records its **actuals** into the durable `### Feedback Cycles` section in a documented entry format; the **deviation** of actuals from the captain-approved estimate is **narrated** at each re-dispatch decision point, so the runaway loop becomes visible against the estimate rather than legal against the prior round.
