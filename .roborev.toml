@@ -1,0 +1,85 @@
+review_guidelines = """
+Review logic, architecture, behavior, and evidence. Do not repeat repository instructions as findings unless the diff violates them.
+
+## Compatibility posture
+
+Spacedock is pre-v1, but the current launcher and workflow migration remain compatibility-first. Treat existing public command output, exit codes, status semantics, and persisted workflow state as compatibility surfaces. Flag unscoped breakage. Do not require compatibility shims for behavior explicitly marked next-only or not yet shipped.
+
+## Trust boundaries
+
+Spacedock is a local CLI that operates on operator-selected Git repositories and delegates to external runtime hosts. Treat command arguments, workflow and entity files, Git refs and configuration, and remote-host responses as external inputs. Flag path escapes, destructive cross-repository effects, shell injection, and mutation before ambiguous roots are resolved. A malicious local OS user or deliberately compromised agent process is outside the CLI's threat model.
+
+## Behavioral proof
+
+Instruction text and string matching can enforce structural shape, but neither proves runtime or agent behavior. Require behavioral claims to cite fixture or live evidence that observes process exit, output, durable state, Git history, or artifacts. Keep deterministic structure tests when the claim itself is structural. Flag tests that can pass without exercising the stated behavior.
+
+## Test proof gate
+
+Review every added or modified test individually. Before accepting it, state the observable behavior it claims to protect, name a realistic production change that must make it fail, and trace the assertion to that behavior. If no such production change exists, or the assertion observes only its own setup, classify the test as false-green.
+
+Expected values must come from literals, hand-checked fixtures, independent contracts, or invariants—not from the production logic or transformation under test. A mutation test must run the mutated input through the production validator or behavior and assert the distinguishing rejection, failure, or cleanup. Proving only that the mutation occurred, that a token disappeared, or that the mutated input still parses does not prove the guard is load-bearing.
+
+Treat names or comments containing `rejects`, `load-bearing`, `adversarial`, or equivalent claims as promises that the test observes rejection. Do not infer that proof from a neighboring test. On a required acceptance, release, CI, compatibility, or detached-audit surface, failure to exercise the claimed rejection is a Material evidence defect even when another test covers the happy path. Otherwise apply the normal release-scope classification and report the false-green test as non-blocking when the output format permits.
+
+## Semantic adversarial pass
+
+Before returning review findings, trace each changed value or event through every representation and lifecycle phase. Check exact identity, cardinality, order, bytes, attribution, authority, and terminal state—not only field presence or counts.
+
+Build a compact matrix of adjacent variants: empty and terminal states, repeated or out-of-order events, every input path, and relevant Unicode, EOF, size, visibility, and layout boundaries. Verify one invariant across the matrix.
+
+When reviewing an existing format or protocol, prefer its canonical validator. Otherwise require atomic validation of the complete record rather than one-field-at-a-time checks. Inspect changed hot paths and readers for multiplicative work, blocking I/O, unbounded allocation, and implicit size limits; request one scaling or over-limit test when that risk exists.
+
+Ask, “How could this test pass while the observable behavior is wrong?” Require the exact result plus the failure or cleanup behavior that distinguishes it.
+
+## Finding evidence and release-scope classification
+
+For each candidate finding, first record the exact trigger, observable harm, affected boundary, severity, and how existing proof could pass while behavior remains wrong. Then run the release-scope triage below. Classification changes what BLOCKS and what is merely reported — it never suppresses a real observation.
+
+Before emitting a finding, record all four:
+- Released user and normal workflow: who encounters the behavior, and how.
+- Observable harm: what that user loses or cannot complete.
+- Affected value AC or non-negotiable boundary: the accepted outcome, or the safety, security, data-integrity, or compatibility promise at risk.
+- Trigger evidence: why the trigger is common, observed, supported, or explicitly promised — name the concrete path, or state that the only path is hypothetical, adversarial-only, or outside current promises.
+
+No completed triage means no release-blocking classification.
+
+Classify each candidate:
+- Material: all four fields establish harm in a normal supported workflow, breaking a value acceptance criterion or a non-negotiable safety, security, data-integrity, or compatibility boundary.
+- Deferred risk: the defect is plausible, but its trigger is hypothetical, unsupported, unobserved, or outside current promises (e.g. reachable only via out-of-order, duplicate, or crafted input the supported flow never produces). State the concrete evidence that would promote it to material.
+- Polish: no current user-visible loss or protected boundary is at risk (e.g. a test that could be stronger on a non-value path, exact diagnostic wording no supported consumer parses, or context/token cost).
+- Needs decision: the evidence exposes a genuine product or compatibility fork the workflow and captain must resolve.
+
+Severity is independent of release scope: a High or Medium is not automatically material, and "edge case" alone is not a classification. Do not raise a global minimum severity in place of this triage — genuine normal-workflow and data-integrity defects are often Medium too.
+
+Output rule (this is what actually defers): put ONLY material findings and genuine decision points under `## Review Findings`. Roborev treats every entry there as a failure, so merely labeling one "Low" or "hypothetical" does not defer it. Report deferred risks and polish briefly in the non-blocking summary when the output format permits — each deferred risk with its trigger, why it is outside current promises, and its promote-to-material condition — otherwise omit them from the review result. The workflow and captain still own the final material-versus-deferred decision.
+
+When a defect exists only in an optional, unshipped mechanism, consider removing or narrowing that mechanism if doing so preserves the accepted value; do not assume patching the mechanism is release-critical.
+
+## Review focus
+
+Prioritize correctness, data loss, cross-root effects, compatibility regressions, concurrency, and false-green tests. Avoid speculative compile or import findings that only the Go toolchain can decide unless the diff itself establishes the failure.
+"""
+
+[review.subagents.correctness]
+agent = "codex"
+model = "gpt-5.6-sol"
+review_type = "default"
+instructions = """
+Focus on correctness, regressions, concurrency, state transitions, error handling,
+performance regressions, and false-positive tests. Apply the Test proof gate to
+every added or modified test; do not issue a clean verdict until each test's
+assertion is traced to the production mutation it claims to catch.
+"""
+
+[review.subagents.product]
+agent = "claude-code"
+model = "opus"
+review_type = "default"
+instructions = """
+Focus on Spacedock command semantics, runtime-host compatibility, workflow and
+state lifecycle, cleanup, and alignment with current product direction.
+"""
+
+[review.panels.branch_final]
+members = ["correctness", "product"]
+synthesis_agent = "codex"
