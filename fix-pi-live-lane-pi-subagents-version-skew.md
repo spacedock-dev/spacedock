@@ -4,8 +4,8 @@ title: Restore pi-live lane green by resolving the pi-subagents/pi-coding-agent 
 status: implementation
 source: c6 validation cycle-7 live-lane triage, 2026-07-20
 started: 2026-07-20T13:56:42Z
-completed: 2026-07-20T14:19:37Z
-verdict: PASSED
+completed:
+verdict:
 score:
 worktree: .worktrees/spacedock-ensign-fix-pi-live-lane-pi-subagents-version-skew
 issue:
