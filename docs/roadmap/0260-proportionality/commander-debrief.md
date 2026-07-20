@@ -38,6 +38,7 @@ Every one was caught by machinery the FO had insisted on for others.
 5. **Misread a `waiting` run as "queued".** An environment-gated re-run was awaiting the FO's own approval; ~30 minutes lost. Check `gh run view --json status`, not the check list.
 6. **Answered a reachability question with an existence argument, twice.** Declined roborev's ID/filing finding on z7 on the grounds that the rule survives in `fo-write-core.md`, citing four entities the FO had filed successfully — evidence drawn from the one host that has a boot-resident copy, and therefore the least transferable possible support for a claim about Codex. Filed as `mvv1`.
 7. **Nearly shipped unreproducible headline evidence.** The lure catalog's RESULTS were recorded while the scenario texts sat in a throwaway dir. Caught by a captain question, not by the FO. Now persisted.
+8. **Recorded a shutdown sweep as "confirmed terminated" without checking the roster.** All three agents were alive a day later. Then, asked why the captain could still see them, asserted a second unverified mechanism — that shutdown does not reconcile team config — which one command disproved (5 → 2 members, drift empty). Twice in one exchange: an outcome claimed from the act of sending rather than from the result, then a mechanism claimed from stale state rather than from a test. Caught by the captain noticing the UI, not by the FO.
 
 ## Per-host remedy efficacy (new capability — none of this existed before)
 
@@ -58,7 +59,16 @@ From z7's 30-drive lure matrix (6 scenarios x branch/main x Claude/codex):
 
 ## Degraded Mode (active, irreversible this session)
 
-Two API transport failures killed both 2ae ensigns. Degraded Mode tripped on the second per contract: sequential bare dispatch only, no `team_name`, no background workers, no `SendMessage` to any pre-trip name. Cooperative shutdown sweep completed; all three surviving agents confirmed terminated. The two dead 2ae ensigns were never sent shutdowns (cooperative shutdown must not be sent to dead agents).
+Two API transport failures killed both 2ae ensigns. Degraded Mode tripped on the second per contract: sequential bare dispatch only, no `team_name`, no background workers, no `SendMessage` to any pre-trip name. Cooperative shutdown sweep run; the FO recorded all three surviving agents as "confirmed terminated."
+
+**LIFTED by captain ruling 2026-07-21: an API transport failure must not trigger degradation — the correct response is to nudge the worker for retry.** What the lift exposed, all of it verified rather than inferred:
+
+- **The "confirmed terminated" claim above was false.** All three agents were still on the roster a day later, alive and responsive. Asked properly on 2026-07-21 they approved shutdown in ~1 second each (23:42:20, :21, :25) and the roster went 5 → 2 with `reconcile` drift empty. Shutdown works and DOES reconcile team config; the original sweep simply never took, and the FO recorded its completion without checking the roster afterward. Conduct finding 8, same shape as 1 and 6: an outcome reported without verifying it.
+- **Dead workers resume from transcript.** The 2ae ensign that died mid-response (138 turns, 620 KB) was nudged back with full context intact and picked its work up. A transport-killed worker is recoverable, not lost.
+- **Therefore the zombie premise is wrong for this runtime.** Degraded Mode's irreversibility rests on dead workers leaving addressable names holding no live context, undetectable by the post-dispatch config check. Observed instead: the roster is accurate and reconcilable, shutdown is clean, and names resume with their context. The contract defends against a failure mode this runtime does not have, and charges a session's entire concurrency for it.
+- **Both failures were `API Error: Connection closed mid-response` with `"error":"server_error"`** — read from the subagent jsonl, not inferred from the label.
+
+Retirement is scoped into `q4` (retire-legacy-teamcreate-and-back-channel-naming). The distinction that must survive scoping: BARE MODE — sequential blocking `Agent()`, no `team_name` — is the legitimate teams-unavailable path, live-proven to work by `e3z`, and must be preserved. DEGRADED MODE is the mid-session irreversible transition into it on a counter-free "any second dispatch failure" trigger, with no retry rung between first failure and permanent degradation. Only the second is defective.
 
 ## Exact state of the two unfinished members
 
