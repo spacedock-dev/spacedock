@@ -82,7 +82,7 @@ Append a `## Stage Report: {stage_name}` section at the end of the entity file u
 {2-3 sentences: what was done, key decisions, anything notable}
 ```
 
-Size guideline: 30-50 lines max. One-line evidence per checklist item. Do not paste before/after diffs — the git log is the diff; cite commit SHAs. Do not paste full test output — `5/5 passed` is sufficient.
+Size guideline: 30-50 lines max. One-line evidence per checklist item. Do not paste before/after diffs — the git log is the diff; cite commit SHAs. Do not paste full test output; for each test cited, name in one line what it asserts and the change that would make it fail — a bare pass count hides a tautology from the gate.
 
 Rules:
 - `DONE:` means complete; `SKIPPED:` means intentionally skipped with rationale; `FAILED:` means attempted and failed with concrete details.
