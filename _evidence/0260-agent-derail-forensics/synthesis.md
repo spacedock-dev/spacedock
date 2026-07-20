@@ -40,7 +40,7 @@ Clause-level active drivers (full analysis in `remedy-analyses-digest.txt`): "pr
 
 ## What the sprint does about it
 
-The mapping from findings to members is the sprint index's layer map and groups; per-member evidence citations are in each entity's Problem section. Key structural decisions: rigor keyed to a declared **stakes** field (source of truth: workflow README; channels: project AGENTS.md digest, dispatch packet, roborev config — one source, never a fourth copy); the falsifiability ladder replacing the code-gate clause; a design-reset trigger in the feedback flow; an ensign-side finding-triage/decline disposition; template propagation with refit carrying content.
+The mapping from findings to members is the sprint index's layer map and groups; per-member evidence citations are in each entity's Problem section. Key structural decisions: rigor keyed to a declared **stakes** field (source of truth: workflow README; channels: project AGENTS.md digest, dispatch packet, roborev config — one source, never a fourth copy); the cheapest-check-that-can-fail ordering replacing the code-gate clause; a design-reset trigger in the feedback flow; an ensign-side finding-triage/decline disposition; template propagation with refit carrying content.
 
 ## Re-mining recipe (Phase-1 scout method)
 
