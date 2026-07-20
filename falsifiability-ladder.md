@@ -11,7 +11,7 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:z7:ideation
-        attempt: gate-attempt:z7-ideation-3
+        attempt: gate-attempt:z7-ideation-4
     records:
         - id: gate:docs-dev:z7:ideation
           stage: ideation
@@ -34,7 +34,7 @@ gates:
               application:
                 action: feedback
                 target-stage: ideation
-                state: pending
+                state: consumed
               note: "Subspace advisory float; captain annotation included (annotation:captain-1784520762311801000, TextQuoteSelector on the clause opening). In-stage revision routed to the live worker; next attempt opens at re-presentation."
             - id: gate-attempt:z7-ideation-2
               sequence: 2
@@ -54,7 +54,7 @@ gates:
               application:
                 action: feedback
                 target-stage: ideation
-                state: pending
+                state: consumed
             - id: gate-attempt:z7-ideation-3
               sequence: 3
               previous-attempt: gate-attempt:z7-ideation-2
@@ -73,7 +73,7 @@ gates:
               application:
                 action: feedback
                 target-stage: ideation
-                state: pending
+                state: consumed
             - id: gate-attempt:z7-ideation-4
               sequence: 4
               previous-attempt: gate-attempt:z7-ideation-3
