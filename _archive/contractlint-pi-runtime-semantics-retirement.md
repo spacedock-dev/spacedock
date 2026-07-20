@@ -31,3 +31,7 @@ Verified by: focused contractlint test results plus the new independent test evi
 ## Test plan
 
 Classify each current assertion as structural, fixture-testable, live-testable, or guidance-only. Add/run the smallest independent cases, then run the affected Go packages and `go test ./...`.
+
+## Archived (adopted cross-review re-lock, 2026-07-20)
+
+Merged into `contractlint-codex-runtime-semantics-retirement` — scope carried there; this entity ships nothing separately.

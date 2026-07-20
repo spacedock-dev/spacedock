@@ -19,3 +19,7 @@ Remove the rule/verdict from the runbook (don't supply the answer), and grade on
 
 ## Test plan
 - Drive the scenario both ways (correct/incorrect FO behavior) and assert divergent durable state; prove RED-first against the clause-removed deliverable.
+
+## Archived (adopted cross-review re-lock, 2026-07-20)
+
+Merged into `ac2-design-proof-fixture` — scope carried there; this entity ships nothing separately.

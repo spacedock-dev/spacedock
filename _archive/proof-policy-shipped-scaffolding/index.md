@@ -54,3 +54,7 @@ Verified by: NOT a standalone AC — it is the text half. If a check is wanted, 
 ## Notes
 
 Provenance: the wm detached audit (this session) empirically proved a negation-wrap defeats a presence oracle; the captain ruled presence-over-ingested-file checks tautological and banned as behavioral proof. Sibling: the dev-README fix `f8b257cf` (the THIS-workflow half, already shipped). The AI-engineer proposal (this session) carries the drafted wording + the full propagation list.
+
+## Archived (adopted cross-review re-lock, 2026-07-20)
+
+Merged into `template-rigor-propagation` — scope carried there; this entity ships nothing separately.

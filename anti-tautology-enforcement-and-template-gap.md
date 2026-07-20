@@ -26,3 +26,7 @@ template-rigor-propagation) — one owner per surface, no duplicate delivery.
 ## Merged scope (adopted cross-review re-lock, 2026-07-20)
 
 Absorbs `anti-tautology-enforcement-output-grep-shape` (the output/prose-grep third shape). The cross-review caught a latent contradiction: this entity's banked direction leans against an automated prose-gate while the absorbed entity proposes extending one — the merged ideation must resolve gate-vs-no-gate DELIBERATELY, once, with the losing side recorded. Scope: the contract falsifiable-evidence rule ("show the change that makes it fail"; remove "5/5 passed is sufficient" so gates read assertion content) + the third-shape enforcement decision. The 8 concrete test fixes ship independently (their ideation is complete and valid under either outcome here).
+
+## Additional evidence: the 0.25.1 AC-narrowing incident (2026-07-20)
+
+See the synthesis addendum (`_evidence/0260-agent-derail-forensics/synthesis.md`). Design input for this entity's merged ideation: the falsifiable-evidence rule must cover not only proof that cannot fail but VALUE CLAIMS that quietly shrink — an AC edit weakening the value claim after a validation rejection is a design-reset event (captain-visible), never a task-internal edit; and evidence placement matters: proof lives at the seam where the failure lives (0.25.1 proved the adapter, the live invocation stayed unproven, and the unproven seam is exactly where the failure recurred).
