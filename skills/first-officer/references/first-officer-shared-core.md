@@ -52,7 +52,7 @@ These two reads use only the retained loader-supplied `{first_officer_base}` plu
 
 ## Single-Entity Scope
 
-A headless run scoped to one named entity is not a distinct mode. The headless branch of `«interaction.boundary»()` governs; scoping only narrows it: resolve the named reference (slug/title/id), stop on ambiguity, and drive that entity only. If the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID.
+A headless run scoped to one named entity is not a distinct mode: the headless branch of `«interaction.boundary»()` governs and scoping only narrows it — resolve the named reference (slug/title/id), stop on ambiguity, and drive that entity only. If the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID.
 
 ## Working Directory
 
@@ -175,7 +175,7 @@ The compacted summary is never authoritative.
 - a falsifiable exercise — replay the behavior at the exact place the failure occurs (not a nearby layer), check a claim against its source, or let an adversarial skeptic try to break it;
 - captain judgment.
 
-Building a new check or enforcement process of any kind — a test harness, a review gate, a validation step — is the last resort: only when none of the above can falsify the claim, only with explicit captain approval, and normally as its own entity rather than folded into the current task; it is never obvious reversible work. A prose-only rule is not AC satisfaction on its own — "the contract says X" needs one of the first three checks actually run and able to fail. A check run once at validation and shown as output is legitimate evidence; committing it as a durable presence-grep that passes forever is the tautology the AC cross-check refuses, as is any criterion whose only proof is review of the entity's own prose.
+Building a new STANDING check or enforcement process — a lint, a review gate, a CI lane, a recurring validation step, a harness that becomes a second implementation of the thing it tests — is the last resort: only when none of the above can falsify the claim, only with explicit captain approval, and normally as its own entity rather than folded into the current task; it is never obvious reversible work. Writing a test that exercises the behavior in hand is NOT that — it is ordinary work the proof policy already requires. A prose-only rule is not AC satisfaction on its own — "the contract says X" needs one of the first three checks actually run and able to fail. A check run once at validation and shown as output is legitimate evidence; committing it as a durable presence-grep that passes forever is the tautology the AC cross-check refuses, as is any criterion whose only proof is review of the entity's own prose.
 
 > **Hold your own gate, merge, and triage calls to the bar you impose on workers.** The proof discipline above binds not just the ensign's deliverable and the gate review but the FO's own dispatcher decisions:
 > - **Required verification follows from what changed, not the FO's sense of relevance.** "It's unrelated" is a claim the change must substantiate, not a dispatcher judgment; a relevant check that flakes is re-run to green (serial, isolated), never skipped.

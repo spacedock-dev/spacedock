@@ -4,7 +4,7 @@ The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly,
 
 ## Dispatch
 
-**Standing-teammate injection.** Before the first worker dispatch, inject the workflow's declared standing teammates via the runtime adapter's standing-injection call (it forwards each returned spawn spec to the spawn call with the same verbatim discipline as `«dispatch.build»` output). Idempotent (already-alive members omitted), a no-op when none is declared or the runtime has no shared-teammate surface. Lifetime is the adapter's. Read each teammate's routing usage from its mod.
+**Standing-teammate injection.** Before the first worker dispatch, inject the workflow's declared standing teammates via the runtime adapter's standing-injection call, forwarding each returned spawn spec verbatim. Idempotent (already-alive members omitted), a no-op when none is declared or the runtime has no shared-teammate surface. Lifetime is the adapter's. Read each teammate's routing usage from its mod.
 
 For each entity reported by `status --next`:
 
@@ -19,7 +19,7 @@ For each entity reported by `status --next`:
    Omit `worktree=...` for non-worktree stages. Bare `started` auto-fills a UTC ISO 8601 timestamp (skipped if already set).
 6. Commit the state transition on main: `dispatch: {slug} entering {next_stage}`.
 7. Create the worktree on first dispatch to a worktree stage.
-8. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (the helper assembles the assignment; `--feedback-context-file` when the stage has `feedback-to`).
+8. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`).
 9. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case.
 
 A feedback-stage worker checks and reports on what was produced; it does not silently take over the prior stage.
@@ -165,9 +165,9 @@ When PRESENT, invoke `«roster-reconcile»()` before the inbound-message drain. 
 - **done-when:** a ready entity is dispatched, a mod-block's pending action is resumed, or nothing is dispatchable and the iteration ends.
 - → **prose** (deterministic mechanism, binary pending — NOT judgment-owned), becomes `` `spacedock dispatch next-action` `` — no driver binary backs it yet (descoped to roadmap 0222); the FO hand-follows the deterministic skeleton above and does not probe for the unshipped command (runtime-support.md's `→ prose` trichotomy).
 
-**Consent stop before dispatching a new check or enforcement process.** A ready action whose deliverable is a NEW check or enforcement process — a test harness, a review gate, a validation step — as opposed to running one that already exists, is the last resort of the boot-resident ordering, never obvious reversible work. Surface it to the captain and do not dispatch it without explicit approval; prefer filing it as its own entity over folding it into the current task. The license hangs off the captain wanting it, never an inference that it would help. It bites hardest in non-dev workflows, where every check is new process.
+**Consent stop before dispatching new standing enforcement.** A ready action whose deliverable is a NEW STANDING check or enforcement process — a lint, a review gate, a CI lane, a recurring validation step — as opposed to running a check that already exists or writing a test for the behavior in hand, is the last resort of the boot-resident ordering, never obvious reversible work. Surface it to the captain and do not dispatch it without explicit approval; prefer filing it as its own entity over folding it into the current task. The license hangs off the captain wanting it, never an inference that it would help. It bites hardest in non-dev workflows, where every check is new process.
 
-**Fan-out checkpoint.** Before spawning the Nth entity or opening the Nth PR of a SINGLE investigation (a flake chase, a review-rework, a refactor sweep), stop and surface the running count and the cap question to the captain rather than spawning again. Keep-moving speeds independent, already-scoped work; it does not authorize an unbounded spawn chain off one thread. The checkpoint also binds the AUTHORING moment: a plan that commits a fan-out in one act — a workflow script, a batch spawn — declares its expected agent count, the tolerance, and why that spend is economically reasonable BEFORE launch, because a running script reaches no Nth-spawn moment the FO can catch. Judgment, not a counter binary.
+**Fan-out checkpoint.** A SINGLE investigation that will spawn entities or open PRs (a flake chase, a review-rework, a refactor sweep) declares its expected count, the tolerance, and why that spend is economically reasonable BEFORE the first spawn. The checkpoint then fires when the next spawn would exceed the declared count: stop, surface the running count against the declaration, and let the captain re-cap rather than spawning again. This binds the AUTHORING moment identically — a plan that commits a fan-out in one act, a workflow script or a batch spawn, declares the same numbers before launch, because a running script reaches no later moment the FO can catch. Keep-moving speeds independent, already-scoped work; it does not authorize an unbounded spawn chain off one thread. Judgment against a declared number, not a counter binary.
 
 **A second verifier is for judgment calls only.** "Independent adversarial verification" justifies a second agent only for a JUDGMENT CALL; a DETERMINISTIC FACT is settled by running the check that owns it, not a second opinion. And N agents reaching the same answer is one confirmation observed N times, not N independent confidences — agreement among spawned workers raises cost, not confidence.
 
