@@ -23,11 +23,23 @@ gates:
       attempts:
         - id: gate-attempt:az-ideation-1
           sequence: 1
-          state: open
+          state: closed
           briefing:
             id: briefing:docs-dev:az:ideation:attempt-1:revision-4
             digest: sha256:610fcfab5250d0d23eb7ed01f10eb702657b05b7be0692b194819715dff5bdc4
             room-ref: "./review/ideation/briefing-1"
+          resolution:
+            type: Resolution
+            id: resolution:captain-chat-az-ideation-1
+            briefing: briefing:docs-dev:az:ideation:attempt-1:revision-4
+            by: person:captain
+            at: 2026-07-20T05:40:00Z
+            decision: approve
+            reason: "Approved in chat after the specifics review (landing files + line counts). Edit D (the audit-trigger widening) is NOT covered by this approval — it awaits its own explicit yes/no per the new-enforcement consent rule."
+          application:
+            action: advance
+            target-stage: implementation
+            state: pending
           note: "Captain hold via float 2026-07-20 (resolution:actor-1784524247673759000): the FO gate summary was session-jargon dense and unreadable without full context. Attempt open; plain-language rewrite via the comm-officer before re-presentation."
 ---
 

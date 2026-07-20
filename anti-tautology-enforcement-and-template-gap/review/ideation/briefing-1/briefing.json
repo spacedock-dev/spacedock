@@ -1,0 +1,47 @@
+{
+ "type": "Briefing",
+ "version": "1",
+ "id": "briefing:docs-dev:az:ideation:attempt-1:revision-4",
+ "question": "No automatic fake-test detector \u2014 seven sentences of rule text carry the class instead. Approve (with or without the review-widening), revise, or hold?",
+ "artifacts": [
+  {
+   "id": "artifact:gate-summary",
+   "uri": "gate-summary.md",
+   "mediaType": "text/markdown",
+   "rev": "sha256:b5c8cb6236899e9a76c4f040e5d000c4713b421e625b75305d8c47e23ef07f28"
+  },
+  {
+   "id": "artifact:entity",
+   "uri": "entity-snapshot.md",
+   "mediaType": "text/markdown",
+   "rev": "sha256:d3ba09acccb116603dc2eb9607d4b8bc0c8de78229e4e33f322421aa7e28961c"
+  }
+ ],
+ "context": [
+  {
+   "type": "Routing",
+   "id": "routing:ideation-outcome",
+   "ns": "spacedock",
+   "routes": [
+    {
+     "id": "route:approve",
+     "decision": "approve",
+     "label": "Begin implementation",
+     "to": "stage:implementation"
+    },
+    {
+     "id": "route:revise",
+     "decision": "revise",
+     "label": "Revise the design",
+     "to": "stage:ideation"
+    },
+    {
+     "id": "route:hold",
+     "decision": "hold",
+     "label": "Hold for discussion",
+     "to": "stage:ideation"
+    }
+   ]
+  }
+ ]
+}

@@ -25,9 +25,9 @@ gates:
           sequence: 1
           state: open
           briefing:
-            id: briefing:docs-dev:az:ideation:attempt-1
-            digest: sha256:ceaf9cbab19f6ef166e4f90b37b6a6c536b4066e9e7d6f414022e3ad05f3164a
-            room-ref: "/tmp/az-briefing-1"
+            id: briefing:docs-dev:az:ideation:attempt-1:revision-3
+            digest: sha256:b885ab932a254dabc70845327264c50a1ff8f67fd09e72cd6ad2616e7c7fe438
+            room-ref: "./review/ideation/briefing-1"
           note: "Captain hold via float 2026-07-20 (resolution:actor-1784524247673759000): the FO gate summary was session-jargon dense and unreadable without full context. Attempt open; plain-language rewrite via the comm-officer before re-presentation."
 ---
 

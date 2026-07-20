@@ -1,0 +1,3 @@
+VALID
+evidence committed + pushed
+{"type":"review-v1-result","status":"advisory","briefing":"briefing:single-file:6dccb59ffda766b265687e727d507f4a","artifact":{"id":"artifact:primary","uri":"/tmp/cycle-record-gate-briefing.md","mediaType":"text/markdown","rev":"sha256:520f84901aae2b1e9fc0c78eaaf974cbec3a8b8cbb82db3d8eb7fecb9a778a6d"},"annotations":[],"resolution":{"type":"Resolution","id":"resolution:actor-1784523098406183000","briefing":"briefing:single-file:6dccb59ffda766b265687e727d507f4a","by":"person:reviewer","at":"2026-07-20T04:51:38.406191Z","decision":"approve"},"binding":false,"actor":"person:reviewer","approver":"agent:first-officer","resolutionId":"resolution:actor-1784523098406183000","decision":"approve","reason":"","includes":[]}
