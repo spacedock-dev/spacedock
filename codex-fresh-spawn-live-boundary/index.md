@@ -265,3 +265,24 @@ Cycle 3 removes the ineffective captain-warning path and all offline test scar t
 ### Summary
 
 The task contract now matches the accepted product: one four-line, marker-gated `SessionStart(compact)` hook and no PostCompact fallback, runtime plumbing narration, or committed hook test. The existing real 4/4 Codex run is the behavioral proof, while deletion accounting and ordinary repository gates provide proportional static/build evidence without new infrastructure.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: AC-1 (VALUE) — A compacted First Officer launched or resumed through Spacedock receives and acts on model-visible reload context, while the equivalent bare Codex paths remain silent.
+  The reconciled AC now cites the captain's already-completed real installed-plugin 4/4 marked/bare launch-and-resume run and the independent red baseline; no new evidence was requested or produced.
+- DONE: AC-2 — The shipped recovery surface is exactly one compact-only, launcher-gated SessionStart hook.
+  The authoritative shape matches unchanged candidate `2be84f73a1c20de29f0dda95c262a925f7876946`: one `^compact$` registration and the retained four-line `SPACEDOCK_BIN`-gated script, with the real run owning behavior.
+- DONE: AC-3 — Resume behavior follows the launcher boundary without inferred provenance.
+  The contract now relies on the marked-resume and bare-resume halves of the same real 4/4 run and explicitly rejects additional provenance machinery or tests.
+- DONE: AC-4 — The ineffective fallback and its proof scar tissue are absent.
+  AC-4 now requires deletion of the PostCompact registration/script, both runtime narration lines, and the full legacy test file with no replacement; validation cycle 3 already verified commit `2be84f73` as exactly 363 deletions and zero insertions across those four targets.
+- SKIPPED: AC-5 — v0.25.2 ships the scoped fix on the stable line without rewinding `next`.
+  Exact-candidate validation is complete; annotated tag cutting and documented `next` propagation remain sequential release-owner actions and cannot be claimed before they occur.
+- DONE: Verify the authoritative ACs, scope, decision/design, LOC accounting, test plan, and documentation delta now consistently require the deletion-only shape and real 4/4 session proof.
+  Every normative section now names the same retained SessionStart surface, PostCompact/test/narration deletions, 0/363 cleanup and net −321 candidate accounting, real 4/4 oracle, and prohibition on replacement proof machinery.
+- DONE: Reuse validation cycle 3's already-green formatting/full/race/diff evidence because product commit 2be84f73 is unchanged; add and run no hook test or replacement proof machinery.
+  Product HEAD remains exact `2be84f73`; this cycle ran no formatting, test, race, hook, or replacement-proof command and reuses cycle 3's recorded green gates as directed.
+
+### Summary
+
+**Recommendation: PASSED** for validation at candidate `2be84f73`; the sole cycle-3 specification defect is closed, and no outcome, evidence, material, deferred-risk, or polish finding remains. The state contract and product now agree on the proportional deletion-only design and real-session proof boundary. AC-5's release/tag/`next` operations remain for the release owner after this gate.
