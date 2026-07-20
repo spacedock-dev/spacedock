@@ -9,6 +9,8 @@ completed:
 verdict:
 worktree:
 issue:
+sprint: 0260-proportionality
+group: reframe
 ---
 
 Promote the feedback-rejection 3-cycle-escalation guarantee from FO contract prose into a binary-enforced gate over durable on-disk state. The FO currently *tracks* feedback cycles in the `### Feedback Cycles` body section and is *instructed in prose* to escalate to the human on the 3rd rejection instead of auto-bouncing a 4th time — a prose-only guarantee whose ceiling is "the wording is present" and whose drift mode is an infinite reject→re-implement→reject loop burning tokens. This task makes the count binary-owned and tamper-evident, the same prose→binary promotion `mod-block` already models.
