@@ -217,3 +217,14 @@ Cycle 2 clears the sole formatting-gate rejection with a separate six-gross-line
 ### Summary
 
 **Recommendation: PASSED** for validation at candidate `620e9761`; the prior material evidence defect and formatting-gate defect are closed, with no outcome, evidence, material, deferred-risk, or polish findings remaining. AC-1 through AC-4 have offline plus captain-run evidence, and AC-5's candidate-verification portion is complete. The release owner must still cut annotated `v0.25.2` from `main` and propagate the fix to `next` before AC-5 can be terminally marked complete.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Delete the entire PostCompact path: hooks.json registration, codex_post_compact_notice.sh, the 344-line codex_post_compact_hook_test.go file, and the Codex runtime hook narration.
+  Commit `2be84f73` deletes all four targets with 363 deletions and zero insertions; scoped searches find no remaining PostCompact path.
+- DONE: Keep only the four-line SessionStart(compact) hook, add no replacement test, run formatting/full/race gates, and report the exact negative line delta.
+  The retained hook is byte-identical and remains registered; no test replacement exists. Formatting, `go test ./...`, and `go test ./... -race` pass. The rework is net −363 lines; the candidate versus `origin/main` is 10 insertions/331 deletions, net −321.
+
+### Summary
+
+Cycle 3 removes the ineffective captain-warning path and all offline test scar tissue, leaving the real 4/4 marked/bare launch-and-resume session as behavioral proof. The product is now the four-line marker-gated SessionStart hook plus its registration, with no runtime plumbing narration or replacement harness.
