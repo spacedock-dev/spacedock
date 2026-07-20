@@ -108,3 +108,37 @@ Verified by: the six delete + two narrow edits land exactly as described in Prop
 ### Summary
 
 Confirmed the banked 8-test list by reading each test and its named sibling(s): six deletes are fully covered by existing behavioral siblings; two narrows (state-commit HALT, filing template loop) keep the dynamic assertions and drop the tautological ones. The two HALT remediation greps are verbatim copies of `state_sync.go:228-229`; the filing heading greps mirror the test's own `filingReadme()` fixture. Value AC is a per-test mutation-survival matrix — a real behavior change still turns a retained test RED — and no spike is needed since the fix is test-only edits on a proven mechanism.
+
+## Stage Report: implementation
+
+- DONE: All 8 confirmed tautological output-grep tests are fixed — six deletions and two narrowings — across exactly the 6 named _test.go files, with no production code and no non-test file touched
+  Commit `ff3be305` on `spacedock-ensign/fix-tautological-output-grep-tests`. Deletes `TestTopLevelHelpGroupedJargonFree` + `TestVersionContractToken` (cli/cli_test.go), `TestRuntimeSupportDocsKeepPiDoctorVsLiveTalkbackBoundary` (cli/pi_frontdoor_test.go), `TestHelpListsNewVerbs` (cli/verbs_test.go), `TestBuildHelpDocumentsShapeFlags` (dispatch/build_team_name_advisory_test.go); narrows the two source-prose greps out of the state-commit HALT test and removes the required-literal loop from the filing template test. `git diff --numstat main...HEAD` lists exactly the 6 declared `_test.go` paths and nothing else.
+- DONE: The mutation matrix is RUN, not asserted: for each retained sibling that carries the behavioral coverage, a seeded one-line production break is observed RED and the revert observed GREEN, with the observed output recorded in the stage report
+  10/10 mutants RED, 10/10 reverts GREEN, tree clean after (`git status --short` empty). Observed failures below.
+- DONE: The stage report states the ACTUAL LOC delta and file count against the declared 6 files / six deletions + two narrowings / ~-135/+0 LOC
+  See "Surface against declaration" below.
+
+### Mutation matrix (observed)
+
+| # | Seeded one-line production break | Retained sibling | Observed RED |
+|---|---|---|---|
+| 1 | `cli.go:125` bare-help path prints an extra line | `TestTopLevelHelpFormsAreIdentical` | `cli_test.go:16: help form [] output differs from --help` |
+| 2 | `pi.go:636` drops the `durable marker probe` line | `TestPiDoctorReportsMissingAndHealthyRuntime` | `pi_frontdoor_test.go:622: healthy doctor output missing "durable marker probe"` |
+| 3a | `dispatch.go:30` build `--help` returns 2 | `TestDispatchBuildHelpBeforeRequiredFlags` | `help_test.go:15: dispatch build --help exit=2, want 0` (both `--help` and `-h` subtests) |
+| 3b | `build.go:752` advisory written to `io.Discard` | `TestBuildLegacyTeamNameAdvisory` | `build_team_name_advisory_test.go:62: must emit the legacy advisory; stderr=""` |
+| 4 | `cli.go:584` version line 1 omits `frozenContractToken` | `TestVersion` | `cli_test.go:47: version first line = "spacedock 0.25.1+dev", want "spacedock 0.25.1+dev (contract 3)"` |
+| 5 | `state_sync.go:225` HALT emits a bogus peer sha | narrowed `TestStateCommitHaltStderrCarriesRemediationAndPeerCommit` | `state_commit_test.go:148: HALT stderr should name the peer commit "29ef2b4"` |
+| 6a | `cli.go:328` `new` alias forwards `--nope` | `TestNewVerbMintsInDiscoveredWorkflow` | `verbs_test.go:33: new stdout = "ID SLUG …", want minted-id narration` |
+| 6b | `cli.go:605` `completion bash` returns 2 | `TestCompletionShells` | `verbs_test.go:70: completion bash exit=2` |
+| 7 | `status/new.go:77` `new` stops stamping the minted id | narrowed filing test, `literal template creates entity and mints id` | `filing_readme_template_test.go:51: created entity has no minted id` |
+| 7b | Task Template fixture loses `title:` (the plan's named mutation for the removed `title:`/`status:` greps) | same sub-test | `filing_readme_template_test.go:48: created entity did not preserve template frontmatter` |
+
+Reproduce (no machine-specific tooling; each row is one edit): from the worktree at `ff3be305`, apply the row's break at the named `file:line`, run `go test <pkg> -run '^<SiblingTest>$' -count=1` and observe the quoted failure, then `git checkout -- <file>` and re-run to observe GREEN. Mutation 7b is the one non-production seed: the removed assertion was over the test's own fixture, so the fixture is the only place a "regression" can be seeded — recorded as such rather than dressed up as a production break.
+
+### Surface against declaration
+
+Declared: 6 `_test.go` files, six deletions + two narrowings, ~−135/+0 LOC, no production code, no non-test files. **Actual: 6 `_test.go` files, six deletions + two narrowings, −141/+4 LOC**, no production code, no non-test files. Well inside the default 2x tolerance; no reconfirm/re-scope/park/escalate needed. The +4 is comments only, and is a deviation from the declared removal-only shape: two doc-comment lines on the narrowed HALT test and the two `ABOUTME:` lines on `build_team_name_advisory_test.go`, both of which named the now-deleted assertions and would otherwise have been left actively false. No new assertion, helper, test, check, gate, or lint was added; `git diff main...HEAD | grep '^+[^+]'` returns those four comment lines and nothing else.
+
+### Summary
+
+Six deletions and two narrowings landed across exactly the 6 declared `_test.go` files at −141/+4 (comments only), commit `ff3be305`. AC-1 was proved by running the matrix rather than asserting it: ten seeded one-line breaks each turned the named retained sibling RED with the failure text recorded above, and every revert returned GREEN with a clean tree — no mutation survived, so no real regression coverage was dropped. `go test ./...` is green across all 17 packages. No replacement test was written and no enforcement mechanism was added, per the sprint constraints; the one honest caveat is mutation 7b, which necessarily seeds a test fixture rather than production because the assertion it retires was a mirror of that fixture.
