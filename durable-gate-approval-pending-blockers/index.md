@@ -22,7 +22,7 @@ gates:
                 id: briefing:docs-dev:3k:ideation:attempt-1:revision-7
                 digest: sha256:9b1106ac34f4dfa1221304f998beb4c34acb3878b2faf648289e95a48f8d50f2
                 room-ref: "./review/ideation"
-sprint: 0270-durable-decisions
+sprint: durable-decisions
 group: recorder
 ---
 
