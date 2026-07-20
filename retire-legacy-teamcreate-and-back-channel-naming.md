@@ -42,6 +42,10 @@ Verified by: `TestFOFunctionPromptSurfaceShrinks` / checkpoint-metrics byte coun
 **AC-3 - The shipped contract nowhere names inter-agent messaging "back-channel"; the concept carries a descriptive name.**
 Verified by: review-time grep over the FO surface cited as evidence (no committed prose-grep, per proof policy).
 
+**AC-4 - The FO-surface ratchet baseline is re-tightened to the post-retirement measured value (zero-slack convention).**
+This task carries the F1 mitigation from `codex-post-compaction-contract-reload` (archived, validation cycle 7): with 204 B of slack at baseline 122634, the scratch-proven inert-heading escape (122584 B) passes every mechanical gate, leaving the review-time grep as the only guard for inert-prose reintroduction. Re-tightening here closes it mechanically.
+Verified by: `foFunctionReferenceBaselineBytes` equals measured+1 after the retirement lands; `TestFOFunctionPromptSurfaceShrinks` green at zero slack.
+
 ## Test plan
 
 {Ideation fills this in. Expected: contractlint structural suites + surface-metrics deltas; claude-live lane required (shipped contract change); no committed grep tests.}
