@@ -122,12 +122,12 @@ func TestStateCommitHaltsOnSameEntityConflict(t *testing.T) {
 	}
 }
 
-// TestStateCommitHaltStderrCarriesRemediationAndPeerCommit pins AC-2 (D1): the
-// exit-3 HALT stderr carries the peer commit that survived the aborted rebase —
-// a populated, computed diagnostic rather than only an exit code. The peer
-// commit is A's pushed HEAD sha (the pull's fetch phase updates origin/{branch}
-// before the rebase conflicts; abort does not touch it).
-func TestStateCommitHaltStderrCarriesRemediationAndPeerCommit(t *testing.T) {
+// TestStateCommitHaltStderrCarriesPeerCommit pins AC-2 (D1): the exit-3 HALT
+// stderr carries the peer commit that survived the aborted rebase — a populated,
+// computed diagnostic rather than only an exit code. The peer commit is A's
+// pushed HEAD sha (the pull's fetch phase updates origin/{branch} before the
+// rebase conflicts; abort does not touch it).
+func TestStateCommitHaltStderrCarriesPeerCommit(t *testing.T) {
 	_, workflowA, workflowB, _ := twoHostStateWorkflow(t)
 	checkoutA := filepath.Join(workflowA, ".spacedock-state")
 	hostA := filepath.Dir(filepath.Dir(workflowA))
