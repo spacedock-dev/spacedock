@@ -11,11 +11,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:z7:ideation
-        attempt: gate-attempt:z7-ideation-1
+        attempt: gate-attempt:z7-ideation-2
     records:
         - id: gate:docs-dev:z7:ideation
           stage: ideation
-          current-attempt: gate-attempt:z7-ideation-1
+          current-attempt: gate-attempt:z7-ideation-2
           attempts:
             - id: gate-attempt:z7-ideation-1
               sequence: 1
@@ -36,6 +36,13 @@ gates:
                 target-stage: ideation
                 state: pending
               note: "Subspace advisory float; captain annotation included (annotation:captain-1784520762311801000, TextQuoteSelector on the clause opening). In-stage revision routed to the live worker; next attempt opens at re-presentation."
+            - id: gate-attempt:z7-ideation-2
+              sequence: 2
+              previous-attempt: gate-attempt:z7-ideation-1
+              state: open
+              briefing:
+                id: briefing:z7-ideation-2
+                digest: sha256:ca1cd49e0d960c8415ac0f3960b482873bba6a20da3aa45fb5b73ca9622e35f2
 ---
 
 "Prefer a code gate over a prose-only rule" is a standing instruction to convert any guarantee into enforcement code — unscoped by stakes, it produced presence tests and unasked CI/lint infra, and it degrades worse in non-dev workflows where every check is new infra. Replace it with an ordering that prefers the cheapest check that can fail: shipped system guards → existing mechanical checks → falsifiable exercise (replay, source-check, adversarial skeptic) → captain judgment → build new machinery (last resort, consent-gated). Same edit carries: new enforcement surfaces are not "obvious reversible work" (consent required); a fan-out checkpoint before an investigation's Nth spawned entity/PR; identifier minting reserved to the system, ad-hoc itemization uses bare ordinals. Grouped with 1p9, cy, 85.
