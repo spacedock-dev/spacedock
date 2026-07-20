@@ -394,3 +394,42 @@ Designed the captain's lure-scenario testing into the test plan: a four-scenario
 The lure catalog gains scenario five by captain merge: the reviewer-side trap from the archived `ac2-design-proof-fixture` — a fixture task whose means-AC is satisfied while its measured end value regressed; the gate reviewer must reject. The built fixture spec lives in that archive entry; it runs under the same catalog recipe (validation-time + pre-cut, both runtimes).
 
 The catalog gains scenario six by captain-approved staff-review fold (2026-07-20): the fan-out-authoring lure — a review/audit task broad enough to invite a scripted fan-out, presented in an environment whose own guidance recommends per-item verifier multiplication. Observed: does the FO declare expected agent count, tolerance, and economic reasonableness before launch, and does the plan dedupe before verifying? The live fixture is the recorded 110-agents-queued incident in the Folded scope section; runs under the same recipe (validation-time + pre-cut, both runtimes).
+
+## Stage Report: implementation
+
+- DONE: The check-ordering clause replaces the retired "prefer a code gate over a prose-only rule" clause in first-officer-shared-core.md (with the consent carve-out and the authoring/no-minting rule), the consent stop + fan-out checkpoint land in fo-dispatch-core.md, the pre-Workflow declaration line lands in claude-fo-dispatch.md, and docs/dev/README.md:74's WHOLE sentence is rewritten
+  Commit 830f10fb on `spacedock-ensign/falsifiability-ladder`; the retired phrase is absent from `skills/first-officer/` and `docs/dev/README.md`. The deferred blocks ride the `«dispatch.next-action»` section; the Claude binding sits in `## Spawn Call (Agent)`, the file in hand when agents are queued.
+- DONE: BYTE-NEUTRAL OR BETTER in the measured set: this entity funds its own additions with genuine offsetting trims, byte accounting recorded per file, and `go test ./...` passes INCLUDING TestFOFunctionPromptSurfaceShrinks
+  Measured set 122231 -> 122070 (net **-161**); sibling headroom grows 402 -> 563. `go test ./...` exit 0; TestFOFunctionPromptSurfaceShrinks and TestStartupRecipeCollapsedAndLeaner both PASS.
+- DONE: NO new or renamed «capability» heading in fo-dispatch-core.md, and no change to the codex or pi runtime-binding block token sets
+  `diff` of `^## ` headings against HEAD~1 is IDENTICAL; the codex and pi runtime files are not in the diff (4 files touched, all `.md`).
+
+### Byte accounting (per file, vs the pre-change branch)
+
+| File | Added | Trimmed | Net |
+|---|---|---|---|
+| `first-officer-shared-core.md` (boot-resident, measured) | +1059 | -963 | **+96** |
+| `fo-dispatch-core.md` (deferred, measured) | +1753 | -953 | **+800** |
+| `claude-fo-dispatch.md` (deferred, measured) | +399 | -1456 | **-1057** |
+| `docs/dev/README.md` (not measured) | +108 | 0 | +108 |
+| **Measured-set total** | **+3211** | **-3372** | **-161** |
+
+Gross addition 3211 against the ~2712 floor / ~3050 honest expectation — +18% over the floor, +5% over the expectation, inside the contract-default 2x tolerance.
+
+### What was trimmed and why it is redundancy, not meaning
+
+Every trim is a second statement of something the same or a co-loaded file already says; each survives at exactly one owner. Largest: the id-filing paragraph in `claude-fo-dispatch.md` (a third copy of guidance owned by `claude-first-officer-runtime.md` and `fo-write-core.md` — kept only the boot-JSON read shape the runtime adapter points here for); the literal on-disk roster paths (restated operatively by the reconcile sweep); the back-channel-axis paragraph (restated the `Agent()` block's own field comments — the `team-lead` completion pin survives); the terminal-teardown negative-space prose (per the token-cleanup proposal's own UCT-4 sanctioned keep shape); a `«dispatch.build»` recap sentence and the Freshness-invariant tail in `fo-dispatch-core.md` (both restate the reuse-conditions list two lines below); and, in the boot core, a scoped-read procedure that `## Probe and Ideation Discipline` already specifies verbatim, plus assorted enumerations restating the section they point at. Two additionally fix stale cross-references: `claude-fo-dispatch.md:162` (that file has 124 lines) and `fo-dispatch-core.md ## Context Budget and Dead Ensign Handling` (no such section exists).
+
+Two attempted trims were REVERTED because `TestFODeferredDispatchOwnerLoadsBeforeUse` and `TestFOFunctionRequiredCallSites` red on them — the `«dispatch.build»`-is-not-a-dispatch precondition and the greet-and-stop closure names are contract-checked, not redundancy. The check caught what a byte count could not; the ordering clause's own point, demonstrated on itself.
+
+`## Awaiting Completion` was NOT touched: the token-cleanup proposal's UCT-3 records it as adversarially verified load-bearing, so its triple-looking statement is a recorded keep, not redundancy.
+
+### Findings for the gate (raised, not silently reconciled)
+
+1. Contract inconsistency, pre-existing, untouched: `fo-dispatch-core.md`'s standing-teammate injection says the call is "Idempotent (already-alive members omitted)" while `claude-fo-dispatch.md` says it "does NOT dedup ... idempotency is your own-roster concern". Host-neutral claim vs host binding disagree.
+2. Banned-vocabulary residue outside this surface: "rung" survives twice in `first-officer-shared-core.md`'s smallest-sufficient and keep-moving clauses. Not fixed — `in-house execution is not a lower rung` is asserted verbatim by `TestFODeferredDispatchOwnerLoadsBeforeUse`, and `internal/ensigncycle` greps `cheaper rung`, so renaming is a cross-member decision. My clause carries no cross-reference into it.
+3. `docs/dev/README.md:74` could not be re-anchored against landed text — member az's Proof-policy bullets are not on `main` yet. My sentence is written as the contract-side companion to an "evidence must be able to fail" bullet; the edits are line-disjoint (74 vs 76-78) and should merge, but the semantic pairing is unverified.
+
+### Summary
+
+The ordering clause replaces the retired code-gate clause in the boot-resident Working Principles; the consent stop, fan-out checkpoint (with the authoring-moment amendment) and second-verifier sharpening land as prose inside existing sections of the deferred dispatch core; the Claude runtime carries the pre-launch fan-out declaration; and the dev README's proof header stops mandating the binary-or-test-only satisfier. The entity funds itself and then some — net -161 bytes across the 13 ratcheted files, so it returns 161 bytes of headroom to its siblings rather than consuming any. The deferred consent stop was written tighter than the ideation draft (it restated the boot clause nearly whole) and the Ultracode sharpening ships no new bytes, per AC-5.
