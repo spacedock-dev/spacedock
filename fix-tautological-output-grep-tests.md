@@ -22,10 +22,22 @@ gates:
       attempts:
         - id: gate-attempt:ht-ideation-1
           sequence: 1
-          state: open
+          state: closed
           briefing:
             id: briefing:ht-ideation-1
             digest: sha256:a4d518d5f9aeff1e033c91e5d5dbbc41595396a9082c6ea6739fe64f6513393d
+          resolution:
+            type: Resolution
+            id: resolution:actor-1784520615843597000
+            briefing: briefing:ht-ideation-1
+            by: person:reviewer
+            at: 2026-07-20T04:10:15Z
+            decision: approve
+          application:
+            action: advance
+            target-stage: implementation
+            state: pending
+          note: "Subspace advisory float, captain at the keyboard as person:reviewer."
 ---
 
 Fix (narrow to observed behavior, or remove relying on the sibling behavioral test) the 8 confirmed tautological output-grep tests. Each is verified redundant/prose by adversarial refutation — the behavioral coverage it claims is already provided by a named sibling.
