@@ -9,7 +9,7 @@ group: triage
 started: 2026-07-20T05:04:07Z
 ---
 
-`ensign-shared-core` contains zero guidance on consuming review findings — the exact actor that dutifully fixes a symlink edge case in a prototype has no rule to consult, and no disposition short of fixing exists for a substantively-correct-but-disproportionate finding. This adds the generic consumption rule (classify each finding against the workflow's committed finding-triage taxonomy AND the entity's own value ACs before fixing) and the decline disposition (a correct-but-disproportionate finding gets a recorded decline, not a dutiful fix), with the decline recorded as a field on the same `### Feedback Cycles` correction-round entry the gate already reads. The dev instance anchors on the committed taxonomy — the `validation` stage-def release-scope classification plus `.roborev.toml`'s four-field evidence record (this workflow's port of spacedock-subspace's triage). Anchor correction from the seed: the stakes member is **parked**, so triage keys on per-entity value ACs and the committed taxonomy, not a workflow stakes field.
+`ensign-shared-core` contains zero guidance on consuming review findings — the exact actor that dutifully fixes a symlink edge case in a prototype has no rule to consult, and no disposition short of fixing exists for a substantively-correct-but-disproportionate finding. This adds the generic consumption rule (classify each finding against the workflow's committed finding-triage taxonomy AND the entity's own value ACs before fixing) and the decline disposition (a correct-but-disproportionate finding gets a recorded decline, not a dutiful fix), with the decline recorded as a field on the same `### Feedback Cycles` correction-round entry the gate already reads. The dev instance anchors on the committed taxonomy — the `validation` stage-def release-scope classification plus `.roborev.toml`'s four-field evidence record (this workflow's port of spacedock-subspace's triage). Anchor correction from the seed: the stakes member is **parked**, so triage keys on per-entity value ACs and the committed taxonomy, not a workflow stakes field. **Placement (captain rework, cycle 3):** the generic rule is delivered *at the trigger* — a standing block in the feedback delivery path (`feedback-rejection-flow`, carried into the routed worker's feedback context) plus the `docs/dev/README.md` implementation stage-def bullet for in-stage rounds — not the always-loaded `ensign-shared-core`, which a worker not consuming findings never needs.
 
 ## Problem
 
@@ -21,9 +21,9 @@ started: 2026-07-20T05:04:07Z
 
 ## Proposed approach
 
-Two layers, cleanly separated (checklist item 2). The **generic** consumption rule and decline disposition land in fleet-loaded `ensign-shared-core` and name no dev artifact; the **dev-specific** taxonomy citations and review instances land in `docs/dev/README.md`.
+Two layers, cleanly separated (checklist item 2), each delivered AT THE TRIGGER (captain rework, cycle 3). The **generic** consumption rule and decline disposition ride the feedback delivery path — a standing block in `feedback-rejection-flow` that the FO includes in the routed worker's feedback context — and name no dev artifact. The **dev-specific** taxonomy citations and review instances ride the `docs/dev/README.md` implementation stage-def, carried in every implementation packet (the stage that faces in-stage rounds). The always-loaded `ensign-shared-core` gets nothing (justified below). The rule *text* is approved-shaped; only its delivery changed.
 
-### Generic consumption rule (lands in `ensign-shared-core`, workflow-agnostic)
+### Generic consumption rule (delivered via the feedback path, workflow-agnostic)
 
 Review findings are inputs to triage, not a fix list. A **review finding** is the output of a review instance the active stage's definition declares — the panels, audits, or validators it names, carried to the ensign in the dispatch packet — or feedback the first officer explicitly routes to the ensign as a review outcome. A direct instruction from the captain is not a finding: it is an order to follow or a decision to seek, never something to triage away. The shared contract qualifies the trigger by *reference* (the stage definition), not by enumerating reviewer types it cannot know — the dev instance's stage-defs are where the concrete panels/audits/validators are named. Before changing anything in response to such a finding, the ensign classifies each against the workflow's declared finding-triage taxonomy (where one is declared) and this entity's own value acceptance criteria:
 
@@ -33,7 +33,18 @@ Review findings are inputs to triage, not a fix list. A **review finding** is th
 
 The anchor is always present: every entity has value ACs, so the rule has something to triage against even where no workflow-level taxonomy is declared (this is why the parked stakes member does not block it — the entity's own value ACs plus any committed taxonomy are the anchor the captain named).
 
-### Dev-specific realization (lands in `docs/dev/README.md`, cites dev artifacts)
+### Where the rule is delivered (landing spots — captain rework, cycle 3)
+
+The captain's gate question: why should the always-loaded `ensign-shared-core` carry a rule that binds only when a worker is *consuming* review findings — a situation most workers in most stages never face? It should not. The rule is delivered at the trigger, matching the two loop shapes (the same split bw uses):
+
+- **Cross-stage feedback reflow** (findings routed back after a gate REJECTED). The rule is a standing block in `feedback-rejection-flow` — loaded by the FO only at the rejection-handling point, itself trigger-scoped — that the FO includes at the head of the `--feedback-context-file` it already assembles every reflow. `dispatch build` already emits that file's content as the packet's `### Feedback from prior review` block (`internal/dispatch/build.go:627-629`, gated on `is_feedback_reflow`; Rule 5 at :494-497 makes the context mandatory), so the rule reaches the routed worker in the same packet as the findings, at the moment they arrive. **Zero new machinery:** the `--feedback-context-file` → packet path and the FO's file-assembly both exist today (`fo-dispatch-core.md:129,138`). Host-neutral — every workflow's reflow carries it.
+  - **Losing alternative — a `dispatch build`-emitted standing block** (a constant block on the existing `is_feedback_reflow` branch, beside `### Feedback from prior review`, in the same pattern as the existing `stateCommitGuidance`/entity-read standing blocks). Guaranteed delivery with no FO discipline and a cleaner rule/findings separation, but it is product LOC + golden-fixture churn — new machinery the captain's zero-machinery preference defers. It is the justified upgrade IF live drives show the FO omitting the block (bw's convention-first → mechanism-when-drift ordering).
+- **In-stage review round** (a roborev panel or detached-audit pass during implementation — the worker is already dispatched and runs the reviewer itself, so there is no reflow packet). The rule rides the `docs/dev/README.md` implementation stage-def bullet, carried in every implementation packet via the existing `show-stage-def` fetch line — the stage that faces in-stage rounds. The `template` group propagates the stage-def pattern to non-dev workflows.
+- **`ensign-shared-core` (always-loaded): nothing** — justified, not merely preferred. The by-reference finding definition scopes a "review finding" to exactly (a) instances the active stage's definition declares and (b) feedback the FO routes — precisely the two paths above that already deliver the rule with the findings. By construction every review finding arrives via a path that carries its rule, so an always-loaded pointer would restate at boot what the trigger already delivers, re-incurring the always-loaded cost the rework removes. Net always-loaded contract delta: **zero**.
+
+Reinforcement (dev): a cross-stage reflow targets the `feedback-to` stage (normally `implementation`), so its packet also carries the implementation stage-def bullet — the dev reflow worker gets the rule from both the feedback block and the stage-def, and the feedback-path block is the host-neutral delivery for workflows whose stage-defs do not yet carry the bullet.
+
+### Dev-specific realization (the in-stage delivery — `docs/dev/README.md`, cites dev artifacts)
 
 - **The committed taxonomy** the dev ensign triages against = the `validation` stage-def release-scope classification (Material / Deferred risk / Polish / Needs decision; `README.md:146-152`) + `.roborev.toml`'s four-field evidence record (released user + workflow; observable harm; affected value AC or non-negotiable boundary; trigger evidence; `.roborev.toml:34-56`).
 - **The review instance** = a roborev panel, a detached-audit pass, or routed gate feedback (the dev instances of "an automated panel / staff review").
@@ -56,6 +67,7 @@ The consumption rule names the twin explicitly: narrowing a value AC to make a f
 - **The generic consumption rule + decline disposition (serves AC-1):** Alt — rely on roborev's output rule alone (only material findings land under `## Review Findings`). Insufficient: that is the *production* side; when the reviewer mis-files a deferred risk as material, or the user-global "fix everything" pressure bites, the ensign still has no licensed re-triage/decline (digest:158, 154). The rule is the consumption half that was missing.
 - **Decline-as-a-field on the `### Feedback Cycles` entry (serves AC-1/AC-2):** Alt — a dedicated `### Declined Findings` section. Insufficient/over-built: a second record shape duplicates the correction-round record bw already ships and splits "how the ensign responded to review pressure" across two sections; one entry with sibling disposition fields is the smaller, single-convention answer the sprint's own thesis prefers.
 - **The AC-narrowing-is-illegal clause (serves AC-1):** Alt — leave AC-drift to bw's field alone. Insufficient: bw's field *records* a narrowing; it does not tell the ensign the narrowing move is off-limits. Naming it as the decline's illegal twin, in the consumption rule, is what makes the ensign escalate instead of edit.
+- **Delivery at the trigger, not always-loaded core (serves leanness):** Alt — a section in always-loaded `ensign-shared-core`. Wrong altitude: it loads the rule into every ensign session, including the majority that never consume findings, against the sprint's load-at-the-trigger discipline; the feedback-context block + the stage-def bullet deliver it exactly when findings arrive, at zero always-loaded cost. Alt — a `dispatch build` code block: guaranteed but product LOC, deferred per the captain's zero-machinery preference (see the landing-spots losing alternative).
 
 ## Out of scope
 
@@ -64,6 +76,7 @@ The consumption rule names the twin explicitly: narrowing a value AC to make a f
 - **The reviewer/production side** — how roborev classifies and what it emits (`.roborev.toml`, present-gate tiering). Unchanged; this is the consumption half.
 - **A workflow stakes field.** The stakes member is parked; triage anchors on per-entity value ACs + the committed taxonomy. Do not reintroduce a stakes dependency.
 - **bw's `### Feedback Cycles` entry format itself** (surface/estimate/AC-drift fields, the `git diff --numstat` one-liner). Owned by bw; this entity adds only the `findings` field and the all-declines-still-records extension, coordinated at the shared gate.
+- **A `dispatch build`-emitted feedback-triage block** (`internal/dispatch/build.go`). The guaranteed-delivery upgrade to the feedback-path block; deferred behind observed FO-omission drift, per the captain's zero-new-machinery preference (see the landing-spots losing alternative). Out of scope for the first cut precisely because it is the product code the estimate's hard self-check guards against.
 
 ## Riskiest-mechanism spike (done first)
 
@@ -82,10 +95,12 @@ The consumption rule names the twin explicitly: narrowing a value AC to make a f
 
 ## Documentation changes (concrete before/after — ideation proposes, implementation applies)
 
-**`skills/ensign/references/ensign-shared-core.md`** — insert a new section after `## Proving your work` (before `## Worktree Ownership`):
+**`skills/feedback-rejection-flow/SKILL.md`** — add the standing finding-triage block (the approved rule text, relocated from the earlier `ensign-shared-core` draft) and direct the FO to include it in the routed feedback context. Co-edits bw's steps 2-3 in the same skill; the two land together at the shared gate.
+
+Add a new section (the standing block):
 
 > ```markdown
-> ## Consuming review findings
+> ## Finding-triage block (include verbatim at the head of the routed feedback context)
 >
 > Review findings are inputs to triage, not a fix list. A **review finding** is the output of a review instance the active stage's definition declares — the panels, audits, or validators it names, carried to you in the dispatch packet — or feedback the first officer explicitly routes to you as a review outcome. A direct instruction from the captain is not a finding: it is an order to follow or a decision to seek, never something to triage away. Before changing anything in response to such a finding, classify each against the workflow's declared finding-triage taxonomy (where one is declared) and this entity's own value acceptance criteria:
 >
@@ -93,16 +108,23 @@ The consumption rule names the twin explicitly: narrowing a value AC to make a f
 > - **Correct-but-disproportionate** (deferred risk or polish) — substantively right, but no value AC breaks and its trigger is outside the supported/promised workflow. Record a decline; do not fix it. The decline is your licensed disposition, not a dodge: name the finding, its class, and why it is not material (no value AC at risk; trigger outside the promise; the condition that would promote it to material).
 > - **Needs decision** — a genuine product or compatibility fork. Escalate to the first officer; do not resolve it privately.
 >
-> Record the disposition — which findings were fixed as material, which were declined and why — in the entity's correction-round record (the workflow's `### Feedback Cycles` section) so the gate sees it. A finding you neither fix nor record is not triaged.
+> Record the disposition — which findings were fixed as material, which were declined and why — in the entity's `### Feedback Cycles` record so the gate sees it. A finding you neither fix nor record is not triaged.
 >
 > **Narrowing an acceptance criterion to make a finding or rejection pass is not a licensed disposition.** Declining a disproportionate finding and narrowing the claim it targets are opposite moves under the same pressure: the first leaves the product unchanged and is yours to make; the second weakens the value the entity promised and is a design-reset event requiring the captain's sign-off, recorded so it is captain-visible — never a task-internal edit.
 > ```
 
-**`docs/dev/README.md`** — add one bullet in the `implementation` stage-def, after the design-reset bullet (`README.md:123`), composing with bw's in-stage-round bullet:
+And amend step 5 (findings routing) so the block reaches the worker:
+
+> - Before (step 5, first sentence): `Route findings back to the target stage in the same worktree using «addressable-worker» …`
+> - After: prepend the **Finding-triage block** above to the feedback context you assemble (the `--feedback-context-file`), then the findings, so the routed worker receives the triage rule and the findings in one packet (`### Feedback from prior review`). The rest of step 5 is unchanged.
+
+**`skills/ensign/references/ensign-shared-core.md`** — **no change.** The by-reference finding definition scopes every review finding to a delivered path (feedback context or stage-def), so an always-loaded pointer would restate what the trigger already carries; the always-loaded contract gains zero bytes.
+
+**`docs/dev/README.md`** — add one bullet in the `implementation` stage-def, after the design-reset bullet (`README.md:123`), composing with bw's in-stage-round bullet (unchanged from cycle 2):
 
 > `- When consuming an in-stage review round's findings (a roborev panel, a detached-audit pass, or routed gate feedback), triage before fixing. The committed finding-triage taxonomy is the release-scope classification in the `validation` stage-def (Material / Deferred risk / Polish / Needs decision) plus `.roborev.toml`'s four-field evidence record (released user + workflow; observable harm; affected value AC or non-negotiable boundary; trigger evidence). Fix only material findings; record a decline for a correct-but-disproportionate one — its class and why it is not material — in the `findings` field of the same `### Feedback Cycles` entry that logs the round; escalate a needs-decision finding to the FO. A value AC narrowed to make a finding pass is a design-reset event for the captain, not a fix (see the entry's AC-drift note).`
 
-No other surfaces change (no FO-contract enforcement, no schema, no binary — see Out of scope).
+No other surfaces change (no new FO enforcement check, no schema, no binary; `ensign-shared-core` unchanged — see Out of scope). The standing block is FO-facing guidance the FO copies into the routed context, not an enforcement gate.
 
 ## Acceptance criteria
 
@@ -112,24 +134,25 @@ Verified by: a live replay (the sprint DoD line) in which a dispatched ensign, g
 **AC-2 — The decline record's class is falsifiable against the finding's own evidence: a decline recorded for a finding whose four fields establish materiality FAILS the check; a decline for a non-material finding passes.**
 Verified by: a checked-in fixture (the Case-A declined finding + the Case-B material control, each with its four-field evidence as fixture data) and a small offline check that recomputes materiality from the four fields and asserts it matches the entry's `findings` class flag — so a mis-classified decline (material finding recorded as declined) fails it. The expected value is the fixture's four-field data (an independent source that can diverge from the flag), NOT a substring of any instruction file — satisfying the captain's prose-grep ruling. Seeds directly from the spike's Case A/B. Cost: low, no product code.
 
-**AC-3 — The generic consumption rule + decline disposition + AC-narrowing clause live in `ensign-shared-core` (naming no dev artifact); the taxonomy citations, review instances, and `### Feedback Cycles` home live in `docs/dev/README.md` — neither layer leaks into the other.**
-Verified by: a validation-stage landing-placement audit (like bw's AC-7) — read the two surfaces and assert the generic clauses are present in `ensign-shared-core` and carry no `.roborev.toml`/`docs/dev` specifics, and the dev specifics (the four-field taxonomy citation, the roborev/detached-audit instance) are present in `docs/dev/README.md` and absent from the skill. A one-off read at validation, output in the report, not a committed prose-grep test.
+**AC-3 — The generic rule is delivered at the trigger and is ABSENT from always-loaded core: the standing block lives in `feedback-rejection-flow` (naming no dev artifact) and actually reaches a feedback-reflow packet; the in-stage bullet + dev taxonomy citation live only in `docs/dev/README.md`; `ensign-shared-core` carries no finding-consumption section.**
+Verified by: a validation-stage landing-placement audit — (a) `feedback-rejection-flow` carries the standing block with the by-reference finding definition and no dev artifact; (b) a `dispatch build --feedback-reflow` with an FO-assembled context containing the block shows it in the emitted packet's `### Feedback from prior review` region (exercises the delivery mechanism — behavior, not prose); (c) `ensign-shared-core` contains no finding-consumption section (an absence read that a re-introduction flips); (d) the four-field taxonomy citation is present in `docs/dev/README.md` and absent from the generic block. One-off reads/build at validation, output in the report, not committed prose-grep tests.
 
 ## Test plan
 
 - **Value replay (live drive) → AC-1:** the DoD live replay — a dispatched ensign declines Case A (zero product LOC) and fixes Case B (non-zero), decline recorded in `### Feedback Cycles`. Validation owns the drive; the fixture entity + the two seeded findings come from the spike. Cost: one live dispatch, medium.
 - **Offline classification check (fixture + check) → AC-2:** the spike formalized — a checked-in fixture with the two findings' four-field evidence and a small offline check asserting the recorded class matches the independently-recomputed materiality; fails a mis-classified decline. No product code. Cost: low.
-- **Landing-placement audit (read at validation) → AC-3:** the core-vs-dev separation read. Cost: low.
-- **No Go/binary tests, no product code in this cut** — the deliverable is prose (a skill section + a README bullet) plus a fixture and one offline check, matching the sibling bw's prose-first posture and the sprint's anti-over-engineering thesis.
-- **High-stakes note:** `ensign-shared-core` is shipped contract/scaffolding (a high-stakes surface per the Proof policy), so the detached adversarial audit applies at validation before merge.
+- **Landing-placement + delivery audit → AC-3:** the trigger-delivery reads plus a `dispatch build --feedback-reflow` that shows the standing block reaching the packet (behavior, not prose), and the `ensign-shared-core` absence read. Cost: low (one build + reads).
+- **No Go/binary tests, no product code in this cut** — the deliverable is prose (a `feedback-rejection-flow` standing block + step-5 amendment, a `docs/dev/README.md` bullet, `ensign-shared-core` unchanged) plus a fixture and one offline check, matching the sibling bw's prose-first posture and the sprint's anti-over-engineering thesis.
+- **High-stakes note:** `feedback-rejection-flow` is shipped contract/scaffolding (a high-stakes surface per the Proof policy), so the detached adversarial audit applies at validation before merge.
 
 ## Expected surface + tolerance (declared, per captain ruling)
 
-- `skills/ensign/references/ensign-shared-core.md`: +1 section, ~15 lines (the generic rule + the by-reference trigger definition + captain-direction exclusion + decline disposition + AC-narrowing clause).
-- `docs/dev/README.md`: +1 bullet in the `implementation` stage-def, ~4 lines.
-- 1 fixture entity (+ its two seeded four-field findings) and 1 offline check for AC-2.
-- **0 Go source files, 0 product LOC.** The `findings` field is an addition to bw's `### Feedback Cycles` entry, coordinated at the shared gate, not new machinery.
-- **Tolerance: 2×**, with a hard self-check: any Go/product code, any new FO-contract enforcement check, or a second record section (a `### Declined Findings`) appearing in the first cut trips a reconfirm — deferring enforcement to its own captain-approved entity and keeping one record convention IS the point.
+- `skills/feedback-rejection-flow/SKILL.md`: +1 standing block, ~13 lines (the approved rule text relocated) + a ~1-line step-5 amendment to include it in the routed feedback context. Co-edits bw's steps 2-3 in the same skill.
+- `docs/dev/README.md`: +1 bullet in the `implementation` stage-def, ~4 lines (unchanged).
+- `skills/ensign/references/ensign-shared-core.md`: **no change** — net always-loaded contract delta zero (the rule moved out of always-loaded core to the trigger paths).
+- 1 fixture entity (+ its two seeded four-field findings), 1 offline check (AC-2), and one `dispatch build --feedback-reflow` delivery check (AC-3).
+- **0 Go source files, 0 product LOC.** The `findings` field is an addition to bw's `### Feedback Cycles` entry; the `dispatch build` block is the deferred losing alternative, out of scope.
+- **Tolerance: 2×**, with a hard self-check: any Go/product code, any new FO-contract enforcement check, a second record section (a `### Declined Findings`), or a NET-POSITIVE always-loaded `ensign-shared-core` delta appearing in the first cut trips a reconfirm — delivering at the trigger with zero always-loaded cost, deferring enforcement to its own captain-approved entity, and keeping one record convention ARE the point.
 
 ## Stage Report: ideation
 
@@ -152,3 +175,18 @@ Ideated the ensign finding-consumption rule + decline disposition as a prose cha
 ### Summary
 
 Folded the single captain ask into the generic rule and its concrete before/after diff: the finding trigger is now defined by reference to the active stage's definition (plus explicit FO-routed feedback), with captain direction excluded, replacing the unqualified "reviewer / staff review / automated panel" enumeration. Surface grew ~2 lines (well within tolerance); the rest of the design — the decline-as-`findings`-field convention, the AC-narrowing sibling, the spike, and the AC set — is unchanged.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Move the generic rule OUT of always-loaded `ensign-shared-core` into the feedback delivery path (captain gate rework, item 1).
+  `### Where the rule is delivered` designs the concrete mechanism: a standing block in `feedback-rejection-flow` that the FO prepends to the `--feedback-context-file` it already assembles every reflow, delivered to the worker via the existing `### Feedback from prior review` packet emission (`internal/dispatch/build.go:627-629`, gated on `is_feedback_reflow`; FO file-assembly at `fo-dispatch-core.md:129,138`). **Zero new machinery** — both the context-file→packet path and the FO's assembly exist today. Losing alternative named and deferred: a `dispatch build`-emitted block (guaranteed, but product LOC + golden churn), the justified upgrade only if live drives show FO omission. The `## Documentation changes` diff now targets `feedback-rejection-flow` (standing block + step-5 amendment) instead of `ensign-shared-core`.
+- DONE: Keep the in-stage half in `docs/dev/README.md` (item 2).
+  The implementation stage-def bullet is unchanged (carried in every implementation packet via `show-stage-def`); `template` group propagates the stage-def pattern for non-dev workflows — recorded in the landing spots.
+- DONE: `ensign-shared-core` gets nothing, justified (item 3).
+  Absence justified by construction: the by-reference finding definition scopes a review finding to exactly the stage-def-declared and FO-routed paths, both of which already deliver the rule with the findings, so an always-loaded pointer would restate at boot what the trigger carries. Net always-loaded delta zero.
+- DONE: Update the landing-spot audit AC and the estimate (item 4).
+  AC-3 rewritten to a trigger-delivery + absence audit, adding a `dispatch build --feedback-reflow` check that the block reaches the packet (behavior, not prose). Estimate moved the ~13 rule lines from `ensign-shared-core` to `feedback-rejection-flow`, recorded `ensign-shared-core` no-change, and added a NET-POSITIVE-always-loaded-delta trip to the hard self-check.
+
+### Summary
+
+Applied the captain's placement rework: the approved rule text now ships in the feedback delivery path (a `feedback-rejection-flow` standing block the FO includes in the routed `--feedback-context-file`, delivered via the existing `### Feedback from prior review` packet emission — zero new machinery) plus the unchanged `docs/dev/README.md` in-stage bullet, with `ensign-shared-core` getting nothing because the by-reference finding definition provably scopes every finding to a path that already carries the rule. Named and deferred the `dispatch build`-emitted-block alternative behind observed FO-omission drift (bw's convention-first ordering). The rule TEXT, the decline-as-`findings`-field convention, the AC-narrowing sibling, the spike, and AC-1/AC-2 are unchanged; only AC-3 and the estimate moved with the delivery.
