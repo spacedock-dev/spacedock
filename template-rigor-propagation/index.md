@@ -1,7 +1,7 @@
 ---
 id: 2ae8r33r18g0w0g21559yc57
 title: Dev template ships the rigor scar tissue and refit propagates it to commissioned workflows
-status: ideation
+status: implementation
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.6"
 sprint: 0260-proportionality
@@ -57,7 +57,7 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
               note: "FO applied the folds directly under the captain's edit-directly grant; fable delta findings 4-6 and the codex finding-4 wave-4 sharpening. The attempt-1 validation-gate instruction (refit README delta presented for human review) carries forward unchanged."
               carried-finding:
                 from: "roborev branch review of sibling member az, 2026-07-20"
@@ -71,6 +71,7 @@ gates:
                 gap-1: "az's Edit B standalone bullet — 'Evidence must be able to fail: each AC's cited evidence names the concrete change that would flip it; an author who cannot name what would make the evidence fail has not shown it can fail, and the criterion does not count' — is carried by NO Piece. Verified receiving surface: development.md has ZERO occurrences of a can-fail rule; its 'External-proof acceptance criteria' bullet (~line 93) requires evidence from outside the task body but never asks the author to name the falsifying change. Piece 1 fixes only the AC-template stub. So a workflow commissioned today inherits the weaker rule. DECIDE DELIBERATELY: port it into the external-proof bullet, or record a decline with grounds — do not let it fall through by omission."
                 gap-2: "az's Edit D — the detached audit ALSO fires on AC provenance (an AC whose expected value derives from the same package's production functions or constants), scoped to that AC's adversarial-edit check — is carried by NO Piece. Verified receiving surface: development.md DOES already carry a detached-adversarial-audit bullet (~line 94), so there is somewhere for it to land; the gap is not structural. DECIDE DELIBERATELY: port, or decline on the grounds that the provenance trigger is a dev-repo-specific sharpening a fresh workflow does not need yet."
                 do-not-propagate: "NOT everything az landed belongs in the template, and porting indiscriminately would be its own error. The required-CI-lane rule and its path-to-lane mapping are a dev-lane realization tied to this repo's specific lanes, and the validation stage-def's routine-change exemption qualification is likewise docs/dev-specific. Those stay put. The generic disciplines (evidence must be able to fail; the prose-grep honesty boundary; arguably the provenance trigger) are the propagation candidates. Judge each on whether a NEWLY COMMISSIONED workflow with no CI and no lanes would be served by it."
+worktree: .worktrees/spacedock-ensign-template-rigor-propagation
 ---
 
 Every rigor cap in the ecosystem is post-incident scar tissue stuck in the repo where the incident happened: zaphod's no-PR-machinery rule and offline/interactive AC split, spacedock-v1's mechanism-to-value trace and materiality taxonomy. The shipped commission template contains none of them, its proof-discipline menu can only raise rigor, its interview never asks rigor level, and its "Verified by: grep" example models the exact tautology the Proof policy bans. Refit refreshes scaffolding version, not accumulated content. Template gains: `## Stakes` scaffold + interview question, materiality taxonomy, AC split, small-change fast path, size-gated semantic adversarial pass, fixed Verified-by example; refit gains content propagation so the three commissioned workflows receive the delta. Grouped with `ey`.
