@@ -1,3 +1,18 @@
+# Briefing: Stakes declaration read-through — ideation gate
+
+**Gate review: Stakes declaration read-through — a declared `## Stakes` reaches every dispatch packet and reviewer context — ideation**
+**Chosen direction:** one source — a prose `## Stakes` section in the workflow README — carried verbatim by two non-diverging code paths: a `stakes` key in `status --boot --json` and an inline block in every `dispatch build` packet. Injected prose hint, NOT defined levels; frontmatter and level-enum alternatives recorded as losing.
+**FO recommends approve.**
+
+Checklist (Stage Report, lines 260-267 of the task file): 3 done, 0 skipped, 0 failed.
+AC cross-check: 4 ACs; AC-1 (VALUE) measures stakes-bytes-in-packet against a measured 0 baseline with an edit-follows clause; AC-2/3/4 mechanisms are paired to it. Spike evidence recorded: byte-identical section round-trip through the shipped parser; AGENTS.md-ingestion canary null (3 runs, CLAUDE.md positive control).
+
+Decision: approve closes this gate in 3k notation (application advance -> implementation, state pending, Commander applies). Reject bounces to ideation rework with your annotations.
+
+---
+
+## Full task body follows
+
 ---
 id: js6vwx74s0yg3vb88rekfkf8
 title: Stakes declaration read-through — a declared `## Stakes` reaches every dispatch packet and reviewer context
@@ -7,24 +22,6 @@ score: "0.9"
 sprint: 0260-proportionality
 group: stakes
 started: 2026-07-20T01:44:22Z
-gates:
-  version: 1
-  current:
-    gate: gate:docs-dev:js6:ideation
-    attempt: gate-attempt:js6-ideation-1
-  records:
-    - id: gate:docs-dev:js6:ideation
-      stage: ideation
-      current-attempt: gate-attempt:js6-ideation-1
-      attempts:
-        - id: gate-attempt:js6-ideation-1
-          sequence: 1
-          state: open
-          briefing:
-            id: briefing:js6-ideation-1a
-            digest: sha256:6984a7e9a1809cfd9b34eafdcdf7b158c13fe23ae2088f3ce707781a7f3eaefa
-            room-ref: "_reviews/js6-ideation"
-          note: "Captain reviewed via Subspace advisory float 2026-07-20 and took the leave-open (hold) action: decision held for captain/FO discussion of three fundamentals — declaration governance/evolution/default semantics, read cost (answered: zero added roundtrips), and stage-differential stakes. No resolution recorded; attempt remains open; revised briefing to follow the discussion."
 ---
 
 No rigor dial exists anywhere in the system: "prototype" has zero hits across the skills tree, so workers and reviewers default to maximum rigor regardless of what the project wants. The workflow README declares stakes (who depends on this, what a defect costs, derived test-depth/infra/materiality policies); the boot record exposes it; dispatch build injects it verbatim into worker packets and review context so an ensign or reviewer can cite it. The contract requires the declaration exists and flows — it never sets the value.
@@ -48,9 +45,7 @@ decisions. This entity is the substrate the rest of the `stakes` group and the `
 `ladder`, and `template` groups cite: the read-through that carries a workflow's declared
 `## Stakes` from one source into the boot record and every dispatch packet, verbatim. It
 delivers the *flow*, not the value — the contract requires the declaration exists and is
-carried; it never decides what a project's stakes are. A corollary the design must honor:
-the *absence* of a declaration must itself resolve to an explicit, bounded default — an
-undefined default silently reinstates the max-rigor inference this field exists to stop.
+carried; it never decides what a project's stakes are.
 
 Two questions had to be settled before designing the flow, and both rest on unverified
 mechanisms, so they were spiked first (see **Spike results**): does a `## Stakes` section
@@ -149,53 +144,6 @@ One source, read by two code paths that must never diverge:
    Absent → the same `none declared` marker. This reaches ensigns and every dispatched
    reviewer (staff-review, validation) uniformly.
 
-**Read cost — no extra roundtrip for any consumer.** The packet block is assembled inline at
-`dispatch build` time (build already reads the workflow README for the stage/frontmatter
-data), so an ensign receives stakes in the single dispatch-file Read it already performs —
-there is deliberately no `show-stakes` fetch line. Boot rides the existing `--boot` read (the
-`--boot` path already parses the same `definitionDir/README.md` for the stage taxonomy), so
-the FO pays no extra command. Every dispatched reviewer gets it inline in its own packet. Net
-added tool calls across all consumers: zero.
-
-**Governance — the declaration is a captain-declared fact.** By the sprint's anti-inference
-principle the `## Stakes` *value* is set and changed only by the captain (or with captain
-sign-off), recorded like a durable gate decision. The README is FO-writable process doc, so
-an FO may scaffold the empty heading at commission/refit, but no worker, reviewer, or FO
-infers, escalates, or rewrites the declared value. This is a documented convention, not a
-code-enforced author gate — identity-gating the edit needs authorship tracking this repo does
-not have and is out of scope; the convention is the contract and ships as a line in the README
-note (below).
-
-**The `none declared` default is explicit, not silent max-rigor.** An undefined default leaves
-a worker to infer rigor — the disease itself. So the marker is not a bare "none": it carries
-its own default behavior verbatim — *apply the rigor the stage definitions specify and no
-more; do not infer additional project-level stakes; if this workflow needs a different
-baseline, ask the captain to declare a `## Stakes` section.* This caps inference at the written
-stage-def rigor (which still mandates, e.g., the detached adversarial audit for high-stakes
-surfaces, so safety is not lowered) and turns a missing declaration into a visible prompt to
-declare rather than a licence to over-build.
-
-**Stage-differential stakes — uniform declaration; per-stage depth stays in the stage
-definitions.** The declaration is injected uniformly into every stage's packet, byte-identical
-at ideation and validation, because who-depends / what-a-defect-costs is a project fact that
-does not change with the stage. Per-*stage* rigor already lives in the stage definitions
-(ideation "spike the riskiest path" cheaply and throwaway; validation's detached adversarial
-audit + semantic adversarial pass) and is already carried into every packet via the existing
-`show-stage-def` fetch line. The declaration's *derived-policy* prose is written to COMPOSE
-with them — it states the project's weight and explicitly carves out spikes — so a worker sees
-`high project stakes` (declaration) + `spike cheaply` (ideation stage def) + `spikes exempt
-from full depth` (declaration carve-out) and does not over-build a throwaway.
-
-- *Losing alternative — per-stage-aware injection (the mechanism selects different stakes text
-  per stage).* Loses: it duplicates the stage-appropriate rigor the stage definitions already
-  express and already deliver, couples the stakes mechanism to the stage taxonomy, and splits
-  the single source into per-stage copies — against leanness and "one source".
-- *Losing alternative — a per-stage derivation table inside the declaration prose.* Loses: it
-  bloats a workflow-level fact with stage mechanics that belong in (and duplicate) the stage
-  definitions, and it is carried verbatim into stages it does not apply to. Keep the
-  declaration to the project fact plus a one-line spike carve-out; the stage defs own per-stage
-  depth. The dev template's stage definitions are the natural home for the per-stage half.
-
 Each new mechanism, the value AC it serves, the simplest alternative, and why that
 alternative is insufficient:
 
@@ -239,10 +187,7 @@ behavior tests over prose, the detached adversarial audit before merge, live-dri
 for contract claims. This is a HIGH-stakes workflow and the default rigor is correct
 here. A throwaway spike entity may record a lower local stakes in its own body and
 decline disproportionate findings; this declaration sets the project baseline, not an
-entity-by-entity floor. Per-stage depth is set by the stage definitions (ideation
-spikes cheaply and throwaway; validation applies full depth including the detached
-adversarial audit), and the two compose — a spike at ideation is not held to
-validation-grade rigor even in this high-stakes workflow.
+entity-by-entity floor.
 ```
 
 *Add one mechanism note under `docs/dev/README.md` `### Reading sections` (kept OUTSIDE the
@@ -251,11 +196,7 @@ validation-grade rigor even in this high-stakes workflow.
 ```markdown
 The workflow's `## Stakes` section is read by `status --boot` and injected verbatim into
 every dispatch packet, so a declared stakes reaches every worker and reviewer. Declare it
-once here; never copy it into entity bodies. Its content is a captain-declared fact: an FO
-may scaffold the heading, but the declared value changes only with captain sign-off — no
-agent infers, escalates, or rewrites it. A workflow with no `## Stakes` section is treated
-as: apply the rigor the stage definitions specify and no more; do not infer additional
-project stakes; ask the captain to declare one if a different baseline is needed.
+once here; never copy it into entity bodies.
 ```
 
 ## Out of scope
@@ -287,12 +228,9 @@ against a fixture README with a known `## Stakes` section and asserts the packet
 block equals that section (trailing-blank-trimmed) by exact string compare; (b) mutates the
 README section, rebuilds, and asserts the packet block changes to the new text — a hardcoded
 copy passes (a) but fails (b); (c) runs against a `## Stakes`-less README and asserts the
-packet carries the `none declared` marker; (d) runs the stakes-bearing fixture at two
-different stages (ideation and validation) and asserts the stakes block is byte-identical
-across them, pinning the uniform workflow-level injection. Baseline that can move the wrong
-way: on `main` today the packet carries 0 stakes-declaration bytes (Spike result 2); the AC
-fails if the block is absent, stale, truncated, varies by stage, or fails to track a README
-edit.
+packet carries the literal `none declared` marker. Baseline that can move the wrong way: on
+`main` today the packet carries 0 stakes-declaration bytes (Spike result 2); the AC fails if
+the block is absent, stale, truncated, or fails to track a README edit.
 
 **AC-2 — `status --boot --json` exposes the workflow's `## Stakes` body under a `stakes`
 key, tracking the README; absent → an explicit none value.**
@@ -315,26 +253,14 @@ entity/stage showing the dev README's `## Stakes` verbatim in the packet, and
 `spacedock status --boot --json --workflow-dir docs/dev` showing the same body under
 `stakes`. Fails if the dev README lacks the section or the live carry drops or mangles it.
 
-**AC-5 — An undeclared workflow gets an explicit default directive, not silent rigor
-inference.**
-When a workflow has no `## Stakes` section, both the packet and `status --boot` emit a
-`none declared` marker carrying the default behavior (apply the stage definitions' rigor as
-written; do not infer additional project stakes; ask the captain to declare). Verified by: a
-toggle test that runs `dispatch build` and `--boot --json` against one fixture with and
-without the section and asserts the output SWAPS between the verbatim section and the
-default-directive marker on the section's presence — the marker appears only in the absent
-case and the section only in the present case. Fails if absence yields a bare/empty value, if
-the marker leaks into the declared case, or if the directive text is missing.
-
 ## Test plan
 
-- **Fixture/CLI (primary, cheap):** the AC-1/AC-2/AC-3/AC-5 Go behavior fixtures in
+- **Fixture/CLI (primary, cheap):** the AC-1/AC-2/AC-3 Go behavior fixtures in
   `internal/dispatch` and `internal/status` — packet-carries-verbatim, boot-exposes,
-  edit-follows, cross-channel identity, stage-invariance (same block at ideation and
-  validation, AC-1d), and the presence-toggle that swaps section↔default-directive marker
-  (AC-5). These drive the built binary / package functions and assert on generated bytes, not
-  on instruction-file text. No new harness, no new infra: they reuse the spike-proven
-  `scanHeadings`/section-extractor substrate.
+  edit-follows, none-marker, and cross-channel identity. These drive the built binary /
+  package functions and assert on generated bytes, not on instruction-file text. No new
+  harness, no new infra: they reuse the spike-proven `scanHeadings`/section-extractor
+  substrate.
 - **Live smoke (one run, AC-4):** after the dev README gains `## Stakes`, run `dispatch
   build` and `status --boot --json` against `docs/dev` and record that both carry the
   section. Single-command each; this is the DoD's live proof.
@@ -369,27 +295,3 @@ mechanical option because the sprint requires the contract to carry the declarat
 ever setting its value; the frontmatter/levels alternatives are named but recorded as
 losing. A concrete doc diff for the dev README (`## Stakes` section + a Reading-sections
 mechanism note) is in the body for implementation to apply.
-
-## Stage Report: ideation (cycle 2)
-
-Revised against captain gate feedback (three design questions). Problem, approach, ACs, and
-test plan updated together per the ideation stage rules.
-
-- DONE: Q1 — lifecycle/governance and the `none declared` default designed explicitly
-  Added `### Mechanism` "Governance" (the declaration is a captain-declared fact — FO may scaffold the heading, value changes only with captain sign-off, no agent infers/rewrites; convention not a code author-gate, which is out of scope) and "The `none declared` default is explicit" (the marker carries its own directive: apply stage-def rigor and no more, do not infer project stakes, ask the captain to declare — caps inference at the written stage-def rigor instead of reinstating silent max-rigor). Reflected in the Problem corollary, the README note doc-diff, and new AC-5 (presence-toggle swaps section↔directive marker).
-- DONE: Q2 — read cost confirmed as a one-liner in Mechanism
-  Added "Read cost — no extra roundtrip for any consumer": inline at build time (no `show-stakes` fetch line), boot rides the existing `--boot` read (verified: the `--boot` path already parses `definitionDir/README.md` for the stage taxonomy — `internal/status/handlers.go:438`), reviewers inline. Net added tool calls: zero.
-- DONE: Q3 — stage-differential decided, losing alternatives named
-  Decision: uniform workflow-level declaration; per-stage depth stays in the stage definitions (already carried via the `show-stage-def` fetch line) and the declaration's derived-policy prose composes with them (spike carve-out). Losing: per-stage-aware injection (duplicates + couples to the stage taxonomy + splits the source) and a per-stage table in the declaration (bloats a workflow fact, carried into stages it does not apply to). Pinned by AC-1(d): the block is byte-identical across ideation and validation. Dev `## Stakes` derived-policy updated to state the composition.
-
-### Summary
-
-Cycle-2 revision addresses all three captain questions without enlarging the surface: the
-governance and default semantics are convention + a self-documenting `none declared` marker
-(no new code gate), read cost is confirmed zero-extra-roundtrip against the actual boot code
-path, and the stage-differential resolves to uniform injection with per-stage rigor left in
-its existing home (the stage definitions). ACs grew by one (AC-5, the presence-toggle) and
-AC-1 gained a stage-invariance clause; both are behavioral (branch selection driven by the
-README's section presence), not prose-greps. No mechanism, spike result, or the two-axis
-recommendation changed — the additions are default/governance/stage-composition semantics the
-original design implied but had not stated.

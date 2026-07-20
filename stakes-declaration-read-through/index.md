@@ -48,9 +48,13 @@ decisions. This entity is the substrate the rest of the `stakes` group and the `
 `ladder`, and `template` groups cite: the read-through that carries a workflow's declared
 `## Stakes` from one source into the boot record and every dispatch packet, verbatim. It
 delivers the *flow*, not the value — the contract requires the declaration exists and is
-carried; it never decides what a project's stakes are. A corollary the design must honor:
-the *absence* of a declaration must itself resolve to an explicit, bounded default — an
-undefined default silently reinstates the max-rigor inference this field exists to stop.
+carried; it never decides what a project's stakes are — with one deliberate exception. A
+corollary the design must honor: the *absence* of a declaration resolves to a single fixed,
+system-declared default — **prototype-grade** (smallest sufficient test surface; no new
+enforcement infra without consent; lean triage). That default is a constant, never a per-diff
+agent inference; boot and every gate presentation carry a one-line visible nag until a
+declaration exists, so absence is loud and gets fixed rather than silently reinstating the
+max-rigor inference this field exists to stop.
 
 Two questions had to be settled before designing the flow, and both rest on unverified
 mechanisms, so they were spiked first (see **Spike results**): does a `## Stakes` section
@@ -119,18 +123,28 @@ readable without a second representation.
   copy" rule fights. Adopt frontmatter only if and when a consumer needs a typed level; the
   section does not preclude adding one later.
 
-**Rigor — an injected prose hint (a verbatim `## Stakes` block carried into boot + every
-packet), NOT defined stakes levels with per-level behaviors.** The contract must "require
-the declaration exists and flows, never set the value" (sprint goal, verbatim). A prose
-hint that the worker/reviewer reads and applies with judgment satisfies that exactly.
+**Shape — an opinionated four-part declaration, NOT a bare level label and NOT a free-form
+hint.** The declaration carries four labeled parts (captain ruling): (a) who depends / what
+breaks; (b) promised surfaces — the high-stakes list; (c) the most-expensive defect classes;
+(d) what is explicitly outside the promise. The contract still "requires the declaration
+exists and flows, never sets the value": the four parts are *facts the project declares*, and
+rigor is *derived* by the reader's materiality triage against them — the system sets no rigor
+level. The one system-set behavior is the undeclared default (prototype-grade), which is a
+fixed constant, not an inference.
 
-- *Losing alternative — defined stakes levels (e.g. `prototype|production|critical`) with a
-  behavior spec per level.* It loses on three counts: it puts the system in the business of
-  *setting* rigor (the one thing the sprint says the contract must not do); a fixed enum
-  cannot carry the who-depends / what-a-defect-costs nuance a prose declaration can, so it
-  couples every downstream group to a lossy taxonomy; and it is speculative boot-resident
-  machinery against the leanness constraint. A project that wants a crisp level simply
-  writes it as the first line of its prose `## Stakes`.
+- *Losing alternative — a bare level label (`prototype|production|critical`).* It loses on the
+  evidence: a "high" label does nothing for a high-stakes repo's actual failure mode. The 0260
+  HIGH incidents in spacedock_v1 were fabricated rigor (false-green presence tests) and rigor
+  spent on *unpromised* surfaces — a bare "high" would have *endorsed* both. The four-part
+  shape is exactly what lets materiality triage and the falsifiability rule bite AT high
+  stakes: (b) says which surfaces earn depth, (c) names the defect class a test must actually
+  catch, (d) says where NOT to spend rigor. A label carries none of that.
+- *Losing alternative — a free-form prose hint (cycle-2's design).* It loses on structure: an
+  unlabeled paragraph is readable but gives the downstream triage/ladder consumers no stable
+  parts to key on — "is this finding on a promised surface?" and "is this the costliest defect
+  class?" become re-derivations per reader. The four labeled parts are still prose (no enum,
+  no per-level machinery), so the "never sets the value" and leanness constraints hold, while
+  the structure makes the field usable by the groups that cite it.
 
 ### Mechanism
 
@@ -157,34 +171,60 @@ there is deliberately no `show-stakes` fetch line. Boot rides the existing `--bo
 the FO pays no extra command. Every dispatched reviewer gets it inline in its own packet. Net
 added tool calls across all consumers: zero.
 
-**Governance — the declaration is a captain-declared fact.** By the sprint's anti-inference
-principle the `## Stakes` *value* is set and changed only by the captain (or with captain
-sign-off), recorded like a durable gate decision. The README is FO-writable process doc, so
-an FO may scaffold the empty heading at commission/refit, but no worker, reviewer, or FO
-infers, escalates, or rewrites the declared value. This is a documented convention, not a
-code-enforced author gate — identity-gating the edit needs authorship tracking this repo does
-not have and is out of scope; the convention is the contract and ships as a line in the README
-note (below).
+**Governance — the declaration is captain-only; it evolves at ceremonies, not on drift.** The
+`## Stakes` value is set and changed only by the captain. No worker, reviewer, or FO infers,
+escalates, or rewrites it. Three parts:
 
-**The `none declared` default is explicit, not silent max-rigor.** An undefined default leaves
-a worker to infer rigor — the disease itself. So the marker is not a bare "none": it carries
-its own default behavior verbatim — *apply the rigor the stage definitions specify and no
-more; do not infer additional project-level stakes; if this workflow needs a different
-baseline, ask the captain to declare a `## Stakes` section.* This caps inference at the written
-stage-def rigor (which still mandates, e.g., the detached adversarial audit for high-stakes
-surfaces, so safety is not lowered) and turns a missing declaration into a visible prompt to
-declare rather than a licence to over-build.
+- *Edit authority (captain-only).* Recommended enforcement: carve `## Stakes` out of the FO's
+  README write authority in the write classifier, so an FO write that touches the section is
+  refused rather than trusted (the FO position). Named alternative the gate decides between:
+  FO-proposes-captain-approves — the FO may draft a change but it is inert until the captain
+  signs off, recorded like a durable gate decision. Either way an FO may scaffold the empty
+  heading at commission/refit; neither lets an agent set the value. The write-classifier change
+  is a small FO-contract surface; whether it ships with this entity or as the adjacent triage/
+  template work is the gate's call (probe 1 surfaces both for captain judgment).
+- *Evolution is event-triggered, never timed.* Re-affirmation happens at lifecycle ceremonies
+  — the sprint scope-lock line and the release cut — where the captain re-confirms the
+  declaration still holds. No TTL, no staleness timer; a declaration does not "expire".
+- *Stakes-drift flag (sanctioned).* When a worker or reviewer hits evidence that contradicts
+  the declaration, it does NOT re-grade stakes on its own. It triages the finding under the
+  DECLARED stakes anyway, and raises a `stakes-drift` flag carrying the contradicting evidence.
+  The FO surfaces the flag at the gate; only the captain then edits the declaration. This keeps
+  the anti-inference guarantee (no silent agent re-grading) while giving contradicting evidence
+  a sanctioned path instead of a private judgment call.
 
-**Stage-differential stakes — uniform declaration; per-stage depth stays in the stage
-definitions.** The declaration is injected uniformly into every stage's packet, byte-identical
-at ideation and validation, because who-depends / what-a-defect-costs is a project fact that
-does not change with the stage. Per-*stage* rigor already lives in the stage definitions
-(ideation "spike the riskiest path" cheaply and throwaway; validation's detached adversarial
-audit + semantic adversarial pass) and is already carried into every packet via the existing
-`show-stage-def` fetch line. The declaration's *derived-policy* prose is written to COMPOSE
-with them — it states the project's weight and explicitly carves out spikes — so a worker sees
-`high project stakes` (declaration) + `spike cheaply` (ideation stage def) + `spikes exempt
-from full depth` (declaration carve-out) and does not over-build a throwaway.
+**The undeclared default is prototype-grade, and it nags.** A workflow with no `## Stakes`
+section resolves to one fixed, system-declared default — *prototype-grade: smallest sufficient
+test surface; no new enforcement infrastructure without explicit consent; lean finding-triage*
+— carried verbatim in the `none declared` marker in both the packet and boot. This is a
+constant the system sets, not a per-diff inference, so it never reintroduces the max-rigor
+guessing disease. Because a lean default on a surface that actually deserved rigor is a real
+risk, the absence is made *loud*: boot emits a one-line `STAKES: none declared` nag and every
+gate presentation carries the same one-liner until a declaration exists (the gate nag is
+surfaced by present-gate reading the boot `stakes` field). The nag turns "forgot to declare"
+into a visible, self-clearing prompt.
+
+**Stage-differential stakes — uniform injection because stakes *parameterizes* stage rules,
+it does not replace them.** The declaration is injected uniformly into every stage's packet,
+byte-identical at ideation and validation, because who-depends / promised-surfaces / costliest-
+defects / outside-the-promise is a project fact that does not change with the stage. The way
+stakes affects a stage is by parameterizing that stage's existing rules: high stakes shifts
+which risk a stage's work *selects* — at ideation, which path the "spike the riskiest path"
+rule aims at; at validation, which surfaces earn the detached adversarial audit — but it never
+changes the *polish* a given unit of work gets. A spike stays throwaway at any stakes level;
+high stakes makes you spike the *promised* surface first, not gold-plate the spike. The stage
+definitions keep all the per-stage rigor mechanics (already carried into every packet via the
+existing `show-stage-def` fetch line); the declaration is the parameter they read. So the
+worker composes `promised surfaces = status/dispatch/state` (declaration part b) + `spike the
+riskiest path` (ideation stage def) into "spike the riskiest status/dispatch path", and does
+not over-build a throwaway.
+
+The "stakes shifts spike selection, never polish" *behavior* is a worker-consumption rule; its
+falsifiable AC (a high-stakes context changes which path a worker spikes, not how much) belongs
+to the `triage`/`ladder` groups that own finding-triage and own the ensign's consumption of the
+field — they blocker-depend on this entity. This entity's job is to make that composition
+*possible* by delivering the four-part declaration to every stage uniformly and provably (AC-1,
+AC-1d); it does not re-implement the consumption behavior here.
 
 - *Losing alternative — per-stage-aware injection (the mechanism selects different stakes text
   per stage).* Loses: it duplicates the stage-appropriate rigor the stage definitions already
@@ -193,8 +233,8 @@ from full depth` (declaration carve-out) and does not over-build a throwaway.
 - *Losing alternative — a per-stage derivation table inside the declaration prose.* Loses: it
   bloats a workflow-level fact with stage mechanics that belong in (and duplicate) the stage
   definitions, and it is carried verbatim into stages it does not apply to. Keep the
-  declaration to the project fact plus a one-line spike carve-out; the stage defs own per-stage
-  depth. The dev template's stage definitions are the natural home for the per-stage half.
+  declaration to the four project-level parts; the stage defs own per-stage depth. The dev
+  template's stage definitions are the natural home for the per-stage half.
 
 Each new mechanism, the value AC it serves, the simplest alternative, and why that
 alternative is insufficient:
@@ -223,26 +263,27 @@ packet gains a stakes block; the dev README gains a section). The concrete doc d
 ```markdown
 ## Stakes
 
-**Who depends on this:** every agent session in every repo that loads the shipped
-Spacedock contract — the first-officer/ensign skills, the `status`/`dispatch` launcher,
-and the workflow scaffolding. A change here reaches codex, Claude, and pi workers across
-spacedock_v1, zaphod, and spacedock_subspace.
+**Who depends / what breaks:** every agent session in every repo that loads the shipped
+Spacedock contract — the first-officer/ensign skills and the `status`/`dispatch` launcher
+— across spacedock_v1, zaphod, and spacedock_subspace. A defect derails real multi-hour
+sessions at scale (the 0260 forensics corpus: 15 confirmed derailments, 4 multi-hour
+runaway loops) and can lose a worker's committed state.
 
-**What a defect costs:** a wrong contract clause or a launcher regression derails real
-multi-hour sessions at scale — the 0260 forensics corpus records 15 confirmed
-derailments, 4 of them multi-hour runaway loops. Silent state or dispatch corruption can
-lose a worker's committed work.
+**Promised surfaces (high-stakes):** the front-door launcher; the `status` mutation and
+guard paths; the `.spacedock-state` checkout and the dispatch/launch path; the CI and
+release machinery. Changes to these earn the full depth — the falsifiability rule,
+behavior-over-prose tests, and the detached adversarial audit before merge.
 
-**Derived policy:** high rigor for the four high-stakes surfaces (front-door launcher,
-`status` mutation/guard paths, shipped contract/scaffolding, CI/release machinery):
-behavior tests over prose, the detached adversarial audit before merge, live-drive proof
-for contract claims. This is a HIGH-stakes workflow and the default rigor is correct
-here. A throwaway spike entity may record a lower local stakes in its own body and
-decline disproportionate findings; this declaration sets the project baseline, not an
-entity-by-entity floor. Per-stage depth is set by the stage definitions (ideation
-spikes cheaply and throwaway; validation applies full depth including the detached
-adversarial audit), and the two compose — a spike at ideation is not held to
-validation-grade rigor even in this high-stakes workflow.
+**Most-expensive defect classes:** a false green — a test that passes while the behavior is
+wrong (the presence/prose-grep tautologies this sprint is retiring) — because it ships a
+regression undetected; and silent state or dispatch corruption that loses committed work.
+Rigor is spent to make these two catchable, not spread evenly.
+
+**Explicitly outside the promise:** contract and skill *prose* wording (proven by a live
+drive, never a grep over the file); throwaway spikes (the smallest sufficient exercise,
+not gold-plated); and research/analysis entities whose product is a decision recorded in
+the roadmap. A correct-but-disproportionate finding on one of these is a candidate decline,
+not a dutiful fix.
 ```
 
 *Add one mechanism note under `docs/dev/README.md` `### Reading sections` (kept OUTSIDE the
@@ -251,27 +292,45 @@ validation-grade rigor even in this high-stakes workflow.
 ```markdown
 The workflow's `## Stakes` section is read by `status --boot` and injected verbatim into
 every dispatch packet, so a declared stakes reaches every worker and reviewer. Declare it
-once here; never copy it into entity bodies. Its content is a captain-declared fact: an FO
-may scaffold the heading, but the declared value changes only with captain sign-off — no
-agent infers, escalates, or rewrites it. A workflow with no `## Stakes` section is treated
-as: apply the rigor the stage definitions specify and no more; do not infer additional
-project stakes; ask the captain to declare one if a different baseline is needed.
+once here as four parts (who depends / what breaks; promised surfaces; costliest defect
+classes; explicitly outside the promise); never copy it into entity bodies. Its content is
+captain-only: an FO may scaffold the heading, but the value changes only by the captain, and
+it is re-affirmed at ceremonies (sprint scope-lock, release cut), not on a timer. A worker or
+reviewer whose evidence contradicts the declaration triages under the DECLARED stakes anyway
+and raises a stakes-drift flag with that evidence for the captain at the gate — it never
+re-grades stakes on its own. A workflow with no `## Stakes` section is treated as
+prototype-grade (smallest sufficient test surface, no new enforcement infra without consent,
+lean triage), and boot/gate presentations nag until one is declared.
 ```
 
 ## Out of scope
 
-- **Setting or grading stakes values.** The contract carries the declaration; it never
-  decides a project's stakes or enforces a rigor level from them.
+- **Grading a *declared* project's stakes.** The contract carries the four-part declaration
+  and sets exactly one value — the fixed prototype-grade default when nothing is declared. It
+  never grades or escalates a declared project's stakes per diff.
+- **The worker-consumption behavior of the field** — the ensign's finding-triage against
+  stakes, the recorded decline of a disproportionate-but-correct finding, and the falsifiable
+  "high stakes shifts spike selection, not polish" AC. These are the `triage` and `ladder`
+  groups (which blocker-depend on this entity). This entity delivers the field to every stage;
+  it does not re-implement how a worker acts on it.
 - **The AGENTS.md one-line digest + pointer** (router-layer / `template` group) and **the
   roborev config alignment** (repo-local group). This entity delivers the boot + dispatch-
-  packet channels (which reach ensigns and every dispatched reviewer). The canary result
-  that shapes those channels is recorded above; wiring them is theirs.
+  packet channels (which reach ensigns and every dispatched reviewer). The canary result that
+  shapes those channels is recorded above; wiring them is theirs.
+- **The four-part `## Stakes` template scaffold + commission rigor question** (`template`
+  group). This entity ships the field, the read-through, and the dev workflow's own
+  declaration; the reusable scaffold future commissions start from is the template's.
+- **The write-classifier carve-out that enforces captain-only edits.** It is the recommended
+  enforcement (see Governance) but is an FO-contract surface; whether the code change lands
+  with this entity or adjacent is the gate's call (probe 1). The captain-only *convention*
+  ships here in the README note regardless.
 - **Per-entity stakes override.** Stakes is workflow-level here (one `## Stakes` per README).
   An entity-level override is a possible future extension, not this entity.
-- **`status --validate` hard-requiring a `## Stakes` section.** Presence is made *visible*
-  (the `none declared` marker); hard-fail validation would break every existing workflow
-  that predates the field and belongs with the `template`/validate work. Keeping this
-  surface minimal and stable is deliberate — downstream groups cite the field.
+- **`status --validate` hard-requiring a `## Stakes` section.** Absence is made *loud* (the
+  boot/gate nag) and *safe* (the fixed prototype-grade default); hard-fail validation would
+  break every existing workflow that predates the field and belongs with the `template`/
+  validate work. Keeping this surface minimal and stable is deliberate — downstream groups
+  cite the field.
 
 ## Acceptance criteria
 
@@ -315,26 +374,31 @@ entity/stage showing the dev README's `## Stakes` verbatim in the packet, and
 `spacedock status --boot --json --workflow-dir docs/dev` showing the same body under
 `stakes`. Fails if the dev README lacks the section or the live carry drops or mangles it.
 
-**AC-5 — An undeclared workflow gets an explicit default directive, not silent rigor
-inference.**
+**AC-5 — An undeclared workflow resolves to the fixed prototype-grade default and nags,
+rather than a bare or empty value.**
 When a workflow has no `## Stakes` section, both the packet and `status --boot` emit a
-`none declared` marker carrying the default behavior (apply the stage definitions' rigor as
-written; do not infer additional project stakes; ask the captain to declare). Verified by: a
-toggle test that runs `dispatch build` and `--boot --json` against one fixture with and
-without the section and asserts the output SWAPS between the verbatim section and the
-default-directive marker on the section's presence — the marker appears only in the absent
-case and the section only in the present case. Fails if absence yields a bare/empty value, if
-the marker leaks into the declared case, or if the directive text is missing.
+`none declared` marker carrying the fixed default (prototype-grade: smallest sufficient test
+surface; no new enforcement infra without consent; lean triage), and the `--boot` text form
+emits a one-line `STAKES: none declared` nag. Verified by: a toggle test that runs
+`dispatch build` and `--boot` (text and `--json`) against one fixture with and without the
+section and asserts the output SWAPS on the section's presence — the verbatim section in the
+present case, the prototype-grade default marker + the boot nag line in the absent case, and
+neither leaking into the other. The default text is a single system constant, so the test also
+asserts it is byte-identical across two different fixtures that both lack a declaration (it is
+not per-workflow inference). Fails if absence yields a bare/empty value, if the marker leaks
+into the declared case, if the nag line is missing, or if the default text varies by workflow.
 
 ## Test plan
 
 - **Fixture/CLI (primary, cheap):** the AC-1/AC-2/AC-3/AC-5 Go behavior fixtures in
   `internal/dispatch` and `internal/status` — packet-carries-verbatim, boot-exposes,
   edit-follows, cross-channel identity, stage-invariance (same block at ideation and
-  validation, AC-1d), and the presence-toggle that swaps section↔default-directive marker
-  (AC-5). These drive the built binary / package functions and assert on generated bytes, not
-  on instruction-file text. No new harness, no new infra: they reuse the spike-proven
-  `scanHeadings`/section-extractor substrate.
+  validation, AC-1d), the presence-toggle that swaps section↔prototype-default marker with the
+  `STAKES: none declared` boot nag (AC-5), and the default-constant invariance across two
+  undeclared fixtures (AC-5, proving the default is system-fixed not per-workflow). These drive
+  the built binary / package functions and assert on generated bytes, not on instruction-file
+  text. No new harness, no new infra: they reuse the spike-proven `scanHeadings`/section-
+  extractor substrate.
 - **Live smoke (one run, AC-4):** after the dev README gains `## Stakes`, run `dispatch
   build` and `status --boot --json` against `docs/dev` and record that both carry the
   section. Single-command each; this is the DoD's live proof.
@@ -393,3 +457,30 @@ AC-1 gained a stage-invariance clause; both are behavioral (branch selection dri
 README's section presence), not prose-greps. No mechanism, spike result, or the two-axis
 recommendation changed — the additions are default/governance/stage-composition semantics the
 original design implied but had not stated.
+
+## Stage Report: ideation (cycle 3)
+
+Revised against the captain's three rulings (probes 1 and 3 were insufficient-evidence against
+briefing-1a; this revision makes them answerable). Problem, approach, ACs, and test plan
+updated together. Briefing-2a written; ProbeResults appended for all three probes.
+
+- DONE: Ruling 1 — undeclared default is now fixed prototype-grade + a visible nag
+  Reversed cycle-2's "apply stage-def rigor". `### Mechanism` "The undeclared default is prototype-grade, and it nags": smallest sufficient test surface / no new enforcement infra without consent / lean triage, a system constant (not per-diff inference), with a boot `STAKES: none declared` nag and a gate-presentation nag (present-gate reads the boot field). Problem corollary, README note, and AC-5 rewritten to match; AC-5 now asserts the default text is byte-identical across two undeclared fixtures (proving system-fixed).
+- DONE: Ruling 2 — staleness ergonomics: event-triggered re-affirmation + sanctioned stakes-drift flag
+  `### Mechanism` Governance now has three parts: edit authority captain-only (write-classifier carve-out recommended, FO-proposes-captain-approves the named alternative — gate decides which via probe 1); evolution at ceremonies only (sprint scope-lock, release cut; no timers); and the stakes-drift flag (worker/reviewer triages under DECLARED stakes, flags drift + evidence, FO surfaces at the gate, only the captain edits).
+- DONE: Ruling 3 — declaration is the opinionated four-part shape, not a level label
+  Second design axis retitled "Shape"; the dev `## Stakes` doc-diff rewritten into four labeled parts (who depends/what breaks; promised surfaces; costliest defect classes; outside the promise) with the spacedock-v1 worked example (status/dispatch/state high-stakes; false greens the costliest class; contract prose + spikes outside the promise). Rationale recorded: a bare "high" label endorses the two observed HIGH failure modes (fabricated rigor, rigor on unpromised surfaces); the four parts are what let materiality triage and the falsifiability rule bite AT high stakes. Losing alternatives named: bare level label, and cycle-2's free-form hint.
+- DONE: Stage-differential reframed to parameterization; "shifts spike selection not polish" AC located in triage/ladder
+  `### Mechanism` stage-differential now: stakes parameterizes stage rules (shifts spike SELECTION, never polish); stage defs keep the mechanics; the falsifiable selection-behavior AC belongs to the `triage`/`ladder` consumers (out of scope here, recorded). Uniform injection unchanged; still pinned by AC-1d.
+
+### Summary
+
+Cycle-3 folds the captain's three rulings without growing the shipped surface: the flow
+(README→boot+packet), the fixed prototype-grade default marker + nag, and the dev four-part
+declaration are what ships; governance (captain-only, ceremony re-affirmation, drift-flag),
+the write-classifier enforcement, the four-part template scaffold, and the worker-consumption
+"selection-not-polish" AC are recorded as conventions or sibling-owned with explicit pointers.
+The two-axis recommendation is unchanged on placement (prose section) and sharpened on shape
+(four-part, replacing the free-form hint). One open item is surfaced honestly for the gate: whether
+the captain-only write-classifier carve-out ships here or adjacent (probe 1). Briefing-2a and
+three fresh ProbeResults bound to its digest are in `review/ideation/`.
