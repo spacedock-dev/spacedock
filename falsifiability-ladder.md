@@ -1,7 +1,7 @@
 ---
 id: z7sfm93ccddg7x2tycp1smwy
 title: Prefer the cheapest check that can fail — replaces "code gate over prose rule", with new-check consent, fan-out surfacing, and the no-minting authoring rule
-status: implementation
+status: validation
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.75"
 sprint: 0260-proportionality
