@@ -84,31 +84,60 @@ Both treat the arm→hook transition as a stopping point (park the arm, or re-as
 
 ## Proposed change (before / after)
 
-One added clause in `«merge.guard»`, immediately after the `→ shipped` bullet. No deletions; the existing effect/done-when/block/shipped bullets are unchanged.
+**PAYLOAD SUBSTITUTION, captain decision 2026-07-20.** What this entity delivers changed after validation cycle 1. The original payload — the "armed is not a stopping point" paragraph — is PARKED, NOT SHIPPED. What ships instead is the `--no-ff` conflict blocker, below. Grounds and the preserved original claim are in "## Acceptance criteria" and "### Review findings (validation cycle 1)". This is a design-reset event, not tidying: the entity now makes a narrower claim than the one it was approved on.
 
-**Expected surface:** 1 file (`skills/first-officer/references/fo-merge-core.md`), ~1 clause / ~2 lines added (the bolded paragraph plus its blank separator), no deletions, no other files touched.
+### What ships
 
-**Before** (`fo-merge-core.md`, `«merge.guard»` — nothing binds the FO's turn boundary; the done-when's "left it armed/blocked with its next step named" reads as an acceptable turn end):
+Two edits to the same `«merge.guard»` capability in `skills/first-officer/references/fo-merge-core.md`: the `block:` bullet gains the conflict blocker, and the `effect:` bullet drops a restatement of its own heading to fund it.
 
-    - **done-when:** the entity is archived terminal, or `«merge.guard»` left it armed/blocked with its next step named in its own output.
-    ...
-    - → **shipped**: `` `spacedock merge guard <slug>` `` — invoke it directly per phase (via `${SPACEDOCK_BIN:-spacedock}`, per the launcher invariant above).
+**Before:**
 
-**After** (append this one clause after the `→ shipped` bullet) — NOT SHIPPED; parked pending the captain's ship decision, see "Review findings (validation cycle 1)". This is the M2/D1-repaired text, 843 bytes, and it is the text to copy if the captain rules it ships:
+    - **effect:** drive the terminal merge-finalize ceremony — auto-arm, block on an open PR, finalize on a merge sentinel, then archive (including the path-scoped archive commit) — the same under both `merge:` policies. Invoke it once per phase. …
+    - **block:** `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten.
+
+**After** (this is the shipped text, byte-identical to `fo-merge-core.md`):
+
+    - **effect:** drive the terminal merge-finalize ceremony (including the path-scoped archive commit), the same under both `merge:` policies. Invoke it once per phase. …
+    - **block:** `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten. A `--no-ff` merge conflict is a blocker: surface it and stop, never auto-resolve.
+
+**Surface:** 1 file, +2/−2 lines, **net +1 byte** of FO prompt surface (122231 → 122232 against a 122634 ceiling). The `effect:` trim is genuine: the heading directly above it already reads "auto-arm → block-on-open-PR → finalize-on-merge-sentinel, then archive", so the bullet restated it verbatim in substance.
+
+### PARKED — NOT SHIPPED — do not carry this forward
+
+The paragraph below is the original payload, in its M2/D1-repaired form (843 bytes). It is recorded for history only. It is NOT in `fo-merge-core.md` and MUST NOT be copied into any contract file. A later member copying from this entity must copy the "What ships" block above, never this one.
 
     **An armed result is not a stopping point.** Armed is a valid return from one invocation, not a valid end to the FO's turn: invoke `«hooks.run»("merge")` in the SAME turn, not a later one. Parking an armed merge, or re-asking the captain for a push already granted, is the contract violation, exactly as stopping after a completion-only stage report is (the stage-completion clause in `first-officer-shared-core.md`). The only halts the contract licenses after arming are: a captain decision the contract requires — under `merge: pr`, the decision on the presented PR; the guard's blocked result, which waits for the merge sentinel; or an unresolved blocker — a `«halt.rebase-conflict»`, a `--no-ff` merge conflict, an unmet clarification. On a blocker, surface it and stop; never force, never auto-resolve, never discard either side.
 
-**Why not edit the done-when instead?** The done-when is correct at the capability granularity — armed/blocked ARE legitimate returns from a single invocation. The bug is the FO conflating "this invocation returned" with "my turn is over." The added clause draws exactly that distinction and leaves the (correct) done-when untouched — the smaller, more precise edit.
+**Why not edit the done-when instead?** (Retained from the original design, and still the reason the parked paragraph did not touch it.) The done-when is correct at the capability granularity — armed/blocked ARE legitimate returns from a single invocation. The bug is the FO conflating "this invocation returned" with "my turn is over."
 
 ## Acceptance criteria
 
-**AC-1 (value — behavior at the armed transition).** Given the armed-state scenario (captain has granted the push; `«merge.guard» <slug>` returns armed and names the merge hook as next action), the merge-core contract sanctions exactly two FO next-moves — invoke the merge hook this turn, or halt at the presented captain PR gate — and admits NO reading in which ending the turn at armed, or re-asking for the granted push, is legitimate.
-- Test: captain-judgment check (adversarial read-through), not new machinery. A skeptic, given only the merge-core contract and the armed stdout, tries to justify parking at armed / re-asking permission; against the after-text it fails, against the before-text it succeeds. The "before" arm is already established by production — two real FOs parked (2026-07-08; session 6d175b2f). Cheap optional replay: hand the same armed prompt to a fresh reader-as-FO under each text and record proceed-to-hook vs end-turn.
-- Baseline that can move the wrong way: the two parking incidents. If the clause is mis-placed (added as narrative but the arm→hook turn boundary left unbound), the skeptic still finds the park-license and AC-1 fails.
+These describe WHAT SHIPS. They are NARROWER than the criteria this entity was approved on. The original criteria are preserved verbatim below under "Original value claim — NOT DELIVERED"; they were not edited down into these, because they are a different claim.
 
-**AC-2 (mechanism — serves AC-1).** `«merge.guard»` in `fo-merge-core.md` carries the keep-moving clause above, attached to the armed result at the arm→hook transition and structurally mirroring the stage-completion clause in `first-officer-shared-core.md`.
-- Test: the diff against `origin/main` adds only this clause — no deletions, no rewrites of existing bullets (smallest-edit + leanness constraint: net contract bytes are the added clause). Confirms the wording shipped at the right site.
-- Counts only paired with AC-1, per the gate's mechanism→value re-anchor.
+**AC-1 (value — behavior on a `--no-ff` conflict after arming).** Given a `merge: local` workflow where the ceremony's own mandated `git merge --no-ff` hits a content conflict, the merge-core contract directs the FO to surface the conflict and stop, and admits no reading in which the FO auto-resolves it or loops back into `«merge.guard»` without reaching the captain.
+- Test: blind A/B read-through, baseline established by production-shaped readers, no new machinery. RUN in implementation cycle 2 — 3 readers per arm, pre-registered coding rule. Before-text 0/3 surfaced to the captain (3/3 looped back to `«merge.guard»`, citing the boot-time Mod-Block Guard clause); after-text 3/3 surfaced and stopped. Baseline moved.
+- Known limit, recorded rather than hidden: the same probe returned a NULL on the force-restraint dimension — 6/6 readers across both arms already refused to auto-resolve. The restraint half of the bullet is therefore belt-and-braces, not evidence-backed.
+
+**AC-2 (mechanism — serves AC-1).** `«merge.guard»`'s `block:` bullet in `fo-merge-core.md` names a `--no-ff` merge conflict as a blocker to surface and stop on, and the change pays its own way on the FO prompt-surface ratchet.
+- Test: `go test ./...` green including `TestFOFunctionPromptSurfaceShrinks`, with the FO surface total recorded before and after. Net cost must be ≤ the 81-byte `effect:` trim that funds it.
+
+### Original value claim — NOT DELIVERED
+
+Preserved because it is the reason this entity exists, and it is still unmet. It was NOT narrowed into AC-1 above; it was abandoned as this entity's payload by captain decision on 2026-07-20.
+
+> **AC-1 (value — behavior at the armed transition).** Given the armed-state scenario (captain has granted the push; `«merge.guard» <slug>` returns armed and names the merge hook as next action), the merge-core contract sanctions exactly two FO next-moves — invoke the merge hook this turn, or halt at the presented captain PR gate — and admits NO reading in which ending the turn at armed, or re-asking for the granted push, is legitimate.
+
+**Why it was not delivered — two grounds, both evidential.**
+1. **No probe moved its baseline.** Validation's blind A/B on the arm→hook transition: 3/3 before-text readers already chose proceed-this-turn at HIGH confidence, citing text already in force. The re-anchored probe in cycle 2 did not rehabilitate it either — what moved there was the conflict-blocker claim, a different claim.
+2. **It could not fund itself.** The paragraph costs 843 bytes against 203 bytes of headroom on a shrink-ratcheted surface; paying its own way needed 844 bytes of offsetting trim, and only 81 were defensible without cutting unrelated contracts (one of them a file z7 is concurrently editing).
+
+**The null is a limit of the probe as much as a verdict on the clause.** Three careful readers asked "what do you do next?" answer correctly. Both production failures happened to real FOs deep in a session, under interruption and competing demands. A careful-reader probe structurally cannot detect a context-pressure failure — it presents the decision in isolation, which is exactly the condition under which the decision is easy. The null is therefore weak evidence that the problem is not real, and should not be read as proof of it.
+
+**The two production incidents remain UNADDRESSED.** Nothing that ships here prevents either:
+1. 2026-07-08 — captain said "push it"; the FO armed three entities, was pulled into an unrelated task, and pushed nothing.
+2. Session 6d175b2f — the FO re-asked the captain for a push already granted, twice.
+
+**Follow-up:** filed separately as `probe-armed-parking-under-context-pressure`, carrying this entity's probe design plus the requirement that a future probe model context pressure rather than careful reading.
 
 ## Spike
 
@@ -239,3 +268,22 @@ Accounting, all measured with `TestFOFunctionReferenceCheckpointMetrics`:
 ### Summary
 
 Re-anchored AC-1 on the `merge: local` conflict path and ran it blind, 3 readers per arm, pre-registered. The primary outcome moved 3/3 vs 3/3 — before-text readers loop back to `«merge.guard»`, after-text readers surface to the captain — but the force-ban outcome is a null: both arms already refuse to self-resolve, so M2's force-risk premise is not behaviorally supported and the clause's real effect is narrower than claimed. Repaired M2 and folded D1 into the same sentence (the halt list now names the `--no-ff` conflict, carries its own restraint, and matches shared-core's list). On M1 I took the second branch the captain left open: 844 bytes are needed to pay the clause's way, 81 are defensible in my own file, and the ~545 remaining would mean cutting unrelated contracts — including one z7 is concurrently editing — so the paragraph is parked and the branch is green at exactly the base. A proportionate alternative measuring net +1 byte is verified green and recorded for the ship decision.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Ship the verified alternative — `block:` bullet gains the `--no-ff` conflict blocker, `effect:` bullet drops the restatement of its own heading.
+  Branch rebased onto current main (bdf39f01) FIRST, then applied and re-measured — the earlier 122431 figure was against the old base and is superseded. New base 122231, shipped 122232: **net +1 byte**, ceiling 122634. `git diff --numstat main` = `2 2 skills/first-officer/references/fo-merge-core.md`. Shipped exactly what was verified; not extended.
+- DONE: `go test ./...` green including TestFOFunctionPromptSurfaceShrinks.
+  17 packages ok, zero FAIL. `TestFOFunctionPromptSurfaceShrinks` PASS. FO surface recorded before (122231) and after (122232) via `TestFOFunctionReferenceCheckpointMetrics`.
+- DONE: Record the payload substitution as a decision, preserving the original value claim.
+  "## Proposed change" now opens with the captain decision and date, carries the shipped text under "What ships", and quarantines the paragraph under "### PARKED — NOT SHIPPED — do not carry this forward". "## Acceptance criteria" states up front that the new ACs are narrower, then preserves the original AC-1 verbatim as a block quote under "Original value claim — NOT DELIVERED" with both grounds, the probe-limit caveat, the two still-live incidents, and the follow-up name.
+- DONE: Keep the entity's "**After**" block byte-identical to the shipped text.
+  Verified by comparison against `fo-merge-core.md`: the `block:` bullet in the After block is byte-identical to the shipped line (exit-0 equality check, 194 bytes). The `effect:` bullet is shown with a trailing `…` elision of the unchanged tail; its quoted prefix matches the shipped line exactly.
+
+### Surface: actual against declared
+
+Declared at ideation: 1 file (`fo-merge-core.md`), ~2 lines added, no deletions. Actual: 1 file, +2/−2 lines, net +1 byte. Same file, same capability, but a DIFFERENT EDIT than declared — the declared payload is parked and a narrower one shipped in its place. That is captain-directed scope (decision 2026-07-20 on the cycle-2 recorded finding), not drift. The line count now shows deletions where the declaration said none; both are the `effect:`-bullet trim that funds the change, not a rewrite of the payload.
+
+### Summary
+
+Shipped the alternative the captain selected, exactly as verified and no wider: the `«merge.guard»` `block:` bullet now names a `--no-ff` merge conflict as a blocker to surface and stop on, funded by trimming the `effect:` bullet's verbatim restatement of the heading directly above it. Rebased onto current main before measuring, because the base had moved from 122430 to 122231 and the old figure no longer applied; the shipped state measures net +1 byte with the full suite green. The originally approved payload is parked and recorded as a design-reset event rather than tidied away: the original AC-1 is preserved verbatim as NOT DELIVERED, with both grounds (no probe moved its baseline; it could not fund its 844 bytes), the explicit caveat that a careful-reader probe structurally cannot detect the context-pressure failure both production incidents actually exhibited, and the two incidents recorded as still unaddressed. Follow-up work is referenced as `probe-armed-parking-under-context-pressure`.
