@@ -11,6 +11,23 @@ worktree:
 issue:
 sprint: 0260-proportionality
 group: test-cleanups
+gates:
+  version: 1
+  current:
+    gate: gate:docs-dev:az:ideation
+    attempt: gate-attempt:az-ideation-1
+  records:
+    - id: gate:docs-dev:az:ideation
+      stage: ideation
+      current-attempt: gate-attempt:az-ideation-1
+      attempts:
+        - id: gate-attempt:az-ideation-1
+          sequence: 1
+          state: open
+          briefing:
+            id: briefing:docs-dev:az:ideation:attempt-1
+            digest: sha256:ceaf9cbab19f6ef166e4f90b37b6a6c536b4066e9e7d6f414022e3ad05f3164a
+            room-ref: "/tmp/az-briefing-1"
 ---
 
 Design and land a standing mechanism (not just reactive review) against tautological tests, and bring the commission-skill templates that scaffold new workflows up to docs/dev's own Proof-policy bar so new workflows don't inherit the gap.
