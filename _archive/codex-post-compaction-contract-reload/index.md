@@ -1,10 +1,10 @@
 ---
 title: Post-compaction contract reload
-status: validation
+status: done
 source: Absorbed from task njr36mfyhbafy8zx9ydks8ep in another workflow; canonical handoff /tmp/first-officer-compaction-rehydration.md; captain directed repo-local absorption 2026-07-11
 started: 2026-07-11T04:15:29Z
-completed:
-verdict:
+completed: 2026-07-20T02:16:30Z
+verdict: passed
 score: 0.95
 worktree: .worktrees/spacedock-ensign-codex-post-compaction-contract-reload
 issue:
@@ -49,6 +49,7 @@ gates:
                     at: 2026-07-19T09:34:34Z
                     reason: Do not apply, push, or open a PR; record the decision first.
 pr: pr-merge:531
+archived: 2026-07-20T02:16:30Z
 ---
 
 ## Decision
