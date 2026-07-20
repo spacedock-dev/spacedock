@@ -69,7 +69,7 @@ gates:
                 by: person:captain
                 at: 2026-07-20T12:21:26Z
                 record: "Edit D (the existing detached audit ALSO fires whenever a test's expected answer comes from the same code being tested) — EXPLICIT captain yes, given to the Commander in chat when the contradiction was surfaced. This satisfies the attempt resolution's standing condition that Edit D 'awaits its own explicit yes/no per the new-enforcement consent rule'. Scope of the yes: a trigger widening of the EXISTING detached audit, contract prose only — no new tool, test, gate, lint, or CI lane, so AC-4's zero-new-enforcement criterion still holds. az ships Edits A-D across the two named instruction files. Supersedes the earlier reading that derived consent from the blanket 'agree with all recommendations' staff-review ruling plus a flag-if-not; a consent-gated edit needs a direct answer, which this record now carries."
-pr: "#536"
+pr: pr-merge:536
 ---
 
 Design and land a standing mechanism (not just reactive review) against tautological tests, and bring the commission-skill templates that scaffold new workflows up to docs/dev's own Proof-policy bar so new workflows don't inherit the gap.
