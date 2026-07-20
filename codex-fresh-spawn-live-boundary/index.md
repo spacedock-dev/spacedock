@@ -193,3 +193,24 @@ No product outcome defect was found in AC-2 through AC-4 or the scoped mechanism
 ### Summary
 
 Cycle 2 clears the sole formatting-gate rejection with a separate six-gross-line commit and leaves the SessionStart implementation, tests, output, and runtime contract byte-for-byte unchanged. The captain reports the installed marked/bare launch and resume runbook also passed, so candidate `620e9761` is ready for fresh validation.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: AC-1 (VALUE) — A compacted First Officer launched through `spacedock codex` receives a model-visible reload instruction, while a bare Codex session receives none.
+  The captain's installed-plugin runbook passed: marked launch injected the exact recovery context and the next model acted on it; the paired bare launch remained silent. This closes the live value boundary that cycle 1 correctly left captain-pending.
+- DONE: AC-2 — Injection is gated only by the inherited launcher marker and only on `compact`.
+  `TestCodexSessionStartCompactHookIsMarkedOnly` passed at exact candidate `620e97618704e1e32a25bd99c3318c2975a450e0`; the unchanged hook matrix still proves absent/empty silence, one exact valid marked object, compact-only matching, and no `systemMessage`.
+- DONE: AC-3 — Resume behavior is explicit.
+  The captain's marked resume injected and bare resume stayed silent; focused `TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume` independently passed and proves launcher-side marker restoration.
+- DONE: AC-4 — Automatic mid-turn compaction retains a named timing limitation and a captain-visible fallback.
+  The rework has no diff outside `internal/release/journeydelta.go`, so the previously verified unchanged PostCompact hook, delayed-delivery wording, and no-immediate-reload claim remain intact.
+- SKIPPED: AC-5 — v0.25.2 ships the scoped fix on the stable line without rewinding `next`.
+  All release-candidate proof is now green at exact SHA `620e97618704e1e32a25bd99c3318c2975a450e0`; annotated `v0.25.2` cutting and documented `next` propagation remain sequential release-owner actions and cannot be claimed before they occur.
+- DONE: Re-review AC-1 through AC-5 using the captain's all-passed installed-plugin runbook result and candidate commits 12d9a610 plus 620e9761.
+  `12d9a610` remains the complete scoped hook/runtime change; `620e9761` changes only three `JourneyDelta` field alignments (3 insertions, 3 deletions), with no other candidate diff.
+- DONE: Confirm the formatting gate, focused hook tests, go test ./..., and go test ./... -race are green, and verify the rework changed only journeydelta field alignment.
+  `gofmt -d ./cmd ./internal` was empty; `gofmt -w ./cmd ./internal` left the worktree clean; both focused suites, `go test ./...`, `go test ./... -race`, and `git diff --check ddf51d53..HEAD` passed.
+
+### Summary
+
+**Recommendation: PASSED** for validation at candidate `620e9761`; the prior material evidence defect and formatting-gate defect are closed, with no outcome, evidence, material, deferred-risk, or polish findings remaining. AC-1 through AC-4 have offline plus captain-run evidence, and AC-5's candidate-verification portion is complete. The release owner must still cut annotated `v0.25.2` from `main` and propagate the fix to `next` before AC-5 can be terminally marked complete.
