@@ -37,12 +37,25 @@ gates:
             - id: gate-attempt:xb-ideation-2
               sequence: 2
               previous-attempt: gate-attempt:xb-ideation-1
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:xb:ideation:briefing-2
                 digest: sha256:98b247e79ce5e88285a3a903a1c339dab6c658d8e89f44d28f1a612f3faccc33
                 room-ref: "./review/ideation/briefing-2"
                 note: "Same package shape; the design now carries the no-subspace chat fallback (captain's attempt-1 question), exercised as spike fixture D."
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784638768658049000
+                briefing: briefing:docs-dev:xb:ideation:briefing-2
+                by: person:reviewer
+                at: 2026-07-21T12:59:28Z
+                decision: revise
+                reason: "Annotation on the Go surface estimate: i am wondering if this should be left as an overridable of the current present-gate skill, so that they are not coupled."
+              application:
+                action: feedback
+                target-stage: ideation
+                state: consumed
+              note: "Architecture reframe routed to the live worker: presentation as an overridable channel of the present-gate skill (default chat, override the hardened float script); validation/id-mapping/record-handoff duties move to the recorder surface where they belong. Attempt 3 at re-presentation."
 sprint: durable-decisions
 group: recorder
 started: 2026-07-21T01:43:36Z
