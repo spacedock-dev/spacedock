@@ -137,7 +137,7 @@ Designed `spacedock gate review` as the presentation half split from 3k: a block
 
 ## Stage Report: ideation (cycle 2)
 
-Preflight fable-seat fold D1 applied.
+Preflight fold applied (the first decline: the destroyed-approval fixture).
 
 - DONE: Extend the evidence base to findings 1-15.
   Bumped both evidence lines (overview + Problem) to findings 1-15, cited 3k's attempt-7 resolution provenance note (verified at the source: index.md line 164), and marked finding 14 as the deliberate live-session numbering skip.
