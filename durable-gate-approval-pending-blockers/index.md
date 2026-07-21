@@ -19,14 +19,15 @@ gates:
               sequence: 1
               state: open
               current-briefing:
-                id: briefing:docs-dev:3k:ideation:attempt-1:revision-7
-                digest: sha256:9b1106ac34f4dfa1221304f998beb4c34acb3878b2faf648289e95a48f8d50f2
-                room-ref: "./review/ideation"
+                id: briefing:docs-dev:3k:ideation:attempt-1:revision-8
+                digest: sha256:3a8fd6d6702d212d72b708a406549a3a4c1d3f81997887e36d3453755721825b
+                room-ref: "./review/ideation/briefing-8"
+                note: "Open-attempt rebind to the post-cut content (scheduler rule 2). The digest binds the frozen briefing-8 gate-summary artifact (summary + full snapshot), byte-verifiable in the room — not the live entity file."
 sprint: durable-decisions
 group: recorder
 ---
 
-# Persist gate approval while dispatch blockers remain
+# Gate recorder — durable gates records with binary-owned writes
 
 ## Scope cut (captain-approved, 2026-07-21)
 
@@ -40,6 +41,8 @@ Moved out, one owner per concern:
 - AC-8's behavioral-test mutants split with their owners.
 
 Spec-level coupling retained here: this task keeps ownership of `gate-resolution-frontmatter-contract.md`; the presentation task's id-mapping rule (provider envelope briefing id normalized to the attempt briefing id after digest validation) is SPECIFIED in that contract and implemented in the presentation task. The open gate attempt's briefing must be rebound to this post-cut content before its next presentation (open-attempt rebinding, scheduler rule 2).
+
+**Expected surface + tolerance (FO-drafted at re-presentation per the standing ruling — the entity predates it; captain corrects at the gate):** Go product code, first in-repo binary surface of the gate cluster: ~2-4 new files under `internal/` (gates block read/model/write + invariant validation + the record mutations) plus edits in `internal/status` (surfacing, `--set` coexistence so unrelated field writes leave `gates:` untouched) and 1-2 new `spacedock gate ...` verb entries in `cmd/`; ~600-900 production LOC, roughly equal test LOC (fixture replay of the eight 0260 production entities + the red fixtures: z7's real pointer conflict, a second pending application, a frozen-closure mutation). Contract doc unchanged (the spec is the already-banked `gate-resolution-frontmatter-contract.md`); ~10 lines of FO-contract prose naming the recorder as the gates-write owner. Tolerance 2×. Hard self-check: any schema change that breaks replay of the eight production entities, any subspace-tui coupling (that is xb's surface), or any blocker/eligibility computation (h1's) trips a reconfirm.
 
 ## Problem
 
