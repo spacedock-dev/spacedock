@@ -163,3 +163,10 @@ Two couplings force the ordering:
 ### Summary
 
 Firmed the design to captain ruling #1 (Degraded Mode retired entirely; triggers dissolve to honest shapes). The open question is resolved AGAINST a fan-out cap on this session's direct evidence — every transport stall cleared by a nudge at unchanged concurrency — and the design is robust to the answer regardless, so the r5y6 dependency is retired. The load-bearing bookkeeping is a durable FO-written `### Dispatch Retries` ledger (not session memory alone), reusing the `### Feedback Cycles` write pattern for zero new Go/frontmatter surface. Both contractlint bindings were spike-verified to red on an anchor/blockquote change and revert clean; a NEWLY-found binding coupling forces 9q4 and q4 to land as one coordinated change. Byte surface measured on disk at 87 B headroom (tighter than q4's cited 507 B) — 9q4 alone is net-negative, so it fits. AC-1's offline oracle is the sole CI guard and must ship with the rung.
+
+## Gate: ideation — APPROVED (FO, captain-ratified, JOINT with q4)
+
+- **Verdict:** approved for JOINT implementation with `q4` — ONE worktree, ONE commit, never q4-alone-first.
+- **Captain ruling (CL, 2026-07-22):** Degraded Mode is retired; the no-TeamCreate auto-team model is the go-forward floor (q4's governance decision). This unblocks the joint landing.
+- **Validation:** the bare no-team live drive (9q4 AC-2, runnable on this session) is the shared live proof; the AC-1 default-tagged offline oracle is the sole CI guard and MUST ship in the same commit as the rung; detached adversarial audit applies (shipped FO contract).
+- **Base:** worktree off `origin/main` (`ca136f83`).
