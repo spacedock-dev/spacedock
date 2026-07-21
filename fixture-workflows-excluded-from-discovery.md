@@ -125,3 +125,9 @@ The **detached adversarial audit trigger applies**: this change touches two of t
 ### Summary
 
 Root cause is `discoverWorkflows` counting the verbatim-commission test fixture `fixtures/refit-content-propagation/site-workflow` as a real workflow because `discoverIgnoreDirs` omits `fixtures`/`testdata`. Chose the 1-line prune-set fix over a fixture marker or entity-scoped resolution because it repairs the single shared resolver and thus every auto-discovering command at once. Spiked the fix live (discovery count 2→1) and confirmed the full status test suite stays green before proposing it; flagged the detached adversarial audit for validation.
+
+## Gate: ideation — APPROVED (FO)
+
+- **Verdict:** approved for implementation. One-line prune-set fix, spiked live (discovery 2→1, `go test ./internal/status/...` green), value-measuring ACs (count baseline can move to 0 or 2), ~38 LOC / 2 files. No captain decision required.
+- **Validation carries the detached adversarial audit** — touches the front-door launcher + the `status` discovery/mutation path (2 of 4 high-stakes surfaces). AC-provenance sub-trigger does not fire.
+- **Implementation base:** worktree off `origin/main` (`ca136f83`), not local `main` (which carries unrelated durable-decisions work).
