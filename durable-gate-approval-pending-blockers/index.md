@@ -136,38 +136,40 @@ rendering as a Subspace product gap rather than expanding this task's UI scope.
 3. Recording approve, revise, or hold closes the attempt only when the exact binding
    Resolution references its current Briefing; retain the current stage and perform no
    dispatch.
-4. Approval current and blocker present: retain the current stage, show
-   `approved-pending`, and do not dispatch.
-5. Approval current and captain execution hold active: retain the current stage, show
-   `approved-held`, and do not dispatch. This is distinct from a Review & Gate `hold`
-   decision, which does not approve the reviewed material.
-6. Final blocker clears and any execution hold is released with reviewed content
-   unchanged: apply the approval exactly once through the existing transition/dispatch
-   path without another human approval or a parallel gate-owned dispatch receipt.
-7. If gate-defining input changes after the attempt closed, mark its application stale,
-   keep the task non-dispatchable, and require a new attempt. Closed attempts never gain
-   another Briefing.
+4. **→ h1.** Approval current with a blocker present (`approved-pending`, retain stage, no dispatch) is eligibility computation owned by `gate-blockers-and-eligibility`.
+5. **→ h1.** Approval current with a captain execution hold active (`approved-held`, distinct from a Review & Gate `hold`) is eligibility computation owned by `gate-blockers-and-eligibility`.
+6. **→ h1.** Applying the approval exactly once when the final blocker clears and any hold is released is eligibility/consumption computation owned by `gate-blockers-and-eligibility`.
+7. If gate-defining input changes after an attempt closed, a new attempt is required;
+   closed attempts never gain another Briefing. (Marking the closed application stale
+   and keeping the task non-dispatchable is eligibility surfacing owned by **h1**.)
 8. Review & Gate `revise` or `hold` closes the attempt. `revise` creates a pending
    feedback application; `hold` creates `action: none`, `state: not-applicable`.
-9. Status surfaces stage, gate/attempt/Briefing/Resolution
-   identities, open or closed state, blocker set, execution hold, staleness, and
-   application state. Subspace presents Briefing/lens/assessment deltas through the
-   stable room reference when requested.
-10. A current approval authorizes exactly one successful workflow application. The
-   existing transition/dispatch coordinator owns its effect and crash reconciliation;
-   the gate schema records only `pending`, `consumed`, `superseded`, or
-   `not-applicable`.
-11. A rejection routed through `feedback-to` retains the rejected gate result
-   and projects the current lifecycle stage with explicit `feedback_rework`
-   context. Re-entry at the gate after that closed result creates a new attempt.
+9. Status surfaces the recorded stage, gate/attempt/Briefing/Resolution identities, open
+   or closed state, and application state. Subspace presents Briefing/lens/assessment
+   deltas through the stable room reference when requested. (The blocker-set,
+   execution-hold, and staleness surfacing is owned by **h1**.)
+10. The gate schema records only `pending`, `consumed`, `superseded`, or
+   `not-applicable` application state; the existing transition/dispatch coordinator owns
+   effect identity and crash reconciliation. (The one-use guard — a current approval
+   authorizes exactly one successful application — is eligibility enforcement owned by
+   **h1**.)
+11. A rejection routed through `feedback-to` retains the rejected gate result, and
+   re-entry at the gate after that closed result creates a new attempt. (Projecting the
+   current lifecycle stage with explicit `feedback_rework` route context is **DEFERRED**,
+   AC-9.)
 
 ## Acceptance criteria
 
+Retained criteria keep full text. Every moved or deferred criterion is a one-line
+pointer naming its new owner: **h1** (`gate-blockers-and-eligibility`), **xb**
+(`gate-review-presentation-command`), or **DEFERRED**. The scope cut (captain-approved,
+2026-07-21) is the authority for the split; nothing moved reads as in-scope here.
+
 **AC-1** An approved blocked entity survives process restart and still reports the same durable approval, exact blocker, reviewed digest, and `approved-pending` condition without advancing or dispatching.
 
-**AC-2** Clearing the final blocker with unchanged reviewed content causes exactly one stage advance and exactly one dispatch, without re-presenting the gate. Repeated scheduler passes do not redispatch or reuse the approval.
+**AC-2 → h1.** Blocker-clearance eligibility (one advance + one dispatch on final-blocker clear, no redispatch on repeated passes) now lives in `gate-blockers-and-eligibility`.
 
-**AC-3** Any change to the reviewed artifact or other digest-bound gate input before blocker clearance marks the approval stale and produces zero advance/dispatch effects until a replacement Resolution is recorded.
+**AC-3 → h1.** Digest-bound staleness (any reviewed-input change before clearance marks the approval stale with zero advance/dispatch effects) now lives in `gate-blockers-and-eligibility`.
 
 **AC-4** Review & Gate `revise` and `hold` Resolutions remain durable, visible, and
 non-dispatchable; blocker clearance cannot override them. A captain-facing rejection
@@ -176,41 +178,25 @@ the superseded portable `reject` vocabulary. `approve` needs no portable rationa
 `revise`/`hold` require a nonblank reason or an included earlier same-Briefing
 Annotation, exactly as Review & Gate v1 specifies.
 
-**AC-5** Dependency and scheduler failures fail closed. Missing, ambiguous, or unqueryable blocker state never appears as satisfied and never consumes approval.
+**AC-5 → h1.** Fail-closed blocker evaluation (missing/ambiguous/unqueryable blocker state never reads as satisfied and never consumes approval) now lives in `gate-blockers-and-eligibility`.
 
-**AC-6** Status text and JSON distinguish pending approval, active execution hold,
-Review & Gate hold, stale approval, unsatisfied/unknown/failed blockers,
-satisfied-but-not-yet-consumed approval, consumed approval, rejected-pending-rework,
-and active feedback rework.
+**AC-6 (record-state subset)** Status text and JSON distinguish the recorded gate
+states the recorder surfaces from entity frontmatter alone: pending approval, consumed
+approval, a recorded Review & Gate `hold`, and a recorded `revise` with its feedback
+application. → The active-execution-hold, unsatisfied/unknown/failed-blocker,
+satisfied-but-not-yet-consumed, and stale-approval distinctions are computed eligibility
+surfacing owned by **h1**; the fuller rejected-gate rework route context is **DEFERRED**
+(AC-9).
 
-**AC-7** The First Officer can use `followup_task` on the still-addressable gate-
-attempt ensign, which invokes one binary command with a complete explicit Briefing and
-a frozen Probe input/history snapshot bound as supporting `Reference` context. The
-command derives the canonical title, runs Subspace as a blocking child, and durably
-preserves its review log, Resolution, and diagnostics on success or failure without
-changing workflow state. The ensign remains unresolved until child exit plus atomic
-result validation/retention; the First Officer waits with
-`wait_agent({timeout_ms:300000})` and repeats after timeout while the worker remains
-active.
-The First Officer separately records the exact field-preserving binding Resolution in
-the entity's `gates` collection only when it names the attempt's exact current
-Briefing. Durable entity records contain no temporary path, pane/session metadata,
-prompts, credentials, personal information, or provider-owned Probe history.
+**AC-7 → xb.** The one-command blocking gate-review presentation (explicit Briefing + frozen Probe Reference, canonical title, blocking child, atomic log/Resolution/diagnostics retention, ensign-unresolved-until-exit) now lives in `gate-review-presentation-command`.
 
-**AC-8** Behavioral tests cover frontmatter record/replay, restart, blocker-clear,
-execution-hold release, stale-content supersession, revise, Review & Gate hold,
-open-attempt Briefing advancement, duplicate scheduler passes, and one-command
-presentation failures. A mutant that loses pointer history/provider reference, fails
-to present explicit Reference context, completes when a Zellij pane is created, lets
-the ensign resolve before the TUI exits, appends through a digest-bound live Probe
-Reference, treats a lens addition as `revise`, advances while recording, or applies
-while blocked/held fails.
+**AC-8 (mutants split with owners).** The recorder retains its frontmatter
+record/replay, open-attempt Briefing advancement, and concurrency/frozen-mutation
+mutants (behavioral-test-plan items 2 and 9). The blocked/held/stale/duplicate-pass
+mutants move to **h1**; the presentation mutants (early completion, detached worker,
+live-Reference append, controller/child/validation/retention) move to **xb**.
 
-**AC-9** After validation rejects and routes to implementation, status text and JSON
-   report both the current `implementation` stage and its validation-rejection
-   rework context, including cycle and source gate identity. A fresh process
-   reconstructing the same state history reports byte-equivalent structured
-   context. A plain repeated implementation run is not mislabeled as rework.
+**AC-9 → DEFERRED.** The durable rejected-gate → rework route edge (status projecting `feedback_rework` context with cycle and source-gate identity after restart) is deferred with no task; the feedback-cycle prose convention shipped in 0260 and the binary edge waits for observed drift.
 
 **AC-10 (VALUE)** Recording either an approval or rejection changes only the entity's
 versioned `gates` frontmatter collection: current `status` is byte-identical and no
@@ -220,11 +206,7 @@ binding (replaceable when open, frozen when closed), exact adopted Resolution,
 selection pointer, and latest application state. Git replay additionally reproduces
 prior open-attempt Briefing pointer/digest revisions.
 
-**AC-11** A captain can approve while explicitly forbidding dispatch: the durable
-Resolution remains `approve`, an active workflow-owned `execution-hold` makes the
-entity non-dispatchable across restart, and releasing that same hold later preserves
-the approval and makes it eligible only if its digest is current and every blocker is
-satisfied. This is observably distinct from a Review & Gate `hold` decision.
+**AC-11 → h1.** Approve-but-do-not-dispatch (durable `approve` plus an active workflow-owned `execution-hold` that survives restart, distinct from a portable `hold` decision) now lives in `gate-blockers-and-eligibility`.
 
 **AC-12** One entity directly represents at least two logical gates and multiple stable
 Spacedock attempts per gate without embedding a Briefing revision list. Each open
@@ -248,14 +230,7 @@ prior bindings, while the stable Subspace room owns full Briefings/logs/lenses,
 assessment re-evaluation, and presentable deltas. Closure freezes the exact current
 binding. Re-entry after that closed result creates a new attempt.
 
-**AC-15 (VALUE)** At first use, answering yes to the exact Subspace offer reaches the
-complete multi-source review through one blocking ensign-facing command. The captain
-sees a separate semantic-delta summary when Subspace does not render the newly joined
-ProbeResult/comparison, and annotations return directly to the still-addressable ensign
-for revision before the First Officer re-presents the gate. Answering no preserves the
-existing First-Officer-relayed path. In both branches, workflow `status`, dispatch
-roster, and worktree state remain byte-identical until the First Officer records and
-later applies a binding decision.
+**AC-15 (VALUE) → xb.** The first-use value measurement (answering yes reaches the complete multi-source review through one blocking command; both branches leave `status`, dispatch roster, and worktree byte-identical until the FO records and applies a decision) now lives in `gate-review-presentation-command`.
 
 ## Resolved storage decisions
 
@@ -286,6 +261,83 @@ later applies a binding decision.
 - **Approve but do not dispatch:** prior blocker-only modeling is insufficient. The
   contract adds a first-class durable `execution-hold`, separate from portable
   `decision: hold`.
+
+## PR-510 alignment (Ledger gate-binding boundary)
+
+PR #510 (OPEN draft, unmerged: `feat(contract): draft Ledger gate-binding boundary`)
+proposes `spacedock.gate-binding.v1` — a thin Spacedock-owned provider *pin* (`ns` +
+`entity_ref`, optional `stage`/`target_stage`/`workflow_ref`/`provider_instance_id`/
+`expected_revision`) stored inside a Helm Ledger gate slot, plus the consumption
+contract for Helm-owned application facts (`helm.application.committed/observed/view.v1`,
+the committed receipt, `source_superseded`, generic `provider.binding`, and
+`projection.rewrite_quarantined`). It explicitly claims no shipped writer, projector,
+or command.
+
+PR-510 and this recorder sit at **different layers describing adjacent facts**. The
+recorder owns the whole durable gate tree *inside* entity `gates` frontmatter — the
+workflow-owned physical authority (settled 2026-07-21; not reopened here). PR-510 owns
+the Spacedock↔Helm-Ledger *boundary* for the case where a portable Helm Ledger is the
+gate authority. They are not competing stores. The alignment question is whether the
+recorder's record schema names the same concepts compatibly, so that if PR-510 later
+lands, the frontmatter records can become the `entity_ref` target of a binding and map
+to Helm's application facts without renaming or re-authoritying.
+
+| Element | Recorder record schema (3k) | PR-510 gate-binding boundary | Read |
+|---|---|---|---|
+| Storage / authority | whole gate tree in entity `gates` frontmatter; Spacedock sole authority | thin provider pin in a Helm Ledger gate slot; Helm Ledger owns the gate | **diverge (settled)** — different layers, not competing stores. Frontmatter authority stands. The entity *is* the `entity_ref` target a binding would point at. |
+| Identity | Spacedock-minted `gate:…`, `gate-attempt:…`, `briefing:…`, `resolution:…` strings | Helm-owned `gat_`, `resolution_id`, `application_id` — immutable external ids, forbidden as required binding fields | **diverge → F1** |
+| Field names | `target-stage`, `stage`, blocker `expected-revision` (hyphen-case) | `target_stage`, `stage`, `expected_revision` (snake_case) | **align** — same concepts, cosmetic casing; YAML house style keeps hyphens |
+| Application states | `pending` / `consumed` / `superseded` / `not-applicable` | `pending_apply` / `applied` / `superseded` / `rewrite_quarantined` | **align + adopt** — `pending`↔`pending_apply`, `consumed`↔`applied` map cleanly; `superseded` is a shared term to adopt; `rewrite_quarantined` has no recorder analog (F4) |
+| pending→applied fold | existing Spacedock transition/dispatch commit sets `consumed` | Ledger acceptance of `helm.application.committed.v1` is the sole fold input | **diverge → F2** |
+| Supersession | reviewed-input/digest change → `superseded` + new attempt; `previous-attempt` chains; append-only in Git | append-only `helm.application.source_superseded.v1` (`old`/`new_source_pin`); `supersedes_application_id` links a new application | **align** on append-only principle; **diverge** on trigger (recorder = pre-apply reviewed content; PR-510 = post-apply source pin). Recorder has no `supersedes_application_id` (it omits `application.id`) |
+| Provider binding | `briefing.room-ref` opaque Subspace review-room pin | generic opaque `helm.provider.binding.v1` (`ns`+additive), specialized by `spacedock.gate-binding.v1` | **align** — same "opaque provider pin, don't interpret" principle; distinct providers (Subspace room vs Helm gate) |
+| Receipts / idempotency | deliberately omitted (`effect-receipt`, `dispatch-attempt-id`, `consumed-at`, `application.id`); existing machinery owns effect id + crash recovery | `helm.application.committed_receipt.v1` (`receipt_id`, `idempotency_key`, `body_digest`); idempotency `(application_id, idempotency_key)`; response-loss via `application.view.v1` | **diverge → F3** |
+| Digest discipline | `sha256:` over RFC 8785 JCS canonical Briefing bytes | binding digests `sha256:` over RFC 8785 JCS; git tree/blob digests raw-payload SHA-256 | **adopt / identical** — the recorder already matches PR-510's JCS + `sha256:` convention |
+| Operation without the other layer | must work without Subspace/Ledger; entity is authority | binding absent when Spacedock absent; Helm keeps its own path | **align** — both assert symmetric optionality |
+
+### Genuine forks flagged for the captain (not resolved here)
+
+- **F1 — identity authority.** The recorder mints and owns all gate/attempt/briefing/
+  resolution ids in frontmatter; PR-510 treats `gat_`/`resolution_id`/`application_id` as
+  Helm-owned. The settled decision keeps frontmatter authoritative for this sprint, so
+  the recorder does not adopt Helm ids as authority. The open captain choice is whether
+  to *shape/namespace* the recorder's ids now so a later `spacedock.gate-binding.v1` pin
+  maps cleanly, or leave them purely Spacedock-internal. Not required to ship the recorder.
+- **F2 — pending→applied fold owner.** The recorder sets `consumed` in the durable state
+  change that records the existing transition/dispatch machinery's success; PR-510 folds
+  `pending_apply→applied` only on Ledger acceptance of a committed attestation. Both sides
+  assert symmetric "works without the other" optionality, so the reconciling reading is
+  coexistence — the recorder's apply-once stays authoritative for Ledger-absent operation,
+  and a Ledger-bound deployment adds the receipt fold as an outer layer. Captain to confirm
+  coexistence vs one subsuming the other; nothing to build this sprint either way.
+- **F3 — receipts/idempotency in the record.** The recorder deliberately omits receipt and
+  idempotency fields; PR-510 makes them central to the Helm apply fold. Confirming the
+  omission stands for this sprint (it does — settled) keeps `consumed` from having to
+  mirror a Helm `applied` receipt inside frontmatter.
+- **F4 — projection/quarantine + post-apply source drift.** PR-510's epoch cursor,
+  `rewrite_quarantined`, and post-apply `source_superseded` lanes have no recorder analog,
+  because the frontmatter *is* the authority rather than a projection of an event log.
+  These map onto the banked commit-derived event design
+  (`artifacts/spacedock-state-commit-event-proposal.md`), which is explicitly out of this
+  cut. Captain to note the seam, not act on it now.
+
+### Expected surface + tolerance, reconfirmed in light of the alignment
+
+The alignment is a boundary read, not new build scope. Because the frontmatter-authority
+decision is settled, PR-510 does not pull the recorder into consuming Helm facts this
+sprint, and none of F1–F4 requires code in the recorder cut. The FO-drafted **Expected
+surface + tolerance** in the Scope cut section therefore **stands as reconfirmed**: Go
+product code (~2–4 files under `internal/` + `internal/status` edits + 1–2 `spacedock
+gate …` verbs; ~600–900 production LOC ≈ equal test LOC), the contract doc unchanged,
+~10 lines of FO-contract prose, **tolerance 2×**. The hard self-check (a schema change
+that breaks replay of the eight production entities, any subspace-tui coupling, any
+blocker/eligibility computation) is untripped by this alignment. One qualifier: if the
+captain elects **F1** (shape/namespace recorder ids now), that adds only id-string
+convention — a handful of lines, comfortably inside 2×. Coverage note: the sprint-goal
+digest-verifiability DoD ("reproduce the digest from a committed snapshot, closing the
+advisory-digest hole") is proven by behavioral-test-plan item 2 and owned by AC-10 (Git
+replay reproduces digest revisions) plus AC-12 (frozen binding immutability); no new AC
+is minted for it.
 
 ## Design proposal and review
 
@@ -362,68 +414,61 @@ journey contradiction.
 
 ## Behavioral test plan
 
-1. **Physical record contrast (AC-7, AC-10, AC-15).** Drive the real binary-owned gate
-   recorder against an approving and a revising fixture. Exactly `gates` changes;
-   `status`, process roster, dispatch state, and worktree remain byte-identical. Delete
-   projector caches and prove the entity still reconstructs the exact Resolution.
-2. **Cold read, replay, and schema (AC-6, AC-10, AC-12, AC-14).** Validate the concrete
-   two-gate/multi-attempt example through the shipped schema, restart, and invoke
-   status. The direct read enumerates every gate, gate attempt, single `briefing`
-   binding, exact Resolution, and minimal application; Git replay reconstructs prior
-   open pointers. Mutants that require `current-briefing`/`resolved-briefing`, embed
-   provider history, or consult a cache fail.
-3. **Approve-but-do-not-dispatch (AC-11).** Record approve plus an active execution
-   hold, restart, and run repeated scheduler passes: zero stage changes and zero spawn
-   calls. Release the same hold; with a current digest and satisfied blockers, the
-   existing transition/dispatch fake observes exactly one application. Contrast a
-   portable `decision: hold`, which never becomes eligible.
-4. **Blockers and stale content (AC-1, AC-2, AC-3, AC-5, AC-8).** Table-drive each
-   blocker state (`unsatisfied`, `satisfied`, `unknown`, `failed`) and changed Briefing
-   digest. Only exact-current plus all-satisfied is eligible. Mutants that ignore hold,
-   blocker revision/state, digest, or consumed state fail.
-5. **Rejected rework (AC-4, AC-9).** Build state history containing validation
-   `revise`, pending feedback, consumed feedback, and re-entry into implementation.
-   Human/JSON status retains source gate and cycle after restart; ordinary repeated
-   implementation, missing route binding, and cycle escalation do not acquire false
-   rework context.
-6. **Re-entry, pointers, and concurrency (AC-3, AC-4, AC-9, AC-10, AC-12, AC-14).**
-   Extend the fixture through re-validation. Concurrent attempt/pointer writes, a close
-   racing a pointer advance, mutation of closed `briefing`/Resolution, and field-wise
-   merge fail closed.
-7. **First-use presentation (AC-7, AC-8, AC-15).** Use `followup_task` on the existing
-   gate-attempt ensign and drive `gate review` with a complete Briefing whose frozen
-   Probe input/history snapshot is an explicit supporting `Reference`. Assert the
-   reference and separate semantic-delta summary are visible, the title is derived,
-   workflow state is unchanged, missing binary/skill probes return the exact install
-   action, and one-file/title/controller/child/validation/retention failures preserve
-   diagnostics and package state. The FO uses `wait_agent({timeout_ms:300000})` while
-   the worker remains active; a timeout and Zellij pane creation are both nonterminal.
-   Mutants that resolve the ensign before TUI exit or append the new ProbeResult through
-   the digest-bound Reference fail. A direct-Zellij fixture reaches the same retained
-   result through the one blocking command. The no branch invokes no provider and
-   preserves the relayed path.
-8. **Portable-boundary and conn policy (AC-4, AC-7, AC-13).** Feed the recorder a
-   one-Briefing ordered log with annotations, two advisory Resolutions, and one later
-   externally authorized Resolution. Assert only the binding object is copied exactly.
-   Contrast reasonless `approve` (portable-valid), reasonless `revise`/`hold`,
-   `includes` naming only an advisory Resolution, `includes` naming an earlier
-   Annotation, and a reasonless FO conn-made approval. Only the last case is rejected by
-   the FO's Spacedock authoring policy; portable Review & Gate validation still accepts
-   that approve object.
-9. **Presentation evolution (AC-8, AC-12, AC-13, AC-14).** Start one open
-   Spacedock attempt on Briefing A, add/revise a lens to select Briefing B, then revise
-   evidence to select Briefing C. Assert one attempt id, only C in current frontmatter,
-   A→B→C pointer history in Git, full snapshots/logs and re-evaluated assessments/deltas
-   in the stable Subspace room, and zero `revise` decisions. Reject B-log `includes` of
-   A-log entries. Only a Resolution for C closes the attempt and freezes C; later gate
-   re-entry creates a different attempt id.
+Retained items prove the recorder's own ACs. Moved items are one-line pointers to their
+owner (**h1**, **xb**, or **DEFERRED**); split items keep the recorder-proving part and
+point the rest.
 
-Estimated cost is medium-high: YAML-node schema/round-trip tests, deterministic Git
-history, CLI goldens, the existing transition/dispatch fake, and a provider-launch
-fixture. The riskiest mechanisms run first: prove the nested writer changes only
-`gates`, then prove one complete referenced Briefing reaches the TUI and remains
-recoverable after controller failure. No production host smoke is needed because the
-terminal adapter can be fixture-driven.
+1. **Physical record contrast (AC-10).** Drive the real binary-owned gate recorder
+   against an approving and a revising fixture. Exactly `gates` changes; `status`,
+   process roster, dispatch state, and worktree remain byte-identical. Delete projector
+   caches and prove the entity still reconstructs the exact Resolution. (The AC-7/AC-15
+   presentation side moves to **xb**.)
+2. **Cold read, replay, and schema (AC-6 record-subset, AC-10, AC-12, AC-14).** Validate
+   the concrete two-gate/multi-attempt example through the shipped schema, restart, and
+   invoke status. The direct read enumerates every gate, gate attempt, single `briefing`
+   binding, exact Resolution, and minimal application; Git replay reconstructs prior open
+   pointers and reproduces each recorded Briefing digest from its committed snapshot.
+   Mutants that require `current-briefing`/`resolved-briefing`, embed provider history,
+   or consult a cache fail.
+3. **→ h1.** Approve-but-do-not-dispatch (record approve + active execution hold, restart, repeated passes yield zero effects; release the hold and observe exactly one application) is proven in `gate-blockers-and-eligibility` (AC-11).
+4. **Restart visibility, blocker table split (AC-1).** The approved-blocked fixture
+   survives restart and still reports the same durable approval, exact blocker, digest,
+   and `approved-pending` condition. (The blocker-state/stale-digest eligibility table —
+   `unsatisfied`/`satisfied`/`unknown`/`failed` and changed-digest, AC-2/AC-3/AC-5 with
+   their mutants — moves to **h1**.)
+5. **Revise/hold durability (AC-4).** Build state history containing a validation
+   `revise` and its consumed feedback application; human/JSON status keeps the durable
+   `revise` and feedback application after restart, and blocker clearance cannot override
+   it. (The rejected-gate → rework route context and its false-rework contrast, AC-9, is
+   **DEFERRED**.)
+6. **Re-entry, pointers, and concurrency (AC-4, AC-10, AC-12, AC-14).** Extend the
+   fixture through re-validation. Concurrent attempt/pointer writes, a close racing a
+   pointer advance, mutation of a closed `briefing`/Resolution, and field-wise merge fail
+   closed. (Stale-content supersession, AC-3, moves to **h1**; the rework-context replay,
+   AC-9, is **DEFERRED**.)
+7. **→ xb.** First-use presentation (`gate review` with a complete Briefing whose frozen Probe input/history is an explicit supporting `Reference`, title derivation, controller-failure retention, direct-Zellij equivalence, no branch) is proven in `gate-review-presentation-command` (AC-7, AC-15, presentation-side AC-8 mutants).
+8. **Portable-boundary and conn policy (AC-4, AC-13).** Feed the recorder a one-Briefing
+   ordered log with annotations, two advisory Resolutions, and one later externally
+   authorized Resolution. Assert only the binding object is copied exactly. Contrast
+   reasonless `approve` (portable-valid), reasonless `revise`/`hold`, `includes` naming
+   only an advisory Resolution, `includes` naming an earlier Annotation, and a reasonless
+   FO conn-made approval — only the last is rejected by the FO's Spacedock authoring
+   policy. (The Briefing-transport/presentation side, AC-7, moves to **xb**.)
+9. **Open-attempt Briefing evolution (AC-12, AC-13, AC-14).** Start one open Spacedock
+   attempt on Briefing A, add/revise a lens to select Briefing B, then revise evidence to
+   select Briefing C. Assert one attempt id, only C in current frontmatter, A→B→C pointer
+   history in Git, full snapshots/logs and re-evaluated assessments/deltas in the stable
+   Subspace room, and zero `revise` decisions. Reject B-log `includes` of A-log entries.
+   Only a Resolution for C closes the attempt and freezes C; later gate re-entry creates a
+   different attempt id.
+
+Estimated cost is medium: YAML-node schema/round-trip tests, deterministic Git history,
+CLI goldens, and the existing transition/dispatch fake. The riskiest recorder mechanism
+runs first: prove the nested writer changes only `gates` and that `--set` on unrelated
+fields leaves the gates block untouched, then prove each recorded Briefing digest is
+reproducible from its committed snapshot (the advisory-digest hole). The provider-launch
+fixture and the "one referenced Briefing reaches the TUI and survives controller failure"
+proof move to **xb**; no production host smoke is needed.
 
 ## Documentation change proposal
 
@@ -904,3 +949,22 @@ gate-attempt ensign stays addressable until the blocking TUI exits and the provi
 validated and retained the result. It also separates immutable Briefing input from
 provider output, so a fresh ProbeResult can no longer invalidate the package that
 caused it. First Officer, I love you too. ❤️
+
+## Stage Report: ideation (cycle 13)
+
+- DONE: The body physically matches the scope cut: retained ACs (1, 4, 6 record-subset, 10, 12, 13, 14) keep full text; every moved or deferred AC and scheduler rule is reduced to a one-line pointer naming its new owner (h1, xb, or deferred) — no moved content reads as in-scope.
+  Restructured `## Acceptance criteria` (AC-2/3/5/11 → h1, AC-7/15 → xb, AC-9 → DEFERRED, AC-6 split to record-subset + h1 pointer, AC-8 split across owners), `## Scheduler behavior` (rules 4-6 → h1, rule 10's one-use guard → h1, rules 7/9/11 trimmed of moved clauses), and `## Behavioral test plan` (items 3 → h1, 7 → xb; items 1/4/5/6/8 keep the recorder-proving part and point the rest). `status --read … --ac-scan --stage ideation` enumerates all 15 markers, exit 0.
+- DONE: A PR-510 alignment section: per-element adopt / align / diverge between the recorder's record schema and the draft Ledger gate-binding boundary (field names, application states, supersession, provider binding, receipts), with genuine forks flagged for the captain rather than resolved silently.
+  Added `## PR-510 alignment (Ledger gate-binding boundary)` from `git fetch origin pull/510/head` (spec, schema, and the committed/observed/view/receipt/superseded/provider-binding/quarantine testdata). Ten-row adopt/align/diverge table; four genuine forks (F1 identity authority, F2 pending→applied fold owner, F3 receipts/idempotency, F4 projection/quarantine + post-apply source drift) flagged, not resolved. Confirmed the recorder already matches PR-510's RFC 8785 JCS + `sha256:` digest discipline exactly.
+- DONE: The FO-drafted expected surface + tolerance reconfirmed or corrected in light of the alignment; declared in the body.
+  Reconfirmed the Scope-cut surface (~600-900 prod LOC ≈ equal test LOC, ~2-4 `internal/` files + status edits + 1-2 `gate` verbs, contract doc unchanged, ~10 lines FO-contract prose, tolerance 2×); the alignment is a boundary read that adds no build scope and leaves the hard self-check untripped. Noted F1 (namespacing recorder ids) as the only elective add, well inside 2×, and mapped the digest-verifiability DoD onto AC-10 + AC-12 so no new AC is minted.
+
+### Summary
+
+The two captain asks are addressed without reopening settled decisions. The body now
+physically enforces the approved scope cut — seven retained in-scope ACs, the rest
+one-line owner pointers — so nothing moved reads as buildable here; and a PR-510 alignment
+read places the recorder and the draft Ledger boundary at different layers, adopts the
+shared digest/`superseded` vocabulary, and surfaces four genuine forks for the captain
+rather than silently resolving them. The frontmatter records remain the physical
+authority; the expected surface and 2× tolerance stand.
