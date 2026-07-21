@@ -7,28 +7,78 @@ id: 769mybp649pj160n17x13r8g
 
 ## Problem
 
-When running `spacedock dispatch build` inside a Pi coding agent session without passing `--host pi` explicitly, the helper currently exits 1 with an error:
+When running `spacedock dispatch build` inside a Pi coding agent session without passing `--host pi` explicitly, the helper currently exits 1 with:
 
-```
+```text
 error: missing host source: pass --host, set JSON host, or run under CODEX_THREAD_ID or CLAUDECODE
 ```
 
-Because Pi sets environment variables such as `PI_CODING_AGENT=true` (and `PI_CODING_AGENT_DIR`), `spacedock dispatch build` should automatically detect `host: "pi"` in the same way it detects Claude Code (`CLAUDECODE`) and Codex (`CODEX_THREAD_ID`). Requiring an explicit `--host pi` flag under Pi creates unnecessary First Officer runtime friction and breaks host-autodetect parity.
+This breaks host-autodetect parity with Claude Code (`CLAUDECODE`) and Codex (`CODEX_THREAD_ID`). Pi sessions expose Pi-specific environment markers, so First Officer dispatches launched from Pi should not need a bespoke explicit `--host pi` flag.
+
+## Research and Spike
+
+- Live Pi harness marker observed in this session: `PI_CODING_AGENT=true`; `PI_CODING_AGENT_DIR` and `PI_CODING_AGENT_SESSION_DIR` are empty in this particular child shell. Repository/runtime docs and Pi runtime code also use `PI_CODING_AGENT_DIR` and `PI_CODING_AGENT_SESSION_DIR` as supported Pi agent/session locations.
+- Current host resolver in `internal/dispatch/build.go` only checks `CODEX_THREAD_ID` and `CLAUDECODE`, then emits the missing-host error. Its explicit-source precedence is already flag host -> JSON host -> environment.
+- Spike result: with `PI_CODING_AGENT=true` and no Claude/Codex markers, `${SPACEDOCK_BIN:-spacedock} dispatch build ...` exits 1 with the missing-host error. The same command with `--host pi` exits 0 and emits a Pi-shaped dispatch JSON, so the unverified risk is isolated to environment host resolution, not the Pi adapter itself.
 
 ## Proposed Approach
 
-1. **Auto-detect Pi Host (`internal/dispatch/` or `cmd/spacedock`):**
-   Update the host resolution logic in `spacedock dispatch build` to inspect environment variables (`PI_CODING_AGENT` or `PI_CODING_AGENT_DIR`). When set (and `--host` is not explicitly passed), resolve `host` to `"pi"`.
+1. **Extend host auto-detection in `resolveBuildHost`:** After explicit `--host` / JSON host handling, derive `pi := getenv("PI_CODING_AGENT") != "" || getenv("PI_CODING_AGENT_DIR") != ""`. Include Pi in the same ambiguity check as Codex and Claude: if more than one runtime marker family is set, return an explicit ambiguous-runtime error naming the set markers and telling the user to pass `--host claude`, `--host codex`, or `--host pi`.
+   - Value AC served: AC-1, AC-2, AC-4.
+   - Simplest alternative considered: detect only `PI_CODING_AGENT_DIR`. Insufficient because the live Pi child shell for this task has `PI_CODING_AGENT=true` while `PI_CODING_AGENT_DIR` is empty, so it would still fail in the target runtime.
+   - Simplest alternative considered: silently prefer Pi over Claude/Codex when multiple markers are set. Insufficient because current behavior rejects ambiguous Claude+Codex sources; preserving that safety avoids wrong-host dispatch bodies in nested or inherited environments.
 
-2. **Unit Tests:**
-   Add unit test cases covering Pi environment variable host auto-detection in `internal/dispatch` or `internal/status`.
+2. **Update host-resolution tests in `internal/dispatch/build_json_ergonomics_test.go`:** Add table rows for `PI_CODING_AGENT=true`, `PI_CODING_AGENT_DIR=<tmp>`, explicit `--host` overriding Pi markers, JSON host overriding Pi markers, and Pi+Claude/Codex ambiguity.
+   - Value AC served: AC-1 through AC-4.
+   - Simplest alternative considered: test only `resolveBuildHost` directly. Insufficient because the user-facing failure occurs through `dispatch build`; existing tests already exercise the real command path and inspect the emitted dispatch shape.
+
+3. **Keep documentation changes minimal:** This is user-visible CLI behavior. Update the `dispatch build` help/environment text (or the closest existing help sentence for host derivation) so the missing-host/remediation wording includes Pi markers.
+   - Proposed wording change:
+
+```diff
+- error: missing host source: pass --host, set JSON host, or run under CODEX_THREAD_ID or CLAUDECODE
++ error: missing host source: pass --host, set JSON host, or run under CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT, or PI_CODING_AGENT_DIR
+```
+
+```diff
+- ambiguous runtime host sources: CODEX_THREAD_ID and CLAUDECODE are both set; pass --host claude, codex, or pi
++ ambiguous runtime host sources: multiple runtime markers are set; pass --host claude, codex, or pi
+```
+
+## Expected Surface
+
+- `internal/dispatch/build.go`: small host resolver change and error wording, about 10-25 LOC changed.
+- `internal/dispatch/build_json_ergonomics_test.go`: host-resolution table/rows, about 35-70 LOC changed.
+- Optional if help text names env-derived hosts: `internal/dispatch/dispatch.go`, about 1-5 LOC changed.
+- Tolerance: total implementation delta should stay under ~120 LOC and should not touch skill text, Pi launch/install flows, status behavior, or runtime-auth code.
 
 ## Acceptance Criteria
 
-- **AC-1 (Auto-detect Pi host from environment):** Running `spacedock dispatch build` with `PI_CODING_AGENT=true` set in `env` (and no explicit `--host` flag) automatically resolves `host` to `"pi"`. *Verified by:* unit test.
-- **AC-2 (Explicit --host overrides env):** When `--host claude` or `--host codex` is explicitly passed, it overrides the `PI_CODING_AGENT` environment detection. *Verified by:* unit test.
+- **AC-1 (Pi marker auto-detects Pi dispatch):** With `PI_CODING_AGENT=true` set and no `--host`, JSON host, `CODEX_THREAD_ID`, or `CLAUDECODE`, `spacedock dispatch build` exits 0 and emits a Pi dispatch body/envelope rather than the missing-host error. *Verified by:* a command-level Go test using `runNativePreservingHostEnv` that asserts exit 0 and Pi-shaped output; it would fail if `PI_CODING_AGENT` were ignored.
+- **AC-2 (Pi directory marker also auto-detects Pi):** With `PI_CODING_AGENT_DIR` set and no other host source, `spacedock dispatch build` exits 0 and emits a Pi dispatch body/envelope. *Verified by:* a command-level Go test; it would fail if detection only handled the boolean marker.
+- **AC-3 (Explicit host sources override Pi env):** When `--host claude`, `--host codex`, or JSON `host` is provided, that explicit source wins even if `PI_CODING_AGENT=true` is set. *Verified by:* command-level Go tests asserting the emitted prompt/body matches the explicit host; they would fail if env detection ran before explicit-source precedence.
+- **AC-4 (Ambiguous runtime markers fail safely):** When Pi and Claude/Codex runtime markers are both set and no explicit host source is provided, `dispatch build` exits non-zero with an ambiguity error naming the conflicting marker families and the explicit-host remedy. *Verified by:* command-level Go tests; they would fail if the resolver silently selected the wrong host.
+- **AC-5 (Operator-facing remediation names Pi):** The missing-host error/help text includes Pi markers so a Pi FO can understand why host inference did or did not happen. *Verified by:* focused test assertion on the error text or help text; it would fail if remediation still mentions only Codex/Claude.
+
+## Test Plan
+
+- Add focused subtests to `TestBuildHostResolutionFromFlagJSONAndEnv` for `derived-pi-from-PI_CODING_AGENT`, `derived-pi-from-PI_CODING_AGENT_DIR`, `explicit-overrides-pi-runtime`, and `ambiguous-pi-runtime`.
+- Keep tests command-level through `Run(...)`/`runNativePreservingHostEnv` so they verify output shape and exit behavior, not only a private helper return value.
+- Run `go test ./internal/dispatch -run TestBuildHostResolutionFromFlagJSONAndEnv -count=1` for the focused behavior, then `go test ./...` as the stage baseline. Run `go test ./... -race` and `gofmt -w ./cmd ./internal` before completion because Go code will be touched in implementation.
 
 ## Directives
 
 - Perform ideation dispatch for this entity.
 
+## Stage Report: ideation
+
+- DONE: Research environment variables set by Pi coding agent harness (PI_CODING_AGENT, PI_CODING_AGENT_DIR).
+  Observed live `PI_CODING_AGENT=true`; repo/runtime docs and Pi code reference `PI_CODING_AGENT_DIR`/session dir as Pi agent paths.
+- DONE: Design host auto-detection for dispatch build when running under Pi.
+  Proposed extending `resolveBuildHost` after explicit sources, with Pi markers and safe multi-runtime ambiguity handling.
+- DONE: Author proposed design, acceptance criteria, test plan, and stage report.
+  Entity now includes problem, research/spike, expected surface, ACs with verification, test plan, and this report.
+
+### Summary
+
+Ideation scoped the task to a small dispatch host-resolution change plus focused command-level tests. The live spike confirms Pi dispatch works with explicit `--host pi` and the current failure is specifically missing Pi env auto-detection.
