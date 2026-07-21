@@ -395,3 +395,36 @@ Raised the ratchet baseline to 123,323 in its own commit (f2c5a40e) with the gro
 2. **"No compatibility path for entities without estimates" (anchored `SKILL.md:14`) — DECLINED here, routed upstream.** Names a real gap but not bw's: bw ships the convention that CONSUMES an ideation estimate; the estimate SOURCE (every entity declaring one) is upstream (`js6` stakes-declaration-read-through / the ideation gate). An entity with no estimate produces no deviation figure — graceful degradation, not a failure. Any legacy/migration path is backward-compatibility, which requires an explicit captain decision by standing rule; not folded in unilaterally. Surfaced to the captain.
 
 Both are the sprint's own thesis in miniature: a reviewer asking a deliberately prose-only, enforcement-deferred recording convention to become a fully-specified computed tolerance gate. bw's scope (command, refusal machinery, escalation backstop DEFERRED) is a captain decision; the review does not disturb it.
+
+## Stage Report: validation (detached adversarial audit + AC-1 value proof, FO-driven under the conn 2026-07-21)
+
+**Verdict: CLEAR FOR MERGE — refuted nothing material.** Two independent detached validators on throwaway checkouts (correctness+scope lens; live-lane+AC lens) both returned refuted-nothing-material; the only non-NOTHING findings were two CORRECT-BUT-DISPROPORTIONATE items, both captain-sanctioned (the AC-2/4/7 one-off greps are blessed by the 2026-07-20 prose-grep ruling; AC-1's value proof was a validation-stage deliverable, now run — below).
+
+**Scope exactly as declared:** 4 files, one Go line (baseline constant only). No fifth file, no second Go change, no new lint/gate/test func, no minted terminology.
+
+**Four preserved properties — all SURVIVED, each independently checked:**
+- P1 (`- Cycle {N}:` satisfies the shipped `^- Cycle \d+:` live assertion): PROVEN, not asserted — a validator fed a bw-format escalation entity to the REAL `assertThirdCycleEscalation` + `feedbackCycleEntry` regex (internal/ensigncycle/shared_assertions_impl_test.go:43) in a throwaway in-package test → PASS, 3 entries + escalation matched, no fixture edited. The claude/codex/pi feedback-3-cycle-escalation lanes will not red on format grounds.
+- P2 (cycle-3 escalation clause retained): SURVIVED; contractlint TestFOLocalOrderedProceduresPreserved anchors "cycle 3".
+- P3 (dev numstat one-liner OUT of the generic skill, AC-7): SURVIVED; the one-liner lives only in docs/dev/README.md, not the skill.
+- P4 (deviation pinned to approved estimate, not prior round): SURVIVED and shown load-bearing by the AC-1 negative case below.
+
+**Ratchet:** re-arm proven by padding the file to a real RED (137215 > 123323) then reverting to clean; +689 baseline bump exactly matches +689 surface growth (identical 508 B slack to main). Disciplined, not loose. `go test ./...` green.
+
+### AC-1 (VALUE) — PASS, on real e6j data
+
+Run as a one-off exercise (output here, nothing committed — see the fixture decision below). e6j's real per-cycle history was git-reconstructed from `archive/2026-07-14/e6j-state-ready-rejected` (10 commits = 10 roborev cycles) and cross-checked against the forensics evidence and the live transcript (msg 203669 corroborates cycle-2 = 1,068 additions).
+
+- Conforming entries, 2-file/40-LOC approved estimate:
+  - `- Cycle 1: REJECTED — roborev; surface 6 files/630 LOC vs estimate 2 files/40 LOC (300% files / 1575% LOC); AC unchanged`
+  - `- Cycle 2: REJECTED — roborev; surface 14 files/1068 LOC vs estimate 2 files/40 LOC (700% files / 2670% LOC); AC unchanged`
+- **Round-2 deviation = 700% (files) / 2670% (LOC), both ≥ 200% → PASS.** Runaway visible at cycle 2; e6j's real history reframed only at cycle 10 — surfaced 8 cycles earlier, meeting AC-1's "by round 2" DoD target. (The ideation spike used a conservative synthetic 7-file/350%; real data is ~2× more extreme.)
+- Falsification cases (all behaved as AC-1 requires): (a) within-tolerance 3-file/60-LOC = 150% → design-reset NOT tripped; (b) omitted actuals/estimate → check FAILS (uncomputable); (c) measured vs the PRIOR ROUND instead of the approved estimate → caps at 170% and the runaway hides every round, versus 2670% at round 2 against the fixed estimate — this is why "vs approved estimate, never the prior round" is load-bearing (matches the forensics finding that every observed runaway was contract-legal round by round).
+- AC-5 drift half: narrowed entry carries the note, control does not, a mislabeled entry FAILS. Verified.
+
+### Fixture-commit decision (recorded FO call, captain may override)
+
+AC-1's text names "a checked-in fixture entity." The FO did NOT commit a fixture. Grounds: the captain struck AC-1's committed check at ideation (gate-attempt bw-ideation-3, "one-off script, no committed check"); bw is scoped prose-only, 0 committed tests/gates/lints/fixtures; and a committed entity whose sole purpose is to be read by a one-off script is the fabricated-rigor shape this sprint prices out. The value is proven falsifiably by the one-off exercise above with real data. If the captain wants a durable fixture, it is a small add — surfaced, not silently skipped.
+
+### Required lanes before merge
+
+bw touches `skills/**/references/**` (the host-neutral contract core), so ALL THREE host live lanes (claude-live, codex-live, pi-live) plus the deterministic lanes are required green — deterministic-only merge is not permitted. The P1 format-compat proof predicts the live lanes stay green; any red is a captain reconciliation decision, never a silent fixture edit.
