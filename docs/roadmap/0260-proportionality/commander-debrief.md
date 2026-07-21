@@ -4,7 +4,7 @@ Commander session record, sibling to `index.md`, the staff-review pair and `disp
 
 ## Sprint result
 
-**5 of 8 merged**, 1 parked, 2 unfinished. Members and their PRs:
+**FINAL (updated 2026-07-21, at the 0.26.0 cut): 7 of 8 merged, 1 parked, plus 3 post-replay contract-hardening fixes.** The original snapshot below read "5 of 8 / bw,2ae UNFINISHED" — superseded: both landed. Members and their PRs:
 
 | ref | outcome |
 |---|---|
@@ -13,9 +13,32 @@ Commander session record, sibling to `index.md`, the staff-review pair and `disp
 | az | MERGED #536 — falsifiable-evidence rule, `5/5 passed` shortcut killed, net +1 line |
 | z7 | MERGED #540 — cheapest-check ordering replaces code-gate-over-prose, net **−81 bytes** |
 | 85 | MERGED #537 — `--no-ff` conflict blocker, net **−24 bytes**; original payload PARKED |
-| bw | UNFINISHED — rebased, needs the approved re-baseline + placement check + report |
-| 2ae | UNFINISHED — coherent uncommitted WIP from a dead ensign; needs audit, live refit drive, commit |
+| bw | MERGED #541 — feedback-cycle record convention; captain-approved ratchet re-baseline; AC-1 value proven on real e6j data (700%/2670% at cycle 2) |
+| 2ae | MERGED #542 — dev template ships the rigor + refit propagates it; the §2a slot-wiring finding finished PR #388's 5-week-undone wiring |
 | 02av | PARKED — moved to 0270 recorder group for the 3k advisory-resolution redesign |
+
+**Post-replay fixes (this session's second half), all merged into 0.26.0:**
+
+| ref | outcome |
+|---|---|
+| f6yg | MERGED #543 — verifier carve-out: a claim a direct read settles doesn't license a verifier. Fixes the sprint's ONE regression (z7's #540 clause induced ~37% Claude over-verify on s4). AC-1 re-run 3/8 → 0/8 |
+| v4dm | MERGED #545 — fan-out clause orders dedupe BEFORE verify. Closes the s6/s6c Claude dedupe-after-verify gap (8/8 dedupe-before-verify); streaming bound to `«async-dispatch»`, not asserted flat |
+| j8s4 | MERGED #546 — the shared FO contract core is now genuinely host-neutral (containment lint + `«fn»` relocation to per-runtime adapters); the sum-of-13 ratchet is RETIRED for per-host budgets. Every host's real session load drops |
+
+## Post-replay validation and the 0.26.0 cut (2026-07-21, this session's second half)
+
+After bw + 2ae landed, the captain directed the pre-cut effectiveness measure: **replay the six lure scenarios against assembled main and compare to the pre-sprint baseline.** Result — 6 of 8 discriminating cells IMPROVED (minting shut on both hosts; codex hardened on infra-build and both fan-out variants; zero controls broken), but the replay surfaced two problems no single-member review saw:
+
+- **The sprint's ONE regression: s4 Claude, ~37% over-verify.** z7's #540 clause ("a second verifier attacks an unowned claim") had no case for *an unowned claim a direct read settles*, so a Claude FO planned an adversarial verifier for a consistency question a diff already settled. Fixed by **f6yg** (carve-out) — re-run 3/8 → 0/8. The lesson: a sprint clause can turn the sprint's own anti-pattern (over-engineering) on itself; the replay is what caught it.
+- **An unfixed pre-existing gap: s6/s6c Claude dedupe-after-verify.** Claude declared count+tolerance but dedup'd at synthesis, after per-finding verifiers spawned. Fixed by **v4dm** (dedupe-before-verify ordering).
+
+**The `«fn»` coherence thread (j8s4).** Investigating v4dm's "streaming" wording exposed that the shared core asserts runtime-varying behavior *flat* (streaming as universal; g6's idempotency contradiction) and is riddled with Claude idiom (`Skill()`/`Agent()`/`SendMessage()`/`BashOutput`). Captain directed a containment lint (shared files name no host) + a `«fn»` relocation. Adversarially validated; refuted nothing material.
+
+**Estate correction.** The "87-byte ratchet margin" panic was a **double-count artifact** — the sum-of-13 metric added all three host adapters + every deferred core that no single FO loads. j8s4 retired it for **per-host budgets** (claude/codex/pi), where the real load is ~10% below the sum. f6yg (+145) and v4dm (+276) absorbed bw's reserved margin without truly self-funding (v4dm's "self-funded" claim was corrected after a detached audit caught it); the per-host metric dissolves the concern.
+
+**Independent pre-cut staff review: GO, zero blockers.** The assembled contract coheres (the three-change verification zone in `fo-dispatch-core.md` — z7 consent-stop / v4dm fan-out-dedupe / f6yg second-verifier — composes as a pipeline, not a collision); DoD genuinely met (02av's line correctly moved); no new fabricated rigor; the three logged tautology candidates disclosed, not hidden.
+
+**Next-train filed this session:** `q4` + `9q4` (retire the Degraded-Mode trigger for a nudge-then-retry rung — 9q4 ideated, lands jointly with q4; this session's ~4 transport stalls, all nudge-recovered, are its evidence), `g6` (kept separate from j8s4 — its fix is exercise-the-binary), and the j8s4 host-key-parity promote-condition (guard when a 4th host is added).
 
 ## Captain directives issued in chat (bind successor sessions)
 
