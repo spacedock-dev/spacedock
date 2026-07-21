@@ -10,7 +10,7 @@
 
 A captain's gate decision, once made, is recorded by machinery that cannot mis-file it, presented by machinery that cannot lose it, and consumed exactly once — proven by checks that can fail:
 
-- Replaying 0260's real hand-authored gate history through the recorder reproduces every record; the recorder REFUSES the failure fixtures 0260 produced live (a second pending application, a current-attempt pointer conflict — z7's real one is the red fixture), and `--set` on unrelated fields no longer touches the gates block (`recorder` group: 3k).
+- Replaying 0260's real hand-authored gate history through the recorder reproduces every record; the recorder REFUSES the record-integrity failure fixtures 0260 produced live (a current-attempt pointer conflict — z7's real one is the red fixture; a mutation of a frozen closure), and `--set` on unrelated fields no longer touches the gates block (3k). The second-pending-application refusal follows the application layer to h1 (resolution-first split, captain 2026-07-21).
 - A recorded briefing digest is mechanically verifiable: the drift check reproduces the digest from a committed snapshot, closing the advisory-digest hole (3k).
 - One command presents a briefing package and atomically retains the result, review log, and diagnostics on success AND on failure — the destroyed hold-path result and the blank-float EOF are its red fixtures; the probe-first ritual is encoded, not remembered (xb).
 - Blockers/eligibility ship only against a demonstrated live consumer; absent one, h1 closes as a recorded decline, not a build (h1 — its own body carries this condition).
