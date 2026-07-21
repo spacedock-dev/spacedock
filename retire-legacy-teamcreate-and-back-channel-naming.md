@@ -170,3 +170,11 @@ This is the shipped FO contract. Two items the gate must weigh:
 ### Summary
 
 Designed q4 to dovetail with 9q4's completed ideation and land as one commit. Two shipped-contract retirements: delete the legacy TeamCreate override + skill (14065 B), and rename "back-channel" → "inter-agent communication". A throwaway-worktree spike proved the binding map complete (contractlint red set == the mapped 6 files, `go build` clean) and re-grounded the joint-landing necessity. Three corrections to the seed surfaced and recorded: (1) AC-4 named a stale test/constant — the real gate is per-host `foHostLoadBaselineBytes`, strictly-above, all three hosts at exactly zero slack today (so the rename reds the pi ratchet and needs a pi re-baseline); (2) the seed's "codex mailbox back-channel" — codex uses "mailbox", no rename needed; (3) the advisory defect extends to `PresentFalseHint`, not just `BareModeAdvisory`. Two gate flags: the installer-stable / TeamCreate-capable-runtime team-mode live drive is unverifiable on this session, and q4 SUPERSEDES the AC-5 governance decision (`TestLegacyConsumerRetiredButPathLives`) that RETAINS the legacy path — the gate/captain must ratify.
+
+## Gate: ideation — APPROVED (FO, captain-ratified)
+
+- **Verdict:** approved for JOINT implementation with `9q4` (one worktree, one commit, never q4-alone-first).
+- **Governance ruling (captain CL, 2026-07-22): RETIRE NOW.** The no-TeamCreate auto-team model is the go-forward floor; installer-stable Claude (2.1.170) is no longer a blocking supported target for this path. This ratifies q4 superseding `TestLegacyConsumerRetiredButPathLives`' retain-until-both-conditions decision. **No TeamCreate-capable live drive is required before landing.**
+- **Validation:** detached adversarial audit (shipped FO contract, high-stakes) + `9q4`'s bare no-team live drive (runnable on this session). The installer-stable team-mode drive is NOT required per the ruling.
+- **Corrections banked from ideation:** AC-4 gate is the per-host `foHostLoadBaselineBytes` map (claude ↓ ≥14 KB, pi ↑ ~13 B, codex unchanged); codex uses "mailbox" (no rename); `PresentFalseHint` rewritten alongside `BareModeAdvisory`.
+- **Base:** worktree off `origin/main` (`ca136f83`), not local `main`.
