@@ -433,6 +433,10 @@ Generated IDs make concurrent and offline creation safer because creators do not
 
 {ONLY include this section if {captain} explicitly requests a multi-dimension rubric. Otherwise omit entirely — the 0.0–1.0 float is self-explanatory from the schema.}
 
+## Workflow-specific rules
+
+{Copy the selected template's own `## Workflow-specific rules` section — its intro sentence and every bullet — adapting only the mission-specific wording. This is the slot each template holds its shape's rules in (proof discipline, the repo-mutation layer, opt-in review disciplines); a README generated without it ships none of them.}
+
 ## Workflow State
 
 Workflow state is read by the first officer at boot. To view current state, dispatch the first officer or run it directly:
