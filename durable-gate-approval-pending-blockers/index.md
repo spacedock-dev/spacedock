@@ -127,12 +127,23 @@ gates:
             - id: gate-attempt:3k-ideation-6
               sequence: 6
               previous-attempt: gate-attempt:3k-ideation-5
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:3k:ideation:attempt-6:revision-13
                 digest: sha256:5b128db9cb36e2d690bcceaa279d47b6c8a7da0077c8d1124752323fce903a19
                 room-ref: "./review/ideation/briefing-13"
-                note: "Same package shape as attempt 5; the contract artifact now carries the vertical single-column mermaid (contract sha256 b17984fa...). The float itself is the render check — the worker could parse-verify only. Probe skipped this round, recorded deliberately: mechanism unchanged and probe-proven twice this session on the identical launcher and binary; a third probe pane is the redundant verification this sprint prices."
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784602325418452000
+                briefing: briefing:docs-dev:3k:ideation:attempt-6:revision-13
+                by: person:reviewer
+                at: 2026-07-21T02:52:05Z
+                decision: revise
+                reason: "Annotation on the contract mermaid: still too wide."
+              application:
+                action: feedback
+                target-stage: ideation
+                state: consumed
 sprint: durable-decisions
 group: recorder
 ---
