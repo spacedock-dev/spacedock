@@ -1,6 +1,6 @@
 ---
 title: Gate recorder — durable gates records with binary-owned writes
-status: ideation
+status: implementation
 score: "0.80"
 source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
@@ -209,10 +209,11 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
               note: "The contract now agrees with every approved member design and both preflight seats. The captain has NOT re-reviewed the amended bytes; this closure rests on the quoted directive, recorded honestly under the FO identity — exactly what the ruling prescribes."
 sprint: durable-decisions
 group: recorder
+worktree: .worktrees/spacedock-ensign-durable-gate-approval-pending-blockers
 ---
 
 # Gate recorder — durable gates records with binary-owned writes
