@@ -282,3 +282,26 @@ Ideated the template-rigor propagation as two prose changes: fill the commission
 ### Summary
 
 Carried the sprint's settled wording verbatim into the four declared files: the fixed Verified-by example and the no-prose-grep rule from az's merged README, z7's cheapest-check clause into both templates, 02av's three-class triage taxonomy into the implementation stage-def plus a pattern sentence for non-dev workflows, zaphod's AC split, the small-change fast path, an opt-in declared-posture note, and both coverage-gap ports. Refit Phase 3b now regenerates the template's full body, which four dispatched-agent drives confirm propagates the content delta where today's refit propagates none. Surface: 4 instruction files, +24/-7 = 17 net prose lines against ~18 declared and a 36-line tolerance, plus the declared AC-2 fixture; zero Go, zero product code, zero new committed tests, gates, or lints, and bw's `### Feedback Cycles` format referenced by name only. `go test ./...` green. Three findings above are for the gate: the control drive is noisier than AC-2 predicted, `## Workflow-specific rules` never reaches a freshly commissioned workflow (declined to fix unilaterally), and Piece 4 now outruns its own parent workflow.
+
+## Stage Report: implementation (cycle 2 — §2a slot wiring)
+
+Captain ruled YES on the finding raised in cycle 1: add `## Workflow-specific rules` to commission §2a's required-section list. Landed as commit `a45b4ec0`, inside the declared four-file surface. Combined surface is now 21 net prose lines (28+/7−) across the four instruction files — inside the 36-line tolerance, no fifth file, still zero Go/tests/gates/lints.
+
+- DONE: `## Workflow-specific rules` emitted from §2a, sourced from the selected template's own slot
+  `commission/SKILL.md` §2a now lists the section between `## Scoring` and `## Workflow State`, instructing the generator to copy the selected template's slot verbatim. Falsifying change: delete that section-block and a freshly commissioned README ships none of the dev-shape rigor.
+- DONE: provenance verified independently before it went in the commit message
+  `git log -S 'Workflow-specific rules' -- skills/commission/SKILL.md` → 0 commits (§2a never named the slot, ever). The slot was born in `b9aad379` / PR #388 on 2026-06-16 ("defer universal rules to the FO/ensign contract"). So this is finishing wiring #388 left undone five weeks ago, not a new behavioral concept.
+- DONE: AC-2 re-proven by two live refit drives against the corrected faithful §2a-shaped fixture, grounded in the emitted diff files (not the agents' summaries)
+  Treatment (my branch): 35 changed lines; every scar-tissue marker is an ADDED line — the `## Workflow-specific rules` heading, no-prose-grep, evidence-must-fail, triage-before-fixing, small-change fast path, declaring-a-posture, the offline AC split, and the fixed Verified-by "…and that can fail; name the concrete change". Control (pre-fix main): 25 changed lines but ZERO scar-tissue content lines (4 added lines, all Task-Template scaffolding churn), and the `{grep / test name …}` tautology SURVIVES in the regenerated README. Baseline moves the wrong way exactly as AC-2 requires.
+
+### Additional finding (the sprint's own thesis, in the sprint's own tooling)
+
+`internal/contractlint/template_defer_test.go`'s `TestTemplatesCarryWorkflowSpecificRulesSlot` asserts each TEMPLATE file contains the `## Workflow-specific rules` heading. It has been green for five weeks — while the section it guards reached zero commissioned workflows, because commission never emitted it. The check guards the CONTAINER (the template has the slot) and never the DELIVERY (a commissioned README receives it). That is the exact failure mode this sprint exists to name: a green check whose passing says nothing about the value shipping. A delivery check — a test that a commissioned README carries the slot — was explicitly considered and DECLINED here to keep the "zero new committed tests/gates/lints" line intact; team-lead is filing it as next-train work. Recorded, not overlooked.
+
+### Scope note
+
+The §2a fix is prose whose behavioral proof is a live COMMISSION drive (branch vs `main`), which is AC-1's validation-owned verification — not re-run here by design. The refit treatment drive above demonstrates the same slot content is followable and lands correctly when an agent is told to emit it; it does not itself exercise commission's §2a. Cycle-1 finding-1 stands unchanged: a live refit control is not literally stamp-only (scaffolding churn varies by run), but it carries zero scar-tissue content lines in every run, which is the load-bearing half of AC-2's baseline. The Piece-4 asymmetry recorded in cycle 1 is likewise unchanged.
+
+### Human-reviewable refit delta (for the validation gate's binding captain condition)
+
+Reproducible in one dispatched drive: drive `skills/refit/SKILL.md` Phase 3b against `fixtures/refit-content-propagation/site-workflow/README.md` on this branch; the emitted README diff IS the delta a human reviews. Against a pre-fix `main` checkout of the same fixture, the control diff carries only stamp + scaffolding churn and no scar tissue. The fixture and its explainer are committed for exactly this.
