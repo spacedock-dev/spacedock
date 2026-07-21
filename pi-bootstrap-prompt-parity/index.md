@@ -12,7 +12,7 @@ sprint:
 sprint-readiness:
 id: 7vtn8yda8vn0p7y8am3f43c8
 mod-block: merge:pr-merge
-pr: "#544"
+pr: pr-merge:544
 ---
 
 # Pi bootstrap prompt parity
