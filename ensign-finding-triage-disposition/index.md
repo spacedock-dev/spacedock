@@ -97,7 +97,7 @@ Three parts. The rule text (unchanged in substance) is delivered at the trigger;
 
 ### The triage disposition as an advisory resolution (the shape this entity owns)
 
-The normative spec home for this shape is `durable-gate-approval-pending-blockers/gate-resolution-frontmatter-contract.md`, section "Round records and triage dispositions (advisory)" (contract sha256 b4c96236…) — evergreen, component-language; that section is owner-tagged to this entity (02av) per the change protocol, so shape amendments route there, not to a second copy. The text below is the design rationale and the rule semantics that shape serves; it must not diverge from the contract section.
+The normative spec home for this shape is `durable-gate-approval-pending-blockers/gate-resolution-frontmatter-contract.md`, section "Round records and triage dispositions (advisory)" (contract sha256 681b2348…) — evergreen, component-language; that section is owner-tagged to this entity (02av) per the change protocol, so shape amendments route there, not to a second copy. The text below is the design rationale and the rule semantics that shape serves; it must not diverge from the contract section.
 
 A correction round maps onto the recorder's settled shapes (3k, frozen at `durable-gate-approval-pending-blockers/review/ideation/briefing-15/contract-snapshot.md`):
 
