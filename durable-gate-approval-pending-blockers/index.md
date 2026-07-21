@@ -17,12 +17,25 @@ gates:
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:3k:ideation:attempt-1:revision-8
                 digest: sha256:3a8fd6d6702d212d72b708a406549a3a4c1d3f81997887e36d3453755721825b
                 room-ref: "./review/ideation/briefing-8"
-                note: "Open-attempt rebind to the post-cut content (scheduler rule 2). The digest binds the frozen briefing-8 gate-summary artifact (summary + full snapshot), byte-verifiable in the room — not the live entity file."
+                note: "Frozen at closure. The digest binds the briefing-8 gate-summary artifact (summary + full post-cut snapshot), byte-verifiable in the room. Provider result validated by digest equality and retained as provider-result-8.json; the provider envelope id (briefing:single-file:e63586cd350f4f7b6cdcaa074a1ff312) is normalized to this attempt briefing id per the recorded id-mapping practice."
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784592481316587000
+                briefing: briefing:docs-dev:3k:ideation:attempt-1:revision-8
+                by: person:reviewer
+                at: 2026-07-21T00:08:01Z
+                decision: revise
+                reason: "1. why are there still 14 ACs? i thought we trimmed this. 2. take a look at PR#510 to see where things align"
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
+              note: "Subspace advisory float on the rebuilt tip binary, probe-first ritual observed. Two asks: physically trim the body to the cut (the AC section still carries every pre-cut criterion in full; the scope-cut prose named the retained set but never restructured the sections), and produce an alignment read against open draft PR #510 (Ledger gate-binding boundary). Routed to a fresh ideation revision worker; attempt 2 opens at re-presentation."
 sprint: durable-decisions
 group: recorder
 ---
