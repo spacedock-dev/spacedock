@@ -15,12 +15,25 @@ gates:
           attempts:
             - id: gate-attempt:h1-ideation-1
               sequence: 1
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:h1:ideation:briefing-1
                 digest: sha256:f98f7ac3f9b6933a83ec8d573204c44ae1e2ba598f63378bc71ac09e604dbc78
                 room-ref: "./review/ideation/briefing-1"
                 note: "Multi-artifact package: gate summary, frozen entity snapshot, frozen recorder-contract snapshot — each digest-pinned inside the briefing; the digest above binds briefing.json itself."
+              resolution:
+                type: Resolution
+                id: resolution:captain-chat-h1-ideation-1
+                briefing: briefing:docs-dev:h1:ideation:briefing-1
+                by: person:captain
+                at: 2026-07-21T12:52:44Z
+                decision: approve
+                reason: "Captain approve in chat after a left-open float and a requested justification of the application abstraction (what breaks without it: exactly-once consumption across sessions, staleness marking, the approve-consequence routing, and the structural advisory-cannot-advance guarantee — each anchored to a lived incident). The left-open envelope is retained in-room (float-result.json); the captain saw the floated content and rendered this resolution in chat, so the captain identity is correct under the recording-identity ruling."
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+              note: "The ships-vs-declines split stands: the application record ships; the blocker-evaluator half stays a recorded decline with its promotion condition."
 sprint: durable-decisions
 group: recorder
 started: 2026-07-21T01:43:36Z
