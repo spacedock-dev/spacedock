@@ -1,5 +1,5 @@
 ---
-title: A failed dispatch is retried once before it degrades anything — replace the second-failure Degraded Mode trigger with a per-entity retry rung
+title: A failed dispatch is retried once before anything halts — replace Degraded Mode with a per-entity retry
 source: "captain (CL), 2026-07-21 — ruling: an API transport failure must not trigger degradation; nudge the worker for retry. Split out of q4 on the evidence of a two-seat adversarial scope review, which found the defect is the missing rung BELOW the trigger, not the trigger itself."
 status: backlog
 id: 9q4x5hvyxthc41mt73txr23k
@@ -62,3 +62,9 @@ Verified by: the fixture in AC-1 plus a review-time read of the surviving trigge
 ## Test plan
 
 {Ideation fills this in. Note the coverage vacuum: `TestLiveDegradedBareRecovery` is `//go:build live` and appears in ZERO CI `-run` filters, and `.github/workflows/runtime-live-e2e.yml:111` sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, so the teams-unavailable branch never runs in CI. Any change here currently lands with no oracle in either direction.}
+
+## Captain rulings (2026-07-21, recorded at shaping)
+
+1. **Degraded Mode is retired entirely — no session-wide backstop survives.** This answers the open ideation question (the two review seats' disagreement). The three triggers dissolve, each to its honest shape: (1) a second consecutive failure of the SAME entity/stage halts THAT entity and reports to the captain — never the session; (2) `/spacedock bare` becomes a plain captain instruction to dispatch bare from that point, not an irreversible mode transition; (3) `Agent`/`SendMessage` unavailable is not a mode at all — it is the ordinary teams-unavailable condition selecting bare dispatch, evaluated where dispatch happens. Bare mode itself survives untouched (already a hard constraint above). Co-edits stand as mapped: `fo-dispatch-recovery`'s Degraded Mode section, the two contractlint anchors, and the recovery-report verbatim binding.
+2. **Title de-minted** (the metaphor family is banned vocabulary): the slug stays stable per the no-slug-churn precedent; the title now reads plain.
+3. **Recommended to the captain, pending a nod:** accept the failure-kind-agnostic design both seats converged on (the retry IS the classifier; no error-string vocabulary enters the contract), which removes the r5y6 sequencing dependency — the "was it our own fan-out" question stops mattering because a retry that reproduces the failure halts that entity either way.
