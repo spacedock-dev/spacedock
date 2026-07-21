@@ -7,11 +7,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:xb:ideation
-        attempt: gate-attempt:xb-ideation-2
+        attempt: gate-attempt:xb-ideation-1
     records:
         - id: gate:docs-dev:xb:ideation
           stage: ideation
-          current-attempt: gate-attempt:xb-ideation-2
+          current-attempt: gate-attempt:xb-ideation-1
           attempts:
             - id: gate-attempt:xb-ideation-1
               sequence: 1
@@ -34,15 +34,6 @@ gates:
                 target-stage: ideation
                 state: consumed
               note: "Provider result and log retained in-room. Routed to the live worker; attempt 2 opens at re-presentation."
-            - id: gate-attempt:xb-ideation-2
-              sequence: 2
-              previous-attempt: gate-attempt:xb-ideation-1
-              state: open
-              current-briefing:
-                id: briefing:docs-dev:xb:ideation:briefing-2
-                digest: sha256:98b247e79ce5e88285a3a903a1c339dab6c658d8e89f44d28f1a612f3faccc33
-                room-ref: "./review/ideation/briefing-2"
-                note: "Same package shape; the design now carries the no-subspace chat fallback (captain's attempt-1 question), exercised as spike fixture D."
 sprint: durable-decisions
 group: recorder
 started: 2026-07-21T01:43:36Z
