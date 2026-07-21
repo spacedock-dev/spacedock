@@ -212,7 +212,7 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 The exact first-use journey, minimal schema, helper boundary, examples, and lifecycle
 are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `b17984fa80cab63714dd47952580a9b499671b1c42b45cac254e83a4bf29045e`).
+(SHA-256 `4ca06d1540796cc6bdc1cc7fea0bfca352b62f48a4079adecec75da913a879be`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
@@ -1131,3 +1131,25 @@ The ownership diagram is redrawn vertical for TUI rendering — per-subgraph `di
 and a top-to-bottom subgraph chain with compressed labels — while preserving the xb → 3k →
 h1 (plus 02av advisory) boundary semantics exactly. The seven retained resolution ACs
 (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the resolution-first split are unchanged.
+
+## Stage Report: ideation (cycle 18)
+
+Attempt-6 render check: "still too wide." Applied the structural lever — subgraph title frames set a width floor no label-shortening beats, so the single diagram becomes TWO small stacked diagrams with no subgraphs and owner-prefixed node labels.
+
+- DONE: Replace the single ownership diagram with two subgraph-free stacked diagrams (record; flow-across-owners), owner prefixes in labels, each a near-linear vertical chain; one-sentence intro before each.
+  Diagram 1 = the 3k record (gate → attempt → briefing/resolution); diagram 2 = the cross-owner flow (xb → 3k → h1 → effect, with the 02av advisory branch). Both parse as `flowchart-v2` (browserless jsdom check). No subgraph frames, so no long title sets the box-width floor.
+- DONE: Preserve the graduation semantics with a caption.
+  Diagram 2's design-reset edge targets `res` (the resolution) to keep one column; a caption line under it states exactly that it opens a NEW binding attempt on the gate.
+- DONE: Refresh the contract provenance; the split and the seven retained ACs are unchanged.
+  New contract SHA-256 `4ca06d15…`; the body provenance reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are untouched.
+
+### Summary
+
+The ownership visual is now two small subgraph-free stacked diagrams — the frames that set
+the previous width floor are gone, and owner identity moved into node-label prefixes. Same
+boundary semantics (xb → 3k → h1, 02av advisory) across the pair. Render caveat stands:
+Chromium won't launch in this sandbox, so I confirmed both parse as `flowchart-v2` but
+cannot pixel-measure width. If your float still reads wide, these are at the structural
+floor — the next step is to present the diagrams as a linked appendix rather than inline.
+The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the
+resolution-first split are unchanged.

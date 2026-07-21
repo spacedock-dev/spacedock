@@ -23,32 +23,30 @@ The recorder's first implementation ships:
    the recorded action once through the existing workflow transition and dispatch path.
    The gate record does not create a second dispatch protocol.
 
+The ownership shape, in two small stacked views. First, the record 3k owns — one logical
+gate holds attempts, and each attempt binds one briefing and one resolution:
+
 ```mermaid
 flowchart TB
-    subgraph obtain ["xb — obtain the decision"]
-        direction TB
-        present["present briefing package"] --> normalize["validate result, normalize provider id"]
-    end
-    subgraph record ["3k — record the decision (sole gates writer)"]
-        direction TB
-        gate["logical gate"] --> attempt["attempt: rebindable open, frozen closed"]
-        attempt --> briefing["briefing binding: digest-frozen snapshot"]
-        attempt --> resolution["resolution: approve / revise / hold"]
-    end
-    subgraph apply ["h1 — apply the decision (extends the same binary)"]
-        direction TB
-        application["application: pending → consumed once; superseded on drift"] --> eligibility["eligibility: stage + non-stale + blockers + unconsumed"]
-    end
-    subgraph rounds ["02av — non-gate rounds (advisory only)"]
-        round["round records: verdict + triage/decline — no application, ever"]
-    end
-    obtain --> record
-    normalize --> resolution
-    resolution -->|"binding approve"| application
-    resolution -.->|"advisory"| round
-    round -.->|"design-reset graduates to a binding attempt"| gate
-    eligibility --> effect["existing transition + dispatch path"]
+    gate["3k: logical gate"] --> attempt["3k: attempt<br/>rebindable open, frozen closed"]
+    attempt --> briefing["3k: briefing binding<br/>digest-frozen snapshot"]
+    attempt --> resolution["3k: resolution<br/>approve / revise / hold"]
 ```
+
+Second, the flow across owners — xb obtains the decision, 3k records the resolution, h1
+applies it once eligible, and 02av rounds stay advisory:
+
+```mermaid
+flowchart TB
+    obtain["xb: present package,<br/>validate + normalize result"] --> res["3k: record the resolution"]
+    res -->|"binding approve"| app["h1: application<br/>consumed exactly once"]
+    app --> elig["h1: eligibility"] --> effect["existing transition + dispatch"]
+    res -.->|"advisory"| round["02av: round records<br/>no application, ever"]
+    round -.->|"design-reset graduates<br/>to a binding attempt"| res
+```
+
+The design-reset edge is drawn to the resolution to keep one column; semantically it opens
+a NEW binding attempt on the gate.
 
 The first use begins when the First Officer needs captain input before recommending a
 gate:
