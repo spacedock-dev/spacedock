@@ -57,7 +57,7 @@ gates:
                 action: advance
                 target-stage: implementation
                 state: pending
-              note: "Subspace multi-artifact float, no annotations; provider result and review log retained in-room. The reframe is approved: dispositions as advisory resolutions, semantics-only boundary, the moved release line aboard."
+              note: "Subspace multi-artifact float, no annotations; provider result and review log retained in-room. The reframe is approved: dispositions as advisory resolutions, semantics-only boundary, the moved release line aboard. ADOPTION PROVENANCE (captain-confirmed in chat, 2026-07-21): person:reviewer at this float was the captain personally; the FO adopted the provider's advisory result as the captain's binding approval on that basis. The provider envelope (binding:false) is evidence, not the binding record — this note is the durable authorization the promotion previously lacked."
 worktree:
 sprint-readiness:
 ---
