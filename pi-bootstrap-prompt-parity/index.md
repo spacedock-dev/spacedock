@@ -162,3 +162,16 @@ Captain: "dispatch the parity so we don't need to hand inject this extension" �
 - Bootstrap prompt mirrors the shipped FO contract per the closed questions; the stopgap text is a starting point, not gospel.
 - Test via the RPC harness approach (pitfalls above) — never `pi -p` for compaction, never compact mid-stream. Do NOT grep instruction prose in tests (same trap class as the wiped workflow-guard prose-greps); verify extension effects.
 - Hand-over-hand: stage report must note that the captain deletes `~/.pi/agent/extensions/spacedock-compact-reinject.ts` once the shipped version is verified loaded.
+
+## Stage Report: implementation
+
+- DONE: The shipped extension re-injects the FO bootstrap after a real compaction, proven by execution evidence (RPC harness before_provider_request payload or equivalent), not by reading the code.
+  Evidence: live `pi --approve --mode rpc -e .pi/extensions/spacedock.ts -e /tmp/spacedock-pi-proof-probe.ts` completed compaction (`session_before_compact`, `session_compact`, `compact_complete tokensBefore=28069`) and the next `before_provider_request` logged `marker=true bootstrapCount=1`.
+- DONE: De-dup is structural and proven: when the compaction summary mentions the marker text, exactly one bootstrap exists in context — no double-inject, no false-skip.
+  Evidence: `go test ./internal/piruntime -run TestSpacedockPiExtensionBootstrapBehavior` fails if summary-marker prose suppresses reinjection, if structural duplicate messages double-inject, or if `agent_end` fails to suppress; live proof also logged `markerOccurrences=3` but `bootstrapCount=1` after compact.
+- DONE: Extension loads clean alongside the repo's existing extensions via /reload, and the bootstrap text mirrors the shipped first-officer contract rather than a hand-tuned variant.
+  Evidence: RPC `/reload` driver loaded `.pi/extensions/spacedock.ts` with `sawReload=true` and empty stderr; bootstrap text uses `SPACEDOCK-FO-BOOTSTRAP-v1` contract text with the Pi tool mapping from the shipped FO bootstrap.
+
+### Summary
+
+Implemented `.pi/extensions/spacedock.ts` context-hook commissioning: `session_start` and `session_compact` arm FO bootstrap injection, `agent_end` suppresses it, and structural de-dup avoids false skips when compaction summaries mention the marker. Added a Node-backed Go behavior test for the extension and left `piBootstrapPrompt` as the minimal launcher trigger while the extension owns durable commissioning; captain should delete `~/.pi/agent/extensions/spacedock-compact-reinject.ts` after verifying the shipped extension is loaded. Code commit: `fed85b03`; validation gates run: `go test ./...`, `go test ./... -race`, focused extension behavior test, live RPC compaction proof, and RPC `/reload` smoke.
