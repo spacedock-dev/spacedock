@@ -83,12 +83,25 @@ gates:
             - id: gate-attempt:3k-ideation-4
               sequence: 4
               previous-attempt: gate-attempt:3k-ideation-3
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:3k:ideation:attempt-4:revision-11
                 digest: sha256:f8cd6fa75043b061dc64aa5583620af14f90a9dc3d557b5c0f246f9eb051a5aa
                 room-ref: "./review/ideation/briefing-11"
-                note: "Byte-verifiable frozen gate-summary artifact (summary + full post-split snapshot). Presents the resolution-first split (application layer to h1), the owner-tagged spec with the boundary mermaid, the ~400-650 LOC re-estimate, and the id-rule elaboration deferred to xb under the change protocol."
+                note: "Frozen at closure; provider result retained as provider-result-11.json, digest equality validated; provider envelope id (briefing:single-file:6a66ead293dbb27a4931ec57e370a02b) normalized to this attempt briefing id."
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784599855140796000
+                briefing: briefing:docs-dev:3k:ideation:attempt-4:revision-11
+                by: person:reviewer
+                at: 2026-07-21T02:10:55Z
+                decision: revise
+                reason: "btw, does the multi-artifact briefing not work? i want to see the mermaid diagram in the spec too"
+              application:
+                action: feedback
+                target-stage: ideation
+                state: consumed
+              note: "Presentation-side revise, FO-owned (no design change requested): re-present as a multi-artifact briefing package with the contract spec (carrying the mermaid) as its own artifact. Attempt 5 opens on the package presentation; the design content is unchanged from this attempt."
 sprint: durable-decisions
 group: recorder
 ---
