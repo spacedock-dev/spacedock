@@ -5,18 +5,21 @@ Date: 2026-07-19
 
 ## What 3k ships first
 
-3k separates a captain's gate decision from the workflow action that follows it. The
-first implementation ships four observable capabilities:
+3k separates a captain's gate decision — the resolution (what the decision *is*) — from
+the workflow action that follows it — the application (what the decision *does*), owned by
+`gate-blockers-and-eligibility` (h1) per the captain's 2026-07-21 resolution-first split.
+The recorder's first implementation ships:
 
 1. A gate attempt and its current immutable Briefing are directly readable from the
    entity's `gates` frontmatter.
 2. The exact authenticated Resolution can close that attempt without changing
    `status`, routing feedback, or dispatching a worker.
-3. Status can show approved-pending, approved-held, stale, revise-pending-feedback,
-   active feedback rework, and consumed results after restart.
-4. Once the guards pass, the First Officer can apply the recorded action once through
-   the existing workflow transition and dispatch path. The gate record does not create
-   a second dispatch protocol.
+3. Status can show the recorded resolution states — a recorded `approve`, `hold`, or
+   `revise` — after restart. (The approved-pending/approved-held/stale/consumed
+   application-eligibility surfacing is **h1-owned**.)
+4. **(h1-owned — the application layer.)** Once the guards pass, the First Officer applies
+   the recorded action once through the existing workflow transition and dispatch path.
+   The gate record does not create a second dispatch protocol.
 
 The first use begins when the First Officer needs captain input before recommending a
 gate:
@@ -239,10 +242,21 @@ An open attempt uses the same binding field and has no Resolution or application
 | `attempts[].id`, `sequence`, `previous-attempt`, `state` | Preserve stable attempt identity, re-entry order, and open/closed immutability. |
 | `attempts[].briefing` | Bind the exact Briefing id/digest and optional opaque provider room. |
 | `attempts[].resolution` | Preserve the exact authenticated portable decision. |
-| `application.action`, `target-stage`, `state` | Record the one-use workflow authorization and whether it was applied. |
-| `application.blockers[]` | Explain and guard approved-pending work. |
-| `application.execution-hold` | Preserve “approve but do not dispatch” separately from portable `hold`. |
-| `application.feedback` | Preserve rejection-to-rework lineage and cycle context. |
+| `application.action`, `target-stage`, `state` | **h1-owned** (`gate-blockers-and-eligibility`): the one-use workflow authorization and whether it was applied. |
+| `application.blockers[]` | **h1-owned**: explain and guard approved-pending work. |
+| `application.execution-hold` | **h1-owned**: preserve “approve but do not dispatch” separately from portable `hold`. |
+| `application.feedback` | **h1-owned**: preserve rejection-to-rework lineage and cycle context. |
+
+**Application layer ownership (captain split, 2026-07-21 — "get the resolution right
+first").** The `application.*` fields above — action/target-stage, the
+`pending`/`consumed`/`superseded`/`not-applicable` state, blockers, execution-hold, and
+feedback — are owned by `gate-blockers-and-eligibility` (h1): *what the decision does* (the
+one-use advance authorization and its exactly-once consumption). 3k owns the resolution
+record — *what the decision is* (gate/attempt/briefing/resolution and their invariants).
+This doc stays the one spec; the application section carries the h1 owner (one doc, many
+owners — not relocated). An application never exists without a closed binding approval; a
+resolution stands alone. The recorder round-trips the `application` sub-object unchanged on
+write, so h1 lands its semantics without a schema break.
 
 The first implementation deliberately omits `application.id`, `effect`,
 `dispatch-attempt-id`, `effect-receipt`, `consumed-at`, and a separate application
@@ -258,10 +272,10 @@ duplicate that authority without making the gate decision more durable.
    compare-and-swap. It creates neither a Resolution nor a new attempt.
 3. Recording validates actor authority, exact Briefing id/digest, same-Briefing log
    rules, and current pointers. One commit changes `open` to `closed`, freezes
-   `briefing`, copies the exact Resolution, and creates the minimal application. It
-   does not advance, route, or dispatch.
-4. `approve` creates `advance/pending`; `revise` creates `feedback/pending`; portable
-   `hold` creates `none/not-applicable`.
+   `briefing`, and copies the exact Resolution. It does not advance, route, or dispatch.
+   (Creating the resulting `application` object is **h1-owned**.)
+4. **(h1-owned — the application layer, rules 4-7.)** `approve` creates `advance/pending`;
+   `revise` creates `feedback/pending`; portable `hold` creates `none/not-applicable`.
 5. A pending application is eligible only when its gate/attempt/Briefing and stage are
    current, its reviewed input is unchanged, every blocker is satisfied, no execution
    hold is active, and decision/action/target agree.
@@ -292,11 +306,12 @@ reimplement:
   authors design content, decides which References belong, interprets annotations, or
   mutates workflow state.
 - the gate recorder parses the exact provider result, verifies authorized identity,
-  current Briefing id/digest and log rules, constructs the closed attempt plus minimal
-  application, and commits only `gates`. It never changes `status` or dispatches.
-- the application guard validates current stage, exact frozen binding, decision/action,
-  blockers, hold, and one-use state before handing the action to existing transition
-  and dispatch code. It does not mint a second effect identity or receipt.
+  current Briefing id/digest and log rules, constructs the closed attempt (the resolution
+  record), and commits only `gates`. It round-trips any `application` sub-object unchanged
+  and never changes `status` or dispatches.
+- **h1-owned:** the application guard validates current stage, exact frozen binding,
+  decision/action, blockers, hold, and one-use state before handing the action to existing
+  transition and dispatch code. It does not mint a second effect identity or receipt.
 
 The gate-attempt ensign owns Briefing and Probe presentation, provider-room state,
 annotation-driven revision, affected-Probe reruns, and durable Resolution capture. The
