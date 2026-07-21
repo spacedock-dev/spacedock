@@ -1,7 +1,7 @@
 ---
 title: Core-level contract claims must bind to «fn» present/absent, not assert runtime behavior flat — audit + fix, consolidating g6
 source: "post-sprint 0260 (2026-07-21). Two instances found where host-neutral core prose asserts a runtime-varying behavior as universal, contradicting the per-adapter «fn» binding; each was caught by an FO having to improvise in the field. Captain directed a consolidated audit."
-status: ideation
+status: implementation
 sprint:
 id: j8s43ffcvdv6367td5v7d96e
 started: 2026-07-21T12:12:12Z
@@ -114,3 +114,21 @@ Re-adding BEHAVIORAL phrase/prose checks — a grep asserting what a program or 
 ### Summary
 
 Spike executed the full relocation end-to-end in the throwaway worktree: all `./internal/...` tests green after only two test-line edits, proving the migration path (`runtimeBoundCapabilities`) already exists and regression risk is low. The value, measured in the captain's corrected frame: every host's real FO session load drops ~1-1.5 KB and the shared host-neutral core drops 2.5percent, while three core/binding contradictions dissolve; the 13-file sum was retired as a double-counting artifact and replaced by per-host budgets (AC-5). Recommend g6 kept separate by reference, AC-4 deferred with grounds; estimate one implementation session (~200 Go LOC + ~70 prose lines across 9-12 files).
+
+## Stage Report: implementation
+
+- DONE: Containment lint (AC-1) — `internal/contractlint/host_neutral_core_test.go`
+  145 LOC; five shared files scanned for host words (`claude|codex|pi|opus|sonnet|haiku|fable`, word-bounded, case-insensitive) + the three hosts' tool-token vocabularies (reusing `codexToolTokens`/`piContainmentTokens` + a Claude list); discriminator control reds on planted host words/tokens per host and passes capability-speak, `pi`-lookalikes, and "acceptance criteria". Proof by exercise: planted `On Claude, prefer the direct write.` in fo-write-core.md → red at file:line; reverted → green. Zero FO-surface cost (Go).
+- DONE: Per-host budget rewrite (AC-5) — `fo_function_reference_invariant_test.go`
+  `foPromptMetrics`/`TestFOFunctionPromptSurfaceShrinks` (sum-of-13, stale 123323 ceiling) replaced by `foHostLoadBytes` per-host sets (shared 7 files + host adapters + host-only triggers) with per-host constants claude=111183 codex=74608 pi=70725 (measured post-relocation; a +1-byte host regression reds). Proof by exercise: planted 2 bytes in codex-first-officer-runtime.md → ONLY the codex ratchet red; reverted → green. In-process discriminator (`hostBudgetViolations` driven with synthetic codex+1) + `TestFOHostLoadSetsCoverAddressLintUnion` keeps the 13-file address-lint union synced; checkpoint logs all three loads.
+- DONE: Prose relocation + flat-claim reconciliation (AC-2, AC-3)
+  Re-anchor at 317d6dff confirmed the ideation's locations unchanged (arrows 94/98/104/108/119/123; build 143-144; shared-core 10/49/200/202; ensign 54-64/101-109/120); only the fan-out checkpoint shifted (+1, v4dm). Six arrows → kind-only `→ **runtime-binding**` pointers (`runtimeBoundCapabilities` +6); residue landed: Pi adapter +425 B (interrupt-steering, cwd-on-every-call, advisory detail, model-space ownership, back-channel naming), Claude dispatch +237 B (ASYNC binding, «completion-signal» DUAL tag), claude-first-officer-runtime +390 B (staleness caveat, ownership inverted per row 12), claude-ensign-runtime +489 B (Background Task Surface, failure-signal channel), Codex 0 B (as predicted). Dispositions: row 1 g6-owned, NO edit to the standing-teammate lines (AC-3 by reference); rows 2-7 relocated/dissolved (both previously-unknown CONFLICTs — wait_agent, roster-reconcile — now adapter-owned); row 8 reworded to "spawn/transport fields (the adapter enumerates them)"; rows 9-11 reworded host-neutral; row 12 moved; row 13 mechanics moved + build.go/fo-dispatch-recovery wording + 13 golden files regenerated (one-word diff each); row 14 reworded + completion-signal reference made heading-agnostic (dangling-heading fix for Codex/Pi ensigns); row 15 = the AC-3 authoring sentence in the Fan-out checkpoint, capability-speak, lint-green. One row ADDED on the implementation re-sweep (within ±2 tolerance): bare `acceptance` Pi token over-matches core "acceptance criteria" vocabulary — excluded from the shared-file union with grounds; the field token stays Pi-adapter-contained.
+- DONE: AC-4 remains deferred (no live lane built), per the recorded grounds.
+- DONE: `go test ./...` fully green
+  All packages ok, including contractlint (new lint + rewritten budget), dispatch (goldens regenerated via `-update`; diff is exactly `BashOutput` → `background-task` in 13 files), ensigncycle, piruntime. Adapter set-equality + preservation suites green ⇒ no «fn» reference dangles (one preservation re-point: the "completion" row now anchors `runtime-binding`/`stage report` instead of Claude/Codex/Pi in the core).
+- FAILED (tolerance report-back, not silent absorption): per-host byte deltas outside ±150 of the spike numbers
+  Measured deltas claude −221 / codex −853 / pi −428 B vs spike −1177/−1457/−1041. Accounting: the spike predates rows 8/13/14/15 (the AC-3 fan-out sentence +233 B lands IN the core) and this implementation keeps short host-neutral body summaries in the relocated core blocks for coherence (~+600 B) plus a larger ensign failure-channel/background-surface binding (+489 vs spike +252). Direction and structure match; magnitude is smaller. All loads still DROP on every host and the new ratchets pin them.
+
+### Summary
+
+All three deliverables shipped in one commit (0b41577c, branch `spacedock-ensign/fn-cleanup-containment`): the five shared contract files are now lint-enforced host-neutral, the budget measures per-host loads an FO actually pulls (claude 111404→111183, codex 75461→74608, pi 71153→70725), and the six per-host arrow lines relocated into the adapters, dissolving both previously-unknown core/binding conflicts while g6 stays separately owned. Both adversarial discrimination proofs (planted host token, planted codex-only regression) exercised red→green.
