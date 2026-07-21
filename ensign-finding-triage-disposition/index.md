@@ -40,12 +40,24 @@ gates:
             - id: gate-attempt:02av-ideation-2
               sequence: 2
               previous-attempt: gate-attempt:02av-ideation-1
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:02av:ideation:briefing-2
                 digest: sha256:03324cb161fc3f8df2936c5bca85ae99a580a2ac2a97fb9dc33420777c80772f
                 room-ref: "./review/ideation/briefing-2"
                 note: "Re-entry after the 0260 park and the captain-directed advisory-records reframe. Multi-artifact package: gate summary, frozen entity snapshot, frozen recorder-contract snapshot; the digest binds briefing.json."
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784638564842898000
+                briefing: briefing:docs-dev:02av:ideation:briefing-2
+                by: person:reviewer
+                at: 2026-07-21T12:56:04Z
+                decision: approve
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+              note: "Subspace multi-artifact float, no annotations; provider result and review log retained in-room. The reframe is approved: dispositions as advisory resolutions, semantics-only boundary, the moved release line aboard."
 worktree:
 sprint-readiness:
 ---
