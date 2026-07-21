@@ -1,13 +1,13 @@
 ---
 id: vzsastkvv2r6dpjakw1vq6wx
 title: Binary-upgrade prompt must be install-source-aware (brew formula, non-brew, sandbox)
-status: ideation
+status: implementation
 source: "Captain report (CL) 2026-07-16 — the skill-upgrade version gate prompts `brew upgrade spacedock` regardless of how the binary was installed."
 started: 2026-07-21T15:58:31Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-upgrade-remedy-install-source-aware
 issue:
 ---
 
