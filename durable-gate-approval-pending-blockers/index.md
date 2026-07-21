@@ -1344,3 +1344,38 @@ Baseline and race suites pass, formatting is clean, and the present implementati
 ### Summary
 
 Correction commit `9d279b87` closes validation cycle 1 without changing the approved scope. Durable replay now covers the eight real 0260 histories and a multi-gate re-entry fixture; the recorder admits only portable Resolution fields from provider envelopes; and the shipped suite directly protects rebinding, freeze, and supersession behavior.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: **AC-1** Recorded approval and reviewed digest survive restart without advancing or dispatching.
+  The close/re-read fixture preserves exact binding identity and digest; mismatched-digest failure leaves the complete entity unchanged.
+- DONE: **AC-4** Portable approve/revise/hold decisions remain valid, durable, and visible under their specified rationale rules.
+  Provider and status fixtures accept reasonless approve, reject unsupported reasonless revise/hold, and project all three recorded decisions.
+- DONE: **AC-6 (record-state subset)** Status text and JSON distinguish approve, hold, and revise from frontmatter alone.
+  `TestStatusTextAndJSONProjectAllRecordedResolutionStates` asserts the three exact JSON decision values and text visibility.
+- DONE: **AC-10 (VALUE)** Recorder mutations remain gates-only and failures remain atomic.
+  Outside-gates byte comparison, complete-file failure comparisons, pointer/CAS refusal, application preservation, and direct replay all pass.
+- DONE: **AC-12** Multi-gate, multi-attempt, frozen-history, and production-replay evidence is now real and complete.
+  Eight fixture frontmatters are byte-identical to their named sources at state commit `9594033d`; the two-gate fixture asserts eight attempts, pointers, lineage, applications, extensions, and fork refusals.
+- DONE: **AC-13** Only the portable Review & Gate v1 Resolution field set crosses from a provider envelope.
+  The wrapper test drops known and future-unknown envelope fields while preserving the binding Resolution; a future-only leak mutant turns it red.
+- DONE: **AC-14** Open binding evolution, closure freeze, and re-entry are protected end to end.
+  The A→B→C→close→D test asserts every identity/digest/state transition, no-mutation frozen refusal, and distinct sequence-2 lineage.
+- DONE: Re-review correction commit `9d279b87` against the three cycle-1 material findings: prove wrapper fields cannot leak into portable Resolution state, the fixture truly covers two logical gates and eight production histories, and the exact rebind/freeze/supersede lifecycle is asserted.
+  Independent source comparison and focused behavioral runs close AC-12, AC-13, and AC-14 without relying on the implementation report.
+- DONE: Repeat the detached adversarial mutations that previously survived (success-reporting no-op rebind and disabled supersede) and confirm the full suite now kills both; probe the allow-list boundary with future unknown wrapper data.
+  On detached `9d279b87`, each full-suite lifecycle mutant failed in `TestRebindCloseFreezeAndSupersedeLifecycle`; a future-only wrapper leak failed the adversarial boundary test.
+- DONE: Reproduce all seven retained ACs, full test/race/gofmt evidence, approved-surface and contract-landing checks, then issue PASSED or REJECTED with material and deferred findings separated.
+  `go test ./...` and `go test ./... -race` pass; gofmt is clean; help/dependencies expose recorder-only verbs with no Subspace, application, eligibility, presentation, or shaping-token leak.
+- DONE: Recommendation: PASSED.
+  All cycle-1 material findings are closed; the sole residual risk is deferred and version-triggered below.
+
+### Summary
+
+Correction commit `9d279b87` closes the portable-boundary outcome defect and both lifecycle evidence defects. The independent detached audit now kills all three adversarial edits, the required suites pass, and validation recommends PASSED.
+
+### Reviewer Findings
+
+- Material: none.
+- Deferred risk: if a future portable Review & Gate version adds a required Resolution field, the v1 allow-list will discard it as unknown envelope data. This is outside the current v1 promise; current fields reproduce exactly, and the risk becomes material when Spacedock advertises or receives that newer required field.
+- Polish: none.
