@@ -1,6 +1,6 @@
 # First Officer Dispatch Core
 
-The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Host-specific parts ride the `→` lines of the capability `«fn»`s below.
+The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Host-specific parts are bound in the runtime adapters' `## Runtime implementation` blocks.
 
 ## Dispatch
 
@@ -80,7 +80,7 @@ Split worker identity into:
 
 ## Dispatch Adapter
 
-Runtime adapters bind the capability `«fn»`s below in their `## Runtime implementation` blocks; the `→` lines here carry legacy host coverage this core still owns. `«addressable-worker»` is the organizing capability: its presence makes a worker reusable. `«worker.spawn»` handles initial dispatch; the reuse-advance handle only advances a reused agent.
+Runtime adapters bind the capability `«fn»`s below in their `## Runtime implementation` blocks. `«addressable-worker»` is the organizing capability: its presence makes a worker reusable. `«worker.spawn»` handles initial dispatch; the reuse-advance handle only advances a reused agent.
 
 ## «worker.spawn»: create the initial worker from a `«dispatch.build»` artifact
 
@@ -90,22 +90,26 @@ The runtime adapter binds the spawn call, helper-field mapping, model/null handl
 
 ## «addressable-worker»: address a still-running worker and hear from it mid-run
 
-- **block:** ABSENT → the `«addressable-worker»` reuse condition fails; fresh one-shot only (return value is the sole completion signal; no mid-run steering, no reusable handle). When PRESENT, `«async-dispatch»` must be async — a blocking FO cannot answer a mid-run escalation within the worker's timeout window.
-- → **Claude:** PRESENT when team-mode is enabled (boot-probed), else ABSENT (fresh one-shot, no reuse). · **Codex:** PRESENT — mailbox back-channel. · **Pi:** PRESENT — `contact_supervisor`/`intercom` back-channel. Each host's worker↔FO routes, probe, and ABSENT teardown are its adapter's `## Runtime implementation` binding.
+- **block:** ABSENT → the `«addressable-worker»` reuse condition fails; fresh one-shot only (return value is the sole completion signal; no mid-run steering, no reusable handle). When PRESENT, `«async-dispatch»` must be async — a blocking FO cannot answer a mid-run escalation within the worker's timeout window. Each host's worker↔FO routes, presence probe, and ABSENT teardown are its adapter's binding.
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
 
 ## «async-dispatch»: dispatch a worker without blocking the FO event loop
 
-- → **Claude:** ASYNC — `Agent(name=…, run_in_background=true)` returns immediately; single-entity/bare mode blocks until completion. · **Codex:** ASYNC — `spawn_agent` returns a handle; `wait_agent` is the explicit foreground wait. · **Pi:** ASYNC — `subagent(... async: true)` returns a run id; poll `subagent({action:"status", id})`; `subagent({action:"interrupt", id})` steers; pass `cwd: <resolved repo root>` on every call so the ensign's working dir is the repo.
+Resolved per adapter as ASYNC (the spawn returns immediately) or BLOCKING (the dispatch call returns only at completion); a host may bind different modes for different dispatch surfaces.
+
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
 
 ## «worker-identity»: the spawn-time metadata that keeps a worker addressable and reuse-comparable
 
-Records worker label, substrate, run/session handle, worker address, entity slug, stage, state, completion epoch, stamped model, and the host canonical model space used by `«reuse.model-match»`. Each host's model-resolution stamps the model, including the `«dispatch.build»` null case.
+Records worker label, substrate, run/session handle, worker address, entity slug, stage, state, completion epoch, stamped model, and the host canonical model space used by `«reuse.model-match»`. Each host's model-resolution stamps the model, including the `«dispatch.build»` null case; each host's handle/address shape and canonical model space are its adapter's binding.
 
-- → **Claude:** canonical model space = the Claude enum in `claude-fo-dispatch.md`. · **Codex:** the thread's model. · **Pi:** the Pi model space, OWNED BY `pi-dispatch-model-stamping`. Each host's handle/address shape and null-model stamping are its adapter's `## Runtime implementation` binding.
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
 
 ## «completion-signal»: the signals that trigger the completion-verify path
 
-- → **Claude:** DUAL — a `Done:` inbox message, a `task_notification`, or captain shutdown. · **Codex:** single observable signal — the async final-status notification in the FO mailbox. · **Pi:** PRIMARY (subagent return, `status: completed`) + optional advisory (a non-blocking heads-up via raw `intercom send` before return; `contact_supervisor` carries no completion reason).
+The adapter enumerates which observations count as a completion signal on its host; nothing outside that enumeration completes a worker, and the entity-file stage report remains the verify gate in every case.
+
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
 
 ## «worker.shutdown»: cooperatively close a terminal or superseded worker
 
@@ -116,11 +120,11 @@ Runs at terminal, supersede, or fresh-dispatch cleanup boundaries after any requ
 ## «context-budget»: probe whether a completed worker is still under context budget for reuse
 
 - **block:** an over-budget or unavailable reading forces fresh dispatch (fail-safe). ABSENT satisfies the `«context-budget»()` reuse condition.
-- → **Claude:** PRESENT — `spacedock dispatch context-budget --name {name}`. · **Codex:** ABSENT. · **Pi:** ABSENT.
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
 
 ## «roster-reconcile»: sweep the host roster for drift before dispatching
 
-- → **Claude:** PRESENT — `spacedock dispatch reconcile` (drift classes and per-class remedy are in the adapter's named binding). · **Codex:** ABSENT. · **Pi:** ABSENT.
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
 
 ## «dispatch.build»(): assemble the initial-dispatch artifact the spawn call consumes
 
@@ -140,8 +144,8 @@ The ONLY initial-dispatch path: route input through `spacedock dispatch build`, 
     [--feedback-reflow] \
     [--advance]
   ```
-  `host` derives from the runtime (`--host` is for tests/cross-host tooling only). `--bare-mode` reads from live team state, never inferred from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage. Add `--advance` when advancing a reused live worker instead of spawning one: the emitted envelope carries no `subagent_type`/`name`/`team_name`/`run_in_background` (nothing is spawned) and `prompt` is the reuse-advance pointer message, forwarded to the reuse-advance handle instead of `«worker.spawn»`; `--advance` is incompatible with `--bare-mode`.
-- **done-when:** on exit 0, `«worker.spawn»` is called with `subagent_type`/`name`/`description`/`model`/`prompt` (plus any host-scoped fields the adapter declares) forwarded unchanged. `description` is REQUIRED. `prompt` is the ~175-char file-pointer the ensign Reads on first action — do not strip or rewrite it. Null `model` is `«worker-identity»`'s per-host case, not a core omit-on-null.
+  `host` derives from the runtime (`--host` is for tests/cross-host tooling only). `--bare-mode` reads from live team state, never inferred from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage. Add `--advance` when advancing a reused live worker instead of spawning one: the emitted envelope carries no spawn/transport fields (nothing is spawned; the adapter enumerates them) and `prompt` is the reuse-advance pointer message, forwarded to the reuse-advance handle instead of `«worker.spawn»`; `--advance` is incompatible with `--bare-mode`.
+- **done-when:** on exit 0, `«worker.spawn»` is called with every helper-emitted field — the spawn/transport fields the adapter enumerates plus `description`/`model`/`prompt` — forwarded unchanged. `description` is REQUIRED. `prompt` is the ~175-char file-pointer the ensign Reads on first action — do not strip or rewrite it. Null `model` is `«worker-identity»`'s per-host case, not a core omit-on-null.
 - **block:** on non-zero exit (or missing binary) ONLY — read stderr, report the helper failure to the captain, then use the adapter's Break-Glass Manual Dispatch template (stage definition inlined verbatim; conditional `model` slot per `«worker-identity»`'s canonical model space). A zero-exit run is never a break-glass trigger.
 - → **shipped**: `` `spacedock dispatch build` `` — invoke it directly per the effect above.
 
@@ -167,7 +171,7 @@ When PRESENT, invoke `«roster-reconcile»()` before the inbound-message drain. 
 
 **Consent stop before dispatching new standing enforcement.** A ready action whose deliverable is a NEW STANDING check or enforcement process the FO ORIGINATED — a lint, a review gate, a CI lane, a recurring validation step — is the last resort of the boot-resident ordering, never obvious reversible work. Consent is already given for a deliverable the captain commissioned, for running a check that already exists, and for writing a test for the behavior in hand; none of those stop. Otherwise do not dispatch: hold the entity ready-but-undispatched, surface it as an unmet clarification, and carry `awaiting-consent: {slug}` as the iteration's stop reason — headless EXITs with it, interactive waits. The license hangs off the captain wanting it, never an inference that it would help; it bites hardest in non-dev workflows, where every check is new process.
 
-**Fan-out checkpoint.** A SINGLE investigation that will dispatch more than one worker (a flake chase, a review-rework, a refactor sweep) declares BEFORE its first spawn how many WORKERS it expects, the tolerance, and why that spend is economically reasonable — dispatched workers are the counted unit, whether they file entities or open PRs. The checkpoint fires when the next spawn would take the running count past expected-plus-tolerance: stop, surface the count against the declaration, and let the captain re-cap rather than spawning again. It binds equally to a plan that commits the fan-out in one act — a workflow script or batch spawn declares the same numbers before launch, since a running script reaches no later moment to catch. Keep-moving speeds independent, already-scoped work; it does not authorize an unbounded spawn chain off one thread. Judgment against a declared number, not a counter binary. Collapse demonstrably-identical findings in a barrier stage BEFORE the per-finding verifier spawn — never spend a verifier per duplicate. Where `«async-dispatch»` is async, a per-member verify that fires as reviews land forfeits that barrier; batch, dedupe, then fan out.
+**Fan-out checkpoint.** A SINGLE investigation that will dispatch more than one worker (a flake chase, a review-rework, a refactor sweep) declares BEFORE its first spawn how many WORKERS it expects, the tolerance, and why that spend is economically reasonable — dispatched workers are the counted unit, whether they file entities or open PRs. The checkpoint fires when the next spawn would take the running count past expected-plus-tolerance: stop, surface the count against the declaration, and let the captain re-cap rather than spawning again. It binds equally to a plan that commits the fan-out in one act — a workflow script or batch spawn declares the same numbers before launch, since a running script reaches no later moment to catch. Keep-moving speeds independent, already-scoped work; it does not authorize an unbounded spawn chain off one thread. Judgment against a declared number, not a counter binary. Collapse demonstrably-identical findings in a barrier stage BEFORE the per-finding verifier spawn — never spend a verifier per duplicate. Where `«async-dispatch»` is async, a per-member verify that fires as reviews land forfeits that barrier; batch, dedupe, then fan out. Author the fan-out's shape against this host's `«async-dispatch»`/`«addressable-worker»` bindings — a blocking or ABSENT binding makes a streaming per-member shape unexecutable; plan batch review instead.
 
 **A second verifier attacks an unowned claim; it never re-runs an owned check.** "Independent adversarial verification" does not justify a second agent to re-run a green check or second-opinion a deterministic fact a shipped check owns — run that check instead. It DOES justify one to attack a claim no check owns AND that no direct read settles — a judgment, a runtime behavior, a fact not visible in the source; adversarial skepticism and a mandated detached audit are that falsifiable exercise. When a read or diff settles the claim, that read is the exercise, and a second agent re-reading the source is the redundancy this refuses. And N agents reaching the same answer is one confirmation observed N times, not N independent confidences — agreement raises cost, not confidence.
 

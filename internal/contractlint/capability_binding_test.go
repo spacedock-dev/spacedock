@@ -1,6 +1,6 @@
 // ABOUTME: AC-1 — binds the capability «fn» layer of the host-neutral dispatch core
 // ABOUTME: across two divergeable surfaces: «fn» DEFINITIONS (## «name») and body CALLS
-// ABOUTME: («name»), plus legacy per-host → coverage where the core still owns it.
+// ABOUTME: («name»), holding every runtime-bound block to the host-neutral arrow policy.
 package contractlint
 
 import (
@@ -17,9 +17,9 @@ func dispatchCorePath(t *testing.T) string {
 	return filepath.Join(skillsRoot(t), "first-officer", "references", "fo-dispatch-core.md")
 }
 
-// capabilityHosts: legacy core → lines still present before the runtime-binding-block
-// migration MUST name all three. New runtime-bound capabilities are host-neutral here and
-// are bound from runtime adapter `## Runtime implementation` blocks instead.
+// capabilityHosts: the runtime hosts the adapters bind. A legacy core → line that
+// names hosts MUST name all three; runtime-bound capabilities are host-neutral in the
+// core and are bound from runtime adapter `## Runtime implementation` blocks instead.
 var capabilityHosts = []string{"Claude", "Codex", "Pi"}
 
 // fnHeadingRe: a capability «fn» DEFINITION heading `## «name»:` (the colon distinguishes
@@ -42,7 +42,16 @@ var (
 // runtimeBoundCapabilities are the capabilities whose per-host binding is delegated to the
 // runtime adapters' `## Runtime implementation` blocks via a kind-only `→ **runtime-binding**`
 // arrow in the core; they carry no per-host `→` coverage in fo-dispatch-core.md itself.
-var runtimeBoundCapabilities = []string{"worker.spawn", "worker.shutdown"}
+var runtimeBoundCapabilities = []string{
+	"worker.spawn",
+	"worker.shutdown",
+	"addressable-worker",
+	"async-dispatch",
+	"worker-identity",
+	"completion-signal",
+	"context-budget",
+	"roster-reconcile",
+}
 
 func isRuntimeBoundCapability(name string) bool {
 	for _, c := range runtimeBoundCapabilities {

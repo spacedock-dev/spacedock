@@ -7,13 +7,15 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
 )
 
-const foFunctionReferenceBaselineBytes = 123323
-
+// foFunctionReferencePaths is the 13-file union the mutable-address lint scans. The
+// BUDGET is not this union: no single FO ever loads all three host adapters, so the
+// byte ratchet below is per-host over foSharedLoadPaths + foHostLoadPaths.
 var foFunctionReferencePaths = []string{
 	"skills/first-officer/SKILL.md",
 	"skills/first-officer/references/first-officer-shared-core.md",
@@ -28,6 +30,47 @@ var foFunctionReferencePaths = []string{
 	"skills/feedback-rejection-flow/SKILL.md",
 	"skills/using-legacy-claude-team/SKILL.md",
 	"skills/fo-dispatch-recovery/SKILL.md",
+}
+
+// foSharedLoadPaths is the load every host's FO pulls: the skill entry, the
+// boot-resident shared core, the three deferred cores, and the trigger skills
+// reachable on every host (present-gate, feedback-rejection-flow).
+var foSharedLoadPaths = []string{
+	"skills/first-officer/SKILL.md",
+	"skills/first-officer/references/first-officer-shared-core.md",
+	"skills/first-officer/references/fo-dispatch-core.md",
+	"skills/first-officer/references/fo-merge-core.md",
+	"skills/first-officer/references/fo-write-core.md",
+	"skills/present-gate/SKILL.md",
+	"skills/feedback-rejection-flow/SKILL.md",
+}
+
+// foHostLoadPaths adds each host's adapter file(s) and the trigger skills reachable
+// only on that host (using-legacy-claude-team and fo-dispatch-recovery are named
+// only from the Claude dispatch module). load(H) = foSharedLoadPaths + this.
+var foHostLoadPaths = map[string][]string{
+	"claude": {
+		"skills/first-officer/references/claude-first-officer-runtime.md",
+		"skills/first-officer/references/claude-fo-dispatch.md",
+		"skills/using-legacy-claude-team/SKILL.md",
+		"skills/fo-dispatch-recovery/SKILL.md",
+	},
+	"codex": {
+		"skills/first-officer/references/codex-first-officer-runtime.md",
+	},
+	"pi": {
+		"skills/first-officer/references/pi-first-officer-runtime.md",
+	},
+}
+
+// foHostLoadBaselineBytes ratchets each host's real session load against its own
+// measured baseline — per-host, not max-only, so a one-host regression cannot hide
+// under another host's headroom. Growing a host's load past its constant is a
+// deliberate re-baseline edit here, with the growth justified in the change.
+var foHostLoadBaselineBytes = map[string]int{
+	"claude": 111183,
+	"codex":  74608,
+	"pi":     70725,
 }
 
 var mutableProcedureAddress = regexp.MustCompile(`(?i)(?:\bsteps?[- ]\d+(?:\.\d+)?(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?|\breuse[- ]conditions?[- ]?\d+|\btiers?[- ]\d+|\btiers?\s+\d+(?:\s+and\s+\d+)?|\bentry-point principle\s+\d+|\b(?:signals?|items?)\s*\(\d+(?:\s*,\s*\d+)*(?:\s*,?\s*or\s*\d+)?\s+above\))`)
@@ -48,14 +91,32 @@ func mutableFOAddresses(path, body string) []foAddressMatch {
 	return out
 }
 
-func foPromptMetrics(t *testing.T) (addresses int, bytes int) {
+// foHostLoadBytes measures one host's real FO session load: the shared load plus
+// that host's adapter files and host-only trigger skills.
+func foHostLoadBytes(t *testing.T, host string) int {
 	t.Helper()
-	for _, rel := range foFunctionReferencePaths {
-		body := readRepoFile(t, filepath.FromSlash(rel))
-		addresses += len(mutableFOAddresses(rel, body))
-		bytes += len([]byte(body))
+	total := 0
+	for _, rel := range append(append([]string{}, foSharedLoadPaths...), foHostLoadPaths[host]...) {
+		total += len([]byte(readRepoFile(t, filepath.FromSlash(rel))))
 	}
-	return addresses, bytes
+	return total
+}
+
+// hostBudgetViolations compares each host's measured load to its ratchet constant.
+// The real ratchet and its discriminator control both drive this one function.
+func hostBudgetViolations(loads, baselines map[string]int) []string {
+	hosts := make([]string, 0, len(baselines))
+	for host := range baselines {
+		hosts = append(hosts, host)
+	}
+	sort.Strings(hosts)
+	var out []string
+	for _, host := range hosts {
+		if loads[host] > baselines[host] {
+			out = append(out, fmt.Sprintf("%s FO session load = %d bytes, above its ratchet baseline %d — a %s-load regression; shrink the load or deliberately re-baseline", host, loads[host], baselines[host], host))
+		}
+	}
+	return out
 }
 
 func TestFOFunctionReferenceInvariant(t *testing.T) {
@@ -101,16 +162,58 @@ func TestFOFunctionReferenceClassifierDiscriminates(t *testing.T) {
 	}
 }
 
-func TestFOFunctionPromptSurfaceShrinks(t *testing.T) {
-	_, got := foPromptMetrics(t)
-	if got >= foFunctionReferenceBaselineBytes {
-		t.Fatalf("FO prompt surface = %d bytes, want strictly below post-#531 baseline %d", got, foFunctionReferenceBaselineBytes)
+// TestFOHostPromptLoadRatchet (per-host budget): each host's measured session load
+// stays at or below its own baseline constant. A regression in a host-specific file
+// reds only that host's ratchet — the discrimination a summed budget cannot see.
+func TestFOHostPromptLoadRatchet(t *testing.T) {
+	loads := map[string]int{}
+	for host := range foHostLoadBaselineBytes {
+		loads[host] = foHostLoadBytes(t, host)
+	}
+	for _, msg := range hostBudgetViolations(loads, foHostLoadBaselineBytes) {
+		t.Error(msg)
+	}
+}
+
+// TestFOHostPromptLoadRatchetDiscriminates is the non-vacuity control: at-baseline
+// loads pass; a one-byte regression in a single host's load reds exactly that
+// host's ratchet while the others stay green.
+func TestFOHostPromptLoadRatchetDiscriminates(t *testing.T) {
+	baselines := map[string]int{"claude": 100, "codex": 90, "pi": 80}
+	if v := hostBudgetViolations(map[string]int{"claude": 100, "codex": 90, "pi": 80}, baselines); len(v) != 0 {
+		t.Fatalf("control: at-baseline loads were wrongly flagged: %v", v)
+	}
+	v := hostBudgetViolations(map[string]int{"claude": 100, "codex": 91, "pi": 80}, baselines)
+	if len(v) != 1 || !strings.Contains(v[0], "codex") {
+		t.Fatalf("control: a codex-only one-byte regression must red exactly the codex ratchet, got: %v", v)
+	}
+}
+
+// TestFOHostLoadSetsCoverAddressLintUnion keeps the two scopes in sync: the union of
+// the shared load and every host's load equals the 13-file set the mutable-address
+// lint scans, so neither list can drop or gain a file without the other noticing.
+func TestFOHostLoadSetsCoverAddressLintUnion(t *testing.T) {
+	union := map[string]bool{}
+	for _, rel := range foSharedLoadPaths {
+		union[rel] = true
+	}
+	for _, paths := range foHostLoadPaths {
+		for _, rel := range paths {
+			union[rel] = true
+		}
+	}
+	if !setEqual(union, toSet(foFunctionReferencePaths)) {
+		t.Fatalf("per-host load sets and the address-lint union diverged:\n  loads:   %v\n  address: %v", sortedSet(union), sortedSet(toSet(foFunctionReferencePaths)))
 	}
 }
 
 func TestFOFunctionReferenceCheckpointMetrics(t *testing.T) {
-	addresses, bytes := foPromptMetrics(t)
-	t.Logf("FO_FUNCTION_METRICS addresses=%d bytes=%d", addresses, bytes)
+	addresses := 0
+	for _, rel := range foFunctionReferencePaths {
+		addresses += len(mutableFOAddresses(rel, readRepoFile(t, filepath.FromSlash(rel))))
+	}
+	t.Logf("FO_FUNCTION_METRICS addresses=%d claude_bytes=%d codex_bytes=%d pi_bytes=%d",
+		addresses, foHostLoadBytes(t, "claude"), foHostLoadBytes(t, "codex"), foHostLoadBytes(t, "pi"))
 }
 
 func TestFirstOfficerReferenceTopology(t *testing.T) {
@@ -253,7 +356,7 @@ func TestFOFunctionNormalizationPreservationSuite(t *testing.T) {
 		{"startup-interaction", "skills/first-officer/references/first-officer-shared-core.md", []string{"## «interaction.boundary»(): route interactive and headless launch behavior", "## Startup"}, []string{"Interactive", "Headless", "given the conn", "STOP"}},
 		{"dispatch-checklist", "skills/first-officer/references/fo-dispatch-core.md", []string{"## «dispatch.checklist»(entity, stage): assemble dispatch linchpins", "## Dispatch"}, []string{"≤3", "Outputs:", "acceptance criteria", "not stage actions"}},
 		{"reuse", "skills/first-officer/references/fo-dispatch-core.md", []string{"## Reuse and Fresh Dispatch"}, []string{"«context-budget»()", "«addressable-worker»", "fresh: true", "«reuse.model-match»"}},
-		{"completion", "skills/first-officer/references/fo-dispatch-core.md", []string{"## «completion-signal»: the signals that trigger the completion-verify path"}, []string{"Claude", "Codex", "Pi"}},
+		{"completion", "skills/first-officer/references/fo-dispatch-core.md", []string{"## «completion-signal»: the signals that trigger the completion-verify path"}, []string{"runtime-binding", "stage report"}},
 		{"terminal-teardown", "skills/first-officer/references/fo-merge-core.md", []string{"## «merge.guard»(slug): auto-arm → block-on-open-PR → finalize-on-merge-sentinel, then archive"}, []string{"teardown", "best-effort", "drop them from session memory"}},
 		{"legacy-recovery", "skills/using-legacy-claude-team/SKILL.md", []string{"## «legacy-team.recover»(): recover a desynchronized legacy team", "## Team Creation"}, []string{"Fresh-suffixed TeamCreate", "Degraded Mode", "Surface to captain"}},
 		{"hooks", "skills/first-officer/references/first-officer-shared-core.md", []string{"## «hooks.run»(point): run registered lifecycle hooks", "## Mod Hook Convention"}, []string{"startup", "idle", "merge", "alphabetically"}},

@@ -53,12 +53,12 @@ When the workflow is split-root (README declares `state:` checkout, e.g. `state:
 
 ## Background Bash Discipline
 
-When you launch `Bash(run_in_background: true)`, wait via `BashOutput` polling, not a blocking `sleep`:
+When you launch a long-running command in the background, wait by polling, not a blocking `sleep` (your runtime adapter binds the concrete launch and polling calls):
 
-1. Capture the returned `bash_id`.
+1. Capture the background task's handle when you launch it.
 2. Sleep briefly between polls — ~30s default; longer for many-minute tasks, shorter for sub-minute ones.
-3. Call `BashOutput(bash_id=...)` and read `status`.
-4. On `"completed"`, read the final output and proceed.
+3. Poll the task's status through the runtime's background-task read.
+4. On completion, read the final output and proceed.
 5. Otherwise repeat. Cap total wait at the task's budgeted timeout; on cap, report the timeout instead of waiting indefinitely.
 
 Never wait on a background task with `sleep N && tail …`. A blocking sleep sized for the worst case wastes wallclock when the task finishes early and blocks incoming messages until it returns. Polling avoids both.
@@ -98,15 +98,15 @@ When done, send a minimal completion signal that points the first officer back t
 
 ## DISPATCH_FILE Bootstrap
 
-The FO dispatches an ensign with a tiny ~175-char `Agent(prompt=...)` of the shape:
+The FO dispatches an ensign with a tiny ~175-char dispatch prompt of the shape:
 
     Skill(skill="spacedock:ensign"); then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.
 
 When your initial prompt matches this pattern (the `Skill(...)` invocation followed by `Read /tmp/spacedock-dispatch/...`), your first action MUST be `Read /tmp/spacedock-dispatch/{name}.md` and treat the file's content as your inline assignment. Then proceed with the rest of the operating contract.
 
-If the Read fails (missing, unreadable, empty), do NOT proceed with empty context. Send `SendMessage(to="team-lead", message="DISPATCH_FILE_MISSING: {path} - {error}")` and stop.
+If the Read fails (missing, unreadable, empty), do NOT proceed with empty context. Send `DISPATCH_FILE_MISSING: {path} - {error}` to the first officer through your runtime adapter's completion-signal channel and stop.
 
-**Advance bootstrap.** This covers the initial prompt only. When a mid-session message instead matches `Advancing to next stage: {stage}.` followed by `Read /tmp/spacedock-dispatch/{name}.md and treat its content as your next-stage assignment.`, Read that file and treat its content as your next-stage assignment (the fetch-commands bootstrap above applies to it identically). On Read failure, send `SendMessage(to="team-lead", message="DISPATCH_FILE_MISSING: {path} - {error}")` and stop — the same failure shape as the initial bootstrap.
+**Advance bootstrap.** This covers the initial prompt only. When a mid-session message instead matches `Advancing to next stage: {stage}.` followed by `Read /tmp/spacedock-dispatch/{name}.md and treat its content as your next-stage assignment.`, Read that file and treat its content as your next-stage assignment (the fetch-commands bootstrap above applies to it identically). On Read failure, send `DISPATCH_FILE_MISSING: {path} - {error}` through the same completion-signal channel and stop — the same failure shape as the initial bootstrap.
 
 ## Fetch-on-Demand Bootstrap
 
@@ -117,6 +117,6 @@ The FO's dispatch may carry a `### Fetch commands` section near the top of your 
 3. Concatenate stdouts; treat the result as inlined into your prompt at the `### Fetch commands` position.
 4. Proceed with the rest of your assignment.
 
-If a fetch command exits non-zero, report the failure to the FO via your runtime's teammate-message channel (see your runtime adapter's `## Completion Signal`). Include command, exit code, and stderr — do not silently proceed. A missing or unreadable stage definition is a dispatch-shape failure the FO must surface to the captain.
+If a fetch command exits non-zero, report the failure to the FO via your runtime adapter's completion-signal channel. Include command, exit code, and stderr — do not silently proceed. A missing or unreadable stage definition is a dispatch-shape failure the FO must surface to the captain.
 
 If the prompt has no `### Fetch commands` block, skip this step; the rest of the prompt is self-contained.

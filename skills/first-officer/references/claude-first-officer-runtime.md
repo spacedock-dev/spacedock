@@ -28,7 +28,7 @@ For the dispatch-idle and idle-hallucination guardrails, see `## Awaiting Comple
 
 ## Entity-Body Inspection
 
-See `## Probe and Ideation Discipline` in the shared core — its Grep-over-Read rule and Read-then-Bash staleness-echo guidance are already Claude-qualified.
+See `## Probe and Ideation Discipline` in the shared core for the Grep-over-Read rule; ToolSearch is this host's tool-discovery surface. The Claude read-then-mutate caveat: a `Read` followed by a Bash mutation of the same file (including `status --set`) triggers the file-staleness safety net, echoing the file back as cache-write tokens. Grep does not participate. Trust `status --set` stdout (`field: old -> new`, `field: old -> ` for clear-to-empty, `field:  -> {timestamp}` for bare-timestamp auto-fill) to narrate mutations without re-reading.
 
 ## Filing New Entities
 
