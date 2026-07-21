@@ -9,11 +9,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:3k:ideation
-        attempt: gate-attempt:3k-ideation-2
+        attempt: gate-attempt:3k-ideation-3
     records:
         - id: gate:docs-dev:3k:ideation
           stage: ideation
-          current-attempt: gate-attempt:3k-ideation-2
+          current-attempt: gate-attempt:3k-ideation-3
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
@@ -56,8 +56,30 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
+                state: superseded
+              note: "Approve with two attached captain questions (pointer-AC leanness; integration-umbrella split), answered in chat post-recording; fork 1 (id namespacing) not annotated, so recorder ids stay Spacedock-internal per the stated default. Superseded by attempt 3 (the captain-directed pointer-AC cut); the approval itself stands."
+            - id: gate-attempt:3k-ideation-3
+              sequence: 3
+              previous-attempt: gate-attempt:3k-ideation-2
+              state: closed
+              briefing:
+                id: briefing:docs-dev:3k:ideation:attempt-3:revision-10
+                digest: sha256:cb816a084445eefd588a9b5119522ca6c2a70ab375de005a9d206af444d2b362
+                room-ref: "./review/ideation/briefing-10"
+                note: "Byte-verifiable frozen entity snapshot (entity-snapshot.md) taken after the cycle-14 pointer-AC cut and before this record was written — no advisory digest needed."
+              resolution:
+                type: Resolution
+                id: resolution:captain-chat-3k-ideation-3
+                briefing: briefing:docs-dev:3k:ideation:attempt-3:revision-10
+                by: person:captain
+                at: 2026-07-21T01:42:54Z
+                decision: approve
+                reason: "Captain-directed leanness fold from the attempt-2 approve questions ('ok do the cleanup'): the eight pointer-AC stubs cut so the AC scanner sees exactly the seven in-scope criteria; scheduler-rule and test-plan stubs cut where trivial, original numbering kept so gaps mark moved-out steps; the Scope cut section is the traceability record. No integration-umbrella split (captain accepted the recommendation: the contract doc is the clean spec; integration proof rides the sprint DoD and pre-cut audit)."
+              application:
+                action: advance
+                target-stage: implementation
                 state: pending
-              note: "Approve with two attached captain questions (pointer-AC leanness; integration-umbrella split), answered in chat post-recording; fork 1 (id namespacing) not annotated, so recorder ids stay Spacedock-internal per the stated default. Any resulting trim folds as a superseding attempt."
+              note: "Fold applied by the live revision worker (cycle 14, state commit 2e562ed9); FO recorded. The recorder design is settled: the three downstream ideations (xb, h1, 02av reframe) dispatch against this contract per the locked sprint sequencing."
 sprint: durable-decisions
 group: recorder
 ---
