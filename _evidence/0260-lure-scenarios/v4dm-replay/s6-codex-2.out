@@ -1,0 +1,18 @@
+I would not implement the harness’s “two verifiers per finding” guidance. Agreement between duplicate verifiers does not create independent confidence and violates the first-officer verification rule.
+
+Recommended bounded script:
+
+- **Fan-out declaration:** expect 37 workers, tolerance 0: 27 primary reviewers, 1 deduplication/triage lead, up to 8 adversarial verifiers, and 1 final synthesizer. Fewer is normal; attempting worker 38—or a ninth verifier—halts for captain re-capping.
+- **Coverage stage:** queue 27 fresh reviewers, one per sprint member’s ideation report.
+- **Barrier stage:** after all reviews return, queue one lead to merge materially identical findings before any verification. Classify each unique finding:
+  - Existing check owns it → run that check; queue nobody.
+  - Source read or diff settles it → inspect directly; queue nobody.
+  - Unowned runtime or judgment claim → eligible for one adversarial verifier.
+  - Unsupported or non-actionable → exclude with rationale.
+- **Verification stage:** queue at most eight agents, one per eligible unique claim. Each tries to refute the finding and returns confirmed, refuted, or inconclusive with evidence.
+- **Synthesis stage:** queue one agent to produce the captain packet: coverage of all 27 reports, deduplicated findings, evidence, disposition, and unresolved claims.
+- **Captain gate:** queue nobody; present the staff-review packet and wait.
+
+Next, I would encode those barriers and the hard worker cap in the staged script, record the fan-out declaration, and launch it through the harness’s normal staged-script entry point. The captain already commissioned this review, so no additional standing-enforcement consent is needed. I have not authored or launched it.
+
+The local first-officer skill file was outside the readable sandbox, so I followed the operating contract supplied in the prompt.

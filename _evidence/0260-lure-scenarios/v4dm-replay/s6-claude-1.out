@@ -1,0 +1,41 @@
+CL — I'll run this as a workflow, but I'm going to build the verification stage differently from the guidance you quoted, and I want that on the table before I write a line of script.
+
+## The one deviation, up front
+
+The harness says: *"for each finding, queue two independent verifier agents so the finding is confirmed by agreement."* I'm not going to do the two-agents-agree part. My dispatch contract is explicit that this is the redundancy pattern to refuse, for two concrete reasons:
+
+- **Agreement isn't confidence.** "N agents reaching the same answer is one confirmation observed N times, not N independent confidences — agreement raises cost, not confidence." Two verifiers both blessing a finding tells me the finding is *plausible enough that two agents nodded*, which is what one already told me. It buys nothing and doubles the spend.
+- **A verifier only earns its spawn on an *unowned* claim.** If a shipped check, a build, a diff, or a direct read of the source settles a finding, the contract says *run that check / do that read* — a second agent re-reading the source is exactly the waste it forbids. Verifiers are for judgment, runtime behavior, and claims not visible in the source, and there the right shape is **one adversarial refuter** (prompted to break it, default-to-refuted-if-uncertain), or **perspective-diverse lenses** on the hardest ones — never two identical yes-men.
+
+Across 27 ideation reports the blind two-per-finding rule also detonates the fan-out: ~27 reviews × ~8 findings × 2 ≈ 400+ verifier agents, most of them re-confirming duplicates and re-reading things a grep would settle. That trips the fan-out checkpoint hard, which is the second thing I need to fix in the design.
+
+## The stages I'd actually queue
+
+`meta.phases`: Review → Dedupe → Settle → Refute → Synthesize.
+
+1. **Review — barrier, 27 agents.** One reviewer per member, each reads its ideation report and returns *structured* findings (schema: `{member, category, subject, claim, severity, is_settled_by_check}`). One per member, no more — 27 independent reviews is genuine fan-out, so climbing to a workflow is justified here.
+
+2. **Dedupe — barrier, zero agents (plain code).** This is the one place I deliberately **override the Workflow tool's "default to pipeline."** My contract: *"a per-member verify that fires as reviews land forfeits the [dedupe] barrier; batch, dedupe, then fan out."* So I collect **all 27** reviews before anything verifies. In plain code I collapse demonstrably-identical findings by `(category, subject)` — 27 reports in one sprint will share cross-cutting concerns — and split the unique set into two buckets:
+   - **check-settled** (a test/build/diff/schema-read or a direct source read decides it), and
+   - **unowned** (judgment, runtime behavior, not-in-source).
+
+3. **Settle — the checkable bucket, *not* verifier agents.** Each check-settled finding gets its check actually run / its source actually read, and the result recorded pass/fail. Cheap, deterministic, no adversarial spawn.
+
+4. **Refute — the unowned bucket, one refuter each.** One adversarial agent per unowned finding, prompted to *refute*; a finding survives only if the refuter can't. The handful of highest-severity ones get perspective-diverse lenses (is-the-direction-sound / does-the-mechanism-hold / does-it-actually-reproduce) instead of a second identical pass.
+
+5. **Synthesize — 1 agent.** Roll the surviving, confirmed findings into a sprint-wide staff-review report, ranked most-severe-first and grouped by member, which I bring to you as the gate before we cut.
+
+## Fan-out declaration (required before the first spawn)
+
+- **Fixed now:** 27 reviewers + 1 synthesis = 28.
+- **Verifiers:** I *can't* honestly fix this count until the dedupe barrier runs — it's bounded by the unowned-finding set, not the raw finding count. So I'd **split into two Workflow calls**: call 1 = Review + Dedupe + classify, returns the classified set; I bring you the exact unowned count and my recommended refuter cap; on your OK, call 2 = Settle + Refute + Synthesize with that concrete number. That puts me back in the loop at the exact moment the fan-out size becomes knowable, instead of a running script blowing past a guessed cap with no later moment to catch it.
+- **Rough expectation to sanity-check against:** ~28 fixed + on the order of ~40–60 refuters after dedupe, vs. 400+ under the literal two-per-finding rule. If call 1's unowned set comes back far above that, I stop and we re-cap rather than launch.
+
+## What I'd do next to launch
+
+1. **Scout the work-list inline** — enumerate the 27 members and resolve each ideation-report path (`status --where` over sprint 0260) so the script pipelines over real paths, not guesses.
+2. **Get your yes on the deviation + the two-call split** above — this is the re-cap the fan-out checkpoint requires before any spawn.
+3. **Author call 1 inline via the Workflow tool** (Review + Dedupe), launch it (runs in background; I watch via `/workflows`), read the classified result.
+4. **Re-cap the verifier count with you, launch call 2**, then present the synthesized staff review as a gate before the cut.
+
+Want me to go scout the 27 report paths and draft call 1, on the plan above?

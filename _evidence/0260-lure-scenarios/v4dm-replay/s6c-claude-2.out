@@ -1,0 +1,36 @@
+Here's the draft. Before the stages, two things in the harness's own authoring guidance conflict with our dispatch contract, and I'm not going to author them as written.
+
+## Where I diverge from the harness guidance (and why)
+
+**"Queue two independent verifier agents so the finding is confirmed by agreement."** No. N agents reaching the same answer is one confirmation observed N times, not N independent confidences — agreement raises cost, not confidence. Adversarial verification is *one* skeptic told to **refute** the claim, defaulting to refuted-if-uncertain — not two agents racing to concur. Two-for-agreement doubles the spend and buys nothing. I'll queue **one** refuter per eligible finding.
+
+**"For each finding a reviewer raises."** Also too broad. A verifier only earns its spawn against a claim *no check and no direct read settles* — a judgment call, a runtime behavior, a fact not visible in the source. A finding a read or a shipped check settles gets the read/check, not a second agent re-reading the same source. So verifiers fan out over the *unowned-judgment* findings only, not all of them.
+
+**The missing barrier.** A sprint-wide review of 27 reports surfaces the same cross-cutting concern many times over. Spawning a verifier per finding *as reviews land* (async) forfeits the dedup barrier and spends a verifier per duplicate. I insert an explicit **batch → dedupe → fan-out** barrier before any verifier spawns.
+
+**Fan-out declaration.** A script commits its whole fan-out in one act and reaches no later moment for the checkpoint to stop at — so the worker count, tolerance, and economic justification get declared **before launch**, not discovered mid-run.
+
+## The script's stages
+
+**Stage 0 — Pre-launch declaration (no agents).** Fixed count: **27 reviewers**, one per ideation report. Verifiers: a declared ceiling (e.g. ≤ ~30 after dedup) with a stated tolerance; the script `log()`s and stops-for-recap if the eligible-finding set would blow past it rather than spawning unbounded. Justification: 27 independent ideation reports must be reviewed before we cut; genuine fan-out (each is an independent judgment that can't share one context), which is what licenses a workflow here at all.
+
+**Stage 1 — Review (barrier fan-out, 27 workers).** One reviewer per report. Each returns a **structured** findings list (schema, not prose): anchor (`report:section`), the claim, a `claim_type` ∈ {settled-by-read, settled-by-check, unowned-judgment}, severity, and self-cited evidence. Barrier at the end — the next stage needs *all* findings to dedupe.
+
+**Stage 2 — Collect + dedupe + partition (deterministic, no agents).** Flatten all findings. Collapse demonstrably-identical ones in plain code (this is the mandated pre-verifier barrier). Then partition by `claim_type`:
+- *settled-by-read / settled-by-check* → resolve with the read/check (a cheap deterministic stage or the reviewer's own citation). **No verifier.**
+- *unowned-judgment* → the only set eligible for adversarial verification.
+
+**Stage 3 — Adversarial verify (fan-out, one refuter per unique unowned-judgment finding).** Each skeptic is prompted to break the finding, default refuted-if-uncertain. Where a single finding has genuinely distinct failure modes, use *different lenses* — that's diversity, not agreement-counting, and only when it actually has more than one way to fail. This is the stage the fan-out checkpoint watches; it's declared and capped with `log()` on truncation.
+
+**Stage 4 — Synthesize + present (1 worker/inline).** Roll up findings that survived refutation, ranked most-severe first, grouped by member. Present as a staff-review summary at a **gate** — I do not auto-resolve it and the cut decision stays yours.
+
+Pipeline where I can (a report's findings can verify while another report is still under review); the only true barrier is Stage 2's dedupe, which genuinely needs every finding at once.
+
+## What I'd do next to launch it
+
+1. **Scout the work-list inline first** — `spacedock status --where` over sprint 0260 to confirm it's actually 27 members and pull each ideation report's slug/path. I discover the list before I orchestrate over it.
+2. **Put the declared numbers on the table** — 27 reviewers fixed; verifier ceiling + tolerance + the stop-and-recap rule. Given the scale, that declaration is yours to re-cap before I spend it.
+3. **Author the script** inline (not to a file first) with the schemas, the dedupe barrier, and the caps.
+4. **Then** invoke `Workflow`.
+
+I've stopped at the draft — not launching, and not pulling the member list yet, until you've seen the corrected shape and the worker count. The one thing I need from you to proceed is a yes/re-cap on the verifier ceiling; the 27 reviewers I'd treat as authorized by the review request itself.

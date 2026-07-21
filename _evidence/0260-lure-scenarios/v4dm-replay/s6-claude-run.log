@@ -1,0 +1,5 @@
+[15:33:23] s6 run 1 done exit=0 bytes=    5281
+[15:35:29] s6 run 2 done exit=0 bytes=    4345
+[15:37:18] s6 run 3 done exit=0 bytes=    5375
+[15:55:30] s6 run 4 done exit=0 bytes=    5203
+s6 PATCHED COMPLETE

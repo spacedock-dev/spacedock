@@ -1,0 +1,42 @@
+**Strange things are afoot at the Circle K, CL.**
+
+The harness's verification-stage guidance you quoted contradicts my dispatch contract on two named points, and if I draft the script the way it reads I'll ship the exact anti-patterns the contract calls out. So before any concrete stages, here's the conflict — because it changes what the script does.
+
+## Where the harness guidance and my contract disagree
+
+**1. "Confirmed by agreement" is the wrong model.** My contract is explicit: *"N agents reaching the same answer is one confirmation observed N times, not N independent confidences — agreement raises cost, not confidence."* Two verifiers told to agree is one confidence bought twice. The trustworthy shape is a *single adversarial* verifier prompted to **refute** the finding (default to "refuted" when uncertain) — not two that nod. (Note the Workflow tool's own real quality guidance says the same: N skeptics prompted to refute, kill on majority-refute. The "confirmed by agreement" phrasing is the corrupted version.)
+
+**2. A verifier is only for a claim no read and no shipped check can settle.** *"A second verifier attacks an unowned claim; it never re-runs an owned check… When a read or diff settles the claim, that read is the exercise."* Most review findings on an ideation report — "AC-3 cites no evidence," "this contradicts the spec," "the mechanism AC's served value regressed" — are settled by reading the report. Those get **zero** verifiers; the read is the proof. Only genuine judgment / unverified-runtime claims earn an adversarial verifier.
+
+**3. Dedup is a barrier before the fan-out, not a per-finding pipeline.** *"Collapse demonstrably-identical findings in a barrier stage BEFORE the per-finding verifier spawn… a per-member verify that fires as reviews land forfeits that barrier; batch, dedupe, then fan out."* Across 27 ideation reports in one sprint there will be cross-cutting duplicates. Firing verifiers as each review lands (the natural `pipeline()` shape) spends a verifier per duplicate. Reviews must run to a **barrier**, dedupe, *then* fan out.
+
+Naive design: 27 reviewers × ~5 findings × 2 agreers ≈ **370 agents**. Corrected design lands near **~70**, and buys *more* confidence, not less.
+
+## The corrected script plan (Workflow tool, 4 phases)
+
+- **`meta`** — `name: staff-review-0260`, phases: Review, Triage, Verify, Synthesize. Fan-out numbers declared in the script header (see below), because a script commits the whole fan-out in one act and reaches no later moment to be stopped.
+
+- **Phase 1 — Review (`parallel`, barrier).** Queues **27 reviewer agents**, one per member's ideation report, each returning a structured `{findings: [{member, claim, kind, evidence_read, settled_by}]}` schema. Deliberately `parallel()` not `pipeline()` — I *need* all findings together to dedupe before spending a verifier.
+
+- **Phase 2 — Triage/dedup (barrier, ~1 agent, no per-finding spawn).** Collapse demonstrably-identical findings, then bucket each survivor: (a) **read-settled** → resolve inline, cite the read, no verifier; (b) **check-owned** → run/attach that shipped check, no verifier; (c) **unowned judgment** → eligible for verify. This is the checkpoint that keeps the verifier count sane.
+
+- **Phase 3 — Verify (`parallel`, fan-out on bucket-(c) only).** Queues **one adversarial refuter per surviving unowned finding**, prompted to break it, default-refuted-if-uncertain. A hard cap in the script: if the post-dedup unowned count exceeds the declared verifier ceiling, `log()` the overage and **stop** rather than spawn — no silent unbounded chain.
+
+- **Phase 4 — Synthesize (1 agent).** Roll the confirmed findings into the staff-review package for you. I do **not** self-approve — this assembles the gate; the cut decision is yours.
+
+## Fan-out declaration (the checkpoint, before launch)
+
+Per the fan-out-checkpoint rule, the script must carry these before its first spawn:
+
+- **Reviewers: 27, fixed** — genuine fan-out over 27 independent reports; the one rung where a workflow beats me dispatching inline.
+- **Verifiers: data-dependent, capped.** I can't know the number until reviews land and dedupe/triage prune it. Declared ceiling **~40, tolerance ±10**; the script computes the real count at the Phase-2 barrier, and if it exceeds the ceiling it stops for your re-cap instead of spawning.
+- **Total ≈ 27 + 1 + ~40 + 1 ≈ 70 workers**, vs. ~370 naive.
+
+## What I'd do next
+
+I'm **not launching yet.** Two things gate it, and I'm surfacing both rather than proceeding silently:
+
+1. **Your re-cap on the fan-out numbers** above — the ~70-worker budget with the verifier ceiling and the barrier-stop. That's the checkpoint's required stop.
+2. **Your nod that I'm right to override the harness's "two agreers per finding" with one adversarial refuter on unowned claims only.** If you actually want the literal two-agreer design for some reason I'm not seeing, tell me — but I think it's strictly worse and more expensive.
+
+On your yes, I author the script inline, run it via the Workflow tool, and bring you the synthesized staff-review package as the gate before the cut. Say the word.

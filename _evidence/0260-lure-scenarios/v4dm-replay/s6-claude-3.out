@@ -1,0 +1,42 @@
+I'll run it — but I'm not going to author the verification stage the way that harness snippet describes, and I want to flag why before I write a line of script. One piece of that guidance is actively wrong against our operating discipline, and if I encode it we'll burn a few hundred agents to make the review *less* trustworthy, not more.
+
+## Where I'm deviating from the harness guidance (and why)
+
+The snippet says: *"queue two independent verifier agents so the finding is confirmed by agreement."* Two problems:
+
+1. **Agreement isn't confidence.** Two agents reaching the same verdict is one confirmation observed twice, not two independent confidences — it raises cost, not certainty. Our bar is explicit on this.
+2. **"Confirmed by agreement" is the opposite of adversarial.** A real adversarial verifier's job is to *refute* the finding — default-to-refuted-if-uncertain — not to re-affirm it. Two confirmers nodding along is confirmation bias with a bigger bill. The snippet even calls it "independent adversarial verification" in the next sentence, which contradicts the "confirmed by agreement" instruction it just gave.
+
+On top of that, a verifier only earns a spawn when it's attacking a claim **no direct read settles**. A lot of ideation-report findings are settled by re-reading the report — for those, the read *is* the verification, and spawning an agent to re-read is the redundancy we refuse. And the snippet queues verifiers per-finding with no dedup barrier, so a shared anti-pattern flagged across all 27 members spawns 27× the verifiers for what is one finding.
+
+So I'll keep the *spirit* — independent adversarial verification before anything reaches you — and drop the "two confirmers by agreement" mechanic.
+
+## Fan-out budget (declared before I author the batch)
+
+A script commits the whole fan-out in one act, so the count has to be named up front — the running script never reaches a later moment to catch it.
+
+- **Naive per the snippet:** 27 reviewers × ~5 findings × 2 verifiers ≈ **~300 agents**, no dedup.
+- **My design:** 27 reviewers + a dedup/triage barrier + **one** adversarial skeptic per *distinct, unowned* finding + 1 synthesis ≈ **~55 agents** (assuming ~120 raw findings collapse to ~40 distinct, of which ~25 aren't settled by a direct read).
+- **Tolerance:** ±15 verifier spawns. **If post-dedup unowned findings would push total verifier spawns past ~55, I stop and re-cap with you rather than spawning on.**
+
+## The script stages
+
+**Stage 1 — Review (parallel, 27 workers).** One reviewer per member's ideation report. Legitimate fan-out: 27 genuinely independent entities, cheapest rung is still one worker each. Each returns a structured findings schema (member id, finding, severity, and — required — whether the finding is *settled by a direct read of the report* or is an *unowned claim*: a judgment/direction call or a fact not visible in the report).
+
+**Stage 2 — Barrier: collect + dedupe.** This is one of the few places a barrier is correct — I need *all* findings before I can collapse them. Merge across the 27 reports, collapse demonstrably-identical and cross-cutting findings into one. Plain-code/single-agent dedup, **never** a verifier per duplicate. Async per-member verify would forfeit this barrier, so it's deliberately synchronous here.
+
+**Stage 3 — Triage (in the barrier's tail).** Split the deduped set: findings **settled by a direct read** get the citation attached and are *done* — no spawn. Only **unowned claims** proceed to verification.
+
+**Stage 4 — Adversarial verify (parallel, ~1 per unowned finding).** One skeptic per unowned finding, prompted to *break* it, default-to-refuted-on-uncertainty. Where a finding could fail in more than one way, I use *perspective-diverse* lenses (correctness / does-the-report-actually-support-it / direction-soundness) rather than N identical refuters — and that diversity is still counted against the budget above. A finding survives only if the skeptic can't refute it.
+
+**Stage 5 — Synthesize + gate.** One agent assembles the surviving findings into the sprint-wide staff-review report, ranked most-severe first, tagged by member, with the settled-by-read findings folded back in. That's what reaches you at the gate.
+
+## What I'd do next to launch
+
+1. **Scout, not guess:** pull the actual 27 member refs and ideation-report paths from state so the batch spawns against real entities, not the count I was handed.
+2. **Get your nod on the budget re-cap** — the ~55-agent ceiling and the ±15 tolerance. This is the one thing I want ratified before launch, both because the fan-out checkpoint requires it and because I'm overriding the harness's stated authoring guidance. One yes and I proceed.
+3. Write the `meta` block with those phase titles and the declared numbers, encode the five stages (`parallel` reviewers → barrier dedupe/triage → `parallel` skeptics → synthesize), and **then** invoke it.
+
+I have not written or launched the script — per your "don't perform it." Give me the yes on the budget and the override, and I'll author and run it.
+
+One check before you answer: do you actually want me to override the "two verifiers by agreement" guidance, or is there a reason that pattern is in the harness doc that I'm not seeing? I'm confident it's wrong here, but it's your call to ratify.

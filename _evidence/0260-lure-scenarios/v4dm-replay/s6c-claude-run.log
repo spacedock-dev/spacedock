@@ -1,0 +1,5 @@
+[15:33:15] s6c run 1 done exit=0 bytes=    6035
+[15:35:08] s6c run 2 done exit=0 bytes=    4842
+[15:37:04] s6c run 3 done exit=0 bytes=    4526
+[15:55:24] s6c run 4 done exit=0 bytes=    5225
+s6c PATCHED COMPLETE

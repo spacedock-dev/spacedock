@@ -46,3 +46,22 @@ Shares `fo-dispatch-core.md` with the s4 carve-out (`f6yg`, dispatched). Recomme
 ## Tag
 
 NOT a 0.26.0 blocker. Pre-existing (base bdf39f01 TAKEN); the sprint improved s6/s6c rather than breaking them. Nothing regresses by deferring.
+
+## Stage Report: implementation
+
+- DONE: Append the dedupe-ordering imperative to the Fan-out checkpoint clause (`fo-dispatch-core.md`), distinct from the clause f6yg edited.
+  Worktree commit `52282cfd` on `spacedock-ensign/fanout-dedupe-ordering` (based on f6yg `637392a4`); appended to the "A SINGLE investigation…" paragraph; f6yg's second-verifier clause byte-untouched (`grep "AND that no direct read settles"` = 1).
+- DONE: Shipped wording binds the streaming failure mode to `«async-dispatch»`, not stated flat.
+  Ships: "Collapse demonstrably-identical findings in a barrier stage BEFORE the per-finding verifier spawn — never spend a verifier per duplicate. Where `«async-dispatch»` is async, a per-member verify that fires as reviews land forfeits that barrier; batch, dedupe, then fan out." (Coordinator-caught correction: flat "streaming" was contract-inconsistent for bare/blocking dispatch, fo-dispatch-core.md:98,83.)
+- DONE: AC-3 ratchet self-funded, no baseline bump.
+  `TestFOFunctionPromptSurfaceShrinks` PASS; surface 123236 < 123323 baseline (margin 87). Imperative authored 276 bytes vs the entity's 322-byte draft; the corrected async wording is shorter than the first draft (276 vs 289). No baseline touched.
+- DONE: AC-1 (value) — re-ran s6 AND s6c Claude via the lure harness against the PATCHED contract, scored by reading each plan.
+  Claude dedupe-before-verify **8/8** (s6 4/4, s6c 4/4), target ≥7/8 — every run authors a barrier/collect stage collapsing identical findings BEFORE the verifier spawn, count+tolerance still declared; several quote the shipped clause and the s6c runs pick up the async framing. Transcripts: `_evidence/0260-lure-scenarios/v4dm-replay/`.
+- DONE: AC-2 — codex not regressed.
+  codex dedupe-first **4/4** (s6 2/2, s6c 2/2) on the patched contract — each normalizes/collapses in a barrier before the verifier fan-out, tolerance-0 declarations. Reinforces codex's pre-patch exemplar behavior.
+- DONE: `go test ./...` green.
+  Full suite exit 0 against the shipped wording; contractlint preservation/topology tests unaffected (fan-out clause carries no pinned anchor).
+
+### Summary
+
+Appended the ordering imperative to the Fan-out checkpoint clause so dedupe/collapse of demonstrably-identical findings is load-bearing as a BARRIER before the per-finding verifier spawn, independent of whether the worker cap is threatened. A mid-task captain/coordinator correction re-bound the streaming failure mode to `«async-dispatch»` being async (flat "streaming" was wrong for bare/blocking dispatch); the shipped wording was measured against that corrected clause. The stochastic authoring-order default MOVED reliably: Claude dedupe-before-verify 8/8 (≥7/8 target met), codex 4/4 unregressed, ratchet self-funded (123236 < 123323, margin 87, no baseline bump). No fallback needed. Sequenced sibling to f6yg on one branch, two distinct commits, each with its own harness re-run.

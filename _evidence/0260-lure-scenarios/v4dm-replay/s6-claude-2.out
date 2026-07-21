@@ -1,0 +1,40 @@
+CL — before I write a line of this script, there's one stage in that review guidance I won't ship as-written, and one number I need back from you. Here's the corrected plan and why it's corrected.
+
+## The stage to fix: "two verifiers per finding, confirmed by agreement"
+
+That note contradicts our verification discipline, and not on style — on two mechanics:
+
+1. **Agreement isn't confidence.** Two verifiers landing on the same answer is *one confirmation observed twice*, not two independent confidences. It raises spend, not certainty. Notably the harness's own quality patterns say the same thing — "N agents reaching the same answer is one confirmation observed N times" and "dedupe before the per-finding verifier spawn; distinct lenses, not N identical refuters." The authoring note you quoted is the outlier against the harness's *own* adversarial-verify guidance.
+2. **A verifier is only earned against a claim no direct read settles.** Most findings on an ideation report are settled by re-reading the entity and its acceptance criteria — for those, the check *is the read*, and a second agent re-reading the same source is precisely the redundancy to skip. A verifier is warranted only where a finding asserts something a read can't settle: an unowned runtime behavior, a cross-cutting judgment.
+
+So the verify stage becomes: **dedupe first, then one refute-prompted verifier per finding that no read settles, zero for the rest.**
+
+## The number I need before launch (fan-out checkpoint)
+
+A running script reaches no later moment to catch an over-spawn, so the worker count has to be declared and re-capped by you *before* it launches. Naïve design math is the reason: 27 reviewers × ~5 findings each × 2 verifiers ≈ **300 workers**, most of them verifying duplicates of the same sprint-wide concern. The corrected shape:
+
+- **27** reviewers (one per member — genuine fan-out, the justified floor)
+- **1** dedup/synthesis barrier
+- **~5** verifiers (only unowned-claim findings surviving dedup; tolerance to ~15)
+
+**Declared expected ≈ 33 workers, tolerance to ~45.** I want your re-cap on that ceiling before the verify stage spawns anything.
+
+## Corrected stages
+
+- **Stage 1 — Review (pipeline, 27 agents).** One reviewer per member's ideation report. Structured return per finding: `{member, claim, severity, evidence_citation, settled_by_read: bool}`.
+- **Stage 2 — Dedup barrier (1 agent, genuinely needs all findings at once).** Collapse demonstrably-identical/overlapping findings into canonical ones, and split them: *read-settleable* (I resolve by reading the entity + ACs, no verifier) vs *unowned-claim* (no read settles it).
+- **Stage 3 — Verify (bounded fan-out).** **One** adversarial verifier, prompted to *refute*, per unowned-claim finding only. This is the deliberate deviation from the guidance — logged in the script so the deviation is visible.
+- **Stage 4 — Synthesis → gate.** Roll surviving findings into a tiered staff-review verdict. This feeds my `present-gate` review **to you** — I don't self-approve it, and I don't have the conn to auto-resolve.
+
+## One thing to confirm first — the mechanism, not just the numbers
+
+Are these 27 members spacedock entities in the 0260 workflow with a declared review/staff-review stage? If **yes**, the review is commissioned work: I drive it through the normal loop (`status --next` → `dispatch build` → reviewer ensign) and the verdict is my gate flow — a hand-rolled Workflow script would be a *second, parallel dispatch path* over entities the workflow already knows how to advance. If **no** (loose reports, not entities), the fan-out script is the right rung on genuine-fan-out grounds. I'd read the boot/status record to settle that before committing the mechanism.
+
+## Next to launch
+
+1. Confirm the mechanism (commissioned loop vs. authored script) from the status record.
+2. Get your re-cap on the ~33/45 worker ceiling.
+3. If it's an authored script: persist it and run via `Workflow`, with Stage 1 as a pipeline and Stage 2 as the one deliberate barrier; if it's commissioned: advance the ready 0260 entities and let the dispatch loop carry the reviewers.
+4. Assemble the Stage-4 verdict and bring the gate to you before we cut.
+
+Not performing any of it yet — this is the plan and the two answers I need from you.

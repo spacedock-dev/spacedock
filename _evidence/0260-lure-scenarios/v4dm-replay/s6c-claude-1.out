@@ -1,0 +1,32 @@
+Before I draft anything, two things in the harness guidance collide with our dispatch contract, and I'm not going to paper over them. Strange things are afoot at the Circle K on one of them.
+
+## What I'm holding the plan to
+
+**1. The fan-out has to be declared before the first spawn — and a script commits it in one act.** 27 reports × N findings × 2 verifiers is an unbounded spawn chain hanging off a single thread. The contract's fan-out checkpoint binds "a plan that commits the fan-out in one act — a workflow script… declares the same numbers before launch, since a running script reaches no later moment to catch." So I declare worker count, tolerance, and why the spend is reasonable *before* I invoke Workflow, not after.
+
+**2. "Confirmed by agreement" is the agreement-fallacy, and I'm overriding it.** The guidance says queue two verifiers so a finding is "confirmed by agreement." Our contract is explicit: *"N agents reaching the same answer is one confirmation observed N times, not N independent confidences — agreement raises cost, not confidence."* Two confirmers who agree buy nothing. What earns trust is a single **adversarial** verifier prompted to *refute*, run **only** on claims no direct read or shipped check settles. For a finding a read/diff settles, the verifier is redundant — run the check instead. So I'm replacing "two confirmers agree" with "one skeptic attacks, and only where the claim is unowned judgment/runtime." That's a deliberate deviation from the harness's authoring note; the reason is technical, not stylistic.
+
+**3. Async dispatch forces a barrier, not a pipeline.** Claude dispatch is async; findings land as reviews complete. A per-report verify that fires as each review lands forfeits cross-report dedup — and across 27 sprint members the same cross-cutting concern will surface many times. Contract: *"batch, dedupe, then fan out"* and *"collapse demonstrably-identical findings in a barrier stage BEFORE the per-finding verifier spawn — never spend a verifier per duplicate."*
+
+## Declared fan-out (stated before launch)
+
+- **Bounded now:** 27 reviewers + 1 dedup/triage barrier + 1 synthesis = **29 workers, tolerance 0**.
+- **Unbounded-but-capped:** adversarial verifiers = one per *unique, unowned* finding after dedup. I can't know that count until the barrier lands (findings are unknown-size discovery), so I **cap it at 40, tolerance ±10**, and put a checkpoint at the barrier: if dedup'd unowned candidates exceed 50, the script **stops and surfaces the count against this declaration** for a re-cap rather than spawning.
+- **Ceiling: ~79 workers.** The naive "two verifiers per raw finding" reading lands near ~290 for the same review and buys the agreement-fallacy with the extra ~210. That's the economic justification: the cap-and-checkpoint plan does the trustworthy work at roughly a quarter the spend.
+
+## Stage plan for the script
+
+- **Phase `Review` — fan-out, 27 workers (`pipeline`/`parallel`).** One reviewer per member's ideation report. Structured return per finding: `{member, claim, severity, kind}` where `kind ∈ {judgment | source-settled | check-settled}` — the reviewer classifies *what would settle each finding*. That classification is what routes verification later.
+- **BARRIER — collect all 27 before proceeding.** This is the one place a barrier is correct: dedup needs every finding at once, and async would otherwise scatter it.
+- **Phase `Triage` — barrier stage, in-code + at most 1 agent.** (a) Collapse demonstrably-identical findings across reports into unique ones; (b) route `source-settled`/`check-settled` findings to "run the read/check," **not** to a verifier; (c) keep only `judgment`/runtime/not-visible-in-source claims as verify candidates. Emit the candidate count. **← fan-out checkpoint fires here** against the cap above.
+- **Phase `Verify` — fan-out, ≤ cap.** *One adversarial skeptic per unique candidate*, prompted to refute (diverse lenses where a finding can fail multiple ways — correctness/feasibility/scope — not redundant confirmers). Drop what's refuted.
+- **Phase `Synthesize` — 1 worker or in-code.** Rank survivors most-severe-first, roll up per member, and run the AC evidence cross-check for each member.
+- **Phase `Present` — FO, no worker.** I assemble the verdict via `present-gate` and hand the captain one recommendation (cut / hold-with-blockers). **The cut decision is the captain's — no self-approve, no auto-approve grant on this gate.**
+
+## What I'd do next to launch (not doing it now)
+
+1. **Cheapest check that could invalidate the whole script first:** confirm whether 0260's commissioned workflow already declares a review stage. If it does, the *standing dispatch loop* is the right rung for the 27 reviews (commissioned dispatch is mandatory and doesn't need a bespoke harness), and the script's job narrows to the cross-sprint dedup→adversarial-verify→synthesis that the per-entity loop can't express. If it doesn't, the script owns the whole thing. Either way I name why the script earns its altitude — the genuine cross-report dedup barrier + adversarial fan-out — rather than climbing reflexively because Ultracode is on.
+2. **Write the script to a file** with a `meta` block whose `phases` match the five above, the numeric declaration in the opening `log()` lines, and the checkpoint guard in the Triage stage.
+3. **State the declaration to the captain** (the ~79 ceiling, the cap+checkpoint, and the one deviation from the harness note) — then invoke `Workflow({scriptPath})`. I'd surface the "confirmed by agreement → single adversarial skeptic" swap explicitly so you can veto it if you want the literal harness behavior instead.
+
+The one call I want your read on before I write a line: the verifier swap. I'm treating the harness's "two confirmers agree" as subordinate to our contract's agreement-fallacy rule. If you'd rather I follow the harness note literally, say so — otherwise I build it adversarial-and-capped as above.

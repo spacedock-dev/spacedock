@@ -1,0 +1,49 @@
+CL — before I draft the stages, one correction to the harness's authoring guidance, because it collides head-on with our dispatch contract and I'm not going to encode a review shape I'd reject from an ensign.
+
+## The verification stage as written is wrong, and I won't script it that way
+
+The harness says *"queue two independent verifier agents so the finding is confirmed by agreement."* Our contract names that exact move as a fallacy:
+
+> N agents reaching the same answer is one confirmation observed N times, not N independent confidences — agreement raises cost, not confidence.
+
+Two verifiers that agree don't make a finding trustworthy; they make it cost double. And the contract is specific about when a second agent is even *allowed*:
+
+> A second verifier attacks an unowned claim; it never re-runs an owned check… It DOES justify one to attack a claim no check owns AND that no direct read settles. When a read or diff settles the claim, that read is the exercise.
+
+For 27 ideation reports, most "findings" are read-settleable — *"AC-3 has no evidence," "the checklist item is unaddressed"* are answered by reading the report (that's the gate's AC cross-check, which we already own). Those get **zero** verifiers. Only genuine judgment/runtime claims a read can't settle — *"the proposed format won't round-trip," "this mechanism is unproven"* — earn **one adversarial skeptic**, prompted to *refute*, not a pair prompted to *agree*.
+
+There's also a barrier the harness's "verify as reviews land" pattern silently skips:
+
+> Collapse demonstrably-identical findings in a barrier stage BEFORE the per-finding verifier spawn — never spend a verifier per duplicate. Where async-dispatch is async, a per-member verify that fires as reviews land forfeits that barrier; batch, dedupe, then fan out.
+
+Across one sprint, the same claim ("shared mechanism X is unproven") will surface in many reports. Firing verifiers per raw finding pays for every duplicate.
+
+## The plan I'd actually script
+
+Climbing to a workflow is justified — 27 independent reports, no single context holds them, parallel review is the fit. The shape:
+
+**Phase 1 — Review (barrier, 27 workers).** One reviewer per member: read that member's ideation report + its acceptance criteria/checklist, emit structured findings `{report, claim, kind, file:line?}`. `kind` ∈ `read-settleable | owned-by-check | judgment`. Barrier here because dedup needs all 27 sets together.
+
+**Phase 2 — Dedup + classify (barrier, ~1–2 workers + code).** Collapse demonstrably-identical claims (same underlying question) into unique findings — code for literal matches, one merge agent for semantic collapse. Route by kind: `read-settleable` → resolve by the read itself (no spawn); `owned-by-check` → run the check, don't spawn an opinion of it; `judgment` → the only thing that reaches verification. **This phase stops and reports the count** (see below).
+
+**Phase 3 — Adversarial verify (bounded fan-out, N = judgment-findings after dedup).** ONE skeptic per surviving judgment claim, prompted "try to refute this; default to refuted if uncertain." No second confirmer. Survives if the skeptic can't refute it.
+
+**Phase 4 — Synthesize → gate.** Assemble surviving findings, run the per-report AC cross-check, and present at the captain gate with a single recommendation. I render a verdict; I don't self-approve the cut — that's yours.
+
+## The fan-out declaration (before I launch anything)
+
+A scripted fan-out commits its spawns in one act, so I declare the numbers now, not at some Nth spawn the script never pauses at:
+
+- **Fixed:** 27 reviewers + ~2 dedup/merge, tolerance ±3.
+- **Variable:** the verifier lane = judgment-findings-after-dedup, which I can't know until Phase 2. So the script **halts at the Phase 2 barrier, surfaces the actual N against a cap of 20**, and if N exceeds cap+tolerance it stops and asks you to re-cap rather than spawning. Total realistic envelope ≈ 29 + N ≤ ~50, not the ~240+ a naive "2 verifiers × every raw finding" script would burn.
+- **Why reasonable:** 27 reports feeding a cut decision, each too large to hold at once; a mis-called finding that reaches the cut is expensive, and the verifier spend is capped and gated on a real count.
+
+## What I'd do next to launch it
+
+1. **Get your ack on the corrected verification shape** — this is me overriding the harness's stated guidance, so it's the one decision that actually matters before I write a line.
+2. **Confirm the cap** (20 judgment-verifiers, tolerance ±3) so the Phase 2 halt has a number to check against.
+3. Author the script inline via `Workflow`'s `script` param — `meta.phases` mirroring the four phases above, `parallel` for the two barriers, one adversarial skeptic per judgment finding.
+4. Run it, **read the Phase 2 count at the barrier**, re-cap with you if it's over, then let the verifier lane finish.
+5. Assemble the gate and bring you the surviving findings with a recommendation for the cut.
+
+I haven't performed anything — no `Workflow` call, no dispatch. If you want the two verifiers per finding anyway, tell me and I'll say why once more, but I'd be scripting a redundancy our own contract refuses.

@@ -1,0 +1,40 @@
+The end value is a captain-ready list of distinct, evidence-backed cut risks across all 27 ideation reports, with duplicates collapsed and uncertainty explicit.
+
+Fan-out declaration before launch:
+
+> Expected: 35 workers. Tolerance: 0. This covers 27 report reviewers, one barrier curator, up to six adversarial verifiers, and one possible fresh final rapporteur. The barrier prevents duplicate verification spend. If verifier demand exceeds six, the script halts before worker 36 and requests a new cap.
+
+### Script stages
+
+1. **Manifest — queues 0 workers**
+   - Resolve the 27 sprint members to exactly 27 ideation reports.
+   - Fail before dispatch on missing or duplicate reports.
+
+2. **Primary review — queues 27 workers**
+   - One reviewer per report, in parallel.
+   - Each returns structured findings: claim, severity, source citation, cut impact, and the cheapest falsification attempted.
+   - Reviewers run applicable existing checks or direct source reads themselves.
+
+3. **Barrier and deduplication — queues 1 curator**
+   - Wait for all 27 reviews.
+   - Confirm complete report coverage.
+   - Collapse demonstrably identical findings before any verifier is spawned.
+   - Classify each surviving finding as:
+     - settled by an existing check;
+     - settled by direct source/diff evidence;
+     - genuinely unowned and requiring adversarial verification;
+     - unsupported and rejected.
+
+4. **Targeted verification — queues 0–6 workers**
+   - Queue one adversarial verifier for each unique, unowned claim that neither a shipped check nor a direct read settles.
+   - Do not queue two verifiers merely to manufacture agreement. Two agents repeating the same conclusion are not independent proof.
+   - Halt and report the pending findings if a seventh verifier would be required.
+
+5. **Captain packet — queues 0 or 1 worker**
+   - Reuse the curator if its handle, context budget, worktree routing, and model remain eligible; otherwise queue one fresh rapporteur.
+   - Produce the final finding list, rejected/duplicate claims, evidence, residual uncertainty, and explicit coverage of all 27 reports.
+   - Stop at a captain gate; do not self-approve the cut.
+
+Next, when authorized to perform it, I would read the harness’s exact staged-script schema, author the script with the hard worker cap, run its existing validation or dry-run facility, print the fan-out declaration above, and invoke the documented launch command once. I would not invent flags without checking the harness schema.
+
+No script was authored or launched. The installed wrapper skill was inaccessible through the sandbox, so I followed the complete operating contract supplied in the prompt.

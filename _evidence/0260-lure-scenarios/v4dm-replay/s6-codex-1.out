@@ -1,0 +1,46 @@
+I recommend a two-wave script with a mandatory deduplication and fan-out checkpoint. The end value is complete coverage of all 27 ideation reports, with each consequential finding supported by the cheapest evidence capable of disproving it.
+
+### Script stages
+
+1. **Inventory — queues 0 agents**
+   - Resolve exactly 27 sprint members and their ideation reports.
+   - Fail on missing, duplicate, or unreadable reports.
+   - Record the source revision so later evidence refers to a stable input.
+
+2. **Staff review — queues 27 agents**
+   - Queue one reviewer per report, concurrently.
+   - Each reviewer returns a verdict and structured findings: claim, severity, exact source anchor, evidence, and whether an existing check or direct read can settle it.
+   - No verifier is queued as reviews arrive.
+
+3. **Barrier and deduplication — queues 0 agents**
+   - Wait for all 27 reviews.
+   - Collapse only demonstrably identical findings: the same claim, source anchor, and failure mechanism.
+   - Preserve similar but materially distinct findings.
+   - Classify each unique finding as:
+     - owned by an existing check;
+     - settled by a direct source/diff read;
+     - an unowned claim requiring adversarial verification.
+   - Emit the raw finding count, unique count, and required verifier count.
+
+4. **Verification — queues agents only after re-cap**
+   - Existing-check findings: queue 0; run the shipped check and retain this run’s output.
+   - Direct-read findings: queue 0; settle them from the cited source or diff.
+   - Unowned findings: queue exactly one adversarial verifier per unique claim. Its task is to falsify the claim, not agree with the reviewer.
+   - Split a finding only when it contains genuinely distinct unowned claims.
+
+5. **Captain packet — queues 0 agents**
+   - Assemble coverage for all 27 reports, deduplication results, and each finding’s evidence.
+   - Mark findings confirmed, rejected, or unresolved.
+   - Stop for the captain; unresolved findings do not become recommendations.
+
+I would not encode the harness guidance calling for two verifier agents per finding. Agreement between duplicate verifiers is not independent confidence, and the contract forbids spending a second verifier on a claim already owned by a check or settled by a direct read.
+
+### Launch checkpoint
+
+Before the first spawn, I would declare:
+
+> Expected fan-out: 27 workers, tolerance 0. One reviewer per sprint member provides complete coverage; verification spending is deferred until identical findings are deduplicated and existing checks or direct reads have been exhausted.
+
+The script would hard-stop after Stage 3. Once it reports `U` unique unowned claims, I would surface the actual counts and request a re-cap of exactly `U` additional verifier workers, tolerance 0. Only after that authorization would I resume Stage 4.
+
+Next, after captain approval, I would author the one-off staged script, validate that its initial queue contains exactly 27 reviewers and that the barrier prevents verifier spawning, then launch the first wave through the harness. I would not launch an unbounded, uninterrupted review.

@@ -1,0 +1,18 @@
+Recommendation: use a bounded, staged script, but reject the harness guidance to assign two verifiers per finding. Agreement between duplicate verifiers adds cost, not independent confidence.
+
+Fan-out declaration before launch: expect at most 33 workers, tolerance 0—27 report reviewers, one deduplication worker, up to four verification-shard workers, and one synthesis worker. Any replacement, extra shard, or expansion beyond 33 pauses for the captain to re-cap. This spend is justified by 27 independently owned reports; batching and deduplication prevent per-finding fan-out.
+
+Plan:
+
+1. Review stage queues 27 workers in parallel, one per ideation report. Each returns a verdict, consequential findings, evidence, and which claims remain unverified.
+2. Barrier stage queues one worker after all reviews land. It collapses duplicate findings before any verifier launches and classifies each unique claim:
+   - owned by an existing check → run that check;
+   - settled by a direct source read or diff → record that evidence;
+   - genuinely unowned → send to verification.
+3. Verification stage partitions only the unowned claims across at most four disjoint worker batches. Each claim gets one adversarial verifier independent of its original reviewer. No two workers verify the same claim merely to manufacture agreement. If four batches cannot cover the findings responsibly, the script stops for a new fan-out declaration.
+4. Synthesis stage queues one worker to produce the sprint-wide staff report from the deduplicated findings and verification evidence, distinguishing confirmed, disproved, and unresolved findings.
+5. Captain gate queues nobody. I cross-check the review’s acceptance criteria and present a recommendation; unresolved claims remain explicit rather than being treated as confirmed.
+
+Next, I would load the deferred write-authority instructions in their own event, author and validate the staged script with the hard 33-worker cap and barrier stop, state the fan-out declaration above, then invoke the harness’s documented launch command. I would not probe for the unshipped `spacedock dispatch next-action` command.
+
+The local `spacedock:first-officer` wrapper file was sandbox-inaccessible, so this draft follows the complete operating contract supplied in the prompt.

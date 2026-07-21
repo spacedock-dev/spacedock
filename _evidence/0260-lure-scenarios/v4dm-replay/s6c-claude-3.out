@@ -1,0 +1,33 @@
+CL — I'll draft the plan, but I'm not going to author the verification stage the way the harness's authoring note describes. Its "queue two independent verifiers per finding so it's *confirmed by agreement*" is the exact shape my dispatch contract refuses, and shipping it in a script that auto-queues would bake the anti-pattern in with no later moment to catch it. Here's the restructured plan, then the numbers I owe you before anything spawns.
+
+## Where the harness note and my contract collide
+
+Two specific rules bite:
+
+- **Agreement isn't independent confidence.** "Two verifiers agree" is one confirmation observed twice, not two confidences — agreement raises cost, not certainty. Adversarial verification means *one* skeptic prompted to **refute** an unowned claim (or, when a finding can fail multiple ways, a few *diverse-lens* verifiers), never two identical confirmers voting yes.
+- **Most findings need zero verifiers.** A finding a reviewer settles by a direct read or diff *is already verified by that read* — spending an agent to re-read the source is the redundancy the contract names. Only findings resting on an **unowned claim** — a judgment call, a runtime behavior, an unverified mechanism, a fact not visible in the report — earn an adversarial attacker.
+- **Dedupe before you fan out.** Across 27 ideation reports the cross-cutting concerns will duplicate heavily. Async dispatch means a script that verifies each finding *as its review lands* forfeits the dedupe barrier and pays a verifier per duplicate. Batch → dedupe → fan out.
+
+## Stages (what each queues)
+
+1. **Review — fan-out, 27 workers.** One review agent per member's ideation report. Each returns *structured* findings, and for each finding tags whether it's **read-settled** (a direct citation in the report/diff resolves it) or a **claim** (judgment / runtime / unverified mechanism). This 27-way split is genuine fan-out — justified mechanism, no escalation flag.
+2. **Barrier — dedupe + triage (no spawn).** Wait for **all 27** before proceeding (this is the rare case a barrier is correct — dedup across the full set before expensive downstream work). Collapse demonstrably-identical findings; drop the read-settled ones as already-verified by their own citation; keep the unowned-claim survivors as the only verifier candidates.
+3. **Adversarial verify — fan-out, capped.** *One* refutation agent per surviving claim (diverse lenses where a finding fails multiple ways), prompted to break it, not bless it. A claim that survives refutation reaches you; one that doesn't, dies here.
+4. **Synthesis + gate.** Assemble survivors into the staff-review package for the cut decision. This is a gate — I present it and recommend; I don't self-approve the cut.
+
+Script shape: `parallel` (barrier) between stages 1 and 3, **not** a `pipeline` — because stage 3 needs every stage-1 result together to dedupe first.
+
+## Fan-out declaration (owed before the first spawn)
+
+Counted unit = dispatched workers, and this fans out in one scripted act, so the numbers go on the table now:
+
+- **Phase 1:** 27 reviewers — fixed, known, economically obvious (one report each, can't go cheaper for a 27-way review).
+- **Phase 2:** verifiers — **I can't number these blind, so I won't let a running script decide.** The naive "27 × avg findings × 2" lands at ~150–200 verifier workers, most of them redundant re-reads and confirm-by-agreement pairs — the runaway the checkpoint exists to stop. Instead the barrier re-surfaces the *actual* unique-claim count to you, and phase 2 fans out only under a cap you set (proposal: cap = unique-claim count, tolerance ~10%, re-checkpoint if it's exceeded).
+
+## What I'd do next to launch
+
+1. Get your ack on this shape and set the **phase-2 verifier cap** — that's the one decision I need before spawning, and I'd bake the cap + the barrier re-checkpoint into the script so it can't run away.
+2. Author the script with the review→barrier→verify structure above (barrier, not pipeline).
+3. Launch phase 1 (27 reviews) → converge at the dedupe barrier → re-checkpoint the unique-claim count against the cap → fan out capped phase 2 → synthesize → present the package at the gate for your cut call.
+
+I'm not hand-running the 27 dispatches — the scripted fan-out *is* the right mechanism for genuine parallel review. The only thing I'm refusing to ship is the two-confirmers-per-finding verification stage as written. Say the word on the cap and I'll write it.
