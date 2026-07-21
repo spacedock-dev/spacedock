@@ -28,20 +28,260 @@ The current job can therefore report success while leaving the edge binary behin
 4. Observe that no release workflow run exists for the pre0 tag.
 5. Delete and manually re-push the same local annotated tag; observe that the release workflow starts immediately.
 
+## Root cause
+
+Not a race. The `edge-advance` job's "Auto-cut the edge prerelease tag" step
+(`.github/workflows/release.yml`, currently the job's last step) constructs the
+annotated `vX.(Y+1).0-pre0` tag correctly and pushes it with:
+
+    git push "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$PRE0_TAG"
+
+`HOMEBREW_TAP_TOKEN` is a **cross-repo PAT provisioned for
+`spacedock-dev/homebrew-tap`** (goreleaser reuses it to bump the tap casks). The
+step reuses it for a **same-repo** tag push on the belief — stated in the step's
+own comment ("PAT … so the tag push RE-TRIGGERS release.yml") — that any
+non-`GITHUB_TOKEN` PAT triggers workflows. That belief is false for this token:
+the push lands the remote ref but creates **no** `release.yml` run. It is a
+workflow-run-suppressed credential — it behaves like `GITHUB_TOKEN` for
+triggering (GitHub does not create a new workflow run for a `push` event
+authenticated by a suppressed credential).
+
+Proof it is the credential/event path and not a race: the identical tag object,
+deleted and re-pushed under an **operator PAT/ssh** credential, fires `release.yml`
+within seconds — twice (both cuts below). Same ref, same peeled commit, same
+body; only the pushing credential differs. GitHub's documented rule: pushes made
+with `GITHUB_TOKEN` do not create workflow runs, while pushes made with a PAT,
+a GitHub App installation token, or an **SSH deploy key** do; `workflow_dispatch`
+and `repository_dispatch` always create runs. So the fix is to push the pre0 tag
+with a credential whose trigger-capability is unconditional, and to make a
+non-triggering credential fail loudly instead of leaving a silent gap.
+
+## Second reproduction (2026-07-21, v0.26.0 stable cut)
+
+Confirms the first occurrence (v0.25.0 cut, 2026-07-15) was not a fluke.
+
+- Release run `29845035279` (tag `v0.26.0`) reached `edge-advance`,
+  decision=`advance`. Its auto-cut step ran verbatim `git tag -a "$PRE0_TAG"
+  "$RELEASE_COMMIT" -m "$PRE0_BODY"` then the `x-access-token:${HOMEBREW_TAP_TOKEN}`
+  push.
+- Push SUCCEEDED (remote: `* [new tag] v0.27.0-pre0 -> v0.27.0-pre0`); tag object
+  `ac240b4abf8652868dc6b3d9d10a7bb931bf353d`, annotated, peeled to release commit
+  `ca136f83`.
+- **No** `release.yml` run was created for the pre0 tag. Waited >5 min; nothing
+  fired.
+- Operator remedy (`git push origin :refs/tags/v0.27.0-pre0` then
+  `git push origin v0.27.0-pre0`, under an operator PAT/ssh) fired release run
+  `29845875763` within seconds: it published the `v0.27.0-pre0` edge release (4
+  edge tarballs) and bumped the `spacedock@next` cask to `v0.27.0-pre0` (tap
+  commit `2c601b1c`).
+- Run-list confirmation: the ONLY `release.yml` run for each auto-cut pre0 tag is
+  the operator replay — `v0.26.0-pre0` → run `29423262944` (2026-07-15), and
+  `v0.27.0-pre0` → run `29845875763` (2026-07-21) — each firing minutes after its
+  stable run, via a `push` event. The auto-cut push produced zero runs.
+
+Impact: `next`'s skills advance to the new pre-version while the newest edge
+binary lags, so `spacedock@next` users hit a version-skew abort until an operator
+manually replays the tag. Shipped unfixed in 0.26.0 despite the 0.26.0 milestone
+label — recommend re-milestoning to 0.27.0 (frontmatter left unchanged here;
+flagged to the FO).
+
+## Proposed approach
+
+Keep the tag construction exactly as it is (annotated, non-empty body, on the
+greened `$RELEASE_COMMIT`) — AC-3 is preserved because nothing about the tag
+OBJECT changes. Change only two things in the auto-cut step:
+
+1. **Trigger-capable push credential.** Push the pre0 tag over SSH using a
+   dedicated **write deploy key** (`EDGE_RELEASE_DEPLOY_KEY` secret) scoped to
+   THIS repo — `git@github.com:${GITHUB_REPOSITORY}.git`. The pre0 push is a
+   same-repo push, so a repo-scoped deploy key is the minimal-privilege fit (no
+   cross-repo reach, unlike the tap PAT it replaces). Deploy-key pushes are the
+   one credential GitHub never restricts for triggering, they do not expire, and
+   the operator replay already proved an ssh-transport push of this exact tag
+   fires the run — so this productionizes the proven positive control.
+
+2. **Verify-or-fail guard.** After the push, poll the Actions API (read-only, via
+   the default `GITHUB_TOKEN`) for a `release.yml` run whose `head_branch` equals
+   the pre0 tag, for a bounded wait (~2 min, ~10s poll). If none appears, `exit 1`.
+   `edge-advance` is a sibling of `goreleaser` (`needs: goreleaser`), so this red
+   does NOT unwind the already-published stable release — it surfaces the edge
+   handoff as failed instead of silently green. This guard IS the mechanism AC-2
+   requires: a suppressed credential now reds the job before the run reports the
+   edge handoff complete, rather than leaving the gap the operator discovers later.
+
+**Value AC each mechanism serves.**
+- Deploy-key push → **AC-1** (the run fires automatically; edge binary + cask
+  publish without an operator replay). Simplest alternative considered: swap the
+  https URL to a new trigger-capable **classic PAT** secret (one-line change).
+  Insufficient as the primary choice: it repeats the exact class of failure that
+  produced this bug (a credential we *believe* triggers, whose trigger-capability
+  is conditional on flavor/scope and silently lapses on expiry) — the root cause
+  we could not fully explain for the current PAT. A deploy key removes that
+  conditionality. The classic-PAT swap is recorded as the smaller-surface fallback
+  if deploy-key SSH setup on the runner proves troublesome.
+- Verify-or-fail guard → **AC-2** (loud failure on a suppressed/incapable
+  credential). Simplest alternative considered: no guard, trust the deploy key.
+  Insufficient: AC-2 explicitly requires a suppressed token to FAIL the handoff,
+  and without the guard a future credential regression (rotation, revocation,
+  someone reverting to the tap PAT) reintroduces the silent gap — this is the
+  bug's third-occurrence prevention.
+
+Rejected — `repository_dispatch`/`workflow_dispatch` re-trigger (which GitHub
+lets even `GITHUB_TOKEN` fire): it would require every `release.yml` job
+(`e2e-gate`, `goreleaser`, `journey-ledger`, `edge-advance`) to resolve the tag
+from a dispatch payload instead of `github.ref`, rewriting the core of the
+working stable pipeline. That is the LARGEST correction, not the smallest, and
+risks the stable path the Test plan says to protect. Rejected — a polling
+controller (a separate scheduled workflow that watches for tagless pre0s and
+re-fires): the Test plan explicitly disfavors it, and a direct trigger-capable
+push satisfies AC-1 without it.
+
 ## Acceptance criteria
 
-**AC-1 (VALUE):** A stable cut automatically publishes the next-minor pre0 edge release and updates the edge cask without an operator replaying the tag.
+**AC-1 (VALUE):** A stable `vX.Y.Z` cut automatically publishes the next-minor
+`vX.(Y+1).0-pre0` edge release and bumps the `spacedock@next` cask to that
+version **without an operator deleting and replaying the tag** — a distinct
+`release.yml` run is created on the pre0 commit by the auto-cut push itself.
 
-Verified by: a release-workflow fixture or controlled repository exercise that observes the pre0 tag push produce a distinct `release.yml` run on the same commit and the edge artifact publication complete.
+Measured against baseline (a number that can move the wrong way): the count of
+`release.yml` runs created for the auto-pushed pre0 tag goes from **0** (today,
+suppressed) to **≥1** (auto-push), and the `spacedock@next` cask version advances
+to the pre0 version with **no** operator-replay run in the tag's run history.
+Verified by: the in-CI trigger probe (below) proving a runner-embedded deploy-key
+tag push fires a run, plus the first live stable cut after the fix — self-proving
+because the verify-or-fail guard reds the cut if the run does not appear.
 
-**AC-2:** The credential and event path used by `edge-advance` is capable of triggering tag-push workflows; a token shape that GitHub suppresses or cannot trigger fails before the stable run reports the edge handoff complete.
+**AC-2:** The pre0 push uses a credential whose trigger-capability is
+unconditional (SSH deploy key), and the auto-cut step FAILS (reds `edge-advance`)
+before reporting the edge handoff complete when the pre0 push produces no
+`release.yml` run — so a workflow-suppressed token shape (the default
+`GITHUB_TOKEN`, or the current cross-repo tap PAT) cannot pass silently.
 
-Verified by: an integration check over the configured push mechanism, plus a negative control using a workflow-suppressed credential or event.
+Verified by: a negative control that points the pre0 push at `GITHUB_TOKEN`
+(suppressed) and observes the verify-or-fail guard exit non-zero / red the job;
+a positive control being the trigger-capable deploy-key push firing the run. The
+2026-07-21 operator replay is a real-world positive-control datapoint (a
+trigger-capable push of the identical tag fired run `29845875763`).
 
-**AC-3:** The pre0 tag remains annotated, non-empty, and bound to the stable release commit; recovery never changes its source tree or invents standalone changes.
+**AC-3:** The auto-cut pre0 tag remains annotated, non-empty in body, and peeled
+to the stable release commit; the fix changes only the push transport/credential
+and adds the verify guard — it never alters the tag object's construction, source
+tree, or body, and invents no standalone changes.
 
-Verified by: exact tag-object, peeled-commit, and release-body assertions before and after the automated handoff.
+Verified by: the tag-object construction (`git tag -a "$PRE0_TAG"
+"$RELEASE_COMMIT" -m "$PRE0_BODY"`) is unchanged in the diff; a fixture/assertion
+that the pushed pre0 tag is annotated, has a non-empty body, and peels to
+`$RELEASE_COMMIT` (as `ac240b4a`→`ca136f83` did) after the automated handoff.
 
 ## Test plan
 
-Ideation should first determine why the configured token push produced a remote tag without an Actions run. Prefer the smallest correction to the authentication or event path. Do not add a polling controller unless a direct trigger-capable push cannot satisfy AC-1. Exercise one controlled stable-to-pre0 handoff and retain the tag, run, release, and cask evidence.
+1. **Mechanism spike (riskiest path, minutes, do first).** A throwaway
+   `workflow_dispatch` scratch job pushes a `zz-trigger-probe-<sha>` throwaway
+   tag to this repo over the deploy-key SSH transport, then polls the Actions API
+   for a run on that tag; assert a run appears (positive control), then delete the
+   probe tag. Re-run the same probe pushing via `${{ secrets.GITHUB_TOKEN }}` and
+   assert NO run appears within the window and the verify poll would exit non-zero
+   (negative control). This exercises the one thing the manual replay did not: a
+   **runner-embedded** trigger-capable push firing a run. Not committed (scratch).
+   If deploy-key SSH on the runner is problematic, the same probe validates the
+   classic-PAT fallback before committing to it.
+   - Cost: low (one probe run per credential); no full cut needed.
+2. **Regression guard (Go, release-guard family).** Extend the
+   `internal/release/*_workflow_test.go` guards to assert the auto-cut pre0 step
+   (a) does NOT authenticate its push with the default `GITHUB_TOKEN`, and (b)
+   contains a verify-or-fail poll keyed on the pre0 tag that exits non-zero when
+   no run is found. This is a structural regression fence (text over `release.yml`,
+   the workflow IS the artifact) in the idiom of `goreleaser_guard_test.go` /
+   `e2egate_workflow_test.go` — it prevents a silent revert to a suppressed
+   credential. It is NOT the behavioral proof of AC-1; the spike and the live cut
+   are.
+   - Cost: low; `go test ./internal/release/...`.
+3. **Live confirmation (self-proving).** The first real stable cut after merge
+   either fires the pre0 run automatically (AC-1 proven live: edge tarballs + cask
+   bump appear with no operator-replay run in the tag history) or reds
+   `edge-advance` at the verify guard (AC-2 proven live). Retain the tag object,
+   run id, release assets, and cask commit as evidence — the same evidence set the
+   2026-07-21 reproduction captured.
+
+## Expected surface
+
+Files and LOC this task expects to touch (the ideation-gate baseline; later
+rounds calibrate against it):
+
+- `.github/workflows/release.yml` — the "Auto-cut the edge prerelease tag" step
+  only: deploy-key SSH setup, push transport swap, verify-or-fail poll, and a
+  rewrite of the now-false "PAT re-triggers" comment. **~ +25 to +40 LOC.**
+- `docs/releasing.md` — rewrite the "Advancing the Edge Line" claim that the pre0
+  tag is "pushed with the PAT (a `GITHUB_TOKEN` push does not fire the pre0
+  build)" to describe the deploy-key push + verify-or-fail guard. **~ +8 to +15
+  LOC (diff below).**
+- `internal/release/*_workflow_test.go` — new/extended guard asserting the pre0
+  step's credential and the verify poll. **~ +40 to +70 LOC.**
+- Repo secret `EDGE_RELEASE_DEPLOY_KEY` (an org/repo write deploy key) — a
+  provisioning step, not a committed file; documented in the releasing doc.
+- Scratch probe workflow for the spike — throwaway, not committed.
+
+**Total committed: 3 files, ~ +75 to +125 LOC.** Tolerance: if the change spills
+past ~200 LOC, touches jobs other than `edge-advance`, or requires reworking any
+job's `github.ref` resolution (i.e. drifts toward the rejected dispatch rewrite),
+re-gate before proceeding.
+
+## Documentation diff (docs/releasing.md)
+
+The "Advancing the Edge Line (`next`)" section, stable-tag bullet, currently ends
+(lines ~180-188):
+
+> — then an ANNOTATED `vX.(Y+1).0-pre0` tag is auto-created **on the greened
+> release commit** and pushed (via the re-triggering tap PAT). … The auto-tag
+> MUST be annotated with a non-empty body (the release-notes extraction step
+> rejects a lightweight tag), and MUST be pushed with the PAT (a `GITHUB_TOKEN`
+> push does not fire the pre0 build). Expect two GitHub releases per stable cut.
+
+Rewrite the credential clause to:
+
+> — then an ANNOTATED `vX.(Y+1).0-pre0` tag is auto-created **on the greened
+> release commit** and pushed over SSH with a dedicated write **deploy key**
+> (`EDGE_RELEASE_DEPLOY_KEY`), scoped to this repo. … The auto-tag MUST be
+> annotated with a non-empty body (the release-notes extraction step rejects a
+> lightweight tag). The push MUST use a trigger-capable credential: a
+> `GITHUB_TOKEN` push — and, as observed on the v0.25.0 and v0.26.0 cuts, the
+> cross-repo tap PAT — does NOT create the pre0 `release.yml` run, so the step
+> pushes with the deploy key and then **verifies a run was created for the pre0
+> tag, failing `edge-advance` loudly if none appears** rather than leaving the
+> edge binary silently behind. Expect two GitHub releases per stable cut.
+
+## Spike record
+
+- **Already proven (positive control, no new spike needed for this leg):** the
+  2026-07-21 operator replay of the identical `v0.27.0-pre0` tag object under an
+  operator PAT/ssh fired release run `29845875763` within seconds (and
+  `v0.26.0-pre0` → `29423262944` on 2026-07-15). A trigger-capable push of the
+  pre0 tag DOES fire the run and complete the edge publish + cask bump. GitHub's
+  documented triggering rules (GITHUB_TOKEN suppressed; PAT / app token / deploy
+  key trigger; dispatch events always trigger) corroborate this.
+- **Still to spike before implementation (Test-plan step 1):** that a
+  **runner-embedded** deploy-key push (the CI-embeddable form, not an operator's
+  laptop credential) fires the run — the one hop the manual replay did not cover.
+  Cheap: a `workflow_dispatch` probe pushing a throwaway tag, minutes-cost, run
+  first per the mechanism-validation-before-comprehensive discipline.
+
+## Stage Report: ideation
+
+- DONE: Diagnose why the edge-advance pre0 tag push lands the remote tag but creates no release.yml run; name the root cause (token/event path, not a race).
+  Root cause section: the same-repo pre0 push reuses the cross-repo `HOMEBREW_TAP_TOKEN`, a workflow-run-suppressed credential (behaves like GITHUB_TOKEN for triggering); ref lands, no run fires. Proven not-a-race by the identical-object operator replay firing a run twice (`release.yml:403-419`).
+- DONE: Design the smallest correction to the credential/event path; prefer a trigger-capable PAT or explicit re-trigger over a polling controller.
+  Proposed approach: push the pre0 tag over SSH with a repo-scoped write deploy key + a verify-or-fail guard. Dispatch-rewrite and polling-controller both rejected with reasons; classic-PAT swap kept as smaller-surface fallback.
+- DONE: Record the 2026-07-21 second reproduction (v0.26.0 cut) in the task body.
+  "Second reproduction" section: `x-access-token:${HOMEBREW_TAP_TOKEN}` pushed `v0.27.0-pre0` (tag `ac240b4a`→`ca136f83`), no run; operator replay fired run `29845875763`, published edge release + bumped `spacedock@next` cask (tap `2c601b1c`). Corroborated by `gh run list`.
+- DONE: Finalize AC-1/AC-2/AC-3 and the Test plan against the chosen fix.
+  AC-1 measures runs-on-pre0-tag 0→≥1 + cask advance with no replay run; AC-2 names the GITHUB_TOKEN/tap-PAT negative control and the verify-or-fail guard; AC-3 pins tag-object construction unchanged. Test plan layers spike → guard → live self-proving cut.
+- DONE: Declare the expected surface (files + LOC) and tolerance.
+  Expected surface section: 3 committed files (`release.yml`, `docs/releasing.md`, a `internal/release/*_workflow_test.go` guard) ~ +75 to +125 LOC; deploy-key secret + scratch probe uncommitted; re-gate past ~200 LOC or if it drifts into a github.ref rewrite.
+- DONE: Name the value AC each mechanism serves; either spike the riskiest path or record that the manual replay already proves a trigger-capable push fires the run.
+  Deploy-key→AC-1, verify-guard→AC-2, each with simplest-alternative-and-why. Spike record: manual replay already proves a trigger-capable push fires the run; the one remaining hop (runner-embedded deploy-key push) is the Test-plan step-1 probe to run first.
+- DONE: If the fix changes the documented release process, propose the concrete docs/releasing.md before/after diff.
+  "Documentation diff" section: before/after wording for the "Advancing the Edge Line" stable-tag bullet's credential clause (tap PAT → deploy key + verify-or-fail).
+
+### Summary
+
+Diagnosed the pre0-tag-no-run failure as a credential/event-path bug, not a race: the auto-cut step pushes a same-repo tag with a cross-repo tap PAT that is workflow-run-suppressed (empirically behaves like GITHUB_TOKEN), so the ref lands but no `release.yml` run fires; the identical object replayed under an operator PAT/ssh fires the run within seconds — confirmed across both the v0.25.0 and v0.26.0 cuts. The chosen fix is the smallest auth-path correction: push the pre0 tag over SSH with a repo-scoped write deploy key (unconditional trigger-capability, no expiry, minimal privilege) plus a verify-or-fail guard that reds `edge-advance` if no pre0 run appears — the guard is what makes AC-2's suppressed-token negative control fail loudly and prevents a third silent recurrence. One open item for the FO/gate: the milestone reads 0.26.0 but the bug shipped unfixed in 0.26.0 — recommend re-milestoning to 0.27.0 (frontmatter left unchanged per the no-frontmatter rule); and the deploy-key-vs-classic-PAT choice is a real decision the gate may want to weigh (I recommend the deploy key for robustness given the prior credential's unexplained failure).
