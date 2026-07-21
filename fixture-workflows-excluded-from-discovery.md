@@ -1,9 +1,10 @@
 ---
 title: Fixture workflow READMEs must not be workflow-discovery candidates
-status: ideation
+status: implementation
 source: "Live FO session, 2026-07-21, after the refit-content-propagation fixtures landed on main."
 id: ab3ma8m7gsm8tra2ksmcdydq
 started: 2026-07-21T16:05:13Z
+worktree: .worktrees/spacedock-ensign-fixture-workflows-excluded-from-discovery
 ---
 
 A commissioned-shape README used as a test fixture is counted as a real workflow by downward discovery, so a one-workflow repo now looks like a two-workflow repo to every command that auto-discovers.
