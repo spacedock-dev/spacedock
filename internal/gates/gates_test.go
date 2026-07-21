@@ -1,6 +1,7 @@
 package gates
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,69 +10,185 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestEightHistoryReplayPreservesApplicationsAndUnknownFields(t *testing.T) {
-	var attempts []string
-	for i := 1; i <= 8; i++ {
-		previous := ""
-		extra := ""
-		if i > 1 {
-			previous = "\n          previous-attempt: gate-attempt:design-" + itoa(i-1)
-		}
-		if i == 8 {
-			extra = "          scope-amendment:\n            decision: keep the historical amendment\n"
-		}
-		attempts = append(attempts, ""+
-			"        - id: gate-attempt:design-"+itoa(i)+"\n"+
-			"          sequence: "+itoa(i)+previous+"\n"+
-			"          state: closed\n"+
-			"          briefing:\n"+
-			"            id: briefing:design-"+itoa(i)+"\n"+
-			"            digest: sha256:"+strings.Repeat(itoa(i), 64)+"\n"+
-			"            note: RAW-FILE PIN legacy shaping record\n"+
-			"          resolution:\n"+
-			"            type: Resolution\n"+
-			"            id: resolution:design-"+itoa(i)+"\n"+
-			"            briefing: briefing:design-"+itoa(i)+"\n"+
-			"            by: person:captain\n"+
-			"            at: 2026-07-2"+itoa(i)+"T00:00:00Z\n"+
-			"            decision: approve\n"+
-			"          application:\n"+
-			"            action: advance\n"+
-			"            target-stage: implementation\n"+
-			"            state: consumed\n")
-		attempts[len(attempts)-1] += extra
-	}
-	body := "version: 1\ncurrent:\n  gate: gate:design\n  attempt: gate-attempt:design-8\nrecords:\n  - id: gate:design\n    stage: ideation\n    current-attempt: gate-attempt:design-8\n    attempts:\n" + strings.Join(attempts, "")
-	var before yaml.Node
-	if err := yaml.Unmarshal([]byte(body), &before); err != nil {
-		t.Fatal(err)
-	}
-	var doc Document
-	if err := before.Decode(&doc); err != nil {
-		t.Fatal(err)
-	}
-	if err := Validate(&doc); err != nil {
-		t.Fatalf("eight-attempt production-shaped history rejected: %v", err)
-	}
-	out, err := yaml.Marshal(&doc)
+func TestTwoGateMultipleAttemptReplayPreservesApplicationsAndUnknownFields(t *testing.T) {
+	fixture := filepath.Join("testdata", "two-gate-eight-history.md")
+	data, err := os.ReadFile(fixture)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var after Document
-	if err := yaml.Unmarshal(out, &after); err != nil {
+	entity := filepath.Join(t.TempDir(), "entity.md")
+	if err := os.WriteFile(entity, data, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	for i, a := range after.Records[0].Attempts {
-		if a.Application == nil {
-			t.Fatalf("attempt %d application subtree was lost", i+1)
+	doc, before, err := Read(entity)
+	if err != nil {
+		t.Fatalf("two-gate contract fixture rejected: %v", err)
+	}
+	if len(doc.Records) != 2 {
+		t.Fatalf("logical gates = %d, want 2", len(doc.Records))
+	}
+	histories := 0
+	for _, record := range doc.Records {
+		if len(record.Attempts) < 2 {
+			t.Fatalf("gate %s has no re-entry history", record.ID)
 		}
-		app, ok := a.Application.(map[string]any)
-		if !ok || app["state"] != "consumed" {
-			t.Fatalf("attempt %d application changed: %#v", i+1, a.Application)
+		histories += len(record.Attempts)
+		for _, attempt := range record.Attempts {
+			if attempt.Application == nil {
+				t.Fatalf("attempt %s application subtree was lost", attempt.ID)
+			}
 		}
 	}
-	if _, ok := after.Records[0].Attempts[7].Extra["scope-amendment"]; !ok {
+	if histories != 8 {
+		t.Fatalf("history count = %d, want 8", histories)
+	}
+	if got := CurrentSummary(doc); got.Gate != "gate:docs:dev:falsifiability-ladder:validation" || got.Attempt != "gate-attempt:z7cvbvdv-validation-3" {
+		t.Fatalf("current pointers disagree: %#v", got)
+	}
+	if err := write(entity, doc); err != nil {
+		t.Fatal(err)
+	}
+	after, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := after.Extra["fixture-purpose"]; !ok {
+		t.Fatal("unknown document field was lost")
+	}
+	if _, ok := after.Records[0].Attempts[3].Extra["scope-amendment"]; !ok {
 		t.Fatal("unknown historical attempt field was lost")
+	}
+	if _, ok := after.Records[1].Attempts[2].Resolution.Extra["provider-audit"]; !ok {
+		t.Fatal("unknown historical resolution field was lost")
+	}
+	app, ok := after.Records[1].Attempts[2].Application.(map[string]any)
+	if !ok || app["state"] != "pending" {
+		t.Fatalf("nested current application changed: %#v", after.Records[1].Attempts[2].Application)
+	}
+
+	t.Run("pointer fork", func(t *testing.T) {
+		fork := cloneDocument(t, doc)
+		fork.Current.Attempt = "gate-attempt:z7cvbvdv-validation-2"
+		if err := Validate(fork); err == nil || !strings.Contains(err.Error(), "pointer conflict") {
+			t.Fatalf("pointer fork = %v, want fail closed", err)
+		}
+	})
+	t.Run("history fork", func(t *testing.T) {
+		fork := cloneDocument(t, doc)
+		fork.Records[0].Attempts[3].PreviousAttempt = "gate-attempt:fork"
+		if err := Validate(fork); err == nil || !strings.Contains(err.Error(), "previous-attempt") {
+			t.Fatalf("history fork = %v, want fail closed", err)
+		}
+	})
+	t.Run("frozen history fork", func(t *testing.T) {
+		fork := cloneDocument(t, doc)
+		fork.Records[1].Attempts[0].Application = map[string]any{"state": "rewritten"}
+		if err := ValidateTransition(before, fork); err == nil || !strings.Contains(err.Error(), "frozen") {
+			t.Fatalf("frozen fork = %v, want fail closed", err)
+		}
+	})
+}
+
+func TestEightProductionHistoryReplays(t *testing.T) {
+	fixtures, err := filepath.Glob(filepath.Join("testdata", "production", "*.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fixtures) != 8 {
+		t.Fatalf("production fixture count = %d, want 8", len(fixtures))
+	}
+	for _, fixture := range fixtures {
+		fixture := fixture
+		t.Run(strings.TrimSuffix(filepath.Base(fixture), ".md"), func(t *testing.T) {
+			data, err := os.ReadFile(fixture)
+			if err != nil {
+				t.Fatal(err)
+			}
+			entity := filepath.Join(t.TempDir(), "entity.md")
+			if err := os.WriteFile(entity, data, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			doc, _, err := Read(entity)
+			if err != nil {
+				t.Fatalf("production history rejected: %v", err)
+			}
+			before, err := yaml.Marshal(doc)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := write(entity, doc); err != nil {
+				t.Fatal(err)
+			}
+			replayed, _, err := Read(entity)
+			if err != nil {
+				t.Fatalf("rewritten history rejected: %v", err)
+			}
+			after, err := yaml.Marshal(replayed)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(after) != string(before) {
+				t.Fatalf("production history changed during replay:\nbefore:\n%s\nafter:\n%s", before, after)
+			}
+		})
+	}
+}
+
+func TestRebindCloseFreezeAndSupersedeLifecycle(t *testing.T) {
+	entity := writeEntity(t, "status: ideation\n")
+	briefingA := operationFile(t, `{"type":"Briefing","id":"provider:a","body":"A"}`)
+	briefingB := operationFile(t, `{"type":"Briefing","id":"provider:b","body":"B"}`)
+	briefingC := operationFile(t, `{"type":"Briefing","id":"provider:c","body":"C"}`)
+	briefingD := operationFile(t, `{"type":"Briefing","id":"provider:d","body":"D"}`)
+	digestA, _ := CanonicalDigest([]byte(readFile(t, briefingA)))
+	digestB, _ := CanonicalDigest([]byte(readFile(t, briefingB)))
+	digestC, _ := CanonicalDigest([]byte(readFile(t, briefingC)))
+	digestD, _ := CanonicalDigest([]byte(readFile(t, briefingD)))
+
+	open := operationFile(t, "operation: open\nexpected: {gate: '', attempt: '', briefing: '', digest: ''}\ngate-id: gate:lifecycle\nstage: ideation\nattempt-id: attempt:lifecycle-1\nbriefing: {id: briefing:a}\n")
+	if err := Record(entity, open, briefingA); err != nil {
+		t.Fatal(err)
+	}
+	assertCurrentBinding(t, entity, "attempt:lifecycle-1", "briefing:a", digestA, "open", 1)
+
+	rebindB := operationFile(t, fmt.Sprintf("operation: rebind\nexpected: {gate: 'gate:lifecycle', attempt: 'attempt:lifecycle-1', briefing: 'briefing:a', digest: '%s'}\ngate-id: gate:lifecycle\nattempt-id: attempt:lifecycle-1\nbriefing: {id: briefing:b}\n", digestA))
+	if err := Record(entity, rebindB, briefingB); err != nil {
+		t.Fatal(err)
+	}
+	assertCurrentBinding(t, entity, "attempt:lifecycle-1", "briefing:b", digestB, "open", 1)
+
+	rebindC := operationFile(t, fmt.Sprintf("operation: rebind\nexpected: {gate: 'gate:lifecycle', attempt: 'attempt:lifecycle-1', briefing: 'briefing:b', digest: '%s'}\ngate-id: gate:lifecycle\nattempt-id: attempt:lifecycle-1\nbriefing: {id: briefing:c}\n", digestB))
+	if err := Record(entity, rebindC, briefingC); err != nil {
+		t.Fatal(err)
+	}
+	assertCurrentBinding(t, entity, "attempt:lifecycle-1", "briefing:c", digestC, "open", 1)
+
+	closeOp := operationFile(t, fmt.Sprintf("operation: close\nexpected: {gate: 'gate:lifecycle', attempt: 'attempt:lifecycle-1', briefing: 'briefing:c', digest: '%s'}\ngate-id: gate:lifecycle\nattempt-id: attempt:lifecycle-1\nresult:\n  briefing-digest: %s\n  authorized-by: person:captain\n  entries:\n    - type: Resolution\n      id: resolution:lifecycle-1\n      briefing: provider:c\n      by: person:captain\n      at: 2026-07-22T00:00:00Z\n      decision: approve\n", digestC, digestC))
+	if err := Record(entity, closeOp, ""); err != nil {
+		t.Fatal(err)
+	}
+	assertCurrentBinding(t, entity, "attempt:lifecycle-1", "briefing:c", digestC, "closed", 1)
+	closed := readFile(t, entity)
+	closedRebind := operationFile(t, fmt.Sprintf("operation: rebind\nexpected: {gate: 'gate:lifecycle', attempt: 'attempt:lifecycle-1', briefing: 'briefing:c', digest: '%s'}\ngate-id: gate:lifecycle\nattempt-id: attempt:lifecycle-1\nbriefing: {id: briefing:b}\n", digestC))
+	if err := Record(entity, closedRebind, briefingB); err == nil || !strings.Contains(err.Error(), "frozen") {
+		t.Fatalf("closed rebind = %v, want frozen refusal", err)
+	}
+	if got := readFile(t, entity); got != closed {
+		t.Fatal("closed-attempt rebind mutated entity")
+	}
+
+	supersede := operationFile(t, fmt.Sprintf("operation: supersede\nexpected: {gate: 'gate:lifecycle', attempt: 'attempt:lifecycle-1', briefing: 'briefing:c', digest: '%s'}\ngate-id: gate:lifecycle\nattempt-id: attempt:lifecycle-2\nbriefing: {id: briefing:d}\n", digestC))
+	if err := Record(entity, supersede, briefingD); err != nil {
+		t.Fatal(err)
+	}
+	assertCurrentBinding(t, entity, "attempt:lifecycle-2", "briefing:d", digestD, "open", 2)
+	doc, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, second := doc.Records[0].Attempts[0], doc.Records[0].Attempts[1]
+	if first.State != "closed" || first.Briefing.ID != "briefing:c" || first.Resolution == nil || second.PreviousAttempt != first.ID || second.Sequence != 2 {
+		t.Fatalf("supersession did not preserve frozen lineage: first=%#v second=%#v", first, second)
 	}
 }
 
@@ -103,6 +220,28 @@ func TestRecordCloseNormalizesOnlyAfterDigestMatch(t *testing.T) {
 	}
 	if got := readFile(t, badEntity); got != before {
 		t.Fatal("failed close mutated the entity")
+	}
+}
+
+func TestAdversarialWrapperFieldsStayOutsideCopiedResolution(t *testing.T) {
+	digest := "sha256:" + strings.Repeat("a", 64)
+	entity := writeEntity(t, "status: ideation\ngates:\n  version: 1\n  current: {gate: 'gate:design', attempt: 'attempt:design-1'}\n  records:\n    - id: gate:design\n      stage: ideation\n      current-attempt: attempt:design-1\n      attempts:\n        - id: attempt:design-1\n          sequence: 1\n          state: open\n          briefing: {id: 'briefing:design-1', digest: '"+digest+"'}\n")
+	op := operationFile(t, "operation: close\nexpected: {gate: 'gate:design', attempt: 'attempt:design-1', briefing: 'briefing:design-1', digest: '"+digest+"'}\ngate-id: gate:design\nattempt-id: attempt:design-1\nresult:\n  briefing-digest: "+digest+"\n  authorized-by: person:captain\n  entries:\n    - type: Resolution\n      id: resolution:binding\n      briefing: provider:design\n      by: person:captain\n      at: 2026-07-22T00:00:00Z\n      decision: approve\n      stage: done\n      sequence: 99\n      briefing-change:\n        from: provider:old\n        to: provider:design\n      application:\n        action: advance\n        state: consumed\n      future-wrapper-field: never-durable\n")
+	if err := Record(entity, op, ""); err != nil {
+		t.Fatal(err)
+	}
+	doc, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt := doc.Records[0].Attempts[0]
+	if attempt.Application != nil {
+		t.Fatalf("provider application crossed into attempt application: %#v", attempt.Application)
+	}
+	for _, key := range []string{"stage", "sequence", "briefing-change", "application", "future-wrapper-field"} {
+		if _, leaked := attempt.Resolution.Extra[key]; leaked {
+			t.Fatalf("provider wrapper field %q leaked into durable Resolution: %#v", key, attempt.Resolution.Extra)
+		}
 	}
 }
 
@@ -249,4 +388,33 @@ func outsideGates(t *testing.T, path string) string {
 	return string(b)
 }
 
-func itoa(i int) string { return string(rune('0' + i)) }
+func cloneDocument(t *testing.T, doc *Document) *Document {
+	t.Helper()
+	b, err := yaml.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var clone Document
+	if err := yaml.Unmarshal(b, &clone); err != nil {
+		t.Fatal(err)
+	}
+	return &clone
+}
+
+func assertCurrentBinding(t *testing.T, entity, attemptID, briefingID, digest, state string, histories int) {
+	t.Helper()
+	doc, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Records) != 1 || len(doc.Records[0].Attempts) != histories {
+		t.Fatalf("history count = %#v, want %d", doc.Records, histories)
+	}
+	a, err := currentAttempt(doc, "gate:lifecycle", attemptID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Briefing.ID != briefingID || a.Briefing.Digest != digest || a.State != state {
+		t.Fatalf("current binding = %#v, want attempt=%s briefing=%s digest=%s state=%s", a, attemptID, briefingID, digest, state)
+	}
+}

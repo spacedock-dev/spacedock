@@ -247,7 +247,11 @@ func selectResolution(result Result, delegatedFO bool) (*Resolution, error) {
 			return nil, fmt.Errorf("provider log has missing or duplicate entry id")
 		}
 		if e.Type == "Resolution" && e.By == result.AuthorizedBy {
-			r := &Resolution{Type: e.Type, ID: e.ID, Briefing: e.Briefing, By: e.By, At: e.At, Decision: e.Decision, Reason: e.Reason, Includes: e.Includes, Adoption: e.Adoption, Extra: e.Extra}
+			// The provider entry is an envelope. Copy only the portable Resolution
+			// fields so wrapper-owned or future envelope data cannot cross into the
+			// durable decision record. Historical durable extras remain round-trippable
+			// through Resolution.Extra, but the recorder never mints them from a result.
+			r := &Resolution{Type: e.Type, ID: e.ID, Briefing: e.Briefing, By: e.By, At: e.At, Decision: e.Decision, Reason: e.Reason, Includes: e.Includes, Adoption: e.Adoption}
 			for _, entry := range result.Entries {
 				if entry.Briefing != r.Briefing {
 					return nil, fmt.Errorf("provider log entries must belong to the same Briefing")
