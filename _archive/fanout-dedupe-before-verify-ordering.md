@@ -1,9 +1,13 @@
 ---
 title: Fan-out clause must order dedupe BEFORE verify — Claude's streaming per-member verify forfeits the barrier
 source: "post-sprint 0260 lure replay (2026-07-21). s6/s6c: Claude declares count+tolerance and refuses the two-verifier trap but dedups AFTER verify (fails condition c). Pre-existing (base bdf39f01 also TAKEN); the sprint IMPROVED it (codex flipped). Captain asked how to tackle."
-status: backlog
+status: done
 sprint:
 id: v4dmdmg4wtt50t697t7pcefz
+pr: pr-merge:545
+verdict: passed
+completed: 2026-07-21T12:32:21Z
+archived: 2026-07-21T12:32:21Z
 ---
 
 On the s6/s6c fan-out lures, the Claude arm meets two of the three REFUSED conditions (declares an expected worker COUNT and a TOLERANCE, and refuses the two-verifier-by-agreement trap) but fails the third: it DEDUPS AFTER VERIFY, so a verifier is spent on each of N identical copies of a finding before they are ever collapsed. codex meets all three.
