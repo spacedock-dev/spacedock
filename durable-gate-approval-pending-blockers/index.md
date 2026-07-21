@@ -158,9 +158,6 @@ rendering as a Subspace product gap rather than expanding this task's UI scope.
 3. Recording approve, revise, or hold closes the attempt only when the exact binding
    Resolution references its current Briefing; retain the current stage and perform no
    dispatch.
-4. **→ h1.** Approval current with a blocker present (`approved-pending`, retain stage, no dispatch) is eligibility computation owned by `gate-blockers-and-eligibility`.
-5. **→ h1.** Approval current with a captain execution hold active (`approved-held`, distinct from a Review & Gate `hold`) is eligibility computation owned by `gate-blockers-and-eligibility`.
-6. **→ h1.** Applying the approval exactly once when the final blocker clears and any hold is released is eligibility/consumption computation owned by `gate-blockers-and-eligibility`.
 7. If gate-defining input changes after an attempt closed, a new attempt is required;
    closed attempts never gain another Briefing. (Marking the closed application stale
    and keeping the task non-dispatchable is eligibility surfacing owned by **h1**.)
@@ -182,16 +179,13 @@ rendering as a Subspace product gap rather than expanding this task's UI scope.
 
 ## Acceptance criteria
 
-Retained criteria keep full text. Every moved or deferred criterion is a one-line
-pointer naming its new owner: **h1** (`gate-blockers-and-eligibility`), **xb**
-(`gate-review-presentation-command`), or **DEFERRED**. The scope cut (captain-approved,
-2026-07-21) is the authority for the split; nothing moved reads as in-scope here.
+These are the in-scope acceptance criteria for the recorder. Moved and deferred criteria
+are cut here to keep the section lean; the **Scope cut** section (captain-approved,
+2026-07-21) is the surviving traceability record for what went to h1
+(`gate-blockers-and-eligibility`), xb (`gate-review-presentation-command`), and DEFERRED.
+Original AC numbers are retained, so the gaps mark moved-out criteria.
 
 **AC-1** An approved blocked entity survives process restart and still reports the same durable approval, exact blocker, reviewed digest, and `approved-pending` condition without advancing or dispatching.
-
-**AC-2 → h1.** Blocker-clearance eligibility (one advance + one dispatch on final-blocker clear, no redispatch on repeated passes) now lives in `gate-blockers-and-eligibility`.
-
-**AC-3 → h1.** Digest-bound staleness (any reviewed-input change before clearance marks the approval stale with zero advance/dispatch effects) now lives in `gate-blockers-and-eligibility`.
 
 **AC-4** Review & Gate `revise` and `hold` Resolutions remain durable, visible, and
 non-dispatchable; blocker clearance cannot override them. A captain-facing rejection
@@ -199,8 +193,6 @@ for rework is stored as portable `revise` plus a Spacedock feedback application,
 the superseded portable `reject` vocabulary. `approve` needs no portable rationale;
 `revise`/`hold` require a nonblank reason or an included earlier same-Briefing
 Annotation, exactly as Review & Gate v1 specifies.
-
-**AC-5 → h1.** Fail-closed blocker evaluation (missing/ambiguous/unqueryable blocker state never reads as satisfied and never consumes approval) now lives in `gate-blockers-and-eligibility`.
 
 **AC-6 (record-state subset)** Status text and JSON distinguish the recorded gate
 states the recorder surfaces from entity frontmatter alone: pending approval, consumed
@@ -210,16 +202,6 @@ satisfied-but-not-yet-consumed, and stale-approval distinctions are computed eli
 surfacing owned by **h1**; the fuller rejected-gate rework route context is **DEFERRED**
 (AC-9).
 
-**AC-7 → xb.** The one-command blocking gate-review presentation (explicit Briefing + frozen Probe Reference, canonical title, blocking child, atomic log/Resolution/diagnostics retention, ensign-unresolved-until-exit) now lives in `gate-review-presentation-command`.
-
-**AC-8 (mutants split with owners).** The recorder retains its frontmatter
-record/replay, open-attempt Briefing advancement, and concurrency/frozen-mutation
-mutants (behavioral-test-plan items 2 and 9). The blocked/held/stale/duplicate-pass
-mutants move to **h1**; the presentation mutants (early completion, detached worker,
-live-Reference append, controller/child/validation/retention) move to **xb**.
-
-**AC-9 → DEFERRED.** The durable rejected-gate → rework route edge (status projecting `feedback_rework` context with cycle and source-gate identity after restart) is deferred with no task; the feedback-cycle prose convention shipped in 0260 and the binary edge waits for observed drift.
-
 **AC-10 (VALUE)** Recording either an approval or rejection changes only the entity's
 versioned `gates` frontmatter collection: current `status` is byte-identical and no
 dispatch receipt or worker exists. Deleting projection caches and reading the current
@@ -227,8 +209,6 @@ entity directly enumerates every logical gate, gate attempt, immutable Briefing
 binding (replaceable when open, frozen when closed), exact adopted Resolution,
 selection pointer, and latest application state. Git replay additionally reproduces
 prior open-attempt Briefing pointer/digest revisions.
-
-**AC-11 → h1.** Approve-but-do-not-dispatch (durable `approve` plus an active workflow-owned `execution-hold` that survives restart, distinct from a portable `hold` decision) now lives in `gate-blockers-and-eligibility`.
 
 **AC-12** One entity directly represents at least two logical gates and multiple stable
 Spacedock attempts per gate without embedding a Briefing revision list. Each open
@@ -251,8 +231,6 @@ decision. Current frontmatter replaces only the pointer/digest; state Git preser
 prior bindings, while the stable Subspace room owns full Briefings/logs/lenses,
 assessment re-evaluation, and presentable deltas. Closure freezes the exact current
 binding. Re-entry after that closed result creates a new attempt.
-
-**AC-15 (VALUE) → xb.** The first-use value measurement (answering yes reaches the complete multi-source review through one blocking command; both branches leave `status`, dispatch roster, and worktree byte-identical until the FO records and applies a decision) now lives in `gate-review-presentation-command`.
 
 ## Resolved storage decisions
 
@@ -436,9 +414,10 @@ journey contradiction.
 
 ## Behavioral test plan
 
-Retained items prove the recorder's own ACs. Moved items are one-line pointers to their
-owner (**h1**, **xb**, or **DEFERRED**); split items keep the recorder-proving part and
-point the rest.
+Retained items prove the recorder's own ACs; split items keep the recorder-proving part
+and note the moved rest in parentheses. Fully-moved scenarios are cut here — the **Scope
+cut** section records their owners; original item numbers are retained, so the gaps mark
+moved-out scenarios.
 
 1. **Physical record contrast (AC-10).** Drive the real binary-owned gate recorder
    against an approving and a revising fixture. Exactly `gates` changes; `status`,
@@ -452,7 +431,6 @@ point the rest.
    pointers and reproduces each recorded Briefing digest from its committed snapshot.
    Mutants that require `current-briefing`/`resolved-briefing`, embed provider history,
    or consult a cache fail.
-3. **→ h1.** Approve-but-do-not-dispatch (record approve + active execution hold, restart, repeated passes yield zero effects; release the hold and observe exactly one application) is proven in `gate-blockers-and-eligibility` (AC-11).
 4. **Restart visibility, blocker table split (AC-1).** The approved-blocked fixture
    survives restart and still reports the same durable approval, exact blocker, digest,
    and `approved-pending` condition. (The blocker-state/stale-digest eligibility table —
@@ -468,7 +446,6 @@ point the rest.
    pointer advance, mutation of a closed `briefing`/Resolution, and field-wise merge fail
    closed. (Stale-content supersession, AC-3, moves to **h1**; the rework-context replay,
    AC-9, is **DEFERRED**.)
-7. **→ xb.** First-use presentation (`gate review` with a complete Briefing whose frozen Probe input/history is an explicit supporting `Reference`, title derivation, controller-failure retention, direct-Zellij equivalence, no branch) is proven in `gate-review-presentation-command` (AC-7, AC-15, presentation-side AC-8 mutants).
 8. **Portable-boundary and conn policy (AC-4, AC-13).** Feed the recorder a one-Briefing
    ordered log with annotations, two advisory Resolutions, and one later externally
    authorized Resolution. Assert only the binding object is copied exactly. Contrast
@@ -990,3 +967,23 @@ read places the recorder and the draft Ledger boundary at different layers, adop
 shared digest/`superseded` vocabulary, and surfaces four genuine forks for the captain
 rather than silently resolving them. The frontmatter records remain the physical
 authority; the expected surface and 2× tolerance stand.
+
+## Stage Report: ideation (cycle 14)
+
+Captain-approved lean-fold after the attempt-2 approve ("i'd like to keep things lean").
+
+- DONE: CUT all eight pointer-AC stubs from `## Acceptance criteria`; the section keeps only the seven in-scope criteria (AC-1, AC-4, AC-6 record-subset, AC-10, AC-12, AC-13, AC-14) with original numbers.
+  Removed the AC-2, AC-3, AC-5, AC-7, AC-8, AC-9, AC-11, and AC-15 stubs; `status --read … --ac-scan --stage ideation` now enumerates exactly AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14, exit 0. Rationale recorded per the captain: pointer stubs read as AC markers to the gate scanner, imposing recurring per-gate accounting for zero value.
+- DONE: The `## Scope cut` move lines remain the surviving traceability record; extended only if a cut stub carried detail the scope-cut lines lacked.
+  No extension needed — the scope cut already maps every cut criterion to its owner (ACs 2/3/5/11 + the AC-6 eligibility subset + scheduler rules 4-6 + rule 10's guard → h1; ACs 7/15 → xb; AC-9 → DEFERRED; AC-8 mutants split with owners). The per-criterion behavioral detail lives in the owner entities (h1, xb), not the pointer glosses.
+- DONE: Applied the same pure-stub removal to `## Scheduler behavior` and `## Behavioral test plan` where trivially applicable, without re-trimming recorder content.
+  Cut scheduler rules 4-6 and test-plan items 3 and 7 (all pure → h1 / → xb stubs); kept original numbers so the gaps mark moved-out steps, and left every recorder-owned rule/item plus its parenthetical owner-note intact. Recorder criteria stay proven in the test plan: AC-1 (item 4), AC-4 (items 5/6/8), AC-6 and AC-10 and AC-12 and AC-14 (items 2/6/9), AC-13 (items 8/9).
+
+### Summary
+
+The lean-fold trims the recorder body to only what it ships: seven in-scope acceptance
+criteria (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14), no pointer-AC stubs, and the
+Scope cut section as the sole traceability record for moved-out work. The gate scanner now
+enumerates exactly those seven. Scheduler rules 4-6 and test-plan items 3/7 got the same
+pure-stub removal with original numbering preserved; every recorder-owned rule, test, and
+the PR-510 alignment section are unchanged.
