@@ -1392,16 +1392,3 @@ Correction commit `9d279b87` closes the portable-boundary outcome defect and bot
 ### Summary
 
 Packaged the passed validation evidence into a compact captain-facing gate review without rerunning validation or changing product code. The briefing recommends approval and makes the recorder capability, falsifiable evidence, residual risk, and merge authorization readable without presenting the entity body.
-
-## Stage Report: validation (cycle 4)
-
-- DONE: Complete `review/validation/briefing-1/` as a canonical Review & Gate v1 package: keep `gate-review.md` primary, add a frozen entity snapshot and frozen landed-contract snapshot as reference artifacts, and bind their exact SHA-256 revisions in `briefing.json`.
-  The package contains one primary and two frozen references; manifest id `briefing:docs-dev:3k:validation:attempt-1:revision-1` binds all three relative URIs with reproduced `sha256:` revisions.
-- DONE: Make the manifest's question and routing decision-specific: approve authorizes merge/landing, revise returns to implementation with concrete findings, and hold names a prerequisite; use stable component vocabulary and the validation-gate attempt identity.
-  Routing maps approve to `ceremony:merge-landing`, revise to `stage:implementation`, and hold to `gate:validation` with a named-prerequisite label.
-- DONE: Verify every manifest revision reproduces from its committed artifact bytes and commit only the package/state report; do not change or retest the validated product branch.
-  JSON shape and all three artifact digests were checked before commit and are rechecked from Git object bytes after commit; product HEAD remains `9d279b87` and no product test was rerun.
-
-### Summary
-
-Completed the validation review room as a portable Briefing v1 package with a concise primary review, frozen entity and contract references, exact artifact revisions, and decision-specific routing. Only package and state-report artifacts changed; the validated product branch remains untouched.
