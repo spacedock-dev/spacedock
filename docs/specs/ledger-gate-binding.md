@@ -3,13 +3,14 @@
 > **Draft for CL and Jared ratification.** This document and
 > [`gate-binding.v1.schema.json`](../schema/gate-binding.v1.schema.json) propose the
 > Spacedock-owned boundary. They do not claim a shipped writer, projector, watcher,
-> command, or endpoint.
+> ledger-bound adapter, provider attempt-state schema, command, or endpoint.
 
 Spacedock needs one stable way to bind a portable Ledger gate to workflow state
 without taking ownership of the gate or Ledger facts. `spacedock.gate-binding.v1`
-does that. It identifies the Spacedock target before a Resolution or application
-exists. Later Ledger facts link through the containing gate; they do not expand the
-binding payload.
+does that for a ledger-bound gate attempt. It identifies the Spacedock target before
+a Resolution or application exists. Later Ledger facts link through the containing
+gate; they do not expand the binding payload. A standalone Spacedock gate attempt is
+outside this binding contract and remains valid without Helm Ledger.
 
 ## Ownership
 
@@ -25,6 +26,62 @@ binding payload.
 
 There is no synchronous transaction across Git and Ledger. The boundary makes each
 uncertain window observable and assigns one recovery owner.
+
+## Authority selection
+
+A standalone-only Spacedock deployment remains outside this binding contract. A
+future implementation that supports ledger-bound attempts or both modes must select
+exactly one decision authority when an attempt opens:
+
+- A standalone attempt explicitly persists standalone authority in the
+  provider-owned attempt record before presenting the Briefing or accepting a
+  Resolution. It has no Helm Ledger gate or Spacedock binding. Spacedock may persist
+  the authoritative R&G Resolution and its local application state. Those are
+  Spacedock-local facts, not Helm facts.
+- A ledger-bound attempt explicitly persists ledger-bound authority before opening
+  a Helm Ledger gate with `spacedock.gate-binding.v1`. Helm owns `gate_id`,
+  `resolution_id`, `application_id`, the authoritative Resolution, and the
+  application fold. Spacedock persists their references plus workflow-owned state.
+
+The selection is immutable for that attempt and is never inferred from the absence
+of a readable Ledger gate or binding. Missing selection, an incomplete ledger-bound
+opening, Ledger unavailability, or projection lag all refuse closed. They never
+downgrade an attempt to standalone authority. Spacedock must also refuse before
+mutation if a ledger-bound attempt presents a Spacedock-local authoritative
+Resolution or locally minted Ledger identity. Converting a standalone attempt into
+a ledger-bound attempt requires a new attempt or a separately ratified import
+contract; it is not an in-place fallback.
+
+A ledger-bound workflow may omit the Resolution body entirely. If it caches a body
+for display, the cache must be explicitly non-authoritative, bound to the Ledger
+Resolution by digest, and immutable for that `resolution_id`. A digest mismatch
+discards or quarantines that cache record; a refetch creates a new cache record
+rather than replacing its contents in place. Ledger remains the source of truth.
+Provider-owned probe and room history neither selects the authority mode nor becomes
+a Ledger fact.
+
+## Ledger-bound adapter preconditions
+
+These requirements constrain a future ledger-bound adapter. They do not define or
+ship a provider attempt-state wire format in v1. A dual-mode implementation considers
+a standalone attempt ready only after its explicit authority selection is durable. A
+ledger-bound attempt uses this opening sequence:
+
+1. Spacedock durably selects ledger-bound authority and records the producer-owned
+   `openGate` idempotency key plus the exact command body bytes and their stable
+   digest.
+2. The opener creates the Helm Ledger gate with `spacedock.gate-binding.v1` using
+   that key and body.
+3. Spacedock durably records the returned gate and binding reference. A response-lost
+   retry reuses the same key and byte-identical body, so Ledger returns the same
+   `gate_id`.
+4. Only then may the attempt present the Briefing or accept a Resolution or
+   application action.
+
+If gate creation or the durable reference write has an unknown outcome, the attempt
+stays blocked in opening. The opener reconciles through the durable idempotency key
+before continuing or explicitly abandons the attempt. A retry cannot change the body
+or create a standalone authority path for the same attempt.
 
 ## Binding identity
 
@@ -74,7 +131,9 @@ vector uses OID `e69de29bb2d1d6434b8b29ae775ad8c2e48c5391` and payload digest
 
 ## Apply lifecycle
 
-1. Ledger opens the gate with the Spacedock binding, then records an authorized
+This lifecycle applies only to a ledger-bound attempt:
+
+1. After the gate-opening sequence completes, Ledger records an authorized
    Resolution and exposes a stable `application_id` for required apply.
 2. The Spacedock coordinator verifies the provider pin, target state, and required
    Ledger capabilities before mutation.
@@ -98,6 +157,7 @@ authority, or makes Ledger availability part of Git commit success.
 
 | Window | Reported state | Recovery owner and action |
 |---|---|---|
+| Gate creation or binding persistence has an unknown outcome | Attempt remains in opening; no Resolution is accepted | The opener replays the durable `openGate` idempotency key and byte-identical body to recover the same `gate_id`, then reconciles the provider attempt or abandons it. It never falls back to standalone authority. |
 | Binding validation fails before mutation | `binding_refused` | Spacedock refuses closed and returns the typed Ledger or provider validation error. |
 | Provider version or digest differs from the pinned contract | `helm.provider_binding.unsupported_version.v1` | Spacedock refuses before mutation and waits for an explicitly supported pin. |
 | Spacedock exits before commit | Ledger remains `pending_apply` | Spacedock cleans or reconciles its own worktree, then retries by `application_id`. |
@@ -176,6 +236,19 @@ When Spacedock is absent, this binding is absent. Helm keeps the existing Ledger
 This keeps Spacedock optional without creating a second decision or application
 model.
 
+## Operation without Helm Ledger
+
+When Helm Ledger is absent, the Spacedock binding is absent. Spacedock may run the
+standalone authority mode described above only after explicitly persisting that
+selection. Ledger unavailability or an unreadable binding is not standalone
+selection. A standalone attempt may include an authoritative R&G Resolution and
+local application state in its workflow record. It must not mint `gat_`,
+`resolution_id`, or `application_id` values that appear to be Helm Ledger facts.
+
+Adding Helm later does not retroactively convert the attempt. A new ledger-bound
+attempt may reference the same provider target and Briefing lineage, but it receives
+new Ledger-owned identities and authority.
+
 ## Compatibility rules
 
 The schema follows JSON Schema 2020-12 and accepts the existing minimal Helm binding
@@ -191,6 +264,14 @@ remains valid for optional fields.
 An additive optional field is compatible within v1. Removing or renaming a required
 field, changing a constant, changing authority, or changing a fold effect requires a
 new schema version. New versions must not reuse `spacedock.gate-binding.v1`.
+
+The standalone versus ledger-bound clarification changes neither the v1 schema
+document nor binding payload bytes. It defines preconditions for a future
+ledger-bound adapter; the versioned provider attempt-state representation remains a
+separate ratification surface. In a dual-mode implementation, the explicit
+provider-owned attempt selection chooses the mode. A valid binding on the containing
+Ledger gate confirms the ledger-bound path, but binding absence alone never selects
+standalone authority. A hybrid record is invalid rather than a third mode.
 
 The executable examples live in
 `internal/contract/testdata/ledger-boundary/`. They include the existing minimal
@@ -218,6 +299,16 @@ the vendored bytes from the immutable source commit.
 
 A consumer of `spacedock.gate-binding.v1` must:
 
+- determine whether the gate attempt is standalone or ledger-bound before mutation
+  by reading its explicit durable selection, never by treating an unavailable or
+  absent Ledger binding as standalone;
+- keep that authority selection fixed for the attempt and block while a ledger-bound
+  opening outcome is unknown;
+- persist the producer-owned `openGate` idempotency key, exact body bytes, and stable
+  body digest before calling Ledger, then reuse the same key and byte-identical body
+  for response-lost recovery;
+- refuse a ledger-bound record that also claims a Spacedock-local authoritative
+  Resolution or locally minted Ledger identity;
 - verify required `ns` and `entity_ref`, plus any supplied optional target fields,
   before using the provider pin;
 - read `gate_id`, `resolution_id`, and `application_id` from their Ledger-owned facts,
@@ -234,11 +325,13 @@ A consumer of `spacedock.gate-binding.v1` must:
 
 ## Contribution checklist
 
-A contract change must update the spec, schema, relevant valid and invalid fixtures,
-and `internal/contract/gate_binding_test.go` in the same pull request. Contributors
-must state whether the change is additive within v1 or requires a new version. A Helm
-wire-shape change also updates the vendored schema bytes, manifest digest, and all
-conforming Spacedock fixtures in the same pull request. Review-ready provenance
+A wire contract change must update the spec, schema, relevant valid and invalid
+fixtures, and `internal/contract/gate_binding_test.go` in the same pull request.
+Contributors must state whether the change is additive within v1 or requires a new
+version. A prose-only scope or consumer clarification leaves the schema document
+unchanged unless all raw-digest consumers update their pins in the same change. A
+Helm wire-shape change also updates the vendored schema bytes, manifest digest, and
+all conforming Spacedock fixtures in the same pull request. Review-ready provenance
 requires `provenance_status: complete`, the exact 40-character Helm source commit,
 and the 40-character Git blob ID plus raw SHA-256 for every vendored schema.
 
