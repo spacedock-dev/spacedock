@@ -95,7 +95,7 @@ If `{dir}/status` exists, it's a legacy workflow-local status script. The status
 
 ### 3b. README (Show Diff)
 
-1. Generate what the current commission template would produce for this workflow, using the extracted values (mission, stages, schema, etc.).
+1. Re-select the matching template for this workflow's shape (development / experiment / refinement) and generate its FULL body for this workflow, substituting the extracted values (mission, stages, schema). Regenerate the workflow-INDEPENDENT sections too — `## Workflow-specific rules`, the proof/triage bullets, and the `## {Entity} Template` / `Verified by` example — not only the stage prose. These carry the accumulated scaffolding content; a refit that re-renders only the stage values propagates the version stamp but not the content the template gained since this workflow was commissioned.
 2. Diff it against the user's current README.
 3. Present the diff to the captain, noting which differences are likely template changes vs user customizations:
 
@@ -106,6 +106,8 @@ If `{dir}/status` exists, it's a legacy workflow-local status script. The status
 > {diff output}
 >
 > I have NOT modified your README. Review the diff and apply any changes you want manually, or tell me which specific changes to make.
+>
+> Additive sections the current template gained since your workflow was commissioned (new proof/triage bullets, a fixed example) appear as additions in this diff — those are the accumulated scaffolding content, safe to adopt; hunks that touch your customized stage prose are yours to judge.
 
 Do NOT auto-modify the README. The captain decides what to adopt.
 
