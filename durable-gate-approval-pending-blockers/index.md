@@ -148,12 +148,25 @@ gates:
             - id: gate-attempt:3k-ideation-7
               sequence: 7
               previous-attempt: gate-attempt:3k-ideation-6
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:3k:ideation:attempt-7:revision-14
                 digest: sha256:8f003849fd0b059495afcd3fcd7f438fa050d027a36e6a5dc393de6233bd55db
                 room-ref: "./review/ideation/briefing-14"
-                note: "Contract artifact carries two stacked frameless diagrams (contract sha256 4ca06d15...); each retains one semantic two-column branch — a still-too-wide verdict routes to a linked appendix, not another render round. Probe skip continues under the recorded rationale. Design content unchanged since attempt 4."
+                note: "Contract artifact carries two stacked frameless diagrams (contract sha256 4ca06d15...). Frozen at closure."
+              resolution:
+                type: Resolution
+                id: resolution:captain-chat-3k-ideation-7
+                briefing: briefing:docs-dev:3k:ideation:attempt-7:revision-14
+                by: person:captain
+                at: 2026-07-21T03:20:00Z
+                decision: approve
+                reason: "Captain approve, re-affirmed in chat: the two stacked diagrams render well ('it looks great') and h1 goes based on the current 3k. HONEST PROVENANCE: the captain first resolved this attempt in a float pane whose launcher had died — the resolution was written to an unlinked scratch file and destroyed. The chat re-affirmation is the authoritative record; the destroyed float result is float finding 15 and the presentation command's primary red fixture."
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+              note: "The captain-directed fold in flight (round-disposition section + evergreen restyle) records as a superseding attempt 8 on the worker's Done — captain-directed content, no re-ask; the approval stands through it. h1 dispatches immediately per the captain."
 sprint: durable-decisions
 group: recorder
 ---
