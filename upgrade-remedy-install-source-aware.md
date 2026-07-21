@@ -162,3 +162,9 @@ Estimate: ~9 files; prod ~117 LOC, test ~178 LOC, doc ~3. **Tolerance: ±3 files
 ### Summary
 
 Filled the entity with a concrete, testable, source-aware remedy design. The remedy is generated in one place (`tooOldBinaryRemedy()`); the plan keeps `contract` pure by threading a detected `InstallSource` value (mirroring existing `host` threading) and keeps the public `Compare` signature stable to cap the caller ripple. The riskiest mechanism — reading the owning cask from the resolved Caskroom path without shelling out to `brew` — was spiked live and confirmed (`spacedock@next` token extracted from the real path). Key subtlety banked for implementation: `brew upgrade spacedock@next` contains the substring `brew upgrade spacedock`, so the "no bare stable" assertion must be word-boundary matched. No user-facing doc or skill text restates the binary remedy, so the doc change is a single command-reference addition.
+
+## Gate: ideation — APPROVED (FO)
+
+- **Verdict:** approved for implementation. Threads a detected `InstallSource` value into the single remedy generator (keeps `contract` pure, `Compare` signature stable to cap the caller ripple), spike proven live on the edge box (`Caskroom/spacedock@next` token extracted from the resolved path, no `brew` subprocess), and correctly catches the word-boundary subtlety. No captain decision required.
+- **Validation carries the detached adversarial audit** — threads a param through `frontdoor.go gateHost` (the front-door launcher, a high-stakes surface). AC-1's oracle is the external install-source input, so the AC-provenance sub-trigger does not fire.
+- **Implementation base:** worktree off `origin/main` (`ca136f83`), not local `main`.
