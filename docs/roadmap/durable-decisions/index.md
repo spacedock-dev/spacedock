@@ -55,3 +55,16 @@ A captain's gate decision, once made, is recorded by machinery that cannot mis-f
 
 **Close — Shaping FO**
 - [ ] Sprint-close mining pass (by hand, second manual run; the recipe is banked in the 0260 forensics) → seeds the next train
+
+## Responsibility boundary (captain-aligned, 2026-07-21)
+
+| Task | Owns | Boundary line |
+|---|---|---|
+| 3k recorder | what the decision IS: gate → attempt → briefing binding (replaceable open, frozen closed) → exact resolution; record invariants; snapshot digests; status surfacing of recorded state; the contract doc (sections owner-tagged) | recording never advances status, never dispatches, never computes eligibility |
+| h1 applications + blockers + eligibility | what the decision DOES: the one-use application (pending → consumed exactly-once via the existing transition path; superseded on drift; not-applicable on hold), declared blockers (fail-closed), execution holds, the eligibility computation | an application never exists without a closed binding approval; a resolution stands alone fine |
+| xb presentation command | how the decision is OBTAINED: package validation, blocking TUI child, atomic retention on success AND failure, presenter lifecycle, probe ritual, provider id-mapping (specified in 3k's contract) | hands the validated resolution to the recorder; never writes gates itself |
+| 02av triage on advisory records | what a non-gate decision MEANS: triage rule, decline as the ensign's advisory resolution, AC-narrowing graduating to a binding gate attempt | round records carry no application, ever — advisory cannot advance anything by construction |
+
+Rules: (1) 3k records, h1 authorizes — resolutions stand alone, applications depend; (2) only binding resolutions may carry applications; (3) one write surface — the recorder binary, extended by h1's verbs, called by xb, never a second writer; (4) one spec — 3k's contract doc, sections owner-tagged, each task edits only its sections; (5) inside h1, applications have a proven consumer (the 0260 Commander) while blockers/holds must be justified or declined separately.
+
+Dogfooding change protocol: frictions in your own spec section — amend and record the round in your entity; frictions in another owner's section — route through the FO to the owner, consumers re-anchor on landed text; amendment after a closed gate — a superseding attempt on the owner's gate record; every friction is a finding triaged under the standing taxonomy (declines legal). The first dogfood channel is this sprint's own remaining gates.
