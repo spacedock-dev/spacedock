@@ -9,11 +9,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:3k:ideation
-        attempt: gate-attempt:3k-ideation-8
+        attempt: gate-attempt:3k-ideation-5
     records:
         - id: gate:docs-dev:3k:ideation
           stage: ideation
-          current-attempt: gate-attempt:3k-ideation-8
+          current-attempt: gate-attempt:3k-ideation-5
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
@@ -124,71 +124,6 @@ gates:
                 target-stage: ideation
                 state: consumed
               note: "Presentation-content revise: reshape the diagram vertical for the terminal render. Design content still unchanged since attempt 4. Attempt 6 opens at re-presentation."
-            - id: gate-attempt:3k-ideation-6
-              sequence: 6
-              previous-attempt: gate-attempt:3k-ideation-5
-              state: closed
-              briefing:
-                id: briefing:docs-dev:3k:ideation:attempt-6:revision-13
-                digest: sha256:5b128db9cb36e2d690bcceaa279d47b6c8a7da0077c8d1124752323fce903a19
-                room-ref: "./review/ideation/briefing-13"
-              resolution:
-                type: Resolution
-                id: resolution:actor-1784602325418452000
-                briefing: briefing:docs-dev:3k:ideation:attempt-6:revision-13
-                by: person:reviewer
-                at: 2026-07-21T02:52:05Z
-                decision: revise
-                reason: "Annotation on the contract mermaid: still too wide."
-              application:
-                action: feedback
-                target-stage: ideation
-                state: consumed
-              note: "Render check failed again at the float: the subgraph frames were removed next round. Attempt 7 re-presents with two stacked frameless diagrams."
-            - id: gate-attempt:3k-ideation-7
-              sequence: 7
-              previous-attempt: gate-attempt:3k-ideation-6
-              state: closed
-              briefing:
-                id: briefing:docs-dev:3k:ideation:attempt-7:revision-14
-                digest: sha256:8f003849fd0b059495afcd3fcd7f438fa050d027a36e6a5dc393de6233bd55db
-                room-ref: "./review/ideation/briefing-14"
-                note: "Contract artifact carries two stacked frameless diagrams (contract sha256 4ca06d15...). Frozen at closure."
-              resolution:
-                type: Resolution
-                id: resolution:captain-chat-3k-ideation-7
-                briefing: briefing:docs-dev:3k:ideation:attempt-7:revision-14
-                by: person:captain
-                at: 2026-07-21T03:20:00Z
-                decision: approve
-                reason: "Captain approve, re-affirmed in chat: the two stacked diagrams render well ('it looks great') and h1 goes based on the current 3k. HONEST PROVENANCE: the captain first resolved this attempt in a float pane whose launcher had died — the resolution was written to an unlinked scratch file and destroyed. The chat re-affirmation is the authoritative record; the destroyed float result is float finding 15 and the presentation command's primary red fixture."
-              application:
-                action: advance
-                target-stage: implementation
-                state: superseded
-              note: "Superseded by attempt 8 (the captain-directed fold: round-disposition section + evergreen restyle); the approval itself stands. h1 dispatched immediately per the captain. Application state corrected pending->superseded at the preflight (fable seat M2a): the attempt-8 recording updated this note but left the state field live, briefly giving the gate two pending advances — banked as the cross-attempt red fixture for the eligibility task."
-            - id: gate-attempt:3k-ideation-8
-              sequence: 8
-              previous-attempt: gate-attempt:3k-ideation-7
-              state: closed
-              briefing:
-                id: briefing:docs-dev:3k:ideation:attempt-8:revision-15
-                digest: sha256:fd95df2a7f7200ffdc3370db13785cf1b2018af42c1ce13e1e05b00af08e5f1a
-                room-ref: "./review/ideation/briefing-15"
-                note: "Byte-verifiable frozen entity snapshot + contract snapshot (final contract sha256 9c0ee9ad469ca0399e657b146e70f9de524387851ccbd3a0a4d9a0fd6d4b08b7), taken after the fold pass and before this record."
-              resolution:
-                type: Resolution
-                id: resolution:captain-chat-3k-ideation-8
-                briefing: briefing:docs-dev:3k:ideation:attempt-8:revision-15
-                by: person:captain
-                at: 2026-07-21T04:52:00Z
-                decision: approve
-                reason: "Captain-directed fold, content the captain specified in chat — no re-ask per the attempt-7 record: the round-records/triage-dispositions advisory section folded into the contract from the triage task's reframe ideation; the evergreen rule applied (component-only prose, task ids confined to removable scaffolding, with the diagram prefixes and example ids explicitly scoped as scaffolding converted at the landing pass); the captain's approve of the design and diagrams stands through the fold."
-              application:
-                action: advance
-                target-stage: implementation
-                state: pending
-              note: "The recorder's ideation is SETTLED: resolution-first scope, seven evidenced ACs, owner-tagged evergreen-styled contract carrying the full record model including advisory rounds, two render-approved diagrams. The fold worker released with honors after fifteen cycles. Consumption is the sprint Commander's."
 sprint: durable-decisions
 group: recorder
 ---
@@ -257,7 +192,7 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 The exact first-use journey, minimal schema, helper boundary, examples, and lifecycle
 are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `9c0ee9ad469ca0399e657b146e70f9de524387851ccbd3a0a4d9a0fd6d4b08b7`).
+(SHA-256 `b17984fa80cab63714dd47952580a9b499671b1c42b45cac254e83a4bf29045e`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
@@ -1176,62 +1111,3 @@ The ownership diagram is redrawn vertical for TUI rendering — per-subgraph `di
 and a top-to-bottom subgraph chain with compressed labels — while preserving the xb → 3k →
 h1 (plus 02av advisory) boundary semantics exactly. The seven retained resolution ACs
 (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the resolution-first split are unchanged.
-
-## Stage Report: ideation (cycle 18)
-
-Attempt-6 render check: "still too wide." Applied the structural lever — subgraph title frames set a width floor no label-shortening beats, so the single diagram becomes TWO small stacked diagrams with no subgraphs and owner-prefixed node labels.
-
-- DONE: Replace the single ownership diagram with two subgraph-free stacked diagrams (record; flow-across-owners), owner prefixes in labels, each a near-linear vertical chain; one-sentence intro before each.
-  Diagram 1 = the 3k record (gate → attempt → briefing/resolution); diagram 2 = the cross-owner flow (xb → 3k → h1 → effect, with the 02av advisory branch). Both parse as `flowchart-v2` (browserless jsdom check). No subgraph frames, so no long title sets the box-width floor.
-- DONE: Preserve the graduation semantics with a caption.
-  Diagram 2's design-reset edge targets `res` (the resolution) to keep one column; a caption line under it states exactly that it opens a NEW binding attempt on the gate.
-- DONE: Refresh the contract provenance; the split and the seven retained ACs are unchanged.
-  New contract SHA-256 `4ca06d15…`; the body provenance reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are untouched.
-
-### Summary
-
-The ownership visual is now two small subgraph-free stacked diagrams — the frames that set
-the previous width floor are gone, and owner identity moved into node-label prefixes. Same
-boundary semantics (xb → 3k → h1, 02av advisory) across the pair. Render caveat stands:
-Chromium won't launch in this sandbox, so I confirmed both parse as `flowchart-v2` but
-cannot pixel-measure width. If your float still reads wide, these are at the structural
-floor — the next step is to present the diagrams as a linked appendix rather than inline.
-The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the
-resolution-first split are unchanged.
-
-## Stage Report: ideation (cycle 19)
-
-Two captain directives for the contract doc: fold the round-record/triage-disposition shape into it, and apply the evergreen "landed spec references no tasks" rule.
-
-- DONE: Fold the round-record/triage-disposition shape into the contract doc as a new section after the resolution material.
-  Added `## Round records and triage dispositions (advisory)`: the mapping (round snapshot = briefing; findings = annotations; reviewer verdict = advisory resolution; consumer's triage = its own advisory resolution whose `includes` name each declined finding with class / why-not-material / promotes-when), the concrete YAML, the all-declines-vs-absence rule, the graduation rule (narrowing a value claim opens a binding attempt; an advisory round never advances `status`), and the room-resident storage shape. Adapted from `ensign-finding-triage-disposition.md` 77-118, component language only, no invented vocabulary.
-- DONE: Apply the evergreen rule — the landed spec references no tasks.
-  Added the scaffolding note at the top; audited the seven tagged sections and moved every task-ownership reference out of body prose into component language (the recorder / the application layer / the presentation command / round records / the consumer's triage), with task ids confined to the removable owner-tag lines. Prose is now component-clean.
-- DONE: Refresh provenance; the split and the seven retained ACs are unchanged.
-  New contract SHA-256 `ee4e354d…`; the body reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are untouched; both diagrams still parse as `flowchart-v2`.
-
-### Summary
-
-The contract doc now carries the advisory round-record/triage shape as its own
-component-language section, and every section's body prose speaks in component terms with
-task ids confined to the removable owner tags. Remaining task tokens are shaping-time
-illustration only — the two diagram owner-prefixes, the CLI example slug, and the YAML
-example ids — flagged for landing-time genericization (the diagram case carries a width
-tension, so I left it for the captain rather than widening or dropping prefixes unasked).
-The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the
-resolution-first split are unchanged.
-
-## Stage Report: ideation (cycle 20)
-
-Captain ruling on the flagged scaffolding: option (c) for all three (diagram prefixes, CLI slug, YAML ids) — shaping-time scaffolding covered by the note; the approved-as-rendered diagrams do not change now.
-
-- DONE: Extend the scaffolding note to name the three token locations and their landing-pass treatment.
-  Added the captain's sentence: the scaffolding includes the diagram-label task-id prefixes and the CLI/YAML task-slug/task-id tokens; the landing pass converts labels to component prefixes (re-checking render width) and genericizes example ids. New contract SHA-256 `9c0ee9ad…`; the body reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are unchanged.
-
-### Summary
-
-The scaffolding note now explicitly scopes all three shaping-time task-token locations, so
-the doc is internally consistent: the landed spec speaks only in component terms, and
-everything task-tagged (owner tags, diagram prefixes, example ids) is declared removable at
-landing. This closes the contract-doc pass; the seven retained resolution ACs (AC-1, AC-4,
-AC-6, AC-10, AC-12, AC-13, AC-14) and the resolution-first split are unchanged.

@@ -1,0 +1,68 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:3k:ideation:attempt-7:revision-14",
+  "question": "Does the resolution-first recorder cut (application layer moved to h1; owner-tagged spec with the boundary diagram) stand as the implementation contract?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-summary",
+      "uri": "gate-summary.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:af13027d237ce8f00b39d9a531b5d2157a223fa93099276d363ac7a861b1d5f5"
+    },
+    {
+      "id": "artifact:gate-resolution-frontmatter-contract",
+      "uri": "../../../gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4ca06d1540796cc6bdc1cc7fea0bfca352b62f48a4079adecec75da913a879be"
+    },
+    {
+      "id": "artifact:entity-snapshot",
+      "uri": "entity-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f288e52234400bb75b219148827a93261394f631fd77b7fdd5380d2774bf1051"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Park the decision",
+          "to": "tasking:park"
+        }
+      ]
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:resolution-first",
+      "text": "The recorder records what the decision is (gate, attempt, briefing binding, exact resolution) and never advances status, dispatches, or computes eligibility; the application layer belongs to the blockers-and-eligibility task."
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:one-writer",
+      "text": "One binary write surface owns gates frontmatter; the eligibility task extends the same binary; the presentation command calls it and never writes."
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:replay-green",
+      "text": "The eight 0260 production entities replay through the recorder unchanged, including round-tripping the h1-owned application sub-object."
+    }
+  ]
+}

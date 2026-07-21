@@ -9,11 +9,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:3k:ideation
-        attempt: gate-attempt:3k-ideation-8
+        attempt: gate-attempt:3k-ideation-2
     records:
         - id: gate:docs-dev:3k:ideation
           stage: ideation
-          current-attempt: gate-attempt:3k-ideation-8
+          current-attempt: gate-attempt:3k-ideation-2
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
@@ -56,139 +56,8 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: superseded
-              note: "Approve with two attached captain questions (pointer-AC leanness; integration-umbrella split), answered in chat post-recording; fork 1 (id namespacing) not annotated, so recorder ids stay Spacedock-internal per the stated default. Superseded by attempt 3 (the captain-directed pointer-AC cut); the approval itself stands."
-            - id: gate-attempt:3k-ideation-3
-              sequence: 3
-              previous-attempt: gate-attempt:3k-ideation-2
-              state: closed
-              briefing:
-                id: briefing:docs-dev:3k:ideation:attempt-3:revision-10
-                digest: sha256:cb816a084445eefd588a9b5119522ca6c2a70ab375de005a9d206af444d2b362
-                room-ref: "./review/ideation/briefing-10"
-                note: "Byte-verifiable frozen entity snapshot (entity-snapshot.md) taken after the cycle-14 pointer-AC cut and before this record was written — no advisory digest needed."
-              resolution:
-                type: Resolution
-                id: resolution:captain-chat-3k-ideation-3
-                briefing: briefing:docs-dev:3k:ideation:attempt-3:revision-10
-                by: person:captain
-                at: 2026-07-21T01:42:54Z
-                decision: approve
-                reason: "Captain-directed leanness fold from the attempt-2 approve questions ('ok do the cleanup'): the eight pointer-AC stubs cut so the AC scanner sees exactly the seven in-scope criteria; scheduler-rule and test-plan stubs cut where trivial, original numbering kept so gaps mark moved-out steps; the Scope cut section is the traceability record. No integration-umbrella split (captain accepted the recommendation: the contract doc is the clean spec; integration proof rides the sprint DoD and pre-cut audit)."
-              application:
-                action: advance
-                target-stage: implementation
-                state: superseded
-              note: "Fold applied by the live revision worker (cycle 14, state commit 2e562ed9); FO recorded. Superseded by attempt 4 (the captain-directed resolution-first split); the approval itself stands."
-            - id: gate-attempt:3k-ideation-4
-              sequence: 4
-              previous-attempt: gate-attempt:3k-ideation-3
-              state: closed
-              briefing:
-                id: briefing:docs-dev:3k:ideation:attempt-4:revision-11
-                digest: sha256:f8cd6fa75043b061dc64aa5583620af14f90a9dc3d557b5c0f246f9eb051a5aa
-                room-ref: "./review/ideation/briefing-11"
-                note: "Frozen at closure; provider result retained as provider-result-11.json, digest equality validated; provider envelope id (briefing:single-file:6a66ead293dbb27a4931ec57e370a02b) normalized to this attempt briefing id."
-              resolution:
-                type: Resolution
-                id: resolution:actor-1784599855140796000
-                briefing: briefing:docs-dev:3k:ideation:attempt-4:revision-11
-                by: person:reviewer
-                at: 2026-07-21T02:10:55Z
-                decision: revise
-                reason: "btw, does the multi-artifact briefing not work? i want to see the mermaid diagram in the spec too"
-              application:
-                action: feedback
-                target-stage: ideation
-                state: consumed
-              note: "Presentation-side revise, FO-owned (no design change requested): re-present as a multi-artifact briefing package with the contract spec (carrying the mermaid) as its own artifact. Attempt 5 opens on the package presentation; the design content is unchanged from this attempt."
-            - id: gate-attempt:3k-ideation-5
-              sequence: 5
-              previous-attempt: gate-attempt:3k-ideation-4
-              state: closed
-              briefing:
-                id: briefing:docs-dev:3k:ideation:attempt-5:revision-12
-                digest: sha256:ec6bb198f1fc2451b47ffecf904390c9278a161d33f55f40697d2ca4f4020ee0
-                room-ref: "./review/ideation/briefing-12"
-                note: "Multi-artifact briefing package — FIRST successful package-mode gate presentation (direct review-v1 float, probe-proven; the probe caught the required-context schema rule). Review log retained in-room as briefing.review.jsonl by the provider itself."
-              resolution:
-                type: Resolution
-                id: resolution:actor-1784601146924137000
-                briefing: briefing:docs-dev:3k:ideation:attempt-5:revision-12
-                by: person:reviewer
-                at: 2026-07-21T02:32:26Z
-                decision: revise
-                reason: "Annotation on the contract mermaid: 'this is too wide and can't be rendered. is there a way to make it vertical?' (annotation:captain-1784601092240856000, included). The resolution reason's route-to-decision observation is subspace-side product feedback per the captain's follow-up — not filed in this workflow."
-              application:
-                action: feedback
-                target-stage: ideation
-                state: consumed
-              note: "Presentation-content revise: reshape the diagram vertical for the terminal render. Design content still unchanged since attempt 4. Attempt 6 opens at re-presentation."
-            - id: gate-attempt:3k-ideation-6
-              sequence: 6
-              previous-attempt: gate-attempt:3k-ideation-5
-              state: closed
-              briefing:
-                id: briefing:docs-dev:3k:ideation:attempt-6:revision-13
-                digest: sha256:5b128db9cb36e2d690bcceaa279d47b6c8a7da0077c8d1124752323fce903a19
-                room-ref: "./review/ideation/briefing-13"
-              resolution:
-                type: Resolution
-                id: resolution:actor-1784602325418452000
-                briefing: briefing:docs-dev:3k:ideation:attempt-6:revision-13
-                by: person:reviewer
-                at: 2026-07-21T02:52:05Z
-                decision: revise
-                reason: "Annotation on the contract mermaid: still too wide."
-              application:
-                action: feedback
-                target-stage: ideation
-                state: consumed
-              note: "Render check failed again at the float: the subgraph frames were removed next round. Attempt 7 re-presents with two stacked frameless diagrams."
-            - id: gate-attempt:3k-ideation-7
-              sequence: 7
-              previous-attempt: gate-attempt:3k-ideation-6
-              state: closed
-              briefing:
-                id: briefing:docs-dev:3k:ideation:attempt-7:revision-14
-                digest: sha256:8f003849fd0b059495afcd3fcd7f438fa050d027a36e6a5dc393de6233bd55db
-                room-ref: "./review/ideation/briefing-14"
-                note: "Contract artifact carries two stacked frameless diagrams (contract sha256 4ca06d15...). Frozen at closure."
-              resolution:
-                type: Resolution
-                id: resolution:captain-chat-3k-ideation-7
-                briefing: briefing:docs-dev:3k:ideation:attempt-7:revision-14
-                by: person:captain
-                at: 2026-07-21T03:20:00Z
-                decision: approve
-                reason: "Captain approve, re-affirmed in chat: the two stacked diagrams render well ('it looks great') and h1 goes based on the current 3k. HONEST PROVENANCE: the captain first resolved this attempt in a float pane whose launcher had died — the resolution was written to an unlinked scratch file and destroyed. The chat re-affirmation is the authoritative record; the destroyed float result is float finding 15 and the presentation command's primary red fixture."
-              application:
-                action: advance
-                target-stage: implementation
-                state: superseded
-              note: "Superseded by attempt 8 (the captain-directed fold: round-disposition section + evergreen restyle); the approval itself stands. h1 dispatched immediately per the captain. Application state corrected pending->superseded at the preflight (fable seat M2a): the attempt-8 recording updated this note but left the state field live, briefly giving the gate two pending advances — banked as the cross-attempt red fixture for the eligibility task."
-            - id: gate-attempt:3k-ideation-8
-              sequence: 8
-              previous-attempt: gate-attempt:3k-ideation-7
-              state: closed
-              briefing:
-                id: briefing:docs-dev:3k:ideation:attempt-8:revision-15
-                digest: sha256:fd95df2a7f7200ffdc3370db13785cf1b2018af42c1ce13e1e05b00af08e5f1a
-                room-ref: "./review/ideation/briefing-15"
-                note: "Byte-verifiable frozen entity snapshot + contract snapshot (final contract sha256 9c0ee9ad469ca0399e657b146e70f9de524387851ccbd3a0a4d9a0fd6d4b08b7), taken after the fold pass and before this record."
-              resolution:
-                type: Resolution
-                id: resolution:captain-chat-3k-ideation-8
-                briefing: briefing:docs-dev:3k:ideation:attempt-8:revision-15
-                by: person:captain
-                at: 2026-07-21T04:52:00Z
-                decision: approve
-                reason: "Captain-directed fold, content the captain specified in chat — no re-ask per the attempt-7 record: the round-records/triage-dispositions advisory section folded into the contract from the triage task's reframe ideation; the evergreen rule applied (component-only prose, task ids confined to removable scaffolding, with the diagram prefixes and example ids explicitly scoped as scaffolding converted at the landing pass); the captain's approve of the design and diagrams stands through the fold."
-              application:
-                action: advance
-                target-stage: implementation
                 state: pending
-              note: "The recorder's ideation is SETTLED: resolution-first scope, seven evidenced ACs, owner-tagged evergreen-styled contract carrying the full record model including advisory rounds, two render-approved diagrams. The fold worker released with honors after fifteen cycles. Consumption is the sprint Commander's."
+              note: "Approve with two attached captain questions (pointer-AC leanness; integration-umbrella split), answered in chat post-recording; fork 1 (id namespacing) not annotated, so recorder ids stay Spacedock-internal per the stated default. Any resulting trim folds as a superseding attempt."
 sprint: durable-decisions
 group: recorder
 ---
@@ -197,18 +66,18 @@ group: recorder
 
 ## Scope cut (captain-approved, 2026-07-21)
 
-This task grew four products in one coat (12 cycles, 15 ACs, two companion specs). It now narrows to ONE: the gate **resolution** recorder and its record schema — the binary that owns every `gates:` frontmatter write for the resolution record (open / rebind-while-open / close-with-resolution / supersede-attempt), the record invariants (pointer agreement, one binding per attempt, frozen closures), snapshot-bound digests, and the status surfacing of recorded resolution state. It records WHAT THE DECISION IS; the `application` layer — WHAT THE DECISION DOES (the one-use advance authorization) — moved to h1 at the captain's 2026-07-21 resolution-first split ("get the resolution right first"). Retained ACs: 1, 4, 6 (record-state subset), 10, 12, 13, 14, each trimmed to its resolution-side core. This half is production-proven as a hand-run convention across eight entities in 0260 shaping (see `production-evidence-2026-07-20-fo-dry-run.md` and the 0260 closure findings: `--set` re-serialization, a self-conflicting attempt pointer, stale applications, the advisory-digest hole, entity-cannot-self-bind) — the recorder mechanizes a proven shape.
+This task grew four products in one coat (12 cycles, 15 ACs, two companion specs). It now narrows to ONE: the gate recorder and its record schema — the binary that owns every `gates:` frontmatter write (open / rebind-while-open / close-with-resolution / supersede / consume), the record invariants (one pending application per record, pointer agreement, frozen closures), snapshot-bound digests, and the status surfacing of recorded gate state. Retained ACs: 1, 4, 6 (record-state subset), 10, 12, 13, 14. This half is production-proven as a hand-run convention across eight entities in 0260 shaping (see `production-evidence-2026-07-20-fo-dry-run.md` and the 0260 closure findings: `--set` re-serialization, a self-conflicting attempt pointer, stale applications, the advisory-digest hole, entity-cannot-self-bind) — the recorder mechanizes a proven shape.
 
 Moved out, one owner per concern:
 
-- **The application layer + blockers, execution holds, and dispatch eligibility** → `gate-blockers-and-eligibility`. Two joined concerns. (a) *What the decision does* — the one-use advance authorization: `application` action/target-stage, the `pending`/`consumed`/`superseded`/`not-applicable` states, and application-staleness marking (moved from 3k at the captain's 2026-07-21 resolution-first split: the application halves of ACs 1, 4, 6, and 10; scheduler rules 8, 9 (application-state clause), and 10; test-plan items 2, 4, 5; the `application` section of the contract doc, now h1-owned in place). (b) The original seed — blockers, execution holds, and dispatch eligibility (ACs 2, 3, 5, 11 + the eligibility subset of AC-6; scheduler rules 4-6 and 10's guard beyond convention). h1 already owns exactly-once consumption and blockers, so the application record lands with its consumer. Unlike the blocker half (which the dry run never exercised — all eight recorded approvals had zero declared blockers), the application record HAS a demonstrated consumer: the 0260 Commander consumed pending `advance` applications through the normal transition path, so h1's live-need question should credit it. The "refuses a second pending application" red fixture follows the application layer to h1; the recorder keeps the pointer-conflict and frozen-closure red fixtures. Sequenced after the recorder; its gate re-examines live need.
+- **Blockers, execution holds, and dispatch eligibility** (ACs 2, 3, 5, 11 + the eligibility subset of AC-6; scheduler rules 4-6 and 10's guard beyond convention) → `gate-blockers-and-eligibility`. The original seed concern — and the one part the production dry run never exercised (all eight recorded approvals had zero declared blockers). Sequenced after the recorder; its gate re-examines live need.
 - **The presentation journey** (ACs 7 and 15; the one-command `gate review` blocking presenter, atomic result retention, briefing packages, probe-snapshot binding, provider id-mapping adapter; the probes companion spec rides along as convention) → `gate-review-presentation-command`. Subspace-coupled — sequenced with the subspace-tui surface, interim ritual per the 0260 shaping debrief.
 - **Rejection-rework route context** (AC-9; the durable route edge) → DEFERRED, no task: the feedback-cycle prose convention just shipped in 0260; the binary edge waits for observed drift, per the escalation ordering.
 - AC-8's behavioral-test mutants split with their owners.
 
-Spec-level coupling retained here: this task keeps ownership of `gate-resolution-frontmatter-contract.md` as the one spec, with its `application` section now marked h1-owned in place (one doc, many owners — not relocated); the presentation task's id-mapping rule (provider envelope briefing id normalized to the attempt briefing id after digest validation) is SPECIFIED in that contract and implemented in the presentation task. The open gate attempt's briefing must be rebound to this post-cut content before its next presentation (open-attempt rebinding, scheduler rule 2).
+Spec-level coupling retained here: this task keeps ownership of `gate-resolution-frontmatter-contract.md`; the presentation task's id-mapping rule (provider envelope briefing id normalized to the attempt briefing id after digest validation) is SPECIFIED in that contract and implemented in the presentation task. The open gate attempt's briefing must be rebound to this post-cut content before its next presentation (open-attempt rebinding, scheduler rule 2).
 
-**Expected surface + tolerance (FO-drafted; re-estimated at the 2026-07-21 resolution-first split — the recorder shrinks as the application layer leaves; captain corrects at the gate):** Go product code, first in-repo binary surface of the gate cluster: ~2-3 new files under `internal/` (gates block read/model/write for the resolution record + invariant validation + the resolution close/supersede-attempt mutations; NO application struct — that is h1's) plus edits in `internal/status` (surfacing recorded resolution state, `--set` coexistence so unrelated field writes leave `gates:` untouched) and 1-2 new `spacedock gate ...` verb entries in `cmd/`; **~400-650 production LOC** (down from the pre-split ~600-900), roughly equal test LOC (fixture replay of the eight 0260 production entities + the red fixtures: z7's real pointer conflict, a frozen-closure mutation, a resolution/briefing-digest mutation). The recorder round-trips the h1-owned `application` sub-object unchanged on write (preserve-not-model), so replay of the eight production entities — which carry `application` blocks — stays green. Contract doc unchanged in location (the spec is the already-banked `gate-resolution-frontmatter-contract.md`, its `application` section marked h1-owned in place); ~10 lines of FO-contract prose naming the recorder as the gates-resolution-write owner. Tolerance 2×. Hard self-check: any schema change that breaks replay of the eight production entities, any subspace-tui coupling (xb's), any blocker/eligibility computation OR application-record modeling/writing/state-surfacing (h1's) trips a reconfirm.
+**Expected surface + tolerance (FO-drafted at re-presentation per the standing ruling — the entity predates it; captain corrects at the gate):** Go product code, first in-repo binary surface of the gate cluster: ~2-4 new files under `internal/` (gates block read/model/write + invariant validation + the record mutations) plus edits in `internal/status` (surfacing, `--set` coexistence so unrelated field writes leave `gates:` untouched) and 1-2 new `spacedock gate ...` verb entries in `cmd/`; ~600-900 production LOC, roughly equal test LOC (fixture replay of the eight 0260 production entities + the red fixtures: z7's real pointer conflict, a second pending application, a frozen-closure mutation). Contract doc unchanged (the spec is the already-banked `gate-resolution-frontmatter-contract.md`); ~10 lines of FO-contract prose naming the recorder as the gates-write owner. Tolerance 2×. Hard self-check: any schema change that breaks replay of the eight production entities, any subspace-tui coupling (that is xb's surface), or any blocker/eligibility computation (h1's) trips a reconfirm.
 
 ## Problem
 
@@ -257,7 +126,7 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 The exact first-use journey, minimal schema, helper boundary, examples, and lifecycle
 are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `9c0ee9ad469ca0399e657b146e70f9de524387851ccbd3a0a4d9a0fd6d4b08b7`).
+(SHA-256 `da8ed3d7cf6a580913179f60e27698845c1bf98fe226cf7b7db5e55e17b179cb`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
@@ -292,17 +161,21 @@ rendering as a Subspace product gap rather than expanding this task's UI scope.
 7. If gate-defining input changes after an attempt closed, a new attempt is required;
    closed attempts never gain another Briefing. (Marking the closed application stale
    and keeping the task non-dispatchable is eligibility surfacing owned by **h1**.)
-8. Review & Gate `revise` or `hold` closes the attempt and records the exact Resolution.
-   (Creating the resulting application — `revise` → a pending feedback application, `hold`
-   → `action: none`/`state: not-applicable` — is owned by **h1**.)
-9. Status surfaces the recorded stage, gate/attempt/Briefing/Resolution identities, and
-   open or closed state. Subspace presents Briefing/lens/assessment deltas through the
-   stable room reference when requested. (Application-state, blocker-set, execution-hold,
-   and staleness surfacing is owned by **h1**.)
-11. A recorded rejection (`revise` Resolution) is retained, and re-entry at the gate after
-   that closed result creates a new attempt. (Routing it through `feedback-to` as a
-   feedback application is owned by **h1**; projecting the current lifecycle stage with
-   explicit `feedback_rework` route context is **DEFERRED**, AC-9.)
+8. Review & Gate `revise` or `hold` closes the attempt. `revise` creates a pending
+   feedback application; `hold` creates `action: none`, `state: not-applicable`.
+9. Status surfaces the recorded stage, gate/attempt/Briefing/Resolution identities, open
+   or closed state, and application state. Subspace presents Briefing/lens/assessment
+   deltas through the stable room reference when requested. (The blocker-set,
+   execution-hold, and staleness surfacing is owned by **h1**.)
+10. The gate schema records only `pending`, `consumed`, `superseded`, or
+   `not-applicable` application state; the existing transition/dispatch coordinator owns
+   effect identity and crash reconciliation. (The one-use guard — a current approval
+   authorizes exactly one successful application — is eligibility enforcement owned by
+   **h1**.)
+11. A rejection routed through `feedback-to` retains the rejected gate result, and
+   re-entry at the gate after that closed result creates a new attempt. (Projecting the
+   current lifecycle stage with explicit `feedback_rework` route context is **DEFERRED**,
+   AC-9.)
 
 ## Acceptance criteria
 
@@ -312,31 +185,30 @@ are cut here to keep the section lean; the **Scope cut** section (captain-approv
 (`gate-blockers-and-eligibility`), xb (`gate-review-presentation-command`), and DEFERRED.
 Original AC numbers are retained, so the gaps mark moved-out criteria.
 
-**AC-1** A recorded approval — its exact Resolution and reviewed digest — survives process restart and still reports the same durable decision byte-for-byte, without advancing or dispatching. (The approved-pending condition, the exact blocker, and the blocked-entity framing are application/eligibility surfacing owned by h1.)
+**AC-1** An approved blocked entity survives process restart and still reports the same durable approval, exact blocker, reviewed digest, and `approved-pending` condition without advancing or dispatching.
 
-**AC-4** Review & Gate `revise` and `hold` Resolutions remain durable and visible. A
-captain-facing rejection for rework is recorded as a portable `revise` Resolution, not as
+**AC-4** Review & Gate `revise` and `hold` Resolutions remain durable, visible, and
+non-dispatchable; blocker clearance cannot override them. A captain-facing rejection
+for rework is stored as portable `revise` plus a Spacedock feedback application, not as
 the superseded portable `reject` vocabulary. `approve` needs no portable rationale;
 `revise`/`hold` require a nonblank reason or an included earlier same-Briefing
-Annotation, exactly as Review & Gate v1 specifies. (Non-dispatchability, blocker-clearance
-non-override, and the resulting feedback application are owned by h1.)
+Annotation, exactly as Review & Gate v1 specifies.
 
 **AC-6 (record-state subset)** Status text and JSON distinguish the recorded gate
-resolution states the recorder surfaces from entity frontmatter alone: a recorded
-`approve`, a recorded Review & Gate `hold`, and a recorded `revise`. → The
-application-state surfacing (`pending`/`consumed`/`superseded`/`not-applicable`), active
-execution hold, unsatisfied/unknown/failed blockers, satisfied-but-not-yet-consumed, and
-stale-approval distinctions are application/eligibility surfacing owned by **h1**; the
-fuller rejected-gate rework route context is **DEFERRED** (AC-9).
+states the recorder surfaces from entity frontmatter alone: pending approval, consumed
+approval, a recorded Review & Gate `hold`, and a recorded `revise` with its feedback
+application. → The active-execution-hold, unsatisfied/unknown/failed-blocker,
+satisfied-but-not-yet-consumed, and stale-approval distinctions are computed eligibility
+surfacing owned by **h1**; the fuller rejected-gate rework route context is **DEFERRED**
+(AC-9).
 
 **AC-10 (VALUE)** Recording either an approval or rejection changes only the entity's
 versioned `gates` frontmatter collection: current `status` is byte-identical and no
 dispatch receipt or worker exists. Deleting projection caches and reading the current
 entity directly enumerates every logical gate, gate attempt, immutable Briefing
-binding (replaceable when open, frozen when closed), exact adopted Resolution, and
-selection pointer. Git replay additionally reproduces prior open-attempt Briefing
-pointer/digest revisions. (The recorded `application` sub-object is round-tripped
-unchanged but its state semantics are h1's.)
+binding (replaceable when open, frozen when closed), exact adopted Resolution,
+selection pointer, and latest application state. Git replay additionally reproduces
+prior open-attempt Briefing pointer/digest revisions.
 
 **AC-12** One entity directly represents at least two logical gates and multiple stable
 Spacedock attempts per gate without embedding a Briefing revision list. Each open
@@ -555,19 +427,20 @@ moved-out scenarios.
 2. **Cold read, replay, and schema (AC-6 record-subset, AC-10, AC-12, AC-14).** Validate
    the concrete two-gate/multi-attempt example through the shipped schema, restart, and
    invoke status. The direct read enumerates every gate, gate attempt, single `briefing`
-   binding, and exact Resolution; Git replay reconstructs prior open
+   binding, exact Resolution, and minimal application; Git replay reconstructs prior open
    pointers and reproduces each recorded Briefing digest from its committed snapshot.
    Mutants that require `current-briefing`/`resolved-briefing`, embed provider history,
    or consult a cache fail.
-4. **Restart visibility (AC-1).** The recorded-approval fixture survives restart and
-   still reports the same durable Resolution and reviewed digest, byte-for-byte. (The
-   approved-pending condition, blocker set, and the blocker-state/stale-digest eligibility
-   table — AC-2/AC-3/AC-5 with their mutants — move to **h1**.)
+4. **Restart visibility, blocker table split (AC-1).** The approved-blocked fixture
+   survives restart and still reports the same durable approval, exact blocker, digest,
+   and `approved-pending` condition. (The blocker-state/stale-digest eligibility table —
+   `unsatisfied`/`satisfied`/`unknown`/`failed` and changed-digest, AC-2/AC-3/AC-5 with
+   their mutants — moves to **h1**.)
 5. **Revise/hold durability (AC-4).** Build state history containing a validation
-   `revise` Resolution; human/JSON status keeps the durable `revise` after restart. (The
-   feedback application it produces, its consumption, and the blocker-override guard move
-   to **h1**; the rejected-gate → rework route context and its false-rework contrast,
-   AC-9, is **DEFERRED**.)
+   `revise` and its consumed feedback application; human/JSON status keeps the durable
+   `revise` and feedback application after restart, and blocker clearance cannot override
+   it. (The rejected-gate → rework route context and its false-rework contrast, AC-9, is
+   **DEFERRED**.)
 6. **Re-entry, pointers, and concurrency (AC-4, AC-10, AC-12, AC-14).** Extend the
    fixture through re-validation. Concurrent attempt/pointer writes, a close racing a
    pointer advance, mutation of a closed `briefing`/Resolution, and field-wise merge fail
@@ -1114,124 +987,3 @@ Scope cut section as the sole traceability record for moved-out work. The gate s
 enumerates exactly those seven. Scheduler rules 4-6 and test-plan items 3/7 got the same
 pure-stub removal with original numbering preserved; every recorder-owned rule, test, and
 the PR-510 alignment section are unchanged.
-
-## Stage Report: ideation (cycle 15)
-
-Captain re-scope after the attempt-2 approve: "can we split the application part to the
-next task? i want to get the resolution right first." Resolution-first split — 3k records
-WHAT THE DECISION IS; the application layer (WHAT THE DECISION DOES) moves to h1.
-
-- DONE: Trim the retained ACs of application semantics — reduce each to its resolution-side core, move the application half to the Scope cut mapping (owner h1).
-  AC-1 (approved-pending/exact-blocker → h1), AC-4 (non-dispatchability/blocker-override/feedback application → h1), AC-6 (pending/consumed application-state surfacing → h1), and AC-10 (application-state enumeration → h1) trimmed to resolution cores; AC-12, AC-13, AC-14 were already pure resolution-side and untouched. `--ac-scan --stage ideation` still enumerates AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 (seven, exit 0).
-- DONE: Same for scheduler rules and test-plan items.
-  Scheduler rule 8 (application creation → h1), rule 9 (application-state surfacing → h1), rule 10 (application-state enum + one-use guard → h1, removed with a gap), rule 11 (feedback routing → h1); test-plan items 2 (minimal-application enumeration), 4 (approved-pending/blocker), and 5 (feedback application/consumption) trimmed to resolution cores.
-- DONE: In `gate-resolution-frontmatter-contract.md`, MARK the application section h1-owned (do not delete — one doc, many owners).
-  Owner-tagged the `application.*` field rows plus an ownership note, lifecycle rules 4-7, the recording-commit boundary (rule 3), intro capabilities 3-4, and the go-helper application-guard bullet as h1-owned; nothing deleted. New contract SHA-256 `77a83db2…`; the body provenance reference updated from `da8ed3d7…`.
-- DONE: Update the Scope cut moved-out list and reconfirm the expected surface (recorder shrinks — re-estimate honestly).
-  Scope cut now moves the application layer to h1 alongside blockers/eligibility; expected surface re-estimated from ~600-900 to ~400-650 production LOC (no application struct; the recorder round-trips the h1-owned `application` sub-object unchanged, so eight-entity replay stays green). Aligned with the roadmap's 2026-07-21 Responsibility boundary table.
-
-### Summary
-
-The resolution-first split narrows 3k to recording what the decision IS — logical gate,
-attempts, briefing bindings, resolutions, invariants, digests, and resolution-state
-surfacing (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14). The application layer — the
-one-use advance authorization and its consumption — moves to h1, which already owns
-exactly-once consumption and blockers; the application record has a demonstrated consumer
-(the 0260 Commander consumed pending `advance` applications through the normal transition
-path), which h1's live-need question should credit. The contract doc stays the one spec
-with its application section owner-tagged in place. Surface delta: the recorder drops to
-~400-650 production LOC, down from ~600-900.
-
-## Stage Report: ideation (cycle 16)
-
-Two captain-directed riders on the attempt-4 pass (per-section owner tags + an ownership diagram); no AC or design change.
-
-- DONE: Add a one-line owner tag to every top-level section of `gate-resolution-frontmatter-contract.md`.
-  Tagged all seven sections: What-3k-ships-first → 3k; Minimum schema → 3k (application cluster h1; provider-envelope id-normalization specified here, implemented by xb); Fields → 3k (h1 rows marked); Lifecycle → record lifecycle 3k, application + eligibility h1; Go helper → 3k write surface, h1 extends the binary, xb calls and never writes; Behavioral proof → each owner proves its own sections; References → 3k curates.
-- DONE: Add the captain-provided ownership mermaid diagram after `## What 3k ships first` (before the schema), labels verbatim.
-  Placed right after the "what ships" summary. Rendering: Chromium is unavailable in this sandbox (puppeteer cannot launch a browser), so I verified syntax browserlessly via the mermaid parser under jsdom — it parses as `flowchart-v2` with no errors.
-- DONE: Keep the resolution-first split and the seven retained ACs intact; refresh the contract provenance.
-  AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are unchanged by these riders; new contract SHA-256 `d1ac9d8d…` and the body provenance reference updated to match.
-
-### Summary
-
-The riders make implementation ownership explicit so dogfooding frictions and amendments
-route to the right owner: every contract-doc section now carries a one-line owner tag, and
-a captain-provided diagram shows the xb → 3k → h1 (plus 02av advisory) ownership shape
-before the schema. The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12,
-AC-13, AC-14) and the split are unchanged.
-
-## Stage Report: ideation (cycle 17)
-
-Captain annotation on the contract mermaid at the attempt-5 float: "this is too wide and can't be rendered. is there a way to make it vertical?" Replaced the diagram with the captain's vertical single-column redesign.
-
-- DONE: Replace the ownership mermaid with the vertical single-column redesign; keep semantics identical; verify it parses.
-  Each subgraph now declares `direction TB` (3 declarations) and the subgraphs chain top-to-bottom (obtain → record → apply/rounds); labels shortened so no single line drives width; same nodes, same edges, same boundary language compressed. Parses as `flowchart-v2` (browserless jsdom check). A pixel-accurate width / side-by-side render needs headless Chromium, which is unavailable here — applied verbatim and kept the obtain→record spine (the captain's delete-if-still-wide lever), since I cannot run the render check that would trigger removing it.
-- DONE: Refresh the contract provenance; the split and the seven retained ACs are unchanged.
-  New contract SHA-256 `b17984fa…`; the body provenance reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are untouched.
-
-### Summary
-
-The ownership diagram is redrawn vertical for TUI rendering — per-subgraph `direction TB`
-and a top-to-bottom subgraph chain with compressed labels — while preserving the xb → 3k →
-h1 (plus 02av advisory) boundary semantics exactly. The seven retained resolution ACs
-(AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the resolution-first split are unchanged.
-
-## Stage Report: ideation (cycle 18)
-
-Attempt-6 render check: "still too wide." Applied the structural lever — subgraph title frames set a width floor no label-shortening beats, so the single diagram becomes TWO small stacked diagrams with no subgraphs and owner-prefixed node labels.
-
-- DONE: Replace the single ownership diagram with two subgraph-free stacked diagrams (record; flow-across-owners), owner prefixes in labels, each a near-linear vertical chain; one-sentence intro before each.
-  Diagram 1 = the 3k record (gate → attempt → briefing/resolution); diagram 2 = the cross-owner flow (xb → 3k → h1 → effect, with the 02av advisory branch). Both parse as `flowchart-v2` (browserless jsdom check). No subgraph frames, so no long title sets the box-width floor.
-- DONE: Preserve the graduation semantics with a caption.
-  Diagram 2's design-reset edge targets `res` (the resolution) to keep one column; a caption line under it states exactly that it opens a NEW binding attempt on the gate.
-- DONE: Refresh the contract provenance; the split and the seven retained ACs are unchanged.
-  New contract SHA-256 `4ca06d15…`; the body provenance reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are untouched.
-
-### Summary
-
-The ownership visual is now two small subgraph-free stacked diagrams — the frames that set
-the previous width floor are gone, and owner identity moved into node-label prefixes. Same
-boundary semantics (xb → 3k → h1, 02av advisory) across the pair. Render caveat stands:
-Chromium won't launch in this sandbox, so I confirmed both parse as `flowchart-v2` but
-cannot pixel-measure width. If your float still reads wide, these are at the structural
-floor — the next step is to present the diagrams as a linked appendix rather than inline.
-The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the
-resolution-first split are unchanged.
-
-## Stage Report: ideation (cycle 19)
-
-Two captain directives for the contract doc: fold the round-record/triage-disposition shape into it, and apply the evergreen "landed spec references no tasks" rule.
-
-- DONE: Fold the round-record/triage-disposition shape into the contract doc as a new section after the resolution material.
-  Added `## Round records and triage dispositions (advisory)`: the mapping (round snapshot = briefing; findings = annotations; reviewer verdict = advisory resolution; consumer's triage = its own advisory resolution whose `includes` name each declined finding with class / why-not-material / promotes-when), the concrete YAML, the all-declines-vs-absence rule, the graduation rule (narrowing a value claim opens a binding attempt; an advisory round never advances `status`), and the room-resident storage shape. Adapted from `ensign-finding-triage-disposition.md` 77-118, component language only, no invented vocabulary.
-- DONE: Apply the evergreen rule — the landed spec references no tasks.
-  Added the scaffolding note at the top; audited the seven tagged sections and moved every task-ownership reference out of body prose into component language (the recorder / the application layer / the presentation command / round records / the consumer's triage), with task ids confined to the removable owner-tag lines. Prose is now component-clean.
-- DONE: Refresh provenance; the split and the seven retained ACs are unchanged.
-  New contract SHA-256 `ee4e354d…`; the body reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are untouched; both diagrams still parse as `flowchart-v2`.
-
-### Summary
-
-The contract doc now carries the advisory round-record/triage shape as its own
-component-language section, and every section's body prose speaks in component terms with
-task ids confined to the removable owner tags. Remaining task tokens are shaping-time
-illustration only — the two diagram owner-prefixes, the CLI example slug, and the YAML
-example ids — flagged for landing-time genericization (the diagram case carries a width
-tension, so I left it for the captain rather than widening or dropping prefixes unasked).
-The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the
-resolution-first split are unchanged.
-
-## Stage Report: ideation (cycle 20)
-
-Captain ruling on the flagged scaffolding: option (c) for all three (diagram prefixes, CLI slug, YAML ids) — shaping-time scaffolding covered by the note; the approved-as-rendered diagrams do not change now.
-
-- DONE: Extend the scaffolding note to name the three token locations and their landing-pass treatment.
-  Added the captain's sentence: the scaffolding includes the diagram-label task-id prefixes and the CLI/YAML task-slug/task-id tokens; the landing pass converts labels to component prefixes (re-checking render width) and genericizes example ids. New contract SHA-256 `9c0ee9ad…`; the body reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are unchanged.
-
-### Summary
-
-The scaffolding note now explicitly scopes all three shaping-time task-token locations, so
-the doc is internally consistent: the landed spec speaks only in component terms, and
-everything task-tagged (owner tags, diagram prefixes, example ids) is declared removable at
-landing. This closes the contract-doc pass; the seven retained resolution ACs (AC-1, AC-4,
-AC-6, AC-10, AC-12, AC-13, AC-14) and the resolution-first split are unchanged.
