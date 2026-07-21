@@ -1334,3 +1334,13 @@ Baseline and race suites pass, formatting is clean, and the present implementati
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — detached high-stakes audit; surface 17 files/1696 changed lines (774 production, 367 test) vs estimate 2-3 new internal files plus status/CLI/docs, 400-650 production LOC with roughly equal test LOC (119% of upper production estimate); AC unchanged
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Closed AC-13 at the complete portable boundary: provider result envelopes are copied through an explicit portable Resolution field allow-list, so `stage`, `sequence`, Briefing-change, `application`, and arbitrary future wrapper fields cannot enter the durable Resolution. `TestAdversarialWrapperFieldsStayOutsideCopiedResolution` fails on any such leak.
+- DONE: Replaced the fabricated replay evidence for AC-12 with exact frozen frontmatter snapshots of all eight 0260 production entities, plus a two-logical-gate/eight-attempt contract fixture. The tests prove multiple stable attempts per gate, current-pointer agreement, opaque application and unknown-field preservation, and fail-closed pointer, lineage, and frozen-history forks.
+- DONE: Added the exact A→B→C→close→new-attempt lifecycle for AC-14. The test observes both successful rebinding changes, closure freeze with a no-mutation refusal, and supersession to a distinct sequence-2 attempt, killing the success-reporting no-op rebind and disabled-supersede mutants. `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` are green.
+
+### Summary
+
+Correction commit `9d279b87` closes validation cycle 1 without changing the approved scope. Durable replay now covers the eight real 0260 histories and a multi-gate re-entry fixture; the recorder admits only portable Resolution fields from provider envelopes; and the shipped suite directly protects rebinding, freeze, and supersession behavior.
