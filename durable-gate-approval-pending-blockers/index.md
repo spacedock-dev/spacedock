@@ -1,6 +1,6 @@
 ---
 title: Gate recorder — durable gates records with binary-owned writes
-status: validation
+status: implementation
 score: "0.80"
 source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
@@ -1333,5 +1333,4 @@ Baseline and race suites pass, formatting is clean, and the present implementati
 
 ### Feedback Cycles
 
-- Cycle 1 — detached high-stakes audit, material outcome defect (AC-13): an adversarial provider Resolution carrying `stage`, `sequence`, and `application` is accepted and copies those wrapper fields into durable portable state. Correct the complete portable-validation boundary atomically (not one key at a time) and add the failing fixture.
-- Cycle 1 — detached high-stakes audit, material evidence defects (AC-12/AC-14): `rebind` changed to a success-reporting no-op and `supersede` changed to unconditional failure; each mutant passed `go test ./...`. Add a real two-gate/eight-history replay and exact A→B→C→close→new-attempt tests that kill both mutants.
+- Cycle 1: REJECTED — detached high-stakes audit; surface 17 files/1696 changed lines (774 production, 367 test) vs estimate 2-3 new internal files plus status/CLI/docs, 400-650 production LOC with roughly equal test LOC (119% of upper production estimate); AC unchanged
