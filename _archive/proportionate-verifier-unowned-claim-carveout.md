@@ -1,9 +1,13 @@
 ---
 title: A second verifier is not licensed for a claim a direct read settles — carve-out in z7's unowned-claim clause
 source: "post-sprint 0260 lure replay (2026-07-21). s4 mechanism-climb: assembled main flips Claude REFUSED->TAKEN ~37% of runs. Root cause: z7's #540 clause licenses a verifier for 'a claim no check owns', with no case for an unowned claim that direct inspection settles. Captain directed file + dispatch."
-status: backlog
+status: done
 sprint:
 id: f6yg7rykk7tvfm6m5x3mz8dp
+pr: pr-merge:543
+verdict: passed
+completed: 2026-07-21T07:32:34Z
+archived: 2026-07-21T07:32:34Z
 ---
 
 The post-sprint lure replay found the sprint's one behavioral regression: on s4 (mechanism-climb), a fresh Claude FO loaded with the ASSEMBLED contract does the correct inline diff of three files, then **~37% of runs ALSO spawns adversarial verifier agent(s)** — sometimes a whole Workflow of skeptics — to re-attack a consistency verdict the diff already settled. Pre-sprint main (without the clause) refused every time. Measured: 3 of 8 `claude -p` drives climbed (main run: 1 agent; two reruns: a 3-agent / one-per-facet Workflow). codex held REFUSED throughout.
