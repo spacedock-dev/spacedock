@@ -389,7 +389,9 @@ round can never advance `status`; a narrowing opens a binding gate attempt inste
 **Storage.** Round records live in the entity's review room (append-only, the
 `probes.jsonl` pattern the recorder already uses); the frontmatter carries the pointer; the
 body's `### Feedback Cycles` line survives as the human-readable projection. This section
-SPECIFIES that shape; the recorder OWNS the append, pointer, and projection.
+SPECIFIES that shape; the append, pointer, and projection are the recorder's generalization
+to in-stage rounds, DEFERRED beyond this contract's first implementation. Until that
+generalization lands, round records are hand-authored into the room.
 
 ## Go helper boundary
 
