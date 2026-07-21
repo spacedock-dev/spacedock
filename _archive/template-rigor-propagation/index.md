@@ -1,7 +1,7 @@
 ---
 id: 2ae8r33r18g0w0g21559yc57
 title: Dev template ships the rigor scar tissue and refit propagates it to commissioned workflows
-status: implementation
+status: done
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.6"
 sprint: 0260-proportionality
@@ -72,6 +72,10 @@ gates:
                 gap-2: "az's Edit D — the detached audit ALSO fires on AC provenance (an AC whose expected value derives from the same package's production functions or constants), scoped to that AC's adversarial-edit check — is carried by NO Piece. Verified receiving surface: development.md DOES already carry a detached-adversarial-audit bullet (~line 94), so there is somewhere for it to land; the gap is not structural. DECIDE DELIBERATELY: port, or decline on the grounds that the provenance trigger is a dev-repo-specific sharpening a fresh workflow does not need yet."
                 do-not-propagate: "NOT everything az landed belongs in the template, and porting indiscriminately would be its own error. The required-CI-lane rule and its path-to-lane mapping are a dev-lane realization tied to this repo's specific lanes, and the validation stage-def's routine-change exemption qualification is likewise docs/dev-specific. Those stay put. The generic disciplines (evidence must be able to fail; the prose-grep honesty boundary; arguably the provenance trigger) are the propagation candidates. Judge each on whether a NEWLY COMMISSIONED workflow with no CI and no lanes would be served by it."
 worktree: .worktrees/spacedock-ensign-template-rigor-propagation
+pr: pr-merge:542
+verdict: passed
+completed: 2026-07-21T04:43:00Z
+archived: 2026-07-21T04:43:00Z
 ---
 
 Every rigor cap in the ecosystem is post-incident scar tissue stuck in the repo where the incident happened: zaphod's no-PR-machinery rule and offline/interactive AC split, spacedock-v1's mechanism-to-value trace and materiality taxonomy. The shipped commission template contains none of them, its proof-discipline menu can only raise rigor, its interview never asks rigor level, and its "Verified by: grep" example models the exact tautology the Proof policy bans. Refit refreshes scaffolding version, not accumulated content. Template gains: `## Stakes` scaffold + interview question, materiality taxonomy, AC split, small-change fast path, size-gated semantic adversarial pass, fixed Verified-by example; refit gains content propagation so the three commissioned workflows receive the delta. Grouped with `ey`.
