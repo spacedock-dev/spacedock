@@ -1301,3 +1301,37 @@ supersede operations, validates and normalizes provider results only after diges
 and surfaces recorded resolution state without changing the default status table. The
 application subtree remains opaque and preserved, legacy shaping histories replay honestly,
 and presentation, eligibility, transitions, dispatch, and Subspace stay outside the recorder.
+
+## Stage Report: validation
+
+- DONE: **AC-1** Recorded approval and reviewed digest survive a cold file read without status advance or dispatch.
+  `TestRecordCloseNormalizesOnlyAfterDigestMatch` plus the detached A→B→C→close replay fail on lost identity/digest or any failed-close mutation.
+- DONE: **AC-4** `approve`, `hold`, and `revise` portable rationale rules and durable visibility were reproduced.
+  `TestPortableResolutionValidation` and `TestStatusTextAndJSONProjectAllRecordedResolutionStates` fail if reasonless revise/hold or a missing recorded projection is admitted.
+- DONE: **AC-6 (record-state subset)** Text and JSON status distinguish recorded approve, hold, and revise.
+  The three-decision status fixture asserts exact JSON field values and their corresponding text rows.
+- DONE: **AC-10 (VALUE)** Recorder success changes only `gates`; digest/CAS failures leave the whole entity unchanged.
+  The close fixture compares all bytes outside `gates`, and the mismatch/lock fixtures compare the complete failed-write file.
+- FAILED: **AC-12** One entity and its evidence must cover two logical gates, multiple attempts, and fail-closed forks.
+  `TestEightHistoryReplayPreservesApplicationsAndUnknownFields` fabricates one gate with eight attempts; it is neither the promised multi-gate fixture nor a replay of the production histories.
+- FAILED: **AC-13** Wrapper fields must remain outside the copied portable Resolution.
+  Detached test `TestAdversarialWrapperFieldsStayOutsideCopiedResolution` fails because `selectResolution` copies `stage`, `sequence`, and `application` through `Entry.Extra`.
+- FAILED: **AC-14** The landed suite must prove open-attempt A→B→C rebinding, closure freeze, and re-entry.
+  Current behavior passed a detached lifecycle test, but both a no-op `rebind` mutant and a disabled `supersede` mutant left `go test ./...` green.
+- FAILED: Reproduce evidence for every retained recorder AC and the implementation checklist, including eight-history replay, exact gates-only mutation, frozen/CAS failures, digest domains, provider-result normalization, application preservation, and approve/hold/revise status projection.
+  Gates-only writes, CAS/freeze, digest domains, normalization, application preservation, and projections reproduced; AC-12/13/14 evidence failed as detailed above.
+- DONE: Perform the required semantic adversarial pass and detached high-stakes audit on a throwaway checkout: construct claim-breaking edits against recorder invariants/tests, exercise adjacent lifecycle variants and atomic failure behavior, and classify every finding by defect kind and release scope.
+  Detached HEAD `1095be38` exercised the lifecycle and atomic refusals, ran two green claim-breaking full-suite mutants, and reproduced one failing reserved-field boundary test; the checkout was removed afterward.
+- DONE: Verify the approved surface and landing pass (no application/eligibility/presentation ownership leak, no Subspace binary dependency, no shaping owner/task tokens in the landed contract), then run `go test ./...`, `go test ./... -race`, and confirm gofmt cleanliness.
+  Product dependencies/help expose only record/validate; no Subspace package or shaping token landed; both full suites pass and `gofmt -l ./cmd ./internal` is empty.
+- FAILED: Recommendation: REJECTED; no deferred risk is being used to dilute the material findings.
+  AC-13 has a material outcome defect at the portable-record boundary; AC-12/14 have material evidence defects on supported, promised recorder lifecycles.
+
+### Summary
+
+Baseline and race suites pass, formatting is clean, and the present implementation completes the adjacent lifecycle in a detached audit. Validation rejects the gate because reserved Spacedock fields leak into the copied Resolution and the landed tests do not protect multi-gate replay, successful rebinding, or supersession.
+
+### Feedback Cycles
+
+- Cycle 1 — detached high-stakes audit, material outcome defect (AC-13): an adversarial provider Resolution carrying `stage`, `sequence`, and `application` is accepted and copies those wrapper fields into durable portable state. Correct the complete portable-validation boundary atomically (not one key at a time) and add the failing fixture.
+- Cycle 1 — detached high-stakes audit, material evidence defects (AC-12/AC-14): `rebind` changed to a success-reporting no-op and `supersede` changed to unconditional failure; each mutant passed `go test ./...`. Add a real two-gate/eight-history replay and exact A→B→C→close→new-attempt tests that kill both mutants.
