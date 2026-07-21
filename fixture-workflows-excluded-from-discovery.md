@@ -1,6 +1,6 @@
 ---
 title: Fixture workflow READMEs must not be workflow-discovery candidates
-status: implementation
+status: validation
 source: "Live FO session, 2026-07-21, after the refit-content-propagation fixtures landed on main."
 id: ab3ma8m7gsm8tra2ksmcdydq
 started: 2026-07-21T16:05:13Z
