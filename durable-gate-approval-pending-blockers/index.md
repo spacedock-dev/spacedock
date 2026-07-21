@@ -9,11 +9,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:3k:ideation
-        attempt: gate-attempt:3k-ideation-7
+        attempt: gate-attempt:3k-ideation-8
     records:
         - id: gate:docs-dev:3k:ideation
           stage: ideation
-          current-attempt: gate-attempt:3k-ideation-7
+          current-attempt: gate-attempt:3k-ideation-8
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
@@ -166,7 +166,29 @@ gates:
                 action: advance
                 target-stage: implementation
                 state: pending
-              note: "The captain-directed fold in flight (round-disposition section + evergreen restyle) records as a superseding attempt 8 on the worker's Done — captain-directed content, no re-ask; the approval stands through it. h1 dispatches immediately per the captain."
+              note: "Superseded by attempt 8 (the captain-directed fold: round-disposition section + evergreen restyle); the approval itself stands. h1 dispatched immediately per the captain."
+            - id: gate-attempt:3k-ideation-8
+              sequence: 8
+              previous-attempt: gate-attempt:3k-ideation-7
+              state: closed
+              briefing:
+                id: briefing:docs-dev:3k:ideation:attempt-8:revision-15
+                digest: sha256:fd95df2a7f7200ffdc3370db13785cf1b2018af42c1ce13e1e05b00af08e5f1a
+                room-ref: "./review/ideation/briefing-15"
+                note: "Byte-verifiable frozen entity snapshot + contract snapshot (final contract sha256 9c0ee9ad469ca0399e657b146e70f9de524387851ccbd3a0a4d9a0fd6d4b08b7), taken after the fold pass and before this record."
+              resolution:
+                type: Resolution
+                id: resolution:captain-chat-3k-ideation-8
+                briefing: briefing:docs-dev:3k:ideation:attempt-8:revision-15
+                by: person:captain
+                at: 2026-07-21T04:52:00Z
+                decision: approve
+                reason: "Captain-directed fold, content the captain specified in chat — no re-ask per the attempt-7 record: the round-records/triage-dispositions advisory section folded into the contract from the triage task's reframe ideation; the evergreen rule applied (component-only prose, task ids confined to removable scaffolding, with the diagram prefixes and example ids explicitly scoped as scaffolding converted at the landing pass); the captain's approve of the design and diagrams stands through the fold."
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+              note: "The recorder's ideation is SETTLED: resolution-first scope, seven evidenced ACs, owner-tagged evergreen-styled contract carrying the full record model including advisory rounds, two render-approved diagrams. The fold worker released with honors after fifteen cycles. Consumption is the sprint Commander's."
 sprint: durable-decisions
 group: recorder
 ---
