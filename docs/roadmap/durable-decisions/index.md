@@ -22,6 +22,7 @@ A captain's gate decision, once made, is recorded by machinery that cannot mis-f
 - The 0260 operating directives bind every FO session driving this sprint: assume the members' intended behavior in FO conduct; present gates via the Subspace float with the design in the presented artifact (probe-first ritual per the shaping debrief); record resolutions in gates frontmatter — by hand only until 3k lands, then recorder-owned.
 - A scripted fan-out declares expected agent count, tolerance, and economic reasonableness before launch (z7's authoring-time amendment, in force for FO conduct now).
 - This sprint eats its own output at the first opportunity: once the recorder can record, this sprint's own remaining gates use it.
+- **Recording identity (captain ruling, 2026-07-21):** a resolution is recorded under the identity that actually rendered it. A chat-directed fold closes under the FO's identity acting on delegated authority, with the reason quoting the captain's directive; the captain's identity appears only on resolutions the captain rendered over content the captain saw (a float resolved, presented content approved in chat). One sentence lands in the contract's lifecycle rules at implementation; prior records stand as honest history.
 
 ## Sequencing
 
@@ -50,6 +51,7 @@ A captain's gate decision, once made, is recorded by machinery that cannot mis-f
 
 **Drive — Commander (separate cold-booted session)**
 - [ ] Implementation → validation → done per member; detached adversarial audit on shipped-contract surfaces
+- [ ] **Contract landing pass** (captain placement ruling, 2026-07-21): strip the spec's shaping scaffolding — owner-tag lines, diagram task-id prefixes (converted to component words with a render re-check via a float), example ids genericized — so the landed spec speaks only component terms. Owner: the Commander, as the recorder member's final step before its merge.
 - [ ] **⚠️ Pre-cut audit** before the tag
 - [ ] **Cut 0.27.0** — `go test ./...` + `-race` green, `gofmt` clean, then `docs/releasing.md` *(captain authorizes)*
 

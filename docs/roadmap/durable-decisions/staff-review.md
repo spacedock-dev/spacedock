@@ -35,6 +35,6 @@ DoD ownership complete across all five Goal bullets; the one-writer rule consist
 
 ## Closure condition
 
-READY when the routed folds land (h1 AC-A4 sentence; 02av contract Storage + companion removal + anchor; xb finding-15 clause), M5 has a placed owner line, and the captain answers ND1. Re-review is a diff of exactly those regions plus a fresh state-repo status — no per-member gate reopens.
+READY when the routed folds land (h1 AC-A4 sentence; 02av contract Storage + companion removal + anchor; xb finding-15 clause) — LANDED AND VERIFIED 2026-07-21 — plus the two captain rulings, both now given: the landing pass is owned by the Commander as the recorder member's final pre-merge step (fifth material finding, placed in the Drive checklist), and recording identity follows who actually rendered the resolution (the needs-decision, answered as the stricter arm; recorded in the index Constraints). CLOSURE COMPLETE — the sprint is READY; gates present next. Re-review is a diff of exactly those regions plus a fresh state-repo status — no per-member gate reopens.
 
 *Scope and method: single-reviewer fable seat per the 0260 two-seat precedent; read the sprint index, all four member bodies, the contract, both 0260 precedent reviews, and the production evidence; mechanical checks: four digest reproductions, state-repo status/ls-files, membership grep, task-token sweep, finding-numbering grep, room-ref listing across all eight rooms.*
