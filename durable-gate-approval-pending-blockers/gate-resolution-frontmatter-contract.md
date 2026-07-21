@@ -1,15 +1,17 @@
 # Gate Resolution frontmatter contract
 
-Status: proposed first implementation for `3k`
+Status: proposed first implementation for the recorder
 Date: 2026-07-19
 
-## What 3k ships first
+*Section owner tags are shaping-time scaffolding naming the implementing tasks; they are removed when the spec lands — the landed document speaks only in component terms.*
+
+## What the recorder ships first
 
 **Owner:** 3k.
 
-3k separates a captain's gate decision — the resolution (what the decision *is*) — from
-the workflow action that follows it — the application (what the decision *does*), owned by
-`gate-blockers-and-eligibility` (h1) per the captain's 2026-07-21 resolution-first split.
+The recorder separates a captain's gate decision — the resolution (what the decision *is*)
+— from the workflow action that follows it — the application (what the decision *does*),
+owned by the application layer per the captain's 2026-07-21 resolution-first split.
 The recorder's first implementation ships:
 
 1. A gate attempt and its current immutable Briefing are directly readable from the
@@ -18,12 +20,12 @@ The recorder's first implementation ships:
    `status`, routing feedback, or dispatching a worker.
 3. Status can show the recorded resolution states — a recorded `approve`, `hold`, or
    `revise` — after restart. (The approved-pending/approved-held/stale/consumed
-   application-eligibility surfacing is **h1-owned**.)
-4. **(h1-owned — the application layer.)** Once the guards pass, the First Officer applies
+   application-eligibility surfacing is owned by the application layer.)
+4. **(The application layer.)** Once the guards pass, the First Officer applies
    the recorded action once through the existing workflow transition and dispatch path.
    The gate record does not create a second dispatch protocol.
 
-The ownership shape, in two small stacked views. First, the record 3k owns — one logical
+The ownership shape, in two small stacked views. First, the record the recorder owns — one logical
 gate holds attempts, and each attempt binds one briefing and one resolution:
 
 ```mermaid
@@ -33,8 +35,9 @@ flowchart TB
     attempt --> resolution["3k: resolution<br/>approve / revise / hold"]
 ```
 
-Second, the flow across owners — xb obtains the decision, 3k records the resolution, h1
-applies it once eligible, and 02av rounds stay advisory:
+Second, the flow across owners — the presentation command obtains the decision, the
+recorder records the resolution, the application layer applies it once eligible, and round
+records stay advisory:
 
 ```mermaid
 flowchart TB
@@ -104,7 +107,7 @@ ProbeResult and derived comparison outside the Briefing package, keyed by Briefi
 then joins those records to the presentation by that id. Appending provider history
 therefore cannot invalidate the Briefing digest. Until Subspace renders that joined
 result itself, the ensign presents a separate semantic-delta summary alongside the
-review; implementing ProbeResult/comparison UI is not part of 3k.
+review; implementing ProbeResult/comparison UI is not part of the recorder.
 
 The ensign receives the annotations directly, revises the design, reruns affected
 Probes, and publishes another immutable Briefing in the same open gate attempt. The
@@ -273,21 +276,22 @@ An open attempt uses the same binding field and has no Resolution or application
 | `attempts[].id`, `sequence`, `previous-attempt`, `state` | Preserve stable attempt identity, re-entry order, and open/closed immutability. |
 | `attempts[].briefing` | Bind the exact Briefing id/digest and optional opaque provider room. |
 | `attempts[].resolution` | Preserve the exact authenticated portable decision. |
-| `application.action`, `target-stage`, `state` | **h1-owned** (`gate-blockers-and-eligibility`): the one-use workflow authorization and whether it was applied. |
-| `application.blockers[]` | **h1-owned**: explain and guard approved-pending work. |
-| `application.execution-hold` | **h1-owned**: preserve “approve but do not dispatch” separately from portable `hold`. |
-| `application.feedback` | **h1-owned**: preserve rejection-to-rework lineage and cycle context. |
+| `application.action`, `target-stage`, `state` | **Application layer:** the one-use workflow authorization and whether it was applied. |
+| `application.blockers[]` | **Application layer:** explain and guard approved-pending work. |
+| `application.execution-hold` | **Application layer:** preserve “approve but do not dispatch” separately from portable `hold`. |
+| `application.feedback` | **Application layer:** preserve rejection-to-rework lineage and cycle context. |
 
 **Application layer ownership (captain split, 2026-07-21 — "get the resolution right
 first").** The `application.*` fields above — action/target-stage, the
 `pending`/`consumed`/`superseded`/`not-applicable` state, blockers, execution-hold, and
-feedback — are owned by `gate-blockers-and-eligibility` (h1): *what the decision does* (the
-one-use advance authorization and its exactly-once consumption). 3k owns the resolution
+feedback — are owned by the application layer: *what the decision does* (the one-use
+advance authorization and its exactly-once consumption). The recorder owns the resolution
 record — *what the decision is* (gate/attempt/briefing/resolution and their invariants).
-This doc stays the one spec; the application section carries the h1 owner (one doc, many
-owners — not relocated). An application never exists without a closed binding approval; a
-resolution stands alone. The recorder round-trips the `application` sub-object unchanged on
-write, so h1 lands its semantics without a schema break.
+This doc stays the one spec; the application section carries the application-layer owner
+(one doc, many owners — not relocated). An application never exists without a closed
+binding approval; a resolution stands alone. The recorder round-trips the `application`
+sub-object unchanged on write, so the application layer lands its semantics without a
+schema break.
 
 The first implementation deliberately omits `application.id`, `effect`,
 `dispatch-attempt-id`, `effect-receipt`, `consumed-at`, and a separate application
@@ -306,8 +310,8 @@ duplicate that authority without making the gate decision more durable.
 3. Recording validates actor authority, exact Briefing id/digest, same-Briefing log
    rules, and current pointers. One commit changes `open` to `closed`, freezes
    `briefing`, and copies the exact Resolution. It does not advance, route, or dispatch.
-   (Creating the resulting `application` object is **h1-owned**.)
-4. **(h1-owned — the application layer, rules 4-7.)** `approve` creates `advance/pending`;
+   (Creating the resulting `application` object is owned by the application layer.)
+4. **(The application layer, rules 4-7.)** `approve` creates `advance/pending`;
    `revise` creates `feedback/pending`; portable `hold` creates `none/not-applicable`.
 5. A pending application is eligible only when its gate/attempt/Briefing and stage are
    current, its reviewed input is unchanged, every blocker is satisfied, no execution
@@ -327,6 +331,66 @@ nonblank reason or included earlier Annotation from the same Briefing log. A lat
 Resolution for a no-longer-current Briefing stays valid provider history but cannot
 close the current Spacedock attempt.
 
+## Round records and triage dispositions (advisory)
+
+**Owner:** round records + the consumer's triage → 02av; storage shape borrowed from the recorder (3k).
+
+A correction round maps onto the recorder's settled shapes with no schema change:
+
+- The round's **reviewed snapshot** is a **briefing** — immutable, digest-bound (SHA-256
+  over RFC 8785 canonical bytes), the same object the recorder binds for a gate attempt.
+- The reviewer's **findings** are **annotations** (with selectors) in that briefing's one
+  ordered log.
+- The round's **verdict** is the reviewer's **advisory resolution** — advisory is
+  load-bearing: a round can never advance `status`, so it carries no advancing application
+  (the application layer's `action: none` territory, untouched). The recorder already
+  preserves advisory resolutions as first-class, distinct from binding.
+- The **consumer's triage** is the consumer's OWN **advisory resolution** on the same
+  briefing. Its `includes` name each **declined** finding with the three parts the landed
+  validation taxonomy requires of a deferred risk: its class (e.g.
+  correct-but-disproportionate), why it is not material (no value AC at risk; trigger
+  outside the promise), and the condition that promotes it to material. A **material**
+  finding is fixed (the fix is the product change); a **needs-decision** finding escalates
+  to the First Officer.
+- An **all-declines round** is a real advisory resolution recording zero fixes and naming
+  each decline. Absence of a resolution means no finding arrived; a resolution with only
+  declines means every finding was declined — the two must never render alike.
+
+Concretely, riding the recorder's vocabulary with no schema change (the record lives in
+the round's briefing log in the review room, joined by briefing id — not in entity
+frontmatter):
+
+```yaml
+- type: Annotation                      # one per declined finding
+  id: annotation:decline-symlink-prototype
+  briefing: briefing:impl-round-3
+  by: actor:ensign
+  includes: [annotation:finding-symlink-prototype]   # the reviewer's finding it declines
+  body: >
+    class: correct-but-disproportionate; why-not-material: no value AC breaks and the
+    crafted-symlink trigger is outside the supported flow; promotes-when: a released user
+    reaches it through an operator-selected repo.
+- type: Resolution                      # the advisory triage verdict for the round
+  id: resolution:triage-impl-round-3
+  briefing: briefing:impl-round-3
+  by: actor:ensign
+  decision: revise                      # advisory only — no application block, status unchanged
+  reason: "triage: 1 material fixed; 1 declined"
+  includes: [annotation:decline-symlink-prototype]
+```
+
+**Graduation (design-reset) is a binding resolution.** Declining a disproportionate
+finding and narrowing a value claim to make a finding pass are opposite moves under the
+same pressure. The first is the consumer's, recorded as the advisory resolution above. The
+second weakens the value the entity promised: it graduates to a **binding resolution** — a
+real gate attempt — so the loop structurally cannot self-approve a reframe. An advisory
+round can never advance `status`; a narrowing opens a binding gate attempt instead.
+
+**Storage.** Round records live in the entity's review room (append-only, the
+`probes.jsonl` pattern the recorder already uses); the frontmatter carries the pointer; the
+body's `### Feedback Cycles` line survives as the human-readable projection. This section
+SPECIFIES that shape; the recorder OWNS the append, pointer, and projection.
+
 ## Go helper boundary
 
 **Owner:** 3k owns the binary write surface; h1 extends the same binary; xb calls it and never writes gates.
@@ -344,7 +408,7 @@ reimplement:
   current Briefing id/digest and log rules, constructs the closed attempt (the resolution
   record), and commits only `gates`. It round-trips any `application` sub-object unchanged
   and never changes `status` or dispatches.
-- **h1-owned:** the application guard validates current stage, exact frozen binding,
+- **The application layer:** the application guard validates current stage, exact frozen binding,
   decision/action, blockers, hold, and one-use state before handing the action to existing
   transition and dispatch code. It does not mint a second effect identity or receipt.
 
@@ -395,7 +459,7 @@ Reference is visible and whose result survives controller failure.
   `bd17bdb23318f815d17a1d10ea2a6d39ab449520`, blob
   `14f3eb91ec85bfcc08bb3330c21b94cc77f4529f`.
 - Closed PR #474 supplied the retained physical direction: workflow gate binding lives
-  in binary-owned entity frontmatter. 3k removes its decision-plus-status coupling.
+  in binary-owned entity frontmatter. The recorder removes its decision-plus-status coupling.
 - [`gate-review-probes.md`](gate-review-probes.md) owns concern memory and provider-
   independent Probe semantics.
 - Git history preserves earlier open-attempt Briefing pointers. The provider room owns
@@ -403,4 +467,4 @@ Reference is visible and whose result survives controller failure.
   current entity frontmatter.
 - A future cross-runtime dispatch coordinator may expose richer effect identities and
   receipts. That is not required to persist or apply the first gate authorization and
-  is outside 3k.
+  is outside the recorder.

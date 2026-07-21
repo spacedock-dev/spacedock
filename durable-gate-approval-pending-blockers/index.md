@@ -235,7 +235,7 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 The exact first-use journey, minimal schema, helper boundary, examples, and lifecycle
 are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `4ca06d1540796cc6bdc1cc7fea0bfca352b62f48a4079adecec75da913a879be`).
+(SHA-256 `ee4e354d7a507d22e9e38609037f824fce413e1b454136e8e206f5049678c01b`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
@@ -1174,5 +1174,27 @@ boundary semantics (xb → 3k → h1, 02av advisory) across the pair. Render cav
 Chromium won't launch in this sandbox, so I confirmed both parse as `flowchart-v2` but
 cannot pixel-measure width. If your float still reads wide, these are at the structural
 floor — the next step is to present the diagrams as a linked appendix rather than inline.
+The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the
+resolution-first split are unchanged.
+
+## Stage Report: ideation (cycle 19)
+
+Two captain directives for the contract doc: fold the round-record/triage-disposition shape into it, and apply the evergreen "landed spec references no tasks" rule.
+
+- DONE: Fold the round-record/triage-disposition shape into the contract doc as a new section after the resolution material.
+  Added `## Round records and triage dispositions (advisory)`: the mapping (round snapshot = briefing; findings = annotations; reviewer verdict = advisory resolution; consumer's triage = its own advisory resolution whose `includes` name each declined finding with class / why-not-material / promotes-when), the concrete YAML, the all-declines-vs-absence rule, the graduation rule (narrowing a value claim opens a binding attempt; an advisory round never advances `status`), and the room-resident storage shape. Adapted from `ensign-finding-triage-disposition.md` 77-118, component language only, no invented vocabulary.
+- DONE: Apply the evergreen rule — the landed spec references no tasks.
+  Added the scaffolding note at the top; audited the seven tagged sections and moved every task-ownership reference out of body prose into component language (the recorder / the application layer / the presentation command / round records / the consumer's triage), with task ids confined to the removable owner-tag lines. Prose is now component-clean.
+- DONE: Refresh provenance; the split and the seven retained ACs are unchanged.
+  New contract SHA-256 `ee4e354d…`; the body reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are untouched; both diagrams still parse as `flowchart-v2`.
+
+### Summary
+
+The contract doc now carries the advisory round-record/triage shape as its own
+component-language section, and every section's body prose speaks in component terms with
+task ids confined to the removable owner tags. Remaining task tokens are shaping-time
+illustration only — the two diagram owner-prefixes, the CLI example slug, and the YAML
+example ids — flagged for landing-time genericization (the diagram case carries a width
+tension, so I left it for the captain rather than widening or dropping prefixes unasked).
 The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the
 resolution-first split are unchanged.
