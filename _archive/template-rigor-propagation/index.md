@@ -349,3 +349,15 @@ Applied the captain's ruling (superseding my AC-2-grounded decline, which is pre
 3. **"Commission's emission path lacks behavioral coverage" (`SKILL.md:436`) — DECLINED.** Same class. AC-1's proof is the validation-owned live commission drive (branch vs `main`). A committed "compare generated README to a hand-authored expected section" fixture is either frozen-LLM-output or a prose-to-prose comparison near the banned grep shape. The delivery check — a durable test that a commissioned README carries the slot — was explicitly considered and DECLINED this sprint, filed next-train. LLM-skill behavior is proven by live drive at validation, never a frozen committed fixture.
 
 Findings 2 and 3 are the sprint's thesis inverted: an adversarial reviewer's honest instinct ("add durable behavioral coverage") reaching for exactly the committed prose-comparison / frozen-output check 0260 retires. The right coverage is the live drive, scheduled at the validation gate, with the human-reviewable refit delta as the binding captain condition.
+
+## Stage Report: validation (retroactive gate record, 2026-07-21)
+
+Recorded after the fact: 2ae was merged (#542) and archived under the captain's "just merge it" / "approve both" direction WITHOUT a recorded validation gate — the gate pointer still named ideation and the attempt-1 binding condition ("on the validation gate, present the refitted delta on the workflow readme for human review") had no recorded disposition. The 0260 pre-cut staff seats (codex `pre-cut-staff-review.md` blocker 2; fable `pre-cut-staff-review-fable.md`) flagged this. This record closes it evidence-only (the product is already merged and independently validated; no product correction needed).
+
+**Independent validation evidence (fresh, detached — not the implementer's self-report):**
+- **AC-1 (commission):** a fresh non-leading commission drive produced a README carrying the three-class materiality taxonomy, the fixed `Verified by` example verbatim, and ZERO grep-tautology occurrences (fable seat's detached drive; corroborated by the implementation-stage commission drive that motivated the §2a slot-wiring fix).
+- **AC-2 (refit):** a fresh agent drove `refit` Phase 3b against the committed fixture `fixtures/refit-content-propagation/` and emitted the full content delta (the `## Workflow-specific rules` slot + no-prose-grep + evidence-must-fail + triage + fixed Verified-by); the version-only control moves the wrong way (stamp-only, zero scar-tissue content). AC-2's narrowing (control asserts zero scar-tissue content lines, not a literal 2-line diff) is recorded in the `### Feedback Cycles` entry.
+
+**Captain-required human review (the binding condition):** the refit README delta (control 1-line stamp-only vs treatment +21/−2 carrying the full rigor payload) was presented to the captain 2026-07-21 and **APPROVED**.
+
+**Verdict: PASSED.** Both AC drives pass on fresh detached agents; the captain reviewed and approved the refit delta; the Piece-4 asymmetry (a commissioned workflow carries the finding-triage rule docs/dev lacks until 3k lands) stays recorded, not papered over.
