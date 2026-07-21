@@ -5,6 +5,8 @@ Date: 2026-07-19
 
 ## What 3k ships first
 
+**Owner:** 3k.
+
 3k separates a captain's gate decision — the resolution (what the decision *is*) — from
 the workflow action that follows it — the application (what the decision *does*), owned by
 `gate-blockers-and-eligibility` (h1) per the captain's 2026-07-21 resolution-first split.
@@ -20,6 +22,33 @@ The recorder's first implementation ships:
 4. **(h1-owned — the application layer.)** Once the guards pass, the First Officer applies
    the recorded action once through the existing workflow transition and dispatch path.
    The gate record does not create a second dispatch protocol.
+
+```mermaid
+flowchart TB
+    subgraph obtain ["xb — obtain the decision"]
+        present["present briefing package<br/>blocking TUI, atomic retention"]
+        normalize["validate result, normalize<br/>provider id to attempt briefing id"]
+        present --> normalize
+    end
+    subgraph record ["3k — record the decision (sole gates writer)"]
+        gate["logical gate"] --> attempt["attempt<br/>open: briefing replaceable<br/>closed: frozen"]
+        attempt --> briefing["briefing binding<br/>digest = frozen snapshot"]
+        attempt --> resolution["resolution<br/>approve / revise / hold<br/>binding or advisory"]
+    end
+    subgraph apply ["h1 — apply the decision (extends the same binary)"]
+        application["application, binding approve only<br/>pending, consumed exactly once<br/>superseded on drift, not-applicable on hold"]
+        eligibility["eligibility<br/>stage + non-stale + blockers ok + unconsumed"]
+        application --> eligibility
+    end
+    subgraph rounds ["02av — non-gate rounds (advisory only)"]
+        round["round records: reviewer verdict +<br/>ensign triage and decline as advisory resolutions<br/>no application, ever"]
+    end
+    normalize --> resolution
+    resolution -->|"binding approve"| application
+    resolution -.->|"advisory"| round
+    round -.->|"design-reset or AC-narrowing<br/>graduates to a binding attempt"| gate
+    eligibility -->|"existing transition + dispatch path"| effect["stage advance + dispatch<br/>outside the gate layer"]
+```
 
 The first use begins when the First Officer needs captain input before recommending a
 gate:
@@ -89,6 +118,8 @@ On no, the current path remains: the First Officer presents the gate, relays com
 to the ensign, and later records the captain's decision.
 
 ## Minimum schema
+
+**Owner:** 3k (the record schema). The `application.*` field cluster is h1-owned; the provider-envelope id-normalization rule (envelope briefing id → attempt briefing id after digest validation) is specified here, implemented by xb.
 
 The first-use schema uses existing product language:
 
@@ -234,6 +265,8 @@ An open attempt uses the same binding field and has no Resolution or application
 
 ## Fields in the first implementation
 
+**Owner:** 3k; the `application.*` rows are h1-owned (marked below).
+
 | Field | Why it is needed now |
 |---|---|
 | `gates.version` | Reject unsupported encodings. |
@@ -266,6 +299,8 @@ duplicate that authority without making the gate decision more durable.
 
 ## Lifecycle and invariants
 
+**Owner:** record lifecycle 3k; application lifecycle + eligibility h1.
+
 1. Opening a gate creates one open attempt and `briefing` binding without changing
    `status`.
 2. A revised presentation replaces the open attempt's `briefing` under
@@ -296,6 +331,8 @@ close the current Spacedock attempt.
 
 ## Go helper boundary
 
+**Owner:** 3k owns the binary write surface; h1 extends the same binary; xb calls it and never writes gates.
+
 The binary owns mechanics that a gate-attempt ensign or First Officer should not
 reimplement:
 
@@ -320,6 +357,8 @@ gate presentation, and later application. Subspace owns portable objects, review
 resource verification, attribution, and interaction state.
 
 ## Behavioral proof
+
+**Owner:** each owner proves its own sections (3k the record, h1 the application/eligibility, xb the presentation).
 
 The first tests must exercise outcomes, not prose:
 
@@ -351,6 +390,8 @@ or dispatch state, then by launching a multi-source Briefing whose `probes.jsonl
 Reference is visible and whose result survives controller failure.
 
 ## References and deferred work
+
+**Owner:** 3k curates.
 
 - Review & Gate v1 authority: `../spacedock-subspace/docs/review-and-gate.md` at commit
   `bd17bdb23318f815d17a1d10ea2a6d39ab449520`, blob

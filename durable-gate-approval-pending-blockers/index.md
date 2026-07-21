@@ -148,7 +148,7 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 The exact first-use journey, minimal schema, helper boundary, examples, and lifecycle
 are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `77a83db212641e1e1b08bd8379635fd5fc80dc214df6d9d8f9af6e7738c52f1b`).
+(SHA-256 `d1ac9d8d0346744d91ed3c3004dbf8c474431fdae6a8c054a323f9946c23db45`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
@@ -1032,3 +1032,22 @@ exactly-once consumption and blockers; the application record has a demonstrated
 path), which h1's live-need question should credit. The contract doc stays the one spec
 with its application section owner-tagged in place. Surface delta: the recorder drops to
 ~400-650 production LOC, down from ~600-900.
+
+## Stage Report: ideation (cycle 16)
+
+Two captain-directed riders on the attempt-4 pass (per-section owner tags + an ownership diagram); no AC or design change.
+
+- DONE: Add a one-line owner tag to every top-level section of `gate-resolution-frontmatter-contract.md`.
+  Tagged all seven sections: What-3k-ships-first → 3k; Minimum schema → 3k (application cluster h1; provider-envelope id-normalization specified here, implemented by xb); Fields → 3k (h1 rows marked); Lifecycle → record lifecycle 3k, application + eligibility h1; Go helper → 3k write surface, h1 extends the binary, xb calls and never writes; Behavioral proof → each owner proves its own sections; References → 3k curates.
+- DONE: Add the captain-provided ownership mermaid diagram after `## What 3k ships first` (before the schema), labels verbatim.
+  Placed right after the "what ships" summary. Rendering: Chromium is unavailable in this sandbox (puppeteer cannot launch a browser), so I verified syntax browserlessly via the mermaid parser under jsdom — it parses as `flowchart-v2` with no errors.
+- DONE: Keep the resolution-first split and the seven retained ACs intact; refresh the contract provenance.
+  AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are unchanged by these riders; new contract SHA-256 `d1ac9d8d…` and the body provenance reference updated to match.
+
+### Summary
+
+The riders make implementation ownership explicit so dogfooding frictions and amendments
+route to the right owner: every contract-doc section now carries a one-line owner tag, and
+a captain-provided diagram shows the xb → 3k → h1 (plus 02av advisory) ownership shape
+before the schema. The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12,
+AC-13, AC-14) and the split are unchanged.
