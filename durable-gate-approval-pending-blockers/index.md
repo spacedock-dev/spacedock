@@ -9,11 +9,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:3k:ideation
-        attempt: gate-attempt:3k-ideation-4
+        attempt: gate-attempt:3k-ideation-5
     records:
         - id: gate:docs-dev:3k:ideation
           stage: ideation
-          current-attempt: gate-attempt:3k-ideation-4
+          current-attempt: gate-attempt:3k-ideation-5
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
@@ -102,6 +102,15 @@ gates:
                 target-stage: ideation
                 state: consumed
               note: "Presentation-side revise, FO-owned (no design change requested): re-present as a multi-artifact briefing package with the contract spec (carrying the mermaid) as its own artifact. Attempt 5 opens on the package presentation; the design content is unchanged from this attempt."
+            - id: gate-attempt:3k-ideation-5
+              sequence: 5
+              previous-attempt: gate-attempt:3k-ideation-4
+              state: open
+              current-briefing:
+                id: briefing:docs-dev:3k:ideation:attempt-5:revision-12
+                digest: sha256:ec6bb198f1fc2451b47ffecf904390c9278a161d33f55f40697d2ca4f4020ee0
+                room-ref: "./review/ideation/briefing-12"
+                note: "Multi-artifact briefing package (briefing.json digest above): gate-summary, the owner-tagged contract spec with the boundary mermaid as its OWN artifact, and the frozen entity snapshot — each digest-pinned inside the briefing. First package presentation through the direct review-v1 float path, mechanism probe green (the probe caught the required-context schema rule). Design content unchanged from attempt 4."
 sprint: durable-decisions
 group: recorder
 ---
