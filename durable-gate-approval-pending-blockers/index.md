@@ -105,12 +105,25 @@ gates:
             - id: gate-attempt:3k-ideation-5
               sequence: 5
               previous-attempt: gate-attempt:3k-ideation-4
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:3k:ideation:attempt-5:revision-12
                 digest: sha256:ec6bb198f1fc2451b47ffecf904390c9278a161d33f55f40697d2ca4f4020ee0
                 room-ref: "./review/ideation/briefing-12"
-                note: "Multi-artifact briefing package (briefing.json digest above): gate-summary, the owner-tagged contract spec with the boundary mermaid as its OWN artifact, and the frozen entity snapshot — each digest-pinned inside the briefing. First package presentation through the direct review-v1 float path, mechanism probe green (the probe caught the required-context schema rule). Design content unchanged from attempt 4."
+                note: "Multi-artifact briefing package — FIRST successful package-mode gate presentation (direct review-v1 float, probe-proven; the probe caught the required-context schema rule). Review log retained in-room as briefing.review.jsonl by the provider itself."
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784601146924137000
+                briefing: briefing:docs-dev:3k:ideation:attempt-5:revision-12
+                by: person:reviewer
+                at: 2026-07-21T02:32:26Z
+                decision: revise
+                reason: "Annotation on the contract mermaid: 'this is too wide and can't be rendered. is there a way to make it vertical?' (annotation:captain-1784601092240856000, included). The resolution reason's route-to-decision observation is subspace-side product feedback per the captain's follow-up — not filed in this workflow."
+              application:
+                action: feedback
+                target-stage: ideation
+                state: consumed
+              note: "Presentation-content revise: reshape the diagram vertical for the terminal render. Design content still unchanged since attempt 4. Attempt 6 opens at re-presentation."
 sprint: durable-decisions
 group: recorder
 ---
