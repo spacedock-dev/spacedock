@@ -1,5 +1,5 @@
 ---
-title: One-command gate review presentation with atomic result retention
+title: Gate presentation as an overridable channel with atomic result retention
 status: ideation
 source: "Split from the gate-recorder task (3k), captain-approved 2026-07-21. The subspace-coupled presentation half; 3k cycles 11-12 are its banked design history."
 id: xbatj4hxtxw9t83vvmfem27f
@@ -59,12 +59,24 @@ gates:
             - id: gate-attempt:xb-ideation-3
               sequence: 3
               previous-attempt: gate-attempt:xb-ideation-2
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:xb:ideation:briefing-3
                 digest: sha256:7fb094109c3ad7c873dcd66cf77295c555395394c20da9823af4fed7fd9abc37
                 room-ref: "./review/ideation/briefing-3"
                 note: "The reframed design: overridable present-gate channel, zero-Go surface, recorder-side validation ask, the committed-drive-suite condition homed subspace-side."
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784640771337164000
+                briefing: briefing:docs-dev:xb:ideation:briefing-3
+                by: person:reviewer
+                at: 2026-07-21T13:32:51Z
+                decision: approve
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+              note: "Subspace multi-artifact float, no annotations; provider result and review log retained in-room. The decoupled architecture is approved: presentation as an overridable present-gate channel, the binary subspace-free by checkable criterion."
 sprint: durable-decisions
 group: recorder
 started: 2026-07-21T01:43:36Z
