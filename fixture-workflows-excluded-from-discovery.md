@@ -132,3 +132,16 @@ Root cause is `discoverWorkflows` counting the verbatim-commission test fixture 
 - **Verdict:** approved for implementation. One-line prune-set fix, spiked live (discovery 2→1, `go test ./internal/status/...` green), value-measuring ACs (count baseline can move to 0 or 2), ~38 LOC / 2 files. No captain decision required.
 - **Validation carries the detached adversarial audit** — touches the front-door launcher + the `status` discovery/mutation path (2 of 4 high-stakes surfaces). AC-provenance sub-trigger does not fire.
 - **Implementation base:** worktree off `origin/main` (`ca136f83`), not local `main` (which carries unrelated durable-decisions work).
+
+## Stage Report: implementation
+
+- DONE: discoverIgnoreDirs includes fixtures and testdata; `./spacedock status --discover` from repo root returns EXACTLY docs/dev (AC-1, count 2->1).
+  Added `"fixtures": true, "testdata": true` to `discoverIgnoreDirs` (handlers.go, code commit 1f8b666a). Built the binary in the worktree; `status --discover` from the worktree root printed exactly one line ending `/docs/dev`, exit 0 — the `fixtures/refit-content-propagation/site-workflow` row that the pre-prune walk returned is gone.
+- DONE: AC-3 behavior test added in internal/status: a temp tree with commissioned READMEs nested under fixtures/ and testdata/ makes discoverWorkflows return exactly [docs/dev]; written to fail pre-prune and pass post.
+  `TestDiscoverWorkflowsPrunesFixturesAndTestdata` (discover_worktree_noise_test.go) builds `docs/dev` + commissioned READMEs under `fixtures/…` and `testdata/…`, asserts `discoverWorkflows(repo) == [docs/dev]`. Ran RED first (returned all three subtrees), GREEN after the prune landed. Reverting the two basenames re-surfaces the fixture rows and reds it.
+- DONE: go test ./... and go test ./... -race green; change stays within the ~38 LOC / 2 file expected surface (re-gate if it drifts past ~200 LOC or into a github.ref rewrite).
+  `go test ./...` — all packages ok; `go test ./... -race` — all packages ok. Diff is 43 insertions / 2 deletions across handlers.go + discover_worktree_noise_test.go (within ~38 LOC ±15, 2 files). No `github.ref` rewrite, no scope drift.
+
+### Summary
+
+Added `fixtures` and `testdata` to `discoverIgnoreDirs` in `internal/status/handlers.go` — the same basename prune the walk already applies to `tests`/`vendor`/`dist`/`build` — so a commissioned-shape README that exists only as a test fixture is no longer counted as a real workflow, repairing every auto-discovering command (`--discover`, `new`, `state commit`, boot `--identify`, front-door banner) at once via the single shared resolver. TDD: wrote the behavior test first, watched it red returning all three subtrees, then landed the two-basename prune to green; only descent into such a child is pruned, so `--workflow-dir`/`--root` pointed directly at one still resolves. Full suite and `-race` both pass; surface is 43 LOC across the two expected files. Confirmed the `DISCOVER_IGNORE_DIRS` comment reference has no live counterpart to keep in sync.
