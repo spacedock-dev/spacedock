@@ -9,11 +9,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:3k:ideation
-        attempt: gate-attempt:3k-ideation-1
+        attempt: gate-attempt:3k-ideation-2
     records:
         - id: gate:docs-dev:3k:ideation
           stage: ideation
-          current-attempt: gate-attempt:3k-ideation-1
+          current-attempt: gate-attempt:3k-ideation-2
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
@@ -36,6 +36,15 @@ gates:
                 target-stage: ideation
                 state: consumed
               note: "Subspace advisory float on the rebuilt tip binary, probe-first ritual observed. Two asks: physically trim the body to the cut (the AC section still carries every pre-cut criterion in full; the scope-cut prose named the retained set but never restructured the sections), and produce an alignment read against open draft PR #510 (Ledger gate-binding boundary). Routed to a fresh ideation revision worker; attempt 2 opens at re-presentation."
+            - id: gate-attempt:3k-ideation-2
+              sequence: 2
+              previous-attempt: gate-attempt:3k-ideation-1
+              state: open
+              current-briefing:
+                id: briefing:docs-dev:3k:ideation:attempt-2:revision-9
+                digest: sha256:1c229dfe87f5954b2b1e6b7a54cc4918cddf55e35bb66f198fba7f6ccbb3d28a
+                room-ref: "./review/ideation/briefing-9"
+                note: "The digest binds the frozen briefing-9 gate-summary artifact (summary + full cycle-13 snapshot), byte-verifiable in the room. Presents the physical trim and the PR-510 alignment with four captain-flagged forks."
 sprint: durable-decisions
 group: recorder
 ---
@@ -319,7 +328,7 @@ to Helm's application facts without renaming or re-authoritying.
   because the frontmatter *is* the authority rather than a projection of an event log.
   These map onto the banked commit-derived event design
   (`artifacts/spacedock-state-commit-event-proposal.md`), which is explicitly out of this
-  cut. Captain to note the seam, not act on it now.
+  cut. Captain to note the boundary, not act on it now.
 
 ### Expected surface + tolerance, reconfirmed in light of the alignment
 
