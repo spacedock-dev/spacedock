@@ -2,7 +2,7 @@
 title: "Welcome"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-07-21 12:13:42"
+last_updated: "2026-07-21 12:32:18"
 ---
 
 # Spacedock
