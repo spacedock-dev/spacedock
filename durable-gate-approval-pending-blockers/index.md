@@ -1284,3 +1284,20 @@ divergence fixture) and Material 6 (authorization-only consumption + two crash-w
 fixtures) align to the captain's index rulings, and the recording-identity sentence lands
 in the lifecycle. New contract SHA-256 `681b2348…`; the body reference updated. The seven
 retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) are unchanged.
+
+## Stage Report: implementation
+
+- DONE: Ship the recorder-only binary surface: validate and mutate gate/attempt/briefing/resolution records with frozen-closure and pointer invariants, while preserving the h1-owned application subtree and leaving status/dispatch untouched by recording.
+  Commit `1095be38`; `TestRecordCloseNormalizesOnlyAfterDigestMatch`, `TestRecordRefusesPointerConflictAndFrozenMutation`, and `TestConcurrentWriterFailsClosed` fail if recording escapes `gates`, launders a mismatched result, mutates a closure, or admits a competing writer.
+- DONE: Prove the behavior with the eight-history replay plus real pointer-conflict, frozen-closure, digest-domain, result-validation/id-normalization, unrelated-`--set`, and recorded-state status fixtures; keep the binary Subspace-free.
+  `TestEightHistoryReplayPreservesApplicationsAndUnknownFields`, the recorder table tests, `TestUnrelatedSetPreservesGatesAndStatusProjectsResolution`, and `TestStatusTextAndJSONProjectAllRecordedResolutionStates` fail on lost application/history fields, bad CAS/digests/results, changed gates under `--set`, or missing approve/hold/revise projections; source grep finds no Subspace dependency in the binary.
+- DONE: Complete the contract landing pass and recorder ownership prose, stay within the approved ~400–650 production-LOC surface unless the hard self-check triggers, and commit a green implementation (`go test ./...`, race where applicable, gofmt clean).
+  Landed `docs/specs/gate-resolution-frontmatter-contract.md`, schema/reference prose, and the two recorder verbs; `internal/gates` is 636 production lines, with `go test ./...`, `go test ./... -race`, and `gofmt -l ./cmd ./internal` all clean at `1095be38`.
+
+### Summary
+
+The binary now owns atomic, pointer-checked `gates` writes for open, rebind, close, and
+supersede operations, validates and normalizes provider results only after digest equality,
+and surfaces recorded resolution state without changing the default status table. The
+application subtree remains opaque and preserved, legacy shaping histories replay honestly,
+and presentation, eligibility, transitions, dispatch, and Subspace stay outside the recorder.
