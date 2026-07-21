@@ -1,10 +1,14 @@
 ---
 title: Core-level contract claims must bind to «fn» present/absent, not assert runtime behavior flat — audit + fix, consolidating g6
 source: "post-sprint 0260 (2026-07-21). Two instances found where host-neutral core prose asserts a runtime-varying behavior as universal, contradicting the per-adapter «fn» binding; each was caught by an FO having to improvise in the field. Captain directed a consolidated audit."
-status: implementation
+status: done
 sprint:
 id: j8s43ffcvdv6367td5v7d96e
 started: 2026-07-21T12:12:12Z
+pr: pr-merge:546
+verdict: passed
+completed: 2026-07-21T14:20:36Z
+archived: 2026-07-21T14:20:36Z
 ---
 
 The contract binds runtime-varying capabilities as `«fn»`s: `fo-dispatch-core.md:83` — "Runtime adapters bind the capability `«fn»`s below in their `## Runtime implementation` blocks." Present/absent and async/blocking are resolved per adapter (`«addressable-worker»` :91, `«async-dispatch»` :96). But some CORE-LEVEL prose asserts a runtime behavior FLAT — as if universal — which contradicts what a given adapter actually binds. An FO reading the core trusts a guarantee its runtime does not provide, and either acts wrongly or has to improvise the gap by judgment.
