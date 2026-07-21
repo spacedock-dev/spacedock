@@ -192,7 +192,7 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 The exact first-use journey, minimal schema, helper boundary, examples, and lifecycle
 are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `d1ac9d8d0346744d91ed3c3004dbf8c474431fdae6a8c054a323f9946c23db45`).
+(SHA-256 `b17984fa80cab63714dd47952580a9b499671b1c42b45cac254e83a4bf29045e`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
@@ -1095,3 +1095,19 @@ route to the right owner: every contract-doc section now carries a one-line owne
 a captain-provided diagram shows the xb → 3k → h1 (plus 02av advisory) ownership shape
 before the schema. The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12,
 AC-13, AC-14) and the split are unchanged.
+
+## Stage Report: ideation (cycle 17)
+
+Captain annotation on the contract mermaid at the attempt-5 float: "this is too wide and can't be rendered. is there a way to make it vertical?" Replaced the diagram with the captain's vertical single-column redesign.
+
+- DONE: Replace the ownership mermaid with the vertical single-column redesign; keep semantics identical; verify it parses.
+  Each subgraph now declares `direction TB` (3 declarations) and the subgraphs chain top-to-bottom (obtain → record → apply/rounds); labels shortened so no single line drives width; same nodes, same edges, same boundary language compressed. Parses as `flowchart-v2` (browserless jsdom check). A pixel-accurate width / side-by-side render needs headless Chromium, which is unavailable here — applied verbatim and kept the obtain→record spine (the captain's delete-if-still-wide lever), since I cannot run the render check that would trigger removing it.
+- DONE: Refresh the contract provenance; the split and the seven retained ACs are unchanged.
+  New contract SHA-256 `b17984fa…`; the body provenance reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are untouched.
+
+### Summary
+
+The ownership diagram is redrawn vertical for TUI rendering — per-subgraph `direction TB`
+and a top-to-bottom subgraph chain with compressed labels — while preserving the xb → 3k →
+h1 (plus 02av advisory) boundary semantics exactly. The seven retained resolution ACs
+(AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the resolution-first split are unchanged.

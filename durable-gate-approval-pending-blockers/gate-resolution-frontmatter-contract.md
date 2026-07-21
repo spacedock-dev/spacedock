@@ -26,28 +26,28 @@ The recorder's first implementation ships:
 ```mermaid
 flowchart TB
     subgraph obtain ["xb — obtain the decision"]
-        present["present briefing package<br/>blocking TUI, atomic retention"]
-        normalize["validate result, normalize<br/>provider id to attempt briefing id"]
-        present --> normalize
+        direction TB
+        present["present briefing package"] --> normalize["validate result, normalize provider id"]
     end
     subgraph record ["3k — record the decision (sole gates writer)"]
-        gate["logical gate"] --> attempt["attempt<br/>open: briefing replaceable<br/>closed: frozen"]
-        attempt --> briefing["briefing binding<br/>digest = frozen snapshot"]
-        attempt --> resolution["resolution<br/>approve / revise / hold<br/>binding or advisory"]
+        direction TB
+        gate["logical gate"] --> attempt["attempt: rebindable open, frozen closed"]
+        attempt --> briefing["briefing binding: digest-frozen snapshot"]
+        attempt --> resolution["resolution: approve / revise / hold"]
     end
     subgraph apply ["h1 — apply the decision (extends the same binary)"]
-        application["application, binding approve only<br/>pending, consumed exactly once<br/>superseded on drift, not-applicable on hold"]
-        eligibility["eligibility<br/>stage + non-stale + blockers ok + unconsumed"]
-        application --> eligibility
+        direction TB
+        application["application: pending → consumed once; superseded on drift"] --> eligibility["eligibility: stage + non-stale + blockers + unconsumed"]
     end
     subgraph rounds ["02av — non-gate rounds (advisory only)"]
-        round["round records: reviewer verdict +<br/>ensign triage and decline as advisory resolutions<br/>no application, ever"]
+        round["round records: verdict + triage/decline — no application, ever"]
     end
+    obtain --> record
     normalize --> resolution
     resolution -->|"binding approve"| application
     resolution -.->|"advisory"| round
-    round -.->|"design-reset or AC-narrowing<br/>graduates to a binding attempt"| gate
-    eligibility -->|"existing transition + dispatch path"| effect["stage advance + dispatch<br/>outside the gate layer"]
+    round -.->|"design-reset graduates to a binding attempt"| gate
+    eligibility --> effect["existing transition + dispatch path"]
 ```
 
 The first use begins when the First Officer needs captain input before recommending a
