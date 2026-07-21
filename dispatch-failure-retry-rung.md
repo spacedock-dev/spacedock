@@ -1,9 +1,10 @@
 ---
 title: A failed dispatch is retried once before anything halts — replace Degraded Mode with a per-entity retry
 source: "captain (CL), 2026-07-21 — ruling: an API transport failure must not trigger degradation; nudge the worker for retry. Split out of q4 on the evidence of a two-seat adversarial scope review, which found the defect is the missing rung BELOW the trigger, not the trigger itself."
-status: ideation
+status: implementation
 id: 9q4x5hvyxthc41mt73txr23k
 started: 2026-07-21T13:26:28Z
+worktree: .worktrees/spacedock-ensign-retire-legacy-and-retry-rung
 ---
 
 Today the FO contract has no first-failure response at all. It goes straight from one observed dispatch failure to "any SECOND dispatch failure within the session" tripping Degraded Mode — a session-wide, irreversible fallback to sequential bare dispatch. There is no retry, no nudge, and no way back within the session.
