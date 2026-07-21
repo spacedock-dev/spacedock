@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-const foFunctionReferenceBaselineBytes = 122634
+const foFunctionReferenceBaselineBytes = 123323
 
 var foFunctionReferencePaths = []string{
 	"skills/first-officer/SKILL.md",
