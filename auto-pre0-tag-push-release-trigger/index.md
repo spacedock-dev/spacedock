@@ -8,7 +8,7 @@ verdict:
 score:
 worktree:
 issue:
-milestone: 0.26.0
+milestone: 0.27.0
 id: 5aqczjeq6rq3mckbc5gyjqe3
 ---
 
