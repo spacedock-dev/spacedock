@@ -3,7 +3,7 @@
 Status: proposed first implementation for the recorder
 Date: 2026-07-19
 
-*Section owner tags are shaping-time scaffolding naming the implementing tasks; they are removed when the spec lands — the landed document speaks only in component terms.*
+*Section owner tags are shaping-time scaffolding naming the implementing tasks; they are removed when the spec lands — the landed document speaks only in component terms. This scaffolding includes the task-id prefixes in the diagram labels and the task-slug/task-id tokens in the CLI and YAML examples; the landing pass converts labels to component prefixes (re-checking render width) and genericizes example ids.*
 
 ## What the recorder ships first
 

@@ -235,7 +235,7 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 The exact first-use journey, minimal schema, helper boundary, examples, and lifecycle
 are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `ee4e354d7a507d22e9e38609037f824fce413e1b454136e8e206f5049678c01b`).
+(SHA-256 `9c0ee9ad469ca0399e657b146e70f9de524387851ccbd3a0a4d9a0fd6d4b08b7`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
@@ -1198,3 +1198,18 @@ example ids — flagged for landing-time genericization (the diagram case carrie
 tension, so I left it for the captain rather than widening or dropping prefixes unasked).
 The seven retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) and the
 resolution-first split are unchanged.
+
+## Stage Report: ideation (cycle 20)
+
+Captain ruling on the flagged scaffolding: option (c) for all three (diagram prefixes, CLI slug, YAML ids) — shaping-time scaffolding covered by the note; the approved-as-rendered diagrams do not change now.
+
+- DONE: Extend the scaffolding note to name the three token locations and their landing-pass treatment.
+  Added the captain's sentence: the scaffolding includes the diagram-label task-id prefixes and the CLI/YAML task-slug/task-id tokens; the landing pass converts labels to component prefixes (re-checking render width) and genericizes example ids. New contract SHA-256 `9c0ee9ad…`; the body reference updated. AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 are unchanged.
+
+### Summary
+
+The scaffolding note now explicitly scopes all three shaping-time task-token locations, so
+the doc is internally consistent: the landed spec speaks only in component terms, and
+everything task-tagged (owner tags, diagram prefixes, example ids) is declared removable at
+landing. This closes the contract-doc pass; the seven retained resolution ACs (AC-1, AC-4,
+AC-6, AC-10, AC-12, AC-13, AC-14) and the resolution-first split are unchanged.
