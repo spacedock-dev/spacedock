@@ -166,7 +166,7 @@ gates:
                 action: advance
                 target-stage: implementation
                 state: superseded
-              note: "Superseded by attempt 8 (the captain-directed fold: round-disposition section + evergreen restyle); the approval itself stands. h1 dispatched immediately per the captain. Application state corrected pending->superseded at the preflight (fable seat M2a): the attempt-8 recording updated this note but left the state field live, briefly giving the gate two pending advances — banked as the cross-attempt red fixture for the eligibility task."
+              note: "Superseded by attempt 8 (the captain-directed fold: round-disposition section + evergreen restyle); the approval itself stands. h1 dispatched immediately per the captain. Application state corrected pending->superseded at the preflight (the preflight's second material finding, state half): the attempt-8 recording updated this note but left the state field live, briefly giving the gate two pending advances — banked as the cross-attempt red fixture for the eligibility task."
             - id: gate-attempt:3k-ideation-8
               sequence: 8
               previous-attempt: gate-attempt:3k-ideation-7
