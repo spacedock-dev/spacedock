@@ -305,3 +305,12 @@ The §2a fix is prose whose behavioral proof is a live COMMISSION drive (branch 
 ### Human-reviewable refit delta (for the validation gate's binding captain condition)
 
 Reproducible in one dispatched drive: drive `skills/refit/SKILL.md` Phase 3b against `fixtures/refit-content-propagation/site-workflow/README.md` on this branch; the emitted README diff IS the delta a human reviews. Against a pre-fix `main` checkout of the same fixture, the control diff carries only stamp + scaffolding churn and no scar tissue. The fixture and its explainer are committed for exactly this.
+
+### Feedback Cycles
+
+FO-owned per feedback-rejection-flow. 2ae exercises the correction-round convention `bw` shipped this sprint on its own in-stage rounds; deviation is measured against the ~18-line ideation estimate, never the prior round.
+
+- Cycle 1: changes-requested — FO branch review; surface 17 vs estimate 18 (94%); AC unchanged. The cycle-1 stage report recorded a reasoned decline to wire §2a; the captain ruling (fix the wiring, on regression grounds) superseded it. Bounced back for the wiring plus the report correction.
+- Cycle 2: passed — FO ruling applied (§2a slot wiring, `a45b4ec0`); surface 21 vs estimate 18 (117%); AC narrowed: AC-2's control was specified as "the version-only control diff contains only the stamp line," but a live refit control carries variable Task-Template scaffolding churn (25 / 107 / 4 / 23 changed lines across runs) with ZERO scar-tissue content lines every time — narrow the control assertion to "zero scar-tissue content lines," which is the load-bearing invariant the 2-line figure only approximated. Cause of the variance is `main`'s refit step-1 template-source ambiguity (a finding about `main`, not this change). Within 2× tolerance, so the design-reset decision is RECONFIRM — no re-scope, park, or escalate.
+
+FO note (recorded against this FO, not buried): the commission drive I ordered at implementation was declined by the ensign on the ground that AC-1's live commission drive is validation-owned and an implementer-run proof weakens its independence — the same principle the staff review used to keep AC-2's refit drive out of the validator's own hands. The ensign was right and I withdrew the instruction. AC-1's live commission drive (branch vs `main`, scar-tissue and tautology counts) is carried to the validation gate as a detached-validator requirement so it does not slip.
