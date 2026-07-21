@@ -1,6 +1,6 @@
 ---
 title: Pi bootstrap prompt parity — match claude/codex warmth; "Use $spacedock:first-officer" is the cold outlier
-status: implementation
+status: validation
 source: "Captain (2026-06-20): the pi bootstrap prompt (internal/cli/pi.go:20) is 'Use $spacedock:first-officer for this whole Pi session.' — a bare mechanism trigger. claude (frontdoor.go:25) and codex (frontdoor.go:434) get 'You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage.' (codex appends 'Assume $spacedock:first-officer for the entire session.'). Pi is the cold outlier — pure mechanism, zero warmth. The skill is the contract (single source of truth), but the launch moment is the one chance to frame the commissioning, and pi's reads like a config line."
 score:
 started: 2026-07-20T23:43:13Z
