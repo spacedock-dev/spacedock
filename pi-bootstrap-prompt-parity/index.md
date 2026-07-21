@@ -175,3 +175,16 @@ Captain: "dispatch the parity so we don't need to hand inject this extension" â€
 ### Summary
 
 Implemented `.pi/extensions/spacedock.ts` context-hook commissioning: `session_start` and `session_compact` arm FO bootstrap injection, `agent_end` suppresses it, and structural de-dup avoids false skips when compaction summaries mention the marker. Added a Node-backed Go behavior test for the extension and left `piBootstrapPrompt` as the minimal launcher trigger while the extension owns durable commissioning; captain should delete `~/.pi/agent/extensions/spacedock-compact-reinject.ts` after verifying the shipped extension is loaded. Code commit: `fed85b03`; validation gates run: `go test ./...`, `go test ./... -race`, focused extension behavior test, live RPC compaction proof, and RPC `/reload` smoke.
+
+## Stage Report: validation
+
+- DONE: Independently re-proves the core claim with a fresh live run (RPC compaction â†’ bootstrap present post-compact, exactly once), rather than citing the implementation report's evidence.
+  Evidence: fresh `node /tmp/spacedock-validation-rpc-driver.mjs` drove `go run ./cmd/spacedock pi --plugin-dir <worktree> -- --approve --mode rpc`; probe log shows `session_compact`, `compact_complete tokensBefore=22000`, then next `before_provider_request structuralBootstrapCount=1 markerOccurrences=2` (one structural bootstrap, marker also in summary).
+- DONE: Attacks the structural de-dup for edge cases: false-skip on summary variants, double-inject with a pre-existing bootstrap, suppression failure after agent_end.
+  Evidence: fresh `node /tmp/spacedock-validation-edge-harness.mjs` fails if compaction-summary marker prose suppresses reinjection, if pre-existing structural bootstrap double-injects, or if `agent_end` does not suppress.
+- DONE: Confirms launcher trigger and extension hook coexist without double-injection in a real session (AC-4 coherence).
+  Evidence: fresh `go run ./cmd/spacedock pi --plugin-dir <worktree> -- --approve --print --no-tools --no-session -e /tmp/spacedock-validation-pi-bootstrap-probe.ts` logged first provider request with `structuralBootstrapCount=1 markerOccurrences=1 firstLauncherMsg=1`.
+
+### Summary
+
+Validation PASSED. The shipped extension behavior was re-proven with a fresh live Pi RPC compaction run and a separate real `spacedock pi --print` launch-coexistence run; repository gates `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` also completed cleanly. Deferred note: an adversarial phrase outside the observed/canonical "compaction summary" wording (`compacted summary`) would insert before rather than after that summary, but still injects exactly once and does not violate the current promised Pi compaction-summary path.
