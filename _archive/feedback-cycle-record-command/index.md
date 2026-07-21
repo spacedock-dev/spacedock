@@ -1,12 +1,12 @@
 ---
 id: bwr6j6edkmfx5sbz73cr2952
 title: Feedback-cycle record convention and design-reset decision — declared estimate, per-round actuals, recorded reframe
-status: implementation
+status: done
 source: "captain (2026-06-04) — forked from xa (feedback-guarantee-binary-gate) per the roadmap-the-decision + separate-build-task call. xa's ideation determined Candidate 1 (3-cycle escalation) is mechanizable via a dedicated cycle-record command (a spike disproved a --set status guard) and Candidate 2 (budget-probe) is not. This task SHIPS the Candidate-1 guard; xa closed as a roadmap decision."
 score: "0.30"
 started: 2026-07-20T03:29:33Z
-completed:
-verdict:
+completed: 2026-07-21T04:41:32Z
+verdict: passed
 worktree: .worktrees/spacedock-ensign-feedback-cycle-record-command
 issue:
 sprint: 0260-proportionality
@@ -80,6 +80,9 @@ gates:
                 target-stage: implementation
                 state: consumed
               note: "FO applied the folds directly under the captain's edit-directly grant; codex staff review finding 1 and fable delta findings 8-10."
+mod-block:
+pr: pr-merge:541
+archived: 2026-07-21T04:41:32Z
 ---
 
 Turn the feedback-rejection correction loop from a prose-only cycle count into a measured, calibrated loop. At ideation the entity declares an **expected surface** as part of the captain-approved design; every correction round records its **actuals** into the durable `### Feedback Cycles` section in a documented entry format; the **deviation** of actuals from the captain-approved estimate is **narrated** at each re-dispatch decision point, so the runaway loop becomes visible against the estimate rather than legal against the prior round.
