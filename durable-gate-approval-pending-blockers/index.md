@@ -34,7 +34,7 @@ gates:
               application:
                 action: feedback
                 target-stage: ideation
-                state: pending
+                state: consumed
               note: "Subspace advisory float on the rebuilt tip binary, probe-first ritual observed. Two asks: physically trim the body to the cut (the AC section still carries every pre-cut criterion in full; the scope-cut prose named the retained set but never restructured the sections), and produce an alignment read against open draft PR #510 (Ledger gate-binding boundary). Routed to a fresh ideation revision worker; attempt 2 opens at re-presentation."
 sprint: durable-decisions
 group: recorder
