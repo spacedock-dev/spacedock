@@ -1,0 +1,13 @@
+This is a direct-read task, not a fan-out. Three small files (38KB total), one coherent comparison, no unowned runtime claim a read can't settle — so a single context reads all three and diffs them. I will **not** open a Workflow or dispatch reader agents: a read/diff settles "is it consistent," and three agents re-reading 17/12/9KB files is exactly the redundancy the contract refuses. "Ultracode is on" and "the captain wants to be sure" raise the *thoroughness of the read* (check omissions, not just present mentions; anchor against the canonical contract), not the *weight of the mechanism*.
+
+Concrete next action — the ordered tool calls, all read-only, the first batch in one parallel block:
+
+1. **`Grep`** — pattern `(?i)advance`, `output_mode: "content"`, `-n`, `-C 3`, globbed over the three adapter files **plus** `fo-dispatch-core.md`. Anchors every `--advance` / `reuse-advance` / `advance` occurrence per file, and pulls the canonical `«dispatch.build» --advance` clause the adapters must be consistent *with*. (This also catches an inconsistency-by-omission — a file that never says "advance" fails the grep loudly.)
+
+2. **`Read`** (×3, parallel, section-scoped by the offsets grep returns) — the reuse-advance / `«worker.spawn»` binding sections of `claude-fo-dispatch.md`, `codex-first-officer-runtime.md`, `pi-first-officer-runtime.md`. Given the sizes, I'll read each adapter's full `## Runtime implementation` block rather than a keyhole, so an omitted clause can't hide between two matched lines.
+
+Then I compose the three-way comparison against a fixed checklist drawn from the shared contract — for each adapter: (a) does it bind the **reuse-advance handle** the `--advance` envelope's `prompt` forwards to; (b) does it describe the **no-spawn envelope** (no `subagent_type`/`name`/`team_name`/`run_in_background`); (c) the `--advance` ⊥ `--bare-mode` incompatibility; (d) the fallback-to-manual-advance path — and report each cell as consistent / divergent / **absent**, most-severe first.
+
+If step 2 surfaces a genuinely *unowned* claim — e.g. an adapter asserts a host reuse-messaging call *behaves* a certain way that the doc can't settle by itself — that, and only that, is where I'd escalate to one adversarial verifier. The documentation-consistency question itself is settled by the read.
+
+Want me to run it?

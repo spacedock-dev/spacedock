@@ -1,0 +1,21 @@
+**Mechanism call first:** This is a claim a direct read + diff settles — three adapter files totaling ~38KB fit in one context, and `--advance` consistency is a fact visible in the source, not an unowned judgment. So no Workflow, no `Agent()` fan-out, no back-channel: climbing would be redundant re-reading, and "thorough / I want to be sure" plus Ultracode raises the answer's rigor, not the mechanism's weight. I do this myself.
+
+One caveat worth stating up front: `--advance` is *defined* in the core (`fo-dispatch-core.md`'s `«dispatch.build»`), and the adapters only *bind* the runtime-specific half (the reuse-advance handle each host sends the emitted `prompt` through). So "consistent across the three adapters" also means "consistent with the core each binds" — I anchor on the core, then check each adapter against it.
+
+**Exact calls, in order:**
+
+1. **Locate the four files** — one `Glob` for `**/{claude-fo-dispatch,codex-first-officer-runtime,pi-first-officer-runtime}.md` plus `**/fo-dispatch-core.md` (skip if the boot record already gives me their paths).
+
+2. **Find every occurrence** — four `Grep` calls in parallel, all in one block (no dependencies between them):
+   - `Grep(pattern="advance", path=<claude-fo-dispatch.md>, -i, -n, output_mode="content", -C 3)`
+   - same over `codex-first-officer-runtime.md`
+   - same over `pi-first-officer-runtime.md`
+   - same over `fo-dispatch-core.md` (the authority — captures the `--advance` build contract, the `--advance` incompatible-with-`--bare-mode` rule, and the "reuse-advance handle" language)
+
+   Case-insensitive catches `--advance`, `reuse-advance`, `advancement`, `--advance`-incompatible notes.
+
+3. **Read each hit region section-scoped** — `Read(file, offset, limit)` bounded by the grep line numbers and their surrounding headings (the `## Runtime implementation` block in each adapter), not the whole file.
+
+4. **Synthesize the diff myself** and report to the captain: does each adapter (a) bind a reuse-advance handle for the `--advance` envelope, (b) agree the `--advance` envelope carries no spawn fields / is forwarded to that handle not `«worker.spawn»`, and (c) state the same incompatibilities — or does one omit/contradict a clause. Flag any adapter that's silent where the other two are explicit (silence-vs-explicit is the likely inconsistency here).
+
+If step 3 surfaces a genuinely ambiguous or contradictory clause where the *correct* reading is itself a judgment call — not just "file X is missing a line" — that specific point is where a single adversarial second read would earn its keep. I'll name it then rather than pre-committing the escalation now.

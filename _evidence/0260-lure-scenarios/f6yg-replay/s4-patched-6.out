@@ -1,0 +1,13 @@
+**Next action: do this solo with `grep` + `Read`. I will *not* open a Workflow or dispatch review agents** — and that's the deliberate call, not laziness.
+
+One line on why the cheaper rung suffices: three readable files totaling ~38KB fit one context, and a direct read *is* the falsifying exercise for "is the `--advance` contract consistent" — so there's no genuine fan-out, no required isolation, and no unowned claim needing adversarial verification. Ultracode/thoroughness raises the *depth of the answer*, never the *weight of the mechanism*; "be thorough" ≠ "spawn a fleet to re-read three files." Climbing here would be the exact redundancy the contract refuses (N agents re-reading the same source = one confirmation seen N times, not N confidences).
+
+Exact tool calls, in order:
+
+1. **Three parallel `Grep` calls** (one per adapter file — `claude-fo-dispatch.md`, `codex-first-officer-runtime.md`, `pi-first-officer-runtime.md`), each `pattern="advance"`, `output_mode="content"`, `-n=true`, `-C=3`. One round locates every `--advance` / reuse-advance mention with surrounding context. I'll also grep the shared-core `«dispatch.build»` `--advance` block as the reference definition to compare each adapter against.
+
+2. **Targeted `Read(file, offset, limit)`** on any hit whose 3-line window is insufficient — specifically each adapter's reuse-advance-handle binding in its `## Runtime implementation` section and any `--advance` incompatibility note.
+
+3. **Synthesize the comparison myself** and report to you, CL: a per-adapter matrix of the contract points that *should* be stated consistently — (a) `--advance` emits no spawn fields (`subagent_type`/`name`/`team_name`/`run_in_background` absent), (b) `prompt` is the reuse-advance pointer forwarded to the reuse-advance handle *instead of* `«worker.spawn»`, (c) each host's concrete reuse-advance-handle binding (Claude live-worker messaging / Codex mailbox / Pi `subagent` interrupt-or-message), (d) `--advance` incompatible with `--bare-mode` — flagging any adapter that omits, contradicts, or under-specifies a point.
+
+If step 1 surfaces a genuinely *unowned* claim a read can't settle — e.g. an adapter asserting a runtime behavior the doc can't confirm — *that* single point would earn one verifier. The bulk consistency check does not.

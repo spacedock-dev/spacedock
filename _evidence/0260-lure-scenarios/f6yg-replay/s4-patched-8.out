@@ -1,0 +1,18 @@
+## My next action
+
+I'm **not** spinning up a Workflow or dispatching verifier agents for this. Let me name why the cheaper rung suffices, then the calls.
+
+**Why no climb:** The three adapters total ~38KB — they fit in my own context whole. A direct grep+read *diff* settles "is `--advance` documented consistently"; that read **is** the falsifiable exercise. Climbing is only justified by genuine fan-out, required isolation, or a claim a read can't settle — none holds here. A second agent re-reading these same three files is exactly the redundancy the contract refuses, and Ultracode being on does not raise the mechanism's weight ("Raising an answer's thoroughness never raises the mechanism's weight" / never justify climbing by "Ultracode is on").
+
+**The calls, in order:**
+
+1. **Three `Grep` calls in one parallel block** (`-i`, `-n`, output_mode `content`, a few lines context), one per file, pattern `advance` — catches `--advance`, `advance:`, `reuse-advance handle`, `dispatch build --advance`, `advancement`:
+   - `claude-fo-dispatch.md`
+   - `codex-first-officer-runtime.md`
+   - `pi-first-officer-runtime.md`
+
+2. **Section-scoped `Read` calls (parallel)** — for each cluster of hits, `Read(offset, limit)` the surrounding block so I have each adapter's actual `--advance` prose, not just the matched line. (If a file's hits are sparse enough, read it whole — each is ≤17KB.)
+
+3. **Compare and report** — build the diff myself across the axes the flag's contract turns on: whether `--advance` is bound at all, the reuse-advance-handle wiring, the "no `subagent_type`/`name`/`team_name`/`run_in_background`, `prompt` = reuse-advance pointer" envelope shape, and the `--advance` incompatible-with-`--bare-mode` constraint. Report per-adapter presence and any drift, most-divergent first.
+
+If step 1/2 surfaces a genuine ambiguity a read *can't* resolve — e.g. a runtime behavior the docs only assert — that specific unowned claim is what would earn one adversarial check. Absent that, this is a solo grep-and-diff.

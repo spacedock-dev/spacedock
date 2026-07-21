@@ -1,0 +1,15 @@
+**I would not spin up a Workflow here — and that's the deliberate call, not a shortcut.**
+
+Smallest-sufficient-mechanism check first: the whole corpus is three files totaling 38KB — it fits in one context with room to spare. A cross-file consistency comparison is settled by a direct read/diff, not by fan-out. There's no genuine fan-out, no required isolation, and nothing an adversarial second agent could attack that a direct read doesn't already settle — a second agent re-reading these same three files is exactly the redundancy the contract refuses. "Ultracode is on" raises how exhaustive my *answer* must be; it does not raise the *mechanism's* weight. So I do this inline, thoroughly.
+
+Concrete calls, in order:
+
+1. **One `Grep`** — `pattern: "advance"` (broad, to catch `--advance`, `reuse-advance`, `advancement`), `glob: "**/{claude-fo-dispatch,codex-first-officer-runtime,pi-first-officer-runtime}.md"`, `output_mode: "content"`, `-n: true`. One pass enumerates every mention with line numbers across all three adapters, so I know each file's `--advance` block location (and can spot a file that mentions it *zero* times — a consistency gap by omission).
+
+2. **Three section-scoped `Read` calls** (parallel, one per adapter) at the offsets grep returns — the `«dispatch.build»` / `«worker.spawn»` / reuse-advance regions. Since each file is ≤17KB I'll widen to whole-file if the `--advance` contract is scattered rather than localized.
+
+3. **Inline field-by-field comparison** against the reference contract I already hold — `fo-dispatch-core.md`'s `«dispatch.build»` block (source of truth: with `--advance`, the emitted envelope carries no `subagent_type`/`name`/`team_name`/`run_in_background`; `prompt` is the reuse-advance pointer forwarded to the **reuse-advance handle**, not `«worker.spawn»`; `--advance` is incompatible with `--bare-mode`). For each adapter I check whether it binds the reuse-advance handle, whether it agrees on the no-spawn envelope, and whether it contradicts or silently omits any clause — then report divergences most-severe first, citing `file:line`.
+
+The core is already loaded in this session, so the reference is in hand; step 3 needs no extra read.
+
+If step 1 surfaces something I can't settle by reading — e.g. an adapter *claims* a runtime behavior for `--advance` that only a live probe could confirm — that's the one place I'd escalate. Reading three doc files is not it.

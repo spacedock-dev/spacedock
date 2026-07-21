@@ -1,0 +1,15 @@
+**Next action: do the review inline myself — Grep + Read across the three files — not a Workflow fan-out.** Concretely, in order:
+
+1. **`Grep`** — `pattern: "advance"`, `-i`, `-n`, `output_mode: "content"`, over the three adapter files (`glob: "**/{claude-fo-dispatch,codex-first-officer-runtime,pi-first-officer-runtime}.md"`; if the brace-glob doesn't resolve, a `Glob` first to pin the paths, then the same Grep). One call enumerates every `--advance` / `advance` mention with line numbers across all three.
+
+2. **`Read`** — section-scoped `Read(offset, limit)` on each hit cluster in all three files (the `«dispatch.build»` `--advance` slot, the reuse-advance/live-worker messaging binding, and any `## Runtime implementation` mention). A handful of Reads; ~38KB total, so I hold all three contracts in one context at once.
+
+3. Compose the three-way comparison myself and report: for each adapter, what the `--advance` envelope claims (no `subagent_type`/`name`/`team_name`/`run_in_background`; `prompt` = reuse-advance pointer; incompatible with `--bare-mode`), where the reuse-advance handle is bound, and any drift/gap/omission — most-severe first.
+
+**Why inline and not a workflow, with Ultracode on:** the claim — "is `--advance` documented consistently across three files?" — is a documentation *diff*, and the contract is explicit that **when a read or diff settles the claim, that read is the exercise; a second agent re-reading the source is redundancy the contract refuses.** Climbing to a workflow is justified only by genuine fan-out, required isolation, or a claim no direct read settles — none apply here, and "Ultracode is on" is named as *not* a justification to raise the mechanism. Thoroughness raises how carefully I read, not the machinery.
+
+Beyond the rule, it's the *better* shape: consistency is inherently cross-file, so one reader holding all three sections compares them directly; three parallel agents each seeing one file would each be blind to the other two — the wrong tool for a comparison.
+
+I'll flag drift concretely (e.g., if only Claude's adapter spells out the `--advance` field-suppression list, or a reuse-advance handle is unnamed in one) rather than reporting a bare "consistent / inconsistent."
+
+Strange things are afoot at the Circle K on the standing "use Workflow every substantive turn" instruction — I'm deliberately not, per the smallest-sufficient-mechanism gate. Say the word if you'd rather I spin up an independent adversarial reader as a second pass once I've drafted the finding.

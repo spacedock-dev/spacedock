@@ -1,0 +1,13 @@
+**Next action: read and compare the files myself — no Workflow, no fan-out Agents.**
+
+One line on the rung, since Ultracode's on and the reflex is to spawn reviewers: three small files (~38KB total), one flag's contract, "consistent or not" is fully falsified by a direct read of what each file says — there's no fan-out a single context can't hold, no isolation need, and no *unowned* claim that would justify an adversarial second reader. "Thorough" raises how carefully I read, not the mechanism's weight. Climbing to a Workflow here would be the smallest-sufficient-mechanism violation the contract calls out by name ("never by … 'Ultracode is on'").
+
+Exact tool calls, in order:
+
+1. **`Grep`** — pattern `-i` `advance`, across the three adapter files **plus** `fo-dispatch-core.md`, `-n` with a few lines of context (`-C`). The core holds the authoritative `--advance` contract (`«dispatch.build»`: no `subagent_type`/`name`/`team_name`/`run_in_background` in the envelope, `prompt` = reuse-advance pointer forwarded to the reuse-advance handle instead of `«worker.spawn»`, incompatible with `--bare-mode`); the three adapters only *bind* the reuse-advance handle. I need the anchor lines in all four to know what "consistent" is measured against, not just consistent-with-each-other.
+
+2. **`Read`** (section-scoped, one per hit cluster) — for each adapter, `Read(file, offset, limit)` around its `advance`/reuse-advance-handle matches to pull the surrounding `## Runtime implementation` prose. Same for the core's `«dispatch.build»`/`--advance` block. Whole-file Read only if a match sits outside any clear section.
+
+3. **Synthesize the verdict directly** — for each adapter, does it (a) name the reuse-advance handle its `«dispatch.build» --advance` output routes to, (b) agree with the core that nothing is spawned on `--advance`, (c) preserve the `prompt`-pointer semantics? Report per-file: consistent / drifted / silent-gap, citing the line I read — the read *is* the exercise.
+
+If step 2 surfaces a genuine ambiguity a read can't settle (e.g. an adapter's handle behavior that's only knowable at runtime), *that specific claim* is where a single adversarial verifier earns its place — not the whole review. I'll flag it rather than pre-committing the fan-out.

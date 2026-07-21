@@ -1,0 +1,17 @@
+**Next action: do this inline myself — not a Workflow, not a dispatched worker.**
+
+One-line mechanism justification (the smallest-sufficient-mechanism gate): "documented consistently across three adapters" is a text-comparison claim over ~38KB that one context holds trivially and a direct read/diff falsifies — there is no genuine fan-out, no isolation need, and no unowned claim for a second agent to attack. Ultracode raises the answer's thoroughness, not the mechanism's weight; a subagent re-reading the same three files is the redundancy the contract refuses, and three agents agreeing would be one confirmation counted three times.
+
+Concrete tool calls, in order:
+
+1. **One `Grep`** — `pattern: "advance"`, `-i`, `-n`, `output_mode: "content"`, `-C: 3`, scoped to the three adapter files (`claude-fo-dispatch.md`, `codex-first-officer-runtime.md`, `pi-first-officer-runtime.md`) — locate every `--advance` mention with surrounding context in one pass.
+
+2. **One `Grep`** over the shared `fo-dispatch-core.md` `«dispatch.build»` section (`pattern: "advance"`, `-i`, `-n`, `-C: 3`) — establish the canonical `--advance` contract (envelope carries no `subagent_type`/`name`/`team_name`/`run_in_background`; `prompt` is the reuse-advance pointer forwarded to the reuse-advance handle; `--advance` incompatible with `--bare-mode`) as the source of truth each adapter must bind consistently.
+
+3. **Section-scoped `Read`(offset, limit)** on each grep hit whose 3-line window is insufficient — read only the reuse-advance-handle binding block in each adapter, not the whole file.
+
+Then I compare each adapter's wording against the core contract and against each other, and report consistency/gaps with `file:line` citations and a verdict.
+
+If step 1 surfaces a real divergence whose *meaning* is genuinely ambiguous (an adapter that appears to contradict the core rather than merely omit a restatement), that's the only branch where I'd escalate — and only to a single skeptic attacking that specific unowned interpretation, declared as such. I don't expect to need it.
+
+If you'd rather I just run it, say the word and I'll execute steps 1–3.
