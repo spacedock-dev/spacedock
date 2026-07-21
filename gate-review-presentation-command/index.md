@@ -76,7 +76,7 @@ gates:
                 action: advance
                 target-stage: implementation
                 state: pending
-              note: "Subspace multi-artifact float, no annotations; provider result and review log retained in-room. The decoupled architecture is approved: presentation as an overridable present-gate channel, the binary subspace-free by checkable criterion."
+              note: "Subspace multi-artifact float, no annotations; provider result and review log retained in-room. The decoupled architecture is approved: presentation as an overridable present-gate channel, the binary subspace-free by checkable criterion. ADOPTION PROVENANCE (captain-confirmed in chat, 2026-07-21): person:reviewer at this float was the captain personally; the FO adopted the provider's advisory result as the captain's binding approval on that basis. The provider envelope (binding:false) is evidence, not the binding record — this note is the durable authorization the promotion previously lacked."
 sprint: durable-decisions
 group: recorder
 started: 2026-07-21T01:43:36Z
