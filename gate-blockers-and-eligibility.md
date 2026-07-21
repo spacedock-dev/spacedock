@@ -126,7 +126,7 @@ Split the layer by evidence: the application record (one-use consume-exactly-onc
 
 ## Stage Report: ideation (cycle 2 — preflight folds)
 
-- DONE: M2b — cross-attempt pending-application invariant.
+- DONE: Preflight fold, second material finding's criterion half — cross-attempt pending-application invariant.
   Extended AC-A4: after a supersede, the gate holds at most one pending application across ALL attempts (the superseded attempt's must read `superseded`); cited the banked incident (the recorder's own ideation gate briefly held pending advances on attempts 7 and 8, corrected at preflight) and added a supersede-then-eligibility red-fixture test.
-- DONE: D3 — decline fallback reworded.
+- DONE: Preflight fold, third decline — fallback reworded.
   Removed the sentence naming a non-existent recorder gates-write verb; the recorded promotion condition is now the only authoring route (a live consumer promotes the hold/blocker half to its own captain-approved design round), no hand-edit fallback implied.
