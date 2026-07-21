@@ -1,7 +1,7 @@
 ---
 id: vzsastkvv2r6dpjakw1vq6wx
 title: Binary-upgrade prompt must be install-source-aware (brew formula, non-brew, sandbox)
-status: implementation
+status: validation
 source: "Captain report (CL) 2026-07-16 — the skill-upgrade version gate prompts `brew upgrade spacedock` regardless of how the binary was installed."
 started: 2026-07-21T15:58:31Z
 completed:
@@ -168,6 +168,10 @@ Filled the entity with a concrete, testable, source-aware remedy design. The rem
 - **Verdict:** approved for implementation. Threads a detected `InstallSource` value into the single remedy generator (keeps `contract` pure, `Compare` signature stable to cap the caller ripple), spike proven live on the edge box (`Caskroom/spacedock@next` token extracted from the resolved path, no `brew` subprocess), and correctly catches the word-boundary subtlety. No captain decision required.
 - **Validation carries the detached adversarial audit** — threads a param through `frontdoor.go gateHost` (the front-door launcher, a high-stakes surface). AC-1's oracle is the external install-source input, so the AC-provenance sub-trigger does not fire.
 - **Implementation base:** worktree off `origin/main` (`ca136f83`), not local `main`.
+
+### Gate note — implementation surface overage ACCEPTED (FO)
+
+Implementation landed at +416/-32 (~+118 over the ±60 LOC tolerance). Accepted as an estimation miss, NOT scope growth: the 10 touched files are exactly the approved surface (no new files, no new behavior), all value ACs are met with falsifiable evidence, `Compare`'s signature stayed stable (its 15 cases pass unedited), and the overage is concentrated in AC-mandated test tables (`install_source_test.go` 198: the AC-1 four-source matrix + AC-3 six-row detection table + live smoke) plus a `currentInstallSource` DRY helper and repo-norm comment density. Trimming would cut AC-mandated coverage. The tolerance baseline is recalibrated to the as-built surface for any later correction round; proceeding to validation.
 
 ## Stage Report: implementation
 
