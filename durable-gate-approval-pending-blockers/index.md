@@ -1379,3 +1379,16 @@ Correction commit `9d279b87` closes the portable-boundary outcome defect and bot
 - Material: none.
 - Deferred risk: if a future portable Review & Gate version adds a required Resolution field, the v1 allow-list will discard it as unknown envelope data. This is outside the current v1 promise; current fields reproduce exactly, and the risk becomes material when Spacedock advertises or receives that newer required field.
 - Polish: none.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Create one concise validation-gate briefing at `review/validation/briefing-1/gate-review.md` that leads with the recorder capability and recommended decision; the entity file is a reference artifact, never the presented body.
+  The standalone briefing opens with APPROVE, explains the recorder in one paragraph, and links the detailed entity only as a reference.
+- DONE: Explain how the capability works and how it was falsifiably tested: command surface and ownership boundary, all seven AC outcomes, the cycle-1 rejection/correction, three detached adversarial mutants, and full test/race/gofmt results.
+  The evidence table covers AC-1/4/6/10/12/13/14, followed by the correction and the exact three red adversarial edits plus suite results.
+- DONE: Make the decision legible in one screen: material findings, deferred risk, exact commits/paths as references, and what approval authorizes next; commit the briefing artifact to the state checkout without changing the validated product branch.
+  The decision block records zero material findings, the v1 allow-list version risk, merge/landing authority, and commits `1095be38`, `9d279b87`, and `0c0fb6ca`; product HEAD remains unchanged.
+
+### Summary
+
+Packaged the passed validation evidence into a compact captain-facing gate review without rerunning validation or changing product code. The briefing recommends approval and makes the recorder capability, falsifiable evidence, residual risk, and merge authorization readable without presenting the entity body.
