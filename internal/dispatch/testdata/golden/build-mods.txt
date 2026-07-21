@@ -26,7 +26,7 @@ Before anything else, invoke your operating contract:
 
     Skill(skill="spacedock:ensign")
 
-This loads the shared ensign discipline (stage-report format, BashOutput polling, worktree ownership, completion signal protocol). The call is safe to call more than once; if the agent-definition preload ever starts working, calling it again is a no-op (the skill content is re-loaded but has no behavioral effect). Do not paraphrase; call the tool.
+This loads the shared ensign discipline (stage-report format, background-task polling, worktree ownership, completion signal protocol). The call is safe to call more than once; if the agent-definition preload ever starts working, calling it again is a no-op (the skill content is re-loaded but has no behavioral effect). Do not paraphrase; call the tool.
 
 You are working on: Thing
 

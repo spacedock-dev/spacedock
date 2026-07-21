@@ -14,7 +14,7 @@ The startup boot read is an FO-internal read; consume it as JSON: `status --boot
 
 ## Spawn Call (Agent)
 
-The spawn call (fo-dispatch-core.md `## Dispatch Adapter`) is the Agent tool. **Use Agent() for initial dispatch** — SendMessage is only for advancing a reused agent to its next stage. **NEVER use `subagent_type="first-officer"`** — that clones yourself instead of dispatching a worker.
+The spawn call (fo-dispatch-core.md `## Dispatch Adapter`) is the Agent tool. **Use Agent() for initial dispatch** — SendMessage is only for advancing a reused agent to its next stage. **NEVER use `subagent_type="first-officer"`** — that clones yourself instead of dispatching a worker. `«async-dispatch»` binds ASYNC here: `Agent(name=…, run_in_background=true)` returns immediately; single-entity/bare mode uses the blocking call and dispatches one entity at a time.
 
 **Declare a scripted fan-out before launching it.** When agents are queued by a plan or script rather than by one `Agent()` call you make now — a workflow harness, a batch spawn, a per-finding verifier lane — state the expected worker count, the tolerance, and why that spend is economically reasonable BEFORE launch. A running script reaches no Nth spawn for the fan-out checkpoint to stop at.
 
@@ -55,7 +55,7 @@ The Claude realization of the core's standing-injection call (fo-dispatch-core.m
 
 After dispatching an ensign (or routing work to a kept-alive ensign), you are waiting for that ensign's completion signal. Until that signal arrives, take NO action that affects the ensign's lifecycle.
 
-**A completion signal is one of these three things, and nothing else:**
+**A completion signal (`«completion-signal»`, DUAL-bound on this host) is one of these three things, and nothing else:**
 
 1. An inbox-delivered user-role message from the ensign whose text begins with `Done:` (per the ensign runtime's completion contract).
 2. A `system` entry with `subtype: task_notification` and `status: completed` whose `tool_use_id` matches the ensign's `Agent(...)` dispatch id.

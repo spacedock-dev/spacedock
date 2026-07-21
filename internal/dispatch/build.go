@@ -904,7 +904,7 @@ func firstActionBlock(host string) string {
 		"\n" +
 		"    Skill(skill=\"spacedock:ensign\")\n" +
 		"\n" +
-		"This loads the shared ensign discipline (stage-report format, BashOutput " +
+		"This loads the shared ensign discipline (stage-report format, background-task " +
 		"polling, worktree ownership, completion signal protocol). The call is safe " +
 		"to call more than once; if the agent-definition preload ever starts " +
 		"working, calling it again is a no-op (the skill content is re-loaded but " +

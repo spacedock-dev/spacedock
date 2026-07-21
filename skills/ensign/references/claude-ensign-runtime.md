@@ -24,6 +24,12 @@ SendMessage(to="team-lead", message="Done: {entity title} completed {stage}. Rep
 
 The entity file is the artifact. Do not include the checklist or summary in the message. Plain text only. Never send JSON.
 
+This SendMessage route is the completion-signal channel the shared core's failure signals use too — e.g. `SendMessage(to="team-lead", message="DISPATCH_FILE_MISSING: {path} - {error}")`.
+
+## Background Task Surface
+
+The shared core's Background Bash Discipline binds here to the background Bash tools: launch with `Bash(run_in_background: true)`, capture the returned `bash_id`, and poll `BashOutput(bash_id=...)`, reading `status`. On `"completed"`, read the final output and proceed.
+
 ## Feedback Interaction
 
 For feedback stages, the FO may keep a prior-stage agent alive for messaging. If the reviewer finds issues, the FO routes fixes through a fresh dispatch — the ensign does not directly message other agents.
