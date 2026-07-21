@@ -15,6 +15,7 @@ import (
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
+	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
@@ -149,8 +150,74 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		newMergeCommand(ctx, env, dir, stdout, stderr),
 		newCompletionCommand(stdout, stderr),
 		newDispatchCommand(dispatchProbe, stdin, stdout, stderr),
+		newGateCommand(dir, stdout, stderr),
 	)
 	return root
+}
+
+// newGateCommand exposes the recorder-only surface. The operation file owns
+// open/rebind/close/supersede details; the CLI owns only path resolution.
+func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
+	return &cobra.Command{
+		Use:                "gate record|validate <entity>",
+		Short:              "Record or validate durable gate resolutions",
+		GroupID:            "workflow",
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if wantsHelp(args) {
+				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --operation FILE [--briefing FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--workflow-dir DIR]")
+				return nil
+			}
+			if len(args) < 2 || (args[0] != "record" && args[0] != "validate") {
+				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: record|validate)")
+				return exitCodeError{2}
+			}
+			workflowDir, operation, briefing := "", "", ""
+			for i := 2; i < len(args); i++ {
+				if i+1 >= len(args) {
+					fmt.Fprintf(stderr, "Error: %s requires an argument\n", args[i])
+					return exitCodeError{2}
+				}
+				switch args[i] {
+				case "--workflow-dir":
+					workflowDir = args[i+1]
+				case "--operation":
+					operation = args[i+1]
+				case "--briefing":
+					briefing = args[i+1]
+				default:
+					fmt.Fprintf(stderr, "Error: unknown gate flag: %s\n", args[i])
+					return exitCodeError{2}
+				}
+				i++
+			}
+			path, err := status.ResolveActivePath(workflowDir, dir, args[1], stderr)
+			if err != nil {
+				fmt.Fprintln(stderr, "Error:", err)
+				return exitCodeError{1}
+			}
+			if args[0] == "validate" {
+				s, err := gates.SummaryFile(path)
+				if err != nil {
+					fmt.Fprintln(stderr, "Error:", err)
+					return exitCodeError{1}
+				}
+				fmt.Fprintf(stdout, "gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
+				return nil
+			}
+			if operation == "" {
+				fmt.Fprintln(stderr, "Error: gate record requires --operation FILE")
+				return exitCodeError{2}
+			}
+			if err := gates.Record(path, operation, briefing); err != nil {
+				fmt.Fprintln(stderr, "Error:", err)
+				return exitCodeError{1}
+			}
+			s, _ := gates.SummaryFile(path)
+			fmt.Fprintf(stdout, "recorded gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
+			return nil
+		},
+	}
 }
 
 // newClaudeCommand wires `spacedock claude`. Flag parsing is disabled at the cobra

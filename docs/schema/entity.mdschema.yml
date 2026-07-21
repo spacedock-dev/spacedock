@@ -23,7 +23,8 @@
       "verdict",
       "mod-block",
       "archived",
-      "issue"
+      "issue",
+      "gates"
     ],
     "fields": {
       "id": {
@@ -102,6 +103,18 @@
       },
       "issue": {
         "type": "string"
+      },
+      "gates": {
+        "type": "mapping",
+        "version": 1,
+        "semantics": "binary-owned durable resolution records: logical gates, stable attempts, one briefing binding per attempt, and the exact adopted Resolution; application subtrees are owned by the application layer",
+        "writer": "spacedock gate record",
+        "invariants": [
+          "gates.current and records[].current-attempt pointers agree",
+          "open attempts may replace their one briefing binding",
+          "closed attempt briefing and resolution records are frozen",
+          "recording never changes status or dispatches"
+        ]
       }
     },
     "custom_fields": {

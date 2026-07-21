@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 // reservedSubdirs are never treated as entity folders. Dot-prefixed dirs are
@@ -209,6 +211,14 @@ func scanEntitiesActive(directory string, stderr io.Writer) []*entity {
 // mirroring the oracle's per-entity dict construction. The slug is written into
 // fields (the oracle's entity['slug'] = slug) so formatters/filters can read it.
 func newEntity(fields map[string]string, slug, path, scope string) *entity {
+	if summary, err := gates.SummaryFile(path); err == nil {
+		fields["gate"] = summary.Gate
+		fields["gate-attempt"] = summary.Attempt
+		fields["gate-state"] = summary.State
+		fields["gate-briefing"] = summary.Briefing
+		fields["gate-resolution"] = summary.Resolution
+		fields["gate-decision"] = summary.Decision
+	}
 	fields["slug"] = slug
 	for _, k := range defaultEntityKeys {
 		if _, ok := fields[k]; !ok {
