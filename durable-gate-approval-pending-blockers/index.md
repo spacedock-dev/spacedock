@@ -9,11 +9,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:3k:ideation
-        attempt: gate-attempt:3k-ideation-8
+        attempt: gate-attempt:3k-ideation-9
     records:
         - id: gate:docs-dev:3k:ideation
           stage: ideation
-          current-attempt: gate-attempt:3k-ideation-8
+          current-attempt: gate-attempt:3k-ideation-9
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
@@ -187,8 +187,30 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
+                state: superseded
+              note: "Superseded by attempt 9 (the codex-seat contract reconciliation); the approval itself stands."
+            - id: gate-attempt:3k-ideation-9
+              sequence: 9
+              previous-attempt: gate-attempt:3k-ideation-8
+              state: closed
+              briefing:
+                id: briefing:docs-dev:3k:ideation:attempt-9:revision-16
+                digest: sha256:c99e7b8597038912b25f2d2f7fccd631649cc3b635fb57aa566d0ad25318aba9
+                room-ref: "./review/ideation/briefing-16"
+                note: "RAW-FILE PIN (the marked legacy digest domain, per the digest-domains ruling): byte-verifiable frozen entity + contract snapshots (contract sha256 681b23483f61202094f8c6095cad381f448b98b24e1098716cbf3601b4767aa6), taken after the amendment pass and before this record."
+              resolution:
+                type: Resolution
+                id: resolution:fo-delegated-3k-ideation-9
+                briefing: briefing:docs-dev:3k:ideation:attempt-9:revision-16
+                by: agent:first-officer
+                at: 2026-07-21T14:35:06Z
+                decision: approve
+                reason: "Recorded by the FO on the captain's delegated authority under the recording-identity ruling — the ruling's first exercise. Captain directive, verbatim: 'agree with advisory-to-binding and the 3 recommendations. fix the gate review retirement.' The amendment pass closed the codex seat's second, third, and sixth material findings against the contract: the gate-review architecture retired from every operative section in favor of the approved overridable present-gate channel with recorder-side validation; the two digest domains named with shaping history explicitly legacy; consumption semantics aligned authorization-only with the crash windows named and fixtured; the recording-identity sentence itself added to the lifecycle rules."
+              application:
+                action: advance
+                target-stage: implementation
                 state: pending
-              note: "The recorder's ideation is SETTLED: resolution-first scope, seven evidenced ACs, owner-tagged evergreen-styled contract carrying the full record model including advisory rounds, two render-approved diagrams. The fold worker released with honors after fifteen cycles. Consumption is the sprint Commander's."
+              note: "The contract now agrees with every approved member design and both preflight seats. The captain has NOT re-reviewed the amended bytes; this closure rests on the quoted directive, recorded honestly under the FO identity — exactly what the ruling prescribes."
 sprint: durable-decisions
 group: recorder
 ---
