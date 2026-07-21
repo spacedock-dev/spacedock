@@ -14,7 +14,7 @@
 }
 
 ===== stderr =====
-WARN: bare_mode dispatch with no recent TeamCreate evidence (no ~/.claude/teams/*/config.json modified in the last 30 minutes). If you intend teams mode, run ToolSearch select:TeamCreate and TeamCreate first. If bare is intentional, this warning can be ignored.
+WARN: bare_mode dispatch with no recent TeamCreate evidence (no ~/.claude/teams/*/config.json modified in the last 30 minutes). If you intend teams mode, ensure SendMessage is available (ToolSearch select:SendMessage) and dispatch a named background Agent — no TeamCreate. If bare is intentional, this warning can be ignored.
 
 ===== body =====
 ## First action

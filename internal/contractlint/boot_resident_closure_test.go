@@ -50,7 +50,7 @@ var deferredSkillCores = map[string][]string{
 		"## Status Viewer", "### Captain-Facing State Display", "## Issue Filing",
 	},
 	filepath.Join("skills", "fo-dispatch-recovery", "SKILL.md"): {
-		"## Degraded Mode", "## Break-Glass Manual Dispatch", "## Context Budget Failure and Dead Ensign Handling",
+		"## Break-Glass Manual Dispatch", "## Context Budget Failure and Dead Ensign Handling",
 	},
 }
 
@@ -58,11 +58,11 @@ var deferredSkillCores = map[string][]string{
 // does not read them at boot) but that themselves carry in-module `spacedock:` lazy
 // skill triggers whose targets must resolve on disk, and whose prose pointers at a
 // moved section must not dangle. claude-fo-dispatch.md is read at first dispatch
-// (not boot) and carries both the legacy-team probe token and the three
-// fo-dispatch-recovery failure-trigger lines (Degraded Mode, Break-Glass, Context
-// Budget). Walking it with the same extraction+os.Stat oracle retroactively
-// closure-checks the existing using-legacy-claude-team token there, uncovered by
-// bootResidentBodies today because this file is not itself boot-resident.
+// (not boot) and carries the fo-dispatch-recovery failure-trigger lines (the
+// dispatch-failure retry rung's dead-ensign handling, Break-Glass, Context Budget).
+// Walking it with the same extraction+os.Stat oracle closure-checks those
+// spacedock:fo-dispatch-recovery tokens, uncovered by bootResidentBodies today
+// because this file is not itself boot-resident.
 var deferredModuleBodies = []string{
 	filepath.Join("skills", "first-officer", "references", "claude-fo-dispatch.md"),
 }
@@ -91,11 +91,10 @@ var bodyModRe = regexp.MustCompile(`_mods/([a-z0-9][a-z0-9_.-]*\.md)`)
 // shared core names them via `spacedock:<name>`, so the closure walk resolves each to
 // skills/<name>/SKILL.md, the same as the gate skills.
 var lazyLoadSkills = map[string]bool{
-	"using-legacy-claude-team": true,
-	"present-gate":             true,
-	"feedback-rejection-flow":  true,
-	"fo-status-viewer":         true,
-	"fo-dispatch-recovery":     true,
+	"present-gate":            true,
+	"feedback-rejection-flow": true,
+	"fo-status-viewer":        true,
+	"fo-dispatch-recovery":    true,
 }
 
 // deferredLoadPoint is one extracted load-point: the on-disk path the body names
@@ -183,7 +182,7 @@ func TestBootResidentDeferredLoadPointsResolve(t *testing.T) {
 func TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget(t *testing.T) {
 	root := repoRoot(t)
 	fixture := "At first dispatch, read references/claude-fo-this-file-does-not-exist.md\n" +
-		"and at terminal, invoke spacedock:using-legacy-claude-team.\n"
+		"and at terminal, invoke spacedock:fo-dispatch-recovery.\n"
 	points := extractDeferredLoadPoints(fixture)
 	if len(points) == 0 {
 		t.Fatal("control fixture extracted no load-points — the dangling-target case never exercises the stat")
@@ -204,7 +203,7 @@ func TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget(t *testing.T) {
 		t.Fatal("control: the dangling deferred reference was not extracted — the guard cannot fail on a moved/deleted target")
 	}
 	if !sawReal {
-		t.Fatal("control: the real load-point (using-legacy-claude-team) was not resolved — the discriminator has nothing to contrast the dangling case against")
+		t.Fatal("control: the real load-point (fo-dispatch-recovery) was not resolved — the discriminator has nothing to contrast the dangling case against")
 	}
 }
 

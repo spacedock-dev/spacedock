@@ -19,7 +19,7 @@ const teamStateWindow = 30 * time.Minute
 // supplies. It names a Claude-only tool (TeamCreate), so it lives here, not in
 // the generic internal/status renderer — the generic renderer reads it only when
 // a probe is wired, and emits a host-neutral line when the probe is nil.
-const PresentFalseHint = "run TeamCreate before first team-mode dispatch (claude runtime supports it)"
+const PresentFalseHint = "dispatch a named background Agent for team-mode messaging (no TeamCreate needed)"
 
 // TeamStateProbe reports recent local team-runtime evidence over the shared
 // ~/.claude/teams read. present drives the boot TEAM_STATE present field; hint is
@@ -74,7 +74,7 @@ func BareModeAdvisory(w io.Writer) {
 	fmt.Fprintln(w,
 		"WARN: bare_mode dispatch with no recent TeamCreate evidence "+
 			"(no ~/.claude/teams/*/config.json modified in the last 30 minutes). "+
-			"If you intend teams mode, run ToolSearch select:TeamCreate and TeamCreate first. "+
+			"If you intend teams mode, ensure SendMessage is available (ToolSearch select:SendMessage) and dispatch a named background Agent — no TeamCreate. "+
 			"If bare is intentional, this warning can be ignored.")
 }
 

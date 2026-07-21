@@ -1,44 +1,12 @@
 ---
 name: fo-dispatch-recovery
-description: "Claude dispatch failure recovery — Degraded Mode (triggers, effects, the verbatim captain report, the cooperative shutdown sweep), Break-Glass Manual Dispatch (the manual `Agent()` template), and Context Budget Failure/Dead Ensign Handling (the budget-unavailable stderr conditions, the recovery clause, dead-ensign bookkeeping). Read ONLY at its three resident triggers inside `claude-fo-dispatch.md` — a second dispatch failure, `/spacedock bare`, or `Agent`/`SendMessage` unavailable (Degraded Mode); a non-zero or unavailable `spacedock dispatch build` (Break-Glass); or a budget-fail/zombie/dead-ensign replacement dispatch (Context Budget) — never at boot, never on the happy path."
+description: "Claude dispatch failure recovery — Break-Glass Manual Dispatch (the manual `Agent()` template) and Context Budget Failure/Dead Ensign Handling (the budget-unavailable stderr conditions, the recovery clause, dead-ensign bookkeeping). Read ONLY at its resident triggers inside `claude-fo-dispatch.md` — a non-zero or unavailable `spacedock dispatch build` (Break-Glass); or a budget-fail/zombie/dead-ensign replacement dispatch, including the dispatch-failure retry rung's fresh `-retry` re-dispatch under dead-ensign handling (Context Budget) — never at boot, never on the happy path."
 user-invocable: false
 ---
 
 # First Officer Dispatch Recovery (Claude)
 
-The three Claude dispatch exception bodies, each read only at its own failure trigger in `claude-fo-dispatch.md` — never at boot, never on a session where dispatch never fails.
-
-## Degraded Mode
-
-Degraded Mode is an explicit, session-wide mid-session transition to sequential bare dispatch. Once entered, it persists until the session ends — there is no recovery back to background dispatch in the same session.
-
-### Triggers
-
-Any one of the following trips Degraded Mode:
-
-- Any SECOND dispatch failure within the session — no time window, no durable counter. The counter-free rule is deliberate: the FO cannot reliably track failure timestamps across context pressure and idle notifications, so "second failure anywhere in the session" is the fail-early trigger.
-- The captain command `/spacedock bare` — the explicit operator-initiated degrade.
-- `Agent` or `SendMessage` themselves are unavailable (a genuinely degraded runtime with no concurrent-dispatch substrate).
-
-### Effects
-
-Once Degraded Mode is active, the following invariants hold for the remainder of the session:
-
-- No `team_name` parameter on any subsequent `Agent()` dispatch. The dispatch is built in bare mode (`team_name: null`, `bare_mode: true`) so the emitted Agent call has `name` and `team_name` absent. (This is the Claude realization of fo-dispatch-core.md `## Dispatch Adapter`'s "no `team_name` on subsequent dispatch" effect.)
-- Every stage dispatches fresh and blocks until completion — the bare-mode `Agent()` call blocks until the subagent completes, so concurrent dispatch is not possible (the Claude realization of fo-dispatch-core.md `## Dispatch Adapter`'s "when the adapter's dispatch is blocking" clause); dispatch one entity through one stage at a time and process completions inline.
-- No SendMessage reuse of prior agent names. Stage advancement is always a fresh `Agent()` dispatch seeded from entity frontmatter. `SendMessage(to="{ensign_name}")` against any pre-degrade name is forbidden.
-
-### Captain Report Template
-
-On Degraded Mode entry, the FO emits the following sentence verbatim to the captain (direct text output, not SendMessage):
-
-> Falling back to bare mode for the remainder of this session due to infrastructure failure. Prior background agents are presumed-zombified; I will not route work to them or through the team registry. If you want to escalate: restart the session to retry concurrent dispatch, or let me continue — every stage will still complete, just without concurrent dispatch.
-
-### Cooperative Shutdown Sweep
-
-On Degraded Mode entry, perform a single-pass cooperative shutdown sweep of every known agent name from session memory: one `SendMessage(to="{ensign_name}", message="shutdown_request")` per name. Ignore failures — best-effort, not transactional. Do not retry, track responses, or block on the outcome; proceed immediately to the first fresh bare-mode dispatch.
-
-Exempt any agent whose entity is in an active feedback-cycle state (tracked via a `### Feedback Cycles` subsection in the entity body; read from the worktree copy when `worktree:` is set on the entity, otherwise from main). Those reviewers may hold load-bearing context from the prior cycle that re-dispatch cannot reconstruct. Sweep feedback-cycle reviewers only on explicit captain confirmation.
+The two Claude dispatch exception bodies, each read only at its own failure trigger in `claude-fo-dispatch.md` — never at boot, never on a session where dispatch never fails.
 
 ## Break-Glass Manual Dispatch
 

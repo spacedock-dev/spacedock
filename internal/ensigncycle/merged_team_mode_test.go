@@ -13,7 +13,7 @@ import (
 // mergedAgentDispatch is the parsed shape of the merged-mode dispatch the FO emits
 // on a host where TeamCreate is gone (claude ≥2.1.178): an Agent tool_use carrying
 // a member name, the spacedock:ensign subagent type, run_in_background true, and NO
-// team_name. The merged dispatch's two back-channel halves are `name` (lead→worker)
+// team_name. The merged dispatch's two inter-agent communication halves are `name` (lead→worker)
 // and `run_in_background` (worker→lead); the absence of `team_name` is what
 // distinguishes it from a legacy team dispatch.
 type mergedAgentDispatch struct {
@@ -223,7 +223,7 @@ func TestMergedEnsignDispatchShape(t *testing.T) {
 			t.Errorf("name = %q, want the derived ensign name", d.name)
 		}
 		if !d.runInBackground {
-			t.Errorf("run_in_background = false, want true (the worker→lead back-channel)")
+			t.Errorf("run_in_background = false, want true (the worker→lead inter-agent communication)")
 		}
 		if d.hasTeamName {
 			t.Errorf("merged dispatch carries a team_name, want none")

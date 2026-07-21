@@ -4,13 +4,13 @@ This file defines how the shared first-officer core executes on Claude Code: Cap
 
 ## Dispatch reference (load at first dispatch)
 
-The Claude dispatch parts — the worker back-channel, the ID/next-id read, the `Agent()` spawn call and `SendMessage` advance handle, the Awaiting-Completion idle guardrail, the Degraded-Mode/break-glass/budget-failure trigger lines, the Context-Budget probe, and the Event-Loop reconcile sweep + Backstop — live in `references/claude-fo-dispatch.md`, read alongside `fo-dispatch-core.md` at the first worker dispatch (the exception bodies behind those triggers load at failure time via `Skill(skill="spacedock:fo-dispatch-recovery")`). (`claude-fo-dispatch.md`'s one legacy-override line handles a runtime that still exposes `TeamCreate`; it is the sole legacy load point.)
+The Claude dispatch parts — inter-agent communication, the ID/next-id read, the `Agent()` spawn call and `SendMessage` advance handle, the Awaiting-Completion idle guardrail, the dispatch-failure retry rung and the break-glass/budget-failure trigger lines, the Context-Budget probe, and the Event-Loop reconcile sweep + Backstop — live in `references/claude-fo-dispatch.md`, read alongside `fo-dispatch-core.md` at the first worker dispatch (the exception bodies behind those triggers load at failure time via `Skill(skill="spacedock:fo-dispatch-recovery")`).
 
 When filing a new task, read `id_style` from `status --boot --json`, then use `status --next-id` only when the style is `sequential` or `sd-b32` (see claude-fo-dispatch.md for the full read shape). A boot that only greets does not file a task.
 
 ## Terminal teardown (load at terminalization)
 
-The shared core loads `fo-merge-core.md` at the terminal/recovery boundary; that core invokes `«worker.shutdown»()`. On Claude, realize a deferred-core load as its own successful `Read` call against the exact path formed from retained `{first_officer_base}`. A terminal status mutation must complete the write-core `Read`, then the merge-core `Read`, before its Bash call; do not infer either core from this adapter or skip its read. The Claude shutdown binding is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch). When the runtime still exposes `TeamCreate`, its further bounded teardown is the legacy override.
+The shared core loads `fo-merge-core.md` at the terminal/recovery boundary; that core invokes `«worker.shutdown»()`. On Claude, realize a deferred-core load as its own successful `Read` call against the exact path formed from retained `{first_officer_base}`. A terminal status mutation must complete the write-core `Read`, then the merge-core `Read`, before its Bash call; do not infer either core from this adapter or skip its read. The Claude shutdown binding is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch).
 
 ## Captain Interaction
 

@@ -8,16 +8,20 @@ import (
 	"strings"
 )
 
-// degradedModeCaptainReportPrefix is the fixed lead of the verbatim captain report
-// sentence Diff 2's `## Degraded Mode` skill section mandates on trip. Matching the
-// fixed prefix (not the whole sentence) tolerates trailing whitespace/newline
-// variation a real model turn can introduce without weakening the observable: the
-// distinguishing content is the "Falling back to bare mode ... infrastructure
-// failure" clause, which no other FO output plausibly emits verbatim.
-const degradedModeCaptainReportPrefix = "Falling back to bare mode for the remainder of this session due to infrastructure failure."
+// retiredDegradedModeReportPrefix is the fixed lead of the verbatim captain report
+// the RETIRED `## Degraded Mode` section used to mandate on trip. It survives here
+// only as a wrong-way check: after the retirement, no contract prose mandates it, so
+// a bare-dispatch drive must NOT emit it. assertBareReachableObservables fails if it
+// reappears.
+const retiredDegradedModeReportPrefix = "Falling back to bare mode for the remainder of this session due to infrastructure failure."
 
-// recoverySkillArg is the Skill tool_use argument both live scenarios must observe
-// after their trigger — the resident trigger line's `Skill(skill="spacedock:fo-dispatch-recovery")` load.
+// retrySuffix is the distinct axis a bounded dispatch-failure re-attempt carries on
+// the `{worker_key}-{slug}-{stage}` name — never a `-cycleN` increment, so a retry
+// cannot advance the feedback counter.
+const retrySuffix = "-retry"
+
+// recoverySkillArg is the Skill tool_use argument the break-glass scenario must
+// observe after its trigger — the resident trigger line's `Skill(skill="spacedock:fo-dispatch-recovery")` load.
 const recoverySkillArg = "spacedock:fo-dispatch-recovery"
 
 // streamContentBlock is one tool_use/text content block of one assistant message
@@ -77,24 +81,60 @@ func inputStringField(input map[string]json.RawMessage, key string) string {
 	return s
 }
 
-// assertDegradedBareObservables is the AC-2 behavioral oracle: over the captured
-// stream it asserts (i) a Skill(skill="spacedock:fo-dispatch-recovery") tool_use
-// appears, (ii) the verbatim captain-report sentence appears in a text block, and
-// (iii) every Agent() tool_use that follows the report text omits BOTH `name` and
-// `run_in_background` (the bare-mode shape Degraded Mode's Effects mandate). It does
-// not require a specific ordering between (i) and (ii)/(iii) beyond "after the
-// trigger" — the trigger rides in the initial `-p` prompt (HEADLESS transport, per
-// the M4 decision), so the whole stream is post-trigger.
-func assertDegradedBareObservables(stream string) error {
+// assertBoundedRetryObservables is the AC-1 offline oracle: over the captured stream
+// it asserts a dispatch failure of one `(entity, stage)` is retried exactly ONCE and
+// no further. The first Agent() dispatch is the failed attempt; the bounded
+// re-attempt is a fresh Agent() dispatch carrying the distinct `-retry` suffix on the
+// same `{worker_key}-{slug}-{stage}` stem. No third Agent() call may appear for that
+// stem — the bound. It reads only the dispatch surface (Agent() names), introducing
+// no error-string classification.
+func assertBoundedRetryObservables(stream string) error {
+	var agentNames []string
+	walkStreamBlocks(stream, func(block streamContentBlock) {
+		if block.Type == "tool_use" && block.Name == "Agent" {
+			agentNames = append(agentNames, inputStringField(block.Input, "name"))
+		}
+	})
+	if len(agentNames) == 0 {
+		return fmt.Errorf("no Agent() dispatch observed in the stream — the bounded-retry path never dispatched")
+	}
+	base := agentNames[0]
+	if base == "" {
+		return fmt.Errorf("the first Agent() dispatch carried no name — the retry stem cannot be derived")
+	}
+	retryName := base + retrySuffix
+	retries := 0
+	for _, name := range agentNames[1:] {
+		if name == retryName {
+			retries++
+		}
+	}
+	if retries == 0 {
+		return fmt.Errorf("no re-dispatch carrying the %q suffix (%q) after the first Agent() dispatch %q — a dispatch failure must be retried once", retrySuffix, retryName, base)
+	}
+	if len(agentNames) > 2 {
+		return fmt.Errorf("%d Agent() calls for one (entity, stage) — the retry is bounded to the initial dispatch + one %q re-attempt; no third attempt may appear: observed %v", len(agentNames), retrySuffix, agentNames)
+	}
+	return nil
+}
+
+// assertBareReachableObservables is the AC-2 behavioral oracle, rewritten for the
+// post-retirement expectation: over the captured stream it asserts (i) at least one
+// bare-shaped Agent() call (neither `name` nor `run_in_background`) — bare dispatch is
+// reached — AND, as the wrong-way check the retirement preserves, (ii) NO retired
+// Degraded Mode captain report in any text block, and (iii) NO
+// Skill(skill="spacedock:fo-dispatch-recovery") load. A drive that still emits the
+// report or loads the recovery skill is now a FAILURE.
+func assertBareReachableObservables(stream string) error {
+	sawBareAgent := false
+	sawRetiredReport := false
 	sawRecoverySkill := false
-	sawCaptainReport := false
-	var nonBareAgentCalls []string
 
 	walkStreamBlocks(stream, func(block streamContentBlock) {
 		switch block.Type {
 		case "text":
-			if strings.Contains(block.Text, degradedModeCaptainReportPrefix) {
-				sawCaptainReport = true
+			if strings.Contains(block.Text, retiredDegradedModeReportPrefix) {
+				sawRetiredReport = true
 			}
 		case "tool_use":
 			switch block.Name {
@@ -103,22 +143,21 @@ func assertDegradedBareObservables(stream string) error {
 					sawRecoverySkill = true
 				}
 			case "Agent":
-				if inputHasKey(block.Input, "name") || inputHasKey(block.Input, "run_in_background") {
-					nonBareAgentCalls = append(nonBareAgentCalls, fmt.Sprintf("name-present=%v run_in_background-present=%v",
-						inputHasKey(block.Input, "name"), inputHasKey(block.Input, "run_in_background")))
+				if !inputHasKey(block.Input, "name") && !inputHasKey(block.Input, "run_in_background") {
+					sawBareAgent = true
 				}
 			}
 		}
 	})
 
-	if !sawRecoverySkill {
-		return fmt.Errorf("no Skill(skill=%q) tool_use observed in the stream — the Degraded Mode trigger did not load the recovery skill", recoverySkillArg)
+	if !sawBareAgent {
+		return fmt.Errorf("no bare-shaped Agent() call (neither `name` nor `run_in_background`) observed — bare dispatch was not reached")
 	}
-	if !sawCaptainReport {
-		return fmt.Errorf("the verbatim captain report sentence (prefix %q) was not observed in any text block", degradedModeCaptainReportPrefix)
+	if sawRetiredReport {
+		return fmt.Errorf("the retired Degraded Mode captain report (%q) still appeared — it was retired with Degraded Mode and must not fire on a bare drive", retiredDegradedModeReportPrefix)
 	}
-	if len(nonBareAgentCalls) > 0 {
-		return fmt.Errorf("%d Agent() call(s) carried `name` or `run_in_background` after Degraded Mode tripped — bare mode requires BOTH omitted: %v", len(nonBareAgentCalls), nonBareAgentCalls)
+	if sawRecoverySkill {
+		return fmt.Errorf("a Skill(skill=%q) load appeared — a post-retirement bare drive must NOT load the recovery skill", recoverySkillArg)
 	}
 	return nil
 }

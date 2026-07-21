@@ -20,7 +20,7 @@ import (
 // discovers. The test-only `integration` package is deliberately absent.
 var userSkills = []string{
 	"commission", "debrief", "refit", "survey", "ensign",
-	"first-officer", "using-legacy-claude-team", "present-gate", "feedback-rejection-flow",
+	"first-officer", "present-gate", "feedback-rejection-flow",
 }
 
 // skillsRoot is the shipped skill tree under test.
@@ -327,9 +327,9 @@ var machineDependentPaths = []string{
 
 // isClaudeAdapter reports whether a shipped file is a Claude-host coupling surface
 // (a claude-*-runtime.md adapter, a claude-fo-*.md FO module reference, or the
-// Claude-only using-legacy-claude-team skill), where a `~/.claude/teams` read is
-// the legitimate quarantined coupling. ONLY the personal-config check excludes
-// these; the interpreter / machine-path checks apply.
+// survey skill), where a `~/.claude/teams` read is the legitimate quarantined
+// coupling. ONLY the personal-config check excludes these; the interpreter /
+// machine-path checks apply.
 func isClaudeAdapter(path string) bool {
 	base := filepath.Base(path)
 	if strings.HasPrefix(base, "claude-") && strings.HasSuffix(base, "-runtime.md") {
@@ -341,11 +341,9 @@ func isClaudeAdapter(path string) bool {
 	if strings.HasPrefix(base, "claude-fo-") && strings.HasSuffix(base, ".md") {
 		return true
 	}
-	// The legacy TeamCreate lifecycle carries the same legitimate ~/.claude/teams
-	// coupling (the NEVER-delete constraint + the diagnostic startup probe); it
-	// lives in the conditionally-loaded legacy skill, read only on a probe match.
-	return strings.Contains(path, filepath.Join("using-legacy-claude-team", "SKILL.md")) ||
-		strings.Contains(path, filepath.Join("survey", "SKILL.md"))
+	// The survey skill carries the same legitimate ~/.claude coupling (its
+	// session-history scan reads the host's local agent state).
+	return strings.Contains(path, filepath.Join("survey", "SKILL.md"))
 }
 
 // TestShippedSurfaceHasNoHiddenMachineDependency is a no-MACHINE-DEPENDENCY

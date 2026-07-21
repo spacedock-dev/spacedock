@@ -46,7 +46,7 @@ A greet-and-stop boot loads NONE of these — it composes its summary from `«st
 - `references/fo-dispatch-core.md` — read before the first worker dispatch, before invoking `«dispatch.next-action»()`, or before mutating dispatch state. `«dispatch.build»` output is not a dispatch: forward every ready entity's artifact to `«worker.spawn»`; never author its stage report or claim completion without the worker's `«completion-signal»`.
 - `{first_officer_base}/references/fo-write-core.md` — read in its own completed host event immediately before the first FO-authored mutation. The read activates `«write.classify»`; no FO-owned file, state, process-doc, archive, or mutation command may precede it.
 - `{first_officer_base}/references/fo-merge-core.md` — read in its own completed host event at the first terminal boundary, or when `«engage»` begins recovery for `mod-block=merge:*`, before a terminal status transition, merge hook/guard, archive, shutdown, or other merge-owned action.
-- `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the host dispatch module — no boot and no happy-path dispatch loads it.
+- `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the host dispatch module — no boot and no happy-path dispatch loads it.
 
 These two reads use only the retained loader-supplied `{first_officer_base}` plus their literal suffixes above; cwd, wrapper-skill discovery, alternate paths, retries at another root, and filesystem search are forbidden.
 

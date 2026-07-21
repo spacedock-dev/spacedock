@@ -1,6 +1,6 @@
-// ABOUTME: AC-5 structural guard — the legacy TeamCreate machinery is layered
-// ABOUTME: into a conditionally-loaded skill, with an externally-anchored removal
-// ABOUTME: trigger; the normal-path dispatch contract inlines none of it.
+// ABOUTME: AC-1 structural guard — the legacy TeamCreate path is fully retired: no
+// ABOUTME: skill directory, no load token, no select:TeamCreate probe, and the
+// ABOUTME: normal-path dispatch contract inlines none of the legacy machinery.
 package contractlint
 
 import (
@@ -10,14 +10,12 @@ import (
 	"testing"
 )
 
-// legacyMachineryStrings are the legacy TeamCreate/TeamDelete machinery markers
-// that AC-5 requires to live ONLY in the conditionally-loaded
-// using-legacy-claude-team skill, never inline in the normal-path dispatch
-// contract (claude-fo-dispatch.md) every current-host session reads — the
-// recovery ladder, the bounded terminal-teardown apparatus, the registry-desync
-// issue, and the NAME_PATTERN naming constraint. A current-host session takes the
-// no-match probe branch and never loads the legacy skill, so a re-inlined marker
-// would be real context weight every such session pays.
+// legacyMachineryStrings are the legacy TeamCreate/TeamDelete machinery markers the
+// retirement removes entirely — the recovery ladder, the bounded terminal-teardown
+// apparatus, the registry-desync issue, and the NAME_PATTERN naming constraint. They
+// lived only in the now-deleted using-legacy-claude-team skill; a current-host
+// session reads the normal-path dispatch contract (claude-fo-dispatch.md), so a
+// re-inlined marker would be real context weight every session pays.
 var legacyMachineryStrings = []string{
 	"TERMINAL_TEARDOWN_BOUNDED",
 	"36806",
@@ -28,27 +26,26 @@ var legacyMachineryStrings = []string{
 }
 
 // deletedFromMergedFloor are strings the rewrite REMOVES outright (not relocated):
-// the back-channel works without the `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` opt-in
-// flag (OQ-2), so any captain-facing "set the flag to enable team mode" hint is
-// stale. The whole env-var token must be absent from BOTH the normal-path dispatch
-// contract and the legacy skill — re-introducing it anywhere resurrects the
-// obsolete advice. The CI lane in runtime-live-e2e.yml legitimately sets the flag
-// (test config, not captain-facing skill prose), so it is out of this check's
-// scope (skills/ only).
+// inter-agent communication works without the `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`
+// opt-in flag (OQ-2), so any captain-facing "set the flag to enable team mode" hint
+// is stale. The whole env-var token must be absent from the normal-path dispatch
+// contract — re-introducing it resurrects the obsolete advice. The CI lane in
+// runtime-live-e2e.yml legitimately sets the flag (test config, not captain-facing
+// skill prose), so it is out of this check's scope (skills/ only).
 var deletedFromMergedFloor = []string{
 	"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS",
 }
 
 // normalPathDispatchContractPath is claude-fo-dispatch.md — the Claude FO dispatch
 // contract a current-host session reads at first dispatch. It carries the
-// worker-back-channel shape and the idle/degraded discipline inline; it must
-// inline none of the legacy TeamCreate machinery.
+// inter-agent-communication shape and the idle/failure-retry discipline inline; it
+// must inline none of the legacy TeamCreate machinery.
 func normalPathDispatchContractPath(t *testing.T) string {
 	return filepath.Join(skillsRoot(t), "first-officer", "references", "claude-fo-dispatch.md")
 }
 
-// legacyClaudeTeamSkillPath is the conditionally-loaded legacy skill that owns the
-// full TeamCreate lifecycle, read only on a probe match.
+// legacyClaudeTeamSkillPath is the retired legacy skill path, asserted absent on
+// disk by TestLegacyTeamCreatePathFullyRetired.
 func legacyClaudeTeamSkillPath(t *testing.T) string {
 	return filepath.Join(skillsRoot(t), "using-legacy-claude-team", "SKILL.md")
 }
@@ -62,77 +59,56 @@ func readFileString(t *testing.T, path string) string {
 	return string(data)
 }
 
-// TestNormalPathContractInlinesNoLegacyMachinery is AC-5's layering invariant
+// TestNormalPathContractInlinesNoLegacyMachinery is AC-1's layering invariant
 // (structural-ABSENCE): the normal-path dispatch contract claude-fo-dispatch.md
-// inlines NONE of the legacy TeamCreate machinery markers, and neither contract
-// carries the stale enable-the-flag hint. A current-host session that takes the
-// no-match probe branch never loads the legacy skill, so a re-inlined marker is
-// real context weight every such session pays. This asserts ABSENCE from the
-// normal-path contract only — it does not grep the legacy skill for its own prose
-// (that would be a tautological prose-grep); the legacy machinery's continued
-// existence is bound by TestLegacyConsumerRetiredButPathLives (the skill file and
-// its dispatch-contract load line still resolve), not by a string match here.
+// inlines NONE of the legacy TeamCreate machinery markers, and does not carry the
+// stale enable-the-flag hint. With the legacy skill retired, every current-host
+// session reads only this contract, so a re-inlined marker is real context weight
+// every such session pays. This asserts ABSENCE from the normal-path contract; the
+// legacy skill's full retirement is bound by TestLegacyTeamCreatePathFullyRetired.
 func TestNormalPathContractInlinesNoLegacyMachinery(t *testing.T) {
 	contract := readFileString(t, normalPathDispatchContractPath(t))
-	legacySkill := readFileString(t, legacyClaudeTeamSkillPath(t))
 
 	for _, marker := range legacyMachineryStrings {
 		if strings.Contains(contract, marker) {
-			t.Errorf("claude-fo-dispatch.md inlines legacy machinery marker %q — it belongs only in the conditionally-loaded using-legacy-claude-team skill", marker)
+			t.Errorf("claude-fo-dispatch.md inlines legacy machinery marker %q — the legacy TeamCreate path is retired; it must not reappear", marker)
 		}
 	}
 	for _, gone := range deletedFromMergedFloor {
 		if strings.Contains(contract, gone) {
 			t.Errorf("claude-fo-dispatch.md still carries %q — the rewrite removes this stale hint outright", gone)
 		}
-		if strings.Contains(legacySkill, gone) {
-			t.Errorf("using-legacy-claude-team/SKILL.md carries %q — this stale hint is removed, not relocated", gone)
-		}
 	}
 }
 
-// TestNormalPathContractNamesLegacySkill is the load-point half of the layering:
-// the normal-path dispatch contract retains exactly the probe branch that names
-// the legacy skill, so the conditional load actually resolves. (The reference-
-// closure check in boot_resident_closure_test.go proves the named skill exists on
-// disk via the boot-resident runtime adapter that also names it.)
-func TestNormalPathContractNamesLegacySkill(t *testing.T) {
+// TestNormalPathContractNamesNoLegacySkill is the inverted load-point half: the
+// legacy probe branch is deleted, so the normal-path dispatch contract no longer
+// names the retired legacy skill token. A re-added token would dangle — no skill
+// file resolves it — which boot_resident_closure_test.go's closure check also catches.
+func TestNormalPathContractNamesNoLegacySkill(t *testing.T) {
 	contract := readFileString(t, normalPathDispatchContractPath(t))
-	if !strings.Contains(contract, "spacedock:using-legacy-claude-team") {
-		t.Errorf("claude-fo-dispatch.md must name spacedock:using-legacy-claude-team so the legacy probe branch can load it")
+	if strings.Contains(contract, "spacedock:using-legacy-claude-team") {
+		t.Errorf("claude-fo-dispatch.md still names spacedock:using-legacy-claude-team — the legacy probe branch is retired and must not name the deleted skill")
 	}
 }
 
-// TestLegacyConsumerRetiredButPathLives is AC-5's removal-trigger binding after
-// the #395 pin retired. The legacy removal trigger has TWO conditions: (1) no live
-// lane drives the legacy branch, AND (2) no runtime the FO targets still exposes
-// TeamCreate. Unpinning the live lane (this task) satisfies only (1) — a user on
-// installer-`stable` (2.1.170, still TeamCreate-capable) still hits the legacy
-// path, so condition (2) is unmet and the path is NOT dead code. This test binds
-// two independent sources so it stays a structural guard, not a self-referential
-// prose-grep:
-//   - the REAL .github/workflows/runtime-live-e2e.yml NO LONGER pins a
-//     TeamCreate-capable version (SPACEDOCK_PINNED_CLAUDE_VERSION absent) — the
-//     live consumer is RETIRED; AND
-//   - the legacy skill and its dispatch-contract load line STILL EXIST — the
-//     best-effort legacy path is RETAINED, not deleted.
-//
-// The externally-checkable proxy for legacy DELETION is no longer this CI pin (now
-// retired); it is the future condition "even installer-`stable` Claude is ≥ the
-// merged floor" — a separate trigger, out of this task's scope.
-func TestLegacyConsumerRetiredButPathLives(t *testing.T) {
-	workflow := readFileString(t, filepath.Join(repoRoot(t), ".github", "workflows", "runtime-live-e2e.yml"))
-	if strings.Contains(workflow, "SPACEDOCK_PINNED_CLAUDE_VERSION") {
-		t.Errorf("the live-e2e workflow still pins SPACEDOCK_PINNED_CLAUDE_VERSION — the #395 pin should be retired so the live lane floats to the merged floor (the live legacy consumer is retired)")
+// TestLegacyTeamCreatePathFullyRetired is AC-1's mechanical guard: the legacy
+// TeamCreate path is fully retired from the shipped FO contract. It binds two
+// independent sources — the filesystem (the skill directory is gone) and the
+// contract text (no select:TeamCreate probe survives on the FO dispatch surface) —
+// so it stays a structural guard, not a self-referential prose-grep. Re-adding the
+// skill dir or the probe reds this test.
+func TestLegacyTeamCreatePathFullyRetired(t *testing.T) {
+	skillPath := legacyClaudeTeamSkillPath(t)
+	if _, err := os.Stat(skillPath); !os.IsNotExist(err) {
+		t.Errorf("using-legacy-claude-team/SKILL.md still resolves on disk (stat err=%v) — AC-1 retires the legacy skill entirely", err)
+	}
+	if _, err := os.Stat(filepath.Dir(skillPath)); !os.IsNotExist(err) {
+		t.Errorf("the using-legacy-claude-team skill directory still exists (stat err=%v) — retire the directory, not just the file", err)
 	}
 
 	contract := readFileString(t, normalPathDispatchContractPath(t))
-	if !strings.Contains(contract, "spacedock:using-legacy-claude-team") {
-		t.Errorf("claude-fo-dispatch.md no longer names spacedock:using-legacy-claude-team — the best-effort legacy path must be RETAINED (a user on installer-stable still hits it); deletion is a separate trigger")
-	}
-
-	legacySkill := readFileString(t, legacyClaudeTeamSkillPath(t))
-	if strings.TrimSpace(legacySkill) == "" {
-		t.Errorf("using-legacy-claude-team/SKILL.md is empty or missing — the best-effort legacy path must be RETAINED until even installer-stable Claude clears the merged floor")
+	if strings.Contains(contract, "select:TeamCreate") {
+		t.Errorf("claude-fo-dispatch.md still carries a select:TeamCreate probe on the FO dispatch surface — the legacy TeamCreate probe is retired")
 	}
 }
