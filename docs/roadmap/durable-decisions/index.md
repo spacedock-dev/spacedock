@@ -44,10 +44,10 @@ A captain's gate decision, once made, is recorded by machinery that cannot mis-f
 **Shape — Shaping FO**
 - [x] **Scope-lock** with the captain — locked 2026-07-21: recorder group only (3k, xb, h1, 02av)
 - [x] **Carve** — 4 members stamped, index written; drivable query above
-- [ ] **Ideate** — 3k gate rebind/close first; then xb, h1 parallel; 02av last
-- [ ] **⚠️ Preflight staff review (sprint-wide)** — two-seat panel per the 0260 precedent *(shape TBD at the time; the 7wv formalization is NOT this train's deliverable)*
-- [ ] **Present ideation gates** — recorded in gates frontmatter *(captain decides)*
-- [ ] **Package** — cold-boot Commander package, AFTER the preflight box resolves
+- [x] **Ideate** — complete 2026-07-21: the recorder through eight attempts (two captain scope cuts, the fold, the render war); xb through three (the fallback question, the decoupling reframe); h1 with its recorded decline; 02av's reframe in one round
+- [x] **⚠️ Preflight staff review (sprint-wide)** — fable seat 2026-07-21, READY AFTER FOLDS (6 material, 1 needs-decision, 5 recorded declines) → `staff-review.md`; all folds applied and verified, both captain rulings given; closure complete
+- [x] **Present ideation gates** — all four closed-approve with pending advances, every briefing byte-verifiable in its room; two design questions answered mid-gate (the no-subspace fallback; the decoupling reframe)
+- [x] **Package** — `dispatch-sprint-execution.md`, written after the preflight resolved (the 0260 sequencing lesson, kept)
 
 **Drive — Commander (separate cold-booted session)**
 - [ ] Implementation → validation → done per member; detached adversarial audit on shipped-contract surfaces
