@@ -61,7 +61,7 @@ func TestDoctorVerdicts(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
 			manifestPath := filepath.Join("testdata", c.manifest)
-			code := RunDoctor(manifestPath, c.host, binaryVersionForTest, &stdout, &stderr)
+			code := RunDoctor(manifestPath, c.host, binaryVersionForTest, InstallSource{}, &stdout, &stderr)
 			if code != c.wantExit {
 				t.Fatalf("exit = %d, want %d (stdout=%q stderr=%q)", code, c.wantExit, stdout.String(), stderr.String())
 			}
@@ -80,7 +80,7 @@ func TestDoctorVerdicts(t *testing.T) {
 func TestDoctorMalformedNamesManifest(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	manifestPath := filepath.Join("testdata", "malformed-version.json")
-	code := RunDoctor(manifestPath, "claude", binaryVersionForTest, &stdout, &stderr)
+	code := RunDoctor(manifestPath, "claude", binaryVersionForTest, InstallSource{}, &stdout, &stderr)
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1", code)
 	}

@@ -53,7 +53,7 @@ An unsandboxed bootstrap launch carries no safehouse isolation, so per-action pe
 | `spacedock install` | Install the per-host plugin, then run the compatibility check |
 | `spacedock doctor` | Run the compatibility check alone |
 
-Both take `--host claude|codex|pi` (default `claude`). When `doctor` reports the plugin is out of date, refresh it with `spacedock install`. When the plugin is still contract-compatible but a newer one is available, `doctor` and the front-door launch print an opt-in upgrade hint (`run spacedock install --host <host> to refresh`); the hint never blocks the launch. See [Install Spacedock](../get-started/install.md) for the full setup path.
+Both take `--host claude|codex|pi` (default `claude`). When `doctor` reports the plugin is out of date, refresh it with `spacedock install`. When `doctor` reports the **binary** is out of date, it prints the upgrade path that matches how the binary was installed — `brew upgrade spacedock` for a stable Homebrew install, `brew upgrade spacedock@next` for the edge (`@next`) channel, a source rebuild for a non-Homebrew build, and a run-on-host hint when Homebrew isn't reachable (e.g. inside a sandbox). When the plugin is still contract-compatible but a newer one is available, `doctor` and the front-door launch print an opt-in upgrade hint (`run spacedock install --host <host> to refresh`); the hint never blocks the launch. See [Install Spacedock](../get-started/install.md) for the full setup path.
 
 ## Workflow
 

@@ -97,19 +97,20 @@ func ParseMajorMinor(v string) (major, minor int, ok bool) {
 // manifest is absent), not here — Compare always has a raw plugin version to
 // evaluate.
 func Compare(host, pluginVersion, binaryVersion string) Result {
-	return compareNamed(host, "", pluginVersion, binaryVersion)
+	return compareNamed(host, "", pluginVersion, binaryVersion, InstallSource{})
 }
 
 // compareNamed is Compare with an optional manifest path woven into the
-// malformed-version message so a packaging bug names the offending file.
-func compareNamed(host, manifestPath, pluginVersion, binaryVersion string) Result {
+// malformed-version message so a packaging bug names the offending file, and the
+// detected install source that tailors the too-old-binary remedy.
+func compareNamed(host, manifestPath, pluginVersion, binaryVersion string, src InstallSource) Result {
 	bMajor, bMinor, bOk := ParseMajorMinor(binaryVersion)
 	if !bOk {
 		// A binary version with no parseable major.minor can only be an
 		// integer-era source build (`dev`, pre-D3 embed) — treated as too-old,
 		// with the existing remedy's "build from source" arm doubling as the
 		// rebuild hint.
-		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy())}
+		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy(src))}
 	}
 	pMajor, pMinor, pOk := ParseMajorMinor(pluginVersion)
 	if !pOk {
@@ -127,7 +128,7 @@ func compareNamed(host, manifestPath, pluginVersion, binaryVersion string) Resul
 	}
 	switch {
 	case bMajor < pMajor || (bMajor == pMajor && bMinor < pMinor):
-		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy())}
+		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy(src))}
 	case bMajor > pMajor || (bMajor == pMajor && bMinor > pMinor):
 		return Result{Verdict: TooOldPlugin, Message: mismatchMessage(binaryVersion, pluginVersion, "Update the plugin to continue.", tooOldPluginRemedy(host))}
 	default:
@@ -219,13 +220,60 @@ func mismatchMessage(binaryVersion, pluginVersion, direction, remedy string) str
 		binaryVersion, pluginVersion, direction, remedy)
 }
 
-// tooOldBinaryRemedy is the pinned too-old-binary remedy block: it leads with the
-// Homebrew upgrade, keeps the source-build fallback, and names the binary-vs-plugin
-// distinction (refreshing the plugin instead is a different command).
-func tooOldBinaryRemedy() string {
-	return "  Upgrade via Homebrew: brew upgrade spacedock\n" +
-		"  Or build from source: go build -o spacedock ./cmd/spacedock\n" +
-		"  Or refresh the plugin instead: spacedock install"
+// SourceKind identifies how the running binary was installed, selecting the
+// too-old-binary upgrade instruction that actually applies.
+type SourceKind int
+
+const (
+	// SourceUnknown is the safe fallback: the install source could not be
+	// determined, so the remedy offers the generic three-way block.
+	SourceUnknown SourceKind = iota
+	// BrewStable is a Homebrew install of the stable `spacedock` cask.
+	BrewStable
+	// BrewEdge is a Homebrew install of the edge `spacedock@next` cask — a
+	// separate cask token, so `brew upgrade spacedock` is the wrong command.
+	BrewEdge
+	// NonBrew is a source build, a downloaded release, or a proxy `go install` —
+	// `brew upgrade` does not apply; the binary must be rebuilt or re-downloaded.
+	NonBrew
+)
+
+// InstallSource carries the detected install source the too-old-binary remedy
+// switches on. HostOnly is set when the binary is Homebrew-owned but `brew` is
+// not reachable in the current execution context (a sandbox or minimal env), so
+// the upgrade must be run on the host rather than in place. The zero value
+// {SourceUnknown, false} reproduces the generic remedy — the reason the public
+// Compare signature stays untouched.
+type InstallSource struct {
+	Kind     SourceKind
+	HostOnly bool
+}
+
+// tooOldBinaryRemedy renders the too-old-binary remedy for the detected install
+// source: the right brew formula for a Homebrew install, a source rebuild for a
+// non-brew build, and a run-on-host hint when Homebrew is unreachable (HostOnly).
+// The SourceUnknown zero value reproduces the generic three-way block. Every arm
+// keeps the binary-vs-plugin distinction line — refreshing the plugin instead is
+// a different command than upgrading the binary.
+func tooOldBinaryRemedy(src InstallSource) string {
+	const refresh = "  Or refresh the plugin instead: spacedock install"
+	switch src.Kind {
+	case BrewStable, BrewEdge:
+		formula := "spacedock"
+		if src.Kind == BrewEdge {
+			formula = "spacedock@next"
+		}
+		if src.HostOnly {
+			return "  Homebrew isn't reachable here (e.g. a sandbox). Upgrade on your host, then relaunch: brew upgrade " + formula + "\n" + refresh
+		}
+		return "  Upgrade via Homebrew: brew upgrade " + formula + "\n" + refresh
+	case NonBrew:
+		return "  Rebuild from source: go build -o spacedock ./cmd/spacedock (or re-download the latest release)\n" + refresh
+	default: // SourceUnknown
+		return "  Upgrade via Homebrew: brew upgrade spacedock\n" +
+			"  Or build from source: go build -o spacedock ./cmd/spacedock\n" +
+			refresh
+	}
 }
 
 // tooOldPluginRemedy is the pinned too-old-plugin remedy line, parameterized by
