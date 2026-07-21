@@ -257,7 +257,7 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 The exact first-use journey, minimal schema, helper boundary, examples, and lifecycle
 are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `9c0ee9ad469ca0399e657b146e70f9de524387851ccbd3a0a4d9a0fd6d4b08b7`).
+(SHA-256 `681b23483f61202094f8c6095cad381f448b98b24e1098716cbf3601b4767aa6`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
@@ -1235,3 +1235,29 @@ the doc is internally consistent: the landed spec speaks only in component terms
 everything task-tagged (owner tags, diagram prefixes, example ids) is declared removable at
 landing. This closes the contract-doc pass; the seven retained resolution ACs (AC-1, AC-4,
 AC-6, AC-10, AC-12, AC-13, AC-14) and the resolution-first split are unchanged.
+
+## Stage Report: ideation (cycle 21)
+
+Codex preflight seat (`staff-review-codex.md`) found the contract's operative sections still describing the `gate review` command architecture the captain retired at xb's gate (Material 3), plus digest (Material 2) and consumption (Material 6) semantics needing captain-ruling alignment. Four captain-directed amendments to `gate-resolution-frontmatter-contract.md`, evergreen component language.
+
+- DONE: Gate-review retirement — amend every operative section to the approved overridable-channel architecture.
+  Retired `spacedock gate review` from the first-use journey, the Go helper boundary, and behavioral-proof item 5; presentation is now an overridable channel of the present-gate skill (default chat; override = a provider-owned hardened script); result validation + provider id-normalization are recorder-side verbs (binary subspace-free, checkable); the channel calls the recorder and never writes gates. Schema owner tag: id-normalization "specified AND implemented recorder-side". Diagram 2's obtain node corrected (validate+normalize moved to the recorder node). No `gate review`/retired-arch phrases remain; both diagrams parse as `flowchart-v2`. Source: xb's attempt-3 approved entity.
+- DONE: Digest domains — name the two domains and the divergence fixture.
+  Added a "Digest domains" paragraph to the schema section: the canonical-bytes (JCS) briefing digest emitted/validated going forward; the raw-file pin is the marked legacy domain (shaping-era records, honest history, no rewrite); the recorder accepts it on replay. Behavioral-proof item 7 is the formatting-only fixture (JCS stable, raw-file changes).
+- DONE: Consumption semantics — align the lifecycle to authorization-only.
+  Rule 6 now reads: `consumed` marks the authorization spent atomically with the status transition, provably once; the dispatch effect is the dispatch machinery's, at-least-once retryable; receipts stay declined. Named the two crash windows; behavioral-proof item 8 is the authorization-side fixtures that surface them without double-firing.
+- DONE: Recording identity — add the sentence to the lifecycle rules.
+  A resolution is recorded under the identity that rendered it; a chat-directed closure records under the First Officer's identity on delegated authority with the directive quoted; adopting an advisory provider result as binding carries an explicit adoption note naming the authorizer.
+- DONE: Confirm the amendments leave the seven retained resolution ACs unchanged.
+  AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14 keep their resolution-side cores; these amendments touch only presentation architecture, digest domains, consumption semantics, and recording identity — not the AC set.
+
+### Summary
+
+The contract's operative sections now match the architecture the captain approved at xb's
+gate — presentation retired from the binary to an overridable present-gate channel,
+validation/normalization homed recorder-side, the binary subspace-free — closing the codex
+seat's Material 3 shared-region collision. Material 2 (two named digest domains + a
+divergence fixture) and Material 6 (authorization-only consumption + two crash-window
+fixtures) align to the captain's index rulings, and the recording-identity sentence lands
+in the lifecycle. New contract SHA-256 `681b2348…`; the body reference updated. The seven
+retained resolution ACs (AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, AC-14) are unchanged.

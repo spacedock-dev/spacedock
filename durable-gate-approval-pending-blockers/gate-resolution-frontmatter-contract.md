@@ -41,7 +41,7 @@ records stay advisory:
 
 ```mermaid
 flowchart TB
-    obtain["xb: present package,<br/>validate + normalize result"] --> res["3k: record the resolution"]
+    obtain["xb: present package<br/>chat or override float"] --> res["3k: record + validate,<br/>normalize provider id"]
     res -->|"binding approve"| app["h1: application<br/>consumed exactly once"]
     app --> elig["h1: eligibility"] --> effect["existing transition + dispatch"]
     res -.->|"advisory"| round["02av: round records<br/>no application, ever"]
@@ -59,9 +59,18 @@ gate:
 > so the ensign can show you the complete design, receive your annotations directly,
 > and revise it before I bring it back for approval? [Y/n]
 
-On yes, the First Officer uses `followup_task` on the still-addressable gate-attempt
-ensign. That same ensign checks for `subspace-tui` and the Subspace review skill.
-Missing pieces produce the exact relevant action:
+Presentation is an **overridable channel of the present-gate skill**, not a recorder
+verb. The default channel is chat: the First Officer renders the gate-review template in
+conversation and records the captain's chat resolution through the recorder, exactly as
+every gate is recorded. A workflow or session may declare an **override channel** — a
+provider-owned hardened script (a Subspace float) that presents the design as a briefing
+package in one blocking review and returns a retained result. Selecting the override
+probes the presenter (`subspace-tui` and the Subspace review skill, version-gated) before
+any side effect; if it is absent or version-mismatched, the selection falls back to chat,
+emitting one line that names both the install remedy and the fallback, with zero side
+effects and no retention directory created. A missing presenter is an ordinary condition
+selecting the chat channel — not a mode, and it never blocks the gate. The install remedy
+the fallback names:
 
 ```sh
 brew install spacedock-dev/tap/subspace-beta
@@ -73,33 +82,26 @@ codex plugin marketplace add spacedock-dev/marketplace
 codex plugin add subspace@spacedock
 ```
 
-The ensign assembles the complete Briefing, binds a frozen snapshot of the available
-provider-owned Probe input and history as supporting `Reference` context, and invokes
-one command:
+On yes, the First Officer uses `followup_task` on the still-addressable gate-attempt
+ensign and invokes the override channel. The override script assembles the complete
+Briefing, binds a frozen snapshot of the available provider-owned Probe input and history
+as supporting `Reference` context, runs the presenter as one blocking child, and writes
+the result **room-resident from the first byte to a caller-owned path the script never
+deletes** — so the result survives launcher death, validation failure, and the
+leave-open/hold path. Creating a Zellij pane or session is only launch progress; it never
+means the review completed. The gate-attempt ensign remains unresolved and addressable for
+that whole blocking call; the First Officer waits with `wait_agent({timeout_ms:300000})`
+and, if the wait times out while the ensign is still active, waits again rather than
+treating the timeout as completion or failure.
 
-```sh
-${SPACEDOCK_BIN:-spacedock} gate review 3k \
-  --workflow-dir /absolute/path/to/workflow \
-  --stage ideation \
-  --briefing /absolute/path/to/briefing.json
-```
-
-Before opening the review, the command says that workflow state will not advance. It
-validates the explicit Briefing and its referenced resources, derives the canonical
-pane title, and runs `subspace-tui` as one blocking child process. Creating a Zellij
-pane or session is only launch progress; it never means the review completed. The
-command succeeds only after the TUI exits, the returned log and Resolution validate,
-and the provider atomically retains them. A launch, controller, child-exit, validation,
-or retention failure preserves the package, diagnostics, and attempt for retry. The
-command never changes entity frontmatter.
-
-The gate-attempt ensign remains unresolved and addressable for that whole blocking
-call. The First Officer must wait with `wait_agent({timeout_ms:300000})`; if the wait
-times out while the ensign is still active, the First Officer waits again rather than
-treating the timeout as completion or failure. Only after the command returns and the
-ensign reports the retained result does the First Officer resume gate handling. This
-uses the existing `followup_task` and worker-wait lifecycle rather than adding a
-presentation worker type.
+The **recorder** — not the presentation channel — validates the returned result and
+records the resolution. It verifies the returned artifact digest against the digest bound
+by the attempt Briefing, and only on a digest match normalizes the provider envelope
+briefing id to the attempt briefing id; on a mismatch it rejects without normalizing, so
+an unverified result is never laundered into the attempt id. Result validation and
+id-normalization are **recorder-side** verbs that check whatever the channel produced —
+the recorder's binary carries **zero** Subspace knowledge (a checkable property). The
+presentation channel calls the recorder and never writes `gates` itself.
 
 The Briefing never references a provider file that the run will append. Its frozen
 Probe snapshot is immutable input only. The provider writes the fresh exact-Briefing
@@ -112,15 +114,15 @@ review; implementing ProbeResult/comparison UI is not part of the recorder.
 The ensign receives the annotations directly, revises the design, reruns affected
 Probes, and publishes another immutable Briefing in the same open gate attempt. The
 First Officer then validates the returned Resolution against the current Briefing,
-records the gate state, and brings the revised gate to the captain. Approval can then
-be applied immediately when its blockers and hold permit it.
+records the gate state through the recorder, and brings the revised gate to the captain.
+Approval can then be applied immediately when its blockers and hold permit it.
 
-On no, the current path remains: the First Officer presents the gate, relays comments
-to the ensign, and later records the captain's decision.
+On no, the current path remains: the First Officer presents the gate in chat, relays
+comments to the ensign, and later records the captain's decision through the recorder.
 
 ## Minimum schema
 
-**Owner:** 3k (the record schema). The `application.*` field cluster is h1-owned; the provider-envelope id-normalization rule (envelope briefing id → attempt briefing id after digest validation) is specified here, implemented by xb.
+**Owner:** 3k (the record schema). The `application.*` field cluster is h1-owned; the provider-envelope id-normalization rule (envelope briefing id → attempt briefing id after digest validation) is specified here AND implemented recorder-side (3k) — the presentation-side implementation home was retired at xb's attempt-3 gate.
 
 The first-use schema uses existing product language:
 
@@ -264,6 +266,16 @@ An open attempt uses the same binding field and has no Resolution or application
     room-ref: subspace-room:3k-gate-design
 ```
 
+**Digest domains (captain ruling, 2026-07-21).** `briefing.digest` names one of two
+domains. Going forward the recorder emits and validates the **canonical-bytes** briefing
+digest — SHA-256 over the RFC 8785 (JCS) canonical bytes of the Review & Gate Briefing
+object. Every gate record written during shaping is explicitly the **raw-file pin** — a
+SHA-256 over the raw briefing/snapshot file bytes — retained as honest history with no
+rewrite and no silent reinterpretation; the recorder accepts this marked legacy domain on
+replay. The two domains are provably distinct: re-serializing the same Briefing JSON with
+sorted, compact keys leaves the canonical-bytes digest stable and changes the raw-file pin
+(the formatting-only fixture in Behavioral proof).
+
 ## Fields in the first implementation
 
 **Owner:** 3k; the `application.*` rows are h1-owned (marked below).
@@ -316,10 +328,18 @@ duplicate that authority without making the gate decision more durable.
 5. A pending application is eligible only when its gate/attempt/Briefing and stage are
    current, its reviewed input is unchanged, every blocker is satisfied, no execution
    hold is active, and decision/action/target agree.
-6. The First Officer applies an eligible action through the existing workflow
-   transition and dispatch machinery. The application becomes `consumed` only in the
-   durable state change that records that machinery's successful outcome. Re-reading
-   `consumed` never authorizes another application.
+6. **`consumed` marks the authorization spent, not the effect done.** The First Officer
+   applies an eligible action through the existing transition machinery: the application
+   becomes `consumed` **atomically with the status transition**, spending the
+   authorization provably once — re-reading `consumed` never authorizes another
+   application. The dispatch **effect** is the dispatch machinery's, documented
+   **at-least-once retryable**; the gate record carries no dispatch identity, receipt, or
+   reconciliation state (receipts stay declined). Two crash windows are surfaced rather
+   than double-fired by authorization-side fixtures: (a) a crash after `consumed` commits
+   but before dispatch starts — the authorization is already spent, so recovery re-drives
+   the dispatch and never re-consumes; (b) a crash after dispatch succeeds but before the
+   caller durably observes it — the retry re-drives the same at-least-once dispatch while
+   the spent authorization blocks a second consume.
 7. If reviewed input changes before application, mark the application `superseded` and
    create a new gate attempt. Closed attempts never reopen.
 8. Unknown, failed, conflicting, missing, or stale state is ineligible. Concurrent
@@ -330,6 +350,12 @@ duplicate that authority without making the gate decision more durable.
 nonblank reason or included earlier Annotation from the same Briefing log. A late
 Resolution for a no-longer-current Briefing stays valid provider history but cannot
 close the current Spacedock attempt.
+
+A resolution is recorded under the identity that rendered it: a chat-directed closure
+records under the First Officer's identity acting on delegated authority, with the reason
+quoting the captain's directive, and the captain's identity attaches only to resolutions
+the captain rendered over content the captain saw; adopting an advisory provider result as
+a binding decision carries an explicit adoption note naming the authorizer.
 
 ## Round records and triage dispositions (advisory)
 
@@ -400,16 +426,20 @@ generalization lands, round records are hand-authored into the room.
 The binary owns mechanics that a gate-attempt ensign or First Officer should not
 reimplement:
 
-- `gate review` validates one explicit complete Briefing, including every Artifact and
-  supporting Reference revision; derives the canonical title; probes the binary and
-  review skill; runs one blocking provider child; and atomically retains diagnostics,
-  log, and returned Resolution after child exit. Pane creation is not success. It never
-  authors design content, decides which References belong, interprets annotations, or
-  mutates workflow state.
-- the gate recorder parses the exact provider result, verifies authorized identity,
-  current Briefing id/digest and log rules, constructs the closed attempt (the resolution
-  record), and commits only `gates`. It round-trips any `application` sub-object unchanged
-  and never changes `status` or dispatches.
+- Presentation is an **overridable channel of the present-gate skill**, not a recorder
+  verb: the default channel is chat, and an override channel is a provider-owned hardened
+  script that presents the Briefing package in one blocking review and atomically retains
+  the result, log, and diagnostics on success AND failure at a caller-owned path it never
+  deletes (pane creation is not success). The recorder's binary carries zero Subspace
+  knowledge — a checkable property; the override script and its committed drive suite are a
+  named cross-repo release condition, provider-owned. The presentation channel calls the
+  recorder and never mutates workflow state.
+- the gate recorder parses and validates the exact provider result, verifies authorized
+  identity, current Briefing id/digest and log rules, normalizes the provider envelope
+  briefing id to the attempt briefing id only after the digest matches (rejecting on
+  mismatch, never laundering an unverified result), constructs the closed attempt (the
+  resolution record), and commits only `gates`. It round-trips any `application` sub-object
+  unchanged and never changes `status` or dispatches.
 - **The application layer:** the application guard validates current stage, exact frozen binding,
   decision/action, blockers, hold, and one-use state before handing the action to existing
   transition and dispatch code. It does not mint a second effect identity or receipt.
@@ -437,21 +467,33 @@ The first tests must exercise outcomes, not prose:
 4. The existing transition/dispatch fake observes exactly one action when a pending
    approval becomes eligible and none on repeated passes; the gate schema contains no
    parallel dispatch identity or receipt.
-5. `gate review` fixture tests prove a frozen supporting `Reference` is presented,
-   missing binary/skill output contains the exact install action, title derivation is
-   canonical, and every launch/controller/child/validation/retention failure leaves
-   package diagnostics and Resolution state recoverable. Mutants that complete on pane
-   creation, let the ensign resolve before TUI exit, or append through a digest-bound
-   live Reference fail. A direct-Zellij fixture reaches the same retained result
-   through the one blocking command.
+5. The recorder's result-validation fixtures prove the returned result is digest-bound to
+   the attempt Briefing and that the provider envelope briefing id is normalized to the
+   attempt briefing id only on a digest match — rejected un-normalized on mismatch. The
+   subspace-free binary criterion is a build/dependency check: the binary depends on no
+   Subspace package and exposes no presentation verb. Retention on success AND failure —
+   launcher/controller death, the leave-open/hold path, and the blank-float EOF — is
+   proven by the override script's committed drive suite, a named cross-repo release
+   condition in the provider repo, not a recorder test; there a mutant that completes on
+   pane creation or resolves before the child exits fails.
 6. Provider fixtures accept reasonless `approve`, reject invalid `revise`/`hold`
    rationale and cross-Briefing includes, preserve advisory decisions, and bind only
    the authorized current-Briefing Resolution.
+7. A formatting-only fixture proves the digest domains diverge: re-serializing one
+   Briefing's JSON with sorted, compact keys leaves its canonical-bytes (JCS) digest stable
+   and changes its raw-file-pin digest, and replay accepts the marked legacy raw-file pin
+   for shaping-era records.
+8. Authorization-side crash fixtures surface the two consume windows without double-firing:
+   a crash after `consumed` commits but before dispatch starts re-drives the dispatch
+   without re-consuming; a crash after dispatch succeeds but before the caller observes it
+   re-drives the same at-least-once dispatch while the spent authorization blocks a second
+   consume.
 
-The riskiest unverified seams are the nested frontmatter mutation and the one-command
-provider launch. Spike them first by recording a Resolution without changing `status`
-or dispatch state, then by launching a multi-source Briefing whose `probes.jsonl`
-Reference is visible and whose result survives controller failure.
+The riskiest unverified seams are the nested frontmatter mutation and the recorder's
+result validation and id-normalization. Spike them first by recording a Resolution without
+changing `status` or dispatch state, then by validating a provider result whose digest
+matches (id normalized) and one whose digest mismatches (rejected un-normalized). The
+override script's retention contract is spiked in the provider repo, not here.
 
 ## References and deferred work
 
