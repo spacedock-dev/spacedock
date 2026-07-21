@@ -7,11 +7,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:xb:ideation
-        attempt: gate-attempt:xb-ideation-3
+        attempt: gate-attempt:xb-ideation-2
     records:
         - id: gate:docs-dev:xb:ideation
           stage: ideation
-          current-attempt: gate-attempt:xb-ideation-3
+          current-attempt: gate-attempt:xb-ideation-2
           attempts:
             - id: gate-attempt:xb-ideation-1
               sequence: 1
@@ -56,15 +56,6 @@ gates:
                 target-stage: ideation
                 state: consumed
               note: "Architecture reframe routed to the live worker: presentation as an overridable channel of the present-gate skill (default chat, override the hardened float script); validation/id-mapping/record-handoff duties move to the recorder surface where they belong. Attempt 3 at re-presentation."
-            - id: gate-attempt:xb-ideation-3
-              sequence: 3
-              previous-attempt: gate-attempt:xb-ideation-2
-              state: open
-              current-briefing:
-                id: briefing:docs-dev:xb:ideation:briefing-3
-                digest: sha256:7fb094109c3ad7c873dcd66cf77295c555395394c20da9823af4fed7fd9abc37
-                room-ref: "./review/ideation/briefing-3"
-                note: "The reframed design: overridable present-gate channel, zero-Go surface, recorder-side validation ask, the committed-drive-suite condition homed subspace-side."
 sprint: durable-decisions
 group: recorder
 started: 2026-07-21T01:43:36Z

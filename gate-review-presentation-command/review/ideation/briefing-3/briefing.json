@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:xb:ideation:briefing-3",
+  "question": "Does the reframed design \u2014 presentation as an overridable present-gate channel, zero-Go, recorder-side validation, the override script drive-suite condition \u2014 stand as the implementation contract?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-summary",
+      "uri": "gate-summary.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d07f87373775ac56967f53acab34d72dec0063c2e8c2b1884dd34963e14caf35"
+    },
+    {
+      "id": "artifact:entity-snapshot",
+      "uri": "entity-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:796de1275cd980ddedbcde7dd149213f7124fe93e845faa595c8e65922d82ffe"
+    },
+    {
+      "id": "artifact:recorder-contract",
+      "uri": "contract-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:b4c9623648c840ba53d1f4fb61328dceb65d0a912a4cfd597264032147dcc17b"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Park the decision",
+          "to": "tasking:park"
+        }
+      ]
+    }
+  ]
+}
