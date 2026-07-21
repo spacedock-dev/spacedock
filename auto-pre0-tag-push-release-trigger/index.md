@@ -285,3 +285,11 @@ Rewrite the credential clause to:
 ### Summary
 
 Diagnosed the pre0-tag-no-run failure as a credential/event-path bug, not a race: the auto-cut step pushes a same-repo tag with a cross-repo tap PAT that is workflow-run-suppressed (empirically behaves like GITHUB_TOKEN), so the ref lands but no `release.yml` run fires; the identical object replayed under an operator PAT/ssh fires the run within seconds — confirmed across both the v0.25.0 and v0.26.0 cuts. The chosen fix is the smallest auth-path correction: push the pre0 tag over SSH with a repo-scoped write deploy key (unconditional trigger-capability, no expiry, minimal privilege) plus a verify-or-fail guard that reds `edge-advance` if no pre0 run appears — the guard is what makes AC-2's suppressed-token negative control fail loudly and prevents a third silent recurrence. One open item for the FO/gate: the milestone reads 0.26.0 but the bug shipped unfixed in 0.26.0 — recommend re-milestoning to 0.27.0 (frontmatter left unchanged per the no-frontmatter rule); and the deploy-key-vs-classic-PAT choice is a real decision the gate may want to weigh (I recommend the deploy key for robustness given the prior credential's unexplained failure).
+
+## Gate: ideation — APPROVED (FO, captain-ruled)
+
+- **Verdict:** ideation design approved for implementation. Design is sound, behavior-first, ACs measure value against a movable baseline, riskiest hop correctly held for spike-first.
+- **Credential decision (captain ruling):** SSH write **deploy key** (`EDGE_RELEASE_DEPLOY_KEY`), repo-scoped — chosen over the classic-PAT swap for unconditional trigger-capability and to not repeat the prior credential's unexplained suppression.
+- **Milestone:** corrected `0.26.0 → 0.27.0` (shipped unfixed in 0.26.0).
+- **BLOCKER before implementation:** the `EDGE_RELEASE_DEPLOY_KEY` repo secret must be provisioned (generate keypair → add repo deploy key with write → store private key as the secret). Test-plan step-1 spike (runner-embedded deploy-key push fires a run) depends on it; implementation holds at ideation until the secret exists.
+- **Next on unblock:** dispatch implementation, spike-first (the `workflow_dispatch` probe), then the `release.yml` step + verify-or-fail guard + `docs/releasing.md` diff + `internal/release/*_workflow_test.go` guard.
