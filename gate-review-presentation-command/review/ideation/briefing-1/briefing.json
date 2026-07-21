@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:xb:ideation:briefing-1",
+  "question": "Does the presentation command design \u2014 blocking presenter, atomic retention on success and failure, id-mapping per the contract, no gate-state writes \u2014 stand as the implementation contract?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-summary",
+      "uri": "gate-summary.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e718a51c2bc98a79c3867dcf1183ec740bc2303d8ae806ea01f163f4dd53740d"
+    },
+    {
+      "id": "artifact:entity-snapshot",
+      "uri": "entity-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c3b6e619685f95b01aab458b6c6cc7ef9a454bbe52a8d73c507b1421f8acffc0"
+    },
+    {
+      "id": "artifact:recorder-contract",
+      "uri": "contract-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:b4c9623648c840ba53d1f4fb61328dceb65d0a912a4cfd597264032147dcc17b"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Park the decision",
+          "to": "tasking:park"
+        }
+      ]
+    }
+  ]
+}

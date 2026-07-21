@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:02av:ideation:briefing-2",
+  "question": "Does the triage reframe \u2014 dispositions as advisory resolutions, the decline with class/why-not-material/promote-when, design-reset graduating to a binding attempt, semantics-only boundary \u2014 stand as the implementation contract?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-summary",
+      "uri": "gate-summary.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:16f0d34cce7c9c4ccd85412edf373a7f539a6fb021749fcd3ec954b282d3ff1a"
+    },
+    {
+      "id": "artifact:entity-snapshot",
+      "uri": "entity-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:db6780ac1958534ae7dab6ea56eb2dac892952033a3dc16a58941d383de5a2ba"
+    },
+    {
+      "id": "artifact:recorder-contract",
+      "uri": "contract-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:b4c9623648c840ba53d1f4fb61328dceb65d0a912a4cfd597264032147dcc17b"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Park the decision",
+          "to": "tasking:park"
+        }
+      ]
+    }
+  ]
+}

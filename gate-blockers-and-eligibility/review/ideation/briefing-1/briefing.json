@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:h1:ideation:briefing-1",
+  "question": "Does the application-layer design \u2014 one-use consumption via the existing transition path, cross-attempt single-pending invariant, fail-closed honoring, with the blocker-evaluator half declined on the record \u2014 stand as the implementation contract?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-summary",
+      "uri": "gate-summary.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:93f2bc8ce82f4a12b1c2a870d2788f0014dbbf95873f2f9d3c04e3e28edb7a9c"
+    },
+    {
+      "id": "artifact:entity-snapshot",
+      "uri": "entity-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:195031984c4d26110de4587ae0a40bb8a10d599ca5b17408f76848da9478adf5"
+    },
+    {
+      "id": "artifact:recorder-contract",
+      "uri": "contract-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:b4c9623648c840ba53d1f4fb61328dceb65d0a912a4cfd597264032147dcc17b"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Park the decision",
+          "to": "tasking:park"
+        }
+      ]
+    }
+  ]
+}
