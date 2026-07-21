@@ -9,11 +9,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:3k:ideation
-        attempt: gate-attempt:3k-ideation-6
+        attempt: gate-attempt:3k-ideation-7
     records:
         - id: gate:docs-dev:3k:ideation
           stage: ideation
-          current-attempt: gate-attempt:3k-ideation-6
+          current-attempt: gate-attempt:3k-ideation-7
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
@@ -144,6 +144,16 @@ gates:
                 action: feedback
                 target-stage: ideation
                 state: consumed
+              note: "Render check failed again at the float: the subgraph frames were removed next round. Attempt 7 re-presents with two stacked frameless diagrams."
+            - id: gate-attempt:3k-ideation-7
+              sequence: 7
+              previous-attempt: gate-attempt:3k-ideation-6
+              state: open
+              current-briefing:
+                id: briefing:docs-dev:3k:ideation:attempt-7:revision-14
+                digest: sha256:8f003849fd0b059495afcd3fcd7f438fa050d027a36e6a5dc393de6233bd55db
+                room-ref: "./review/ideation/briefing-14"
+                note: "Contract artifact carries two stacked frameless diagrams (contract sha256 4ca06d15...); each retains one semantic two-column branch — a still-too-wide verdict routes to a linked appendix, not another render round. Probe skip continues under the recorded rationale. Design content unchanged since attempt 4."
 sprint: durable-decisions
 group: recorder
 ---
