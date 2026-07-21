@@ -15,12 +15,25 @@ gates:
           attempts:
             - id: gate-attempt:xb-ideation-1
               sequence: 1
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:xb:ideation:briefing-1
                 digest: sha256:bfb87cff3c021c17af9a9d8a999cb682cde972d73d292a5838f21baec7a240de
                 room-ref: "./review/ideation/briefing-1"
                 note: "Multi-artifact package: gate summary, frozen entity snapshot, frozen recorder-contract snapshot — each digest-pinned inside the briefing; the digest above binds briefing.json itself."
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784637808799451000
+                briefing: briefing:docs-dev:xb:ideation:briefing-1
+                by: person:reviewer
+                at: 2026-07-21T12:43:28Z
+                decision: revise
+                reason: "Annotation on the command definition: what happens when the user does not have subspace installed? what's the fallback?"
+              application:
+                action: feedback
+                target-stage: ideation
+                state: consumed
+              note: "Provider result and log retained in-room. Routed to the live worker; attempt 2 opens at re-presentation."
 sprint: durable-decisions
 group: recorder
 started: 2026-07-21T01:43:36Z
