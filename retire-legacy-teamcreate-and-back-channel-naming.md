@@ -178,3 +178,9 @@ Designed q4 to dovetail with 9q4's completed ideation and land as one commit. Tw
 - **Validation:** detached adversarial audit (shipped FO contract, high-stakes) + `9q4`'s bare no-team live drive (runnable on this session). The installer-stable team-mode drive is NOT required per the ruling.
 - **Corrections banked from ideation:** AC-4 gate is the per-host `foHostLoadBaselineBytes` map (claude ↓ ≥14 KB, pi ↑ ~13 B, codex unchanged); codex uses "mailbox" (no rename); `PresentFalseHint` rewritten alongside `BareModeAdvisory`.
 - **Base:** worktree off `origin/main` (`ca136f83`), not local `main`.
+
+### Scope expansion — captain-directed (CL, 2026-07-22)
+
+Implementation surfaced a binding the ideation spike missed (it ran only `./internal/contractlint/...`, not `./...`): `internal/ensigncycle/teardown_marker_consistency_test.go` (`TestGradeMarkerMatchesContract`, default-tagged/CI) reads `skills/using-legacy-claude-team/SKILL.md` — the ONLY contract home of `TERMINAL_TEARDOWN_BOUNDED` — so AC-1's skill deletion reds it, and retarget is impossible.
+
+**Captain ruling: WIDEN scope** — fully retire the orphaned legacy teardown-grade machinery in `internal/ensigncycle` (the `terminalTeardownMarker` const, its teardown-grade tests, the cross-check, and the legacy TeamDelete grade fixtures) rather than delete the cross-check and leave a contract-orphaned const. This moves that machinery OUT of the `## Out of scope` "removable at leisure" follow-up and INTO this deliverable. Guardrail given to implementation: retire only what grades the legacy TeamDelete teardown path; anything grading a surviving go-forward behavior stays (stop-and-reflag). Expected surface grows on the `internal/ensigncycle` side accordingly; the joint commit must be green across `./...` incl. `./internal/ensigncycle/...`.
