@@ -39,12 +39,25 @@ gates:
             - id: gate-attempt:3k-ideation-2
               sequence: 2
               previous-attempt: gate-attempt:3k-ideation-1
-              state: open
-              current-briefing:
+              state: closed
+              briefing:
                 id: briefing:docs-dev:3k:ideation:attempt-2:revision-9
                 digest: sha256:1c229dfe87f5954b2b1e6b7a54cc4918cddf55e35bb66f198fba7f6ccbb3d28a
                 room-ref: "./review/ideation/briefing-9"
-                note: "The digest binds the frozen briefing-9 gate-summary artifact (summary + full cycle-13 snapshot), byte-verifiable in the room. Presents the physical trim and the PR-510 alignment with four captain-flagged forks."
+                note: "Frozen at closure; byte-verifiable in the room. Provider result validated by digest equality, retained as provider-result-9.json; provider envelope id (briefing:single-file:201ca46ba902b9da0ec874243ee2c000) normalized to this attempt briefing id."
+              resolution:
+                type: Resolution
+                id: resolution:actor-1784596837823868000
+                briefing: briefing:docs-dev:3k:ideation:attempt-2:revision-9
+                by: person:reviewer
+                at: 2026-07-21T01:20:37Z
+                decision: approve
+                reason: "is there any reason to keep the split AC? like we need to do a final integration test? i'd like to keep things lean if possible. / is it easier to keep this one for integration test and split a clean gate/resolution implementation? or not necessary"
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+              note: "Approve with two attached captain questions (pointer-AC leanness; integration-umbrella split), answered in chat post-recording; fork 1 (id namespacing) not annotated, so recorder ids stay Spacedock-internal per the stated default. Any resulting trim folds as a superseding attempt."
 sprint: durable-decisions
 group: recorder
 ---
