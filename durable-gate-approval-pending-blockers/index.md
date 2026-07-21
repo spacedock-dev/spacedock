@@ -9,11 +9,11 @@ gates:
     version: 1
     current:
         gate: gate:docs-dev:3k:ideation
-        attempt: gate-attempt:3k-ideation-3
+        attempt: gate-attempt:3k-ideation-4
     records:
         - id: gate:docs-dev:3k:ideation
           stage: ideation
-          current-attempt: gate-attempt:3k-ideation-3
+          current-attempt: gate-attempt:3k-ideation-4
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
@@ -78,8 +78,17 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
-              note: "Fold applied by the live revision worker (cycle 14, state commit 2e562ed9); FO recorded. The recorder design is settled: the three downstream ideations (xb, h1, 02av reframe) dispatch against this contract per the locked sprint sequencing."
+                state: superseded
+              note: "Fold applied by the live revision worker (cycle 14, state commit 2e562ed9); FO recorded. Superseded by attempt 4 (the captain-directed resolution-first split); the approval itself stands."
+            - id: gate-attempt:3k-ideation-4
+              sequence: 4
+              previous-attempt: gate-attempt:3k-ideation-3
+              state: open
+              current-briefing:
+                id: briefing:docs-dev:3k:ideation:attempt-4:revision-11
+                digest: sha256:f8cd6fa75043b061dc64aa5583620af14f90a9dc3d557b5c0f246f9eb051a5aa
+                room-ref: "./review/ideation/briefing-11"
+                note: "Byte-verifiable frozen gate-summary artifact (summary + full post-split snapshot). Presents the resolution-first split (application layer to h1), the owner-tagged spec with the boundary mermaid, the ~400-650 LOC re-estimate, and the id-rule elaboration deferred to xb under the change protocol."
 sprint: durable-decisions
 group: recorder
 ---
