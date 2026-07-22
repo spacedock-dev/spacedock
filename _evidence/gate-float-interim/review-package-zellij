@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# ABOUTME: Zellij float launcher for subspace-tui --review-v1 briefing packages.
+# ABOUTME: Adapts the working-copy review-local-zellij mechanics to a briefing.json positional.
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: $(basename "$0") <briefing.json>" >&2
+  exit 2
+fi
+
+briefing=$(realpath "$1")
+if [ ! -f "$briefing" ] || [ ! -r "$briefing" ]; then
+  echo "Briefing must be one readable regular file: $briefing" >&2
+  exit 2
+fi
+case "$briefing" in
+  *.json) ;;
+  *) echo "Briefing must be JSON: $briefing" >&2; exit 2 ;;
+esac
+
+binary=${SUBSPACE_TUI_BIN:?SUBSPACE_TUI_BIN must name the exact-tip local build}
+expected_version=${SUBSPACE_TUI_EXPECT_VERSION:-0.9.0}
+actual_version=$("$binary" --version)
+if [ "$actual_version" != "$expected_version" ]; then
+  echo "local subspace-tui version $actual_version, expected $expected_version" >&2
+  exit 2
+fi
+
+session=${ZELLIJ_SESSION_NAME:?ZELLIJ_SESSION_NAME is required}
+pane_id=${ZELLIJ_PANE_ID:?ZELLIJ_PANE_ID is required}
+case "$pane_id" in
+  *[!0-9]*|'') echo "ZELLIJ_PANE_ID must be numeric" >&2; exit 2 ;;
+esac
+
+zellij_bin=${SUBSPACE_TUI_ZELLIJ_BIN:-zellij}
+command -v "$zellij_bin" >/dev/null 2>&1
+command -v jq >/dev/null 2>&1
+
+inventory=$($zellij_bin --session "$session" action list-panes --json --tab --state)
+tab_id=$(printf '%s' "$inventory" | jq -er --argjson pane "$pane_id" '
+  [.[] | select(.is_plugin == false and .id == $pane)] |
+  if length == 1 then .[0].tab_id else error("caller pane is missing or ambiguous") end
+')
+
+scratch=$(mktemp -d /tmp/subspace-review-package.XXXXXX)
+chmod 700 "$scratch"
+# Result is ROOM-RESIDENT from the first byte: the briefing dir owns it, not this process's lifetime.
+result=$(dirname "$briefing")/float-result.json
+launch_log=$scratch/zellij.out
+runner=$scratch/run-review-v1
+cat > "$runner" <<RUNNER
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+exec "$binary" --review-v1 --actor person:reviewer --approver agent:invoking-session "$briefing" >"$result"
+RUNNER
+chmod 700 "$runner"
+trap 'rm -rf "$scratch"' EXIT
+
+briefing_dir=$(dirname "$briefing")
+$zellij_bin --session "$session" action new-pane \
+  --blocking --floating --close-on-exit \
+  --tab-id "$tab_id" --cwd "$briefing_dir" \
+  --width 90% --height 90% --name "Subspace review" \
+  -- "$runner" >"$launch_log"
+
+if [ ! -s "$result" ]; then
+  echo "package review returned no result (room-resident path: $result)" >&2
+  exit 1
+fi
+dd if="$result" bs=4096 2>/dev/null
