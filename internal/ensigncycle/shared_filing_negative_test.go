@@ -1,6 +1,9 @@
 package ensigncycle
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 // Offline positive + negative cases for the `filing` scenario assertions. They
 // build synthetic host streams — a stream that filed via `new` (passes) and the
@@ -17,6 +20,17 @@ func claudeToolUse(name, inputJSON string) string {
 // codexCommand builds a `codex exec --json` command_execution item line.
 func codexCommand(command string) string {
 	return `{"type":"item.completed","item":{"type":"command_execution","command":"` + command + `"}}`
+}
+
+func codexRawCommand(command string) string {
+	row := codexCommandItem{Type: "item.completed"}
+	row.Item.Type = "command_execution"
+	row.Item.Command = command
+	encoded, err := json.Marshal(row)
+	if err != nil {
+		panic(err)
+	}
+	return string(encoded)
 }
 
 func TestAssertClaudeFilingViaNew(t *testing.T) {
@@ -121,6 +135,17 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 		t.Fatalf("expected the exact command-v resolved launcher filing to count as atomic: %v", err)
 	}
 
+	// Positive regression: the archived PR #551 Codex lane records the successful
+	// quoted launcher behind a pipeline using bash -lc's display quote-splice.
+	// Keep the complete command here so the detector is pinned to the observed
+	// transport shape that exited zero and created wire-the-thing as id 001.
+	filedDisplayQuotedCapture := codexRawCommand(`/bin/bash -lc 'launcher="${SPACEDOCK_BIN:-spacedock}"
+printf '"'%s\\n' '---' 'id:' 'title: Wire The Thing' 'status: backlog' '---' 'Connect the required components so the thing is fully wired.' | \""'$launcher" new wire-the-thing
+"$launcher" status --read wire-the-thing --json'`)
+	if err := assertCodexFilingViaNew(filedDisplayQuotedCapture, slug); err != nil {
+		t.Fatalf("expected PR #551's exact /bin/bash -lc display-quoted filing to count as atomic: %v", err)
+	}
+
 	malformedCaptures := map[string]string{
 		"mismatched quotes":   `launcher=\"${SPACEDOCK_BIN:-spacedock}'\n\"$launcher\" new ` + slug,
 		"leading-only quote":  `launcher=\"${SPACEDOCK_BIN:-spacedock}\n\"$launcher\" new ` + slug,
@@ -138,6 +163,8 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 		"different command after launcher status": `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n\"$launcher\" status; $EDITOR new ` + slug,
 		"mismatched invocation quotes":            `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n\"$launcher' new ` + slug,
 		"new token after launcher version":        `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n$launcher --version; touch new ` + slug,
+		"wrapped different variable":              `/bin/bash -lc 'launcher="${SPACEDOCK_BIN:-spacedock}"; printf body | \""'$EDITOR" new ` + slug + `'`,
+		"wrapped narrated invocation":             `/bin/bash -lc 'launcher="${SPACEDOCK_BIN:-spacedock}"; echo \""'$launcher" new ` + slug + `'`,
 	}
 	for name, command := range crossSegmentCalls {
 		t.Run(name, func(t *testing.T) {

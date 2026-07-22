@@ -81,9 +81,16 @@ func capturedLauncherFilesViaNew(command, slug string) bool {
 	segments := regexp.MustCompile(`\r?\n|;|&&|\|\||\|`).Split(command[captureEnd:], -1)
 	executable := regexp.QuoteMeta(varName)
 	call := regexp.MustCompile(`^(?:\$` + executable + `|\$\{` + executable + `\}|"\$` + executable + `"|"\$\{` + executable + `\}")[ \t]+(?:new|--new)\b`)
+	// Codex records exec_command calls through `/bin/bash -lc '…'`. When a
+	// quoted captured launcher follows a pipeline, the outer command's display
+	// form is `\""'$launcher" new`. Recognize that exact transport encoding only
+	// for the known wrapper; keep the normal simple-command matcher strict about
+	// mismatched quotes and unrelated `$VAR new` narration.
+	displayQuotedCall := regexp.MustCompile(`^\\""'\$` + executable + `"[ \t]+(?:new|--new)\b`)
+	codexBashLCWrapper := strings.HasPrefix(strings.TrimSpace(command), "/bin/bash -lc '")
 	for _, segment := range segments {
 		segment = strings.TrimSpace(segment)
-		if call.MatchString(segment) && strings.Contains(segment, slug) {
+		if (call.MatchString(segment) || (codexBashLCWrapper && displayQuotedCall.MatchString(segment))) && strings.Contains(segment, slug) {
 			return true
 		}
 	}
