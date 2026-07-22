@@ -332,3 +332,20 @@ Design inputs at reframe time: bw's LANDED wording (never ideation-time quotes),
 ### Summary
 
 Applied the captain's advisory-resolution reframe: the triage disposition moves from a `findings` prose field on the `### Feedback Cycles` entry to the ensign's own advisory resolution under the gate-recorder model (3k), whose `includes` name each declined finding with the class / why-not-material / promote-when fields the landed validation taxonomy already requires — answering the byte objection that parked the last cut, since a per-entity structured record carries no always-loaded weight where the ~2 KB prose block did. The boundary question is answered honestly: this entity owns triage SEMANTICS only (rule text + shape), not the generic rounds-record plumbing, which is the recorder's own generalization and a 3k-successor / own-task concern — the 3k four-products cut is the cautionary bound, and spike Claim 2 proves the shape rides 3k's frozen contract with zero schema change, so it is genuinely semantics, not a fourth product. The rule text, three-class taxonomy, AC-narrowing-is-a-captain-binding-resolution clause, and the Case A/B spike all stand; the falsifiability of the recorded class was exercised offline over the real 85 drift fixtures and discriminates.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Ship the finding-consumption rule and decline-as-advisory-resolution semantics in the approved prose/fixture surface, with zero product LOC and no generic rounds-record plumbing.
+  Commit d3efaea0 changes only the three approved prose surfaces plus the fixture/check pair; `git diff --numstat "$(git merge-base main HEAD)"..HEAD` contains no Go or recorder-plumbing path.
+- DONE: Prove a seeded correct-but-disproportionate finding yields an explicit recorded decline and zero-line product diff, while no-findings and all-declines remain observably distinct.
+  `docs/specs/check-finding-triage-materiality.sh` accepts Case A, rejects the material-as-declined red control, and the contract distinguishes absent triage Resolution from a present zero-fix all-declines Resolution; changing the red expectation to accept makes the check fail.
+- DONE: Keep material findings fixable, needs-decision findings escalated, and value-AC narrowing captain-owned; preserve the existing validation taxonomy and recorder schema.
+  The trigger and implementation-stage rules route the three dispositions, while the owner-tagged contract section adds no schema field and makes AC narrowing a captain-owned binding gate attempt.
+- FAILED: Required repository suites are green.
+  `go test ./...` fails only `TestFOHostPromptLoadRatchet`: the approved thin trigger pointer adds 703 bytes to each host load; changing a Go baseline is outside the declared zero-Go boundary and the prior park records only ~110 honest redundant bytes.
+- SKIPPED: Request Roborev on the completed commit and durably triage every finding.
+  Commit d3efaea0 is preserved for inspection but is not a completed commit while the material ratchet failure awaits a captain scope decision, so Roborev was not requested prematurely.
+
+### Summary
+
+The triage semantics, advisory decline shape, all-declines distinction, and falsifiable four-field fixture are implemented in commit d3efaea0. Actual surface is 0 production LOC, 40 fixture/check lines, and 48 docs/skill/spec lines versus the declared 0 / 35–55 / 25–40 with 2× tolerance; no hard scope boundary was crossed, but the 703-byte FO ratchet failure requires an explicit decision before implementation can complete.
