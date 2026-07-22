@@ -116,3 +116,8 @@ Tolerance: up to ~200 net LOC across the above files is expected. Exceeding that
 ### Summary
 
 Ideation scoped the fix to the many-workflow `--boot --identify` terminal branch: preserve PR #480 compatibility and side-effect boundaries, but append self-describing completion fields so LLM consumers know the sparse discovery record is complete. The plan also adds a narrow First Officer contract hint, docs wording, behavior tests for the JSON shape/no-mutation boundaries, and a startup classification fixture to catch duplicate retry regressions.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — captain/subspace; surface ideation vs estimate n/a; AC narrowed: AC-3 test shape replaced test-only helper/fixture with live-drive proof. Reviewer feedback: AC-3's test shape smuggled in a test-only Go helper ('may introduce the smallest helper'). Replace with a live-drive before/after retry count proof as validation evidence.
+
