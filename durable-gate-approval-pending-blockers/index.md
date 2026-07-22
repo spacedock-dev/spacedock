@@ -1927,3 +1927,62 @@ durable package is rooted at `briefing.json`, and alternate basenames fail befor
 lock. Public schema/reference/help text now matches the strict canonical-v1 product while
 the earlier prototype deletion, external artifacts, opaque application, and atomic writer
 boundaries remain unchanged.
+
+## Stage Report: validation (cycle 7)
+
+- DONE: Independently verify commit `024a2c56` rejects noncanonical manifest basenames
+  before lock acquisition or entity mutation.
+  Both focused tests reject valid Briefing bytes named `revision-1.json`, preserve the
+  entity byte-for-byte, and leave no lock residue. A detached discriminator pre-created a
+  sentinel `.gates.lock`: the noncanonical call still returned the `briefing.json`
+  basename error and left the sentinel unchanged, proving validation precedes lock
+  contention. Moving the check below `lockEntity` red-lined that probe.
+- DONE: Drive the accepted canonical manifest path end to end.
+  Public `record --briefing PATH/briefing.json` binds the exact three-artifact validation
+  package, stores `room-ref: ./review/validation/briefing-1`, and the later exact Result
+  resolver reads those same bytes, recomputes frozen JCS digest
+  `sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac`,
+  derives all three artifact id/revision pairs, rejects the consistently truncated
+  association without mutation, and adopts the complete Result only after verification.
+  Referenced artifact payloads remain external URI + SHA; the fixture creates only the
+  retained `briefing.json`, not duplicate payload files.
+- DONE: Audit all public contract and help surfaces.
+  `docs/schema/entity.mdschema.yml`, the frontmatter reference, command reference, CLI
+  help, and recorder spec consistently require `PATH/briefing.json`, reject prototype and
+  arbitrary unknown binary-owned gates fields, preserve bytes only outside `gates`, and
+  retain only the known opaque h1-owned `application` nesting. Remaining legacy/prototype
+  terms occur solely in explicit rejection/no-migration statements. Live
+  `go run ./cmd/spacedock gate --help` prints the corrected canonical path.
+- DONE: Re-run the clean-v1 behavioral matrix.
+  Prototype/unknown-field rejection, canonical open/rebind/close/successor, frozen
+  Resolution/application, cross-logical-gate current-stage selection, CAS/lock/invalid
+  rebuild/atomic replacement, mixed-line-ending preservation outside `gates`, independent
+  complete association, wrapper exclusion, chat provenance, `--operation` exit 2, status
+  text/JSON, and unrelated status-set coexistence all passed.
+- DONE: Reproduce deletion and surface evidence.
+  Product code is 1,707 lines versus 1,982 at cycle 3; tests/fixtures are 937 versus 1,977.
+  No pilot compatibility, source-position editor, migration/version branch, provider
+  transport, copied artifact payload, new durable path field, application lifecycle,
+  workflow transition, or dispatch ownership was introduced.
+- DONE: Run all required gates from a clean product worktree.
+  Focused gates/CLI/status tests passed. `gofmt -w ./cmd ./internal`, `git diff --check`,
+  and `git status --short` were clean. Uncached `go test ./... -count=1` and
+  `go test ./... -race -count=1` each passed all 18 packages. Product HEAD remained
+  `024a2c56`; validation changed no product code or workflow state.
+
+### Reviewer Findings
+
+No material findings. No deferred risks. No polish-only findings.
+
+The detached pre-lock control also closes the narrow evidence gap in the landed
+no-residue test: a pre-existing lock distinguishes true pre-lock basename rejection from
+transient acquisition followed by cleanup. The implementation passes that stronger
+observable boundary.
+
+### Summary
+
+**PASSED.** Commit `024a2c56` closes both cycle-6 findings without weakening the rigorous
+canonical-v1 cut. Non-`briefing.json` manifests fail before lock or mutation; an accepted
+canonical package remains independently resolvable through exact Result adoption; public
+schema/reference/help text matches strict behavior; focused, baseline, and race gates are
+green with no material or deferred finding.
