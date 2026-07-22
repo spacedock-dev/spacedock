@@ -5,7 +5,7 @@ score: 0.85
 id: 769mybp649pj160n17x13r8g
 worktree: .worktrees/spacedock-ensign-dispatch-build-auto-detect-pi
 mod-block: merge:pr-merge
-pr: "#550"
+pr: pr-merge:550
 ---
 
 ## Problem
