@@ -97,6 +97,27 @@ func TestGateImplicitWorkflowUsesOwningDefinitionFromNestedDirectory(t *testing.
 	}
 }
 
+func TestGatePresentationRemainsOutsideBinary(t *testing.T) {
+	root := t.TempDir()
+	before, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "review", "task"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: record|validate)") {
+		t.Fatalf("gate review exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(before) != len(after) {
+		t.Fatalf("rejected presentation verb changed working directory: before=%v after=%v", before, after)
+	}
+}
+
 func TestGateRecordRejectsNonCanonicalBriefingBasenameBeforeMutation(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n---\n# Workflow\n")

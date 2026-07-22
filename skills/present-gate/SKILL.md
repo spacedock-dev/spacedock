@@ -8,6 +8,21 @@ user-invocable: false
 
 This skill carries the first-officer's captain-facing gate-presentation rendering: the gate-review format template and the assembly rules for filling it. The decide-to-gate and AC-cross-check policy stays always-on in the FO contract; this skill loads at the gate point to render the decision the FO has already made.
 
+## Presentation channels
+
+Chat is the default channel. Render the gate template in the current conversation, then hand the captain's semantic decision to `${SPACEDOCK_BIN:-spacedock} gate record ... --decision`. An override changes only where the captain sees the review; gate policy and recorder ownership stay unchanged.
+
+A workflow or session may declare one presentation override. Apply this contract:
+
+1. **Probe before side effects.** Run the override's read-only availability and version probe before creating a package or retention path. If the presenter is missing or mismatched, launch nothing, create nothing, mutate nothing, and emit one line naming both the install or upgrade remedy and the chat fallback. Then use chat.
+2. **Present the complete canonical Briefing.** Give the override the retained `briefing.json`, its exact question, and every Artifact and supporting Reference at the revision the manifest names. Derive the presentation title from that Briefing. A one-file float is advisory evidence only; the manifest's mention of unpresented artifacts never turns it into a complete-package review.
+3. **Block through retention.** Keep the gate-attempt ensign addressable for the whole invocation. Pane or session creation and a `wait_agent` timeout are not completion. Re-wait after a timeout; complete only after the presenter exits, the Result validates, and retention finishes.
+4. **Retain from the first byte.** Before launch, the caller chooses a room-resident result path outside launcher-owned scratch. The override writes the exact Result there and retains the review log and diagnostics, including argv, exit code, and stderr. It never deletes the retention directory on success, hold, validation failure, child failure, or launcher death.
+5. **Associate only what the reviewer saw.** Build `spacedock-result-association` from the artifacts actually presented, not from the manifest alone. Hand the exact retained Result and association to `${SPACEDOCK_BIN:-spacedock} gate record ... --result FILE --association FILE --actor ID`. The recorder verifies the frozen Briefing digest, complete presentation mapping, actor, and exact Result before it normalizes the provider Briefing id.
+6. **Retain failures without inventing a decision.** After launch, a missing or invalid Result leaves the gate open with its package and diagnostics recoverable. Do not replace that attempted review with a chat decision or write entity frontmatter directly.
+
+The hardened override script and its committed CI drive suite belong to the provider. A Subspace override is release-eligible only at the pinned provider revision that carries both; Spacedock's binary and this skill contain no Subspace transport implementation.
+
 ## Gate Presentation
 
 Present gate reviews in this format:
