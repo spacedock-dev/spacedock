@@ -246,18 +246,35 @@ func resolveBuildHost(flagHost, jsonHost string, getenv func(string) string) (st
 		return jsonHost, nil
 	}
 
-	codex := getenv("CODEX_THREAD_ID") != ""
-	claude := getenv("CLAUDECODE") != ""
-	if codex && claude {
-		return "", fmt.Errorf("ambiguous runtime host sources: CODEX_THREAD_ID and CLAUDECODE are both set; pass --host claude, codex, or pi")
+	runtimeMarkers := []struct {
+		host   string
+		marker string
+		set    bool
+	}{
+		{host: "codex", marker: "CODEX_THREAD_ID", set: getenv("CODEX_THREAD_ID") != ""},
+		{host: "claude", marker: "CLAUDECODE", set: getenv("CLAUDECODE") != ""},
+		{host: "pi", marker: "PI_CODING_AGENT", set: getenv("PI_CODING_AGENT") != ""},
+		{host: "pi", marker: "PI_CODING_AGENT_DIR", set: getenv("PI_CODING_AGENT_DIR") != ""},
 	}
-	if codex {
-		return "codex", nil
+	var host string
+	var setMarkers []string
+	for _, runtimeMarker := range runtimeMarkers {
+		if !runtimeMarker.set {
+			continue
+		}
+		setMarkers = append(setMarkers, runtimeMarker.marker)
+		if host == "" {
+			host = runtimeMarker.host
+			continue
+		}
+		if host != runtimeMarker.host {
+			return "", fmt.Errorf("ambiguous runtime host sources: multiple runtime markers are set (%s); pass --host claude, codex, or pi", strings.Join(setMarkers, ", "))
+		}
 	}
-	if claude {
-		return "claude", nil
+	if host != "" {
+		return host, nil
 	}
-	return "", fmt.Errorf("missing host source: pass --host, set JSON host, or run under CODEX_THREAD_ID or CLAUDECODE")
+	return "", fmt.Errorf("missing host source: pass --host, set JSON host, or run under CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT, or PI_CODING_AGENT_DIR")
 }
 
 func validBuildHost(host string) bool {
