@@ -28,6 +28,14 @@ The implementation explains the outcome: folder-form resolution returns `<slug>/
 
 A manual cleanup also exposed a second boundary: `state commit` accepted nested pseudo-slugs naming each artifact without a `.md` suffix and committed them. A command whose operand is documented as an entity slug must not accept path-bearing aliases for arbitrary nested Markdown files.
 
+The failure reproduced again while dogfooding the canonical v1 gate recorder on 2026-07-22. The First Officer added a new retained package at `durable-gate-approval-pending-blockers/review/validation/briefing-v1/` and ran:
+
+```bash
+spacedock state commit --workflow-dir docs/dev durable-gate-approval-pending-blockers
+```
+
+The command reported `Nothing to commit ... state checkout already up to date` while both new package files remained untracked. The exact-path fallback committed and pushed only those files as state commit `d8e4180c`; the worktree-built recorder then bound the package successfully, and the ordinary entity-only mutation committed as `2c616b7e`. This confirms both halves of the boundary on a second folder-form entity: `index.md` mutations work, but additional reports and artifacts are omitted and can trigger a false clean no-op.
+
 ## Proposed approach
 
 - Resolve one entity commit unit from the canonical top-level slug:
