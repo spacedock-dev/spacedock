@@ -8,6 +8,28 @@ import (
 	"strings"
 )
 
+// ResolveActivePath resolves an active entity reference through the same
+// workflow/state-checkout and id-style rules as status mutation commands.
+// Binary-owned sibling verbs use this instead of reimplementing path lookup.
+func ResolveActivePath(workflowDir, baseDir, ref string, stderr io.Writer) (string, error) {
+	roots, err := resolveRoots(workflowDir, baseDir)
+	if err != nil {
+		return "", err
+	}
+	idStyle, err := workflowIDStyle(roots.definitionDir)
+	if err != nil {
+		return "", err
+	}
+	result := resolveReferenceCandidates(roots.definitionDir, roots.entityDir, ref, false, idStyle, stderr)
+	if result.status != "ok" {
+		if len(result.errors) > 0 {
+			return "", fmt.Errorf("%s", strings.Join(result.errors, "\n"))
+		}
+		return "", fmt.Errorf("unknown reference: %s", ref)
+	}
+	return result.matches[0].path, nil
+}
+
 // reference is a parsed resolver reference: scope filter, lookup mode, value.
 type reference struct {
 	scopeFilter string // "", "active", or "archived"
