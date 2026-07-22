@@ -307,3 +307,33 @@ REJECTED — material evidence defect for AC-3. Narrow fix: provide or rerun a r
 ### Summary
 
 Cycle 3 preserves the approved boot-identify design while repairing the live Codex CI false negative at the transcript-matcher boundary. PR #551 now contains the rebased combined tree plus an exact archived-command regression, with all focused, baseline, and race gates passing.
+
+## Stage Report: validation (cycle 5)
+
+- FAILED: Independently verify PR #551's rebased boot-identify behavior against every AC, including reproducible live First Officer before/after evidence and retry counts for AC-3 rather than accepting prior narration.
+  AC-1/2/4 passed, but isolated live drives could not reproduce AC-3's required failing baseline: old `fcf96896` + sparse JSON made 1 initial identify and 0 follow-up retries on both Codex and Pi; new `e588ca43` made 1 initial identify and 0 follow-up retries on Codex, then gave the exact many-workflow engage greeting.
+- FAILED: Adversarially reproduce the archived Codex filing command against the repaired detector and adjacent malformed, unrelated-variable, narration, and different-command variants; reject any false positive or missed observed success.
+  The 278-byte archived command and regression literal matched exactly (SHA-256 `027b05c786a5558cb259a85c8a8ca0760bbe3029998c39f50e92a3e61fe69218`) and passed with all checked-in negatives, but an overlay test proved a heredoc narration line beginning `\""'$launcher" new wire-the-thing` false-passes as executed filing.
+- DONE: Run the focused boot/contract/filing checks plus go test ./... and go test ./... -race, inspect the clean remote PR head and current checks, and record a PASSED/REJECTED recommendation with material findings separated from deferred risks.
+  Focused status/contract/filing tests, `gofmt -l ./cmd ./internal`, serial `go test ./...`, and serial `go test ./... -race` passed; clean local/remote/PR heads all equal `e588ca43`.
+- DONE: AC-1 multi-workflow identify JSON is self-describing and terminal.
+  A native two-workflow fixture emitted the existing ordered `command`/`discovery` plus the exact typed terminal envelope and `workflow_count == len(discovery)`; removing or corrupting a field fails `TestBootIdentifyManyWorkflowJSONSelfDescribing`.
+- DONE: AC-2 original PR #480 boundaries remain intact.
+  Focused zero/one/many, side-effect, PR-local-mirror, and native boot-oracle tests passed; a `gh` call, state mutation, broad-search drift, or unflagged boot-byte change fails these gates.
+- FAILED: AC-3 First Officer no longer has a duplicate retry path for the recorded failure shape.
+  Material evidence defect: after behavior is zero-retry, but fresh old/new First Officer drives produced baseline/after retry counts of 0/0, so the promised before failure and causal reduction were not reproduced.
+- DONE: AC-4 user-facing and operator-facing contracts describe the discovery-only terminal branch.
+  Contractlint pins the many-discovery terminal branch and exact greeting, the docs check is green, and command-reference review confirms select/engage instead of retry.
+
+### Material Findings
+
+- Evidence mechanism defect (AC-3): the historical failing baseline is absent and no longer reproducible on current Codex or Pi; this requires a captain-approved proof/design reset (for example, a durable archived failing transcript or a revised after-only invariant), not another narration-only implementation cycle.
+- Evidence mechanism defect (filing regression): `capturedLauncherFilesViaNew` loses separator provenance when splitting commands, so heredoc content can satisfy the new display-quoted matcher. Constrain that matcher to an executed pipeline segment and add the failing heredoc-narration negative before merge.
+
+### Deferred Risks
+
+- At inspection, offline, docs, and both install checks were green; four model-live jobs were still `WAITING`. This becomes material if any live job concludes non-successfully; the clean remote head and supported local gates remain proven meanwhile.
+
+### Summary
+
+The boot-identify implementation satisfies AC-1, AC-2, and AC-4, and its fresh after drive makes zero duplicate retries, but AC-3's mandated before/after causal proof remains non-reproducible. Validation also found a material false positive in the adjacent Codex filing detector, so the recommendation is **REJECTED** pending an AC-3 proof/design decision and a narrow matcher correction.
