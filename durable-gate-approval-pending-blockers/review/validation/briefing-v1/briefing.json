@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:3k:validation:canonical-v1:revision-1",
+  "question": "Should canonical-v1 gate recorder commit 024a2c56 proceed to landing and terminal completion?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:38a04b8abd442d5d74eb76aa12557f0b8186415474254c8e28895845507105e6"
+    },
+    {
+      "id": "artifact:clean-entity",
+      "uri": "git+spacedock-state://153e420c06dcc9587f03908ac2d2840b3d51a0aa/durable-gate-approval-pending-blockers/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:fd85bd4cd493e5683e1932560d4c637652cd4d7fdfc71ccccc3debe401d8129f"
+    },
+    {
+      "id": "artifact:recorder-contract",
+      "uri": "git+repo://024a2c56a7bf7fb9cb531f3ad16ee5ebe1bea9b9/docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:18075b448fba7173d49fcdde87ecf91244529959abf2ce46d3e8ca23ec431dea"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:validation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Proceed to landing and terminal completion",
+          "to": "ceremony:merge-landing"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return material findings to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}
