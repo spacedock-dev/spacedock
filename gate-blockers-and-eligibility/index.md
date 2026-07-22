@@ -1,6 +1,6 @@
 ---
 title: Approved-pending blockers, execution holds, and dispatch eligibility for recorded gates
-status: ideation
+status: implementation
 source: "Split from the gate-recorder task (3k), captain-approved 2026-07-21. Carries 3k's original seed concern (captain design feedback 2026-07-13: an approval evaporated while its dispatch stayed blocked)."
 id: h1y616vjh64wc961z5t1031d
 gates:
@@ -32,11 +32,12 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
               note: "The ships-vs-declines split stands: the application record ships; the blocker-evaluator half stays a recorded decline with its promotion condition."
 sprint: durable-decisions
 group: recorder
 started: 2026-07-21T01:43:36Z
+worktree: .worktrees/spacedock-ensign-gate-blockers-and-eligibility
 ---
 
 The application layer is what a recorded gate decision *does*: it turns a durable approval into exactly one workflow action, or holds it durably when it must not act yet. The recorder owns the resolution record (what the decision *is*); this layer owns the one-use `application` — its `pending → consumed` transition through the existing workflow transition and dispatch path, its `superseded` marking on reviewed-input drift, its `not-applicable` state under a portable `hold`, and the fail-closed eligibility read that decides whether a pending action may act now. The record's field shapes are authored in the settled contract (`durable-gate-approval-pending-blockers/gate-resolution-frontmatter-contract.md`); this task designs the behavior over the `application.*` sections that contract marks application-layer-owned.
