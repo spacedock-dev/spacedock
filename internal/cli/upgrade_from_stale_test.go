@@ -51,7 +51,7 @@ func TestUpgradeFromStaleMovesToGreen(t *testing.T) {
 	// The stale install resolves to the too-old-plugin verdict (exit 1) — the
 	// dead-end this entity fixes.
 	staleManifest := resolveClaudeManifestEnv(t, claudeBin, env)
-	staleVerdict := contract.ManifestVerdict(staleManifest, "claude", displayVersion())
+	staleVerdict := contract.ManifestVerdict(staleManifest, "claude", displayVersion(), false)
 	if staleVerdict.Verdict != contract.TooOldPlugin {
 		t.Fatalf("stale install verdict = %v, want too-old-plugin (message=%q)", staleVerdict.Verdict, staleVerdict.Message)
 	}
@@ -72,7 +72,7 @@ func TestUpgradeFromStaleMovesToGreen(t *testing.T) {
 
 	// Doctor now reports compatible (exit 0) — the install moved off the stale plugin.
 	upgradedManifest := resolveClaudeManifestEnv(t, claudeBin, env)
-	upgradedVerdict := contract.ManifestVerdict(upgradedManifest, "claude", displayVersion())
+	upgradedVerdict := contract.ManifestVerdict(upgradedManifest, "claude", displayVersion(), false)
 	if upgradedVerdict.Verdict != contract.Compatible {
 		t.Fatalf("after upgrade, verdict = %v, want compatible (message=%q)", upgradedVerdict.Verdict, upgradedVerdict.Message)
 	}

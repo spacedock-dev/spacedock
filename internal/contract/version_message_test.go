@@ -46,7 +46,7 @@ func TestMismatchShowsVersionsNotContract(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
 			manifestPath := filepath.Join("testdata", c.manifest)
-			code := RunDoctor(manifestPath, "claude", binaryVersionForTest, &stdout, &stderr)
+			code := RunDoctor(manifestPath, "claude", binaryVersionForTest, false, &stdout, &stderr)
 			if code != 1 {
 				t.Fatalf("exit = %d, want 1 (stderr=%q)", code, stderr.String())
 			}
@@ -73,7 +73,7 @@ func TestMismatchShowsVersionsNotContract(t *testing.T) {
 func TestCompatibleShowsVersions(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	manifestPath := filepath.Join("testdata", "compatible.json")
-	code := RunDoctor(manifestPath, "claude", binaryVersionForTest, &stdout, &stderr)
+	code := RunDoctor(manifestPath, "claude", binaryVersionForTest, false, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
@@ -95,7 +95,7 @@ func TestCompatibleShowsVersions(t *testing.T) {
 func TestTooOldBinaryRemedyLeadsWithBrew(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	manifestPath := filepath.Join("testdata", "too-old-binary.json")
-	code := RunDoctor(manifestPath, "claude", binaryVersionForTest, &stdout, &stderr)
+	code := RunDoctor(manifestPath, "claude", binaryVersionForTest, false, &stdout, &stderr)
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1", code)
 	}
@@ -108,5 +108,35 @@ func TestTooOldBinaryRemedyLeadsWithBrew(t *testing.T) {
 	}
 	if strings.Contains(out, "@next") {
 		t.Fatalf("too-old-binary remedy must not pin a channel branch (the removed @branch shorthand): %q", out)
+	}
+}
+
+// TestTooOldBinaryRemedyEdgeChannel is the captain's @next regression: when the
+// running binary is the edge (`spacedock@next`) cask, the too-old-binary remedy
+// must name `brew upgrade spacedock@next` and NOT the bare stable `brew upgrade
+// spacedock` (word-boundary matched, so `@next` does not satisfy the stable form).
+// For any other install (edgeCask=false) the block is byte-for-byte unchanged.
+func TestTooOldBinaryRemedyEdgeChannel(t *testing.T) {
+	// bareStable matches the stable command only when `spacedock` is the whole
+	// token — `brew upgrade spacedock@next` must NOT satisfy it.
+	bareStable := regexp.MustCompile(`brew upgrade spacedock(\s|$)`)
+
+	edge := tooOldBinaryRemedy(true)
+	if !strings.Contains(edge, "brew upgrade spacedock@next") {
+		t.Fatalf("edge remedy must name `brew upgrade spacedock@next`: %q", edge)
+	}
+	if bareStable.MatchString(edge) {
+		t.Fatalf("edge remedy must NOT carry the bare stable `brew upgrade spacedock`: %q", edge)
+	}
+	if !strings.Contains(edge, "spacedock install") {
+		t.Fatalf("edge remedy must keep the plugin-refresh line: %q", edge)
+	}
+
+	// edgeCask=false reproduces the pinned block byte-for-byte.
+	want := "  Upgrade via Homebrew: brew upgrade spacedock\n" +
+		"  Or build from source: go build -o spacedock ./cmd/spacedock\n" +
+		"  Or refresh the plugin instead: spacedock install"
+	if got := tooOldBinaryRemedy(false); got != want {
+		t.Fatalf("non-edge remedy must be byte-for-byte unchanged:\n got=%q\nwant=%q", got, want)
 	}
 }

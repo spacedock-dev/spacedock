@@ -269,7 +269,7 @@ func gateHost(ops hostOps, host string, stderr io.Writer) contract.Result {
 	if manifestPath == "" {
 		return contract.Result{Verdict: contract.NoPluginFound}
 	}
-	res := contract.ManifestVerdict(manifestPath, host, displayVersion())
+	res := contract.ManifestVerdict(manifestPath, host, displayVersion(), runningEdgeCask())
 	switch res.Verdict {
 	case contract.NoPluginFound, contract.TooOldPlugin:
 		return res
