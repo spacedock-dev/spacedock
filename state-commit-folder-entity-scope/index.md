@@ -12,6 +12,28 @@ issue:
 milestone: 0.26.0
 sprint: durable-decisions
 group: recorder
+gates:
+    version: 1
+    current:
+        gate: gate:state-commit-folder-entity-scope:ideation
+    records:
+        - id: gate:state-commit-folder-entity-scope:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:state-commit-folder-entity-scope-ideation-1
+              briefing:
+                id: briefing:docs-dev:vn:ideation:canonical-v1:revision-1
+                digest: sha256:8191dc40c67c3854119c189622f6a15006e8a21fa9ac7ce2ce6f0618a66f496d
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-v1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:state-commit-folder-entity-scope:ideation:1
+                briefing: briefing:docs-dev:vn:ideation:canonical-v1:revision-1
+                by: person:captain
+                at: "2026-07-22T14:19:30.731531Z"
+                decision: approve
+                reason: 'Captain explicitly confirmed in chat after the recovered Subspace advisory approval: vn is approved.'
 ---
 
 `spacedock state commit <slug>` commits a flat entity correctly but treats a folder-form entity as only `<slug>/index.md`. Reports, evidence, and artifacts stored beside the index remain dirty even though the state command reports that the entity was committed and pushed.
@@ -47,6 +69,16 @@ The command reported `Nothing to commit ... state checkout already up to date` w
 - Treat concurrent changes anywhere within one folder-form entity as changes to the same entity. Preserve the existing reject, rebase, conflict-HALT, and no-force behavior.
 - Validate the operand as a canonical entity slug before path resolution. Reject path separators, traversal, and nested pseudo-slugs without changing the index, worktree, or remote.
 - Keep flat-form output, exit codes, JSON results, no-origin behavior, and clean no-op behavior compatible.
+
+## Approved implementation boundary
+
+Expected surface: `internal/cli/state_sync.go` (~20-60 production LOC), existing real-Git/CLI state-commit tests plus focused new cases (~160-300 test LOC), and the state-command reference (~5-20 documentation lines), with 2× tolerance. No new package, dependency, command, persisted schema, or background process is expected.
+
+No new spike is needed. The riskiest mechanism is already proven twice by live failure and by source inspection: folder-form resolution returns `<slug>/index.md`, and the existing path-scoped Git helper stages only that resolved path. Archive handling already demonstrates the repository's directory-scoped entity boundary. Implementation should change the resolved commit unit, not introduce another lifecycle.
+
+Mechanism-to-value check: a folder-scoped Git pathspec is the smallest mechanism that makes one folder entity durable while preserving sibling isolation. Checkout-wide `git add -A` cannot protect sibling dirt; enumerating known artifact types would miss future valid room files; an artifact manifest or registry would duplicate the filesystem boundary and add a second protocol.
+
+User-facing documentation change: the state command reference must say that a flat entity commits only `<slug>.md`, while a folder entity commits every changed/new/deleted non-ignored path below `<slug>/`; unrelated paths remain untouched. It must also say the operand is one canonical top-level entity slug, not a nested path.
 
 ## Acceptance criteria
 
