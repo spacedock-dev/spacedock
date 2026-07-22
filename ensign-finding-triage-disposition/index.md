@@ -1,7 +1,7 @@
 ---
 id: 02avdajaz0q3hnjwycm5fq45
 title: Ensigns triage review findings against declared stakes before fixing — decline disposition for correct-but-disproportionate findings
-status: implementation
+status: validation
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.7"
 sprint: durable-decisions
