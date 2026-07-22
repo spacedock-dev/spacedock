@@ -1764,3 +1764,50 @@ source-position writer can return success with corrupted gate selection, and the
 association can self-declare a truncated multi-artifact package complete. Repair the
 writer narrowly and reset the association-verification mechanism around independent
 package completeness evidence before re-validation.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Make canonical Briefing bytes—already bound by the frozen JCS digest—the independent source of the complete artifact inventory, then require the retained presentation association to map that inventory exactly before identity normalization.
+  Commit `1e5bc9d2` resolves `room-ref/briefing.json`, recomputes digest/id, derives all three artifacts, and compares both association inventory and presentation mapping before normalization; `TestGateRecordConsumesExactResultOnlyWithCompleteAssociation` fails if the exact consistently truncated fixture is accepted or changes the entity.
+- DONE: Simplify the binary-owned v1 `gates:` write boundary with no prototype compatibility or migration: accept/emit the canonical v1 shape and fail closed on unsupported prototype encodings, while preserving unrelated entity content and validating rebuilt bytes before atomic replacement.
+  `TestPrototypeAndUnknownGateShapesFailClosed` rejects every removed encoding; `TestWriterCASValidationAtomicityAndLock` fails on stale/invalid replacement, and `TestWriterPreservesMixedLineEndingsOutsideGates` byte-compares unrelated mixed-ending content.
+- DONE: Add the approved realistic multi-artifact fixture and adversarial consistently-truncated association regression, retain ordinary canonical lifecycle coverage, and run focused tests, gofmt, go test ./..., and go test ./... -race before committing the clean worktree.
+  Exact Briefing raw SHA-256 is `b34fedc7…`, frozen JCS digest is `0a54f1ba…`; focused gates/CLI/status, all 18 baseline packages, and all 18 race packages passed after `gofmt -w ./cmd ./internal`.
+
+### Deletion inventory
+
+- Removed `gates.current.attempt`, `record.current-attempt`, `sequence`,
+  `previous-attempt`, explicit attempt `state`, their synchronization/error branches,
+  `recordCurrentAttempt`, `recordAttempt`, `mutableOpenAttempt`, and compatibility state
+  inference.
+- Removed all inline `Extra` unknown-field bags inside binary-owned gates records and
+  made `KnownFields(true)` the canonical-v1 read gate; only the known opaque
+  `application` boundary admits h1-owned nested data.
+- Removed `scalarEdit`, `lineEdit`, gate/attempt source locators, line-oriented surgical
+  mutations, and the eight production-history/two prototype replay fixtures. The writer
+  now replaces one canonical subtree by byte boundaries, validates rebuilt bytes, syncs
+  the temporary file, and atomically renames it.
+- No migration/version-upgrade branch existed and none was added; the only version branch
+  is the exact `version: 1` rejection guard. No operation/lifecycle alias is accepted;
+  the `--operation` test remains solely as a fail-closed public-surface negative.
+
+### Retained current-v1 boundaries
+
+- Retained RFC-8785 canonical digests and explicitly labelled `raw-file-pin` because both
+  are approved current-v1 domains; Result association requires `canonical-bytes` and
+  never reinterprets a raw pin.
+- Retained opaque `application` data because it is the current h1-owned field, and froze
+  it with every closed attempt; the canonical cross-gate test fails if it changes.
+- Retained byte-exact top-level frontmatter/body preservation, subtree CAS, entity lock,
+  frozen-closure transition checks, and atomic rename because they are current-v1 data
+  integrity invariants, not prototype-format compatibility.
+- Retained the exact Result, complete association, revision-18 Briefing, and canonical
+  lifecycle fixtures; deleted only prototype entity encodings. Production LOC moved from
+  1,982 to 1,704 and test/fixture LOC from 1,977 to 858 versus cycle 3.
+
+### Summary
+
+The recorder now has one closed canonical-v1 model and one small validated subtree writer,
+with no pilot-format compatibility or migration machinery. Exact independently digested
+Briefing bytes close AC-13's completeness hole, while current-v1 application, freeze,
+CAS/atomicity, cross-gate lifecycle, and unrelated-entity boundaries remain exercised.
