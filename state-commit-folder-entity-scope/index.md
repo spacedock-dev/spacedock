@@ -53,6 +53,7 @@ gates:
                 reason: All six acceptance criteria reproduced; Roborev material findings fixed; full, race, focused, format, and clean checks passed; live xb and vn gate-room commits proved exact folder scoping.
                 adoption-note: 'Captain: you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement.'
 mod-block: merge:pr-merge
+pr: "#558"
 ---
 
 `spacedock state commit <slug>` commits a flat entity correctly but treats a folder-form entity as only `<slug>/index.md`. Reports, evidence, and artifacts stored beside the index remain dirty even though the state command reports that the entity was committed and pushed.
