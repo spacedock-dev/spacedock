@@ -120,6 +120,8 @@ Ideation scoped the fix to the many-workflow `--boot --identify` terminal branch
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — captain/subspace; surface ideation vs estimate n/a; AC narrowed: AC-3 test shape replaced test-only helper/fixture with live-drive proof. Reviewer feedback: AC-3's test shape smuggled in a test-only Go helper ('may introduce the smallest helper'). Replace with a live-drive before/after retry count proof as validation evidence.
+- Cycle 2: REJECTED — captain/subspace; surface ideation vs estimate n/a; AC narrowed: reorder design contract-first. Reviewer feedback: reorder the design contract-first — branch-shape «state.boot» effect/done-when and «interaction.boundary»'s greet line for the many branch (these replace, not accompany, the appended Startup hint), keep the payload envelope as the machine-readable hardening, add the ab sibling note with the genuine-multi-workflow residual as the entity's justification, name the shared-core ratchet re-baseline in the expected surface, and fill source:.
+
 
 
 ## Stage Report: ideation (cycle 2)
