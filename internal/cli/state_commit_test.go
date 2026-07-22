@@ -63,6 +63,19 @@ func writeEntity(t *testing.T, workflowDir, slug, body string) {
 	}
 }
 
+// writeFolderFile writes a file below a folder-form entity in the workflow's
+// state checkout, creating parent directories as needed.
+func writeFolderFile(t *testing.T, workflowDir, slug, rel, body string) {
+	t.Helper()
+	path := filepath.Join(workflowDir, ".spacedock-state", slug, rel)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // runStateCommitCmd runs `spacedock state commit slug` for workflowDir and returns
 // the exit code plus captured stdout/stderr.
 func runStateCommitCmd(t *testing.T, hostDir, workflowDir, slug string, extra ...string) (code int, stdout, stderr string) {
@@ -191,16 +204,209 @@ func TestStateCommitIsPathScoped(t *testing.T) {
 		t.Fatalf("commit should succeed; got exit=%d stderr=%q", code, errOut)
 	}
 	// The commit lists ONLY the entity path.
-	names := git(t, checkoutA, "show", "--name-only", "--pretty=format:", "HEAD")
-	if !strings.Contains(names, "first-task.md") {
-		t.Fatalf("commit should include first-task.md; name-only:\n%s", names)
-	}
-	if strings.Contains(names, "sibling-junk.md") {
-		t.Fatalf("path-scoped commit must NOT sweep the sibling; name-only:\n%s", names)
+	names := strings.Fields(git(t, checkoutA, "show", "--name-only", "--pretty=format:", "HEAD"))
+	if len(names) != 1 || names[0] != "first-task.md" {
+		t.Fatalf("flat-form commit should contain exactly first-task.md; names=%q", names)
 	}
 	// The sibling stays untracked.
 	if porcelain := git(t, checkoutA, "status", "--porcelain"); !strings.Contains(porcelain, "sibling-junk.md") {
 		t.Fatalf("sibling should remain untracked after the scoped commit; porcelain:\n%s", porcelain)
+	}
+}
+
+// TestStateCommitFolderIncludesWholeEntity pins AC-1 through AC-3: a folder-form
+// entity is one commit unit. Its index, tracked report modification, tracked
+// deletion, and untracked artifact land together while flat/folder siblings and
+// unrelated top-level dirt remain untouched. Artifact-only dirt is not a false
+// no-op, and a clean rerun is the existing no-op.
+func TestStateCommitFolderIncludesWholeEntity(t *testing.T) {
+	_, workflowA, _, _ := twoHostStateWorkflow(t)
+	checkout := filepath.Join(workflowA, ".spacedock-state")
+	host := filepath.Dir(filepath.Dir(workflowA))
+	const slug = "folder-task"
+
+	writeFolderFile(t, workflowA, slug, "index.md", "---\nstatus: ideation\n---\n# Folder\n")
+	writeFolderFile(t, workflowA, slug, "reports/review.md", "baseline report\n")
+	writeFolderFile(t, workflowA, slug, "artifacts/obsolete.md", "remove me\n")
+	git(t, checkout, "add", "--", slug)
+	git(t, checkout, "commit", "-q", "-m", "seed folder entity", "--", slug)
+	git(t, checkout, "push", "-q", "origin", "HEAD")
+
+	writeFolderFile(t, workflowA, slug, "index.md", "---\nstatus: implementation\n---\n# Folder\n")
+	writeFolderFile(t, workflowA, slug, "reports/review.md", "updated tracked report\n")
+	writeFolderFile(t, workflowA, slug, "artifacts/evidence.md", "new evidence\n")
+	if err := os.Remove(filepath.Join(checkout, slug, "artifacts", "obsolete.md")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(checkout, "flat-sibling.md"), []byte("untracked flat sibling\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeFolderFile(t, workflowA, "folder-sibling", "index.md", "untracked folder sibling\n")
+	if err := os.WriteFile(filepath.Join(checkout, "unrelated.txt"), []byte("untracked top-level path\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if code, _, errOut := runStateCommitCmd(t, host, workflowA, slug, "-m", "folder: scoped"); code != 0 {
+		t.Fatalf("folder commit should succeed; exit=%d stderr=%q", code, errOut)
+	}
+	wantNames := []string{
+		"folder-task/artifacts/evidence.md",
+		"folder-task/artifacts/obsolete.md",
+		"folder-task/index.md",
+		"folder-task/reports/review.md",
+	}
+	gotNames := strings.Fields(git(t, checkout, "show", "--name-only", "--pretty=format:", "HEAD"))
+	if strings.Join(gotNames, "\n") != strings.Join(wantNames, "\n") {
+		t.Fatalf("folder commit paths mismatch\nwant: %q\n got: %q", wantNames, gotNames)
+	}
+	porcelain := git(t, checkout, "status", "--porcelain")
+	for _, dirty := range []string{"flat-sibling.md", "folder-sibling/", "unrelated.txt"} {
+		if !strings.Contains(porcelain, dirty) {
+			t.Fatalf("sibling dirt %q should remain after scoped commit; porcelain:\n%s", dirty, porcelain)
+		}
+	}
+	if strings.Contains(porcelain, slug+"/") {
+		t.Fatalf("target folder should be clean after scoped commit; porcelain:\n%s", porcelain)
+	}
+
+	writeFolderFile(t, workflowA, slug, "artifacts/evidence.md", "artifact-only update\n")
+	headBefore := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD"))
+	if code, _, errOut := runStateCommitCmd(t, host, workflowA, slug, "-m", "folder: artifact only"); code != 0 {
+		t.Fatalf("artifact-only commit should succeed; exit=%d stderr=%q", code, errOut)
+	}
+	if headAfter := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD")); headAfter == headBefore {
+		t.Fatal("artifact-only folder dirt must advance HEAD, not return a false no-op")
+	}
+	if got := strings.TrimSpace(git(t, checkout, "show", "--name-only", "--pretty=format:", "HEAD")); got != slug+"/artifacts/evidence.md" {
+		t.Fatalf("artifact-only commit should contain exactly the artifact; got %q", got)
+	}
+	code, stdout, errOut := runStateCommitCmd(t, host, workflowA, slug, "--json")
+	if code != 0 || !strings.Contains(stdout, `"result": "no-op"`) {
+		t.Fatalf("clean rerun should be no-op; exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+	}
+}
+
+// TestStateCommitFolderMultiWriterHappyPath pins AC-5's disjoint-entity case:
+// folder entities (including their artifacts) remain separate rebase units.
+func TestStateCommitFolderMultiWriterHappyPath(t *testing.T) {
+	bare, workflowA, workflowB, stateBranch := twoHostStateWorkflow(t)
+	hostA := filepath.Dir(filepath.Dir(workflowA))
+	hostB := filepath.Dir(filepath.Dir(workflowB))
+
+	writeFolderFile(t, workflowA, "alpha-folder", "index.md", "---\nstatus: ideation\n---\n# Alpha\n")
+	writeFolderFile(t, workflowA, "alpha-folder", "artifacts/a.md", "alpha evidence\n")
+	if code, _, errOut := runStateCommitCmd(t, hostA, workflowA, "alpha-folder", "-m", "A: add folder"); code != 0 {
+		t.Fatalf("A folder commit should succeed; exit=%d stderr=%q", code, errOut)
+	}
+
+	writeFolderFile(t, workflowB, "beta-folder", "index.md", "---\nstatus: ideation\n---\n# Beta\n")
+	writeFolderFile(t, workflowB, "beta-folder", "artifacts/b.md", "beta evidence\n")
+	if code, _, errOut := runStateCommitCmd(t, hostB, workflowB, "beta-folder", "-m", "B: add folder"); code != 0 {
+		t.Fatalf("B folder commit should rebase and push; exit=%d stderr=%q", code, errOut)
+	}
+	checkoutB := filepath.Join(workflowB, ".spacedock-state")
+	if merges := strings.TrimSpace(git(t, checkoutB, "log", "--merges", "--oneline")); merges != "" {
+		t.Fatalf("disjoint folder commits should retain linear history; merges:\n%s", merges)
+	}
+	for _, path := range []string{"alpha-folder/artifacts/a.md", "beta-folder/artifacts/b.md"} {
+		if got := showOriginFile(t, bare, stateBranch, path); !strings.Contains(got, "evidence") {
+			t.Fatalf("origin should contain %s; got %q", path, got)
+		}
+	}
+}
+
+// TestStateCommitFolderConflictHalts pins AC-5's same-folder case: concurrent
+// edits to any shared nested path halt cleanly and name that path.
+func TestStateCommitFolderConflictHalts(t *testing.T) {
+	bare, workflowA, workflowB, stateBranch := twoHostStateWorkflow(t)
+	checkoutA := filepath.Join(workflowA, ".spacedock-state")
+	checkoutB := filepath.Join(workflowB, ".spacedock-state")
+	hostA := filepath.Dir(filepath.Dir(workflowA))
+	hostB := filepath.Dir(filepath.Dir(workflowB))
+	const slug = "shared-folder"
+	const report = "reports/review.md"
+
+	writeFolderFile(t, workflowA, slug, "index.md", "---\nstatus: implementation\n---\n# Shared\n")
+	writeFolderFile(t, workflowA, slug, report, "baseline\n")
+	git(t, checkoutA, "add", "--", slug)
+	git(t, checkoutA, "commit", "-q", "-m", "seed shared folder", "--", slug)
+	git(t, checkoutA, "push", "-q", "origin", stateBranch)
+	git(t, checkoutB, "pull", "-q", "--rebase", "origin", stateBranch)
+
+	writeFolderFile(t, workflowA, slug, report, "host A\n")
+	if code, _, errOut := runStateCommitCmd(t, hostA, workflowA, slug, "-m", "A: report"); code != 0 {
+		t.Fatalf("A report commit should succeed; exit=%d stderr=%q", code, errOut)
+	}
+	writeFolderFile(t, workflowB, slug, report, "host B\n")
+	code, _, errOut := runStateCommitCmd(t, hostB, workflowB, slug, "-m", "B: report")
+	if code != 3 {
+		t.Fatalf("same-folder nested conflict should HALT; exit=%d stderr=%q", code, errOut)
+	}
+	if !strings.Contains(errOut, slug+"/"+report) {
+		t.Fatalf("HALT should name nested conflicting path; stderr:\n%s", errOut)
+	}
+	if porcelain := strings.TrimSpace(git(t, checkoutB, "status", "--porcelain")); porcelain != "" {
+		t.Fatalf("HALT should abort rebase cleanly; porcelain=%q", porcelain)
+	}
+	localReport, err := os.ReadFile(filepath.Join(checkoutB, slug, report))
+	if err != nil || string(localReport) != "host B\n" {
+		t.Fatalf("HALT must preserve the local writer's nested edit; body=%q err=%v", localReport, err)
+	}
+	if got := showOriginFile(t, bare, stateBranch, slug+"/"+report); got != "host A\n" {
+		t.Fatalf("origin must preserve peer's nested edit; got %q", got)
+	}
+}
+
+// TestStateCommitRejectsNoncanonicalSlugWithoutSideEffects pins AC-6. The
+// operand is one top-level entity slug, never an absolute/traversal/nested path.
+func TestStateCommitRejectsNoncanonicalSlugWithoutSideEffects(t *testing.T) {
+	bare, workflowA, _, stateBranch := twoHostStateWorkflow(t)
+	checkout := filepath.Join(workflowA, ".spacedock-state")
+	host := filepath.Dir(filepath.Dir(workflowA))
+	writeFolderFile(t, workflowA, "folder-task", "index.md", "---\nstatus: ideation\n---\n# Folder\n")
+	writeFolderFile(t, workflowA, "folder-task", "artifacts/evidence.md", "evidence\n")
+	git(t, checkout, "add", "--", "folder-task")
+	git(t, checkout, "commit", "-q", "-m", "seed nested target", "--", "folder-task")
+	git(t, checkout, "push", "-q", "origin", stateBranch)
+
+	cases := []string{
+		"folder-task/artifacts/evidence",
+		`folder-task\artifacts\evidence`,
+		"roborev-workflow-setup-skill/artifacts/roborev-setup-skill/SKILL",
+		".", "..", "../folder-task", "/folder-task", filepath.Join(checkout, "folder-task"),
+	}
+	evidencePath := filepath.Join(checkout, "folder-task", "artifacts", "evidence.md")
+	for _, slug := range cases {
+		t.Run(slug, func(t *testing.T) {
+			headBefore := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD"))
+			indexBefore := git(t, checkout, "diff", "--cached", "--binary")
+			worktreeBefore := git(t, checkout, "status", "--porcelain=v1", "--untracked-files=all")
+			originBefore := strings.TrimSpace(git(t, bare, "rev-parse", stateBranch))
+			bytesBefore, err := os.ReadFile(evidencePath)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			code, _, errOut := runStateCommitCmd(t, host, workflowA, slug)
+			if code == 0 || !strings.Contains(errOut, "invalid entity slug") {
+				t.Fatalf("noncanonical slug should fail clearly; slug=%q exit=%d stderr=%q", slug, code, errOut)
+			}
+			if got := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD")); got != headBefore {
+				t.Fatalf("invalid slug changed HEAD: before=%s after=%s", headBefore, got)
+			}
+			if got := git(t, checkout, "diff", "--cached", "--binary"); got != indexBefore {
+				t.Fatalf("invalid slug changed index\nbefore=%q\nafter=%q", indexBefore, got)
+			}
+			if got := git(t, checkout, "status", "--porcelain=v1", "--untracked-files=all"); got != worktreeBefore {
+				t.Fatalf("invalid slug changed worktree\nbefore=%q\nafter=%q", worktreeBefore, got)
+			}
+			if got, err := os.ReadFile(evidencePath); err != nil || string(got) != string(bytesBefore) {
+				t.Fatalf("invalid slug changed worktree bytes: before=%q after=%q err=%v", bytesBefore, got, err)
+			}
+			if got := strings.TrimSpace(git(t, bare, "rev-parse", stateBranch)); got != originBefore {
+				t.Fatalf("invalid slug changed origin: before=%s after=%s", originBefore, got)
+			}
+		})
 	}
 }
 
