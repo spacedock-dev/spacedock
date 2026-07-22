@@ -44,6 +44,10 @@ func (d piSharedLiveDriver) withStubPATH(dir string) liveDriver {
 	d.env = withSpacedockShimShellEnv(d.t, d.env, dir)
 	return d
 }
+func (d piSharedLiveDriver) withInvocationLedger(ledger testInvocationLedger) liveDriver {
+	d.env = ledger.instrumentEnv(d.env)
+	return d
+}
 func (d piSharedLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
 	emitPiScenarioMetrics(t, scenario, result, d.modelName)
 }

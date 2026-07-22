@@ -91,6 +91,7 @@ type liveDriver interface {
 	model() string
 	home() string
 	withStubPATH(dir string) liveDriver
+	withInvocationLedger(ledger testInvocationLedger) liveDriver
 }
 
 // liveResult is the host-neutral observed state the shared assertions consume.
@@ -204,6 +205,11 @@ func (r claudeLiveRunner) prepareRecordedGate(t *testing.T) (liveDriver, func(li
 func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 	r.env = withPATHPrefix(r.env, dir)
 	r.env = withSpacedockShimShellEnv(r.t, r.env, dir)
+	return r
+}
+
+func (r claudeLiveRunner) withInvocationLedger(ledger testInvocationLedger) liveDriver {
+	r.env = ledger.instrumentEnv(r.env)
 	return r
 }
 
@@ -495,39 +501,24 @@ func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario share
 }
 
 // runClaudeFilingScenario drives the real FO against an EMPTY workflow and asks it
-// to file one seed entity. It grades the FO's recorded tool-call stream — the FO
-// filed via `spacedock … new <slug>`, not the `--next-id` + `Write` pair — because
-// the durable end-state file is indistinguishable between the two paths. The file
-// must also actually land (the run produced a real seed), so the stream grade is
-// proof of HOW, not just THAT, the entity was filed.
-func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func([]string, string) error) {
+// to file one seed entity. It grades the test-local launcher's actual argv ledger,
+// because the durable end-state file is indistinguishable from a manual filing.
+func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func([]testInvocation, string) error) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := build(t, workflowRoot)
+	ledger := newTestInvocationLedger(t, spacedockBinary(t))
+	runner = runner.withInvocationLedger(ledger)
 	result := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot))
 	if _, err := os.Stat(entityPath); err != nil {
 		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
 	}
-	if err := assert(result.commands, filingSlug); err != nil {
+	invocations := ledger.read(t)
+	writeInvocationLedgerArtifact(t, result.artifactDir, invocations)
+	if err := assert(invocations, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	runner.emitMetrics(t, scenario, result)
-}
-
-func assertFilingCommands(commands []string, slug string) error {
-	filed := false
-	for _, command := range commands {
-		if nextIDInvocation.MatchString(command) {
-			return fmt.Errorf("filing previewed --next-id instead of using the atomic new path")
-		}
-		if commandFilesViaNew(command, slug) {
-			filed = true
-		}
-	}
-	if !filed {
-		return fmt.Errorf("filing command log has no spacedock new %s invocation", slug)
-	}
-	return nil
 }
 
 // runClaudeShallowBootScenario drives the real FO against the shallow-boot fixture

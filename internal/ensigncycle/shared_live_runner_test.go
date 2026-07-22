@@ -137,7 +137,7 @@ func TestLiveCommonMergeHookGuardrail(t *testing.T) {
 
 //spacedock:live-journey id=filing fixture=filing/empty-workflow
 func TestLiveCommonFiling(t *testing.T) {
-	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, nil, runClaudeFilingScenario, assertFilingCommands)
+	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, nil, runClaudeFilingScenario, assertFilingViaNew)
 }
 
 //spacedock:live-journey id=shallow-boot fixture=boot/held-gate

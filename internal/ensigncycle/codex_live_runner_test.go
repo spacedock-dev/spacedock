@@ -63,6 +63,11 @@ func (d codexAsLiveDriver) withStubPATH(dir string) liveDriver {
 	return d
 }
 
+func (d codexAsLiveDriver) withInvocationLedger(ledger testInvocationLedger) liveDriver {
+	d.runner.env = ledger.instrumentEnv(d.runner.env)
+	return d
+}
+
 func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner {
 	t.Helper()
 	r.env = withPATHPrefix(r.env, dir)

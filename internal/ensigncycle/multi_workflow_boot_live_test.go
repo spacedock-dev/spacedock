@@ -8,8 +8,12 @@ func runMultiWorkflowBootJourney(t *testing.T, driver liveDriver, scenario share
 	t.Helper()
 	projectRoot := t.TempDir()
 	fixture := build(t, projectRoot)
+	ledger := newTestInvocationLedger(t, spacedockBinary(t))
+	driver = driver.withInvocationLedger(ledger)
 	result := driver.run(t, scenario, projectRoot, multiWorkflowBootPrompt(projectRoot))
-	observation := gatherMultiWorkflowBootObservation(t, fixture, result.commands, result.finalMessage)
+	invocations := ledger.read(t)
+	writeInvocationLedgerArtifact(t, result.artifactDir, invocations)
+	observation := gatherMultiWorkflowBootObservation(t, fixture, invocations, result.finalMessage)
 	finishLiveScenario(t, driver, scenario, result,
 		durableSemantic("multi-workflow-boot-violation", assert(observation)))
 }
