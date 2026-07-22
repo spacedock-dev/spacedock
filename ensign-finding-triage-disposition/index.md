@@ -7,59 +7,22 @@ score: "0.7"
 sprint: durable-decisions
 group: recorder
 started: 2026-07-20T05:04:07Z
+worktree: .worktrees/spacedock-ensign-ensign-finding-triage-disposition
+sprint-readiness:
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:02av:ideation
-        attempt: gate-attempt:02av-ideation-2
+        gate: gate:ensign-finding-triage-disposition:validation
     records:
-        - id: gate:docs-dev:02av:ideation
-          stage: ideation
-          current-attempt: gate-attempt:02av-ideation-2
+        - id: gate:ensign-finding-triage-disposition:validation
+          stage: validation
           attempts:
-            - id: gate-attempt:02av-ideation-1
-              sequence: 1
-              state: closed
+            - id: gate-attempt:ensign-finding-triage-disposition-validation-1
               briefing:
-                id: briefing:02av-ideation-1-chat
-                digest: sha256:36fa6dd8cb3e8af49598143eb81e4e9b71e7048084dd85d70193fc7abd05e6e2
-                note: chat presentation; digest is the entity content immediately before this record was written
-              resolution:
-                type: Resolution
-                id: resolution:captain-chat-02av-ideation-1
-                briefing: briefing:02av-ideation-1-chat
-                by: person:captain
-                at: 2026-07-20T06:38:56Z
-                decision: approve
-                reason: "Approved in chat after reading the full proposal: cycle-3 placement rework — the triage rule delivered at the trigger (feedback-rejection-flow standing block riding the routed feedback context, plus the docs/dev/README.md implementation stage-def bullet), ensign-shared-core unchanged with zero always-loaded delta; rule text, decline-as-findings-field convention, and the AC-narrowing design-reset clause as previously approved-shaped."
-              application:
-                action: advance
-                target-stage: implementation
-                state: consumed
-              note: "Two earlier chat revise rounds (trigger-by-reference finding qualification; placement rework) closed before this entity's gates recording began; they are documented in the cycle-2 and cycle-3 stage reports."
-            - id: gate-attempt:02av-ideation-2
-              sequence: 2
-              previous-attempt: gate-attempt:02av-ideation-1
-              state: closed
-              briefing:
-                id: briefing:docs-dev:02av:ideation:briefing-2
-                digest: sha256:03324cb161fc3f8df2936c5bca85ae99a580a2ac2a97fb9dc33420777c80772f
-                room-ref: "./review/ideation/briefing-2"
-                note: "Re-entry after the 0260 park and the captain-directed advisory-records reframe. Multi-artifact package: gate summary, frozen entity snapshot, frozen recorder-contract snapshot; the digest binds briefing.json."
-              resolution:
-                type: Resolution
-                id: resolution:actor-1784638564842898000
-                briefing: briefing:docs-dev:02av:ideation:briefing-2
-                by: person:reviewer
-                at: 2026-07-21T12:56:04Z
-                decision: approve
-              application:
-                action: advance
-                target-stage: implementation
-                state: consumed
-              note: "Subspace multi-artifact float, no annotations; provider result and review log retained in-room. The reframe is approved: dispositions as advisory resolutions, semantics-only boundary, the moved release line aboard. ADOPTION PROVENANCE (captain-confirmed in chat, 2026-07-21): person:reviewer at this float was the captain personally; the FO adopted the provider's advisory result as the captain's binding approval on that basis. The provider envelope (binding:false) is evidence, not the binding record — this note is the durable authorization the promotion previously lacked."
-worktree: .worktrees/spacedock-ensign-ensign-finding-triage-disposition
-sprint-readiness:
+                id: briefing:docs-dev:02av:validation:canonical-v1:revision-1
+                digest: sha256:fc31fe9a3ed18b5c8dae203e74431fd6494beac263dbc5d2b6e5af5a35f8905b
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-1
 ---
 
 `ensign-shared-core` contains zero guidance on consuming review findings — the exact actor that dutifully fixes a symlink edge case in a prototype has no rule to consult, and no disposition short of fixing exists for a substantively-correct-but-disproportionate finding. This adds the generic consumption rule (classify each finding against the workflow's committed finding-triage taxonomy AND the entity's own value ACs before fixing) and the decline disposition (correct-but-disproportionate gets a recorded decline, not a dutiful fix). **Reframe (captain-directed, 2026-07-21):** the disposition is recorded as an **advisory resolution under the gate-recorder model (3k)** — the ensign's triage is its own advisory resolution whose `includes` name each declined finding with class and why-not-material — not the `findings` prose field on a `### Feedback Cycles` entry the parked cut proposed. That answers the byte objection that parked the last cut: a per-entity structured record carries no always-loaded prompt-surface weight, where the ~2 KB prose block did. **Boundary (answered below, not assumed):** this entity owns **triage semantics only** — the rule text and the decline-as-advisory-resolution *shape* — and does NOT absorb the generic rounds-record plumbing (round briefings, room layout, frontmatter pointer, projection), which is the recorder's own generalization and belongs with a 3k successor or its own task. The rule *text* stands as approved-shaped; only the record/delivery mechanism reframes. Triage keys on per-entity value ACs + the committed taxonomy (the `validation` stage-def release-scope classification plus `.roborev.toml`'s four fields), never a workflow stakes field — that member is parked.
