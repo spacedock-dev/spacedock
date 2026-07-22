@@ -1,7 +1,7 @@
 ---
 id: vn15pvn4nt9zce55m757f23a
 title: Make state commit include folder-form entity artifacts
-status: implementation
+status: validation
 source: "Captain-directed follow-up from Roborev setup entity 00 dogfood, 2026-07-14"
 started: 2026-07-14T13:28:29Z
 completed:
