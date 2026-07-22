@@ -90,6 +90,37 @@ func TestGateRecordBriefingReentersStageGateWhenAnotherGateIsSelected(t *testing
 	}
 }
 
+func TestGateRecordOperationClosesMinimalBriefingAttempt(t *testing.T) {
+	root, entity, briefing := crossGateFixture(t)
+	const digest = "sha256:6b2c4f1388a58f42f7c8610f847ed9e7cce92758c00b201d4eb9f4f89dbedd8b"
+
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "durable-gate-approval-pending-blockers", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("record --briefing exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	created, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	minimal := fixtureSection(t, string(created), "            - id: gate-attempt:3k-ideation-10\n", "        - id: gate:docs-dev:3k:validation\n")
+	if strings.Contains(minimal, "state:") || strings.Contains(minimal, "resolution:") {
+		t.Fatalf("semantic record did not create a minimal open attempt:\n%s", minimal)
+	}
+
+	closeOperation := filepath.Join(root, "close.yml")
+	writeFile(t, closeOperation, "operation: close\nexpected: {gate: 'gate:docs-dev:3k:ideation', attempt: 'gate-attempt:3k-ideation-10', briefing: 'briefing:docs-dev:3k:ideation:attempt-10:revision-18', digest: '"+digest+"'}\ngate-id: gate:docs-dev:3k:ideation\nattempt-id: gate-attempt:3k-ideation-10\nresult:\n  briefing-digest: "+digest+"\n  authorized-by: person:captain\n  entries:\n    - type: Resolution\n      id: resolution:docs-dev:3k:ideation:attempt-10\n      briefing: briefing:docs-dev:3k:ideation:attempt-10:revision-18\n      by: person:captain\n      at: 2026-07-22T00:00:00Z\n      decision: approve\n      reason: lgtm. add the fixture\n")
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "durable-gate-approval-pending-blockers", "--workflow-dir", root, "--operation", closeOperation}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("operation close exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	if !strings.Contains(out.String(), "attempt=gate-attempt:3k-ideation-10 state=closed") || !strings.Contains(out.String(), "decision=approve") {
+		t.Fatalf("operation close stdout=%q, want closed approved attempt", out.String())
+	}
+}
+
 func TestLegacyGateOperationCharacterizesGlobalCurrentDefect(t *testing.T) {
 	root, _, briefing := crossGateFixture(t)
 	op := filepath.Join(root, "supersede.yml")

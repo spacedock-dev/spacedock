@@ -192,6 +192,29 @@ func TestRebindCloseFreezeAndSupersedeLifecycle(t *testing.T) {
 	}
 }
 
+func TestMutableOpenAttemptCompatibility(t *testing.T) {
+	resolution := &Resolution{ID: "resolution:a"}
+	for _, tc := range []struct {
+		name    string
+		attempt Attempt
+		want    bool
+	}{
+		{name: "explicit legacy open", attempt: Attempt{State: "open"}, want: true},
+		{name: "minimal open", attempt: Attempt{}, want: true},
+		{name: "resolution-bearing minimal", attempt: Attempt{Resolution: resolution}},
+		{name: "explicit closed", attempt: Attempt{State: "closed", Resolution: resolution}},
+		{name: "contradictory open with resolution", attempt: Attempt{State: "open", Resolution: resolution}},
+		{name: "contradictory closed without resolution", attempt: Attempt{State: "closed"}},
+		{name: "unknown explicit state", attempt: Attempt{State: "pending"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := mutableOpenAttempt(&tc.attempt); got != tc.want {
+				t.Fatalf("mutableOpenAttempt(%#v) = %v, want %v", tc.attempt, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestRecordCloseNormalizesOnlyAfterDigestMatch(t *testing.T) {
 	initial := "status: ideation\ngates:\n  version: 1\n  current: {gate: 'gate:design', attempt: 'gate-attempt:design-1'}\n  records:\n    - id: gate:design\n      stage: ideation\n      current-attempt: gate-attempt:design-1\n      attempts:\n        - id: gate-attempt:design-1\n          sequence: 1\n          state: open\n          briefing:\n            id: briefing:design-1\n            digest: sha256:" + strings.Repeat("a", 64) + "\n"
 	entity := writeEntity(t, initial)

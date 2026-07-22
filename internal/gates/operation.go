@@ -156,7 +156,7 @@ func Record(entityPath, operationPath, briefingPath string) error {
 		if err != nil {
 			return err
 		}
-		if a.State != "open" {
+		if !mutableOpenAttempt(a) {
 			return fmt.Errorf("attempt %s is frozen closed", a.ID)
 		}
 		binding, err := bindBriefing(op.Briefing, briefingPath, op.RawFilePin)
@@ -169,7 +169,7 @@ func Record(entityPath, operationPath, briefingPath string) error {
 		if err != nil {
 			return err
 		}
-		if a.State != "open" {
+		if !mutableOpenAttempt(a) {
 			return fmt.Errorf("attempt %s is frozen closed", a.ID)
 		}
 		if !digestRE.MatchString(a.Briefing.Digest) {
@@ -263,6 +263,13 @@ func findRecord(doc *Document, id string) *GateRecord {
 		}
 	}
 	return nil
+}
+
+// mutableOpenAttempt bridges explicit legacy state to the minimal v1 shape.
+// Contradictory or unknown legacy state remains non-mutable even when the
+// record has not yet acquired a Resolution.
+func mutableOpenAttempt(attempt *Attempt) bool {
+	return attempt.Resolution == nil && (attempt.State == "" || attempt.State == "open")
 }
 
 func recordForStage(doc *Document, stage string) (*GateRecord, error) {
