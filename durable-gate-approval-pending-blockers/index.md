@@ -1,6 +1,6 @@
 ---
 title: Gate recorder — durable gates records with binary-owned writes
-status: implementation
+status: ideation
 score: "0.80"
 source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
