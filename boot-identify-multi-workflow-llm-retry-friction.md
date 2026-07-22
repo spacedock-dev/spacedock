@@ -5,6 +5,7 @@ score: 0.85
 id: 32vshm0h2h04gs7hzcf315g0
 source: "recorded Pi First Officer boot session at this repository root, cross-checked against PR #480"
 worktree: .worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction
+pr: "#551"
 ---
 
 ## Problem
