@@ -17,7 +17,9 @@ When the skill is upgraded and determines the binary needs upgrading, the remedy
 
 ## Problem
 
-The too-old-binary remedy is generated in ONE place: `internal/contract/contract.go` → `tooOldBinaryRemedy()` (called only from `compareNamed`, reached by `spacedock doctor`, `spacedock init/install`'s post-install doctor, and the `spacedock claude|codex` front-door version gate via `ManifestVerdict`). It returns a fixed block that leads with `brew upgrade spacedock` regardless of how the running binary was installed:
+> **Captain TRIM (2026-07-22).** The all-install-sources design (a `BrewStable`/`BrewEdge`/`NonBrew`/sandbox `InstallSource` matrix) was implemented and validated PASSED, then the captain trimmed the scope to ONLY the actual reported bug — the edge (`@next`) channel. The sections in THIS spec region (Problem → Expected surface) are revised to that @next-only scope. The historical ideation / implementation / validation reports below describe the superseded four-source design and are kept as the record.
+
+The too-old-binary remedy is generated in ONE place: `internal/contract/contract.go` → `tooOldBinaryRemedy()` (called from `compareNamed`, reached by `spacedock doctor`, `spacedock init/install`'s post-install doctor, and the `spacedock claude|codex` front-door version gate via `ManifestVerdict`). It returns a fixed block that leads with `brew upgrade spacedock`:
 
 ```
   Upgrade via Homebrew: brew upgrade spacedock
@@ -25,109 +27,67 @@ The too-old-binary remedy is generated in ONE place: `internal/contract/contract
   Or refresh the plugin instead: spacedock install
 ```
 
-That stable-`spacedock` command is wrong for the source the binary actually came from, and leaves the user stuck on the old binary:
+**The reported bug (captain-observed).** A user who installed via the `spacedock@next` cask ran the prompt, followed `brew upgrade spacedock`, and it did nothing — the stable cask isn't installed. The edge cask is a *separate* cask token (`spacedock@next`, `conflicts_with cask: spacedock`), so the correct command is `brew upgrade spacedock@next`. That is the only case this task fixes; every other install keeps today's unchanged block.
 
-1. **Edge / `@next` channel (captain-observed).** A user who installed via the `spacedock@next` cask ran the prompt, followed `brew upgrade spacedock`, and it did nothing — the stable cask isn't installed. The edge cask is a *separate* cask token (`spacedock@next`, `conflicts_with cask: spacedock`), so the correct command is `brew upgrade spacedock@next`.
-2. **Non-brew install.** A source `go build`, a `go install …@next` proxy build, a downloaded release archive, or a `SPACEDOCK_BIN` pointing at a checkout build — `brew upgrade` does not apply at all; the user needs a rebuild / re-download.
-3. **Sandbox / brew-unreachable execution.** When the doctor/gate runs where Homebrew is not on PATH (a safehouse sandbox, a minimal CI/container env), any `brew upgrade …` line is unactionable in place — the upgrade must be run on the host.
-
-No skill/agent text and no user-facing doc restates the `brew upgrade spacedock` remedy (grep of `skills/`, `agents/`, `docs/site` finds only the too-old-*plugin* `spacedock install` remedy, and `install.md`'s `brew install` setup line). So the fix is contained to the code remedy generator plus one small doc addition — there is no scattered skill abort text to chase.
+No skill/agent text and no user-facing doc restates the `brew upgrade spacedock` remedy, so the fix is contained to the one code remedy generator.
 
 ## Proposed approach
 
-Make the remedy generator install-source-aware by passing it a detected install source, mirroring how `tooOldPluginRemedy(host)` already threads the detected host.
+Minimal @next-only fix: thread a small `edgeCask bool` into the single remedy generator (mirroring how `tooOldPluginRemedy(host)` already threads a value), and detect the one case — "is the running binary the `spacedock@next` cask?" — in `internal/cli`. The `contract` package stays free of `os.Executable`/`exec`: it receives a bool and picks the Homebrew formula.
 
-**Detection lives in `internal/cli` (new `install_source.go`); remedy selection lives in `internal/contract` (pure data-in).** The `contract` package stays free of `os.Executable`/`exec`/`safehouse` — it receives a small value and switches on it.
+1. **`tooOldBinaryRemedy(edgeCask bool)` in `internal/contract`.** `edgeCask=true` swaps line 1's formula to `brew upgrade spacedock@next`; the other two lines are unchanged. `edgeCask=false` reproduces today's 3-line block byte-for-byte — the safe default and the reason the public `Compare` signature stays untouched (it passes `false`).
 
-1. **New value in `internal/contract`:**
-   ```go
-   type SourceKind int
-   const ( SourceUnknown SourceKind = iota; BrewStable; BrewEdge; NonBrew )
-   type InstallSource struct { Kind SourceKind; HostOnly bool } // HostOnly: brew unreachable (sandbox/minimal)
-   ```
-   Zero value `{SourceUnknown, false}` reproduces today's 3-line block — the safe fallback and the reason the public `Compare` (17 callers) stays untouched.
+2. **Thread the bool through the remedy path only:** `compareNamed`, `ManifestVerdict`, and `RunDoctor` gain an `edgeCask bool` param; `Compare` keeps its signature and passes `false`. Callers computing it: `frontdoor.go` `gateHost` (×1) and `init.go`'s doctor / codex / manifest arms (×3), each calling `runningEdgeCask()`.
 
-2. **New detector `detectInstallSource(execPath string, brewLookPath func(string)(string,error), devBranch string) contract.InstallSource` in `internal/cli`.** All inputs injectable for tests. Algorithm:
-   - Resolve the RUNNING binary via the existing `resolvedLauncherBin()` (`os.Executable` → `filepath.EvalSymlinks`). Anchor on the running process, not `command -v spacedock` (they can differ — see Spike).
-   - `token, isCask := caskToken(execPath)`: split the resolved path on `/`, and if a `Caskroom` segment is present, `token` is the next segment. `token == "spacedock@next"` → `BrewEdge`; `token == "spacedock"` → `BrewStable`; other/absent-token cask path → `SourceUnknown`.
-   - For a brew kind, `HostOnly = brewLookPath("brew") errored` (brew not resolvable here → run-on-host variant; the sandbox case).
-   - Non-empty resolved path with NO `Caskroom` segment → `NonBrew`.
-   - Empty/unresolvable path → `SourceUnknown` (generic block).
+3. **Detection `runningEdgeCask()` / `isEdgeCaskPath(execPath)` in `internal/cli/edge_cask.go`.** Resolve the RUNNING binary via the existing `resolvedLauncherBin()` (`os.Executable` → `filepath.EvalSymlinks`), split the path, and report whether the segment immediately after a `Caskroom` segment is exactly `spacedock@next`. Any other path (the stable `spacedock` cask, a source checkout, an empty/unresolvable path) → `false` → the unchanged remedy. No `brew` subprocess (the resolved Caskroom token carries the cask name; spike-proven below).
 
-3. **Thread the source through the remedy path only:** `compareNamed` gains a `src InstallSource` param; `Compare` keeps its signature and passes `SourceUnknown`; `ManifestVerdict(manifestPath, host, binaryVersion, src)` and `RunDoctor(…, src, …)` gain the param. `tooOldBinaryRemedy(src)` switches on it. Callers computing the source: `frontdoor.go` `gateHost` (×1) and `init.go` `runDoctor`/codex/manifest arms (×3), each calling `detectInstallSource(...)`.
-
-4. **Per-source remedy wording** (every arm keeps the binary-vs-plugin distinction line `Or refresh the plugin instead: spacedock install`, which the existing test pins):
-   - `SourceUnknown` → unchanged 3-line block (brew upgrade spacedock / build from source / refresh plugin).
-   - `BrewStable` → `  Upgrade via Homebrew: brew upgrade spacedock` + refresh line.
-   - `BrewEdge` → `  Upgrade via Homebrew: brew upgrade spacedock@next` + refresh line.
-   - `BrewStable`/`BrewEdge` with `HostOnly` → `  Homebrew isn't reachable here (e.g. a sandbox). Upgrade on your host, then relaunch: brew upgrade <formula>` + refresh line (formula per channel).
-   - `NonBrew` → `  Rebuild from source: go build -o spacedock ./cmd/spacedock (or re-download the latest release)` + refresh line. No `brew` line.
-
-**Why not simpler alternatives?**
-- *Use the `devBranch` build stamp (`next`/`main`) alone to pick the formula.* Rejected as the sole signal: `devBranch` defaults to `next` for any plain `go build`, so it can't distinguish an edge cask from a source build — it would emit `brew upgrade spacedock@next` for a source checkout. The Caskroom-token path signal is what proves a brew install; `devBranch` is not needed once the path is read.
-- *Shell out to `brew list --cask`/`brew --prefix` to find the owning cask.* Rejected: slower, adds a subprocess dependency, and fails inside a sandbox where `brew` is stripped — the exact case we must handle. The resolved Caskroom path already carries the token with no subprocess.
-- *Overwrite the remedy string in the CLI after calling the verdict.* Rejected: duplicates message assembly and splits remedy ownership across two packages; threading a value mirrors the existing `host` threading and keeps assembly in `contract`.
+**Why a bool, not the `SourceKind` enum?** The captain's reported bug is exactly one case (`@next`). A single bool is the smallest value that fixes it and keeps `contract` pure; the non-brew / stable-formula / sandbox arms of the earlier enum design are out of scope (below).
 
 ## Out of scope
 
-- **Version-COMPARISON logic.** What counts as out-of-date (`ParseMajorMinor`, `Compare`, the verdict classification) is untouched. Only the too-old-binary remedy MESSAGE changes.
-- **The other verdicts' messages.** Compatible, too-old-plugin, malformed-version, no-plugin-found are byte-identical to before.
+- **Every install source except the `@next` edge cask.** Non-brew builds (source `go build`, proxy `go install`, downloaded archive), a separate remedy for the stable `spacedock` cask, and sandbox / brew-unreachable execution are NOT addressed — they keep today's unchanged 3-line block. The captain trimmed the four-source design that had covered these; if any recurs as a real report, it is a separate task.
+- **The `SourceKind`/`InstallSource` enum, `HostOnly`/sandbox detection, and the per-source rendering/detection matrices.** Replaced by the single `edgeCask` bool.
+- **Version-COMPARISON logic** (`ParseMajorMinor`, `Compare`, verdict classification) — untouched. Only the too-old-binary remedy's Homebrew formula line changes, and only for an @next install.
+- **The other verdicts' messages** (compatible, too-old-plugin, malformed-version, no-plugin-found) — byte-identical.
+- **Doc change.** The command-reference never described the too-old-binary remedy, so no doc edit is made (keeping the trim minimal).
 - **Auto-upgrade / self-update.** The remedy tells the user what to run; it never runs it.
-- **New install methods** or changes to the cask/goreleaser channel model.
-- **A new `safehouse` in-process "am I inside a sandbox" marker.** None exists today, and adding one to safehouse (a separate project) is out of scope. The sandbox case is detected by its observable consequence — `brew` unresolvable on PATH — via `HostOnly`, not a marker. Known limitation (documented, not fixed here): a sandbox that *relocates* the binary off its Caskroom path AND strips `brew` degrades to `NonBrew`/`SourceUnknown`; the common in-place sandbox (same path, brew stripped) is handled by `HostOnly`.
-- **`SPACEDOCK_DEV_BRANCH` / channel overrides changing the emitted formula.** The formula is read from the Caskroom token (the real cask), not the overridable `devBranch` stamp.
 
 ## Acceptance criteria
 
-- **AC-1 (value — remedy matches the actual source across the matrix).** For each install source in {`BrewStable`, `BrewEdge`, `NonBrew`, brew+`HostOnly` (sandbox)}, the too-old-binary remedy emitted through the doctor/gate path names the instruction that actually applies: brew-stable → `brew upgrade spacedock`; brew-edge → `brew upgrade spacedock@next`; non-brew → a source rebuild / re-download instruction with NO `brew` line; sandbox → a run-on-host instruction. Verified by a table test whose oracle is the install-source INPUT, which lives outside the message and moves each row independently — a remedy generator that ignored its input would fail ≥3 rows.
-  - *Test:* `internal/cli/install_source_test.go` rendering table (source → emitted remedy tokens).
-- **AC-2 (the captain's regression — no bare stable command where it's wrong).** For a `BrewEdge` install and for a `NonBrew` install, the emitted remedy contains NO bare stable `brew upgrade spacedock` command, word-boundary matched so that `brew upgrade spacedock@next` does NOT satisfy the stable substring. (This is exactly the `@next`-user-got-`brew upgrade spacedock` bug.)
-  - *Test:* same table asserts `regexp \`brew upgrade spacedock(\s|$)\`` does NOT match the edge/non-brew rows, while `brew upgrade spacedock@next` IS present in the edge row.
-- **AC-3 (detection grounded in the real path).** `detectInstallSource` classifies the resolved running-binary path: a `…/Caskroom/<token>/…` path → the brew kind named by `<token>` (`spacedock`→stable, `spacedock@next`→edge); a resolved non-Caskroom path → non-brew; a brew-owned path with `brew` unresolvable → the `HostOnly` variant. Anchored on the spike's observed real path (below).
-  - *Test:* `internal/cli/install_source_test.go` detection table over `(execPath, brewLookPath stub, devBranch)` inputs.
-- **AC-4 (no collateral change).** The `SourceUnknown` fallback reproduces today's 3-line remedy byte-for-byte, and the compatible / too-old-plugin / malformed / no-plugin messages are unchanged — so the untouched `Compare`-based verdict tests pass without edits.
-  - *Test:* existing `internal/contract/contract_test.go` + `TestTooOldBinaryRemedyLeadsWithBrew` (drives the `SourceUnknown` arm) stay green unmodified.
-- **AC-5 (docs).** The command-reference doctor section documents the binary-out-of-date remedy as install-source-aware, alongside the existing plugin-out-of-date remedy.
-  - *Test:* the doc diff below is applied; reviewed at the gate (prose, no automated check).
+- **AC-1 (the captain's regression — an @next install names the @next formula, never the bare stable command).** When the running binary is the `spacedock@next` cask (`edgeCask=true`), the too-old-binary remedy names `brew upgrade spacedock@next` and contains NO bare stable `brew upgrade spacedock` command, word-boundary matched so `brew upgrade spacedock@next` does NOT satisfy the stable substring. (This is exactly the `@next`-user-got-`brew upgrade spacedock`-no-op bug.)
+  - *Test:* `internal/contract/version_message_test.go` `TestTooOldBinaryRemedyEdgeChannel` — `tooOldBinaryRemedy(true)` asserts `brew upgrade spacedock@next` present AND regexp `` `brew upgrade spacedock(\s|$)` `` absent.
+- **AC-2 (no collateral change).** For any non-@next install (`edgeCask=false`), the remedy is byte-for-byte the existing 3-line block, and the compatible / too-old-plugin / malformed / no-plugin messages are unchanged — so the untouched `Compare`-based verdict tests pass without edits.
+  - *Test:* same `TestTooOldBinaryRemedyEdgeChannel` pins `tooOldBinaryRemedy(false)` byte-for-byte; existing `internal/contract/contract_test.go` and `TestTooOldBinaryRemedyLeadsWithBrew` (call-only reconcile) stay green.
+- **AC-3 (detection grounded in the resolved path).** `isEdgeCaskPath` classifies a `…/Caskroom/spacedock@next/…` path as edge (true), and the stable cask / a source checkout / an empty path as not-edge (false).
+  - *Test:* `internal/cli/edge_cask_test.go` `TestIsEdgeCaskPath` table over four representative paths.
 
 ## Test plan
 
-Primary proof is Go unit/table tests exercising the generator and detector by feeding inputs and asserting the emitted bytes — no mocks, oracle external to the message.
+Focused Go unit tests feeding inputs and asserting emitted bytes — no mocks.
 
-1. **`internal/cli/install_source_test.go` (new, ~110 LOC).**
-   - *Detection table* over `detectInstallSource(execPath, brewLookPath, devBranch)`:
-     - `/opt/homebrew/Caskroom/spacedock@next/0.26.0-pre0/spacedock`, brew-found → `{BrewEdge, HostOnly:false}`.
-     - `/usr/local/Caskroom/spacedock/0.25.0/spacedock`, brew-found → `{BrewStable, false}`.
-     - same Caskroom path, brew-NOT-found (stub errors) → `{BrewEdge, HostOnly:true}`.
-     - `/Users/x/git/spacedock/spacedock` (checkout build) → `{NonBrew, false}`.
-     - `""` (unresolvable) → `{SourceUnknown, false}`.
-   - *Rendering table*: for each `contract.InstallSource`, drive a too-old fixture through `contract.RunDoctor(fixture, "claude", oldBinaryVersion, src, &out, &err)` and assert exact/forbidden tokens per AC-1/AC-2, using the word-boundary regexp for the stable command.
-2. **`internal/contract/version_message_test.go` (reconcile + extend, ~+55 LOC).** `TestTooOldBinaryRemedyLeadsWithBrew` keeps driving the `SourceUnknown` arm (still `brew upgrade spacedock`, still no `@next`, its existing `@next`-forbid assertion stays valid for that arm). ADD `TestTooOldBinaryRemedyPerSource` covering `BrewEdge` (`brew upgrade spacedock@next`, no bare stable), `NonBrew` (no `brew`), and `HostOnly` (run-on-host, brew not the in-place action).
-3. **Signature-ripple caller updates (~+8 LOC total):** `internal/contract/doctor_test.go` (×2) and `internal/cli/upgrade_from_stale_test.go` (×2) pass `contract.SourceUnknown` (verdict-only tests); `frontdoor.go` (×1) and `init.go` (×3) pass `detectInstallSource(...)`. `Compare` callers (`contract_test.go` ×15, `release/stamp_then_gate_test.go`, `skills/integration/contract_skew_test.go`) are UNCHANGED.
-4. **Live smoke (skip-guarded, machine-grounded value check).** Resolve the `spacedock` on PATH; if it resolves under a `Caskroom/` segment, run `spacedock doctor --plugin-manifest <too-old fixture>` and assert the emitted remedy names that Caskroom token's formula (on a `@next` box: `brew upgrade spacedock@next`). Skips when the PATH binary isn't a Caskroom install (portable per "no hidden machine dependencies").
-5. **Hygiene:** `gofmt -l` (clean), `go vet ./...`, `go test ./...`, `go test ./... -race`.
+1. **`internal/contract/version_message_test.go` — add `TestTooOldBinaryRemedyEdgeChannel`.** `tooOldBinaryRemedy(true)` → contains `brew upgrade spacedock@next`, the word-boundary regexp for the bare stable command does NOT match, and it keeps the `spacedock install` plugin-refresh line. `tooOldBinaryRemedy(false)` → byte-for-byte the pinned 3-line block.
+2. **`internal/cli/edge_cask_test.go` (new) — `TestIsEdgeCaskPath`.** Table: edge Caskroom path → true; stable Caskroom path → false; source checkout → false; empty → false.
+3. **Signature-ripple caller reconciles:** `internal/contract/doctor_test.go` (×2), `internal/cli/upgrade_from_stale_test.go` (×2), and `version_message_test.go` (×3) pass `false`; `frontdoor.go` (×1) and `init.go` (×3) pass `runningEdgeCask()`. `Compare` callers are UNCHANGED.
+4. **Hygiene:** `gofmt -l` (clean), `go vet ./...`, `go test ./...`, `go test ./... -race`.
 
 ## Expected surface
 
-| File | Kind | ~LOC |
+| File | Kind | as-built |
 |---|---|---|
-| `internal/contract/contract.go` | prod — `InstallSource`/`SourceKind`, `tooOldBinaryRemedy(src)`, thread `compareNamed` | +45 |
-| `internal/contract/doctor.go` | prod — `ManifestVerdict`/`RunDoctor` gain `src` | +5 |
-| `internal/cli/install_source.go` | prod — `detectInstallSource`, `caskToken` (new file) | +55 |
-| `internal/cli/frontdoor.go` | prod — `gateHost` computes + passes source | +4 |
-| `internal/cli/init.go` | prod — 3 doctor callers pass source | +8 |
-| `internal/cli/install_source_test.go` | test — detection + rendering tables + live smoke (new) | +115 |
-| `internal/contract/version_message_test.go` | test — reconcile + per-source | +55 |
-| `internal/contract/doctor_test.go`, `internal/cli/upgrade_from_stale_test.go` | test — ripple `SourceUnknown` | +8 |
-| `docs/site/reference/command-reference.md` | doc — binary-out-of-date remedy note | +3 |
+| `internal/contract/contract.go` | prod — `tooOldBinaryRemedy(edgeCask)`, thread `compareNamed`/`Compare` | +18/-8 |
+| `internal/contract/doctor.go` | prod — `ManifestVerdict`/`RunDoctor` gain `edgeCask` | +10/-6 |
+| `internal/cli/edge_cask.go` | prod — `runningEdgeCask`, `isEdgeCaskPath` (new file) | +37 |
+| `internal/cli/frontdoor.go` | prod — `gateHost` passes `runningEdgeCask()` | +1/-1 |
+| `internal/cli/init.go` | prod — 3 doctor callers pass `runningEdgeCask()` | +3/-3 |
+| `internal/contract/version_message_test.go` | test — reconcile + `TestTooOldBinaryRemedyEdgeChannel` | +33/-3 |
+| `internal/cli/edge_cask_test.go` | test — `TestIsEdgeCaskPath` (new) | +28 |
+| `internal/contract/doctor_test.go`, `internal/cli/upgrade_from_stale_test.go` | test — ripple `false` | +4/-4 |
 
-Estimate: ~9 files; prod ~117 LOC, test ~178 LOC, doc ~3. **Tolerance: ±3 files, ±60 LOC.** The dominant variable is the signature-ripple caller count; keeping `Compare` stable caps it (only `ManifestVerdict`/`RunDoctor` callers move).
+As-built: 9 files, +134/-25 (net +109). No doc change (out of scope per the trim). Roughly ⅓ the surface of the superseded four-source build (+416/-32).
 
-## Doc diff
+## Docs
 
-`docs/site/reference/command-reference.md`, the `doctor`/`init` paragraph (currently ~line 56). Append after the existing plugin-out-of-date sentence:
-
-> When `doctor` reports the **binary** is out of date, it prints the upgrade path that matches how the binary was installed — `brew upgrade spacedock` for a stable Homebrew install, `brew upgrade spacedock@next` for the edge (`@next`) channel, a source rebuild for a non-Homebrew build, and a run-on-host hint when Homebrew isn't reachable (e.g. inside a sandbox).
+No doc change: the command-reference never described the too-old-binary remedy, so the @next-only trim adds none. (The four-source design's proposed command-reference note is dropped with the rest of that scope.)
 
 ## Spike (riskiest mechanism — DONE)
 
@@ -212,3 +172,20 @@ Threaded a detected `contract.InstallSource` through the single remedy generator
 ### Summary
 
 PASSED. All five value ACs verified with reproduced evidence and, where an automated guard exists, mutation-tested (each claim-breaking edit reds a specific test) — no AC proof is self-referential or tautological. The captain's regression is fixed at the value level: BrewEdge→`brew upgrade spacedock@next` (render table + live smoke on this real `@next` Caskroom box), non-brew→source rebuild with no brew line, sandbox→run-on-host, SourceUnknown→byte-for-byte the old block. The FO-flagged high-stakes surface (`gateHost`/`currentInstallSource` threading) is confirmed live: the built binary's real `doctor` path emits a detected NonBrew remedy, proving the source flows end-to-end rather than degrading to the zero-value generic block. The `Compare` signature stayed stable (contract_test.go empty diff). No material findings. Deferred/observational only: (1) the documented, out-of-scope known limitation — a sandbox that RELOCATES the binary off its Caskroom path AND strips brew degrades to NonBrew/SourceUnknown (trigger outside the promised in-place-sandbox case; HostOnly handles the common case); (2) BrewEdge cannot be driven through the *built* binary end-to-end on this box (the only Caskroom binary is the pre-fix installed one) — covered instead by the union of exercised links (real-@next-path detection + render(BrewEdge) + live currentInstallSource→runDoctor threading). The FO-accepted +118 LOC overage is not re-litigated; confirmed it is AC-mandated test-table volume, not faked coverage.
+
+## Stage Report: implementation (cycle 2 — captain @next-only trim)
+
+Supersedes the four-source implementation above. The captain trimmed the scope (2026-07-22) to ONLY the @next edge-channel fix; the branch was reset to clean `origin/main` (`dceede3a`; main advanced past the earlier `ca136f83` base) and the four-source code discarded. Items track the trim directive, not the superseded four-source checklist.
+
+- DONE: @next-only remedy — when the running binary is the `spacedock@next` cask, `tooOldBinaryRemedy` emits `brew upgrade spacedock@next`; otherwise the 3-line block is byte-for-byte unchanged.
+  Threaded a small `edgeCask bool` (NOT a `SourceKind` enum) through `compareNamed`/`ManifestVerdict`/`RunDoctor`; `Compare` passes `false`. Code commit `37a872e2`. AC-1: `TestTooOldBinaryRemedyEdgeChannel` asserts `tooOldBinaryRemedy(true)` contains `brew upgrade spacedock@next` AND regexp `` `brew upgrade spacedock(\s|$)` `` does NOT match — reds if the formula switch is dropped (edge falls back to bare stable). AC-2: same test pins `tooOldBinaryRemedy(false)` byte-for-byte equal to the old block — reds on any drift.
+- DONE: Minimal detection — `isEdgeCaskPath` reads the resolved `os.Executable` Caskroom token for the @next case only; no enum, no non-brew/sandbox/HostOnly.
+  New `internal/cli/edge_cask.go` (`runningEdgeCask`/`isEdgeCaskPath`), anchored on `resolvedLauncherBin()`. AC-3: `TestIsEdgeCaskPath` — edge Caskroom path→true; stable cask / source checkout / empty→false. Reds if the segment-after-`Caskroom` check misreads (substring match or off-by-one).
+- DONE: Entity body revised to @next-only + trimmed title proposed.
+  Problem / Proposed approach / Out of scope / Acceptance criteria / Test plan / Expected surface rewritten to the @next-only scope with a Captain-TRIM provenance banner; the four-source ideation/impl/validation reports kept as history. **Proposed title (frontmatter — for the FO to apply, since ensigns do not edit frontmatter):** `Binary-upgrade prompt must name spacedock@next for edge-cask installs`.
+- DONE: TDD; gofmt/vet clean; `go test ./...` and `-race` green.
+  `gofmt -l` clean, `go vet ./...` clean. `go test ./...` green (0 FAIL); `go test ./... -race` green (0 FAIL). NOTE: one earlier `-race` run hit a TRANSIENT `internal/contractlint` failure — its repo-root filesystem walk raced a concurrent goreleaser `dist/` snapshot build mutating the git-ignored `dist/`; environmental, unrelated to this change; the settled re-run is clean. (Latent robustness gap in that boundary-guard test — it walks git-ignored `dist/` — noted, not fixed here: unrelated package.) As-built surface: 9 files, +134/-25 (net +109) — above the ~30-60 target, driven by the 4-signature threading ripple + a new detection file + tests at repo comment density, NOT behavioral scope (one formula line). ~⅓ the surface of the discarded four-source build (+416/-32).
+
+### Summary
+
+Minimal @next-only fix per the captain's trim: a single `edgeCask bool` threaded into the one remedy generator emits `brew upgrade spacedock@next` when the running binary is the edge cask (resolved `Caskroom/spacedock@next/` token), leaving every other install's remedy byte-for-byte unchanged. No `SourceKind` enum, no non-brew/sandbox arms — those are now Out of scope. Before/after for the @next case: `brew upgrade spacedock` (a no-op for @next users — the bug) → `brew upgrade spacedock@next`. Entity spec sections revised to the trimmed scope; four-source history preserved; trimmed title proposed for the FO to apply. `go test ./...` and `-race` green. Surface is net +109 (above the ~30-60 target but ~⅓ of the discarded build) — the plumbing to keep `contract` pure, not behavioral scope.
