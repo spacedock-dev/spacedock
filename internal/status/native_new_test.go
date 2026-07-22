@@ -139,8 +139,11 @@ func TestNewFolderForm(t *testing.T) {
 	if !strings.Contains(written, "id: "+want) {
 		t.Fatalf("folder entity missing minted id %q:\n%s", want, written)
 	}
-	// Byte-identity: the written file equals STDIN with the id line inserted.
-	wantBytes := string(stampID([]byte(newBody), want))
+	// Byte-identity: the written file equals STDIN with the id line inserted
+	// immediately before the closing --- of the frontmatter. The expected bytes are
+	// reconstructed independently of stampID (an anchored splice on the last
+	// frontmatter line) so a stampID splice-offset regression is caught.
+	wantBytes := strings.Replace(newBody, "source: roadmap\n---", "source: roadmap\nid: "+want+"\n---", 1)
 	if written != wantBytes {
 		t.Fatalf("folder entity not byte-identical to STDIN+id-stamp\n--- got ---\n%q\n--- want ---\n%q", written, wantBytes)
 	}
