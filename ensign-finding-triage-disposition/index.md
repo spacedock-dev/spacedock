@@ -1,7 +1,7 @@
 ---
 id: 02avdajaz0q3hnjwycm5fq45
 title: Ensigns triage review findings against declared stakes before fixing — decline disposition for correct-but-disproportionate findings
-status: ideation
+status: implementation
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.7"
 sprint: durable-decisions
@@ -56,9 +56,9 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
               note: "Subspace multi-artifact float, no annotations; provider result and review log retained in-room. The reframe is approved: dispositions as advisory resolutions, semantics-only boundary, the moved release line aboard. ADOPTION PROVENANCE (captain-confirmed in chat, 2026-07-21): person:reviewer at this float was the captain personally; the FO adopted the provider's advisory result as the captain's binding approval on that basis. The provider envelope (binding:false) is evidence, not the binding record — this note is the durable authorization the promotion previously lacked."
-worktree:
+worktree: .worktrees/spacedock-ensign-ensign-finding-triage-disposition
 sprint-readiness:
 ---
 
