@@ -97,3 +97,26 @@ Re-confirmed all four tautological tests at HEAD b7f331d5 and designed independe
 ### Summary
 
 Gave all four tautological tests independent oracles and mutation-proved each (RED under its exposing mutation, GREEN reverted; pre-fix each stayed GREEN under the same mutation — the tautology). NOTABLE FINDING on #2/#3: the ideation's named mutation (id after the closing `---`) pushes the id out of the frontmatter, so the sibling `--validate` assertion catches it independently — it does NOT isolate the byte-identity mirror tautology (pre-fix under that mutation the tests fail at `--validate`, not the byte-identity check). I additionally used a within-frontmatter splice (id after the opening `---`, id stays in the frontmatter so `--validate` passes) as the clean isolator: pre-fix it left both mirror tests GREEN, post-fix it makes both RED on the byte-identity check ALONE. That confirms the literal-oracle fix genuinely added teeth the mirror lacked, beyond what `--validate` already guarded. The `:106` PresentFalseHint sibling was left untouched per the gate ruling. No production code changed.
+
+## Stage Report: validation
+
+- DONE: Verify AC-1 (activeSessionFile recency-tiebreak reversal reds #1) with reproduced mutation-kill.
+  Post-fix + mutation (`pty_session_test.go:219` `cands[i].mod > cands[j].mod` → `<`) → RED at `:394` (returned the older FO file); reverted → GREEN. Pre-fix (ca136f83) + same mutation → GREEN (subtest only `t.Logf`'d — tautology). The fix's `t.Errorf` against the hand-set `teammatePath` is what fails.
+- DONE: Verify AC-2/AC-3 (stampID splice regression reds #2 and #3) with reproduced mutation-kill.
+  Post-fix + within-frontmatter splice (`new.go:131` `lines[:fmEnd:fmEnd]` → `lines[:fmStart+1:fmStart+1]`) → RED at `native_new_test.go:148` and `zz_independent_parity_test.go:556` on the byte-identity check ALONE (slug-flat branch correctly PASSES); reverted → GREEN.
+- DONE: CRITICAL cross-check on #2/#3 — isolate the byte-identity tautology, not the id-out-of-frontmatter case.
+  Reproduced the implementer's stronger proof: the within-frontmatter splice (id stays valid) is NOT caught by `--validate` — the parity test uses `t.Errorf` and ran on to its `:561` `--validate` with NO `:563` failure. Pre-fix mirror + that splice → fully GREEN (tautology); post-fix → RED on byte-identity alone. Also reproduced the ideation's NAMED mutation (id after closing `---`, `lines[:fmEnd+1:fmEnd+1]`): pre-fix mirror → RED but at `--validate` ("missing required id"), NOT byte-identity — confirming it never isolates the tautology. The tautology IS genuinely killed.
+- DONE: Verify AC-4 (emptying teamStateNeutralHint reds #4) with reproduced mutation-kill.
+  Post-fix + emptied constant (`boot.go:23` → `""`) → RED at `boot_probe_parity_test.go:116` (render emits `hint: `, literal oracle expects `hint: no active team runtime detected`); reverted → GREEN. Pre-fix mirror + same → GREEN (both sides emptied — tautology).
+- DONE: Verify AC-5 (full suite GREEN, no lost coverage, diff review).
+  `go test ./internal/ensigncycle ./internal/status -count=1` → both ok, exit 0 (9.3s / 29.8s). Diff vs origin/main = exactly the four cited assertions + #1's `os.Chtimes` pin and `time` import; 4 test files (+24/-7); gofmt-clean; no sibling assertion removed.
+- DONE: Confirm :106 PresentFalseHint sibling NOT touched and NO production code changed (test-file-only).
+  `git diff origin/main...HEAD` has zero hits for `PresentFalseHint`/`wantAbsent`; `git diff --name-only` shows only `*_test.go` (no production file). Commit under review: 9de3e058.
+- DONE: Semantic adversarial pass over each fixed assertion.
+  Each oracle is independent of the code under test: #1 asserts against the hand-written `teammatePath`; #2/#3 rebuild expected bytes via an anchored `strings.Replace` on `"source: roadmap\n---"` (fixed textual anchor, not a `stampID` line-scan) with the id from `--next-id`, pinning the id-line POSITION which the mirror could not; #4 is a hand-copied literal of the constant. No residual "passes while behavior wrong" path found — each mutation-kill above is the falsifier.
+- DONE: Detached adversarial audit — N/A (test-file-only, low blast radius; ACs' oracle is external RED/GREEN-under-mutation).
+  Per the stage's audit carve-out and the assignment: no high-stakes production surface changed. The AC-provenance trigger is satisfied — every AC's proof is a reproduced command RED/GREEN, not a string match.
+
+### Summary
+
+Reproduced every AC's mutation-kill from a clean worktree at commit 9de3e058 (base origin/main ca136f83): each fixed test goes RED under its exposing mutation and GREEN reverted, and pre-fix each stayed GREEN under the same mutation — proving the tautology was real and is now closed. The #2/#3 critical cross-check holds: the byte-identity oracle catches a clean within-frontmatter `stampID` splice that `--validate` does not, while the ideation's named (id-out-of-frontmatter) mutation is caught only by `--validate` — so the fix adds genuine teeth. No production code changed, the `:106` sibling is untouched, gofmt-clean, full suite GREEN. No material findings; no deferred risks. Recommendation: **PASSED**.
