@@ -1598,3 +1598,39 @@ The corrected gate package presents an unreleased-v1 design with one semantic re
 binary-owned mechanics, exact gates-only writes, and no migration. It freezes the real late
 provider output while refusing to equate a single matching artifact with a verified
 multi-artifact Briefing; implementation remains paused for captain approval.
+
+## Ideation delta from cycle 23 (cycle 24)
+
+The captain approved briefing 17 (`lgtm`) and required one dogfooded fixture. Immutable
+[`briefing-18`](review/ideation/briefing-18/briefing.json) preserves the approved design and
+adds the exact cross-logical-gate re-entry case from state commit `71c61fbc`: workflow
+status is `ideation`, ideation has nine closed attempts, and a closed validation `revise`
+remains globally selected.
+
+`spacedock gate record 3k --briefing revision-18.json --workflow-dir docs/dev` must derive
+the ideation gate from workflow status rather than require it to equal `gates.current`,
+append minimal ideation attempt 10, update the existing legacy/global selection, and leave
+ideation attempt 9 plus validation attempt 1 byte-identical. The fixture pins the source,
+both closure-range digests, the complete Briefing's canonical digest, the expected gates
+diff, and the required mutant: reinstating the current implementation's global-current
+prerequisite must turn the suite red.
+
+All cycle-23 rulings and AC-1/4/6/10/12/13/14 remain unchanged. The new fixture fits the
+approved ~300-500 test/fixture-LOC budget and does not change the ~220-360 production-LOC
+estimate or 2x tolerance. Product HEAD remains `9d279b87`; implementation has not begun.
+
+## Stage Report: ideation (cycle 24)
+
+- DONE: Add the exact cross-logical-gate re-entry fixture: ideation closed, validation globally current and closed, workflow status returned to ideation, then `record --briefing` appends ideation attempt 10 and selects it without mutating either closure.
+  `briefing-18/cross-logical-gate-reentry.md` pins state commit `71c61fbc`, exact closure hashes, canonical revision-18 digest, and the three-field/one-append expected diff.
+- DONE: Revise the cleaned gate-review/spec and behavioral proof so the fixture kills the current recorder defect that requires the target logical gate to already be globally current.
+  Revision 18 makes current-stage gate lookup independent of `gates.current`; its mandatory global-current mutant fails before attempt 10 can be appended.
+- DONE: Publish an immutable revision-18 package and a concise cycle-23 to cycle-24 delta; preserve product HEAD and every previously verified artifact.
+  The package composes immutable briefing 17, exact Result evidence, baseline contract, complete binding input, fixture, and fold review; product HEAD remains `9d279b87`.
+
+### Summary
+
+The approved v1 recorder design now includes the missing two-logical-gate re-entry proof.
+Revision 18 demonstrates that workflow stage selects the target gate even when another
+closed gate remains globally current, while both historical closures stay byte-identical;
+no product implementation changed.

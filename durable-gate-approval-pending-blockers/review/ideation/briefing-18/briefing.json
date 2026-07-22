@@ -1,0 +1,71 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:3k:ideation:attempt-10:revision-18-package",
+  "question": "Does the approved unreleased-v1 recorder design, with its exact cross-logical-gate re-entry fixture, proceed to implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:fixture-fold-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:859a57cf74f6b09dc6d8580b1a3d799a6e97ccec28ef25df482d8aecab494cc4"
+    },
+    {
+      "id": "artifact:cross-logical-gate-reentry",
+      "uri": "cross-logical-gate-reentry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8f2e907720d99dce7e4a0693ea4e78c9591dd08c35e27ac9e8dab7178e298518"
+    },
+    {
+      "id": "artifact:revision-18-binding-input",
+      "uri": "revision-18.json",
+      "mediaType": "application/json",
+      "rev": "sha256:04d1ec83df5b4ee11231571a8311213e88adc5c9f5ccec129e11d527d2434f96"
+    },
+    {
+      "id": "artifact:approved-v1-design",
+      "uri": "../briefing-17/gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4cbcbc404b869e858448d767472957c2d97095bd5a4314bc63863b004b95fb16"
+    },
+    {
+      "id": "artifact:exact-review-v1-result",
+      "uri": "../briefing-17/exact-review-v1-result.json",
+      "mediaType": "application/json",
+      "rev": "sha256:4609610352bef7206a7cab143a4768d30342bd101a7bd7692220cc72ba1464f7"
+    },
+    {
+      "id": "artifact:baseline-contract",
+      "uri": "../briefing-16/contract-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:681b23483f61202094f8c6095cad381f448b98b24e1098716cbf3601b4767aa6"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-fixture-fold",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Proceed to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return a concrete fixture finding",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
