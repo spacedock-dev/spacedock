@@ -21,7 +21,7 @@ func TestStatusTextAndJSONProjectAllRecordedResolutionStates(t *testing.T) {
 		if decision != "approve" {
 			reason = ", reason: 'recorded reason'"
 		}
-		body := "---\nstatus: ideation\ntitle: " + decision + "\ngates:\n  version: 1\n  current: {gate: 'gate:" + decision + "', attempt: 'attempt:" + decision + "-1'}\n  records:\n    - id: gate:" + decision + "\n      stage: ideation\n      current-attempt: attempt:" + decision + "-1\n      attempts:\n        - id: attempt:" + decision + "-1\n          sequence: 1\n          state: closed\n          briefing: {id: 'briefing:" + decision + "-1', digest: 'sha256:" + strings.Repeat("2", 64) + "'}\n          resolution: {type: Resolution, id: 'resolution:" + decision + "-1', briefing: 'briefing:" + decision + "-1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: " + decision + reason + "}\n---\n"
+		body := "---\nstatus: ideation\ntitle: " + decision + "\ngates:\n  version: 1\n  current: {gate: 'gate:" + decision + "'}\n  records:\n    - id: gate:" + decision + "\n      stage: ideation\n      attempts:\n        - id: attempt:" + decision + "-1\n          briefing: {id: 'briefing:" + decision + "-1', digest: 'sha256:" + strings.Repeat("2", 64) + "', digest-domain: canonical-bytes, room-ref: ./review}\n          resolution: {type: Resolution, id: 'resolution:" + decision + "-1', briefing: 'briefing:" + decision + "-1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: " + decision + reason + "}\n---\n"
 		if err := os.WriteFile(filepath.Join(root, decision+".md"), []byte(body), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -44,7 +44,7 @@ func TestStatusTextAndJSONProjectAllRecordedResolutionStates(t *testing.T) {
 
 func TestUnrelatedSetPreservesGatesAndStatusProjectsResolution(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "task.md")
-	body := "---\nid: task\nstatus: ideation\nscore: '0.5'\ngates:\n  version: 1\n  current: {gate: 'gate:design', attempt: 'attempt:design-1'}\n  records:\n    - id: gate:design\n      stage: ideation\n      current-attempt: attempt:design-1\n      attempts:\n        - id: attempt:design-1\n          sequence: 1\n          state: closed\n          briefing: {id: 'briefing:design-1', digest: 'sha256:" + strings.Repeat("1", 64) + "'}\n          resolution: {type: Resolution, id: 'resolution:design-1', briefing: 'briefing:design-1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: hold, reason: 'wait'}\n          application: {action: none, state: not-applicable}\n---\n# Task\n"
+	body := "---\nid: task\nstatus: ideation\nscore: '0.5'\ngates:\n  version: 1\n  current: {gate: 'gate:design'}\n  records:\n    - id: gate:design\n      stage: ideation\n      attempts:\n        - id: attempt:design-1\n          briefing: {id: 'briefing:design-1', digest: 'sha256:" + strings.Repeat("1", 64) + "', digest-domain: canonical-bytes, room-ref: ./review}\n          resolution: {type: Resolution, id: 'resolution:design-1', briefing: 'briefing:design-1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: hold, reason: 'wait'}\n          application: {action: none, state: not-applicable}\n---\n# Task\n"
 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}

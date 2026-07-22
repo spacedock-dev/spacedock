@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
@@ -42,8 +43,12 @@ func TestGateRecordBriefingReentersStageGateWhenAnotherGateIsSelected(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	beforeIdeationClosure := fixtureSection(t, string(before), "            - id: gate-attempt:3k-ideation-9\n", "        - id: gate:docs-dev:3k:validation\n")
-	beforeValidationClosure := fixtureSection(t, string(before), "            - id: gate-attempt:3k-validation-1\n", "sprint: durable-decisions\n")
+	beforeDoc, _, err := gates.Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeIdeationClosure, _ := json.Marshal(beforeDoc.Records[0].Attempts[0])
+	beforeValidationClosure, _ := json.Marshal(beforeDoc.Records[1].Attempts[0])
 	beforeOutsideGates := outsideFixtureGates(t, string(before))
 
 	var out, errOut bytes.Buffer
@@ -56,23 +61,26 @@ func TestGateRecordBriefingReentersStageGateWhenAnotherGateIsSelected(t *testing
 		t.Fatal(err)
 	}
 	afterText := string(after)
-	if got := fixtureSection(t, afterText, "            - id: gate-attempt:3k-ideation-9\n", "        - id: gate:docs-dev:3k:validation\n"); !strings.HasPrefix(got, beforeIdeationClosure) {
+	afterDoc, _, err := gates.Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotIdeationClosure, _ := json.Marshal(afterDoc.Records[0].Attempts[0])
+	gotValidationClosure, _ := json.Marshal(afterDoc.Records[1].Attempts[0])
+	if !bytes.Equal(gotIdeationClosure, beforeIdeationClosure) {
 		t.Fatal("closed ideation attempt 9 changed while appending attempt 10")
 	}
-	if got := fixtureSection(t, afterText, "            - id: gate-attempt:3k-validation-1\n", "sprint: durable-decisions\n"); got != beforeValidationClosure {
+	if !bytes.Equal(gotValidationClosure, beforeValidationClosure) {
 		t.Fatal("closed validation attempt changed during ideation re-entry")
 	}
 	if got := outsideFixtureGates(t, afterText); got != beforeOutsideGates {
 		t.Fatal("record --briefing changed bytes outside gates")
 	}
-	ideation := fixtureSection(t, afterText, "        - id: gate:docs-dev:3k:ideation\n", "        - id: gate:docs-dev:3k:validation\n")
-	if strings.Count(ideation, "            - id: gate-attempt:3k-ideation-") != 10 {
-		t.Fatalf("ideation attempts did not grow to 10:\n%s", ideation)
+	if afterDoc.Current.Gate != "gate:docs-dev:3k:ideation" || len(afterDoc.Records[0].Attempts) != 2 {
+		t.Fatalf("ideation successor not selected: %#v", afterDoc)
 	}
 	for _, want := range []string{
 		"gate: gate:docs-dev:3k:ideation",
-		"attempt: gate-attempt:3k-ideation-10",
-		"current-attempt: gate-attempt:3k-ideation-10",
 		"id: briefing:docs-dev:3k:ideation:attempt-10:revision-18",
 		"digest: sha256:6b2c4f1388a58f42f7c8610f847ed9e7cce92758c00b201d4eb9f4f89dbedd8b",
 	} {
@@ -80,10 +88,9 @@ func TestGateRecordBriefingReentersStageGateWhenAnotherGateIsSelected(t *testing
 			t.Fatalf("recorded entity missing %q:\n%s", want, afterText)
 		}
 	}
-	newAttempt := fixtureSection(t, afterText, "            - id: gate-attempt:3k-ideation-10\n", "        - id: gate:docs-dev:3k:validation\n")
-	for _, forbidden := range []string{"sequence:", "previous-attempt:", "state:"} {
-		if strings.Contains(newAttempt, forbidden) {
-			t.Fatalf("minimal attempt minted %q:\n%s", forbidden, newAttempt)
+	for _, forbidden := range []string{"current-attempt:", "sequence:", "previous-attempt:"} {
+		if strings.Contains(afterText, forbidden) {
+			t.Fatalf("canonical writer emitted prototype field %q:\n%s", forbidden, afterText)
 		}
 	}
 }
@@ -96,13 +103,12 @@ func TestGateRecordDecisionClosesMinimalBriefingAttempt(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("record --briefing exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
-	created, err := os.ReadFile(entity)
+	created, _, err := gates.Read(entity)
 	if err != nil {
 		t.Fatal(err)
 	}
-	minimal := fixtureSection(t, string(created), "            - id: gate-attempt:3k-ideation-10\n", "        - id: gate:docs-dev:3k:validation\n")
-	if strings.Contains(minimal, "state:") || strings.Contains(minimal, "resolution:") {
-		t.Fatalf("semantic record did not create a minimal open attempt:\n%s", minimal)
+	if got := created.Records[0].Attempts[1].Resolution; got != nil {
+		t.Fatalf("semantic record did not create an open attempt: %#v", got)
 	}
 
 	out.Reset()
@@ -132,24 +138,8 @@ func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	associationBytes, err := os.ReadFile(association)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var primaryOnly map[string]any
-	if err := json.Unmarshal(associationBytes, &primaryOnly); err != nil {
-		t.Fatal(err)
-	}
-	presentation := primaryOnly["presentation"].([]any)
-	primaryOnly["presentation"] = presentation[:1]
 	primaryOnlyPath := filepath.Join(root, "primary-only-association.json")
-	primaryOnlyBytes, err := json.Marshal(primaryOnly)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(primaryOnlyPath, primaryOnlyBytes, 0o644); err != nil {
-		t.Fatal(err)
-	}
+	copyGateTestdata(t, primaryOnlyPath, "exact-review-v1-association-truncated.json")
 	out.Reset()
 	errOut.Reset()
 	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--association", primaryOnlyPath, "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
@@ -179,10 +169,21 @@ func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) 
 			t.Fatalf("recorded Result missing %q:\n%s", want, body)
 		}
 	}
-	resolution := fixtureSection(t, string(body), "          resolution:\n", "title: Task\n")
-	for _, wrapperField := range []string{"status:", "binding:", "actor:", "approver:", "resolutionId:"} {
-		if strings.Contains(resolution, wrapperField) {
-			t.Fatalf("provider wrapper field %q crossed the portable boundary:\n%s", wrapperField, resolution)
+	doc, _, err := gates.Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolutionBytes, err := json.Marshal(doc.Records[0].Attempts[0].Resolution)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var portable map[string]any
+	if err := json.Unmarshal(resolutionBytes, &portable); err != nil {
+		t.Fatal(err)
+	}
+	for _, wrapperField := range []string{"status", "binding", "actor", "approver", "resolutionId"} {
+		if _, ok := portable[wrapperField]; ok {
+			t.Fatalf("provider wrapper field %q crossed the portable boundary: %s", wrapperField, resolutionBytes)
 		}
 	}
 }
@@ -218,6 +219,11 @@ func semanticDecisionFixture(t *testing.T) (root, entity string) {
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n---\n# Workflow\n")
 	entity = filepath.Join(root, "task.md")
 	writeFile(t, entity, "---\nstatus: validation\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:docs-dev:3k:validation:attempt-1:revision-1\n            digest: sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac\n            digest-domain: canonical-bytes\n            room-ref: ./review/validation/briefing-1\ntitle: Task\n---\n# Task\n")
+	briefing := filepath.Join(root, "review", "validation", "briefing-1", "briefing.json")
+	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	copyGateTestdata(t, briefing, "exact-validation-briefing.json")
 	return root, entity
 }
 
@@ -236,14 +242,9 @@ func crossGateFixture(t *testing.T) (root, entity, briefing string) {
 	t.Helper()
 	root = t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: validation\n---\n# Workflow\n")
-	source, err := os.ReadFile(filepath.Join("..", "gates", "testdata", "cross-logical-gate-reentry.md"))
-	if err != nil {
-		t.Fatal(err)
-	}
 	entity = filepath.Join(root, "durable-gate-approval-pending-blockers.md")
-	if err := os.WriteFile(entity, source, 0o644); err != nil {
-		t.Fatal(err)
-	}
+	digest := func(char string) string { return "sha256:" + strings.Repeat(char, 64) }
+	writeFile(t, entity, "---\nstatus: ideation\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:ideation\n      stage: ideation\n      attempts:\n        - id: gate-attempt:3k-ideation-9\n          briefing:\n            id: briefing:ideation:9\n            digest: "+digest("1")+"\n            digest-domain: raw-file-pin\n            room-ref: ./review/ideation/9\n          resolution:\n            type: Resolution\n            id: resolution:ideation:9\n            briefing: briefing:ideation:9\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: approve\n          application:\n            state: pending\n            blockers: [preserve-me]\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:validation:1\n            digest: "+digest("2")+"\n            digest-domain: raw-file-pin\n            room-ref: ./review/validation/1\n          resolution:\n            type: Resolution\n            id: resolution:validation:1\n            briefing: briefing:validation:1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: revise\n            reason: Re-enter ideation.\nsprint: durable-decisions\ntitle: Task\n---\n# Task\n")
 	briefing = filepath.Join(root, "review", "ideation", "briefing-18", "revision-18.json")
 	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
 		t.Fatal(err)

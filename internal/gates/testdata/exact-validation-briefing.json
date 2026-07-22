@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:3k:validation:attempt-1:revision-1",
+  "question": "Should the validated binary-owned gate-resolution recorder proceed to merge/landing and close its worktree through the merge ceremony?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d2a747755b1c348c499396a1900c0f94a0387565f2a0f4f1d9744b18c124a5a4"
+    },
+    {
+      "id": "artifact:entity-snapshot",
+      "uri": "entity-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:32af4e65fa5a60961b5181d9f2ae1da73001fe28f40d84fcea8be275b1be8684"
+    },
+    {
+      "id": "artifact:recorder-contract",
+      "uri": "contract-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f87dbdb1f36030b814183c08c5c915aa470ded4f78d8d3e3468cbba1fc8cbf32"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:validation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Proceed to merge/landing",
+          "to": "ceremony:merge-landing"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return concrete findings to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold at validation for a named prerequisite",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}

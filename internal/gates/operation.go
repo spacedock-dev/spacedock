@@ -35,6 +35,14 @@ type artifactRef struct {
 	Rev string `json:"rev"`
 }
 
+type briefingManifest struct {
+	Type      string        `json:"type"`
+	Version   string        `json:"version"`
+	ID        string        `json:"id"`
+	Question  string        `json:"question"`
+	Artifacts []artifactRef `json:"artifacts"`
+}
+
 type providerResult struct {
 	Type        string      `json:"type"`
 	Status      string      `json:"status"`
@@ -130,21 +138,11 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 		}
 		record = &GateRecord{ID: gateID, Stage: stage, Attempts: []Attempt{{ID: attemptID, Briefing: binding}}}
 		doc.Records = append(doc.Records, *record)
-		legacyAttemptPointer := doc.Current.Attempt != ""
 		doc.Current = Selection{Gate: gateID}
-		if legacyAttemptPointer {
-			doc.Current.Attempt = attemptID
-		}
-		if err := Validate(doc); err != nil {
-			return err
-		}
-		return writeNewGate(entityPath, doc, *record)
+		return writeDocument(entityPath, oldNode, doc)
 	}
-	previous, err := recordAttempt(record, recordCurrentAttempt(record))
-	if err != nil {
-		return err
-	}
-	if mutableOpenAttempt(previous) {
+	previous := &record.Attempts[len(record.Attempts)-1]
+	if previous.Resolution == nil {
 		if sameBinding(previous.Briefing, binding) {
 			return nil
 		}
@@ -155,7 +153,7 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 		if err := ValidateTransition(oldNode, doc); err != nil {
 			return err
 		}
-		return writeBriefingRebind(entityPath, record.ID, previous.ID, binding)
+		return writeDocument(entityPath, oldNode, doc)
 	}
 	nextID, err := successorAttemptID(previous.ID)
 	if err != nil {
@@ -163,20 +161,14 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	}
 	next := Attempt{ID: nextID, Briefing: binding}
 	record.Attempts = append(record.Attempts, next)
-	if record.CurrentAttempt != "" {
-		record.CurrentAttempt = nextID
-	}
 	doc.Current.Gate = record.ID
-	if doc.Current.Attempt != "" {
-		doc.Current.Attempt = nextID
-	}
 	if err := Validate(doc); err != nil {
 		return err
 	}
 	if err := ValidateTransition(oldNode, doc); err != nil {
 		return err
 	}
-	return writeBriefingSuccessor(entityPath, record.ID, next)
+	return writeDocument(entityPath, oldNode, doc)
 }
 
 func recordResultLocked(entityPath string, input RecordInput) error {
@@ -187,11 +179,11 @@ func recordResultLocked(entityPath string, input RecordInput) error {
 	if err != nil {
 		return err
 	}
-	if !mutableOpenAttempt(attempt) {
+	if attempt.Resolution != nil {
 		return fmt.Errorf("attempt %s is frozen closed", attempt.ID)
 	}
 	if !digestRE.MatchString(attempt.Briefing.Digest) {
-		return fmt.Errorf("open legacy attempt %s has no verifiable digest; rebind it before closing", attempt.ID)
+		return fmt.Errorf("open attempt %s has no verifiable digest", attempt.ID)
 	}
 	resultBytes, err := os.ReadFile(input.ResultPath)
 	if err != nil {
@@ -209,7 +201,11 @@ func recordResultLocked(entityPath string, input RecordInput) error {
 	if err := json.Unmarshal(associationBytes, &association); err != nil {
 		return fmt.Errorf("parse result association: %w", err)
 	}
-	if err := verifyAssociation(resultBytes, &result, &association, input.Actor, attempt.Briefing); err != nil {
+	manifest, err := boundBriefingManifest(entityPath, attempt.Briefing)
+	if err != nil {
+		return err
+	}
+	if err := verifyAssociation(resultBytes, &result, &association, input.Actor, attempt.Briefing, manifest.Artifacts); err != nil {
 		return err
 	}
 	if !result.Binding && strings.TrimSpace(input.AdoptionNote) == "" {
@@ -221,7 +217,7 @@ func recordResultLocked(entityPath string, input RecordInput) error {
 	if err := closeAttempt(doc, oldNode, record, attempt, &resolution); err != nil {
 		return err
 	}
-	return writeResolution(entityPath, record.ID, attempt.ID, &resolution)
+	return writeDocument(entityPath, oldNode, doc)
 }
 
 func recordChatLocked(entityPath string, input RecordInput) error {
@@ -245,11 +241,11 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 	if err != nil {
 		return err
 	}
-	if !mutableOpenAttempt(attempt) {
+	if attempt.Resolution != nil {
 		return fmt.Errorf("attempt %s is frozen closed", attempt.ID)
 	}
 	if !digestRE.MatchString(attempt.Briefing.Digest) {
-		return fmt.Errorf("open legacy attempt %s has no verifiable digest; rebind it before closing", attempt.ID)
+		return fmt.Errorf("open attempt %s has no verifiable digest", attempt.ID)
 	}
 	resolution := &Resolution{
 		Type:     "Resolution",
@@ -264,7 +260,7 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 	if err := closeAttempt(doc, oldNode, record, attempt, resolution); err != nil {
 		return err
 	}
-	return writeResolution(entityPath, record.ID, attempt.ID, resolution)
+	return writeDocument(entityPath, oldNode, doc)
 }
 
 // lockEntity makes the pointer comparison and gates-only rename one
@@ -294,13 +290,6 @@ func findRecord(doc *Document, id string) *GateRecord {
 	return nil
 }
 
-// mutableOpenAttempt bridges explicit legacy state to the minimal v1 shape.
-// Contradictory or unknown legacy state remains non-mutable even when the
-// record has not yet acquired a Resolution.
-func mutableOpenAttempt(attempt *Attempt) bool {
-	return attempt.Resolution == nil && (attempt.State == "" || attempt.State == "open")
-}
-
 func sameBinding(left, right Briefing) bool {
 	return left.ID == right.ID && left.Digest == right.Digest && left.DigestDomain == right.DigestDomain && left.RoomRef == right.RoomRef
 }
@@ -318,10 +307,7 @@ func currentStageAttempt(entityPath string) (*Document, *yaml.Node, *GateRecord,
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	attempt, err := recordAttempt(record, recordCurrentAttempt(record))
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
+	attempt := &record.Attempts[len(record.Attempts)-1]
 	return doc, oldNode, record, attempt, nil
 }
 
@@ -330,20 +316,14 @@ func closeAttempt(doc *Document, oldNode *yaml.Node, record *GateRecord, attempt
 		return err
 	}
 	attempt.Resolution = resolution
-	if attempt.State != "" {
-		attempt.State = "closed"
-	}
 	doc.Current.Gate = record.ID
-	if doc.Current.Attempt != "" {
-		doc.Current.Attempt = attempt.ID
-	}
 	if err := Validate(doc); err != nil {
 		return err
 	}
 	return ValidateTransition(oldNode, doc)
 }
 
-func verifyAssociation(resultBytes []byte, result *providerResult, association *resultAssociation, actor string, binding Briefing) error {
+func verifyAssociation(resultBytes []byte, result *providerResult, association *resultAssociation, actor string, binding Briefing, inventory []artifactRef) error {
 	if result.Type != "review-v1-result" || result.Briefing == "" || result.Artifact.ID == "" || !digestRE.MatchString(result.Artifact.Rev) {
 		return fmt.Errorf("--result is not a complete review-v1-result")
 	}
@@ -362,23 +342,26 @@ func verifyAssociation(resultBytes []byte, result *providerResult, association *
 	if association.Canonical.Briefing != binding.ID || association.Canonical.Revision != binding.Digest {
 		return fmt.Errorf("association does not bind the current canonical Briefing revision")
 	}
-	if len(association.Canonical.Artifacts) == 0 || len(association.Presentation) != len(association.Canonical.Artifacts) {
+	if len(inventory) == 0 || len(association.Canonical.Artifacts) != len(inventory) || len(association.Presentation) != len(inventory) {
 		return fmt.Errorf("association does not cover the complete presentation mapping")
 	}
-	canonical := make(map[string]string, len(association.Canonical.Artifacts))
-	for _, artifact := range association.Canonical.Artifacts {
-		if artifact.ID == "" || !digestRE.MatchString(artifact.Rev) || canonical[artifact.ID] != "" {
-			return fmt.Errorf("association canonical artifacts are incomplete or duplicated")
+	canonical := make(map[string]string, len(inventory))
+	for i, artifact := range inventory {
+		declared := association.Canonical.Artifacts[i]
+		if artifact.ID == "" || !digestRE.MatchString(artifact.Rev) || canonical[artifact.ID] != "" || declared.ID != artifact.ID || declared.Rev != artifact.Rev {
+			return fmt.Errorf("association canonical artifacts do not match the bound Briefing inventory")
 		}
 		canonical[artifact.ID] = artifact.Rev
 	}
 	seenCanonical := map[string]bool{}
+	seenProvider := map[string]bool{}
 	resultArtifactPresent := false
 	for _, mapping := range association.Presentation {
-		if mapping.Provider.ID == "" || !digestRE.MatchString(mapping.Provider.Rev) || canonical[mapping.Canonical.ID] != mapping.Canonical.Rev || seenCanonical[mapping.Canonical.ID] {
+		if mapping.Provider.ID == "" || !digestRE.MatchString(mapping.Provider.Rev) || canonical[mapping.Canonical.ID] != mapping.Canonical.Rev || seenCanonical[mapping.Canonical.ID] || seenProvider[mapping.Provider.ID] {
 			return fmt.Errorf("association does not cover the complete presentation mapping")
 		}
 		seenCanonical[mapping.Canonical.ID] = true
+		seenProvider[mapping.Provider.ID] = true
 		if mapping.Provider.ID == result.Artifact.ID && mapping.Provider.Rev == result.Artifact.Rev {
 			resultArtifactPresent = true
 		}
@@ -464,15 +447,6 @@ func recordForStage(doc *Document, stage string) (*GateRecord, error) {
 	return found, nil
 }
 
-func recordAttempt(record *GateRecord, id string) (*Attempt, error) {
-	for i := range record.Attempts {
-		if record.Attempts[i].ID == id {
-			return &record.Attempts[i], nil
-		}
-	}
-	return nil, fmt.Errorf("gate %s current attempt %s is missing", record.ID, id)
-}
-
 func successorAttemptID(previous string) (string, error) {
 	cut := strings.LastIndex(previous, "-")
 	if cut < 0 || cut == len(previous)-1 {
@@ -490,23 +464,9 @@ func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
 	if err != nil {
 		return Briefing{}, err
 	}
-	var manifest struct {
-		Type      string        `json:"type"`
-		Version   string        `json:"version"`
-		ID        string        `json:"id"`
-		Question  string        `json:"question"`
-		Artifacts []artifactRef `json:"artifacts"`
-	}
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		return Briefing{}, fmt.Errorf("parse Briefing: %w", err)
-	}
-	if manifest.Type != "Briefing" || manifest.Version != "1" || manifest.ID == "" || strings.TrimSpace(manifest.Question) == "" || len(manifest.Artifacts) == 0 {
-		return Briefing{}, fmt.Errorf("--briefing must name a complete Briefing v1")
-	}
-	for _, artifact := range manifest.Artifacts {
-		if artifact.ID == "" || artifact.URI == "" || !digestRE.MatchString(artifact.Rev) {
-			return Briefing{}, fmt.Errorf("--briefing has an incomplete artifact binding")
-		}
+	manifest, err := parseBriefingManifest(data)
+	if err != nil {
+		return Briefing{}, err
 	}
 	digest, err := CanonicalDigest(data)
 	if err != nil {
@@ -523,6 +483,50 @@ func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
 		roomRef = "./" + roomRef
 	}
 	return Briefing{ID: manifest.ID, Digest: digest, DigestDomain: "canonical-bytes", RoomRef: roomRef}, nil
+}
+
+func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManifest, error) {
+	if binding.DigestDomain != "canonical-bytes" {
+		return nil, fmt.Errorf("Result association requires a canonical-bytes Briefing binding")
+	}
+	path := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef), "briefing.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read bound canonical Briefing: %w", err)
+	}
+	digest, err := CanonicalDigest(data)
+	if err != nil {
+		return nil, fmt.Errorf("canonicalize bound Briefing: %w", err)
+	}
+	if digest != binding.Digest {
+		return nil, fmt.Errorf("bound canonical Briefing bytes do not match the frozen digest")
+	}
+	manifest, err := parseBriefingManifest(data)
+	if err != nil {
+		return nil, err
+	}
+	if manifest.ID != binding.ID {
+		return nil, fmt.Errorf("bound canonical Briefing identity does not match the current binding")
+	}
+	return manifest, nil
+}
+
+func parseBriefingManifest(data []byte) (*briefingManifest, error) {
+	var manifest briefingManifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return nil, fmt.Errorf("parse Briefing: %w", err)
+	}
+	if manifest.Type != "Briefing" || manifest.Version != "1" || manifest.ID == "" || strings.TrimSpace(manifest.Question) == "" || len(manifest.Artifacts) == 0 {
+		return nil, fmt.Errorf("--briefing must name a complete Briefing v1")
+	}
+	seen := map[string]bool{}
+	for _, artifact := range manifest.Artifacts {
+		if artifact.ID == "" || artifact.URI == "" || !digestRE.MatchString(artifact.Rev) || seen[artifact.ID] {
+			return nil, fmt.Errorf("--briefing has an incomplete or duplicate artifact binding")
+		}
+		seen[artifact.ID] = true
+	}
+	return &manifest, nil
 }
 
 func ValidateTransition(oldNode *yaml.Node, next *Document) error {
