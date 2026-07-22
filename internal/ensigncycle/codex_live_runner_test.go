@@ -72,6 +72,7 @@ func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedR
 		"merge-hook-guardrail":          runCodexMergeHookGuardrailScenario,
 		"filing":                        runCodexFilingScenario,
 		"shallow-boot":                  runCodexShallowBootScenario,
+		"multi-workflow-boot":           runCodexMultiWorkflowBootScenario,
 		"self-evidence-merge-triage":    runCodexSelfEvidenceMergeTriageScenario,
 		"smallest-sufficient-mechanism": runCodexSmallestSufficientMechanismScenario,
 		"keep-moving-posture":           runCodexKeepMovingScenario,
@@ -375,6 +376,22 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 
 	obs := gatherShallowBootObservation(t, workflowRoot, "", fixture, gateBefore, result.finalMessage)
 	if err := assertShallowBoot(obs); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
+}
+
+func runCodexMultiWorkflowBootScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	projectRoot := t.TempDir()
+	fixture := writeMultiWorkflowBootFixture(t, projectRoot)
+
+	result, err := runner.run(t, scenario, projectRoot, multiWorkflowBootPrompt(projectRoot))
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	obs := gatherMultiWorkflowBootObservation(t, fixture, codexExecutedCommands(result.jsonl), result.finalMessage)
+	if err := assertMultiWorkflowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)

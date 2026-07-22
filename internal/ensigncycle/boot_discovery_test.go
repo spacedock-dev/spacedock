@@ -27,6 +27,7 @@ func fixtureDiscoveryReadmes() map[string]func() string {
 		"merge-hook-guardrail":          mergeHookGuardReadme,
 		"filing":                        filingReadme,
 		"shallow-boot":                  shallowBootReadme,
+		"multi-workflow-boot":           func() string { return multiWorkflowBootReadme("alpha") },
 		"self-evidence-merge-triage":    mergeTriageReadme,
 		"smallest-sufficient-mechanism": smallestMechanismReadme,
 		"keep-moving-posture":           keepMovingReadme,

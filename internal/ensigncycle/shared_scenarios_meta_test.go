@@ -35,6 +35,7 @@ func TestSharedRuntimeScenarioDefinitions(t *testing.T) {
 		"merge-hook-guardrail",
 		"filing",
 		"shallow-boot",
+		"multi-workflow-boot",
 		"self-evidence-merge-triage",
 		"smallest-sufficient-mechanism",
 		"keep-moving-posture",

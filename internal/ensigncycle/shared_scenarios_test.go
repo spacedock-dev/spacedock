@@ -54,6 +54,11 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			intent:        "A freshly-booted FO performs local identify, greets with accurate held-gate state, creates NO team, dispatches NO worker, mutates NO entity, then stops for engage/input.",
 		},
 		{
+			name:          "multi-workflow-boot",
+			oldPythonTest: "boot-identify-multi-workflow-llm-retry-friction (net-new; after-only live invariant)",
+			intent:        "At a project root with two commissioned workflows, FO runs boot identify once, makes no status/helper retry, greets with the exact workflow-selection boundary, and performs no convergence or mutation.",
+		},
+		{
 			// Net-new in the 0250 FO-behavioral-discipline sprint (z25 self-evidence
 			// bar); no Python ancestor — it reconstructs the ezf/hf merge/triage
 			// incident (2026-06-16), a recorded real failure, as a live decision.
