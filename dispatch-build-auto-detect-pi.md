@@ -3,6 +3,7 @@ title: spacedock dispatch build auto-detects host pi when running under Pi agent
 status: implementation
 score: 0.85
 id: 769mybp649pj160n17x13r8g
+worktree: .worktrees/spacedock-ensign-dispatch-build-auto-detect-pi
 ---
 
 ## Problem
@@ -82,3 +83,16 @@ This breaks host-autodetect parity with Claude Code (`CLAUDECODE`) and Codex (`C
 ### Summary
 
 Ideation scoped the task to a small dispatch host-resolution change plus focused command-level tests. The live spike confirms Pi dispatch works with explicit `--host pi` and the current failure is specifically missing Pi env auto-detection.
+
+## Stage Report: implementation
+
+- DONE: Implement PI_CODING_AGENT / PI_CODING_AGENT_DIR auto-detection for host: pi in resolveBuildHost in internal/cli/dispatch_build.go.
+  Implemented in `internal/dispatch/build.go` (actual package path): Pi markers now resolve to `pi`, explicit sources still win, and mixed runtime families fail with an ambiguity error; code commit `2fed964b`.
+- DONE: Add unit test coverage in internal/cli/dispatch_build_test.go covering pi auto-resolution and explicit host override.
+  Added command-level coverage in `internal/dispatch/build_json_ergonomics_test.go` (actual package path); tests fail if `PI_CODING_AGENT`/`PI_CODING_AGENT_DIR` are ignored or explicit flag/JSON host stops overriding Pi env.
+- DONE: Run go test ./... and go test ./... -race to verify all tests pass cleanly.
+  `go test ./...` and `go test ./... -race` both passed after `gofmt -w ./cmd ./internal`.
+
+### Summary
+
+`dispatch build` now auto-detects Pi when either `PI_CODING_AGENT` or `PI_CODING_AGENT_DIR` is present, while retaining safe ambiguity behavior across distinct runtime marker families. The implementation also clears Pi markers in legacy default-Claude test harness paths so the suite remains deterministic when run from a live Pi shell.
