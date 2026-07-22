@@ -28,7 +28,7 @@ type Selection struct {
 type GateRecord struct {
 	ID             string               `yaml:"id" json:"id"`
 	Stage          string               `yaml:"stage" json:"stage"`
-	CurrentAttempt string               `yaml:"current-attempt" json:"current-attempt"`
+	CurrentAttempt string               `yaml:"current-attempt,omitempty" json:"current-attempt,omitempty"`
 	Attempts       []Attempt            `yaml:"attempts" json:"attempts"`
 	Note           string               `yaml:"note,omitempty" json:"note,omitempty"`
 	Extra          map[string]yaml.Node `yaml:",inline" json:"-"`
@@ -36,9 +36,9 @@ type GateRecord struct {
 
 type Attempt struct {
 	ID              string               `yaml:"id" json:"id"`
-	Sequence        int                  `yaml:"sequence" json:"sequence"`
+	Sequence        int                  `yaml:"sequence,omitempty" json:"sequence,omitempty"`
 	PreviousAttempt string               `yaml:"previous-attempt,omitempty" json:"previous-attempt,omitempty"`
-	State           string               `yaml:"state" json:"state"`
+	State           string               `yaml:"state,omitempty" json:"state,omitempty"`
 	Briefing        Briefing             `yaml:"briefing" json:"briefing"`
 	Resolution      *Resolution          `yaml:"resolution,omitempty" json:"resolution,omitempty"`
 	Application     any                  `yaml:"application,omitempty" json:"-"`
@@ -88,18 +88,21 @@ func Validate(doc *Document) error {
 	var selected *Attempt
 	for ri := range doc.Records {
 		r := &doc.Records[ri]
-		if r.ID == "" || r.Stage == "" || r.CurrentAttempt == "" || gateIDs[r.ID] {
+		if r.ID == "" || r.Stage == "" || gateIDs[r.ID] {
 			return fmt.Errorf("record %d has missing or duplicate identity/current pointer", ri+1)
+		}
+		if r.CurrentAttempt == "" && len(r.Attempts) > 0 {
+			r.CurrentAttempt = r.Attempts[len(r.Attempts)-1].ID
 		}
 		gateIDs[r.ID] = true
 		currentFound := false
 		for ai := range r.Attempts {
 			a := &r.Attempts[ai]
-			if a.ID == "" || attemptIDs[a.ID] || a.Sequence < 1 || ai > 0 && a.Sequence != r.Attempts[ai-1].Sequence+1 {
+			if a.ID == "" || attemptIDs[a.ID] || a.Sequence < 0 || a.Sequence > 0 && ai > 0 && r.Attempts[ai-1].Sequence > 0 && a.Sequence != r.Attempts[ai-1].Sequence+1 {
 				return fmt.Errorf("gate %s attempt %d has missing/duplicate id or non-contiguous sequence", r.ID, ai+1)
 			}
 			attemptIDs[a.ID] = true
-			if ai > 0 && a.PreviousAttempt != r.Attempts[ai-1].ID {
+			if ai > 0 && a.PreviousAttempt != "" && a.PreviousAttempt != r.Attempts[ai-1].ID {
 				return fmt.Errorf("attempt %s previous-attempt does not name sequence %d", a.ID, ai)
 			}
 			if a.Briefing.ID == "" || briefingIDs[a.Briefing.ID] || a.Briefing.Digest != "" && !digestRE.MatchString(a.Briefing.Digest) {
@@ -109,7 +112,7 @@ func Validate(doc *Document) error {
 			if a.Briefing.DigestDomain != "" && a.Briefing.DigestDomain != "canonical-bytes" && a.Briefing.DigestDomain != "raw-file-pin" {
 				return fmt.Errorf("attempt %s has unknown digest-domain %q", a.ID, a.Briefing.DigestDomain)
 			}
-			switch a.State {
+			switch attemptState(a) {
 			case "open":
 				if a.Resolution != nil {
 					return fmt.Errorf("open attempt %s cannot carry a resolution", a.ID)
@@ -175,7 +178,7 @@ func CurrentSummary(doc *Document) Summary {
 			if a.ID != doc.Current.Attempt {
 				continue
 			}
-			s := Summary{Gate: r.ID, Attempt: a.ID, State: a.State, Briefing: a.Briefing.ID}
+			s := Summary{Gate: r.ID, Attempt: a.ID, State: attemptState(a), Briefing: a.Briefing.ID}
 			if a.Resolution != nil {
 				s.Resolution, s.Decision = a.Resolution.ID, a.Resolution.Decision
 			}
@@ -183,4 +186,14 @@ func CurrentSummary(doc *Document) Summary {
 		}
 	}
 	return Summary{}
+}
+
+func attemptState(a *Attempt) string {
+	if a.State != "" {
+		return a.State
+	}
+	if a.Resolution != nil {
+		return "closed"
+	}
+	return "open"
 }

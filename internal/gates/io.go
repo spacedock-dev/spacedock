@@ -43,6 +43,119 @@ func SummaryFile(path string) (Summary, error) {
 	return CurrentSummary(doc), nil
 }
 
+func entityStatus(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	root, _, _, err := frontmatterNode(data)
+	if err != nil {
+		return "", err
+	}
+	status := mappingValue(root, "status")
+	if status == nil || strings.TrimSpace(status.Value) == "" {
+		return "", fmt.Errorf("entity has no current workflow status")
+	}
+	return status.Value, nil
+}
+
+// writeBriefingSuccessor makes only the three approved selection edits and one
+// attempt append. Existing attempt source bytes, including frozen closures and
+// opaque legacy fields, are copied untouched.
+func writeBriefingSuccessor(path, gateID string, next Attempt) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	root, fmStart, fmEnd, err := frontmatterNode(data)
+	if err != nil {
+		return err
+	}
+	gatesNode := mappingValue(root, "gates")
+	if gatesNode == nil {
+		return fmt.Errorf("entity has no gates record")
+	}
+	currentNode := mappingValue(gatesNode, "current")
+	recordsNode := mappingValue(gatesNode, "records")
+	if currentNode == nil || recordsNode == nil || recordsNode.Kind != yaml.SequenceNode {
+		return fmt.Errorf("gates record has no editable current/records projection")
+	}
+	currentGate := mappingValue(currentNode, "gate")
+	currentAttempt := mappingValue(currentNode, "attempt")
+	if currentGate == nil || currentAttempt == nil {
+		return fmt.Errorf("legacy gates.current must name gate and attempt")
+	}
+
+	var target *yaml.Node
+	targetIndex := -1
+	for i, recordNode := range recordsNode.Content {
+		idNode := mappingValue(recordNode, "id")
+		if idNode != nil && idNode.Value == gateID {
+			target, targetIndex = recordNode, i
+			break
+		}
+	}
+	if target == nil {
+		return fmt.Errorf("unknown gate %s", gateID)
+	}
+	legacyCurrent := mappingValue(target, "current-attempt")
+	attemptsNode := mappingValue(target, "attempts")
+	if legacyCurrent == nil || attemptsNode == nil || attemptsNode.Kind != yaml.SequenceNode || len(attemptsNode.Content) == 0 {
+		return fmt.Errorf("gate %s has no editable legacy attempt projection", gateID)
+	}
+
+	crlf := bytes.Contains(data, []byte("\r\n"))
+	lines := strings.Split(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n")
+	for _, edit := range []struct {
+		node  *yaml.Node
+		value string
+	}{
+		{currentGate, gateID},
+		{currentAttempt, next.ID},
+		{legacyCurrent, next.ID},
+	} {
+		lineIndex := fmStart + edit.node.Line
+		if lineIndex < 0 || lineIndex >= len(lines) || !strings.Contains(lines[lineIndex], edit.node.Value) {
+			return fmt.Errorf("cannot locate scalar %q for surgical gate write", edit.node.Value)
+		}
+		lines[lineIndex] = strings.Replace(lines[lineIndex], edit.node.Value, edit.value, 1)
+	}
+
+	lastAttempt := attemptsNode.Content[len(attemptsNode.Content)-1]
+	lastLineIndex := fmStart + lastAttempt.Line
+	if lastLineIndex < 0 || lastLineIndex >= len(lines) {
+		return fmt.Errorf("cannot locate last attempt for gate %s", gateID)
+	}
+	itemIndent := lines[lastLineIndex][:len(lines[lastLineIndex])-len(strings.TrimLeft(lines[lastLineIndex], " \t"))]
+	fieldIndent := itemIndent + "  "
+	briefingIndent := fieldIndent + "  "
+	newLines := []string{
+		itemIndent + "- id: " + next.ID,
+		fieldIndent + "briefing:",
+		briefingIndent + "id: " + next.Briefing.ID,
+		briefingIndent + "digest: " + next.Briefing.Digest,
+		briefingIndent + "digest-domain: " + next.Briefing.DigestDomain,
+		briefingIndent + "room-ref: " + next.Briefing.RoomRef,
+	}
+
+	insertAt := fmEnd
+	if targetIndex+1 < len(recordsNode.Content) {
+		insertAt = fmStart + recordsNode.Content[targetIndex+1].Line
+	}
+	if insertAt < 0 || insertAt > len(lines) {
+		return fmt.Errorf("cannot locate append point for gate %s", gateID)
+	}
+	rebuilt := make([]string, 0, len(lines)+len(newLines))
+	rebuilt = append(rebuilt, lines[:insertAt]...)
+	rebuilt = append(rebuilt, newLines...)
+	rebuilt = append(rebuilt, lines[insertAt:]...)
+	out := strings.Join(rebuilt, "\n")
+	if crlf {
+		out = strings.ReplaceAll(out, "\n", "\r\n")
+	}
+	return atomicWrite(path, []byte(out))
+}
+
 func write(path string, doc *Document) error {
 	if err := Validate(doc); err != nil {
 		return err

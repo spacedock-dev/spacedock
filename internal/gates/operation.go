@@ -6,13 +6,71 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	jsoncanonicalizer "github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer"
 	"gopkg.in/yaml.v3"
 )
+
+// RecordBriefing is the semantic bootstrap path for binding a complete
+// Briefing after a closed attempt. It derives the target gate from workflow
+// status and does not require that gate to be globally selected already.
+func RecordBriefing(entityPath, briefingPath string) error {
+	unlock, err := lockEntity(entityPath)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	doc, oldNode, err := Read(entityPath)
+	if err != nil {
+		return err
+	}
+	stage, err := entityStatus(entityPath)
+	if err != nil {
+		return err
+	}
+	record, err := recordForStage(doc, stage)
+	if err != nil {
+		return err
+	}
+	previous, err := recordAttempt(record, record.CurrentAttempt)
+	if err != nil {
+		return err
+	}
+	if attemptState(previous) != "closed" {
+		return fmt.Errorf("semantic --briefing bootstrap requires a closed current %s attempt", stage)
+	}
+	binding, err := bindingFromManifest(entityPath, briefingPath)
+	if err != nil {
+		return err
+	}
+	nextID, err := successorAttemptID(previous.ID)
+	if err != nil {
+		return err
+	}
+	for _, attempt := range record.Attempts {
+		if attempt.ID == nextID {
+			return fmt.Errorf("successor attempt %s already exists", nextID)
+		}
+	}
+	next := Attempt{ID: nextID, Briefing: binding}
+	record.Attempts = append(record.Attempts, next)
+	record.CurrentAttempt = nextID
+	doc.Current = Selection{Gate: record.ID, Attempt: nextID}
+	if err := Validate(doc); err != nil {
+		return err
+	}
+	if err := ValidateTransition(oldNode, doc); err != nil {
+		return err
+	}
+	return writeBriefingSuccessor(entityPath, record.ID, next)
+}
 
 type Operation struct {
 	Operation  string   `yaml:"operation"`
@@ -205,6 +263,76 @@ func findRecord(doc *Document, id string) *GateRecord {
 		}
 	}
 	return nil
+}
+
+func recordForStage(doc *Document, stage string) (*GateRecord, error) {
+	var found *GateRecord
+	for i := range doc.Records {
+		if doc.Records[i].Stage != stage {
+			continue
+		}
+		if found != nil {
+			return nil, fmt.Errorf("multiple logical gates claim workflow stage %s", stage)
+		}
+		found = &doc.Records[i]
+	}
+	if found == nil {
+		return nil, fmt.Errorf("no logical gate exists for workflow stage %s", stage)
+	}
+	return found, nil
+}
+
+func recordAttempt(record *GateRecord, id string) (*Attempt, error) {
+	for i := range record.Attempts {
+		if record.Attempts[i].ID == id {
+			return &record.Attempts[i], nil
+		}
+	}
+	return nil, fmt.Errorf("gate %s current attempt %s is missing", record.ID, id)
+}
+
+func successorAttemptID(previous string) (string, error) {
+	cut := strings.LastIndex(previous, "-")
+	if cut < 0 || cut == len(previous)-1 {
+		return "", fmt.Errorf("cannot derive successor id from %s", previous)
+	}
+	sequence, err := strconv.Atoi(previous[cut+1:])
+	if err != nil || sequence < 1 {
+		return "", fmt.Errorf("cannot derive successor id from %s", previous)
+	}
+	return previous[:cut+1] + strconv.Itoa(sequence+1), nil
+}
+
+func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
+	data, err := os.ReadFile(briefingPath)
+	if err != nil {
+		return Briefing{}, err
+	}
+	var manifest struct {
+		Type string `json:"type"`
+		ID   string `json:"id"`
+	}
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return Briefing{}, fmt.Errorf("parse Briefing: %w", err)
+	}
+	if manifest.Type != "Briefing" || manifest.ID == "" {
+		return Briefing{}, fmt.Errorf("--briefing must name a complete Briefing with type and id")
+	}
+	digest, err := CanonicalDigest(data)
+	if err != nil {
+		return Briefing{}, fmt.Errorf("canonicalize briefing: %w", err)
+	}
+	roomRef, err := filepath.Rel(filepath.Dir(entityPath), filepath.Dir(briefingPath))
+	if err != nil {
+		return Briefing{}, fmt.Errorf("resolve briefing room: %w", err)
+	}
+	roomRef = filepath.ToSlash(roomRef)
+	if roomRef == "." {
+		roomRef = "./"
+	} else if !strings.HasPrefix(roomRef, ".") {
+		roomRef = "./" + roomRef
+	}
+	return Briefing{ID: manifest.ID, Digest: digest, DigestDomain: "canonical-bytes", RoomRef: roomRef}, nil
 }
 
 func currentAttempt(doc *Document, gateID, attemptID string) (*Attempt, error) {

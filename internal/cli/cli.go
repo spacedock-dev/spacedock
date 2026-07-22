@@ -155,8 +155,8 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 	return root
 }
 
-// newGateCommand exposes the recorder-only surface. The operation file owns
-// open/rebind/close/supersede details; the CLI owns only path resolution.
+// newGateCommand exposes the semantic Briefing bootstrap while temporarily
+// retaining the operation-file path used to close the approval attempt.
 func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
 		Use:                "gate record|validate <entity>",
@@ -165,7 +165,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --operation FILE [--briefing FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--workflow-dir DIR]")
+				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing FILE [--workflow-dir DIR]\n       spacedock gate record <entity> --operation FILE [--briefing FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--workflow-dir DIR]")
 				return nil
 			}
 			if len(args) < 2 || (args[0] != "record" && args[0] != "validate") {
@@ -205,12 +205,18 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintf(stdout, "gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
 				return nil
 			}
-			if operation == "" {
-				fmt.Fprintln(stderr, "Error: gate record requires --operation FILE")
+			if operation == "" && briefing == "" {
+				fmt.Fprintln(stderr, "Error: gate record requires --briefing FILE")
 				return exitCodeError{2}
 			}
-			if err := gates.Record(path, operation, briefing); err != nil {
-				fmt.Fprintln(stderr, "Error:", err)
+			var recordErr error
+			if operation == "" {
+				recordErr = gates.RecordBriefing(path, briefing)
+			} else {
+				recordErr = gates.Record(path, operation, briefing)
+			}
+			if recordErr != nil {
+				fmt.Fprintln(stderr, "Error:", recordErr)
 				return exitCodeError{1}
 			}
 			s, _ := gates.SummaryFile(path)
