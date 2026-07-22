@@ -1,6 +1,6 @@
 ---
 title: Gate recorder — durable gates records with binary-owned writes
-status: validation
+status: ideation
 score: "0.80"
 source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
@@ -217,12 +217,20 @@ gates:
           attempts:
             - id: gate-attempt:3k-validation-1
               sequence: 1
-              state: open
+              state: closed
               briefing:
                 id: briefing:docs-dev:3k:validation:attempt-1:revision-1
                 digest: sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:first-officer-3k-validation-1-design-reset
+                briefing: briefing:docs-dev:3k:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-22T02:01:32Z"
+                decision: revise
+                reason: 'Captain directive: ''ok. send it back.'' Return to ideation because the validated recorder requires an agent-authored transaction envelope instead of consuming semantic intent and exact Review v1; redesign the durable projection so Git supplies rebind audit history while current and frozen decisions remain self-contained.'
 sprint: durable-decisions
 group: recorder
 worktree: .worktrees/spacedock-ensign-durable-gate-approval-pending-blockers
@@ -1346,6 +1354,7 @@ Baseline and race suites pass, formatting is clean, and the present implementati
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — detached high-stakes audit; surface 17 files/1696 changed lines (774 production, 367 test) vs estimate 2-3 new internal files plus status/CLI/docs, 400-650 production LOC with roughly equal test LOC (119% of upper production estimate); AC unchanged
+- Cycle 2: REJECTED — captain-directed design reset to ideation after the validation gate; surface 27 files/2736 changed lines (778 production, 1403 test/fixture) vs estimate 2-3 new internal files plus status/CLI/docs, 400-650 production LOC with roughly equal test LOC (120% of upper production estimate); AC unchanged
 
 ## Stage Report: implementation (cycle 2)
 
