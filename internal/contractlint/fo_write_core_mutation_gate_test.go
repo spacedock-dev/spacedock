@@ -35,7 +35,7 @@ func TestFOWriteCoreMutationGateClassifiesTargets(t *testing.T) {
 		{"docs/site/reference/command-reference.md", "blocked-product"},
 		{"docs/specs/state-behavior-extension.md", "blocked-product"},
 		{"docs/roadmap/0250-fo-behavioral-discipline/index.md", "blocked-product"},
-		{"fixtures/entity-label-drive/README.md", "blocked-product"},
+		{"skills/integration/testdata/entity-label-drive/README.md", "blocked-product"},
 		{"docs/dev/_mods/pr-merge.md", "blocked-product"},
 	}
 	for _, tc := range cases {

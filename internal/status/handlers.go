@@ -467,11 +467,15 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 // discoverIgnoreDirs is the baseline prune set for --discover. Matches
 // DISCOVER_IGNORE_DIRS, extended with .spacedock-state so a state checkout is
 // never walked into and re-surfaced as a second workflow (the native split-root
-// state dir holds no own README; a stray symlinked one would otherwise match).
+// state dir holds no own README; a stray symlinked one would otherwise match),
+// and with testdata so a commissioned-shape README carried as a package-adjacent
+// test fixture (Go ignores testdata/ when building, this repo homes fixtures
+// there) is not counted as a real workflow — the same test-scaffolding tradeoff
+// the set already makes for tests/vendor/dist/build.
 var discoverIgnoreDirs = map[string]bool{
 	".git": true, ".worktrees": true, "node_modules": true, "vendor": true,
 	"dist": true, "build": true, "__pycache__": true, "tests": true,
-	".spacedock-state": true,
+	".spacedock-state": true, "testdata": true,
 }
 
 // readGitignoreDirBasenames returns basenames of directory-pattern entries in

@@ -132,3 +132,39 @@ func TestDiscoverWorkflowsSkipsNestedCheckout(t *testing.T) {
 		t.Fatalf("discoverWorkflows = %v, want exactly [%s] (nested-checkout .git skip must prune the copy)", got, want)
 	}
 }
+
+// TestDiscoverWorkflowsPrunesTestdata isolates the `testdata` basename prune: a
+// commissioned-shape README that exists only as a test fixture lives under a
+// package's `testdata/` subtree (the Go-idiomatic, package-adjacent home, e.g.
+// skills/integration/testdata/refit-content-propagation/site-workflow). Discovery
+// must NOT count it as a real workflow while still finding the one real workflow
+// at docs/dev. The `testdata` basename is the ONLY thing that drops the fixture
+// row here — its parent dirs (skills, integration) are neither in
+// discoverIgnoreDirs nor any .gitignore — so removing `testdata` from
+// discoverIgnoreDirs re-surfaces the fixture as a second workflow and reds this.
+func TestDiscoverWorkflowsPrunesTestdata(t *testing.T) {
+	repo := t.TempDir()
+	commissioned := "---\ncommissioned-by: spacedock@1.0\nid-style: sequential\n---\n# WF\n"
+	write := func(rel string) {
+		p := filepath.Join(repo, rel, "README.md")
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(commissioned), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// The one real workflow, part of the main checkout.
+	write(filepath.Join("docs", "dev"))
+	// A commissioned README carried as a fixture under a package's testdata/ —
+	// the shape of the relocated skills/integration/testdata fixtures. Pruned by
+	// the `testdata` basename, not by any parent dir name or gitignore rule.
+	write(filepath.Join("skills", "integration", "testdata", "refit-content-propagation", "site-workflow"))
+
+	got := discoverWorkflows(repo)
+	want := realpathOf(filepath.Join(repo, "docs", "dev"))
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("discoverWorkflows = %v, want exactly [%s] (a commissioned README under testdata/ must be pruned)", got, want)
+	}
+}
