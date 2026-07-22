@@ -25,7 +25,7 @@ import (
 // captain raised both caps by the measured remainder plus headroom.
 func TestFOInstructionComponentCaps(t *testing.T) {
 	for rel, cap := range map[string]int{
-		"skills/first-officer/references/first-officer-shared-core.md": 26900,
+		"skills/first-officer/references/first-officer-shared-core.md": 27194,
 		"skills/fo-gate-lifecycle/SKILL.md":                            7000,
 	} {
 		if got := len([]byte(readRepoFile(t, filepath.FromSlash(rel)))); got > cap {

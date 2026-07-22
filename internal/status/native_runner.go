@@ -660,7 +660,15 @@ func resolveIdentifyBootDir(dir string, asJSON bool, stdout, stderr io.Writer) (
 		return workflows[0], false, 0
 	default:
 		if asJSON {
-			emitJSON(stdout, newJSONObj().set("command", "boot").setValue("discovery", jsonStrArr(workflows)))
+			emitJSON(stdout, newJSONObj().
+				set("command", "boot").
+				setValue("discovery", jsonStrArr(workflows)).
+				set("schema", "spacedock.status.boot.identify.discovery.v1").
+				set("status", "complete").
+				set("result", "multiple_workflows").
+				setValue("terminal", jsonBool(true)).
+				setValue("workflow_count", jsonInt(len(workflows))).
+				set("next_action", "select_workflow"))
 		} else {
 			fmt.Fprintln(stdout, "DISCOVERY")
 			for _, w := range workflows {
