@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,12 +18,9 @@ func TestGateRecordAndValidateCLILeaveStatusUntouched(t *testing.T) {
 	entity := filepath.Join(root, "task.md")
 	writeFile(t, entity, "---\nstatus: ideation\ntitle: Task\n---\n# Task\n")
 	briefing := filepath.Join(root, "briefing.json")
-	writeFile(t, briefing, `{"type":"Briefing","id":"briefing:provider"}`)
-	op := filepath.Join(root, "open.yml")
-	writeFile(t, op, "operation: open\ngate-id: gate:design\nstage: ideation\nattempt-id: attempt:design-1\nbriefing: {id: 'briefing:design-1', room-ref: './review/ideation'}\n")
-
+	writeFile(t, briefing, `{"type":"Briefing","version":"1","id":"briefing:provider","question":"Review task","artifacts":[{"id":"artifact:primary","uri":"artifact.md","rev":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}`)
 	var out, errOut bytes.Buffer
-	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--operation", op, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 0 {
 		t.Fatalf("record exit=%d stderr=%q", code, errOut.String())
 	}
@@ -90,9 +88,8 @@ func TestGateRecordBriefingReentersStageGateWhenAnotherGateIsSelected(t *testing
 	}
 }
 
-func TestGateRecordOperationClosesMinimalBriefingAttempt(t *testing.T) {
+func TestGateRecordDecisionClosesMinimalBriefingAttempt(t *testing.T) {
 	root, entity, briefing := crossGateFixture(t)
-	const digest = "sha256:6b2c4f1388a58f42f7c8610f847ed9e7cce92758c00b201d4eb9f4f89dbedd8b"
 
 	var out, errOut bytes.Buffer
 	code := run(context.Background(), []string{"gate", "record", "durable-gate-approval-pending-blockers", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
@@ -108,28 +105,130 @@ func TestGateRecordOperationClosesMinimalBriefingAttempt(t *testing.T) {
 		t.Fatalf("semantic record did not create a minimal open attempt:\n%s", minimal)
 	}
 
-	closeOperation := filepath.Join(root, "close.yml")
-	writeFile(t, closeOperation, "operation: close\nexpected: {gate: 'gate:docs-dev:3k:ideation', attempt: 'gate-attempt:3k-ideation-10', briefing: 'briefing:docs-dev:3k:ideation:attempt-10:revision-18', digest: '"+digest+"'}\ngate-id: gate:docs-dev:3k:ideation\nattempt-id: gate-attempt:3k-ideation-10\nresult:\n  briefing-digest: "+digest+"\n  authorized-by: person:captain\n  entries:\n    - type: Resolution\n      id: resolution:docs-dev:3k:ideation:attempt-10\n      briefing: briefing:docs-dev:3k:ideation:attempt-10:revision-18\n      by: person:captain\n      at: 2026-07-22T00:00:00Z\n      decision: approve\n      reason: lgtm. add the fixture\n")
 	out.Reset()
 	errOut.Reset()
-	code = run(context.Background(), []string{"gate", "record", "durable-gate-approval-pending-blockers", "--workflow-dir", root, "--operation", closeOperation}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code = run(context.Background(), []string{"gate", "record", "durable-gate-approval-pending-blockers", "--workflow-dir", root, "--decision", "approve", "--actor", "person:captain", "--reason", "lgtm. add the fixture"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 0 {
-		t.Fatalf("operation close exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		t.Fatalf("decision close exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	if !strings.Contains(out.String(), "attempt=gate-attempt:3k-ideation-10 state=closed") || !strings.Contains(out.String(), "decision=approve") {
 		t.Fatalf("operation close stdout=%q, want closed approved attempt", out.String())
 	}
 }
 
-func TestLegacyGateOperationCharacterizesGlobalCurrentDefect(t *testing.T) {
-	root, _, briefing := crossGateFixture(t)
-	op := filepath.Join(root, "supersede.yml")
-	writeFile(t, op, "operation: supersede\nexpected: {gate: 'gate:docs-dev:3k:validation', attempt: 'gate-attempt:3k-validation-1', briefing: 'briefing:docs-dev:3k:validation:attempt-1:revision-1', digest: 'sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac'}\ngate-id: gate:docs-dev:3k:ideation\nattempt-id: gate-attempt:3k-ideation-10\nbriefing: {id: 'briefing:docs-dev:3k:ideation:attempt-10:revision-18', room-ref: './review/ideation/briefing-18'}\n")
+func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) {
+	root, entity := semanticDecisionFixture(t)
+	result := filepath.Join(root, "result.json")
+	association := filepath.Join(root, "association.json")
+	copyGateTestdata(t, result, "exact-review-v1-result.json")
+	copyGateTestdata(t, association, "exact-review-v1-association.json")
 
 	var out, errOut bytes.Buffer
-	code := run(context.Background(), []string{"gate", "record", "durable-gate-approval-pending-blockers", "--workflow-dir", root, "--operation", op, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-	if code != 1 || !strings.Contains(errOut.String(), "pointer conflict") {
-		t.Fatalf("legacy supersede exit=%d stdout=%q stderr=%q, want global-current pointer conflict", code, out.String(), errOut.String())
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 2 || !strings.Contains(errOut.String(), "--association") {
+		t.Fatalf("result without association exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	associationBytes, err := os.ReadFile(association)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var primaryOnly map[string]any
+	if err := json.Unmarshal(associationBytes, &primaryOnly); err != nil {
+		t.Fatal(err)
+	}
+	presentation := primaryOnly["presentation"].([]any)
+	primaryOnly["presentation"] = presentation[:1]
+	primaryOnlyPath := filepath.Join(root, "primary-only-association.json")
+	primaryOnlyBytes, err := json.Marshal(primaryOnly)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(primaryOnlyPath, primaryOnlyBytes, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--association", primaryOnlyPath, "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "complete presentation mapping") {
+		t.Fatalf("primary-only association exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	afterFailed, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(afterFailed, before) {
+		t.Fatal("rejected primary-only association changed the entity")
+	}
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--association", association, "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("record result exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	body, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"id: resolution:actor-1784675152206198000", "briefing: briefing:docs-dev:3k:validation:attempt-1:revision-1", "decision: revise", "adoption-note: Adopted by the captain"} {
+		if !strings.Contains(string(body), want) {
+			t.Fatalf("recorded Result missing %q:\n%s", want, body)
+		}
+	}
+	resolution := fixtureSection(t, string(body), "          resolution:\n", "title: Task\n")
+	for _, wrapperField := range []string{"status:", "binding:", "actor:", "approver:", "resolutionId:"} {
+		if strings.Contains(resolution, wrapperField) {
+			t.Fatalf("provider wrapper field %q crossed the portable boundary:\n%s", wrapperField, resolution)
+		}
+	}
+}
+
+func TestGateRecordChatDecisionAndRejectsOperationInterface(t *testing.T) {
+	root, entity := semanticDecisionFixture(t)
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--decision", "approve", "--actor", "agent:first-officer", "--reason", "All retained ACs reproduced", "--directive", "Captain: approve after the reset"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("record decision exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	body, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"by: agent:first-officer", "decision: approve", "reason: All retained ACs reproduced", "adoption-note: 'Captain: approve after the reset'"} {
+		if !strings.Contains(string(body), want) {
+			t.Fatalf("chat Resolution missing %q:\n%s", want, body)
+		}
+	}
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--operation", "old.yml"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 2 || !strings.Contains(errOut.String(), "unknown gate flag: --operation") {
+		t.Fatalf("legacy operation exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+}
+
+func semanticDecisionFixture(t *testing.T) (root, entity string) {
+	t.Helper()
+	root = t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n---\n# Workflow\n")
+	entity = filepath.Join(root, "task.md")
+	writeFile(t, entity, "---\nstatus: validation\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:docs-dev:3k:validation:attempt-1:revision-1\n            digest: sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac\n            digest-domain: canonical-bytes\n            room-ref: ./review/validation/briefing-1\ntitle: Task\n---\n# Task\n")
+	return root, entity
+}
+
+func copyGateTestdata(t *testing.T, destination, name string) {
+	t.Helper()
+	body, err := os.ReadFile(filepath.Join("..", "gates", "testdata", name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(destination, body, 0o644); err != nil {
+		t.Fatal(err)
 	}
 }
 

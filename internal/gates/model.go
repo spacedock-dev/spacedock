@@ -21,7 +21,7 @@ type Document struct {
 
 type Selection struct {
 	Gate    string               `yaml:"gate" json:"gate"`
-	Attempt string               `yaml:"attempt" json:"attempt"`
+	Attempt string               `yaml:"attempt,omitempty" json:"attempt,omitempty"`
 	Extra   map[string]yaml.Node `yaml:",inline" json:"-"`
 }
 
@@ -81,8 +81,8 @@ func Validate(doc *Document) error {
 	if doc.Version != 1 {
 		return fmt.Errorf("gates.version must be 1")
 	}
-	if doc.Current.Gate == "" || doc.Current.Attempt == "" {
-		return fmt.Errorf("gates.current must name a gate and attempt")
+	if doc.Current.Gate == "" {
+		return fmt.Errorf("gates.current must name a gate")
 	}
 	gateIDs, attemptIDs, briefingIDs, resolutionIDs := map[string]bool{}, map[string]bool{}, map[string]bool{}, map[string]bool{}
 	var selected *Attempt
@@ -91,10 +91,8 @@ func Validate(doc *Document) error {
 		if r.ID == "" || r.Stage == "" || gateIDs[r.ID] {
 			return fmt.Errorf("record %d has missing or duplicate identity/current pointer", ri+1)
 		}
-		if r.CurrentAttempt == "" && len(r.Attempts) > 0 {
-			r.CurrentAttempt = r.Attempts[len(r.Attempts)-1].ID
-		}
 		gateIDs[r.ID] = true
+		currentID := recordCurrentAttempt(r)
 		currentFound := false
 		for ai := range r.Attempts {
 			a := &r.Attempts[ai]
@@ -131,18 +129,18 @@ func Validate(doc *Document) error {
 			default:
 				return fmt.Errorf("attempt %s state must be open or closed", a.ID)
 			}
-			if a.ID == r.CurrentAttempt {
+			if a.ID == currentID {
 				currentFound = true
 			}
-			if r.ID == doc.Current.Gate && a.ID == doc.Current.Attempt {
+			if r.ID == doc.Current.Gate && a.ID == currentID {
 				selected = a
 			}
 		}
 		if !currentFound {
 			return fmt.Errorf("gate %s current-attempt pointer does not resolve", r.ID)
 		}
-		if r.ID == doc.Current.Gate && r.CurrentAttempt != doc.Current.Attempt {
-			return fmt.Errorf("current pointer conflict: gate %s selects %s but gates.current selects %s", r.ID, r.CurrentAttempt, doc.Current.Attempt)
+		if r.ID == doc.Current.Gate && doc.Current.Attempt != "" && currentID != doc.Current.Attempt {
+			return fmt.Errorf("current pointer conflict: gate %s selects %s but gates.current selects %s", r.ID, currentID, doc.Current.Attempt)
 		}
 	}
 	if selected == nil {
@@ -173,9 +171,10 @@ func CurrentSummary(doc *Document) Summary {
 		if r.ID != doc.Current.Gate {
 			continue
 		}
+		currentID := recordCurrentAttempt(r)
 		for j := range r.Attempts {
 			a := &r.Attempts[j]
-			if a.ID != doc.Current.Attempt {
+			if a.ID != currentID {
 				continue
 			}
 			s := Summary{Gate: r.ID, Attempt: a.ID, State: attemptState(a), Briefing: a.Briefing.ID}
@@ -186,6 +185,16 @@ func CurrentSummary(doc *Document) Summary {
 		}
 	}
 	return Summary{}
+}
+
+func recordCurrentAttempt(record *GateRecord) string {
+	if record.CurrentAttempt != "" {
+		return record.CurrentAttempt
+	}
+	if len(record.Attempts) == 0 {
+		return ""
+	}
+	return record.Attempts[len(record.Attempts)-1].ID
 }
 
 func attemptState(a *Attempt) string {

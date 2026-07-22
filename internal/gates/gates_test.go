@@ -1,7 +1,6 @@
 package gates
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,13 +44,7 @@ func TestTwoGateMultipleAttemptReplayPreservesApplicationsAndUnknownFields(t *te
 	if got := CurrentSummary(doc); got.Gate != "gate:docs:dev:falsifiability-ladder:validation" || got.Attempt != "gate-attempt:z7cvbvdv-validation-3" {
 		t.Fatalf("current pointers disagree: %#v", got)
 	}
-	if err := write(entity, doc); err != nil {
-		t.Fatal(err)
-	}
-	after, _, err := Read(entity)
-	if err != nil {
-		t.Fatal(err)
-	}
+	after := doc
 	if _, ok := after.Extra["fixture-purpose"]; !ok {
 		t.Fatal("unknown document field was lost")
 	}
@@ -89,7 +82,7 @@ func TestTwoGateMultipleAttemptReplayPreservesApplicationsAndUnknownFields(t *te
 	})
 }
 
-func TestEightProductionHistoryReplays(t *testing.T) {
+func TestEightProductionHistoriesSurviveTargetedSemanticWrite(t *testing.T) {
 	fixtures, err := filepath.Glob(filepath.Join("testdata", "production", "*.md"))
 	if err != nil {
 		t.Fatal(err)
@@ -112,23 +105,37 @@ func TestEightProductionHistoryReplays(t *testing.T) {
 			if err != nil {
 				t.Fatalf("production history rejected: %v", err)
 			}
-			before, err := yaml.Marshal(doc)
+			beforeRecords := recordSourceSections(t, data)
+			beforeOutside := outsideGates(t, entity)
+			slug := strings.TrimSuffix(filepath.Base(fixture), ".md")
+			briefing := operationFile(t, completeBriefing(`briefing:compat:`+slug+`:done:attempt-1:revision-1`, "compatibility"))
+			if err := RecordBriefing(entity, briefing); err != nil {
+				t.Fatal(err)
+			}
+			afterBytes, err := os.ReadFile(entity)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := write(entity, doc); err != nil {
-				t.Fatal(err)
+			afterRecords := recordSourceSections(t, afterBytes)
+			for id, before := range beforeRecords {
+				if afterRecords[id] != before {
+					t.Fatalf("legacy record %s changed during targeted write", id)
+				}
+			}
+			if got := outsideGates(t, entity); got != beforeOutside {
+				t.Fatal("targeted write changed bytes outside gates")
 			}
 			replayed, _, err := Read(entity)
 			if err != nil {
-				t.Fatalf("rewritten history rejected: %v", err)
+				t.Fatalf("targeted history rejected: %v", err)
 			}
-			after, err := yaml.Marshal(replayed)
-			if err != nil {
-				t.Fatal(err)
+			if len(replayed.Records) != len(doc.Records)+1 {
+				t.Fatalf("records=%d, want one appended to %d", len(replayed.Records), len(doc.Records))
 			}
-			if string(after) != string(before) {
-				t.Fatalf("production history changed during replay:\nbefore:\n%s\nafter:\n%s", before, after)
+			added := replayed.Records[len(replayed.Records)-1]
+			attempt := added.Attempts[0]
+			if added.Stage != "done" || added.CurrentAttempt != "" || attempt.Sequence != 0 || attempt.PreviousAttempt != "" || attempt.State != "" {
+				t.Fatalf("new record is not minimal v1: %#v", added)
 			}
 		})
 	}
@@ -136,59 +143,49 @@ func TestEightProductionHistoryReplays(t *testing.T) {
 
 func TestRebindCloseFreezeAndSupersedeLifecycle(t *testing.T) {
 	entity := writeEntity(t, "status: ideation\n")
-	briefingA := operationFile(t, `{"type":"Briefing","id":"provider:a","body":"A"}`)
-	briefingB := operationFile(t, `{"type":"Briefing","id":"provider:b","body":"B"}`)
-	briefingC := operationFile(t, `{"type":"Briefing","id":"provider:c","body":"C"}`)
-	briefingD := operationFile(t, `{"type":"Briefing","id":"provider:d","body":"D"}`)
+	briefingA := operationFile(t, completeBriefing("briefing:local:lifecycle:ideation:attempt-1:revision-1", "A"))
+	briefingB := operationFile(t, completeBriefing("briefing:local:lifecycle:ideation:attempt-1:revision-2", "B"))
+	briefingC := operationFile(t, completeBriefing("briefing:local:lifecycle:ideation:attempt-1:revision-3", "C"))
+	briefingD := operationFile(t, completeBriefing("briefing:local:lifecycle:ideation:attempt-2:revision-1", "D"))
 	digestA, _ := CanonicalDigest([]byte(readFile(t, briefingA)))
 	digestB, _ := CanonicalDigest([]byte(readFile(t, briefingB)))
 	digestC, _ := CanonicalDigest([]byte(readFile(t, briefingC)))
 	digestD, _ := CanonicalDigest([]byte(readFile(t, briefingD)))
 
-	open := operationFile(t, "operation: open\nexpected: {gate: '', attempt: '', briefing: '', digest: ''}\ngate-id: gate:lifecycle\nstage: ideation\nattempt-id: attempt:lifecycle-1\nbriefing: {id: briefing:a}\n")
-	if err := Record(entity, open, briefingA); err != nil {
+	if err := RecordBriefing(entity, briefingA); err != nil {
 		t.Fatal(err)
 	}
-	assertCurrentBinding(t, entity, "attempt:lifecycle-1", "briefing:a", digestA, "open", 1)
+	assertCurrentBinding(t, entity, "gate:local:lifecycle:ideation", "gate-attempt:lifecycle-ideation-1", "briefing:local:lifecycle:ideation:attempt-1:revision-1", digestA, "open", 1)
 
-	rebindB := operationFile(t, fmt.Sprintf("operation: rebind\nexpected: {gate: 'gate:lifecycle', attempt: 'attempt:lifecycle-1', briefing: 'briefing:a', digest: '%s'}\ngate-id: gate:lifecycle\nattempt-id: attempt:lifecycle-1\nbriefing: {id: briefing:b}\n", digestA))
-	if err := Record(entity, rebindB, briefingB); err != nil {
+	if err := RecordBriefing(entity, briefingB); err != nil {
 		t.Fatal(err)
 	}
-	assertCurrentBinding(t, entity, "attempt:lifecycle-1", "briefing:b", digestB, "open", 1)
+	assertCurrentBinding(t, entity, "gate:local:lifecycle:ideation", "gate-attempt:lifecycle-ideation-1", "briefing:local:lifecycle:ideation:attempt-1:revision-2", digestB, "open", 1)
 
-	rebindC := operationFile(t, fmt.Sprintf("operation: rebind\nexpected: {gate: 'gate:lifecycle', attempt: 'attempt:lifecycle-1', briefing: 'briefing:b', digest: '%s'}\ngate-id: gate:lifecycle\nattempt-id: attempt:lifecycle-1\nbriefing: {id: briefing:c}\n", digestB))
-	if err := Record(entity, rebindC, briefingC); err != nil {
+	if err := RecordBriefing(entity, briefingC); err != nil {
 		t.Fatal(err)
 	}
-	assertCurrentBinding(t, entity, "attempt:lifecycle-1", "briefing:c", digestC, "open", 1)
+	assertCurrentBinding(t, entity, "gate:local:lifecycle:ideation", "gate-attempt:lifecycle-ideation-1", "briefing:local:lifecycle:ideation:attempt-1:revision-3", digestC, "open", 1)
 
-	closeOp := operationFile(t, fmt.Sprintf("operation: close\nexpected: {gate: 'gate:lifecycle', attempt: 'attempt:lifecycle-1', briefing: 'briefing:c', digest: '%s'}\ngate-id: gate:lifecycle\nattempt-id: attempt:lifecycle-1\nresult:\n  briefing-digest: %s\n  authorized-by: person:captain\n  entries:\n    - type: Resolution\n      id: resolution:lifecycle-1\n      briefing: provider:c\n      by: person:captain\n      at: 2026-07-22T00:00:00Z\n      decision: approve\n", digestC, digestC))
-	if err := Record(entity, closeOp, ""); err != nil {
+	if err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain"}); err != nil {
 		t.Fatal(err)
 	}
-	assertCurrentBinding(t, entity, "attempt:lifecycle-1", "briefing:c", digestC, "closed", 1)
+	assertCurrentBinding(t, entity, "gate:local:lifecycle:ideation", "gate-attempt:lifecycle-ideation-1", "briefing:local:lifecycle:ideation:attempt-1:revision-3", digestC, "closed", 1)
 	closed := readFile(t, entity)
-	closedRebind := operationFile(t, fmt.Sprintf("operation: rebind\nexpected: {gate: 'gate:lifecycle', attempt: 'attempt:lifecycle-1', briefing: 'briefing:c', digest: '%s'}\ngate-id: gate:lifecycle\nattempt-id: attempt:lifecycle-1\nbriefing: {id: briefing:b}\n", digestC))
-	if err := Record(entity, closedRebind, briefingB); err == nil || !strings.Contains(err.Error(), "frozen") {
-		t.Fatalf("closed rebind = %v, want frozen refusal", err)
-	}
-	if got := readFile(t, entity); got != closed {
-		t.Fatal("closed-attempt rebind mutated entity")
-	}
-
-	supersede := operationFile(t, fmt.Sprintf("operation: supersede\nexpected: {gate: 'gate:lifecycle', attempt: 'attempt:lifecycle-1', briefing: 'briefing:c', digest: '%s'}\ngate-id: gate:lifecycle\nattempt-id: attempt:lifecycle-2\nbriefing: {id: briefing:d}\n", digestC))
-	if err := Record(entity, supersede, briefingD); err != nil {
+	if err := RecordBriefing(entity, briefingD); err != nil {
 		t.Fatal(err)
 	}
-	assertCurrentBinding(t, entity, "attempt:lifecycle-2", "briefing:d", digestD, "open", 2)
+	assertCurrentBinding(t, entity, "gate:local:lifecycle:ideation", "gate-attempt:lifecycle-ideation-2", "briefing:local:lifecycle:ideation:attempt-2:revision-1", digestD, "open", 2)
 	doc, _, err := Read(entity)
 	if err != nil {
 		t.Fatal(err)
 	}
 	first, second := doc.Records[0].Attempts[0], doc.Records[0].Attempts[1]
-	if first.State != "closed" || first.Briefing.ID != "briefing:c" || first.Resolution == nil || second.PreviousAttempt != first.ID || second.Sequence != 2 {
+	if first.State != "" || first.Resolution == nil || second.PreviousAttempt != "" || second.Sequence != 0 || second.State != "" {
 		t.Fatalf("supersession did not preserve frozen lineage: first=%#v second=%#v", first, second)
+	}
+	if !strings.HasPrefix(readFile(t, entity), strings.TrimSuffix(closed, "---\n# Entity\n")) {
+		t.Fatal("supersession rewrote the frozen closed attempt")
 	}
 }
 
@@ -215,67 +212,8 @@ func TestMutableOpenAttemptCompatibility(t *testing.T) {
 	}
 }
 
-func TestRecordCloseNormalizesOnlyAfterDigestMatch(t *testing.T) {
-	initial := "status: ideation\ngates:\n  version: 1\n  current: {gate: 'gate:design', attempt: 'gate-attempt:design-1'}\n  records:\n    - id: gate:design\n      stage: ideation\n      current-attempt: gate-attempt:design-1\n      attempts:\n        - id: gate-attempt:design-1\n          sequence: 1\n          state: open\n          briefing:\n            id: briefing:design-1\n            digest: sha256:" + strings.Repeat("a", 64) + "\n"
-	entity := writeEntity(t, initial)
-	badEntity := writeEntity(t, initial)
-	beforeOutside := outsideGates(t, entity)
-	op := operationFile(t, "operation: close\nexpected: {gate: 'gate:design', attempt: 'gate-attempt:design-1', briefing: 'briefing:design-1', digest: 'sha256:"+strings.Repeat("a", 64)+"'}\ngate-id: gate:design\nattempt-id: gate-attempt:design-1\nresult:\n  briefing-digest: sha256:"+strings.Repeat("a", 64)+"\n  authorized-by: person:captain\n  entries:\n    - type: Resolution\n      id: resolution:advisory\n      briefing: briefing:provider-envelope\n      by: agent:reviewer\n      at: 2026-07-22T00:00:00Z\n      decision: revise\n      reason: advisory\n    - type: Resolution\n      id: resolution:binding\n      briefing: briefing:provider-envelope\n      by: person:captain\n      at: 2026-07-22T00:01:00Z\n      decision: approve\n")
-	if err := Record(entity, op, ""); err != nil {
-		t.Fatal(err)
-	}
-	if afterOutside := outsideGates(t, entity); afterOutside != beforeOutside {
-		t.Fatalf("recording changed bytes outside gates:\nbefore=%q\nafter=%q", beforeOutside, afterOutside)
-	}
-	doc, _, err := Read(entity)
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := doc.Records[0].Attempts[0].Resolution
-	if got.ID != "resolution:binding" || got.Briefing != "briefing:design-1" {
-		t.Fatalf("binding resolution not selected/normalized: %#v", got)
-	}
-
-	bad := operationFile(t, strings.ReplaceAll(readFile(t, op), strings.Repeat("a", 64), strings.Repeat("b", 64)))
-	before := readFile(t, badEntity)
-	if err := Record(badEntity, bad, ""); err == nil || !strings.Contains(err.Error(), "digest") {
-		t.Fatalf("digest mismatch = %v, want refusal", err)
-	}
-	if got := readFile(t, badEntity); got != before {
-		t.Fatal("failed close mutated the entity")
-	}
-}
-
-func TestAdversarialWrapperFieldsStayOutsideCopiedResolution(t *testing.T) {
-	digest := "sha256:" + strings.Repeat("a", 64)
-	entity := writeEntity(t, "status: ideation\ngates:\n  version: 1\n  current: {gate: 'gate:design', attempt: 'attempt:design-1'}\n  records:\n    - id: gate:design\n      stage: ideation\n      current-attempt: attempt:design-1\n      attempts:\n        - id: attempt:design-1\n          sequence: 1\n          state: open\n          briefing: {id: 'briefing:design-1', digest: '"+digest+"'}\n")
-	op := operationFile(t, "operation: close\nexpected: {gate: 'gate:design', attempt: 'attempt:design-1', briefing: 'briefing:design-1', digest: '"+digest+"'}\ngate-id: gate:design\nattempt-id: attempt:design-1\nresult:\n  briefing-digest: "+digest+"\n  authorized-by: person:captain\n  entries:\n    - type: Resolution\n      id: resolution:binding\n      briefing: provider:design\n      by: person:captain\n      at: 2026-07-22T00:00:00Z\n      decision: approve\n      stage: done\n      sequence: 99\n      briefing-change:\n        from: provider:old\n        to: provider:design\n      application:\n        action: advance\n        state: consumed\n      future-wrapper-field: never-durable\n")
-	if err := Record(entity, op, ""); err != nil {
-		t.Fatal(err)
-	}
-	doc, _, err := Read(entity)
-	if err != nil {
-		t.Fatal(err)
-	}
-	attempt := doc.Records[0].Attempts[0]
-	if attempt.Application != nil {
-		t.Fatalf("provider application crossed into attempt application: %#v", attempt.Application)
-	}
-	for _, key := range []string{"stage", "sequence", "briefing-change", "application", "future-wrapper-field"} {
-		if _, leaked := attempt.Resolution.Extra[key]; leaked {
-			t.Fatalf("provider wrapper field %q leaked into durable Resolution: %#v", key, attempt.Resolution.Extra)
-		}
-	}
-}
-
-func TestRecordRefusesPointerConflictAndFrozenMutation(t *testing.T) {
+func TestFrozenMutationIsRejected(t *testing.T) {
 	entity := writeEntity(t, "status: ideation\ngates:\n  version: 1\n  current: {gate: 'gate:a', attempt: 'attempt:a-1'}\n  records:\n    - id: gate:a\n      stage: ideation\n      current-attempt: attempt:a-1\n      attempts:\n        - id: attempt:a-1\n          sequence: 1\n          state: closed\n          briefing: {id: 'briefing:a-1', digest: 'sha256:"+strings.Repeat("1", 64)+"'}\n          resolution: {type: Resolution, id: 'resolution:a-1', briefing: 'briefing:a-1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: approve}\n")
-	conflict := operationFile(t, "operation: supersede\nexpected: {gate: 'gate:a', attempt: 'attempt:wrong', briefing: 'briefing:a-1', digest: 'sha256:"+strings.Repeat("1", 64)+"'}\ngate-id: gate:a\nattempt-id: attempt:a-2\nbriefing: {id: 'briefing:a-2'}\n")
-	briefing := operationFile(t, `{"type":"Briefing","id":"provider:new"}`)
-	if err := Record(entity, conflict, briefing); err == nil || !strings.Contains(err.Error(), "pointer conflict") {
-		t.Fatalf("pointer conflict = %v", err)
-	}
-
 	var doc Document
 	_, n, err := Read(entity)
 	if err != nil {
@@ -295,10 +233,9 @@ func TestConcurrentWriterFailsClosed(t *testing.T) {
 	if err := os.WriteFile(entity+".gates.lock", []byte("held"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	op := operationFile(t, "operation: open\ngate-id: gate:a\nstage: ideation\nattempt-id: attempt:a-1\nbriefing: {id: 'briefing:a-1'}\n")
-	briefing := operationFile(t, `{"type":"Briefing"}`)
+	briefing := operationFile(t, completeBriefing("briefing:local:a:ideation:attempt-1:revision-1", "lock"))
 	before := readFile(t, entity)
-	if err := Record(entity, op, briefing); err == nil || !strings.Contains(err.Error(), "concurrent gate writer") {
+	if err := RecordBriefing(entity, briefing); err == nil || !strings.Contains(err.Error(), "concurrent gate writer") {
 		t.Fatalf("concurrent writer = %v, want refusal", err)
 	}
 	if got := readFile(t, entity); got != before {
@@ -334,22 +271,19 @@ func TestDigestDomainsDivergeAndLegacyAccepted(t *testing.T) {
 }
 
 func TestPortableResolutionValidation(t *testing.T) {
-	base := Result{BriefingDigest: "sha256:" + strings.Repeat("a", 64), AuthorizedBy: "person:captain"}
 	tests := []struct {
-		name    string
-		entries []Entry
-		wantErr string
+		name       string
+		resolution Resolution
+		wantErr    string
 	}{
-		{"reasonless approve", []Entry{{Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "approve"}}, ""},
-		{"reasonless revise", []Entry{{Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "revise"}}, "reason"},
-		{"earlier annotation", []Entry{{Type: "Annotation", ID: "a", Briefing: "p"}, {Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "hold", Includes: []string{"a"}}}, ""},
-		{"cross briefing include", []Entry{{Type: "Annotation", ID: "a", Briefing: "other"}, {Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "hold", Includes: []string{"a"}}}, "same Briefing"},
+		{"reasonless approve", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "approve"}, ""},
+		{"reasonless revise", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "revise"}, "reason"},
+		{"included rationale", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "hold", Includes: []string{"annotation:a"}}, ""},
+		{"unknown decision", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "later"}, "decision"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := base
-			got.Entries = tc.entries
-			_, err := selectResolution(got, false)
+			err := validateResolution(&tc.resolution, "p")
 			if tc.wantErr == "" && err != nil {
 				t.Fatal(err)
 			}
@@ -357,6 +291,23 @@ func TestPortableResolutionValidation(t *testing.T) {
 				t.Fatalf("err=%v, want %q", err, tc.wantErr)
 			}
 		})
+	}
+}
+
+func TestProviderResolutionIncludesRequireSameBriefingAnnotation(t *testing.T) {
+	result := providerResult{Briefing: "briefing:provider"}
+	result.Resolution = Resolution{Type: "Resolution", ID: "resolution:r", Briefing: result.Briefing, By: "person:reviewer", At: "now", Decision: "hold", Includes: []string{"annotation:a"}}
+	result.Annotations = append(result.Annotations, struct {
+		Type     string `json:"type"`
+		ID       string `json:"id"`
+		Briefing string `json:"briefing"`
+	}{Type: "Annotation", ID: "annotation:a", Briefing: "briefing:other"})
+	if err := verifyProviderResolution(&result); err == nil || !strings.Contains(err.Error(), "same Briefing") {
+		t.Fatalf("cross-Briefing include = %v, want refusal", err)
+	}
+	result.Annotations[0].Briefing = result.Briefing
+	if err := verifyProviderResolution(&result); err != nil {
+		t.Fatalf("same-Briefing Annotation rejected: %v", err)
 	}
 }
 
@@ -376,6 +327,10 @@ func operationFile(t *testing.T, body string) string {
 		t.Fatal(err)
 	}
 	return p
+}
+
+func completeBriefing(id, question string) string {
+	return `{"type":"Briefing","version":"1","id":"` + id + `","question":"` + question + `","artifacts":[{"id":"artifact:primary","uri":"artifact.md","rev":"sha256:` + strings.Repeat("a", 64) + `"}]}`
 }
 
 func readFile(t *testing.T, path string) string {
@@ -411,6 +366,36 @@ func outsideGates(t *testing.T, path string) string {
 	return string(b)
 }
 
+func recordSourceSections(t *testing.T, data []byte) map[string]string {
+	t.Helper()
+	root, fmStart, fmEnd, err := frontmatterNode(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, gatesEnd, gatesNode, err := mappingPairRange(root, "gates", fmStart, fmEnd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, recordsEnd, records, err := mappingPairRange(gatesNode, "records", fmStart, gatesEnd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := normalizedLines(data)
+	sections := map[string]string{}
+	for i, record := range records.Content {
+		id := mappingValue(record, "id")
+		if id == nil {
+			t.Fatal("record fixture has no id")
+		}
+		start, end := fmStart+record.Line, recordsEnd
+		if i+1 < len(records.Content) {
+			end = fmStart + records.Content[i+1].Line
+		}
+		sections[id.Value] = strings.Join(lines[start:end], "\n")
+	}
+	return sections
+}
+
 func cloneDocument(t *testing.T, doc *Document) *Document {
 	t.Helper()
 	b, err := yaml.Marshal(doc)
@@ -424,7 +409,7 @@ func cloneDocument(t *testing.T, doc *Document) *Document {
 	return &clone
 }
 
-func assertCurrentBinding(t *testing.T, entity, attemptID, briefingID, digest, state string, histories int) {
+func assertCurrentBinding(t *testing.T, entity, gateID, attemptID, briefingID, digest, state string, histories int) {
 	t.Helper()
 	doc, _, err := Read(entity)
 	if err != nil {
@@ -433,11 +418,15 @@ func assertCurrentBinding(t *testing.T, entity, attemptID, briefingID, digest, s
 	if len(doc.Records) != 1 || len(doc.Records[0].Attempts) != histories {
 		t.Fatalf("history count = %#v, want %d", doc.Records, histories)
 	}
-	a, err := currentAttempt(doc, "gate:lifecycle", attemptID)
+	record := findRecord(doc, gateID)
+	if record == nil {
+		t.Fatalf("gate %s not found", gateID)
+	}
+	a, err := recordAttempt(record, recordCurrentAttempt(record))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a.Briefing.ID != briefingID || a.Briefing.Digest != digest || a.State != state {
+	if a.ID != attemptID || a.Briefing.ID != briefingID || a.Briefing.Digest != digest || attemptState(a) != state {
 		t.Fatalf("current binding = %#v, want attempt=%s briefing=%s digest=%s state=%s", a, attemptID, briefingID, digest, state)
 	}
 }

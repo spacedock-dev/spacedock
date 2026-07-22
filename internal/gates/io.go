@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -59,152 +60,324 @@ func entityStatus(path string) (string, error) {
 	return status.Value, nil
 }
 
-// writeBriefingSuccessor makes only the three approved selection edits and one
-// attempt append. Existing attempt source bytes, including frozen closures and
-// opaque legacy fields, are copied untouched.
+type lineEdit struct {
+	start    int
+	end      int
+	lines    []string
+	oldValue string
+	newValue string
+}
+
+type gateLocation struct {
+	gates       *yaml.Node
+	current     *yaml.Node
+	records     *yaml.Node
+	record      *yaml.Node
+	attempts    *yaml.Node
+	recordEnd   int
+	attemptsEnd int
+	recordsEnd  int
+}
+
+// writeNewGate adds the minimal v1 projection. It intentionally omits the
+// legacy attempt pointer, sequence, lineage, and state fields.
+func writeNewGate(path string, doc *Document, record GateRecord) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	root, _, fmEnd, err := frontmatterNode(data)
+	if err != nil {
+		return err
+	}
+	if mappingValue(root, "gates") == nil {
+		minimal := &Document{Version: 1, Current: Selection{Gate: record.ID}, Records: []GateRecord{record}}
+		block, err := yaml.Marshal(struct {
+			Gates *Document `yaml:"gates"`
+		}{Gates: minimal})
+		if err != nil {
+			return err
+		}
+		return applyLineEdits(path, data, []lineEdit{{start: fmEnd, end: fmEnd, lines: splitYAML(block)}})
+	}
+
+	loc, err := locateGate(data, "")
+	if err != nil {
+		return err
+	}
+	currentGate := mappingValue(loc.current, "gate")
+	if currentGate == nil {
+		return fmt.Errorf("gates.current has no gate selection")
+	}
+	item, err := sequenceItemLines(record, sequenceIndent(data, loc.records))
+	if err != nil {
+		return err
+	}
+	edits := []lineEdit{
+		scalarEdit(data, currentGate, record.ID),
+		{start: loc.recordsEnd, end: loc.recordsEnd, lines: item},
+	}
+	if node := mappingValue(loc.current, "attempt"); node != nil {
+		edits = append(edits, scalarEdit(data, node, record.Attempts[0].ID))
+	}
+	if err := Validate(doc); err != nil {
+		return err
+	}
+	return applyLineEdits(path, data, edits)
+}
+
+func writeBriefingRebind(path, gateID, attemptID string, binding Briefing) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	_, attempt, attemptEnd, err := locateAttempt(data, gateID, attemptID)
+	if err != nil {
+		return err
+	}
+	start, end, _, err := mappingPairRange(attempt, "briefing", locLineStart(data), attemptEnd)
+	if err != nil {
+		return err
+	}
+	fragment, err := yaml.Marshal(struct {
+		Briefing Briefing `yaml:"briefing"`
+	}{Briefing: binding})
+	if err != nil {
+		return err
+	}
+	return applyLineEdits(path, data, []lineEdit{{start: start, end: end, lines: indentLines(splitYAML(fragment), lineIndent(data, start))}})
+}
+
+// writeBriefingSuccessor makes only existing selection edits and one attempt
+// append. Frozen closures and opaque legacy fields remain byte-identical.
 func writeBriefingSuccessor(path, gateID string, next Attempt) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	root, fmStart, fmEnd, err := frontmatterNode(data)
+	loc, err := locateGate(data, gateID)
 	if err != nil {
 		return err
 	}
-	gatesNode := mappingValue(root, "gates")
-	if gatesNode == nil {
-		return fmt.Errorf("entity has no gates record")
+	if len(loc.attempts.Content) == 0 {
+		return fmt.Errorf("gate %s has no attempt history", gateID)
 	}
-	currentNode := mappingValue(gatesNode, "current")
-	recordsNode := mappingValue(gatesNode, "records")
-	if currentNode == nil || recordsNode == nil || recordsNode.Kind != yaml.SequenceNode {
-		return fmt.Errorf("gates record has no editable current/records projection")
+	item, err := sequenceItemLines(next, sequenceIndent(data, loc.attempts))
+	if err != nil {
+		return err
 	}
-	currentGate := mappingValue(currentNode, "gate")
-	currentAttempt := mappingValue(currentNode, "attempt")
-	if currentGate == nil || currentAttempt == nil {
-		return fmt.Errorf("legacy gates.current must name gate and attempt")
+	edits := []lineEdit{
+		scalarEdit(data, mappingValue(loc.current, "gate"), gateID),
+		{start: loc.attemptsEnd, end: loc.attemptsEnd, lines: item},
 	}
+	if node := mappingValue(loc.current, "attempt"); node != nil {
+		edits = append(edits, scalarEdit(data, node, next.ID))
+	}
+	if node := mappingValue(loc.record, "current-attempt"); node != nil {
+		edits = append(edits, scalarEdit(data, node, next.ID))
+	}
+	return applyLineEdits(path, data, edits)
+}
 
-	var target *yaml.Node
-	targetIndex := -1
-	for i, recordNode := range recordsNode.Content {
-		idNode := mappingValue(recordNode, "id")
-		if idNode != nil && idNode.Value == gateID {
-			target, targetIndex = recordNode, i
-			break
+func writeResolution(path, gateID, attemptID string, resolution *Resolution) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	loc, attempt, attemptEnd, err := locateAttempt(data, gateID, attemptID)
+	if err != nil {
+		return err
+	}
+	if mappingValue(attempt, "resolution") != nil {
+		return fmt.Errorf("attempt %s is frozen closed", attemptID)
+	}
+	briefingStart, insertAt, _, err := mappingPairRange(attempt, "briefing", locLineStart(data), attemptEnd)
+	if err != nil {
+		return err
+	}
+	fragment, err := yaml.Marshal(struct {
+		Resolution *Resolution `yaml:"resolution"`
+	}{Resolution: resolution})
+	if err != nil {
+		return err
+	}
+	edits := []lineEdit{{start: insertAt, end: insertAt, lines: indentLines(splitYAML(fragment), lineIndent(data, briefingStart))}}
+	if node := mappingValue(attempt, "state"); node != nil {
+		edits = append(edits, scalarEdit(data, node, "closed"))
+	}
+	if node := mappingValue(loc.current, "gate"); node != nil {
+		edits = append(edits, scalarEdit(data, node, gateID))
+	}
+	if node := mappingValue(loc.current, "attempt"); node != nil {
+		edits = append(edits, scalarEdit(data, node, attemptID))
+	}
+	return applyLineEdits(path, data, edits)
+}
+
+func locateGate(data []byte, gateID string) (gateLocation, error) {
+	root, fmStart, fmEnd, err := frontmatterNode(data)
+	if err != nil {
+		return gateLocation{}, err
+	}
+	_, gatesEnd, gatesNode, err := mappingPairRange(root, "gates", fmStart, fmEnd)
+	if err != nil {
+		return gateLocation{}, err
+	}
+	current := mappingValue(gatesNode, "current")
+	recordsStart, recordsEnd, records := 0, 0, (*yaml.Node)(nil)
+	recordsStart, recordsEnd, records, err = mappingPairRange(gatesNode, "records", fmStart, gatesEnd)
+	_ = recordsStart
+	if err != nil || current == nil || records.Kind != yaml.SequenceNode {
+		return gateLocation{}, fmt.Errorf("gates record has no editable current/records projection")
+	}
+	loc := gateLocation{gates: gatesNode, current: current, records: records, recordsEnd: recordsEnd}
+	if gateID == "" {
+		return loc, nil
+	}
+	for i, record := range records.Content {
+		id := mappingValue(record, "id")
+		if id == nil || id.Value != gateID {
+			continue
+		}
+		loc.record = record
+		loc.recordEnd = recordsEnd
+		if i+1 < len(records.Content) {
+			loc.recordEnd = fmStart + records.Content[i+1].Line
+		}
+		_, loc.attemptsEnd, loc.attempts, err = mappingPairRange(record, "attempts", fmStart, loc.recordEnd)
+		if err != nil || loc.attempts.Kind != yaml.SequenceNode {
+			return gateLocation{}, fmt.Errorf("gate %s has no attempts", gateID)
+		}
+		return loc, nil
+	}
+	return gateLocation{}, fmt.Errorf("unknown gate %s", gateID)
+}
+
+func locateAttempt(data []byte, gateID, attemptID string) (gateLocation, *yaml.Node, int, error) {
+	loc, err := locateGate(data, gateID)
+	if err != nil {
+		return gateLocation{}, nil, 0, err
+	}
+	fmStart := locLineStart(data)
+	for i, attempt := range loc.attempts.Content {
+		id := mappingValue(attempt, "id")
+		if id == nil || id.Value != attemptID {
+			continue
+		}
+		end := loc.attemptsEnd
+		if i+1 < len(loc.attempts.Content) {
+			end = fmStart + loc.attempts.Content[i+1].Line
+		}
+		return loc, attempt, end, nil
+	}
+	return gateLocation{}, nil, 0, fmt.Errorf("gate %s attempt %s is missing", gateID, attemptID)
+}
+
+func mappingPairRange(parent *yaml.Node, key string, fmStart, containerEnd int) (int, int, *yaml.Node, error) {
+	for i := 0; i+1 < len(parent.Content); i += 2 {
+		if parent.Content[i].Value != key {
+			continue
+		}
+		start, end := fmStart+parent.Content[i].Line, containerEnd
+		if i+2 < len(parent.Content) {
+			end = fmStart + parent.Content[i+2].Line
+		}
+		return start, end, parent.Content[i+1], nil
+	}
+	return 0, 0, nil, fmt.Errorf("mapping has no %s field", key)
+}
+
+func locLineStart(data []byte) int {
+	_, start, _, _ := frontmatterNode(data)
+	return start
+}
+
+func scalarEdit(data []byte, node *yaml.Node, value string) lineEdit {
+	if node == nil {
+		return lineEdit{start: -1}
+	}
+	line := locLineStart(data) + node.Line
+	lines := normalizedLines(data)
+	if line < 0 || line >= len(lines) || !strings.Contains(lines[line], node.Value) {
+		return lineEdit{start: -1}
+	}
+	return lineEdit{start: line, end: line + 1, oldValue: node.Value, newValue: value}
+}
+
+func applyLineEdits(path string, original []byte, edits []lineEdit) error {
+	lines := normalizedLines(original)
+	for _, edit := range edits {
+		if edit.start < 0 || edit.end < edit.start || edit.end > len(lines) {
+			return fmt.Errorf("cannot locate surgical gate edit")
 		}
 	}
-	if target == nil {
-		return fmt.Errorf("unknown gate %s", gateID)
-	}
-	legacyCurrent := mappingValue(target, "current-attempt")
-	attemptsNode := mappingValue(target, "attempts")
-	if legacyCurrent == nil || attemptsNode == nil || attemptsNode.Kind != yaml.SequenceNode || len(attemptsNode.Content) == 0 {
-		return fmt.Errorf("gate %s has no editable legacy attempt projection", gateID)
-	}
-
-	crlf := bytes.Contains(data, []byte("\r\n"))
-	lines := strings.Split(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n")
-	for _, edit := range []struct {
-		node  *yaml.Node
-		value string
-	}{
-		{currentGate, gateID},
-		{currentAttempt, next.ID},
-		{legacyCurrent, next.ID},
-	} {
-		lineIndex := fmStart + edit.node.Line
-		if lineIndex < 0 || lineIndex >= len(lines) || !strings.Contains(lines[lineIndex], edit.node.Value) {
-			return fmt.Errorf("cannot locate scalar %q for surgical gate write", edit.node.Value)
+	sort.SliceStable(edits, func(i, j int) bool { return edits[i].start > edits[j].start })
+	for _, edit := range edits {
+		if edit.oldValue != "" {
+			if !strings.Contains(lines[edit.start], edit.oldValue) {
+				return fmt.Errorf("cannot locate scalar %q for surgical gate edit", edit.oldValue)
+			}
+			lines[edit.start] = strings.Replace(lines[edit.start], edit.oldValue, edit.newValue, 1)
+			continue
 		}
-		lines[lineIndex] = strings.Replace(lines[lineIndex], edit.node.Value, edit.value, 1)
+		rebuilt := make([]string, 0, len(lines)-(edit.end-edit.start)+len(edit.lines))
+		rebuilt = append(rebuilt, lines[:edit.start]...)
+		rebuilt = append(rebuilt, edit.lines...)
+		rebuilt = append(rebuilt, lines[edit.end:]...)
+		lines = rebuilt
 	}
-
-	lastAttempt := attemptsNode.Content[len(attemptsNode.Content)-1]
-	lastLineIndex := fmStart + lastAttempt.Line
-	if lastLineIndex < 0 || lastLineIndex >= len(lines) {
-		return fmt.Errorf("cannot locate last attempt for gate %s", gateID)
-	}
-	itemIndent := lines[lastLineIndex][:len(lines[lastLineIndex])-len(strings.TrimLeft(lines[lastLineIndex], " \t"))]
-	fieldIndent := itemIndent + "  "
-	briefingIndent := fieldIndent + "  "
-	newLines := []string{
-		itemIndent + "- id: " + next.ID,
-		fieldIndent + "briefing:",
-		briefingIndent + "id: " + next.Briefing.ID,
-		briefingIndent + "digest: " + next.Briefing.Digest,
-		briefingIndent + "digest-domain: " + next.Briefing.DigestDomain,
-		briefingIndent + "room-ref: " + next.Briefing.RoomRef,
-	}
-
-	insertAt := fmEnd
-	if targetIndex+1 < len(recordsNode.Content) {
-		insertAt = fmStart + recordsNode.Content[targetIndex+1].Line
-	}
-	if insertAt < 0 || insertAt > len(lines) {
-		return fmt.Errorf("cannot locate append point for gate %s", gateID)
-	}
-	rebuilt := make([]string, 0, len(lines)+len(newLines))
-	rebuilt = append(rebuilt, lines[:insertAt]...)
-	rebuilt = append(rebuilt, newLines...)
-	rebuilt = append(rebuilt, lines[insertAt:]...)
-	out := strings.Join(rebuilt, "\n")
-	if crlf {
+	out := strings.Join(lines, "\n")
+	if bytes.Contains(original, []byte("\r\n")) {
 		out = strings.ReplaceAll(out, "\n", "\r\n")
 	}
 	return atomicWrite(path, []byte(out))
 }
 
-func write(path string, doc *Document) error {
-	if err := Validate(doc); err != nil {
-		return err
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	root, fmStart, fmEnd, err := frontmatterNode(data)
-	if err != nil {
-		return err
-	}
-	var wrapper yaml.Node
-	if err := wrapper.Encode(map[string]*Document{"gates": doc}); err != nil {
-		return err
-	}
-	block, err := yaml.Marshal(&wrapper)
-	if err != nil {
-		return err
-	}
-	blockLines := strings.Split(strings.TrimSuffix(string(block), "\n"), "\n")
-	crlf := bytes.Contains(data, []byte("\r\n"))
-	lines := strings.Split(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n")
+func normalizedLines(data []byte) []string {
+	return strings.Split(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n")
+}
 
-	start, end := -1, -1 // absolute line indexes, start inclusive / end exclusive
-	for i := 0; i+1 < len(root.Content); i += 2 {
-		key := root.Content[i]
-		if key.Value != "gates" {
-			continue
-		}
-		start = fmStart + key.Line
-		end = fmEnd
-		if i+2 < len(root.Content) {
-			end = fmStart + root.Content[i+2].Line
-		}
-		break
+func lineIndent(data []byte, line int) string {
+	lines := normalizedLines(data)
+	if line < 0 || line >= len(lines) {
+		return ""
 	}
-	if start < 0 {
-		start, end = fmEnd, fmEnd
+	return lines[line][:len(lines[line])-len(strings.TrimLeft(lines[line], " \t"))]
+}
+
+func sequenceIndent(data []byte, sequence *yaml.Node) string {
+	if len(sequence.Content) == 0 {
+		return "    "
 	}
-	rebuilt := make([]string, 0, len(lines)-(end-start)+len(blockLines))
-	rebuilt = append(rebuilt, lines[:start]...)
-	rebuilt = append(rebuilt, blockLines...)
-	rebuilt = append(rebuilt, lines[end:]...)
-	out := strings.Join(rebuilt, "\n")
-	if crlf {
-		out = strings.ReplaceAll(out, "\n", "\r\n")
+	return lineIndent(data, locLineStart(data)+sequence.Content[0].Line)
+}
+
+func sequenceItemLines(value any, indent string) ([]string, error) {
+	body, err := yaml.Marshal(value)
+	if err != nil {
+		return nil, err
 	}
-	return atomicWrite(path, []byte(out))
+	lines := splitYAML(body)
+	if len(lines) == 0 {
+		return nil, fmt.Errorf("empty YAML sequence item")
+	}
+	out := []string{indent + "- " + lines[0]}
+	for _, line := range lines[1:] {
+		out = append(out, indent+"  "+line)
+	}
+	return out, nil
+}
+
+func splitYAML(body []byte) []string {
+	return strings.Split(strings.TrimSuffix(string(body), "\n"), "\n")
+}
+
+func indentLines(lines []string, indent string) []string {
+	out := make([]string, len(lines))
+	for i, line := range lines {
+		out[i] = indent + line
+	}
+	return out
 }
 
 func frontmatterNode(data []byte) (*yaml.Node, int, int, error) {

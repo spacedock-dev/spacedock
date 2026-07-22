@@ -110,9 +110,10 @@
         "semantics": "binary-owned durable resolution records: logical gates, stable attempts, one briefing binding per attempt, and the exact adopted Resolution; application subtrees are owned by the application layer",
         "writer": "spacedock gate record",
         "invariants": [
-          "gates.current and records[].current-attempt pointers agree",
+          "gates.current selects one logical gate; any retained legacy attempt pointers agree with that gate's ordered current attempt",
           "open attempts may replace their one briefing binding",
-          "closed attempt briefing and resolution records are frozen",
+          "Resolution absence means open and presence means closed; contradictory legacy state fails closed",
+          "legacy sequence, lineage, state, notes, applications, and extensions are preserved but not minted on minimal new writes",
           "recording never changes status or dispatches"
         ]
       }

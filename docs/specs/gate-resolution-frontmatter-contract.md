@@ -127,10 +127,34 @@ logical gate -> gate attempts -> one Briefing binding -> Resolution -> applicati
 ```
 
 A gate attempt may point to several immutable Briefings over time, but current
-frontmatter stores only one `briefing`. While the attempt is `open`, a compare-and-swap
-may replace that binding. When the attempt is `closed`, the same field is frozen. This
-avoids a second name such as `resolved-briefing`; attempt state already says whether
-the binding may change.
+frontmatter stores only one `briefing`. Resolution absence means open and permits a
+locked rebind; Resolution presence means closed and freezes the binding. Ordered attempts
+give lineage and select the last attempt unless a retained legacy pointer says the same
+thing explicitly. New v1 writes therefore omit duplicated attempt pointers, sequence,
+lineage, and state fields.
+
+The minimal projection written by the recorder is:
+
+```yaml
+gates:
+  version: 1
+  current:
+    gate: gate:example:sample:validation
+  records:
+    - id: gate:example:sample:validation
+      stage: validation
+      attempts:
+        - id: gate-attempt:sample-validation-1
+          briefing:
+            id: briefing:sample-validation-1a
+            digest: sha256:3333333333333333333333333333333333333333333333333333333333333333
+            digest-domain: canonical-bytes
+            room-ref: ./review/validation/briefing-1
+```
+
+The larger example below is valid retained legacy history. The reader validates its
+duplicated pointers/mechanics and the writer preserves them without bulk rewrite; it does
+not use this shape for newly created records or attempts.
 
 ```yaml
 gates:
@@ -253,9 +277,6 @@ An open attempt uses the same binding field and has no Resolution or application
 
 ```yaml
 - id: gate-attempt:sample-validation-3
-  sequence: 3
-  previous-attempt: gate-attempt:sample-validation-2
-  state: open
   briefing:
     id: briefing:sample-validation-3c
     digest: sha256:7555555555555555555555555555555555555555555555555555555555555555
@@ -279,11 +300,12 @@ sorted, compact keys leaves the canonical-bytes digest stable and changes the ra
 | Field | Why it is needed now |
 |---|---|
 | `gates.version` | Reject unsupported encodings. |
-| `gates.current` | Select the one gate attempt eligible for later application. |
-| `records[].id`, `stage`, `current-attempt` | Represent multiple logical gates and their selected attempts. |
-| `attempts[].id`, `sequence`, `previous-attempt`, `state` | Preserve stable attempt identity, re-entry order, and open/closed immutability. |
+| `gates.current.gate` | Select the logical gate eligible for later application. |
+| `records[].id`, `stage`, ordered `attempts` | Represent multiple logical gates and their ordered attempts; the last is current. |
+| `attempts[].id` | Preserve stable attempt identity; Resolution absence/presence gives open/closed state. |
 | `attempts[].briefing` | Bind the exact Briefing id/digest and optional opaque provider room. |
 | `attempts[].resolution` | Preserve the exact authenticated portable decision. |
+| Legacy pointer/mechanics fields | Accepted, cross-checked, and preserved when already present; never minted by minimal writes. |
 | `application.action`, `target-stage`, `state` | **Application layer:** the one-use workflow authorization and whether it was applied. |
 | `application.blockers[]` | **Application layer:** explain and guard approved-pending work. |
 | `application.execution-hold` | **Application layer:** preserve “approve but do not dispatch” separately from portable `hold`. |
@@ -310,13 +332,18 @@ duplicate that authority without making the gate decision more durable.
 ## Lifecycle and invariants
 
 
-1. Opening a gate creates one open attempt and `briefing` binding without changing
-   `status`.
-2. A revised presentation replaces the open attempt's `briefing` under
-   compare-and-swap. It creates neither a Resolution nor a new attempt.
-3. Recording validates actor authority, exact Briefing id/digest, same-Briefing log
-   rules, and current pointers. One commit changes `open` to `closed`, freezes
-   `briefing`, and copies the exact Resolution. It does not advance, route, or dispatch.
+1. Binding a complete Briefing derives the current-stage logical gate while holding the
+   entity lock. No gate opens its first attempt; an open attempt rebinds in place; a closed
+   attempt appends a successor. None changes `status`.
+2. Rebinding replaces only the open attempt's `briefing`. It creates neither a Resolution
+   nor a new attempt; the room and Git retain the previous immutable Briefing.
+3. Recording a decision validates the current open attempt and actor. Exact provider
+   Results additionally require a retained association covering exact Result digest,
+   provider and canonical Briefing identities/revisions, and the complete presentation
+   mapping. Only after all checks does the recorder normalize the Resolution Briefing id.
+   Chat recording constructs the portable Resolution and requires a quoted directive for
+   delegated authority. One atomic gates-only write adds the Resolution and freezes the
+   binding; it never advances, routes, creates application state, or dispatches.
    (Creating the resulting `application` object is owned by the application layer.)
 4. **(The application layer, rules 4-7.)** `approve` creates `advance/pending`;
    `revise` creates `feedback/pending`; portable `hold` creates `none/not-applicable`.
@@ -337,9 +364,9 @@ duplicate that authority without making the gate decision more durable.
    the spent authorization blocks a second consume.
 7. If reviewed input changes before application, mark the application `superseded` and
    create a new gate attempt. Closed attempts never reopen.
-8. Unknown, failed, conflicting, missing, or stale state is ineligible. Concurrent
-   pointer, closure, and application writes compare-and-swap the whole relevant node;
-   no field-wise merge or timestamp winner is allowed.
+8. Unknown, failed, conflicting, missing, or stale state is ineligible. The recorder lock
+   makes stage/gate lookup, current-attempt validation, and atomic rename one CAS; no
+   caller-authored expected pointer, field-wise merge, or timestamp winner exists.
 
 `approve` may omit a portable rationale. `revise` and portable `hold` require a
 nonblank reason or included earlier Annotation from the same Briefing log. A late
@@ -438,29 +465,27 @@ reimplement:
   transition and dispatch code. It does not mint a second effect identity or receipt.
 
 The recorder exposes two verbs. `spacedock gate validate <entity>` validates and reports
-the selected record. `spacedock gate record <entity> --operation FILE [--briefing FILE]`
-applies one declarative operation. Every operation carries a whole-pointer compare-and-swap
-expectation:
+the selected record without writing. `spacedock gate record <entity>` accepts exactly one
+semantic source:
 
-```yaml
-operation: rebind # open | rebind | close | supersede
-expected:
-  gate: gate:example:sample:ideation
-  attempt: gate-attempt:sample-ideation-1
-  briefing: briefing:sample-ideation-1a
-  digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
-gate-id: gate:example:sample:ideation
-attempt-id: gate-attempt:sample-ideation-1
-briefing:
-  id: briefing:sample-ideation-1b
-  room-ref: ./review/ideation
+```text
+--briefing FILE
+--result FILE --association FILE --actor ID [--adoption-note TEXT]
+--decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT]
 ```
 
-`open`, `rebind`, and `supersede` require `--briefing`; the recorder computes the
-canonical-bytes digest rather than trusting a supplied value. `close` carries a provider
-result (`briefing-digest`, `authorized-by`, and ordered `entries`) in the operation file.
-The recorder selects the first Resolution by the authorized actor, checks its same-Briefing
-log rules and digest, then normalizes its provider briefing id to the attempt binding.
+The binary derives open/rebind/supersede/close, current-stage gate, current-attempt CAS,
+and recorder-owned ids while holding the entity lock. The caller supplies no operation,
+expected pointer/digest, or candidate id. Provider Results are retained exact bytes; a
+matching primary artifact alone is insufficient to normalize a multi-artifact Briefing.
+The retained association is a `spacedock-result-association` v1 JSON object: `result`
+binds the raw Result digest and provider Briefing id; `actor` names the authorized
+recording actor; `canonical` binds the current Briefing id, canonical revision, and full
+artifact id/revision list; and `presentation[]` maps every canonical artifact to the
+provider artifact/revision actually presented. The recorder requires a one-to-one,
+complete canonical mapping and requires the exact Result's primary artifact among the
+provider side of that mapping. Advisory (`binding: false`) Results additionally require
+an adoption note naming the authorizer.
 
 The gate-attempt ensign owns Briefing and Probe presentation, provider-room state,
 annotation-driven revision, affected-Probe reruns, and durable Resolution capture. The

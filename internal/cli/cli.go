@@ -155,8 +155,8 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 	return root
 }
 
-// newGateCommand exposes the semantic Briefing bootstrap while temporarily
-// retaining the operation-file path used to close the approval attempt.
+// newGateCommand exposes only semantic decision sources; lifecycle mechanics,
+// CAS values, and durable ids belong to the recorder.
 func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
 		Use:                "gate record|validate <entity>",
@@ -165,14 +165,15 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing FILE [--workflow-dir DIR]\n       spacedock gate record <entity> --operation FILE [--briefing FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--workflow-dir DIR]")
+				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing FILE [--workflow-dir DIR]\n       spacedock gate record <entity> --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--workflow-dir DIR]")
 				return nil
 			}
 			if len(args) < 2 || (args[0] != "record" && args[0] != "validate") {
 				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: record|validate)")
 				return exitCodeError{2}
 			}
-			workflowDir, operation, briefing := "", "", ""
+			workflowDir := ""
+			input := gates.RecordInput{}
 			for i := 2; i < len(args); i++ {
 				if i+1 >= len(args) {
 					fmt.Fprintf(stderr, "Error: %s requires an argument\n", args[i])
@@ -181,10 +182,22 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				switch args[i] {
 				case "--workflow-dir":
 					workflowDir = args[i+1]
-				case "--operation":
-					operation = args[i+1]
 				case "--briefing":
-					briefing = args[i+1]
+					input.BriefingPath = args[i+1]
+				case "--result":
+					input.ResultPath = args[i+1]
+				case "--association":
+					input.AssociationPath = args[i+1]
+				case "--actor":
+					input.Actor = args[i+1]
+				case "--adoption-note":
+					input.AdoptionNote = args[i+1]
+				case "--decision":
+					input.Decision = args[i+1]
+				case "--reason":
+					input.Reason = args[i+1]
+				case "--directive":
+					input.Directive = args[i+1]
 				default:
 					fmt.Fprintf(stderr, "Error: unknown gate flag: %s\n", args[i])
 					return exitCodeError{2}
@@ -197,6 +210,10 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				return exitCodeError{1}
 			}
 			if args[0] == "validate" {
+				if input != (gates.RecordInput{}) {
+					fmt.Fprintln(stderr, "Error: gate validate accepts only --workflow-dir")
+					return exitCodeError{2}
+				}
 				s, err := gates.SummaryFile(path)
 				if err != nil {
 					fmt.Fprintln(stderr, "Error:", err)
@@ -205,18 +222,30 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintf(stdout, "gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
 				return nil
 			}
-			if operation == "" && briefing == "" {
-				fmt.Fprintln(stderr, "Error: gate record requires --briefing FILE")
+			sources := 0
+			for _, source := range []string{input.BriefingPath, input.ResultPath, input.Decision} {
+				if source != "" {
+					sources++
+				}
+			}
+			if sources != 1 {
+				fmt.Fprintln(stderr, "Error: gate record requires exactly one of --briefing, --result, or --decision")
 				return exitCodeError{2}
 			}
-			var recordErr error
-			if operation == "" {
-				recordErr = gates.RecordBriefing(path, briefing)
-			} else {
-				recordErr = gates.Record(path, operation, briefing)
+			if input.ResultPath != "" && (input.AssociationPath == "" || input.Actor == "") {
+				fmt.Fprintln(stderr, "Error: --result requires --association FILE and --actor ID")
+				return exitCodeError{2}
 			}
-			if recordErr != nil {
-				fmt.Fprintln(stderr, "Error:", recordErr)
+			if input.Decision != "" && input.Actor == "" {
+				fmt.Fprintln(stderr, "Error: --decision requires --actor ID")
+				return exitCodeError{2}
+			}
+			if input.BriefingPath != "" && (input.AssociationPath != "" || input.Actor != "" || input.AdoptionNote != "" || input.Reason != "" || input.Directive != "") || input.ResultPath != "" && (input.Reason != "" || input.Directive != "") || input.Decision != "" && (input.AssociationPath != "" || input.AdoptionNote != "") {
+				fmt.Fprintln(stderr, "Error: gate record flags do not match the selected semantic source")
+				return exitCodeError{2}
+			}
+			if err := gates.RecordSemantic(path, input); err != nil {
+				fmt.Fprintln(stderr, "Error:", err)
 				return exitCodeError{1}
 			}
 			s, _ := gates.SummaryFile(path)
