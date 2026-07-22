@@ -37,6 +37,30 @@ func TestGateRecordAndValidateCLILeaveStatusUntouched(t *testing.T) {
 	}
 }
 
+func TestGateImplicitWorkflowUsesOwningDefinitionFromNestedDirectory(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), "---\ncommissioned-by: spacedock@0.1.0\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: implementation\n---\n# Workflow\n")
+	entity := filepath.Join(root, "task.md")
+	writeFile(t, entity, "---\nstatus: ideation\ntitle: Task\n---\n# Task\n")
+	briefing := filepath.Join(root, "review", "ideation", "briefing-1", "briefing.json")
+	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, briefing, `{"type":"Briefing","version":"1","id":"briefing:task:1","question":"Review task","artifacts":[{"id":"artifact:primary","uri":"artifact.md","rev":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}`)
+	nested := filepath.Join(root, "nested", "deeper")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--briefing", briefing}, nil, nested, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("implicit workflow record exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	if _, _, err := gates.Read(entity); err != nil {
+		t.Fatalf("owning workflow entity was not recorded: %v", err)
+	}
+}
+
 func TestGateRecordRejectsNonCanonicalBriefingBasenameBeforeMutation(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n---\n# Workflow\n")

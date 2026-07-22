@@ -58,7 +58,7 @@ func ApplicationSummaryFile(path string) (Summary, error) {
 	if err != nil {
 		return Summary{}, err
 	}
-	eligibility, err := EligibilityFile(path)
+	eligibility, err := EligibilityFileAt(path, nearestWorkflowDir(filepath.Dir(path)))
 	if err != nil {
 		return Summary{}, err
 	}

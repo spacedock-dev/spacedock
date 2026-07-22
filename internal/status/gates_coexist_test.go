@@ -42,6 +42,14 @@ func TestStatusTextAndJSONProjectApprovedPendingApplication(t *testing.T) {
 	if code != 0 || !strings.Contains(jsonOut, `"gate-application":"advance/pending"`) || !strings.Contains(jsonOut, `"gate-condition":"approved-pending"`) || !strings.Contains(jsonOut, `"gate-eligible":"true"`) {
 		t.Fatalf("json status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
 	}
+	changed := strings.Replace(readme, "name: implementation", "name: validation", 1)
+	if err := os.WriteFile(filepath.Join(root, "README.md"), []byte(changed), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	jsonOut, stderr, code = runNative(t, root, nil, append(args, "--json")...)
+	if code != 0 || !strings.Contains(jsonOut, `"gate-condition":"ineligible"`) || !strings.Contains(jsonOut, `"gate-eligible":"false"`) {
+		t.Fatalf("changed-taxonomy status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
+	}
 }
 
 func TestStatusTextAndJSONProjectAllRecordedResolutionStates(t *testing.T) {

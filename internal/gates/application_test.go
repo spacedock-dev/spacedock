@@ -224,8 +224,16 @@ func TestResolutionSummaryDoesNotHashBriefing(t *testing.T) {
 		t.Fatalf("resolution-only summary = %#v, %v", summary, err)
 	}
 	eligibility, err := EligibilityFileAt(entity, root)
-	if err != nil || eligibility.Condition != "stale" {
-		t.Fatalf("explicit eligibility = %#v, %v, want stale", eligibility, err)
+	if err != nil || eligibility.Condition != "ineligible" {
+		t.Fatalf("explicit eligibility = %#v, %v, want fail-closed unknown", eligibility, err)
+	}
+	result, err := ConsumeAt(entity, root)
+	if err != nil || result.Consumed || result.Condition != "ineligible" {
+		t.Fatalf("missing-input consume = %#v, %v, want refusal", result, err)
+	}
+	doc, _, err := Read(entity)
+	if err != nil || doc.Records[0].Attempts[0].Application.State != "pending" {
+		t.Fatalf("missing input spent approval: state=%#v err=%v", doc, err)
 	}
 }
 

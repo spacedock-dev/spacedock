@@ -92,11 +92,15 @@ func EligibilityFile(path string) (Eligibility, error) {
 	if err != nil {
 		return Eligibility{}, err
 	}
-	current := false
+	inputState := reviewedInputUnknown
 	if record := findRecord(doc, doc.Current.Gate); record != nil && len(record.Attempts) > 0 {
-		current = reviewedInputMatches(path, record.Attempts[len(record.Attempts)-1].Briefing)
+		inputState = inspectReviewedInput(path, record.Attempts[len(record.Attempts)-1].Briefing)
 	}
-	return EvaluateEligibility(doc, status, current), nil
+	result := EvaluateEligibility(doc, status, inputState == reviewedInputCurrent)
+	if inputState == reviewedInputUnknown && result.Condition == "stale" {
+		result.Condition = "ineligible"
+	}
+	return result, nil
 }
 
 func EligibilityFileAt(path, workflowDir string) (Eligibility, error) {
@@ -136,8 +140,14 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 		return ConsumeResult{}, err
 	}
 	record := findRecord(doc, doc.Current.Gate)
-	current := record != nil && len(record.Attempts) > 0 && reviewedInputMatches(path, record.Attempts[len(record.Attempts)-1].Briefing)
-	eligibility := EvaluateEligibility(doc, status, current)
+	inputState := reviewedInputUnknown
+	if record != nil && len(record.Attempts) > 0 {
+		inputState = inspectReviewedInput(path, record.Attempts[len(record.Attempts)-1].Briefing)
+	}
+	eligibility := EvaluateEligibility(doc, status, inputState == reviewedInputCurrent)
+	if inputState == reviewedInputUnknown && eligibility.Condition == "stale" {
+		eligibility.Condition = "ineligible"
+	}
 	result := ConsumeResult{Eligibility: eligibility}
 	if record == nil || len(record.Attempts) == 0 {
 		return result, nil
@@ -176,7 +186,7 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 
 func nearestWorkflowDir(start string) string {
 	for dir := filepath.Clean(start); ; dir = filepath.Dir(dir) {
-		if info, err := os.Stat(filepath.Join(dir, "README.md")); err == nil && info.Mode().IsRegular() {
+		if _, err := applicationStages(filepath.Join(dir, "README.md")); err == nil {
 			return dir
 		}
 		parent := filepath.Dir(dir)
@@ -202,14 +212,22 @@ func applicationTargetMatches(workflowDir, current, target string) bool {
 	return false
 }
 
-func reviewedInputMatches(entityPath string, binding Briefing) bool {
+type reviewedInputCheck int
+
+const (
+	reviewedInputUnknown reviewedInputCheck = iota
+	reviewedInputCurrent
+	reviewedInputStale
+)
+
+func inspectReviewedInput(entityPath string, binding Briefing) reviewedInputCheck {
 	path := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
 	if info, err := os.Stat(path); err == nil && info.IsDir() {
 		path = filepath.Join(path, "briefing.json")
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return false
+		return reviewedInputUnknown
 	}
 	var digest string
 	switch binding.DigestDomain {
@@ -218,9 +236,12 @@ func reviewedInputMatches(entityPath string, binding Briefing) bool {
 	case "raw-file-pin":
 		digest = RawDigest(data)
 	default:
-		return false
+		return reviewedInputUnknown
 	}
-	return err == nil && digest == binding.Digest
+	if err == nil && digest == binding.Digest {
+		return reviewedInputCurrent
+	}
+	return reviewedInputStale
 }
 
 // validateApplicationMutation proves the selected application's state is the

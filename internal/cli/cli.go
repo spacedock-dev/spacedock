@@ -204,14 +204,18 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				}
 				i++
 			}
-			path, err := status.ResolveActivePath(workflowDir, dir, args[1], stderr)
+			definitionDir := workflowDir
+			if definitionDir == "" {
+				var code int
+				definitionDir, code = status.ResolveWorkflowDir(dir, stderr)
+				if code != 0 {
+					return exitCodeError{code}
+				}
+			}
+			path, err := status.ResolveActivePath(definitionDir, dir, args[1], stderr)
 			if err != nil {
 				fmt.Fprintln(stderr, "Error:", err)
 				return exitCodeError{1}
-			}
-			definitionDir := workflowDir
-			if definitionDir == "" {
-				definitionDir = dir
 			}
 			if args[0] == "validate" {
 				if input != (gates.RecordInput{}) {
