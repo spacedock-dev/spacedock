@@ -1,16 +1,17 @@
 ---
 id: vzsastkvv2r6dpjakw1vq6wx
 title: Binary-upgrade prompt must name spacedock@next for edge-cask installs
-status: validation
+status: done
 source: "Captain report (CL) 2026-07-16 — the skill-upgrade version gate prompts `brew upgrade spacedock` regardless of how the binary was installed."
 started: 2026-07-21T15:58:31Z
-completed:
-verdict:
+completed: 2026-07-22T09:07:38Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-upgrade-remedy-install-source-aware
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:556
+archived: 2026-07-22T09:07:38Z
 ---
 
 When the skill is upgraded and determines the binary needs upgrading, the remedy it emits hardcodes `brew upgrade spacedock` — even when that is not how the binary was installed. It must detect the real install source and runtime context and emit the correct upgrade instruction. Likely a follow-up gap in the shipped upgrade-hint work (`install-refresh-and-upgrade-hint`, `init-upgrade-and-contract-remedy`).
