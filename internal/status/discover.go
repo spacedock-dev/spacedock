@@ -211,7 +211,7 @@ func scanEntitiesActive(directory string, stderr io.Writer) []*entity {
 // mirroring the oracle's per-entity dict construction. The slug is written into
 // fields (the oracle's entity['slug'] = slug) so formatters/filters can read it.
 func newEntity(fields map[string]string, slug, path, scope string) *entity {
-	if summary, err := gates.ApplicationSummaryFile(path); err == nil {
+	if summary, err := gates.SummaryFile(path); err == nil {
 		fields["gate"] = summary.Gate
 		fields["gate-attempt"] = summary.Attempt
 		fields["gate-state"] = summary.State
@@ -238,6 +238,31 @@ func newEntity(fields map[string]string, slug, path, scope string) *entity {
 		scope:    scope,
 	}
 	return e
+}
+
+func materializeGateEligibility(entities []*entity, definitionDir string, explicitFields []string, allFields bool, filters []whereFilter) {
+	referenced := allFields
+	for _, field := range explicitFields {
+		if field == "gate-condition" || field == "gate-eligible" {
+			referenced = true
+		}
+	}
+	for _, filter := range filters {
+		if filter.field == "gate-condition" || filter.field == "gate-eligible" {
+			referenced = true
+		}
+	}
+	if !referenced {
+		return
+	}
+	for _, entity := range entities {
+		eligibility, err := gates.EligibilityFileAt(entity.path, definitionDir)
+		if err != nil {
+			continue
+		}
+		entity.fields["gate-condition"] = eligibility.Condition
+		entity.fields["gate-eligible"] = fmt.Sprintf("%t", eligibility.Eligible)
+	}
 }
 
 // archiveEntities scans entityDir/_archive in archived scope. Matches

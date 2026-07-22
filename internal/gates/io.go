@@ -53,20 +53,6 @@ func SummaryFile(path string) (Summary, error) {
 	return CurrentSummary(doc), nil
 }
 
-func ApplicationSummaryFile(path string) (Summary, error) {
-	summary, err := SummaryFile(path)
-	if err != nil {
-		return Summary{}, err
-	}
-	eligibility, err := EligibilityFileAt(path, nearestWorkflowDir(filepath.Dir(path)))
-	if err != nil {
-		return Summary{}, err
-	}
-	summary.Condition = eligibility.Condition
-	summary.Eligible = eligibility.Eligible
-	return summary, nil
-}
-
 func entityStatus(path string) (string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

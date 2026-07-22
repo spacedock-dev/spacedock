@@ -248,13 +248,9 @@ func TestConsumeCrashWindowsNeverReconsumeAuthorization(t *testing.T) {
 			if err != nil || !first.Consumed {
 				t.Fatalf("initial consume = %#v, %v", first, err)
 			}
-			dispatches := 0
-			if crash == "after-dispatch-before-observation" {
-				dispatches++
-			}
 			// Recovery belongs to the ordinary at-least-once dispatch path. It
-			// re-drives dispatch from advanced status without consuming again.
-			dispatches++
+			// may re-drive dispatch, but never consumes the authorization again,
+			// regardless of whether dispatch had started before the crash.
 			again, err := Consume(entity)
 			if err != nil {
 				t.Fatal(err)
@@ -262,29 +258,22 @@ func TestConsumeCrashWindowsNeverReconsumeAuthorization(t *testing.T) {
 			if again.Consumed {
 				t.Fatal("spent authorization was consumed twice")
 			}
-			wantDispatches := 1
-			if crash == "after-dispatch-before-observation" {
-				wantDispatches = 2
-			}
-			if dispatches != wantDispatches {
-				t.Fatalf("dispatch retries = %d, want %d", dispatches, wantDispatches)
-			}
 		})
 	}
 }
 
 func TestEightCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
 	cases := []struct {
-		name, decision, application string
+		name, decision, application, encoded string
 	}{
-		{"approval pending", "approve", "action: advance\n            target-stage: implementation\n            state: pending\n            blockers: []"},
-		{"approval consumed", "approve", "action: advance\n            target-stage: implementation\n            state: consumed\n            blockers: []"},
-		{"approval superseded", "approve", "action: advance\n            target-stage: implementation\n            state: superseded\n            blockers: []"},
-		{"approval held", "approve", "action: advance\n            target-stage: implementation\n            state: pending\n            blockers: []\n            execution-hold: {id: hold:1, state: active, by: person:captain}"},
-		{"portable hold", "hold", "action: none\n            state: not-applicable"},
-		{"feedback pending", "revise", "action: feedback\n            target-stage: ideation\n            state: pending"},
-		{"feedback consumed", "revise", "action: feedback\n            target-stage: implementation\n            state: consumed\n            feedback: {cycle: 1, finding-ref: resolution:1, finding-digest: 'sha256:" + strings.Repeat("2", 64) + "'}"},
-		{"historical consumed without blockers", "approve", "action: advance\n            target-stage: implementation\n            state: consumed"},
+		{"approval pending", "approve", "action: advance\n            target-stage: implementation\n            state: pending\n            blockers: []", "              application:\n                action: advance\n                target-stage: implementation\n                state: pending\n                blockers: []\n"},
+		{"approval consumed", "approve", "action: advance\n            target-stage: implementation\n            state: consumed\n            blockers: []", "              application:\n                action: advance\n                target-stage: implementation\n                state: consumed\n                blockers: []\n"},
+		{"approval superseded", "approve", "action: advance\n            target-stage: implementation\n            state: superseded\n            blockers: []", "              application:\n                action: advance\n                target-stage: implementation\n                state: superseded\n                blockers: []\n"},
+		{"approval held", "approve", "action: advance\n            target-stage: implementation\n            state: pending\n            blockers: []\n            execution-hold: {id: hold:1, state: active, by: person:captain}", "              application:\n                action: advance\n                target-stage: implementation\n                state: pending\n                blockers: []\n                execution-hold:\n                    id: hold:1\n                    state: active\n                    by: person:captain\n"},
+		{"portable hold", "hold", "action: none\n            state: not-applicable", "              application:\n                action: none\n                state: not-applicable\n"},
+		{"feedback pending", "revise", "action: feedback\n            target-stage: ideation\n            state: pending", "              application:\n                action: feedback\n                target-stage: ideation\n                state: pending\n"},
+		{"feedback consumed", "revise", "action: feedback\n            target-stage: implementation\n            state: consumed\n            feedback: {cycle: 1, finding-ref: resolution:1, finding-digest: 'sha256:" + strings.Repeat("2", 64) + "'}", "              application:\n                action: feedback\n                target-stage: implementation\n                state: consumed\n                feedback:\n                    cycle: 1\n                    finding-ref: resolution:1\n                    finding-digest: sha256:" + strings.Repeat("2", 64) + "\n"},
+		{"historical consumed without blockers", "approve", "action: advance\n            target-stage: implementation\n            state: consumed", "              application:\n                action: advance\n                target-stage: implementation\n                state: consumed\n"},
 	}
 	for i, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -302,6 +291,9 @@ func TestEightCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
 			}{Gates: doc})
 			if err != nil {
 				t.Fatal(err)
+			}
+			if !bytes.Contains(block, []byte(tc.encoded)) {
+				t.Fatalf("canonical application encoding changed:\n%s", block)
 			}
 			entity := filepath.Join(t.TempDir(), "entity.md")
 			canonical := append([]byte("---\nstatus: ideation\n"), block...)
