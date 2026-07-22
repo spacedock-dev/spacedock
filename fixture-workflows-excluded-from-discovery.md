@@ -5,6 +5,8 @@ source: "Live FO session, 2026-07-21, after the refit-content-propagation fixtur
 id: ab3ma8m7gsm8tra2ksmcdydq
 started: 2026-07-21T16:05:13Z
 worktree: .worktrees/spacedock-ensign-fixture-workflows-excluded-from-discovery
+mod-block: merge:pr-merge
+pr: "#552"
 ---
 
 A commissioned-shape README used as a test fixture is counted as a real workflow by downward discovery, so a one-workflow repo now looks like a two-workflow repo to every command that auto-discovers.
