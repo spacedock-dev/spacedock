@@ -97,19 +97,21 @@ func ParseMajorMinor(v string) (major, minor int, ok bool) {
 // manifest is absent), not here — Compare always has a raw plugin version to
 // evaluate.
 func Compare(host, pluginVersion, binaryVersion string) Result {
-	return compareNamed(host, "", pluginVersion, binaryVersion)
+	return compareNamed(host, "", pluginVersion, binaryVersion, false)
 }
 
 // compareNamed is Compare with an optional manifest path woven into the
-// malformed-version message so a packaging bug names the offending file.
-func compareNamed(host, manifestPath, pluginVersion, binaryVersion string) Result {
+// malformed-version message so a packaging bug names the offending file, and an
+// edgeCask flag that names the `spacedock@next` formula in the too-old-binary
+// remedy when the running binary is the edge cask install.
+func compareNamed(host, manifestPath, pluginVersion, binaryVersion string, edgeCask bool) Result {
 	bMajor, bMinor, bOk := ParseMajorMinor(binaryVersion)
 	if !bOk {
 		// A binary version with no parseable major.minor can only be an
 		// integer-era source build (`dev`, pre-D3 embed) — treated as too-old,
 		// with the existing remedy's "build from source" arm doubling as the
 		// rebuild hint.
-		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy())}
+		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy(edgeCask))}
 	}
 	pMajor, pMinor, pOk := ParseMajorMinor(pluginVersion)
 	if !pOk {
@@ -127,7 +129,7 @@ func compareNamed(host, manifestPath, pluginVersion, binaryVersion string) Resul
 	}
 	switch {
 	case bMajor < pMajor || (bMajor == pMajor && bMinor < pMinor):
-		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy())}
+		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy(edgeCask))}
 	case bMajor > pMajor || (bMajor == pMajor && bMinor > pMinor):
 		return Result{Verdict: TooOldPlugin, Message: mismatchMessage(binaryVersion, pluginVersion, "Update the plugin to continue.", tooOldPluginRemedy(host))}
 	default:
@@ -221,9 +223,17 @@ func mismatchMessage(binaryVersion, pluginVersion, direction, remedy string) str
 
 // tooOldBinaryRemedy is the pinned too-old-binary remedy block: it leads with the
 // Homebrew upgrade, keeps the source-build fallback, and names the binary-vs-plugin
-// distinction (refreshing the plugin instead is a different command).
-func tooOldBinaryRemedy() string {
-	return "  Upgrade via Homebrew: brew upgrade spacedock\n" +
+// distinction (refreshing the plugin instead is a different command). edgeCask
+// names the edge `spacedock@next` cask as the upgrade target when the running
+// binary was installed from it: that cask is a separate Homebrew token, so a plain
+// `brew upgrade spacedock` is a no-op for an @next install. edgeCask=false leaves
+// the block unchanged.
+func tooOldBinaryRemedy(edgeCask bool) string {
+	formula := "spacedock"
+	if edgeCask {
+		formula = "spacedock@next"
+	}
+	return "  Upgrade via Homebrew: brew upgrade " + formula + "\n" +
 		"  Or build from source: go build -o spacedock ./cmd/spacedock\n" +
 		"  Or refresh the plugin instead: spacedock install"
 }

@@ -56,7 +56,7 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 				fmt.Fprintf(stderr, "spacedock init: could not resolve the installed codex plugin: %v\n", err)
 				return 1
 			}
-			return contract.RunDoctor(resolved, "codex", displayVersion(), stdout, stderr)
+			return contract.RunDoctor(resolved, "codex", displayVersion(), runningEdgeCask(), stdout, stderr)
 		}
 		// `install --host codex` drives the install seam (marketplace add + plugin
 		// add, re-pinning the source) and runs doctor — the same programmatic path
@@ -91,7 +91,7 @@ func runDoctor(ctx context.Context, args []string, ops hostOps, stdout, stderr i
 	}
 
 	if manifestPath != "" {
-		return contract.RunDoctor(manifestPath, host, displayVersion(), stdout, stderr)
+		return contract.RunDoctor(manifestPath, host, displayVersion(), runningEdgeCask(), stdout, stderr)
 	}
 
 	resolved, err := ops.ResolveManifest(host)
@@ -101,7 +101,7 @@ func runDoctor(ctx context.Context, args []string, ops hostOps, stdout, stderr i
 	}
 	// An empty resolved path is the no-plugin-found report; RunDoctor renders it
 	// from a non-existent path as a non-fatal report.
-	return contract.RunDoctor(resolved, host, displayVersion(), stdout, stderr)
+	return contract.RunDoctor(resolved, host, displayVersion(), runningEdgeCask(), stdout, stderr)
 }
 
 // parseInitArgs reads `--host claude|codex` (default claude) and `--check`. A

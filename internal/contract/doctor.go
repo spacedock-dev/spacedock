@@ -49,10 +49,12 @@ func ManifestVersion(manifestPath string) (string, error) {
 // yields NoPluginFound; an unparseable manifest JSON yields a MalformedVersion
 // Result naming the parse error. The plugin's display version (from the manifest)
 // and the binary's display version (threaded in by the cli caller) are woven into
-// the user-facing message. The front door inspects the verdict directly (a
+// the user-facing message. edgeCask names the `spacedock@next` formula in the
+// too-old-binary remedy when the running binary is the edge cask install (false
+// leaves the remedy unchanged). The front door inspects the verdict directly (a
 // non-empty path to a missing file is NoPluginFound, NOT compatible); RunDoctor
 // maps the same verdict to an exit code and stream.
-func ManifestVerdict(manifestPath, host, binaryVersion string) Result {
+func ManifestVerdict(manifestPath, host, binaryVersion string, edgeCask bool) Result {
 	pluginVersion, err := readManifest(manifestPath)
 	if errors.Is(err, errNoManifest) {
 		return Result{Verdict: NoPluginFound, Message: noPluginMessage(host)}
@@ -60,17 +62,19 @@ func ManifestVerdict(manifestPath, host, binaryVersion string) Result {
 	if err != nil {
 		return Result{Verdict: MalformedVersion, Message: fmt.Sprintf("error: %s", err)}
 	}
-	return compareNamed(host, manifestPath, pluginVersion, binaryVersion)
+	return compareNamed(host, manifestPath, pluginVersion, binaryVersion, edgeCask)
 }
 
 // RunDoctor reports the compatibility verdict for the manifest at manifestPath
 // against binaryVersion, for the named host. binaryVersion is the binary's
-// display version threaded in for the user-facing message. A compatible verdict
+// display version threaded in for the user-facing message; edgeCask names the
+// `spacedock@next` formula in the too-old-binary remedy when the running binary is
+// the edge cask install. A compatible verdict
 // and a no-plugin-found report exit 0 (the report is non-fatal-by-default); every
 // mismatch (too-old-binary, too-old-plugin, malformed-version) exits 1 with the
 // pinned remedy on stderr.
-func RunDoctor(manifestPath, host, binaryVersion string, stdout, stderr io.Writer) int {
-	res := ManifestVerdict(manifestPath, host, binaryVersion)
+func RunDoctor(manifestPath, host, binaryVersion string, edgeCask bool, stdout, stderr io.Writer) int {
+	res := ManifestVerdict(manifestPath, host, binaryVersion, edgeCask)
 	switch res.Verdict {
 	case Compatible:
 		fmt.Fprintln(stdout, res.Message)
