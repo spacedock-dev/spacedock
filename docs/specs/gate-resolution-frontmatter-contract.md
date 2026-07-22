@@ -1,16 +1,15 @@
 # Gate Resolution frontmatter contract
 
-Status: implemented recorder contract
+Status: implemented recorder and application contract
 Date: 2026-07-22
 
 ## Outcome and ownership
 
-The recorder makes a captain's decision durable without changing workflow status,
-routing feedback, creating application state, or dispatching work. It owns the logical
-gate, ordered attempts, immutable Briefing binding, and portable Resolution. The
-application layer owns what an approval does and may add an opaque `application` subtree
-to a closed attempt; the recorder preserves that known boundary and freezes it with the
-closure.
+The recorder makes a captain's decision durable before any workflow status change or
+dispatch. It owns the logical gate, ordered attempts, immutable Briefing binding, and
+portable Resolution. The application layer owns what an approval does through the typed
+`application` subtree on a closed attempt; the same recorder binary owns its guarded
+writes.
 
 Presentation remains an overridable channel of the present-gate skill, not a recorder
 verb. Chat and provider channels both hand semantic decision input to the recorder.
@@ -58,8 +57,8 @@ state.
 The binary-owned model is closed: unsupported fields inside `gates` fail validation.
 In particular, the pilot-only `gates.current.attempt`, `current-attempt`, `sequence`,
 `previous-attempt`, and explicit attempt `state` encodings are rejected. There is no
-migration or compatibility rewrite. The one intentionally opaque exception is the known
-`application` field, whose nested keys belong to the application layer.
+migration or compatibility rewrite. The `application` field is the typed one-use
+lifecycle boundary owned by the application layer on the same canonical-v1 writer surface.
 
 Every Briefing binding includes an id, SHA-256 digest, explicit digest domain, and room
 reference. The approved domains are:
@@ -79,9 +78,10 @@ reference. The approved domains are:
 2. With no record for that stage, it opens the first attempt.
 3. With an open last attempt, an identical binding is a no-op and a changed binding
    replaces that attempt's Briefing.
-4. With a closed last attempt, it appends a successor. Existing closed attempts,
-   Resolutions, and application data are frozen.
-5. A Result or chat decision closes only the last open attempt for the current stage.
+4. With a closed last attempt, it supersedes any pending application and appends a
+   successor. Existing Briefings and Resolutions remain frozen.
+5. A Result or chat decision closes only the last open attempt for the current stage and
+   derives its `advance/pending`, `feedback/pending`, or `none/not-applicable` application.
 
 Cross-logical-gate re-entry is ordinary: workflow stage selects the target record even
 when `gates.current.gate` names a different closed gate. The successful write selects the
@@ -155,7 +155,8 @@ self-approve that design reset.
 
 ## Write boundary and invariants
 
-The recorder rebuilds only the canonical `gates:` subtree. Before atomic replacement it
+Ordinary recorder operations rebuild only the canonical `gates:` subtree. Consumption
+co-writes `status` and `application.state: consumed` in one atomic replacement. Before replacement it
 validates the rebuilt full entity and compares the locked source subtree with the one it
 read, so stale or invalid writes fail without replacing the file. All frontmatter fields
 outside `gates` and the Markdown body are preserved byte-for-byte. The per-entity lock
@@ -175,6 +176,8 @@ spacedock gate record ENTITY --briefing PATH/briefing.json [--workflow-dir DIR]
 spacedock gate record ENTITY --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]
 spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]
 spacedock gate validate ENTITY [--workflow-dir DIR]
+spacedock gate eligibility ENTITY [--workflow-dir DIR]
+spacedock gate consume ENTITY [--workflow-dir DIR]
 ```
 
 Exactly one semantic source is required. The binary derives operation, ids, stage target,
@@ -192,7 +195,7 @@ result.
   inside `gates`.
 - Provider launch, polling, result retention, presentation UI, and Subspace-specific
   behavior.
-- Application lifecycle, workflow transition, dispatch, or effect receipts.
+- Blocker-satisfaction evaluation, execution-hold authoring, dispatch identities, or effect receipts.
 - A second schema version or provider operation envelope.
 
 ## Behavioral proof

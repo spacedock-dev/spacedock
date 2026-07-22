@@ -80,7 +80,9 @@ func TestGateRecordBriefingReentersStageGateWhenAnotherGateIsSelected(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	beforeIdeationClosure, _ := json.Marshal(beforeDoc.Records[0].Attempts[0])
+	expectedIdeationClosure := beforeDoc.Records[0].Attempts[0]
+	expectedIdeationClosure.Application.State = "superseded"
+	beforeIdeationClosure, _ := json.Marshal(expectedIdeationClosure)
 	beforeValidationClosure, _ := json.Marshal(beforeDoc.Records[1].Attempts[0])
 	beforeOutsideGates := outsideFixtureGates(t, string(before))
 
@@ -101,7 +103,7 @@ func TestGateRecordBriefingReentersStageGateWhenAnotherGateIsSelected(t *testing
 	gotIdeationClosure, _ := json.Marshal(afterDoc.Records[0].Attempts[0])
 	gotValidationClosure, _ := json.Marshal(afterDoc.Records[1].Attempts[0])
 	if !bytes.Equal(gotIdeationClosure, beforeIdeationClosure) {
-		t.Fatal("closed ideation attempt 9 changed while appending attempt 10")
+		t.Fatal("closed ideation attempt 9 changed beyond superseding its pending application")
 	}
 	if !bytes.Equal(gotValidationClosure, beforeValidationClosure) {
 		t.Fatal("closed validation attempt changed during ideation re-entry")
@@ -152,6 +154,38 @@ func TestGateRecordDecisionClosesMinimalBriefingAttempt(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "attempt=gate-attempt:3k-ideation-10 state=closed") || !strings.Contains(out.String(), "decision=approve") {
 		t.Fatalf("operation close stdout=%q, want closed approved attempt", out.String())
+	}
+}
+
+func TestGateEligibilityAndConsumeAuthorizeOnce(t *testing.T) {
+	root, entity, briefing := crossGateFixture(t)
+	var out, errOut bytes.Buffer
+	invoke := func(args ...string) int {
+		out.Reset()
+		errOut.Reset()
+		return run(context.Background(), args, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	}
+	if code := invoke("gate", "record", "durable-gate-approval-pending-blockers", "--workflow-dir", root, "--briefing", briefing); code != 0 {
+		t.Fatalf("record briefing exit=%d stderr=%q", code, errOut.String())
+	}
+	if code := invoke("gate", "record", "durable-gate-approval-pending-blockers", "--workflow-dir", root, "--decision", "approve", "--actor", "person:captain"); code != 0 {
+		t.Fatalf("record approval exit=%d stderr=%q", code, errOut.String())
+	}
+	if code := invoke("gate", "eligibility", "durable-gate-approval-pending-blockers", "--workflow-dir", root); code != 0 || !strings.Contains(out.String(), "application=advance/pending condition=approved-pending eligible=true target-stage=validation") {
+		t.Fatalf("eligibility exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	if code := invoke("gate", "consume", "durable-gate-approval-pending-blockers", "--workflow-dir", root); code != 0 || !strings.Contains(out.String(), "consumed=true") {
+		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	body, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), "status: validation") || !strings.Contains(string(body), "state: consumed") {
+		t.Fatalf("consume did not co-write status and application:\n%s", body)
+	}
+	if code := invoke("gate", "consume", "durable-gate-approval-pending-blockers", "--workflow-dir", root); code != 1 || !strings.Contains(out.String(), "condition=consumed") || !strings.Contains(out.String(), "consumed=false") {
+		t.Fatalf("repeat consume exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 }
 
@@ -237,7 +271,7 @@ func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) 
 func unboundSemanticDecisionFixture(t *testing.T) (root, entity, briefing string) {
 	t.Helper()
 	root = t.TempDir()
-	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n---\n# Workflow\n")
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n    - name: done\n      terminal: true\n---\n# Workflow\n")
 	entity = filepath.Join(root, "task.md")
 	writeFile(t, entity, "---\nstatus: validation\ntitle: Task\n---\n# Task\n")
 	briefing = filepath.Join(root, "review", "validation", "briefing-1", "briefing.json")
@@ -276,7 +310,7 @@ func TestGateRecordChatDecisionAndRejectsOperationInterface(t *testing.T) {
 func semanticDecisionFixture(t *testing.T) (root, entity string) {
 	t.Helper()
 	root = t.TempDir()
-	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n---\n# Workflow\n")
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n    - name: done\n      terminal: true\n---\n# Workflow\n")
 	entity = filepath.Join(root, "task.md")
 	writeFile(t, entity, "---\nstatus: validation\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:docs-dev:3k:validation:attempt-1:revision-1\n            digest: sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac\n            digest-domain: canonical-bytes\n            room-ref: ./review/validation/briefing-1\ntitle: Task\n---\n# Task\n")
 	briefing := filepath.Join(root, "review", "validation", "briefing-1", "briefing.json")
@@ -304,7 +338,7 @@ func crossGateFixture(t *testing.T) (root, entity, briefing string) {
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: validation\n---\n# Workflow\n")
 	entity = filepath.Join(root, "durable-gate-approval-pending-blockers.md")
 	digest := func(char string) string { return "sha256:" + strings.Repeat(char, 64) }
-	writeFile(t, entity, "---\nstatus: ideation\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:ideation\n      stage: ideation\n      attempts:\n        - id: gate-attempt:3k-ideation-9\n          briefing:\n            id: briefing:ideation:9\n            digest: "+digest("1")+"\n            digest-domain: raw-file-pin\n            room-ref: ./review/ideation/9\n          resolution:\n            type: Resolution\n            id: resolution:ideation:9\n            briefing: briefing:ideation:9\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: approve\n          application:\n            state: pending\n            blockers: [preserve-me]\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:validation:1\n            digest: "+digest("2")+"\n            digest-domain: raw-file-pin\n            room-ref: ./review/validation/1\n          resolution:\n            type: Resolution\n            id: resolution:validation:1\n            briefing: briefing:validation:1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: revise\n            reason: Re-enter ideation.\nsprint: durable-decisions\ntitle: Task\n---\n# Task\n")
+	writeFile(t, entity, "---\nstatus: ideation\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:ideation\n      stage: ideation\n      attempts:\n        - id: gate-attempt:3k-ideation-9\n          briefing:\n            id: briefing:ideation:9\n            digest: "+digest("1")+"\n            digest-domain: raw-file-pin\n            room-ref: ./review/ideation/9\n          resolution:\n            type: Resolution\n            id: resolution:ideation:9\n            briefing: briefing:ideation:9\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: approve\n          application:\n            action: advance\n            target-stage: validation\n            state: pending\n            blockers: [{id: blocker:preserve-me, state: unsatisfied}]\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:validation:1\n            digest: "+digest("2")+"\n            digest-domain: raw-file-pin\n            room-ref: ./review/validation/1\n          resolution:\n            type: Resolution\n            id: resolution:validation:1\n            briefing: briefing:validation:1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: revise\n            reason: Re-enter ideation.\nsprint: durable-decisions\ntitle: Task\n---\n# Task\n")
 	briefing = filepath.Join(root, "review", "ideation", "briefing-18", "briefing.json")
 	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
 		t.Fatal(err)

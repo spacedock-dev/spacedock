@@ -30,7 +30,8 @@ Workflow
   merge       guard <slug>           Run the terminal merge-finalize ceremony for an entity
   completion  bash|zsh               Print a bash or zsh completion script
   dispatch    build | show-stage-def Build worker dispatch artifacts
-  gate        record | validate       Record or validate durable gate resolutions
+  gate        record | validate | eligibility | consume
+                                      Record, inspect, or consume durable gate resolutions
 
 Run "spacedock <command> --help" for details.  ·  --version prints the version.
 `

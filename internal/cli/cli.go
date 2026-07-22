@@ -159,17 +159,17 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 // CAS values, and durable ids belong to the recorder.
 func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
-		Use:                "gate record|validate <entity>",
-		Short:              "Record or validate durable gate resolutions",
+		Use:                "gate record|validate|eligibility|consume <entity>",
+		Short:              "Record, inspect, or consume durable gate resolutions",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing PATH/briefing.json [--workflow-dir DIR]\n       spacedock gate record <entity> --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--workflow-dir DIR]")
+				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing PATH/briefing.json [--workflow-dir DIR]\n       spacedock gate record <entity> --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]")
 				return nil
 			}
-			if len(args) < 2 || (args[0] != "record" && args[0] != "validate") {
-				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: record|validate)")
+			if len(args) < 2 || (args[0] != "record" && args[0] != "validate" && args[0] != "eligibility" && args[0] != "consume") {
+				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: record|validate|eligibility|consume)")
 				return exitCodeError{2}
 			}
 			workflowDir := ""
@@ -222,6 +222,31 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintf(stdout, "gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
 				return nil
 			}
+			if args[0] == "eligibility" || args[0] == "consume" {
+				if input != (gates.RecordInput{}) {
+					fmt.Fprintf(stderr, "Error: gate %s accepts only --workflow-dir\n", args[0])
+					return exitCodeError{2}
+				}
+				if args[0] == "eligibility" {
+					e, err := gates.EligibilityFile(path)
+					if err != nil {
+						fmt.Fprintln(stderr, "Error:", err)
+						return exitCodeError{1}
+					}
+					fmt.Fprintf(stdout, "gate=%s attempt=%s application=%s/%s condition=%s eligible=%t target-stage=%s\n", e.Gate, e.Attempt, e.Action, e.ApplicationState, e.Condition, e.Eligible, e.TargetStage)
+					return nil
+				}
+				result, err := gates.Consume(path)
+				if err != nil {
+					fmt.Fprintln(stderr, "Error:", err)
+					return exitCodeError{1}
+				}
+				fmt.Fprintf(stdout, "gate=%s attempt=%s application=%s/%s condition=%s eligible=%t consumed=%t target-stage=%s\n", result.Gate, result.Attempt, result.Action, result.ApplicationState, result.Condition, result.Eligible, result.Consumed, result.TargetStage)
+				if !result.Consumed {
+					return exitCodeError{1}
+				}
+				return nil
+			}
 			sources := 0
 			for _, source := range []string{input.BriefingPath, input.ResultPath, input.Decision} {
 				if source != "" {
@@ -243,6 +268,10 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 			if input.BriefingPath != "" && (input.AssociationPath != "" || input.Actor != "" || input.AdoptionNote != "" || input.Reason != "" || input.Directive != "") || input.ResultPath != "" && (input.Reason != "" || input.Directive != "") || input.Decision != "" && (input.AssociationPath != "" || input.AdoptionNote != "") {
 				fmt.Fprintln(stderr, "Error: gate record flags do not match the selected semantic source")
 				return exitCodeError{2}
+			}
+			input.WorkflowDir = workflowDir
+			if input.WorkflowDir == "" {
+				input.WorkflowDir = dir
 			}
 			if err := gates.RecordSemantic(path, input); err != nil {
 				fmt.Fprintln(stderr, "Error:", err)

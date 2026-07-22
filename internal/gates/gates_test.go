@@ -40,8 +40,8 @@ func TestCanonicalLifecycleRebindCloseFreezeAndSupersede(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := marshalAttempt(t, doc.Records[0].Attempts[0]); got != frozen {
-		t.Fatal("successor write changed the frozen closed attempt")
+	if got := marshalAttempt(t, doc.Records[0].Attempts[0]); strings.Replace(got, "state: superseded", "state: pending", 1) != frozen {
+		t.Fatal("successor write changed the frozen closure beyond superseding its pending application")
 	}
 	if got := outsideGates(t, entity); got != outside {
 		t.Fatal("canonical gates writer changed unrelated frontmatter or body bytes")
@@ -87,14 +87,17 @@ func TestCanonicalCrossGateReentryPreservesFrozenApplication(t *testing.T) {
 	if doc.Current.Gate != "gate:docs-dev:3k:ideation" || len(doc.Records[0].Attempts) != 2 {
 		t.Fatalf("cross-gate successor not selected: %#v", doc)
 	}
-	if marshalAttempt(t, doc.Records[0].Attempts[0]) != frozenIdeation || marshalAttempt(t, doc.Records[1].Attempts[0]) != frozenValidation {
-		t.Fatal("cross-gate re-entry changed a frozen closure or its opaque application")
+	if doc.Records[0].Attempts[0].Application.State != "superseded" || marshalAttempt(t, doc.Records[1].Attempts[0]) != frozenValidation {
+		t.Fatal("cross-gate re-entry did not narrowly supersede the prior pending application")
+	}
+	if strings.Replace(marshalAttempt(t, doc.Records[0].Attempts[0]), "state: superseded", "state: pending", 1) != frozenIdeation {
+		t.Fatal("cross-gate re-entry changed fields besides pending application state")
 	}
 	if got := outsideGates(t, entity); got != outside {
 		t.Fatal("cross-gate re-entry changed bytes outside gates")
 	}
 	mutated := cloneDocument(t, doc)
-	mutated.Records[0].Attempts[0].Application = map[string]any{"state": "rewritten"}
+	mutated.Records[0].Attempts[0].Application = &Application{Action: "advance", TargetStage: "implementation", State: "rewritten"}
 	if err := ValidateTransition(oldNode, mutated); err == nil || !strings.Contains(err.Error(), "frozen") {
 		t.Fatalf("application mutation = %v, want frozen refusal", err)
 	}
@@ -255,7 +258,12 @@ func TestProviderResolutionIncludesRequireSameBriefingAnnotation(t *testing.T) {
 
 func writeEntity(t *testing.T, frontmatter string) string {
 	t.Helper()
-	p := filepath.Join(t.TempDir(), "entity.md")
+	dir := t.TempDir()
+	readme := "---\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: implementation\n---\n# Workflow\n"
+	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte(readme), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	p := filepath.Join(dir, "entity.md")
 	if err := os.WriteFile(p, []byte("---\n"+frontmatter+"---\n# Entity\nBody keeps   spaces.\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -285,7 +293,7 @@ func canonicalClosedFrontmatter() string {
 }
 
 func canonicalTwoGateFrontmatter() string {
-	return "status: ideation\ntitle: Task\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:ideation\n      stage: ideation\n      attempts:\n        - id: gate-attempt:3k-ideation-9\n          briefing:\n            id: briefing:ideation:9\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            digest-domain: raw-file-pin\n            room-ref: ./review/ideation/9\n          resolution:\n            type: Resolution\n            id: resolution:ideation:9\n            briefing: briefing:ideation:9\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: approve\n          application:\n            state: pending\n            blockers:\n              - preserve me\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:validation:1\n            digest: sha256:" + strings.Repeat("2", 64) + "\n            digest-domain: raw-file-pin\n            room-ref: ./review/validation/1\n          resolution:\n            type: Resolution\n            id: resolution:validation:1\n            briefing: briefing:validation:1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: revise\n            reason: Re-enter ideation.\n"
+	return "status: ideation\ntitle: Task\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:ideation\n      stage: ideation\n      attempts:\n        - id: gate-attempt:3k-ideation-9\n          briefing:\n            id: briefing:ideation:9\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            digest-domain: raw-file-pin\n            room-ref: ./review/ideation/9\n          resolution:\n            type: Resolution\n            id: resolution:ideation:9\n            briefing: briefing:ideation:9\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: approve\n          application:\n            action: advance\n            target-stage: implementation\n            state: pending\n            blockers:\n              - id: blocker:preserve-me\n                state: unsatisfied\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:validation:1\n            digest: sha256:" + strings.Repeat("2", 64) + "\n            digest-domain: raw-file-pin\n            room-ref: ./review/validation/1\n          resolution:\n            type: Resolution\n            id: resolution:validation:1\n            briefing: briefing:validation:1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: revise\n            reason: Re-enter ideation.\n"
 }
 
 func readFile(t *testing.T, path string) string {

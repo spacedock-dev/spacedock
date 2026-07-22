@@ -27,6 +27,7 @@ type RecordInput struct {
 	Decision        string
 	Reason          string
 	Directive       string
+	WorkflowDir     string
 }
 
 type artifactRef struct {
@@ -162,6 +163,9 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	if err != nil {
 		return err
 	}
+	if previous.Application != nil && previous.Application.State == "pending" {
+		previous.Application.State = "superseded"
+	}
 	next := Attempt{ID: nextID, Briefing: binding}
 	record.Attempts = append(record.Attempts, next)
 	doc.Current.Gate = record.ID
@@ -217,7 +221,7 @@ func recordResultLocked(entityPath string, input RecordInput) error {
 	resolution := result.Resolution
 	resolution.Briefing = attempt.Briefing.ID
 	resolution.Adoption = input.AdoptionNote
-	if err := closeAttempt(doc, oldNode, record, attempt, &resolution); err != nil {
+	if err := closeAttempt(entityPath, input.WorkflowDir, doc, oldNode, record, attempt, &resolution); err != nil {
 		return err
 	}
 	return writeDocument(entityPath, oldNode, doc)
@@ -260,7 +264,7 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 		Reason:   input.Reason,
 		Adoption: input.Directive,
 	}
-	if err := closeAttempt(doc, oldNode, record, attempt, resolution); err != nil {
+	if err := closeAttempt(entityPath, input.WorkflowDir, doc, oldNode, record, attempt, resolution); err != nil {
 		return err
 	}
 	return writeDocument(entityPath, oldNode, doc)
@@ -314,16 +318,99 @@ func currentStageAttempt(entityPath string) (*Document, *yaml.Node, *GateRecord,
 	return doc, oldNode, record, attempt, nil
 }
 
-func closeAttempt(doc *Document, oldNode *yaml.Node, record *GateRecord, attempt *Attempt, resolution *Resolution) error {
+func closeAttempt(entityPath, workflowDir string, doc *Document, oldNode *yaml.Node, record *GateRecord, attempt *Attempt, resolution *Resolution) error {
 	if err := validateResolution(resolution, attempt.Briefing.ID); err != nil {
 		return err
 	}
+	application, err := applicationForDecision(entityPath, workflowDir, record.Stage, resolution.Decision)
+	if err != nil {
+		return err
+	}
 	attempt.Resolution = resolution
+	attempt.Application = application
 	doc.Current.Gate = record.ID
 	if err := Validate(doc); err != nil {
 		return err
 	}
 	return ValidateTransition(oldNode, doc)
+}
+
+func applicationForDecision(entityPath, workflowDir, stage, decision string) (*Application, error) {
+	switch decision {
+	case "hold":
+		return &Application{Action: "none", State: "not-applicable"}, nil
+	case "approve", "revise":
+	default:
+		return nil, fmt.Errorf("unsupported application decision %q", decision)
+	}
+	if workflowDir == "" {
+		workflowDir = filepath.Dir(entityPath)
+	}
+	stages, err := applicationStages(filepath.Join(workflowDir, "README.md"))
+	if err != nil {
+		return nil, err
+	}
+	for i, candidate := range stages {
+		if candidate.Name != stage {
+			continue
+		}
+		if decision == "revise" {
+			target := candidate.FeedbackTo
+			if target == "" {
+				target = stage
+			}
+			return &Application{Action: "feedback", TargetStage: target, State: "pending"}, nil
+		}
+		if i+1 >= len(stages) || strings.TrimSpace(stages[i+1].Name) == "" {
+			return nil, fmt.Errorf("workflow stage %s has no advance target", stage)
+		}
+		blockers := []Blocker{}
+		return &Application{Action: "advance", TargetStage: stages[i+1].Name, State: "pending", Blockers: &blockers}, nil
+	}
+	return nil, fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
+}
+
+type applicationStage struct {
+	Name       string
+	FeedbackTo string
+}
+
+func applicationStages(readme string) ([]applicationStage, error) {
+	data, err := os.ReadFile(readme)
+	if err != nil {
+		return nil, fmt.Errorf("read workflow stages: %w", err)
+	}
+	root, _, _, err := frontmatterNode(data)
+	if err != nil {
+		return nil, err
+	}
+	stages := mappingValue(root, "stages")
+	if stages == nil {
+		return nil, fmt.Errorf("workflow has no stages mapping")
+	}
+	states := mappingValue(stages, "states")
+	if states == nil || states.Kind != yaml.SequenceNode {
+		return nil, fmt.Errorf("workflow has no stages.states list")
+	}
+	result := make([]applicationStage, 0, len(states.Content))
+	for _, item := range states.Content {
+		if item.Kind != yaml.MappingNode {
+			continue
+		}
+		name, feedback := mappingValue(item, "name"), mappingValue(item, "feedback-to")
+		if name == nil || strings.TrimSpace(name.Value) == "" {
+			continue
+		}
+		stage := applicationStage{Name: name.Value}
+		if feedback != nil {
+			stage.FeedbackTo = feedback.Value
+		}
+		result = append(result, stage)
+	}
+	if len(result) == 0 {
+		return nil, fmt.Errorf("workflow has no application stages")
+	}
+	return result, nil
 }
 
 func verifyAssociation(resultBytes []byte, result *providerResult, association *resultAssociation, actor string, binding Briefing, inventory []artifactRef) error {
@@ -552,12 +639,20 @@ func ValidateTransition(oldNode *yaml.Node, next *Document) error {
 					found = &nr.Attempts[i]
 				}
 			}
-			if found == nil || !nodesEqual(oldAttempt, *found) {
+			if found == nil || !nodesEqual(oldAttempt, *found) && !pendingApplicationSuperseded(oldAttempt, *found) {
 				return fmt.Errorf("frozen closed attempt %s cannot be deleted or mutated", oldAttempt.ID)
 			}
 		}
 	}
 	return nil
+}
+
+func pendingApplicationSuperseded(oldAttempt, nextAttempt Attempt) bool {
+	if oldAttempt.Application == nil || oldAttempt.Application.State != "pending" || nextAttempt.Application == nil || nextAttempt.Application.State != "superseded" {
+		return false
+	}
+	oldAttempt.Application.State = "superseded"
+	return nodesEqual(oldAttempt, nextAttempt)
 }
 
 func nodesEqual(a, b Attempt) bool {

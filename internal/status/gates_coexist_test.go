@@ -7,8 +7,42 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/gates"
 	"gopkg.in/yaml.v3"
 )
+
+func TestStatusTextAndJSONProjectApprovedPendingApplication(t *testing.T) {
+	root := t.TempDir()
+	readme := "---\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: implementation\n---\n# Workflow\n"
+	if err := os.WriteFile(filepath.Join(root, "README.md"), []byte(readme), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	briefing := []byte(`{"type":"Briefing","version":"1","id":"briefing:task:1","question":"approve?","artifacts":[{"id":"artifact:1","uri":"artifact.md","rev":"sha256:` + strings.Repeat("a", 64) + `"}]}`)
+	digest, err := gates.CanonicalDigest(briefing)
+	if err != nil {
+		t.Fatal(err)
+	}
+	room := filepath.Join(root, "review", "ideation", "briefing-1")
+	if err := os.MkdirAll(room, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(room, "briefing.json"), briefing, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	body := "---\nid: task\nstatus: ideation\ntitle: Task\ngates:\n  version: 1\n  current: {gate: 'gate:task:ideation'}\n  records:\n    - id: gate:task:ideation\n      stage: ideation\n      attempts:\n        - id: attempt:task-1\n          briefing: {id: 'briefing:task:1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1}\n          resolution: {type: Resolution, id: 'resolution:task-1', briefing: 'briefing:task:1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: approve}\n          application: {action: advance, target-stage: implementation, state: pending, blockers: []}\n---\n# Task\n"
+	if err := os.WriteFile(filepath.Join(root, "task.md"), []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"--workflow-dir", root, "--fields", "gate-decision,gate-application,gate-condition,gate-eligible"}
+	text, stderr, code := runNative(t, root, nil, args...)
+	if code != 0 || !strings.Contains(text, "approve") || !strings.Contains(text, "advance/pending") || !strings.Contains(text, "approved-pending") {
+		t.Fatalf("text status exit=%d stderr=%q output=%q", code, stderr, text)
+	}
+	jsonOut, stderr, code := runNative(t, root, nil, append(args, "--json")...)
+	if code != 0 || !strings.Contains(jsonOut, `"gate-application":"advance/pending"`) || !strings.Contains(jsonOut, `"gate-condition":"approved-pending"`) || !strings.Contains(jsonOut, `"gate-eligible":"true"`) {
+		t.Fatalf("json status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
+	}
+}
 
 func TestStatusTextAndJSONProjectAllRecordedResolutionStates(t *testing.T) {
 	root := t.TempDir()

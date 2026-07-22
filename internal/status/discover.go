@@ -218,6 +218,11 @@ func newEntity(fields map[string]string, slug, path, scope string) *entity {
 		fields["gate-briefing"] = summary.Briefing
 		fields["gate-resolution"] = summary.Resolution
 		fields["gate-decision"] = summary.Decision
+		fields["gate-application"] = summary.Application
+		fields["gate-application-state"] = summary.ApplicationState
+		fields["gate-condition"] = summary.Condition
+		fields["gate-eligible"] = fmt.Sprintf("%t", summary.Eligible)
+		fields["gate-target-stage"] = summary.TargetStage
 	}
 	fields["slug"] = slug
 	for _, k := range defaultEntityKeys {

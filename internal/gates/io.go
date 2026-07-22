@@ -50,7 +50,14 @@ func SummaryFile(path string) (Summary, error) {
 	if err != nil {
 		return Summary{}, err
 	}
-	return CurrentSummary(doc), nil
+	summary := CurrentSummary(doc)
+	eligibility, err := EligibilityFile(path)
+	if err != nil {
+		return Summary{}, err
+	}
+	summary.Condition = eligibility.Condition
+	summary.Eligible = eligibility.Eligible
+	return summary, nil
 }
 
 func entityStatus(path string) (string, error) {
