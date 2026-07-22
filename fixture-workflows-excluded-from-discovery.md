@@ -193,3 +193,31 @@ Captain re-scope (2026-07-22): relocate fixtures to package-adjacent testdata (O
 ### Summary
 
 Per the captain's 2026-07-22 re-scope, eliminated the top-level `fixtures/` directory by relocating its three fixtures to `skills/integration/testdata/` — the one Go test package among the skills, already excluded from the contractlint instruction-surface walk — and pruned only the `testdata` basename from `discoverWorkflows`. The riskiest unknown, that the fixtures have no Go-test consumer, was traced and escalated; the captain chose the `skills/integration/testdata/` home. Confirmed the relocated frontmatter parses under the migration-check walk (a new exposure since it walks `skills/`). TDD'd the `testdata` prune (RED→GREEN); full suite and `-race` green; discovery returns exactly `docs/dev` and the top-level `fixtures/` is gone.
+
+## Stage Report: validation (cycle 2)
+
+Validates the cycle-2 implementation (commit `2e643132`, off `origin/main` `ca136f83`): relocate fixtures to `skills/integration/testdata/` + prune `testdata`-only. Supersedes the cycle-1 validation above.
+
+- DONE: Verify the VALUE AC with reproduced evidence — no top-level `fixtures/`; `status --discover` from repo root returns EXACTLY `docs/dev`, exit 0, against the built worktree binary.
+  Worktree binary (`go build -o ./spacedock ./cmd/spacedock`): `test ! -d fixtures` true (AC-1 i); `status --discover` → 1 line `…/docs/dev`, exit 0 (AC-1 ii); read `status` no `--workflow-dir` exit 0 (AC-2). Pre-change binary built at parent `ca136f83` (throwaway) → `--discover` 2 lines (`docs/dev` + `fixtures/…/site-workflow`), read `status` exit 1 (multi-workflow refusal). Count 2→1 / exit 1→0 on an independent moving baseline.
+- DONE: Verify the move — 7 byte-preserving renames, consumers still reference, classifier example updated, prune is testdata-ONLY.
+  `git show 2e643132 -M` → all 7 fixture files R100 (byte-identical renames) into `skills/integration/testdata/{refit-content-propagation,entity-label-drive}/`. Moved READMEs point at `skills/refit/SKILL.md` + first-officer (both unchanged); grep found NO live reference to the old `fixtures/…` path (only the historical `docs/roadmap` debrief, correctly untouched). `fo_write_core_mutation_gate_test.go:38` now `skills/integration/testdata/entity-label-drive/README.md` (classifies `blocked-product`; test green). Map holds `testdata` only — no `fixtures` key (correct: `fixtures` was never on the origin/main base).
+- DONE: Detached adversarial audit on a THROWAWAY checkout (2 of 4 high-stakes surfaces) — claim-breaking edits RED the behavior test; skills/integration guard stays green.
+  Throwaway detached worktree at `2e643132` (never the impl worktree). AC-3 `TestDiscoverWorkflowsPrunesTestdata`: GREEN at HEAD; (a) revert `testdata` prune → RED, and the worktree binary `status --discover` resurfaces `…/testdata/refit-content-propagation/site-workflow` (the 2→1 defect returns); (b) misspell `testdata`→`testdataX` → RED. Sensitive to the exact basename — no single-basename hole. `shippedInstructionMarkdown`: proved by falsification — WITH `SkipDir("integration")` the surface is 29 files / 0 integration paths; disabling the SkipDir leaks all 7 relocated fixtures (surface 39 / 10 integration paths). testdata is excluded by the SkipDir mechanism, not by luck. CLEAN audit — no test-strength hole.
+- DONE: go test ./... + -race green; semantic adversarial pass; classify findings; recommend.
+  `go test ./...` all packages ok, 0 FAIL; `go test ./... -race` all ok, 0 FAIL / 0 DATA RACE (16 packages). AC-4 migration check (`TestMigrationCheckFixturesParseConsistently`) walks the real `skills/` tree (prunes only `.spacedock-state`/`docs/roadmap`, NOT `testdata`) → the 5 frontmatter-bearing relocated fixtures parse consistently (reader == yaml.v3 key-by-key); the 2 fence-less index READMEs are correctly skipped.
+
+### Semantic adversarial pass
+
+- Single production consumer: `discoverIgnoreDirs` → `discoverWorkflows` only; the "Matches DISCOVER_IGNORE_DIRS" comment is a dead parity ref (no parallel impl — grep).
+- Start-root always inspected: `status --discover --root skills/integration/testdata/refit-content-propagation` still resolves `site-workflow` (exit 0); `--workflow-dir` at the nested site-workflow resolves (exit 0). Only the auto-walk descent prunes — override paths unaffected.
+- Perf: +1 O(1) map key; pruning more subtrees is strictly cheaper. No scaling risk.
+- Tautology check: AC-3 reds under 3 distinct claim-breaking edits (full revert + each single-basename misspell), asserting exact `[docs/dev]` — not a substring/prose match.
+
+### Deferred risks
+
+- A real workflow deliberately placed under a `testdata/`-named directory is no longer auto-discovered. Trigger is outside the current promise — real workflows live at `docs/dev`, the identical tradeoff already accepted for `tests`/`vendor`/`dist`/`build`; the supported path still returns exactly `docs/dev`, and `--root`/`--workflow-dir` still reaches such a path. Narrower than cycle 1 (which also pruned `fixtures`): only the `testdata` basename is swallowed now. Promotes to material only if the project ever hosts a real, auto-discoverable workflow under a `testdata`-named dir.
+
+### Summary
+
+Recommend **PASSED**. Both value ACs reproduced on an independent moving baseline (AC-1 count 2→1 with `fixtures/` gone; AC-2 read exit 1→0), the 7 renames are byte-identical (R100), the classifier example is updated, and the discovery change is `testdata`-prune-ONLY. The AC-3 behavior test is falsifiable and proven strong (reds under full revert + each basename misspell). The detached throwaway audit is CLEAN, and the `skills/integration` instruction-surface exclusion is proven load-bearing (SkipDir on `integration`, not luck). `go test ./...` and `-race` are green. One deferred risk (real workflow nested under `testdata`), outside the promised workflow; no material findings block the gate.
