@@ -146,6 +146,18 @@ printf '"'%s\\n' '---' 'id:' 'title: Wire The Thing' 'status: backlog' '---' 'Co
 		t.Fatalf("expected PR #551's exact /bin/bash -lc display-quoted filing to count as atomic: %v", err)
 	}
 
+	// Negative regression: the same display-quoted text inside a heredoc is
+	// narration, not an executed simple command. The validator caught the matcher
+	// losing separator provenance and treating this line as a pipeline invocation.
+	heredocNarration := codexRawCommand(`/bin/bash -lc 'launcher="${SPACEDOCK_BIN:-spacedock}"
+cat <<'EOF'
+\""'$launcher" new wire-the-thing
+EOF
+'`)
+	if err := assertCodexFilingViaNew(heredocNarration, slug); err == nil {
+		t.Fatal("expected display-quoted launcher text inside heredoc narration to stay negative")
+	}
+
 	malformedCaptures := map[string]string{
 		"mismatched quotes":   `launcher=\"${SPACEDOCK_BIN:-spacedock}'\n\"$launcher\" new ` + slug,
 		"leading-only quote":  `launcher=\"${SPACEDOCK_BIN:-spacedock}\n\"$launcher\" new ` + slug,

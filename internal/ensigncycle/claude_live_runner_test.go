@@ -164,6 +164,7 @@ func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRunti
 		"merge-hook-guardrail":          runClaudeMergeHookGuardrailScenario,
 		"filing":                        runClaudeFilingScenario,
 		"shallow-boot":                  runClaudeShallowBootScenario,
+		"multi-workflow-boot":           runClaudeMultiWorkflowBootScenario,
 		"self-evidence-merge-triage":    runClaudeSelfEvidenceMergeTriageScenario,
 		"smallest-sufficient-mechanism": runClaudeSmallestSufficientMechanismScenario,
 		"keep-moving-posture":           runClaudeKeepMovingScenario,
@@ -527,6 +528,19 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	// shallow-boot-window observation, riding the same journeymetrics ledger pipe
 	// emitClaudeScenarioMetrics below already uses.
 	emitShallowBootWindowMetrics(t, result.stream, runner.model())
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
+func runClaudeMultiWorkflowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	projectRoot := t.TempDir()
+	fixture := writeMultiWorkflowBootFixture(t, projectRoot)
+
+	result := runner.run(t, scenario, projectRoot, multiWorkflowBootPrompt(projectRoot))
+	obs := gatherMultiWorkflowBootObservation(t, fixture, claudeExecutedCommands(result.stream), result.finalMessage)
+	if err := assertMultiWorkflowBoot(obs); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 

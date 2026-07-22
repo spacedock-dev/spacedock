@@ -39,6 +39,10 @@ func piSharedScenarioCoverageMap() map[string]piSharedScenarioCoverage {
 			mode:   "gap",
 			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer shallow-boot runner.",
 		},
+		"multi-workflow-boot": {
+			mode:   "live",
+			reason: "TestLivePiMultiWorkflowBootScenario runs the shared two-workflow fixture and after-only startup oracle through Pi JSON event mode.",
+		},
 		"self-evidence-merge-triage": {
 			mode:   "gap",
 			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer merge/triage self-evidence runner.",
@@ -56,6 +60,7 @@ func piSharedScenarioCoverageMap() map[string]piSharedScenarioCoverage {
 
 func TestPiSharedScenarioCoverage(t *testing.T) {
 	coverage := piSharedScenarioCoverageMap()
+	runners := piScenarioRunners()
 	defined := map[string]bool{}
 	for _, scenario := range sharedRuntimeScenarios() {
 		defined[scenario.name] = true
@@ -72,10 +77,18 @@ func TestPiSharedScenarioCoverage(t *testing.T) {
 		if entry.reason == "" {
 			t.Errorf("shared scenario %q Pi coverage entry needs an honest reason", scenario.name)
 		}
+		if entry.mode == "live" && runners[scenario.name] == nil {
+			t.Errorf("shared scenario %q claims Pi live coverage without a live runner", scenario.name)
+		}
 	}
 	for name := range coverage {
 		if !defined[name] {
 			t.Errorf("Pi coverage entry %q has no shared scenario definition", name)
+		}
+	}
+	for name := range runners {
+		if entry, ok := coverage[name]; !ok || entry.mode != "live" {
+			t.Errorf("Pi runner %q is not backed by a live coverage entry", name)
 		}
 	}
 }
