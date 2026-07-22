@@ -1,11 +1,11 @@
 ---
 id: vn15pvn4nt9zce55m757f23a
 title: Make state commit include folder-form entity artifacts
-status: validation
+status: done
 source: "Captain-directed follow-up from Roborev setup entity 00 dogfood, 2026-07-14"
 started: 2026-07-14T13:28:29Z
-completed:
-verdict:
+completed: 2026-07-22T16:05:43Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-state-commit-folder-entity-scope
 issue:
@@ -52,8 +52,9 @@ gates:
                 decision: approve
                 reason: All six acceptance criteria reproduced; Roborev material findings fixed; full, race, focused, format, and clean checks passed; live xb and vn gate-room commits proved exact folder scoping.
                 adoption-note: 'Captain: you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement.'
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:558
+archived: 2026-07-22T16:05:43Z
 ---
 
 `spacedock state commit <slug>` commits a flat entity correctly but treats a folder-form entity as only `<slug>/index.md`. Reports, evidence, and artifacts stored beside the index remain dirty even though the state command reports that the entity was committed and pushed.
