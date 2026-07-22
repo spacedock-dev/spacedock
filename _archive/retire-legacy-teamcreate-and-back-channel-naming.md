@@ -1,16 +1,17 @@
 ---
 id: q4pw3xb4nf4cwfdjtwbn17mz
 title: Retire legacy TeamCreate path and rename back-channel to inter-agent communication
-status: validation
+status: done
 source: captain (CL), 2026-07-20 session
 started: 2026-07-21T16:05:13Z
-completed:
-verdict:
+completed: 2026-07-22T05:34:00Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-retire-legacy-and-retry-rung
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:549
+archived: 2026-07-22T05:34:00Z
 ---
 
 Retire the legacy TeamCreate machinery from the shipped FO contract and stop naming the worker/FO messaging surface "back-channel".
