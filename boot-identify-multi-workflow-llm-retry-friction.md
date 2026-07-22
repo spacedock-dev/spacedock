@@ -1,6 +1,6 @@
 ---
 title: Self-describing boot identify schema and contract hint to eliminate LLM duplicate CLI retry loop
-status: implementation
+status: validation
 score: 0.85
 id: 32vshm0h2h04gs7hzcf315g0
 source: "recorded Pi First Officer boot session at this repository root, cross-checked against PR #480"
@@ -185,10 +185,28 @@ Cycle 3 re-centered the design on the First Officer shared-core contract before 
 
 ### Validation Notes
 
-Before (installed `spacedock status --boot --identify --json`): `{"command":"boot","discovery":[".../docs/dev",".../fixtures/refit-content-propagation/site-workflow"]}`; recorded Pi failure shape retried 8+ duplicate CLI/helper calls because this sparse payload lacked terminal/next-action signals.
-After (worktree `go run ./cmd/spacedock status --boot --identify --json`): `{"command":"boot","discovery":[".../docs/dev",".../fixtures/refit-content-propagation/site-workflow"],"schema":"spacedock.status.boot.identify.discovery.v1","status":"complete","result":"multiple_workflows","terminal":true,"workflow_count":2,"next_action":"select_workflow"}`. Retry count observed in the after drive before workflow selection: 0 duplicate follow-up `status`, `jq`, `python3`, or `go run` calls beyond the intentional after command.
+#### Live FO Boot-Drive Transcript & Retry Count Evidence (AC-3)
+
+**Before (Installed `spacedock status --boot --identify --json` v0.26.0):**
+```
+$ spacedock status --boot --identify --json
+{"command":"boot","discovery":["/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev","/Users/clkao/git/spacedock-research/spacedock-v1/fixtures/refit-content-propagation/site-workflow"]}
+```
+*Failure Shape:* The LLM agent received this sparse JSON without completion markers, mistook it for incomplete output, and entered an 8+ turn duplicate retry loop running `spacedock status`, `jq`, `python3` subprocess wrappers, and `go run` before greeting.
+
+**After (Worktree `go run ./cmd/spacedock status --boot --identify --json` with contract ratchet):**
+```
+$ cd .worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction
+$ go run ./cmd/spacedock status --boot --identify --json
+{"command":"boot","discovery":["/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction/docs/dev","/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction/fixtures/refit-content-propagation/site-workflow"],"schema":"spacedock.status.boot.identify.discovery.v1","status":"complete","result":"multiple_workflows","terminal":true,"workflow_count":2,"next_action":"select_workflow"}
+```
+*Observed Outcome:*
+1. Self-describing JSON payload returned `status: "complete"`, `terminal: true`, and `next_action: "select_workflow"`.
+2. First Officer `«state.boot»` and `«interaction.boundary»` contract ratchet in `first-officer-shared-core.md` treats `multiple_workflows` discovery as complete and greets with `Multiple workflows discovered; select one with engage <workflow>.`.
+3. Retry count observed in the after drive before workflow selection: **0 duplicate follow-up CLI/helper retry calls** (`status`, `jq`, `python3`, or `go run`).
 
 ### Summary
+
 
 Implemented the contract-first many-workflow boot identify hardening: the CLI now emits a self-describing terminal discovery envelope, and the First Officer shared core/documentation tells agents to select or engage a workflow rather than retry identify. The implementation also adds typed JSON leaves for the new boolean/count fields, pins the FO prose ratchet, and preserves the existing zero/one/many and unflagged boot compatibility tests.
 
