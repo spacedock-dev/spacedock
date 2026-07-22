@@ -7,7 +7,7 @@ started: 2026-07-14T13:28:29Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-state-commit-folder-entity-scope
 issue:
 milestone: 0.26.0
 sprint: durable-decisions
