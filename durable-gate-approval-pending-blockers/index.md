@@ -1,6 +1,6 @@
 ---
 title: Gate recorder — durable gates records with binary-owned writes
-status: ideation
+status: implementation
 score: "0.80"
 source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
@@ -8,12 +8,12 @@ started: 2026-07-18T08:58:53Z
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:3k:validation
-        attempt: gate-attempt:3k-validation-1
+        gate: gate:docs-dev:3k:ideation
+        attempt: gate-attempt:3k-ideation-10
     records:
         - id: gate:docs-dev:3k:ideation
           stage: ideation
-          current-attempt: gate-attempt:3k-ideation-9
+          current-attempt: gate-attempt:3k-ideation-10
           attempts:
             - id: gate-attempt:3k-ideation-1
               sequence: 1
@@ -211,6 +211,21 @@ gates:
                 state: consumed
                 target-stage: implementation
               note: The contract now agrees with every approved member design and both preflight seats. The captain has NOT re-reviewed the amended bytes; this closure rests on the quoted directive, recorded honestly under the FO identity — exactly what the ruling prescribes.
+            - id: gate-attempt:3k-ideation-10
+              state: closed
+              briefing:
+                id: briefing:docs-dev:3k:ideation:attempt-10:revision-18
+                digest: sha256:6b2c4f1388a58f42f7c8610f847ed9e7cce92758c00b201d4eb9f4f89dbedd8b
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-18
+              resolution:
+                type: Resolution
+                id: resolution:first-officer-3k-ideation-10
+                briefing: briefing:docs-dev:3k:ideation:attempt-10:revision-18
+                by: agent:first-officer
+                at: "2026-07-22T04:11:08Z"
+                decision: approve
+                reason: 'Recorded by the First Officer on the captain''s delegated authority. Captain directive, verbatim: ''lgtm. add the fixture''. Revision 18 changes only the required cross-logical-gate re-entry fixture and preserves every approved revision-17 boundary; the captain did not separately render the folded package bytes.'
         - id: gate:docs-dev:3k:validation
           stage: validation
           current-attempt: gate-attempt:3k-validation-1
