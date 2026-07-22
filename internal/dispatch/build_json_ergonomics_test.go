@@ -12,6 +12,8 @@ import (
 func TestBuildFlagFileInputModePreservesLiteralChecklist(t *testing.T) {
 	t.Setenv("CODEX_THREAD_ID", "")
 	t.Setenv("CLAUDECODE", "1")
+	t.Setenv("PI_CODING_AGENT", "")
+	t.Setenv("PI_CODING_AGENT_DIR", "")
 	root, entityPath := buildHostFixture(t)
 	checklistPath := filepath.Join(root, "checklist.txt")
 	scopePath := filepath.Join(root, "scope.md")
@@ -45,6 +47,9 @@ func TestBuildFlagFileInputModePreservesLiteralChecklist(t *testing.T) {
 }
 
 func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
+	t.Setenv("PI_CODING_AGENT", "")
+	t.Setenv("PI_CODING_AGENT_DIR", "")
+
 	t.Run("derived-codex", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "codex-thread")
 		t.Setenv("CLAUDECODE", "")
@@ -103,6 +108,33 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 		}
 	})
 
+	t.Run("derived-pi-from-PI_CODING_AGENT", func(t *testing.T) {
+		t.Setenv("CODEX_THREAD_ID", "")
+		t.Setenv("CLAUDECODE", "")
+		t.Setenv("PI_CODING_AGENT", "true")
+		root, _ := buildHostFixture(t)
+
+		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
+		if native.exit != 0 {
+			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
+		}
+		assertPiBuildOutput(t, native.stdout)
+	})
+
+	t.Run("derived-pi-from-PI_CODING_AGENT_DIR", func(t *testing.T) {
+		t.Setenv("CODEX_THREAD_ID", "")
+		t.Setenv("CLAUDECODE", "")
+		t.Setenv("PI_CODING_AGENT", "")
+		t.Setenv("PI_CODING_AGENT_DIR", t.TempDir())
+		root, _ := buildHostFixture(t)
+
+		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
+		if native.exit != 0 {
+			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
+		}
+		assertPiBuildOutput(t, native.stdout)
+	})
+
 	t.Run("host-flag", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "")
 		t.Setenv("CLAUDECODE", "")
@@ -133,6 +165,38 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 		}
 	})
 
+	t.Run("host-flag-overrides-pi-runtime", func(t *testing.T) {
+		t.Setenv("CODEX_THREAD_ID", "")
+		t.Setenv("CLAUDECODE", "")
+		t.Setenv("PI_CODING_AGENT", "true")
+		root, _ := buildHostFixture(t)
+
+		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root, "--host", "claude")
+		if native.exit != 0 {
+			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
+		}
+		out := decodeBuildOutput(t, native.stdout)
+		if !strings.HasPrefix(out.Prompt, "Skill(skill=\"spacedock:ensign\")") {
+			t.Fatalf("explicit Claude override lost Skill wrapper: %q", out.Prompt)
+		}
+	})
+
+	t.Run("json-host-overrides-pi-runtime", func(t *testing.T) {
+		t.Setenv("CODEX_THREAD_ID", "")
+		t.Setenv("CLAUDECODE", "")
+		t.Setenv("PI_CODING_AGENT", "true")
+		root, _ := buildHostFixture(t)
+
+		native := runNativePreservingHostEnv(buildHostStdin(t, root, map[string]any{"host": "codex"}), "build", "--workflow-dir", root)
+		if native.exit != 0 {
+			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
+		}
+		out := decodeBuildOutput(t, native.stdout)
+		if strings.Contains(out.Prompt, "Skill(skill=") {
+			t.Fatalf("explicit JSON Codex prompt is Claude-shaped: %q", out.Prompt)
+		}
+	})
+
 	t.Run("conflicting-explicit-sources", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "")
 		t.Setenv("CLAUDECODE", "")
@@ -157,7 +221,7 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 		root, _ := buildHostFixture(t)
 
 		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
-		assertBuildHostError(t, native, "host source", "CODEX_THREAD_ID", "CLAUDECODE")
+		assertBuildHostError(t, native, "host source", "CODEX_THREAD_ID", "CLAUDECODE", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR")
 	})
 
 	t.Run("ambiguous-runtime", func(t *testing.T) {
@@ -167,6 +231,16 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 
 		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
 		assertBuildHostError(t, native, "ambiguous", "CODEX_THREAD_ID", "CLAUDECODE")
+	})
+
+	t.Run("ambiguous-pi-runtime", func(t *testing.T) {
+		t.Setenv("CODEX_THREAD_ID", "codex-thread")
+		t.Setenv("CLAUDECODE", "")
+		t.Setenv("PI_CODING_AGENT", "true")
+		root, _ := buildHostFixture(t)
+
+		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
+		assertBuildHostError(t, native, "ambiguous", "CODEX_THREAD_ID", "PI_CODING_AGENT", "--host claude, codex, or pi")
 	})
 
 	t.Run("explicit-overrides-runtime", func(t *testing.T) {
@@ -185,7 +259,29 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 	})
 }
 
+func assertPiBuildOutput(t *testing.T, stdout string) {
+	t.Helper()
+	out := decodeBuildOutput(t, stdout)
+	for _, banned := range []string{"Skill(skill=", "Agent(", "SendMessage", "TeamCreate", "TeamDelete"} {
+		if strings.Contains(out.Prompt, banned) {
+			t.Fatalf("derived Pi prompt contains Claude syntax %q: %q", banned, out.Prompt)
+		}
+	}
+	if !strings.Contains(out.Prompt, "Read ") || !strings.Contains(out.Prompt, "treat its content as your assignment") {
+		t.Fatalf("derived Pi prompt should be the read-dispatch-file form: %q", out.Prompt)
+	}
+	body := readDispatchBody(t, out.DispatchFilePath)
+	for _, want := range []string{"Read this dispatch file directly", "Pi subagent completion result", "Do not emit Claude team-tool calls"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("derived Pi dispatch body missing %q:\n%s", want, body)
+		}
+	}
+}
+
 func TestBuildSchemaAndValidateOnly(t *testing.T) {
+	t.Setenv("PI_CODING_AGENT", "")
+	t.Setenv("PI_CODING_AGENT_DIR", "")
+
 	t.Run("print-schema", func(t *testing.T) {
 		native := runNativePreservingHostEnv("", "build", "--print-schema")
 		if native.exit != 0 {
@@ -250,7 +346,7 @@ func TestBuildSchemaAndValidateOnly(t *testing.T) {
 		}
 		for _, tc := range cases {
 			t.Run(tc.name, func(t *testing.T) {
-				for _, key := range []string{"CODEX_THREAD_ID", "CLAUDECODE"} {
+				for _, key := range []string{"CODEX_THREAD_ID", "CLAUDECODE", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR"} {
 					t.Setenv(key, "")
 				}
 				for key, value := range tc.env {

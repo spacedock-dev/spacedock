@@ -41,14 +41,20 @@ func runNativePreservingHostEnv(stdin string, args ...string) runResult {
 }
 
 // runNativeWithDefaultClaudeHost keeps legacy build fixtures deterministic when
-// the developer's real shell happens to carry Codex runtime markers.
+// the developer's real shell happens to carry Codex or Pi runtime markers.
 func runNativeWithDefaultClaudeHost(stdin string, args ...string) runResult {
 	oldCodex, hadCodex := os.LookupEnv("CODEX_THREAD_ID")
 	oldClaude, hadClaude := os.LookupEnv("CLAUDECODE")
+	oldPiAgent, hadPiAgent := os.LookupEnv("PI_CODING_AGENT")
+	oldPiAgentDir, hadPiAgentDir := os.LookupEnv("PI_CODING_AGENT_DIR")
 	os.Unsetenv("CODEX_THREAD_ID")
 	os.Setenv("CLAUDECODE", "1")
+	os.Unsetenv("PI_CODING_AGENT")
+	os.Unsetenv("PI_CODING_AGENT_DIR")
 	defer restoreEnv("CODEX_THREAD_ID", oldCodex, hadCodex)
 	defer restoreEnv("CLAUDECODE", oldClaude, hadClaude)
+	defer restoreEnv("PI_CODING_AGENT", oldPiAgent, hadPiAgent)
+	defer restoreEnv("PI_CODING_AGENT_DIR", oldPiAgentDir, hadPiAgentDir)
 	return runNativePreservingHostEnv(stdin, args...)
 }
 
