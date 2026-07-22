@@ -306,6 +306,7 @@ This is the design the composition proved out, kept whole so the park costs no d
 ### Feedback Cycles
 
 - 2026-07-20T16:20:45Z — captain design-reset, recorded before any further dispatch (the landed convention's own rule): PARK this entity's implementation before landing — bw lands alone in wave 3. Reframe at ideation: record round dispositions, including the decline, as ADVISORY resolutions under the gate-recorder model (see the 3k scope cut of 2026-07-21) instead of the findings field on the entry; the finding-triage rule TEXT stays approved-shaped, only the record/delivery mechanism reframes. surface 0 landed vs estimate ~17 lines (held before landing); AC unchanged.
+- Cycle 1: REJECTED — Roborev job 548; surface 6 files/91 added lines vs estimate 5 files/60–95 lines (96% of upper bound); AC unchanged
 
 ## Reframe brief (captain-directed, 2026-07-21)
 
