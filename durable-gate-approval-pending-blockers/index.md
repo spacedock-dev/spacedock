@@ -1811,3 +1811,95 @@ The recorder now has one closed canonical-v1 model and one small validated subtr
 with no pilot-format compatibility or migration machinery. Exact independently digested
 Briefing bytes close AC-13's completeness hole, while current-v1 application, freeze,
 CAS/atomicity, cross-gate lifecycle, and unrelated-entity boundaries remain exercised.
+
+## Stage Report: validation (cycle 6)
+
+- DONE: Inspect correction commit `1e5bc9d2` for an actual clean unreleased-v1 cut.
+  `Document`, `Selection`, `GateRecord`, `Attempt`, `Briefing`, and `Resolution` expose
+  only canonical fields; `yaml.Decoder.KnownFields(true)` rejects prototype and unknown
+  binary-owned keys. `scalarEdit`, source line edits/locators, compatibility inference,
+  pointer/sequence/state mechanics, inline unknown bags, and all eight prototype replay
+  fixtures are deleted rather than hidden or aliased. Production code fell from 1,982 to
+  1,704 lines and tests/fixtures from 1,977 to 858 lines relative to `6b450c7d`.
+- DONE: Verify canonical-v1 rejection and preservation boundaries.
+  Every removed prototype/unknown gates encoding fails closed without mutation. A fresh
+  detached probe replayed the prior same-valued flow-map `shadow` field: strict decoding
+  rejected it, left entity bytes identical, and removed the recorder lock. Canonical
+  writes preserve all bytes outside `gates`; closed opaque `application` data remains
+  semantically identical and frozen. Unrelated `status --set` still preserves `gates`.
+- DONE: Reproduce independent complete-association proof.
+  The exact canonical Briefing raw SHA-256 is `b34fedc7…`; recomputed RFC-8785/JCS digest
+  is `sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac`
+  and yields three artifacts. The exact association succeeds; deleting canonical
+  artifacts 2-3 and their matching presentation entries now exits 1 before normalization
+  and leaves the entity byte-identical. A detached mutant that substituted the
+  association's own list for the Briefing inventory made the truncation succeed and
+  red-lined `TestGateRecordConsumesExactResultOnlyWithCompleteAssociation`.
+- DONE: Re-run canonical lifecycle and write-integrity coverage.
+  Open/rebind/close/successor, frozen Resolution/application, cross-logical-gate re-entry,
+  current-stage selection, CAS refusal, lock contention, invalid-rebuild refusal, atomic
+  replacement, mixed-line-ending preservation outside `gates`, exact Result, chat
+  provenance, wrapper exclusion, `--operation` exit 2, status text/JSON, and status-set
+  coexistence all passed. Removing strict known-field decoding red-lined every prototype
+  negative, confirming that the rejection suite observes the intended boundary.
+- FAILED: Verify every accepted `--briefing FILE` remains resolvable by the exact Result
+  path. A valid canonical Briefing saved as `room/revision-1.json` is accepted and durably
+  bound by `record --briefing`; the landed cross-gate fixture likewise passes
+  `revision-18.json`. The projection stores only `room-ref`, however, and `record --result`
+  later hard-codes `room-ref/briefing.json`. With no duplicate file, it returns
+  `read bound canonical Briefing: .../room/briefing.json: no such file or directory` and
+  cannot close the accepted attempt. The public `--briefing FILE` journey therefore has
+  an accepted dead-end input.
+- FAILED: Remove stale prototype-compatibility promises from public contracts.
+  `docs/schema/entity.mdschema.yml` still says retained legacy attempt pointers must agree,
+  contradictory legacy state fails closed, and legacy sequence/lineage/state/notes/
+  applications/extensions are preserved. `docs/site/reference/frontmatter-contract.md`
+  still promises preservation of “legacy extension subtrees” without bulk rewriting.
+  Both conflict with the captain's clean cut, strict canonical reader, rewritten gates
+  subtree, and the updated focused spec/command reference.
+- DONE: Run formatting, focused, baseline, and race gates from a clean product worktree.
+  `gofmt -w ./cmd ./internal` and `git diff --check` produced no diff. Focused gates/CLI/
+  status tests passed. Uncached `go test ./... -count=1` and
+  `go test ./... -race -count=1` both passed all 18 packages. Product HEAD remained
+  `1e5bc9d2`; no product code or workflow state was edited by validation.
+
+### Reviewer Findings
+
+1. **Material outcome defect — AC-13/public Result journey; narrow input-location fix.**
+   `bindingFromManifest` accepts any `--briefing FILE` and records only its containing
+   directory, while `boundBriefingManifest` later assumes the discarded basename was
+   exactly `briefing.json`. The trigger is supported and fixture-backed, not hypothetical:
+   the public grammar says `FILE`, and the canonical cross-gate fixture uses
+   `revision-18.json`. Either reject noncanonical package locations before the first write
+   or retain/resolve the exact accepted manifest location; an accepted binding must not
+   become unresolvable only when a provider Result arrives.
+2. **Material public-contract defect — captain clean-v1 ruling; narrow documentation/schema
+   correction.** The shipped entity schema and frontmatter reference continue promising
+   legacy pointer/mechanics/extension preservation that the corrected product deliberately
+   rejects. Update those two public sources to distinguish byte-exact unrelated entity
+   preservation and the one opaque `application` boundary from unsupported fields inside
+   binary-owned `gates`.
+
+No deferred risk or polish-only finding was identified. The corrected source-position,
+strict-schema, independent-inventory, freeze, atomicity, and ownership mechanisms passed.
+
+### Feedback Cycles
+
+- **Detached validation-cycle-6 accepted-file audit:** changed only the valid Briefing's
+  basename from `briefing.json` to `revision-1.json`; bind succeeded, exact Result then
+  failed on the hard-coded missing `briefing.json`. The failed Result did not mutate the
+  entity.
+- **Detached validation-cycle-6 strict-schema control:** removed `KnownFields(true)`;
+  every prototype/unknown-field negative became readable and red-lined the focused test.
+- **Detached validation-cycle-6 association control:** replaced independently derived
+  Briefing inventory with `association.Canonical.Artifacts`; the consistently truncated
+  association closed the attempt and red-lined the exact Result CLI test.
+
+### Summary
+
+**REJECTED.** Commit `1e5bc9d2` successfully removes prototype compatibility, replaces
+the vulnerable source-position writer, and closes the self-declared association hole;
+all focused, baseline, and race tests pass. The gate remains blocked because an accepted
+`--briefing FILE` can become unresolvable on the exact Result path, and two public contract
+surfaces still promise the legacy compatibility the captain explicitly removed. Both are
+narrow corrections; re-validation should retain the clean canonical-v1 ruling.
