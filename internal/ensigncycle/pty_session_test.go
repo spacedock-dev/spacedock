@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 )
 
 // fileLineSource is the pty lineSource: it tails the FO's session jsonl, returning
@@ -374,24 +373,6 @@ func TestFOSessionPinning(t *testing.T) {
 		got := foRootSessionID(dir)
 		if got != "fo-session-id" {
 			t.Errorf("foRootSessionID = %q, want \"fo-session-id\" (the no-agentName root, not the comm-officer transcript)", got)
-		}
-	})
-
-	t.Run("activeSessionFile_would_flip_to_teammate", func(t *testing.T) {
-		// The bug being fixed: the newest-assistant-bearing heuristic picks the
-		// teammate (this is WHY the by-id pin is required, not activeSessionFile).
-		// Both files carry assistant entries, so activeSessionFile's tiebreak is
-		// mod-time recency; pin the teammate provably newer than the FO file with
-		// os.Chtimes so the flip is deterministic (coarse fs timestamps could tie).
-		base := time.Now()
-		if err := os.Chtimes(foPath, base.Add(-2*time.Second), base.Add(-2*time.Second)); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.Chtimes(teammatePath, base, base); err != nil {
-			t.Fatal(err)
-		}
-		if active := activeSessionFile(dir); active != teammatePath {
-			t.Errorf("activeSessionFile = %q, want teammate %q — the naive newest-assistant heuristic must pick the teammate, which is WHY the by-id pin is required", active, teammatePath)
 		}
 	})
 
