@@ -1,17 +1,15 @@
 package ensigncycle
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 )
 
 type multiWorkflowBootObservation struct {
-	commands            []string
+	invocations         []testInvocation
 	finalMessage        string
 	workflowDirs        []string
 	entityBefore        []string
@@ -23,42 +21,30 @@ type multiWorkflowBootObservation struct {
 	convergenceArtifact bool
 }
 
-var (
-	shellCommandSegments = regexp.MustCompile(`\r?\n|;|&&|\|\||\|`)
-	spacedockLauncher    = `(?:spacedock(?:_launcher)?|"[^"\r\n]*/spacedock"|[^ \t'"\r\n]*/spacedock|\$\{SPACEDOCK_BIN[^}]*\}|"?\$[A-Za-z_][A-Za-z0-9_]*"?)`
-	spacedockStatusCall  = regexp.MustCompile(spacedockLauncher + `[ \t]+status\b`)
-	spacedockStateCall   = regexp.MustCompile(spacedockLauncher + `[ \t]+state\b`)
-	retryHelperCall      = regexp.MustCompile(`(?:^|[ \t'"\\])(?:jq|python3)(?:[ \t'"\\]|$)|(?:^|[ \t'"\\])go[ \t]+run(?:[ \t'"\\]|$)`)
-)
-
 func assertMultiWorkflowBoot(o multiWorkflowBootObservation) error {
 	bootIdentifyCalls := 0
 	statusRetries := 0
 	helperRetries := 0
 	convergenceCalls := 0
 	workflowSpecificCalls := 0
-	for _, command := range o.commands {
-		for _, segment := range shellCommandSegments.Split(command, -1) {
-			segment = strings.TrimSpace(segment)
-			if segment == "" {
-				continue
-			}
-			if spacedockStatusCall.MatchString(segment) {
-				if strings.Contains(segment, "--workflow-dir") {
+	for _, invocation := range o.invocations {
+		if invocation.tool == "spacedock" && len(invocation.args) > 0 {
+			switch invocation.args[0] {
+			case "status":
+				if invocationHasArg(invocation, "--workflow-dir") {
 					workflowSpecificCalls++
 				}
-				if strings.Contains(segment, "--boot") && strings.Contains(segment, "--identify") && strings.Contains(segment, "--json") {
+				if invocationHasArg(invocation, "--boot") && invocationHasArg(invocation, "--identify") && invocationHasArg(invocation, "--json") {
 					bootIdentifyCalls++
 				} else {
 					statusRetries++
 				}
-			}
-			if retryHelperCall.MatchString(segment) {
-				helperRetries++
-			}
-			if spacedockStateCall.MatchString(segment) {
+			case "state":
 				convergenceCalls++
 			}
+		}
+		if invocation.tool == "jq" || invocation.tool == "python3" || (invocation.tool == "go" && len(invocation.args) > 0 && invocation.args[0] == "run") {
+			helperRetries++
 		}
 	}
 	if bootIdentifyCalls != 1 {
@@ -110,10 +96,10 @@ func containsExactLine(text, want string) bool {
 	return false
 }
 
-func gatherMultiWorkflowBootObservation(t *testing.T, fx multiWorkflowBootFixture, commands []string, finalMessage string) multiWorkflowBootObservation {
+func gatherMultiWorkflowBootObservation(t *testing.T, fx multiWorkflowBootFixture, invocations []testInvocation, finalMessage string) multiWorkflowBootObservation {
 	t.Helper()
 	obs := multiWorkflowBootObservation{
-		commands:        commands,
+		invocations:     invocations,
 		finalMessage:    finalMessage,
 		workflowDirs:    append([]string(nil), fx.workflowDirs...),
 		entityBefore:    append([]string(nil), fx.entityBefore...),
@@ -142,48 +128,11 @@ func gatherMultiWorkflowBootObservation(t *testing.T, fx multiWorkflowBootFixtur
 	return obs
 }
 
-func codexExecutedCommands(jsonl string) []string {
-	var commands []string
-	for _, line := range strings.Split(jsonl, "\n") {
-		var event codexCommandItem
-		if json.Unmarshal([]byte(line), &event) == nil && event.Type == "item.completed" && event.Item.Type == "command_execution" {
-			commands = append(commands, event.Item.Command)
-		}
-	}
-	return commands
-}
-
-func claudeExecutedCommands(stream string) []string {
-	var commands []string
-	for _, line := range strings.Split(stream, "\n") {
-		var event struct {
-			Message *struct {
-				Content []struct {
-					Type  string `json:"type"`
-					Name  string `json:"name"`
-					Input struct {
-						Command string `json:"command"`
-					} `json:"input"`
-				} `json:"content"`
-			} `json:"message"`
-		}
-		if json.Unmarshal([]byte(line), &event) != nil || event.Message == nil {
-			continue
-		}
-		for _, block := range event.Message.Content {
-			if block.Type == "tool_use" && block.Name == "Bash" {
-				commands = append(commands, block.Input.Command)
-			}
-		}
-	}
-	return commands
-}
-
 func TestMultiWorkflowBootAfterOnlyInvariant(t *testing.T) {
 	paths := []string{"/project/alpha", "/project/beta"}
 	entity := multiWorkflowBootEntity("alpha")
 	good := multiWorkflowBootObservation{
-		commands:        []string{`${SPACEDOCK_BIN:-spacedock} status --boot --identify --json`},
+		invocations:     []testInvocation{{tool: "spacedock", args: []string{"status", "--boot", "--identify", "--json"}}},
 		finalMessage:    multiWorkflowSelectionGreeting + "\n" + strings.Join(paths, "\n"),
 		workflowDirs:    paths,
 		entityBefore:    []string{entity, entity},
@@ -196,29 +145,25 @@ func TestMultiWorkflowBootAfterOnlyInvariant(t *testing.T) {
 	if err := assertMultiWorkflowBoot(good); err != nil {
 		t.Fatalf("after-only multi-workflow baseline must pass: %v", err)
 	}
-	absoluteLauncher := good
-	absoluteLauncher.commands = []string{`"/tmp/bin/spacedock" status --boot --identify --json`}
-	if err := assertMultiWorkflowBoot(absoluteLauncher); err != nil {
-		t.Fatalf("quoted absolute launcher baseline must pass: %v", err)
-	}
-
 	broken := map[string]func(*multiWorkflowBootObservation){
-		"duplicate identify": func(o *multiWorkflowBootObservation) { o.commands = append(o.commands, o.commands[0]) },
+		"duplicate identify": func(o *multiWorkflowBootObservation) { o.invocations = append(o.invocations, o.invocations[0]) },
 		"status retry": func(o *multiWorkflowBootObservation) {
-			o.commands = append(o.commands, `spacedock status --boot --json`)
+			o.invocations = append(o.invocations, testInvocation{tool: "spacedock", args: []string{"status", "--boot", "--json"}})
 		},
 		"jq retry": func(o *multiWorkflowBootObservation) {
-			o.commands = append(o.commands, `/bin/bash -lc 'jq . boot.json'`)
+			o.invocations = append(o.invocations, testInvocation{tool: "jq", args: []string{".", "boot.json"}})
 		},
 		"python retry": func(o *multiWorkflowBootObservation) {
-			o.commands = append(o.commands, `/bin/bash -lc 'python3 check.py'`)
+			o.invocations = append(o.invocations, testInvocation{tool: "python3", args: []string{"check.py"}})
 		},
 		"go-run retry": func(o *multiWorkflowBootObservation) {
-			o.commands = append(o.commands, `/bin/bash -lc 'go run ./cmd/spacedock status --boot --identify --json'`)
+			o.invocations = append(o.invocations, testInvocation{tool: "go", args: []string{"run", "./cmd/spacedock", "status", "--boot", "--identify", "--json"}})
 		},
-		"convergence": func(o *multiWorkflowBootObservation) { o.commands = append(o.commands, `spacedock state ready`) },
+		"convergence": func(o *multiWorkflowBootObservation) {
+			o.invocations = append(o.invocations, testInvocation{tool: "spacedock", args: []string{"state", "ready"}})
+		},
 		"workflow boot": func(o *multiWorkflowBootObservation) {
-			o.commands = []string{`spacedock status --boot --identify --json --workflow-dir /project/alpha`}
+			o.invocations = []testInvocation{{tool: "spacedock", args: []string{"status", "--boot", "--identify", "--json", "--workflow-dir", "/project/alpha"}}}
 		},
 		"wrong greeting": func(o *multiWorkflowBootObservation) { o.finalMessage = strings.Join(paths, "\n") },
 		"embedded greeting": func(o *multiWorkflowBootObservation) {
@@ -234,7 +179,7 @@ func TestMultiWorkflowBootAfterOnlyInvariant(t *testing.T) {
 	for name, mutate := range broken {
 		t.Run(name, func(t *testing.T) {
 			o := good
-			o.commands = append([]string(nil), good.commands...)
+			o.invocations = append([]testInvocation(nil), good.invocations...)
 			o.entityAfter = append([]string(nil), good.entityAfter...)
 			mutate(&o)
 			if err := assertMultiWorkflowBoot(o); err == nil {
