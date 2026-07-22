@@ -446,3 +446,50 @@ The live Pi ledger contained only `spacedock --version` and one `spacedock statu
 - Pi live: `go test -tags live ./internal/ensigncycle -run '^TestLivePiMultiWorkflowBootScenario$' -count=1 -v` passed.
 - Baseline: `go test ./...` passed.
 - Race: `go test ./... -race` passed.
+
+## Stage Report: validation (cycle 7)
+
+- DONE: Independently inspect commit 115f5019 and verify the new oracle derives boot and filing claims only from actual argv recorded by a test-local launcher shim, not transcript/source substrings.
+  Evidence: the inspected NUL-delimited ledger records tool plus exact argv before executing the resolved binary; boot and filing assertions consume only `[]testInvocation`. Superseded transcript parsers and the archived source fixture were removed.
+
+- DONE: Run adversarial negatives for echoed, quoted, heredoc, and conditional command-shaped text; prove they cannot populate the execution ledger or satisfy boot/filing assertions.
+  Evidence: checked-in focused tests passed, and an independent `/tmp` Go overlay left the ledger empty for echo, quoted text, heredoc text, and a false conditional branch. A true conditional branch produced exactly one `status --boot --identify --json` argv record.
+
+- DONE: Run the shared multi-workflow after-only invariant and explicit Pi live scenario, confirming one identify, zero retry/helper/convergence executions, exact standalone greeting, and unchanged durable state.
+  Evidence: the shared invariant and every mutation-negative passed. The required fresh Pi run passed in 26.62s; its ledger contained only `spacedock --version` and one `spacedock status --boot --identify --json`, the exact greeting appeared once with both workflow paths, and its immutable-state assertions remained green.
+
+- DONE: Re-run the exact filing success and adjacent failure cases through execution-grounded argv; reject any narrated false positive or real-execution false negative.
+  Evidence: the independently replayed 278-byte archived Codex command (SHA-256 `027b05c786a5558cb259a85c8a8ca0760bbe3029998c39f50e92a3e61fe69218`) passed. Narrated exact-shape, wrong-slug, unrelated-execution, and actual `status --next-id` cases all failed; real `new` and `status --new` cases passed.
+
+- DONE: Run focused tests, gofmt check, go test ./..., and go test ./... -race; verify local/remote/PR heads and cleanliness.
+  Evidence: focused status, contractlint, ledger, filing, invariant, and live-tag compile tests passed; `gofmt -l ./cmd ./internal` was empty; baseline and race suites passed. Local, tracking, remote, and PR #551 heads equal `115f5019`, and the code worktree is clean.
+
+- DONE: Record a PASSED or REJECTED recommendation with material findings separated from deferred risks.
+  Evidence: the recommendation below is PASSED; no material findings remain, and pending CI/ledger-scope considerations are separated as deferred risks.
+
+### Acceptance Criteria Cross-check
+
+- AC-1 PASSED: focused native identify tests preserve the ordered compatibility fields and verify the complete terminal envelope with `workflow_count == len(discovery)`.
+- AC-2 PASSED: zero/one/many identify, unflagged boot compatibility, local PR mirror, no-`gh`, and durable-state invariants passed.
+- AC-3 PASSED: execution-grounded checked-in and independent adversarial tests prove exactly one identify and no named retry/helper/convergence calls; the fresh Pi live run exhibits the required after-only behavior and exact greeting.
+- AC-4 PASSED: focused contractlint tests, the full docs-bearing suite, and the live greeting verify the discovery-only terminal branch in operator and user contracts.
+
+### Material Findings
+
+- None.
+
+### Deferred Risks
+
+- PR #551 offline, docs, and both install checks are successful; four model-live jobs remain `WAITING`. Any later non-success promotes to a material release/gate finding.
+- The test-local ledger intentionally intercepts the contract launcher and named retry helpers through `SPACEDOCK_BIN`/`PATH`; arbitrary deliberate absolute-path bypass is outside the launcher invariant and was not observed. Ledger file ordering is immaterial because these assertions grade cardinality and argv membership, not chronology.
+
+### Verification
+
+- Independent overlay: `go test -overlay=/tmp/pr551_cycle7_overlay.json ./internal/ensigncycle -run '^TestCycle7' -count=1 -v` passed.
+- Focused: status, contractlint, invocation-ledger, filing, and shared multi-workflow invariant commands passed.
+- Pi live: `env -u SPACEDOCK_BIN SPACEDOCK_PI_LIVE_REQUIRED=1 go test -tags live ./internal/ensigncycle -run '^TestLivePiMultiWorkflowBootScenario$' -count=1 -v` passed.
+- Baseline and race: `go test ./...` and `go test ./... -race` passed.
+
+### Recommendation
+
+**PASSED.** Commit `115f5019` repairs the cycle-6 evidence defects: boot and filing grades now derive from actual recorded argv, adversarial narration cannot satisfy them, the archived real filing execution remains accepted, and the candidate Pi run delivers the required no-retry end value without durable-state change.
