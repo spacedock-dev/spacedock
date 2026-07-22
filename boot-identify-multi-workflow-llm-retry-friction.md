@@ -189,3 +189,22 @@ After (worktree `go run ./cmd/spacedock status --boot --identify --json`): `{"co
 ### Summary
 
 Implemented the contract-first many-workflow boot identify hardening: the CLI now emits a self-describing terminal discovery envelope, and the First Officer shared core/documentation tells agents to select or engage a workflow rather than retry identify. The implementation also adds typed JSON leaves for the new boolean/count fields, pins the FO prose ratchet, and preserves the existing zero/one/many and unflagged boot compatibility tests.
+
+## Stage Report: validation
+
+- DONE: Run go test ./... and go test ./... -race in worktree .worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction.
+  Evidence: `go test ./...` and `go test ./... -race` both passed in the implementation worktree; failures in any package or race detector failures would fail this gate.
+- DONE: Verify all boot identify tests and unflagged boot compatibility assertions pass.
+  Evidence: `go test ./internal/status -run 'BootIdentify|BootPRState|NativeBoot|Boot' -count=1` and `go test ./internal/contractlint -run 'FOBootManyWorkflowDiscoveryIsTerminal' -count=1` passed; removing the new envelope, calling `gh`, mutating state, or drifting boot pins would fail these tests.
+- FAILED: Verify live before/after multi-workflow boot drive proof and retry counts are recorded.
+  Evidence defect (material, AC-3): the implementation notes record before/after CLI JSON and asserted retry counts, but do not paste a live First Officer boot-drive transcript showing before duplicate retries and after zero follow-up `status`/`jq`/`python3`/`go run` calls before workflow selection.
+- DONE: Record validation evidence in stage report.
+  Evidence: this validation report records the passing Go gates, focused boot/contract checks, a live CLI spot-check of installed-before sparse JSON vs worktree-after terminal JSON, and the AC-3 evidence defect.
+
+### Summary
+
+Validation recommends REJECTED pending AC-3 proof repair. Product behavior and compatibility tests passed, and a live CLI spot-check showed the installed binary still emits sparse many-workflow JSON while the worktree binary emits the complete terminal envelope, but the required live First Officer before/after boot-drive transcript evidence is missing.
+
+### Recommendation
+
+REJECTED — material evidence defect for AC-3. Narrow fix: add pasted live FO boot-drive before/after transcript evidence with retry counts, demonstrating zero duplicate identify/helper retries after the terminal payload/contract ratchet and before workflow selection.
