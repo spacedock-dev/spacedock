@@ -1,7 +1,7 @@
 ---
 id: 02avdajaz0q3hnjwycm5fq45
 title: Ensigns triage review findings against declared stakes before fixing — decline disposition for correct-but-disproportionate findings
-status: validation
+status: done
 source: "0260 shaping — agent-derail forensics audit, 2026-07-19."
 score: "0.7"
 sprint: durable-decisions
@@ -32,8 +32,11 @@ gates:
                 decision: approve
                 reason: Exact candidate e85eb0cf passed 12/12 validation checks, AC-1/2/3, live replay, negative controls, detached audit, full and race tests, formatting, and clean-head verification; no material finding remains.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:559
+verdict: passed
+completed: 2026-07-22T17:23:07Z
+archived: 2026-07-22T17:23:07Z
 ---
 
 `ensign-shared-core` contains zero guidance on consuming review findings — the exact actor that dutifully fixes a symlink edge case in a prototype has no rule to consult, and no disposition short of fixing exists for a substantively-correct-but-disproportionate finding. This adds the generic consumption rule (classify each finding against the workflow's committed finding-triage taxonomy AND the entity's own value ACs before fixing) and the decline disposition (correct-but-disproportionate gets a recorded decline, not a dutiful fix). **Reframe (captain-directed, 2026-07-21):** the disposition is recorded as an **advisory resolution under the gate-recorder model (3k)** — the ensign's triage is its own advisory resolution whose `includes` name each declined finding with class and why-not-material — not the `findings` prose field on a `### Feedback Cycles` entry the parked cut proposed. That answers the byte objection that parked the last cut: a per-entity structured record carries no always-loaded prompt-surface weight, where the ~2 KB prose block did. **Boundary (answered below, not assumed):** this entity owns **triage semantics only** — the rule text and the decline-as-advisory-resolution *shape* — and does NOT absorb the generic rounds-record plumbing (round briefings, room layout, frontmatter pointer, projection), which is the recorder's own generalization and belongs with a 3k successor or its own task. The rule *text* stands as approved-shaped; only the record/delivery mechanism reframes. Triage keys on per-entity value ACs + the committed taxonomy (the `validation` stage-def release-scope classification plus `.roborev.toml`'s four fields), never a workflow stakes field — that member is parked.
