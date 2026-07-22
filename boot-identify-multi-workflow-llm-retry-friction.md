@@ -239,3 +239,22 @@ REJECTED — material evidence defect for AC-3. Narrow fix: add pasted live FO b
 ### Summary
 
 I re-ran the required Go gates cleanly, but could not satisfy the narrow AC-3 evidence repair because the exact live First Officer before/after transcript snippet was not present in the accessible worktree/tmp/home transcript search, and the supervisor did not provide an artifact pointer before timeout. The implementation remains code-clean, but validation should still treat AC-3 as unresolved until an actual FO boot-drive transcript is supplied or re-run by an owning session.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Run go test ./... and go test ./... -race in worktree .worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction.
+  Evidence: `go test ./...` passed; `go test ./... -race` passed; any package failure or race detector finding would fail this gate.
+- DONE: Verify all boot identify tests and unflagged boot compatibility assertions pass.
+  Evidence: `go test ./internal/status -run 'BootIdentify|NativeBoot|Boot' -count=1` and `go test ./internal/contractlint -run 'FOBootManyWorkflowDiscoveryIsTerminal' -count=1` passed; removing the envelope/contract ratchet or drifting boot compatibility pins would fail these checks.
+- FAILED: Verify live before/after multi-workflow boot drive proof, transcript snippet, and retry counts are recorded under Validation Notes.
+  Evidence defect (material, AC-3): Validation Notes still contain CLI before/after output and an asserted after retry count, while implementation cycle 2 explicitly reports no accessible live FO before/after transcript artifact; this does not reproduce the required FO boot-drive evidence.
+- DONE: Record validation evidence in stage report.
+  Evidence: this report records the passing baseline/focused gates, live worktree CLI spot-check of the terminal payload, and the remaining AC-3 evidence defect with a REJECTED recommendation.
+
+### Summary
+
+Validation still recommends REJECTED. The shipped code path and compatibility/contract tests pass, and `go run ./cmd/spacedock status --boot --identify --json` at this multi-workflow worktree emits the complete terminal envelope, but the AC-3 live First Officer before/after transcript proof remains absent.
+
+### Recommendation
+
+REJECTED — material evidence defect for AC-3 only. Narrow fix: supply or rerun a real First Officer before/after boot-drive transcript with retry counts showing zero duplicate `status`/`jq`/`python3`/`go run` follow-up calls after the new payload/contract and before workflow selection.
