@@ -2,7 +2,7 @@
 title: "Gates & decisions"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-07-22 13:59:47"
+last_updated: "2026-07-22 14:55:13"
 ---
 
 # Gates & decisions
@@ -44,7 +44,7 @@ Material findings are the ones that should move your vote; Polish never blocks. 
 
 ## The three calls
 
-- **Approve.** The work advances to the next stage. Approving the terminal stage merges and closes it.
+- **Approve.** The decision is recorded first. A separate application step may then advance eligible work exactly once.
 - **Redo with feedback.** You accept the direction but send concrete fixes back. Name the specific asks ("tighten the AC-2 substring assertion, correct the file path claim"), not "address the reviewer's notes".
 - **Reject.** The work bounces back to the stage that owns the fix, carrying your findings.
 

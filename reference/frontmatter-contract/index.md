@@ -2,7 +2,7 @@
 title: "Frontmatter contract"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-07-22 13:59:47"
+last_updated: "2026-07-22 14:55:13"
 ---
 
 # Frontmatter contract
@@ -16,6 +16,8 @@ The workflow `README.md` frontmatter declares the entity type, the id style, and
 ## Entity
 
 Each entity's frontmatter carries its id, current stage, outcome, and worktree state. The contract is [`entity.mdschema.yml`](https://github.com/spacedock-dev/spacedock/blob/main/docs/schema/entity.mdschema.yml), which defines the fields, the custom-field policy, the recognized body headings, and the invariants.
+
+A gate decision is recorded in the entity's versioned `gates` collection before any stage transition or worker dispatch. The `spacedock gate record` verb is the sole writer for the canonical-v1 gate/attempt/Briefing/Resolution collection; callers provide a complete retained package manifest named `briefing.json`, a fully associated exact Result, or a chat decision, while the binary derives lifecycle and ids. Unknown or prototype fields inside binary-owned `gates` fail closed. The only opaque nested boundary is the known `application` field owned by the application layer. Canonical gates writes preserve top-level frontmatter outside `gates` and the entity body byte-for-byte. Each attempt stores one Briefing reference and digest: replaceable while Resolution is absent and frozen when present. `spacedock status --fields gate-state,gate-decision,gate-resolution` surfaces the current recorded result without changing the default status table.
 
 ## Sitemap
 
