@@ -35,18 +35,23 @@ Session note recorded alongside the seed (not part of this fix): the FO's own `c
 
 ## Proposed approach
 
-Fix the root cause in discovery, cheapest-first evaluation:
+**Captain re-scope (2026-07-22).** The earlier in-place prune — add `fixtures` and `testdata` to `discoverIgnoreDirs` (landed as commit 1f8b666a, since removed) — is SUPERSEDED. The captain chose to REMOVE the top-level `fixtures/` directory rather than legitimize its name in the prune set, and rejected a top-level `testdata/`. The prior cheapest-first option analysis (marker field, entity-scoped resolution) is preserved in the ideation stage report below.
 
-- **(a) Chosen — add `fixtures` and `testdata` to `discoverIgnoreDirs`.** One line in `internal/status/handlers.go`, plus a comment noting these are test-scaffolding basenames (`testdata` is the Go-tool-ignored convention; `fixtures` is this repo's), matching the philosophy the set already applies to `tests`, `vendor`, `dist`, `build`. Fixing `discoverWorkflows` fixes **every** consumer above at once — the walk simply does not descend into a `fixtures/` or `testdata/` subtree. Cheapest-sufficient because it targets the single shared root and needs no per-call-site or per-fixture work.
-  - What it costs: a real workflow deliberately placed *under* a directory named `fixtures/` or `testdata/` would no longer be discovered. Accepted — no real workflow lives there (real ones live at `docs/dev`), and this is the identical tradeoff already made for `tests`. The start-root of a walk is always inspected regardless of its own basename (only descent into a `fixtures`/`testdata` *child* is pruned), so pointing `--workflow-dir`/`--root` directly at such a path still works; only the auto-walk skips them.
+Two moves against the single shared resolver:
 
-- **(b) Rejected — a marker field on the fixture README that discovery respects.** More expensive *and* self-defeating: the marker would have to go on `site-workflow/README.md`, whose entire reason for existing is to be a *verbatim* commission output; adding a `fixture: true` field corrupts that faithfulness and breaks the refit-content-propagation test the fixture serves. A marker on the parent doc README does not help — discovery reads each directory's own README frontmatter, not an ancestor's. It also adds a new discovery predicate plus a standing "every future fixture author must remember the marker" failure mode (forget it → the bug returns silently).
+- **Relocate every fixture to package-adjacent `testdata/` (Go-idiomatic).** The three fixtures are live/manual-drive scaffolding with NO Go-test consumer (traced: the sole code reference is a reference-only classifier example, not a file read). Their drivers are the `refit` and `first-officer` skills, neither a Go package. `skills/integration` is the one Go test package among the skills (the live-drive harness) and its dir is already excluded from the contractlint instruction-surface walk (`shippedInstructionMarkdown` SkipDir's `integration`), so it is the clean package-adjacent home:
+  - `fixtures/refit-content-propagation/` → `skills/integration/testdata/refit-content-propagation/`
+  - `fixtures/entity-label-drive/` → `skills/integration/testdata/entity-label-drive/`
+  Top-level `fixtures/` ends up empty and is removed.
 
-- **(c) Rejected — entity-scoped commands resolve the workflow from the entity's state checkout.** Narrower *and* more expensive. It only helps `state commit`, which has an existing entity in a state checkout to resolve *from*. `new` creates a new entity — there is nothing to resolve from — so it stays broken, as do `status --discover`, `status --boot --identify`, and the front-door banner. It leaves the root defect (a fixture counts as a workflow) in place, so the bug resurfaces at every non-entity-scoped call site, for more code than option (a).
+- **Prune the `testdata` basename ONLY from `discoverIgnoreDirs`** (drop the `fixtures` prune — `fixtures/` no longer exists). `testdata` is the Go-tool-ignored test-scaffolding convention, so a commissioned-shape README carried as a package-adjacent fixture is no longer counted as a real workflow — the same test-scaffolding tradeoff the set already makes for `tests`/`vendor`/`dist`/`build`. Fixing `discoverWorkflows` fixes **every** auto-discovering consumer at once.
+  - What it costs: a real workflow deliberately placed *under* a `testdata/` directory would no longer be auto-discovered. Accepted — real workflows live at `docs/dev`; identical tradeoff already made for `tests`. The walk always inspects its start-root regardless of basename (only descent into a `testdata` *child* is pruned), so `--workflow-dir`/`--root` pointed directly at such a path still resolves; only the auto-walk skips it.
 
-No `--workflow-dir` / `--root` override behavior changes. The current clear-error-on-ambiguity path stays exactly as is (it is correct and out of scope).
+The moved fixtures' own READMEs point at their drivers (`skills/refit/SKILL.md`, `skills/first-officer`) and sibling dirs by relative name — all still valid, the skills are unchanged. The one code reference to a fixture path — the FO-write classifier example at `internal/contractlint/fo_write_core_mutation_gate_test.go` — is updated to the new path (still classifies `blocked-product` via `skills/**`).
 
-**Documentation:** no doc diff required. `discoverIgnoreDirs` is an internal implementation detail not enumerated in any user-facing doc (the docs-site describes `spacedock status --workflow-dir docs/dev` and boot as single-workflow; grep of `docs/` and `skills/` finds the prune list only in archived state files and roadmap notes, none rendered). This change *restores* the documented single-workflow auto-discovery, so no user-visible command surface or output wording changes.
+No `--workflow-dir` / `--root` override behavior changes. The clear-error-on-ambiguity path stays exactly as is (correct, out of scope).
+
+**Documentation:** no doc diff required. `discoverIgnoreDirs` is an internal implementation detail not enumerated in any user-facing doc; this change *restores* the documented single-workflow auto-discovery, so no user-visible command surface or output wording changes.
 
 ## Out of scope
 
@@ -59,50 +64,57 @@ No `--workflow-dir` / `--root` override behavior changes. The current clear-erro
 
 Each AC names a property of the finished task, not a stage action, and how it is verified.
 
-**AC-1 (VALUE) — In this repo, downward discovery returns EXACTLY the one real workflow.**
-The discovered-workflow set for the repo toplevel is exactly `{<repo>/docs/dev}` (count 1), down from the current 2 (`docs/dev` + `fixtures/refit-content-propagation/site-workflow`). The count is the independent baseline that can move the wrong way: too-aggressive → 0, ineffective → 2.
-Verified by: `./spacedock status --discover` from the repo root prints exactly one line, `<repo>/docs/dev`, exit 0 (currently prints two lines). A test-strength edit that reverts the prune line makes this red.
+**AC-1 (VALUE) — The top-level `fixtures/` directory is gone AND downward discovery returns EXACTLY the one real workflow.**
+Two coupled properties: (i) no top-level `fixtures/` directory remains (its three fixtures relocated under `skills/integration/testdata/`), and (ii) the discovered-workflow set for the repo toplevel is exactly `{<repo>/docs/dev}` (count 1), down from the pre-change 2 (`docs/dev` + `fixtures/refit-content-propagation/site-workflow`). The count is the independent baseline that can move the wrong way: too-aggressive → 0, ineffective → 2.
+Verified by: `test ! -d fixtures` at the repo root; and `./spacedock status --discover` from the repo root prints exactly one line, `<repo>/docs/dev`, exit 0 (pre-change printed two lines). Removing the `testdata` entry from `discoverIgnoreDirs` re-surfaces a `testdata`-nested commissioned README (AC-3 reds).
 
 **AC-2 (VALUE) — The auto-discovering commands succeed without `--workflow-dir` in this one-workflow repo.**
 `new` and `state commit` (and the read `status`) resolve `docs/dev` by discovery alone, instead of exiting non-zero with the multi-workflow "pass --workflow-dir" refusal.
-Verified by: from the repo root with no `--workflow-dir`, `./spacedock status` (read) exits 0 and lists `docs/dev` entities; a `new`/`state commit` resolution over a fixture-bearing tree resolves to the real workflow — exercised by the discovery behavior test in AC-3, since `discoverWorkflows` is the shared resolver all three call. Failure mode that would make it red: discovery again returns ≥2, re-triggering the refusal.
+Verified by: from the repo root with no `--workflow-dir`, `./spacedock status` (read) exits 0 and lists `docs/dev` entities; `new`/`state commit` share the resolver `discoverWorkflows`, exercised by the AC-3 behavior test. Failure mode that would make it red: discovery again returns ≥2, re-triggering the refusal.
 
-**AC-3 — A behavior test proves the fixtures/testdata prune excludes a nested commissioned README while still finding the real workflow.**
-A Go test builds a temp tree with a real workflow (`docs/dev/README.md`, commissioned) plus a commissioned README nested under `fixtures/…` and under `testdata/…`, calls `discoverWorkflows(repo)`, and asserts the result is exactly `[<repo>/docs/dev]`. It is the falsifiable guard: reverting the prune line re-introduces the fixture rows and reds the test.
-Verified by: the new test in `internal/status/discover_worktree_noise_test.go` (sibling of `TestDiscoverWorkflowsSkipsNestedCheckout`); `go test ./internal/status/...` green with the prune, red without it.
+**AC-3 — A behavior test proves the `testdata` prune excludes a nested commissioned README while still finding the real workflow.**
+A Go test builds a temp tree with a real workflow (`docs/dev/README.md`, commissioned) plus a commissioned README nested under `skills/integration/testdata/…` (the relocated-fixture shape), calls `discoverWorkflows(repo)`, and asserts the result is exactly `[<repo>/docs/dev]`. It is the falsifiable guard: removing the `testdata` entry from `discoverIgnoreDirs` re-introduces the fixture row and reds the test.
+Verified by: `TestDiscoverWorkflowsPrunesTestdata` in `internal/status/discover_worktree_noise_test.go` (sibling of `TestDiscoverWorkflowsSkipsNestedCheckout`); `go test ./internal/status/...` green with the prune, red without it (watched RED→GREEN).
 
-**AC-4 — The full Go suite stays green with the prune applied.**
-Adding `fixtures`/`testdata` to the prune set breaks no existing test (in particular the `testdata/*-workflow` fixtures many status tests point `--root`/`--workflow-dir` at directly, which the prune does not touch — those are start-roots, not descended children).
-Verified by: `go test ./...` and `go test ./... -race` pass. (Pre-verified during ideation: `go test ./internal/status/...` passed with the throwaway prune applied.)
+**AC-4 — The full Go suite stays green with the fixtures relocated and the prune applied.**
+Relocating the fixtures newly exposes their `*.md` frontmatter to the `internal/status` migration-check walk (it walks `skills/`, does not prune `testdata`) and to the `skills/integration` package's own guards; the `testdata` prune touches no start-root `--root`/`--workflow-dir` fixture (those are inspected directly, not as descended children). Nothing breaks.
+Verified by: `go test ./...` and `go test ./... -race` pass — including `internal/status` (migration check over the moved fixtures), `skills/integration`, and `internal/contractlint` (the updated FO-write classifier example + the `shippedInstructionMarkdown` guard, which excludes the `integration` dir).
 
 ## Test plan
 
-- **Primary (behavior, cheap, ~35 LOC):** a Go unit test alongside `internal/status/discover_worktree_noise_test.go`, same shape as `TestDiscoverWorkflowsSkipsNestedCheckout` — write a temp tree with the real `docs/dev` workflow plus commissioned READMEs nested under `fixtures/` and `testdata/`, assert `discoverWorkflows(repo)` returns exactly `[docs/dev]`. This is written first and watched fail (returns the fixture rows) before the prune line lands. This one test covers AC-1/AC-2/AC-3 because `discoverWorkflows` is the single resolver behind `--discover`, `new`, `state commit`, boot `--identify`, and the front-door banner — driving each command separately would re-prove the same resolver, so the simplest sufficient proof is one test at the resolver plus the real-repo `--discover` check.
-- **Real-repo check (AC-1, CLI, near-zero cost):** `./spacedock status --discover` from the repo root returns the single `docs/dev` line, exit 0.
-- **Regression (AC-4):** `go test ./...`, then `go test ./... -race`. No live-workflow test needed — the claim is discovery filtering, not runtime integration.
+- **Primary (behavior, ~36 LOC):** `TestDiscoverWorkflowsPrunesTestdata`, a Go unit test alongside `internal/status/discover_worktree_noise_test.go`, same shape as `TestDiscoverWorkflowsSkipsNestedCheckout` — write a temp tree with the real `docs/dev` workflow plus a commissioned README nested under `skills/integration/testdata/…`, assert `discoverWorkflows(repo)` returns exactly `[docs/dev]`. Written first and watched fail (returns the fixture row) before the `testdata` prune lands. It covers AC-1(ii)/AC-2/AC-3 because `discoverWorkflows` is the single resolver behind `--discover`, `new`, `state commit`, boot `--identify`, and the front-door banner — driving each command separately re-proves the same resolver.
+- **Value check — `fixtures/` gone (AC-1(i), near-zero cost):** `test ! -d fixtures` at the repo root; the git move is a set of pure renames.
+- **Real-repo check (AC-1(ii), CLI, near-zero cost):** `./spacedock status --discover` from the repo root returns the single `docs/dev` line, exit 0.
+- **Regression (AC-4):** `go test ./...`, then `go test ./... -race`. Includes the migration-check walk over the relocated fixtures (they must parse cleanly) and the `skills/integration` + `contractlint` guards.
 
-The only new mechanism is the two added prune basenames; the value AC it serves is AC-1 (discovered count 2→1). The simplest alternative to a behavior test — asserting the source contains the strings `"fixtures"`/`"testdata"` — is insufficient: it is a static prose check that passes even if the map key is misspelled or the walk never consults it, so it cannot fail for the right reason. Exercising `discoverWorkflows` over a real tree is the proof.
+The moved fixtures have no automated Go-test consumer (traced), so "run the consumer green" reduces to: the relocated `*.md` still parse under the migration check and the full suite stays green. The simplest alternative to a behavior test — asserting the source contains the string `"testdata"` — is insufficient: it is a static prose check that passes even if the map key is misspelled or the walk never consults it. Exercising `discoverWorkflows` over a real tree is the proof.
 
 ## Expected surface
 
-- `internal/status/handlers.go` — +1 changed line (the two basenames on the existing `discoverIgnoreDirs` line) plus ~2 comment lines: ~3 LOC.
-- `internal/status/discover_worktree_noise_test.go` — one appended `Test…` function: ~35 LOC.
+Code (3 files):
+- `internal/status/handlers.go` — `"testdata": true` on the `discoverIgnoreDirs` map + expanded comment: ~4 changed lines.
+- `internal/status/discover_worktree_noise_test.go` — one appended `TestDiscoverWorkflowsPrunesTestdata`: ~36 LOC.
+- `internal/contractlint/fo_write_core_mutation_gate_test.go` — 1 line: the classifier-example path updated to the new location.
 
-Total ~38 LOC across 2 files, almost all test. Tolerance ±15 LOC and ±1 file (if the test lands as a new `discover_fixtures_prune_test.go` with its own ABOUTME header instead of appending, add ~4 header LOC and one file).
+Moves (7 files, pure renames, 0 content change):
+- `fixtures/refit-content-propagation/**` (2 files) → `skills/integration/testdata/refit-content-propagation/**`
+- `fixtures/entity-label-drive/**` (5 files) → `skills/integration/testdata/entity-label-drive/**`
+
+Total ~41 code LOC across 3 files + 7 renames + the removed empty `fixtures/` dir. Tolerance ±15 LOC; the file count is fixed by the fixture set (7 moves) plus the 3 code files.
 
 ## Spike (riskiest unverified mechanism)
 
-Riskiest unverified claim: the chosen filter actually excludes the fixture while still finding the real workflow, and does not break the existing discovery tests. **Spiked and proven:**
+Riskiest unknown for the re-scope (named in the dispatch): the three fixtures may have no consuming Go package, so "relocate to a consuming package's testdata/" might have no valid home. **Traced and resolved:**
 
-1. Reproduced the defect against the real binary: `./spacedock status --discover` from the repo root returns 2 workflows (`docs/dev` + `fixtures/refit-content-propagation/site-workflow`), exit 0.
-2. Applied the throwaway edit (`"fixtures": true, "testdata": true` on the `discoverIgnoreDirs` line), rebuilt `./cmd/spacedock`, re-ran `status --discover` → returned EXACTLY `/…/docs/dev` (count 2→1). Reverted the edit (`git checkout --`), tree clean.
-3. With the same throwaway edit applied, `go test ./internal/status/...` → PASS (16.3s) — the `testdata/*-workflow` fixtures are start-roots the walk inspects directly, not descended `testdata` children, so the prune does not touch them. Reverted.
+1. **Consumer trace** (grep over all `*.go`/`*.sh`/`*.yml`/`*.md`, `.github`, `go:embed`, Makefile): none of the three fixtures has a Go-test consumer that reads it. `refit-content-propagation/site-workflow` is driven manually against `skills/refit/SKILL.md` Phase 3b; `entity-label-drive/*` by a live first-officer drive. The sole code reference — `fo_write_core_mutation_gate_test.go` — is reference-only (a classifier path-string example; it reads `fo-write-core.md`, never the fixture). Escalated the no-Go-consumer ambiguity to the FO; captain chose `skills/integration/testdata/` (Option B: the one real Go package among the skills, already excluded from the contractlint instruction-surface walk — `shippedInstructionMarkdown` SkipDir's `integration`).
+2. **Second riskiest — migration-check exposure:** relocating under `skills/` newly exposes fixture frontmatter to the `internal/status` migration-check walk (walks `skills/`, does not prune `testdata`). Zero-cost pre-check confirmed every fixture frontmatter parses cleanly (top-level scalars agree with a direct yaml.v3 decode; the bare RFC3339 `started` is safe under the node-based comparison). `go test ./internal/status/` GREEN post-move.
+3. **Discovery mechanism:** `TestDiscoverWorkflowsPrunesTestdata` watched RED (fixture returned as a second workflow) before the `testdata` prune, GREEN after. Real binary `status --discover` from the repo root → exactly `docs/dev`, exit 0; `fixtures/` removed.
 
-The throwaway tree seeds the AC-3 test. Relied-on proven mechanisms: `discoverWorkflows`'s existing `ignore[ent.Name()]` basename prune (already the mechanism for `tests`/`vendor`/`dist`) and the always-walk-the-start-root behavior.
+Relied-on proven mechanisms: `discoverWorkflows`'s existing `ignore[ent.Name()]` basename prune (already the mechanism for `tests`/`vendor`/`dist`) and the always-walk-the-start-root behavior.
 
 ## Validation note
 
-The **detached adversarial audit trigger applies**: this change touches two of the four high-stakes surfaces — the **front-door launcher** (`frontdoor.go` consumes `DiscoverWorkflows`) and the **`status` mutation/guard/discovery path** (`ResolveWorkflowDir` backs `--set` mutation resolution, the merge guard, and `new`/`state commit`). Validation should run the read-only audit on a throwaway checkout: construct an adversarial edit (e.g., revert the prune line, or misspell a basename) and confirm the AC-3 behavior test reds. The AC-provenance sub-trigger does NOT fire — the value AC's expected value (count 1, the known real `docs/dev`) is an independent constant, not derived from the package's own production functions or constants.
+The **detached adversarial audit trigger applies**: this change touches two of the four high-stakes surfaces — the **front-door launcher** (`frontdoor.go` consumes `DiscoverWorkflows`) and the **`status` mutation/guard/discovery path** (`ResolveWorkflowDir` backs `--set` mutation resolution, the merge guard, and `new`/`state commit`). Validation should run the read-only audit on a throwaway checkout: construct a claim-breaking edit (remove the `testdata` entry from `discoverIgnoreDirs`, or misspell it) and confirm `TestDiscoverWorkflowsPrunesTestdata` reds. Additionally confirm the value AC's move dimension: `fixtures/` is gone and its contents are present under `skills/integration/testdata/` as pure renames (no content drift), and the relocated fixtures parse under the `internal/status` migration-check walk. The AC-provenance sub-trigger does NOT fire — the value AC's expected value (count 1, the known real `docs/dev`, plus the structural `fixtures/`-absent fact) is an independent constant, not derived from the package's own production functions or constants.
 
 ## Stage Report: ideation
 
@@ -162,3 +174,22 @@ Added `fixtures` and `testdata` to `discoverIgnoreDirs` in `internal/status/hand
 ### Summary
 
 Recommend **PASSED**. Both value ACs (AC-1 count 2→1, AC-2 exit-0-vs-refusal) have valid, reproduced evidence on an independent moving baseline; the AC-3 behavior test is falsifiable and proven strong (reds under full-revert and each single-basename misspell); `go test ./...` and `-race` are green. The detached adversarial audit on a throwaway checkout is CLEAN — every claim-breaking edit reds the guard. One deferred risk recorded (real workflow nested under `fixtures`/`testdata`), outside the promised workflow. No material findings block the gate.
+
+## Stage Report: implementation (cycle 2)
+
+Captain re-scope (2026-07-22): relocate fixtures to package-adjacent testdata (Option B, `skills/integration/testdata/`) + prune `testdata`-only. Supersedes the prune-both implementation (commit 1f8b666a, removed) and its validation reported above.
+
+- DONE: Revise the entity's Proposed approach / Acceptance criteria / Test plan / Expected surface to the re-scoped target.
+  All four rewritten (plus Spike and Validation note, for consistency). Value AC-1 now couples "no top-level `fixtures/`" with "discovery returns exactly `docs/dev`"; the prior cheapest-first option analysis is preserved in the ideation stage report.
+- DONE: Trace each fixture's consumer first (riskiest unknown).
+  Grep over all `*.go`/`*.sh`/`*.yml`/`*.md`, `.github`, `go:embed`, Makefile: no fixture has a Go-test consumer; drivers are the `refit` + `first-officer` skills (manual/live). The sole code ref (`fo_write_core_mutation_gate_test.go`) is reference-only. Escalated the no-Go-consumer ambiguity; captain confirmed Option B.
+- DONE: Spike the move mechanism before executing all.
+  Adapted (no consumer test exists to "run green"): zero-cost pre-check that every fixture frontmatter parses cleanly under the migration-check yaml.v3 consistency walk, then ran the three newly-exposed packages (`internal/status`, `skills/integration`, `internal/contractlint`) immediately post-move before the full suite. All green.
+- DONE: Execute the move + `testdata`-only prune + TDD the behavior test + update references.
+  `git mv fixtures/{refit-content-propagation,entity-label-drive}` → `skills/integration/testdata/` (7 pure renames), removed the empty `fixtures/`. Added `"testdata": true` to `discoverIgnoreDirs` (`handlers.go`); the `fixtures` prune was never on this base (origin/main), so nothing to drop. `TestDiscoverWorkflowsPrunesTestdata` watched RED→GREEN. Updated the FO-write classifier example to `skills/integration/testdata/entity-label-drive/README.md` (still `blocked-product` via `skills/**`). Left the `docs/roadmap` debrief's historical "untracked `fixtures/refit-content-propagation/`" line unchanged — an accurate past-incident record, not a live pointer, and `docs/roadmap` is pruned from the migration check + outside the instruction-surface walk.
+- DONE: go test ./... + -race green; fixture-consuming tests green; diff review confirms `fixtures/` gone; value AC.
+  `go test ./...` → 0 FAIL. `go test ./... -race` → 0 FAIL, 0 DATA RACE (15 packages ok). `status --discover` from the worktree root → exactly `…/docs/dev`, exit 0, 1 line. `test ! -d fixtures` → true. Surface: 43 insertions / 3 deletions across 3 code files + 7 renames (within tolerance).
+
+### Summary
+
+Per the captain's 2026-07-22 re-scope, eliminated the top-level `fixtures/` directory by relocating its three fixtures to `skills/integration/testdata/` — the one Go test package among the skills, already excluded from the contractlint instruction-surface walk — and pruned only the `testdata` basename from `discoverWorkflows`. The riskiest unknown, that the fixtures have no Go-test consumer, was traced and escalated; the captain chose the `skills/integration/testdata/` home. Confirmed the relocated frontmatter parses under the migration-check walk (a new exposure since it walks `skills/`). TDD'd the `testdata` prune (RED→GREEN); full suite and `-race` green; discovery returns exactly `docs/dev` and the top-level `fixtures/` is gone.
