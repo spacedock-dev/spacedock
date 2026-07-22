@@ -147,3 +147,38 @@ The task is ready for staff review as a 0.26 correctness fix. The key design is 
 ### Summary
 
 Commit `e0822912` makes a folder-form entity one durable Git pathspec while retaining the single-file boundary for flat entities and rejecting noncanonical path aliases before resolution. Real-Git coverage now proves complete folder artifacts, sibling isolation, artifact-only commits, clean no-ops, flat compatibility, and both disjoint and conflicting two-host behavior; the full normal and race suites pass.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — Roborev `branch_final` job 534; surface 3 files/263 LOC vs estimate 3 files/185-380 LOC (93% of 283-line midpoint); AC unchanged
+- Cycle 2: REJECTED — Roborev `branch_final` job 537; surface 3 files/337 LOC vs estimate 3 files/185-380 LOC (119% of 283-line midpoint); AC unchanged
+- Cycle 3: REJECTED → DECLINED/DEFERRED — Roborev `branch_final` job 540; surface 3 files/429 LOC vs estimate 3 files/185-380 LOC (152% of 283-line midpoint); AC unchanged — stale comment fixed in `d4d39ed6`; Commander retained exact current-form scope and deferred conversion until a supported entity-form conversion workflow exists
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Change `state commit <slug>` so flat-form entities stage exactly `<slug>.md` while folder-form entities stage exactly `<slug>/`, including tracked modifications/deletions and new non-ignored reports/artifacts.
+  Commits `e0822912` and `f58dfe20`; real-Git tests fail if folder contents, index deletion, complete-folder deletion, or flat deletion are omitted.
+- DONE: Preserve strict entity scoping: never stage dirty sibling entities or unrelated top-level state paths, and keep existing local-only, push, reject/rebase, conflict-HALT, no-force, JSON/text, and clean no-op behavior.
+  Commit `030b9c3c` makes every scoped Git operation literal; the explicit `:(glob)` regression fails if matching tracked/untracked siblings reach the local commit or remote.
+- DONE: Reuse the existing canonical entity discovery/slug authority where possible; reject path-bearing, traversal, absolute, dot, and nested pseudo-slug operands before side effects without minting a conflicting slug grammar.
+  Canonical on-disk resolution retains exact current form, with tracked-path fallback only for deletion; invalid-operand tests prove HEAD, index, bytes, and origin unchanged.
+- DONE: Add the real-Git regression first: index + tracked report + untracked artifact commit together; sibling dirt remains; artifact-only change is not a false no-op; clean rerun is a no-op.
+  `TestStateCommitFolderIncludesWholeEntity` was RED before production edits and is GREEN with exact committed-path and residual-dirt assertions.
+- DONE: Extend two-host real-Git coverage so disjoint entities rebase/push and conflicting paths anywhere within the same folder entity halt cleanly without force or discard.
+  Folder disjoint-writer and nested-conflict tests prove linear rebase/push, exit-3 abort, named nested path, and preservation of both writers.
+- DONE: Preserve flat-form compatibility with exact committed-path assertions and existing state-commit output/error behavior.
+  Flat update and deletion tests require exactly `first-task.md`; the complete existing state-commit suite passes.
+- DONE: Update the state command reference with the approved flat/folder commit-unit and top-level-slug wording; add no new command, package, dependency, schema, registry, or background lifecycle.
+  The final four-commit branch changes only the assigned three files and retains the folder pathspec as the smallest mechanism.
+- DONE: Run gofmt -w ./cmd ./internal, focused state-commit tests, go test ./..., and go test ./... -race; record exact evidence, actual surface versus estimate, and commit the clean worktree.
+  All commands passed after the last semantic change; final surface is production 62 lines vs 20-60, tests 363 vs 160-300, docs 9 vs 5-20, within the approved 2x tolerance; code worktree is clean at `d4d39ed6`.
+
+### Roborev disposition
+
+- Job `534` (`correctness F`, `product P`, synthesis `F`): one medium tracked-deletion finding, fixed by `f58dfe20` with index-only, complete-folder, and flat-deletion regressions.
+- Job `537` (`correctness F`, `product P`, synthesis `F`): one high literal-pathspec isolation finding, fixed by `030b9c3c` with explicit Git-magic sibling and nonexistent-alias regressions.
+- Job `540` (`correctness F`, `product P`, synthesis `F`): low stale-comment finding fixed by `d4d39ed6`; medium flat↔folder conversion request declined/deferred by Commander because dual-form staging conflicts with the approved exact current-form unit. Promote when a supported entity-form conversion workflow exists.
+
+### Summary
+
+The final implementation makes folder artifacts and tracked deletions durable without weakening exact entity isolation, including for canonical filenames containing Git pathspec syntax. All material in-scope Roborev findings are fixed; the sole semantic expansion is explicitly deferred under the Commander ruling, with its promotion trigger recorded above.
