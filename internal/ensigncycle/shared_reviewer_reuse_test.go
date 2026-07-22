@@ -194,8 +194,8 @@ func assertClaudeReviewerReuse(stream string) error {
 // assertClaudeSingleEntityRejectionFlow is the single-entity (`-p`) Claude
 // producer-signal assertion for the rejection-flow scenario. The Claude runner
 // launches `spacedock claude -- -p {prompt}` with a prompt naming one entity. The
-// `-p` FO drives EITHER bare OR team mode (it opts into the background back-channel
-// when SendMessage is exposed), so the contract admits two valid end-states: bare
+// `-p` FO drives EITHER bare OR team mode (it opts into the background inter-agent
+// communication when SendMessage is exposed), so the contract admits two valid end-states: bare
 // fresh-dispatches a distinct reviewer per cycle (reviewerFresh); team keeps the
 // cycle-1 reviewer alive and reuses it (reviewerReuse). The invariant across both is
 // that the cycle-2 re-review reaches a VALIDATION worker and NEVER collapses onto the

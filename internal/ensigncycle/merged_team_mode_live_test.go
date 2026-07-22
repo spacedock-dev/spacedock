@@ -209,7 +209,7 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 		t.Errorf("merged host init tool surface unexpectedly contains TeamCreate/TeamDelete — not a merged host\ninit tools: %v\nArtifacts: %s", initTools, artifactDir)
 	}
 	if !stringInSlice("SendMessage", initTools) {
-		t.Errorf("merged host init tool surface missing SendMessage (the back-channel tool)\ninit tools: %v\nArtifacts: %s", initTools, artifactDir)
+		t.Errorf("merged host init tool surface missing SendMessage (the inter-agent communication tool)\ninit tools: %v\nArtifacts: %s", initTools, artifactDir)
 	}
 	if streamHasTeamCreateToolUse(lines) {
 		t.Errorf("the merged FO emitted a TeamCreate/TeamDelete tool_use — it must use the named-background dispatch, not the native team registry\nArtifacts: %s", artifactDir)

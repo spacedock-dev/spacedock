@@ -1,14 +1,12 @@
 # First Officer Dispatch Module (Claude)
 
-The Claude dispatch parts (fo-dispatch-core.md defers them to the runtime adapter), read alongside the core at the first worker dispatch: the worker back-channel, the `Agent()` spawn call, the `SendMessage` reuse-advance handle, the idle guardrail and the failure-recovery trigger lines, the context-budget probe, and the event-loop reconcile sweep.
+The Claude dispatch parts (fo-dispatch-core.md defers them to the runtime adapter), read alongside the core at the first worker dispatch: inter-agent communication, the `Agent()` spawn call, the `SendMessage` reuse-advance handle, the idle guardrail and the failure-recovery trigger lines, the context-budget probe, and the event-loop reconcile sweep.
 
-## Worker Back-Channel
+## Inter-Agent Communication
 
-Claude PROVIDES the worker back-channel (fo-dispatch-core.md `## Dispatch Adapter`, the organizing capability) via named background subagents **when the team-mode opt-in is enabled** — detect it at boot by probing `SendMessage` availability (`ToolSearch(query="select:SendMessage", max_results=1)` / enabled-tools); present when enabled, else fall back to fresh one-shot dispatch (`«addressable-worker»` ABSENT). When enabled there is no separate setup step: a worker is `Agent(name=…, run_in_background=true)` (no `team_name`) and messages the lead mid-run via `SendMessage(to="main")`. `spacedock dispatch build` emits this shape (`name` present, `team_name` absent, `run_in_background` true) for you to map verbatim (below); Claude Code records each spawned member's `agentType` on disk automatically, at an entrypoint-dependent path: the reconcile sweep below resolves the interactive one and degrades to git-only headless. Dispatch directly — there is nothing to load first.
+Claude PROVIDES inter-agent communication (fo-dispatch-core.md `## Dispatch Adapter`, the organizing capability) via named background subagents **when the team-mode opt-in is enabled** — detect it at boot by probing `SendMessage` availability (`ToolSearch(query="select:SendMessage", max_results=1)` / enabled-tools); present when enabled, else fall back to fresh one-shot dispatch (`«addressable-worker»` ABSENT). When enabled there is no separate setup step: a worker is `Agent(name=…, run_in_background=true)` (no `team_name`) and messages the lead mid-run via `SendMessage(to="main")`. `spacedock dispatch build` emits this shape (`name` present, `team_name` absent, `run_in_background` true) for you to map verbatim (below); Claude Code records each spawned member's `agentType` on disk automatically, at an entrypoint-dependent path: the reconcile sweep below resolves the interactive one and degrades to git-only headless. Dispatch directly — there is nothing to load first.
 
-**Legacy override (delete this line to sunset legacy mode):** if `ToolSearch(query="select:TeamCreate", max_results=1)` matches before the first dispatch (the runtime still exposes the native team registry), `Skill(skill="spacedock:using-legacy-claude-team")` and follow it — it OVERRIDES every tool-call signature below; otherwise this file applies as written.
-
-In single-entity mode, skip the background back-channel and use bare-mode dispatch for all agent spawning — the blocking call prevents premature session termination in `-p` mode.
+In single-entity mode, skip background inter-agent communication and use bare-mode dispatch for all agent spawning — the blocking call prevents premature session termination in `-p` mode.
 
 The startup boot read is an FO-internal read; consume it as JSON: `status --boot --json` returns one object with the keys `command`, `mods`, `id_style`, `next_id`, `min_prefix` (present only for `sd-b32`), `orphans`, `pr_state`, `dispatchable`, `team_state` — every value a string. For `sd-b32`, call `status --next-id --id-seed "{slug-or-title}"` and optionally pass `--id-actor` so the SHA-derived candidate includes creation context.
 
@@ -24,9 +22,9 @@ On a zero-exit `spacedock dispatch build` (`host` derived from `CLAUDECODE`; pas
 ```
 Agent(
     subagent_type=output.subagent_type,
-    name=output.name,                           // the lead→worker back-channel; omit if bare mode (field absent)
+    name=output.name,                           // the lead→worker channel; omit if bare mode (field absent)
     team_name=output.team_name,                 // absent in the normal shape; map it verbatim if the build emits it
-    run_in_background=output.run_in_background,  // the worker→lead back-channel; omit when field absent
+    run_in_background=output.run_in_background,  // the worker→lead channel; omit when field absent
     description=output.description,             // REQUIRED — Agent tool rejects missing description
     model=output.model,                         // omit when output.model is null
     prompt=output.prompt                        // ~175 chars; ensign Reads dispatch_file_path on first action
@@ -65,7 +63,7 @@ After dispatching an ensign (or routing work to a kept-alive ensign), you are wa
 
 - emit `SendMessage(to="{ensign}", message={"type":"shutdown_request"})` — this is the exact bug this section exists to prevent. Before a completion signal the entity is not terminal, so reaping the worker is premature. (At the TERMINAL boundary the opposite holds — see `## Terminal Worker Teardown`, where workers are reaped per-name.)
 - emit `Bash` with commands like `sleep 30` or `wait` — the runtime handles the wait for you; sleeping in Bash wastes time and does not accelerate delivery.
-- re-dispatch a replacement ensign — you have no evidence the first ensign failed.
+- re-dispatch a replacement ensign — you have no evidence the first ensign failed. (The `## Dispatch Failure Retry` rung below is the one exception: it fires ONLY on an OBSERVED dispatch failure — an `Agent()` error, or a dispatched session that ended with no completion signal AND no stage report on the entity — which is exactly the evidence this ban says is absent. Absent that observed failure, the ban holds.)
 - write reassuring text like "Waiting for completion signal" — this converts idle-polling into a multi-turn generation loop that drifts into hallucination on subsequent wake-ups.
 
 Just emit `end_turn` with empty content. The runtime will wake you up again when a real event arrives.
@@ -80,9 +78,18 @@ Just emit `end_turn` with empty content. The runtime will wake you up again when
 
 **DISPATCH IDLE GUARDRAIL.** After dispatching an agent, wait for an explicit completion message. Idle notifications are normal between-turn state for background workers — they are not a reason to tear a worker down, and they usually mean the agent is waiting for input. Only shut down when: (1) the agent sends a completion message, (2) the captain explicitly requests shutdown, or (3) you are transitioning the entity to a new stage (AFTER you have observed the prior stage's completion signal per the list above). Never interpret idle notifications as "stuck" or "unresponsive."
 
-## Degraded Mode (trigger)
+## Dispatch Failure Retry
 
-Any ONE of these trips Degraded Mode — a session-wide, irreversible fallback to sequential bare dispatch: (1) any SECOND dispatch failure within the session (no time window, no counter — the FO tracks it by its own observation, not a mechanism); (2) the captain command `/spacedock bare`; (3) `Agent` or `SendMessage` themselves unavailable. On trip, FIRST ACTION: stop all named/background dispatch for the remainder of the session and do not route `SendMessage` to any pre-trip worker name. Then `Skill(skill="spacedock:fo-dispatch-recovery")` and follow its `## Degraded Mode` section: the bare-dispatch invariants, the verbatim captain report, and the cooperative shutdown sweep.
+A dispatch failure of `(entity, stage)` is exactly one of two observed things, with no error-string classification: `Agent()` returns an error, OR a dispatched worker's session ends with NO completion signal (per `## Awaiting Completion`) AND no stage report on the entity. On such a failure, read that entity's durable `### Dispatch Retries` ledger before re-attempting:
+
+- **No retry recorded for this `(entity, stage)`** — append one ledger line, then re-attempt ONCE. If the failed worker is still addressable (a transport STALL), the re-attempt is a NUDGE: `SendMessage` it to resume from its transcript, preserving its accumulated context. If no live worker remains (an `Agent()` error, or a terminated session), the re-attempt is a FRESH `Agent()` dispatch of the same `(entity, stage)` carrying a distinct `-retry` suffix on the `{worker_key}-{slug}-{stage}` name, under dead-ensign handling — `Skill(skill="spacedock:fo-dispatch-recovery")`, its `## Context Budget Failure and Dead Ensign Handling` section: mark the prior worker dead in session memory, do NOT cooperatively shut it down.
+- **A retry already recorded for this `(entity, stage)`** — the second consecutive failure. HOLD that entity un-dispatched, surface it to the captain, and stop re-attempting it. Every OTHER entity keeps running; the session dispatch mode NEVER changes.
+
+Only ONE entity is ever affected, and only reversibly. Two adjacent captain conditions are NOT this rung and NOT a mode transition: `/spacedock bare` is a plain captain instruction to dispatch bare from that point; `Agent`/`SendMessage` themselves being unavailable is the ordinary teams-unavailable condition selecting bare dispatch where dispatch happens (`## Inter-Agent Communication`'s ABSENT branch). Bare mode itself is untouched.
+
+**The `### Dispatch Retries` ledger** is the authority the "retry once" bound rests on: session memory is a fast-path cache, the ledger is the tiebreak, re-read before every re-attempt so a compaction cannot forget a retry and respawn a dead API unboundedly. Write it as an FO-owned `### Dispatch Retries` subsection on the entity body (the worktree copy when `worktree:` is set, else main), reusing the `### Feedback Cycles` write pattern on a DISTINCT axis so a retry never advances the feedback counter — one line per retry:
+
+    - Retry 1: {stage} — {agent-error | no-completion-signal}; {nudged | re-dispatched -retry}
 
 ## Terminal Worker Teardown
 
@@ -103,7 +110,7 @@ This is the Claude realization of `«context-budget»()` (also used by feedback 
 
 ## Feedback Rejection Flow (bare mode)
 
-In bare mode, the feedback rejection flow is sequential: dispatch fix agent (wait for completion), then dispatch reviewer (wait for completion), then present at gate. With the background back-channel, the fix agent and reviewer can interact via messaging.
+In bare mode, the feedback rejection flow is sequential: dispatch fix agent (wait for completion), then dispatch reviewer (wait for completion), then present at gate. With background inter-agent communication, the fix agent and reviewer can interact via messaging.
 
 ## Claude binding: «roster-reconcile»()
 

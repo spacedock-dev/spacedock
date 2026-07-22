@@ -12,6 +12,6 @@ ID     SLUG                           CURRENT              NEXT                 
 003    003-gamma                      implementation       done                 no
 TEAM_STATE
 present: false
-hint: run TeamCreate before first team-mode dispatch (claude runtime supports it)
+hint: dispatch a named background Agent for team-mode messaging (no TeamCreate needed)
 
 ===== stderr =====

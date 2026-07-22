@@ -46,18 +46,18 @@ func dispatchRecoveryEntity() string {
 		"A single dispatchable entity at implementation. Dispatch one worker to append the marker `" + dispatchRecoveryMarker + "` to this file, then stop — do not advance to done.\n"
 }
 
-// degradedBarePrompt rides the `/spacedock bare` trigger in the INITIAL `-p` prompt
-// (the M4 headless-transport decision: a mid-run captain turn is not injectable
-// through the headless runner, so the trigger fires at turn 0 instead of after a
-// real dispatch failure). Every subsequent Agent() dispatch in this run must
-// therefore already be bare-shaped from the first dispatch onward.
+// bareReachablePrompt carries the `/spacedock bare` instruction in the INITIAL `-p`
+// prompt. Post-retirement, `/spacedock bare` is a plain captain instruction to
+// dispatch bare from that point (not a mode transition), so every Agent() dispatch
+// in this run must be bare-shaped from the first dispatch onward, with NO retired
+// Degraded Mode captain report and NO recovery-skill load.
 //
 // The trigger phrase must NOT be the first four characters of the `-p` argument:
 // a live probe proved `claude -p "/spacedock bare\n..."` gets intercepted by the
 // CLI's own slash-command dispatcher (final message: "Unknown command:
 // /spacedock") before the FO contract ever sees the text. Prefixing a sentence
 // that quotes the captain's command keeps it plain prompt content instead.
-func degradedBarePrompt() string {
+func bareReachablePrompt() string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"The captain has issued the command: /spacedock bare",
 		"Use $spacedock:first-officer for this whole run.",

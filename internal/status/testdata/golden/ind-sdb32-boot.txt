@@ -13,6 +13,6 @@ ID     SLUG                           CURRENT              NEXT                 
 ab     abcdefghjkmnpqrstvwxyz23-one   backlog              done                 no
 TEAM_STATE
 present: false
-hint: run TeamCreate before first team-mode dispatch (claude runtime supports it)
+hint: dispatch a named background Agent for team-mode messaging (no TeamCreate needed)
 
 ===== stderr =====

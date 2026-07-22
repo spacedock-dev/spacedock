@@ -46,25 +46,26 @@ func writeStubBreakGlassSpacedock(t *testing.T, realBinary string) string {
 	return dir
 }
 
-// TestLiveDegradedBareRecovery is AC-2's behavioral proof: the `/spacedock bare`
-// trigger (riding in the initial `-p` prompt per the M4 headless-transport
-// decision) must produce the verbatim captain report, a
-// Skill(skill="spacedock:fo-dispatch-recovery") load, and bare-shaped Agent() calls
-// (no `name`, no `run_in_background`) for the remainder of the run.
+// TestLiveBareReachable is AC-2's behavioral proof (post-retirement): a plain
+// `/spacedock bare` instruction (riding in the initial `-p` prompt) must produce
+// bare-shaped Agent() calls (no `name`, no `run_in_background`) for the run, WITHOUT
+// the retired Degraded Mode captain report and WITHOUT a
+// Skill(skill="spacedock:fo-dispatch-recovery") load. A drive still emitting either is
+// now a FAILURE.
 // Run it against a real credential:
-// `go test -tags live -run TestLiveDegradedBareRecovery ./internal/ensigncycle -v -count=1`.
-func TestLiveDegradedBareRecovery(t *testing.T) {
+// `go test -tags live -run TestLiveBareReachable ./internal/ensigncycle -v -count=1`.
+func TestLiveBareReachable(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 	workflowRoot := t.TempDir()
 	writeDispatchRecoveryWorkflow(t, workflowRoot)
 
 	scenario := sharedRuntimeScenario{
-		name:          "degraded-bare",
+		name:          "bare-reachable",
 		oldPythonTest: "n/a (net-new; dispatch-exception-paths-deferred-module)",
-		intent:        "The `/spacedock bare` trigger produces the verbatim captain report, loads spacedock:fo-dispatch-recovery, and every subsequent Agent() dispatch is bare-shaped.",
+		intent:        "A plain `/spacedock bare` instruction produces bare-shaped Agent() dispatch for the run, without the retired Degraded Mode captain report and without loading spacedock:fo-dispatch-recovery.",
 	}
-	result := runner.run(t, scenario, workflowRoot, degradedBarePrompt())
-	if err := assertDegradedBareObservables(result.stream); err != nil {
+	result := runner.run(t, scenario, workflowRoot, bareReachablePrompt())
+	if err := assertBareReachableObservables(result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())

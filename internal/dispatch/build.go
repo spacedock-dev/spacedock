@@ -67,7 +67,7 @@ var modelEnum = map[string]bool{"sonnet": true, "opus": true, "haiku": true, "fa
 // JSON literal null; Name / TeamName / RunInBackground are *T with omitempty so
 // bare-mode dispatches omit the keys entirely (absent, not null). RunInBackground
 // is set only on the merged Claude shape (.178+: named background teammate, no
-// team_name) — it carries the worker→lead back-channel half of the dispatch (the
+// team_name) — it carries the worker→lead inter-agent communication half of the dispatch (the
 // `name` carries the lead→worker half), so a legacy team-name or bare dispatch
 // omits it.
 type buildOutput struct {
@@ -311,7 +311,7 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// true)) with no team registry name. It is distinct from legacy team mode
 	// (team_name present, requires TeamCreate) and from bare mode (no name at all,
 	// sequential). The merged shape emits a name (the lead→worker SendMessage and
-	// reuse-advance handle), run_in_background (the worker→lead back-channel), and
+	// reuse-advance handle), run_in_background (the worker→lead inter-agent communication), and
 	// no team_name. Claude-only: codex/pi have their own non-team named-dispatch
 	// shapes handled by their host branches.
 	mergedMode := !bareMode && host == "claude" && teamName == ""

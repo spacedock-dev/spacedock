@@ -1,7 +1,7 @@
 //go:build live
 
 // ABOUTME: Live team-mode e2e over the pty/tmux driver — resurrects the two retired forced-team
-// ABOUTME: tests: comm-officer roster injection (AC-3) and the bounded TERMINAL_TEARDOWN_BOUNDED marker (AC-4).
+// ABOUTME: tests: comm-officer roster injection (AC-3) and team-mode dispatch-to-terminal (AC-4).
 package ensigncycle
 
 import (
@@ -128,27 +128,17 @@ func TestLivePtyStandingResidencyInjectsCommOfficer(t *testing.T) {
 // dispatch DRIVES THE ENTITY TO A TERMINAL STATE, resurrected over the pty transport
 // (the retired TestLiveEnsignCycleTeamTeardown). It boots a REAL interactive
 // `spacedock claude`, forces team mode, drives a full TeamCreate → dispatch →
-// terminalize cycle, and accepts EITHER valid terminus:
-//
-//   - (a) the clean dispatch-to-terminal HAPPY path: the FO drove the entity to its
-//     terminal/archived state (status: done + a stage-report + a path-scoped commit) —
-//     in the interactive/tmux world the launcher just kills the session once the work
-//     is finished, so a clean terminalize is a fully valid terminus; OR
-//   - (b) the cap-exhaustion path: the FO emits the contract-mandated
-//     TERMINAL_TEARDOWN_BOUNDED marker (a text/thinking block it authors, not a
-//     contract-Read), graded by the EXISTING gradeTerminalTeardown /
-//     markerEmittedByAssistant over the captured live stream — the SAME grader the
-//     offline fixture suite uses, no parallel grading stack.
+// terminalize cycle, and asserts the clean dispatch-to-terminal terminus: the FO
+// drove the entity to its terminal/archived state (status: done + a stage-report + a
+// path-scoped commit). In the interactive/tmux world the launcher just kills the
+// session once the work is finished, so a clean terminalize is the valid terminus.
 //
 // The load-bearing behavior the live test proves is that the DISPATCH MECHANISM
-// reaches a gate/terminal state, NOT that the FO necessarily hits the bounded-teardown
-// edge. The marker is a headless-`-p` edge-case fallback (#275/#282) for a stuck-roster
-// process that cannot self-exit; an interactive launcher just kills the session, so a
-// clean dispatch-to-terminal is the happy path and a valid terminus. The marker remains
-// ONE acceptable terminus, not the only one — its cap-exhaustion shape is graded
-// deterministically OFFLINE (gradeTerminalTeardown + teardown_grade_test.go +
-// teardown_grade_watcher_test.go with synthetic fixtures), which this live oracle does
-// not duplicate or weaken. Skips (never fatals) without auth (AC-6).
+// reaches a gate/terminal state. (The legacy cap-exhaustion TERMINAL_TEARDOWN_BOUNDED
+// marker terminus was retired with the legacy bounded TeamDelete teardown; it was a
+// headless-`-p` edge-case fallback for a stuck-roster process that cannot self-exit,
+// and the interactive launcher's clean-terminal happy path never needed it.) Skips
+// (never fatals) without auth (AC-6).
 func TestLivePtyEnsignCycleTeamTeardown(t *testing.T) {
 	// Legacy lane: drives native TeamCreate on an interactive session. On a merged
 	// host (claude ≥2.1.178, native team tools gone) it cannot run, so SKIP rather
@@ -206,51 +196,30 @@ func TestLivePtyEnsignCycleTeamTeardown(t *testing.T) {
 	}
 
 	// Step 2 (the team-only coverage this test exists for): wait for the dispatch to
-	// reach EITHER valid terminus, then assert that terminus is real and correct.
+	// drive the entity to its terminal state, then assert that terminus is real and
+	// correct.
 	//
-	// The two termini, both proving the dispatch drove the entity to a terminal state:
-	//   - clean dispatch-to-terminal (happy path): the on-disk entity reached its
-	//     terminal/archived state (status: done + a stage-report). A team FO archives
-	//     the entity as part of finalize, so this is observable on disk regardless of
-	//     whether a teardown edge was hit.
-	//   - bounded teardown (cap-exhaustion path): the FO AUTHORS the
-	//     TERMINAL_TEARDOWN_BOUNDED marker in the live stream — the EXISTING
-	//     markerEmittedByAssistant discriminator the offline fixture suite greens on.
+	// The terminus proving the dispatch drove the entity to a terminal state is the
+	// clean dispatch-to-terminal happy path: the on-disk entity reached its
+	// terminal/archived state (status: done + a stage-report). A team FO archives the
+	// entity as part of finalize, so this is observable on disk. (The legacy
+	// cap-exhaustion TERMINAL_TEARDOWN_BOUNDED marker terminus was retired with the
+	// legacy bounded TeamDelete teardown; the interactive launcher just kills the
+	// session on clean finalize, which is the interactive happy path anyway.)
 	//
 	// expectCondition drains the stream each poll (keeping the watcher transcript and
-	// the no-progress budget fresh) and returns once EITHER signal holds. The
+	// the no-progress budget fresh) and returns once the entity is terminal. The
 	// dispatch-close budget bounds STREAM SILENCE, not wallclock — it resets on every
 	// drained line, so a multi-turn finalize that keeps streaming never trips it.
-	markerSeen := func() bool {
-		for _, line := range splitStreamLines(watcher.fullTranscript()) {
-			if markerEmittedByAssistant(line) {
-				return true
-			}
-		}
-		return false
-	}
 	entityTerminal := func() bool {
 		entity, _, found := locateEntity(root, "make-it-work")
 		return found && liveStageReportHeading.MatchString(entity) && frontmatterField.MatchString(entity)
 	}
-	reachedTerminus := func() bool { return markerSeen() || entityTerminal() }
-	if err := watcher.expectCondition(reachedTerminus, quietBudgetDispatchClose, "team-mode terminus"); err != nil {
+	if err := watcher.expectCondition(entityTerminal, quietBudgetDispatchClose, "team-mode terminus"); err != nil {
 		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), rootResolved); wrongRoot != nil {
 			t.Fatalf("live team-teardown drive reached no terminus due to a wrong-root boot: %v\nUnderlying watcher error: %v\nArtifacts: %s", wrongRoot, err, session.artifactDir)
 		}
-		t.Fatalf("live team-teardown drive reached neither terminus (clean terminal entity state nor TERMINAL_TEARDOWN_BOUNDED marker): %v\nFO pane:\n%s\nArtifacts: %s", err, driver.captureFOPane(session.tmuxName), session.artifactDir)
-	}
-
-	// If the FO took the cap-exhaustion path, the marker terminus must be a REAL
-	// FO-authored emission, not a contract-Read of the marker string. Re-grading the
-	// captured stream with the EXACT offline gradeTerminalTeardown proves the live
-	// transcript carries the same authored-marker shape the offline fixture suite
-	// greens on — the marker stays a fully valid terminus, graded by the unchanged
-	// grader, never weakened.
-	if markerSeen() {
-		if ok, reason := gradeTerminalTeardown(splitStreamLines(watcher.fullTranscript())); !ok {
-			t.Fatalf("the live stream contained the marker but offline gradeTerminalTeardown REDs it (not an FO-authored emission): %s\nArtifacts: %s", reason, session.artifactDir)
-		}
+		t.Fatalf("live team-teardown drive reached no clean terminal entity state: %v\nFO pane:\n%s\nArtifacts: %s", err, driver.captureFOPane(session.tmuxName), session.artifactDir)
 	}
 
 	// Whichever terminus the FO took, the entity must be in its terminal/archived
@@ -279,7 +248,7 @@ func TestLivePtyEnsignCycleTeamTeardown(t *testing.T) {
 }
 
 // splitStreamLines splits a newline-joined transcript back into the []string the
-// offline gradeTerminalTeardown consumes.
+// line-oriented offline graders consume.
 func splitStreamLines(stream string) []string {
 	if stream == "" {
 		return nil

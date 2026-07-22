@@ -57,7 +57,7 @@ var executablePath = os.Executable
 
 const spacedockBinEnv = "SPACEDOCK_BIN"
 
-// agentTeamsEnv is the env flag associated with claude's worker↔FO back-channel
+// agentTeamsEnv is the env flag associated with claude's worker↔FO inter-agent communication
 // (SendMessage/TeamCreate). The authoritative enabler is ~/.claude/settings.json
 // (env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 + teammateMode:auto), which re-applies
 // the flag to every child regardless of shell env; the launcher export below does
@@ -76,7 +76,7 @@ func launchEnv(parent []string) []string {
 // already set it — an explicit operator value (even =0) is preserved. This is a
 // best-effort export for users without the authoritative settings.json enabler
 // (see agentTeamsEnv) and a no-op when settings already enable it; it does NOT
-// independently enable the back-channel. Claude-only: codex/pi do not call this.
+// independently enable inter-agent communication. Claude-only: codex/pi do not call this.
 func withAgentTeams(env []string) []string {
 	if hasEnv(env, agentTeamsEnv) {
 		return env

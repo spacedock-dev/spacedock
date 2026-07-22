@@ -4,56 +4,84 @@ package ensigncycle
 
 import "testing"
 
-// degradedBareGoodStream is a hand-authored representative stream (NOT a captured
-// live run — the live baseline capture this scenario needs is a separate,
-// credentialed step) shaped like the real multi-delta runner output: a thinking
-// delta, a Skill(spacedock:fo-dispatch-recovery) tool_use delta, a text delta
-// carrying the verbatim captain report, then two bare-mode Agent() calls (neither
-// carries `name` nor `run_in_background`).
-const degradedBareGoodStream = `{"type":"assistant","message":{"id":"msg1","content":[{"type":"thinking","thinking":"second dispatch failure — tripping Degraded Mode"}]}}
-{"type":"assistant","message":{"id":"msg1","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
-{"type":"assistant","message":{"id":"msg2","content":[{"type":"text","text":"Falling back to bare mode for the remainder of this session due to infrastructure failure. Prior background agents are presumed-zombified; I will not route work to them or through the team registry."}]}}
-{"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch","prompt":"..."}}]}}
-{"type":"assistant","message":{"id":"msg4","content":[{"type":"tool_use","id":"t3","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch 2","prompt":"..."}}]}}`
+// boundedRetryGoodStream is a hand-authored representative stream shaped like the
+// real multi-delta runner output: a text delta acknowledging an Agent() error, the
+// failed initial Agent() dispatch, then exactly one bounded re-dispatch carrying the
+// `-retry` suffix on the same `{worker_key}-{slug}-{stage}` stem, and NO third
+// attempt.
+const boundedRetryGoodStream = `{"type":"assistant","message":{"id":"m1","content":[{"type":"text","text":"Agent() returned an error dispatching widget-task implementation; recording retry 1 and re-dispatching once."}]}}
+{"type":"assistant","message":{"id":"m1","content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"description":"initial dispatch"}}]}}
+{"type":"assistant","message":{"id":"m2","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation-retry","run_in_background":true,"description":"bounded re-dispatch"}}]}}`
 
-func TestAssertDegradedBareObservablesOffline(t *testing.T) {
-	if err := assertDegradedBareObservables(degradedBareGoodStream); err != nil {
-		t.Fatalf("the positive fixture (recovery skill loaded, verbatim report, bare Agent calls) must pass: %v", err)
+func TestAssertBoundedRetryObservablesOffline(t *testing.T) {
+	if err := assertBoundedRetryObservables(boundedRetryGoodStream); err != nil {
+		t.Fatalf("the positive fixture (one dispatch, one -retry re-dispatch, no third attempt) must pass: %v", err)
 	}
 }
 
-// TestAssertDegradedBareObservablesCatchesMissingSkillLoad is the RED control for
-// observable (i): a stream with the captain report and bare Agent calls but NO
-// Skill(skill="spacedock:fo-dispatch-recovery") tool_use must fail.
-func TestAssertDegradedBareObservablesCatchesMissingSkillLoad(t *testing.T) {
-	stream := `{"type":"assistant","message":{"id":"msg2","content":[{"type":"text","text":"Falling back to bare mode for the remainder of this session due to infrastructure failure."}]}}
-{"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch"}}]}}`
-	if err := assertDegradedBareObservables(stream); err == nil {
-		t.Fatal("a stream with no Skill(skill=\"spacedock:fo-dispatch-recovery\") tool_use must fail — the trigger did not load the recovery skill")
+// TestAssertBoundedRetryObservablesCatchesNoRetry is the RED control for the bound's
+// lower edge: a dispatch that failed but was NEVER retried (no `-retry` re-dispatch)
+// must fail — a dispatch failure must be retried once before anything holds.
+func TestAssertBoundedRetryObservablesCatchesNoRetry(t *testing.T) {
+	stream := `{"type":"assistant","message":{"id":"m1","content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"description":"initial dispatch"}}]}}`
+	if err := assertBoundedRetryObservables(stream); err == nil {
+		t.Fatal("a stream with a failed dispatch but NO -retry re-dispatch must fail — a dispatch failure must be retried once")
 	}
 }
 
-// TestAssertDegradedBareObservablesCatchesMissingCaptainReport is the RED control
-// for observable (ii): the skill loads and Agent calls are bare, but no text block
-// carries the verbatim captain report sentence.
-func TestAssertDegradedBareObservablesCatchesMissingCaptainReport(t *testing.T) {
-	stream := `{"type":"assistant","message":{"id":"msg1","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
-{"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch"}}]}}`
-	if err := assertDegradedBareObservables(stream); err == nil {
-		t.Fatal("a stream missing the verbatim captain report sentence must fail")
+// TestAssertBoundedRetryObservablesCatchesThirdAttempt is the RED control for the
+// bound's upper edge: a THIRD Agent() dispatch for one `(entity, stage)` (past the
+// initial + one `-retry`) must fail — the retry is bounded to a single re-attempt.
+func TestAssertBoundedRetryObservablesCatchesThirdAttempt(t *testing.T) {
+	stream := `{"type":"assistant","message":{"id":"m1","content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true}}]}}
+{"type":"assistant","message":{"id":"m2","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation-retry","run_in_background":true}}]}}
+{"type":"assistant","message":{"id":"m3","content":[{"type":"tool_use","id":"t3","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation-retry-again","run_in_background":true}}]}}`
+	if err := assertBoundedRetryObservables(stream); err == nil {
+		t.Fatal("a third Agent() dispatch for one (entity, stage) must fail — the retry is bounded to one re-attempt")
 	}
 }
 
-// TestAssertDegradedBareObservablesCatchesNamedAgentAfterTrip is the RED control for
-// observable (iii): an Agent() call that STILL carries `name` (a reuse-shaped call,
-// the exact bug Degraded Mode's Effects forbid) after the trip must fail — even
-// though the skill loaded and the report fired.
-func TestAssertDegradedBareObservablesCatchesNamedAgentAfterTrip(t *testing.T) {
-	stream := `{"type":"assistant","message":{"id":"msg1","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
-{"type":"assistant","message":{"id":"msg2","content":[{"type":"text","text":"Falling back to bare mode for the remainder of this session due to infrastructure failure."}]}}
-{"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"stale-worker-name","run_in_background":true,"description":"still team-shaped"}}]}}`
-	if err := assertDegradedBareObservables(stream); err == nil {
-		t.Fatal("an Agent() call carrying `name`/`run_in_background` after Degraded Mode tripped must fail — bare mode requires both omitted")
+// bareReachableGoodStream is a hand-authored representative post-retirement bare
+// drive: a bare-shaped Agent() call (neither `name` nor `run_in_background`), with NO
+// retired Degraded Mode captain report and NO recovery-skill load.
+const bareReachableGoodStream = `{"type":"assistant","message":{"id":"m1","content":[{"type":"text","text":"The captain asked for bare dispatch; dispatching one worker at a time, blocking on each."}]}}
+{"type":"assistant","message":{"id":"m2","content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch","prompt":"..."}}]}}`
+
+func TestAssertBareReachableObservablesOffline(t *testing.T) {
+	if err := assertBareReachableObservables(bareReachableGoodStream); err != nil {
+		t.Fatalf("the positive fixture (bare Agent, no retired report, no recovery-skill load) must pass: %v", err)
+	}
+}
+
+// TestAssertBareReachableObservablesCatchesRetiredReport is the wrong-way RED
+// control (ii): a bare drive that STILL emits the retired Degraded Mode captain
+// report must fail — the report was retired with Degraded Mode.
+func TestAssertBareReachableObservablesCatchesRetiredReport(t *testing.T) {
+	stream := `{"type":"assistant","message":{"id":"m1","content":[{"type":"text","text":"Falling back to bare mode for the remainder of this session due to infrastructure failure."}]}}
+{"type":"assistant","message":{"id":"m2","content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch"}}]}}`
+	if err := assertBareReachableObservables(stream); err == nil {
+		t.Fatal("a stream still emitting the retired Degraded Mode captain report must fail — the report was retired")
+	}
+}
+
+// TestAssertBareReachableObservablesCatchesRecoverySkillLoad is the wrong-way RED
+// control (iii): a post-retirement bare drive that loads
+// Skill(skill="spacedock:fo-dispatch-recovery") must fail.
+func TestAssertBareReachableObservablesCatchesRecoverySkillLoad(t *testing.T) {
+	stream := `{"type":"assistant","message":{"id":"m1","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
+{"type":"assistant","message":{"id":"m2","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch"}}]}}`
+	if err := assertBareReachableObservables(stream); err == nil {
+		t.Fatal("a post-retirement bare drive that loads spacedock:fo-dispatch-recovery must fail")
+	}
+}
+
+// TestAssertBareReachableObservablesCatchesNoBareAgent is the RED control for
+// observable (i): a stream whose only Agent() call carries `name`/`run_in_background`
+// (a team-shaped call, not bare) must fail — bare dispatch was not reached.
+func TestAssertBareReachableObservablesCatchesNoBareAgent(t *testing.T) {
+	stream := `{"type":"assistant","message":{"id":"m1","content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"description":"team-shaped"}}]}}`
+	if err := assertBareReachableObservables(stream); err == nil {
+		t.Fatal("a stream with only a name/run_in_background Agent() (no bare-shaped call) must fail — bare dispatch was not reached")
 	}
 }
 

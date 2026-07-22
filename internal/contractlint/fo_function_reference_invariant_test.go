@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-// foFunctionReferencePaths is the 13-file union the mutable-address lint scans. The
+// foFunctionReferencePaths is the 12-file union the mutable-address lint scans. The
 // BUDGET is not this union: no single FO ever loads all three host adapters, so the
 // byte ratchet below is per-host over foSharedLoadPaths + foHostLoadPaths.
 var foFunctionReferencePaths = []string{
@@ -28,7 +28,6 @@ var foFunctionReferencePaths = []string{
 	"skills/first-officer/references/pi-first-officer-runtime.md",
 	"skills/present-gate/SKILL.md",
 	"skills/feedback-rejection-flow/SKILL.md",
-	"skills/using-legacy-claude-team/SKILL.md",
 	"skills/fo-dispatch-recovery/SKILL.md",
 }
 
@@ -46,13 +45,12 @@ var foSharedLoadPaths = []string{
 }
 
 // foHostLoadPaths adds each host's adapter file(s) and the trigger skills reachable
-// only on that host (using-legacy-claude-team and fo-dispatch-recovery are named
-// only from the Claude dispatch module). load(H) = foSharedLoadPaths + this.
+// only on that host (fo-dispatch-recovery is named only from the Claude dispatch
+// module). load(H) = foSharedLoadPaths + this.
 var foHostLoadPaths = map[string][]string{
 	"claude": {
 		"skills/first-officer/references/claude-first-officer-runtime.md",
 		"skills/first-officer/references/claude-fo-dispatch.md",
-		"skills/using-legacy-claude-team/SKILL.md",
 		"skills/fo-dispatch-recovery/SKILL.md",
 	},
 	"codex": {
@@ -68,9 +66,9 @@ var foHostLoadPaths = map[string][]string{
 // under another host's headroom. Growing a host's load past its constant is a
 // deliberate re-baseline edit here, with the growth justified in the change.
 var foHostLoadBaselineBytes = map[string]int{
-	"claude": 111183,
-	"codex":  74608,
-	"pi":     70725,
+	"claude": 95378,
+	"codex":  74593,
+	"pi":     70723,
 }
 
 var mutableProcedureAddress = regexp.MustCompile(`(?i)(?:\bsteps?[- ]\d+(?:\.\d+)?(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?|\breuse[- ]conditions?[- ]?\d+|\btiers?[- ]\d+|\btiers?\s+\d+(?:\s+and\s+\d+)?|\bentry-point principle\s+\d+|\b(?:signals?|items?)\s*\(\d+(?:\s*,\s*\d+)*(?:\s*,?\s*or\s*\d+)?\s+above\))`)
@@ -190,7 +188,7 @@ func TestFOHostPromptLoadRatchetDiscriminates(t *testing.T) {
 }
 
 // TestFOHostLoadSetsCoverAddressLintUnion keeps the two scopes in sync: the union of
-// the shared load and every host's load equals the 13-file set the mutable-address
+// the shared load and every host's load equals the 12-file set the mutable-address
 // lint scans, so neither list can drop or gain a file without the other noticing.
 func TestFOHostLoadSetsCoverAddressLintUnion(t *testing.T) {
 	union := map[string]bool{}
@@ -322,7 +320,6 @@ func TestFOFunctionRequiredCallSites(t *testing.T) {
 		{"skills/first-officer/references/fo-dispatch-core.md", "## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration", []string{"«roster-reconcile»()", "«hooks.run»(\"idle\")"}},
 		{"skills/first-officer/references/fo-merge-core.md", "## «merge.guard»(slug): auto-arm → block-on-open-PR → finalize-on-merge-sentinel, then archive", []string{"«worker.shutdown»()", "«hooks.run»(\"merge\")"}},
 		{"skills/feedback-rejection-flow/SKILL.md", "## Feedback Rejection Flow", []string{"«context-budget»()", "«addressable-worker»"}},
-		{"skills/using-legacy-claude-team/SKILL.md", "## «legacy-team.recover»(): recover a desynchronized legacy team", []string{"Fresh-suffixed TeamCreate", "Degraded Mode", "Surface to captain"}},
 	}
 	for _, tc := range sites {
 		section := foMarkdownSection(t, readRepoFile(t, filepath.FromSlash(tc.path)), tc.heading)
@@ -337,7 +334,6 @@ func TestFOFunctionRequiredCallSites(t *testing.T) {
 		{"skills/first-officer/references/first-officer-shared-core.md", "## «interaction.boundary»(): route interactive and headless launch behavior"},
 		{"skills/first-officer/references/first-officer-shared-core.md", "## «hooks.run»(point): run registered lifecycle hooks"},
 		{"skills/first-officer/references/fo-dispatch-core.md", "## «dispatch.checklist»(entity, stage): assemble dispatch linchpins"},
-		{"skills/using-legacy-claude-team/SKILL.md", "## «legacy-team.recover»(): recover a desynchronized legacy team"},
 	}
 	for _, owner := range uniqueOwners {
 		body := readRepoFile(t, filepath.FromSlash(owner.path))
@@ -358,11 +354,10 @@ func TestFOFunctionNormalizationPreservationSuite(t *testing.T) {
 		{"reuse", "skills/first-officer/references/fo-dispatch-core.md", []string{"## Reuse and Fresh Dispatch"}, []string{"«context-budget»()", "«addressable-worker»", "fresh: true", "«reuse.model-match»"}},
 		{"completion", "skills/first-officer/references/fo-dispatch-core.md", []string{"## «completion-signal»: the signals that trigger the completion-verify path"}, []string{"runtime-binding", "stage report"}},
 		{"terminal-teardown", "skills/first-officer/references/fo-merge-core.md", []string{"## «merge.guard»(slug): auto-arm → block-on-open-PR → finalize-on-merge-sentinel, then archive"}, []string{"teardown", "best-effort", "drop them from session memory"}},
-		{"legacy-recovery", "skills/using-legacy-claude-team/SKILL.md", []string{"## «legacy-team.recover»(): recover a desynchronized legacy team", "## Team Creation"}, []string{"Fresh-suffixed TeamCreate", "Degraded Mode", "Surface to captain"}},
 		{"hooks", "skills/first-officer/references/first-officer-shared-core.md", []string{"## «hooks.run»(point): run registered lifecycle hooks", "## Mod Hook Convention"}, []string{"startup", "idle", "merge", "alphabetically"}},
 		{"write-permission", "skills/first-officer/references/fo-write-core.md", []string{"## Mutation Gate"}, []string{"classify", "blocked-product", "exact task and target path"}},
 		{"approval-evidence-feedback", "skills/first-officer/references/first-officer-shared-core.md", []string{"## Completion and Gates"}, []string{"Stage Report", "AC coverage cross-check", "captain", "«feedback.route»"}},
-		{"claude-binding", "skills/first-officer/references/claude-fo-dispatch.md", []string{"## Worker Back-Channel"}, []string{"Agent", "SendMessage"}},
+		{"claude-binding", "skills/first-officer/references/claude-fo-dispatch.md", []string{"## Inter-Agent Communication"}, []string{"Agent", "SendMessage"}},
 		{"pi-binding", "skills/first-officer/references/pi-first-officer-runtime.md", []string{"## Runtime implementation"}, []string{"subagent", "intercom", "member_shutdown"}},
 	}
 	for _, tc := range checks {
@@ -401,8 +396,6 @@ func TestFOLocalOrderedProceduresPreserved(t *testing.T) {
 		{"skills/first-officer/references/fo-dispatch-core.md", "## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration", []string{"0.5", "1", "2", "3"}, []string{"«addressable-worker»", "mod-block", "status --next", "«hooks.run»", "«roster-reconcile»"}},
 		{"skills/present-gate/SKILL.md", "### Captain-facing assembly rules", sequence(1, 11), []string{"Lede first", "Chosen direction", "Stage Report", "Reviewer findings", "Recommendation", "Bounce-back", "format-pedantry", "worktree", "Target length", "declared label", "verification state"}},
 		{"skills/feedback-rejection-flow/SKILL.md", "## Feedback Rejection Flow", sequence(1, 7), []string{"feedback-to", "Feedback Cycles", "cycle 3", "«context-budget»", "«addressable-worker»", "reviewer", "gate flow"}},
-		{"skills/using-legacy-claude-team/SKILL.md", "## «legacy-team.recover»(): recover a desynchronized legacy team", sequence(1, 3), []string{"Fresh-suffixed TeamCreate", "Degraded Mode", "Surface to captain"}},
-		{"skills/using-legacy-claude-team/SKILL.md", "## Legacy override: «worker.shutdown»()", sequence(1, 4), []string{"shutdown_request", "TeamDelete", "settle", "TERMINAL_TEARDOWN_BOUNDED"}},
 	}
 	for _, tc := range cases {
 		section := foMarkdownSection(t, readRepoFile(t, filepath.FromSlash(tc.path)), tc.heading)
