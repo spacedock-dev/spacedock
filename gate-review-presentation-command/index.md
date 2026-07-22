@@ -1,6 +1,6 @@
 ---
 title: Gate presentation as an overridable channel with atomic result retention
-status: ideation
+status: implementation
 source: "Split from the gate-recorder task (3k), captain-approved 2026-07-21. The subspace-coupled presentation half; 3k cycles 11-12 are its banked design history."
 id: xbatj4hxtxw9t83vvmfem27f
 gates:
@@ -75,11 +75,12 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
               note: "Subspace multi-artifact float, no annotations; provider result and review log retained in-room. The decoupled architecture is approved: presentation as an overridable present-gate channel, the binary subspace-free by checkable criterion. ADOPTION PROVENANCE (captain-confirmed in chat, 2026-07-21): person:reviewer at this float was the captain personally; the FO adopted the provider's advisory result as the captain's binding approval on that basis. The provider envelope (binding:false) is evidence, not the binding record — this note is the durable authorization the promotion previously lacked."
 sprint: durable-decisions
 group: recorder
 started: 2026-07-21T01:43:36Z
+worktree: .worktrees/spacedock-ensign-gate-review-presentation-command
 ---
 
 Gate presentation is an **overridable channel of the present-gate skill**, not a spacedock binary verb. The present-gate skill is the existing presentation authority (the captain-facing gate template + assembly rules); its DEFAULT channel is chat, already its only behavior today. A workflow or session may declare an OVERRIDE channel — a hardened Subspace float (the `review-local-zellij` lineage with the retention contract: caller-owned result path, room-resident from the first byte, probe-first ritual) — presenting the design as a briefing package in a blocking float and returning a retained result. Spacedock's binary carries **zero** Subspace knowledge; the only Subspace-coupled artifact is the opt-in override script, so the cross-repo release-train coupling (this design's biggest declared liability) dissolves to that script. The duties that genuinely need binary support — result validation, provider id-normalization, and the record handoff — are **recorder-side** (they validate what gets recorded, whatever the channel) and are proposed as a small extension of the recorder's existing parse-and-verify step via the dogfooding change protocol; the id-mapping rule specified in 3k's `gate-resolution-frontmatter-contract.md` moves its implementation home from the presentation side to the recorder (owner-tag amendment proposed below). Atomic retention lives in the override script under a testable contract whose drive suite is this task's 12 red-fixture spike assertions, run at validation. Evidence base: the 0260 shaping float findings 1-15 (blank-float EOF defect, launcher repair, probe-first ritual, retention-deleted-on-failure incidents, and finding 15 — the captain's own approval destroyed when a dead launcher unlinked its scratch result; finding 14 is a deliberate live-session numbering skip) in the shaping debrief and 3k's attempt-7 resolution provenance note. Kept from the prior attempts: the no-subspace fallback (now simply the default channel), the probe ritual, and every red fixture. Land after the recorder (3k).
