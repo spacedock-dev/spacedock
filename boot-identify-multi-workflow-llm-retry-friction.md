@@ -273,3 +273,22 @@ Validation still recommends REJECTED. The shipped code path and compatibility/co
 ### Recommendation
 
 REJECTED — material evidence defect for AC-3 only. Narrow fix: supply or rerun a real First Officer before/after boot-drive transcript with retry counts showing zero duplicate `status`/`jq`/`python3`/`go run` follow-up calls after the new payload/contract and before workflow selection.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Run go test ./... and go test ./... -race in worktree .worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction.
+  Evidence: `go test ./...` passed; `go test ./... -race` passed; any package failure or race detector failure would fail this gate.
+- DONE: Verify all boot identify tests and unflagged boot compatibility assertions pass.
+  Evidence: `go test ./internal/status -run 'BootIdentify|NativeBoot|Boot' -count=1` and `go test ./internal/contractlint -run 'FOBootManyWorkflowDiscoveryIsTerminal' -count=1` passed; removing the envelope/contract ratchet, drifting boot pins, or changing branch boundaries would fail these checks.
+- FAILED: Verify live before/after multi-workflow boot drive execution transcript and retry counts are recorded under Validation Notes for AC-3.
+  Evidence defect (material, AC-3): Validation Notes contain live CLI JSON output and asserted/prose retry counts, but not a pasted live First Officer before/after boot-drive transcript artifact; implementation cycle 2 also reports no accessible transcript artifact.
+- DONE: Record validation evidence in stage report.
+  Evidence: this report records the baseline/focused test gates, live worktree CLI spot-check of the terminal payload, AC coverage, and the remaining AC-3 evidence defect.
+
+### Summary
+
+Validation still recommends REJECTED for AC-3 evidence only. Code-level behavior, compatibility, contract ratchet tests, and a live worktree `go run ./cmd/spacedock status --boot --identify --json` spot-check all pass, but the required live First Officer before/after transcript proof remains absent, so the gate cannot validate the promised retry-loop elimination.
+
+### Recommendation
+
+REJECTED — material evidence defect for AC-3. Narrow fix: provide or rerun a real First Officer boot-drive before/after transcript with retry counts showing zero duplicate `status`/`jq`/`python3`/`go run` follow-up calls after the new terminal payload/contract and before workflow selection.
