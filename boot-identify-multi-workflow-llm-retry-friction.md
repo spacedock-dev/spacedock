@@ -1,6 +1,6 @@
 ---
 title: Self-describing boot identify schema and contract hint to eliminate LLM duplicate CLI retry loop
-status: validation
+status: implementation
 score: 0.85
 id: 32vshm0h2h04gs7hzcf315g0
 source: "recorded Pi First Officer boot session at this repository root, cross-checked against PR #480"
@@ -140,6 +140,7 @@ Ideation scoped the fix to the many-workflow `--boot --identify` terminal branch
 - Cycle 2: REJECTED — captain/subspace; surface ideation vs estimate n/a; AC narrowed: reorder design contract-first. Reviewer feedback: reorder the design contract-first — branch-shape «state.boot» effect/done-when and «interaction.boundary»'s greet line for the many branch (these replace, not accompany, the appended Startup hint), keep the payload envelope as the machine-readable hardening, add the ab sibling note with the genuine-multi-workflow residual as the entity's justification, name the shared-core ratchet re-baseline in the expected surface, and fill source:.
 - Cycle 3: REJECTED — validation/ensign; surface implementation vs validation; AC narrowed: paste live FO before/after transcript evidence for AC-3. Validator feedback: AC-3 evidence defect — the implementation notes record before/after CLI JSON and asserted retry counts, but do not paste a live First Officer boot-drive transcript snippet showing before duplicate retries and after zero follow-up status/jq/python3/go run calls before workflow selection.
 - Cycle 4: REJECTED — captain/subspace; surface validation vs merge; AC narrowed: capture live First Officer before/after boot drive execution transcript in Validation Notes. Reviewer feedback: as recommended (accepting validator's REJECTED to produce full transcript proof).
+- Cycle 5: REJECTED — codex-live CI/captain; surface 6 files/133 changed LOC vs estimate 180 LOC (74%); AC unchanged. Design-reset decision: captain reconfirmed a narrow implementation pass that preserves the approved boot-identify design, rebases PR #551 onto current main, and repairs the observed Codex filing-detector false negative with an exact archived-command regression before fresh validation.
 
 
 
