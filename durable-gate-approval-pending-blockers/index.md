@@ -1,6 +1,6 @@
 ---
 title: Gate recorder — durable gates records with binary-owned writes
-status: validation
+status: implementation
 score: "0.80"
 source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
@@ -1374,6 +1374,7 @@ Baseline and race suites pass, formatting is clean, and the present implementati
 - Cycle 4: RECONFIRMED — captain accepted the implementation surface expansion; surface 14 files/2004 changed lines (1066 production, 822 test/fixture, 116 contract/help) vs revised 220-360 production, 300-500 test/fixture, 80-150 documentation lines (296% of upper production estimate; 148% of the 2x production ceiling); AC unchanged
 - Cycle 5: REJECTED — validation/captain boundary reset; surface 36 files/4557 changed lines with the captain-reconfirmed production surface still 1066 changed lines vs revised 220-360 production lines (296% of upper estimate); AC narrowed: v1 owes no compatibility or migration for prototype `gates:` encodings, so the flow-map/unknown-field collision is out of supported scope and not a release blocker. Canonical multi-artifact association completeness remains material: derive the complete inventory from independent canonical Briefing bytes bound by the frozen JCS digest, then require exact presentation mapping before normalization. Simplify the binary-owned v1 writer boundary rather than adding arbitrary prototype-shape preservation.
 - Cycle 5 captain cut directive: remove all prototype-compatibility machinery, not merely guard it—dual attempt pointers, legacy sequence/lineage/state fields and branches, arbitrary unknown fields inside the binary-owned `gates:` model, line-oriented scalar replacement, compatibility errors/comments, and prototype replay expectations. Replace them with one canonical v1 projection and fail-closed prototype-shape tests. Preserve only current v1 boundaries: unrelated entity bytes, opaque h1-owned application data, frozen resolutions, atomic/CAS behavior, semantic briefing replacement/successor behavior, and the approved digest domains. Report the deletion inventory and before/after surface explicitly.
+- Cycle 6: REJECTED — validation/captain; surface after the rigorous cut is production 1,704 LOC and test/fixture 858 LOC versus cycle 3 production 1,982 and test/fixture 1,977; AC unchanged. The prototype cut and independent canonical-inventory fix passed, but `--briefing FILE` accepts a noncanonical manifest basename that the later Result path cannot resolve, and public schema/reference text still promises removed legacy preservation. Boundary ruling: the retained room package has exactly one canonical manifest name, `briefing.json`; reject any other basename before mutation and adapt fixture setup to stage canonical bytes at that name. Artifact payloads remain external URI + SHA and are not copied. Remove every stale legacy-compatibility promise from the public entity schema and frontmatter reference, retaining only unrelated entity-byte preservation and the explicit opaque `application` boundary.
 
 ## Stage Report: implementation (cycle 2)
 
