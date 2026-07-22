@@ -39,7 +39,7 @@ Material findings are the ones that should move your vote; Polish never blocks. 
 
 Gate reviews appear in chat by default. A workflow or session can opt into a review provider that presents the same canonical Briefing as a blocking review and returns an exact retained Result.
 
-The provider must show the Briefing's question and every artifact at its recorded revision. A single-file review remains advisory even when its manifest names files the reviewer never saw. Spacedock records a provider Result only when its retained association covers the complete presentation. If the provider is missing or has the wrong version, the first officer names the remedy and returns to chat without launching it or creating retention files.
+The provider must show the Briefing's question and every canonical artifact at its recorded revision. Supporting material can appear as provider References, but the retained association must map every Artifact and Reference the reviewer saw to the complete canonical inventory. A single-file review remains advisory even when its manifest names files the reviewer never saw. If the provider is missing or has the wrong version, the first officer names the remedy and returns to chat without launching it or creating retention files.
 
 The provider owns its presentation transport and retained files. The `spacedock` binary verifies and records the outcome; it does not launch the review or write a decision on the provider's behalf.
 
