@@ -1,0 +1,6 @@
+id	released-user-and-workflow	observable-harm	affected-value-ac-or-boundary	trigger-evidence	recorded-class	expected-check
+case-a-symlink-prototype	outside-promise: crafted symlink no supported path produces	none: supported workflow remains intact	none: trust-boundaries carve-out applies	outside-promise: adversarial-only crafted input	correct-but-disproportionate	accept
+case-b-boot-taxonomy-drop	supported: every first officer normal boot	present: taxonomy field is absent	value-ac: boot reports the required classification	supported: normal status boot	material	accept
+85-m1-prompt-surface-ceiling	supported: every first officer boot	present: prompt exceeds the byte ceiling	boundary: TestFOFunctionPromptSurfaceShrinks ceiling	supported: every boot loads the surface	material	accept
+85-d1-unsupported-trigger	outside-promise: no released user path reaches the input	present: hypothetical operation could fail	value-ac: operation remains correct on supported inputs	outside-promise: only crafted input reaches it	correct-but-disproportionate	accept
+red-material-recorded-declined	supported: every first officer normal boot	present: taxonomy field is absent	value-ac: boot reports the required classification	supported: normal status boot	correct-but-disproportionate	reject

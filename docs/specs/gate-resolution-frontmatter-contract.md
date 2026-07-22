@@ -108,6 +108,51 @@ the provider Resolution's Briefing id to the canonical binding. Advisory results
 require an adoption note naming the authorizer. Artifact payloads may remain external
 URI + SHA references; the recorder does not copy them merely to establish inventory.
 
+## Round records and triage dispositions (advisory; owner: 02av)
+
+A correction round reuses the recorder vocabulary without becoming a gate: its reviewed
+snapshot is an immutable, digest-bound Briefing; reviewer findings are same-Briefing
+Annotations; and the reviewer verdict is an advisory Resolution. The worker's triage is
+a separate advisory Resolution on that Briefing. Round Resolutions carry no application,
+do not select a logical gate, and cannot advance workflow status.
+
+For every correct-but-disproportionate finding, the triage Resolution `includes` a
+worker-authored Annotation that itself includes the reviewer's finding Annotation. Its
+body records the class, why the finding is not material to an entity value AC or
+non-negotiable boundary, and the condition that promotes it to material. Material
+findings are fixed; needs-decision findings are escalated. A finding neither fixed nor
+represented by the triage Resolution is not triaged.
+
+```yaml
+- type: Annotation
+  id: annotation:decline-symlink-prototype
+  briefing: briefing:02av-implementation-round-1
+  by: actor:ensign
+  includes: [annotation:finding-symlink-prototype]
+  body: >
+    class: correct-but-disproportionate; why-not-material: no value AC breaks and the
+    crafted-symlink trigger is outside the supported flow; promotes-when: a released
+    user reaches it through an operator-selected repository.
+- type: Resolution
+  id: resolution:ensign-02av-implementation-round-1
+  briefing: briefing:02av-implementation-round-1
+  by: actor:ensign
+  decision: revise
+  reason: "triage: 0 material fixed; 1 declined"
+  includes: [annotation:decline-symlink-prototype]
+```
+
+No findings means no triage Resolution. An all-declines round instead has a real triage
+Resolution recording zero fixes and including every decline Annotation; those states
+must never project alike. The round's ordered log in the review room is the interim
+hand-authored home. Appending it, maintaining a frontmatter pointer, and projecting a
+`### Feedback Cycles` line are deferred generic round-recorder plumbing, not part of this
+contract section or recorder v1.
+
+Narrowing a value AC to make a finding pass is not a round disposition. It opens a real
+gate attempt whose binding Resolution is captain-owned; the correction loop cannot
+self-approve that design reset.
+
 ## Write boundary and invariants
 
 The recorder rebuilds only the canonical `gates:` subtree. Before atomic replacement it
