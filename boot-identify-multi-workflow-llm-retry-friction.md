@@ -3,6 +3,7 @@ title: Self-describing boot identify schema and contract hint to eliminate LLM d
 status: ideation
 score: 0.85
 id: 32vshm0h2h04gs7hzcf315g0
+source: "recorded Pi First Officer boot session at this repository root, cross-checked against PR #480"
 ---
 
 ## Problem
