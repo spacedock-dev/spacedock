@@ -145,6 +145,11 @@ func TestLiveCommonShallowBoot(t *testing.T) {
 	liveJourney(t, "shallow-boot", "boot/held-gate", writeShallowBootWorkflow, nil, runClaudeShallowBootScenario, assertShallowBoot)
 }
 
+//spacedock:live-journey id=multi-workflow-boot fixture=boot/multiple-workflows
+func TestLiveCommonMultiWorkflowBoot(t *testing.T) {
+	liveJourney(t, "multi-workflow-boot", "boot/multiple-workflows", writeMultiWorkflowBootFixture, nil, runMultiWorkflowBootJourney, assertMultiWorkflowBoot)
+}
+
 //spacedock:live-journey id=zero-discovery fixture=boot/no-workflow
 func TestLiveCommonZeroDiscovery(t *testing.T) {
 	liveJourney(t, "zero-discovery", "boot/no-workflow", writeZeroDiscoveryFixture, nil, runZeroDiscoveryJourney, detectBroadSearchCommands)
