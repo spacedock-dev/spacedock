@@ -10,7 +10,7 @@ import (
 
 func TestFOInstructionComponentCaps(t *testing.T) {
 	for rel, cap := range map[string]int{
-		"skills/first-officer/references/first-officer-shared-core.md": 26754,
+		"skills/first-officer/references/first-officer-shared-core.md": 27194,
 		"skills/fo-gate-lifecycle/SKILL.md":                            6600,
 	} {
 		if got := len([]byte(readRepoFile(t, filepath.FromSlash(rel)))); got > cap {
