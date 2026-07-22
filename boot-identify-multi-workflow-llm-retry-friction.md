@@ -338,3 +338,41 @@ Cycle 3 preserves the approved boot-identify design while repairing the live Cod
 ### Summary
 
 The boot-identify implementation satisfies AC-1, AC-2, and AC-4, and its fresh after drive makes zero duplicate retries, but AC-3's mandated before/after causal proof remains non-reproducible. Validation also found a material false positive in the adjacent Codex filing detector, so the recommendation is **REJECTED** pending an AC-3 proof/design decision and a narrow matcher correction.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Add a shared live multi-workflow boot scenario with a two-workflow fixture and an explicit Pi live runner path, reusing the existing runtime-scenario architecture rather than a one-host test.
+  Evidence: commit `8fca55ec` registers `multi-workflow-boot` in the shared scenario catalog and the existing Codex, Claude, and Pi runner/coverage maps.
+  The shared fixture creates two commissioned workflows with held entities under one clean project root and supplies one host-neutral interactive-selection prompt.
+  Pi runs the same fixture and oracle through its isolated JSON event harness; removing its runner or live coverage entry fails the shared coverage meta-tests.
+
+- DONE: Prove narrowed after-only invariant: one boot-identify call, zero status/jq/python3/go-run retries before selection, exact workflow-selection greeting, and no workflow convergence or mutation.
+  Evidence: `TestMultiWorkflowBootAfterOnlyInvariant` passes the after-only baseline and rejects duplicate identify, status/helper retry, workflow-specific boot, state convergence, embedded/wrong greeting, mutation, and artifact variants.
+  `TestLivePiMultiWorkflowBootScenario` passed against the retained `/tmp/pr551-pi-live-final.n0fkW7` trace with one identify and zero retry/helper/convergence calls.
+  The live final response named both discovered workflow paths and contained the exact standalone sentence `Multiple workflows discovered; select one with engage <workflow>.`.
+  Pre/post entity bytes, project HEAD/status, and worktree/archive artifact checks remained unchanged; altering any of them makes the oracle fail.
+
+- DONE: Constrain Codex display-quoted launcher matcher to executed command segments so heredoc narration stays negative; run focused coverage, Pi live scenario, gofmt, go test ./..., race, then commit and safely update PR #551.
+  Evidence: the Codex-only display-quoted matcher now requires the launcher call immediately after a real pipeline separator and requires the slug in that same simple-command segment.
+  The exact archived `/bin/bash -lc` success remains positive while the new display-quoted heredoc narration regression and existing malformed, alternate-variable, narration, and unrelated-command cases stay negative.
+  Focused matcher and multi-workflow oracle tests passed, as did the Pi live scenario, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
+  Commit `8fca55ec` was pushed as a fast-forward after verifying remote ancestor `e588ca43`; PR #551 and the remote head both resolve to `8fca55ec108c0b48586de4b2ef350511a710c6cd`.
+
+### Summary
+
+Cycle 4 implements the captain-approved design reset: current behavior is judged by a durable after-only multi-workflow invariant, without claiming a reproducible historical failing baseline.
+The shared scenario now exercises Codex and Claude through their established runner maps and supplies the explicitly required live Pi path with the same fixture, prompt, and oracle.
+
+### Verification
+
+- Focused: shared filing positive/negative regressions, after-only mutation tests, scenario metadata, and Pi live-coverage metadata passed.
+- Live: `go test -tags live ./internal/ensigncycle -run '^TestLivePiMultiWorkflowBootScenario$' -count=1 -v` passed.
+- Format: `gofmt -w ./cmd ./internal` completed cleanly.
+- Baseline: `go test ./...` passed.
+- Race: `go test ./... -race` passed.
+- Publish: code worktree is clean and PR #551 is updated without a force push.
+
+### Scope
+
+The change adds only shared runtime-scenario fixtures, host runner wiring, live/offline oracles, scenario documentation, and the narrow Codex matcher correction.
+It adds no controller, separate validation lane, workflow convergence behavior, or product-state mutation.
