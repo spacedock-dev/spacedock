@@ -1,11 +1,14 @@
 ---
 title: spacedock dispatch build auto-detects host pi when running under Pi agent harness
-status: validation
+status: done
 score: 0.85
 id: 769mybp649pj160n17x13r8g
 worktree: .worktrees/spacedock-ensign-dispatch-build-auto-detect-pi
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:550
+verdict: passed
+completed: 2026-07-22T14:38:16Z
+archived: 2026-07-22T14:38:16Z
 ---
 
 ## Problem
