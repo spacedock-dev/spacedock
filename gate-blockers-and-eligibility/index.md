@@ -1,6 +1,6 @@
 ---
 title: Approved-pending blockers, execution holds, and dispatch eligibility for recorded gates
-status: implementation
+status: validation
 source: "Split from the gate-recorder task (3k), captain-approved 2026-07-21. Carries 3k's original seed concern (captain design feedback 2026-07-13: an approval evaporated while its dispatch stayed blocked)."
 id: h1y616vjh64wc961z5t1031d
 gates:
@@ -169,3 +169,18 @@ Split the layer by evidence: the application record (one-use consume-exactly-onc
 - Cycle 2: CHANGES_REQUESTED — Roborev branch_final job 551; surface 14 files/1,077 added LOC (605 production, 448 test, 24 docs) vs estimate 250–400 production plus roughly equal tests and small docs (151% of production upper estimate; within 2×); AC unchanged
 - Cycle 3: CHANGES_REQUESTED — Roborev branch_final job 557; surface 14 files/1,143 added LOC (631 production, 488 test, 24 docs) vs estimate 250–400 production plus roughly equal tests and small docs (158% of production upper estimate; within 2×); AC unchanged
 - Write-scope incident: the implementation worker directly authored the three FO-owned cycle lines before requesting First-Officer review. The First Officer halted the worker at the Cycle-3 boundary, independently reconciled each job id, reviewed ref, surface total, and unchanged-AC claim, and adopts the lines here; no worker-authored state write is treated as self-authorizing.
+
+## Stage Report: implementation (FO closeout after Cycle 3)
+
+- DONE: Implement the approved one-use application lifecycle, atomic consume, staleness/supersession, closure shapes, and pure fail-closed eligibility without adding the declined blocker evaluator, hold authoring, Subspace coupling, or a second gates writer.
+  Commits `b1513f80`, `6c41403a`, `2cba20e0`, and `c7612661` form the clean implementation branch. The final commit is retained only for its independently useful literal-byte evidence, requested-only eligibility materialization, split-root definition-root correction, and removal of the test-local dispatch counter.
+- DONE: Close Roborev jobs 545, 551, and 557 at the Cycle-3 human boundary, with the two unresolved product findings decided by the captain rather than another automatic correction pass.
+  Legacy/pilot application compatibility is DECLINED/DEFERRED under the settled unreleased strict-v1 ruling; promote only if a future captain explicitly promises compatibility to a released external consumer. Approval at a terminal or single-stage gate with no successor is DECLINED/DEFERRED because h1's approved application is a one-use advance to a successor and no supported consumer exists; promote only when a real supported commissioned workflow gates a stage with no successor.
+- DONE: Preserve and route the unintended post-limit review as audit evidence without treating it as a fourth correction cycle.
+  Job 563 was initiated before the Cycle-3 stop and is not authorization for more implementation. Its compatibility and terminal findings inherit the captain's declines. Its medium claim that the same-gate supersession test can false-green is routed as a mandatory fresh-validation attack: assert the prior application state directly and prove a mutant that leaves it pending fails.
+- DONE: Reconcile final surface and verification responsibility.
+  Exact `fa240a76...c7612661` surface is 14 files, 1,146 additions and 52 deletions: 642 production additions, 480 test additions, and 24 documentation additions. Production is 160.5% of the 400-line upper estimate and remains below the approved 2× ceiling. Focused checks, formatting, and `git diff --check` were green at `c7612661`; full normal/race suites were green before the final evidence/performance commit and are explicitly validation-owned at the exact final head.
+
+### Summary
+
+Implementation closes at clean `c7612661` under the Cycle-3 captain decision. The supported successor-gate application path remains the only promised path; pilot compatibility and successorless terminal approvals are explicit deferred semantics with concrete promotion conditions. No fourth implementation round is authorized, and job 563's test-hole claim must be attacked independently before any validation recommendation.
