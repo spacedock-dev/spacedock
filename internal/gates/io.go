@@ -50,7 +50,14 @@ func SummaryFile(path string) (Summary, error) {
 	if err != nil {
 		return Summary{}, err
 	}
-	summary := CurrentSummary(doc)
+	return CurrentSummary(doc), nil
+}
+
+func ApplicationSummaryFile(path string) (Summary, error) {
+	summary, err := SummaryFile(path)
+	if err != nil {
+		return Summary{}, err
+	}
 	eligibility, err := EligibilityFile(path)
 	if err != nil {
 		return Summary{}, err

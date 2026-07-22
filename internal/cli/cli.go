@@ -209,6 +209,10 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintln(stderr, "Error:", err)
 				return exitCodeError{1}
 			}
+			definitionDir := workflowDir
+			if definitionDir == "" {
+				definitionDir = dir
+			}
 			if args[0] == "validate" {
 				if input != (gates.RecordInput{}) {
 					fmt.Fprintln(stderr, "Error: gate validate accepts only --workflow-dir")
@@ -228,7 +232,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					return exitCodeError{2}
 				}
 				if args[0] == "eligibility" {
-					e, err := gates.EligibilityFile(path)
+					e, err := gates.EligibilityFileAt(path, definitionDir)
 					if err != nil {
 						fmt.Fprintln(stderr, "Error:", err)
 						return exitCodeError{1}
@@ -236,7 +240,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					fmt.Fprintf(stdout, "gate=%s attempt=%s application=%s/%s condition=%s eligible=%t target-stage=%s\n", e.Gate, e.Attempt, e.Action, e.ApplicationState, e.Condition, e.Eligible, e.TargetStage)
 					return nil
 				}
-				result, err := gates.Consume(path)
+				result, err := gates.ConsumeAt(path, definitionDir)
 				if err != nil {
 					fmt.Fprintln(stderr, "Error:", err)
 					return exitCodeError{1}
@@ -269,10 +273,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintln(stderr, "Error: gate record flags do not match the selected semantic source")
 				return exitCodeError{2}
 			}
-			input.WorkflowDir = workflowDir
-			if input.WorkflowDir == "" {
-				input.WorkflowDir = dir
-			}
+			input.WorkflowDir = definitionDir
 			if err := gates.RecordSemantic(path, input); err != nil {
 				fmt.Fprintln(stderr, "Error:", err)
 				return exitCodeError{1}

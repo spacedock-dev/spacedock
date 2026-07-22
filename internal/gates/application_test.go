@@ -149,6 +149,9 @@ func TestConsumeStaleSupersedesWithoutEffectAndSuccessorLeavesOnePending(t *test
 	if result.Consumed || result.Condition != "stale" {
 		t.Fatalf("stale consume = %#v, want zero effect", result)
 	}
+	if result.ApplicationState != "superseded" {
+		t.Fatalf("stale consume reported application state %q, want superseded", result.ApplicationState)
+	}
 	doc, _, err := Read(entity)
 	if err != nil {
 		t.Fatal(err)
@@ -182,6 +185,47 @@ func TestConsumeStaleSupersedesWithoutEffectAndSuccessorLeavesOnePending(t *test
 	}
 	if pending != 1 {
 		t.Fatalf("pending applications across attempts = %d, want 1", pending)
+	}
+}
+
+func TestConsumeRefusesTargetRemovedFromCurrentWorkflow(t *testing.T) {
+	root, entity := applicationWorkflow(t)
+	if err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: root}); err != nil {
+		t.Fatal(err)
+	}
+	changed := "---\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: validation\n---\n# Workflow\n"
+	if err := os.WriteFile(filepath.Join(root, "README.md"), []byte(changed), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	result, err := ConsumeAt(entity, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Consumed || result.Eligible || result.Condition != "ineligible" {
+		t.Fatalf("removed-target consume = %#v, want fail-closed refusal", result)
+	}
+	body := readFile(t, entity)
+	if !strings.Contains(body, "status: ideation") || !strings.Contains(body, "state: pending") {
+		t.Fatalf("removed target changed entity:\n%s", body)
+	}
+}
+
+func TestResolutionSummaryDoesNotHashBriefing(t *testing.T) {
+	root, entity := applicationWorkflow(t)
+	if err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: root}); err != nil {
+		t.Fatal(err)
+	}
+	briefing := filepath.Join(root, "review", "ideation", "briefing-1", "briefing.json")
+	if err := os.Remove(briefing); err != nil {
+		t.Fatal(err)
+	}
+	summary, err := SummaryFile(entity)
+	if err != nil || summary.Decision != "approve" {
+		t.Fatalf("resolution-only summary = %#v, %v", summary, err)
+	}
+	eligibility, err := EligibilityFileAt(entity, root)
+	if err != nil || eligibility.Condition != "stale" {
+		t.Fatalf("explicit eligibility = %#v, %v, want stale", eligibility, err)
 	}
 }
 

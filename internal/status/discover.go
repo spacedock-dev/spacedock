@@ -211,7 +211,7 @@ func scanEntitiesActive(directory string, stderr io.Writer) []*entity {
 // mirroring the oracle's per-entity dict construction. The slug is written into
 // fields (the oracle's entity['slug'] = slug) so formatters/filters can read it.
 func newEntity(fields map[string]string, slug, path, scope string) *entity {
-	if summary, err := gates.SummaryFile(path); err == nil {
+	if summary, err := gates.ApplicationSummaryFile(path); err == nil {
 		fields["gate"] = summary.Gate
 		fields["gate-attempt"] = summary.Attempt
 		fields["gate-state"] = summary.State

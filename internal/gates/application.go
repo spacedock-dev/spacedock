@@ -99,9 +99,29 @@ func EligibilityFile(path string) (Eligibility, error) {
 	return EvaluateEligibility(doc, status, current), nil
 }
 
+func EligibilityFileAt(path, workflowDir string) (Eligibility, error) {
+	result, err := EligibilityFile(path)
+	if err != nil {
+		return Eligibility{}, err
+	}
+	status, err := entityStatus(path)
+	if err != nil {
+		return Eligibility{}, err
+	}
+	if result.Eligible && !applicationTargetMatches(workflowDir, status, result.TargetStage) {
+		result.Eligible = false
+		result.Condition = "ineligible"
+	}
+	return result, nil
+}
+
 // Consume spends an eligible approval once. A stale pending approval is marked
 // superseded without changing status. Other ineligible states are read-only.
 func Consume(path string) (ConsumeResult, error) {
+	return ConsumeAt(path, nearestWorkflowDir(filepath.Dir(path)))
+}
+
+func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 	unlock, err := lockEntity(path)
 	if err != nil {
 		return ConsumeResult{}, err
@@ -131,9 +151,15 @@ func Consume(path string) (ConsumeResult, error) {
 		if err := writeDocument(path, oldNode, doc); err != nil {
 			return ConsumeResult{}, err
 		}
+		result.ApplicationState = "superseded"
 		return result, nil
 	}
 	if !eligibility.Eligible {
+		return result, nil
+	}
+	if !applicationTargetMatches(workflowDir, status, eligibility.TargetStage) {
+		result.Eligible = false
+		result.Condition = "ineligible"
 		return result, nil
 	}
 	attempt.Application.State = "consumed"
@@ -146,6 +172,34 @@ func Consume(path string) (ConsumeResult, error) {
 	result.Consumed = true
 	result.ApplicationState = "consumed"
 	return result, nil
+}
+
+func nearestWorkflowDir(start string) string {
+	for dir := filepath.Clean(start); ; dir = filepath.Dir(dir) {
+		if info, err := os.Stat(filepath.Join(dir, "README.md")); err == nil && info.Mode().IsRegular() {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+	}
+}
+
+func applicationTargetMatches(workflowDir, current, target string) bool {
+	if workflowDir == "" {
+		return false
+	}
+	stages, err := applicationStages(filepath.Join(workflowDir, "README.md"))
+	if err != nil {
+		return false
+	}
+	for i, stage := range stages {
+		if stage.Name == current {
+			return i+1 < len(stages) && stages[i+1].Name == target
+		}
+	}
+	return false
 }
 
 func reviewedInputMatches(entityPath string, binding Briefing) bool {
