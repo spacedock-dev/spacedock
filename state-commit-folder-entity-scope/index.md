@@ -124,3 +124,26 @@ Verified by: table-driven CLI and real-Git cases for slash and platform-separato
 ### Summary
 
 The task is ready for staff review as a 0.26 correctness fix. The key design is directory-scoped Git pathspecs for folder-form entities, not checkout-wide staging; canonical slug validation closes the workaround that exposed the gap.
+
+## Stage Report: implementation
+
+- DONE: Change `state commit <slug>` so flat-form entities stage exactly `<slug>.md` while folder-form entities stage exactly `<slug>/`, including tracked modifications/deletions and new non-ignored reports/artifacts.
+  Code commit `e0822912`; `TestStateCommitFolderIncludesWholeEntity` fails if the folder pathspec omits the index, tracked report edit/deletion, or new artifact.
+- DONE: Preserve strict entity scoping: never stage dirty sibling entities or unrelated top-level state paths, and keep existing local-only, push, reject/rebase, conflict-HALT, no-force, JSON/text, and clean no-op behavior.
+  The same real-Git test leaves flat/folder/top-level sibling dirt untouched; the full CLI suite would fail on output, retry, HALT, local-only, or no-op regressions.
+- DONE: Reuse the existing canonical entity discovery/slug authority where possible; reject path-bearing, traversal, absolute, dot, and nested pseudo-slug operands before side effects without minting a conflicting slug grammar.
+  `status.EntitySlug` identifies resolved commit units; `TestStateCommitRejectsNoncanonicalSlugWithoutSideEffects` proves HEAD, index, worktree bytes, and origin remain unchanged for every rejected operand.
+- DONE: Add the real-Git regression first: index + tracked report + untracked artifact commit together; sibling dirt remains; artifact-only change is not a false no-op; clean rerun is a no-op.
+  The regression was run RED before production edits (only `folder-task/index.md` committed), then GREEN; it also pins a tracked deletion in the same entity unit.
+- DONE: Extend two-host real-Git coverage so disjoint entities rebase/push and conflicting paths anywhere within the same folder entity halt cleanly without force or discard.
+  `TestStateCommitFolderMultiWriterHappyPath` fails if either host's artifact misses origin; `TestStateCommitFolderConflictHalts` fails unless both the peer and local nested edits survive the aborted rebase boundary.
+- DONE: Preserve flat-form compatibility with exact committed-path assertions and existing state-commit output/error behavior.
+  `TestStateCommitIsPathScoped` now requires the committed path set to equal only `first-task.md`; all pre-existing state-commit tests pass unchanged.
+- DONE: Update the state command reference with the approved flat/folder commit-unit and top-level-slug wording; add no new command, package, dependency, schema, registry, or background lifecycle.
+  `docs/site/reference/command-reference.md` documents the canonical operand and exact commit units; commit `e0822912` adds no new protocol surface.
+- DONE: Run gofmt -w ./cmd ./internal, focused state-commit tests, go test ./..., and go test ./... -race; record exact evidence, actual surface versus estimate, and commit the clean worktree.
+  All commands passed; actual surface was 36 production changed lines vs 20-60 estimated, 218 test lines vs 160-300, and 9 documentation lines vs 5-20.
+
+### Summary
+
+Commit `e0822912` makes a folder-form entity one durable Git pathspec while retaining the single-file boundary for flat entities and rejecting noncanonical path aliases before resolution. Real-Git coverage now proves complete folder artifacts, sibling isolation, artifact-only commits, clean no-ops, flat compatibility, and both disjoint and conflicting two-host behavior; the full normal and race suites pass.
