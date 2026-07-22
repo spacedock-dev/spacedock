@@ -165,3 +165,27 @@ Revised ideation removes the proposed test-only Go classification/helper path th
 ### Summary
 
 Cycle 3 re-centered the design on the First Officer shared-core contract before the JSON payload: the many-workflow branch is complete at `«state.boot»`, and `«interaction.boundary»` greets with workflow selection instead of retrying identify. The payload envelope remains the machine-readable hardening layer, while the entity now records the genuine multi-workflow residual and sibling contrast that justify the work.
+
+## Stage Report: implementation
+
+- DONE: Update resolveIdentifyBootDir in internal/status/native_runner.go to append schema, status: "complete", result: "multiple_workflows", terminal: true, workflow_count, and next_action: "select_workflow" to many-workflow boot identify JSON.
+  Evidence: commit 55736301 emits the appended envelope after existing `command`/`discovery`; `TestBootIdentifyManyWorkflowJSONSelfDescribing` fails if any field is missing or `workflow_count != len(discovery)`.
+- DONE: Ratchet «state.boot» and «interaction.boundary» in skills/first-officer/references/first-officer-shared-core.md for many-workflow discovery.
+  Evidence: commit 55736301 pins the many-discovery terminal contract and greet; `TestFOBootManyWorkflowDiscoveryIsTerminal` fails if retry/deep-boot prohibitions or greet line are removed.
+- DONE: Update command reference docs in docs/site/reference/command-reference.md.
+  Evidence: commit 55736301 documents complete `multiple_workflows` discovery and select/engage instead of retry; reverting that sentence fails the documented-surface review.
+- DONE: Extend Go tests in internal/status/boot_identify_test.go and verify zero/one/many and unflagged boot output compatibility.
+  Evidence: `go test ./...` passed; new many-workflow JSON test covers compatibility order, existing zero/one/many and native boot golden/unflagged tests still pass and would fail on broad-search or boot-output drift.
+- DONE: Perform live before/after multi-workflow boot drive proof and record transcript evidence and retry counts in validation notes.
+  Evidence: validation notes below record installed-before sparse JSON vs worktree-after complete JSON at this multi-workflow root; after run made zero duplicate follow-up `status`/`jq`/`python3`/`go run` retries before selection.
+- DONE: Run go test ./... and go test ./... -race to ensure all tests pass.
+  Evidence: `go test ./...` and `go test ./... -race` both passed after gofmt.
+
+### Validation Notes
+
+Before (installed `spacedock status --boot --identify --json`): `{"command":"boot","discovery":[".../docs/dev",".../fixtures/refit-content-propagation/site-workflow"]}`; recorded Pi failure shape retried 8+ duplicate CLI/helper calls because this sparse payload lacked terminal/next-action signals.
+After (worktree `go run ./cmd/spacedock status --boot --identify --json`): `{"command":"boot","discovery":[".../docs/dev",".../fixtures/refit-content-propagation/site-workflow"],"schema":"spacedock.status.boot.identify.discovery.v1","status":"complete","result":"multiple_workflows","terminal":true,"workflow_count":2,"next_action":"select_workflow"}`. Retry count observed in the after drive before workflow selection: 0 duplicate follow-up `status`, `jq`, `python3`, or `go run` calls beyond the intentional after command.
+
+### Summary
+
+Implemented the contract-first many-workflow boot identify hardening: the CLI now emits a self-describing terminal discovery envelope, and the First Officer shared core/documentation tells agents to select or engage a workflow rather than retry identify. The implementation also adds typed JSON leaves for the new boolean/count fields, pins the FO prose ratchet, and preserves the existing zero/one/many and unflagged boot compatibility tests.
