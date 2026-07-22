@@ -109,7 +109,9 @@ func TestBootTeamStateProbeConfinement(t *testing.T) {
 	}
 
 	blockNil, _ := teamStateBlock(bootNil)
-	wantNil := "TEAM_STATE\npresent: false\nhint: " + teamStateNeutralHint
+	// Hand-copied literal oracle (the current teamStateNeutralHint value), independent
+	// of the constant the render reads, so emptying that constant is caught.
+	wantNil := "TEAM_STATE\npresent: false\nhint: no active team runtime detected"
 	if blockNil != wantNil {
 		t.Fatalf("nil-probe TEAM_STATE:\n got %q\nwant %q", blockNil, wantNil)
 	}

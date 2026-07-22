@@ -548,8 +548,10 @@ func TestIndNewAtomicCreate(t *testing.T) {
 					t.Errorf("[%s] seed missing minted id line %q:\n%s", name, wantLine, string(seed))
 				}
 				// Seed must equal STDIN with exactly the id-stamp added (byte-identity
-				// of every other line — AC-5 preservation), verified by reconstructing.
-				wantSeed := string(stampID([]byte(body), expectedID))
+				// of every other line — AC-5 preservation), verified by reconstructing
+				// the expected bytes independently of stampID (an anchored splice on the
+				// last frontmatter line) so a stampID splice-offset regression is caught.
+				wantSeed := strings.Replace(body, "source: roadmap\n---", "source: roadmap\nid: "+expectedID+"\n---", 1)
 				if string(seed) != wantSeed {
 					t.Errorf("[%s] seed not STDIN+id-stamp:\ngot=%q\nwant=%q", name, string(seed), wantSeed)
 				}
