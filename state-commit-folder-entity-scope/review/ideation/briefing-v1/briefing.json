@@ -1,0 +1,41 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:vn:ideation:canonical-v1:revision-1",
+  "question": "Is vn's current ideation plan ready to approve for implementation as the durable-decisions sprint's persistence companion?",
+  "artifacts": [
+    {
+      "id": "artifact:plan-review",
+      "uri": "../plan-review-1.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:deda68965a61da25532f110941fd769353b9d2158bb6d6c3907a48d460a666c7"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Proceed to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the plan",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
