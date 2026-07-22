@@ -294,3 +294,16 @@ Validation still recommends REJECTED for AC-3 evidence only. Code-level behavior
 ### Recommendation
 
 REJECTED — material evidence defect for AC-3. Narrow fix: provide or rerun a real First Officer boot-drive before/after transcript with retry counts showing zero duplicate `status`/`jq`/`python3`/`go run` follow-up calls after the new terminal payload/contract and before workflow selection.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Preserve upstream #549's legacy-TeamCreate removal and #551's multi-workflow terminal-discovery behavior in the rebased tree; recompute rather than select stale FO byte baselines.
+  Evidence: combined-tree commit `25f8fcca` retains #549's 12-file/legacy-free FO load set and `TestFOBootManyWorkflowDiscoveryIsTerminal`; the metric test measured Claude 95,818, Codex 75,033, and Pi 71,163 bytes and would fail if any host exceeded its recomputed baseline.
+- DONE: Fix the observed Codex filing-detector false negative at the narrowest correct layer, with an exact archived `/bin/bash -lc` display-quoted command regression and retained malformed/unrelated-command negatives.
+  Evidence: commit `e588ca43` recognizes only the known Bash wrapper's display quote-splice; `TestAssertCodexFilingViaNew` exercises the complete archived command and fails for malformed captures, another variable, narration, and unrelated simple commands.
+- DONE: Run focused tests plus gofmt, go test ./..., and go test ./... -race; commit a clean task worktree and update PR #551 only with a verified force-with-lease.
+  Evidence: focused filing/FO-contract tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed; the clean worktree was pushed with lease on remote `e359a1a6`, and both PR #551 and its remote ref resolved to `e588ca43` afterward.
+
+### Summary
+
+Cycle 3 preserves the approved boot-identify design while repairing the live Codex CI false negative at the transcript-matcher boundary. PR #551 now contains the rebased combined tree plus an exact archived-command regression, with all focused, baseline, and race gates passing.
