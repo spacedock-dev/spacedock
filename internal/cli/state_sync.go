@@ -251,8 +251,9 @@ func peerCommitSHA(checkout, branch string) string {
 	return strings.TrimSpace(out)
 }
 
-// commitEntityPathScoped stages and commits exactly entityPath (never `add -A`),
-// retrying the staging on index.lock contention. It returns (true, "") for a
+// commitEntityPathScoped stages and commits exactly entityPath with `add -A`
+// restricted to its literal pathspec, retrying staging on index.lock contention.
+// It returns (true, "") for a
 // clean no-op (nothing staged for the entity → success), (true, output) for a
 // landed commit, and (false, output) on a real git failure. The `git -C` argv
 // form (via runGit) has no rendered command string for a weak model to paraphrase.
