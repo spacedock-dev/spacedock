@@ -152,8 +152,10 @@ func TestReleaseWorkflowEdgeAdvanceDecisionGates(t *testing.T) {
 // `git rev-list -1 "$GITHUB_REF_NAME"`, not next's tip — so the pre0 run reuses
 // the existing green e2e run), creates an ANNOTATED tag with a non-empty body (a
 // lightweight/empty-body tag reds the release-notes extraction step before the
-// binary builds), and pushes via the re-triggering PAT (a GITHUB_TOKEN push does
-// not fire the pre0 build).
+// binary builds), pushes it with a trigger-capable credential — the
+// EDGE_RELEASE_DEPLOY_KEY SSH deploy key, NOT the workflow-suppressed default
+// GITHUB_TOKEN (which lands the ref but fires no run) — and then verifies a
+// release.yml run was created for the pre0 tag, failing loudly if none appears.
 func assertAlwaysCutPre0(workflow string) error {
 	job := edgeAdvanceJob(workflow)
 	if job == nil {
@@ -172,16 +174,23 @@ func assertAlwaysCutPre0(workflow string) error {
 
 	var tagCmd, pushCmd string
 	derivesGreenedSHA, assignsBody := false, false
+	verifiesRun, failsOnMiss := false, false
 	for _, command := range executableShellCommands(pre0.run) {
 		switch {
 		case strings.HasPrefix(command, "git tag "):
 			tagCmd = command
-		case strings.HasPrefix(command, "git push"):
+		case strings.Contains(command, "git push"):
 			pushCmd = command
 		case command == `RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"`:
 			derivesGreenedSHA = true
 		case strings.HasPrefix(command, `PRE0_BODY="`) && command != `PRE0_BODY=""`:
 			assignsBody = true
+		}
+		if strings.Contains(command, "actions/workflows/release.yml/runs") && strings.Contains(command, "PRE0_TAG") {
+			verifiesRun = true
+		}
+		if strings.Contains(command, "exit 1") {
+			failsOnMiss = true
 		}
 	}
 	if tagCmd == "" {
@@ -202,8 +211,17 @@ func assertAlwaysCutPre0(workflow string) error {
 	if pushCmd == "" {
 		return fmt.Errorf("auto-pre0 step runs no `git push` command")
 	}
-	if !strings.Contains(pushCmd, "HOMEBREW_TAP_TOKEN") {
-		return fmt.Errorf("auto-pre0 push does not use the re-triggering PAT (HOMEBREW_TAP_TOKEN); a GITHUB_TOKEN push would not fire the pre0 build: %q", pushCmd)
+	if strings.Contains(pushCmd, "GITHUB_TOKEN") {
+		return fmt.Errorf("auto-pre0 push authenticates with the default GITHUB_TOKEN (workflow-suppressed — lands the ref but fires no release.yml run): %q", pushCmd)
+	}
+	if !strings.Contains(pushCmd, `git@github.com:${GITHUB_REPOSITORY}.git`) {
+		return fmt.Errorf("auto-pre0 push does not use the trigger-capable deploy-key SSH transport git@github.com:${GITHUB_REPOSITORY}.git: %q", pushCmd)
+	}
+	if !verifiesRun {
+		return fmt.Errorf("auto-pre0 step has no release.yml run-verification poll keyed on the pre0 tag — a suppressed credential would leave the edge binary silently behind")
+	}
+	if !failsOnMiss {
+		return fmt.Errorf("auto-pre0 step's verify poll never exits non-zero when no run is found — a suppressed credential would pass silently")
 	}
 	return nil
 }
@@ -256,8 +274,9 @@ func tagCmdTarget(tagCmd string) string {
 // TestReleaseWorkflowAlwaysCutPre0 locks AC-4 against the on-disk release.yml.
 // The adversarial twins: (a) retarget the tag from the greened RELEASE_COMMIT to
 // next's tip; (b) drop -a/-m to make it a lightweight tag; (c) move the step to
-// the prerelease path (recursion); (d) push via GITHUB_TOKEN instead of the PAT.
-// Each must red.
+// the prerelease path (recursion); (d) push via the workflow-suppressed
+// GITHUB_TOKEN instead of the trigger-capable deploy key; (e) neuter the
+// verify-or-fail run poll. Each must red.
 func TestReleaseWorkflowAlwaysCutPre0(t *testing.T) {
 	workflow := readWorkflow(t, "release.yml")
 	if err := assertAlwaysCutPre0(workflow); err != nil {
@@ -298,14 +317,25 @@ func TestReleaseWorkflowAlwaysCutPre0(t *testing.T) {
 		t.Fatal("always-cut-pre0 guard accepted an auto-pre0 step on the prerelease path (recursion)")
 	}
 
-	// (d) push via GITHUB_TOKEN instead of the re-triggering PAT.
+	// (d) push via the workflow-suppressed GITHUB_TOKEN instead of the deploy key.
 	wrongToken := strings.Replace(workflow,
-		`git push "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$PRE0_TAG"`,
+		`git push "git@github.com:${GITHUB_REPOSITORY}.git" "$PRE0_TAG"`,
 		`git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$PRE0_TAG"`, 1)
 	if wrongToken == workflow {
-		t.Fatal("fixture workflow missing the auto-pre0 PAT push line to swap")
+		t.Fatal("fixture workflow missing the auto-pre0 deploy-key push line to swap")
 	}
 	if err := assertAlwaysCutPre0(wrongToken); err == nil {
-		t.Fatal("always-cut-pre0 guard accepted a pre0 tag pushed via GITHUB_TOKEN (would not re-trigger)")
+		t.Fatal("always-cut-pre0 guard accepted a pre0 tag pushed via GITHUB_TOKEN (would not fire the pre0 run)")
+	}
+
+	// (e) neuter the verify-or-fail poll → a suppressed credential passes silently.
+	noVerify := strings.Replace(workflow,
+		"actions/workflows/release.yml/runs",
+		"actions/workflows/DISABLED.yml/runs", 1)
+	if noVerify == workflow {
+		t.Fatal("fixture workflow missing the auto-pre0 verify poll to neuter")
+	}
+	if err := assertAlwaysCutPre0(noVerify); err == nil {
+		t.Fatal("always-cut-pre0 guard accepted an auto-pre0 step whose verify poll no longer queries release.yml runs")
 	}
 }

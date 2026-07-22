@@ -178,14 +178,19 @@ rare conflict here cannot unwind or block the release that already published):
   (`spacedock-release dev-preversion X.Y.Z`) so the edge line never masquerades
   as the stable version it just shipped, and the calendar key is bumped — then an
   ANNOTATED `vX.(Y+1).0-pre0` tag is auto-created **on the greened release commit**
-  and pushed (via the re-triggering tap PAT). That prerelease tag's own release
-  run reuses the greened commit's e2e-gate pass, builds+publishes the `X.(Y+1)`-minor
-  edge binary, and bumps the `spacedock@next` cask — so the edge binary's minor
-  catches up to the skills' gate line within minutes instead of waiting for the
-  next hand-cut prerelease. The auto-tag MUST be annotated with a non-empty body
-  (the release-notes extraction step rejects a lightweight tag), and MUST be
-  pushed with the PAT (a `GITHUB_TOKEN` push does not fire the pre0 build). Expect
-  two GitHub releases per stable cut.
+  and pushed over SSH with a dedicated write **deploy key**
+  (`EDGE_RELEASE_DEPLOY_KEY`), scoped to this repo. That prerelease tag's own
+  release run reuses the greened commit's e2e-gate pass, builds+publishes the
+  `X.(Y+1)`-minor edge binary, and bumps the `spacedock@next` cask — so the edge
+  binary's minor catches up to the skills' gate line within minutes instead of
+  waiting for the next hand-cut prerelease. The auto-tag MUST be annotated with a
+  non-empty body (the release-notes extraction step rejects a lightweight tag).
+  The push MUST use a trigger-capable credential: a `GITHUB_TOKEN` push — and, as
+  observed on the v0.25.0 and v0.26.0 cuts, the cross-repo tap PAT — does NOT
+  create the pre0 `release.yml` run, so the step pushes with the deploy key and
+  then **verifies a run was created for the pre0 tag, failing `edge-advance`
+  loudly if none appears** rather than leaving the edge binary silently behind.
+  Expect two GitHub releases per stable cut.
 - **Old-line / patch (`vX.Y.1`, or any tag whose target edge version is not
   strictly greater than `next`'s current manifest version):** the whole
   `edge-advance` job SKIPS (`spacedock-release edge-advance-decision` prints

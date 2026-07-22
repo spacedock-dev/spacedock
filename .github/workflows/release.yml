@@ -388,24 +388,32 @@ jobs:
 
       # Always-cut-pre0 (latest-line stable tag only, same advance gate): auto-cut
       # an ANNOTATED vX.(Y+1).0-pre0 tag ON THE GREENED RELEASE COMMIT (the SHA
-      # e2e-gate already greened and the stable stamp resolved) and push it via the
-      # re-triggering PAT. That tag's own release run resolves the SAME green e2e
-      # run (same commit), builds+publishes the X.(Y+1)-minor edge binary, and
-      # bumps the spacedock@next cask — closing the post-stable-cut window in
-      # minutes instead of waiting for the next hand-cut prerelease. The tag MUST be
-      # annotated with a non-empty body: the release-notes extraction step
-      # (above, in goreleaser) hard-errors on a lightweight/empty-body tag before
-      # the binary builds. The push MUST use the PAT: a push authenticated with the
-      # default GITHUB_TOKEN deliberately does NOT trigger further workflow runs, so
-      # the pre0 build would never start. Recursion terminates at one level — the
-      # pre0 tag routes to the prerelease path, whose edge-advance-decision skips
-      # (pre0 < next's pre1), so it neither re-tags nor rewinds `next`.
+      # e2e-gate already greened and the stable stamp resolved) and push it over
+      # SSH with the EDGE_RELEASE_DEPLOY_KEY write deploy key. That tag's own
+      # release run resolves the SAME green e2e run (same commit), builds+publishes
+      # the X.(Y+1)-minor edge binary, and bumps the spacedock@next cask — closing
+      # the post-stable-cut window in minutes instead of waiting for the next
+      # hand-cut prerelease. The tag MUST be annotated with a non-empty body: the
+      # release-notes extraction step (above, in goreleaser) hard-errors on a
+      # lightweight/empty-body tag before the binary builds. The push MUST use a
+      # trigger-capable credential: GitHub creates NO workflow run for a push
+      # authenticated by the default GITHUB_TOKEN or — as the v0.25.0 and v0.26.0
+      # cuts showed — the cross-repo tap PAT, so the pre0 build would never start; a
+      # repo-scoped SSH deploy key is the one credential GitHub never suppresses for
+      # triggering. The step then verifies a release.yml run was created for the
+      # pre0 tag and fails edge-advance loudly if none appears, so a suppressed
+      # credential can never leave the edge binary silently behind. Recursion
+      # terminates at one level — the pre0 tag routes to the prerelease path, whose
+      # edge-advance-decision skips (pre0 < next's pre1), so it neither re-tags nor
+      # rewinds `next`.
       - name: Auto-cut the edge prerelease tag on the greened release commit
         if: "!contains(github.ref, '-') && steps.decision.outputs.advance == 'true'"
         env:
-          # PAT (HOMEBREW_TAP_TOKEN-class) so the tag push RE-TRIGGERS release.yml;
-          # the default GITHUB_TOKEN cannot fire a workflow from within a run.
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          # Write deploy key (SSH) so the tag push is trigger-capable and creates
+          # the pre0 release.yml run; GH_TOKEN is the read-only Actions-API
+          # credential the verify-or-fail poll uses.
+          EDGE_RELEASE_DEPLOY_KEY: ${{ secrets.EDGE_RELEASE_DEPLOY_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
@@ -416,4 +424,29 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "$PRE0_TAG" "$RELEASE_COMMIT" -m "$PRE0_BODY"
-          git push "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$PRE0_TAG"
+          # Push over SSH with the write deploy key — the one credential GitHub
+          # never suppresses for triggering, so the pre0 release.yml run fires.
+          mkdir -p ~/.ssh
+          printf '%s\n' "$EDGE_RELEASE_DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
+            git push "git@github.com:${GITHUB_REPOSITORY}.git" "$PRE0_TAG"
+          # Verify-or-fail: confirm the push created a release.yml run for the pre0
+          # tag. A workflow-suppressed credential lands the ref but fires no run, so
+          # fail edge-advance loudly instead of leaving the edge binary behind.
+          VERIFY_TIMEOUT=120
+          deadline=$((SECONDS + VERIFY_TIMEOUT))
+          while :; do
+            runs="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/release.yml/runs?event=push&per_page=50" \
+              --jq "[.workflow_runs[] | select(.head_branch==\"${PRE0_TAG}\")] | length" 2>/dev/null || echo 0)"
+            if [ "${runs:-0}" -gt 0 ]; then
+              echo "::notice::pre0 tag $PRE0_TAG created ${runs} release.yml run(s)"
+              break
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::pre0 tag $PRE0_TAG push created no release.yml run within ${VERIFY_TIMEOUT}s; the push credential is workflow-suppressed. Failing edge-advance so the edge binary is not left silently behind." >&2
+              exit 1
+            fi
+            sleep 10
+          done
