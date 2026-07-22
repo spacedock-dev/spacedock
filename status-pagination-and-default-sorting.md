@@ -1,8 +1,9 @@
 ---
 title: status pagination and stage-then-score default sorting
-status: backlog
+status: ideation
 score: 0.70
 id: rwpe45pdxffk2zfy24ejde6a
+started: 2026-07-22T06:31:16Z
 ---
 
 ### Goal
