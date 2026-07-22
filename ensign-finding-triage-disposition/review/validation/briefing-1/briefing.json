@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:02av:validation:canonical-v1:revision-1",
+  "question": "Should ensign-finding-triage-disposition exact candidate e85eb0cfcc3c243fd94754be2baafa23be302a21 proceed to landing and terminal completion?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:86ce40a13f3400682c1e57abf85d5a28e34afacb442efe91f36e38358be04ade"
+    },
+    {
+      "id": "artifact:exact-validator-report",
+      "uri": "validator-report.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8b753cd0f9f60064cfc777e59c67351112ef338dc7cb6d875ce36c8ac2547bc7"
+    },
+    {
+      "id": "artifact:candidate-commit-evidence",
+      "uri": "local-commit-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:ab051c78fbe2484e38512bb688f691e8b34b44591ae35b6a9b8a3424fe85793c"
+    },
+    {
+      "id": "artifact:validation-execution-evidence",
+      "uri": "validation-execution-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:bbb18a9f781dabe35d23148b83e1e43fbb8c705d9ad60312dfe3a1710d7e0941"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:validation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Proceed to landing and terminal completion",
+          "to": "ceremony:merge-landing"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return a material finding to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}
