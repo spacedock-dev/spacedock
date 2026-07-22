@@ -6,7 +6,7 @@ id: 9q4x5hvyxthc41mt73txr23k
 started: 2026-07-21T13:26:28Z
 worktree: .worktrees/spacedock-ensign-retire-legacy-and-retry-rung
 mod-block: merge:pr-merge
-pr: "#549"
+pr: pr-merge:549
 ---
 
 Today the FO contract has no first-failure response at all. It goes straight from one observed dispatch failure to "any SECOND dispatch failure within the session" tripping Degraded Mode — a session-wide, irreversible fallback to sequential bare dispatch. There is no retry, no nudge, and no way back within the session.
