@@ -5,6 +5,8 @@ source: "Captain review (CL) 2026-07-22 — mp (#548) gave four tautological tes
 id: sf2d5zawymn5n86g8nt597nh
 worktree: .worktrees/spacedock-ensign-drop-activesessionfile-characterization-subtest
 started: 2026-07-22T05:44:43Z
+mod-block: merge:pr-merge
+pr: "#554"
 ---
 
 Delete the `activeSessionFile_would_flip_to_teammate` subtest from TestFOSessionPinning — it characterizes a test-local port's mod-time tiebreak, not the shipped session-resolution behavior, so it is not worth keeping even with teeth.
