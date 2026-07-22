@@ -45,7 +45,7 @@ func emitSync(stdout io.Writer, jsonOut bool, res syncResult, code int) int {
 }
 
 // runStateCommit implements `spacedock state commit <slug>`. It resolves <slug> to
-// its entity file under the split-root state checkout, then runs the path-scoped
+// its entity commit unit under the split-root state checkout, then runs the path-scoped
 // commit → push → on-reject pull --rebase → re-push sequence. A same-entity rebase
 // conflict HALTS: the rebase is aborted (clean tree restored), no force-push is
 // ever issued, and the verb exits 3 with the conflicting path named — so a caller
@@ -68,7 +68,7 @@ func runStateCommit(ctx context.Context, args []string, env []string, dir string
 		}, 0)
 	}
 
-	entityPath, ok := resolveEntityPath(checkout, slug)
+	entityPath, ok := resolveEntityCommitPath(checkout, slug)
 	if !ok {
 		fmt.Fprintf(stderr, "spacedock state commit: no entity %q under %s (looked for %s.md and %s/index.md)\n", slug, checkout, slug, slug)
 		return 1
@@ -251,21 +251,23 @@ func peerCommitSHA(checkout, branch string) string {
 	return strings.TrimSpace(out)
 }
 
-// commitEntityPathScoped stages and commits exactly entityPath (never `add -A`),
-// retrying the staging on index.lock contention. It returns (true, "") for a
+// commitEntityPathScoped stages and commits exactly entityPath with `add -A`
+// restricted to its literal pathspec, retrying staging on index.lock contention.
+// It returns (true, "") for a
 // clean no-op (nothing staged for the entity → success), (true, output) for a
 // landed commit, and (false, output) on a real git failure. The `git -C` argv
 // form (via runGit) has no rendered command string for a weak model to paraphrase.
 func commitEntityPathScoped(checkout, entityPath, msg string) (ok bool, output string) {
 	rel := relToCheckout(checkout, entityPath)
-	if ok, out := runGitRetryLock(checkout, "add", "--", rel); !ok {
+	pathspec := literalGitPathspec(rel)
+	if ok, out := runGitRetryLock(checkout, "add", "-A", "--", pathspec); !ok {
 		return false, out
 	}
 	// Nothing staged for this entity → clean no-op success.
-	if clean, _ := runGit(checkout, "diff", "--cached", "--quiet", "--", rel); clean {
+	if clean, _ := runGit(checkout, "diff", "--cached", "--quiet", "--", pathspec); clean {
 		return true, ""
 	}
-	ok, out := runGitRetryLock(checkout, "commit", "-m", msg, "--", rel)
+	ok, out := runGitRetryLock(checkout, "commit", "-m", msg, "--", pathspec)
 	if !ok {
 		return false, out
 	}
@@ -325,19 +327,45 @@ func conflictingPaths(checkout string) []string {
 	return paths
 }
 
-// resolveEntityPath finds the entity file for slug under checkout, returning the
-// absolute path. It accepts both the flat `{slug}.md` and the directory
-// `{slug}/index.md` entity layouts (matching loadEntityFrontmatter's scan).
-func resolveEntityPath(checkout, slug string) (string, bool) {
+// resolveEntityCommitPath finds the commit unit for slug under checkout. Folder
+// form wins when present, matching canonical entity discovery, and commits the
+// whole folder; flat form commits only `{slug}.md`. A tracked candidate remains
+// resolvable after deletion so the exact same commit unit can record its removal.
+// EntitySlug remains the authority for the slug represented by either path.
+func resolveEntityCommitPath(checkout, slug string) (string, bool) {
+	nested := filepath.Join(checkout, slug, "index.md")
+	if fileExists(nested) && status.EntitySlug(nested) == slug {
+		return filepath.Dir(nested), true
+	}
 	flat := filepath.Join(checkout, slug+".md")
-	if fileExists(flat) {
+	if fileExists(flat) && status.EntitySlug(flat) == slug {
 		return flat, true
 	}
-	nested := filepath.Join(checkout, slug, "index.md")
-	if fileExists(nested) {
-		return nested, true
+	if gitTracksPath(checkout, nested) && status.EntitySlug(nested) == slug {
+		return filepath.Dir(nested), true
+	}
+	if gitTracksPath(checkout, flat) && status.EntitySlug(flat) == slug {
+		return flat, true
 	}
 	return "", false
+}
+
+func gitTracksPath(checkout, path string) bool {
+	ok, _ := runGit(checkout, "ls-files", "--error-unmatch", "--", literalGitPathspec(relToCheckout(checkout, path)))
+	return ok
+}
+
+func literalGitPathspec(path string) string {
+	return ":(literal)" + path
+}
+
+// validStateEntitySlug accepts the filesystem-level slug shape canonical entity
+// discovery can expose: one visible top-level name, never a path alias. It does
+// not impose a separate character grammar on otherwise valid entity filenames.
+func validStateEntitySlug(slug string) bool {
+	return slug != "" && slug != "." && slug != ".." &&
+		!filepath.IsAbs(slug) && !strings.HasPrefix(slug, ".") &&
+		!strings.ContainsAny(slug, `/\\`) && filepath.Clean(slug) == slug
 }
 
 // relToCheckout returns entityPath relative to checkout for the path-scoped git
@@ -415,6 +443,10 @@ func parseStateCommitArgs(args []string, dir string, stderr io.Writer) (slug, wo
 	}
 	if slug == "" {
 		fmt.Fprintln(stderr, "spacedock state commit: missing required <slug> argument")
+		return "", "", "", false, 2
+	}
+	if !validStateEntitySlug(slug) {
+		fmt.Fprintf(stderr, "spacedock state commit: invalid entity slug %q (expected one canonical top-level slug, not a path)\n", slug)
 		return "", "", "", false, 2
 	}
 	workflowDir, code = resolveWorkflowDir(workflowDir, dir, stderr)
