@@ -82,14 +82,14 @@ Update the First Officer Startup contract narrowly: after running `status --boot
 
 1. **The multi-workflow identify JSON is self-describing and terminal.** At a git root containing two commissioned workflows, `spacedock status --boot --identify --json` exits 0 and emits `command: "boot"`, the existing `discovery` array, plus appended `schema`, `status: "complete"`, `result: "multiple_workflows"`, `terminal: true`, `workflow_count` equal to `len(discovery)`, and `next_action: "select_workflow"`. Test with a native runner fixture rooted above two workflows; make it fail by removing any completion/next-action field or making `workflow_count` disagree with `discovery`.
 2. **The original PR #480 boundaries remain intact.** Unflagged `--boot` output remains byte-identical, one-workflow identify still deep-boots and includes stage taxonomy/PR local mirror, zero-workflow identify still halts without broad filesystem search, and identify makes no `gh` call or state mutation. Test by extending existing `internal/status/boot_identify_test.go` coverage and preserving current boot pins; make it fail by moving the state checkout HEAD/tree, invoking a `gh` shim, or changing unflagged boot output.
-3. **The First Officer no longer has a duplicate retry path for the recorded failure shape.** A contract-level fixture containing the new multi-workflow JSON must classify the response as complete and produce zero follow-up retry commands (`status`, `jq`, `python3`, or `go run`) for the same boot identify attempt before workflow selection. Test with a small parser/decision fixture in the contractlint or startup test area; make it fail by omitting the new `multiple_workflows` complete/terminal hint or by counting any duplicate identify retry before selection.
+3. **The First Officer no longer has a duplicate retry path for the recorded failure shape.** A live before/after boot drive at a git root containing two commissioned workflows shows the First Officer treats the new multi-workflow identify payload as complete: the before transcript records the duplicate retry loop, while the after transcript records zero follow-up retry calls (`status`, `jq`, `python3`, or `go run`) for the same boot identify attempt before workflow selection. Test by pasting the live-drive transcript evidence and retry counts into the implementation-stage validation notes; make it fail by observing any duplicate identify retry before selection after the new complete/terminal hint lands.
 4. **User-facing documentation describes the discovery-only terminal branch.** The command reference states that multi-workflow `--boot --identify` returns a complete `multiple_workflows` discovery record and that the First Officer selects/engages one workflow instead of retrying. Test with the doc build or existing docs checks if available, plus a focused assertion only if this repository already uses command-reference contract tests; make it fail by reverting the documented multi-workflow behavior.
 
 ## Test Plan
 
 - Add or extend Go tests in `internal/status/boot_identify_test.go` for the many-workflow JSON shape, asserting appended fields and count consistency while retaining the existing `command`/`discovery` compatibility.
 - Re-run the existing boot identify side-effect tests to guard no mutation/no `gh` and zero/one/many behavior.
-- Add a focused contract/startup fixture test that feeds the new many-workflow payload into the First Officer startup classification rule and asserts zero same-command retries before workflow selection. If there is no reusable parser helper, the implementation may introduce the smallest helper needed to test this behavior without invoking an LLM.
+- Perform a one-off live before/after boot drive at a multi-workflow root and record validation evidence: count duplicate follow-up retry calls (`status`, `jq`, `python3`, or `go run`) after the initial boot identify and before workflow selection. The before evidence should capture the recorded failure shape; the after evidence must show zero such retries.
 - Run `go test ./...` as the baseline gate, then `go test ./... -race` before completion.
 
 ## Expected Surface
@@ -97,10 +97,10 @@ Update the First Officer Startup contract narrowly: after running `status --boot
 - `internal/status/native_runner.go`: small JSON/text branch update for multi-workflow identify, roughly 10-25 LOC.
 - `internal/status/boot_identify_test.go`: extend fixture assertions, roughly 40-90 LOC.
 - `skills/first-officer/references/first-officer-shared-core.md`: one narrow Startup hint, roughly 1-4 lines net.
-- `internal/contractlint/` or nearby startup tests: focused no-retry classification fixture if no existing test fits, roughly 30-80 LOC.
 - `docs/site/reference/command-reference.md`: one sentence/row update, roughly 1-3 lines net.
+- Implementation validation notes or entity stage report: pasted before/after live-drive transcript evidence and retry counts, roughly 10-30 lines.
 
-Tolerance: up to ~200 net LOC across the above files is expected. Exceeding that should trigger implementation-stage explanation because the design intentionally avoids a broad boot-schema redesign.
+Tolerance: up to ~160 net LOC across the above files is expected. Exceeding that should trigger implementation-stage explanation because the design intentionally avoids a broad boot-schema redesign.
 
 
 
@@ -115,9 +115,22 @@ Tolerance: up to ~200 net LOC across the above files is expected. Exceeding that
 
 ### Summary
 
-Ideation scoped the fix to the many-workflow `--boot --identify` terminal branch: preserve PR #480 compatibility and side-effect boundaries, but append self-describing completion fields so LLM consumers know the sparse discovery record is complete. The plan also adds a narrow First Officer contract hint, docs wording, behavior tests for the JSON shape/no-mutation boundaries, and a startup classification fixture to catch duplicate retry regressions.
+Ideation scoped the fix to the many-workflow `--boot --identify` terminal branch: preserve PR #480 compatibility and side-effect boundaries, but append self-describing completion fields so LLM consumers know the sparse discovery record is complete. The plan also adds a narrow First Officer contract hint, docs wording, behavior tests for the JSON shape/no-mutation boundaries, and a live before/after boot-drive proof that counts duplicate retry calls in the actual LLM startup path.
 
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — captain/subspace; surface ideation vs estimate n/a; AC narrowed: AC-3 test shape replaced test-only helper/fixture with live-drive proof. Reviewer feedback: AC-3's test shape smuggled in a test-only Go helper ('may introduce the smallest helper'). Replace with a live-drive before/after retry count proof as validation evidence.
 
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Revise AC-3 and Proposed Design/Test Plan to remove the test-only Go classification helper/fixture.
+  Evidence: AC-3 and Test Plan now require a live before/after boot drive; Expected Surface removes the contractlint/startup fixture helper and budgets validation notes instead.
+- DONE: Replace AC-3's proof requirement with a live-drive before/after boot drive at a multi-workflow root, counting CLI retry calls and pasting the transcript evidence.
+  Evidence: AC-3 names the before/after multi-workflow boot drive, duplicate retry commands to count, and pasted transcript evidence as the implementation-stage proof.
+- DONE: Update the Ideation Stage Report summary to reflect the revised AC-3 and live-drive proof.
+  Evidence: the ideation summary now cites a live before/after boot-drive proof that counts duplicate retry calls in the actual LLM startup path.
+
+### Summary
+
+Revised ideation removes the proposed test-only Go classification/helper path that reviewer feedback rejected. AC-3 and the test plan now require validation by live before/after boot-drive transcript evidence at a multi-workflow root, counting duplicate retry calls in the actual LLM startup path.
