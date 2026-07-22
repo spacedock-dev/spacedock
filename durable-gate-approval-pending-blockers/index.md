@@ -1649,3 +1649,21 @@ The approved v1 recorder design now includes the missing two-logical-gate re-ent
 Revision 18 demonstrates that workflow stage selects the target gate even when another
 closed gate remains globally current, while both historical closures stay byte-identical;
 no product implementation changed.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Complete the two-verb agent surface: semantic `record --briefing`, exact `record --result --association --actor`, and chat `record --decision`; derive lifecycle/CAS/IDs internally and remove the unshipped `--operation` interface.
+  Commits `3c874fcd`, `2b03dd76`, and `6b450c7d` implement the surface; `TestGateRecordChatDecisionAndRejectsOperationInterface` fails if chat provenance is lost or `--operation` becomes accepted, and `TestRebindCloseFreezeAndSupersedeLifecycle` fails if A/B/C stop reusing one open attempt, closure stops freezing C, or D stops appending a successor.
+- DONE: Implement the cleaned v1 projection and compatibility boundary: minimal new writes, targeted preservation of all eight legacy histories, gates-only atomicity, full-package association before normalization, and discovery-safe exact Result/cross-gate fixtures.
+  `TestEightProductionHistoriesSurviveTargetedSemanticWrite` byte-compares every prior record and all non-`gates` bytes across eight fixtures; the exact Result SHA-256 is `46096103…`, and `TestGateRecordConsumesExactResultOnlyWithCompleteAssociation` fails on missing/primary-only association, premature normalization, or provider-wrapper leakage.
+- DONE: Update the landed contract/help and falsifiable tests, keep xb/h1 boundaries intact, report actual surface, and commit with `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` green.
+  Contract/schema/help name only the semantic forms and preserve presenter/application ownership; final baseline and race suites passed. Relative to `9d279b87`, actual surface is production `+823/-243` across four files, tests/fixtures `+698/-124` across six files, and contract/help `+72/-44` across four files.
+
+### Summary
+
+The recorder now owns lifecycle selection, current-stage lookup, CAS, ids, exact Result
+association validation, chat provenance, and surgical gates-only writes behind `record` and
+read-only `validate`. The production surface exceeded the ideation estimate's 2x tolerance
+because exact legacy byte preservation required a source-position writer and the complete
+association verifier; no provider transport, application lifecycle, workflow transition,
+dispatch behavior, new schema version, migration, or new production package was added.
