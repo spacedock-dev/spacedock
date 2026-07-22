@@ -1,7 +1,7 @@
 ---
 id: vzsastkvv2r6dpjakw1vq6wx
 title: Binary-upgrade prompt must name spacedock@next for edge-cask installs
-status: implementation
+status: validation
 source: "Captain report (CL) 2026-07-16 — the skill-upgrade version gate prompts `brew upgrade spacedock` regardless of how the binary was installed."
 started: 2026-07-21T15:58:31Z
 completed:
