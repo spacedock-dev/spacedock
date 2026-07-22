@@ -1355,6 +1355,7 @@ Baseline and race suites pass, formatting is clean, and the present implementati
 
 - Cycle 1: REJECTED — detached high-stakes audit; surface 17 files/1696 changed lines (774 production, 367 test) vs estimate 2-3 new internal files plus status/CLI/docs, 400-650 production LOC with roughly equal test LOC (119% of upper production estimate); AC unchanged
 - Cycle 2: REJECTED — captain-directed design reset to ideation after the validation gate; surface 27 files/2736 changed lines (778 production, 1403 test/fixture) vs estimate 2-3 new internal files plus status/CLI/docs, 400-650 production LOC with roughly equal test LOC (120% of upper production estimate); AC unchanged
+- Cycle 3: REJECTED — captain ideation escalation; surface 125 proposal lines vs revised 100-180 documentation lines (69% of upper documentation estimate); AC unchanged
 
 ## Stage Report: implementation (cycle 2)
 
