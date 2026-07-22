@@ -286,6 +286,68 @@ func TestStateCommitFolderIncludesWholeEntity(t *testing.T) {
 	}
 }
 
+// TestStateCommitFolderDeletion pins the Roborev deletion finding: the tracked
+// index identifies a folder entity even after it disappears from the worktree,
+// so deleting only index.md or the complete folder remains committable.
+func TestStateCommitFolderDeletion(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		removeAll bool
+		wantNames []string
+	}{
+		{name: "index", wantNames: []string{"deleted-folder/index.md"}},
+		{name: "complete folder", removeAll: true, wantNames: []string{"deleted-folder/artifacts/evidence.md", "deleted-folder/index.md"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, workflow, _, _ := twoHostStateWorkflow(t)
+			checkout := filepath.Join(workflow, ".spacedock-state")
+			host := filepath.Dir(filepath.Dir(workflow))
+			const slug = "deleted-folder"
+
+			writeFolderFile(t, workflow, slug, "index.md", "---\nstatus: implementation\n---\n# Deleted Folder\n")
+			writeFolderFile(t, workflow, slug, "artifacts/evidence.md", "tracked evidence\n")
+			git(t, checkout, "add", "--", slug)
+			git(t, checkout, "commit", "-q", "-m", "seed deletable folder", "--", slug)
+			git(t, checkout, "push", "-q", "origin", "HEAD")
+
+			if tc.removeAll {
+				if err := os.RemoveAll(filepath.Join(checkout, slug)); err != nil {
+					t.Fatal(err)
+				}
+			} else if err := os.Remove(filepath.Join(checkout, slug, "index.md")); err != nil {
+				t.Fatal(err)
+			}
+			if code, _, errOut := runStateCommitCmd(t, host, workflow, slug, "-m", "delete folder paths"); code != 0 {
+				t.Fatalf("tracked folder deletion should commit; exit=%d stderr=%q", code, errOut)
+			}
+			gotNames := strings.Fields(git(t, checkout, "show", "--name-only", "--pretty=format:", "HEAD"))
+			if strings.Join(gotNames, "\n") != strings.Join(tc.wantNames, "\n") {
+				t.Fatalf("folder deletion paths mismatch\nwant: %q\n got: %q", tc.wantNames, gotNames)
+			}
+			if porcelain := strings.TrimSpace(git(t, checkout, "status", "--porcelain", "--", slug)); porcelain != "" {
+				t.Fatalf("folder deletion should leave target clean; porcelain=%q", porcelain)
+			}
+		})
+	}
+}
+
+// TestStateCommitFlatDeletion retains the exact flat-file commit unit when the
+// tracked file itself has been deleted from the worktree.
+func TestStateCommitFlatDeletion(t *testing.T) {
+	_, workflow, _, _ := twoHostStateWorkflow(t)
+	checkout := filepath.Join(workflow, ".spacedock-state")
+	host := filepath.Dir(filepath.Dir(workflow))
+	if err := os.Remove(filepath.Join(checkout, "first-task.md")); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, errOut := runStateCommitCmd(t, host, workflow, "first-task", "-m", "delete flat entity"); code != 0 {
+		t.Fatalf("tracked flat deletion should commit; exit=%d stderr=%q", code, errOut)
+	}
+	if got := strings.TrimSpace(git(t, checkout, "show", "--name-only", "--pretty=format:", "HEAD")); got != "first-task.md" {
+		t.Fatalf("flat deletion should commit exactly first-task.md; got %q", got)
+	}
+}
+
 // TestStateCommitFolderMultiWriterHappyPath pins AC-5's disjoint-entity case:
 // folder entities (including their artifacts) remain separate rebase units.
 func TestStateCommitFolderMultiWriterHappyPath(t *testing.T) {

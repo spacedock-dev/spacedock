@@ -258,7 +258,7 @@ func peerCommitSHA(checkout, branch string) string {
 // form (via runGit) has no rendered command string for a weak model to paraphrase.
 func commitEntityPathScoped(checkout, entityPath, msg string) (ok bool, output string) {
 	rel := relToCheckout(checkout, entityPath)
-	if ok, out := runGitRetryLock(checkout, "add", "--", rel); !ok {
+	if ok, out := runGitRetryLock(checkout, "add", "-A", "--", rel); !ok {
 		return false, out
 	}
 	// Nothing staged for this entity → clean no-op success.
@@ -326,9 +326,10 @@ func conflictingPaths(checkout string) []string {
 }
 
 // resolveEntityCommitPath finds the commit unit for slug under checkout. Folder
-// form wins, matching canonical entity discovery, and commits the whole folder;
-// flat form commits only `{slug}.md`. EntitySlug remains the authority for the
-// slug represented by either discovered path.
+// form wins when present, matching canonical entity discovery, and commits the
+// whole folder; flat form commits only `{slug}.md`. A tracked candidate remains
+// resolvable after deletion so the exact same commit unit can record its removal.
+// EntitySlug remains the authority for the slug represented by either path.
 func resolveEntityCommitPath(checkout, slug string) (string, bool) {
 	nested := filepath.Join(checkout, slug, "index.md")
 	if fileExists(nested) && status.EntitySlug(nested) == slug {
@@ -338,7 +339,18 @@ func resolveEntityCommitPath(checkout, slug string) (string, bool) {
 	if fileExists(flat) && status.EntitySlug(flat) == slug {
 		return flat, true
 	}
+	if gitTracksPath(checkout, nested) && status.EntitySlug(nested) == slug {
+		return filepath.Dir(nested), true
+	}
+	if gitTracksPath(checkout, flat) && status.EntitySlug(flat) == slug {
+		return flat, true
+	}
 	return "", false
+}
+
+func gitTracksPath(checkout, path string) bool {
+	ok, _ := runGit(checkout, "ls-files", "--error-unmatch", "--", relToCheckout(checkout, path))
+	return ok
 }
 
 // validStateEntitySlug accepts the filesystem-level slug shape canonical entity
