@@ -12,10 +12,9 @@ NR == 1 {
     next
 }
 {
-    material = ($2 ~ /^supported:/ && $3 ~ /^present:/ &&
-                $4 ~ /^(value-ac|boundary):/ && $5 ~ /^supported:/)
+    material = ($2 ~ /^supported:/ && $3 ~ /^present:/ && $4 ~ /^(value-ac|boundary):/ && $5 ~ /^supported:/)
     recorded_material = ($6 == "material")
-    check = (material == recorded_material) ? "accept" : "reject"
+    check = (($6 == "material" || $6 == "correct-but-disproportionate") && material == recorded_material) ? "accept" : "reject"
 
     if ($7 != check) {
         printf "FAIL %s: got %s, want %s\n", $1, check, $7 > "/dev/stderr"
