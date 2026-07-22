@@ -258,14 +258,15 @@ func peerCommitSHA(checkout, branch string) string {
 // form (via runGit) has no rendered command string for a weak model to paraphrase.
 func commitEntityPathScoped(checkout, entityPath, msg string) (ok bool, output string) {
 	rel := relToCheckout(checkout, entityPath)
-	if ok, out := runGitRetryLock(checkout, "add", "-A", "--", rel); !ok {
+	pathspec := literalGitPathspec(rel)
+	if ok, out := runGitRetryLock(checkout, "add", "-A", "--", pathspec); !ok {
 		return false, out
 	}
 	// Nothing staged for this entity → clean no-op success.
-	if clean, _ := runGit(checkout, "diff", "--cached", "--quiet", "--", rel); clean {
+	if clean, _ := runGit(checkout, "diff", "--cached", "--quiet", "--", pathspec); clean {
 		return true, ""
 	}
-	ok, out := runGitRetryLock(checkout, "commit", "-m", msg, "--", rel)
+	ok, out := runGitRetryLock(checkout, "commit", "-m", msg, "--", pathspec)
 	if !ok {
 		return false, out
 	}
@@ -349,8 +350,12 @@ func resolveEntityCommitPath(checkout, slug string) (string, bool) {
 }
 
 func gitTracksPath(checkout, path string) bool {
-	ok, _ := runGit(checkout, "ls-files", "--error-unmatch", "--", relToCheckout(checkout, path))
+	ok, _ := runGit(checkout, "ls-files", "--error-unmatch", "--", literalGitPathspec(relToCheckout(checkout, path)))
 	return ok
+}
+
+func literalGitPathspec(path string) string {
+	return ":(literal)" + path
 }
 
 // validStateEntitySlug accepts the filesystem-level slug shape canonical entity

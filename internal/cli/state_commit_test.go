@@ -348,6 +348,89 @@ func TestStateCommitFlatDeletion(t *testing.T) {
 	}
 }
 
+// TestStateCommitTreatsSlugAsLiteralGitPathspec pins Roborev job 537: Git
+// pathspec metacharacters are valid filename characters, not permission to sweep
+// matching sibling entities or resolve a nonexistent wildcard alias.
+func TestStateCommitTreatsSlugAsLiteralGitPathspec(t *testing.T) {
+	t.Run("existing metacharacter slug", func(t *testing.T) {
+		bare, workflow, _, stateBranch := twoHostStateWorkflow(t)
+		checkout := filepath.Join(workflow, ".spacedock-state")
+		host := filepath.Dir(filepath.Dir(workflow))
+		const slug = ":(glob)scope*"
+		const target = ":(glob)scope*.md"
+		const trackedSibling = "scope-leak.md"
+		const untrackedSibling = "scope-new.md"
+
+		for path, body := range map[string]string{
+			target:         "---\nstatus: ideation\n---\n# Literal Star\n",
+			trackedSibling: "---\nstatus: ideation\n---\n# Tracked Sibling\n",
+		} {
+			if err := os.WriteFile(filepath.Join(checkout, path), []byte(body), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		git(t, checkout, "--literal-pathspecs", "add", "--", target, trackedSibling)
+		git(t, checkout, "--literal-pathspecs", "commit", "-q", "-m", "seed literal pathspec", "--", target, trackedSibling)
+		git(t, checkout, "push", "-q", "origin", stateBranch)
+
+		if err := os.WriteFile(filepath.Join(checkout, target), []byte("---\nstatus: implementation\n---\n# Literal Star\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(checkout, trackedSibling), []byte("dirty tracked sibling\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(checkout, untrackedSibling), []byte("dirty untracked sibling\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+
+		if code, _, errOut := runStateCommitCmd(t, host, workflow, slug, "-m", "literal metacharacter slug"); code != 0 {
+			t.Fatalf("metacharacter slug should commit literally; exit=%d stderr=%q", code, errOut)
+		}
+		if got := strings.TrimSpace(git(t, checkout, "show", "--name-only", "--pretty=format:", "HEAD")); got != target {
+			t.Fatalf("metacharacter slug should commit exactly %q; got %q", target, got)
+		}
+		porcelain := git(t, checkout, "status", "--porcelain", "--untracked-files=all")
+		for _, sibling := range []string{trackedSibling, untrackedSibling} {
+			if !strings.Contains(porcelain, sibling) {
+				t.Fatalf("matching sibling %q should remain dirty; porcelain:\n%s", sibling, porcelain)
+			}
+		}
+		if got := showOriginFile(t, bare, stateBranch, trackedSibling); !strings.Contains(got, "Tracked Sibling") {
+			t.Fatalf("origin tracked sibling should retain baseline; got %q", got)
+		}
+		if _, ok := gitOK(t, bare, "cat-file", "-e", stateBranch+":"+untrackedSibling); ok {
+			t.Fatalf("untracked matching sibling %q must not reach origin", untrackedSibling)
+		}
+	})
+
+	t.Run("nonexistent wildcard alias", func(t *testing.T) {
+		bare, workflow, _, stateBranch := twoHostStateWorkflow(t)
+		checkout := filepath.Join(workflow, ".spacedock-state")
+		host := filepath.Dir(filepath.Dir(workflow))
+		writeEntity(t, workflow, "wildcard-match", "---\nstatus: ideation\n---\n# Sibling\n")
+		git(t, checkout, "add", "--", "wildcard-match.md")
+		git(t, checkout, "commit", "-q", "-m", "seed wildcard sibling", "--", "wildcard-match.md")
+		git(t, checkout, "push", "-q", "origin", stateBranch)
+		writeEntity(t, workflow, "wildcard-match", "---\nstatus: implementation\n---\n# Dirty Sibling\n")
+		headBefore := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD"))
+		originBefore := strings.TrimSpace(git(t, bare, "rev-parse", stateBranch))
+
+		code, _, errOut := runStateCommitCmd(t, host, workflow, ":(glob)wildcard*")
+		if code == 0 || !strings.Contains(errOut, "no entity") {
+			t.Fatalf("nonexistent wildcard alias should not resolve; exit=%d stderr=%q", code, errOut)
+		}
+		if got := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD")); got != headBefore {
+			t.Fatalf("wildcard alias changed HEAD: before=%s after=%s", headBefore, got)
+		}
+		if got := strings.TrimSpace(git(t, bare, "rev-parse", stateBranch)); got != originBefore {
+			t.Fatalf("wildcard alias changed origin: before=%s after=%s", originBefore, got)
+		}
+		if porcelain := git(t, checkout, "status", "--porcelain"); !strings.Contains(porcelain, "wildcard-match.md") {
+			t.Fatalf("matching sibling should remain dirty; porcelain:\n%s", porcelain)
+		}
+	})
+}
+
 // TestStateCommitFolderMultiWriterHappyPath pins AC-5's disjoint-entity case:
 // folder entities (including their artifacts) remain separate rebase units.
 func TestStateCommitFolderMultiWriterHappyPath(t *testing.T) {
