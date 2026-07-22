@@ -170,7 +170,7 @@ A task reaches done when validation is complete and the captain approves the res
 
 ## Workflow State
 
-Workflow state is read from `.spacedock-state`. Read it with the launcher:
+Entities live directly under `.spacedock-state/` (no `entities/` directory); the workflow README stays in the main repo. Workflow state is read from `.spacedock-state`. Read it with the launcher:
 
 ```bash
 spacedock status --workflow-dir docs/dev

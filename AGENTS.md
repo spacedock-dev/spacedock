@@ -1,15 +1,12 @@
 # Agent Instructions
 
-This repo builds the Go-based `spacedock` launcher and the project-side skill integration needed to migrate Spacedock from plugin-shipped scripts to a stable command surface.
+This repo builds the Go-based `spacedock` launcher and the project-side skill integration behind its stable command surface.
 
 ## Priorities
 
-- Keep the first implementation compatibility-first. Preserve current `status` behavior before adding new semantics.
-- Do not add PR or mod behavior yet. The bootstrap scope is status, state checkout layout, skill command routing, and tests.
 - Prefer small Go packages with clear boundaries. Avoid a single large CLI file.
 - Use the standard library unless a dependency removes real complexity.
 - Keep command output stable and test it with fixtures.
-- Use folder-form workflow entities when reports or artifacts may accumulate beside an entity.
 
 ## Expected Commands
 
@@ -21,7 +18,7 @@ go test ./... -race
 gofmt -w ./cmd ./internal
 ```
 
-Use `go test ./...` as the baseline gate for every stage. Add focused tests for each stage before implementing that stage.
+Add focused tests for each stage before implementing that stage.
 
 ## Releasing
 
@@ -31,21 +28,12 @@ Cut stable releases from `main` via an annotated `vX.Y.Z` tag — see `docs/rele
 
 - `cmd/spacedock/`: process entry point only.
 - `internal/cli/`: command routing, usage text, exit-code behavior.
-- `internal/status/`: future status implementation and compatibility runner.
+- `internal/status/`: status implementation.
 - `docs/specs/`: design contracts, including the state behavior extension.
 - `docs/roadmap/`: bootstrap and migration roadmap.
 - `docs/dev/README.md`: development workflow definition.
 - `docs/dev/.spacedock-state/`: development workflow entities in a separate state checkout.
-- `skills/`: future skill-facing command integration notes and fixtures.
-
-## State-Branch Bootstrap Rules
-
-- For v0, each workflow may use a per-workflow `.spacedock-state` checkout.
-- The workflow README stays in the main repo.
-- During the compatibility phase, `.spacedock-state/README.md` may be a symlink to `../README.md`.
-- Active entities live directly under `.spacedock-state/`; do not introduce an `entities/` directory in v0.
-- Entity reports and artifacts live under the folder-form entity when they are part of the workflow record.
-- Product code, fixtures, docs, and release artifacts belong in the main repo when the task explicitly calls for them.
+- `skills/`: first-officer, ensign, and satellite skills plus integration fixtures.
 
 ## Skill Development
 
@@ -58,4 +46,4 @@ Cut stable releases from `main` via an annotated `vX.Y.Z` tag — see `docs/rele
 
 - When adding a new runtime host or debugging first-contact runtime friction, read `docs/runtime-support.md` first.
 - Use the documented "assume it already works" operating prompt before declaring a host impossible due to auth setup, extension/package discovery, or tool-shape mismatch.
-- Prove runtime claims with live or fixture-backed durable state evidence: process exit, entity body, state-checkout git log, and clean status. Do not substitute transcript phrasing or instruction-prose grep for behavior.
+- Prove runtime claims with live or fixture-backed durable state evidence - see `docs/runtime-support.md`.
