@@ -1,7 +1,7 @@
 ---
 id: q4pw3xb4nf4cwfdjtwbn17mz
 title: Retire legacy TeamCreate path and rename back-channel to inter-agent communication
-status: implementation
+status: validation
 source: captain (CL), 2026-07-20 session
 started: 2026-07-21T16:05:13Z
 completed:
