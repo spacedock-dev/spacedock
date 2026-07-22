@@ -1,12 +1,12 @@
 ---
 title: Ensure the automatic pre0 tag push triggers its release workflow
-status: ideation
+status: implementation
 source: "v0.25.0 stable cut, 2026-07-15: edge-advance pushed annotated v0.26.0-pre0, but no release run appeared; manually replaying the identical tag triggered release.yml immediately."
 started: 2026-07-21T15:58:31Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-auto-pre0-tag-push-release-trigger
 issue:
 milestone: 0.27.0
 id: 5aqczjeq6rq3mckbc5gyjqe3
