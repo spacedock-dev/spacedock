@@ -96,3 +96,29 @@ Ideation scoped the task to a small dispatch host-resolution change plus focused
 ### Summary
 
 `dispatch build` now auto-detects Pi when either `PI_CODING_AGENT` or `PI_CODING_AGENT_DIR` is present, while retaining safe ambiguity behavior across distinct runtime marker families. The implementation also clears Pi markers in legacy default-Claude test harness paths so the suite remains deterministic when run from a live Pi shell.
+
+## Stage Report: validation
+
+- DONE: Run go test ./... and go test ./... -race in worktree .worktrees/spacedock-ensign-dispatch-build-auto-detect-pi.
+  `go test ./...` passed; `go test ./... -race` passed; `go test ./internal/dispatch -run TestBuildHostResolutionFromFlagJSONAndEnv -count=1` passed and would fail if dispatch host resolution emitted the wrong host shape or exit code.
+- DONE: Verify dispatch_build_test.go covers both automatic host resolution and explicit overrides.
+  Coverage lives in `internal/dispatch/build_json_ergonomics_test.go` (actual dispatch build test file): subtests cover `PI_CODING_AGENT`, `PI_CODING_AGENT_DIR`, flag override, JSON override, missing-source text, and Pi+Codex ambiguity.
+- DONE: Record validation evidence in stage report.
+  This report records focused/full/race test evidence plus AC-specific semantic checks and the validation recommendation.
+
+### Acceptance Criteria Validation
+
+- DONE: AC-1 (Pi marker auto-detects Pi dispatch).
+  `derived-pi-from-PI_CODING_AGENT` runs command-level `dispatch build` with only `PI_CODING_AGENT=true`, asserts exit 0 and Pi read-dispatch body; it would fail if the boolean marker were ignored.
+- DONE: AC-2 (Pi directory marker also auto-detects Pi).
+  `derived-pi-from-PI_CODING_AGENT_DIR` runs command-level `dispatch build` with only a temp `PI_CODING_AGENT_DIR`, asserts exit 0 and Pi body; it would fail if only `PI_CODING_AGENT` were recognized.
+- DONE: AC-3 (Explicit host sources override Pi env).
+  `host-flag-overrides-pi-runtime` and `json-host-overrides-pi-runtime` assert Claude/Codex output under `PI_CODING_AGENT=true`; they would fail if environment host detection ran before explicit sources.
+- DONE: AC-4 (Ambiguous runtime markers fail safely).
+  `ambiguous-pi-runtime` asserts non-zero command-level failure naming `CODEX_THREAD_ID`, `PI_CODING_AGENT`, and `--host claude, codex, or pi`; it would fail if the resolver silently selected a host.
+- DONE: AC-5 (Operator-facing remediation names Pi).
+  `missing-source` asserts the missing-host remediation includes `PI_CODING_AGENT` and `PI_CODING_AGENT_DIR`; it would fail if the old Codex/Claude-only message returned.
+
+### Summary
+
+Validation PASSED. The focused, full, and race suites pass, and the AC evidence is command-level output/exit behavior rather than static prose; semantic review found explicit-source precedence is preserved before environment detection and same-host Pi markers do not create false ambiguity.
