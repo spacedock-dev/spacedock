@@ -1,6 +1,6 @@
 ---
 title: Gate recorder — durable gates records with binary-owned writes
-status: validation
+status: done
 score: "0.80"
 source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
@@ -31,8 +31,11 @@ gates:
                 decision: approve
                 reason: 'Captain directive: approved after reviewing the presented 3k validation gate.'
                 adoption-note: 'Captain decision on the presented 3k validation gate: approved.'
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:557
+verdict: passed
+completed: 2026-07-22T14:55:35Z
+archived: 2026-07-22T14:55:35Z
 ---
 
 # Gate recorder — durable gates records with binary-owned writes
