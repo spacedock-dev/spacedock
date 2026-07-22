@@ -1,6 +1,6 @@
 ---
 title: Sprint state projection feed and progress dashboard
-status: ideation
+status: backlog
 source: "Captain-directed visibility prototype, 2026-07-22."
 id: 68r2tcyvf9d0v8yv7sz00qt9
 ---
