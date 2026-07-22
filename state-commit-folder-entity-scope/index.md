@@ -15,7 +15,7 @@ group: recorder
 gates:
     version: 1
     current:
-        gate: gate:state-commit-folder-entity-scope:ideation
+        gate: gate:state-commit-folder-entity-scope:validation
     records:
         - id: gate:state-commit-folder-entity-scope:ideation
           stage: ideation
@@ -34,6 +34,15 @@ gates:
                 at: "2026-07-22T14:19:30.731531Z"
                 decision: approve
                 reason: 'Captain explicitly confirmed in chat after the recovered Subspace advisory approval: vn is approved.'
+        - id: gate:state-commit-folder-entity-scope:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:state-commit-folder-entity-scope-validation-1
+              briefing:
+                id: briefing:docs-dev:vn:validation:canonical-v1:revision-1
+                digest: sha256:af40be6a0218d6334de45aaec07c9e7d37777aa849b31c049cea93d44d93d31b
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-1
 ---
 
 `spacedock state commit <slug>` commits a flat entity correctly but treats a folder-form entity as only `<slug>/index.md`. Reports, evidence, and artifacts stored beside the index remain dirty even though the state command reports that the entity was committed and pushed.
