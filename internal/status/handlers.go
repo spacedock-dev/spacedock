@@ -429,6 +429,7 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 
 	applyEffectiveIDs(allEntities, idStyle, allEntities)
 	applyEffectiveIDs(entities, idStyle, allEntities)
+	materializeGateEligibility(entities, roots.definitionDir, explicitFields, allFieldsFlag, whereFilters)
 	materializeSuppressedBy(entities, stages, explicitFields, whereFilters)
 	entities = applyFilters(entities, whereFilters)
 

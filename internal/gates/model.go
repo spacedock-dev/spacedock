@@ -1,5 +1,5 @@
-// ABOUTME: Canonical v1 durable gate-resolution record model and invariants.
-// ABOUTME: The application subtree is a known opaque boundary owned by h1.
+// ABOUTME: Canonical v1 durable gate-resolution and one-use application model.
+// ABOUTME: Validation keeps unknown or conflicting application state fail-closed.
 package gates
 
 import (
@@ -27,10 +27,42 @@ type GateRecord struct {
 }
 
 type Attempt struct {
-	ID          string      `yaml:"id" json:"id"`
-	Briefing    Briefing    `yaml:"briefing" json:"briefing"`
-	Resolution  *Resolution `yaml:"resolution,omitempty" json:"resolution,omitempty"`
-	Application any         `yaml:"application,omitempty" json:"-"`
+	ID          string       `yaml:"id" json:"id"`
+	Briefing    Briefing     `yaml:"briefing" json:"briefing"`
+	Resolution  *Resolution  `yaml:"resolution,omitempty" json:"resolution,omitempty"`
+	Application *Application `yaml:"application,omitempty" json:"application,omitempty"`
+}
+
+type Application struct {
+	Action        string         `yaml:"action" json:"action"`
+	TargetStage   string         `yaml:"target-stage,omitempty" json:"target-stage,omitempty"`
+	State         string         `yaml:"state" json:"state"`
+	Blockers      *[]Blocker     `yaml:"blockers,omitempty" json:"blockers,omitempty"`
+	ExecutionHold *ExecutionHold `yaml:"execution-hold,omitempty" json:"execution-hold,omitempty"`
+	Feedback      *Feedback      `yaml:"feedback,omitempty" json:"feedback,omitempty"`
+}
+
+type Blocker struct {
+	ID               string `yaml:"id,omitempty" json:"id,omitempty"`
+	Kind             string `yaml:"kind,omitempty" json:"kind,omitempty"`
+	Ref              string `yaml:"ref,omitempty" json:"ref,omitempty"`
+	ExpectedRevision string `yaml:"expected-revision,omitempty" json:"expected-revision,omitempty"`
+	ExpectedState    string `yaml:"expected-state,omitempty" json:"expected-state,omitempty"`
+	State            string `yaml:"state,omitempty" json:"state,omitempty"`
+}
+
+type ExecutionHold struct {
+	ID     string `yaml:"id,omitempty" json:"id,omitempty"`
+	State  string `yaml:"state" json:"state"`
+	By     string `yaml:"by,omitempty" json:"by,omitempty"`
+	At     string `yaml:"at,omitempty" json:"at,omitempty"`
+	Reason string `yaml:"reason,omitempty" json:"reason,omitempty"`
+}
+
+type Feedback struct {
+	Cycle         int    `yaml:"cycle,omitempty" json:"cycle,omitempty"`
+	FindingRef    string `yaml:"finding-ref,omitempty" json:"finding-ref,omitempty"`
+	FindingDigest string `yaml:"finding-digest,omitempty" json:"finding-digest,omitempty"`
 }
 
 type Briefing struct {
@@ -53,12 +85,32 @@ type Resolution struct {
 }
 
 type Summary struct {
-	Gate       string
-	Attempt    string
-	State      string
-	Briefing   string
-	Resolution string
-	Decision   string
+	Gate             string
+	Attempt          string
+	State            string
+	Briefing         string
+	Resolution       string
+	Decision         string
+	Application      string
+	ApplicationState string
+	Condition        string
+	Eligible         bool
+	TargetStage      string
+}
+
+type Eligibility struct {
+	Gate             string
+	Attempt          string
+	Action           string
+	TargetStage      string
+	ApplicationState string
+	Condition        string
+	Eligible         bool
+}
+
+type ConsumeResult struct {
+	Eligibility
+	Consumed bool
 }
 
 func Validate(doc *Document) error {
@@ -72,6 +124,7 @@ func Validate(doc *Document) error {
 	selected := false
 	for ri := range doc.Records {
 		r := &doc.Records[ri]
+		pendingApplications := 0
 		if r.ID == "" || r.Stage == "" || gateIDs[r.ID] || len(r.Attempts) == 0 {
 			return fmt.Errorf("record %d has missing or duplicate identity or no attempts", ri+1)
 		}
@@ -101,14 +154,48 @@ func Validate(doc *Document) error {
 			if err := validateResolution(a.Resolution, a.Briefing.ID); err != nil {
 				return fmt.Errorf("attempt %s: %w", a.ID, err)
 			}
+			if a.Application != nil {
+				if err := validateApplication(a.Application, a.Resolution.Decision); err != nil {
+					return fmt.Errorf("attempt %s: %w", a.ID, err)
+				}
+				if a.Application.State == "pending" {
+					pendingApplications++
+				}
+			}
 			if resolutionIDs[a.Resolution.ID] {
 				return fmt.Errorf("duplicate resolution id %s", a.Resolution.ID)
 			}
 			resolutionIDs[a.Resolution.ID] = true
 		}
+		if pendingApplications > 1 {
+			return fmt.Errorf("gate %s carries more than one pending application", r.ID)
+		}
 	}
 	if !selected {
 		return fmt.Errorf("gates.current pointer does not resolve to one logical gate")
+	}
+	return nil
+}
+
+func validateApplication(a *Application, decision string) error {
+	switch a.State {
+	case "pending", "consumed", "superseded", "not-applicable":
+	default:
+		return fmt.Errorf("application state must be pending, consumed, superseded, or not-applicable")
+	}
+	switch decision {
+	case "approve":
+		if a.Action != "advance" || strings.TrimSpace(a.TargetStage) == "" || a.State == "not-applicable" {
+			return fmt.Errorf("approve application must be advance with a target stage")
+		}
+	case "revise":
+		if a.Action != "feedback" || strings.TrimSpace(a.TargetStage) == "" || a.State == "not-applicable" {
+			return fmt.Errorf("revise application must be feedback with a target stage")
+		}
+	case "hold":
+		if a.Action != "none" || a.TargetStage != "" || a.State != "not-applicable" {
+			return fmt.Errorf("hold application must be none/not-applicable")
+		}
 	}
 	return nil
 }
@@ -139,6 +226,11 @@ func CurrentSummary(doc *Document) Summary {
 		s := Summary{Gate: r.ID, Attempt: a.ID, State: attemptState(a), Briefing: a.Briefing.ID}
 		if a.Resolution != nil {
 			s.Resolution, s.Decision = a.Resolution.ID, a.Resolution.Decision
+		}
+		if a.Application != nil {
+			s.Application = a.Application.Action + "/" + a.Application.State
+			s.ApplicationState = a.Application.State
+			s.TargetStage = a.Application.TargetStage
 		}
 		return s
 	}

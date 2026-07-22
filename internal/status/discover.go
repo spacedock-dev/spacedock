@@ -218,6 +218,11 @@ func newEntity(fields map[string]string, slug, path, scope string) *entity {
 		fields["gate-briefing"] = summary.Briefing
 		fields["gate-resolution"] = summary.Resolution
 		fields["gate-decision"] = summary.Decision
+		fields["gate-application"] = summary.Application
+		fields["gate-application-state"] = summary.ApplicationState
+		fields["gate-condition"] = summary.Condition
+		fields["gate-eligible"] = fmt.Sprintf("%t", summary.Eligible)
+		fields["gate-target-stage"] = summary.TargetStage
 	}
 	fields["slug"] = slug
 	for _, k := range defaultEntityKeys {
@@ -233,6 +238,31 @@ func newEntity(fields map[string]string, slug, path, scope string) *entity {
 		scope:    scope,
 	}
 	return e
+}
+
+func materializeGateEligibility(entities []*entity, definitionDir string, explicitFields []string, allFields bool, filters []whereFilter) {
+	referenced := allFields
+	for _, field := range explicitFields {
+		if field == "gate-condition" || field == "gate-eligible" {
+			referenced = true
+		}
+	}
+	for _, filter := range filters {
+		if filter.field == "gate-condition" || filter.field == "gate-eligible" {
+			referenced = true
+		}
+	}
+	if !referenced {
+		return
+	}
+	for _, entity := range entities {
+		eligibility, err := gates.EligibilityFileAt(entity.path, definitionDir)
+		if err != nil {
+			continue
+		}
+		entity.fields["gate-condition"] = eligibility.Condition
+		entity.fields["gate-eligible"] = fmt.Sprintf("%t", eligibility.Eligible)
+	}
 }
 
 // archiveEntities scans entityDir/_archive in archived scope. Matches
