@@ -43,6 +43,15 @@ gates:
                 digest: sha256:af40be6a0218d6334de45aaec07c9e7d37777aa849b31c049cea93d44d93d31b
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:state-commit-folder-entity-scope:validation:1
+                briefing: briefing:docs-dev:vn:validation:canonical-v1:revision-1
+                by: agent:first-officer
+                at: "2026-07-22T15:55:30.121749Z"
+                decision: approve
+                reason: All six acceptance criteria reproduced; Roborev material findings fixed; full, race, focused, format, and clean checks passed; live xb and vn gate-room commits proved exact folder scoping.
+                adoption-note: 'Captain: you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement.'
 ---
 
 `spacedock state commit <slug>` commits a flat entity correctly but treats a folder-form entity as only `<slug>/index.md`. Reports, evidence, and artifacts stored beside the index remain dirty even though the state command reports that the entity was committed and pushed.
