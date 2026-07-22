@@ -1,8 +1,10 @@
 ---
 title: Drop the non-meaningful activeSessionFile characterization subtest
-status: backlog
+status: implementation
 source: "Captain review (CL) 2026-07-22 — mp (#548) gave four tautological tests teeth; three earn their keep, but #1 tests a test-local port not production behavior. Delete it."
 id: sf2d5zawymn5n86g8nt597nh
+worktree: .worktrees/spacedock-ensign-drop-activesessionfile-characterization-subtest
+started: 2026-07-22T05:44:43Z
 ---
 
 Delete the `activeSessionFile_would_flip_to_teammate` subtest from TestFOSessionPinning — it characterizes a test-local port's mod-time tiebreak, not the shipped session-resolution behavior, so it is not worth keeping even with teeth.
