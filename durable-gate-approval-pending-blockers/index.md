@@ -31,6 +31,7 @@ gates:
                 decision: approve
                 reason: 'Captain directive: approved after reviewing the presented 3k validation gate.'
                 adoption-note: 'Captain decision on the presented 3k validation gate: approved.'
+mod-block: merge:pr-merge
 ---
 
 # Gate recorder — durable gates records with binary-owned writes
