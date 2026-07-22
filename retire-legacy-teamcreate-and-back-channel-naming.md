@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-retire-legacy-and-retry-rung
 issue:
 mod-block: merge:pr-merge
-pr: "#549"
+pr: pr-merge:549
 ---
 
 Retire the legacy TeamCreate machinery from the shipped FO contract and stop naming the worker/FO messaging surface "back-channel".
