@@ -193,6 +193,59 @@ func TestBootIdentifyUniformZeroOneMany(t *testing.T) {
 	}
 }
 
+// TestBootIdentifyManyWorkflowJSONSelfDescribing asserts the many-workflow terminal
+// identify branch remains compatible (command + discovery are still first) while
+// appending the completion envelope that tells LLM consumers to select a workflow
+// instead of retrying the same boot identify call.
+func TestBootIdentifyManyWorkflowJSONSelfDescribing(t *testing.T) {
+	root := t.TempDir()
+	buildWorkflowUnder(t, root, "wf-a")
+	buildWorkflowUnder(t, root, "wf-b")
+
+	out, errOut, code := runNative(t, root, pinnedEnv(t), "--boot", "--identify", "--json")
+	if code != 0 {
+		t.Fatalf("many-workflow identify boot exit=%d stderr=%q", code, errOut)
+	}
+	orderedKeys := []string{"command", "discovery", "schema", "status", "result", "terminal", "workflow_count", "next_action"}
+	last := -1
+	for _, key := range orderedKeys {
+		idx := strings.Index(out, `"`+key+`"`)
+		if idx < 0 {
+			t.Fatalf("many-workflow identify record missing key %q\n%s", key, out)
+		}
+		if idx < last {
+			t.Fatalf("many-workflow identify key %q out of order; envelope must append after command/discovery\n%s", key, out)
+		}
+		last = idx
+	}
+
+	var rec struct {
+		Command       string   `json:"command"`
+		Discovery     []string `json:"discovery"`
+		Schema        string   `json:"schema"`
+		Status        string   `json:"status"`
+		Result        string   `json:"result"`
+		Terminal      bool     `json:"terminal"`
+		WorkflowCount int      `json:"workflow_count"`
+		NextAction    string   `json:"next_action"`
+	}
+	if err := json.Unmarshal([]byte(out), &rec); err != nil {
+		t.Fatalf("parse many-workflow identify record: %v\n%s", err, out)
+	}
+	if rec.Command != "boot" {
+		t.Fatalf("command = %q, want boot", rec.Command)
+	}
+	if len(rec.Discovery) != 2 {
+		t.Fatalf("discovery = %v, want two workflows", rec.Discovery)
+	}
+	if rec.Schema != "spacedock.status.boot.identify.discovery.v1" || rec.Status != "complete" || rec.Result != "multiple_workflows" || !rec.Terminal || rec.NextAction != "select_workflow" {
+		t.Fatalf("completion envelope not self-describing/terminal: %+v", rec)
+	}
+	if rec.WorkflowCount != len(rec.Discovery) {
+		t.Fatalf("workflow_count = %d, want len(discovery) %d", rec.WorkflowCount, len(rec.Discovery))
+	}
+}
+
 // buildWorkflowUnder materializes a commissioned split-root workflow named `name`
 // under root, so discovery finds it.
 func buildWorkflowUnder(t *testing.T, root, name string) {

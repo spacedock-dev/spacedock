@@ -66,9 +66,9 @@ var foHostLoadPaths = map[string][]string{
 // under another host's headroom. Growing a host's load past its constant is a
 // deliberate re-baseline edit here, with the growth justified in the change.
 var foHostLoadBaselineBytes = map[string]int{
-	"claude": 95378,
-	"codex":  74593,
-	"pi":     70723,
+	"claude": 95818,
+	"codex":  75033,
+	"pi":     71163,
 }
 
 var mutableProcedureAddress = regexp.MustCompile(`(?i)(?:\bsteps?[- ]\d+(?:\.\d+)?(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?|\breuse[- ]conditions?[- ]?\d+|\btiers?[- ]\d+|\btiers?\s+\d+(?:\s+and\s+\d+)?|\bentry-point principle\s+\d+|\b(?:signals?|items?)\s*\(\d+(?:\s*,\s*\d+)*(?:\s*,?\s*or\s*\d+)?\s+above\))`)
@@ -285,6 +285,34 @@ func TestFODeferredDispatchOwnerLoadsBeforeUse(t *testing.T) {
 	} {
 		if !strings.Contains(principles, want) {
 			t.Errorf("smallest-sufficient commissioned-dispatch boundary missing %q", want)
+		}
+	}
+}
+
+func TestFOBootManyWorkflowDiscoveryIsTerminal(t *testing.T) {
+	shared := readRepoFile(t, filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"))
+
+	boot := foMarkdownSection(t, shared, "## «state.boot»(): read all local startup identify in one call")
+	for _, want := range []string{
+		"**many discovery:** accept a complete discovery-only boot record",
+		`result: "multiple_workflows"`,
+		`status: "complete"`,
+		"`terminal: true`",
+		"do not retry or deep-boot before a workflow is selected",
+	} {
+		if !strings.Contains(boot, want) {
+			t.Errorf("state.boot many-workflow contract missing %q", want)
+		}
+	}
+
+	interaction := foMarkdownSection(t, shared, "## «interaction.boundary»(): route interactive and headless launch behavior")
+	for _, want := range []string{
+		"Multiple workflows discovered; select one with engage <workflow>.",
+		"do not retry identify",
+		"invent missing workflow-specific boot sections",
+	} {
+		if !strings.Contains(interaction, want) {
+			t.Errorf("interaction boundary many-workflow greet contract missing %q", want)
 		}
 	}
 }
