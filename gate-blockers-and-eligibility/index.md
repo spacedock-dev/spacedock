@@ -3,41 +3,24 @@ title: Approved-pending blockers, execution holds, and dispatch eligibility for 
 status: validation
 source: "Split from the gate-recorder task (3k), captain-approved 2026-07-21. Carries 3k's original seed concern (captain design feedback 2026-07-13: an approval evaporated while its dispatch stayed blocked)."
 id: h1y616vjh64wc961z5t1031d
-gates:
-    version: 1
-    current:
-        gate: gate:docs-dev:h1:ideation
-        attempt: gate-attempt:h1-ideation-1
-    records:
-        - id: gate:docs-dev:h1:ideation
-          stage: ideation
-          current-attempt: gate-attempt:h1-ideation-1
-          attempts:
-            - id: gate-attempt:h1-ideation-1
-              sequence: 1
-              state: closed
-              briefing:
-                id: briefing:docs-dev:h1:ideation:briefing-1
-                digest: sha256:f98f7ac3f9b6933a83ec8d573204c44ae1e2ba598f63378bc71ac09e604dbc78
-                room-ref: "./review/ideation/briefing-1"
-                note: "Multi-artifact package: gate summary, frozen entity snapshot, frozen recorder-contract snapshot — each digest-pinned inside the briefing; the digest above binds briefing.json itself."
-              resolution:
-                type: Resolution
-                id: resolution:captain-chat-h1-ideation-1
-                briefing: briefing:docs-dev:h1:ideation:briefing-1
-                by: person:captain
-                at: 2026-07-21T12:52:44Z
-                decision: approve
-                reason: "Captain approve in chat after a left-open float and a requested justification of the application abstraction (what breaks without it: exactly-once consumption across sessions, staleness marking, the approve-consequence routing, and the structural advisory-cannot-advance guarantee — each anchored to a lived incident). The left-open envelope is retained in-room (float-result.json); the captain saw the floated content and rendered this resolution in chat, so the captain identity is correct under the recording-identity ruling."
-              application:
-                action: advance
-                target-stage: implementation
-                state: consumed
-              note: "The ships-vs-declines split stands: the application record ships; the blocker-evaluator half stays a recorded decline with its promotion condition."
 sprint: durable-decisions
 group: recorder
 started: 2026-07-21T01:43:36Z
 worktree: .worktrees/spacedock-ensign-gate-blockers-and-eligibility
+gates:
+    version: 1
+    current:
+        gate: gate:gate-blockers-and-eligibility:validation
+    records:
+        - id: gate:gate-blockers-and-eligibility:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:gate-blockers-and-eligibility-validation-1
+              briefing:
+                id: briefing:docs-dev:h1:validation:canonical-v1:revision-1
+                digest: sha256:7c670b058779747408567c5502e6c530522e68d32286b0a43290add76724a8c7
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-1
 ---
 
 The application layer is what a recorded gate decision *does*: it turns a durable approval into exactly one workflow action, or holds it durably when it must not act yet. The recorder owns the resolution record (what the decision *is*); this layer owns the one-use `application` — its `pending → consumed` transition through the existing workflow transition and dispatch path, its `superseded` marking on reviewed-input drift, its `not-applicable` state under a portable `hold`, and the fail-closed eligibility read that decides whether a pending action may act now. The record's field shapes are authored in the settled contract (`durable-gate-approval-pending-blockers/gate-resolution-frontmatter-contract.md`); this task designs the behavior over the `application.*` sections that contract marks application-layer-owned.
