@@ -376,3 +376,33 @@ The shared scenario now exercises Codex and Claude through their established run
 
 The change adds only shared runtime-scenario fixtures, host runner wiring, live/offline oracles, scenario documentation, and the narrow Codex matcher correction.
 It adds no controller, separate validation lane, workflow convergence behavior, or product-state mutation.
+
+## Stage Report: validation (cycle 6)
+
+- FAILED: Independently run the shared multi-workflow after-only oracle and the explicit Pi live scenario, proving one identify, zero retry/convergence calls, the exact standalone selection greeting, and unchanged durable state.
+  The candidate Pi run passed with one direct identify, terminal envelope, zero retry/convergence calls, exact greeting, and unchanged state, but an overlay adversarial test proved `echo 'spacedock status --boot --identify --json'` falsely counts as execution; a separate live trace also showed one conditional Bash event falsely counted as two calls.
+- FAILED: Re-run the exact archived Codex filing regression plus the heredoc-narration adversarial case and adjacent malformed/unrelated cases; reject any false positive or lost observed success.
+  The exact 278-byte archived success still passes (SHA-256 `027b05c786a5558cb259a85c8a8ca0760bbe3029998c39f50e92a3e61fe69218`), and checked-in heredoc/malformed/alternate-variable negatives pass, but a quoted `echo` argument containing the pipeline-shaped example still false-passes as executed filing.
+- DONE: Re-evaluate all acceptance criteria under Feedback Cycle 6's captain-approved AC-3 narrowing, run focused/full/race gates, inspect PR #551's current live checks, and report PASSED/REJECTED with material findings separated from deferred risks.
+  Focused boot/contract/scenario/filing tests, `gofmt -l ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed; clean local, remote, and PR heads equal `8fca55ec` and PR #551 is mergeable.
+- DONE: AC-1 multi-workflow identify JSON is self-describing and terminal.
+  Focused native tests and the candidate Pi output independently showed the ordered compatibility fields plus the complete typed envelope with `workflow_count == len(discovery)`.
+- DONE: AC-2 original PR #480 boundaries remain intact.
+  Zero/one/many, side-effect, PR-local-mirror, and native boot-oracle tests passed; no candidate live state, HEAD, entity, archive, or worktree artifact changed.
+- FAILED: Feedback Cycle 6 AC-3 after-only live invariant has a valid shared proof mechanism.
+  Material evidence defect: the observed candidate Pi behavior satisfies the narrowed outcome, but transcript substring matching can both accept a non-executed echoed identify and reject one executed conditional launcher call, so exact cardinality is not established reliably.
+- DONE: AC-4 user-facing and operator-facing contracts describe the discovery-only terminal branch.
+  Contractlint, docs checks, and the live exact standalone greeting all passed.
+
+### Material Findings
+
+- Evidence mechanism defect (AC-3): `assertMultiWorkflowBoot` matches unanchored shell substrings and counts mutually exclusive branches as executions. Replace transcript inference with an instrumented launcher invocation ledger (or another execution-grounded boundary) before claiming one call; this is a proof-mechanism reset, not an observed product outcome defect.
+- Evidence mechanism defect (filing regression): `displayQuotedPipelineCall` cannot distinguish a real pipe from identical bytes inside a quoted narration argument. The promised narration-negative boundary remains unsound and blocks the filing live grade; use quote-aware command parsing or a more durable execution signal.
+
+### Deferred Risks
+
+- At inspection, offline, docs, and both install checks were green while four model-live jobs remained `WAITING`. This promotes to material if any concludes non-successfully; it does not change the two locally reproduced material evidence defects.
+
+### Summary
+
+The captain-approved after-only product outcome was observed successfully in a fresh candidate Pi run, and AC-1, AC-2, and AC-4 remain satisfied. Validation recommends **REJECTED** because both new transcript-regex proof mechanisms admit adjacent narration false positives, and the boot oracle also miscounts conditional launcher branches; these require execution-grounded evidence redesign rather than another wording-only correction.
