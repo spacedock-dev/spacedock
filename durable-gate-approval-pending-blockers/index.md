@@ -1668,3 +1668,97 @@ read-only `validate`. The production surface exceeded the ideation estimate's 2x
 because exact legacy byte preservation required a source-position writer and the complete
 association verifier; no provider transport, application lifecycle, workflow transition,
 dispatch behavior, new schema version, migration, or new production package was added.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: **AC-1** A normal recorded approval and reviewed digest survive cold reads while
+  `status` remains byte-identical and no application or dispatch record is created.
+  Reproduced through `TestGateRecordAndValidateCLILeaveStatusUntouched`,
+  `TestGateRecordDecisionClosesMinimalBriefingAttempt`, and the status projection tests.
+- DONE: **AC-4** Portable `approve`, `revise`, and `hold` rationale rules, exact Result
+  adoption, and restart visibility remain correct on the supported fixtures.
+  `TestPortableResolutionValidation`,
+  `TestProviderResolutionIncludesRequireSameBriefingAnnotation`, the exact Result CLI
+  test, and the three-decision status test all passed.
+- DONE: **AC-6 (record-state subset)** Text and JSON status independently surfaced
+  recorded `approve`, `hold`, and `revise`; unrelated `status --set` preserved `gates`.
+  `TestStatusTextAndJSONProjectAllRecordedResolutionStates` and
+  `TestUnrelatedSetPreservesGatesAndStatusProjectsResolution` passed.
+- FAILED: **AC-10 (VALUE)** A supported flow-style unknown field can make a semantic
+  re-entry write return success while corrupting the selection pointer. With
+  `gates.current: {shadow: 'gate:validation', gate: 'gate:validation', attempt: ...}`,
+  the source-position editor changes `shadow` to `gate:ideation` instead of the parsed
+  `gate` scalar, updates the attempt pointer, and leaves the entity unreadable with a
+  current-pointer conflict. The failed operation is not atomic because it is reported as
+  successful and commits invalid durable state.
+- FAILED: **AC-12** The same detached source-position probe creates a gate/attempt fork
+  rather than failing closed. The ordinary two-gate and eight-history fixtures pass, but
+  they do not cover an earlier same-valued scalar on the target flow-map line.
+- FAILED: **AC-13** A three-artifact association truncated to its first canonical artifact
+  **and** first presentation mapping is accepted. The verifier compares the two submitted
+  list lengths but has no independent package inventory, so a consistently truncated
+  association self-declares completeness and permits identity normalization. The landed
+  primary-only test removes only one side and therefore misses this case.
+- FAILED: **AC-14** The approved ordinary cross-logical-gate re-entry fixture passes and
+  preserves both closures, but the supported flow-map collision above makes the same
+  re-entry journey select an invalid gate/attempt pair after appending its successor.
+- DONE: Reproduce the public surface and ownership constraints.
+  The only public verbs are semantic `record` and read-only `validate`; `--operation`
+  exits 2; open/rebind/close/supersede, exact Result, chat provenance, wrapper exclusion,
+  normal current-stage selection, and frozen closure all passed. Diff inspection confirms
+  no v2/migration, provider transport, application lifecycle, status transition, dispatch,
+  xb, or h1 ownership leak. The captain-reconfirmed production surface is exactly
+  `+823/-243` across `internal/cli/cli.go` and the three production `internal/gates` files.
+- DONE: Run the required gates.
+  `gofmt -w ./cmd ./internal` produced no diff; uncached `go test ./... -count=1` and
+  `go test ./... -race -count=1` passed all 18 packages. Focused CLI/gates/status tests
+  also passed before the detached audit.
+
+### Reviewer Findings
+
+1. **Material outcome defect — AC-10/AC-12/AC-14, narrow writer correction.**
+   `scalarEdit` locates a parsed YAML node only by its line and then replaces the first
+   matching scalar bytes on that line. Flow mappings can contain an earlier unknown field
+   with the same scalar, a supported v1 compatibility shape. The exact detached input
+   above made `RecordBriefing` return nil and produced
+   `current: {shadow: 'gate:ideation', gate: 'gate:validation', attempt:
+   'attempt:ideation-2'}`; the next `Read` failed with a current-pointer conflict. Correct
+   the exact node-span edit and validate the rebuilt bytes before rename/success.
+2. **Material outcome defect and mechanism failure — AC-13; focused design reset.**
+   The public association is its own only source of the canonical artifact inventory.
+   Removing artifacts and their mappings together is therefore indistinguishable from a
+   genuinely complete smaller package. This violates the approved requirement that the
+   recorder verify the complete retained association before normalization. The end value
+   remains reachable, but needs independent canonical-package ground truth (or an
+   equivalently authenticated completeness binding); list-cardinality checks within the
+   untrusted association cannot establish it. Per validation policy, route this boundary
+   through a focused design reset rather than an automatic implementation-only repair.
+
+No deferred risk or polish-only finding was identified. The normal-path and race suites
+remain green, but they do not waive either supported data-integrity failure.
+
+### Feedback Cycles
+
+- **Detached validation-cycle-5 audit — source-position adversarial edit:** added a
+  flow-style `gates.current` unknown field before `gate`, with the same old gate value.
+  The semantic cross-gate re-entry returned success and wrote an invalid pointer fork.
+- **Detached validation-cycle-5 audit — association-completeness adversarial edit:**
+  removed canonical artifacts 2-3 and their corresponding presentation mappings from the
+  exact three-artifact association. `verifyAssociation` returned nil.
+- **Detached validation-cycle-5 claim-breaking controls:** replacing current-stage lookup
+  with global-current lookup red-lined
+  `TestGateRecordBriefingReentersStageGateWhenAnotherGateIsSelected`; normalizing the
+  Result identity before provider verification red-lined the exact Result test; removing
+  closed-attempt byte equality red-lined `TestFrozenMutationIsRejected`. These controls
+  confirm the current-stage, normalization-order, and frozen-closure tests can fail for
+  their stated claims.
+
+### Summary
+
+**REJECTED.** The semantic surface, ordinary lifecycle outcomes, status projection,
+compatibility fixtures, scope boundaries, formatter, baseline suite, and race suite are
+green. The detached audit nevertheless found two material supported-path defects: the
+source-position writer can return success with corrupted gate selection, and the retained
+association can self-declare a truncated multi-artifact package complete. Repair the
+writer narrowly and reset the association-verification mechanism around independent
+package completeness evidence before re-validation.
