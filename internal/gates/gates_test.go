@@ -48,6 +48,25 @@ func TestCanonicalLifecycleRebindCloseFreezeAndSupersede(t *testing.T) {
 	}
 }
 
+func TestNonCanonicalBriefingBasenameFailsBeforeLockOrMutation(t *testing.T) {
+	entity := writeEntity(t, "status: ideation\ntitle: Unchanged\n")
+	room := t.TempDir()
+	briefing := filepath.Join(room, "revision-1.json")
+	if err := os.WriteFile(briefing, []byte(completeBriefing("briefing:local:basename:ideation:attempt-1:revision-1", "reject basename")), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	before := readFile(t, entity)
+	if err := RecordBriefing(entity, briefing); err == nil || !strings.Contains(err.Error(), "named briefing.json") {
+		t.Fatalf("noncanonical basename = %v, want refusal", err)
+	}
+	if got := readFile(t, entity); got != before {
+		t.Fatal("noncanonical basename changed entity")
+	}
+	if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
+		t.Fatalf("noncanonical basename left lock residue: %v", err)
+	}
+}
+
 func TestCanonicalCrossGateReentryPreservesFrozenApplication(t *testing.T) {
 	entity := writeEntity(t, canonicalTwoGateFrontmatter())
 	doc, oldNode, err := Read(entity)

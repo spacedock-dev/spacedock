@@ -73,7 +73,9 @@ reference. The approved domains are:
 
 `spacedock gate record` derives lifecycle under the entity lock:
 
-1. `--briefing` derives the logical gate from the entity's current workflow stage.
+1. `--briefing` requires the retained package manifest basename `briefing.json`, then
+   derives the logical gate from the entity's current workflow stage. Any other basename
+   is rejected before locking or mutation.
 2. With no record for that stage, it opens the first attempt.
 3. With an open last attempt, an identical binding is a no-op and a changed binding
    replaces that attempt's Briefing.
@@ -124,7 +126,7 @@ data.
 ## Command surface
 
 ```text
-spacedock gate record ENTITY --briefing FILE [--workflow-dir DIR]
+spacedock gate record ENTITY --briefing PATH/briefing.json [--workflow-dir DIR]
 spacedock gate record ENTITY --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]
 spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]
 spacedock gate validate ENTITY [--workflow-dir DIR]

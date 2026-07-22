@@ -165,7 +165,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing FILE [--workflow-dir DIR]\n       spacedock gate record <entity> --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--workflow-dir DIR]")
+				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing PATH/briefing.json [--workflow-dir DIR]\n       spacedock gate record <entity> --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--workflow-dir DIR]")
 				return nil
 			}
 			if len(args) < 2 || (args[0] != "record" && args[0] != "validate") {

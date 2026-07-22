@@ -93,6 +93,9 @@ func RecordSemantic(entityPath string, input RecordInput) error {
 	if input.BriefingPath != "" && (input.ResultPath != "" || input.AssociationPath != "" || input.Actor != "" || input.AdoptionNote != "" || input.Decision != "" || input.Reason != "" || input.Directive != "") || input.ResultPath != "" && (input.Decision != "" || input.Reason != "" || input.Directive != "") || input.Decision != "" && (input.AssociationPath != "" || input.AdoptionNote != "") {
 		return fmt.Errorf("gate record flags do not match the selected semantic source")
 	}
+	if input.BriefingPath != "" && filepath.Base(input.BriefingPath) != "briefing.json" {
+		return fmt.Errorf("--briefing must name a canonical package manifest named briefing.json")
+	}
 	unlock, err := lockEntity(entityPath)
 	if err != nil {
 		return err

@@ -37,6 +37,39 @@ func TestGateRecordAndValidateCLILeaveStatusUntouched(t *testing.T) {
 	}
 }
 
+func TestGateRecordRejectsNonCanonicalBriefingBasenameBeforeMutation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n---\n# Workflow\n")
+	entity := filepath.Join(root, "task.md")
+	writeFile(t, entity, "---\nstatus: ideation\ntitle: Task\n---\n# Task\n")
+	room := filepath.Join(root, "review", "ideation", "briefing-1")
+	if err := os.MkdirAll(room, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	noncanonical := filepath.Join(room, "revision-1.json")
+	copyGateTestdata(t, noncanonical, "revision-18.json")
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", noncanonical}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "named briefing.json") {
+		t.Fatalf("noncanonical basename exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("noncanonical Briefing basename changed the entity")
+	}
+	if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
+		t.Fatalf("noncanonical Briefing basename left lock residue: %v", err)
+	}
+}
+
 func TestGateRecordBriefingReentersStageGateWhenAnotherGateIsSelected(t *testing.T) {
 	root, entity, briefing := crossGateFixture(t)
 	before, err := os.ReadFile(entity)
@@ -123,14 +156,27 @@ func TestGateRecordDecisionClosesMinimalBriefingAttempt(t *testing.T) {
 }
 
 func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) {
-	root, entity := semanticDecisionFixture(t)
+	root, entity, briefing := unboundSemanticDecisionFixture(t)
 	result := filepath.Join(root, "result.json")
 	association := filepath.Join(root, "association.json")
 	copyGateTestdata(t, result, "exact-review-v1-result.json")
 	copyGateTestdata(t, association, "exact-review-v1-association.json")
 
 	var out, errOut bytes.Buffer
-	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("bind retained briefing.json exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	bound, _, err := gates.Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := bound.Records[0].Attempts[0].Briefing.RoomRef; got != "./review/validation/briefing-1" {
+		t.Fatalf("accepted binding room-ref = %q", got)
+	}
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 2 || !strings.Contains(errOut.String(), "--association") {
 		t.Fatalf("result without association exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
@@ -186,6 +232,20 @@ func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) 
 			t.Fatalf("provider wrapper field %q crossed the portable boundary: %s", wrapperField, resolutionBytes)
 		}
 	}
+}
+
+func unboundSemanticDecisionFixture(t *testing.T) (root, entity, briefing string) {
+	t.Helper()
+	root = t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n---\n# Workflow\n")
+	entity = filepath.Join(root, "task.md")
+	writeFile(t, entity, "---\nstatus: validation\ntitle: Task\n---\n# Task\n")
+	briefing = filepath.Join(root, "review", "validation", "briefing-1", "briefing.json")
+	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	copyGateTestdata(t, briefing, "exact-validation-briefing.json")
+	return root, entity, briefing
 }
 
 func TestGateRecordChatDecisionAndRejectsOperationInterface(t *testing.T) {
@@ -245,7 +305,7 @@ func crossGateFixture(t *testing.T) (root, entity, briefing string) {
 	entity = filepath.Join(root, "durable-gate-approval-pending-blockers.md")
 	digest := func(char string) string { return "sha256:" + strings.Repeat(char, 64) }
 	writeFile(t, entity, "---\nstatus: ideation\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:ideation\n      stage: ideation\n      attempts:\n        - id: gate-attempt:3k-ideation-9\n          briefing:\n            id: briefing:ideation:9\n            digest: "+digest("1")+"\n            digest-domain: raw-file-pin\n            room-ref: ./review/ideation/9\n          resolution:\n            type: Resolution\n            id: resolution:ideation:9\n            briefing: briefing:ideation:9\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: approve\n          application:\n            state: pending\n            blockers: [preserve-me]\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:validation:1\n            digest: "+digest("2")+"\n            digest-domain: raw-file-pin\n            room-ref: ./review/validation/1\n          resolution:\n            type: Resolution\n            id: resolution:validation:1\n            briefing: briefing:validation:1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: revise\n            reason: Re-enter ideation.\nsprint: durable-decisions\ntitle: Task\n---\n# Task\n")
-	briefing = filepath.Join(root, "review", "ideation", "briefing-18", "revision-18.json")
+	briefing = filepath.Join(root, "review", "ideation", "briefing-18", "briefing.json")
 	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
 		t.Fatal(err)
 	}
