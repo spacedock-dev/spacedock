@@ -279,3 +279,23 @@ The captain's question is well-founded and the answer is yes: the binary was the
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — Roborev job 541; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
+- Cycle 2: PASSED — Roborev job 542; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
+
+## Stage Report: implementation
+
+- DONE: Ship the present-gate overridable-channel contract with chat fallback, complete canonical Briefing presentation, exact retained Result handoff, and honest association to what the reviewer actually saw.
+  Commits `cf6008fd` and `612b72fc` add default chat, the six-part override contract, exact retained Result handoff to `gate record`, and one-to-one provider Artifact/Reference mapping to the complete canonical inventory.
+- DONE: Prove missing/mismatched presenter falls back without side effects and the full-package journey never promotes a single-file float into a complete-package association.
+  The skill makes availability/version probing precede package and retention creation; the provider's 12-fixture drive suite remains the required pinned cross-repo proof and is not claimed as a local run, while `TestGateRecordConsumesExactResultOnlyWithCompleteAssociation` rejects the primary-only fixture and proves the entity stays byte-unchanged.
+- DONE: Keep the Spacedock binary Subspace-free and preserve the provider-owned hardened override script plus committed drive suite as the named pinned cross-repo release condition.
+  `go list -deps ./cmd/spacedock` returns no Subspace dependency; `TestGatePresentationRemainsOutsideBinary` fails if a `gate review` verb appears or if rejecting it changes the working directory; the skill names the pinned provider script and CI suite as release eligibility.
+- DONE: Reconcile implementation surface against the pre-edit declaration.
+  Actual surface is 15 skill lines, 8 docs lines, and 26 test-line additions with 3 replacements across 4 files, below the declared prose estimate and within the 2× test/docs tolerance; no Go production, recorder, provider, gate-state, or frontmatter surface changed.
+- DONE: Run repository and documentation verification.
+  `go test ./...` and `go test ./... -race` fail on behavioral regressions; `mkdocs build --strict` verifies the touched concept page; `gofmt -w ./cmd ./internal` and `git diff --check` pass.
+- DONE: Request and triage Roborev on the completed commits.
+  Job 541 found one material AC-5 ambiguity about provider References; `612b72fc` made every Artifact/Reference mapping explicit without expanding recorder scope, and job 542 returned `No issues found.`
+
+### Summary
+
+The present-gate skill now owns an overridable rendering channel: chat remains the side-effect-free default, and a provider override must present the complete canonical package, retain exact results and diagnostics, and associate only content the reviewer saw. The implementation leaves the binary Subspace-free and keeps the hardened provider script plus its committed drive suite as the pinned cross-repo release condition.
