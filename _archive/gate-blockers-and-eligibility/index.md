@@ -1,6 +1,6 @@
 ---
 title: Approved-pending blockers, execution holds, and dispatch eligibility for recorded gates
-status: validation
+status: done
 source: "Split from the gate-recorder task (3k), captain-approved 2026-07-21. Carries 3k's original seed concern (captain design feedback 2026-07-13: an approval evaporated while its dispatch stayed blocked)."
 id: h1y616vjh64wc961z5t1031d
 sprint: durable-decisions
@@ -30,8 +30,11 @@ gates:
                 decision: approve
                 reason: Exact candidate c7612661 passed 10/10 validation checks, AC-A1 through AC-A5 and AC-B1, independent false-green controls, byte-identical refusal paths, detached audit, focused/full/race tests, formatting, and clean-head verification; 642 production additions remain within the approved 2x ceiling and no material finding remains.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:560
+verdict: passed
+completed: 2026-07-22T17:28:31Z
+archived: 2026-07-22T17:28:31Z
 ---
 
 The application layer is what a recorded gate decision *does*: it turns a durable approval into exactly one workflow action, or holds it durably when it must not act yet. The recorder owns the resolution record (what the decision *is*); this layer owns the one-use `application` — its `pending → consumed` transition through the existing workflow transition and dispatch path, its `superseded` marking on reviewed-input drift, its `not-applicable` state under a portable `hold`, and the fail-closed eligibility read that decides whether a pending action may act now. The record's field shapes are authored in the settled contract (`durable-gate-approval-pending-blockers/gate-resolution-frontmatter-contract.md`); this task designs the behavior over the `application.*` sections that contract marks application-layer-owned.
