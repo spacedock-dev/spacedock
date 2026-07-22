@@ -10,6 +10,8 @@ score:
 worktree:
 issue:
 milestone: 0.26.0
+sprint: durable-decisions
+group: recorder
 ---
 
 `spacedock state commit <slug>` commits a flat entity correctly but treats a folder-form entity as only `<slug>/index.md`. Reports, evidence, and artifacts stored beside the index remain dirty even though the state command reports that the entity was committed and pushed.
