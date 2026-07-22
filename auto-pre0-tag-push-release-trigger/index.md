@@ -1,6 +1,6 @@
 ---
 title: Ensure the automatic pre0 tag push triggers its release workflow
-status: implementation
+status: validation
 source: "v0.25.0 stable cut, 2026-07-15: edge-advance pushed annotated v0.26.0-pre0, but no release run appeared; manually replaying the identical tag triggered release.yml immediately."
 started: 2026-07-21T15:58:31Z
 completed:
