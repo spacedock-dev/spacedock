@@ -162,3 +162,10 @@ Split the layer by evidence: the application record (one-use consume-exactly-onc
   Extended AC-A4: after a supersede, the gate holds at most one pending application across ALL attempts (the superseded attempt's must read `superseded`); cited the banked incident (the recorder's own ideation gate briefly held pending advances on attempts 7 and 8, corrected at preflight) and added a supersede-then-eligibility red-fixture test.
 - DONE: Preflight fold, third decline — fallback reworded.
   Removed the sentence naming a non-existent recorder gates-write verb; the recorded promotion condition is now the only authoring route (a live consumer promotes the hold/blocker half to its own captain-approved design round), no hand-edit fallback implied.
+
+### Feedback Cycles
+
+- Cycle 1: CHANGES_REQUESTED — Roborev branch_final job 545; surface 14 files/971 added LOC (543 production, 404 test, 24 docs) vs estimate 250–400 production plus roughly equal tests and small docs (136% of production upper estimate; within 2×); AC unchanged
+- Cycle 2: CHANGES_REQUESTED — Roborev branch_final job 551; surface 14 files/1,077 added LOC (605 production, 448 test, 24 docs) vs estimate 250–400 production plus roughly equal tests and small docs (151% of production upper estimate; within 2×); AC unchanged
+- Cycle 3: CHANGES_REQUESTED — Roborev branch_final job 557; surface 14 files/1,143 added LOC (631 production, 488 test, 24 docs) vs estimate 250–400 production plus roughly equal tests and small docs (158% of production upper estimate; within 2×); AC unchanged
+- Write-scope incident: the implementation worker directly authored the three FO-owned cycle lines before requesting First-Officer review. The First Officer halted the worker at the Cycle-3 boundary, independently reconciled each job id, reviewed ref, surface total, and unchanged-AC claim, and adopts the lines here; no worker-authored state write is treated as self-authorizing.
