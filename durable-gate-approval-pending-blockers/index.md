@@ -1552,3 +1552,49 @@ record a provider/chat decision, while lifecycle mechanics disappear from their 
 from the durable contract. The exact late Review v1 result now anchors the first fixture;
 implementation remains paused pending approval, with xb owning presentation retention and
 h1 retaining application lifecycle ownership.
+
+## Ideation delta from cycle 22 (cycle 23)
+
+The captain rejected the proposed v2/migration. This recorder is unreleased, so the design
+now revises **v1 in place**. There is no migration or bulk rewrite: the reader accepts the
+eight hand-authored/dogfood histories and preserves their existing pointers, `sequence`,
+`previous-attempt`, `state`, notes, applications, and unknown fields. Targeted mutations
+maintain a present legacy pointer/state when lifecycle consistency requires it, but new
+minimal attempts do not mint those derivable fields.
+
+The public surface returns to the approved two verbs. `spacedock gate record` accepts
+exactly one semantic source (`--briefing`, `--result`, or chat `--decision` inputs) and
+internally derives open/rebind/close/supersede, CAS, and recorder ids; `spacedock gate
+validate` is read-only. The exact forms and gates-only before/after projections for all
+three record paths are the primary artifact in
+[`review/ideation/briefing-17/`](review/ideation/briefing-17/briefing.json).
+
+Provider normalization now requires a retained association that covers the exact Result
+digest, provider Briefing identity, bound canonical Briefing identity/revision, and complete
+presentation mapping. Primary-artifact equality alone is an explicit rejection case. The
+late Review v1 Result is frozen byte-identically at
+[`exact-review-v1-result.json`](review/ideation/briefing-17/exact-review-v1-result.json),
+SHA-256 `4609610352bef7206a7cab143a4768d30342bd101a7bd7692220cc72ba1464f7`;
+without such an association it is negative evidence, not an adoptable decision.
+
+The seven end-value ACs remain AC-1/4/6/10/12/13/14. The revised incremental surface is
+~220-360 production LOC touched with net production LOC no higher than `9d279b87`,
+~300-500 test/fixture LOC, and ~80-150 documentation lines, tolerance 2x. Exact Result and
+association fixtures belong only under test discovery-safe paths during implementation;
+provider transport remains xb-owned and application lifecycle remains h1-owned.
+
+## Stage Report: ideation (cycle 23)
+
+- DONE: Revise the unreleased v1 contract in place: remove v2/migration machinery, stop minting derivable mechanics on new writes, and tolerate existing historical fields without rewriting them.
+  The cycle-23 delta keeps legacy fields in place, limits mutation to targeted compatibility maintenance, and defines minimal new attempts under v1.
+- DONE: Keep the public surface to `gate record` plus `gate validate`, with mutually exclusive semantic Briefing, exact Result, and chat-decision inputs; require verified canonical-package association before provider identity normalization.
+  Briefing 17 gives the exact command grammar and three gates-only projections; its exact late Result is a rejection fixture until full-package association exists.
+- DONE: Freeze the exact Review v1 evidence durably and return only a concise delta from cycle 22, including retained compatibility behavior, unchanged end-value ACs, and revised surface.
+  The room copy is byte-identical at SHA-256 `46096103…`; the delta confirms all seven retained ACs, the narrower surface, and paused product HEAD `9d279b87`.
+
+### Summary
+
+The corrected gate package presents an unreleased-v1 design with one semantic record verb,
+binary-owned mechanics, exact gates-only writes, and no migration. It freezes the real late
+provider output while refusing to equate a single matching artifact with a verified
+multi-artifact Briefing; implementation remains paused for captain approval.
