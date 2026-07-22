@@ -1904,3 +1904,26 @@ all focused, baseline, and race tests pass. The gate remains blocked because an 
 `--briefing FILE` can become unresolvable on the exact Result path, and two public contract
 surfaces still promise the legacy compatibility the captain explicitly removed. Both are
 narrow corrections; re-validation should retain the clean canonical-v1 ruling.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Enforce the canonical retained Briefing package boundary before any mutation: `--briefing FILE` must name a manifest whose basename is exactly `briefing.json`; reject every other basename with no entity change or lock residue.
+  Commit `024a2c56` checks the basename before `lockEntity`; `TestNonCanonicalBriefingBasenameFailsBeforeLockOrMutation` fails if `revision-1.json` is accepted, entity bytes differ, or a lock remains.
+- DONE: Update the cross-logical-gate and other fixtures to stage approved manifest bytes as `room/briefing.json`, then prove an accepted binding remains resolvable by the exact Result path.
+  The cross-gate fixture now stages revision-18 bytes as `briefing-18/briefing.json`; `TestGateRecordConsumesExactResultOnlyWithCompleteAssociation` begins blank, binds exact `briefing.json`, then records the exact Result through the stored room reference.
+- DONE: Add an end-to-end negative for valid canonical Briefing bytes named `revision-1.json`: the initial record command must fail before write, rather than create a dead-end binding.
+  `TestGateRecordRejectsNonCanonicalBriefingBasenameBeforeMutation` drives the public CLI and fails unless exit 1 names `briefing.json`, the entity is byte-identical, and `.gates.lock` is absent.
+- DONE: Remove stale prototype/legacy-preservation promises from docs/schema/entity.mdschema.yml and docs/site/reference/frontmatter-contract.md; state only canonical-v1 gates, byte-exact unrelated entity preservation, and the known opaque h1-owned application boundary.
+  Both public sources now reject prototype/unknown binary-owned fields, retain only opaque `application` nesting, and promise byte-exact preservation solely outside `gates`.
+- DONE: Inspect all public help/spec/schema/reference text for the same contradiction and update only where needed; do not add path aliases, migration, compatibility, copied artifact payloads, or another durable manifest-path field.
+  CLI help, command reference, and recorder spec now show `PATH/briefing.json`; an audited contradiction search is empty, and the model still stores only `room-ref` while artifact URI + SHA references remain external.
+- DONE: Run focused gates/CLI/status tests, gofmt, git diff --check, go test ./..., and go test ./... -race; report exact results, commit the clean correction, and preserve the rigorous deletion totals.
+  Focused gates/CLI/status passed; `gofmt -w ./cmd ./internal` and `git diff --check` were clean; baseline and race each passed all 18 packages. Production remains 1,707 versus 1,982 cycle-3 lines, and tests/fixtures 937 versus 1,977.
+
+### Summary
+
+The accepted `--briefing` surface now exactly matches the later Result resolver: every
+durable package is rooted at `briefing.json`, and alternate basenames fail before the
+lock. Public schema/reference/help text now matches the strict canonical-v1 product while
+the earlier prototype deletion, external artifacts, opaque application, and atomic writer
+boundaries remain unchanged.
