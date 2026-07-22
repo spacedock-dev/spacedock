@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-upgrade-remedy-install-source-aware
 issue:
 mod-block: merge:pr-merge
-pr: "#556"
+pr: pr-merge:556
 ---
 
 When the skill is upgraded and determines the binary needs upgrading, the remedy it emits hardcodes `brew upgrade spacedock` — even when that is not how the binary was installed. It must detect the real install source and runtime context and emit the correct upgrade instruction. Likely a follow-up gap in the shipped upgrade-hint work (`install-refresh-and-upgrade-hint`, `init-upgrade-and-contract-remedy`).
