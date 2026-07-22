@@ -1,6 +1,6 @@
 ---
 title: Gate recorder — durable gates records with binary-owned writes
-status: validation
+status: implementation
 score: "0.80"
 source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
@@ -1372,6 +1372,7 @@ Baseline and race suites pass, formatting is clean, and the present implementati
 - Cycle 2: REJECTED — captain-directed design reset to ideation after the validation gate; surface 27 files/2736 changed lines (778 production, 1403 test/fixture) vs estimate 2-3 new internal files plus status/CLI/docs, 400-650 production LOC with roughly equal test LOC (120% of upper production estimate); AC unchanged
 - Cycle 3: REJECTED — captain ideation escalation; surface 125 proposal lines vs revised 100-180 documentation lines (69% of upper documentation estimate); AC unchanged
 - Cycle 4: RECONFIRMED — captain accepted the implementation surface expansion; surface 14 files/2004 changed lines (1066 production, 822 test/fixture, 116 contract/help) vs revised 220-360 production, 300-500 test/fixture, 80-150 documentation lines (296% of upper production estimate; 148% of the 2x production ceiling); AC unchanged
+- Cycle 5: REJECTED — validation/captain boundary reset; surface 36 files/4557 changed lines with the captain-reconfirmed production surface still 1066 changed lines vs revised 220-360 production lines (296% of upper estimate); AC narrowed: v1 owes no compatibility or migration for prototype `gates:` encodings, so the flow-map/unknown-field collision is out of supported scope and not a release blocker. Canonical multi-artifact association completeness remains material: derive the complete inventory from independent canonical Briefing bytes bound by the frozen JCS digest, then require exact presentation mapping before normalization. Simplify the binary-owned v1 writer boundary rather than adding arbitrary prototype-shape preservation.
 
 ## Stage Report: implementation (cycle 2)
 
