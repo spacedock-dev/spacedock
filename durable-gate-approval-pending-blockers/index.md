@@ -8,6 +8,20 @@ started: 2026-07-18T08:58:53Z
 sprint: durable-decisions
 group: recorder
 worktree: .worktrees/spacedock-ensign-durable-gate-approval-pending-blockers
+gates:
+    version: 1
+    current:
+        gate: gate:durable-gate-approval-pending-blockers:validation
+    records:
+        - id: gate:durable-gate-approval-pending-blockers:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:durable-gate-approval-pending-blockers-validation-1
+              briefing:
+                id: briefing:docs-dev:3k:validation:canonical-v1:revision-1
+                digest: sha256:3e8bd794cca22705c69f045e2b7e0eab1427c59f65772f9e3f864c0eb930b5a1
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-v1
 ---
 
 # Gate recorder — durable gates records with binary-owned writes
