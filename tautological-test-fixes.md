@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-tautological-test-fixes
 issue:
 mod-block: merge:pr-merge
-pr: "#548"
+pr: pr-merge:548
 ---
 
 Four tests across internal/ensigncycle and internal/status assert nothing that can actually fail — confirmed by mutation-testing each one. Fix them so they have an independent oracle instead of mirroring the production logic or dropping the assertion entirely.
