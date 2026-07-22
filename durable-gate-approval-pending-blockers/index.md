@@ -1426,3 +1426,128 @@ Packaged the passed validation evidence into a compact captain-facing gate revie
 ### Summary
 
 Completed the validation review room as a portable Briefing v1 package with a concise primary review, frozen entity and contract references, exact artifact revisions, and decision-specific routing. Only package and state-report artifacts changed; the validated product branch remains untouched.
+
+## Ideation delta: binary-owned recorder journey (cycle 22)
+
+**What changes from the validated design:** replace the agent-authored transaction envelope
+with semantic recorder commands. The binary now derives `open` versus open-attempt rebind
+versus post-closure successor, reads the current pointer inside the same entity lock, mints
+gate/attempt/Resolution ids, and writes only the decision projection. This delta supersedes
+the command, schema-mechanics, and provider-result portions above; the full entity and
+`docs/specs/gate-resolution-frontmatter-contract.md` remain reference material, not the next
+gate's presented body.
+
+### Smallest agent-facing journey
+
+Before, an agent had to run `spacedock gate record ENTITY --operation op.yml [--briefing
+briefing.json]`; `op.yml` selected `open|rebind|close|supersede`, repeated the expected
+gate/attempt/Briefing/digest pointer, minted ids, and translated provider output into
+recorder-specific `entries`.
+
+After, the surface is:
+
+```text
+spacedock gate bind ENTITY --briefing ROOM/briefing.json [--workflow-dir DIR]
+spacedock gate resolve ENTITY --result FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]
+spacedock gate resolve ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]
+spacedock gate validate ENTITY [--workflow-dir DIR]
+```
+
+`bind` validates a complete immutable Briefing and derives the logical gate from entity
+identity plus current stage. No existing gate means open; a changed Briefing while the
+current attempt is open means **rebind** (same attempt, binding replaced, old binding only
+in Git/room); a bind after closure means **supersede** (append a new attempt, never mutate
+the closure). `resolve --result` consumes exact provider bytes. The chat form receives only
+the semantic decision, reason/directive, and recording identity; the binary supplies time,
+ids, portable shape, CAS, and lifecycle operation. The unshipped `--operation` form is
+removed, with an error pointing to `bind`/`resolve`. A nonbinding/advisory provider result
+requires an authorized adopting actor plus an adoption note; a delegated chat decision
+requires the quoted directive.
+
+### Durable projection: retained and removed
+
+The v2 contract retains `version`, one `current-gate`, logical gate `id` + `stage`, ordered
+self-contained attempts, recorder-owned attempt `id`, the current/frozen Briefing
+`id`/digest/domain/room reference, the exact portable Resolution, and the h1-owned
+`application` subtree unchanged. These are the minimum facts needed to cold-read multiple
+logical gates, locate and verify reviewed bytes, distinguish attempts, and reproduce each
+decision without Git.
+
+It removes the duplicated `current.attempt`, `current-attempt`, `sequence`,
+`previous-attempt`, and `state` contract fields: list order gives sequence/lineage/current,
+and Resolution absence/presence gives open/closed. Recorder-authored record/attempt/Briefing
+notes also leave the v2 contract; decision provenance belongs in the Briefing, Resolution,
+or adoption note. Operation, expected CAS, and candidate ids were never decision facts and
+are no longer accepted input or stored history. Git remains the audit log for rebinds and
+migrations. Legacy notes/extensions remain opaque compatibility data, not fields new writes
+mint.
+
+### Briefing and Result ownership; exact fixture spike
+
+The gate-attempt/presentation side owns the readable review, complete immutable Briefing,
+artifact resolution, and durable result transport. The recorder accepts that Briefing,
+verifies it, and records decisions; it never builds presentation. Provider code owns
+`result.json` bytes. The recorder verifies the current canonical Briefing's artifact
+revision and actor authority before copying the portable Resolution, then normalizes only
+its provider Briefing identity to the bound canonical identity.
+
+The exercised fixture is `/tmp/subspace-3k-legible-gate.afzJuE/result.json`, exact SHA-256
+`4609610352bef7206a7cab143a4768d30342bd101a7bd7692220cc72ba1464f7`. It is
+`review-v1-result`/`advisory`/`binding:false`, carries its Resolution at `.resolution` (no
+`.entries`), and names provider Briefing
+`briefing:single-file:f8f13afcbd9bb2b3fb2732927934ac40`. The canonical package is
+`review/validation/briefing-1/briefing.json`, id
+`briefing:docs-dev:3k:validation:attempt-1:revision-1`. The spike reproduced that both name
+the same primary bytes through revision
+`sha256:d2a747755b1c348c499396a1900c0f94a0387565f2a0f4f1d9744b18c124a5a4` while the
+Briefing identities differ. That is the first implementation fixture: exact input, artifact
+match first, authority check second, identity normalization last; no fabricated provider
+Result, `entries`, or `briefing-digest` envelope.
+
+**Dependency note for xb:** the valid result arrived after the presenter helper had already
+reported failure. The presentation transport must retain late provider completion bytes and
+their canonical-package association even after controller failure. Repository files may be
+Briefing References by URI + SHA only when xb/provider's resolver can reproduce those bytes;
+otherwise xb freezes a room copy. The recorder neither polls the provider nor owns retention.
+
+### Compatibility, ACs, proof, and expected surface
+
+All eight 0260 histories remain first-class v1 fixtures. Reads and status never rewrite
+them and keep current text/JSON behavior. The first successful gate write performs one
+locked v1→v2 projection migration; it preserves ids, stages, Briefing values, exact
+Resolutions, opaque applications, and unknown extensions, and removes only derivable
+mechanics. Any legacy pointer disagreement fails closed without migration. Unrelated
+`status --set` never migrates. Tests compare all eight histories before/after by semantic
+projection and assert unchanged status; a two-gate lifecycle proves A→B→C binds reuse one
+open attempt, resolution freezes C, and D appends a new attempt.
+
+The seven end-value ACs remain **AC-1, AC-4, AC-6, AC-10, AC-12, AC-13, and AC-14**.
+AC-13's mechanism wording changes from fabricated `entries` to exact Review v1 `.resolution`
+or binary-constructed chat Resolution; AC-10/12/14 tests stop requiring exposed operation,
+pointer, sequence, or state fields. The value claims remain unchanged: restart durability,
+portable approve/revise/hold, status visibility, gates-only mutation, multi-gate attempts,
+portable-boundary fidelity, and rebind/freeze/re-entry behavior.
+
+Revised incremental surface: edit `internal/gates/{model,operation,io,gates_test}.go`,
+`internal/cli/cli.go`, status projection tests if required, one exact Review v1 fixture, and
+the contract/reference docs; no new production package. Expect ~250-400 production LOC
+touched with net production LOC at or below `9d279b87`, ~300-500 test/fixture LOC, and
+~100-180 documentation lines, tolerance 2x. Any provider launch/retention code, application
+lifecycle, or inability to preserve all eight histories trips reconfirmation before build.
+
+## Stage Report: ideation (cycle 22)
+
+- DONE: Define the smallest agent-facing recorder journey: bind a complete Briefing or consume an exact Review v1 result/chat decision, while the binary derives lifecycle operation, pointer CAS, and recorder-owned IDs.
+  The delta replaces `--operation` with `bind` and two `resolve` forms and specifies derived open/rebind/supersede/close behavior.
+- DONE: Reduce durable gate metadata to the self-contained current/frozen decision projection; use Git for open-attempt rebind history and justify every retained or removed field against cold replay and compatibility.
+  The v2 projection removes five redundant mechanics fields, retains decision facts, and gives the eight v1 histories a fail-closed atomic migration path.
+- DONE: Return a concise captain-facing ideation delta covering before/after command surface, schema, ownership, exact-result spike, compatibility, acceptance-criterion impact, and revised surface estimate; do not implement before approval.
+  This cycle records the verified exact-result digest/identity mismatch, xb transport dependency, unchanged end-value AC set, and bounded correction surface; product HEAD remains `9d279b87`.
+
+### Summary
+
+The reset makes the recorder semantic and binary-owned: agents bind a complete Briefing or
+record a provider/chat decision, while lifecycle mechanics disappear from their input and
+from the durable contract. The exact late Review v1 result now anchors the first fixture;
+implementation remains paused pending approval, with xb owning presentation retention and
+h1 retaining application lifecycle ownership.
