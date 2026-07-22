@@ -407,3 +407,42 @@ It adds no controller, separate validation lane, workflow convergence behavior, 
 ### Summary
 
 The captain-approved after-only product outcome was observed successfully in a fresh candidate Pi run, and AC-1, AC-2, and AC-4 remain satisfied. Validation recommends **REJECTED** because both new transcript-regex proof mechanisms admit adjacent narration false positives, and the boot oracle also miscounts conditional launcher branches; these require execution-grounded evidence redesign rather than another wording-only correction.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Replace shell-source substring inference for boot-identify cardinality with a test-local launcher shim that records actual argv before executing the real spacedock binary.
+  Evidence: commit `115f5019` adds a test-only NUL-delimited argv ledger whose `spacedock` shim records each invocation before `exec` of the resolved real binary; bypassing the shim makes the one-identify oracle fail.
+
+- DONE: Grade exactly one boot identify execution and zero pre-selection retry-helper executions from the recorded invocation ledger, not narrated or quoted command text.
+  Evidence: `TestMultiWorkflowBootAfterOnlyInvariant` grades recorded `spacedock`, `jq`, `python3`, and `go run` argv and rejects duplicate identify, status retry, each helper retry, deep boot, and convergence variants.
+
+- DONE: Use execution-grounded evidence for the atomic filing command as well, so an echoed or quoted pipeline cannot satisfy the filing assertion.
+  Evidence: `assertFilingViaNew` now requires recorded `spacedock new <slug>` or adjacent `status --new <slug>` argv and rejects any recorded `status --next-id`; it reads no host transcript source.
+
+- DONE: Keep the shared multi-workflow scenario wired into fixture-backed Codex/Claude/Pi coverage and the Pi live test; preserve exact greeting and no convergence/mutation assertions.
+  Evidence: Codex, Claude/PTY, and Pi runners inject the same ledger into the existing shared fixture; removing the exact greeting, a workflow path, immutable entity bytes, clean HEAD/status, or artifact absence fails the unchanged durable oracle.
+
+- DONE: Delete or substantially reduce superseded shell-source parsing and quoting heuristics; do not add a production dependency, controller, compatibility layer, or CI lane.
+  Evidence: the correction removes the host filing parsers, boot command regexes, archived transcript regression, and fixture for a net `314` additions/`570` deletions, all confined to `_test.go` and testdata surfaces.
+
+- DONE: Add negative controls proving narrated/echoed command-shaped text is rejected while actual shim-recorded invocations pass.
+  Evidence: `TestInvocationLedgerRecordsExecutionNotCommandShapedNarration` and `TestAssertFilingViaNewUsesExecutedArgv` leave echo-only ledgers empty, then require exact actual shim-recorded argv to pass.
+
+- DONE: Run focused tests, the Pi live multi-workflow test, gofmt, go test ./..., and go test ./... -race; record commands and outcomes in the implementation report.
+  Evidence: focused ledger/filing/oracle tests, live-tag compilation, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed; the explicit Pi live command also passed.
+
+- DONE: Commit and push the correction to the existing PR branch.
+  Evidence: commit `115f50190f33fb5abe770e615728131ca285cea8` fast-forwarded remote parent `8fca55ec`; local, remote, and PR #551 heads all resolve to `115f5019`.
+
+### Summary
+
+Cycle 5 replaces both rejected transcript-source proof mechanisms with one execution-grounded, test-local argv ledger while preserving the accepted product behavior and shared runtime scenario.
+The live Pi ledger contained only `spacedock --version` and one `spacedock status --boot --identify --json`, proving zero retry-helper or convergence executions before selection.
+
+### Verification
+
+- Focused: `go test ./internal/ensigncycle -run 'TestInvocationLedger|TestAssertFilingViaNew|TestMultiWorkflowBootAfterOnlyInvariant' -count=1` passed.
+- Live compile: `go test -tags live ./internal/ensigncycle -run '^$'` passed.
+- Pi live: `go test -tags live ./internal/ensigncycle -run '^TestLivePiMultiWorkflowBootScenario$' -count=1 -v` passed.
+- Baseline: `go test ./...` passed.
+- Race: `go test ./... -race` passed.
