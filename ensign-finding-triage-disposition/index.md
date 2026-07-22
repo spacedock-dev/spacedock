@@ -351,3 +351,28 @@ Applied the captain's advisory-resolution reframe: the triage disposition moves 
 ### Summary
 
 The triage semantics, advisory decline shape, all-declines distinction, and falsifiable four-field fixture are implemented in commit d3efaea0. Actual surface is 0 production LOC, 40 fixture/check lines, and 48 docs/skill/spec lines versus the declared 0 / 35–55 / 25–40 with 2× tolerance; no hard scope boundary was crossed, but the 703-byte FO ratchet failure requires an explicit decision before implementation can complete.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Ship the finding-consumption rule and decline-as-advisory-resolution semantics in the approved prose/fixture surface, with zero product LOC and no generic rounds-record plumbing.
+  Commits d3efaea0, 059b12d8, 9b2093b5, and e85eb0cf ship the thin trigger, owner-tagged contract shape, offline fixture/check, exact captain-authorized +703 host baselines, and bounded evidence fixes; no product or recorder-plumbing path changed.
+- DONE: Prove a seeded correct-but-disproportionate finding yields an explicit recorded decline and zero-line product diff, while no-findings and all-declines remain observably distinct.
+  The offline check accepts Case A with zero product LOC, rejects both material-as-declined and unknown-class red controls, and the contract distinguishes absent triage Resolution from a present zero-fix all-declines Resolution; validation owns the live replay.
+- DONE: Keep material findings fixable, needs-decision findings escalated, and value-AC narrowing captain-owned; preserve the existing validation taxonomy and recorder schema.
+  The trigger and implementation rule fix material findings, escalate needs-decision findings, and graduate AC narrowing to a captain-owned binding gate attempt; the advisory shape mints no schema field.
+- DONE: Reconcile implementation surface to the declared boundary and commander reconfirmation.
+  Actual surface is 0 production LOC, 47 test/fixture lines, and 48 docs/skill/spec lines versus declared 0 / 35–55 / 25–40 with 2× tolerance; the commander reconfirmed only the exact +703-byte all-host rebaseline after the cycle-2 blocker, realized by three literal test-baseline edits in 059b12d8.
+- DONE: Run required checks.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` are green; the offline check accepts eight valid cases and rejects its two red controls, and deleting any materiality conjunct makes its isolated control fail.
+- DONE: Request Roborev on the completed commit and durably triage every finding against the value ACs and declared stakes.
+  Branch-final panel jobs 548, 554, and 560 reviewed the full branch; Cycles 1 and 2 were recorded before each fix in state commits 584cae01 and 55473ae8, with AC unchanged and surface at 96% then 100% of the approved upper bound.
+
+### Roborev advisory triage
+
+- Job 548 advisory Resolution: fixed the material AC-2 evidence defect by isolating all four materiality conjuncts. Declined class rename (the captain-reconfirmed disposition class is an AC input; promote if the AC changes or a downstream enum requires it), durable escalation annotations (new record semantics outside the boundary; promote if a supported consumer loses escalation or an AC requires durability), and malformed external-fixture hardening (checked-in-only input; promote if external fixtures become supported).
+- Job 554 advisory Resolution: fixed the material AC-2 gap that accepted unknown non-material classes, while declining the repeated class rename, runtime/CI smoke expansion (validation owns the live drive; promote if that drive fails or the AC changes), and zero-byte external-fixture hardening under the same recorded grounds.
+- Job 560 all-declines advisory Resolution: **0 fixed; 3 declined**, observably distinct from no findings. Declined taxonomy/action separation because it replaces the captain-reconfirmed class semantics (same promotion condition); declined per-row `NF` hardening because the sole checked-in fixture is well-formed (promote on external fixture support); declined the symmetric non-material-as-material red control because AC-2 requires the opposite material-as-declined control and the existing expression already rejects the symmetric mismatch (promote if validation cannot reproduce that rejection).
+
+### Summary
+
+Implementation is complete at e85eb0cf with zero product LOC and no schema or rounds-recorder plumbing. The exact prompt-ratchet exception is captain-authorized and suite-green, material review evidence defects were fixed without exceeding the 95-line ceiling, and all proportionate declines—including Roborev job 560's all-declines round—are durable with explicit promotion conditions.
