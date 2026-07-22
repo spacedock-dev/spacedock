@@ -10,6 +10,8 @@ worktree: .worktrees/spacedock-ensign-auto-pre0-tag-push-release-trigger
 issue:
 milestone: 0.27.0
 id: 5aqczjeq6rq3mckbc5gyjqe3
+mod-block: merge:pr-merge
+pr: "#"
 ---
 
 A stable release must publish its automatically generated next-minor edge binary without requiring an operator to delete and replay the pre0 tag.
