@@ -275,3 +275,7 @@ Captain gate feedback (attempt 2, revise): "i am wondering if this should be lef
 ### Summary
 
 The captain's question is well-founded and the answer is yes: the binary was the wrong vehicle. Presentation moves to an overridable present-gate channel, the spacedock binary ends Subspace-free (AC-6, measurable), and every guarantee relocates without loss — retention to a testable override script (the spike already proved the contract in bash), validation and id-mapping to the recorder where 3k's contract already puts result verification. The single load-bearing condition, surfaced for the captain rather than buried: the override script must carry a committed drive suite (the 12 fixtures), or the reframe reintroduces the untested-script defect it exists to remove.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — Roborev job 541; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
