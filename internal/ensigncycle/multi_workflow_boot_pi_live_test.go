@@ -49,11 +49,13 @@ func runPiMultiWorkflowBootScenario(t *testing.T, scenario sharedRuntimeScenario
 	seedPiLocalAuth(t, piHome, os.Getenv("HOME"))
 	projectRoot := t.TempDir()
 	fixture := writeMultiWorkflowBootFixture(t, projectRoot)
+	ledger := newTestInvocationLedger(t, binary)
 	artifactDir := filepath.Join(piLiveArtifactDir(t, "pi-shared-scenarios"), scenario.name)
 	if err := os.MkdirAll(filepath.Join(artifactDir, "sessions"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	env := piLiveEnv(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot)
+	env = ledger.instrumentEnv(env)
 
 	runPiLiveCommand(t, artifactDir, projectRoot, env, piBin,
 		"--mode", "json",
@@ -63,18 +65,19 @@ func runPiMultiWorkflowBootScenario(t *testing.T, scenario sharedRuntimeScenario
 		multiWorkflowBootPrompt(projectRoot),
 	)
 
-	commands, finalMessage, err := parsePiJSONTrace(readFile(t, filepath.Join(artifactDir, "pi-stdout.txt")))
+	finalMessage, err := parsePiFinalMessage(readFile(t, filepath.Join(artifactDir, "pi-stdout.txt")))
 	if err != nil {
 		t.Fatalf("parse Pi JSON trace: %v; artifacts in %s", err, artifactDir)
 	}
-	obs := gatherMultiWorkflowBootObservation(t, fixture, commands, finalMessage)
+	invocations := ledger.read(t)
+	writeInvocationLedgerArtifact(t, artifactDir, invocations)
+	obs := gatherMultiWorkflowBootObservation(t, fixture, invocations, finalMessage)
 	if err := assertMultiWorkflowBoot(obs); err != nil {
 		t.Fatalf("Pi multi-workflow boot scenario graded FAIL: %v; artifacts in %s\nFinal message:\n%s", err, artifactDir, finalMessage)
 	}
 }
 
-func parsePiJSONTrace(jsonl string) ([]string, string, error) {
-	var commands []string
+func parsePiFinalMessage(jsonl string) (string, error) {
 	finalMessage := ""
 	for _, line := range strings.Split(jsonl, "\n") {
 		line = strings.TrimSpace(line)
@@ -82,11 +85,7 @@ func parsePiJSONTrace(jsonl string) ([]string, string, error) {
 			continue
 		}
 		var event struct {
-			Type     string `json:"type"`
-			ToolName string `json:"toolName"`
-			Args     struct {
-				Command string `json:"command"`
-			} `json:"args"`
+			Type    string `json:"type"`
 			Message struct {
 				Role    string `json:"role"`
 				Content []struct {
@@ -96,10 +95,7 @@ func parsePiJSONTrace(jsonl string) ([]string, string, error) {
 			} `json:"message"`
 		}
 		if err := json.Unmarshal([]byte(line), &event); err != nil {
-			return nil, "", err
-		}
-		if event.Type == "tool_execution_start" && event.ToolName == "bash" && event.Args.Command != "" {
-			commands = append(commands, event.Args.Command)
+			return "", err
 		}
 		if event.Type == "message_end" && event.Message.Role == "assistant" {
 			var text strings.Builder
@@ -114,7 +110,7 @@ func parsePiJSONTrace(jsonl string) ([]string, string, error) {
 		}
 	}
 	if finalMessage == "" {
-		return nil, "", fmt.Errorf("Pi trace contains no terminal assistant message")
+		return "", fmt.Errorf("Pi trace contains no terminal assistant message")
 	}
-	return commands, finalMessage, nil
+	return finalMessage, nil
 }

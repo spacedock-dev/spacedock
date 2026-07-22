@@ -86,6 +86,7 @@ type liveDriver interface {
 	model() string
 	home() string
 	withStubPATH(dir string) liveDriver
+	withInvocationLedger(ledger testInvocationLedger) liveDriver
 }
 
 // liveResult is the host-neutral observed state the shared assertions consume.
@@ -208,6 +209,11 @@ func (r claudeLiveRunner) home() string  { return r.homeDir }
 // race-free.
 func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 	r.env = withPATHPrefix(r.env, dir)
+	return r
+}
+
+func (r claudeLiveRunner) withInvocationLedger(ledger testInvocationLedger) liveDriver {
+	r.env = ledger.instrumentEnv(r.env)
 	return r
 }
 
@@ -353,21 +359,24 @@ func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario share
 }
 
 // runClaudeFilingScenario drives the real FO against an EMPTY workflow and asks it
-// to file one seed entity. It grades the FO's recorded tool-call stream — the FO
-// filed via `spacedock … new <slug>`, not the `--next-id` + `Write` pair — because
-// the durable end-state file is indistinguishable between the two paths. The file
-// must also actually land (the run produced a real seed), so the stream grade is
-// proof of HOW, not just THAT, the entity was filed.
+// to file one seed entity. It grades the test-local launcher's actual argv ledger
+// — the FO executed `spacedock new <slug>`, not the `--next-id` flow — because the
+// durable end-state file is indistinguishable between the two paths. The file must
+// also actually land, so the ledger proves HOW while the file proves THAT.
 func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := writeFilingWorkflow(t, workflowRoot)
+	ledger := newTestInvocationLedger(t, spacedockBinary(t))
+	runner = runner.withInvocationLedger(ledger)
 
 	result := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot))
 	if _, err := os.Stat(entityPath); err != nil {
 		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertClaudeFilingViaNew(result.stream, filingSlug); err != nil {
+	invocations := ledger.read(t)
+	writeInvocationLedgerArtifact(t, result.artifactDir, invocations)
+	if err := assertFilingViaNew(invocations, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
@@ -415,9 +424,13 @@ func runClaudeMultiWorkflowBootScenario(t *testing.T, runner liveDriver, scenari
 	t.Helper()
 	projectRoot := t.TempDir()
 	fixture := writeMultiWorkflowBootFixture(t, projectRoot)
+	ledger := newTestInvocationLedger(t, spacedockBinary(t))
+	runner = runner.withInvocationLedger(ledger)
 
 	result := runner.run(t, scenario, projectRoot, multiWorkflowBootPrompt(projectRoot))
-	obs := gatherMultiWorkflowBootObservation(t, fixture, claudeExecutedCommands(result.stream), result.finalMessage)
+	invocations := ledger.read(t)
+	writeInvocationLedgerArtifact(t, result.artifactDir, invocations)
+	obs := gatherMultiWorkflowBootObservation(t, fixture, invocations, result.finalMessage)
 	if err := assertMultiWorkflowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
