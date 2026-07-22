@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-07-22 14:55:13",
+        "dateModified": "2026-07-22 16:03:11",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1097,6 +1097,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      state commit
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1267,6 +1282,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      state commit
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1388,6 +1418,13 @@ plugins must be installed persistently with <code>codex plugin add</code>.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="state-commit"><code>state commit</code><a class="headerlink" href="#state-commit" title="Permanent link">&para;</a></h3>
+<p><code>spacedock state commit &lt;slug&gt;</code> commits and synchronizes one entity from a
+split-root state checkout. The operand is one canonical top-level entity slug,
+not a nested path. A flat entity commits exactly <code>&lt;slug&gt;.md</code>; a folder-form entity
+commits every changed, new, or deleted non-ignored path below <code>&lt;slug&gt;/</code>, including
+reports and artifacts. Dirty sibling entities and unrelated top-level state paths
+remain untouched.</p>
 <p><a href="../../running-workflows/operating/">Operate a workflow</a> covers how the first officer uses <code>status</code> on your behalf. Run <code>spacedock status --help</code> (and the same for each command) for the full flag list, the mutation guards, and the exit codes.</p>
 
 
@@ -1409,7 +1446,7 @@ plugins must be installed persistently with <code>codex plugin add</code>.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 22, 2026 14:55:13 UTC">2026-07-22 14:55:13</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 22, 2026 16:03:11 UTC">2026-07-22 16:03:11</span>
   </span>
 
     
