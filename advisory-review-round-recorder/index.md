@@ -1,14 +1,15 @@
 ---
 id: frze3yqm9da0vp0r53qqdc8t
-title: Record advisory review rounds without gate semantics
-status: backlog
+title: Extend 3k's recorder to persist advisory review rounds
+status: ideation
 source: "02av deferred round-recorder plumbing and 3j jobs 592/594/597 incident, 2026-07-23"
-started:
+started: 2026-07-23T00:55:59Z
 completed:
 verdict:
 score:
 worktree:
 issue:
+sprint: durable-decisions
 ---
 
 Provide one owned write surface for correction-round Briefings, reviewer Annotations and advisory Resolution, and the worker's triage Resolution, without selecting a gate or advancing workflow state.
