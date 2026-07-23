@@ -76,8 +76,11 @@ gates:
                 state: consumed
                 blockers: []
 sprint: durable-decisions
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:561
+verdict: passed
+completed: 2026-07-23T11:43:58Z
+archived: 2026-07-23T11:43:58Z
 ---
 
 ## Problem
