@@ -634,3 +634,20 @@ Hardened the deferred recorded-gate lifecycle and its host parsers to the exact 
 ### Summary
 
 All binding correction boundaries are closed without duplicating 8n. Three credentialed hosts prove the lifecycle through correlated durable successor output; implementation is ready for validation.
+
+### Feedback Cycles
+
+- Cycle 8: REVISE — Roborev job 837; two Material successor-oracle findings accepted; declared caps remain 650 behavioral and 59 live LOC; ACs and production Go unchanged
+
+## Stage Report: implementation (cycle 5)
+
+- FAILED: Require a correlated public Codex `spawn_agent` call, child completion, and exact-child durable output; parent writes, narration, waits without a receiver, and synthetic commit handles must fail.
+  Credentialed artifact `/tmp/spacedock-fo-gate-sequential-codex/codex-shared-scenarios/recorded-gate-lifecycle/codex-exec.jsonl` has no public spawn or child-completion event. After `item_25` dispatch-build, `item_26` only narrates `/root/recorded_gate_task_handoff`; `item_27` is `tool:"wait"` with `receiver_thread_ids:[]`; `item_28` is a parent-side state read. This cannot be correlated without synthesizing the missing public handle.
+- SKIPPED: Parse Pi child assistant/tool-result events and require child-produced write evidence correlated with the completed async handle and resulting durable state; add parent-writes/no-op-child red controls.
+  Stopped at the explicit Codex public-evidence boundary before expanding the zero-free 650-line behavioral budget; Pi remains a material accepted finding for the next correction after a valid Codex public surface is available.
+- SKIPPED: Rerun focused/full/race and all live lanes, request final-tip Roborev, wait, and triage every finding.
+  No code change was made because the required public Codex observation is absent; rerunning cannot manufacture the missing event, and weakening the oracle is forbidden.
+
+### Summary
+
+Roborev 837 is fully triaged and both Medium findings are Material. The implementation remains blocked in implementation on a missing public Codex spawn/completion correlation; no validation-readiness claim is made.
