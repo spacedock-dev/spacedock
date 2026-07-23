@@ -5,8 +5,10 @@ package ensigncycle
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestLivePiRecordedGateLifecycle is the Pi binding for the same host-neutral
@@ -48,16 +50,18 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 		"--skill", filepath.Join(repo, "skills", "first-officer"),
 		"--skill", filepath.Join(repo, "skills", "fo-gate-lifecycle"), "--provider", envOr("SPACEDOCK_PI_LIVE_PROVIDER", "openai-codex"), "--model", envOr("SPACEDOCK_PI_LIVE_MODEL", "gpt-5.3-codex"),
 		"--skill", filepath.Join(repo, "skills", "ensign"),
-		recordedGatePrompt(fixture.root),
+		recordedGatePrompt(fixture.root)+"\n\nPi host requirement: make the successor subagent call with `async: true` and explicit model `"+envOr("SPACEDOCK_PI_LIVE_CHILD_MODEL", "openrouter/openai/gpt-4.1-mini")+"`; omit the `output` argument entirely, and do not substitute a synchronous retry.",
 	)
 
+	handle, childSession := waitForRecordedGatePiChild(t, readRecordedGatePiSessions(t, artifactDir))
 	after := resolveRecordedGateEntity(fixture)
 	events := recordedGateEventsFromCommandLog(readFile(t, commandLog))
 	session := readRecordedGatePiSessions(t, artifactDir)
 	if err := assertRecordedGateRuntimeLoadOrder("pi", session); err != nil {
 		t.Fatalf("Pi recorded gate lifecycle load order graded FAIL: %v; artifacts in %s", err, artifactDir)
 	}
-	dispatch, review := recordedGatePiObservation(session, after)
+	_, review := recordedGatePiObservation(session, after)
+	dispatch := recordedGateDispatchProof{spawned: handle != "", handle: handle, workerOutput: strings.Contains(childSession, recordedGateDispatchMarker) && strings.Contains(after, recordedGateDispatchMarker)}
 	if err := assertRecordedGateLifecycle(recordedGateObservation{
 		events: events, before: before, after: after, dispatch: dispatch,
 		gateReview: review, expectedNext: "handoff",
@@ -66,6 +70,27 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 	}
 }
 
+func waitForRecordedGatePiChild(t *testing.T, session string) (string, string) {
+	t.Helper()
+	matches := regexp.MustCompile(`"asyncDir":"([^"]+)"`).FindAllStringSubmatch(session, -1)
+	if len(matches) == 0 {
+		t.Fatal("Pi successor spawn returned no async directory")
+	}
+	dir := matches[len(matches)-1][1]
+	for deadline := time.Now().Add(8 * time.Minute); time.Now().Before(deadline); time.Sleep(time.Second) {
+		body, err := os.ReadFile(filepath.Join(dir, "status.json"))
+		if err != nil || strings.Contains(string(body), `"state": "running"`) || strings.Contains(string(body), `"state": "queued"`) {
+			continue
+		}
+		sessions := regexp.MustCompile(`"sessionFile":\s*"([^"]+)"`).FindAllStringSubmatch(string(body), -1)
+		if !strings.Contains(string(body), `"state": "complete"`) || filepath.Base(dir) == "" || len(sessions) == 0 {
+			t.Fatalf("Pi async successor ended without a correlated completion: %s", body)
+		}
+		return filepath.Base(dir), readFile(t, sessions[len(sessions)-1][1])
+	}
+	t.Fatal("Pi async successor did not complete within 8 minutes")
+	return "", ""
+}
 func readRecordedGatePiSessions(t *testing.T, artifactDir string) string {
 	t.Helper()
 	paths, err := filepath.Glob(filepath.Join(artifactDir, "sessions", "*.jsonl"))
