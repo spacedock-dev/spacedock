@@ -19,18 +19,10 @@ import (
 )
 
 type RecordInput struct {
-	BriefingPath      string
-	ResultPath        string
-	AssociationPath   string
-	LogPath           string
-	FeedbackCyclePath string
-	Round             string
-	Actor             string
-	AdoptionNote      string
-	Decision          string
-	Reason            string
-	Directive         string
-	WorkflowDir       string
+	BriefingPath, ResultPath, AssociationPath string
+	LogPath, FeedbackCyclePath, Round         string
+	Actor, AdoptionNote, Decision             string
+	Reason, Directive, WorkflowDir            string
 }
 
 type artifactRef struct {

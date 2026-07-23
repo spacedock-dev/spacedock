@@ -116,11 +116,18 @@ func classifyCompletedRound(log reviewLog) (string, error) {
 		return "no-findings", nil
 	}
 	covered, dispositions := map[string]bool{}, map[string]bool{}
+	fixed, declined := 0, 0
 	for _, entry := range log.Entries[reviewerIndex+1:] {
 		if entry.Resolution == nil {
-			if entry.By != "actor:ensign" || len(entry.Includes) == 0 ||
-				!strings.Contains(entry.Body, "class:") || !strings.Contains(entry.Body, "why-not-material:") || !strings.Contains(entry.Body, "promotes-when:") {
+			isFixed := strings.Contains(entry.Body, "class: material") && strings.Contains(entry.Body, "disposition: fixed")
+			isDeclined := strings.Contains(entry.Body, "class:") && strings.Contains(entry.Body, "why-not-material:") && strings.Contains(entry.Body, "promotes-when:")
+			if entry.By != "actor:ensign" || len(entry.Includes) == 0 || isFixed == isDeclined {
 				return "", fmt.Errorf("worker triage contains an invalid disposition")
+			}
+			if isFixed {
+				fixed++
+			} else {
+				declined++
 			}
 			dispositions[entry.ID] = true
 			for _, finding := range entry.Includes {
@@ -145,5 +152,11 @@ func classifyCompletedRound(log reviewLog) (string, error) {
 		log.Entries[len(log.Entries)-1].Resolution == nil || log.Entries[len(log.Entries)-1].By != "actor:ensign" {
 		return "", fmt.Errorf("findings-bearing round requires complete actor:ensign triage")
 	}
-	return "all-declines", nil
+	if fixed == 0 {
+		return "all-declines", nil
+	}
+	if declined == 0 {
+		return "all-fixed", nil
+	}
+	return "mixed", nil
 }

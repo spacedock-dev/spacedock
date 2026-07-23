@@ -323,6 +323,11 @@ func readRoundRoom(room string) (roundRoomBytes, error) {
 	if err != nil || len(entries) != 2 {
 		return roundRoomBytes{}, fmt.Errorf("round target is not a canonical room")
 	}
+	for _, entry := range entries {
+		if !entry.Type().IsRegular() {
+			return roundRoomBytes{}, fmt.Errorf("round target is not a canonical room")
+		}
+	}
 	result := roundRoomBytes{Exists: true}
 	result.Briefing, err = os.ReadFile(filepath.Join(room, "briefing.json"))
 	if err == nil {

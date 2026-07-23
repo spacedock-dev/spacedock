@@ -345,6 +345,56 @@ func TestRoundWorkerTriageRequiresFixedActorAndBackwardGraph(t *testing.T) {
 	if _, err := classifyCompletedRound(log); err == nil {
 		t.Fatal("multiple authorized worker triage Resolutions succeeded")
 	}
+
+	full := string(mustReadBytes(t, filepath.Join("testdata", "advisory-round", "briefing.review.jsonl")))
+	allFixed := strings.Replace(full,
+		"class: correct-but-disproportionate; why-not-material: released workflow and ACs remain correct at candidate 90aea55; promotes-when: a supported duplicate-member flow produces observable incorrect state",
+		"class: material; disposition: fixed", 1)
+	log, err = parseReviewLog([]byte(allFixed), "briefing:3j:implementation:round-1")
+	if class, classifyErr := classifyCompletedRound(log); err != nil || classifyErr != nil || class != "all-fixed" {
+		t.Fatalf("material-only triage class=%q parse=%v classify=%v", class, err, classifyErr)
+	}
+	lines := strings.Split(full, "\n")
+	lines[3] = `{"type":"Annotation","id":"annotation:fixed","briefing":"briefing:3j:implementation:round-1","by":"actor:ensign","at":"2026-07-20T01:03:00Z","includes":["annotation:job-592"],"body":"class: material; disposition: fixed"}` + "\n" +
+		`{"type":"Annotation","id":"annotation:declined","briefing":"briefing:3j:implementation:round-1","by":"actor:ensign","at":"2026-07-20T01:03:30Z","includes":["annotation:job-594"],"body":"class: correct-but-disproportionate; why-not-material: no released harm; promotes-when: supported harm"}`
+	lines[4] = strings.Replace(lines[4], `["annotation:decline-duplicate-member"]`, `["annotation:fixed","annotation:declined"]`, 1)
+	log, err = parseReviewLog([]byte(strings.Join(lines, "\n")), "briefing:3j:implementation:round-1")
+	if class, classifyErr := classifyCompletedRound(log); err != nil || classifyErr != nil || class != "mixed" {
+		t.Fatalf("mixed triage class=%q parse=%v classify=%v", class, err, classifyErr)
+	}
+}
+
+func TestRoundValidateRequiresCanonicalRegularFileRoom(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		mutate func(string, string)
+	}{
+		{"extra entry", func(room, _ string) {
+			if err := os.WriteFile(filepath.Join(room, "extra"), []byte("unexpected"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{"symlinked log", func(room, log string) {
+			if err := os.Remove(filepath.Join(room, "briefing.review.jsonl")); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(log, filepath.Join(room, "briefing.review.jsonl")); err != nil {
+				t.Fatal(err)
+			}
+		}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root, entity, briefing, log, feedback := advisoryRoundFixture(t)
+			input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}
+			if err := RecordSemantic(entity, input); err != nil {
+				t.Fatal(err)
+			}
+			tc.mutate(filepath.Join(root, "review", "implementation", "round-1"), log)
+			if _, err := ValidateRoundFile(entity, input.Round); err == nil {
+				t.Fatal("non-canonical retained room validated")
+			}
+		})
+	}
 }
 
 func TestFeedbackCycleSpliceIsSectionScoped(t *testing.T) {

@@ -140,6 +140,9 @@ func ValidateRoundFile(entityPath, spec string) (RoundSummary, error) {
 	if location.pointer.ID == "" || location.pointer.Stage != location.stage || location.pointer.Cycle != location.cycle {
 		return RoundSummary{}, fmt.Errorf("entity current review-round pointer does not resolve %s", spec)
 	}
+	if _, err := readRoundRoom(location.room); err != nil {
+		return RoundSummary{}, err
+	}
 	loaded, err := loadValidateRound(filepath.Dir(entityPath), location.room, filepath.Join(location.room, "briefing.json"), filepath.Join(location.room, "briefing.review.jsonl"), &location.pointer.Briefing)
 	if err != nil {
 		return RoundSummary{}, err
