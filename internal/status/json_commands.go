@@ -134,15 +134,16 @@ func dispatchableJSONArr(disp []dispatchable) jsonArr {
 	return arr
 }
 
-// readyGatesJSONArr builds the identify-only current-gate inventory. Its three
-// fixed keys give the greet a stable identity without projecting entity bodies.
+// readyGatesJSONArr builds the identify-only scheduling index. Its four fixed
+// keys identify the entity and the reduced durable lifecycle state.
 func readyGatesJSONArr(entities []*entity) jsonArr {
 	arr := make(jsonArr, 0, len(entities))
 	for _, e := range entities {
 		arr = append(arr, newJSONObj().
 			set("id", e.fields["id"]).
 			set("slug", e.fields["slug"]).
-			set("current", e.fields["status"]))
+			set("current", e.fields["status"]).
+			set("readiness", e.fields["gate-readiness"]))
 	}
 	return arr
 }

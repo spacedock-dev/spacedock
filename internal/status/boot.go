@@ -209,6 +209,7 @@ func gatherBoot(probe claudeteam.TeamStateProbe, entities []*entity, stages []St
 	if identify {
 		d.discovery = discoverWorkflows(gitRoot)
 		d.stages = stages
+		materializeGateReadiness(entities, stages)
 		d.readyGates = computeReadyGates(entities, stages)
 	}
 	// TEAM_STATE comes from the host-supplied probe. HOME resolution stays generic

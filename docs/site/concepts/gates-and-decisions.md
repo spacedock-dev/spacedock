@@ -43,6 +43,13 @@ Material findings are the ones that should move your vote; Polish never blocks. 
 
 Redo and reject differ only in whether you accept the direction; both carry your concrete asks so the next worker has something to act on. Nothing closes without its verdict on the record.
 
+After completion verification, the first officer binds the retained Briefing
+before presenting the gate. That bind selects the current-stage gate attempt,
+letting startup distinguish work still validating, an open attempt awaiting the
+Captain, an approval awaiting nonterminal advance, and an approval awaiting
+merge. Approval to a terminal target is consumed before the existing merge and
+terminalization path begins.
+
 ## Rejections
 
 Rejections bounce automatically: the findings route back, the work is redone, and the reviewer re-runs; no stop at your desk. The gate reaches you only when the work passes review, or after **three failed rounds**, when the call returns to you instead of bouncing again. Every round is on the record in the item's file.

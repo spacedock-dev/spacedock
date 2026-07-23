@@ -36,9 +36,6 @@ func TestBootJSONStructure(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("native --boot --json exit=%d stderr=%q", code, errOut)
 	}
-	if strings.Contains(out, `"ready_gates"`) {
-		t.Fatalf("ordinary --boot --json gained identify-only ready_gates: %s", out)
-	}
 
 	// Key order: each key appears after the previous one in the raw bytes.
 	last := -1

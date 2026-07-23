@@ -36,12 +36,14 @@ func EntitySlug(entityPath string) string {
 // the underscore-prefixed metadata mirrors the oracle's _stored_id/_path/_scope/
 // _display_id dict keys.
 type entity struct {
-	fields    map[string]string
-	slug      string
-	storedID  string
-	path      string
-	scope     string // "active" or "archived"
-	displayID string
+	fields      map[string]string
+	slug        string
+	storedID    string
+	path        string
+	scope       string // "active" or "archived"
+	displayID   string
+	gateDoc     *gates.Document
+	gateInvalid bool
 }
 
 // discoverEntityFiles returns (slug, path) pairs for entities in directory,
@@ -211,7 +213,9 @@ func scanEntitiesActive(directory string, stderr io.Writer) []*entity {
 // mirroring the oracle's per-entity dict construction. The slug is written into
 // fields (the oracle's entity['slug'] = slug) so formatters/filters can read it.
 func newEntity(fields map[string]string, slug, path, scope string) *entity {
-	if summary, err := gates.SummaryFile(path); err == nil {
+	doc, _, gateErr := gates.Read(path)
+	if gateErr == nil {
+		summary := gates.CurrentSummary(doc)
 		fields["gate"] = summary.Gate
 		fields["gate-attempt"] = summary.Attempt
 		fields["gate-state"] = summary.State
@@ -231,16 +235,60 @@ func newEntity(fields map[string]string, slug, path, scope string) *entity {
 		}
 	}
 	e := &entity{
-		fields:   fields,
-		slug:     slug,
-		storedID: fields["id"],
-		path:     path,
-		scope:    scope,
+		fields:      fields,
+		slug:        slug,
+		storedID:    fields["id"],
+		path:        path,
+		scope:       scope,
+		gateDoc:     doc,
+		gateInvalid: gateErr != nil && !strings.Contains(gateErr.Error(), "no gates record"),
 	}
 	return e
 }
 
+func materializeGateReadiness(entities []*entity, stages []Stage) {
+	taxonomy := make([]gates.ReadinessStage, 0, len(stages))
+	for _, stage := range stages {
+		taxonomy = append(taxonomy, gates.ReadinessStage{
+			Name: stage.Name, Gate: stage.gate, Terminal: stage.terminal,
+		})
+	}
+	for _, entity := range entities {
+		if entity.scope != "active" {
+			continue
+		}
+		readiness := gates.CurrentStageReadiness(entity.gateDoc, entity.fields["status"], taxonomy)
+		if entity.gateInvalid && readiness == "validating" {
+			readiness = "invalid"
+		}
+		entity.fields["gate-readiness"] = readiness
+	}
+}
+
 func materializeGateEligibility(entities []*entity, definitionDir string, explicitFields []string, allFields bool, filters []whereFilter) {
+	readinessReferenced := false
+	if allFields {
+		for _, entity := range entities {
+			if entity.gateDoc != nil || entity.gateInvalid {
+				readinessReferenced = true
+				break
+			}
+		}
+	}
+	for _, field := range explicitFields {
+		if field == "gate-readiness" {
+			readinessReferenced = true
+		}
+	}
+	for _, filter := range filters {
+		if filter.field == "gate-readiness" {
+			readinessReferenced = true
+		}
+	}
+	if readinessReferenced {
+		materializeGateReadiness(entities, parseStagesBlock(filepath.Join(definitionDir, "README.md")))
+	}
+
 	referenced := allFields
 	for _, field := range explicitFields {
 		if field == "gate-condition" || field == "gate-eligible" {

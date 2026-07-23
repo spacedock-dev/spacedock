@@ -147,10 +147,15 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	}
 	previous := &record.Attempts[len(record.Attempts)-1]
 	if previous.Resolution == nil {
+		selectionChanged := doc.Current.Gate != record.ID
+		doc.Current.Gate = record.ID
 		if sameBinding(previous.Briefing, binding) {
-			return nil
+			if !selectionChanged {
+				return nil
+			}
+		} else {
+			previous.Briefing = binding
 		}
-		previous.Briefing = binding
 		if err := Validate(doc); err != nil {
 			return err
 		}

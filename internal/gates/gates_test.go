@@ -103,6 +103,137 @@ func TestCanonicalCrossGateReentryPreservesFrozenApplication(t *testing.T) {
 	}
 }
 
+func TestSameBriefingBindSelectsCurrentStageWithoutDuplicateAttempt(t *testing.T) {
+	dir := t.TempDir()
+	room := filepath.Join(dir, "review", "validation", "briefing-1")
+	if err := os.MkdirAll(room, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifest := completeBriefing("briefing:task:validation:attempt-1:revision-1", "validate")
+	briefing := filepath.Join(room, "briefing.json")
+	if err := os.WriteFile(briefing, []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	digest, err := CanonicalDigest([]byte(manifest))
+	if err != nil {
+		t.Fatal(err)
+	}
+	entity := filepath.Join(dir, "task.md")
+	body := "---\nstatus: validation\ntitle: Preserve me\ngates:\n" +
+		"  version: 1\n  current: {gate: 'gate:task:ideation'}\n  records:\n" +
+		"    - id: gate:task:ideation\n      stage: ideation\n      attempts:\n" +
+		"        - id: gate-attempt:task-ideation-1\n" +
+		"          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: 'sha256:" + strings.Repeat("1", 64) + "', digest-domain: raw-file-pin, room-ref: ./review/ideation/briefing-1}\n" +
+		"    - id: gate:task:validation\n      stage: validation\n      attempts:\n" +
+		"        - id: gate-attempt:task-validation-1\n" +
+		"          briefing: {id: 'briefing:task:validation:attempt-1:revision-1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1}\n" +
+		"---\n# Task\nBody keeps   spaces.\n"
+	if err := os.WriteFile(entity, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	before, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeOutside := outsideGates(t, entity)
+	beforeAttempts := []string{
+		marshalAttempt(t, before.Records[0].Attempts[0]),
+		marshalAttempt(t, before.Records[1].Attempts[0]),
+	}
+
+	if err := RecordBriefing(entity, briefing); err != nil {
+		t.Fatal(err)
+	}
+
+	after, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after.Current.Gate != "gate:task:validation" {
+		t.Fatalf("current gate = %q, want current-stage validation gate", after.Current.Gate)
+	}
+	if len(after.Records[0].Attempts) != 1 || len(after.Records[1].Attempts) != 1 {
+		t.Fatalf("same-Briefing bind duplicated attempts: %#v", after.Records)
+	}
+	if marshalAttempt(t, after.Records[0].Attempts[0]) != beforeAttempts[0] ||
+		marshalAttempt(t, after.Records[1].Attempts[0]) != beforeAttempts[1] {
+		t.Fatal("same-Briefing selection repair changed an attempt")
+	}
+	if got := outsideGates(t, entity); got != beforeOutside {
+		t.Fatal("same-Briefing selection repair changed bytes outside gates")
+	}
+}
+
+func TestCurrentStageReadinessFailClosedTable(t *testing.T) {
+	stages := []ReadinessStage{
+		{Name: "ideation", Gate: true},
+		{Name: "implementation"},
+		{Name: "validation", Gate: true},
+		{Name: "done", Terminal: true},
+	}
+	open := eligibleDocument()
+	open.Records[0].Attempts[0].Resolution = nil
+	open.Records[0].Attempts[0].Application = nil
+
+	tests := []struct {
+		name   string
+		status string
+		doc    *Document
+		mutate func(*Document)
+		want   string
+	}{
+		{name: "gate without selected attempt", status: "ideation", want: "validating"},
+		{name: "open selected current attempt", status: "ideation", doc: open, want: "awaiting-captain"},
+		{name: "approved nonterminal target", status: "ideation", doc: eligibleDocument(), want: "approved-awaiting-advance"},
+		{name: "approved terminal target", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
+			d.Records[0].Attempts[0].Application.TargetStage = "done"
+		}, want: "approved-awaiting-merge"},
+		{name: "blocked approval", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
+			blockers := []Blocker{{ID: "blocker:x", State: "unsatisfied"}}
+			d.Records[0].Attempts[0].Application.Blockers = &blockers
+		}, want: "blocked"},
+		{name: "held approval", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
+			d.Records[0].Attempts[0].Application.ExecutionHold = &ExecutionHold{State: "active"}
+		}, want: "held"},
+		{name: "feedback pending", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
+			a := &d.Records[0].Attempts[0]
+			a.Resolution.Decision, a.Resolution.Reason = "revise", "changes requested"
+			a.Application = &Application{Action: "feedback", TargetStage: "ideation", State: "pending"}
+		}, want: "feedback-pending"},
+		{name: "consumed approval", status: "ideation", doc: eligibleDocument(), mutate: setApplicationState("consumed"), want: "consumed"},
+		{name: "superseded approval", status: "ideation", doc: eligibleDocument(), mutate: setApplicationState("superseded"), want: "superseded"},
+		{name: "not applicable hold", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
+			a := &d.Records[0].Attempts[0]
+			a.Resolution.Decision, a.Resolution.Reason = "hold", "wait"
+			a.Application = &Application{Action: "none", State: "not-applicable"}
+		}, want: "not-applicable"},
+		{name: "missing explicit blockers", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
+			d.Records[0].Attempts[0].Application.Blockers = nil
+		}, want: "invalid"},
+		{name: "unknown target", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
+			d.Records[0].Attempts[0].Application.TargetStage = "missing"
+		}, want: "invalid"},
+		{name: "stale selected old stage", status: "validation", doc: open, want: "validating"},
+		{name: "ordinary stage", status: "implementation", doc: open, want: ""},
+		{name: "terminal stage", status: "done", doc: open, want: ""},
+		{name: "unknown stage", status: "missing", doc: open, want: ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var doc *Document
+			if tc.doc != nil {
+				doc = cloneDocument(t, tc.doc)
+			}
+			if tc.mutate != nil {
+				tc.mutate(doc)
+			}
+			if got := CurrentStageReadiness(doc, tc.status, stages); got != tc.want {
+				t.Fatalf("readiness = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestPrototypeAndUnknownGateShapesFailClosed(t *testing.T) {
 	base := "status: ideation\n" + canonicalOpenGates()
 	cases := map[string]string{
