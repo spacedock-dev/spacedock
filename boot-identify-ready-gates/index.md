@@ -445,3 +445,32 @@ The gate-review repair makes boot a four-field scheduling index, not a duplicate
 ### Summary
 
 Boot identify now schedules only durable current-stage gate opportunities and tells the first officer whether each awaits the Captain, nonterminal advance, or terminal merge. Human status shares the same fail-closed reducer, same-Briefing binding repairs stale selection without duplicate history, and the verified branch preserves all prior boot/dispatch compatibility outside the approved additive surfaces.
+
+## Stage Report: validation
+
+- DONE: Independently audit the 14-path current-main diff for the approved four-field readiness projection, exact 3-of-5 semantics, stale-pointer correction, no duplicate attempts, and absence of coupled PR history or undeclared mechanisms.
+  `main` is `73eed65d`; the clean branch is exactly `5b16bd19`/`de941c93`/`c923c9a1`, with 11 declared paths plus three authorized all-fields goldens and no coupled ancestor or extra mechanism.
+- DONE: Re-run the focused, full, race, live-tag compile, golden, and mutation/falsifier evidence needed for AC-1 through AC-6, including terminal consume disappearance and unchanged default boot/status/dispatchability.
+  Focused gate/status/CLI and golden controls passed; `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `go test -tags live -run '^$' ./...` all exited 0 with a clean worktree.
+- DONE: Review Roborev 755/767 dispositions against released harm, verify exact LOC/path ceilings and clean worktree, and issue a fresh PASS or REJECTED recommendation with per-AC evidence.
+  Job 755's all-fields defect is fixed and directly tested; its empty-ID claim is falsified by the no-stored-ID `r4` row after `applyEffectiveIDs`; both low notes remain scheduling-neutral. Job 767 found no issues. Net scope is 158 production Go, 434 test/golden, and 7 docs LOC.
+- DONE: AC-1 (VALUE — exact ready population).
+  `TestBootIdentifyReadyGates` emits exactly `mf`, `r4`, and `2n`; a detached stage-only mutant failed with five rows by adding `sp` and `qc`.
+- DONE: AC-2 (selection is current-stage and completion-owned).
+  The same-Briefing tests preserve attempt IDs/counts and bytes outside `gates`, change only the stale selection, and move boot from zero to the exact `mf` row; deleting the pointer repair failed both named tests.
+- DONE: AC-3 (human distinctions share the reducer).
+  Text, JSON, and all-fields tests enumerate `validating`, `awaiting-captain`, `approved-awaiting-advance`, and `approved-awaiting-merge` while retaining the canonical gate fields.
+- DONE: AC-4 (approved terminal work is restart-visible).
+  The terminal lifecycle test observes exact `approved-awaiting-merge`, real eligibility, atomic consume to `done`/`consumed`, and row disappearance; CLI record/validate and one-use consume controls independently passed.
+- DONE: AC-5 (fail-closed, prose-independent projection).
+  Reducer and boot tables exclude malformed, stale, briefing-less, blocked, held, feedback, consumed, superseded, not-applicable, terminal, unknown, archived, and ordinary states; a body-only Stage Report edit leaves JSON byte-identical.
+- DONE: AC-6 (schema, ordering, and scheduling compatibility).
+  Raw JSON pins exactly four ordered keys and status order, zero emits `[]`, ordinary boot omits the field, fixed-width goldens pass, and identify `dispatchable` equals `--next` exactly.
+- DONE: Perform a semantic adversarial pass over identity, cardinality, ordering, lifecycle, compatibility, and hot-path behavior.
+  The 0/1/3/5-row matrix, no-ID slug fallback, stale/repeated binding, terminal consume, malformed-state exclusions, and two detached mutants found no material defect; the reducer adds bounded local work and no new I/O.
+- DONE: Recommend PASSED.
+  No material findings or deferred risks remain; established fixed-width golden padding is preserved fixture data and the implementation worktree is clean.
+
+### Summary
+
+Validation independently reproduced AC-1 through AC-6 and the Captain's exact three-of-five counterexample, including two failure-inducing mutations. The implementation is scoped to the approved 14 paths, passes focused/full/race/live compilation, and is recommended PASSED.
