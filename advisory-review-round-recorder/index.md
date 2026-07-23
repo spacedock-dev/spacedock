@@ -147,6 +147,20 @@ gates:
                 digest: sha256:7407c32c4dab589e91ebc4609419808ebf8612a96c8a3a8b2b94ac1f1618438b
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fr:validation:1
+                briefing: briefing:docs-dev:fr:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T13:33:32.354162Z"
+                decision: approve
+                reason: Validation passed 12/12 checklist items at exact candidate 1ae990f5; all five ACs have independent behavioral evidence, the Codex live lane passed, zero production paths changed, and no material finding remains.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 review-round:
     id: round:frze3yqm9da0vp0r53qqdc8t:implementation:6
     stage: implementation
