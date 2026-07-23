@@ -466,3 +466,12 @@ are `docs/specs/gate-resolution-frontmatter-contract.md` +22,
 This boundary exposes only the approved command and two trigger callers, preserves
 both command-reference additions, and leaves ordinary First Officer gate lifecycle
 integration to 6y.
+
+The binding implementation correction-round ruling replaces only the invalid size
+estimates above: commit 1 now has a 540 net-production-LOC hard stop before CLI, and
+the completed two-commit surface has a 600 net-production-LOC hard stop. The approved
+mechanism, exact files, two commit boundaries, acceptance criteria, and prohibitions
+remain unchanged. The bounded correction pass must add shared canonical Annotation
+validation, reject multiple authorized worker triages, section-scope the projection,
+share top-level YAML replacement, harden artifact parsing, and prove complete-operation
+CAS/rollback before commit 1 may proceed.
