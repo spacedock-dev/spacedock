@@ -203,12 +203,8 @@ func applicationTargetMatches(workflowDir, current, target string) bool {
 	if err != nil {
 		return false
 	}
-	for i, stage := range stages {
-		if stage.Name == current {
-			return i+1 < len(stages) && stages[i+1].Name == target
-		}
-	}
-	return false
+	i := applicationStageIndex(stages, current)
+	return i >= 0 && i+1 < len(stages) && stages[i+1].Name == target
 }
 
 type reviewedInputCheck int

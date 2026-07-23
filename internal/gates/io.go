@@ -126,14 +126,7 @@ func mutateEntity(path string, expected entityExpectation, build func([]byte) ([
 	if err != nil {
 		return err
 	}
-	modes := 0
-	if expected.Bytes != nil {
-		modes++
-	}
-	if expected.Gates != nil {
-		modes++
-	}
-	if modes != 1 || expected.Status != nil && expected.Gates == nil || expected.Bytes != nil && (expected.Gates != nil || expected.Status != nil) {
+	if (expected.Bytes == nil) == (expected.Gates == nil) || expected.Status != nil && expected.Gates == nil {
 		return fmt.Errorf("entity mutation requires exactly one expectation mode")
 	}
 	if expected.Bytes != nil {
@@ -363,10 +356,8 @@ func publishRound(room string, next roundRoomBytes, commitEntity func(bool) erro
 		cleanup()
 		return err
 	}
-	defer func() {
-		_ = os.RemoveAll(tmp)
-		cleanup()
-	}()
+	defer os.RemoveAll(tmp)
+	defer cleanup()
 	for name, data := range map[string][]byte{"briefing.json": next.Briefing, "briefing.review.jsonl": next.Log} {
 		if err = writeSyncedFile(filepath.Join(tmp, name), data); err != nil {
 			return err

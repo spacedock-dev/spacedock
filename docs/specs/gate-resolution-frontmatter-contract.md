@@ -154,6 +154,11 @@ log omits both worker triage and `--feedback-cycle`.
 Round recording requires a folder-form entity at `<slug>/index.md`, so its accumulating
 `review/` artifacts are scoped beside that entity. Flat entities refuse before locking
 or writing; the recorder does not alter the approved derived room path to compensate.
+`STAGE` must name a stage in the workflow definition, but need not equal current
+`status`: explicit historical backfill remains supported. Decline bodies must use the
+exact structured class/rationale/promotion fields above with substantive values. A
+projected Feedback Cycles line must match the complete documented grammar, its cycle
+must equal `CYCLE`, and its verdict must agree with the reviewer Resolution.
 
 The room is immutable: exact whole-room replay is a whole-tree no-op; any different
 Briefing, log, room shape, pointer, or projection fails closed. Findings-bearing

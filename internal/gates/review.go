@@ -119,8 +119,7 @@ func classifyCompletedRound(log reviewLog) (string, error) {
 	fixed, declined := 0, 0
 	for _, entry := range log.Entries[reviewerIndex+1:] {
 		if entry.Resolution == nil {
-			isFixed := strings.Contains(entry.Body, "class: material") && strings.Contains(entry.Body, "disposition: fixed")
-			isDeclined := strings.Contains(entry.Body, "class:") && strings.Contains(entry.Body, "why-not-material:") && strings.Contains(entry.Body, "promotes-when:")
+			isFixed, isDeclined := dispositionKind(entry.Body)
 			if entry.By != "actor:ensign" || len(entry.Includes) == 0 || isFixed == isDeclined {
 				return "", fmt.Errorf("worker triage contains an invalid disposition")
 			}
@@ -159,4 +158,16 @@ func classifyCompletedRound(log reviewLog) (string, error) {
 		return "all-fixed", nil
 	}
 	return "mixed", nil
+}
+
+func dispositionKind(body string) (bool, bool) {
+	if body == "class: material; disposition: fixed" {
+		return true, false
+	}
+	meaningful := func(value string) bool {
+		value = "|" + strings.Trim(strings.ToLower(value), " .") + "|"
+		return !strings.Contains("||none|n/a|na|no reason|no condition|never|not applicable|false|", value)
+	}
+	match := declineDispositionRE.FindStringSubmatch(body)
+	return false, len(match) == 3 && meaningful(match[1]) && meaningful(match[2])
 }

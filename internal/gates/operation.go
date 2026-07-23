@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -91,7 +92,7 @@ func RecordSemantic(entityPath string, input RecordInput) error {
 			return err
 		}
 		defer unlock()
-		return recordRoundLocked(entityPath, input)
+		return recordRoundLockedWith(entityPath, input, nil, atomicWrite)
 	}
 	if input.LogPath != "" || input.FeedbackCyclePath != "" {
 		return fmt.Errorf("--log and --feedback-cycle require --round")
@@ -369,29 +370,31 @@ func applicationForDecision(entityPath, workflowDir, stage, decision string) (*A
 	if err != nil {
 		return nil, err
 	}
-	for i, candidate := range stages {
-		if candidate.Name != stage {
-			continue
-		}
-		if decision == "revise" {
-			target := candidate.FeedbackTo
-			if target == "" {
-				target = stage
-			}
-			return &Application{Action: "feedback", TargetStage: target, State: "pending"}, nil
-		}
-		if i+1 >= len(stages) || strings.TrimSpace(stages[i+1].Name) == "" {
-			return nil, fmt.Errorf("workflow stage %s has no advance target", stage)
-		}
-		blockers := []Blocker{}
-		return &Application{Action: "advance", TargetStage: stages[i+1].Name, State: "pending", Blockers: &blockers}, nil
+	i := applicationStageIndex(stages, stage)
+	if i < 0 {
+		return nil, fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
 	}
-	return nil, fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
+	if decision == "revise" {
+		target := stages[i].FeedbackTo
+		if target == "" {
+			target = stage
+		}
+		return &Application{Action: "feedback", TargetStage: target, State: "pending"}, nil
+	}
+	if i+1 >= len(stages) || strings.TrimSpace(stages[i+1].Name) == "" {
+		return nil, fmt.Errorf("workflow stage %s has no advance target", stage)
+	}
+	blockers := []Blocker{}
+	return &Application{Action: "advance", TargetStage: stages[i+1].Name, State: "pending", Blockers: &blockers}, nil
 }
 
 type applicationStage struct {
 	Name       string
 	FeedbackTo string
+}
+
+func applicationStageIndex(stages []applicationStage, name string) int {
+	return slices.IndexFunc(stages, func(stage applicationStage) bool { return stage.Name == name })
 }
 
 func applicationStages(readme string) ([]applicationStage, error) {
