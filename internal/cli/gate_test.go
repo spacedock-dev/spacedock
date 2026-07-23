@@ -37,6 +37,38 @@ func TestGateRecordAndValidateCLILeaveStatusUntouched(t *testing.T) {
 	}
 }
 
+func TestGateRoundRecordAndValidateCLI(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: implementation\n      initial: true\n---\n# Workflow\n")
+	entity := filepath.Join(root, "task.md")
+	writeFile(t, entity, "---\nid: task\nstatus: implementation\ntitle: Task\n---\n# Task\n")
+	copyGateTestdata(t, filepath.Join(root, "candidate.patch"), filepath.Join("advisory-round", "candidate.patch"))
+	inputs := filepath.Join(root, "inputs")
+	if err := os.MkdirAll(inputs, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	briefing := filepath.Join(inputs, "briefing.json")
+	log := filepath.Join(inputs, "briefing.review.jsonl")
+	feedback := filepath.Join(inputs, "feedback-cycle.txt")
+	copyGateTestdata(t, briefing, filepath.Join("advisory-round", "briefing.json"))
+	copyGateTestdata(t, log, filepath.Join("advisory-round", "briefing.review.jsonl"))
+	writeFile(t, feedback, "- Cycle 1: REJECTED — Roborev; surface 1/580 vs estimate 580 (100%); AC unchanged\n")
+	var out, errOut bytes.Buffer
+	invoke := func(args ...string) int {
+		out.Reset()
+		errOut.Reset()
+		return run(context.Background(), args, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	}
+	args := []string{"gate", "record", "task", "--workflow-dir", root, "--round", "implementation/1", "--briefing", briefing, "--log", log, "--feedback-cycle", feedback}
+	if code := invoke(args...); code != 0 || !strings.Contains(out.String(), "round=round:task:implementation:1") || !strings.Contains(out.String(), "triage=all-declines") {
+		t.Fatalf("round record exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	if code := invoke("gate", "validate", "task", "--workflow-dir", root, "--round", "implementation/1"); code != 0 ||
+		strings.Count(out.String(), "advisory=true") != 2 || !strings.Contains(out.String(), "annotation:job-592") {
+		t.Fatalf("round validate exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+}
+
 func TestGateImplicitWorkflowUsesOwningDefinitionFromNestedDirectory(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), "---\ncommissioned-by: spacedock@0.1.0\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: implementation\n---\n# Workflow\n")

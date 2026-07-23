@@ -73,29 +73,21 @@ type Briefing struct {
 	RoomRef      string `yaml:"room-ref" json:"room-ref"`
 }
 
-// RoundPointer is the entity's current pointer to one advisory Review & Gate
-// room. The ordered entries remain in the room's JSONL log.
 type RoundPointer struct {
-	ID       string   `yaml:"id" json:"id"`
-	Stage    string   `yaml:"stage" json:"stage"`
-	Cycle    int      `yaml:"cycle" json:"cycle"`
-	Briefing Briefing `yaml:"briefing" json:"briefing"`
+	ID, Stage string
+	Cycle     int
+	Briefing  Briefing
 }
 
 type RoundEntrySummary struct {
-	Type     string
-	ID       string
-	Decision string
-	Advisory bool
+	Type, ID, Decision string
+	Advisory           bool
 }
 
 type RoundSummary struct {
-	ID       string
-	Stage    string
-	Cycle    int
-	Briefing string
-	Triage   string
-	Entries  []RoundEntrySummary
+	ID, Stage, Briefing, Triage string
+	Cycle                       int
+	Entries                     []RoundEntrySummary
 }
 
 type Resolution struct {

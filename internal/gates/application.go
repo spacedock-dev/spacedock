@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -281,86 +280,5 @@ func validateApplicationMutation(oldNode *yaml.Node, next *Document, attemptID, 
 }
 
 func writeDocumentAndStatus(path string, expected *yaml.Node, expectedStatus string, doc *Document, status string) error {
-	if err := Validate(doc); err != nil {
-		return err
-	}
-	original, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	root, fmStart, fmEnd, err := frontmatterNode(original)
-	if err != nil {
-		return err
-	}
-	if !sameYAMLNode(expected, mappingValue(root, "gates")) {
-		return fmt.Errorf("gates record changed during locked update")
-	}
-	statusNode := mappingValue(root, "status")
-	if statusNode == nil || statusNode.Value != expectedStatus {
-		return fmt.Errorf("workflow status changed during locked update")
-	}
-	gatesBlock, err := yaml.Marshal(struct {
-		Gates *Document `yaml:"gates"`
-	}{Gates: doc})
-	if err != nil {
-		return err
-	}
-	statusBlock, err := yaml.Marshal(struct {
-		Status string `yaml:"status"`
-	}{Status: status})
-	if err != nil {
-		return err
-	}
-	replacements := []topLevelReplacement{
-		{key: "gates", data: gatesBlock},
-		{key: "status", data: statusBlock},
-	}
-	for i := range replacements {
-		start, end, ok := topLevelRange(root, fmStart, fmEnd, replacements[i].key)
-		if !ok {
-			return fmt.Errorf("entity has no %s field", replacements[i].key)
-		}
-		replacements[i].start = lineOffset(original, start)
-		replacements[i].end = lineOffset(original, end)
-		if bytes.Contains(original, []byte("\r\n")) {
-			replacements[i].data = []byte(strings.ReplaceAll(string(replacements[i].data), "\n", "\r\n"))
-		}
-	}
-	sort.Slice(replacements, func(i, j int) bool { return replacements[i].start > replacements[j].start })
-	out := append([]byte(nil), original...)
-	for _, replacement := range replacements {
-		next := make([]byte, 0, len(out)-(replacement.end-replacement.start)+len(replacement.data))
-		next = append(next, out[:replacement.start]...)
-		next = append(next, replacement.data...)
-		next = append(next, out[replacement.end:]...)
-		out = next
-	}
-	if _, _, err := readData(out); err != nil {
-		return fmt.Errorf("validate rebuilt gates: %w", err)
-	}
-	parsed, _, _, err := frontmatterNode(out)
-	if err != nil || mappingValue(parsed, "status") == nil || mappingValue(parsed, "status").Value != status {
-		return fmt.Errorf("validate rebuilt workflow status")
-	}
-	return atomicWrite(path, out)
-}
-
-type topLevelReplacement struct {
-	key        string
-	start, end int
-	data       []byte
-}
-
-func topLevelRange(root *yaml.Node, fmStart, fmEnd int, key string) (int, int, bool) {
-	for i := 0; i+1 < len(root.Content); i += 2 {
-		if root.Content[i].Value != key {
-			continue
-		}
-		start, end := fmStart+root.Content[i].Line, fmEnd
-		if i+2 < len(root.Content) {
-			end = fmStart + root.Content[i+2].Line
-		}
-		return start, end, true
-	}
-	return 0, 0, false
+	return writeEntityDocument(path, expected, &expectedStatus, doc, &status)
 }

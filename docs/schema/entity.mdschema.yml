@@ -117,6 +117,18 @@
           "canonical gates writes preserve top-level frontmatter outside gates and the entity body byte-for-byte",
           "recording never changes status or dispatches"
         ]
+      },
+      "review-round": {
+        "type": "mapping",
+        "fields": ["id", "stage", "cycle", "briefing"],
+        "briefing_fields": ["id", "digest", "digest-domain", "room-ref"],
+        "semantics": "current pointer to one immutable complete advisory Review & Gate room; exact replay is a no-op and divergent reuse fails closed",
+        "writer": "spacedock gate record --round",
+        "invariants": [
+          "id is round:<entity-id>:<stage>:<cycle> and room-ref is ./review/<stage>/round-<cycle>",
+          "the pointer and optional Feedback Cycles projection enter one atomic entity replacement",
+          "round recording never selects or closes a gate, creates an application, or changes status"
+        ]
       }
     },
     "custom_fields": {

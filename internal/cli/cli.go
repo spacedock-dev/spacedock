@@ -165,7 +165,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing PATH/briefing.json [--workflow-dir DIR]\n       spacedock gate record <entity> --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]")
+				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing PATH/briefing.json [--workflow-dir DIR]\n       spacedock gate record <entity> --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]")
 				return nil
 			}
 			if len(args) < 2 || (args[0] != "record" && args[0] != "validate" && args[0] != "eligibility" && args[0] != "consume") {
@@ -198,6 +198,12 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					input.Reason = args[i+1]
 				case "--directive":
 					input.Directive = args[i+1]
+				case "--round":
+					input.Round = args[i+1]
+				case "--log":
+					input.LogPath = args[i+1]
+				case "--feedback-cycle":
+					input.FeedbackCyclePath = args[i+1]
 				default:
 					fmt.Fprintf(stderr, "Error: unknown gate flag: %s\n", args[i])
 					return exitCodeError{2}
@@ -218,6 +224,16 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				return exitCodeError{1}
 			}
 			if args[0] == "validate" {
+				if input.Round != "" {
+					round := input.Round
+					input.Round = ""
+					if input != (gates.RecordInput{}) {
+						fmt.Fprintln(stderr, "Error: gate validate --round accepts only --workflow-dir")
+						return exitCodeError{2}
+					}
+					summary, err := gates.ValidateRoundFile(path, round)
+					return printRound(summary, err, stdout, stderr)
+				}
 				if input != (gates.RecordInput{}) {
 					fmt.Fprintln(stderr, "Error: gate validate accepts only --workflow-dir")
 					return exitCodeError{2}
@@ -255,6 +271,15 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				}
 				return nil
 			}
+			if input.Round != "" {
+				input.WorkflowDir = definitionDir
+				if err := gates.RecordSemantic(path, input); err != nil {
+					fmt.Fprintln(stderr, "Error:", err)
+					return exitCodeError{1}
+				}
+				summary, err := gates.ValidateRoundFile(path, input.Round)
+				return printRound(summary, err, stdout, stderr)
+			}
 			sources := 0
 			for _, source := range []string{input.BriefingPath, input.ResultPath, input.Decision} {
 				if source != "" {
@@ -287,6 +312,18 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func printRound(s gates.RoundSummary, err error, stdout, stderr io.Writer) error {
+	if err != nil {
+		fmt.Fprintln(stderr, "Error:", err)
+		return exitCodeError{1}
+	}
+	fmt.Fprintf(stdout, "round=%s stage=%s cycle=%d briefing=%s triage=%s entries=%d\n", s.ID, s.Stage, s.Cycle, s.Briefing, s.Triage, len(s.Entries))
+	for _, entry := range s.Entries {
+		fmt.Fprintf(stdout, "entry=%s type=%s advisory=%t decision=%s\n", entry.ID, entry.Type, entry.Advisory, entry.Decision)
+	}
+	return nil
 }
 
 // newClaudeCommand wires `spacedock claude`. Flag parsing is disabled at the cobra
