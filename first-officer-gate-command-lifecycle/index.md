@@ -47,6 +47,19 @@ gates:
                 digest: sha256:3b5dcf4d8d48d6d3991976efe622e9d577d465b67bb82e52e380310ac0da1334
                 digest-domain: canonical-bytes
                 room-ref: ./review/implementation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:implementation:1
+                briefing: briefing:docs-dev:6y:implementation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T06:28:08.375697Z"
+                decision: revise
+                reason: The boot-resident lifecycle exceeds the hard shared-core ceiling by 5,534 bytes beyond available headroom, leaves a headless gate-entry bypass, and lacks required live-spawn and adversarial proof; ACs remain unchanged and require deferred gate-triggered topology re-ideation.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 ---
 
 Make the normal First Officer gate path use the landed 3k/h1 commands so a presented decision is durably recorded, validated, checked for eligibility, and consumed before workflow advancement or dispatch.
