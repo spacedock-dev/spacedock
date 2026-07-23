@@ -67,6 +67,7 @@ func codexLiveScenarios(t *testing.T) []codexLiveScenario {
 func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedRuntimeScenario) {
 	return map[string]func(*testing.T, codexLiveRunner, sharedRuntimeScenario){
 		"gate-guardrail":                runCodexGateGuardrailScenario,
+		"recorded-gate-lifecycle":       runCodexRecordedGateLifecycleScenario,
 		"rejection-flow":                runCodexRejectionFlowScenario,
 		"feedback-3-cycle-escalation":   runCodexFeedback3CycleEscalationScenario,
 		"merge-hook-guardrail":          runCodexMergeHookGuardrailScenario,
@@ -76,6 +77,34 @@ func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedR
 		"smallest-sufficient-mechanism": runCodexSmallestSufficientMechanismScenario,
 		"keep-moving-posture":           runCodexKeepMovingScenario,
 	}
+}
+
+func (r codexLiveRunner) withStubPATH(dir string) codexLiveRunner {
+	r.env = withPATHPrefix(r.env, dir)
+	r.env = withRecordedGateEnv(r.env, "SPACEDOCK_BIN", filepath.Join(dir, "spacedock"))
+	return r
+}
+
+func runCodexRecordedGateLifecycleScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	fixture := writeRecordedGateFixture(t)
+	before := readFile(t, fixture.entity)
+	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+	shimDir := writeRecordedGateLoggingShim(t, spacedockBinary(t), commandLog)
+	result, err := runner.withStubPATH(shimDir).run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	after := resolveRecordedGateEntity(fixture)
+	events := recordedGateEventsFromCommandLog(readFile(t, commandLog))
+	if err := assertRecordedGateLifecycle(recordedGateObservation{
+		events: events, before: before, after: after,
+		dispatch:   recordedGateCodexDispatchProof(result.jsonl, after),
+		gateReview: recordedGateReviewFromCodexJSONL(result.jsonl), expectedNext: "handoff",
+	}); err != nil {
+		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
 }
 
 func newCodexLiveRunner(t *testing.T) codexLiveRunner {

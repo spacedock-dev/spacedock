@@ -55,6 +55,8 @@ An unsandboxed bootstrap launch carries no safehouse isolation, so per-action pe
 
 Both take `--host claude|codex|pi` (default `claude`). When `doctor` reports the plugin is out of date, refresh it with `spacedock install`. When the plugin is still contract-compatible but a newer one is available, `doctor` and the front-door launch print an opt-in upgrade hint (`run spacedock install --host <host> to refresh`); the hint never blocks the launch. See [Install Spacedock](../get-started/install.md) for the full setup path.
 
+For source-checkout or retained development launchers, version compatibility is not a command-capability check. Before gate work, `spacedock gate --help` must list `record`, `validate`, `eligibility`, and `consume`, including the semantic record forms. If it does not, refresh the installed launcher or build the current checkout and select that executable with `SPACEDOCK_BIN`; do not hand-edit gate frontmatter as a fallback.
+
 ## Workflow
 
 The first officer runs these against workflow state as it moves entities; you operate through it, not by hand. They are documented here for completeness and for the rare direct use (scripting, debugging, restoring a state checkout on a fresh clone).

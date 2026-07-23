@@ -26,6 +26,11 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			intent:        "FO halts at a human gate and presents the review without self-approval, mutation, or archival.",
 		},
 		{
+			name:          "recorded-gate-lifecycle",
+			oldPythonTest: "durable-decisions 3k/h1 dogfood (net-new; no Python ancestor)",
+			intent:        "FO binds and validates a retained Briefing, records and validates delegated approval, proves eligibility, consumes exactly once, and only then dispatches the successor.",
+		},
+		{
 			name:          "rejection-flow",
 			oldPythonTest: "tests/test_rejection_flow.py",
 			intent:        "FO drives a two-cycle rejection trajectory — route back, re-implement, and re-validate, reusing the reviewer when the host exposes an addressable-worker route.",
