@@ -10,6 +10,20 @@ score:
 worktree:
 issue:
 sprint: durable-decisions
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:6y:ideation
+    records:
+        - id: gate:docs-dev:6y:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:6y-ideation-1
+              briefing:
+                id: briefing:docs-dev:6y:ideation:attempt-1:revision-1
+                digest: sha256:39dada7e95453a8738f41ca886881deebfa31edf16ba677cf95a580596f7dbc6
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Make the normal First Officer gate path use the landed 3k/h1 commands so a presented decision is durably recorded, validated, checked for eligibility, and consumed before workflow advancement or dispatch.
