@@ -159,8 +159,14 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: superseded
                 blockers: []
+            - id: gate-attempt:fr-validation-2
+              briefing:
+                id: briefing:docs-dev:fr:validation:attempt-2:revision-1
+                digest: sha256:5419108541087f8b95422e03db0f9903665dbc6a981a7f397ef2fbeda4372a7b
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-2
 review-round:
     id: round:frze3yqm9da0vp0r53qqdc8t:implementation:6
     stage: implementation
