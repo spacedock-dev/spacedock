@@ -787,3 +787,34 @@ Cycle 4 closes only the two rejected proof boundaries: exact whole-entity mutati
 detection and an existing-scenario behavioral launcher/durability grade. Product
 code is unchanged, all required local suites pass, Codex live passes, Claude is
 externally auth-blocked before work, and advisory triage is durably recorded.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce the exact full-entity successful-write oracle and its unrelated-frontmatter/body corruption controls, then verify AC-2 without weakening its every-unrelated-span promise.
+  The focused test matches all 36 expected entity lines byte-for-byte; on a detached `1ae990f5` checkout, the prior production edit corrupting `custom` and the unrelated body now fails at that exact oracle.
+- DONE: Re-run the existing shared rejection-flow durable grader and resolved-launcher invocation control, including the real applicable live lane, and verify AC-5 without instruction-prose evidence.
+  Offline durable/no-invocation and Claude/Codex extractor controls pass; the CI-style branch-built `SPACEDOCK_BIN` Codex `rejection-flow` live subtest passed in 360.93s after observing the exact invocation, all-fixed room, one projection, unchanged lifecycle sentinels, and cycle-2 re-validation.
+- DONE: Confirm zero production LOC changed, the implementation remains 639 production LOC, focused/full/race checks pass, all ACs retain their approved meaning, and issue a fresh PASSED or REJECTED recommendation.
+  Commit `1ae990f5` changes only seven test/testdata paths; production remains 795 additions/156 deletions = 639 net, and focused, live-tag, full, full-race, fresh affected-race, `gofmt`, and diff checks pass on a clean branch.
+- DONE: AC-1 — durable 3j all-declines round remains distinguishable from no findings.
+  The unchanged focused public-command fixture still reproduces the exact five-entry 592/594 chain, two advisory Resolutions, cache-independent pointer readback, one projection, and zero candidate/product delta.
+- DONE: AC-2 — round recording preserves every unrelated entity span and has no lifecycle effect.
+  The complete expected entity independently covers status, gates, `custom`, title, and body bytes; both unrelated-span mutations turn red, while the live durable grader preserves workflow/gate/application sentinels and introduces no gate/application node.
+- DONE: AC-3 — refusal, rollback, divergence, and replay behavior remains byte-clean.
+  No product code changed; the malformed log/digest, occupied room, lock, CAS, replacement failure, immutable divergence, exact replay, and whole-tree rollback matrix passes unchanged.
+- DONE: AC-4 — the implementation remains one 3k extension.
+  The correction adds no product package or mechanism and the 639-line surface still uses the shared Briefing parser/digest, lock, required CAS, entity rebuilder, and atomic writer; ordinary gate and race regressions pass.
+- DONE: AC-5 — trigger-scoped caller behavior is now exercised without instruction-file prose matching.
+  The shared first-officer journey executes the resolved branch launcher after complete reviewer/ensign triage, and the grader requires invocation plus canonical room, pointer, advisory graph, projection, retained inputs, and unchanged lifecycle state; `invoked=false` fails.
+- DONE: Host-lane classification and release condition.
+  The unpinned local run selected a stale repository-root 0.26 binary and was not counted; approval-required mode without `OPENAI_API_KEY` and the reported pre-work Claude HTTP 401 are credential/configuration outcomes, neither green nor product failures. Release use of the Claude adapter still requires the existing Claude CI lane green.
+- DONE: Deferred-risk reassessment.
+  Exact-log digest, fixed-evidence, historical read, power-loss recovery/fsync, CRLF, and loose-heading risks retain their previously recorded out-of-promise triggers and promotion conditions; the proof-only correction creates no new risk.
+- DONE: Recommendation — PASSED.
+  Both prior material evidence defects are closed by independent falsifiers, every approved AC has behavioral evidence, and no material product, mechanism, or proof finding remains.
+
+### Summary
+
+Validation cycle 2 recommends PASSED. The exact full-entity oracle now catches the
+prior AC-2 corruption, and the pinned-candidate Codex live journey proves AC-5 through
+an observed invocation and durable state; production remains unchanged at 639 net LOC.
