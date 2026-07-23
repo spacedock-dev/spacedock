@@ -46,13 +46,18 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 		"--extension", extension,
 		"--skill", filepath.Join(piSubagentsRoot, "skills", "pi-subagents"),
 		"--skill", filepath.Join(repo, "skills", "first-officer"),
+		"--skill", filepath.Join(repo, "skills", "fo-gate-lifecycle"),
 		"--skill", filepath.Join(repo, "skills", "ensign"),
 		recordedGatePrompt(fixture.root),
 	)
 
 	after := resolveRecordedGateEntity(fixture)
 	events := recordedGateEventsFromCommandLog(readFile(t, commandLog))
-	dispatch, review := recordedGatePiObservation(readRecordedGatePiSessions(t, artifactDir), after)
+	session := readRecordedGatePiSessions(t, artifactDir)
+	if err := assertRecordedGateRuntimeLoadOrder("pi", session); err != nil {
+		t.Fatalf("Pi recorded gate lifecycle load order graded FAIL: %v; artifacts in %s", err, artifactDir)
+	}
+	dispatch, review := recordedGatePiObservation(session, after)
 	if err := assertRecordedGateLifecycle(recordedGateObservation{
 		events: events, before: before, after: after, dispatch: dispatch,
 		gateReview: review, expectedNext: "handoff",

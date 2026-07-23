@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-// foFunctionReferencePaths is the 12-file union the mutable-address lint scans. The
+// foFunctionReferencePaths is the 13-file union the mutable-address lint scans. The
 // BUDGET is not this union: no single FO ever loads all three host adapters, so the
 // byte ratchet below is per-host over foSharedLoadPaths + foHostLoadPaths.
 var foFunctionReferencePaths = []string{
@@ -28,6 +28,7 @@ var foFunctionReferencePaths = []string{
 	"skills/first-officer/references/pi-first-officer-runtime.md",
 	"skills/present-gate/SKILL.md",
 	"skills/feedback-rejection-flow/SKILL.md",
+	"skills/fo-gate-lifecycle/SKILL.md",
 	"skills/fo-dispatch-recovery/SKILL.md",
 }
 
@@ -42,6 +43,7 @@ var foSharedLoadPaths = []string{
 	"skills/first-officer/references/fo-write-core.md",
 	"skills/present-gate/SKILL.md",
 	"skills/feedback-rejection-flow/SKILL.md",
+	"skills/fo-gate-lifecycle/SKILL.md",
 }
 
 // foHostLoadPaths adds each host's adapter file(s) and the trigger skills reachable
@@ -66,9 +68,9 @@ var foHostLoadPaths = map[string][]string{
 // under another host's headroom. Growing a host's load past its constant is a
 // deliberate re-baseline edit here, with the growth justified in the change.
 var foHostLoadBaselineBytes = map[string]int{
-	"claude": 96435,
-	"codex":  75650,
-	"pi":     71780,
+	"claude": 103114,
+	"codex":  82329,
+	"pi":     78459,
 }
 
 var mutableProcedureAddress = regexp.MustCompile(`(?i)(?:\bsteps?[- ]\d+(?:\.\d+)?(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?|\breuse[- ]conditions?[- ]?\d+|\btiers?[- ]\d+|\btiers?\s+\d+(?:\s+and\s+\d+)?|\bentry-point principle\s+\d+|\b(?:signals?|items?)\s*\(\d+(?:\s*,\s*\d+)*(?:\s*,?\s*or\s*\d+)?\s+above\))`)
@@ -188,7 +190,7 @@ func TestFOHostPromptLoadRatchetDiscriminates(t *testing.T) {
 }
 
 // TestFOHostLoadSetsCoverAddressLintUnion keeps the two scopes in sync: the union of
-// the shared load and every host's load equals the 12-file set the mutable-address
+// the shared load and every host's load equals the 13-file set the mutable-address
 // lint scans, so neither list can drop or gain a file without the other noticing.
 func TestFOHostLoadSetsCoverAddressLintUnion(t *testing.T) {
 	union := map[string]bool{}
@@ -286,6 +288,30 @@ func TestFODeferredDispatchOwnerLoadsBeforeUse(t *testing.T) {
 		if !strings.Contains(principles, want) {
 			t.Errorf("smallest-sufficient commissioned-dispatch boundary missing %q", want)
 		}
+	}
+}
+
+func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
+	shared := readRepoFile(t, filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"))
+	loads := foMarkdownSection(t, shared, "## Deferred load points")
+	for _, want := range []string{
+		`Skill(skill="spacedock:fo-gate-lifecycle")`,
+		"headless with or without conn", "`engage`", "gated worker completion",
+		"open/pending/revise/hold/stale/consumed resume",
+		"interactive gated greet only names the gate and stops load-free",
+	} {
+		if !strings.Contains(loads, want) {
+			t.Errorf("gate-entry funnel missing %q", want)
+		}
+	}
+	interaction := foMarkdownSection(t, shared, "## «interaction.boundary»(): route interactive and headless launch behavior")
+	if strings.Contains(interaction, `Skill(skill="spacedock:present-gate")`) ||
+		!strings.Contains(interaction, "At each gate enter through `«gate.lifecycle»`") {
+		t.Error("headless gate route bypasses the deferred lifecycle owner")
+	}
+	completion := foMarkdownSection(t, shared, "## Completion and Gates")
+	if !strings.Contains(completion, `Skill(skill="spacedock:fo-gate-lifecycle")`) {
+		t.Error("worker-completion gate route does not load the deferred lifecycle")
 	}
 }
 

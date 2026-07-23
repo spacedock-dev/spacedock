@@ -177,6 +177,9 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 	result := runner.run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
 	after := resolveRecordedGateEntity(fixture)
 	events := recordedGateEventsFromClaudeStream(result.stream)
+	if err := assertRecordedGateRuntimeLoadOrder("claude", result.stream); err != nil {
+		t.Fatalf("recorded gate lifecycle load order graded FAIL: %v\nArtifacts: %s", err, result.artifactDir)
+	}
 	if err := assertRecordedGateLifecycle(recordedGateObservation{
 		events: events, before: before, after: after,
 		dispatch:   recordedGateClaudeDispatchProof(result.stream, after),
@@ -185,6 +188,47 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
+func TestLiveClaudeRecordedGateMissingCommandMutant(t *testing.T) {
+	runner := newClaudeLiveRunner(t)
+	mutantPlugin := t.TempDir()
+	if err := copyTree(runner.pluginDir, mutantPlugin); err != nil {
+		t.Fatal(err)
+	}
+	skillPath := filepath.Join(mutantPlugin, "skills", "fo-gate-lifecycle", "SKILL.md")
+	original := readFile(t, skillPath)
+	command := "${SPACEDOCK_BIN:-spacedock} gate eligibility ENTITY --workflow-dir WORKFLOW_DIR\n"
+	mutant := strings.Replace(original, command, "", 1)
+	if mutant == original {
+		t.Fatal("copied-plugin mutant did not remove the shipped eligibility command")
+	}
+	writeFile(t, skillPath, mutant)
+	runner.pluginDir = mutantPlugin
+	fixture := writeRecordedGateFixture(t)
+	before := readFile(t, fixture.entity)
+	scenario := sharedRuntimeScenario{
+		name:          "recorded-gate-lifecycle-mutant",
+		oldPythonTest: "cycle-2 copied-plugin red control",
+		intent:        "Removing one shipped lifecycle command must turn the common grader red while prospective spawn proof remains valid.",
+	}
+	result := runner.run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
+	after := resolveRecordedGateEntity(fixture)
+	events := recordedGateEventsFromClaudeStream(result.stream)
+	proof := recordedGateClaudeDispatchProof(result.stream, after)
+	if !proof.spawned || strings.TrimSpace(proof.handle) == "" || !proof.workerOutput {
+		t.Fatalf("mutant lost prospective spawn proof instead of isolating the command deletion: %#v\nArtifacts: %s", proof, result.artifactDir)
+	}
+	if !strings.Contains(result.stream, skillPath) {
+		t.Fatalf("runtime did not expose consumption of copied mutant %s\nArtifacts: %s", skillPath, result.artifactDir)
+	}
+	err := assertRecordedGateLifecycle(recordedGateObservation{
+		events: events, before: before, after: after, dispatch: proof,
+		gateReview: recordedGateReviewFromClaudeStream(result.stream), expectedNext: "handoff",
+	})
+	if err == nil || !strings.Contains(err.Error(), "events") {
+		t.Fatalf("missing-command copied-plugin mutant did not turn the common grader red solely on trace completeness: events=%v err=%v", events, err)
+	}
 }
 
 func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
