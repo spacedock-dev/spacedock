@@ -423,3 +423,25 @@ Re-ideation replaces `c5a96678`'s stage-only meaning with a canonical selected-a
 ### Summary
 
 The gate-review repair makes boot a four-field scheduling index, not a duplicate gate record, while human status and engage retain the full canonical detail. Terminal approvals now say `approved-awaiting-merge`, nonterminal approvals say `approved-awaiting-advance`, and the clean-main cherry-pick plan preserves the counterexample without importing unrelated live-runner history.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Re-root the existing worktree on current main without importing the coupled PR #493 history, preserve only counterexample commit c5a96678, and prove the final diff contains only the declared readiness paths.
+  Branch base is current `main` `73eed65d`; cherry-pick `5b16bd19` preserves the six-file `c5a96678` counterexample, followed only by correction commits `de941c93` and `c923c9a1`; the old ancestry remains recoverable at `spacedock-ensign/boot-identify-ready-gates-cycle1`.
+  Final `main...HEAD` is the 11 declared implementation/test/doc paths plus exactly three FO-authorized `--all-fields` golden outputs: 14 files, 158 net production Go LOC, 434 net test LOC, and 7 net docs lines.
+- DONE: Implement one fail-closed current-stage gate-readiness reducer, same-Briefing selection correction, four-field ready_gates rows, and opt-in human gate-readiness with the exact 3-of-5, stale-pointer, terminal-approval, malformed-state, body-independence, and dispatchability controls.
+  `TestBootIdentifyReadyGates` pins 3/3 ready and 0/2 validating rows, exact order/keys, body independence, dispatchable equality, and slug-ID fallback; restoring the stage-only selector makes the exact three-row assertion return five rows.
+  `TestSameBriefingBindSelectsCurrentStageWithoutDuplicateAttempt` and `TestBootReadyGatesRequiresCurrentStageSelection` pin the stale-pointer repair, unchanged attempt histories/outside bytes, and 2→3 ready transition; removing the pointer write leaves `mf` absent.
+  Reducer and command controls enumerate open, terminal/nonterminal approval, blocked, held, feedback, consumed, superseded, not-applicable, malformed, stale, terminal, unknown, and ordinary states; weakening current-stage/application/target checks schedules a named negative.
+  `TestBootReadyGateTerminalApprovalDisappearsAfterConsume` drives record→boot→eligibility→consume→boot and fails if the pending merge row is missing before consumption or survives afterward.
+  `TestStatusProjectsSharedGateReadinessReducer` and `TestStatusAllFieldsProjectsValidatingWithoutGateRecord` pin text/JSON/`--all-fields`; each of the three updated exact-output goldens reds if the new readiness column or `validating` cells are removed.
+- DONE: Update the command/concept references, run focused/full/race/live-tag compile gates, request Roborev and triage findings, and report exact LOC/files/commits without exceeding the approved 2x tolerance.
+  Command and concept references document the four-key scheduling index, opt-in human projection, bind-before-ready boundary, and consume-before-terminal-merge lifecycle; default status and ordinary boot remain byte-compatible.
+  Focused gate/status/CLI tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `go test -tags live -run '^$' ./...` passed; scoped `git diff --check` is clean (the three generated fixed-width goldens retain their established trailing table padding).
+  Roborev branch-final job 755's `--all-fields` finding was Material and fixed in `c923c9a1`; released status users otherwise lost the approved validating distinction, affecting AC-3/AC-6, and the no-record fixture was the supported trigger.
+  Job 755's empty-ID finding was declined as false-positive: slug-workflow boot users suffer no observable harm because `applyEffectiveIDs` populates `fields["id"]` before every `gatherBoot` call, AC-6 remains intact, and the no-stored-ID `r4` fixture emits `"id":"r4"`; promote if a future boot path bypasses effective-ID application.
+  Roborev re-panel job 767 returned `No issues found`.
+
+### Summary
+
+Boot identify now schedules only durable current-stage gate opportunities and tells the first officer whether each awaits the Captain, nonterminal advance, or terminal merge. Human status shares the same fail-closed reducer, same-Briefing binding repairs stale selection without duplicate history, and the verified branch preserves all prior boot/dispatch compatibility outside the approved additive surfaces.
