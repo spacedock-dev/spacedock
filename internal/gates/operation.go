@@ -83,6 +83,9 @@ func RecordSemantic(entityPath string, input RecordInput) error {
 		if filepath.Base(input.BriefingPath) != "briefing.json" || filepath.Base(input.LogPath) != "briefing.review.jsonl" {
 			return fmt.Errorf("--round inputs must name briefing.json and briefing.review.jsonl")
 		}
+		if filepath.Base(entityPath) != "index.md" {
+			return fmt.Errorf("gate record --round requires folder-form entity <slug>/index.md because review artifacts accumulate beside the entity")
+		}
 		unlock, err := lockEntity(entityPath)
 		if err != nil {
 			return err

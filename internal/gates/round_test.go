@@ -128,6 +128,44 @@ func TestRoundRecordCompleteReplayAndRefusalsAreByteClean(t *testing.T) {
 	}
 }
 
+func TestRoundRequiresFolderFormWithoutCrossEntityCollision(t *testing.T) {
+	workflow := t.TempDir()
+	for _, slug := range []string{"task-a", "task-b"} {
+		entity := filepath.Join(workflow, slug+".md")
+		if err := os.WriteFile(entity, []byte("---\nid: "+slug+"\nstatus: implementation\n---\n# Task\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(workflow, "unrelated"), []byte("preserve"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	input := RecordInput{Round: "implementation/1", BriefingPath: filepath.Join(workflow, "briefing.json"), LogPath: filepath.Join(workflow, "briefing.review.jsonl")}
+	for _, slug := range []string{"task-a", "task-b"} {
+		before := treeDigest(t, workflow)
+		entity := filepath.Join(workflow, slug+".md")
+		err := RecordSemantic(entity, input)
+		if err == nil || !strings.Contains(err.Error(), "folder-form entity") || treeDigest(t, workflow) != before {
+			t.Fatalf("%s flat refusal error=%v or changed workflow bytes", slug, err)
+		}
+		if _, statErr := os.Stat(entity + ".gates.lock"); !os.IsNotExist(statErr) {
+			t.Fatalf("%s flat refusal left a lock: %v", slug, statErr)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(workflow, "review")); !os.IsNotExist(err) {
+		t.Fatalf("flat refusals created a shared review room: %v", err)
+	}
+
+	for _, slug := range []string{"task-a", "task-b"} {
+		root, entity, briefing, log, feedback := advisoryRoundFixtureAt(t, filepath.Join(workflow, slug))
+		if err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}); err != nil {
+			t.Fatalf("%s folder-form record: %v", slug, err)
+		}
+		if _, err := os.Stat(filepath.Join(root, "review", "implementation", "round-1")); err != nil {
+			t.Fatalf("%s has no independent retained room: %v", slug, err)
+		}
+	}
+}
+
 func TestRoundNoFindingsAndPreflightRefusals(t *testing.T) {
 	t.Run("no findings", func(t *testing.T) {
 		_, entity, briefing, log, _ := advisoryRoundFixture(t)
@@ -231,6 +269,35 @@ func TestRoundNoFindingsAndPreflightRefusals(t *testing.T) {
 			t.Fatal("malformed URI refusal changed fixture tree")
 		}
 	})
+}
+
+func TestRoundFixedAndMixedTriageProjectAndReplay(t *testing.T) {
+	for _, tc := range []struct {
+		name, class string
+		log         func([]byte) []byte
+	}{
+		{"all fixed", "all-fixed", allFixedRoundLog},
+		{"mixed", "mixed", mixedRoundLog},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root, entity, briefing, log, feedback := advisoryRoundFixture(t)
+			if err := os.WriteFile(log, tc.log(mustReadBytes(t, log)), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}
+			if err := RecordSemantic(entity, input); err != nil {
+				t.Fatal(err)
+			}
+			summary, err := ValidateRoundFile(entity, input.Round)
+			if err != nil || summary.Triage != tc.class || bytes.Count(mustReadBytes(t, entity), []byte("- Cycle 1:")) != 1 {
+				t.Fatalf("summary=%#v err=%v entity=%s", summary, err, mustReadBytes(t, entity))
+			}
+			before := treeDigest(t, root)
+			if err := RecordSemantic(entity, input); err != nil || treeDigest(t, root) != before {
+				t.Fatalf("exact %s replay changed the fixture: %v", tc.class, err)
+			}
+		})
+	}
 }
 
 func TestRoundSharedCASAndRollbackBoundaries(t *testing.T) {
@@ -346,22 +413,29 @@ func TestRoundWorkerTriageRequiresFixedActorAndBackwardGraph(t *testing.T) {
 		t.Fatal("multiple authorized worker triage Resolutions succeeded")
 	}
 
-	full := string(mustReadBytes(t, filepath.Join("testdata", "advisory-round", "briefing.review.jsonl")))
-	allFixed := strings.Replace(full,
-		"class: correct-but-disproportionate; why-not-material: released workflow and ACs remain correct at candidate 90aea55; promotes-when: a supported duplicate-member flow produces observable incorrect state",
-		"class: material; disposition: fixed", 1)
-	log, err = parseReviewLog([]byte(allFixed), "briefing:3j:implementation:round-1")
+	full := mustReadBytes(t, filepath.Join("testdata", "advisory-round", "briefing.review.jsonl"))
+	log, err = parseReviewLog(allFixedRoundLog(full), "briefing:3j:implementation:round-1")
 	if class, classifyErr := classifyCompletedRound(log); err != nil || classifyErr != nil || class != "all-fixed" {
 		t.Fatalf("material-only triage class=%q parse=%v classify=%v", class, err, classifyErr)
 	}
-	lines := strings.Split(full, "\n")
-	lines[3] = `{"type":"Annotation","id":"annotation:fixed","briefing":"briefing:3j:implementation:round-1","by":"actor:ensign","at":"2026-07-20T01:03:00Z","includes":["annotation:job-592"],"body":"class: material; disposition: fixed"}` + "\n" +
-		`{"type":"Annotation","id":"annotation:declined","briefing":"briefing:3j:implementation:round-1","by":"actor:ensign","at":"2026-07-20T01:03:30Z","includes":["annotation:job-594"],"body":"class: correct-but-disproportionate; why-not-material: no released harm; promotes-when: supported harm"}`
-	lines[4] = strings.Replace(lines[4], `["annotation:decline-duplicate-member"]`, `["annotation:fixed","annotation:declined"]`, 1)
-	log, err = parseReviewLog([]byte(strings.Join(lines, "\n")), "briefing:3j:implementation:round-1")
+	log, err = parseReviewLog(mixedRoundLog(full), "briefing:3j:implementation:round-1")
 	if class, classifyErr := classifyCompletedRound(log); err != nil || classifyErr != nil || class != "mixed" {
 		t.Fatalf("mixed triage class=%q parse=%v classify=%v", class, err, classifyErr)
 	}
+}
+
+func allFixedRoundLog(full []byte) []byte {
+	return bytes.Replace(full,
+		[]byte("class: correct-but-disproportionate; why-not-material: released workflow and ACs remain correct at candidate 90aea55; promotes-when: a supported duplicate-member flow produces observable incorrect state"),
+		[]byte("class: material; disposition: fixed"), 1)
+}
+
+func mixedRoundLog(full []byte) []byte {
+	lines := strings.Split(string(full), "\n")
+	lines[3] = `{"type":"Annotation","id":"annotation:fixed","briefing":"briefing:3j:implementation:round-1","by":"actor:ensign","at":"2026-07-20T01:03:00Z","includes":["annotation:job-592"],"body":"class: material; disposition: fixed"}` + "\n" +
+		`{"type":"Annotation","id":"annotation:declined","briefing":"briefing:3j:implementation:round-1","by":"actor:ensign","at":"2026-07-20T01:03:30Z","includes":["annotation:job-594"],"body":"class: correct-but-disproportionate; why-not-material: no released harm; promotes-when: supported harm"}`
+	lines[4] = strings.Replace(lines[4], `["annotation:decline-duplicate-member"]`, `["annotation:fixed","annotation:declined"]`, 1)
+	return []byte(strings.Join(lines, "\n"))
 }
 
 func TestRoundValidateRequiresCanonicalRegularFileRoom(t *testing.T) {
@@ -479,7 +553,11 @@ func TestRoundCompleteOperationCASAndRollbackAreByteClean(t *testing.T) {
 
 func advisoryRoundFixture(t *testing.T) (root, entity, briefing, log, feedback string) {
 	t.Helper()
-	root = t.TempDir()
+	return advisoryRoundFixtureAt(t, filepath.Join(t.TempDir(), "task"))
+}
+
+func advisoryRoundFixtureAt(t *testing.T, root string) (string, string, string, string, string) {
+	t.Helper()
 	if err := os.MkdirAll(filepath.Join(root, "inputs"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -487,18 +565,18 @@ func advisoryRoundFixture(t *testing.T) (root, entity, briefing, log, feedback s
 		t.Fatal(err)
 	}
 	copyRoundFixture(t, filepath.Join(root, "candidate.patch"), "candidate.patch")
-	briefing = filepath.Join(root, "inputs", "briefing.json")
-	log = filepath.Join(root, "inputs", "briefing.review.jsonl")
+	briefing := filepath.Join(root, "inputs", "briefing.json")
+	log := filepath.Join(root, "inputs", "briefing.review.jsonl")
 	copyRoundFixture(t, briefing, "briefing.json")
 	copyRoundFixture(t, log, "briefing.review.jsonl")
-	feedback = filepath.Join(root, "inputs", "feedback-cycle.txt")
+	feedback := filepath.Join(root, "inputs", "feedback-cycle.txt")
 	if err := os.WriteFile(feedback, []byte("- Cycle 1: REJECTED — Roborev; surface 0/0 vs estimate 340 (0%); AC unchanged\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(root, "product", "status.txt"), []byte("candidate=90aea55\nstate=unchanged\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	entity = filepath.Join(root, "task.md")
+	entity := filepath.Join(root, "index.md")
 	body := "---\n" +
 		"id: task\n" +
 		"status: implementation\n" +

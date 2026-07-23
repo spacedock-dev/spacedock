@@ -151,6 +151,10 @@ the canonical two-file room at `review/<stage>/round-<cycle>`, then atomically w
 the exact `review-round` pointer and Feedback Cycles projection. A complete no-findings
 log omits both worker triage and `--feedback-cycle`.
 
+Round recording requires a folder-form entity at `<slug>/index.md`, so its accumulating
+`review/` artifacts are scoped beside that entity. Flat entities refuse before locking
+or writing; the recorder does not alter the approved derived room path to compensate.
+
 The room is immutable: exact whole-room replay is a whole-tree no-op; any different
 Briefing, log, room shape, pointer, or projection fails closed. Findings-bearing
 reviewer-only logs are incomplete and never persist. New-room publication rolls back

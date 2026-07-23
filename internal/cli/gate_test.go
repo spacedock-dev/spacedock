@@ -40,10 +40,14 @@ func TestGateRecordAndValidateCLILeaveStatusUntouched(t *testing.T) {
 func TestGateRoundRecordAndValidateCLI(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: implementation\n      initial: true\n---\n# Workflow\n")
-	entity := filepath.Join(root, "task.md")
+	entityDir := filepath.Join(root, "task")
+	if err := os.MkdirAll(entityDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	entity := filepath.Join(entityDir, "index.md")
 	writeFile(t, entity, "---\nid: task\nstatus: implementation\ntitle: Task\n---\n# Task\n")
-	copyGateTestdata(t, filepath.Join(root, "candidate.patch"), filepath.Join("advisory-round", "candidate.patch"))
-	inputs := filepath.Join(root, "inputs")
+	copyGateTestdata(t, filepath.Join(entityDir, "candidate.patch"), filepath.Join("advisory-round", "candidate.patch"))
+	inputs := filepath.Join(entityDir, "inputs")
 	if err := os.MkdirAll(inputs, 0o755); err != nil {
 		t.Fatal(err)
 	}

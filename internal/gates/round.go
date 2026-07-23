@@ -107,7 +107,7 @@ func recordRoundLockedWith(entityPath string, input RecordInput, beforePublish f
 		}
 	}
 	line := ""
-	project := inputRound.Triage == "all-declines"
+	project := inputRound.Triage != "no-findings"
 	if project {
 		if input.FeedbackCyclePath == "" {
 			return fmt.Errorf("triaged round requires --feedback-cycle")
