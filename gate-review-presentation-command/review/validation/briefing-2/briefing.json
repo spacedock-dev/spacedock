@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:xb:validation:attempt-1:revision-1",
+  "question": "Should Spacedock candidate 612b72fca1ef98a0dde97cf0b1cecdf2355a7b16 land with its provider release condition proven at Subspace 198f76238aeb74ff38900e17b751f0460d0c55ee?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0b13d956f4c04aaf4789fbf913d065bf3aeb470c48c04330e13b2594df8092f3"
+    },
+    {
+      "id": "artifact:entity-snapshot",
+      "uri": "../../ideation/briefing-3/entity-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:796de1275cd980ddedbcde7dd149213f7124fe93e845faa595c8e65922d82ffe"
+    },
+    {
+      "id": "artifact:recorder-contract",
+      "uri": "../../ideation/briefing-3/contract-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:b4c9623648c840ba53d1f4fb61328dceb65d0a912a4cfd597264032147dcc17b"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:validation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Land exact candidate",
+          "to": "ceremony:merge-landing"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return a material defect to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}
