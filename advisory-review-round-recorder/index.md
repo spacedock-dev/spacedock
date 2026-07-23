@@ -24,6 +24,20 @@ gates:
                 digest: sha256:3eb2739582cbde71c1430367b7de4ae1439ba477432fa9586a5ed4564a8e9909
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fr:ideation:1
+                briefing: briefing:docs-dev:fr:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T03:01:03.948941Z"
+                decision: approve
+                reason: Ideation reuses 3k as the sole recorder, persists the already-approved 02av advisory shape, makes the 3j decline replay falsifiable, and forbids gate, application, or workflow effects.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Provide one owned write surface for correction-round Briefings, reviewer Annotations and advisory Resolution, and the worker's triage Resolution, without selecting a gate or advancing workflow state.
