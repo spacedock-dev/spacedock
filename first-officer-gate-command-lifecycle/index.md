@@ -44,6 +44,20 @@ gates:
                 digest: sha256:53b3cd4c9ba72ecbe375bb2a638cba5cd840c0e19481342b52da1cf8db5f11f7
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:ideation:2
+                briefing: briefing:docs-dev:6y:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T06:38:37.347699Z"
+                decision: approve
+                reason: Cycle-2 ideation moves the complete lifecycle behind one deferred gate trigger, preserves the boot-core ceiling and strict spawn ACs, closes every gate-entry route including headless, and names all missing behavioral proof without changing product semantics.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
