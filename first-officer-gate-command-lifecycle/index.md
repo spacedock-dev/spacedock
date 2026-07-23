@@ -328,7 +328,15 @@ The first shared-scenario compile correctly failed because `internal/ensigncycle
 - DONE: Request Roborev and triage every finding before edits.
   Jobs 649 and 663 completed; both triage records above carry workflow, harm, AC/boundary, trigger evidence, and classification. Material oracle defects were fixed; worker attribution, actual stale-FO entry, and host behavior are explicit Needs-decision items; polish/false-positive findings were declined with triggers.
 - FAILED: Commit a self-contained implementation and declare validation readiness.
-  The code worktree intentionally remains an uncommitted checkpoint because its resident-core layout violates a binding design-reset trigger. Actual checkpoint delta: FO contract +58/-3 lines; test/live +1,157 lines; docs +7 lines; production Go 0. Do not advance to validation until the Captain/FO authorizes the deferred gate-core topology, a justified prompt-budget reset, or a materially narrower contract.
+  WIP counterexample commit `cabdef33` preserves the complete checkpoint without claiming it is mergeable: its resident-core layout violates a binding design-reset trigger. Actual checkpoint delta: FO contract +58/-3 lines; test/live +1,157 lines; docs +7 lines; production Go 0. Do not advance to validation; the First Officer disposition is REVISE for bounded topology re-ideation.
+
+### Independent audit additions
+
+- **Recommended topology:** move the lifecycle behind a deferred, non-user-invocable `fo-gate-lifecycle` skill and retain only its trigger in the shared core. The boot-core ceiling remains unchanged; do not rebaseline or compress around it.
+- **Material bypass:** the headless/no-conn path currently invokes `present-gate` directly, bypassing the recorded lifecycle. Re-ideation must route this path through the same lifecycle before presentation or decision handling.
+- **Incomplete behavioral proof:** the checkpoint lacks a shipped-skill live mutant, actor-swap and raw-dump mutants, the full AC-5 refusal matrix, the full AC-7 resume matrix, and exact before/after workflow-discovery equality. Existing focused coverage must not be presented as satisfying those missing arms.
+- **Runtime disposition:** Codex repeatedly consumes then waits without an observed spawn, so no-spawn is an implementation blocker. Claude and Pi fail before workflow work on credentials, so their auth failures are external validation conditions, not implementation failures.
+- **Bounded next step:** topology re-ideation owns only the deferred skill boundary, the headless bypass, and the named proof gaps. This WIP commit is evidence/counterexample input; no implementation continuation or contract compression is authorized from this stage.
 
 ### Summary
 
