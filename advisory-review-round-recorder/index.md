@@ -614,8 +614,13 @@ Captain and First Officer: I love you too.
 
 - DONE: Replace only prefix-append semantics with a complete one-shot round design that preserves every value acceptance criterion and names the exact removed and retained mechanisms.
   The cycle-3 delta rejects findings-bearing reviewer prefixes, makes rooms new-only and immutable, preserves no-findings/all-declines and every AC guard, and explicitly inventories deleted append/CAS/restore paths versus retained shared validation and atomic entity machinery.
+  AC-1 evidence: cycle-3 `Complete-round contract` defines the complete no-findings and authorized-triage forms, and `Removed and retained mechanisms` preserves the complete 3j jobs 592/594 replay plus pointer readback after cache removal.
+  AC-2 evidence: cycle-3 `Removed and retained mechanisms` retains byte-identical gates/application/status/candidate/product state, and risk-first test 5 makes any lifecycle delta fail the complete 3j fixture.
+  AC-4 evidence: cycle-3 `Removed and retained mechanisms` keeps the shared 3k package/parser/lock/entity writer/loader; the durable `shared-composition-audit.md` independently found no second recorder.
+  AC-5 evidence: cycle-3 `Complete-round contract` binds invocation after complete reviewer/worker output, while its value-preservation paragraph keeps the two trigger callers and leaves ordinary gate lifecycle integration to 6y.
 - DONE: Produce a risk-first implementation and test delta with honest hard stops of 580 pre-CLI and 640 total, including immutable-room replay/divergence and atomic pointer/projection failure behavior.
   Red-first tests now falsify pending persistence, existing-room mutation, divergent replay, split pointer/projection writes, entity-CAS rollback, and lifecycle effects; the measured plan is 550-575 pre-CLI and 605-630 total with binding 580/640 stops.
+  AC-3 evidence: cycle-3 `Complete-round contract` makes existing rooms equality-only and pointer/projection one atomic entity replacement; risk-first tests 1, 3, and 4 prove byte-clean refusal, exact no-op replay, full-byte entity CAS, and new-room rollback.
 
 ### Summary
 
