@@ -1,10 +1,38 @@
 ---
 title: Expose ready-gate entities in boot identify JSON
-status: validation
+status: ideation
 score: 0.9
 source: PR #493 local-live m3 investigation on 2026-07-10. The default Claude greeting omitted the already-gated Gate Check entity because status --boot --identify --json returned only dispatchable entities; dispatchAnalysis intentionally suppresses current gate stages, so the authoritative boot record made the shipped greet requirement impossible to satisfy.
 id: 8n55etrw9wj10jfejdq5f1s8
 worktree: .worktrees/spacedock-ensign-boot-identify-ready-gates
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:8n:validation
+    records:
+        - id: gate:docs-dev:8n:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:8n-validation-1
+              briefing:
+                id: briefing:docs-dev:8n:validation:attempt-1:revision-1
+                digest: sha256:74fb6c8bf5bac2091c553e58084933d1c50ada8329310f959e1e49480b88555e
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:8n:validation:1
+                briefing: briefing:docs-dev:8n:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T08:32:11.092975Z"
+                decision: revise
+                reason: 'The live workflow counterexample shows current validation stage is not gate readiness: five tickets share the stage, only three have complete reports, and one complete ticket still points at its old ideation gate. The shipped projection must derive from durable current-stage gate lifecycle state.'
+                adoption-note: 'helps only if gate readiness becomes first-class state—not something the FO infers from status: validation.'
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
+sprint: durable-decisions
 ---
 
 ## Problem
@@ -101,3 +129,7 @@ The design adds one identify-only, append-only `ready_gates` array and reuses ex
 ### Summary
 
 Boot identify JSON now exposes active, non-terminal ready gates as fixed `id`/`slug`/`current` rows in deterministic status order. The additive identify-only field preserves ordinary boot and dispatchable output, and the committed native tests cover the m3-shaped value, exclusions, ordering, and zero-gate behavior; the combined m3 live run remains the AC-4 handoff.
+
+### Feedback Cycles
+
+- Cycle 1: REVISE — Captain live-workflow counterexample; surface 5 current-validation rows vs 3 durably complete unresolved gates (167%); AC narrowed: readiness requires a prepared current-stage gate attempt after completion verification, not merely `gate: true` stage membership
