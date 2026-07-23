@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:ideation:attempt-3:revision-1",
+  "question": "Should the proof-boundary reset preserve the six-command lifecycle while replacing unavailable cross-host forensic requirements and cutting at least 399 lines before implementation resumes?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:00fba8c54e8eefb4fb7755ff857f7f908df0c37a524c802efdf3d83d5a4db022"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:62e27c7b9e143c60ff5dc6aeb0a9888d484908a6dde4cc11fc705e8ca3f7f237"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:cd94c479c36752d9d895df0451cee7d144465176ca84a4e8c85150bd9004bafc"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Resume bounded implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the proof boundary",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}

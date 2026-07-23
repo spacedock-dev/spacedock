@@ -13,7 +13,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:6y:implementation
+        gate: gate:docs-dev:6y:ideation
     records:
         - id: gate:docs-dev:6y:ideation
           stage: ideation
@@ -58,6 +58,12 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+            - id: gate-attempt:6y-ideation-3
+              briefing:
+                id: briefing:docs-dev:6y:ideation:attempt-3:revision-1
+                digest: sha256:9cc879ab82d0b8c0dccf4a5a4370e8e32fd1727f600fa0c0ed24ca0ba91c646c
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-3
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
