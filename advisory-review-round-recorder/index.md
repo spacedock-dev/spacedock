@@ -7,7 +7,7 @@ started: 2026-07-23T00:55:59Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-advisory-review-round-recorder
 issue:
 sprint: durable-decisions
 gates:
