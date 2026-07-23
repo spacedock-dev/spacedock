@@ -214,3 +214,16 @@ Ideation now defines an advisory-round extension to 3k: one existing-recorder mo
 - Tests and fixtures (estimated 455 LOC): `internal/gates/round_test.go`, `internal/cli/gate_test.go`, `internal/contractlint/launcher_invariant_test.go`, and `internal/gates/testdata/advisory-round/{briefing.json,briefing.review.jsonl,candidate.patch}`.
 - Public contract and caller documentation (estimated 78 prose/schema lines): `docs/specs/gate-resolution-frontmatter-contract.md`, `docs/schema/entity.mdschema.yml`, `docs/site/reference/command-reference.md`, `docs/site/reference/frontmatter-contract.md`, `docs/dev/README.md`, and `skills/feedback-rejection-flow/SKILL.md`.
 - Tolerance remains the approved 2×: no more than 600 declared production LOC (and never more than the binding 680-LOC stop), 910 test/fixture LOC, or 156 prose/schema lines. Any additional writer, package, schema, arbitrary room path, journal/lease/retry protocol, provider launch/polling, or gate/application/status mutation requires a stop and design reset.
+
+## Stage Report: implementation
+
+- FAILED: The public 3j replay persists jobs 592/594 plus the worker decline as ordered advisory Review & Gate records, distinguishes all-declines from no findings, leaves candidate/product/gates/status bytes unchanged, and reads back through the entity pointer after derived caches are removed.
+  WIP counterexample commit `0e9a313fdc3a736a648638e954e6b2c604bac7a6` passes `go test ./internal/gates -run 'TestRound' -count=1`, but no public CLI wiring was added before the binding drift hold.
+- FAILED: Round recording is one mode of 3k's existing recorder and writer boundary: exact replay is a no-op, strict-prefix append is deterministic, bad digest/divergent replay/CAS/lock/write failures are byte-clean, and no second package/schema/writer or gate/application/status effect appears.
+  The draft reached 699 net production LOC (708 additions, 9 deletions) before CLI wiring, above the 680-LOC binding stop, and the audit found a second entity writer/transaction path, a second partial Review & Gate parser, and missing retained-room CAS.
+- FAILED: The two existing triage triggers call the round operation, fixtures stay discovery-ignored, existing 3k behavior plus normal/race suites pass, and final Roborev findings are triaged against materiality before the implementation is reported ready for fresh validation.
+  The hold stopped work before caller changes, full/race suites, and Roborev; the audit also found completion inferred by Resolution count and missing stale-room/write-failure/rollback coverage.
+
+### Summary
+
+Implementation is incomplete and held at the declared mechanism-drift gate; commit `0e9a313fdc3a736a648638e954e6b2c604bac7a6` preserves the passing focused-test counterexample without presenting it as a deliverable. The acceptance criteria remain unchanged: no scope was narrowed to accommodate the failed approach. Fresh ideation should restart from shared 3k parsing, CAS, rebuild, and atomic-publication primitives rather than compacting or extending this duplicate path.
