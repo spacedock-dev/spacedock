@@ -417,3 +417,32 @@ required shared-helper input and worker authorization the fixed `actor:ensign` r
 The plan now distinguishes projection eligibility from completeness: no-findings never
 projects, authorized all-declines projects once, and byte-clean failures plus these
 controls must pass before CLI wiring or the 500-LOC ceiling.
+
+## Intended implementation change (cycle 2)
+
+Commit 1, `gates: share advisory recorder primitives`, is the hard pre-CLI boundary.
+Relative to landed `main`, its exact production surface and estimates are:
+`internal/gates/model.go` +25, new `internal/gates/review.go` +85,
+`internal/gates/io.go` net +105, new `internal/gates/round.go` +145, and
+`internal/gates/operation.go` net +0 after deleting the WIP duplicate implementation
+(360 net production LOC total; hard stop 365). Its exact test/fixture surface is
+`internal/gates/round_test.go` +500, `internal/gates/gates_test.go` +35, and
+`internal/gates/testdata/advisory-round/{briefing.json,briefing.review.jsonl,candidate.patch}`
++8 fixture lines. This commit proves mandatory entity expectations, retained-room CAS,
+entity failure and rollback, exact replay, canonical parsing, fixed-role triage,
+projection eligibility, shared record/read validation, and unchanged gate/status/body
+bytes before any CLI code.
+
+Commit 2, `gate: expose advisory round recording`, begins only after commit 1 passes
+the hard stop. Its exact production/test surface and estimates are
+`internal/cli/cli.go` +50 (410 total production LOC) and
+`internal/cli/gate_test.go` +115. Its exact contract/caller/smoke surface and estimates
+are `docs/specs/gate-resolution-frontmatter-contract.md` +22,
+`docs/schema/entity.mdschema.yml` +10,
+`docs/site/reference/command-reference.md` +6,
+`docs/site/reference/frontmatter-contract.md` +4, `docs/dev/README.md` +3,
+`skills/feedback-rejection-flow/SKILL.md` +3, and
+`internal/contractlint/launcher_invariant_test.go` +12 (60 prose/schema/smoke lines).
+This boundary exposes only the approved command and two trigger callers, preserves
+both command-reference additions, and leaves ordinary First Officer gate lifecycle
+integration to 6y.
