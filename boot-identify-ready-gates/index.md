@@ -77,7 +77,7 @@ gates:
                 blockers: []
 sprint: durable-decisions
 mod-block: merge:pr-merge
-pr: "#561"
+pr: pr-merge:561
 ---
 
 ## Problem
