@@ -138,6 +138,15 @@ gates:
                 action: feedback
                 target-stage: implementation
                 state: pending
+review-round:
+    id: round:frze3yqm9da0vp0r53qqdc8t:implementation:6
+    stage: implementation
+    cycle: 6
+    briefing:
+        id: briefing:advisory-review-round-recorder:implementation:round-6
+        digest: sha256:a1010da278264d22e1d9f22db43f35a3e58a316b6ba9e097b458ac443fc8bc77
+        digest-domain: canonical-bytes
+        room-ref: ./review/implementation/round-6
 ---
 
 Provide one owned write surface for correction-round Briefings, reviewer Annotations and advisory Resolution, and the worker's triage Resolution, without selecting a gate or advancing workflow state.
@@ -335,6 +344,8 @@ Implementation is incomplete and held at the declared mechanism-drift gate; comm
 - Cycle 3: REVISE — independent second-boundary audit; surface 670 production LOC before CLI vs revised hard stop 540 (124%); AC unchanged
 - Cycle 4: REVISE — Roborev branch-final job 728; surface 21 files/634 production LOC vs hard stop 640 (99%); AC unchanged
 - Cycle 5: REJECTED — detached validation; surface 639 production LOC vs hard stop 640 (100%); AC unchanged
+
+- Cycle 6: REJECTED — validation reviewer; surface 2 proof gaps vs estimate 2 (100%); AC unchanged
 
 ## Re-ideation delta: shared recorder composition
 
@@ -732,3 +743,47 @@ The one-shot recorder itself survived the semantic, rollback, lifecycle, surface
 and race audits at 639 net production LOC. Validation recommends REJECTED because two
 promised proof boundaries are not load-bearing: AC-2 misses unrelated successful-write
 corruption, and AC-5's claimed caller smoke accepts an inverted instruction.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: The successful-path fixture compares the exact complete entity and turns red when any span outside the authorized review-round pointer and Feedback Cycles insertion is corrupted.
+  Commit `1ae990f5` adds `recorded-entity.md` as the complete successful-write oracle.
+  The focused test compares every output byte, then independently corrupts
+  `custom: preserve-me` and the unrelated Markdown paragraph and requires both
+  corruptions to fail the same oracle.
+- DONE: The existing shared rejection-flow live scenario, through its current Claude and Codex adapters and CI lane, observes the resolved launcher actually recording the completed triage round and verifies room, pointer, projection, and unchanged lifecycle state; the inverted no-invocation control fails.
+  The existing `rejection-flow` fixture now creates one folder entity, Briefing,
+  candidate, exact reviewer/ensign JSONL, and canonical Cycle 1 projection input.
+  Its first validation supplies the reviewer finding/Resolution; rework supplies
+  the material-fixed Annotation and final `actor:ensign` Resolution.
+  Before re-validation, the first officer invokes the resolved launcher once.
+  Both existing host adapters extract the structured command and feed one shared
+  durable grader; no scenario family, framework, adapter, or CI lane was added.
+  The grader revalidates the pointer, `all-fixed` advisory graph, exact two-file
+  immutable room, retained bytes, one projection, candidate/README bytes, status,
+  and workflow/gate/application sentinels.
+  `TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl` proves the
+  complete state passes and the same state with `invoked=false` fails.
+- DONE: The correction changes zero production LOC, removes the prose-grep proof, and passes focused, full, race, and applicable existing live-scenario checks.
+  `TestRoundCallersUseResolvedLauncherAfterCompleteTriage` was deleted; no
+  instruction-file content is used as AC-5 evidence.
+  The correction is seven test/testdata paths, 332 additions and 21 deletions,
+  leaving the approved implementation at exactly 639 net production LOC.
+  Focused gates, contractlint, ensigncycle, and live-tag compile checks pass.
+  `go test ./...` and `go test ./... -race` pass after repository-wide `gofmt`.
+  The pinned-candidate Codex `rejection-flow` live scenario passed in 357.53s,
+  observing the real invocation and durable recorded round through the existing lane.
+  The matching Claude lane compiled and launched but the configured credential
+  returned HTTP 401 before any first-officer work; the offline Claude structured
+  command extractor/control passes and CI retains the real Claude adapter grade.
+- DONE: Validation findings are recorded as an advisory completed correction round.
+  `review/implementation/round-6` retains the exact six-entry Briefing log;
+  `gate validate --round implementation/6` reports `triage=all-fixed`, both
+  Resolutions advisory, and the entity projects Cycle 6 without lifecycle changes.
+
+### Summary
+
+Cycle 4 closes only the two rejected proof boundaries: exact whole-entity mutation
+detection and an existing-scenario behavioral launcher/durability grade. Product
+code is unchanged, all required local suites pass, Codex live passes, Claude is
+externally auth-blocked before work, and advisory triage is durably recorded.
