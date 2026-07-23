@@ -1,7 +1,7 @@
 ---
 id: frze3yqm9da0vp0r53qqdc8t
 title: Extend 3k's recorder to persist advisory review rounds
-status: ideation
+status: implementation
 source: "02av deferred round-recorder plumbing and 3j jobs 592/594/597 incident, 2026-07-23"
 started: 2026-07-23T00:55:59Z
 completed:
@@ -36,7 +36,7 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
