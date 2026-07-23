@@ -655,3 +655,60 @@ Roborev 837 is fully triaged and both Medium findings are Material. The implemen
 ### Feedback Cycles
 
 - Cycle 9: DESIGN RESET — Captain-approved proof-boundary ruling, 2026-07-24. Preserve the six-command fail-closed lifecycle, one successor dispatch, and its durable effect. Preserve deterministic command-deletion proof and one representative live journey per supported host. Remove mandatory public transport-event uniformity, exact-child forensic attribution where the supported host surface does not expose it, and every-route-by-every-host live execution. Host-native fixtures own transport details; live journeys own the observable lifecycle and durable outcome. Return to ideation for the smallest AC-1/AC-8 and test-surface delta before further implementation.
+
+## Proof-boundary reset (cycle 3; authoritative)
+
+This delta replaces only AC-1, AC-8, and their dependent live/transport proof. AC-2 through AC-7, the six-command product lifecycle, deferred skill topology, route coverage, deterministic deletion controls, documentation, and zero-production-Go boundary remain unchanged. Commit `3cc6225b` is the read-only implementation baseline; implementation resumes with a new commit.
+
+### Replacement AC-1 and AC-8
+
+**AC-1 (VALUE) — A normal FO-approved gated stage cannot advance or dispatch without one validated, consumed authorization.** In the real 3k validation-package replay, the FO emits the exact ordered lifecycle trace (briefing record, open validate, delegated decision record, closed validate, eligibility, consume), then exactly one successful successor `dispatch build`. On-disk state ends at the expected successor with the same attempt's `application.state: consumed`; the successor stage produces one new durable marker-bearing stage report/commit that was absent before dispatch. The measured count of advances or dispatches without a matching consumed application is **0**, versus the current contract's possible manual path of 1. *Verified by:* one representative engaged live FO journey on each supported host, graded from the command log, entity before/after bytes, state Git history, and marker/report cardinality. The live oracle does not require a public spawn event, a common transport schema, or exact-child attribution unavailable from that host.
+
+**AC-8 — The procedure is runtime-portable and fixture-backed.** The recorded-gate-lifecycle journey remains one host-neutral scenario with Claude, Codex, and Pi runners. Each host executes one representative engaged route and must satisfy the same observable oracle: six ordered successful gate commands, consumed successor state, exactly one post-consume dispatch build, and exactly one new durable successor effect. Host-native fixtures—not the cross-host live oracle—prove each adapter's transport details and refusal controls. Static contract tests prove every gate-entry route funnels through the lifecycle; route-by-host live multiplication is not required. *Verified by:* the three live journeys, AC-2's six deterministic command-deletion controls, `TestFOGateLifecycleOwnsEveryEngagedEntry`, Claude's `TestMergedEnsignDispatchShape`, Codex's `TestCodexSmallestSufficientCreditsDispatchBuildWaitAndDurableRead` plus `TestCodexDispatchEvidenceRejectsOutOfOrderAndFailedBuilds`, and Pi's native subagent fixture/smoke. No host must expose another host's handle, spawn, wait, or child-completion event shape.
+
+### Dependent test-plan replacement
+
+The common live oracle records successful `spacedock` calls with the existing logging shim. It requires the six gate events in order, then one `dispatch build`; verifies `status: handoff`, one consumed application, exact provenance, and one new marker-bearing `## Stage Report: handoff` commit; and reds on zero/two dispatch builds, a pre-existing marker, a missing/duplicate marker or report, wrong ordering, or missing durable commit. This keeps one dispatch and its durable effect load-bearing without inferring which process wrote the bytes.
+
+Host-native fixture ownership is explicit:
+
+- Claude transport stays with `TestMergedEnsignDispatchShape` and existing stream/member-meta fixtures; the lifecycle live lane supplies only command, review, and durable-outcome evidence.
+- Codex transport stays with `codexDispatchCompletionEvidenceFromJSONL` and its regression tests, which intentionally accept the supported `dispatch build` → completed wait → durable report shape even when JSONL omits `spawn_agent`.
+- Pi transport stays with its `subagent(...)` fixture/live-smoke coverage; the lifecycle live lane no longer requires async-directory polling or exact child-session attribution.
+- `TestFOGateLifecycleOwnsEveryEngagedEntry` retains the complete headless/conn/engage/worker-completion/open/pending/revise/hold/stale/consumed route set. One native load-before-action fixture per host is sufficient; no route is dropped merely because it is not replayed live on all three hosts.
+
+At current `3cc6225b` line numbers, implementation keeps these test regions:
+
+- Keep `recorded_gate_lifecycle_test.go:166-708` unchanged: real CLI replay, relative/absolute path, revise/hold, stale capability, AC-5 refusal, AC-7 resume, discovery, shipped-skill six-command deletion, and provenance/presentation mutants.
+- Keep `recorded_gate_lifecycle_test.go:775-870` and `1276-1556`: deterministic authorization/source deletion, prompt/logging shim, command-log parser, real fixture, hashing, state-commit, and evidence helpers. Keep review extraction at `998-1024`.
+- Keep all topology additions in `boot_resident_closure_test.go`, `fo_function_reference_invariant_test.go`, and `structural_checks_test.go`, especially `TestFOGateLifecycleOwnsEveryEngagedEntry` (`fo_function_reference_invariant_test.go:294-316`).
+- Keep one live binding in `runClaudeRecordedGateLifecycleScenario` (`claude_live_runner_test.go:173-198`), `runCodexRecordedGateLifecycleScenario` (`codex_live_runner_test.go:88-113`), and `TestLivePiRecordedGateLifecycle` (`recorded_gate_lifecycle_pi_live_test.go:19-71`), but simplify each to the common command/durable oracle.
+
+Simplify these exact regions:
+
+- `recorded_gate_lifecycle_test.go:34-104`: replace `spawned/handle/workerOutput` with `dispatchBuilds == 1` and one new durable successor effect/commit; retain all lifecycle, identity, provenance, review, and before/after assertions.
+- `recorded_gate_lifecycle_test.go:811-813`: ask for one successor dispatch and durable stage result, without prescribing or grading a public `worker.spawn`/handle.
+- The three live bindings above: use the same logging shim and durable-state/Git oracle; keep native review extraction, remove cross-host transport parsing and fabricated handles.
+- Replace `recorded_gate_lifecycle_test.go:1026-1274` with at most 60 LOC of host-native fixture linkage or Pi-native parsing only; do not add a common spawn/completion schema.
+
+Delete these exact over-proof regions:
+
+- `TestRecordedGateLifecycleSuccessorOracleControls` (`recorded_gate_lifecycle_test.go:709-773`), whose cross-host handle/child controls exceed the supported public surfaces.
+- Claude command-stream reconstruction plus the route-by-host runtime matrix (`recorded_gate_lifecycle_test.go:871-997`); the command shim owns lifecycle events and structural tests own the route matrix.
+- The bespoke cross-host exact-child parsers and structured public-event fixture (`recorded_gate_lifecycle_test.go:1026-1274`), subject only to the ≤60-LOC Pi/native replacement above.
+- Pi async child-session polling (`recorded_gate_lifecycle_pi_live_test.go:73-110`); the live lane grades the shared observable outcome.
+
+The deletions remove 479 current lines (65 + 127 + 249 + 38). Replacement/common-oracle work is capped at 80 added lines, so the branch must fall from **1,879 to at most 1,480 added LOC**, a net reduction of at least **399 LOC (21.2%)**. No production Go, recorder, runtime, command, schema, or public host interface is added. Focused tests exercise every changed oracle; final validation remains `gofmt -w ./cmd ./internal`, focused contract/lifecycle tests, `go test ./...`, `go test ./... -race`, live-tag compilation, and one green recorded-gate journey on Claude, Codex, and Pi.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Rewrite only the AC-1/AC-8 proof boundary and dependent test plan so the six-command lifecycle, one successor dispatch, durable effect, deterministic command-deletion controls, and one representative live journey per supported host remain mandatory without requiring unavailable public transport events or every-route-by-every-host live execution.
+  The authoritative reset gives all three live lanes one command/state/Git oracle while static route coverage and six source-derived deletion mutants remain mandatory.
+- DONE: Identify the exact existing tests and LOC to retain, simplify, or delete; show that host-native fixtures own transport details while live journeys own observable lifecycle outcomes, and quantify the expected net reduction from the current 1,879-line branch.
+  Current-tip line ranges assign 479 deletions and at most 80 replacement lines, capping the branch at 1,480 added LOC (at least 399 LOC/21.2% smaller).
+- DONE: Produce a concise implementation delta and validation plan that preserves every product/value promise and requires no new recorder, runtime, or public host interface; make no product changes during ideation.
+  Only the shared test oracle and live bindings change; AC-2–AC-7, skill/docs/topology, zero-production-Go scope, and full/race/three-host validation remain intact.
+
+### Summary
+
+Reset the proof mechanism without narrowing the product: every host must still execute the six-command lifecycle, consume once, dispatch once, and leave one durable successor effect. Transport details now stay in host-native fixtures, eliminating unsupported cross-host forensic requirements and at least 399 lines from the current implementation plan.
