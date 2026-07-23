@@ -842,3 +842,35 @@ externally auth-blocked before work, and advisory triage is durably recorded.
 Validation cycle 2 recommends PASSED. The exact full-entity oracle now catches the
 prior AC-2 corruption, and the pinned-candidate Codex live journey proves AC-5 through
 an observed invocation and durable state; production remains unchanged at 639 net LOC.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Re-anchor validation to exact candidate 5617b65ed519b91721656b413551702cf5490baf, compare it with the pre-rebase approved candidate, and rerun every applicable focused, full, race, formatting, and cleanliness check.
+  Stable patch ID `10c6434c1d3c306e414c8fbdd4abf40335137c08` and `git range-diff` prove `1ae990f5 = 5617b65e`; focused, focused-race, full, full-race, live-tag compile, `gofmt -w ./cmd ./internal`, `git diff --check`, and clean-branch checks pass.
+- DONE: Reproduce AC-1 through AC-5 with independent behavioral evidence, including whole-entity preservation and the live Codex rejection-flow invocation; do not rely on instruction prose or the stale approval.
+  Current-tip focused tests and a detached corruption control reproduce the filesystem oracles; a branch-built `SPACEDOCK_BIN` Codex `rejection-flow` live run passes in 439.38s after an observed resolved-launcher invocation.
+- DONE: Issue a fresh PASSED or REJECTED recommendation tied to the exact current tip, classifying every finding by defect kind and release scope; make no product changes.
+  Recommendation is PASSED at `5617b65e`: no material outcome defect, material evidence defect, mechanism failure, or polish finding was found, and the assigned code worktree remains byte-clean.
+- DONE: AC-1 — the retained 3j decline round is durable and distinguishable from no findings without changing the reviewed candidate.
+  `TestRoundRecordCompleteReplayAndRefusalsAreByteClean`, `TestRoundNoFindingsAndPreflightRefusals`, and the CLI test reproduce the five-entry 592/594 chain, two advisory Resolutions, all-declines/no-findings distinction, cache-independent readback, and zero candidate/product delta.
+- DONE: AC-2 — recording a round has no gate, application, workflow, or unrelated-entity effect.
+  The exact 36-line entity golden covers every frontmatter/body byte, lifecycle sentinels remain unchanged in focused and live runs, and a detached product edit corrupting `custom: preserve-me` fails at the complete-entity oracle.
+- DONE: AC-3 — refusals and replays are byte-clean and deterministic.
+  The focused matrix passes for exact replay, divergent room/Briefing, occupied target, lock, CAS, malformed/cross-Briefing log, bad digest, entity replacement failure, rollback, canonical-room shape, and lock/room residue.
+- DONE: AC-4 — the implementation remains an extension of 3k.
+  The current-main audit remains exactly 795 additions/156 deletions = 639 net production LOC in `internal/gates` and `internal/cli`, with no second package, envelope, alternate writer, retry, lease, journal, provider launcher, or lifecycle transition path.
+- DONE: AC-5 — the trigger-scoped caller has behavioral evidence without instruction-prose matching.
+  Offline invocation extractors and inverted no-invocation control pass; the live shared first-officer journey records the completed triage round and the durable grader validates room, pointer, advisory graph, projection, retained inputs, and unchanged lifecycle state.
+- DONE: Finding and release-scope classification.
+  Approval-required mode without `OPENAI_API_KEY` is a credential-policy outcome, neither a product nor evidence defect; local-auth live evidence is green. Reviewer-identity correlation is a deferred evidence risk only when the host emits no structured handle, outside the recorder ACs, and promotes if cross-round actor identity becomes promised.
+- DONE: Deferred-risk reassessment.
+  Immutable-room tests keep exact-log-digest risk outside the supported writer path until a retained-room mutator or pointer revision ships; fixed-evidence, historical-read, power-loss/fsync, CRLF, and loose-heading risks remain outside current promises and promote on their previously recorded supported-workflow triggers.
+- DONE: Recommendation — PASSED.
+  Every approved value AC has current-tip behavioral evidence, both prior evidence defects remain closed under independent falsifiers, and no material finding blocks release.
+
+### Summary
+
+Validation cycle 3 freshly approves rebased candidate `5617b65e`; its final patch is
+identical to the previously reviewed proof correction, but all evidence was rerun
+against the new hash. Full, race, detached-adversarial, and live Codex checks pass,
+the 639-LOC product surface is unchanged, and no product files were modified.
