@@ -8,11 +8,13 @@ user-invocable: false
 
 ## «gate.lifecycle»(slug, stage): bind, decide, and apply one recorded gate authorization
 
-Complete this skill load in one host event before probes, writes, validation, presenter load, routing, replay, or dispatch. It grants no write authority; read `fo-write-core.md` separately immediately before the first FO mutation.
+Load this skill in one host event before probe, write, validation, presentation, route, replay, or dispatch. No write authority; read `fo-write-core.md` before FO mutation.
 
-**Capability preflight.** Before creating a room or gate record, inspect the ONE launcher selected at startup. Run `${SPACEDOCK_BIN:-spacedock} gate --help` and the four subcommand help forms. The surface is capable only when it exposes `record` with `--briefing`, `--result`, and `--decision`, plus `validate`, `eligibility`, and `consume`. A compatible version alone is insufficient. On a missing form, halt before mutation and say to refresh the launcher or build the current source checkout with `go build -o <temp>/spacedock ./cmd/spacedock`, set `SPACEDOCK_BIN` to that executable, and retry the probe. Never hand-edit `gates:` as fallback.
+**Boot projection.** Use only unresolved actionable `ready_gates` rows from `status --boot --identify --json`, fixed keys `id`, `slug`, `current`, `readiness`: `awaiting-captain` = selected current-stage open Briefing; `approved-awaiting-merge` = unblocked approve + advance/pending to terminal; `approved-awaiting-advance` = nonterminal target. Gate-stage/no selected attempt is omitted `validating`; malformed/stale selection, blocked/held, feedback, consumed/superseded/not-applicable are omitted. Opt-in human/JSON `gate-readiness` summarizes; `gate-*` retains diagnostics. Engage row `slug`, read entity, then `gate validate` for full Briefing/Resolution/application. Never infer readiness from status/stage.
 
-**Retain the package.** Assemble `ROOM/briefing.json` (that exact basename) before presentation. Its primary review is concise and names capability/change, test and evidence, exact reviewed snapshot, material/deferred/polish findings, one FO recommendation, and the concrete decision ask. The entity, spec, reports, and other raw inputs are linked references. Keep an existing payload as URI + SHA when its exact bytes remain reproducible through the presentation resolver; otherwise freeze a room copy. Resolve `BRIEFING`, every Result, and every association to absolute paths before invoking the current CLI.
+**Capability preflight.** Probe the ONE startup launcher with `gate --help` and four subcommand help forms. Require `record` flags `--briefing`, `--result`, `--decision`, plus `validate`, `eligibility`, `consume`; version is insufficient. If missing, halt before mutation; prescribe refresh or `go build -o <temp>/spacedock ./cmd/spacedock`, set `SPACEDOCK_BIN`, retry. Never hand-edit `gates:`.
+
+**Retain the package.** Before presentation assemble `ROOM/briefing.json`: concise capability/change, tests/evidence, reviewed snapshot, material/deferred/polish findings, one recommendation, decision ask; link raw entity/spec/reports. Keep reproducible payloads as URI + SHA, else freeze a room copy. Make `BRIEFING`, Results, associations absolute before the CLI.
 
 Bind and prove the open attempt, in this order:
 
@@ -40,13 +42,13 @@ ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --result RESULT --association ASS
 
 `revise` and `hold` require a reason (or the provider's included same-Briefing Annotation). Delegated FO approval always carries both its nonblank evidence reason and the exact quoted grant; never relabel it `person:captain`. A provider Result requires its complete retained association and authorized actor.
 
-After a successful close, immediately prove closure:
+After closing, immediately prove closure:
 
 ```text
 ${SPACEDOCK_BIN:-spacedock} gate validate ENTITY --workflow-dir WORKFLOW_DIR
 ```
 
-It must name the same attempt and Briefing, report `state=closed`, and reproduce the intended decision. Only then `«state.commit»(slug)`. Any close/validation failure halts without feedback, advancement, or dispatch.
+It must name the same attempt/Briefing, report `state=closed`, and reproduce the decision. Only then `«state.commit»(slug)`. Close/validation failure halts without feedback, advance, or dispatch.
 
 **Route fail-closed.** For `approve`, run:
 
@@ -63,4 +65,4 @@ Consume is authorized only when eligibility exits 0 with `condition=approved-pen
 - `stale`: first observe stale through read-only eligibility. Invoke consume only to materialize the landed failure: it exits nonzero, leaves status unchanged, and changes only pending → superseded. Commit, retain/bind a replacement Briefing, and re-present.
 - already `consumed`: the authorization is spent. Follow the current status into ordinary dispatch/recovery; do not re-record or consume it. A diagnostic repeat consume must be nonzero and byte-clean.
 
-**Resume before writing.** Run `gate validate` first. An open attempt with the same Briefing accepts idempotent bind + validate; a changed package updates the Briefing under that attempt and is re-presented. A closed pending approval resumes at eligibility/consume without re-recording. Closed revise/hold routes or stays held. Consumed status resumes dispatch without another consume. Stale materializes supersession through the one consume-failure path, then binds a replacement. Every nonzero command is FO-visible friction with command, exit, and actionable remedy; never repair frontmatter by hand.
+**Resume before writing.** Run `gate validate` first. Same-Briefing `gate record --briefing` must correct stale `gates.current` without a new attempt; changed package updates the open attempt and is re-presented. Closed pending approval resumes eligibility/consume; revise/hold routes or stays held. Consumed resumes dispatch. Stale materializes supersession by consume failure, then binds a replacement. Surface nonzero command, exit, remedy; never repair frontmatter.

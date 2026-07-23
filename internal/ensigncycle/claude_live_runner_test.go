@@ -219,7 +219,7 @@ func TestLiveClaudeRecordedGateMissingCommandMutant(t *testing.T) {
 	if !proof.spawned || strings.TrimSpace(proof.handle) == "" || !proof.workerOutput {
 		t.Fatalf("mutant lost prospective spawn proof instead of isolating the command deletion: %#v\nArtifacts: %s", proof, result.artifactDir)
 	}
-	if !strings.Contains(result.stream, skillPath) {
+	if !strings.Contains(result.stream, filepath.Dir(skillPath)) || strings.Contains(result.stream, command) {
 		t.Fatalf("runtime did not expose consumption of copied mutant %s\nArtifacts: %s", skillPath, result.artifactDir)
 	}
 	err := assertRecordedGateLifecycle(recordedGateObservation{
@@ -233,7 +233,7 @@ func TestLiveClaudeRecordedGateMissingCommandMutant(t *testing.T) {
 
 func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 	t.Helper()
-	binary := spacedockBinary(t)
+	binary := buildRecordedGateBinary(t)
 	pluginDir := livePluginDir(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
 
@@ -523,6 +523,9 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	if base, ok := envValue(r.env, "CLAUDE_CONFIG_DIR"); ok {
 		configDir = filepath.Join(base, scenario.name)
 		cmd.Env = withClaudeConfigDir(r.env, configDir)
+	}
+	if err := seedStoredLoginCredential(configDir); err == nil {
+		cmd.Env = withoutEnvKey(cmd.Env, "CLAUDE_CODE_OAUTH_TOKEN")
 	}
 
 	// The resolved cwd is what Claude Code encodes into its projects path; the FO
