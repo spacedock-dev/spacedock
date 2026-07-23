@@ -261,3 +261,20 @@ This task owns the First Officer invocation contract and its behavioral proof. I
 ### Summary
 
 Codified the successful 3k/h1 dogfood procedure as the proposed normal FO gate lifecycle: capability-check the selected binary, retain and bind canonical `briefing.json`, validate open, judge/present, record and validate the exact direct/delegated/provider decision, then use eligibility and one-use consume as the sole approval advance before ordinary dispatch. The ideation turns the sprint's full friction record into acceptance coverage or explicit sibling boundaries and defines a real 3k-package live replay plus skipped-step mutants that fail whenever an FO bypasses a required lifecycle call.
+
+## Implementation intended-change declaration
+
+Declared before code edits on 2026-07-23. Production Go estimate: **0 LOC**. First-Officer contract estimate: **70-100 lines** (hard stop above 120). Test/live estimate: **650-900 LOC**. Documentation estimate: **18-30 lines**. This remains within the approved 2x tolerance and introduces no new mechanism.
+
+- `skills/first-officer/references/first-officer-shared-core.md` — 70-100 contract lines at the existing gated-stage branch for capability preflight, canonical binding, open/closed validation, provenance, eligibility/consume routing, fail-closed behavior, and resume/idempotency.
+- `internal/ensigncycle/recorded_gate_lifecycle_test.go` — 500-650 test LOC for the retained 3k package fixture copied into temp roots, real CLI six-event replay, command/dispatch oracle, skipped-step/provenance/raw-review mutants, failure matrix, folder-form state commit, resume, and discovery controls.
+- `internal/ensigncycle/shared_scenarios_test.go` — 6-10 test LOC for the host-neutral scenario definition.
+- `internal/ensigncycle/claude_live_runner_test.go` — 20-35 live-test LOC for the Claude binding and retained evidence capture.
+- `internal/ensigncycle/codex_live_runner_test.go` — 20-35 live-test LOC for the Codex binding and retained evidence capture.
+- `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go` — 80-120 live-test LOC for explicit Pi live-capable execution using the same fixture, prompt, and durable oracle.
+- `internal/ensigncycle/pi_shared_coverage_test.go` — 4-8 live-test LOC marking the shared scenario's concrete Pi lane.
+- `docs/specs/scenario-testing-principles.md` — 1-3 docs lines to keep the machine-locked shared scenario list synchronized.
+- `docs/site/concepts/gates-and-decisions.md` — 8-12 docs lines explaining the ordinary FO lifecycle and concise review.
+- `docs/site/reference/command-reference.md` — 6-10 docs lines for capability readiness; collision check was clear at declaration time (clean worktree, latest file commit `f06cce04`) and will be repeated immediately before editing.
+
+If implementation needs production Go, schema/command changes, more than 120 FO-contract lines, provider transport/polling, a presenter redesign, advisory-round logic, or any file outside this declaration, implementation stops and reports drift for a design reset.
