@@ -101,9 +101,10 @@ handoff.
 ## Proposed durable readiness reducer
 
 Add one pure reducer in `internal/gates` and call it from status entity discovery. It
-accepts the already-validated canonical document plus the entity's current status;
-it does not read the entity body or a retained room. The same reducer populates
-`gate-readiness` for human/JSON status and the identify-only boot rows.
+accepts the already-validated canonical document, the entity's current status, and
+the declared taxonomy needed to classify an application target as terminal or
+nonterminal. It does not read the entity body or a retained room. The same reducer
+populates `gate-readiness` for human/JSON status and the identify-only boot rows.
 
 The reducer is fail-closed and uses this state machine:
 
@@ -111,50 +112,61 @@ The reducer is fail-closed and uses this state machine:
 |---|---|---|
 | Declared nonterminal gate stage, but no canonical selected same-stage attempt yet | `validating` | no |
 | Canonical selected same-stage latest attempt is open and has its Briefing binding | `awaiting-captain` | yes |
-| The same attempt is closed by `approve` and carries `advance/pending`, explicit empty blockers, no active execution hold, and a target stage | `approved-pending` | yes |
+| The same attempt is closed by `approve` and carries `advance/pending`, explicit empty blockers, no active execution hold, and a declared terminal target stage | `approved-awaiting-merge` | yes |
+| The same pending approval targets a declared nonterminal successor | `approved-awaiting-advance` | yes |
 | Pending approval has blockers or an active execution hold | `blocked` or `held` | no |
 | Closed `revise` has `feedback/pending` | `feedback-pending` | no; 6y routes it immediately |
 | Application is `consumed`, `superseded`, or `not-applicable` | that canonical application state | no |
 | The `gates` block is malformed or internally inconsistent | `invalid` | no |
 | Current stage is not a declared nonterminal gate | empty | no |
 
-“Approved awaiting merge” is not a second application state. It is the canonical
-`approved-pending` row whose durable `target_stage` names a stage marked
-`terminal:true` in the already-emitted taxonomy. `gate consume` remains the only
-effect authorizer and rechecks eligibility/digest before atomically changing status
-and application state.
+`approved-awaiting-merge` and `approved-awaiting-advance` are human scheduling
+labels, not new application states. Both derive from the same canonical
+`approve` plus `advance/pending`; the durable `target-stage` and declared taxonomy
+select the label. `gate consume` remains the only effect authorizer and rechecks
+eligibility/digest before atomically changing status and application state.
 
 ## Exact boot and human surfaces
 
 `ready_gates` remains identify-only, follows `stages`, emits `[]` at zero, and uses
 the existing status order: declared stage, score descending with empty scores last,
-then lexical discovery order. Every row has these string keys in this fixed order:
+then lexical discovery order. It is a discovery/scheduling index, not a duplicate
+entity record. Every row has exactly four string keys in this fixed order:
 
 ```json
-{"id":"mf","slug":"mf","current":"validation","gate":"gate:docs-dev:mf:validation","attempt":"gate-attempt:mf-validation-1","state":"open","briefing":"briefing:docs-dev:mf:validation:attempt-1:revision-1","resolution":"","decision":"","application":"","application_state":"","target_stage":"","readiness":"awaiting-captain"}
+{"id":"mf","slug":"mf","current":"validation","readiness":"awaiting-captain"}
 ```
 
-The approval-pending terminal handoff is equally explicit:
+Each key is necessary:
+
+- `id` is the workflow's operator-facing identity and greeting reference.
+- `slug` is the stable command/entity-read target 6y engages.
+- `current` names the lifecycle stage whose selected gate state was reduced.
+- `readiness` selects 6y's next scheduling branch before its required entity/gate read.
+
+The terminal handoff is explicit without copying the Resolution/application:
 
 ```json
-{"id":"2n","slug":"2n","current":"validation","gate":"gate:docs-dev:2n:validation","attempt":"gate-attempt:2n-validation-1","state":"closed","briefing":"briefing:docs-dev:2n:validation:attempt-1:revision-1","resolution":"resolution:spacedock:docs-dev:2n:validation:1","decision":"approve","application":"advance/pending","application_state":"pending","target_stage":"done","readiness":"approved-pending"}
+{"id":"2n","slug":"2n","current":"validation","readiness":"approved-awaiting-merge"}
 ```
 
-The `mf` row is the proof that completion corrected selection: `current` is
-`validation` and `gate` names the validation gate. A stale
-`gates.current=...:ideation` must not yield that row even if a validation record or
-complete report exists.
+The `mf` row proves the projection observed a selected current-stage attempt because
+`awaiting-captain` is unreachable without one. The fixture separately asserts that
+`gates.current` changed from ideation to validation. A stale ideation selection must
+not yield that row even if a validation record or complete report exists.
 
-Human status keeps all existing `gate-*` fields and adds the computed
-`gate-readiness`. It remains opt-in through `--fields`/JSON and participates in
-`--all-fields`; the default five-column table stays byte-compatible. This makes the
-counterexample directly visible:
+Human status keeps all existing opt-in `gate-*` fields and adds the computed
+`gate-readiness`; `gate validate` and the required entity read remain the complete
+engage surfaces for the attempt, Briefing room, Resolution, application, and target.
+`gate-readiness` participates in `--fields`/JSON and `--all-fields`; the default
+five-column table stays byte-compatible. This makes the counterexample directly
+visible:
 
 - `sp`, `qc`: `status=validation`, `gate-readiness=validating`
 - `mf`, `r4`: `gate-state=open`, `gate-readiness=awaiting-captain`
 - `2n`: `gate-state=closed`, `gate-decision=approve`,
   `gate-application=advance/pending`, `gate-target-stage=done`,
-  `gate-readiness=approved-pending`
+  `gate-readiness=approved-awaiting-merge`
 
 `gate-condition`/`gate-eligible` retain h1's effect-eligibility meaning and may perform
 their existing deeper retained-Briefing check when explicitly requested.
@@ -180,8 +192,9 @@ owns the narrow binary invariant needed by that procedure:
    selected chat/provider transport and exact retained Result/association.
 5. 6y records the exact Captain/delegated/provider result. The recorder closes the
    same attempt with a Resolution and derived application; state commit makes it
-   durable. Approval to a terminal successor now reports `approved-pending` plus the
-   terminal `target_stage`.
+   durable. Approval to a terminal successor now reports
+   `approved-awaiting-merge`; 6y reads/validates the entity for its exact target and
+   application before acting.
 6. 6y validates, runs eligibility, and calls consume. h1 atomically marks the
    application consumed and advances status. The row disappears.
 7. The existing terminal branch immediately runs merge hooks/default merge,
@@ -195,8 +208,11 @@ honestly `validating`.
 
 ## Implementation scope
 
-- Preserve `c5a96678` as an ancestor; integrate current `main` with a merge, then add
-  correction commits. Do not rebase/drop/revert the preserved counterexample.
+- Start a clean implementation branch/worktree from current `main`, cherry-pick only
+  preserved counterexample commit `c5a96678`, then add correction commits. Do not
+  merge or rebase the old coupled feature branch: its other ancestors are unrelated
+  live-runner work. Before handoff, prove the final diff against current main contains
+  only this task's declared paths.
 - `internal/gates/model.go` (and `io.go` only if needed for an absent-record error
   class): one pure current-stage readiness projection over the landed canonical model.
 - `internal/gates/operation.go`: make same-Briefing/open-attempt binding select the
@@ -246,15 +262,18 @@ store. No skill, provider transport, or live-presentation UI change belongs here
   mutant remains at 2/3 and fails.
 - **AC-3 (human distinctions share the reducer).** Status exposes
   `gate-readiness=validating` for `sp`/`qc`, `awaiting-captain` for open `mf`/`r4`,
-  and `approved-pending` for closed approved `2n`, alongside the exact canonical
-  gate/attempt/Briefing/Resolution/application fields. *Verified by:* text and JSON
+  and `approved-awaiting-merge` for closed approved `2n`, alongside the exact canonical
+  gate/attempt/Briefing/Resolution/application fields. A nonterminal approval instead
+  reports `approved-awaiting-advance`. *Verified by:* text and JSON
   `--fields` tests fed the same fixture as boot; every entity's expected readiness
   is independently enumerated.
 - **AC-4 (approved terminal work is restart-visible).** Before consumption, `2n`'s
-  row preserves its approval Resolution, `advance/pending`, and terminal
-  `target_stage=done`; after the real `gate consume`, status is `done`, the
-  application is consumed, and `2n` is absent from `ready_gates`. *Verified by:* a
-  command-level close→boot→eligibility→consume→boot sequence plus the combined 6y
+  minimal row reports `approved-awaiting-merge`; the existing opt-in status fields,
+  `gate validate`, and entity read preserve its approval Resolution,
+  `advance/pending`, and terminal `target-stage=done`. After the real `gate consume`,
+  status is `done`, the application is consumed, and `2n` is absent from
+  `ready_gates`. *Verified by:* a command-level
+  close→boot→read/validate→eligibility→consume→boot sequence plus the combined 6y
   journey's observed entry into the existing terminal merge path.
 - **AC-5 (fail-closed, prose-independent projection).** Malformed gates, a stale
   old-stage selection, a current gate without a Briefing attempt, terminal/unknown/
@@ -263,8 +282,9 @@ store. No skill, provider transport, or live-presentation UI change belongs here
   complete Stage Report body without changing frontmatter cannot change any boot
   row. *Verified by:* table-driven frontmatter/body mutants and before/after exact
   JSON comparisons.
-- **AC-6 (schema, ordering, and scheduling compatibility).** Rows use the fixed
-  13-key order above and existing status ordering; identify keeps `ready_gates`
+- **AC-6 (schema, ordering, and scheduling compatibility).** Rows contain exactly
+  `id`, `slug`, `current`, and `readiness` in that order and use existing status
+  ordering; identify keeps `ready_gates`
   after `stages` and renders `[]` at zero. Ordinary boot omits the field, default
   human status is unchanged, and raw `dispatchable` remains equal to `--next`.
   *Verified by:* raw key/order assertions, zero/one/many fixtures, default-table
@@ -285,9 +305,11 @@ store. No skill, provider transport, or live-presentation UI change belongs here
    terminal-plus-gate, unknown, archived, and ordinary non-gates. Each is a negative
    exact-row oracle, not an absence-of-crash assertion.
 4. Drive an open attempt through real decision record and consume. Pin the
-   approval-pending terminal row before consumption, then the consumed status and
+   `approved-awaiting-merge` four-key row before consumption and contrast it with a
+   nonterminal `approved-awaiting-advance` row, then assert the consumed status and
    missing row afterward. Removal of pointer correction, application-state checks,
-   or current-stage agreement must make a named assertion fail.
+   target terminal classification, or current-stage agreement must make a named
+   assertion fail.
 5. Preserve the existing identify local-only/key-order/discovery tests, ordinary
    boot omission, default table golden, and exact `dispatchable == --next` control.
 6. Run focused gate/status/CLI tests, `gofmt -w ./cmd ./internal`, `go test ./...`,
@@ -302,10 +324,10 @@ In `docs/site/reference/command-reference.md`:
 
 ```diff
 -folds in the stage taxonomy, and reports the boot sections
-+folds in the stage taxonomy and canonical ready-gate lifecycle rows, and reports
-+the boot sections. A row names the selected current-stage gate, attempt, Briefing,
-+Resolution/application state, target stage, and readiness; a gate stage alone is
-+not ready
++folds in the stage taxonomy and canonical ready-gate scheduling rows, and reports
++the boot sections. Each row carries only `id`, `slug`, `current`, and `readiness`;
++the entity read and gate commands provide the complete decision record at engage.
++A gate stage alone is not ready.
 ```
 
 After the recorded-decision paragraph in `docs/site/concepts/gates-and-decisions.md`:
@@ -313,9 +335,10 @@ After the recorded-decision paragraph in `docs/site/concepts/gates-and-decisions
 ```diff
 +After completion verification, the First Officer binds the retained Briefing before
 +presenting the gate. That bind selects the current-stage gate attempt. Startup can
-+then distinguish work still validating, an open attempt awaiting the Captain, and
-+a recorded approval awaiting one-use consumption. Approval to a terminal target is
-+consumed before the existing merge and terminalization path begins.
++then distinguish work still validating, an open attempt awaiting the Captain, an
++approval awaiting nonterminal advance, and an approval awaiting merge. Approval to
++a terminal target is consumed before the existing merge and terminalization path
++begins.
 ```
 
 ## Stage Report: ideation
@@ -354,12 +377,25 @@ Boot identify JSON now exposes active, non-terminal ready gates as fixed `id`/`s
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Define one durable readiness state machine that mechanically distinguishes validating, awaiting captain, and approved awaiting merge from canonical current-stage gate/attempt/application data.
-  The revised body defines one pure 3k/h1-backed reducer: absent/mismatched selection is `validating`, a selected open Briefing attempt is `awaiting-captain`, and a closed approve plus unblocked `advance/pending` is `approved-pending`; terminal target taxonomy makes the merge handoff explicit without another stored state.
+  Evidence: AC-1 and AC-3 bind the 3-of-5 and human-state oracles; AC-4 binds terminal approval recovery. The reducer maps absent/mismatched selection to `validating`, an open selected Briefing attempt to `awaiting-captain`, terminal approval to `approved-awaiting-merge`, and nonterminal approval to `approved-awaiting-advance`.
 - DONE: Specify the exact boot JSON and human status fields, ordering, transition owners, and backward route from completion verification through Briefing preparation, engage presentation, decision recording, consumption, merge, and terminalization.
-  The fixed 13-key rows and `gate-readiness` human field are specified byte-order-first; the lifecycle assigns verification/bind/present/record/consume to 6y with xb transport, h1 effect consumption, this task's projection/pointer invariant, and the existing terminal merge path.
+  Evidence: AC-2 proves current-stage selection repair; AC-3 and AC-4 prove the human/restart distinctions; AC-6 pins the minimal `id`/`slug`/`current`/`readiness` schema and compatibility. 6y owns engage, xb transport, h1 consumption, and the existing terminal branch owns merge.
 - DONE: Replace the stage-only fixtures with controls covering three complete unresolved gates, two incomplete validations, a stale old-stage gates.current pointer, approval pending merge, and mutation-proof negative cases while preserving dispatchability separation.
-  The test plan starts from the Captain's five-entity 5/3 counterexample, requires same-Briefing bind to repair `mf` without a duplicate attempt, pins `2n` before/after consume, rejects body-only and malformed-state mutants, and keeps raw `dispatchable == --next`.
+  Evidence: AC-1 measures 3/3 ready and 0/2 false positives; AC-2 makes stale-pointer repair load-bearing; AC-5 rejects body-only and malformed-state mutants; AC-6 keeps raw `dispatchable == --next` and prior boot bytes.
 
 ### Summary
 
 Re-ideation replaces `c5a96678`'s stage-only meaning with a canonical selected-attempt readiness projection while preserving that commit as the executable counterexample. The design makes completion binding correct `gates.current`, exposes restart-safe open and approval-pending rows, and leaves FO procedure, presentation transport, consumption safety, dispatchability, and merge semantics with their existing owners.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Minimize boot projection to discovery and scheduling while retaining the complete human diagnostic surface.
+  Evidence: AC-1 measures the exact 3-of-5 population; AC-3 verifies existing `gate-*` fields plus `gate-readiness`; AC-6 fixes each boot row to only `id`, `slug`, `current`, and `readiness`. Full attempt/Briefing/Resolution/application data remains behind entity read and `gate validate`.
+- DONE: Make terminal approval and current-stage repair mechanically explicit without changing lifecycle ownership.
+  Evidence: AC-2 proves same-Briefing bind corrects stale `gates.current` without another attempt; AC-4 proves `approved-awaiting-merge` survives restart and disappears only after h1 consume. `approved-awaiting-advance` is the nonterminal contrast; 6y/xb/h1 and merge boundaries are unchanged.
+- DONE: Repair the land plan and falsifiable evidence without product edits.
+  Evidence: AC-1/AC-2 keep the 3-of-5 and stale-pointer controls; AC-5 keeps malformed/body-only mutants fail-closed; AC-6 keeps boot/dispatch compatibility. Implementation starts from current main, cherry-picks only `c5a96678`, and proves the final diff contains only declared paths.
+
+### Summary
+
+The gate-review repair makes boot a four-field scheduling index, not a duplicate gate record, while human status and engage retain the full canonical detail. Terminal approvals now say `approved-awaiting-merge`, nonterminal approvals say `approved-awaiting-advance`, and the clean-main cherry-pick plan preserves the counterexample without importing unrelated live-runner history.
