@@ -1,7 +1,7 @@
 ---
 id: 6yyyyemkqwsett3g1c991w9f
 title: Make First Officers operate the recorded gate lifecycle
-status: implementation
+status: ideation
 source: "Durable-decisions dogfood audit: PRs #557/#560 shipped gate commands without the planned FO operating contract, 2026-07-23"
 started: 2026-07-23T02:01:56Z
 completed:
@@ -651,3 +651,7 @@ All binding correction boundaries are closed without duplicating 8n. Three crede
 ### Summary
 
 Roborev 837 is fully triaged and both Medium findings are Material. The implementation remains blocked in implementation on a missing public Codex spawn/completion correlation; no validation-readiness claim is made.
+
+### Feedback Cycles
+
+- Cycle 9: DESIGN RESET — Captain-approved proof-boundary ruling, 2026-07-24. Preserve the six-command fail-closed lifecycle, one successor dispatch, and its durable effect. Preserve deterministic command-deletion proof and one representative live journey per supported host. Remove mandatory public transport-event uniformity, exact-child forensic attribution where the supported host surface does not expose it, and every-route-by-every-host live execution. Host-native fixtures own transport details; live journeys own the observable lifecycle and durable outcome. Return to ideation for the smallest AC-1/AC-8 and test-surface delta before further implementation.
