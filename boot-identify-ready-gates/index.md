@@ -1,6 +1,6 @@
 ---
 title: Expose ready-gate entities in boot identify JSON
-status: validation
+status: done
 score: 0.9
 source: PR #493 local-live m3 investigation on 2026-07-10. The default Claude greeting omitted the already-gated Gate Check entity because status --boot --identify --json returned only dispatchable entities; dispatchAnalysis intentionally suppresses current gate stages, so the authoritative boot record made the shipped greet requirement impossible to satisfy.
 id: 8n55etrw9wj10jfejdq5f1s8
@@ -8,7 +8,7 @@ worktree: .worktrees/spacedock-ensign-boot-identify-ready-gates
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:8n:ideation
+        gate: gate:docs-dev:8n:validation
     records:
         - id: gate:docs-dev:8n:validation
           stage: validation
@@ -31,7 +31,27 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:8n-validation-2
+              briefing:
+                id: briefing:docs-dev:8n:validation:attempt-2:revision-1
+                digest: sha256:e7f41232184d6b240ed825bfa5396a4666ade0d1f0a22e70b0090a9136b10e6e
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:8n:validation:2
+                briefing: briefing:docs-dev:8n:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T11:05:27.576075Z"
+                decision: approve
+                reason: Validation is 11 DONE, 0 SKIPPED, 0 FAILED with AC-1 through AC-6 evidenced; focused/full/race/live-tag and adversarial checks are green, the 14-path diff is within authorized bounds, and Roborev re-panel found no issues.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
+              application:
+                action: advance
+                target-stage: done
+                state: consumed
+                blockers: []
         - id: gate:docs-dev:8n:ideation
           stage: ideation
           attempts:
