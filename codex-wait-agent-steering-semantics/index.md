@@ -15,6 +15,22 @@ id: 6gkz4z2qweheyj17ck5tythn
 
 The Codex First Officer runtime currently imports the harness label “Wait interrupted by new input” into its operating language. That label does not describe the behavior: `wait_agent` is asynchronous monitoring, captain input resumes the FO's active loop, and unresolved workers continue unchanged. Repeating an interruption disclaimer before each wait epoch makes normal steering sound destructive and adds noise.
 
+The defect appears in three Codex-only surfaces. The runtime binding says steered input “interrupts” `wait_agent`; the wait notes require a captain-facing interruption disclaimer at each epoch; and the idle-notification recipe calls the mechanism a foreground wait/non-terminal wait return. Those phrases pull a harness result label into the FO's lifecycle model even though the live trace shows no worker cancellation, closure, or redispatch.
+
+## Current surface map
+
+| Surface | Current clause or fixture | Disposition |
+| --- | --- | --- |
+| `skills/first-officer/references/codex-first-officer-runtime.md:21` | `«async-dispatch»` says steered captain input “interrupts it immediately.” | Replace with active-loop resumption and unchanged workers. |
+| Same file, `## Codex wait notes` at lines 31-37 | Lead paragraph repeats “interrupts,” mandates the epoch-start disclaimer, and the `### Idle-monitoring interruption` subsection repeats it. | Replace the lifecycle wording, remove the mandatory cue, and quarantine the harness label as non-semantic. |
+| Same file, lines 23 and 33 | A wait return is an idle observation; no wait result alone completes a worker. | Preserve verbatim in meaning. |
+| `docs/dev/codex-idle-notification-probe.md:3-32,59-68` | Calls explicit `wait_agent` use “foreground wait” and operator input a non-terminal foreground-wait return. | Rename the comparison/classification to async idle monitoring and use the same active-loop wording. Preserve queued-flush/autonomous-wake distinctions. |
+| `skills/integration/codex_idle_notification_test.go:13-18` | Allowed evidence enum contains `foreground_wait`. | Rename only that unused enum member to `async_idle_monitoring`; the checked-in evidence is `queued_flush`, so no evidence migration is needed. |
+| `internal/ensigncycle/codex_dispatch_evidence_test.go:21-89` and regression fixtures | Wait is credited only between dispatch-build and a later durable report read. | Reuse its durable-evidence rule; do not weaken it or make the harness label completion evidence. |
+| `internal/ensigncycle/shared_reviewer_reuse_test.go:244-367` | Correlates Codex worker identity through task/thread handles and rejects uncorrelated reuse. | Reuse this handle-correlation pattern in the new steering fixture; no production change. |
+
+No shared-core contradiction was found. The shared core decides when work is ready or the FO is idle; only the Codex adapter names `wait_agent` and the harness label. Claude and Pi remain out of scope.
+
 ## Required behavior
 
 The Codex runtime contract must express these semantics directly:
@@ -26,18 +42,94 @@ The Codex runtime contract must express these semantics directly:
 
 Scope is the Codex runtime contract and its behavioral proof. Do not change `wait_agent`, invent cancellation/restart state, or broaden this into a generic scheduler redesign.
 
+## Proposed wording delta
+
+Apply this exact semantic edit to the Codex adapter:
+
+```diff
+-`wait_agent` is asynchronous with respect to worker progress and captain interaction: it is idle monitoring only, does not stop the FO event loop, and steered captain input interrupts it immediately so the FO can resume active work.
++`wait_agent` is asynchronous monitoring: captain input resumes the FO's active loop while workers continue unchanged.
+```
+
+In `## Codex wait notes`, replace the interruption/cue cluster with:
+
+> Captain input resumes the FO's active loop while workers continue unchanged. When the FO becomes idle again, it MUST resume monitoring unresolved workers. Do not preface each monitoring epoch with an interruption disclaimer.
+
+Replace `### Idle-monitoring interruption` with:
+
+> ### Harness wait-return label
+>
+> “Wait interrupted by new input” is a harness implementation label only. Do not repeat it as FO language or derive worker cancellation, closure, redispatch, or completion from it.
+
+Keep the timeout/retry paragraph and the following rule intact in meaning: a wait result must be attributed by mailbox/task/durable state and no wait result alone completes a worker.
+
+For `docs/dev/codex-idle-notification-probe.md`, change `Foreground wait comparison` / `foreground_wait` to `Async idle-monitoring comparison` / `async_idle_monitoring`, and replace the step-4 language with:
+
+> If captain input resumes the FO's active loop, record the worker as unchanged and continue useful active-scope work. When the FO becomes idle again, resume monitoring the same unresolved worker. The harness return label is not worker completion, failure, closure, redispatch, or idle-wake evidence.
+
+The simplest alternative was to delete only the word “interrupts.” It is insufficient because the mandatory disclaimer subsection and probe vocabulary would continue teaching the old lifecycle model. Moving the rule to shared core was also rejected: it would broaden a Codex harness correction into Claude/Pi semantics without evidence.
+
+## Spike: real steering trace
+
+No new runtime primitive is assumed. A real Codex 0.145.0 session trace from 2026-07-23 exercised the risky path:
+
+1. `wait_agent(timeout_ms:300000)` began at `14:35:21.736Z`; the harness returned “Wait interrupted by new input” at `14:39:46.715Z`, immediately followed by captain input.
+2. At `14:39:54.317Z`, `list_agents` still reported `/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction` as `running`.
+3. The FO performed active-scope work, including 20 roster/command/spawn calls in the reduced trace; there were zero `interrupt_agent` calls and zero redispatches of that task path.
+4. Only after that active work did the FO call `wait_agent` again at `14:47:46.147Z`.
+
+A `jq` reduction over the raw session produced: same worker running `true`, active-work calls `20`, later waits `1`, target cancellations `0`, target redispatches `0`. This is the cheapest observed discriminator for active-loop resumption. It does not by itself prove eventual durable completion, so the implementation fixture must append correlated final-status plus durable-report events and must fail when either is removed or stale.
+
+## Behavioral proof approach
+
+Add one Codex-only ordered-event fixture and assertion. It serves AC-1 through AC-3 by correlating one task path/completion epoch across: spawn → idle monitor → captain input → same worker still running → useful FO work → active scope empty → monitor again → matching final status → durable report read. The assertion must reject four planted variants: a target cancellation/second spawn, monitoring reinstalled while active work remains, a wrong task path or stale completion epoch credited as done, and an old captain-facing disclaimer before each of two epochs. Harness tool output may contain its implementation label; captain-facing FO messages may not repeat it.
+
+The simplest alternative, a contractlint phrase check over the adapter, is insufficient: this repository retired those checks because they prove only that prose contains a phrase. A shared live-scenario entry is also unnecessary and would force Claude/Pi parity for a Codex-only harness concern. The ordered fixture is the low-cost gate; validation repeats the live drive and records the durable report.
+
 ## Acceptance criteria
 
-**AC-1 (VALUE)** In a Codex drive where one worker remains unresolved across captain input, the FO handles the input, continues useful active-loop work, and later monitors the same worker without failing, closing, or redispatching it. Verified by a runtime drive or fixture that correlates one worker handle before and after steering and observes its eventual durable completion.
+**AC-1 (VALUE)** In a Codex drive where one worker remains unresolved across captain input, the FO handles the input, completes all captain-authorized active work, and later monitors the same task path/completion epoch without cancellation, closure, or redispatch. The measured baseline is one correlated worker before and after steering, at least one useful active-work event between the two monitoring calls, zero target lifecycle mutations, and eventual matching final-status plus durable report. Verified by the ordered fixture and a validation-time live replay.
 
-**AC-2** The Codex runtime instruction models captain input as active-loop resumption and idle monitoring as conditional on becoming idle again, while preserving the rule that monitoring output alone is not completion. Verified by a behavioral contract scenario whose wrong-semantics variants—worker cancellation, redispatch, or treating wait return as completion—fail.
+**AC-2** Captain input has no completion effect: the worker remains unresolved until a matching final-status signal and durable report are observed, and monitoring resumes only after active work is exhausted. Verified by planted cancellation, redispatch, premature-monitoring, wrong-handle, stale-epoch, and wait-return-only fixtures; each must fail independently.
 
-**AC-3** Two or more monitoring epochs do not require repeated captain-facing interruption disclaimers. Verified by an observed-output scenario that permits ordinary progress/idle communication but fails if the old mandatory disclaimer is emitted before each epoch.
+**AC-3** Two or more monitoring epochs produce zero repeated captain-facing uses of the harness label or old mandatory interruption disclaimer. Verified by separating harness tool output from FO `agent_message` output; a planted disclaimer before both epochs fails while ordinary progress/idle communication passes.
 
-**AC-4** The change stays Codex-specific unless ideation demonstrates a shared-core contradiction. Claude and Pi wait semantics remain unchanged, and no runtime tool/API behavior is fabricated. Verified by scoped diff review plus existing runtime contract and live-tag test gates appropriate to the touched paths.
+**AC-4** The shipped change is limited to the Codex adapter, Codex probe/evidence, and Codex behavioral tests; Claude, Pi, shared core, and runtime tool/API behavior remain unchanged. Verified by scoped diff review, `go test` focused/full/race gates, and live-tag compile or replay appropriate to the touched paths.
+
+## Expected surface
+
+Expected implementation surface is 5 files, approximately 190-285 added/changed LOC with a tolerance of ±60 LOC:
+
+- `skills/first-officer/references/codex-first-officer-runtime.md`: 6-10 changed lines, net negative or flat.
+- `docs/dev/codex-idle-notification-probe.md`: 12-20 changed lines.
+- `skills/integration/codex_idle_notification_test.go`: 1-4 changed lines for the classification rename.
+- `docs/dev/_evidence/codex-wait-agent-steering-semantics/2026-07-23-dogfood.json`: 35-55 new lines containing only the reduced event slice, not the full private transcript.
+- `internal/ensigncycle/codex_wait_agent_steering_test.go`: 135-195 new lines for ordered replay, handle/epoch correlation, output-channel separation, and the seven planted negative cases.
+
+No production Go package, shared scenario table, Claude/Pi runner, or shared skill file should change. Exceeding 5 files or adding a runtime/PTY harness requires re-gating because it changes the chosen proof mechanism.
+
+## Test plan
+
+- First add the reduced evidence fixture and ordered replay assertion. Run the passing trace, then each planted variant independently; cost low, fixture-only, no model spend.
+- Apply the exact adapter/probe wording. The behavioral fixture—not a markdown phrase grep—remains the semantic proof. Run `go test ./internal/ensigncycle ./skills/integration -run 'TestCodex.*(Steering|IdleNotification)' -count=1`.
+- Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
+- Compile live-tagged Codex tests. During validation, repeat the live steering drive with one delayed no-write worker, one captain input while monitoring, one useful active action, the same task path still unresolved, a later monitor call, matching final status, and a durable report read. Store only the reduced evidence record.
 
 ## Stage test gates
 
 - Ideation identifies every current clause and behavioral fixture affected, proposes an exact wording delta, and spikes the cheapest scenario that distinguishes steering from worker interruption.
 - Implementation changes only the approved contract/test surfaces, runs focused and full/race gates, and requests Roborev because this is shipped runtime scaffolding.
 - Validation performs the required detached adversarial audit and a Codex behavioral drive capable of catching cancellation, redispatch, stale completion, and repetitive-disclaimer regressions.
+
+## Stage Report: ideation
+
+- DONE: Map the current Codex wait clauses and affected behavioral fixtures, then propose the exact minimal wording delta.
+  The surface map covers the adapter binding/wait notes, probe recipe and enum, durable dispatch evidence, and handle-correlation fixture; the proposed wording removes interruption semantics while preserving no-wait-result completion.
+- DONE: Demonstrate the cheapest falsifiable scenario where captain steering preserves one unresolved worker and monitoring resumes only when the FO is idle again.
+  A reduced real Codex 0.145.0 trace observes the same task path still running, 20 active-work calls, zero cancellation/redispatch, and a later wait after active work.
+- DONE: Produce acceptance evidence and an expected file/LOC surface that distinguish active-loop resumption from cancellation, redispatch, stale completion, and repetitive disclaimer behavior.
+  AC-1 through AC-4 define correlated task/epoch and output-channel checks; the five-file 190-285 LOC surface includes seven independent planted negative cases.
+
+### Summary
+
+Ideation narrows the correction to Codex runtime wording, the Codex idle-notification vocabulary, and a behavioral replay based on the real session that prompted the task. The design treats captain input as active-loop resumption, preserves durable completion authority, and explicitly rejects cancellation, redispatch, premature monitoring, stale completion, and repetitive disclaimer variants.
