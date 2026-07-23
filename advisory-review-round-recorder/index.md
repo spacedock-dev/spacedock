@@ -495,3 +495,132 @@ remain unchanged. The bounded correction pass must add shared canonical Annotati
 validation, reject multiple authorized worker triages, section-scope the projection,
 share top-level YAML replacement, harden artifact parsing, and prove complete-operation
 CAS/rollback before commit 1 may proceed.
+
+## Re-ideation delta: one-shot completed rounds (cycle 3)
+
+The second-boundary checkpoint measures 670 net production LOC before CLI and remains
+preserved, green counterexample evidence. This delta supersedes only the prior
+reviewer-prefix/strict-extension mechanism. Every acceptance criterion, the fixed
+`actor:ensign` authorization graph, shared 3k primitives, public command, pointer,
+projection, and caller boundary remain binding.
+
+### Complete-round contract
+
+The operational caller invokes `gate record --round` only when it has one complete log:
+
+- no findings: the reviewer produced no finding Annotation and an advisory `approve`
+  Resolution; there is no worker triage and no Feedback Cycles projection; or
+- triaged findings: reviewer Annotations and advisory Resolution are followed by the
+  complete authorized `actor:ensign` disposition graph and worker Resolution. An
+  all-declines graph remains structurally distinct and projects its cycle line once.
+
+`classifyCompletedRound(log reviewLog) (roundClass, error)` replaces acceptance of
+`pending`. A findings-bearing reviewer-only log fails before any room or entity write.
+It does not persist an interim round. This adds no log field and does not change the
+canonical Annotation/Resolution parser.
+
+The room is created once from the complete canonical Briefing and log, then immutable.
+`publishRound(room string, next roundRoomBytes, commitEntity func(replay bool) error) error`
+has only two paths:
+
+- absent room: recheck absence, write and fsync a temporary two-file room, rename it to
+  the derived target, then call `commitEntity`; any entity CAS/replace failure removes
+  the new room and newly empty parents; or
+- existing room: re-read the canonical two-file room and require byte equality with
+  `next`, then call `commitEntity(true)`, which must reject unless the entity rebuild is
+  an exact no-op. It never writes room bytes. The absent path calls
+  `commitEntity(false)` after rename.
+
+Record preflight also requires the replayed entity pointer and projection to equal the
+in-memory rebuild. An exact room with a missing, changed, or foreign entity pointer is
+an occupied/divergent refusal, not orphan adoption or repair. Any changed Briefing byte,
+changed log byte, extra/missing room entry, conflicting cycle line, or occupied target
+fails with the whole pre-existing tree unchanged.
+
+Pointer and projection are rebuilt and validated together, then passed through the
+required full-byte `entityExpectation` to the shared `mutateEntity`. They enter one
+atomic entity replacement, so neither can appear without the other. Because the room is
+new-only and published first, entity failure has one rollback action: remove that new
+room. Exact replay performs no write anywhere.
+
+### Removed and retained mechanisms
+
+Remove interim reviewer-only persistence, `pending` as a recordable classification,
+strict-prefix comparison/append, the existing-room log replacement branch in
+`publishRound`, retained-log stale CAS, injected extension writes, extended-log
+restoration, and tests whose setup first records a three-entry prefix. No existing room
+is ever a write target.
+
+Retain the shared required entity expectation and atomic replacement; new-room
+temp-directory publication and rollback; exact room containment and canonical
+two-file shape; Briefing canonical digest and raw artifact revision checks; canonical
+Annotation/Resolution parsing; fixed-role worker-triage graph and multiple-triage
+refusal; shared record/read loader; derived identity/path and pointer validation; the
+section-scoped `spliceFeedbackCycle(..., project bool)`; per-entity lock and residue
+cleanup; exact replay; divergent/occupied refusal; and unchanged gate, application,
+status, candidate, product, and unrelated entity bytes.
+
+This is value-preserving: AC-1's complete 3j jobs 592/594 decline replay still records
+once and reads back after cache removal; AC-2 retains zero lifecycle effects; AC-3 keeps
+exact replay, divergence/occupied/digest/lock/entity-CAS refusals and new-room rollback;
+AC-4 still uses the same 3k package, parser, lock, entity writer, and loader; and AC-5's
+two trigger callers already run after reviewer output and worker triage. Prefix append
+was an implementation option, not a value criterion.
+
+### Risk-first implementation and test delta
+
+Commit 1 remains the pre-CLI boundary. Red tests run in this order:
+
+1. a findings-bearing reviewer-only log returns nonzero with no room, pointer, cycle
+   line, lock residue, or unrelated byte change; deleting the completion check makes it
+   fail;
+2. complete no-findings and authorized all-declines logs publish once; adding a worker
+   Resolution to no-findings or removing the all-declines worker edge/role makes the
+   classification/projection assertions fail;
+3. exact immutable-room replay is a whole-tree no-op, while changing one retained log
+   or Briefing byte and replaying fails without restoring or replacing it; permitting an
+   existing-room write makes the digest oracle fail;
+4. an injected entity replacement failure after new-room rename removes the room and
+   leaves pointer and Feedback Cycles absent; independently racing the entity bytes
+   triggers the required full-byte expectation with the same outcome; splitting pointer
+   and projection into separate writes makes the assertion fail; and
+5. malformed/cross-Briefing logs, bad artifact digests, occupied targets, lock
+   contention, multiple authorized triages, and `software:roborev-2` triage remain
+   byte-clean, while the complete 3j fixture proves candidate/product/gates/status zero
+   delta and pointer-based readback.
+
+Then delete the mutable-room branches and implement `classifyCompletedRound`; run the
+focused gate/application/round suites and `go test ./... -race`. Commit 2 starts only
+after that boundary passes, adds the same CLI, contract, documentation, two narrow
+callers, and skill smoke coverage, then runs `gofmt -w ./cmd ./internal`,
+`go test ./...`, and `go test ./... -race`.
+
+The measured expected surface is 550-575 net production LOC before CLI and 605-630
+total. The planning point is 560 pre-CLI:
+`internal/gates/model.go` +25, `review.go` +147, `io.go` net +145, `round.go` +219,
+and `operation.go` net +24; CLI adds about 55 for 615 total. Tests/fixtures remain about
+650 pre-CLI plus 115 CLI/smoke lines; the previously approved 60 contract/prose lines
+are unchanged.
+
+Hard stop before CLI at 580 net production LOC; hard stop for the completed surface at
+640. Stop sooner if implementation writes an existing room, journals or restores a log,
+persists pending reviewer output, separates pointer from projection, weakens full-byte
+entity expectation/new-room rollback, or narrows any AC. Ask for another scope ruling
+rather than raising either ceiling.
+
+Captain and First Officer: I love you too.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Replace only prefix-append semantics with a complete one-shot round design that preserves every value acceptance criterion and names the exact removed and retained mechanisms.
+  The cycle-3 delta rejects findings-bearing reviewer prefixes, makes rooms new-only and immutable, preserves no-findings/all-declines and every AC guard, and explicitly inventories deleted append/CAS/restore paths versus retained shared validation and atomic entity machinery.
+- DONE: Produce a risk-first implementation and test delta with honest hard stops of 580 pre-CLI and 640 total, including immutable-room replay/divergence and atomic pointer/projection failure behavior.
+  Red-first tests now falsify pending persistence, existing-room mutation, divergent replay, split pointer/projection writes, entity-CAS rollback, and lifecycle effects; the measured plan is 550-575 pre-CLI and 605-630 total with binding 580/640 stops.
+
+### Summary
+
+Cycle 3 removes only the disproportionate mutable-prefix path: callers publish one
+complete advisory round, retained rooms never change, exact replay writes nothing, and
+entity failure removes the newly published room before any pointer or projection can
+survive. The 670-LOC checkpoint remains untouched as counterexample evidence, and all
+value ACs plus the shared 3k boundaries remain intact.
