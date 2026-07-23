@@ -1,6 +1,7 @@
 package status
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -49,6 +50,77 @@ func TestStatusTextAndJSONProjectApprovedPendingApplication(t *testing.T) {
 	jsonOut, stderr, code = runNative(t, root, nil, append(args, "--json")...)
 	if code != 0 || !strings.Contains(jsonOut, `"gate-condition":"ineligible"`) || !strings.Contains(jsonOut, `"gate-eligible":"false"`) {
 		t.Fatalf("changed-taxonomy status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
+	}
+}
+
+func TestStatusProjectsSharedGateReadinessReducer(t *testing.T) {
+	root, _ := buildSplitRoot(t, identifyReadyGatesReadme, map[string]string{
+		"sp.md": "---\nid: sp\nstatus: validation\nscore: 100\n---\n# incomplete\n",
+		"mf.md": openGateEntity("mf", "validation", "90"),
+		"r4.md": openGateEntity("r4", "validation", "80"),
+		"2n.md": approvedGateEntity("2n", "validation", "done", "70"),
+		"ax.md": approvedGateEntity("ax", "validation", "implementation", "65"),
+		"qc.md": "---\nid: qc\nstatus: validation\nscore: 60\n---\n# incomplete\n",
+	})
+	args := []string{"--workflow-dir", root, "--fields", "id,gate-readiness,gate-state,gate-decision,gate-application,gate-target-stage", "--json"}
+	out, errOut, code := runNative(t, root, pinnedEnv(t), args...)
+	if code != 0 {
+		t.Fatalf("status exit=%d stderr=%q", code, errOut)
+	}
+	var result struct {
+		Entities []map[string]string `json:"entities"`
+	}
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{
+		"sp": "validating", "mf": "awaiting-captain", "r4": "awaiting-captain",
+		"2n": "approved-awaiting-merge", "ax": "approved-awaiting-advance", "qc": "validating",
+	}
+	for _, entity := range result.Entities {
+		id := entity["id"]
+		if entity["gate-readiness"] != want[id] {
+			t.Errorf("%s gate-readiness = %q, want %q", id, entity["gate-readiness"], want[id])
+		}
+		if id == "2n" && (entity["gate-state"] != "closed" || entity["gate-decision"] != "approve" ||
+			entity["gate-application"] != "advance/pending" || entity["gate-target-stage"] != "done") {
+			t.Errorf("2n lost canonical gate details: %#v", entity)
+		}
+	}
+
+	text, errOut, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--fields", "gate-readiness")
+	if code != 0 || !strings.Contains(text, "approved-awaiting-m") || !strings.Contains(text, "awaiting-captain") {
+		t.Fatalf("human gate-readiness exit=%d stderr=%q output=%q", code, errOut, text)
+	}
+	all, errOut, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--all-fields", "--json")
+	if code != 0 || !strings.Contains(all, `"gate-readiness":"validating"`) ||
+		!strings.Contains(all, `"gate-readiness":"approved-awaiting-advance"`) {
+		t.Fatalf("--all-fields gate-readiness exit=%d stderr=%q output=%q", code, errOut, all)
+	}
+}
+
+func TestStatusAllFieldsProjectsValidatingWithoutGateRecord(t *testing.T) {
+	root, _ := buildSplitRoot(t, identifyReadyGatesReadme, map[string]string{
+		"sp.md": "---\nstatus: validation\n---\n# still validating\n",
+		"qc.md": "---\nstatus: validation\n---\n# still validating\n",
+	})
+	out, errOut, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--all-fields", "--json")
+	if code != 0 {
+		t.Fatalf("--all-fields exit=%d stderr=%q", code, errOut)
+	}
+	var result struct {
+		Entities []map[string]string `json:"entities"`
+	}
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Entities) != 2 {
+		t.Fatalf("entities = %#v, want two validating entities", result.Entities)
+	}
+	for _, entity := range result.Entities {
+		if entity["gate-readiness"] != "validating" {
+			t.Fatalf("%s gate-readiness = %q, want validating", entity["slug"], entity["gate-readiness"])
+		}
 	}
 }
 

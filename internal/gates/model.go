@@ -113,6 +113,88 @@ type ConsumeResult struct {
 	Consumed bool
 }
 
+// ReadinessStage is the minimum workflow taxonomy needed to reduce a selected
+// gate attempt into a local scheduling state.
+type ReadinessStage struct {
+	Name     string
+	Gate     bool
+	Terminal bool
+}
+
+// CurrentStageReadiness projects validated durable gate state without reading
+// a retained room or entity body. Unknown and inconsistent states fail closed.
+func CurrentStageReadiness(doc *Document, status string, stages []ReadinessStage) string {
+	stageByName := make(map[string]ReadinessStage, len(stages))
+	for _, stage := range stages {
+		stageByName[stage.Name] = stage
+	}
+	current, ok := stageByName[status]
+	if !ok || !current.Gate || current.Terminal {
+		return ""
+	}
+	if doc == nil {
+		return "validating"
+	}
+	var record *GateRecord
+	for i := range doc.Records {
+		if doc.Records[i].ID == doc.Current.Gate {
+			record = &doc.Records[i]
+			break
+		}
+	}
+	if record == nil || record.Stage != status || len(record.Attempts) == 0 {
+		return "validating"
+	}
+	attempt := &record.Attempts[len(record.Attempts)-1]
+	if attempt.Briefing.ID == "" || attempt.Briefing.Digest == "" || attempt.Briefing.RoomRef == "" {
+		return "invalid"
+	}
+	if attempt.Resolution == nil {
+		return "awaiting-captain"
+	}
+	app := attempt.Application
+	if app == nil {
+		return "invalid"
+	}
+	switch app.State {
+	case "consumed", "superseded", "not-applicable":
+		return app.State
+	case "pending":
+	default:
+		return "invalid"
+	}
+	if attempt.Resolution.Decision == "revise" {
+		if app.Action == "feedback" && strings.TrimSpace(app.TargetStage) != "" {
+			return "feedback-pending"
+		}
+		return "invalid"
+	}
+	if attempt.Resolution.Decision != "approve" || app.Action != "advance" ||
+		app.Blockers == nil || strings.TrimSpace(app.TargetStage) == "" || app.TargetStage == status {
+		return "invalid"
+	}
+	if app.ExecutionHold != nil {
+		switch app.ExecutionHold.State {
+		case "active":
+			return "held"
+		case "released":
+		default:
+			return "invalid"
+		}
+	}
+	if len(*app.Blockers) != 0 {
+		return "blocked"
+	}
+	target, ok := stageByName[app.TargetStage]
+	if !ok {
+		return "invalid"
+	}
+	if target.Terminal {
+		return "approved-awaiting-merge"
+	}
+	return "approved-awaiting-advance"
+}
+
 func Validate(doc *Document) error {
 	if doc.Version != 1 {
 		return fmt.Errorf("gates.version must be 1")

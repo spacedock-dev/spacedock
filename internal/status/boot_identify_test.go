@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 // identifyPRReadme declares a split-root slug workflow whose implementation stage
@@ -29,6 +31,41 @@ stages:
 
 # Identify Boot Workflow
 `
+
+const identifyReadyGatesReadme = `---
+commissioned-by: spacedock@1
+id-style: slug
+state: .spacedock-state
+stages:
+  states:
+    - name: draft
+      initial: true
+    - name: validation
+      gate: true
+    - name: implementation
+    - name: done
+      terminal: true
+---
+
+# Identify Ready Gates Workflow
+`
+
+func openGateEntity(slug, status, score string) string {
+	return "---\nid: " + slug + "\nstatus: " + status + "\nscore: " + score + "\ngates:\n" +
+		"  version: 1\n  current: {gate: 'gate:" + slug + ":" + status + "'}\n  records:\n" +
+		"    - id: gate:" + slug + ":" + status + "\n      stage: " + status + "\n      attempts:\n" +
+		"        - id: gate-attempt:" + slug + "-" + status + "-1\n" +
+		"          briefing: {id: 'briefing:" + slug + ":" + status + ":attempt-1', digest: 'sha256:" + strings.Repeat("1", 64) + "', digest-domain: raw-file-pin, room-ref: ./review/" + status + "/briefing-1}\n" +
+		"---\n# " + slug + "\n"
+}
+
+func approvedGateEntity(slug, status, target, score string) string {
+	body := strings.TrimSuffix(openGateEntity(slug, status, score), "---\n# "+slug+"\n")
+	return body +
+		"          resolution: {type: Resolution, id: 'resolution:" + slug + ":1', briefing: 'briefing:" + slug + ":" + status + ":attempt-1', by: 'person:captain', at: '2026-07-23T00:00:00Z', decision: approve}\n" +
+		"          application: {action: advance, target-stage: " + target + ", state: pending, blockers: []}\n" +
+		"---\n# " + slug + "\n"
+}
 
 // writeRecordingGh writes a `gh` shim that appends to sentinelPath whenever it is
 // invoked, so a test can prove `gh` was NEVER run by asserting the sentinel is
@@ -70,7 +107,7 @@ func TestBootIdentifyFoldsDiscoveryTaxonomyLocalPR(t *testing.T) {
 		"command", "mods", "id_style", "next_id",
 		"orphans", "pr_state", "dispatchable", "team_state",
 		"state_backend", "definition_dir", "entity_dir", "entity_dir_present",
-		"sandbox", "discovery", "stages",
+		"sandbox", "discovery", "stages", "ready_gates",
 	}
 	last := -1
 	for _, key := range orderedKeys {
@@ -93,6 +130,7 @@ func TestBootIdentifyFoldsDiscoveryTaxonomyLocalPR(t *testing.T) {
 			Status  string              `json:"status"`
 			Entries []map[string]string `json:"entries"`
 		} `json:"pr_state"`
+		ReadyGates json.RawMessage `json:"ready_gates"`
 	}
 	if err := json.Unmarshal([]byte(out), &rec); err != nil {
 		t.Fatalf("parse identify record: %v\n%s", err, out)
@@ -111,6 +149,199 @@ func TestBootIdentifyFoldsDiscoveryTaxonomyLocalPR(t *testing.T) {
 	}
 	if rec.PRState.Entries[0]["state"] != "local" {
 		t.Fatalf("pr_state entry state = %q, want \"local\" (not-gh-checked)", rec.PRState.Entries[0]["state"])
+	}
+	if got := string(rec.ReadyGates); got != "[]" {
+		t.Fatalf("ready_gates = %s, want [] for a workflow with no current gates", got)
+	}
+	ordinary, ordinaryErr, ordinaryCode := runNative(t, def, env, "--workflow-dir", def, "--boot", "--json")
+	if ordinaryCode != 0 || strings.Contains(ordinary, `"ready_gates"`) {
+		t.Fatalf("ordinary boot gained identify-only ready_gates: exit=%d stderr=%q output=%s", ordinaryCode, ordinaryErr, ordinary)
+	}
+}
+
+// TestBootIdentifyReadyGates is AC-1/AC-6's 3-of-5 native counterexample: all
+// five entities share the validation stage, but only the three with selected
+// durable attempts are scheduled. It also pins ordering and dispatch separation.
+func TestBootIdentifyReadyGates(t *testing.T) {
+	def, state := buildSplitRoot(t, identifyReadyGatesReadme, map[string]string{
+		"sp.md":          "---\nid: sp\nstatus: validation\nscore: 100\n---\n# Still validating\n",
+		"mf.md":          openGateEntity("mf", "validation", "90"),
+		"r4.md":          strings.Replace(openGateEntity("r4", "validation", "80"), "id: r4\n", "", 1),
+		"2n.md":          approvedGateEntity("2n", "validation", "done", "70"),
+		"qc.md":          "---\nid: qc\nstatus: validation\nscore: 60\n---\n# Still validating\n",
+		"dispatch-me.md": "---\nstatus: draft\nscore: 1000\n---\n",
+		"done.md":        "---\nstatus: done\n---\n",
+		"unknown.md":     "---\nstatus: vanished\n---\n",
+	})
+	archiveDir := filepath.Join(state, "_archive")
+	if err := os.MkdirAll(archiveDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(archiveDir, "archived-gate.md"), openGateEntity("archived-gate", "validation", "9999"))
+
+	identifyOut, errOut, code := runNative(t, def, pinnedEnv(t), "--workflow-dir", def, "--boot", "--identify", "--json")
+	if code != 0 {
+		t.Fatalf("--boot --identify --json exit=%d stderr=%q", code, errOut)
+	}
+	var identify struct {
+		Dispatchable json.RawMessage `json:"dispatchable"`
+		ReadyGates   json.RawMessage `json:"ready_gates"`
+	}
+	if err := json.Unmarshal([]byte(identifyOut), &identify); err != nil {
+		t.Fatalf("parse identify boot: %v\n%s", err, identifyOut)
+	}
+
+	wantReady := `[{"id":"mf","slug":"mf","current":"validation","readiness":"awaiting-captain"},{"id":"r4","slug":"r4","current":"validation","readiness":"awaiting-captain"},{"id":"2n","slug":"2n","current":"validation","readiness":"approved-awaiting-merge"}]`
+	if got := string(identify.ReadyGates); got != wantReady {
+		t.Fatalf("ready_gates = %s\nwant        = %s", got, wantReady)
+	}
+	wantDispatchable := `[{"id":"dispatch-me","slug":"dispatch-me","current":"draft","next":"validation","worktree":"no"}]`
+	if got := string(identify.Dispatchable); got != wantDispatchable {
+		t.Fatalf("identify dispatchable = %s\nwant                  = %s", got, wantDispatchable)
+	}
+
+	nextOut, nextErr, nextCode := runNative(t, def, pinnedEnv(t), "--workflow-dir", def, "--next", "--json")
+	if nextCode != 0 {
+		t.Fatalf("--next --json exit=%d stderr=%q", nextCode, nextErr)
+	}
+	var next struct {
+		Dispatchable json.RawMessage `json:"dispatchable"`
+	}
+	if err := json.Unmarshal([]byte(nextOut), &next); err != nil {
+		t.Fatalf("parse next: %v\n%s", err, nextOut)
+	}
+	if string(next.Dispatchable) != string(identify.Dispatchable) {
+		t.Fatalf("identify dispatchable = %s, --next dispatchable = %s", identify.Dispatchable, next.Dispatchable)
+	}
+	mf := filepath.Join(state, "mf.md")
+	mfBytes, err := os.ReadFile(mf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(mf, append(mfBytes, []byte("\n## Stage Report: validation\n\n- DONE: prose only\n")...), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if afterBodyEdit := identifyReadyRows(t, def); afterBodyEdit != wantReady {
+		t.Fatalf("body-only report edit changed ready_gates: %s", afterBodyEdit)
+	}
+}
+
+func TestBootReadyGatesRequiresCurrentStageSelection(t *testing.T) {
+	def, state := buildSplitRoot(t, identifyReadyGatesReadme, nil)
+	room := filepath.Join(state, "review", "validation", "briefing-1")
+	writeFile(t, filepath.Join(room, "briefing.json"),
+		`{"type":"Briefing","version":"1","id":"briefing:mf:validation:attempt-1","question":"ready?","artifacts":[{"id":"artifact:1","uri":"artifact.md","rev":"sha256:`+strings.Repeat("a", 64)+`"}]}`)
+	briefing := filepath.Join(room, "briefing.json")
+	data, err := os.ReadFile(briefing)
+	if err != nil {
+		t.Fatal(err)
+	}
+	digest, err := gates.CanonicalDigest(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entity := filepath.Join(state, "mf.md")
+	writeFile(t, entity, "---\nid: mf\nstatus: validation\ngates:\n"+
+		"  version: 1\n  current: {gate: 'gate:mf:ideation'}\n  records:\n"+
+		"    - id: gate:mf:ideation\n      stage: ideation\n      attempts:\n"+
+		"        - id: gate-attempt:mf-ideation-1\n          briefing: {id: 'briefing:mf:ideation:attempt-1', digest: 'sha256:"+strings.Repeat("2", 64)+"', digest-domain: raw-file-pin, room-ref: ./review/ideation/briefing-1}\n"+
+		"    - id: gate:mf:validation\n      stage: validation\n      attempts:\n"+
+		"        - id: gate-attempt:mf-validation-1\n          briefing: {id: 'briefing:mf:validation:attempt-1', digest: '"+digest+"', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1}\n"+
+		"---\n# MF\n")
+
+	before := identifyReadyRows(t, def)
+	if before != "[]" {
+		t.Fatalf("stale old-stage selection scheduled mf: %s", before)
+	}
+	if err := gates.RecordBriefing(entity, briefing); err != nil {
+		t.Fatal(err)
+	}
+	after := identifyReadyRows(t, def)
+	want := `[{"id":"mf","slug":"mf","current":"validation","readiness":"awaiting-captain"}]`
+	if after != want {
+		t.Fatalf("ready rows after same-Briefing selection repair = %s, want %s", after, want)
+	}
+}
+
+func identifyReadyRows(t *testing.T, def string) string {
+	t.Helper()
+	out, errOut, code := runNative(t, def, pinnedEnv(t), "--workflow-dir", def, "--boot", "--identify", "--json")
+	if code != 0 {
+		t.Fatalf("identify exit=%d stderr=%q", code, errOut)
+	}
+	var rec struct {
+		Ready json.RawMessage `json:"ready_gates"`
+	}
+	if err := json.Unmarshal([]byte(out), &rec); err != nil {
+		t.Fatal(err)
+	}
+	return string(rec.Ready)
+}
+
+func TestBootReadyGateTerminalApprovalDisappearsAfterConsume(t *testing.T) {
+	readme := strings.Replace(identifyReadyGatesReadme, "    - name: implementation\n", "", 1)
+	def, state := buildSplitRoot(t, readme, map[string]string{
+		"2n.md": "---\nid: 2n\nstatus: validation\n---\n# 2n\n",
+	})
+	room := filepath.Join(state, "review", "validation", "briefing-1")
+	briefing := filepath.Join(room, "briefing.json")
+	writeFile(t, briefing,
+		`{"type":"Briefing","version":"1","id":"briefing:2n:validation:attempt-1","question":"ship?","artifacts":[{"id":"artifact:1","uri":"artifact.md","rev":"sha256:`+strings.Repeat("a", 64)+`"}]}`)
+	entity := filepath.Join(state, "2n.md")
+	if err := gates.RecordBriefing(entity, briefing); err != nil {
+		t.Fatal(err)
+	}
+	if err := gates.RecordSemantic(entity, gates.RecordInput{
+		Decision: "approve", Actor: "person:captain", WorkflowDir: def,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	want := `[{"id":"2n","slug":"2n","current":"validation","readiness":"approved-awaiting-merge"}]`
+	if got := identifyReadyRows(t, def); got != want {
+		t.Fatalf("pending terminal approval = %s, want %s", got, want)
+	}
+	eligibility, err := gates.EligibilityFileAt(entity, def)
+	if err != nil || !eligibility.Eligible || eligibility.TargetStage != "done" {
+		t.Fatalf("terminal approval eligibility = %#v, err=%v", eligibility, err)
+	}
+	consumed, err := gates.ConsumeAt(entity, def)
+	if err != nil || !consumed.Consumed {
+		t.Fatalf("consume = %#v, err=%v", consumed, err)
+	}
+	if got := identifyReadyRows(t, def); got != "[]" {
+		t.Fatalf("consumed terminal approval remained ready: %s", got)
+	}
+	doc, _, err := gates.Read(entity)
+	if err != nil || doc.Records[0].Attempts[0].Application.State != "consumed" {
+		t.Fatalf("consumed application not durable: %#v, err=%v", doc, err)
+	}
+}
+
+func TestBootReadyGatesFailClosedLifecycleControls(t *testing.T) {
+	blocked := strings.Replace(approvedGateEntity("blocked", "validation", "done", "90"),
+		"blockers: []", "blockers: [{id: blocker:x, state: unsatisfied}]", 1)
+	held := strings.Replace(approvedGateEntity("held", "validation", "done", "80"),
+		"blockers: []}", "blockers: [], execution-hold: {state: active}}", 1)
+	feedback := strings.Replace(approvedGateEntity("feedback", "validation", "done", "70"),
+		"decision: approve}", "decision: revise, reason: revise}", 1)
+	feedback = strings.Replace(feedback, "action: advance", "action: feedback", 1)
+	consumed := strings.Replace(approvedGateEntity("consumed", "validation", "done", "60"),
+		"state: pending", "state: consumed", 1)
+	superseded := strings.Replace(approvedGateEntity("superseded", "validation", "done", "50"),
+		"state: pending", "state: superseded", 1)
+	def, _ := buildSplitRoot(t, identifyReadyGatesReadme, map[string]string{
+		"validating.md": "---\nstatus: validation\n---\n",
+		"blocked.md":    blocked,
+		"held.md":       held,
+		"feedback.md":   feedback,
+		"consumed.md":   consumed,
+		"superseded.md": superseded,
+		"malformed.md":  "---\nstatus: validation\ngates:\n  version: 1\n  current: {gate: missing}\n  records: []\n---\n",
+		"terminal.md":   openGateEntity("terminal", "done", "100"),
+		"ordinary.md":   openGateEntity("ordinary", "implementation", "100"),
+	})
+	if got := identifyReadyRows(t, def); got != "[]" {
+		t.Fatalf("fail-closed lifecycle controls scheduled rows: %s", got)
 	}
 }
 

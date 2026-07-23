@@ -134,6 +134,20 @@ func dispatchableJSONArr(disp []dispatchable) jsonArr {
 	return arr
 }
 
+// readyGatesJSONArr builds the identify-only scheduling index. Its four fixed
+// keys identify the entity and the reduced durable lifecycle state.
+func readyGatesJSONArr(entities []*entity) jsonArr {
+	arr := make(jsonArr, 0, len(entities))
+	for _, e := range entities {
+		arr = append(arr, newJSONObj().
+			set("id", e.fields["id"]).
+			set("slug", e.fields["slug"]).
+			set("current", e.fields["status"]).
+			set("readiness", e.fields["gate-readiness"]))
+	}
+	return arr
+}
+
 // bootJSON builds the nested {"command":"boot",...} envelope from gathered boot
 // data. mods is an object of point->[mods] (empty -> {}); min_prefix is present
 // only for sd-b32; team_state.present is the string "true"/"false".
@@ -213,6 +227,7 @@ func bootJSON(d *bootData) *jsonObj {
 	if d.identify {
 		out.setValue("discovery", jsonStrArr(d.discovery))
 		out.setValue("stages", stagesJSONArr(d.stages))
+		out.setValue("ready_gates", readyGatesJSONArr(d.readyGates))
 	}
 
 	return out

@@ -75,6 +75,19 @@ func sortDefault(entities []*entity, stages []Stage) []*entity {
 	return out
 }
 
+// computeReadyGates returns only durable gate states that require scheduling,
+// in the same deterministic order as the status table.
+func computeReadyGates(entities []*entity, stages []Stage) []*entity {
+	var out []*entity
+	for _, e := range sortDefault(entities, stages) {
+		switch e.fields["gate-readiness"] {
+		case "awaiting-captain", "approved-awaiting-merge", "approved-awaiting-advance":
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
 // sortNext sorts entities by score (desc, empty last). Stable. Matches
 // sort_key_next.
 func sortNext(entities []*entity) []*entity {
