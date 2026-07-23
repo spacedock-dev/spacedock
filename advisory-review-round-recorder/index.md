@@ -263,12 +263,15 @@ binding. This delta replaces only the failed internal mechanism and supersedes t
 ### Exact reuse and deletion map
 
 - `internal/gates/io.go` gains
-  `mutateEntity(path string, build func([]byte) ([]byte, error), replace func(string, []byte) error) error`.
-  It performs the single current-entity read, lets the caller compare its owned expected
-  bytes and rebuild from that same read, skips an exact no-op, and calls 3k's
-  `atomicWrite`. `writeDocument` and `writeDocumentAndStatus` become callers, preserving
-  their existing gates-node and gates-plus-status CAS rules; round recording supplies a
-  full-entity expected-byte comparison. This is the one entity CAS/atomic-replace path.
+  `type entityExpectation struct { Bytes []byte; Gates *yaml.Node; Status *string }` and
+  `mutateEntity(path string, expected entityExpectation, build func([]byte) ([]byte, error), replace func(string, []byte) error) error`.
+  The required expectation parameter is checked by the helper against its single
+  current-entity read before `build` runs: round recording passes full `Bytes`;
+  `writeDocument` passes the landed expected `Gates` node; and
+  `writeDocumentAndStatus` passes expected `Gates` plus `Status`. Exactly one expectation
+  mode is required. The helper skips an exact no-op and calls 3k's `atomicWrite`; callers
+  cannot omit or defer CAS into an optional build-side comparison. This is the one
+  entity expectation/CAS/atomic-replace path.
 - `internal/gates/io.go` also gains
   `type roundRoomBytes struct { Exists bool; Briefing, Log []byte }`
   and `publishRound(room string, expected, next roundRoomBytes, commitEntity func() error) error`.
@@ -289,12 +292,14 @@ binding. This delta replaces only the failed internal mechanism and supersedes t
   binding, and the canonical log parser. Record adds only replay/preflight and assembly;
   validate adds only pointer resolution and summary rendering.
 - `internal/gates/io.go` keeps only
-  `spliceFeedbackCycle(entity []byte, line string, complete bool) ([]byte, error)` for
+  `spliceFeedbackCycle(entity []byte, line string, project bool) ([]byte, error)` for
   the exact `### Feedback Cycles` section. It scans the Markdown body once, fence-aware,
   for that literal heading and its next peer/ancestor; it is not a reusable heading
   scanner. The projection stays recorder-owned because AC-1 requires the pointer, room,
   and readable cycle line from one invocation, while AC-3 requires their joint rollback.
-  Making it FO-owned would add a second non-atomic write and weaken both ACs.
+  Making it FO-owned would add a second non-atomic write and weaken both ACs. `project`
+  is derived from authorized worker triage, not generic round completeness:
+  no-findings passes false and all-declines passes true exactly once.
 
 Delete WIP `readRoundPointerData`/`rebuildRoundEntity` as independent rebuild machinery,
 `markdownHeading`/`markdownBodyHeadings` and the generic counters, `commitRound`, the
@@ -308,31 +313,42 @@ counterexample.
 ### Structural triage and projection semantics
 
 The first Resolution closes the reviewer phase and may include the preceding reviewer
-finding Annotations. A worker triage Resolution is a later Resolution by a different
-actor whose `includes` resolve to earlier worker-authored disposition Annotations; each
-decline disposition in turn includes one or more findings from the reviewer Resolution.
-There may be at most one such worker Resolution. Completeness and all-declines are
-derived from this graph, never from the number of Resolutions.
+finding Annotations. A worker triage Resolution is a later Resolution authorized
+normatively by `by: actor:ensign`, whose `includes` resolve to earlier
+`actor:ensign` disposition Annotations; each decline disposition in turn includes one
+or more findings from the reviewer Resolution. There may be at most one such worker
+Resolution. No actor inequality heuristic, new log field, or Resolution count grants
+worker authority. The retained WIP fixture's inconsistent `agent:ensign` entries must
+be rewritten to `actor:ensign`.
 
-Falsifier: reviewer findings `f1`, reviewer Resolution `r1(by=software:roborev,
-includes=[f1])`, then `r2(by=software:roborev, includes=[f1])` is still pending and
-projects no cycle line even though it has two Resolutions. Positive control: append
-`d1(by=agent:ensign, includes=[f1])` and
-`t1(by=agent:ensign, includes=[d1])`; `t1` is worker triage and the round projects once.
-Changing `t1.by` to the reviewer, removing `d1 -> f1`, or making either edge forward
-must make that assertion fail. A reviewer approve with no findings has no worker triage
-and remains distinguishable from the positive all-declines graph.
+Falsifier: reviewer findings `f1`, reviewer Resolution
+`r1(by=software:roborev, includes=[f1])`, then disposition
+`d2(by=software:roborev-2, includes=[f1])` and Resolution
+`r2(by=software:roborev-2, includes=[d2])` remain pending and project no cycle line:
+different from reviewer 1 is not authorized worker triage. Positive control replaces
+both second-phase actors with `actor:ensign`; `r2` is then worker triage. Removing
+`d2 -> f1`, making either edge forward, or changing either worker actor must make that
+assertion fail.
+
+A reviewer approve with no findings has no worker triage, is classified no-findings,
+and calls the splice with `project=false`; it receives no Feedback Cycles line. When the
+authorized triage includes dispositions covering every reviewer finding, classification
+is all-declines and calls the splice with `project=true`; exact replay leaves exactly one
+line. Thus no-findings completeness cannot be mistaken for projection eligibility.
 
 ### Risk-first two-commit plan
 
 1. `gates: share advisory recorder primitives`: write red tests in this order for
-   stale retained-room CAS, entity-replace failure, room rollback, exact replay,
-   the two-reviewer-Resolution counterexample, shared record/read validation, and
-   internal-operation preservation of `gates`, `status`, candidate, and unrelated body
-   bytes. Then implement the canonical parser/triage graph, shared loader,
-   `mutateEntity`, `publishRound`, exact Feedback Cycles splice, and internal round
-   operation. Run existing 3k gate/application tests and race tests. No CLI code enters
-   this commit.
+   required full-byte entity expectation and stale retained-room CAS, entity-replace
+   failure, room rollback, exact replay, the unauthorized `software:roborev-2`
+   disposition/Resolution graph, no-findings/no-projection, authorized
+   `actor:ensign` all-declines/exactly-one-projection, shared record/read validation,
+   and internal-operation preservation of `gates`, `status`, candidate, and unrelated
+   body bytes. Existing gate tests additionally pin that the same helper enforces the
+   landed gates-node and gates-plus-status expectations. Then implement the canonical
+   parser/triage graph, shared loader, `mutateEntity`, `publishRound`, exact Feedback
+   Cycles splice, and internal round operation. Run existing 3k gate/application tests
+   and race tests. No CLI code enters this commit.
 2. `gate: expose advisory round recording`: only after the hard stop passes, add
    `internal/cli/cli.go` wiring and CLI fixture coverage; then apply the already-approved
    schema/spec/reference and two trigger-scoped caller changes, smoke-test the skill
@@ -341,9 +357,11 @@ and remains distinguishable from the positive all-declines graph.
 
 Hard pre-CLI stop: stop for a further scope ruling if commit 1 cannot make stale-room
 CAS, entity failure, and rollback whole-tree-byte-clean without a journal; if structural
-triage needs a new log field or actor flag; if commit 1 exceeds 365 net production LOC;
-or if the measured projection reaches above 500 total production LOC. Do not compact by
-weakening AC-3 or by restoring any duplicate writer/parser/load path.
+triage cannot use the binding `actor:ensign` role without a new log field or actor flag;
+if the shared helper makes entity expectation optional or caller-enforced; if no-findings
+can project; if commit 1 exceeds 365 net production LOC; or if the measured projection
+reaches above 500 total production LOC. Do not compact by weakening AC-3 or by restoring
+any duplicate writer/parser/load path.
 
 Expected production delta from landed 3k is 490 LOC:
 `model.go` +36, new `review.go` +108, `io.go` net +142, new `round.go` +152, and
@@ -366,16 +384,16 @@ for their separate owners and are not dependencies or scope for this recorder.
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Produce an exact function-level reuse map from landed 3k and WIP `0e9a313f`: one entity mutation/CAS/atomic-replace helper, one expected-room-byte publication boundary, one canonical Annotation/Resolution parser, and one shared round load/validate pipeline; name signatures, files, callers, and deletions rather than saying only “reuse 3k.”
-  The delta names the four shared signatures and callers, preserves landed validators/digests/atomic replacement, and lists the WIP duplicate writer/parser/load/scanner functions to delete versus the pointer/path/fixture seeds to retain.
+  The shared mutation signature now requires `entityExpectation`: full bytes for round, gates node for `writeDocument`, and gates node plus status for consumption; the delta also names the room, parser, loader, callers, and WIP deletions.
 - DONE: Resolve the two remaining semantic/mechanism questions with falsifiable examples: structurally identify the worker triage Resolution without count heuristics, and decide whether Feedback Cycles projection is inside the recorder or remains an FO-owned state projection, choosing the smallest path that preserves AC-1/2/3.
-  Actor-and-includes graph controls triage; the two-reviewer-Resolution falsifier stays pending, while the worker disposition graph projects once. The recorder retains one narrow exact-section splice so room, pointer, and projection share AC-3 rollback.
+  Only `actor:ensign` plus the backward disposition graph authorizes triage; the `software:roborev-2` graph stays pending, no-findings passes `project=false`, and authorized all-declines passes `project=true` exactly once.
 - DONE: Replace the failed implementation plan with a risk-first two-commit plan and test order that proves stale-room CAS, entity-write failure, rollback, exact replay, and no gate/status effects before CLI wiring; show a credible 470-500 total production-LOC budget and a hard pre-CLI stop.
-  Commit 1 proves the failure matrix and byte preservation before CLI; commit 2 wires the public surface only after a 365-LOC internal checkpoint. The file budget totals 490 production LOC with a hard 500-LOC and no-journal/no-AC-weakening stop.
+  Commit 1 now proves required entity expectations, fixed-role authorization, both projection classifications, the failure matrix, and byte preservation before CLI; the 365/490/500 LOC checkpoints remain binding.
 
 ### Summary
 
-Re-ideation keeps every approved value and surface while replacing the 699-LOC
-counterexample with four shared, testable primitives and structural worker-triage
-recognition. The plan measures byte-clean failure and replay before CLI wiring, keeps
-the one-command Feedback Cycles projection through a narrow splice, and stops for a
-scope ruling rather than exceeding 500 production LOC or weakening AC-3.
+Re-ideation keeps every approved value and surface while making entity expectation a
+required shared-helper input and worker authorization the fixed `actor:ensign` role.
+The plan now distinguishes projection eligibility from completeness: no-findings never
+projects, authorized all-declines projects once, and byte-clean failures plus these
+controls must pass before CLI wiring or the 500-LOC ceiling.
