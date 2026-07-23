@@ -253,3 +253,129 @@ Implementation is incomplete and held at the declared mechanism-drift gate; comm
 ### Feedback Cycles
 
 - Cycle 1: REVISE — independent mechanism-drift audit; surface 699 production LOC before CLI vs estimate 300 (233%); AC unchanged
+
+## Re-ideation delta: shared recorder composition
+
+The value ACs, advisory semantics, command shape, and 3k-extension boundary above remain
+binding. This delta replaces only the failed internal mechanism and supersedes the old
+300/600/680 production-LOC estimates with a hard 500-LOC ceiling.
+
+### Exact reuse and deletion map
+
+- `internal/gates/io.go` gains
+  `mutateEntity(path string, build func([]byte) ([]byte, error), replace func(string, []byte) error) error`.
+  It performs the single current-entity read, lets the caller compare its owned expected
+  bytes and rebuild from that same read, skips an exact no-op, and calls 3k's
+  `atomicWrite`. `writeDocument` and `writeDocumentAndStatus` become callers, preserving
+  their existing gates-node and gates-plus-status CAS rules; round recording supplies a
+  full-entity expected-byte comparison. This is the one entity CAS/atomic-replace path.
+- `internal/gates/io.go` also gains
+  `type roundRoomBytes struct { Exists bool; Briefing, Log []byte }`
+  and `publishRound(room string, expected, next roundRoomBytes, commitEntity func() error) error`.
+  It re-reads and byte-compares both retained files (or exact absence), publishes a
+  temp-room rename or log replacement, invokes `commitEntity` last, and restores/removes
+  its room mutation if entity commit fails. This is the one expected-room-byte boundary.
+- `internal/gates/review.go` adds canonical `Annotation`, `reviewEntry`, and `reviewLog`
+  models plus `parseReviewLog(data []byte, briefingID string) (reviewLog, error)`,
+  `validateAnnotation(a Annotation, briefingID string, prior map[string]reviewEntry) error`,
+  and `workerTriage(log reviewLog) (*Resolution, bool, error)`.
+  JSONL decoding uses the entry's `type`; every identity, actor, timestamp, Briefing,
+  and backward `includes` edge is checked. Resolutions call the landed
+  `validateResolution`; `providerResult.Annotations` uses the same `Annotation` type.
+- `internal/gates/round.go` owns
+  `loadValidateRound(entityDir, room, briefingPath, logPath string, want *Briefing) (loadedRound, error)`.
+  Both `recordRoundLocked` and `ValidateRoundFile` use it for input reads, landed
+  `parseBriefingManifest`/`CanonicalDigest`, local-artifact raw-digest checks, pointer
+  binding, and the canonical log parser. Record adds only replay/preflight and assembly;
+  validate adds only pointer resolution and summary rendering.
+- `internal/gates/io.go` keeps only
+  `spliceFeedbackCycle(entity []byte, line string, complete bool) ([]byte, error)` for
+  the exact `### Feedback Cycles` section. It scans the Markdown body once, fence-aware,
+  for that literal heading and its next peer/ancestor; it is not a reusable heading
+  scanner. The projection stays recorder-owned because AC-1 requires the pointer, room,
+  and readable cycle line from one invocation, while AC-3 requires their joint rollback.
+  Making it FO-owned would add a second non-atomic write and weaken both ACs.
+
+Delete WIP `readRoundPointerData`/`rebuildRoundEntity` as independent rebuild machinery,
+`markdownHeading`/`markdownBodyHeadings` and the generic counters, `commitRound`, the
+duplicate `reviewEntry`/`roundLog` parser and Resolution switch, Resolution-count
+completion, `allFindingsDeclined`, `mustReadRoundFile`, and the repeated record/validate
+load blocks. Retain the WIP pointer/summary structs, `parseRoundSpec`, containment and
+artifact-digest checks, cycle-line validation, derived identity/path helpers, fixtures,
+and focused tests only as rewrite seeds. Commit `0e9a313f` remains untouched as the
+counterexample.
+
+### Structural triage and projection semantics
+
+The first Resolution closes the reviewer phase and may include the preceding reviewer
+finding Annotations. A worker triage Resolution is a later Resolution by a different
+actor whose `includes` resolve to earlier worker-authored disposition Annotations; each
+decline disposition in turn includes one or more findings from the reviewer Resolution.
+There may be at most one such worker Resolution. Completeness and all-declines are
+derived from this graph, never from the number of Resolutions.
+
+Falsifier: reviewer findings `f1`, reviewer Resolution `r1(by=software:roborev,
+includes=[f1])`, then `r2(by=software:roborev, includes=[f1])` is still pending and
+projects no cycle line even though it has two Resolutions. Positive control: append
+`d1(by=agent:ensign, includes=[f1])` and
+`t1(by=agent:ensign, includes=[d1])`; `t1` is worker triage and the round projects once.
+Changing `t1.by` to the reviewer, removing `d1 -> f1`, or making either edge forward
+must make that assertion fail. A reviewer approve with no findings has no worker triage
+and remains distinguishable from the positive all-declines graph.
+
+### Risk-first two-commit plan
+
+1. `gates: share advisory recorder primitives`: write red tests in this order for
+   stale retained-room CAS, entity-replace failure, room rollback, exact replay,
+   the two-reviewer-Resolution counterexample, shared record/read validation, and
+   internal-operation preservation of `gates`, `status`, candidate, and unrelated body
+   bytes. Then implement the canonical parser/triage graph, shared loader,
+   `mutateEntity`, `publishRound`, exact Feedback Cycles splice, and internal round
+   operation. Run existing 3k gate/application tests and race tests. No CLI code enters
+   this commit.
+2. `gate: expose advisory round recording`: only after the hard stop passes, add
+   `internal/cli/cli.go` wiring and CLI fixture coverage; then apply the already-approved
+   schema/spec/reference and two trigger-scoped caller changes, smoke-test the skill
+   invocation, and run `gofmt -w ./cmd ./internal`, `go test ./...`, and
+   `go test ./... -race`.
+
+Hard pre-CLI stop: stop for a further scope ruling if commit 1 cannot make stale-room
+CAS, entity failure, and rollback whole-tree-byte-clean without a journal; if structural
+triage needs a new log field or actor flag; if commit 1 exceeds 365 net production LOC;
+or if the measured projection reaches above 500 total production LOC. Do not compact by
+weakening AC-3 or by restoring any duplicate writer/parser/load path.
+
+Expected production delta from landed 3k is 490 LOC:
+`model.go` +36, new `review.go` +108, `io.go` net +142, new `round.go` +152, and
+`internal/cli/cli.go` +52. Expected tests/fixtures are about 650 LOC across focused
+review/I/O/round tests, CLI and launcher-contract tests, and the retained compact 3j
+fixture. Expected spec/schema/reference/caller text is at most 80 lines. There is no new
+package, dependency, operation envelope, or schema.
+
+Per mechanism: the canonical parser and shared loader serve AC-1/AC-4; structural
+triage plus the exact-section projection serve AC-1; shared entity and room CAS,
+pointer-last commit, rollback, and replay serve AC-2/AC-3/AC-4; CLI and the two narrow
+caller lines serve AC-5. The separate 6y First Officer command-usage contract remains
+the non-blocking owner of 3k's full `record`/`validate`/`eligibility`/`consume` journey.
+
+The reset also exposed two unrelated lifecycle/status defects: implementation
+`revise` derived `feedback/pending target-stage=implementation`, and clearing
+`worktree=` on the backward route falsely hit the terminal merge guard. They are noted
+for their separate owners and are not dependencies or scope for this recorder.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Produce an exact function-level reuse map from landed 3k and WIP `0e9a313f`: one entity mutation/CAS/atomic-replace helper, one expected-room-byte publication boundary, one canonical Annotation/Resolution parser, and one shared round load/validate pipeline; name signatures, files, callers, and deletions rather than saying only “reuse 3k.”
+  The delta names the four shared signatures and callers, preserves landed validators/digests/atomic replacement, and lists the WIP duplicate writer/parser/load/scanner functions to delete versus the pointer/path/fixture seeds to retain.
+- DONE: Resolve the two remaining semantic/mechanism questions with falsifiable examples: structurally identify the worker triage Resolution without count heuristics, and decide whether Feedback Cycles projection is inside the recorder or remains an FO-owned state projection, choosing the smallest path that preserves AC-1/2/3.
+  Actor-and-includes graph controls triage; the two-reviewer-Resolution falsifier stays pending, while the worker disposition graph projects once. The recorder retains one narrow exact-section splice so room, pointer, and projection share AC-3 rollback.
+- DONE: Replace the failed implementation plan with a risk-first two-commit plan and test order that proves stale-room CAS, entity-write failure, rollback, exact replay, and no gate/status effects before CLI wiring; show a credible 470-500 total production-LOC budget and a hard pre-CLI stop.
+  Commit 1 proves the failure matrix and byte preservation before CLI; commit 2 wires the public surface only after a 365-LOC internal checkpoint. The file budget totals 490 production LOC with a hard 500-LOC and no-journal/no-AC-weakening stop.
+
+### Summary
+
+Re-ideation keeps every approved value and surface while replacing the 699-LOC
+counterexample with four shared, testable primitives and structural worker-triage
+recognition. The plan measures byte-clean failure and replay before CLI wiring, keeps
+the one-command Feedback Cycles projection through a narrow splice, and stops for a
+scope ruling rather than exceeding 500 production LOC or weakening AC-3.
