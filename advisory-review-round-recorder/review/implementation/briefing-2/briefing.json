@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:fr:implementation:attempt-2:revision-1",
+  "question": "Should the shared advisory-round checkpoint receive one bounded correction pass under revised 540/600-LOC hard stops?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:442a5185b4b45d8a39a7f7782f7a7784446f31587afec2d3241d5d8e58220881"
+    },
+    {
+      "id": "artifact:shared-composition-audit",
+      "uri": "shared-composition-audit.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:deacd24e18b248b35a22412e6b2b6f5e8d02f78439bcedc4e8b28b86608ba757"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:29a92ab6c5d99037e1ce30642c721e3f8b10ec0c718ce0af37bc5216daa1e89b"
+    },
+    {
+      "id": "artifact:gate-round-contract",
+      "uri": "../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:cd94c479c36752d9d895df0451cee7d144465176ca84a4e8c85150bd9004bafc"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:implementation-correction",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Proceed to validation",
+          "to": "stage:validation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Correct within implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for another reset",
+          "to": "gate:implementation"
+        }
+      ]
+    }
+  ]
+}

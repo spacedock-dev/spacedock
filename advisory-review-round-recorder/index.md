@@ -13,7 +13,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:fr:ideation
+        gate: gate:docs-dev:fr:implementation
     records:
         - id: gate:docs-dev:fr:ideation
           stage: ideation
@@ -79,7 +79,13 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:fr-implementation-2
+              briefing:
+                id: briefing:docs-dev:fr:implementation:attempt-2:revision-1
+                digest: sha256:5f48beeef18ebc98d03313da868aa6ea0da4b6236176cb4adc18dea36fa59b45
+                digest-domain: canonical-bytes
+                room-ref: ./review/implementation/briefing-2
 ---
 
 Provide one owned write surface for correction-round Briefings, reviewer Annotations and advisory Resolution, and the worker's triage Resolution, without selecting a gate or advancing workflow state.
