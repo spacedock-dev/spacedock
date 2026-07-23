@@ -334,3 +334,30 @@ The present-gate skill now owns an overridable rendering channel: chat remains t
 ### Summary
 
 Fresh detached validation passed the four-file Spacedock deliverable and five claim-breaking controls. The provider transport remains deliberately outside this repository: its pinned script and 12-fixture CI suite are an unmet cross-repo release condition, not local test evidence.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Run and pin the provider-owned retained-delivery drive suite at sibling Subspace revision 198f76238aeb74ff38900e17b751f0460d0c55ee, mapping results explicitly to previously skipped AC-1, AC-2, AC-3, and AC-5.
+  `scripts/tests/subspace-r-provider-retained-delivery-test.sh` passed at exact `198f7623`; its approve/revise/hold/open, blank/EOF, crash, invalid-result, retention-write, launcher-death, alive-child, missing/mismatched-presenter, complete-package, and title rows fail on deletion, early delivery, relaunch, or inventory drift.
+- DONE: Replay the complete canonical Briefing, Result, and presented-inventory association at Spacedock candidate 612b72fc; distinguish provider defects from the current Codex/Safehouse Zellij transport limitation and make no sibling-repository edits.
+  Subspace's frozen Result `sha256:46096103...` and association `sha256:95ca15ab...` are byte-identical to Spacedock fixtures; recursive inventory checks and the exact recorder test passed, while the primary-only map failed without mutation. No provider defect appeared; no headed captain float is claimed because this Codex turn does not expose the agreed `/subspace:r gate <gate-room>` surface, and the private 4p vector is not a substitute.
+- DONE: Reissue a fresh exact-tip PASSED or REJECTED recommendation for all six ACs, preserving the zero-Subspace binary boundary and treating the verbose internal 4p vector as implementation plumbing rather than xb's agent-facing interface.
+  **PASSED** at Spacedock `612b72fc` with provider `198f7623`: all six ACs have executable or retained-state evidence, zero material findings remain, and `/subspace:r <file.md>` plus `/subspace:r gate <gate-room>` remains the public shape.
+- DONE: AC-1 (VALUE) — No presented decision is lost on any exit path.
+  The provider matrix retained complete bundles for approve, revise, hold, and open; blank/EOF, crash, validation failure, retention failure, and launcher death retained every produced result/log/inventory/diagnostic byte, so removing any case artifact fails the suite.
+- DONE: AC-2 — Retention survives every failure class, including launcher/controller death.
+  Child exit `42` and launcher exit `43` propagated once; launcher-death kept the non-empty Result, log, inventory, argv/stderr diagnostics, and death marker, while retention-write failure kept the Result plus its error.
+- DONE: AC-3 — Pane/session creation and wait-timeout are never completion.
+  The alive-child fixture published a pane marker and Result while holding the exact child alive; entry return, validation, child-exit publication, and delivery stayed absent until release, then occurred exactly once.
+- DONE: AC-4 — The recorded result is keyed to the attempt briefing id, only after digest validation (recorder-homed, proposed).
+  The exact Spacedock recorder replay normalized the provider envelope only through the complete digest/revision-bound association; missing/changed nested Reference and canonical id/revision mutations all failed closed.
+- DONE: AC-5 — The override channel validates the briefing and derives the title before any launch; an absent or version-mismatched presenter falls back to chat with zero side effects.
+  The complete provider row derived `Subspace — Ship the complete package?` and ordered 2 Artifacts plus 2 recursively reached References; missing/mismatched presenter rows returned `127`/`2` before host preflight or launch, leaving chat selection to the probe-first Spacedock channel contract.
+- DONE: AC-6 (VALUE) — Presentation adds zero Subspace coupling to the spacedock binary, and no channel mutates entity frontmatter.
+  `go list -deps ./cmd/spacedock` found zero Subspace dependencies; the absent `gate review` command and recorder rejection controls changed no working directory or entity bytes.
+- DONE: Run the required repository verification at the exact Spacedock tip.
+  PASS: focused cross-repo tests, `go test ./...`, `go test ./... -race`, `uv run --with-requirements docs/requirements.txt mkdocs build --strict`, `gofmt -w ./cmd ./internal` with no diff, `git diff --check`, and clean code worktree.
+
+### Summary
+
+The previously skipped provider-owned evidence is now pinned and reproduced, and the exact provider Result/inventory/association crosses into Spacedock unchanged and fails closed under independent mutations. Validation recommends **PASSED** for all six ACs at the exact tips; the provider's verbose deterministic vector remains private plumbing, not a new public Spacedock or agent-facing interface.
