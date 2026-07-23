@@ -207,3 +207,10 @@ This is the entire first-officer/skill fold in this task. The missing general pr
 ### Summary
 
 Ideation now defines an advisory-round extension to 3k: one existing-recorder mode retains ordinary Review & Gate Briefing/log bytes in a derived room, publishes a minimal current pointer and Feedback Cycles line, and reuses 3k's digest, identity, lock, CAS, validation, and atomic entity writer. The two existing triage triggers gain only the new round call; the missing general first-officer integration for 3k's four gate commands remains a separately owned dependency. The 3j fixture makes the value and refusal boundaries executable: jobs 592/594 plus the worker decline persist at unchanged candidate `90aea55`, while a bad snapshot digest and every divergent replay leave the entire fixture byte-clean.
+
+## Intended implementation change
+
+- Production (estimated 300 LOC): `internal/gates/operation.go`, `internal/gates/io.go`, `internal/gates/model.go`, and `internal/cli/cli.go`.
+- Tests and fixtures (estimated 455 LOC): `internal/gates/round_test.go`, `internal/cli/gate_test.go`, `internal/contractlint/launcher_invariant_test.go`, and `internal/gates/testdata/advisory-round/{briefing.json,briefing.review.jsonl,candidate.patch}`.
+- Public contract and caller documentation (estimated 78 prose/schema lines): `docs/specs/gate-resolution-frontmatter-contract.md`, `docs/schema/entity.mdschema.yml`, `docs/site/reference/command-reference.md`, `docs/site/reference/frontmatter-contract.md`, `docs/dev/README.md`, and `skills/feedback-rejection-flow/SKILL.md`.
+- Tolerance remains the approved 2×: no more than 600 declared production LOC (and never more than the binding 680-LOC stop), 910 test/fixture LOC, or 156 prose/schema lines. Any additional writer, package, schema, arbitrary room path, journal/lease/retry protocol, provider launch/polling, or gate/application/status mutation requires a stop and design reset.
