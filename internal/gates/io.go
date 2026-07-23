@@ -434,7 +434,11 @@ func spliceFeedbackCycle(data []byte, line string, cycle int, project bool) ([]b
 		}
 		return append(data, []byte(sep+"### Feedback Cycles\n\n"+line+"\n")...), nil
 	}
-	add := []byte(line + "\n\n")
+	sep := ""
+	if insert > 0 && data[insert-1] != '\n' {
+		sep = "\n"
+	}
+	add := []byte(sep + line + "\n\n")
 	return append(append(append([]byte{}, data[:insert]...), add...), data[insert:]...), nil
 }
 

@@ -207,6 +207,22 @@ func TestRoundNoFindingsAndPreflightRefusals(t *testing.T) {
 		}
 	})
 
+	t.Run("self-referential mutable entity artifact", func(t *testing.T) {
+		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
+		body := bytes.Replace(mustReadBytes(t, briefing), []byte("../../../candidate.patch"), []byte("../../../index.md"), 1)
+		body = bytes.Replace(body, []byte("sha256:8e85d4c9523a617e05b17c92390b10b2f9892152ca348433311230ac3ad98dd3"), []byte(RawDigest(mustReadBytes(t, entity))), 1)
+		if err := os.WriteFile(briefing, body, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		before := treeDigest(t, root)
+		if err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}); err == nil {
+			t.Fatal("self-referential mutable entity artifact recorded")
+		}
+		if got := treeDigest(t, root); got != before {
+			t.Fatal("self-referential artifact refusal changed fixture bytes")
+		}
+	})
+
 	t.Run("occupied target", func(t *testing.T) {
 		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
 		room := filepath.Join(root, "review", "implementation", "round-1")
@@ -392,7 +408,7 @@ func TestRoundWorkerTriageRequiresFixedActorAndBackwardGraph(t *testing.T) {
 		t.Fatalf("authorized worker graph = class=%q err=%v", class, err)
 	}
 	for _, broken := range []string{
-		strings.Replace(worker, `"includes":["f1"]`, `"includes":[]`, 1),
+		strings.Replace(worker, `"by":"actor:ensign","at":"2026-07-20T01:02:00Z","includes":["f1"]`, `"by":"actor:ensign","at":"2026-07-20T01:02:00Z","includes":[]`, 1),
 		strings.Replace(worker, `"by":"actor:ensign"`, `"by":"software:roborev-2"`, 1),
 	} {
 		log, err := parseReviewLog([]byte(broken), briefingID)
@@ -421,6 +437,14 @@ func TestRoundWorkerTriageRequiresFixedActorAndBackwardGraph(t *testing.T) {
 	log, err = parseReviewLog(mixedRoundLog(full), "briefing:3j:implementation:round-1")
 	if class, classifyErr := classifyCompletedRound(log); err != nil || classifyErr != nil || class != "mixed" {
 		t.Fatalf("mixed triage class=%q parse=%v classify=%v", class, err, classifyErr)
+	}
+	contradictory := bytes.Replace(mixedRoundLog(full), []byte(`"includes":["annotation:job-594"]`), []byte(`"includes":["annotation:job-592"]`), 1)
+	log, err = parseReviewLog(contradictory, "briefing:3j:implementation:round-1")
+	if err == nil {
+		_, err = classifyCompletedRound(log)
+	}
+	if err == nil {
+		t.Fatal("one reviewer finding received contradictory fixed and declined dispositions")
 	}
 }
 
@@ -486,6 +510,16 @@ func TestFeedbackCycleSpliceIsSectionScoped(t *testing.T) {
 	projected := bytes.LastIndex(out, []byte(line))
 	if projected < feedback || projected > next {
 		t.Fatalf("projection is outside Feedback Cycles section:\n%s", out)
+	}
+
+	eof := []byte("---\nstatus: implementation\n---\n# Entity\n\n### Feedback Cycles")
+	out, err = spliceFeedbackCycle(eof, line, 1, true)
+	if err != nil || !bytes.Contains(out, []byte("### Feedback Cycles\n"+line)) {
+		t.Fatalf("EOF projection corrupted heading: err=%v\n%s", err, out)
+	}
+	replayed, err := spliceFeedbackCycle(out, line, 1, true)
+	if err != nil || !bytes.Equal(replayed, out) {
+		t.Fatalf("EOF projection exact replay changed bytes: err=%v\n%s", err, replayed)
 	}
 }
 

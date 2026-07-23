@@ -223,6 +223,9 @@ func verifyRoundArtifacts(entityDir, room string, manifest *briefingManifest) er
 		if err != nil || relErr != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 			return fmt.Errorf("artifact %s escapes or cannot resolve within entity", artifact.ID)
 		}
+		if realPath == filepath.Join(realRoot, "index.md") {
+			return fmt.Errorf("artifact %s resolves to the mutable entity file", artifact.ID)
+		}
 		body, err := os.ReadFile(realPath)
 		if err != nil || RawDigest(body) != artifact.Rev {
 			return fmt.Errorf("artifact %s raw digest does not match Briefing revision", artifact.ID)

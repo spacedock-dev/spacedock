@@ -131,7 +131,7 @@ func classifyCompletedRound(log reviewLog) (string, error) {
 			}
 			dispositions[entry.ID] = true
 			for _, finding := range entry.Includes {
-				if !findings[finding] {
+				if !findings[finding] || covered[finding] {
 					return "", fmt.Errorf("worker disposition does not include a reviewer finding")
 				}
 				covered[finding] = true

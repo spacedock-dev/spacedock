@@ -373,7 +373,11 @@ func TestPortableResolutionValidation(t *testing.T) {
 func TestProviderResolutionIncludesRequireSameBriefingAnnotation(t *testing.T) {
 	result := providerResult{Briefing: "briefing:provider"}
 	result.Resolution = Resolution{Type: "Resolution", ID: "resolution:r", Briefing: result.Briefing, By: "person:reviewer", At: "now", Decision: "hold", Includes: []string{"annotation:a"}}
-	result.Annotations = append(result.Annotations, Annotation{Type: "Annotation", ID: "annotation:a", Briefing: "briefing:other", By: "person:reviewer", At: "2026-07-20T01:00:00Z"})
+	result.Annotations = append(result.Annotations, Annotation{Type: "Annotation", ID: "annotation:a", Briefing: result.Briefing})
+	if err := verifyProviderResolution(&result); err != nil {
+		t.Fatalf("compatible provider Annotation without by/at = %v", err)
+	}
+	result.Annotations[0].Briefing = "briefing:other"
 	if err := verifyProviderResolution(&result); err == nil || !strings.Contains(err.Error(), "same Briefing") {
 		t.Fatalf("cross-Briefing include = %v, want refusal", err)
 	}

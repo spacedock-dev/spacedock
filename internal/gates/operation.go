@@ -485,19 +485,15 @@ func verifyProviderResolution(result *providerResult) error {
 	if result.Resolution.Briefing != result.Briefing {
 		return fmt.Errorf("provider Resolution does not bind its provider Briefing")
 	}
-	prior := map[string]reviewEntry{}
-	for i := range result.Annotations {
-		annotation := &result.Annotations[i]
-		if _, duplicate := prior[annotation.ID]; duplicate {
+	annotations := map[string]string{}
+	for _, annotation := range result.Annotations {
+		if annotation.Type != "Annotation" || annotation.ID == "" || annotations[annotation.ID] != "" {
 			return fmt.Errorf("provider annotations have missing or duplicate identity")
 		}
-		if err := validateAnnotation(*annotation, result.Briefing, prior); err != nil {
-			return err
-		}
-		prior[annotation.ID] = reviewEntry{Annotation: *annotation}
+		annotations[annotation.ID] = annotation.Briefing
 	}
 	for _, included := range result.Resolution.Includes {
-		if entry, ok := prior[included]; !ok || entry.Resolution != nil {
+		if annotations[included] != result.Briefing {
 			return fmt.Errorf("Resolution includes must name a provider Annotation from the same Briefing")
 		}
 	}
