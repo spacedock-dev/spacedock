@@ -396,6 +396,7 @@ Boot identify JSON now exposes active, non-terminal ready gates as fixed `id`/`s
 ### Feedback Cycles
 
 - Cycle 1: REVISE — Captain live-workflow counterexample; surface 5 current-validation rows vs 3 durably complete unresolved gates (167%); AC narrowed: readiness requires a prepared current-stage gate attempt after completion verification, not merely `gate: true` stage membership
+- Cycle 2: REVISE — Roborev branch_final job 755; surface 11 files/618 changed LOC vs estimate 8-11 files, 100-180 production Go LOC, 250-450 test LOC, and 10-20 docs lines (100% of max files before the authorized golden-only expansion); AC unchanged
 
 ## Stage Report: ideation (cycle 2)
 
