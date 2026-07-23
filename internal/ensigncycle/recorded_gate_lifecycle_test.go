@@ -85,12 +85,12 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		{"resolution identity", "id: resolution:spacedock:docs-dev:3k:validation:1", 1},
 		{"approval decision", "decision: approve", 1},
 		{"approval actor", "by: agent:first-officer", 1},
-		{"approval reason", recordedGateReason, 1},
+		{"approval reason", "\n                reason:", 1},
 		{"delegated directive", recordedGateDirective, 1},
 		{"application target", "target-stage: " + o.expectedNext, 1},
 		{"consumed application", "state: consumed", 1},
 	} {
-		if got := strings.Count(o.after, exact.value); got != exact.count {
+		if got := strings.Count(o.after, exact.value); got != exact.count || (exact.label == "approval reason" && strings.Trim(strings.TrimSpace(strings.SplitN(strings.SplitN(o.after, exact.value, 2)[1], "\n", 2)[0]), `"'`) == "") {
 			return fmt.Errorf("durable post-state %s count = %d, want %d for %q", exact.label, got, exact.count, exact.value)
 		}
 	}
@@ -692,7 +692,7 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 		after: "status: handoff\ngate: gate:docs-dev:3k:validation\nid: gate-attempt:3k-validation-1\n" +
 			"id: " + recordedGateBriefingID + "\ndigest: " + recordedGateDigest + "\n" +
 			"id: resolution:spacedock:docs-dev:3k:validation:1\nbriefing: " + recordedGateBriefingID + "\n" +
-			"by: agent:first-officer\ndecision: approve\nreason: " + recordedGateReason + "\n" +
+			"by: agent:first-officer\ndecision: approve\n                reason: " + recordedGateReason + "\n" +
 			"adoption-note: '" + recordedGateDirective + "'\ntarget-stage: handoff\nstate: consumed",
 		dispatch:     recordedGateDispatchProof{spawned: true, handle: "worker-1", workerOutput: true},
 		gateReview:   recordedGateReview(),
@@ -921,8 +921,16 @@ func recordedGateEventsFromClaudeStream(stream string) []string {
 	}
 	var log strings.Builder
 	for _, command := range successful {
-		if at := strings.Index(command, "gate "); at >= 0 {
-			fmt.Fprintf(&log, "exit=0\t%s\n", command[at:])
+		command = strings.ReplaceAll(command, "\\\n", " ")
+		safe := strings.Count(command, " gate ") <= 1 || strings.Contains(command, "&&")
+		command = strings.ReplaceAll(command, "&&", "\n")
+		if at := strings.Index(command, "gate "); at >= 0 && safe {
+			for _, line := range strings.Split(command[at:], "\n") {
+				if at := strings.Index(line, "gate "); at >= 0 {
+					line = line[at:]
+				}
+				fmt.Fprintf(&log, "exit=0\t%s\n", line)
+			}
 		}
 	}
 	return recordedGateEventsFromCommandLog(log.String())
@@ -930,6 +938,7 @@ func recordedGateEventsFromClaudeStream(stream string) []string {
 
 func assertRecordedGateRuntimeLoadOrder(host, trace string) error {
 	load, action := -1, -1
+	piLoadResult := ""
 	for i, line := range strings.Split(trace, "\n") {
 		if !json.Valid([]byte(line)) {
 			continue
@@ -941,12 +950,15 @@ func assertRecordedGateRuntimeLoadOrder(host, trace string) error {
 		case "codex":
 			skill = skill && (strings.Contains(line, `"tool":"skill"`) || strings.Contains(line, `"type":"skill_call"`))
 		case "pi":
-			skill = skill && strings.Contains(strings.ToLower(line), `"name":"skill"`)
+			if skill && strings.Contains(line, `"name":"read"`) && strings.Contains(line, `"id":"`) {
+				piLoadResult = `"toolCallId":"` + strings.SplitN(strings.SplitN(line, `"id":"`, 2)[1], `"`, 2)[0] + `"`
+			}
+			skill = piLoadResult != "" && strings.Contains(line, piLoadResult) && strings.Contains(line, `"toolName":"read"`) && strings.Contains(line, `"isError":false`)
 		}
 		if skill && load < 0 {
 			load = i
 		}
-		command := strings.Contains(line, "spacedock gate ")
+		command := strings.Contains(line, " gate ")
 		switch host {
 		case "claude":
 			command = command && strings.Contains(line, `"name":"Bash"`)
@@ -980,7 +992,7 @@ func TestRecordedGateLifecycleRuntimeLoadOrderMatrix(t *testing.T) {
 	loads := map[string]string{
 		"claude": `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"spacedock:fo-gate-lifecycle"}}]}}`,
 		"codex":  `{"type":"item.completed","item":{"type":"skill_call","tool":"skill","name":"spacedock:fo-gate-lifecycle"}}`,
-		"pi":     `{"type":"message","message":{"content":[{"type":"toolCall","name":"skill","arguments":{"skill":"spacedock:fo-gate-lifecycle"}}]}}`,
+		"pi":     "{\"type\":\"message\",\"message\":{\"content\":[{\"type\":\"toolCall\",\"id\":\"load\",\"name\":\"read\",\"arguments\":{\"path\":\"/plugin/skills/fo-gate-lifecycle/SKILL.md\"}}]}}\n{\"type\":\"message\",\"message\":{\"toolCallId\":\"load\",\"toolName\":\"read\",\"isError\":false}}",
 	}
 	actions := map[string]string{
 		"claude": `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"spacedock gate --help"}}]}}`,
@@ -989,16 +1001,15 @@ func TestRecordedGateLifecycleRuntimeLoadOrderMatrix(t *testing.T) {
 	}
 	routes := []string{"headless-no-conn", "headless-conn", "engage", "worker-completion", "resume-open", "resume-pending", "resume-revise", "resume-hold", "resume-stale", "resume-consumed"}
 	for host, load := range loads {
-		action := actions[host]
 		for _, route := range routes {
 			t.Run(host+"/"+route, func(t *testing.T) {
-				if err := assertRecordedGateRuntimeLoadOrder(host, load+"\n"+action); err != nil {
+				if err := assertRecordedGateRuntimeLoadOrder(host, load+"\n"+actions[host]); err != nil {
 					t.Fatal(err)
 				}
 			})
 		}
-		if assertRecordedGateRuntimeLoadOrder(host, action) == nil ||
-			assertRecordedGateRuntimeLoadOrder(host, action+"\n"+load) == nil {
+		if assertRecordedGateRuntimeLoadOrder(host, actions[host]) == nil || assertRecordedGateRuntimeLoadOrder(host, actions[host]+"\n"+load) == nil ||
+			(host == "pi" && assertRecordedGateRuntimeLoadOrder(host, strings.Replace(load, `"isError":false`, `"isError":true`, 1)+"\n"+actions[host]) == nil) {
 			t.Fatalf("%s runtime route deletion/order controls stayed green", host)
 		}
 	}
@@ -1072,7 +1083,7 @@ func recordedGateClaudeDispatchProof(stream, after string) recordedGateDispatchP
 					uses[block.ID] = toolUse{name: block.Name, handle: block.Input.Name}
 				}
 			}
-			if block.Type != "tool_result" || block.ToolUseID == "" || block.IsError == nil || *block.IsError {
+			if block.Type != "tool_result" || block.ToolUseID == "" || (block.IsError == nil && !strings.Contains(line, `"tool_use_result":{"status":"completed"`)) || (block.IsError != nil && *block.IsError) {
 				continue
 			}
 			use := uses[block.ToolUseID]
@@ -1209,19 +1220,17 @@ func recordedGatePiObservation(session, after string) (recordedGateDispatchProof
 
 func TestRecordedGateLifecycleStructuredRuntimeEvidence(t *testing.T) {
 	claude := strings.Join([]string{
-		bashToolLine("help", "spacedock gate validate --help"),
+		bashToolLine("help", "spacedock gate validate --help\nspacedock gate record unsafe --briefing /tmp/unsafe.json"),
 		toolResultLine("help", false, "usage"),
 		bashToolLine("failed", "spacedock gate record recorded-gate-task --briefing /tmp/briefing.json"),
 		toolResultLine("failed", true, "exit 1"),
-		bashToolLine("bind", "spacedock gate record recorded-gate-task --briefing /tmp/briefing.json"),
+		bashToolLine("bind", "spacedock gate record recorded-gate-task --briefing /tmp/briefing.json && ${SPACEDOCK_BIN:-spacedock} gate validate recorded-gate-task"),
 		toolResultLine("bind", false, "state=open"),
-		bashToolLine("open", "spacedock gate validate recorded-gate-task"), toolResultLine("open", false, "state=open"),
-		bashToolLine("close", "spacedock gate record recorded-gate-task --decision approve"), toolResultLine("close", false, "state=closed"),
-		bashToolLine("closed", "spacedock gate validate recorded-gate-task"), toolResultLine("closed", false, "state=closed"),
+		bashToolLine("close", "spacedock gate record recorded-gate-task \\\n --decision approve && \\\n${SPACEDOCK_BIN:-spacedock} gate validate recorded-gate-task"), toolResultLine("close", false, "state=closed"),
 		bashToolLine("eligible", "spacedock gate eligibility recorded-gate-task"), toolResultLine("eligible", false, "eligible=true"),
 		bashToolLine("consume", "spacedock gate consume recorded-gate-task"), toolResultLine("consume", false, "consumed=true"),
 		`{"type":"assistant","message":{"content":[{"type":"text","text":"Gate review: Capability; Evidence; Reviewed snapshot; Findings; Recommend; Decision"},{"type":"tool_use","id":"spawn","name":"Agent","input":{"name":"worker-1","prompt":"handoff recorded-gate-task"}}]}}`,
-		toolResultLine("spawn", false, "agentId: a123abc\n"+recordedGateDispatchMarker),
+		`{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"spawn","content":[{"type":"text","text":"agentId: a123abc\n` + recordedGateDispatchMarker + `"}]}]},"tool_use_result":{"status":"completed"}}`,
 	}, "\n")
 	if got := recordedGateEventsFromClaudeStream(claude); strings.Join(got, ",") != strings.Join(recordedGateRequiredEvents, ",") {
 		t.Fatalf("successful Claude event trace = %v", got)
@@ -1233,7 +1242,6 @@ func TestRecordedGateLifecycleStructuredRuntimeEvidence(t *testing.T) {
 	if review := recordedGateReviewFromClaudeStream(claude); !strings.Contains(review, "Reviewed snapshot") {
 		t.Fatalf("Claude presented review = %q", review)
 	}
-
 	codex := strings.Join([]string{
 		`{"type":"item.completed","item":{"type":"command_execution","command":"spacedock gate consume recorded-gate-task","exit_code":0,"status":"completed"}}`,
 		`{"type":"item.completed","item":{"type":"collab_tool_call","tool":"spawn_agent","receiver_thread_ids":["thread-1"],"prompt":"handoff recorded-gate-task"}}`,

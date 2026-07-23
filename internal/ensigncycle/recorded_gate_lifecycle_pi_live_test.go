@@ -18,7 +18,7 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 	piBin := piBinaryOrSkip(t)
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
-	binary := piSpacedockBinary(t, repo)
+	binary := buildRecordedGateBinary(t)
 	fixture := writeRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
 
@@ -46,7 +46,7 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 		"--extension", extension,
 		"--skill", filepath.Join(piSubagentsRoot, "skills", "pi-subagents"),
 		"--skill", filepath.Join(repo, "skills", "first-officer"),
-		"--skill", filepath.Join(repo, "skills", "fo-gate-lifecycle"),
+		"--skill", filepath.Join(repo, "skills", "fo-gate-lifecycle"), "--provider", envOr("SPACEDOCK_PI_LIVE_PROVIDER", "openai-codex"), "--model", envOr("SPACEDOCK_PI_LIVE_MODEL", "gpt-5.3-codex"),
 		"--skill", filepath.Join(repo, "skills", "ensign"),
 		recordedGatePrompt(fixture.root),
 	)
