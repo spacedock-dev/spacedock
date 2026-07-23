@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:8n:ideation:attempt-1:revision-1",
+  "question": "Should durable selected-attempt readiness replace the stage-only boot projection?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1c109787ec499d485b14acaf391a27ba37af07bc1ba49de3e23ca74d6dcb1e05"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5731321884cc4882bc1b752734fc95fa8c116eda8afe5adcc9ad22ddce537fe0"
+    },
+    {
+      "id": "artifact:fo-gate-lifecycle",
+      "uri": "../../../../first-officer-gate-command-lifecycle/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:24c76d50017c85991ed1d96668e321b55f384fbf1c54ae49368fc8ae0a5f0f4b"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:cd94c479c36752d9d895df0451cee7d144465176ca84a4e8c85150bd9004bafc"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:durable-readiness",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Implement durable readiness",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the projection",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold the projection",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}

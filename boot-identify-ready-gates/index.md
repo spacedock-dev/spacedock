@@ -1,6 +1,6 @@
 ---
 title: Expose ready-gate entities in boot identify JSON
-status: ideation
+status: implementation
 score: 0.9
 source: PR #493 local-live m3 investigation on 2026-07-10. The default Claude greeting omitted the already-gated Gate Check entity because status --boot --identify --json returned only dispatchable entities; dispatchAnalysis intentionally suppresses current gate stages, so the authoritative boot record made the shipped greet requirement impossible to satisfy.
 id: 8n55etrw9wj10jfejdq5f1s8
@@ -8,7 +8,7 @@ worktree: .worktrees/spacedock-ensign-boot-identify-ready-gates
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:8n:validation
+        gate: gate:docs-dev:8n:ideation
     records:
         - id: gate:docs-dev:8n:validation
           stage: validation
@@ -32,6 +32,29 @@ gates:
                 action: feedback
                 target-stage: implementation
                 state: pending
+        - id: gate:docs-dev:8n:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:8n-ideation-1
+              briefing:
+                id: briefing:docs-dev:8n:ideation:attempt-1:revision-1
+                digest: sha256:a683c42e8662b7b400b826fa6de85f6a6a1fa7eacaf16fbc3d38971f7648a6c0
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:8n:ideation:1
+                briefing: briefing:docs-dev:8n:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T08:48:57.211228Z"
+                decision: approve
+                reason: The cycle-3 report is 3 DONE, 0 SKIPPED, 0 FAILED with AC-1 through AC-6 evidenced; the four-field projection distinguishes the Captain's 3-of-5 live counterexample without duplicating gate records or importing unrelated branch history.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
+              application:
+                action: advance
+                target-stage: implementation
+                state: consumed
+                blockers: []
 sprint: durable-decisions
 ---
 
