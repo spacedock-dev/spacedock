@@ -1,7 +1,7 @@
 ---
 id: frze3yqm9da0vp0r53qqdc8t
 title: Extend 3k's recorder to persist advisory review rounds
-status: ideation
+status: implementation
 source: "02av deferred round-recorder plumbing and 3j jobs 592/594/597 incident, 2026-07-23"
 started: 2026-07-23T00:55:59Z
 completed:
@@ -13,7 +13,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:fr:implementation
+        gate: gate:docs-dev:fr:ideation
     records:
         - id: gate:docs-dev:fr:ideation
           stage: ideation
@@ -53,6 +53,26 @@ gates:
                 decision: approve
                 reason: Cycle-2 ideation replaces duplicate paths with explicit shared 3k primitives, mandatory entity and room CAS expectations, fixed worker authority, exact projection semantics, risk-first failure tests, and hard 365/500-LOC stops without changing ACs.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: consumed
+                blockers: []
+            - id: gate-attempt:fr-ideation-3
+              briefing:
+                id: briefing:docs-dev:fr:ideation:attempt-3:revision-1
+                digest: sha256:7fc1a7945767d8b332c8550002d4e206aefa831af4746baa3c5b362ab69174b4
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fr:ideation:3
+                briefing: briefing:docs-dev:fr:ideation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T08:16:15.40211Z"
+                decision: approve
+                reason: The cycle-3 report is 2 DONE, 0 SKIPPED, 0 FAILED; AC-1 through AC-5 have durable evidence, and the independent boundary audit shows one-shot publication preserves the value while removing the disproportionate mutable-prefix mechanism.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
               application:
                 action: advance
                 target-stage: implementation
