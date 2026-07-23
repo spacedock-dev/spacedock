@@ -1,0 +1,47 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6g:ideation:attempt-1:revision-1",
+  "question": "Should the bounded Codex wait_agent steering design enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:acaa5367cb07a2aad4063919093b24d6d3f8c0a8abca6912fdfcb7ed887f3a69"
+    },
+    {
+      "id": "artifact:design-snapshot",
+      "uri": "design-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:34d01e303e88eb3feaf4f594032ecd30d3751932da22aabfdec8e0f963924f5d"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Enter bounded implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}

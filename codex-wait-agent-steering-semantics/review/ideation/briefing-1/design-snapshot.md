@@ -9,20 +9,6 @@ score: 0.9
 worktree: ""
 issue:
 id: 6gkz4z2qweheyj17ck5tythn
-gates:
-    version: 1
-    current:
-        gate: gate:docs-dev:6g:ideation
-    records:
-        - id: gate:docs-dev:6g:ideation
-          stage: ideation
-          attempts:
-            - id: gate-attempt:6g-ideation-1
-              briefing:
-                id: briefing:docs-dev:6g:ideation:attempt-1:revision-1
-                digest: sha256:a91e6243eab3b12d756db99283f05e7d74aa48f037bc418dc0327060536fc768
-                digest-domain: canonical-bytes
-                room-ref: ./review/ideation/briefing-1
 ---
 
 ## Problem
