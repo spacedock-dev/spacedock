@@ -69,6 +69,28 @@ func TestRoundRecordCompleteReplayAndRefusalsAreByteClean(t *testing.T) {
 		t.Fatalf("resolution count = %d, want reviewer and worker", resolutions)
 	}
 	entityBytes := mustReadBytes(t, entity)
+	wantEntity := mustReadBytes(t, filepath.Join("testdata", "advisory-round", "recorded-entity.md"))
+	assertExactEntity := func(got []byte) error {
+		if !bytes.Equal(got, wantEntity) {
+			return errors.New("complete entity differs outside the authorized review-round pointer and Feedback Cycles insertion")
+		}
+		return nil
+	}
+	if err := assertExactEntity(entityBytes); err != nil {
+		t.Fatalf("%v\nentity after:\n%s", err, entityBytes)
+	}
+	for _, mutation := range []struct{ old, new string }{
+		{"custom: preserve-me", "custom: corrupted"},
+		{"Unrelated body bytes stay fixed.", "Unrelated body bytes were corrupted."},
+	} {
+		corrupt := bytes.Replace(entityBytes, []byte(mutation.old), []byte(mutation.new), 1)
+		if bytes.Equal(corrupt, entityBytes) {
+			t.Fatalf("negative-control span %q was absent", mutation.old)
+		}
+		if err := assertExactEntity(corrupt); err == nil {
+			t.Fatalf("unrelated corruption %q escaped the complete-entity oracle", mutation.old)
+		}
+	}
 	if got := bytes.Count(entityBytes, []byte("- Cycle 1:")); got != 1 {
 		t.Fatalf("Feedback Cycles projection count = %d, want one", got)
 	}

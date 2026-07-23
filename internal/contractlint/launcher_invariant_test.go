@@ -350,17 +350,3 @@ func TestDeferredSkillLauncherScopeDiscriminates(t *testing.T) {
 		}
 	}
 }
-
-func TestRoundCallersUseResolvedLauncherAfterCompleteTriage(t *testing.T) {
-	for _, rel := range []string{"docs/dev/README.md", "skills/feedback-rejection-flow/SKILL.md"} {
-		body, err := os.ReadFile(filepath.Join(repoRoot(t), filepath.FromSlash(rel)))
-		if err != nil {
-			t.Fatal(err)
-		}
-		text := string(body)
-		if !strings.Contains(text, "After the reviewer and worker entries are complete") ||
-			!strings.Contains(text, "`${SPACEDOCK_BIN:-spacedock} gate record") || !strings.Contains(text, "--round") {
-			t.Errorf("%s does not invoke round recording after complete reviewer/worker triage", rel)
-		}
-	}
-}

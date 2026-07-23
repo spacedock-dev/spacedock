@@ -237,6 +237,9 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	if err := assertRejectionFlow(after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
+	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation", claudeRecordedRejectionRound(result.stream)); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
 	// Single-entity (`-p`) reviewer producer-signal. The Claude runner launches
 	// `spacedock claude -- -p {prompt}` with a prompt naming one entity, so the run
 	// is single-entity → bare; the contract's bare-mode feedback flow is sequential
