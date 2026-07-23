@@ -143,6 +143,29 @@ func TestSurveyIsDiscoverableUserCommand(t *testing.T) {
 	}
 }
 
+func TestFOGateLifecycleIsDeferredAndAdapterless(t *testing.T) {
+	dir := filepath.Join(skillsRoot(t), "fo-gate-lifecycle")
+	data, err := os.ReadFile(filepath.Join(dir, "SKILL.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm, ok := frontmatter(string(data))
+	if !ok || frontmatterField(fm, "name") != "fo-gate-lifecycle" ||
+		frontmatterField(fm, "user-invocable") != "false" {
+		t.Fatalf("fo-gate-lifecycle must be named and non-user-invocable: %q", fm)
+	}
+	if _, found := discoverUserInvocableSkills(t)["fo-gate-lifecycle"]; found {
+		t.Fatal("fo-gate-lifecycle leaked into user command discovery")
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Name() != "SKILL.md" {
+		t.Fatalf("fo-gate-lifecycle must remain adapter-less, entries=%v", entries)
+	}
+}
+
 func sortedUniqueKeys(m map[string]string) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {

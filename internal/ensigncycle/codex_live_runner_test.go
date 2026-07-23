@@ -90,13 +90,16 @@ func runCodexRecordedGateLifecycleScenario(t *testing.T, runner codexLiveRunner,
 	fixture := writeRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
-	shimDir := writeRecordedGateLoggingShim(t, spacedockBinary(t), commandLog)
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
 	result, err := runner.withStubPATH(shimDir).run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	after := resolveRecordedGateEntity(fixture)
 	events := recordedGateEventsFromCommandLog(readFile(t, commandLog))
+	if err := assertRecordedGateRuntimeLoadOrder("codex", result.jsonl); err != nil {
+		t.Fatalf("recorded gate lifecycle load order graded FAIL: %v\nArtifacts: %s", err, result.artifactDir)
+	}
 	if err := assertRecordedGateLifecycle(recordedGateObservation{
 		events: events, before: before, after: after,
 		dispatch:   recordedGateCodexDispatchProof(result.jsonl, after),

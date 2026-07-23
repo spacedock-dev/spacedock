@@ -46,6 +46,9 @@ var foReferenceCores = map[string][]string{
 // anchor is both watched + owner-resolved (sectionOwners) and stat-checked (the skill-anchor
 // test) from one place.
 var deferredSkillCores = map[string][]string{
+	filepath.Join("skills", "fo-gate-lifecycle", "SKILL.md"): {
+		"# First Officer Gate Lifecycle", "## «gate.lifecycle»",
+	},
 	filepath.Join("skills", "fo-status-viewer", "SKILL.md"): {
 		"## Status Viewer", "### Captain-Facing State Display", "## Issue Filing",
 	},
@@ -93,6 +96,7 @@ var bodyModRe = regexp.MustCompile(`_mods/([a-z0-9][a-z0-9_.-]*\.md)`)
 var lazyLoadSkills = map[string]bool{
 	"present-gate":            true,
 	"feedback-rejection-flow": true,
+	"fo-gate-lifecycle":       true,
 	"fo-status-viewer":        true,
 	"fo-dispatch-recovery":    true,
 }
