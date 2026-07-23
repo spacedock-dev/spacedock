@@ -650,3 +650,54 @@ complete advisory round, retained rooms never change, exact replay writes nothin
 entity failure removes the newly published room before any pointer or projection can
 survive. The 670-LOC checkpoint remains untouched as counterexample evidence, and all
 value ACs plus the shared 3k boundaries remain intact.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Implement complete one-shot advisory-round publication by removing mutable prefix-append branches while preserving every shared 3k parser, lock, CAS, digest, rollback, projection, and no-lifecycle-effect boundary.
+  Commits `230a2e00`, `70aade13`, `c8d8dc12`, `9f7d6bdb`, and `b4c95b9f` publish only
+  complete logs, create the canonical room once, and make exact replay a
+  whole-tree no-op while divergent room, pointer, log, and projection states refuse.
+  It removed pending/prefix append, room replacement, stale-log CAS, restoration, and
+  retries; it retains shared parsing/digests, locking, full-byte CAS, rollback, and atomic writing.
+  AC-1 evidence: the 3j fixture retains the exact jobs 592/594 chain, both advisory
+  Resolutions, all-declines, and one cycle line while candidate `90aea55` and product
+  bytes remain fixed; deleting worker completion makes the complete-replay test fail.
+  AC-2 evidence: the same fixture compares status, gates, candidate, product, and
+  unrelated bytes before/after; introducing a lifecycle write flips those assertions.
+  AC-3 evidence: focused tests cover exact replay, changed retained bytes, occupied
+  targets, bad digests, locks, races, replacement failure, rollback, room shape,
+  folder isolation, and atomic pointer/projection replacement.
+  AC-4 evidence: no recorder package, envelope, journal, retry, provider launcher, or
+  lifecycle path was added; all work remains in 3k's `internal/gates` and shared helpers.
+- DONE: Pass the red-first complete-round, immutable replay/divergence, atomic pointer/projection, rollback, triage, 3j fixture, full, race, CLI, caller, and skill-smoke proofs without exceeding 580 pre-CLI or 640 total production LOC.
+  The pre-CLI checkpoint was 580 net production LOC; the committed final branch is
+  639 across non-test `internal/gates/*.go` and `internal/cli/*.go` versus `73eed65d`.
+  Formatting, diff checks, focused suites, `go test ./...`, and `go test ./... -race` pass at `b4c95b9f`.
+  The red-first additions reject incomplete logs, malformed/contradictory triage,
+  injected projections, undefined stages, and every tested failure without room,
+  pointer, projection, lock residue, or unrelated-byte mutation.
+- DONE: Update the canonical repo specification and public references to the landed one-shot behavior, request Roborev, triage every finding against materiality, and report exact LOC plus commit evidence.
+  Schema, gate contract, public references, dev caller, and feedback-rejection skill
+  now document and invoke the complete one-shot operation.
+  Roborev job 728's incomplete-disposition and canonical-room findings, job 738's
+  mixed/fixed projection and flat-entity collision findings, and job 752's mutable
+  entity-artifact, contradictory-disposition, EOF, and compatibility findings are fixed.
+  Job 778's structured-decline, full cycle grammar/decision, and taxonomy-membership
+  findings are fixed in `b4c95b9f`; current-status equality is declined because the
+  approved 3j historical backfill requires an explicit past stage, and promotes only
+  if the product later removes historical backfill and becomes live-only.
+  Jobs 728/786's exact-log digest is deferred because the approved pointer is the exact
+  Briefing-only schema and the canonical room is immutable; promote if a supported
+  writer can mutate retained room bytes or a pointer-schema revision is authorized.
+  Job 786's CRLF request is polish pending a reproduced supported Windows failure;
+  extra-file tolerance conflicts with the exact two-file room, parent-directory fsync
+  exceeds the no-power-loss-recovery boundary, and loose-heading tightening promotes
+  if a supported entity demonstrates misplaced projection.
+  Jobs 738/752's fixed-evidence and historical-read suggestions remain deferred until
+  a supported fixed-evidence contract or CLI historical-read requirement exists.
+
+### Summary
+
+Cycle 3 lands immutable advisory rounds at 639 production LOC with exact replay,
+byte-clean failure behavior, atomic pointer/projection, and no lifecycle effects.
+Full and race suites pass on `b4c95b9f`; all Roborev findings are fixed or declined with evidence and promotion conditions.
