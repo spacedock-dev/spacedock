@@ -44,6 +44,20 @@ gates:
                 digest: sha256:1997028a3179abc08095a49ca0eef667a9eb131a7e13223a0cbacb68c1e14574
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fr:ideation:2
+                briefing: briefing:docs-dev:fr:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T06:35:29.598151Z"
+                decision: approve
+                reason: Cycle-2 ideation replaces duplicate paths with explicit shared 3k primitives, mandatory entity and room CAS expectations, fixed worker authority, exact projection semantics, risk-first failure tests, and hard 365/500-LOC stops without changing ACs.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
         - id: gate:docs-dev:fr:implementation
           stage: implementation
           attempts:
