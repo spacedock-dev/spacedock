@@ -701,3 +701,33 @@ value ACs plus the shared 3k boundaries remain intact.
 Cycle 3 lands immutable advisory rounds at 639 production LOC with exact replay,
 byte-clean failure behavior, atomic pointer/projection, and no lifecycle effects.
 Full and race suites pass on `b4c95b9f`; all Roborev findings are fixed or declined with evidence and promotion conditions.
+
+## Stage Report: validation
+
+- DONE: Independently audit the 21-path current-main diff for the approved one-shot completed-round operation, shared 3k composition, exact 639 production-LOC ceiling, and absence of mutable-room, retry, journal, lifecycle-effect, or second-recorder drift.
+  Clean branch `b4c95b9f` has exactly the six reported commits and 21 paths; non-test `internal/gates` plus `internal/cli` is 795 additions/156 deletions = 639 net, with one shared lock, `mutateEntity`, top-level rebuilder, canonical parser/digest, and atomic writer.
+- DONE: Re-run focused CLI/gates/round/caller/smoke, 3j backfill, no-findings/all-declines, replay/divergence, grammar/triage/taxonomy, flat-entity refusal, whole-tree rollback, full, and race proofs with load-bearing negative controls.
+  Focused suites, `go test ./...`, fresh affected-package race tests, full `go test ./... -race`, `gofmt`, and `git diff --check` passed; removing immutable-room comparison and collapsing no-findings to all-declines made the focused tests fail.
+- DONE: Reassess every Roborev 728/738/752/778/786 fix or decline against supported workflows, verify clean branch and exact commits, and issue a fresh PASS or REJECTED recommendation with AC-1 through AC-5 evidence.
+  Jobs 728/738/752/778 fixes reproduce through commits `70aade13`, `c8d8dc12`, `9f7d6bdb`, and `b4c95b9f`; job 786 and the remaining declines stay outside the supported promise under the recorded promotion conditions.
+- DONE: AC-1 — durable 3j all-declines round and no-findings distinction.
+  The public CLI/focused fixtures retain the exact five-entry 592/594 chain and two advisory Resolutions, read through the pointer after cache deletion, preserve candidate `90aea55` and product bytes, and fail when completion or classification is weakened.
+- FAILED: AC-2 — recording a round has no gate, application, workflow, or unrelated-entity effect.
+  Gates/status/candidate/product checks pass, but a detached edit that corrupted `custom: preserve-me` and the unrelated Markdown body during successful publication left `TestRoundRecordCompleteReplayAndRefusalsAreByteClean` green; the promised every-unrelated-span oracle is absent.
+- DONE: AC-3 — refusals and replays are byte-clean and deterministic.
+  Exact replay is a whole-tree no-op; divergent room/Briefing, occupied target, lock, CAS, malformed log, bad digest, entity-replace failure, and rollback controls pass, and bypassing the room equality check makes the divergence test fail.
+- DONE: AC-4 — the implementation remains an extension of 3k.
+  The diff adds no package, envelope, alternate writer, retry, lease, journal, provider launcher, or status/application effect; ordinary open/rebind/close/successor, frozen application, association, mixed-ending, full, and race regressions pass.
+- FAILED: AC-5 — the trigger-scoped callers have valid behavioral smoke evidence.
+  The two caller lines and round CLI exist, but `TestRoundCallersUseResolvedLauncherAfterCompleteTriage` is prohibited instruction-file prose-grep; changing the shipped skill to say “do not invoke” preserved all checked substrings and the test still passed.
+- DONE: Deferred-risk reassessment.
+  Exact-log digest promotes on a supported retained-room mutator or pointer-schema revision; fixed-evidence and historical read promote when promised; crash recovery/parent fsync promote with a power-loss guarantee; CRLF and loose-heading polish promote on reproduced supported failures; extra-file tolerance conflicts with the canonical two-file room.
+- FAILED: Recommendation — REJECTED (material evidence defects; no product outcome defect found).
+  Narrow correction: add an exact successful-path oracle for every entity span outside `review-round` and the authorized cycle insertion, then replace the caller prose-grep with a behavioral skill/live smoke that invokes the resolved launcher after complete triage and observes room, pointer, projection, and unchanged lifecycle state.
+
+### Summary
+
+The one-shot recorder itself survived the semantic, rollback, lifecycle, surface, full,
+and race audits at 639 net production LOC. Validation recommends REJECTED because two
+promised proof boundaries are not load-bearing: AC-2 misses unrelated successful-write
+corruption, and AC-5's claimed caller smoke accepts an inverted instruction.
