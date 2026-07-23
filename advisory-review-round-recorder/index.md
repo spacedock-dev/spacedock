@@ -10,6 +10,20 @@ score:
 worktree:
 issue:
 sprint: durable-decisions
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:fr:ideation
+    records:
+        - id: gate:docs-dev:fr:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:fr-ideation-1
+              briefing:
+                id: briefing:docs-dev:fr:ideation:attempt-1:revision-1
+                digest: sha256:3eb2739582cbde71c1430367b7de4ae1439ba477432fa9586a5ed4564a8e9909
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Provide one owned write surface for correction-round Briefings, reviewer Annotations and advisory Resolution, and the worker's triage Resolution, without selecting a gate or advancing workflow state.

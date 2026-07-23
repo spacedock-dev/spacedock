@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:fr:ideation:attempt-1:revision-1",
+  "question": "Should 3k's recorder be extended to persist 02av advisory review rounds without acquiring gate or workflow effects?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:192b48ed96fff930cba902354367395db36e1b9393caf14221e351acc66b49f8"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5ae0b97ad98e421ca921fe50524dafba231d6b4130b93d8ef061cbdc485940c7"
+    },
+    {
+      "id": "artifact:gate-round-contract",
+      "uri": "../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:cd94c479c36752d9d895df0451cee7d144465176ca84a4e8c85150bd9004bafc"
+    },
+    {
+      "id": "artifact:materiality-fixture",
+      "uri": "../../../../../../docs/specs/testdata/finding-triage-materiality.tsv",
+      "mediaType": "text/tab-separated-values",
+      "rev": "sha256:c67038ab7652bf2f7568e31a8a393183a70b93933d00e84dbcc8d6974756d35a"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Proceed to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design with concrete findings",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
