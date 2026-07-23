@@ -484,3 +484,83 @@ Two observed workflow-reset defects are recorded but explicitly not absorbed: re
 ### Summary
 
 Re-ideated the rejected resident implementation as one gate-triggered, adapter-less `fo-gate-lifecycle` skill with a sub-26,755-byte boot core and honest all-host worst-case accounting. The revised plan closes the headless bypass and every other gate-entry route, preserves the detailed lifecycle and WIP checkpoint, and makes live mutation, complete refusal/resume matrices, discovery equality, and an actually observed successor spawn mandatory before validation.
+
+## Implementation intended-change declaration (cycle 2)
+
+- `skills/first-officer/references/first-officer-shared-core.md`: extract the checkpoint's 6,222-byte lifecycle body, add only the common gate-entry/load-order trigger, and finish at no more than 26,754 bytes; this is the boot-resident detector and pointer, not the procedure owner.
+- `skills/fo-gate-lifecycle/SKILL.md`: add the sole adapter-less, non-user-invocable lifecycle owner at no more than 6,600 bytes; it is required for capability, package, provenance, closure, refusal, resume, consume, feedback, and dispatch handoff semantics.
+- `internal/contractlint/boot_resident_closure_test.go`: add 24 test LOC for lazy/deferred registration, lifecycle anchors, and resident-pointer ownership.
+- `internal/contractlint/fo_function_reference_invariant_test.go`: add 24 test LOC for address/worst-case set equality and exact per-host measured baselines that include the deferred skill.
+- `internal/contractlint/structural_checks_test.go`: add 20 test LOC proving the skill is non-user-invocable, adapter-less, and absent from user discovery.
+- `internal/ensigncycle/recorded_gate_lifecycle_test.go`: add 500 test LOC for route/load-order deletion controls, the copied-skill missing-command live mutant, exact observed-review/provenance mutants, complete AC-5 refusal and AC-7 resume matrices, discovery equality/red control, and strict spawn-handle/output correlation.
+- The seven checkpoint live/shared-scenario files under `internal/ensigncycle/` remain byte-for-byte unchanged in cycle 2: planned additional live LOC is 0 because they already carry the identical host-neutral scenario and host runners; only their successful executions may satisfy the live lanes.
+- `docs/dev/.spacedock-state/first-officer-gate-command-lifecycle/index.md`: append this declaration and the cycle-2 implementation report only; it owns workflow evidence, not product behavior.
+
+Planned cycle-2 test addition is exactly 568 LOC (68 contract/topology plus 500 behavioral) and planned cycle-2 live-runner addition is exactly 0 LOC. Production Go, schemas, commands, presenter behavior, advisory-round surfaces, host-specific lifecycle copies, and all other instruction/documentation files remain untouched.
+
+### Intended-change amendment 2
+
+- `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go`: add exactly 1 live LOC registering the newly deferred adapter-less skill with Pi; without this explicit skill root the identical Pi scenario cannot consume the shipped lifecycle.
+- `internal/ensigncycle/claude_live_runner_test.go`: add up to 45 live LOC for the required copied-plugin missing-command runtime mutant; this is the existing copied-plugin host seam and proves the runtime consumed the changed shipped tree while the common grader rejects the missing event.
+
+The corrected plan is 568 test LOC plus at most 46 live LOC. These two additions are proof wiring only; they do not create host-specific lifecycle instructions or alter the shared scenario.
+
+### Intended-change amendment 3
+
+- `internal/ensigncycle/codex_live_runner_test.go`: change exactly 1 live LOC so the positive recorded-gate scenario's logging shim delegates to a fresh current-checkout binary, after retaining the separate observed stale-launcher halt artifact. The checkpoint's repo-root binary is intentionally stale and cannot be the positive lane.
+
+The live-proof budget is now at most 47 LOC. The stale executable remains a required red live arm; this amendment only prevents that red control from replacing the fresh-binary positive scenario.
+
+### Roborev triage (cycle 2, job 700)
+
+- **Material — empty observed-review fields can pass.** Released user/workflow: a Captain receiving the ordinary FO gate review; harm: labels without evidence or a decision ask can be graded as a usable review; AC/boundary: AC-6 and the observed-review matrix; trigger: `assertConciseRecordedGateReview` accepts each required label with a blank value. Fix by parsing nonblank field values and pinning the retained snapshot and decision ask.
+- **Material — stale consume can corrupt unrelated bytes and pass.** Released user/workflow: an FO resuming an ordinary stale approval; harm: another record, field, or file could be changed while the test notices only `status`/`superseded`; AC/boundary: AC-5 byte-clean exception and AC-7 stale resume; trigger: the current assertion checks only three substrings. Fix with a whole-tree before/after comparison whose independent expected tree permits only `pending` → `superseded`.
+- **Material — changed-package resume does not pin replacement identity/digest.** Released user/workflow: an FO updating an open gate package; harm: the old binding could remain or unrelated fields could change while the test passes; AC/boundary: AC-7 open/changed-package resume and exact provenance; trigger: the test checks only byte inequality and attempt count. Fix by independently deriving the replacement canonical digest, asserting exact identity/digest, and comparing all other bytes.
+- **Material — discovery equality queries a different root.** Released user/workflow: repository startup discovery after lifecycle fixtures; harm: a planted fixture workflow in the actual queried repository could pollute discovery undetected; AC/boundary: AC-8 exact workflow-discovery equality; trigger: `writeRecordedGateFixture` creates an unrelated temporary root. Fix by placing and exercising the fixture below the queried repository's ignored/test-owned directory, then proving the planted discoverable control changes that same root.
+- **Material — load topology is self-authored rather than runtime-derived.** Released user/workflow: every engaged gate entry on every host; harm: deleting or reordering a real funnel load can remain green because the test's event arrays do not come from the shipped contract/runtime trace; AC/boundary: AC-1/AC-2 engaged-entry load order and the cycle-2 topology stop condition; trigger: the matrix supplies its own events and deletes only event zero. Fix by extracting route events from the copied shipped core plus deferred skill, grading each route, and adding route deletion and interior-order mutants through that extractor.
+
+### Feedback Cycles
+
+- Cycle 2: CHANGES REQUESTED — Roborev job 700; surface 7 test/live files and 584 added LOC vs estimate 7 files and at most 615 added LOC (95%); AC unchanged
+
+### Roborev follow-up triage (cycle 2, job 708)
+
+- **Material — AC-7 resume compares only entity bytes.** Released user/workflow: an FO replaying any open/closed/consumed gate after restart; harm: the replay may create or mutate sibling state while entity-only equality remains green; AC/boundary: AC-7 exact pass cardinality and byte preservation; trigger: same/open, revise, hold, and consumed arms compare only `fixture.entity`. Fix every idempotent arm against a complete state-root snapshot.
+- **Material — topology proof remains structural, not runtime-observed.** Released user/workflow: every engaged gate route on Claude, Codex, and Pi; harm: a host may fail to load the deferred skill before gate commands while the Markdown-derived trace remains green; AC/boundary: AC-1/AC-2 and the cycle-2 load-topology stop condition; trigger: `TestRecordedGateLifecycleLoadTopologyMatrix` reads only shipped Markdown. Retain it as structural proof, add host-stream load/command extractors with all route fixtures and red controls, and make each live recorded-gate runner grade its observed load order.
+- **Material — successor controls bypass the real stream parsers.** Released user/workflow: post-consume successor dispatch on every host; harm: a parser regression could accept narration, a blank handle, parent-written output, or an empty wait; AC/boundary: AC-1 strict spawn/handle/correlated-output oracle; trigger: `TestRecordedGateLifecycleSuccessorOracleControls` constructs `recordedGateDispatchProof` directly. Fix by routing adversarial Claude, Codex, and Pi streams through their production test extractors.
+- **Polish — prompt-load growth note.** Released user/workflow: none; harm: none, because exact baselines and hard ceilings are already measured and the boot core shrank; AC/boundary: reporting clarity only; trigger: the rebaseline comment does not explicitly contrast full-lifetime growth with boot residency. Decline this round; promote if a reviewer or release note conflates the two metrics.
+- **Polish — byte-clean helper name includes stale caller.** Released user/workflow: none; harm: none, because the stale caller separately asserts the exact allowed mutation; AC/boundary: test naming only; trigger: `assertRecordedGateByteCleanFailure` checks nonzero/output/lock, not bytes itself. Decline; promote if a caller relies on the helper name without its own byte assertion.
+
+### Feedback Cycles
+
+- Cycle 3: CHANGES REQUESTED — Roborev job 708; surface 7 test/live files and 708 added LOC vs estimate 7 files and at most 615 added LOC (115%, below 2× tolerance); AC unchanged
+
+### Intended-change amendment 4
+
+- `internal/ensigncycle/claude_live_runner_test.go`, `internal/ensigncycle/codex_live_runner_test.go`, and `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go`: add one runtime-load-order assertion per positive recorded-gate runner, using the shared host-stream extractors added to `recorded_gate_lifecycle_test.go`.
+
+This adds at most 12 live LOC to make the previously declared all-host topology proof load-bearing. It changes no prompt, scenario, host-specific lifecycle instruction, or acceptance criterion.
+
+### Roborev final triage (cycle 2, job 711)
+
+- **Material, fixed — runtime action detection could accept echoed skill prose.** Released user/workflow: every live recorded-gate route; harm: an echoed `gate --help` inside a skill read could false-green load order; AC/boundary: AC-1/AC-2 observed load-before-action proof; trigger: the extractor matched any JSON line containing the text. Fixed by requiring each host's structured Bash/command-execution event and recognizing the first actual `spacedock gate` command, not only help.
+- **Needs decision — route labels do not execute distinct runtime paths.** Released user/workflow: headless conn/no-conn, engage, worker completion, and every resume state; harm: a host-specific route can bypass the load while synthetic route fixtures remain green; AC/boundary: the binding cycle-2 topology matrix and stop condition; trigger: every route subtest currently reuses one normalized load/action fixture. The required actual-host matrix cannot be made green in this cycle: Claude is 401-blocked, Pi cannot load its extension dependency, and Codex omits the required structured spawn event. Do not substitute fixtures or exceed the 650-LOC proof cap; return for captain/FO reset or repaired live hosts.
+- **Needs decision — copied-skill command deletion lacks green runtime execution.** Released user/workflow: a live FO consuming the shipped deferred skill; harm: a host could ignore a missing command while text-derived checks pass; AC/boundary: AC-2 and the copied-plugin live-mutant stop condition; trigger: deterministic deletion uses `procedureEvents`, while the actual Claude copied-plugin mutant cannot start because of 401 credentials. The original six-event baseline and all six deterministic deletions are now explicit, but the required runtime mutant remains blocked pending credential repair; do not claim validation readiness.
+- **Material, fixed — deterministic missing-event discriminator was removed.** Released user/workflow: the common successor grader; harm: an event-completeness regression could escape the more specialized source/runtime checks; AC/boundary: AC-2 six-event load-bearing proof; trigger: job 711 observed the removed deterministic control. Restored a compact six-arm control that requires the grader's event-completeness error.
+
+### Feedback Cycles
+
+- Cycle 4: NEEDS DECISION — Roborev job 711; surface 7 test/live files and 741 added LOC vs estimate 7 files and at most 615 added LOC (120%, below 2× tolerance); AC unchanged, actual-route/live-mutant proof blocked
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Move the detailed lifecycle into the approved non-user `fo-gate-lifecycle` skill and funnel every engaged gate-entry route through one deferred load before gate action; shared core remains ≤26,754 bytes, deferred skill ≤6,600 bytes, all host worst-case sets account for it exactly, and non-gated greet remains load-free.
+  Commit `9a3cc782` leaves the boot core at 26,526 bytes and the adapter-less deferred skill at 6,599 bytes; exact host loads are Claude 103,114, Codex 82,329, and Pi 78,459, each below its unchanged ceiling. Contract/topology tests fail if address/load sets diverge, the deferred file disappears, the skill becomes user-invocable/adapter-backed, the headless route bypasses lifecycle ownership, or interactive greet loads it.
+- FAILED: Retain and strengthen the checkpoint proof with route-deletion/load-order controls, a real copied-skill missing-command live mutant, exact observed-review and provenance mutants, complete AC-5 refusal and AC-7 resume matrices, discovery equality, and a strict post-consume successor oracle requiring one spawn, nonblank handle, and correlated worker output.
+  Fresh real-binary replay, all six deterministic command deletions, structured host load/action matrices, exact review/provenance controls, complete AC-5/AC-7 command matrices, whole-tree byte checks, discovery equality/red control, and real-parser successor negatives pass. Roborev job 711 correctly blocks completion because route names still reuse normalized runtime fixtures and the actual copied-plugin mutant cannot execute under Claude's 401; weakening those requirements or replacing them with fixture narration is prohibited.
+- FAILED: Preserve zero production Go and unchanged ACs, pass focused/full/race/prompt/load/discovery gates and required credentialed live lanes, request Roborev and triage findings before edits, then commit the self-contained deliverable and report validation readiness only if Codex spawn evidence and later green Claude/Pi evidence exist.
+  Production Go remains unchanged; `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, focused lifecycle/contract tests, and live-tag compilation pass. Roborev jobs 700, 708, and 711 were triaged before edits; all bounded material fixes landed in `9a3cc782`. Live readiness is red: stale Codex correctly halts before mutation; fresh Codex consumes and produces the durable worker marker but emits no qualifying structured spawn event/handle; Claude fails 401 before FO work; Pi fails loading `@earendil-works/pi-coding-agent`.
+
+### Summary
+
+Cycle 2 successfully moved the recorded gate lifecycle behind the approved deferred skill while preserving byte budgets, honest host accounting, zero production Go, and the complete deterministic command/refusal/resume/discovery checkpoint. The strict live proof remains intentionally fail-closed: current host evidence cannot establish every route's load order, the copied-plugin runtime mutant, or Codex's required structured spawn/handle/result correlation. The committed checkpoint is therefore not validation-ready and the entity remains in implementation for a captain/First Officer decision or repaired live-host conditions.
