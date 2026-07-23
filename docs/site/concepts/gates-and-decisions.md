@@ -57,6 +57,10 @@ Captain, an approval awaiting nonterminal advance, and an approval awaiting
 merge. Approval to a terminal target is consumed before the existing merge and
 terminalization path begins.
 
+Before the First Officer shows a gate, it binds the exact retained Briefing and validates the open attempt. After the decision, it records and validates the Resolution before any effect. An approval advances only when `gate eligibility` reports the expected current successor and `gate consume` spends that authorization; consume writes the new stage and the consumed mark together. Revise routes feedback instead, and hold stays at the gate.
+
+The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.
+
 ## Rejections
 
 Rejections bounce automatically: the findings route back, the work is redone, and the reviewer re-runs; no stop at your desk. The gate reaches you only when the work passes review, or after **three failed rounds**, when the call returns to you instead of bouncing again. Every round is on the record in the item's file.

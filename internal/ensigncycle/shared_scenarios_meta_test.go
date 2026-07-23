@@ -30,6 +30,7 @@ func TestSharedRuntimeScenarioDefinitions(t *testing.T) {
 
 	want := []string{
 		"gate-guardrail",
+		"recorded-gate-lifecycle",
 		"rejection-flow",
 		"feedback-3-cycle-escalation",
 		"merge-hook-guardrail",

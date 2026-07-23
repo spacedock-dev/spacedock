@@ -158,6 +158,7 @@ func claudeLiveScenarios(t *testing.T) []claudeLiveScenario {
 func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRuntimeScenario) {
 	return map[string]func(*testing.T, liveDriver, sharedRuntimeScenario){
 		"gate-guardrail":                runClaudeGateGuardrailScenario,
+		"recorded-gate-lifecycle":       runClaudeRecordedGateLifecycleScenario,
 		"rejection-flow":                runClaudeRejectionFlowScenario,
 		"feedback-3-cycle-escalation":   runClaudeFeedback3CycleEscalationScenario,
 		"merge-hook-guardrail":          runClaudeMergeHookGuardrailScenario,
@@ -167,6 +168,23 @@ func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRunti
 		"smallest-sufficient-mechanism": runClaudeSmallestSufficientMechanismScenario,
 		"keep-moving-posture":           runClaudeKeepMovingScenario,
 	}
+}
+
+func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	fixture := writeRecordedGateFixture(t)
+	before := readFile(t, fixture.entity)
+	result := runner.run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
+	after := resolveRecordedGateEntity(fixture)
+	events := recordedGateEventsFromClaudeStream(result.stream)
+	if err := assertRecordedGateLifecycle(recordedGateObservation{
+		events: events, before: before, after: after,
+		dispatch:   recordedGateClaudeDispatchProof(result.stream, after),
+		gateReview: recordedGateReviewFromClaudeStream(result.stream), expectedNext: "handoff",
+	}); err != nil {
+		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
 func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
