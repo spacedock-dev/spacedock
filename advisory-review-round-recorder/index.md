@@ -273,6 +273,7 @@ Implementation is incomplete and held at the declared mechanism-drift gate; comm
 ### Feedback Cycles
 
 - Cycle 1: REVISE — independent mechanism-drift audit; surface 699 production LOC before CLI vs estimate 300 (233%); AC unchanged
+- Cycle 2: REVISE — independent shared-composition audit; surface 683 production LOC before CLI vs estimate 365 (187%); AC unchanged
 
 ## Re-ideation delta: shared recorder composition
 
