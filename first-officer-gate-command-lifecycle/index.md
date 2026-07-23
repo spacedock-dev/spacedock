@@ -341,3 +341,7 @@ The first shared-scenario compile correctly failed because `internal/ensigncycle
 ### Summary
 
 Implemented and hardened the six-event integration and its deterministic/live oracles, then stopped at the binding design reset exposed by the final prompt-load gates. The behavioral work is preserved in the assigned worktree, all advisory findings are triaged, and no acceptance criterion or spawn evidence was weakened to manufacture a pass.
+
+### Feedback Cycles
+
+- Cycle 1: REVISE — independent topology audit; surface shared core +6,197 bytes vs available headroom 663 bytes (935%); AC unchanged
