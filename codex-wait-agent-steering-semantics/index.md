@@ -1,6 +1,6 @@
 ---
 title: Codex wait_agent steering semantics describe captain input as active-loop resumption
-status: ideation
+status: implementation
 source: "Captain request 2026-07-23: replace misleading wait-interruption language and use the corrected behavior in-session"
 started: 2026-07-23T14:43:01Z
 completed:
@@ -23,6 +23,20 @@ gates:
                 digest: sha256:a91e6243eab3b12d756db99283f05e7d74aa48f037bc418dc0327060536fc768
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6g:ideation:1
+                briefing: briefing:docs-dev:6g:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T14:53:56.796844Z"
+                decision: approve
+                reason: The ideation supplies a real steering trace, preserves durable completion authority, and bounds implementation to five Codex-only files with independent negative controls.
+                adoption-note: file codex runtime issue; dispatch, and do not forget to asyncwait; use captain steering as active-loop resumption while workers continue unchanged.
+              application:
+                action: advance
+                target-stage: implementation
+                state: consumed
+                blockers: []
 ---
 
 ## Problem
