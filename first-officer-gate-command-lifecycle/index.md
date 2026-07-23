@@ -13,7 +13,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:6y:ideation
+        gate: gate:docs-dev:6y:implementation
     records:
         - id: gate:docs-dev:6y:ideation
           stage: ideation
@@ -38,6 +38,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:6y:implementation
+          stage: implementation
+          attempts:
+            - id: gate-attempt:6y-implementation-1
+              briefing:
+                id: briefing:docs-dev:6y:implementation:attempt-1:revision-1
+                digest: sha256:3b5dcf4d8d48d6d3991976efe622e9d577d465b67bb82e52e380310ac0da1334
+                digest-domain: canonical-bytes
+                room-ref: ./review/implementation/briefing-1
 ---
 
 Make the normal First Officer gate path use the landed 3k/h1 commands so a presented decision is durably recorded, validated, checked for eligibility, and consumed before workflow advancement or dispatch.

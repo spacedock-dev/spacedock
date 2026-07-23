@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:implementation:attempt-1:revision-1",
+  "question": "Should the boot-resident FO gate-lifecycle checkpoint be rejected and returned to ideation for a deferred gate-triggered topology without narrowing its ACs?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e812ed39a4d8178cdb650ca4f422afa9a60bfb51bc1989b2f75d4212e46260e2"
+    },
+    {
+      "id": "artifact:topology-audit",
+      "uri": "topology-audit.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:cd708318f95b75dd9121ffe423dd5e932ffb53dc093340a06de3e934919d25e8"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:239b3df1e4f7efdfe89bce09ff6f1b23a1b4094e48083d41b016bdb5fcd94e79"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:cd94c479c36752d9d895df0451cee7d144465176ca84a4e8c85150bd9004bafc"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:implementation-reset",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Accept the implementation",
+          "to": "stage:validation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return for bounded topology re-ideation",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for another prerequisite",
+          "to": "gate:implementation"
+        }
+      ]
+    }
+  ]
+}
