@@ -334,6 +334,7 @@ Implementation is incomplete and held at the declared mechanism-drift gate; comm
 - Cycle 2: REVISE — independent shared-composition audit; surface 683 production LOC before CLI vs estimate 365 (187%); AC unchanged
 - Cycle 3: REVISE — independent second-boundary audit; surface 670 production LOC before CLI vs revised hard stop 540 (124%); AC unchanged
 - Cycle 4: REVISE — Roborev branch-final job 728; surface 21 files/634 production LOC vs hard stop 640 (99%); AC unchanged
+- Cycle 5: REJECTED — detached validation; surface 639 production LOC vs hard stop 640 (100%); AC unchanged
 
 ## Re-ideation delta: shared recorder composition
 
