@@ -76,6 +76,8 @@ gates:
                 state: consumed
                 blockers: []
 sprint: durable-decisions
+mod-block: merge:pr-merge
+pr: "#561"
 ---
 
 ## Problem
