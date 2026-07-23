@@ -301,3 +301,35 @@ The first shared-scenario compile correctly failed because `internal/ensigncycle
 - **Relative-path wording — Polish.** Released workflow still fails byte-clean and gives a remedy; harm is only test brittleness if Go wording improves. AC-4/AC-5 are protected by exit, byte, and lock assertions. Trigger requires an upstream error-message improvement. Do not spend the material-fix budget on this advisory.
 - **Idempotent-repeat oracle — False positive.** The exact-six oracle grades the fresh baseline only; AC-7 repeats are graded separately by the three-pass resume test. No released workflow rejects a repeat. Trigger would require feeding a resume trace to the baseline grader, which no runner does. No change.
 - **Empty open decision — Material.** Released workflow must not present an already-decided attempt as open. Harm: `decision=approve` satisfies the current substring. AC-1/AC-3. Trigger: any malformed open response with a nonempty decision. Require an exact output field line.
+
+## Stage Report: implementation
+
+- DONE: Publish the intended-change declaration before editing and remain inside the no-production-Go boundary.
+  State commits `2a1ffd49` and `5c45f508` name every touched surface and the one mechanical amendment; production/schema/command LOC remain zero.
+  Collision checks kept the shared command-reference edit serialized at base commit `f06cce04`.
+- DONE: Add behavioral coverage first for the six-event lifecycle and a load-bearing skipped-step mutant.
+  The focused suite grades exact ordered successful events, keeps valid dispatch proof while deleting each event, and reds the shipped-skill eligibility deletion.
+  Initial RED was the shipped FO contract missing the briefing-record integration point; the focused suite is green on the checkpoint.
+- FAILED: Land the ordinary gated-stage FO contract on an architecture that satisfies repository prompt-load invariants.
+  The contract implements capability/absolute-path/package/provenance/validation/eligibility/consume/resume routing, but makes the boot-resident shared core 32,289 bytes versus the hard <26,755-byte invariant. Base is 26,092 bytes, leaving only 663 bytes; the lifecycle adds 6,197 bytes. A gate-triggered deferred reference or deliberate budget reset is necessary, and either is outside the declared file/boundary.
+  Repository precedent keeps substantially larger procedure cores deferred; this is root-cause evidence for a topology reset, not permission to raise a ratchet.
+- FAILED: Complete every deterministic control in the approved matrix.
+  Fresh real-CLI bind/validate/decision/consume, folder commits, exact durable identity/digest/provenance, relative refusal/absolute success, revise/hold, resume-one-consume, capability-stale full-form probes, concise presentation, and structured host parsers pass. An actual model-host stale-launcher entry remains unavailable; worker-attributed Codex output and the full stale/ineligible live controls remain unproven.
+  Claude counts only successful tool-result-paired Bash events; Pi requires successful consume before subagent and a marker-bearing worker result; Codex requires spawn and correlated wait handles.
+- FAILED: Prove the host-neutral scenario across Claude, Codex, and Pi live lanes.
+  Claude failed before workflow work on invalid 401 auth. Pi failed before workflow work on reused-refresh-token/no-API-key auth after an isolated compatible pi-subagents package was supplied. Repeated Codex runs completed all six gate commands and durable consume, then emitted wait with no spawn handle or worker output; strict grading correctly fails.
+  Claude artifacts: `/tmp/spacedock-fo-gate-live-claude/claude-shared-scenarios/recorded-gate-lifecycle`.
+  Pi artifacts: `/tmp/spacedock-fo-gate-live-pi/pi-recorded-gate-lifecycle/run`.
+  Codex artifacts: `/tmp/spacedock-fo-gate-live`, `-rerun`, `-final`, `-spawn`, and `-sequenced` roots.
+- DONE: Preserve the approved product boundary.
+  No production Go, recorder/schema/application, command, provider transport, package generator, presenter, advisory-round, hand-authored-gates, or status-set advancement changes exist.
+- FAILED: Pass the final repository and runtime gates.
+  `gofmt -w ./cmd ./internal`, focused lifecycle tests, workflow-discovery controls, and `go test -tags live ./internal/ensigncycle -run '^$' -count=1` pass. Final `go test ./...` and `go test ./... -race` fail only `TestFOHostPromptLoadRatchet` (Claude 102278>96081, Codex 81493>75296, Pi 77623>71426) and `TestStartupRecipeCollapsedAndLeaner` (32289>=26755). Runtime lanes fail as recorded above.
+- DONE: Request Roborev and triage every finding before edits.
+  Jobs 649 and 663 completed; both triage records above carry workflow, harm, AC/boundary, trigger evidence, and classification. Material oracle defects were fixed; worker attribution, actual stale-FO entry, and host behavior are explicit Needs-decision items; polish/false-positive findings were declined with triggers.
+- FAILED: Commit a self-contained implementation and declare validation readiness.
+  The code worktree intentionally remains an uncommitted checkpoint because its resident-core layout violates a binding design-reset trigger. Actual checkpoint delta: FO contract +58/-3 lines; test/live +1,157 lines; docs +7 lines; production Go 0. Do not advance to validation until the Captain/FO authorizes the deferred gate-core topology, a justified prompt-budget reset, or a materially narrower contract.
+
+### Summary
+
+Implemented and hardened the six-event integration and its deterministic/live oracles, then stopped at the binding design reset exposed by the final prompt-load gates. The behavioral work is preserved in the assigned worktree, all advisory findings are triaged, and no acceptance criterion or spawn evidence was weakened to manufacture a pass.
