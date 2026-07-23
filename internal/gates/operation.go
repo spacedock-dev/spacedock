@@ -8,26 +8,31 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	jsoncanonicalizer "github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer"
 	"gopkg.in/yaml.v3"
 )
 
 type RecordInput struct {
-	BriefingPath    string
-	ResultPath      string
-	AssociationPath string
-	Actor           string
-	AdoptionNote    string
-	Decision        string
-	Reason          string
-	Directive       string
-	WorkflowDir     string
+	BriefingPath      string
+	ResultPath        string
+	AssociationPath   string
+	LogPath           string
+	FeedbackCyclePath string
+	Round             string
+	Actor             string
+	AdoptionNote      string
+	Decision          string
+	Reason            string
+	Directive         string
+	WorkflowDir       string
 }
 
 type artifactRef struct {
@@ -82,6 +87,26 @@ type resultAssociation struct {
 // held. Lifecycle operation, current-stage target, CAS, and ids are derived by
 // the recorder rather than supplied in a transaction envelope.
 func RecordSemantic(entityPath string, input RecordInput) error {
+	if input.Round != "" {
+		if input.BriefingPath == "" || input.LogPath == "" || input.FeedbackCyclePath == "" {
+			return fmt.Errorf("gate record --round requires --briefing, --log, and --feedback-cycle")
+		}
+		if input.ResultPath != "" || input.AssociationPath != "" || input.Actor != "" || input.AdoptionNote != "" || input.Decision != "" || input.Reason != "" || input.Directive != "" {
+			return fmt.Errorf("gate record --round is incompatible with gate-closing flags")
+		}
+		if filepath.Base(input.BriefingPath) != "briefing.json" || filepath.Base(input.LogPath) != "briefing.review.jsonl" {
+			return fmt.Errorf("--round inputs must name briefing.json and briefing.review.jsonl")
+		}
+		unlock, err := lockEntity(entityPath)
+		if err != nil {
+			return err
+		}
+		defer unlock()
+		return recordRoundLocked(entityPath, input)
+	}
+	if input.LogPath != "" || input.FeedbackCyclePath != "" {
+		return fmt.Errorf("--log and --feedback-cycle require --round")
+	}
 	sources := 0
 	for _, source := range []string{input.BriefingPath, input.ResultPath, input.Decision} {
 		if source != "" {
@@ -109,6 +134,377 @@ func RecordSemantic(entityPath string, input RecordInput) error {
 		return recordResultLocked(entityPath, input)
 	}
 	return recordChatLocked(entityPath, input)
+}
+
+type reviewEntry struct {
+	Type     string   `json:"type"`
+	ID       string   `json:"id"`
+	Briefing string   `json:"briefing"`
+	By       string   `json:"by"`
+	At       string   `json:"at"`
+	Decision string   `json:"decision,omitempty"`
+	Reason   string   `json:"reason,omitempty"`
+	Includes []string `json:"includes,omitempty"`
+}
+
+type roundLog struct {
+	Entries     []reviewEntry
+	Summary     []RoundEntrySummary
+	Resolutions int
+	Triage      string
+}
+
+func recordRoundLocked(entityPath string, input RecordInput) error {
+	stage, cycle, err := parseRoundSpec(input.Round)
+	if err != nil {
+		return err
+	}
+	original, err := os.ReadFile(entityPath)
+	if err != nil {
+		return err
+	}
+	current, hasCurrent, err := readRoundPointerData(original)
+	if err != nil {
+		return err
+	}
+	entityID, err := roundEntityID(entityPath, original)
+	if err != nil {
+		return err
+	}
+	roomRef := fmt.Sprintf("./review/%s/round-%d", stage, cycle)
+	room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(roomRef))
+	if err := validateDerivedRoom(entityPath, room); err != nil {
+		return err
+	}
+	briefingBytes, err := os.ReadFile(input.BriefingPath)
+	if err != nil {
+		return err
+	}
+	manifest, err := parseBriefingManifest(briefingBytes)
+	if err != nil {
+		return err
+	}
+	if err := verifyRoundArtifacts(filepath.Dir(entityPath), room, manifest); err != nil {
+		return err
+	}
+	digest, err := CanonicalDigest(briefingBytes)
+	if err != nil {
+		return fmt.Errorf("canonicalize briefing: %w", err)
+	}
+	logBytes, err := os.ReadFile(input.LogPath)
+	if err != nil {
+		return err
+	}
+	parsed, err := parseRoundLog(logBytes, manifest.ID)
+	if err != nil {
+		return err
+	}
+	projection, err := readFeedbackCycle(input.FeedbackCyclePath, cycle)
+	if err != nil {
+		return err
+	}
+	pointer := RoundPointer{
+		ID:       fmt.Sprintf("round:%s:%s:%d", entityID, stage, cycle),
+		Stage:    stage,
+		Cycle:    cycle,
+		Briefing: Briefing{ID: manifest.ID, Digest: digest, DigestDomain: "canonical-bytes", RoomRef: roomRef},
+	}
+
+	roomExists := false
+	if info, statErr := os.Stat(room); statErr == nil {
+		if !info.IsDir() {
+			return fmt.Errorf("round target %s is occupied", room)
+		}
+		roomExists = true
+	} else if !os.IsNotExist(statErr) {
+		return statErr
+	}
+	if roomExists {
+		if !hasCurrent || !sameRoundPointer(current, pointer) {
+			return fmt.Errorf("round target %s is occupied by a non-current round", room)
+		}
+		retainedBriefing, err := os.ReadFile(filepath.Join(room, "briefing.json"))
+		if err != nil {
+			return err
+		}
+		if !bytes.Equal(retainedBriefing, briefingBytes) {
+			return fmt.Errorf("round Briefing bytes diverge from the retained Briefing")
+		}
+		retainedLog, err := os.ReadFile(filepath.Join(room, "briefing.review.jsonl"))
+		if err != nil {
+			return err
+		}
+		if _, err := parseRoundLog(retainedLog, manifest.ID); err != nil {
+			return fmt.Errorf("retained round log is invalid: %w", err)
+		}
+		if len(logBytes) < len(retainedLog) || !bytes.HasPrefix(logBytes, retainedLog) {
+			return fmt.Errorf("round log is not an exact-prefix replay")
+		}
+	}
+	if hasCurrent && current.ID == pointer.ID && !sameRoundPointer(current, pointer) {
+		return fmt.Errorf("round pointer changed for identity %s", pointer.ID)
+	}
+	rebuilt, err := rebuildRoundEntity(original, pointer, projection, parsed.Resolutions >= 2)
+	if err != nil {
+		return err
+	}
+	if roomExists && bytes.Equal(logBytes, mustReadRoundFile(room, "briefing.review.jsonl")) && bytes.Equal(rebuilt, original) {
+		return nil
+	}
+	return commitRound(entityPath, original, room, roomExists, briefingBytes, logBytes, rebuilt, atomicWrite)
+}
+
+// ValidateRoundFile resolves only the current advisory-round pointer. It never
+// consults gate selection or application state.
+func ValidateRoundFile(entityPath, spec string) (RoundSummary, error) {
+	stage, cycle, err := parseRoundSpec(spec)
+	if err != nil {
+		return RoundSummary{}, err
+	}
+	entityBytes, err := os.ReadFile(entityPath)
+	if err != nil {
+		return RoundSummary{}, err
+	}
+	pointer, ok, err := readRoundPointerData(entityBytes)
+	if err != nil {
+		return RoundSummary{}, err
+	}
+	if !ok || pointer.Stage != stage || pointer.Cycle != cycle {
+		return RoundSummary{}, fmt.Errorf("entity current review-round pointer does not resolve %s", spec)
+	}
+	room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(pointer.Briefing.RoomRef))
+	if err := validateDerivedRoom(entityPath, room); err != nil {
+		return RoundSummary{}, err
+	}
+	briefingBytes, err := os.ReadFile(filepath.Join(room, "briefing.json"))
+	if err != nil {
+		return RoundSummary{}, err
+	}
+	manifest, err := parseBriefingManifest(briefingBytes)
+	if err != nil {
+		return RoundSummary{}, err
+	}
+	digest, err := CanonicalDigest(briefingBytes)
+	if err != nil {
+		return RoundSummary{}, err
+	}
+	if manifest.ID != pointer.Briefing.ID || digest != pointer.Briefing.Digest ||
+		pointer.Briefing.DigestDomain != "canonical-bytes" {
+		return RoundSummary{}, fmt.Errorf("review-round pointer does not bind the retained Briefing")
+	}
+	if err := verifyRoundArtifacts(filepath.Dir(entityPath), room, manifest); err != nil {
+		return RoundSummary{}, err
+	}
+	logBytes, err := os.ReadFile(filepath.Join(room, "briefing.review.jsonl"))
+	if err != nil {
+		return RoundSummary{}, err
+	}
+	parsed, err := parseRoundLog(logBytes, manifest.ID)
+	if err != nil {
+		return RoundSummary{}, err
+	}
+	return RoundSummary{ID: pointer.ID, Stage: stage, Cycle: cycle, Briefing: manifest.ID, Triage: parsed.Triage, Entries: parsed.Summary}, nil
+}
+
+func parseRoundSpec(spec string) (string, int, error) {
+	parts := strings.Split(spec, "/")
+	if len(parts) != 2 || !roundStageRE.MatchString(parts[0]) {
+		return "", 0, fmt.Errorf("--round must be a normalized STAGE/positive-cycle")
+	}
+	cycle, err := strconv.Atoi(parts[1])
+	if err != nil || cycle < 1 || strconv.Itoa(cycle) != parts[1] {
+		return "", 0, fmt.Errorf("--round must be a normalized STAGE/positive-cycle")
+	}
+	return parts[0], cycle, nil
+}
+
+func parseRoundLog(data []byte, briefingID string) (roundLog, error) {
+	if len(data) == 0 || data[len(data)-1] != '\n' || !utf8.Valid(data) {
+		return roundLog{}, fmt.Errorf("round log must be non-empty UTF-8 JSONL ending in a complete line")
+	}
+	var result roundLog
+	seen, entryTypes := map[string]bool{}, map[string]string{}
+	baseFindings := map[string]bool{}
+	declineIncludes := map[string][]string{}
+	lines := bytes.Split(data[:len(data)-1], []byte{'\n'})
+	for i, line := range lines {
+		if len(bytes.TrimSpace(line)) == 0 {
+			return roundLog{}, fmt.Errorf("round log entry %d is blank", i+1)
+		}
+		var entry reviewEntry
+		if err := json.Unmarshal(line, &entry); err != nil {
+			return roundLog{}, fmt.Errorf("parse round log entry %d: %w", i+1, err)
+		}
+		if (entry.Type != "Annotation" && entry.Type != "Resolution") || entry.ID == "" || seen[entry.ID] ||
+			entry.Briefing != briefingID || entry.By == "" {
+			return roundLog{}, fmt.Errorf("round log entry %d has invalid or duplicate identity or Briefing", i+1)
+		}
+		if _, err := time.Parse(time.RFC3339Nano, entry.At); err != nil {
+			return roundLog{}, fmt.Errorf("round log entry %d has invalid attribution time", i+1)
+		}
+		for _, included := range entry.Includes {
+			if !seen[included] {
+				return roundLog{}, fmt.Errorf("round log entry %s includes a non-earlier identity %s", entry.ID, included)
+			}
+		}
+		if entry.Type == "Resolution" {
+			switch entry.Decision {
+			case "approve":
+			case "revise", "hold":
+				hasAnnotation := false
+				for _, included := range entry.Includes {
+					hasAnnotation = hasAnnotation || entryTypes[included] == "Annotation"
+				}
+				if strings.TrimSpace(entry.Reason) == "" && !hasAnnotation {
+					return roundLog{}, fmt.Errorf("%s Resolution %s lacks rationale", entry.Decision, entry.ID)
+				}
+			default:
+				return roundLog{}, fmt.Errorf("Resolution %s has invalid decision", entry.ID)
+			}
+			result.Resolutions++
+		} else if len(entry.Includes) == 0 {
+			baseFindings[entry.ID] = true
+		} else {
+			declineIncludes[entry.ID] = entry.Includes
+		}
+		seen[entry.ID], entryTypes[entry.ID] = true, entry.Type
+		result.Entries = append(result.Entries, entry)
+		result.Summary = append(result.Summary, RoundEntrySummary{Type: entry.Type, ID: entry.ID, Decision: entry.Decision, Advisory: entry.Type == "Resolution"})
+	}
+	if result.Resolutions == 0 {
+		return roundLog{}, fmt.Errorf("round log has no reviewer Resolution")
+	}
+	result.Triage = "recorded"
+	if result.Resolutions == 1 {
+		if len(baseFindings) == 0 {
+			result.Triage = "no-findings"
+		} else {
+			result.Triage = "pending"
+		}
+	} else if allFindingsDeclined(baseFindings, declineIncludes, result.Entries[len(result.Entries)-1]) {
+		result.Triage = "all-declines"
+	}
+	return result, nil
+}
+
+func allFindingsDeclined(findings map[string]bool, declines map[string][]string, triage reviewEntry) bool {
+	if len(findings) == 0 || triage.Type != "Resolution" || len(triage.Includes) == 0 {
+		return false
+	}
+	covered := map[string]bool{}
+	for _, id := range triage.Includes {
+		refs, ok := declines[id]
+		if !ok {
+			return false
+		}
+		for _, ref := range refs {
+			if findings[ref] {
+				covered[ref] = true
+			}
+		}
+	}
+	return len(covered) == len(findings)
+}
+
+func verifyRoundArtifacts(entityDir, room string, manifest *briefingManifest) error {
+	for _, artifact := range manifest.Artifacts {
+		parsed, err := url.Parse(artifact.URI)
+		if err != nil {
+			return fmt.Errorf("artifact %s URI: %w", artifact.ID, err)
+		}
+		if parsed.Scheme != "" {
+			continue
+		}
+		path := parsed.Path
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(room, filepath.FromSlash(path))
+		}
+		realPath, err := filepath.EvalSymlinks(path)
+		if err != nil {
+			return fmt.Errorf("resolve artifact %s: %w", artifact.ID, err)
+		}
+		realRoot, err := filepath.EvalSymlinks(entityDir)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(realRoot, realPath)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return fmt.Errorf("artifact %s escapes the entity directory", artifact.ID)
+		}
+		body, err := os.ReadFile(realPath)
+		if err != nil {
+			return fmt.Errorf("read artifact %s: %w", artifact.ID, err)
+		}
+		if RawDigest(body) != artifact.Rev {
+			return fmt.Errorf("artifact %s raw digest does not match Briefing revision", artifact.ID)
+		}
+	}
+	return nil
+}
+
+func readFeedbackCycle(path string, cycle int) (string, error) {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	if !utf8.Valid(body) {
+		return "", fmt.Errorf("--feedback-cycle must be UTF-8")
+	}
+	line := strings.TrimSuffix(string(body), "\n")
+	if strings.ContainsAny(line, "\r\n") || !strings.HasPrefix(line, fmt.Sprintf("- Cycle %d: ", cycle)) {
+		return "", fmt.Errorf("--feedback-cycle must contain exactly one canonical Cycle %d line", cycle)
+	}
+	return line, nil
+}
+
+func roundEntityID(entityPath string, data []byte) (string, error) {
+	root, _, _, err := frontmatterNode(data)
+	if err != nil {
+		return "", err
+	}
+	if id := mappingValue(root, "id"); id != nil && strings.TrimSpace(id.Value) != "" {
+		return id.Value, nil
+	}
+	name := strings.TrimSuffix(filepath.Base(entityPath), filepath.Ext(entityPath))
+	if name == "index" {
+		name = filepath.Base(filepath.Dir(entityPath))
+	}
+	if !roundStageRE.MatchString(name) {
+		return "", fmt.Errorf("cannot derive normalized round entity identity")
+	}
+	return name, nil
+}
+
+func validateDerivedRoom(entityPath, room string) error {
+	root := filepath.Dir(entityPath)
+	rel, err := filepath.Rel(root, room)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("derived round room escapes the entity directory")
+	}
+	current := root
+	for _, part := range strings.Split(rel, string(filepath.Separator)) {
+		current = filepath.Join(current, part)
+		info, err := os.Lstat(current)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("derived round room crosses symlink %s", current)
+		}
+	}
+	return nil
+}
+
+func sameRoundPointer(left, right RoundPointer) bool {
+	return left.ID == right.ID && left.Stage == right.Stage && left.Cycle == right.Cycle && sameBinding(left.Briefing, right.Briefing)
+}
+
+func mustReadRoundFile(room, name string) []byte {
+	body, _ := os.ReadFile(filepath.Join(room, name))
+	return body
 }
 
 func RecordBriefing(entityPath, briefingPath string) error {

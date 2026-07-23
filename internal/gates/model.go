@@ -9,6 +9,7 @@ import (
 )
 
 var digestRE = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
+var roundStageRE = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
 
 type Document struct {
 	Version int          `yaml:"version" json:"version"`
@@ -70,6 +71,31 @@ type Briefing struct {
 	Digest       string `yaml:"digest" json:"digest"`
 	DigestDomain string `yaml:"digest-domain" json:"digest-domain"`
 	RoomRef      string `yaml:"room-ref" json:"room-ref"`
+}
+
+// RoundPointer is the entity's current pointer to one advisory Review & Gate
+// room. The ordered entries remain in the room's JSONL log.
+type RoundPointer struct {
+	ID       string   `yaml:"id" json:"id"`
+	Stage    string   `yaml:"stage" json:"stage"`
+	Cycle    int      `yaml:"cycle" json:"cycle"`
+	Briefing Briefing `yaml:"briefing" json:"briefing"`
+}
+
+type RoundEntrySummary struct {
+	Type     string
+	ID       string
+	Decision string
+	Advisory bool
+}
+
+type RoundSummary struct {
+	ID       string
+	Stage    string
+	Cycle    int
+	Briefing string
+	Triage   string
+	Entries  []RoundEntrySummary
 }
 
 type Resolution struct {
