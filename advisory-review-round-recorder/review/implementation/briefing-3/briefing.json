@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:fr:implementation:attempt-3:revision-1",
+  "question": "Should the over-ceiling two-step advisory-round implementation be reworked as a one-shot completed-round operation?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:902cb8236d2b7e6154c2dda618e45a388fd44b0bd1b8009f8c49b8c34bf59f34"
+    },
+    {
+      "id": "artifact:second-boundary-audit",
+      "uri": "second-boundary-audit.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:a798751fa70b7537ad7ec925cfdee5e5c7f1183cb72713dda2310036ffc3a677"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9fd12a83f50ce114582d6b1fe09d3f6703bdfd3231de54e4d4bb3ee54c4a156d"
+    },
+    {
+      "id": "artifact:gate-round-contract",
+      "uri": "../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:cd94c479c36752d9d895df0451cee7d144465176ca84a4e8c85150bd9004bafc"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:implementation-design-reset",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Accept the two-step implementation",
+          "to": "stage:validation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Re-ideate as one-shot completed rounds",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Park the capability",
+          "to": "gate:implementation"
+        }
+      ]
+    }
+  ]
+}

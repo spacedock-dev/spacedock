@@ -1,7 +1,7 @@
 ---
 id: frze3yqm9da0vp0r53qqdc8t
 title: Extend 3k's recorder to persist advisory review rounds
-status: implementation
+status: ideation
 source: "02av deferred round-recorder plumbing and 3j jobs 592/594/597 incident, 2026-07-23"
 started: 2026-07-23T00:55:59Z
 completed:
@@ -95,6 +95,25 @@ gates:
                 decision: revise
                 reason: Cycle-2 architecture is shared and AC-correct, but the 683-LOC pre-CLI checkpoint exceeds the invalid 365 estimate and retains named canonical-validation, projection, URI, duplication, and whole-operation failure-test defects; authorize one bounded correction under measured 540/600 hard stops.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: feedback
+                target-stage: implementation
+                state: superseded
+            - id: gate-attempt:fr-implementation-3
+              briefing:
+                id: briefing:docs-dev:fr:implementation:attempt-3:revision-1
+                digest: sha256:ecbf5f82df866bde1f85bbd0d399c1dd0fba12f294bbdcc3d1382dbb000b91d4
+                digest-domain: canonical-bytes
+                room-ref: ./review/implementation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fr:implementation:3
+                briefing: briefing:docs-dev:fr:implementation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T07:12:03.145791Z"
+                decision: revise
+                reason: The corrected two-step design remains 670 net production LOC before CLI, above the 540 hard stop; an independent boundary audit shows the value can be preserved by one-shot completed-round publication within 580/640.
+                adoption-note: 'Re-ideate only the append semantics as one-shot completed rounds: immutable room creation once, exact replay no-op, divergent replay refusal, pointer and optional projection published together; preserve every value AC, remove interim/prefix-append machinery, and hard-stop at 580 pre-CLI or 640 total. Captain directive: ''why why is fr not sent back to rework?'''
               application:
                 action: feedback
                 target-stage: implementation
@@ -293,6 +312,7 @@ Implementation is incomplete and held at the declared mechanism-drift gate; comm
 
 - Cycle 1: REVISE — independent mechanism-drift audit; surface 699 production LOC before CLI vs estimate 300 (233%); AC unchanged
 - Cycle 2: REVISE — independent shared-composition audit; surface 683 production LOC before CLI vs estimate 365 (187%); AC unchanged
+- Cycle 3: REVISE — independent second-boundary audit; surface 670 production LOC before CLI vs revised hard stop 540 (124%); AC unchanged
 
 ## Re-ideation delta: shared recorder composition
 
