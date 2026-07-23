@@ -677,15 +677,15 @@ value ACs plus the shared 3k boundaries remain intact.
   injected projections, undefined stages, and every tested failure without room,
   pointer, projection, lock residue, or unrelated-byte mutation.
 - DONE: Update the canonical repo specification and public references to the landed one-shot behavior, request Roborev, triage every finding against materiality, and report exact LOC plus commit evidence.
-  Schema, gate contract, public references, dev caller, and feedback-rejection skill
-  now document and invoke the complete one-shot operation.
-  Roborev job 728's incomplete-disposition and canonical-room findings, job 738's
-  mixed/fixed projection and flat-entity collision findings, and job 752's mutable
-  entity-artifact, contradictory-disposition, EOF, and compatibility findings are fixed.
+  Schema, gate contract, public references, dev caller, and skill document and invoke the complete one-shot operation.
+  AC-5 evidence: `docs/dev/README.md`'s in-stage caller and
+  `skills/feedback-rejection-flow/SKILL.md`'s routed caller both invoke `gate record --round`;
+  `TestRoundCallersUseResolvedLauncherAfterCompleteTriage` and `TestGateRoundRecordAndValidateCLI` prove the caller/command contract, while ordinary 3k lifecycle integration remains 6y-owned.
+  Roborev job 728's disposition/room findings, job 738's projection/collision findings,
+  and job 752's artifact, contradiction, EOF, and compatibility findings are fixed.
   Job 778's structured-decline, full cycle grammar/decision, and taxonomy-membership
-  findings are fixed in `b4c95b9f`; current-status equality is declined because the
-  approved 3j historical backfill requires an explicit past stage, and promotes only
-  if the product later removes historical backfill and becomes live-only.
+  findings are fixed in `b4c95b9f`; status equality is declined because historical
+  backfill requires a past stage, promoting only if the product becomes live-only.
   Jobs 728/786's exact-log digest is deferred because the approved pointer is the exact
   Briefing-only schema and the canonical room is immutable; promote if a supported
   writer can mutate retained room bytes or a pointer-schema revision is authorized.
