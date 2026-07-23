@@ -47,6 +47,19 @@ gates:
                 digest: sha256:5d397bd2da15cd13c483c1c924aaac5130fc7ef15a7afb7feb074c0bdb0e0827
                 digest-domain: canonical-bytes
                 room-ref: ./review/implementation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fr:implementation:1
+                briefing: briefing:docs-dev:fr:implementation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T06:14:55.524908Z"
+                decision: revise
+                reason: The implementation crossed its 680-LOC hard stop before CLI wiring, duplicated 3k writer and Review-and-Gate parsing paths, omitted retained-room CAS, and failed its risky-path coverage; ACs remain unchanged and require bounded mechanism re-ideation.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 ---
 
 Provide one owned write surface for correction-round Briefings, reviewer Annotations and advisory Resolution, and the worker's triage Resolution, without selecting a gate or advancing workflow state.
