@@ -7,7 +7,7 @@ started: 2026-07-23T02:01:56Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-first-officer-gate-command-lifecycle
 issue:
 sprint: durable-decisions
 gates:
