@@ -86,6 +86,19 @@ gates:
                 digest: sha256:5f48beeef18ebc98d03313da868aa6ea0da4b6236176cb4adc18dea36fa59b45
                 digest-domain: canonical-bytes
                 room-ref: ./review/implementation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fr:implementation:2
+                briefing: briefing:docs-dev:fr:implementation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T06:53:07.893364Z"
+                decision: revise
+                reason: Cycle-2 architecture is shared and AC-correct, but the 683-LOC pre-CLI checkpoint exceeds the invalid 365 estimate and retains named canonical-validation, projection, URI, duplication, and whole-operation failure-test defects; authorize one bounded correction under measured 540/600 hard stops.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 ---
 
 Provide one owned write surface for correction-round Briefings, reviewer Annotations and advisory Resolution, and the worker's triage Resolution, without selecting a gate or advancing workflow state.
