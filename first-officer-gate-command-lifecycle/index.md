@@ -278,3 +278,7 @@ Declared before code edits on 2026-07-23. Production Go estimate: **0 LOC**. Fir
 - `docs/site/reference/command-reference.md` — 6-10 docs lines for capability readiness; collision check was clear at declaration time (clean worktree, latest file commit `f06cce04`) and will be repeated immediately before editing.
 
 If implementation needs production Go, schema/command changes, more than 120 FO-contract lines, provider transport/polling, a presenter redesign, advisory-round logic, or any file outside this declaration, implementation stops and reports drift for a design reset.
+
+### Intended-change amendment 1
+
+The first shared-scenario compile correctly failed because `internal/ensigncycle/shared_scenarios_meta_test.go` pins the exact scenario list. Add that existing test lock at **1 test LOC**. This is a mechanical parity update within the declared host-neutral scenario proof: production/schema/command LOC remain zero, FO contract remains 58 added lines, and no lifecycle mechanism or AC changes. No design-reset trigger fired.
