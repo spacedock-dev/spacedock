@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:fr:implementation:attempt-1:revision-1",
+  "question": "Should the over-bound advisory-round implementation be rejected and returned to ideation around shared 3k primitives without changing its value ACs?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e07ec7d7c01c38c10d70904eadb54ee79d30003857ebdda54feef396f482b1a3"
+    },
+    {
+      "id": "artifact:drift-audit",
+      "uri": "drift-audit.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:09e06fbc4787f67d5a328aa48b67fbdc951bb46f8b72641ea031f24c684cd4f9"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:ea0c842d95dcca9ad51d640fde04b4cd87f1b6d44d5d22a8b5df186c2f31d4fd"
+    },
+    {
+      "id": "artifact:gate-round-contract",
+      "uri": "../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:cd94c479c36752d9d895df0451cee7d144465176ca84a4e8c85150bd9004bafc"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:implementation-reset",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Accept the implementation",
+          "to": "stage:validation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return for bounded mechanism re-ideation",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for another prerequisite",
+          "to": "gate:implementation"
+        }
+      ]
+    }
+  ]
+}
