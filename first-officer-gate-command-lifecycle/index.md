@@ -13,7 +13,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:6y:ideation
+        gate: gate:docs-dev:6y:implementation
     records:
         - id: gate:docs-dev:6y:ideation
           stage: ideation
@@ -76,6 +76,25 @@ gates:
                 decision: revise
                 reason: The boot-resident lifecycle exceeds the hard shared-core ceiling by 5,534 bytes beyond available headroom, leaves a headless gate-entry bypass, and lacks required live-spawn and adversarial proof; ACs remain unchanged and require deferred gate-triggered topology re-ideation.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: feedback
+                target-stage: implementation
+                state: superseded
+            - id: gate-attempt:6y-implementation-2
+              briefing:
+                id: briefing:docs-dev:6y:implementation:attempt-2:revision-1
+                digest: sha256:cc82fcd0474089c65e415ba09545dc18c26fd50b47e646785a5dda6cb827f61a
+                digest-domain: canonical-bytes
+                room-ref: ./review/implementation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:implementation:2
+                briefing: briefing:docs-dev:6y:implementation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T11:09:18.116708Z"
+                decision: revise
+                reason: 'The deferred lifecycle implementation preserves the end value, but its remaining failures are proof-boundary defects: a model-reconstructed command-only prompt mutant, an all-routes-by-all-hosts live matrix, and an unexposed Codex public-stream handle are not valid mandatory oracles; Pi still needs real async completion waiting and Claude needs a final corrected positive run.'
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
               application:
                 action: feedback
                 target-stage: implementation
@@ -587,6 +606,7 @@ Cycle 2 successfully moved the recorded gate lifecycle behind the approved defer
 ### Feedback Cycles
 
 - Cycle 6: NEEDS DECISION — Roborev job 775; behavioral proof remains capped at 650 added LOC and live proof at 59; AC unchanged; command-only copied-skill mutant has a credentialed blocking counterexample
+- Cycle 7: REVISE — delegated proof-boundary ruling; surface 650 behavioral plus 59 live LOC vs caps 650 plus 59 (100%); AC unchanged, impossible/disproportionate proof mechanisms corrected
 
 ## Stage Report: implementation (cycle 3)
 

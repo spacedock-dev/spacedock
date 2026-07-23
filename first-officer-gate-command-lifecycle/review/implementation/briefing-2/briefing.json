@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:implementation:attempt-2:revision-1",
+  "question": "Should the lifecycle implementation replace impossible or disproportionate live-proof mechanisms while preserving every value criterion?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:7dd098d3e2a20eac577d6eca86200dc723dd29a7c3ce3f47ed6389c365b2fea8"
+    },
+    {
+      "id": "artifact:proof-boundary-ruling",
+      "uri": "proof-boundary-ruling.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:de7dc26ec62b2e24b6538284791bd2755c672447fa69e7c7c7b823d73f9f8c68"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1c75203279ffa9c08852c15a721400b92c0f55795d36973599297f20b9a9b549"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:cd94c479c36752d9d895df0451cee7d144465176ca84a4e8c85150bd9004bafc"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:implementation-proof-correction",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Enter validation",
+          "to": "stage:validation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Correct proof within implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for runtime repair",
+          "to": "gate:implementation"
+        }
+      ]
+    }
+  ]
+}
