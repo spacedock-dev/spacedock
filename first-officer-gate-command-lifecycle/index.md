@@ -367,3 +367,100 @@ Implemented and hardened the six-event integration and its deterministic/live or
 ### Feedback Cycles
 
 - Cycle 1: REVISE — independent topology audit; surface shared core +6,197 bytes vs available headroom 663 bytes (935%); AC unchanged
+
+## Topology re-ideation delta (cycle 2; authoritative)
+
+This delta replaces only the rejected resident placement and incomplete proof plan. The Problem, six-event lifecycle, provenance rules, fail-closed routing, concise presentation, capability readiness, exact package behavior, AC-1 through AC-8, documentation wording, and no-production-Go boundary above remain binding. Commit `cabdef33` remains an untouched counterexample/checkpoint: implementation continues from it with a new commit and does not compress, amend, reset, or discard it.
+
+### Deferred ownership and byte budget
+
+The detailed `«gate.lifecycle»` body moves verbatim in substance from the boot-resident core to a new adapter-less `skills/fo-gate-lifecycle/SKILL.md`. Its frontmatter declares `name: fo-gate-lifecycle` and `user-invocable: false`; its description names the first engaged-gate trigger. It owns capability preflight, retained package rules, resume validation, open/closed binding, direct/delegated/provider provenance, eligibility/consume routing, stale/consumed behavior, and the handoff to existing feedback/dispatch procedures. It does not own judgment, `present-gate` rendering, write authority, feedback-round semantics, or runtime spawning.
+
+The exact implementation budgets are:
+
+- `skills/first-officer/references/first-officer-shared-core.md`: extract the 6,222-byte lifecycle section. The checkpoint is 26,067 bytes after extraction and before added route/pointer text; all gate-load triggers together have at most 687 bytes, and the finished file must be at most **26,754 bytes**. The hard `<26,755` guard is unchanged.
+- `skills/fo-gate-lifecycle/SKILL.md`: new, **6,600 bytes maximum**, expected 62–75 lines. The 6,222-byte procedure may gain only frontmatter, an ownership heading, and load/write-order preconditions; lifecycle meaning may not be compressed away.
+- Worst-case host accounting: register the new skill in `foFunctionReferencePaths` and `foSharedLoadPaths`, because every host can reach a gate. The implementation ceiling is current baselines plus the 6,600-byte skill plus at most 662 resident bytes versus the 26,092-byte parent: Claude **103,343**, Codex **82,558**, Pi **78,688**. `foHostLoadBaselineBytes` must be set to each candidate's exact measured bytes, with no unused allowance; the ceilings are stop limits, not ratchet values. The set-equality discriminator must fail if the file disappears from either address lint or worst-case accounting.
+- Contract/topology guards: 40–80 test LOC across `internal/contractlint/boot_resident_closure_test.go`, `fo_function_reference_invariant_test.go`, and `structural_checks_test.go`. Register the skill in `lazyLoadSkills`/`deferredSkillCores`, require its lifecycle anchors, prove the resident pointer resolves, and prove it is absent from the user-invocable discovery set.
+- Behavioral proof: retain the seven checkpoint test/live files under `internal/ensigncycle/` and add 350–650 test LOC, chiefly in `recorded_gate_lifecycle_test.go`; a separate `fo_gate_lifecycle_topology_test.go` is allowed only if route-table readability requires it. The three checkpoint documentation edits remain as written and gain no new behavior.
+
+No other production or instruction file is expected. Any production Go, schema/command change, host-specific lifecycle copy, `present-gate` redesign, feedback-round change, or file outside this list is a design-reset trigger.
+
+### One gate-entry trigger and load order
+
+The boot core owns only detection and the load precondition. Every engaged route funnels through one conceptual `gate.enter(slug, stage, route)` boundary:
+
+```text
+if route == interactive-greet:
+    summarize the ready gate and STOP                 # no lifecycle load
+if current/next stage is not gate:true:
+    continue the ordinary event loop                  # no lifecycle load
+
+complete Skill(skill="spacedock:fo-gate-lifecycle")  # its own host event
+run the selected launcher's full gate capability probe
+if resuming an existing attempt:
+    run lifecycle resume validation before any replayed write
+if the next action creates/changes room, entity, gate, or application state:
+    complete the existing fo-write-core read          # separate prerequisite/event
+retain/bind package -> validate open
+AC cross-check/judgment -> Skill(spacedock:present-gate) -> present
+record decision -> validate closed -> eligibility/route/consume
+only after durable consumed state: dispatch build -> runtime spawn -> returned handle
+```
+
+The required route table is:
+
+| Entry route | Required behavior |
+| --- | --- |
+| Interactive startup with an already-gated entity | Greet names the gate and stops without loading the lifecycle or presenter. A later `engage` is the engaged entry below. |
+| Headless/no-conn startup, including already-gated state | Load lifecycle before capability/package work, validation, or `present-gate`; bind and validate open, present, then stop without deciding. The checkpoint's direct presenter call is deleted. |
+| Headless with delegated conn | Same entry and ordering; the grant changes only decision authority, never the pre-presentation sequence. |
+| Interactive `engage` | Stay lazy through convergence/non-gated work; at the first gate, load before any gate action. |
+| Worker completion whose current/next stage is gated | After report/checklist detection and before package mutation, validation, presentation, feedback routing, or advancement, load the lifecycle. |
+| Resume/recovery of open, closed-pending, revise, hold, stale, or consumed records | Load before the first `gate validate` and before any state-specific routing. Consumed resumes dispatch without another consume; it still enters through the module so the one-use decision is observed. |
+
+Loading `fo-gate-lifecycle` never satisfies write authority. The existing `fo-write-core` read remains a separate completed event immediately before the first FO-authored room/state mutation. Conversely, a write-core read cannot substitute for the lifecycle load.
+
+Repository precedent already proves the adapter-less, non-user-invocable skill mechanism structurally (`fo-status-viewer` and `fo-dispatch-recovery`); no new loader or spike product is needed. The unproved value mechanism is real host execution at each route, so the first implementation checkpoint is the copied-plugin route/load-order replay and its deliberately broken trigger controls.
+
+### Checkpoint reuse and falsifiable proof
+
+Retain the checkpoint's fresh real-binary six-command replay, exact attempt/Briefing/digest/Resolution/provenance assertions, exact empty open-decision field, help-event exclusion, successful Claude tool-result pairing, Pi consume-before-subagent rule, Codex spawn/handle correlation, relative/absolute path pair, folder-form commit, revise/hold controls, shared-scenario parity, and command/dispatch evidence artifacts. Change contract-source reads from the shared core to the new skill and keep the resident trigger/topology assertions separate.
+
+Replace two insufficient checkpoint checks:
+
+- Replace the static `procedureEvents(mutant)` eligibility deletion with a live copied-plugin replay that removes one actual lifecycle command from `skills/fo-gate-lifecycle/SKILL.md`. The model host must consume the mutated shipped tree, retain otherwise-valid spawn proof, and the common grader must go red solely because the command is missing.
+- Replace generic review substring acceptance with grading of the review actually emitted by the runtime: required structured fields, one recommendation/decision ask, retained snapshot identity, and no leading raw entity/Briefing/room dump.
+
+Add these exact matrices:
+
+| Matrix | Required arms and red control |
+| --- | --- |
+| Load topology | Interactive gated greet (no load); headless no-conn; headless conn; engage; worker-completion gate; open/pending/revise/hold/stale/consumed resume. For every engaged arm, a timestamped/ordered skill-load event precedes capability probes, room/gate writes, validate, presenter load, decision routing, and resume logic. Delete each route's funnel call in turn; that arm must red while non-gated greet remains green and load-free. |
+| Six load-bearing events | Baseline plus deletion of briefing-record, open-validate, decision-record, closed-validate, eligibility, and consume. Each mutant keeps a valid prospective spawn observation; the grader, not removal of dispatch evidence, refuses it. At least the eligibility deletion is the live copied-plugin mutant. |
+| Provenance/presentation | Delegated baseline; actor swapped to `person:captain`; blank reason; missing/exactly altered directive; raw entity dump; raw `briefing.json` dump. Actor/provenance mutants fail exact durable cardinality; raw-dump mutants fail the observed-review grader. |
+| AC-5 refusals | Capability-stale executable with every help form logged; missing and alternate-basename Briefing; invalid association, actor, reason, and directive; relative Briefing refusal then absolute success; forced close-validation mismatch; validate/eligibility reads; hold, blocked, repeat-consume, and stale consume. Assert nonzero/actionable output, whole-tree/entity byte identity and no lock residue on every promised byte-clean arm; stale may change only pending→superseded and never status. The actual FO stale-launcher entry remains a required live arm, not replaceable by the helper probe. |
+| AC-7 resume | Fresh processes over open/same package, open/changed package, closed approval-pending, closed revise, closed hold, stale, and consumed. Assert attempt/Resolution cardinality and bytes after each pass; across three passes exactly one successful consume and one transition. Stale must supersede, bind a replacement Briefing, and re-present without advancing. |
+| Discovery | Capture the real workflow-discovery candidate list, create/run all fixtures, capture it again, and require exact sorted equality. A planted discoverable workflow proves the comparison can red. |
+| Runtime successor | After consumed state, require one host spawn event, a nonblank returned handle, pre-dispatch absence of the marker, and marker-bearing durable output correlated to that worker result. `dispatch build`, narration, parent-written output, or wait without a handle all fail. |
+
+Claude 401 and Pi reused-refresh-token/no-key failures are external validation conditions: retain their artifacts, repair credentials outside this entity, and later require green executions of the identical host-neutral scenario. They do not authorize fixture substitution or AC narrowing. Codex's repeated consume-without-spawn is an implementation blocker: the task cannot declare implementation complete or enter validation until a run observes the spawn, handle, and correlated worker output.
+
+### Stop conditions and excluded reset defects
+
+Stop and return to ideation if the resident core reaches 26,755 bytes; the deferred file exceeds 6,600 bytes; any host worst-case file set omits the deferred skill or exceeds its ceiling; any engaged entry acts before the module load; the live shipped-skill mutant does not red; the full AC-5/AC-7/discovery matrices are incomplete; observed successor evidence is weakened; or implementation needs a surface excluded above. Full `go test ./...`, `go test ./... -race`, focused/live compilation, and the applicable live lanes remain final gates.
+
+Two observed workflow-reset defects are recorded but explicitly not absorbed: revise currently derives feedback to implementation, and clearing a worktree on backward routing falsely trips the merge guard. This entity changes neither reset target derivation nor worktree/merge-guard behavior; those require a separately scoped correction.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Define the exact deferred topology for the recorded gate lifecycle: a non-user-invocable gate-triggered module, a boot-core trigger that keeps first-officer-shared-core below 26,755 bytes, honest worst-case host prompt accounting, and load order before every mutation/validation/presentation/decision path.
+  The authoritative delta assigns the 6,222-byte procedure to `skills/fo-gate-lifecycle/SKILL.md`, caps the resident core at 26,754 and the module at 6,600 bytes, charges it to all three host load sets, and specifies lifecycle-load then separate write-core ordering.
+- DONE: Enumerate and close every gate-entry route—including already-gated startup, headless/no-conn, engage, worker completion, and resume—while preserving greet-and-stop/non-gated laziness; provide exact file/trigger ownership and a falsifiable load-topology test plan.
+  The route table covers interactive and headless startup, conn/no-conn, engage, worker completion, and all resume states; route-deletion mutants must red while interactive greet and non-gated paths prove no lifecycle load.
+- DONE: Replace the failed implementation plan with a bounded checkpoint-reuse plan that retains useful tests but adds the shipped-skill live mutant, actor-swap/raw-dump mutants, full AC-5/AC-7 matrices, workflow-discovery equality, and strict observed successor-spawn evidence; keep Claude/Pi auth as external validation conditions and do not narrow ACs.
+  The retain/replace/add matrix names every missing proof arm and its red control; Codex consume-without-spawn remains blocking, Claude/Pi require later credentialed green runs, and AC-1 through AC-8 are unchanged.
+
+### Summary
+
+Re-ideated the rejected resident implementation as one gate-triggered, adapter-less `fo-gate-lifecycle` skill with a sub-26,755-byte boot core and honest all-host worst-case accounting. The revised plan closes the headless bypass and every other gate-entry route, preserves the detailed lifecycle and WIP checkpoint, and makes live mutation, complete refusal/resume matrices, discovery equality, and an actually observed successor spawn mandatory before validation.
