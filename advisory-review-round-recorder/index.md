@@ -167,6 +167,20 @@ gates:
                 digest: sha256:5419108541087f8b95422e03db0f9903665dbc6a981a7f397ef2fbeda4372a7b
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fr:validation:2
+                briefing: briefing:docs-dev:fr:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-23T23:49:12.100279Z"
+                decision: approve
+                reason: Exact rebased candidate 5617b65e has 5/5 ACs independently evidenced, full/race/live checks green, patch identity proven, and no material finding.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 review-round:
     id: round:frze3yqm9da0vp0r53qqdc8t:implementation:6
     stage: implementation
