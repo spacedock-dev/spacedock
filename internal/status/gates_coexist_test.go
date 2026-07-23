@@ -99,6 +99,31 @@ func TestStatusProjectsSharedGateReadinessReducer(t *testing.T) {
 	}
 }
 
+func TestStatusAllFieldsProjectsValidatingWithoutGateRecord(t *testing.T) {
+	root, _ := buildSplitRoot(t, identifyReadyGatesReadme, map[string]string{
+		"sp.md": "---\nstatus: validation\n---\n# still validating\n",
+		"qc.md": "---\nstatus: validation\n---\n# still validating\n",
+	})
+	out, errOut, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--all-fields", "--json")
+	if code != 0 {
+		t.Fatalf("--all-fields exit=%d stderr=%q", code, errOut)
+	}
+	var result struct {
+		Entities []map[string]string `json:"entities"`
+	}
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Entities) != 2 {
+		t.Fatalf("entities = %#v, want two validating entities", result.Entities)
+	}
+	for _, entity := range result.Entities {
+		if entity["gate-readiness"] != "validating" {
+			t.Fatalf("%s gate-readiness = %q, want validating", entity["slug"], entity["gate-readiness"])
+		}
+	}
+}
+
 func TestStatusTextAndJSONProjectAllRecordedResolutionStates(t *testing.T) {
 	root := t.TempDir()
 	readme := "---\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n---\n# Workflow\n"

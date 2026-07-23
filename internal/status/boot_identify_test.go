@@ -166,7 +166,7 @@ func TestBootIdentifyReadyGates(t *testing.T) {
 	def, state := buildSplitRoot(t, identifyReadyGatesReadme, map[string]string{
 		"sp.md":          "---\nid: sp\nstatus: validation\nscore: 100\n---\n# Still validating\n",
 		"mf.md":          openGateEntity("mf", "validation", "90"),
-		"r4.md":          openGateEntity("r4", "validation", "80"),
+		"r4.md":          strings.Replace(openGateEntity("r4", "validation", "80"), "id: r4\n", "", 1),
 		"2n.md":          approvedGateEntity("2n", "validation", "done", "70"),
 		"qc.md":          "---\nid: qc\nstatus: validation\nscore: 60\n---\n# Still validating\n",
 		"dispatch-me.md": "---\nstatus: draft\nscore: 1000\n---\n",

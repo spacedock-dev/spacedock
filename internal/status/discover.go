@@ -266,15 +266,7 @@ func materializeGateReadiness(entities []*entity, stages []Stage) {
 }
 
 func materializeGateEligibility(entities []*entity, definitionDir string, explicitFields []string, allFields bool, filters []whereFilter) {
-	readinessReferenced := false
-	if allFields {
-		for _, entity := range entities {
-			if entity.gateDoc != nil || entity.gateInvalid {
-				readinessReferenced = true
-				break
-			}
-		}
-	}
+	readinessReferenced := allFields
 	for _, field := range explicitFields {
 		if field == "gate-readiness" {
 			readinessReferenced = true
