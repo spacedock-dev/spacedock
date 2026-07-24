@@ -3,6 +3,7 @@
 package status
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -58,6 +59,12 @@ func ParseStagesWithDefaults(path string) ([]Stage, map[string]string) {
 	if err != nil {
 		return nil, map[string]string{}
 	}
+	return ParseStagesWithDefaultsData(data)
+}
+
+// ParseStagesWithDefaultsData is ParseStagesWithDefaults over one immutable
+// in-memory README buffer.
+func ParseStagesWithDefaultsData(data []byte) ([]Stage, map[string]string) {
 	stagesNode := stagesNodeFromFrontmatter(data)
 	if stagesNode == nil {
 		return nil, map[string]string{}
@@ -98,6 +105,75 @@ func ParseStagesWithDefaults(path string) ([]Stage, map[string]string) {
 		return nil, defaults
 	}
 	return result, defaults
+}
+
+// StageContextSections parses optional ordered context-sections strictly.
+// A stage-local list replaces defaults; an explicit empty list clears them.
+func StageContextSections(data []byte, stage string) ([]string, error) {
+	slice := frontmatterSlice(data)
+	if len(slice) == 0 {
+		return nil, nil
+	}
+	var doc yaml.Node
+	if err := yaml.Unmarshal(slice, &doc); err != nil {
+		return nil, fmt.Errorf("malformed YAML: %w", err)
+	}
+	if len(doc.Content) == 0 || doc.Content[0].Kind != yaml.MappingNode {
+		return nil, nil
+	}
+	stages := mappingValue(doc.Content[0], "stages")
+	if stages == nil {
+		return nil, nil
+	}
+	if stages.Kind != yaml.MappingNode {
+		return nil, fmt.Errorf("stages: want mapping")
+	}
+
+	effective, present, err := contextSectionsValue(mappingValue(stages, "defaults"), "stages.defaults")
+	if err != nil {
+		return nil, err
+	}
+	if !present {
+		effective = nil
+	}
+	states := mappingValue(stages, "states")
+	if states == nil {
+		return effective, nil
+	}
+	if states.Kind != yaml.SequenceNode {
+		return nil, fmt.Errorf("stages.states: want sequence")
+	}
+	for i, item := range states.Content {
+		if item.Kind != yaml.MappingNode {
+			continue
+		}
+		values, declared, err := contextSectionsValue(item, fmt.Sprintf("stages.states[%d]", i))
+		if err != nil {
+			return nil, err
+		}
+		name := mappingValue(item, "name")
+		if name != nil && name.Kind == yaml.ScalarNode && name.Value == stage && declared {
+			effective = values
+		}
+	}
+	return effective, nil
+}
+func contextSectionsValue(mapping *yaml.Node, path string) ([]string, bool, error) {
+	node := mappingValue(mapping, "context-sections")
+	if node == nil {
+		return nil, false, nil
+	}
+	if node.Kind != yaml.SequenceNode {
+		return nil, true, fmt.Errorf("%s.context-sections: want sequence", path)
+	}
+	values := make([]string, 0, len(node.Content))
+	for i, item := range node.Content {
+		if item.Kind != yaml.ScalarNode {
+			return nil, true, fmt.Errorf("%s.context-sections[%d]: want scalar item", path, i)
+		}
+		values = append(values, item.Value)
+	}
+	return values, true, nil
 }
 
 // stagesNodeFromFrontmatter parses the in-fence frontmatter slice and returns

@@ -5,6 +5,8 @@ package status
 import (
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -126,5 +128,55 @@ stages:
 	path := writeTemp(t, readme)
 	if stages := parseStagesBlock(path); stages != nil {
 		t.Fatalf("expected nil for empty states, got %+v", stages)
+	}
+}
+
+func TestStageContextSectionsTriStateAndStrictKinds(t *testing.T) {
+	readme := []byte(`---
+stages:
+  defaults:
+    context-sections: [Authority, Safety]
+  states:
+    - name: inherited
+    - name: cleared
+      context-sections: []
+    - name: replaced
+      context-sections: [Safety, Authority]
+---
+`)
+	cases := []struct {
+		stage string
+		want  []string
+	}{
+		{"inherited", []string{"Authority", "Safety"}},
+		{"cleared", []string{}},
+		{"replaced", []string{"Safety", "Authority"}},
+	}
+	for _, tc := range cases {
+		got, err := StageContextSections(readme, tc.stage)
+		if err != nil {
+			t.Fatalf("%s: %v", tc.stage, err)
+		}
+		if !reflect.DeepEqual(got, tc.want) {
+			t.Fatalf("%s = %#v, want %#v", tc.stage, got, tc.want)
+		}
+	}
+
+	bad := []struct {
+		name   string
+		readme string
+		want   string
+	}{
+		{"malformed yaml", "---\nstages: [\n---\n", "malformed YAML"},
+		{"scalar", "---\nstages:\n  defaults:\n    context-sections: Authority\n---\n", "want sequence"},
+		{"mapping item", "---\nstages:\n  states:\n    - name: x\n      context-sections: [{name: Authority}]\n---\n", "want scalar item"},
+	}
+	for _, tc := range bad {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := StageContextSections([]byte(tc.readme), "x")
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want containing %q", err, tc.want)
+			}
+		})
 	}
 }

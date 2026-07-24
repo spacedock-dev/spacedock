@@ -19,6 +19,14 @@ type heading struct {
 	level  int
 	offset int // 1-based line number of the heading line
 	lines  int // section line count, so Read(offset, lines) returns exactly it
+	start  int // raw half-open source span, populated by scanHeadingSpans
+	end    int
+}
+
+// SectionSpan is one selected fence-safe heading section in raw README coordinates.
+type SectionSpan struct {
+	Heading    string
+	Start, End int
 }
 
 // sectionRead is the parsed result of reading a markdown file: its frontmatter,
@@ -79,6 +87,63 @@ func scanHeadings(lines []string) []heading {
 	}
 	assignSectionLines(headings, len(lines))
 	return headings
+}
+
+// FindSectionSpans resolves selectors in declaration order against the existing
+// fence-safe heading scanner. Missing and ambiguous exact heading text fail.
+func FindSectionSpans(data []byte, selectors []string) ([]SectionSpan, error) {
+	headings := scanHeadingSpans(data)
+	result := make([]SectionSpan, 0, len(selectors))
+	for _, selector := range selectors {
+		var matches []heading
+		for _, h := range headings {
+			if h.text == selector {
+				matches = append(matches, h)
+			}
+		}
+		if len(matches) != 1 {
+			return nil, fmt.Errorf("selector %q matches %d headings", selector, len(matches))
+		}
+		h := matches[0]
+		result = append(result, SectionSpan{Heading: h.text, Start: h.start, End: h.end})
+	}
+	return result, nil
+}
+
+func scanHeadingSpans(data []byte) []heading {
+	headings := scanHeadings(splitLines(string(data)))
+	starts := rawLineStarts(data)
+	for i := range headings {
+		startLine := headings[i].offset - 1
+		endLine := startLine + headings[i].lines
+		headings[i].start = starts[startLine]
+		headings[i].end = len(data)
+		if endLine < len(starts) {
+			headings[i].end = starts[endLine]
+		}
+	}
+	return headings
+}
+
+// rawLineStarts maps splitLines' CR/LF line model back to source bytes. CRLF is
+// one boundary and an EOF boundary does not create a trailing logical line.
+func rawLineStarts(data []byte) []int {
+	if len(data) == 0 {
+		return nil
+	}
+	starts := []int{0}
+	for i := 0; i < len(data); i++ {
+		if data[i] != '\r' && data[i] != '\n' {
+			continue
+		}
+		if data[i] == '\r' && i+1 < len(data) && data[i+1] == '\n' {
+			i++
+		}
+		if i+1 < len(data) {
+			starts = append(starts, i+1)
+		}
+	}
+	return starts
 }
 
 // assignSectionLines fills each heading's `lines` by the level-aware ownership

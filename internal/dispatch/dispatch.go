@@ -351,7 +351,7 @@ func printShowStageDefUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
   spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
 
-Print the workflow README section for a stage.
+Print a stage's workflow README section followed by its declared context sections.
 
 Flags:
   --workflow-dir DIR   Workflow definition directory containing README.md.

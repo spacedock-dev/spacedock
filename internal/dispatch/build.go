@@ -394,9 +394,17 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	if !isFile(readmePath) {
 		return buildError(stderr, 1, "workflow README not found at '%s'", readmePath)
 	}
+	readmeData, err := os.ReadFile(readmePath)
+	if err != nil {
+		return buildError(stderr, 1, "failed to read workflow README %q: %s", readmePath, err)
+	}
+	if _, err := status.StageContextSections(readmeData, stage); err != nil {
+		return buildError(stderr, 1, "workflow README %q, stage %q: %s", readmePath, stage, err)
+	}
+	readmeFields := status.ParseFrontmatterData(readmeData)
 
 	// Parse workflow stages + defaults.
-	stages, stageDefaults := status.ParseStagesWithDefaults(readmePath)
+	stages, stageDefaults := status.ParseStagesWithDefaultsData(readmeData)
 	if stages == nil {
 		return buildError(stderr, 1, "no stages block found in %s", readmePath)
 	}
@@ -490,7 +498,10 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// isolates CODE only — the entity body stays at the FO-passed entity_path.
 	// stateCheckout is the resolved absolute state-checkout dir (workflowDir/<state>),
 	// the git repo where the entity body lives; "" when the workflow is single-root.
-	stateCheckout := splitRootStateCheckout(workflowDir)
+	var stateCheckout string
+	if mode, relPath, err := status.ClassifyState(readmeFields["state"]); err == nil && mode == status.StateSplitRoot {
+		stateCheckout = filepath.Join(workflowDir, relPath)
+	}
 	splitRoot := stateCheckout != ""
 
 	// stateBranch is the orphan state branch peers push/pull on a split-root
@@ -504,7 +515,10 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// degrades to local-only. Probed once here so both guidance callers below agree.
 	var stateRemotePresent bool
 	if splitRoot {
-		stateBranch, _ = status.StateBranch(workflowDir)
+		stateBranch = strings.TrimSpace(readmeFields["state-branch"])
+		if stateBranch == "" {
+			stateBranch = "spacedock-state/" + filepath.Base(filepath.Clean(workflowDir))
+		}
 		stateRemotePresent = stateHasOrigin(stateCheckout)
 	}
 
@@ -534,7 +548,7 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// still decomposes; short names pass through byte-identical.
 	workerKey := strings.ReplaceAll(subagentType, ":", "-")
 	slug := status.EntitySlug(entityPath)
-	idStyle := status.ParseFrontmatter(readmePath)["id-style"]
+	idStyle := readmeFields["id-style"]
 	derivedName := capWorkerName(workerKey, slug, stage, entityFields["id"], idStyle)
 
 	// Rule 7: Name length and safety.
@@ -551,13 +565,13 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 			derivedName, stage, namePattern.String())
 	}
 
-	// Extract the stage subsection (validates the README heading parses).
-	stageSubsection, err := extractStageSubsection(readmePath, stage)
+	// Preflight this immutable README version before writing a dispatch artifact.
+	stageSubsection, err := resolveStageContext(readmeData, stage)
 	if err != nil {
 		if she, ok := err.(*stageHeadingError); ok {
 			return buildError(stderr, 1, "%s", she.msg)
 		}
-		return buildError(stderr, 1, "%s", err)
+		return buildError(stderr, 1, "workflow README %q, stage %q: %s", readmePath, stage, err)
 	}
 	if stageSubsection == "" {
 		return buildError(stderr, 1, "stage '%s' heading not found in %s", stage, readmePath)

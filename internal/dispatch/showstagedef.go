@@ -8,6 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
+
+	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
 // headingDecorationChars are the inline-markdown decoration characters stripped
@@ -60,6 +63,8 @@ type stageHeadingError struct{ msg string }
 
 func (e *stageHeadingError) Error() string { return e.msg }
 
+type sourceSpan struct{ start, end int }
+
 // extractStageSubsection returns the full ### {stage} subsection from a workflow
 // README. Heading match is permissive: any `###` line whose first content token
 // (after stripping “ ` “, `*`, `_`, `~` and treating `(` / `[` as token
@@ -73,7 +78,15 @@ func extractStageSubsection(readmePath, stage string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	subsection, _, err := extractStageSubsectionBytes(data, stage)
+	return subsection, err
+}
+
+// extractStageSubsectionBytes preserves the legacy rendered subsection while
+// also returning its structural raw source span from the same immutable buffer.
+func extractStageSubsectionBytes(data []byte, stage string) (string, sourceSpan, error) {
 	lines := splitTextLines(string(data))
+	starts := textLineStarts(data)
 
 	start := -1
 	for i, line := range lines {
@@ -87,7 +100,7 @@ func extractStageSubsection(readmePath, stage string) (string, error) {
 			tokens := headingTokens(line)
 			if len(tokens) > 0 && containsToken(tokens, stage) {
 				stripped := strings.TrimSpace(line)
-				return "", &stageHeadingError{msg: fmt.Sprintf(
+				return "", sourceSpan{}, &stageHeadingError{msg: fmt.Sprintf(
 					"stage heading at line %d mentions '%s' "+
 						"but does not parse as a stage heading: %s. "+
 						"The stage name must be the first content token of the "+
@@ -97,7 +110,7 @@ func extractStageSubsection(readmePath, stage string) (string, error) {
 					i+1, stage, pyRepr(stripped))}
 			}
 		}
-		return "", nil
+		return "", sourceSpan{}, nil
 	}
 
 	end := len(lines)
@@ -108,10 +121,16 @@ func extractStageSubsection(readmePath, stage string) (string, error) {
 			break
 		}
 	}
-	for end > start && strings.TrimSpace(lines[end-1]) == "" {
-		end--
+	rawEnd := len(data)
+	if end < len(starts) {
+		rawEnd = starts[end]
 	}
-	return strings.Join(lines[start:end], "\n"), nil
+	renderEnd := end
+	for renderEnd > start && strings.TrimSpace(lines[renderEnd-1]) == "" {
+		renderEnd--
+	}
+	return strings.Join(lines[start:renderEnd], "\n"),
+		sourceSpan{start: starts[start], end: rawEnd}, nil
 }
 
 // containsToken reports whether token is in tokens, matching Python's
@@ -169,6 +188,88 @@ func splitTextLines(text string) []string {
 	return lines
 }
 
+// textLineStarts maps splitTextLines' full separator set to source byte
+// coordinates. The manual decoder consumes CRLF atomically, avoiding the
+// double-advance bug a range-based mapper introduces.
+func textLineStarts(data []byte) []int {
+	if len(data) == 0 {
+		return nil
+	}
+	starts := []int{0}
+	for i := 0; i < len(data); {
+		r, width := utf8.DecodeRune(data[i:])
+		next := i + width
+		if lineBoundary(r) {
+			if r == '\r' && next < len(data) && data[next] == '\n' {
+				next++
+			}
+			if next < len(data) {
+				starts = append(starts, next)
+			}
+		}
+		i = next
+	}
+	return starts
+}
+
+// resolveStageContext assembles the mandatory legacy stage subsection followed
+// by declared fence-safe sections, all resolved from one README buffer.
+func resolveStageContext(data []byte, stage string) (string, error) {
+	subsection, stageSpan, err := extractStageSubsectionBytes(data, stage)
+	if err != nil || subsection == "" {
+		return subsection, err
+	}
+	selectors, err := status.StageContextSections(data, stage)
+	if err != nil {
+		return "", err
+	}
+	if len(selectors) == 0 {
+		return subsection, nil
+	}
+	seen := map[string]bool{}
+	for _, selector := range selectors {
+		if seen[selector] {
+			return "", fmt.Errorf("repeated selector %q", selector)
+		}
+		seen[selector] = true
+	}
+	sections, err := status.FindSectionSpans(data, selectors)
+	if err != nil {
+		return "", err
+	}
+	for i, section := range sections {
+		span := sourceSpan{section.Start, section.End}
+		if spansIntersect(stageSpan, span) {
+			return "", overlapError("stage "+stage, stageSpan, section.Heading, span)
+		}
+		for j := 0; j < i; j++ {
+			other := sourceSpan{sections[j].Start, sections[j].End}
+			if spansIntersect(other, span) {
+				return "", overlapError(sections[j].Heading, other, section.Heading, span)
+			}
+		}
+	}
+
+	parts := []string{subsection}
+	for _, section := range sections {
+		lines := splitTextLines(string(data[section.Start:section.End]))
+		for len(lines) > 0 && strings.TrimSpace(lines[len(lines)-1]) == "" {
+			lines = lines[:len(lines)-1]
+		}
+		parts = append(parts, strings.Join(lines, "\n"))
+	}
+	return strings.Join(parts, "\n\n"), nil
+}
+
+func spansIntersect(a, b sourceSpan) bool {
+	return a.start < b.end && b.start < a.end
+}
+
+func overlapError(aName string, a sourceSpan, bName string, b sourceSpan) error {
+	return fmt.Errorf("overlap: %q [%d,%d) intersects %q [%d,%d)",
+		aName, a.start, a.end, bName, b.start, b.end)
+}
+
 // runShowStageDef emits the README's ### {stage} subsection on stdout. Exit 0
 // with stdout on success; exit 1 with a parser diagnostic on a malformed or
 // missing heading or an unresolvable workflow dir / README. Matches
@@ -184,13 +285,18 @@ func runShowStageDef(workflowDir, stage string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	subsection, err := extractStageSubsection(readmePath, stage)
+	data, err := os.ReadFile(readmePath)
+	if err != nil {
+		fmt.Fprintf(stderr, "error: %s\n", err)
+		return 1
+	}
+	subsection, err := resolveStageContext(data, stage)
 	if err != nil {
 		if she, ok := err.(*stageHeadingError); ok {
 			fmt.Fprintf(stderr, "error: %s\n", she.msg)
 			return 1
 		}
-		fmt.Fprintf(stderr, "error: %s\n", err)
+		fmt.Fprintf(stderr, "error: workflow README %q, stage %q: %s\n", readmePath, stage, err)
 		return 1
 	}
 	if subsection == "" {

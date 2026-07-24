@@ -113,6 +113,35 @@ func TestReadFencedHeadingsSkipped(t *testing.T) {
 	}
 }
 
+func TestFindSectionSpansUsesFenceSafeHeadingOwnership(t *testing.T) {
+	data := []byte("## Pärent\r\nα\r\n### Child\rβ\r\n## Sibling\r\nbody\vcontinued\n```md\n## Fenced\n```\n")
+	spans, err := FindSectionSpans(data, []string{"Sibling", "Pärent", "Child"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantSlices := []string{
+		"## Sibling\r\nbody\vcontinued\n```md\n## Fenced\n```\n",
+		"## Pärent\r\nα\r\n### Child\rβ\r\n",
+		"### Child\rβ\r\n",
+	}
+	for i, span := range spans {
+		if got := string(data[span.Start:span.End]); got != wantSlices[i] {
+			t.Fatalf("span[%d] %s [%d,%d) slice = %q, want %q",
+				i, span.Heading, span.Start, span.End, got, wantSlices[i])
+		}
+	}
+	if _, err := FindSectionSpans(data, []string{"Fenced"}); err == nil ||
+		!strings.Contains(err.Error(), "matches 0 headings") {
+		t.Fatalf("fenced selector error = %v, want missing", err)
+	}
+
+	ambiguous := []byte("## Same\none\n## Same\ntwo\n")
+	if _, err := FindSectionSpans(ambiguous, []string{"Same"}); err == nil ||
+		!strings.Contains(err.Error(), "matches 2 headings") {
+		t.Fatalf("ambiguous selector error = %v", err)
+	}
+}
+
 // TestReadEntityRefResolvesLikeResolve (AC4) drives the runner: a valid slug
 // yields the map for that entity's file, and an unknown ref exits 1 with the
 // resolver's error shape.
