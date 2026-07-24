@@ -182,8 +182,10 @@ Successful close freezes both raw digests; appending even one byte to either ret
 file, or deleting either file, makes `gate validate` fail; restoring the exact bytes
 makes it pass. No copied artifact or stored association is required. *Test:* extend
 `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`'s existing retained-file
-loop so each Result/inventory path is first byte-mutated and then deleted, with both
-failures naming that fixed path and the restored exact bytes passing validation.
+loop so each Result/inventory path is first byte-mutated and then deleted. A present
+but byte-changed file must name the fixed path and `frozen digest`; a missing file must
+name the fixed path plus its read/not-found error. Restoring the exact bytes must pass
+validation.
 
 **AC-6 (VALUE) — Provider coupling in the Spacedock binary remains zero.** The CLI
 exposes no `gate review` presentation verb and `go list -deps ./cmd/spacedock` contains
@@ -238,8 +240,10 @@ the exact tip.
    application. Assert one closure and no mutation on every rejected replay.
 3. **Exact-byte validation (AC-5).** Close a valid room, then use the existing
    retained-file loop to append one byte and separately delete each Result/inventory
-   file. Require `gate validate` to name the changed or missing fixed file and frozen
-   digest in every case; restore the original bytes and require success.
+   file. For a present-but-changed file, require `gate validate` to name the fixed path
+   and `frozen digest`. For a missing file, require the fixed path plus the
+   read/not-found error; do not require a digest diagnostic for bytes that cannot be
+   read. Restore the original bytes and require success.
 4. **Zero-coupling boundary (AC-6).** Require `gate review` to remain absent and
    side-effect-free, inspect the real command surface, and require zero Subspace entries
    from `go list -deps ./cmd/spacedock`.
@@ -560,6 +564,8 @@ The Captain-approved prepared-room recorder passes its current behavioral, surfa
   The clean candidate remains exactly 17 files and `+1086/-169` = 1,255 changed lines. Cycle 11 budgets an exact estimated `+42/-0` in existing `internal/cli/gate_test.go`, projecting 17 files/1,297 changed lines under the approved 1,300-line cap. Only these three focused test gaps remain; no production, fixture-file, interface, provider, harness, or documentation edit is justified.
 - DONE: Fold the Cycle 11 staff-review evidence gaps into the existing proof surfaces.
   The ACs and behavioral plan now require a post-bind Briefing-question mutation, same-cardinality duplicate-id and wrong-revision inventory variants, and deletion of each retained provider file after close. Each addition reuses the existing CLI mutation matrices or retained-file loop and asserts byte-clean rejection or read-only validation failure; no new mechanism or harness is introduced.
+- DONE: Fold Cycle 12's supported diagnostic split into AC-5 without changing scope.
+  The retained-file loop now expects a present-but-byte-changed file to name its fixed path plus `frozen digest`, while deletion expects the fixed path plus the read/not-found error. It requires no invented digest message when bytes cannot be read and leaves the `+42/-0` estimate unchanged.
 - DONE: AC-1 — Specify proof that only the exact authorized room makes a decision durable.
   At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom` closes the canonical fixture once, while the existing authority, room, briefing-only, advisory, and distinct-identity matrices reject adjacent mutations with byte-identical entity state. Cycle 11 adds the missing valid-Briefing question mutation after binding to that same byte-clean room-record matrix.
 - DONE: AC-2 — Specify proof that request, Briefing, attempt, and authority identity freeze.
@@ -569,10 +575,10 @@ The Captain-approved prepared-room recorder passes its current behavioral, surfa
 - DONE: AC-4 — Prove atomic one-use close and frozen history.
   At exact tip `98ebb458`, `TestCanonicalLifecycleRebindCloseFreezeAndSupersede`, `TestWriterCASValidationAtomicityAndLock`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`, and `TestGateEligibilityAndConsumeAuthorizeOnce` cover close-before-replace validation, byte-clean rejection, stale successor refusal, frozen closure, and one-use application.
 - DONE: AC-5 — Specify proof of exact retained Result and inventory byte identity.
-  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom` freezes both raw digests, makes `gate validate` reject a one-byte change to either fixed provider file, and passes after exact restoration. Cycle 11 extends that same two-path loop to delete each file and require validation failure before restoration.
+  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom` freezes both raw digests, makes `gate validate` reject a one-byte change to either fixed provider file with its path and `frozen digest`, and passes after exact restoration. The planned deletion rows require only the missing fixed path plus the read/not-found error before restoration.
 - DONE: AC-6 — Prove zero provider coupling in the binary.
   At exact tip `98ebb458`, `TestGateReviewVerbIsAbsentAndSideEffectFree` proves the presentation verb is absent without side effects, and `go list -deps ./cmd/spacedock` returns zero Subspace dependencies; either regression makes the measured count non-zero.
 
 ### Summary
 
-Reset the binding design to the Captain-approved prepared-room recorder boundary and folded Cycle 11's three test-only falsifiability gaps into its existing CLI matrices. Candidate `98ebb458` remains untouched at 17 files/1,255 changed lines; the next implementation pass is limited to an exact estimated `+42/-0` in `internal/cli/gate_test.go`, projecting 1,297 under the 1,300 cap. No production behavior, interface, provider transport, harness, fixture file, or documentation edit is proposed.
+Reset the binding design to the Captain-approved prepared-room recorder boundary and folded Cycle 11's three test-only falsifiability gaps into its existing CLI matrices. Cycle 12 keeps the deletion proof honest: missing files assert their fixed path and read/not-found error, while only present-but-changed files assert `frozen digest`. Candidate `98ebb458` remains untouched at 17 files/1,255 changed lines; the next implementation pass is limited to an exact estimated `+42/-0` in `internal/cli/gate_test.go`, projecting 1,297 under the 1,300 cap. No production behavior, interface, provider transport, harness, fixture file, or documentation edit is proposed.
