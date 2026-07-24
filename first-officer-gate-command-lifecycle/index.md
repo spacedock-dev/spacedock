@@ -1955,3 +1955,38 @@ Cumulative numstat from `13d70249`:
 | **Total** | **+367 / -480** |
 
 The measured additions fell by **130** from cycle 23's +497, satisfying both the at-least-127 removal requirement and the pre-expansion **≤370** gate. No deletion credit is inferred. Expansion may now begin within the declared eight-file surface and +95 checkpoint-relative additions cap.
+
+## Cycle-26 deterministic implementation checkpoint
+
+Local code commit `45c1a9a3ea0e8e29a61a39036de05de1125eb0ee` is ready for the required independent staff review. No Claude, Codex, or Pi live host journey ran.
+
+The checkpoint adds a host-neutral dispatch-observation requirement, reuses the existing Codex build/wait/report evidence owner unchanged, observes Claude's structured Agent call, and observes Pi's structured subagent call/result shape. Delegated authority now travels as marshaled JSON and is graded as one exact durable adoption-note line; quote, backslash, actual-newline, combined, sentinel-wrapper, and JSON-object controls are deterministic. The Pi owner rejects empty, relative, uncreatable, and symlink-resolved cleanup destinations before launch, creates a run-specific external artifact directory, and retains command log, before/after entity, HEAD/status metadata, per-artifact manifest, and an inspectable all-refs Git bundle from cleanup.
+
+Checkpoint-relative numstat from `ce436505`:
+
+| File | Additions / deletions |
+| --- | ---: |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +0 / -64 |
+| `internal/ensigncycle/claude_live_runner_test.go` | +1 / -1 |
+| `internal/ensigncycle/codex_live_runner_test.go` | +1 / -1 |
+| `internal/ensigncycle/gate_assert_test.go` | +0 / -42 |
+| `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go` | +56 / -2 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +37 / -97 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | +0 / -15 |
+| **Total** | **+95 / -222** |
+
+Cumulative numstat from `13d70249` is **+416 / -506**, within the ≤465 tolerance and below the +480 hard stop. The repair changes only the seven named paths above; `internal/ensigncycle/codex_dispatch_evidence_test.go` is byte-unchanged and remains the Codex transport authority.
+
+Green deterministic/repository evidence:
+
+- `go test ./internal/ensigncycle -run '^(TestRecordedGate|TestAssertGateHeld|TestGateGuardrailNegative)' -count=1`
+- `go test ./internal/contractlint -run '^TestFO' -count=1`
+- `go test -tags live ./internal/ensigncycle -run '^TestRecordedGatePersistentArtifactControls$' -count=1`
+- `gofmt -w ./cmd ./internal`
+- `go test ./...`
+- `go test ./... -race`
+- `go test -tags live ./internal/ensigncycle -run '^$' -count=1`
+- `uv run --with-requirements docs/requirements.txt mkdocs build --strict`
+- `git diff --check`
+
+**STOP FOR INDEPENDENT STAFF REVIEW.** Review the actual commit/diff, especially the host-observation joins, exact directive falsifiers, symlink containment, cleanup ordering, manifest failure behavior, and bundle inspectability. Do not run a live host until that review explicitly approves this checkpoint.
