@@ -55,6 +55,7 @@ gates:
                 state: consumed
                 blockers: []
 started: 2026-07-24T08:41:39Z
+worktree: .worktrees/spacedock-ensign-workflow-declared-section-reads
 ---
 
 A workflow can put a cross-stage policy in its README, but `dispatch show-stage-def` returns only the selected `### stage` subsection. Let workflow metadata point at additional relevant sections and let the dispatched ensign load those exact sections through the existing structured read path.
