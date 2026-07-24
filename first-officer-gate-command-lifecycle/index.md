@@ -184,6 +184,20 @@ gates:
                 digest: sha256:202522443343dc2cf1c18284f79459f4dc3b4bde62e30a9061c560df90822292
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-9
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:ideation:9
+                briefing: briefing:docs-dev:6y:ideation:attempt-9:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T21:18:39.847514Z"
+                decision: approve
+                reason: Independent staff review found no material issue; the repaired design restores the Captain-approved host proof split, makes delegated authority byte-exact, retains Pi failure evidence before cleanup, and requires measured deletion before any expansion.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
