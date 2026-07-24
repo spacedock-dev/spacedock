@@ -13,7 +13,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:s4:backlog
+        gate: gate:docs-dev:s4:ideation
     records:
         - id: gate:docs-dev:s4:backlog
           stage: backlog
@@ -37,6 +37,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:s4:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:s4-ideation-1
+              briefing:
+                id: briefing:docs-dev:s4:ideation:attempt-1:revision-1
+                digest: sha256:2185e46203b2e4747d8a7db557f14737492cf519c9c7d40b632dfe83c51a0074
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Make gate-room preparation one mechanical operation. The First Officer supplies the

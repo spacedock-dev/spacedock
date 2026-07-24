@@ -1,0 +1,65 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:s4:ideation:attempt-1:revision-1",
+  "question": "Should the corrected provider-neutral gate-room preparation design be approved, with implementation held until 6y lands on the xb-rebased main?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4c5744763e8f2e3dd895af6dbc6fe546a1b262c401752c12ee4a33a69572a8a3"
+    },
+    {
+      "id": "artifact:staff-review",
+      "uri": "staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:7650f504068282f6914f3f4c6df40cfbc6fca8ee10ce3ee38fd07ae70a27bb81"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:53717c27d09aa512badea4f32779954242d6237e1271fc8d771166314ff8c756"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6425a361d95b0f5fc64d712aa9da8bd1b377ca9579ec6da5c6e3523fc8039003"
+    },
+    {
+      "id": "artifact:workflow-definition",
+      "uri": "../../../../../../../docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c077d7c6e3c59b4d0d61a7d1c93c88dcb380528f65987f6860bf78c83bab5597"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Enter implementation after 6y lands",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the preparation design",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
