@@ -408,16 +408,13 @@ func TestGateRecordConsumesDirectBindingResultFromPreparedRoom(t *testing.T) {
 			t.Fatalf("recorded Result missing %q:\n%s", want, body)
 		}
 	}
-	afterResult, err := os.ReadFile(result)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !bytes.Equal(afterResult, exactResult) {
-		t.Fatal("room recording changed retained Result bytes")
-	}
 	doc, _, err := gates.Read(entity)
 	if err != nil {
 		t.Fatal(err)
+	}
+	evidence := doc.Records[0].Attempts[0].ProviderEvidence
+	if evidence == nil || evidence.ResultDigest != gates.RawDigest(exactResult) || evidence.PresentedInventoryDigest != gates.RawDigest(inventoryBytes) {
+		t.Fatalf("stored provider evidence = %#v", evidence)
 	}
 	resolutionBytes, err := json.Marshal(doc.Records[0].Attempts[0].Resolution)
 	if err != nil {
@@ -444,6 +441,27 @@ func TestGateRecordConsumesDirectBindingResultFromPreparedRoom(t *testing.T) {
 	}
 	if !bytes.Equal(afterSuccessor, body) {
 		t.Fatal("stale successor request changed the closed entity")
+	}
+	for _, tc := range []struct {
+		path, want string
+		original   []byte
+	}{
+		{result, "provider/result.json", exactResult},
+		{inventory, "provider/presented-inventory.json", inventoryBytes},
+	} {
+		writeFile(t, tc.path, string(append(append([]byte{}, tc.original...), '\n')))
+		out.Reset()
+		errOut.Reset()
+		code = run(context.Background(), []string{"gate", "validate", "task", "--workflow-dir", root}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 1 || !strings.Contains(errOut.String(), tc.want) || !strings.Contains(errOut.String(), "frozen digest") {
+			t.Fatalf("tampered retained evidence exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		}
+		writeFile(t, tc.path, string(tc.original))
+	}
+	out.Reset()
+	errOut.Reset()
+	if code = run(context.Background(), []string{"gate", "validate", "task", "--workflow-dir", root}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil); code != 0 {
+		t.Fatalf("restored retained evidence exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 }
 

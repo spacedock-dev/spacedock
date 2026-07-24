@@ -329,6 +329,10 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	}
 	resolution := result.Resolution
 	resolution.Briefing = attempt.Briefing.ID
+	attempt.ProviderEvidence = &ProviderEvidence{
+		ResultDigest:             RawDigest(resultBytes),
+		PresentedInventoryDigest: RawDigest(presentedBytes),
+	}
 	if err := closeAttempt(entityPath, input.WorkflowDir, doc, oldNode, record, attempt, &resolution); err != nil {
 		return err
 	}

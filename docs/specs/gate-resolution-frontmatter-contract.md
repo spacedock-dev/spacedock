@@ -35,6 +35,9 @@ gates:
             digest-domain: canonical-bytes
             request-digest: sha256:4444444444444444444444444444444444444444444444444444444444444444
             room-ref: ./review/validation/briefing-1
+          provider-evidence:
+            result-digest: sha256:5555555555555555555555555555555555555555555555555555555555555555
+            presented-inventory-digest: sha256:6666666666666666666666666666666666666666666666666666666666666666
           resolution:
             type: Resolution
             id: resolution:captain-sample-validation-1a
@@ -113,6 +116,12 @@ A direct binding Result uses Review v1's minimal envelope: authority comes from 
 request authority. Advisory output remains retained evidence; no adoption note can
 promote it into a binding Resolution. Artifact payloads may remain external URI and
 SHA references.
+
+On provider close, the recorder stores only the raw-byte digests of
+`provider/result.json` and `provider/presented-inventory.json` as `provider-evidence`.
+They are part of the frozen attempt. `gate validate` recomputes both from the fixed room
+files and fails if either is missing or changed. Chat-closed and open attempts carry no
+provider evidence; the derived association remains ephemeral.
 
 ## Round records and triage dispositions (advisory; owner: 02av)
 

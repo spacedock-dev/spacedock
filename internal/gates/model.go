@@ -30,10 +30,16 @@ type GateRecord struct {
 }
 
 type Attempt struct {
-	ID          string       `yaml:"id" json:"id"`
-	Briefing    Briefing     `yaml:"briefing" json:"briefing"`
-	Resolution  *Resolution  `yaml:"resolution,omitempty" json:"resolution,omitempty"`
-	Application *Application `yaml:"application,omitempty" json:"application,omitempty"`
+	ID               string            `yaml:"id" json:"id"`
+	Briefing         Briefing          `yaml:"briefing" json:"briefing"`
+	ProviderEvidence *ProviderEvidence `yaml:"provider-evidence,omitempty" json:"provider-evidence,omitempty"`
+	Resolution       *Resolution       `yaml:"resolution,omitempty" json:"resolution,omitempty"`
+	Application      *Application      `yaml:"application,omitempty" json:"application,omitempty"`
+}
+
+type ProviderEvidence struct {
+	ResultDigest             string `yaml:"result-digest" json:"result-digest"`
+	PresentedInventoryDigest string `yaml:"presented-inventory-digest" json:"presented-inventory-digest"`
 }
 
 type Application struct {
@@ -252,10 +258,20 @@ func Validate(doc *Document) error {
 				return fmt.Errorf("attempt %s has invalid request-digest", a.ID)
 			}
 			if a.Resolution == nil {
+				if a.ProviderEvidence != nil {
+					return fmt.Errorf("open attempt %s cannot carry provider evidence", a.ID)
+				}
 				if a.Application != nil {
 					return fmt.Errorf("open attempt %s cannot carry application data", a.ID)
 				}
 				continue
+			}
+			if a.Briefing.RequestDigest != "" {
+				if a.ProviderEvidence == nil || !digestRE.MatchString(a.ProviderEvidence.ResultDigest) || !digestRE.MatchString(a.ProviderEvidence.PresentedInventoryDigest) {
+					return fmt.Errorf("provider-closed attempt %s has invalid provider evidence", a.ID)
+				}
+			} else if a.ProviderEvidence != nil {
+				return fmt.Errorf("chat-closed attempt %s cannot carry provider evidence", a.ID)
 			}
 			if err := validateResolution(a.Resolution, a.Briefing.ID); err != nil {
 				return fmt.Errorf("attempt %s: %w", a.ID, err)
