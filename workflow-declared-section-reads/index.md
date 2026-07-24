@@ -63,6 +63,20 @@ gates:
                 digest: sha256:fc9e60c5c84fb15d4aa4b5aaecb8f1001419c6c90cf36ffae3386403449ab14c
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:0c:validation:1
+                briefing: briefing:docs-dev:0c:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T11:41:44.818812Z"
+                decision: approve
+                reason: 'Delegated sprint approval: exact candidate 396c92a3 satisfies all six ACs with 15/0/0 validation, Roborev 1990 clean, and all five live CI jobs green.'
+                adoption-note: Captain granted the First Officer the conn to approve sprint gates, relevant CI lanes, PRs, and merge; land only exact candidate 396c92a302e1ac220d552d6f16600e9f08ccb622.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 started: 2026-07-24T08:41:39Z
 worktree: .worktrees/spacedock-ensign-workflow-declared-section-reads
 ---
