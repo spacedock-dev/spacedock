@@ -902,6 +902,8 @@ func writeRecordedGateFixtureAt(t *testing.T, root string) recordedGateFixture {
 	writeFile(t, entity, recordedGateEntity())
 	gitInit(t, root)
 	gitInit(t, stateRoot)
+	git(t, stateRoot, "config", "user.email", "t@t")
+	git(t, stateRoot, "config", "user.name", "t")
 	room := filepath.Join(filepath.Dir(entity), "review", "validation", "briefing-1")
 	briefing := filepath.Join(room, "briefing.json")
 	fixtureBriefing := filepath.Join(recordedGateRepoRoot(t), "internal", "gates", "testdata", "exact-validation-briefing.json")
