@@ -1,7 +1,7 @@
 ---
 id: 6yyyyemkqwsett3g1c991w9f
 title: Make First Officers operate the recorded gate lifecycle
-status: implementation
+status: ideation
 source: "Durable-decisions dogfood audit: PRs #557/#560 shipped gate commands without the planned FO operating contract, 2026-07-23"
 started: 2026-07-23T02:01:56Z
 completed:
@@ -649,6 +649,7 @@ Implemented and hardened the six-event integration and its deterministic/live or
 
 - Cycle 16: REJECTED — Roborev job 2167 reviewing Cycle 15 CI feedback; surface 1 test file/2 added LOC vs estimate 1 test file/2 added LOC (100%); AC unchanged
 - Cycle 17: DESIGN RESET — detached validation audit at `13d70249`; the 2-line identity repair is valid, but supported rejection/decision outcomes and AC-1/AC-6/AC-8 live evidence cross product and harness-controller boundaries; AC unchanged
+- Cycle 18: DESIGN RESET — goal-only Codex lifecycle at `37d6980b`; surface 7 files/95 added LOC vs +95 hard stop (100%); AC unchanged; two unchanged runs omitted root-visible gate review after loading the corrected skill, triggering the approved skill-discovery/runtime-ownership reset
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
