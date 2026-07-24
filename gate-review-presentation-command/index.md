@@ -129,8 +129,8 @@ duplicate the validated recorder rather than test an unverified mechanism.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — Only the exact authorized room can make a Captain decision
-durable.** The canonical fixture closes its bound attempt exactly once; every adjacent
+**AC-1 (VALUE) — Only the exact authorized room can make a Captain decision durable.**
+The canonical fixture closes its bound attempt exactly once; every adjacent
 mutation of request identity, Briefing identity/digest, room identity, authority,
 Result authority, or presentation inventory is rejected, with **zero entity-byte
 changes across the rejection matrix**. The independently mutated room files are the
@@ -142,15 +142,15 @@ entity delta fails the value. *Test:* `TestGateRecordConsumesDirectBindingResult
 `TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation`, and
 `TestGateRoomRejectsDistinctAuthorityAndDifferentRoomWithoutMutation`.
 
-**AC-2 — Request, Briefing, attempt, and authority identity are exact and frozen before
-recording.** The request must bind the derived current-stage gate and open attempt, the
+**AC-2 — Request, Briefing, attempt, and authority identity are exact and frozen before recording.**
+The request must bind the derived current-stage gate and open attempt, the
 canonical Briefing id/digest, the bound room, and equal Captain actor/approver authority;
 post-bind changes fail before mutation. *Test:* the request-authority, room-move,
 briefing-only, malformed-Reference, and distinct-identity tests named under AC-1, plus
 `TestGateBriefingRejectsMalformedReferenceBeforeBinding`.
 
-**AC-3 — A provider close contains one direct Captain Result and a complete recursively
-derived presentation.** Wrapper/advisory fields, adoption provenance, wrong authority,
+**AC-3 — A provider close contains one direct Captain Result and a complete recursively derived presentation.**
+Wrapper/advisory fields, adoption provenance, wrong authority,
 provider-minted identity, incomplete or mistyped inventory, duplicate mapping, or a
 Reference primary fail closed. The valid fixture records only the portable nested
 Resolution. *Test:* `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`,
@@ -541,6 +541,18 @@ The Captain-approved prepared-room recorder passes its current behavioral, surfa
   AC-1 through AC-5 cite the existing CLI/gates tests for the canonical close, adjacent authority and identity mutations, recursive inventory, byte-clean rejection, frozen lifecycle, exact retained-byte digests, and tamper validation. AC-6 cites the absent-presentation-verb test and zero-Subspace dependency check. The proof basis records the full/race/docs/format checks at `98ebb458` and final-tip Roborev job 2028's `P — No issues found`; no replacement provider harness or new recording machinery is proposed.
 - DONE: Rebaseline the approved surface and decide whether product work remains.
   The clean candidate remains exactly 17 files and `+1086/-169` = 1,255 changed lines, below the approved 1,300-line cap and with no provider transport or second harness. No product edit remains necessary unless a fresh validation against the rewritten criteria reveals a genuine supported-path gap.
+- DONE: AC-1 — Prove only the exact authorized room makes a decision durable.
+  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom` closes the canonical fixture once, while `TestGateRoomRejectsRequestAuthorityRebindingWithoutMutation`, `TestGateRoomRejectsRequestBackedRoomMoveWithoutMutation`, `TestGateRoomRejectsBriefingOnlyAttemptWithoutFrozenRequest`, `TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation`, and `TestGateRoomRejectsDistinctAuthorityAndDifferentRoomWithoutMutation` reject the adjacent mutation matrix with byte-identical entity state.
+- DONE: AC-2 — Prove request, Briefing, attempt, and authority identity freeze.
+  At exact tip `98ebb458`, the AC-1 request-authority, room-move, briefing-only, and distinct-identity tests plus `TestGateBriefingRejectsMalformedReferenceBeforeBinding` reject malformed, stale, moved, and rebound identity before entity mutation.
+- DONE: AC-3 — Prove direct Captain Result and complete recursive presentation.
+  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`, `TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation`, and `TestExactCanonicalBriefingIsIndependentAssociationInventory` accept only the portable direct Captain Resolution and reject advisory wrappers, adoption provenance, wrong authority, incomplete or mistyped inventory, and a Reference primary.
+- DONE: AC-4 — Prove atomic one-use close and frozen history.
+  At exact tip `98ebb458`, `TestCanonicalLifecycleRebindCloseFreezeAndSupersede`, `TestWriterCASValidationAtomicityAndLock`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`, and `TestGateEligibilityAndConsumeAuthorizeOnce` cover close-before-replace validation, byte-clean rejection, stale successor refusal, frozen closure, and one-use application.
+- DONE: AC-5 — Prove exact retained Result and inventory byte identity.
+  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom` freezes both raw digests, makes `gate validate` reject a one-byte change to either fixed provider file, and passes again only after exact bytes are restored.
+- DONE: AC-6 — Prove zero provider coupling in the binary.
+  At exact tip `98ebb458`, `TestGateReviewVerbIsAbsentAndSideEffectFree` proves the presentation verb is absent without side effects, and `go list -deps ./cmd/spacedock` returns zero Subspace dependencies; either regression makes the measured count non-zero.
 
 ### Summary
 
