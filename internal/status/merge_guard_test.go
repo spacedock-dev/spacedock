@@ -122,6 +122,24 @@ func TestMergeGuardFinalizesFromMergedSentinelNonArmed(t *testing.T) {
 	}
 }
 
+func TestMergeGuardFinalizesTerminalBlockedEntityFromMergedSentinel(t *testing.T) {
+	root := stageFixture(t, "merge-pr-workflow")
+	entity := filepath.Join(root, "070-pr-pending.md")
+	body, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	updated := strings.ReplaceAll(strings.ReplaceAll(string(body), "status: implementation", "status: done"), `pr: "#42"`, "pr: pr-merge:42")
+	writeFile(t, entity, updated)
+	var out, errOut bytes.Buffer
+	if code := MergeGuard([]string{"--workflow-dir", root, "070-pr-pending", "--verdict", "passed"}, root, &out, &errOut); code != 0 {
+		t.Fatalf("terminal merged-sentinel finalize exit=%d stderr=%q", code, errOut.String())
+	}
+	if archived := filepath.Join(root, "_archive", "070-pr-pending.md"); !fileExists(archived) || frontmatterField(t, archived, "status") != "done" || frontmatterField(t, archived, "mod-block") != "" {
+		t.Fatalf("terminal merged-sentinel did not finalize through existing guard: %s", out.String())
+	}
+}
+
 // TestMergeGuardBlocksOnOpenPRNoModBlock (the premature-finalize gate): a bare,
 // OPEN PR reference (pr: #42) with an EMPTY mod-block must signal blocked/await-pr
 // and must NOT finalize or archive. The verb must NEVER finalize on pr-presence

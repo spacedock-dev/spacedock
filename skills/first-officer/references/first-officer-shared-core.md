@@ -78,7 +78,7 @@ If not gated: terminal → merge; else decide reuse-or-fresh.
 
 **Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module, already loaded by the time a completion reaches this point. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
 
-If gated, complete `Skill(skill="spacedock:fo-gate-lifecycle")`, then `«gate.lifecycle»(slug, stage)`. It commits the bound package before presentation, every successful close before routing, and consumed approval before ordinary dispatch; revise invokes `«feedback.route»`, while hold/ineligibility stops.
+If gated, complete `Skill(skill="spacedock:fo-gate-lifecycle")`, then `«gate.lifecycle»(slug, stage)`. It commits the bound package before presentation, every successful close before routing, and consumed approval before routing: nonterminal → ordinary dispatch, terminal → existing merge ceremony; revise invokes `«feedback.route»`, while hold/ineligibility stops.
 
 ## «gate.ac-cross-check»(slug, stage): every acceptance criterion has evidence, re-anchored on the end value
 

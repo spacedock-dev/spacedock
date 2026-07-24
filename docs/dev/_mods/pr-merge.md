@@ -15,7 +15,7 @@ The two origins stay clean by construction: the code PR carries only the code-br
 
 ## Hook: startup
 
-Scan all entity files (in the workflow directory only, not `_archive/`) for entities with a non-empty `pr` field and a non-terminal status. For each, extract the PR number (strip any `#`, `owner/repo#` prefix) and check: `gh pr view {number} --json state --jq '.state'`.
+Scan all entity files (in the workflow directory only, not `_archive/`) for entities with a non-empty `pr` field and either non-terminal status or terminal status with `mod-block: merge:pr-merge`. For each, extract the PR number (strip any `#`, `owner/repo#` prefix) and check: `gh pr view {number} --json state --jq '.state'`.
 
 If `MERGED`, advance the entity to its terminal stage by delegating the finalize to the `merge guard` verb — the same verb the FO drives at the merge boundary, so the mod's finalize path and the verb's are one shipped path:
 1. Record the landed merge as the `pr-merge` sentinel so the verb keys off a signal that honestly says "this PR merged" rather than the bare `#{N}` open-PR reference: `spacedock status --workflow-dir docs/dev --set {slug} pr=pr-merge:{N}` (commit: `pr: {slug} pr-merge:{N} merged`).
@@ -30,7 +30,7 @@ If `gh` is not available, warn the captain and skip PR state checks.
 
 ## Hook: idle
 
-Check PR-pending entities using the same logic as the startup hook: scan entity files for non-empty `pr` and non-terminal status, run `gh pr view` for each, and advance merged PRs by recording the `pr=pr-merge:{N}` sentinel then finalizing through `spacedock merge guard {slug} --workflow-dir docs/dev --verdict passed` (which clears `mod-block`, terminalizes, archives, and commits path-scoped). This provides a periodic re-check in case the event loop's built-in PR scan missed a state change (defense in depth). Report any advanced entities to the captain.
+Check PR-pending entities using the same logic as the startup hook: scan entity files for non-empty `pr` and either non-terminal status or terminal status with `mod-block: merge:pr-merge`, run `gh pr view` for each, and advance merged PRs by recording the `pr=pr-merge:{N}` sentinel then finalizing through `spacedock merge guard {slug} --workflow-dir docs/dev --verdict passed` (which clears `mod-block`, terminalizes, archives, and commits path-scoped). This provides a periodic re-check in case the event loop's built-in PR scan missed a state change (defense in depth). Report any advanced entities to the captain.
 
 ## Hook: merge
 
