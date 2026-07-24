@@ -59,11 +59,8 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 	if o.dispatch.durableEffects != 1 {
 		return fmt.Errorf("new durable successor effects = %d, want 1", o.dispatch.durableEffects)
 	}
-	if !o.dispatch.ordered {
+	if !o.dispatch.ordered || !o.dispatch.committed {
 		return fmt.Errorf("successor dispatch was not observed after consume")
-	}
-	if !o.dispatch.committed {
-		return fmt.Errorf("close/consume commit ancestry was not durable before dispatch")
 	}
 	if strings.Contains(o.before, recordedGateDispatchMarker) {
 		return fmt.Errorf("successor marker already existed before the lifecycle began")
@@ -84,7 +81,7 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		{"briefing resolution link", "briefing: " + recordedGateBriefingID, 1},
 		{"briefing digest", "digest: " + recordedGateDigest, 1},
 		{"resolution identity", "id: resolution:spacedock:docs-dev:3k:validation:1", 1},
-		{"approval decision", "decision: approve", 1},
+		{"approval decision", "\n                decision: approve", 1},
 		{"approval actor", "by: agent:first-officer", 1},
 		{"approval reason", "\n                reason:", 1},
 		{"delegated directive", recordedGateDirective, 1},
@@ -639,8 +636,8 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 		after: "status: handoff\ngate: gate:docs-dev:3k:validation\nid: gate-attempt:3k-validation-1\n" +
 			"id: " + recordedGateBriefingID + "\ndigest: " + recordedGateDigest + "\n" +
 			"id: resolution:spacedock:docs-dev:3k:validation:1\nbriefing: " + recordedGateBriefingID + "\n" +
-			"by: agent:first-officer\ndecision: approve\n                reason: " + recordedGateReason + "\n" +
-			"adoption-note: '" + recordedGateDirective + "'\ntarget-stage: handoff\n                state: consumed",
+			"by: agent:first-officer\n                decision: approve\n                reason: " + recordedGateReason + "\n" +
+			"adoption-note: '" + recordedGateDirective + "'\ntarget-stage: handoff\n                state: consumed\nreport repeats decision: approve",
 		dispatch:     recordedGateDispatchProof{builds: 1, durableEffects: 1, ordered: true, committed: true},
 		gateReview:   recordedGateReview(),
 		expectedNext: "handoff",
@@ -832,8 +829,7 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	log := readFile(t, commandLog)
 	builds, consumed, ordered := 0, false, true
 	ordered = strings.Index(log, "exit=0\tgate --help") >= 0 && strings.Index(log, "exit=0\tgate record ") > strings.Index(log, "exit=0\tgate --help")
-	var stateHeads []string
-	var dispatchHead string
+	stateHeads, dispatchHead := []string{}, ""
 	for _, line := range strings.Split(log, "\n") {
 		if strings.HasPrefix(line, "exit=0\tgate consume ") {
 			consumed = true
