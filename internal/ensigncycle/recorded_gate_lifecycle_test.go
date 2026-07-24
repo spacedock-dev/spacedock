@@ -828,7 +828,7 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	t.Helper()
 	log := readFile(t, commandLog)
 	builds, consumed, ordered := 0, false, true
-	ordered = strings.Index(log, "exit=0\tgate --help") >= 0 && strings.Index(log, "exit=0\tgate record ") > strings.Index(log, "exit=0\tgate --help")
+	ordered = strings.Count(log, "exit=0\tgate --help") == 1 && strings.Index(log, "exit=0\tgate record ") > strings.Index(log, "exit=0\tgate --help")
 	stateHeads, dispatchHead := []string{}, ""
 	for _, line := range strings.Split(log, "\n") {
 		if strings.HasPrefix(line, "exit=0\tgate consume ") {
