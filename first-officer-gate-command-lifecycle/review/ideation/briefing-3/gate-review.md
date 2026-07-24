@@ -1,6 +1,6 @@
 # IDEATION GATE — First Officer recorded gate lifecycle (`6y`)
 
-Recommendation: **APPROVE the cycle-3 proof-boundary reset and resume implementation.**
+Recommendation: **APPROVE the repaired proof-boundary design and resume implementation.**
 
 ## Capability preserved
 
@@ -19,7 +19,7 @@ The plan deletes 479 lines of cross-host forensic machinery and permits at most 
 
 ## Findings
 
-The reset removes an inferred proof obligation without narrowing the product. AC-2 through AC-7, the deferred lifecycle skill, documentation, byte limits, and full/race/three-host validation remain unchanged.
+The reset removes an inferred proof obligation without narrowing the product. The repaired entity now carries one authoritative specification: canonical AC-1 and AC-8, their dependent test plan, the expected-surface cut, and an obligation table naming authority, bearer, and proof burden. `status --read 6y --stage ideation --ac-scan` resolves the repaired ACs at their canonical lines rather than an appended override. AC-2 through AC-7, the deferred lifecycle skill, documentation, byte limits, and full/race/three-host validation remain unchanged.
 
 ## Decision
 

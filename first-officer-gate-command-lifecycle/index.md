@@ -60,8 +60,8 @@ gates:
                 blockers: []
             - id: gate-attempt:6y-ideation-3
               briefing:
-                id: briefing:docs-dev:6y:ideation:attempt-3:revision-1
-                digest: sha256:9cc879ab82d0b8c0dccf4a5a4370e8e32fd1727f600fa0c0ed24ca0ba91c646c
+                id: briefing:docs-dev:6y:ideation:attempt-3:revision-2
+                digest: sha256:b6ecdb249de0c91b3857b218cf2464ab7b8bafbdb1d2fce70c4f8526d0c827ce
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-3
         - id: gate:docs-dev:6y:implementation
