@@ -865,3 +865,20 @@ Cycle 6 reduces the happy path from six gate commands to three load-bearing muta
 ### Summary
 
 Cycle 7 closes the staff-review gaps without expanding the authority sequence: every decision is durable, cache reuse follows executable identity, load attribution is recomputed, and proof follows real command/Git history. Mandatory diagnostics, repeated probes, caller path workarounds, total-host ceilings, and generic host-event requirements remain excluded.
+
+## Implementation intended-change declaration (cycle 7)
+
+Rebased preserved commits onto current `origin/main` `dd6bd114`; clean tip `2f7a6414` remains 1,468 added / 11 deleted LOC across the approved existing branch surface. Cycle-7 work is limited to these eight files:
+
+| File | Intended cycle-7 delta |
+| --- | ---: |
+| `internal/cli/cli.go` | +6–10 / -0 |
+| `internal/cli/gate_test.go` | +18–25 / -0–5 |
+| `skills/fo-gate-lifecycle/SKILL.md` | +15–25 / -25–40 |
+| `skills/first-officer/references/first-officer-shared-core.md` | +1–3 / -2–4 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +45–65 / -35–55 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +12–18 / -25–45 |
+| `docs/site/concepts/gates-and-decisions.md` | +3–6 / -3–6 |
+| `docs/site/reference/command-reference.md` | +3–4 / -1–2 |
+
+Total intended amendment: at most 156 additions and at least 66 deletions, within the approved +170/-50 correction envelope and 1,588-LOC branch cap. No other file, harness, host adapter, schema, recorder/application package, or runtime transport surface is intended; any need outside this table stops for drift review before editing it.
