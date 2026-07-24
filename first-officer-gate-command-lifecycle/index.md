@@ -188,6 +188,19 @@ gates:
                 digest: sha256:c5fc51c725cd43460b01b65af4558fcfed164eb141c9cd7b8ab67b87c606557a
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:validation:2
+                briefing: briefing:docs-dev:6y:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T17:19:34.698945Z"
+                decision: revise
+                reason: 'PR #565 offline CI and the isolated clean-config reproduction fail at the first fixture-backed state commit because the temporary state repository lacks local Git author identity; this is a material evidence defect and the candidate cannot merge.'
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 review-round:
     id: round:6yyyyemkqwsett3g1c991w9f:implementation:15
     stage: implementation
