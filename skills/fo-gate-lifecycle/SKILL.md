@@ -8,26 +8,21 @@ user-invocable: false
 
 ## «gate.lifecycle»(slug, stage): bind, decide, and apply one recorded gate authorization
 
-Load this skill in one host event before probe, write, validation, presentation, route, replay, or dispatch. No write authority; read `fo-write-core.md` before FO mutation.
+Load this skill in one host event before gate probe, mutation, presentation, route, replay, or dispatch. It grants no write authority; read `fo-write-core.md` before FO mutation.
 
 **Boot projection.** Use only unresolved actionable `ready_gates` rows from `status --boot --identify --json`, fixed keys `id`, `slug`, `current`, `readiness`: `awaiting-captain` = selected current-stage open Briefing; `approved-awaiting-merge` = unblocked approve + advance/pending to terminal; `approved-awaiting-advance` = nonterminal target. Gate-stage/no selected attempt is omitted `validating`; malformed/stale selection, blocked/held, feedback, consumed/superseded/not-applicable are omitted. Opt-in human/JSON `gate-readiness` summarizes; `gate-*` retains diagnostics. Engage row `slug`, read entity, then `gate validate` for full Briefing/Resolution/application. Never infer readiness from status/stage.
 
-**Capability preflight.** Probe the ONE startup launcher with `gate --help` and four subcommand help forms. Require `record` flags `--briefing`, `--result`, `--decision`, plus `validate`, `eligibility`, `consume`; version is insufficient. If missing, halt before mutation; prescribe refresh or `go build -o <temp>/spacedock ./cmd/spacedock`, set `SPACEDOCK_BIN`, retry. Never hand-edit `gates:`.
+**Capability preflight.** Resolve `${SPACEDOCK_BIN:-spacedock}` to its canonical target and content digest immediately before use. Cache one successful `gate --help` only for that session identity; unchanged identity reuses it. Same-path replacement, symlink/PATH retarget, changed launcher, or unknown command/flag invalidates it. Require `record`, `validate`, `eligibility`, `consume`, `--briefing`, `--result`, `--association`, `--decision`, `--actor`, `--directive`. If absent, halt before mutation; prescribe refresh or a fresh build selected with `SPACEDOCK_BIN`. Never hand-edit `gates:`.
 
-**Retain the package.** Before presentation assemble `ROOM/briefing.json`: concise capability/change, tests/evidence, reviewed snapshot, material/deferred/polish findings, one recommendation, decision ask; link raw entity/spec/reports. Keep reproducible payloads as URI + SHA, else freeze a room copy. Make `BRIEFING`, Results, associations absolute before the CLI.
-
-Bind and prove the open attempt, in this order:
+**Retain and bind.** Assemble `ROOM/briefing.json`: concise capability/change, tests/evidence, reviewed snapshot, material/deferred/polish findings, one recommendation, decision ask; link raw entity/spec/reports. Keep reproducible payloads as URI + SHA, else freeze a room copy. Relative retained-input paths resolve from launch cwd.
 
 ```text
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --briefing BRIEFING --workflow-dir WORKFLOW_DIR
-${SPACEDOCK_BIN:-spacedock} gate validate ENTITY --workflow-dir WORKFLOW_DIR
 ```
 
-Both calls must exit 0 and name the same gate, attempt, and Briefing; validation must report `state=open` and no decision. Otherwise halt before presentation and surface the command, exit, and missing artifact/field/step. In a split-root workflow, `«state.commit»(slug)` durably commits the folder-form room and index before presentation.
+Require exit 0, the expected gate/attempt/Briefing, and `state=open`; record already validates before atomic write. `«state.commit»(slug)` must commit the folder room and index before presentation. Then invoke `«gate.ac-cross-check»`, make the evidence judgment, and invoke `«gate.assemble-verdict»`; show the concise review, not raw JSON/YAML.
 
-Only after open validation, invoke `«gate.ac-cross-check»`, make the evidence judgment, and invoke `«gate.assemble-verdict»`. The Captain sees the concise primary review, with the entity/spec/package as references—not a raw JSON/YAML dump or room listing.
-
-**Record exactly who rendered the decision.** Use one semantic source:
+**Record and durably close.** Use exactly one semantic source:
 
 ```text
 # Captain personally rendered the chat decision
@@ -42,27 +37,20 @@ ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --result RESULT --association ASS
 
 `revise` and `hold` require a reason (or the provider's included same-Briefing Annotation). Delegated FO approval always carries both its nonblank evidence reason and the exact quoted grant; never relabel it `person:captain`. A provider Result requires its complete retained association and authorized actor.
 
-After closing, immediately prove closure:
+Require exit 0, the bound attempt/Briefing, `state=closed`, and the decision; record already validates the Resolution/application before atomic write. After every successful close, `«state.commit»(slug)` must commit that exact Resolution before approve, revise, hold, or any consume attempt. Close/commit failure halts.
+
+**Route fail-closed.** For approve, run:
 
 ```text
-${SPACEDOCK_BIN:-spacedock} gate validate ENTITY --workflow-dir WORKFLOW_DIR
-```
-
-It must name the same attempt/Briefing, report `state=closed`, and reproduce the decision. Only then `«state.commit»(slug)`. Close/validation failure halts without feedback, advance, or dispatch.
-
-**Route fail-closed.** For `approve`, run:
-
-```text
-${SPACEDOCK_BIN:-spacedock} gate eligibility ENTITY --workflow-dir WORKFLOW_DIR
 ${SPACEDOCK_BIN:-spacedock} gate consume ENTITY --workflow-dir WORKFLOW_DIR
 ```
 
-Consume is authorized only when eligibility exits 0 with `condition=approved-pending eligible=true` and the expected immediate successor. Consume must exit 0 with `consumed=true`, atomically write that successor status and `application.state: consumed`, and then be committed through `«state.commit»(slug)`. Only after that durable consumed authorization may the deferred dispatch module run its ordinary reuse-or-fresh procedure for the newly current stage. `dispatch build` is still only an artifact: after building it, the very next host event is the runtime-bound `«worker.spawn»` tool call—no narration or wait may intervene. Require its returned live worker handle, and never enter wait or claim successor dispatch before that spawn is observed. Never use `status --set` to advance a gated stage.
+Consume itself rechecks currency, successor, blockers, and one-use state under lock. Require exit 0 with `approved-pending`, `eligible=true`, `consumed=true`, and the expected successor. It atomically writes successor status plus consumed state; commit that descendant through `«state.commit»(slug)` before entering the ordinary reuse-or-fresh dispatch contract. Never use `status --set` to advance a gate.
 
-- `revise`: eligibility, when read diagnostically, is ineligible `feedback/pending`; never consume it. Invoke `«feedback.route»` (including feedback-gate `REJECTED` and captain rejection at a `feedback-to` stage).
-- `hold`: eligibility must be `not-applicable`/ineligible. Leave the entity at the gate and surface the reason; never consume, advance, or dispatch.
-- approved but blocked, wrong-stage, unknown, or otherwise ineligible: halt with the reported condition and missing/current artifact or field; preserve status bytes.
-- `stale`: first observe stale through read-only eligibility. Invoke consume only to materialize the landed failure: it exits nonzero, leaves status unchanged, and changes only pending → superseded. Commit, retain/bind a replacement Briefing, and re-present.
+- `revise`: after its close commit, never consume; invoke `«feedback.route»`.
+- `hold`: after its close commit, remain at the gate and surface the reason.
+- blocked/wrong-stage/unknown/ineligible approval: its close is already durable; halt and preserve status bytes.
+- `stale`: consume exits nonzero, leaves status unchanged, changes only pending → superseded; commit it, bind a replacement Briefing, re-present.
 - already `consumed`: the authorization is spent. Follow the current status into ordinary dispatch/recovery; do not re-record or consume it. A diagnostic repeat consume must be nonzero and byte-clean.
 
-**Resume before writing.** Run `gate validate` first. Same-Briefing `gate record --briefing` must correct stale `gates.current` without a new attempt; changed package updates the open attempt and is re-presented. Closed pending approval resumes eligibility/consume; revise/hold routes or stays held. Consumed resumes dispatch. Stale materializes supersession by consume failure, then binds a replacement. Surface nonzero command, exit, remedy; never repair frontmatter.
+**Resume.** Use boot/entity state and prior result; `gate validate`/`gate eligibility` are optional diagnostics, never mandatory positive-path calls. Same-Briefing bind is idempotent; changed open package updates and re-presents. Before routing any closed state, ensure its exact Resolution commit exists. Pending approval resumes consume; revise/hold routes/stops; consumed resumes ordinary dispatch; stale consume materializes supersession then replacement. Surface nonzero command, exit, remedy; never repair frontmatter.

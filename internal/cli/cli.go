@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -293,6 +294,11 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 			if input.BriefingPath != "" && (input.RoomPath != "" || input.Actor != "" || input.Reason != "" || input.Directive != "") || input.RoomPath != "" && (input.Actor != "" || input.Reason != "" || input.Directive != "") {
 				fmt.Fprintln(stderr, "Error: gate record flags do not match the selected semantic source")
 				return exitCodeError{2}
+			}
+			for _, path := range []*string{&input.BriefingPath, &input.ResultPath, &input.AssociationPath} {
+				if *path != "" && !filepath.IsAbs(*path) {
+					*path = filepath.Join(dir, *path)
+				}
 			}
 			input.WorkflowDir = definitionDir
 			if err := gates.RecordSemantic(path, input); err != nil {
