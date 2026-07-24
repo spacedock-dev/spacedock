@@ -201,13 +201,10 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	}
 	writeRecordedGateEvidence(t, fixture.root, commands, before, readFile(t, fixture.entity), readFile(t, fixture.gateReview), dispatches)
 	observation := recordedGateObservation{
-		events: events,
-		before: before,
-		after:  readFile(t, fixture.entity),
-		dispatch: recordedGateDispatchProof{
-			builds: dispatches, durableEffects: dispatches, ordered: true,
-			committed: recordedGateCommittedBeforeDispatch(t, fixture, closeCommit, consumedCommit, consumedCommit),
-		},
+		events:       events,
+		before:       before,
+		after:        readFile(t, fixture.entity),
+		dispatch:     recordedGateDispatchProof{builds: dispatches, durableEffects: dispatches, ordered: true, committed: recordedGateCommittedBeforeDispatch(t, fixture, closeCommit, consumedCommit, consumedCommit)},
 		gateReview:   readFile(t, fixture.gateReview),
 		expectedNext: "handoff",
 	}
@@ -256,12 +253,12 @@ func TestRecordedGateLifecycleCapabilityStaleLauncherHaltsBeforeMutation(t *test
 		t.Fatal(err)
 	}
 	for range 2 {
-		if err := probeRecordedGateCapability(shim, cache); err != nil {
+		if err := probeRecordedGateCapability(t, shim, cache); err != nil {
 			t.Fatal(err)
 		}
 	}
 	writeFile(t, shim, fmt.Sprintf("#!/bin/sh\nprintf '%%s\\n' \"$*\" >> %q\necho 'record validate eligibility consume'\n", probeLog))
-	err := probeRecordedGateCapability(shim, cache)
+	err := probeRecordedGateCapability(t, shim, cache)
 	if err == nil {
 		t.Fatal("same-path stale replacement passed readiness")
 	}
@@ -277,11 +274,11 @@ func TestRecordedGateLifecycleCapabilityStaleLauncherHaltsBeforeMutation(t *test
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", capableDir+string(os.PathListSeparator)+os.Getenv("PATH"))
-	if err := probeRecordedGateCapability("spacedock", cache); err != nil {
+	if err := probeRecordedGateCapability(t, "spacedock", cache); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", staleDir+string(os.PathListSeparator)+os.Getenv("PATH"))
-	if err := probeRecordedGateCapability("spacedock", cache); err == nil {
+	if err := probeRecordedGateCapability(t, "spacedock", cache); err == nil {
 		t.Fatal("PATH target swap reused capable cache identity")
 	}
 }
@@ -774,6 +771,7 @@ func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
 	}
 }
 func recordedGateReviewFromClaudeStream(stream string) string {
+	stream = strings.SplitN(stream, "gate record recorded-gate-task --decision ", 2)[0]
 	var review string
 	walkStreamBlocks(stream, func(block streamContentBlock) {
 		if block.Type == "text" && strings.Contains(strings.ToLower(block.Text), "capability/change:") {
@@ -784,6 +782,7 @@ func recordedGateReviewFromClaudeStream(stream string) string {
 }
 
 func recordedGateReviewFromCodexJSONL(jsonl string) string {
+	jsonl = strings.SplitN(jsonl, "gate record recorded-gate-task --decision ", 2)[0]
 	var review string
 	for _, line := range strings.Split(jsonl, "\n") {
 		var row struct {
@@ -802,6 +801,7 @@ func recordedGateReviewFromCodexJSONL(jsonl string) string {
 }
 
 func recordedGateReviewFromPiSession(session string) string {
+	session = strings.SplitN(session, "gate record recorded-gate-task --decision ", 2)[0]
 	var review string
 	for _, line := range strings.Split(session, "\n") {
 		var row struct {
@@ -1011,8 +1011,9 @@ func recordedGateEntityAt(t *testing.T, fixture recordedGateFixture, commit stri
 
 func recordedGateCommittedBeforeDispatch(t *testing.T, fixture recordedGateFixture, close, consumed, dispatchHead string) bool {
 	t.Helper()
-	closed, spent := recordedGateEntityAt(t, fixture, close), recordedGateEntityAt(t, fixture, consumed)
+	opened, closed, spent := recordedGateEntityAt(t, fixture, strings.TrimPrefix(close+"^", "^")), recordedGateEntityAt(t, fixture, close), recordedGateEntityAt(t, fixture, consumed)
 	if close == "" || consumed == "" || dispatchHead == "" || close == consumed ||
+		!strings.Contains(opened, "digest: "+recordedGateDigest) || strings.Contains(opened, "resolution:") ||
 		!strings.Contains(closed, "decision: approve") || !strings.Contains(closed, "state: pending") ||
 		!strings.Contains(spent, "status: handoff") || !strings.Contains(spent, "state: consumed") {
 		return false
@@ -1040,11 +1041,10 @@ func assertCommandOutput(t *testing.T, output string, wants ...string) {
 	}
 }
 
-func probeRecordedGateCapability(binary string, cache map[string]bool) error {
+func probeRecordedGateCapability(t *testing.T, binary string, cache map[string]bool) error {
 	target, _ := exec.LookPath(binary)
 	target, _ = filepath.EvalSymlinks(target)
-	body, _ := os.ReadFile(target)
-	key := fmt.Sprintf("%s:%x", target, sha256.Sum256(body))
+	key := fmt.Sprintf("%s:%x", target, sha256.Sum256([]byte(readFile(t, target))))
 	if cache[key] {
 		return nil
 	}
