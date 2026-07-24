@@ -59,14 +59,14 @@ gates:
                 state: consumed
                 blockers: []
 review-round:
-    id: round:xbatj4hxtxw9t83vvmfem27f:implementation:13
+    id: round:xbatj4hxtxw9t83vvmfem27f:implementation:16
     stage: implementation
-    cycle: 13
+    cycle: 16
     briefing:
-        id: briefing:gate-review-presentation-command:implementation:round-13
-        digest: sha256:74c9675995b6a1deeb0cebc1925545b420719d99d4bf1c699b8dac7ea04c2fe5
+        id: briefing:gate-review-presentation-command:implementation:round-16
+        digest: sha256:61c4bffbec0dffc4eec7951e01d229f641ad98759a5f10be1c17a9390c88ba6a
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-13
+        room-ref: ./review/implementation/round-16
 ---
 
 Gate presentation remains an overridable channel of the present-gate skill, not a
