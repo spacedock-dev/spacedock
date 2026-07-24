@@ -1,7 +1,7 @@
 ---
 id: 6yyyyemkqwsett3g1c991w9f
 title: Make First Officers operate the recorded gate lifecycle
-status: ideation
+status: implementation
 source: "Durable-decisions dogfood audit: PRs #557/#560 shipped gate commands without the planned FO operating contract, 2026-07-23"
 started: 2026-07-23T02:01:56Z
 completed:
@@ -64,6 +64,20 @@ gates:
                 digest: sha256:b6ecdb249de0c91b3857b218cf2464ab7b8bafbdb1d2fce70c4f8526d0c827ce
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:ideation:3
+                briefing: briefing:docs-dev:6y:ideation:attempt-3:revision-2
+                by: agent:first-officer
+                at: "2026-07-24T00:14:56.965625Z"
+                decision: approve
+                reason: Canonical AC repair now preserves product value while removing unsupported proof obligations and cutting at least 399 LOC.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: consumed
+                blockers: []
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
