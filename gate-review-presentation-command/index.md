@@ -236,6 +236,7 @@ The captain's question is well-founded and the answer is yes: the binary was the
 - Cycle 2: PASSED — Roborev job 542; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
 - Cycle 3: REJECTED — fresh validation and Roborev job 1955; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
 - Cycle 4: REJECTED — Captain design reset after validation cycle 3: replace advisory-adoption plumbing with the gate-room/minimal-binding Result boundary and derive provider association behind the scaffold; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
+- Cycle 5: REJECTED — Roborev job 1974; surface 15 files/708 LOC vs pre-edit declaration 9 source/docs files plus fixture set/~585 changed lines (121%); AC unchanged.
 
 ## Stage Report: implementation
 
