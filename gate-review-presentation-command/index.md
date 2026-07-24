@@ -10,7 +10,7 @@ worktree: .worktrees/spacedock-ensign-gate-review-presentation-command
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:xb:ideation
+        gate: gate:docs-dev:xb:validation
     records:
         - id: gate:docs-dev:xb:validation
           stage: validation
@@ -33,8 +33,14 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: superseded
                 blockers: []
+            - id: gate-attempt:xb-validation-2
+              briefing:
+                id: briefing:docs-dev:xb:validation:attempt-2:revision-1
+                digest: sha256:cd2fa1035f22eb79e6d63dccc887cb5023b19c4b007fe819e8d8ed7a8fd377d7
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-3
         - id: gate:docs-dev:xb:ideation
           stage: ideation
           attempts:
