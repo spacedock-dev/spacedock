@@ -168,6 +168,20 @@ gates:
                 digest: sha256:1bddbf112a8367cce288e428a4900715221e62d04ad35098e7e9dec50841baee
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:validation:1
+                briefing: briefing:docs-dev:6y:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T17:13:28.512931Z"
+                decision: approve
+                reason: Validation reproduced AC-1 through AC-8 at exact tip b99f9c66; focused, full, race, docs, Codex, Claude, Pi, detached mutants, and final-tip Roborev are green with no candidate-scope material finding.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 review-round:
     id: round:6yyyyemkqwsett3g1c991w9f:implementation:15
     stage: implementation
