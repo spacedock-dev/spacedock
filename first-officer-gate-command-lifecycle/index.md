@@ -1913,3 +1913,45 @@ Declared before code edits at local unpushed checkpoint `ce4365053158ef80c1a4dc3
 Expected checkpoint-relative delta is **+85/-184**, with at most **+95 additions**. Deletion/consolidation happens before expansion and must first produce measured cumulative additions **≤370** versus `13d70249`, removing at least 127 checkpoint-added lines without inferred credit. Checkpoint-relative and cumulative numstat are recorded after deletion and at final tip. Final cumulative target is **≤455**, tolerance is **≤465**, and **+480** is the absolute hard stop.
 
 Implementation stops before every live host after deterministic controls are green so independent staff can review the actual code and measured diff. The reset triggers and unchanged PR/workflow boundaries are those in the approved cycle-24 staff-review repair.
+
+## Cycle-26 deletion checkpoint
+
+Deletion/consolidation completed before feature expansion. Existing deterministic lifecycle, no-authority, gate-guardrail, and FO contract tests remain green:
+
+- `go test ./internal/ensigncycle -run '^(TestRecordedGate|TestAssertGateHeld|TestGateGuardrailNegative)' -count=1`
+- `go test ./internal/contractlint -run '^TestFO' -count=1`
+
+Checkpoint-relative numstat from `ce436505`:
+
+| File | Additions / deletions |
+| --- | ---: |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +0 / -64 |
+| `internal/ensigncycle/gate_assert_test.go` | +5 / -33 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +12 / -55 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | +0 / -15 |
+| **Total** | **+17 / -167** |
+
+Cumulative numstat from `13d70249`:
+
+| File | Additions / deletions |
+| --- | ---: |
+| `docs/site/concepts/gates-and-decisions.md` | +24 / -22 |
+| `docs/site/get-started/first-workflow.md` | +6 / -11 |
+| `docs/specs/scenario-testing-principles.md` | +3 / -2 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +6 / -1 |
+| `internal/ensigncycle/claude_live_runner_test.go` | +28 / -6 |
+| `internal/ensigncycle/codex_live_runner_test.go` | +12 / -7 |
+| `internal/ensigncycle/gate_assert_impl_test.go` | +29 / -17 |
+| `internal/ensigncycle/gate_assert_test.go` | +6 / -54 |
+| `internal/ensigncycle/live_gate_stop_test.go` | +14 / -191 |
+| `internal/ensigncycle/livescenario_adapter_live_test.go` | +10 / -30 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +188 / -37 |
+| `internal/ensigncycle/shared_fixtures_test.go` | +10 / -49 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | +7 / -23 |
+| `internal/ensigncycle/shared_scenarios_test.go` | +1 / -1 |
+| `skills/first-officer/references/first-officer-shared-core.md` | +2 / -2 |
+| `skills/fo-gate-lifecycle/SKILL.md` | +5 / -3 |
+| `skills/present-gate/SKILL.md` | +16 / -24 |
+| **Total** | **+367 / -480** |
+
+The measured additions fell by **130** from cycle 23's +497, satisfying both the at-least-127 removal requirement and the pre-expansion **≤370** gate. No deletion credit is inferred. Expansion may now begin within the declared eight-file surface and +95 checkpoint-relative additions cap.
