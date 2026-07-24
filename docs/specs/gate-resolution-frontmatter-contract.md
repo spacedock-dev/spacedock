@@ -33,6 +33,7 @@ gates:
             id: briefing:sample-validation-1a
             digest: sha256:3333333333333333333333333333333333333333333333333333333333333333
             digest-domain: canonical-bytes
+            request-digest: sha256:4444444444444444444444444444444444444444444444444444444444444444
             room-ref: ./review/validation/briefing-1
           resolution:
             type: Resolution
@@ -68,6 +69,10 @@ reference. The approved domains are:
 - `raw-file-pin`: an explicitly labelled raw-byte pin that may remain in a canonical v1
   record. It is never silently reinterpreted as a canonical digest.
 
+A prepared provider room also binds `request-digest`, the JCS digest of its
+`request.json`. Chat-only attempts may omit it. Changing request authority after the
+attempt binds therefore fails before Result validation or entity mutation.
+
 ## Recorder lifecycle
 
 `spacedock gate record` derives lifecycle under the entity lock:
@@ -89,8 +94,9 @@ target record but does not modify either record's earlier closures.
 
 ## Provider Result association
 
-The provider form consumes one prepared gate room. Its `request.json` binds the logical
-gate, attempt, canonical Briefing id and digest, and equal actor/approver authority.
+The provider form consumes one prepared gate room. Its frozen `request.json` binds the
+logical gate, attempt, canonical Briefing id and digest, and equal actor/approver
+authority. The attempt's `request-digest` rejects any post-binding request change.
 The fixed provider outputs are `provider/result.json` and
 `provider/presented-inventory.json`; callers supply neither path nor provider argv.
 

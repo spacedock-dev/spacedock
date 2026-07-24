@@ -97,7 +97,7 @@ func TestGateImplicitWorkflowUsesOwningDefinitionFromNestedDirectory(t *testing.
 	}
 }
 
-func TestGatePresentationRemainsOutsideBinary(t *testing.T) {
+func TestGateReviewVerbIsAbsentAndSideEffectFree(t *testing.T) {
 	root := t.TempDir()
 	before, err := os.ReadDir(root)
 	if err != nil {
@@ -291,6 +291,9 @@ func TestGateRecordConsumesDirectBindingResultFromPreparedRoom(t *testing.T) {
 	if got := bound.Records[0].Attempts[0].Briefing.RoomRef; got != "./review/validation/briefing-1" {
 		t.Fatalf("accepted binding room-ref = %q", got)
 	}
+	if got := bound.Records[0].Attempts[0].Briefing.RequestDigest; got != "sha256:496172699eab13da987713c31a3ee9d01b9ccc0a694565ad4a6732c809a9cb91" {
+		t.Fatalf("accepted binding request-digest = %q", got)
+	}
 	out.Reset()
 	errOut.Reset()
 	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--association", filepath.Join(root, "association.json"), "--actor", "person:captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
@@ -476,6 +479,24 @@ func TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation
 			},
 			want: "canonical Briefing",
 		},
+		{
+			name: "authority changed after binding",
+			mutate: func(t *testing.T, room string) {
+				requestPath := filepath.Join(room, "request.json")
+				request, err := os.ReadFile(requestPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, requestPath, strings.ReplaceAll(string(request), "person:captain", "agent:first-officer"))
+				resultPath := filepath.Join(room, "provider", "result.json")
+				result, err := os.ReadFile(resultPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, resultPath, strings.Replace(string(result), `"by":"person:captain"`, `"by":"agent:first-officer"`, 1))
+			},
+			want: "frozen request digest",
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -505,6 +526,66 @@ func TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation
 			}
 		})
 	}
+}
+
+func TestGateRoomRejectsDistinctAuthorityAndDifferentRoomWithoutMutation(t *testing.T) {
+	t.Run("distinct actor and approver", func(t *testing.T) {
+		root, entity, room := unboundGateRoomFixture(t)
+		requestPath := filepath.Join(room, "request.json")
+		request, err := os.ReadFile(requestPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		writeFile(t, requestPath, strings.Replace(string(request), `"actor": "person:captain"`, `"actor": "agent:first-officer"`, 1))
+		var out, errOut bytes.Buffer
+		code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 0 {
+			t.Fatalf("bind room exit=%d stderr=%q", code, errOut.String())
+		}
+		before, err := os.ReadFile(entity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out.Reset()
+		errOut.Reset()
+		code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 1 || !strings.Contains(errOut.String(), "resolution authority") {
+			t.Fatalf("distinct authority exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		}
+		after, err := os.ReadFile(entity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(after, before) {
+			t.Fatal("distinct authority changed entity")
+		}
+	})
+
+	t.Run("different room", func(t *testing.T) {
+		root, entity, room := unboundGateRoomFixture(t)
+		var out, errOut bytes.Buffer
+		code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 0 {
+			t.Fatalf("bind room exit=%d stderr=%q", code, errOut.String())
+		}
+		before, err := os.ReadFile(entity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out.Reset()
+		errOut.Reset()
+		code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", filepath.Join(root, "other-room")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 1 || !strings.Contains(errOut.String(), "bound gate room") {
+			t.Fatalf("different room exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		}
+		after, err := os.ReadFile(entity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(after, before) {
+			t.Fatal("different room changed entity")
+		}
+	})
 }
 
 func TestGateRoomAcceptsDelegatedBindingAuthorityFromFrozenRequest(t *testing.T) {

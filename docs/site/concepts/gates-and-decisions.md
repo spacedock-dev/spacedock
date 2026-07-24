@@ -39,7 +39,7 @@ Material findings are the ones that should move your vote; Polish never blocks. 
 
 Gate reviews appear in chat by default. A workflow or session can opt into a review provider that presents the same canonical Briefing as a blocking review and returns an exact retained Result.
 
-The scaffold prepares one gate room that binds the request authority, gate attempt, canonical Briefing, and fixed provider outputs. The first officer passes only that room to the provider. The provider must show the Briefing's question, every Artifact, and every recursively reached Reference at its recorded revision. The recorder derives the complete presentation association from the room; the first officer does not assemble it.
+The scaffold prepares one gate room that binds the request authority, gate attempt, canonical Briefing, and fixed provider outputs. Binding the attempt freezes both the Briefing digest and the request digest. The first officer passes only that room to the provider. The provider must show the Briefing's question, every Artifact, and every recursively reached Reference at its recorded revision. The recorder derives the complete presentation association from the room; the first officer does not assemble it.
 
 The provider owns its presentation transport and retained files. The `spacedock` binary verifies a direct binding Result through its nested `Resolution.by`; advisory output remains evidence and cannot close the gate through an adoption note. If the provider is missing or has the wrong version, the first officer names the remedy and returns to chat without launching it or creating retention files. After launch, a failure never falls back to chat.
 

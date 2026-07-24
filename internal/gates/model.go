@@ -69,10 +69,11 @@ type Feedback struct {
 }
 
 type Briefing struct {
-	ID           string `yaml:"id" json:"id"`
-	Digest       string `yaml:"digest" json:"digest"`
-	DigestDomain string `yaml:"digest-domain" json:"digest-domain"`
-	RoomRef      string `yaml:"room-ref" json:"room-ref"`
+	ID            string `yaml:"id" json:"id"`
+	Digest        string `yaml:"digest" json:"digest"`
+	DigestDomain  string `yaml:"digest-domain" json:"digest-domain"`
+	RequestDigest string `yaml:"request-digest,omitempty" json:"request-digest,omitempty"`
+	RoomRef       string `yaml:"room-ref" json:"room-ref"`
 }
 
 type RoundPointer struct {
@@ -246,6 +247,9 @@ func Validate(doc *Document) error {
 			briefingIDs[a.Briefing.ID] = true
 			if a.Briefing.DigestDomain != "canonical-bytes" && a.Briefing.DigestDomain != "raw-file-pin" {
 				return fmt.Errorf("attempt %s has unknown digest-domain %q", a.ID, a.Briefing.DigestDomain)
+			}
+			if a.Briefing.RequestDigest != "" && !digestRE.MatchString(a.Briefing.RequestDigest) {
+				return fmt.Errorf("attempt %s has invalid request-digest", a.ID)
 			}
 			if a.Resolution == nil {
 				if a.Application != nil {

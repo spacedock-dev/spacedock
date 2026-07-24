@@ -244,6 +244,13 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	if err != nil {
 		return err
 	}
+	requestDigest, err := CanonicalDigest(requestBytes)
+	if err != nil {
+		return fmt.Errorf("canonicalize gate room request: %w", err)
+	}
+	if attempt.Briefing.RequestDigest == "" || requestDigest != attempt.Briefing.RequestDigest {
+		return fmt.Errorf("gate room request does not match the frozen request digest")
+	}
 	var request gateRoomRequest
 	if err := json.Unmarshal(requestBytes, &request); err != nil {
 		return fmt.Errorf("parse gate room request: %w", err)
@@ -384,7 +391,8 @@ func findRecord(doc *Document, id string) *GateRecord {
 }
 
 func sameBinding(left, right Briefing) bool {
-	return left.ID == right.ID && left.Digest == right.Digest && left.DigestDomain == right.DigestDomain && left.RoomRef == right.RoomRef
+	return left.ID == right.ID && left.Digest == right.Digest && left.DigestDomain == right.DigestDomain &&
+		left.RequestDigest == right.RequestDigest && left.RoomRef == right.RoomRef
 }
 
 func currentStageAttempt(entityPath string) (*Document, *yaml.Node, *GateRecord, *Attempt, error) {
@@ -698,7 +706,17 @@ func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
 	} else if !strings.HasPrefix(roomRef, ".") {
 		roomRef = "./" + roomRef
 	}
-	return Briefing{ID: manifest.ID, Digest: digest, DigestDomain: "canonical-bytes", RoomRef: roomRef}, nil
+	binding := Briefing{ID: manifest.ID, Digest: digest, DigestDomain: "canonical-bytes", RoomRef: roomRef}
+	requestBytes, err := os.ReadFile(filepath.Join(filepath.Dir(briefingPath), "request.json"))
+	if err == nil {
+		binding.RequestDigest, err = CanonicalDigest(requestBytes)
+		if err != nil {
+			return Briefing{}, fmt.Errorf("canonicalize gate room request: %w", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return Briefing{}, fmt.Errorf("read gate room request: %w", err)
+	}
+	return binding, nil
 }
 
 func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManifest, error) {
