@@ -164,6 +164,20 @@ gates:
                 digest: sha256:c9a7c203e6d1db996be3325f5d55bcc3bc7ebe6d40d4b2bae9affba5d6f8bd10
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-8
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:ideation:8
+                briefing: briefing:docs-dev:6y:ideation:attempt-8:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T20:08:36.771738Z"
+                decision: approve
+                reason: Independent staff review found no material issue; the unreleased-v1 reset removes prototype marker and unbound-review assumptions, binds presentation to successful durable evidence, and keeps all supported-host and authority ACs falsifiable within an explicit ceiling.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
