@@ -85,6 +85,11 @@ func ParseFrontmatter(path string) map[string]string {
 	return parseFrontmatterContent(data)
 }
 
+// ParseFrontmatterData parses one immutable in-memory buffer.
+func ParseFrontmatterData(data []byte) map[string]string {
+	return parseFrontmatterContent(data)
+}
+
 // parseFrontmatterContent is ParseFrontmatter over in-memory bytes.
 func parseFrontmatterContent(data []byte) map[string]string {
 	fields := map[string]string{}
