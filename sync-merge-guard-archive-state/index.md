@@ -3,7 +3,7 @@ id: rdjjq9hbv86skkw12z106z6q
 title: Make merge-guard archive finalization durable across split-root hosts
 status: ideation
 source: "Roborev 2146 during durable-decisions 6y final implementation review, 2026-07-24"
-started:
+started: 2026-07-24T15:38:16Z
 completed:
 verdict:
 score: "1.0"
