@@ -391,6 +391,7 @@ The captain's question is well-founded and the answer is yes: the binary was the
 - Cycle 11: REJECTED — independent ideation staff review; surface 17 files/1,255 changed LOC vs cap 1,300 (97%); AC unchanged. Three supported-path evidence gaps remain: no cited post-bind Briefing-byte mutation proves AC-2, the AC-3 inventory matrix lacks same-cardinality duplicate-id and wrong-revision cases, and AC-5 lacks deletion cases for both retained provider files. These are test-only falsifiability gaps, not new interface or provider obligations. Revise the test plan and intended surface around compact additions to the existing CLI matrices; do not add production behavior, a new harness, or provider transport.
 - Cycle 12: REJECTED — independent ideation staff re-review; surface unchanged at 17 files/1,255 changed LOC vs cap 1,300 (97%); AC unchanged. The Cycle-11 AC-5 test prose accidentally required missing retained files to emit “frozen digest,” but current supported behavior names the fixed path plus the read/not-found error; only byte mismatches use the frozen-digest diagnostic. Remove that invented message obligation, preserve the distinct assertions, and keep the test-only +42/-0 estimate unchanged.
 - Cycle 13: REJECTED — Roborev job 2039 implementation round 1; surface 17 files/1,293 changed LOC vs estimate 1,300 changed LOC (99%); AC unchanged
+- Cycle 14: REJECTED — validation cycle 5 nested Resolution authority; surface 17 files/1,293 changed LOC vs estimate 1,300 changed LOC (99%); AC unchanged
 
 ## Stage Report: implementation
 
