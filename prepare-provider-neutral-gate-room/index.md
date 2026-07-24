@@ -186,9 +186,10 @@ state=open
 
 `room` is the cleaned absolute path of the published, entity-derived room; no symlink
 lookup or directory scan is required. `briefing` and `digest` are the exact frozen
-binding read back from the successful operation. The First Officer consumes this room
-value verbatim for commit/presentation/handoff and must not rediscover it from ids,
-attempt numbers, status output, or directory contents.
+binding read back from the successful operation. When a future handoff or diagnostic
+needs the room, this emitted value is authoritative; callers must not rediscover it from
+ids, attempt numbers, status output, or directory contents. The no-override chat path
+has no following command that consumes `room=`.
 
 The locator is a clean, non-empty, slash-relative path contained by the room. Absolute
 paths, empty/dot paths, `..`, backslashes, and any symlink escape fail before mutation.
@@ -244,10 +245,11 @@ and capability anchor do not survive: provider-backed recording uses the retaine
 surface and derives the association in memory. The lifecycle's Spacedock-only
 `gate --help` preflight requires `prepare` and `--room`, not `--association`.
 
-For the no-override path, `fo-gate-lifecycle` runs `gate prepare`, commits the returned
-room and entity binding, passes the generated gate-review Artifact to the rendering-only
-`present-gate`, and records the captain's semantic chat decision. It uses the `room=`
-stdout value directly and does not search for the room.
+For the no-override path, `fo-gate-lifecycle` runs `gate prepare`, commits the entity
+folder containing the generated room and binding, passes the gate-review Artifact to
+the rendering-only `present-gate`, and records the captain's semantic chat decision.
+Folder-scoped state commit includes the generated room without taking its stdout path
+as an argument.
 
 The lifecycle text may state the provider-neutral boundary: a landed presentation
 override receives the one prepared room, never caller-built provider argv or output
@@ -266,7 +268,7 @@ Spacedock tests do not fake those future events.
 | One `gate prepare` operation | AC-1 | Tell the FO to write two JSON files and call `gate record` | Preserves the manual ids/digests and partial-room failure that caused the task. |
 | Frozen local Briefing locator | AC-2, AC-5 | Keep joining `briefing.json` | Fails the reproduced valid room and contradicts the provider contract. |
 | One recursive duplicate-member reader | AC-3, AC-5 | Rely on `encoding/json` plus typed structs | Go accepts conflicting duplicates last-wins; the detached counterexample can close under the wrong authority. |
-| Stable room/identity stdout handoff | AC-1, AC-4 | Make the FO reconstruct the room from ids or directory layout | Reintroduces lifecycle knowledge and can select the wrong attempt under retries. |
+| Stable room/identity stdout handoff | AC-1 | Omit the room or make callers reconstruct it from ids/directory layout | Hides the published artifact and can select the wrong attempt under retries. |
 | In-memory derived association | AC-5 | Persist `association.json` | Creates a second durable truth that can diverge from the four frozen inputs. |
 
 ## Expected surface and tolerance
@@ -276,6 +278,12 @@ first. Relative retained-input normalization is then available in `internal/cli`
 existing recorded-gate journey targets `fo-gate-lifecycle`, and `present-gate` contains
 rendering only. Against that composition, the smallest expected implementation is these
 16 files and about `+986/-161` lines (**1,147 changed LOC**):
+
+The inspected 6y tip is still pre-xb-rebase, so implementation must not start until
+6y's final xb rebase lands. Re-read that landed tip before creating the worktree; if it
+changes lifecycle ownership, recorder commands, shared live assertions, or any declared
+file/delta below, return to ideation for a surface reset rather than implementing
+against this provisional composition.
 
 | File | Expected delta | Purpose |
 |---|---:|---|
@@ -288,13 +296,13 @@ rendering only. Against that composition, the smallest expected implementation i
 | `internal/gates/io.go` | `+30/-8` | Recompute the four retained provider inputs through duplicate-safe reads. |
 | `internal/gates/json.go` (new) | `+75/-0` | Recursive duplicate-member rejection. |
 | `internal/gates/testdata/gate-room/request.json` | `+1/-0` | Add the locator to the canonical fixture. |
-| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+24/-16` | Update 6y's existing no-override chat journey in place; add no provider lane. |
-| `internal/contractlint/fo_function_reference_invariant_test.go` | `+18/-8` | Pin lifecycle ownership, room/stdout anchors, and rendering-only `present-gate`. |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+24/-16` | Update the shared no-override observation used by existing Claude/Codex/Pi lanes; add no lane. |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | `+18/-8` | Pin lifecycle ownership, forbidden provider mechanics, and rendering-only `present-gate`. |
 | `docs/specs/gate-resolution-frontmatter-contract.md` | `+60/-30` | Normative prepare/request/resolver/atomicity contract. |
 | `docs/site/reference/command-reference.md` | `+14/-6` | New verb, stdout, and arbitrary-name recording. |
 | `docs/site/reference/frontmatter-contract.md` | `+3/-3` | Remove the manifest-basename claim. |
 | `docs/site/concepts/gates-and-decisions.md` | `+6/-6` | Mechanical no-override preparation and future handoff boundary. |
-| `skills/fo-gate-lifecycle/SKILL.md` | `+18/-14` | Replace hand bind/association wording with prepare, room recording, and direct stdout consumption. |
+| `skills/fo-gate-lifecycle/SKILL.md` | `+18/-14` | Replace hand bind/association wording with prepare and provider-neutral room recording. |
 
 Tolerance is **+2 files and +25% changed LOC** (hard cap 18 files / 1,434 changed
 LOC), for a focused resolver test or fixture split only. A change to
@@ -315,8 +323,8 @@ required Artifact is `text/markdown`, Reference media types follow the closed ta
 every source URI is slash-relative to the generated Briefing directory. *Test:* real CLI
 fixture asserts pre-command metadata count 0, post-command count 2, exact stdout,
 paths/media types/full digests/relative URIs, and no copied source. It fails if the
-fixture must supply metadata, if the FO must scan for the room, or if output changes
-under a launch directory containing spaces.
+fixture must supply metadata, if stdout omits or misstates the published room, or if
+output changes under a launch directory containing spaces.
 
 **AC-2 — Every request-backed operation uses the frozen readable Briefing locator,
 independent of basename.** A clean nested `decision-material.data` locator binds,
@@ -338,19 +346,19 @@ residue. Removing the recursive reader makes at least one case bind or close.
 
 **AC-4 — Spacedock owns a truthful one-room lifecycle boundary without implementing a
 provider transport.** With no override, 6y's `fo-gate-lifecycle` runs prepare once,
-commits the returned room, renders through the unchanged rendering-only `present-gate`,
-and records chat; it consumes the returned absolute room rather than reconstructing it.
-Its future-override wording promises only that a landed override receives that one room.
-No Spacedock Go or skill change names a provider executable, runs a provider availability,
-version, or capability probe, allocates provider outputs, or simulates invocation.
-*Test:* update 6y's existing recorded chat journey and command-text mutants in place;
-the relevant no-override trace is `gate-help → prepare → state-commit → chat-render →
-decision-record`, followed by 6y's unchanged close/consume barriers; removing direct
-`room=` consumption fails it. Contract checks require
-`fo-gate-lifecycle` ownership and no presentation-channel section in `present-gate`;
-they also reject `subspace-tui`, `/subspace:r`, `--supports`, `--version`, or a new
-process-launch import in the changed gate/lifecycle surface. There is no fake override
-lane: q0 owns room-to-provider and retained-preflight proof.
+commits the entity folder containing the generated room and binding, renders through the
+unchanged rendering-only `present-gate`, and records chat. Its future-override wording
+promises only that a landed override receives that one room. No Spacedock Go or skill
+change names a provider executable, runs a provider availability, version, or capability
+probe, allocates provider outputs, or simulates invocation. *Test:* the shared
+recorded-gate observation requires `gate-help → prepare → state-commit → chat-render →
+decision-record`, followed by 6y's unchanged
+decision-commit/consume/consumed-commit barriers. At final tip, the existing Claude,
+Codex, and Pi live lanes must each satisfy that same observation. Legitimate structural
+checks require `fo-gate-lifecycle` ownership, keep `present-gate` rendering-only, and
+reject `subspace-tui`, `/subspace:r`, `--supports`, `--version`, or a new process-launch
+import in the changed gate/lifecycle surface. No prose-derived room-consumption mutant
+or fake override lane is added; q0 owns room-to-provider and retained-preflight proof.
 
 **AC-5 — Provider recording has one recomputed association and no parallel durable
 artifact.** The full fixture prepares, receives fixed Result/inventory outputs, closes,
@@ -362,6 +370,9 @@ association input/file or omitting one frozen input fails.
 
 ## Test plan and proof order
 
+0. **Baseline gate, before implementation:** require 6y's final xb rebase to be landed,
+   record its tip, and compare lifecycle ownership, recorder commands, shared assertions,
+   and the expected-surface table. Any mismatch returns to ideation for reset.
 1. **Focused red/green, low cost:** add the arbitrary-name spike as the first command
    test using the existing gate-room fixture, then add focused `prepare_test.go` cases
    for exact stdout data, relative URIs/media types, 12-to-64-character digest-prefix
@@ -372,12 +383,15 @@ association input/file or omitting one frozen input fails.
    only error substrings. The arbitrary-locator positive case continues through provider
    room closure and CLI eligibility, so `application.go` cannot silently retain its
    basename join.
-3. **Existing FO journey only, medium cost:** update 6y's landed recorded-gate chat
-   fixture in place to consume `gate prepare` stdout and assert
+3. **Existing FO journey only, high cost at final tip:** update 6y's shared
+   recorded-gate observation in place to assert
    `gate-help → prepare → state-commit → chat-render → decision-record` before its
-   unchanged close/consume barriers. Do not add a provider lifecycle harness, fake
-   presenter, provider-capability event ledger, host lane, or cross-repo invocation
-   test. q0 owns those proofs after its room command exists.
+   unchanged decision-commit/consume/consumed-commit barriers. Run the existing
+   `TestLiveClaudeSharedScenarios` and `TestLiveCodexSharedScenarios`
+   `recorded-gate-lifecycle` cases plus `TestLivePiRecordedGateLifecycle` against the
+   final implementation tip; all three must observe the revised sequence. Add no host
+   lane, harness, provider fake, provider-capability ledger, prose-derived room mutant,
+   or cross-repo invocation test. q0 owns those proofs after its room command exists.
 4. **Repository gates:** `gofmt -w ./cmd ./internal`, `go test ./...`,
    `go test ./... -race`, strict docs build, `git diff --check`, and verify
    `go list -deps ./cmd/spacedock` contains no Subspace package, the changed gate code
@@ -405,13 +419,13 @@ target file):
 +++ docs/site/concepts/gates-and-decisions.md
 @@
 -Before the First Officer shows a gate, it binds the exact retained Briefing and commits that package.
-+Before the First Officer shows a no-override gate, it prepares and binds the room mechanically, commits the exact `room=` path returned by the command, then renders in chat. A future presentation override receives that same one room through its own landed transport; Spacedock does not discover, probe, or launch a provider.
++Before the First Officer shows a no-override gate, it prepares and binds the room mechanically, commits the entity folder containing that room, then renders in chat. A future presentation override receives the command's authoritative `room=` value through its own landed transport; Spacedock does not discover, probe, or launch a provider.
 
 --- skills/fo-gate-lifecycle/SKILL.md
 +++ skills/fo-gate-lifecycle/SKILL.md
 @@
 -**Retain and bind.** Assemble `ROOM/briefing.json` ... then run `gate record ENTITY --briefing BRIEFING`.
-+**Prepare and bind.** Select one Markdown gate-review Artifact and any References, then run `${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW [--reference FILE ...] --workflow-dir WORKFLOW_DIR`. Require the four stable output lines and `state=open`; use the absolute `room=` value verbatim and never reconstruct or search for it. Commit that returned room and entity binding before presentation.
++**Prepare and bind.** Select one Markdown gate-review Artifact and any References, then run `${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW [--reference FILE ...] --workflow-dir WORKFLOW_DIR`. Require the four stable output lines and `state=open`; commit the entity folder containing the generated room and binding before presentation. The emitted `room=` value is the sole future override/diagnostic locator and must never be reconstructed or searched for.
 +**Presentation boundary.** With no override, render the generated review through `present-gate` and record chat. A future landed override receives the one prepared room and returns that retained room for `gate record --room`; this lifecycle does not name, discover, version-check, capability-probe, or launch a provider, and does not construct provider output paths or an association.
 ```
 
@@ -493,3 +507,18 @@ prepared room and owns retained compatibility evidence from its first preflight 
 Cycle 3 supersedes cycle 2's selected-provider event ledger. The accepted mechanical
 prepare, arbitrary locator, recursive duplicate rejection, four pins, and unstored
 association remain, now within the smallest post-6y Spacedock-owned boundary.
+
+## Stage Report: ideation (cycle 4)
+
+- DONE: Remove unobservable direct `room=` consumption from AC-4.
+  Stable room/id/digest stdout now serves AC-1 only; AC-4 proves the observable no-override sequence and legitimate provider-absence/ownership checks without a prose-derived room mutant.
+- DONE: Require all existing host-neutral recorded-gate live lanes at final tip.
+  The plan names Claude and Codex shared `recorded-gate-lifecycle` cases plus Pi's existing live test, all using one revised shared observation and unchanged commit/consume barriers.
+- DONE: Preserve the 6y final-xb-rebase implementation dependency.
+  The design blocks worktree creation until that rebase lands and requires an ideation reset if its final ownership, commands, assertions, or expected surface differ.
+
+### Summary
+
+Cycle 4 makes proof match observable behavior: no no-override command consumes the
+reported room, while every existing live host must prove the revised lifecycle. The
+16-file / 1,147-LOC surface remains provisional until 6y's final xb rebase lands.
