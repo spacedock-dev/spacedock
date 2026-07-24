@@ -1,0 +1,7 @@
+`recorded-gate-task` successfully reached the requested bounded stop:
+
+- Validation gate approved and consumed.
+- Handoff successor dispatched.
+- `RECORDED-GATE-SUCCESSOR-DISPATCHED` durably committed in `8fb1eef`.
+- Task remains nonterminal at `handoff`; it was not advanced to `done`.
+- Unrelated `dirty-sibling.md` was preserved.

@@ -1,0 +1,11 @@
+Capability/change: The recorded gate-resolution flow now requires one-use consumed approval before successor dispatch.
+
+Test and evidence: [Validation Stage Report](/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLiveCodexSharedScenariosgate-guardrail3798875073/001/.spacedock-state/recorded-gate-task/index.md:29) — 1 done, 0 skipped, 0 failed; real-command replay and skipped-step mutants passed.
+
+Reviewed snapshot: `briefing:docs-dev:3k:validation:attempt-1:revision-1` at `sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac`.
+
+Findings: No material findings; CLI path normalization remains a deferred product issue.
+
+Recommendation: Approve—the behavioral evidence satisfies AC-1 by demonstrating that successor dispatch is guarded by consumed approval.
+
+Decision ask: **Approve** to consume the authorization once and advance to handoff; **revise** to return concrete findings to implementation; or **hold** at validation for a named prerequisite.

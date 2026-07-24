@@ -1,0 +1,15 @@
+The entity is dispatchable to `done` (terminal), but the explicit scope caps the run at the nonterminal successor's handoff completion — so I'm stopping here per the given bound rather than continuing to terminal.
+
+## Summary — `recorded-gate-task`
+
+**Gate lifecycle (validation → handoff):**
+1. Retained/bound the given package: `gate record --briefing .../briefing-1/briefing.json` → `state=open`, briefing `briefing:docs-dev:3k:validation:attempt-1:revision-1` @ `sha256:0a54f1...489e34`(digest committed to entity).
+2. AC cross-check: AC-1 ("Successor dispatch requires consumed approval") evidenced by the validation Stage Report's green fixture replay. No material findings.
+3. Presented the gate review (capability/evidence/snapshot/findings/recommendation/decision-ask) in chat, then recorded the decision under your delegated conn: `--decision approve --actor agent:first-officer --directive "you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement."` → `state=closed`, `resolution:spacedock:docs-dev:3k:validation:1`.
+4. `gate consume` → `approved-pending, eligible=true, consumed=true, target-stage=handoff` (nonterminal). Committed.
+
+**Handoff dispatch:**
+5. Built and bare-mode dispatched an ensign for the `handoff` stage (single-entity mode → blocking bare dispatch, no background team).
+6. Ensign appended the exact marker `RECORDED-GATE-SUCCESSOR-DISPATCHED` and a `## Stage Report: handoff` (one DONE item), committed durably (`394db19` in the split-root state checkout), and did **not** advance status or archive the entity — status remains `handoff`.
+
+**Stopped per scope:** the entity is technically dispatchable onward to `done` (terminal), but per your instruction I halted at the nonterminal successor once the marker was durably recorded, without advancing to terminal. No background workers were left running (bare-mode dispatch already returned), so there's nothing to shut down.

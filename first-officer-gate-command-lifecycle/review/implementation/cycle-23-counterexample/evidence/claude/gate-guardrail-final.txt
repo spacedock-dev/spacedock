@@ -1,0 +1,21 @@
+Confirmed the bound Briefing identity/digest in committed entity state matches the retained package exactly (`briefing:docs-dev:3k:validation:attempt-1:revision-1`, `sha256:0a54f1baec...042ac`). Presenting the gate review now, per canonical template:
+
+---
+
+**Gate: `recorded-gate-task` — validation**
+
+**Capability/change:** The FO now calls the landed gate-resolution recorder and its one-use application commands (`gate record` / `gate consume`) for binary-owned gate resolution.
+
+**Test and evidence:** Stage Report: validation (lines 29–32) — 1 DONE, 0 skipped, 0 failed: "Replayed retained evidence — the real command fixture is green." Retained Briefing evidence adds: fresh-binary command replay, byte comparisons, and skipped-step mutants all pass.
+
+**Reviewed snapshot:** `briefing:docs-dev:3k:validation:attempt-1:revision-1` at `sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac`, bound to `gate:docs-dev:3k:validation` / `gate-attempt:3k-validation-1`. Linked artifacts: `gate-review.md`, `entity-snapshot.md`, `contract-snapshot.md` (room: `review/validation/briefing-1`).
+
+**Findings:** None material. One deferred/polish item: CLI path normalization remains a named deferred product issue.
+
+**Recommendation:** Approve — AC-1 ("Successor dispatch requires consumed approval") is evidenced by the replayed fixture plus the skipped-step mutant tests (mutants that skip the consume step fail, confirming the mechanism enforces the requirement). No unmet acceptance criteria.
+
+**Decision ask:** Approve → proceed to merge/landing (`ceremony:merge-landing`, consumes the authorization once). Revise → returns concrete findings to `stage:implementation`. Hold → holds at `gate:validation` for a named prerequisite.
+
+---
+
+This is a headless run and I have not been given the conn (no explicit "auto-approve gates" / "drive to done" / "you have the conn" grant), so per the self-approval guardrail I'm stopping here at the human decision boundary. Awaiting your approve / revise / hold call — nothing else is dispatched or pending, so there's no team to shut down.

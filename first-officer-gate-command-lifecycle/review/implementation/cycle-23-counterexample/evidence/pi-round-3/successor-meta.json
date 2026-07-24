@@ -1,0 +1,36 @@
+{
+  "runId": "416fe9fa",
+  "agent": "delegate",
+  "task": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/spacedock-ensign-recorded-gate-task-handoff.md and treat its content as your assignment.",
+  "exitCode": 0,
+  "usage": {
+    "input": 4127,
+    "output": 686,
+    "cacheRead": 16128,
+    "cacheWrite": 0,
+    "cost": 0.0043612,
+    "turns": 7
+  },
+  "model": "openrouter/openai/gpt-4.1-mini",
+  "attemptedModels": [
+    "openrouter/openai/gpt-4.1-mini"
+  ],
+  "modelAttempts": [
+    {
+      "model": "openrouter/openai/gpt-4.1-mini",
+      "success": true,
+      "exitCode": 0,
+      "usage": {
+        "input": 4127,
+        "output": 686,
+        "cacheRead": 16128,
+        "cacheWrite": 0,
+        "cost": 0.0043612,
+        "turns": 7
+      }
+    }
+  ],
+  "durationMs": 17378,
+  "toolCount": 6,
+  "timestamp": 1784925936426
+}

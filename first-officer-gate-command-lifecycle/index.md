@@ -1599,3 +1599,44 @@ Declared before code edits at local unpushed tip `08675f02ff278bb16965ce583f00b1
 | `docs/specs/scenario-testing-principles.md` | +4 / -2 |
 
 Intended incremental total is **+297/-160**. The full branch intent versus `13d70249` is **+471/-224**; additions have a hard stop at **+510** versus that baseline. Shared core remains at or below **26,754 bytes**, lifecycle at or below **7,000 bytes**, and presenter at or below **7,500 bytes**. Any eighteenth file, cap breach, new recorder field/harness/protocol/host lifecycle, unbound presentation, prompt coaching, weakened tuple/directive grade, or repeated unchanged supported-host obligation returns to ideation before further edits.
+
+## Stage Report: implementation (cycle 23)
+
+- DONE: Implement and commit the approved v1 reset as a bounded counterexample checkpoint.
+  Commit `ce4365053158ef80c1a4dc34c63256fd83da62d0` on `spacedock-ensign/first-officer-gate-command-lifecycle-rebased-cc51e518` changes exactly the declared 17 files by **+497/-460** from `13d70249`, within the +510 hard stop. It removes the unbound legacy path, makes no-attempt gates validating, requires bind/commit before presentation, captures the exact tuple and opaque directive, refits the no-authority path to committed-open hold, and structurally keeps reviewer `REJECTED` outside the Captain lifecycle. Component sizes are shared core **26,521**, lifecycle **6,505**, and presenter **6,906** bytes.
+
+  | File | Additions / deletions from `13d70249` |
+  | --- | ---: |
+  | `docs/site/concepts/gates-and-decisions.md` | +24 / -22 |
+  | `docs/site/get-started/first-workflow.md` | +6 / -11 |
+  | `docs/specs/scenario-testing-principles.md` | +3 / -2 |
+  | `internal/contractlint/fo_function_reference_invariant_test.go` | +70 / -1 |
+  | `internal/ensigncycle/claude_live_runner_test.go` | +28 / -6 |
+  | `internal/ensigncycle/codex_live_runner_test.go` | +12 / -7 |
+  | `internal/ensigncycle/gate_assert_impl_test.go` | +29 / -17 |
+  | `internal/ensigncycle/gate_assert_test.go` | +20 / -40 |
+  | `internal/ensigncycle/live_gate_stop_test.go` | +14 / -191 |
+  | `internal/ensigncycle/livescenario_adapter_live_test.go` | +10 / -30 |
+  | `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +230 / -36 |
+  | `internal/ensigncycle/shared_fixtures_test.go` | +10 / -49 |
+  | `internal/ensigncycle/shared_scenarios_negative_test.go` | +17 / -18 |
+  | `internal/ensigncycle/shared_scenarios_test.go` | +1 / -1 |
+  | `skills/first-officer/references/first-officer-shared-core.md` | +2 / -2 |
+  | `skills/fo-gate-lifecycle/SKILL.md` | +5 / -3 |
+  | `skills/present-gate/SKILL.md` | +16 / -24 |
+
+- DONE: Complete every offline, repository, race, documentation, and compile gate at the checkpoint.
+  `gofmt -w ./cmd ./internal`, focused lifecycle/contract controls, `go test ./...`, `go test ./... -race`, `go test -tags live ./internal/ensigncycle -run '^$' -count=1`, `git diff --check`, and strict MkDocs through `uv run --with-requirements docs/requirements.txt mkdocs build --strict` all pass. The real-CLI no-authority control proves one bound open attempt with the exact Briefing tuple and no Resolution, consume, advance, or dispatch.
+
+- DONE: Retain complete pass/fail host evidence without mutating global Pi packages.
+  Claude passes `gate-guardrail` in 108.49s and `recorded-gate-lifecycle` in 261.48s. Codex passes them in 99.83s and 219.01s. Pi round 1 preserves the pre-action reused-refresh-token failure. Pi round 2 uses the compatible FNM package and preserves the skipped bind commit plus invalid successor transport. After the bind-attribution correction, Pi round 3 preserves the exact root session and the fresh successful `delegate` subagent child, including its explicit model, exit 0, output, and path-scoped commit. The retained package is `review/implementation/cycle-23-counterexample/`.
+
+- FAILED: Produce a green supported-Pi lifecycle without crossing the declared reset boundary.
+  Pi round 3 again reports `successor dispatch was not observed after consume` after 271.08s, while its retained subagent artifacts show a fresh `delegate` exited 0 and committed the requested marker. The same root session also transformed the opaque conn into a `BEGIN_CONN`/`END_CONN` block before recorder input. Reconciling this split requires a new or expanded harness/host-lifecycle attribution boundary, weakening exact directive grading, or another unchanged supported-host retry. Each is an explicit cycle-23 hard-reset trigger, so implementation stops with the counterexample intact.
+
+- SKIPPED: Final-tip Roborev, advisory round publication, PR #565 update/push, gate or round recording, workflow-status mutation, merge, and any further Pi retry or fix.
+  The named hard reset fired before those actions. The checkpoint remains local and off PR #565; no gate, status, review-round, merge, or global package state changed.
+
+### Summary
+
+Checklist accounting is **3 DONE, 1 SKIPPED, 1 FAILED**. Cycle 23 proves the reset across deterministic controls, the repository, Claude, and Codex, and preserves all three Pi rounds. The repeated Pi successor boundary plus the exact-token mutation requires a new ideation decision about existing harness/host attribution; the implementation worker stopped at that first named boundary.
