@@ -163,6 +163,10 @@ Update `docs/site/concepts/workflows-and-entities.md` after the frontmatter exam
 
 Update `dispatch show-stage-def --help` from “Print the workflow README section for a stage.” to “Print a stage’s workflow README section followed by its declared context sections.”
 
+### Feedback Cycles
+
+- Cycle 1: REVISE — independent ideation staff review; surface 1 design file with implementation not started vs estimate 8-10 files/380-560 changed lines; AC unchanged. Resolve the existing stage-reader/fence-safe-reader semantic split, reject intersecting stage/selected spans, exercise the actual ordered tri-state YAML round-trip before approval, and state honest live-read semantics for valid edits between build and bootstrap.
+
 ## Stage Report: ideation
 
 - DONE: Define the builder-owned section-selection contract: workflow metadata declares ordered sections, dispatch build validates them, and the existing stage-definition read returns the selected context for the ensign's one-file bootstrap.
