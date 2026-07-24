@@ -44,6 +44,20 @@ gates:
                 digest: sha256:a552c2b7978d9fb642beddba360b926bcf3c334072dba60d31744bba18cae552
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:xb:ideation:1
+                briefing: briefing:docs-dev:xb:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T12:18:27.93418Z"
+                decision: approve
+                reason: Cycle 12 aligns all six ACs to the approved prepared-room boundary; independent staff re-review APPROVES; only +42/-0 test lines are authorized, projecting 1,297/1,300 changed LOC.
+                adoption-note: Captain granted the First Officer the conn to approve sprint gates and required suspicion of drift; preserve exact candidate 98ebb458 and add only the three recorded test variants.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Gate presentation remains an overridable channel of the present-gate skill, not a
