@@ -202,6 +202,7 @@ Update `dispatch show-stage-def --help` from “Print the workflow README sectio
 ### Feedback Cycles
 
 - Cycle 1: REVISE — independent ideation staff review; surface 1 design file with implementation not started vs estimate 8-10 files/380-560 changed lines; AC unchanged. Resolve the existing stage-reader/fence-safe-reader semantic split, reject intersecting stage/selected spans, exercise the actual ordered tri-state YAML round-trip before approval, and state honest live-read semantics for valid edits between build and bootstrap.
+- Cycle 2: REVISE — independent ideation staff re-review; surface 1 design file with implementation not started vs estimate 8-10 files/380-560 changed lines; AC unchanged. Exercise the proposed raw-byte-span reconciliation across UTF-8, CRLF/lone-CR, exotic separators, and overlap cases before approval; define and test exact selected-context trailing-blank and newline rendering for non-LF README bytes.
 
 ## Stage Report: ideation
 
