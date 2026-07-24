@@ -61,6 +61,20 @@ gates:
                 digest: sha256:cf920b3c5ee291361d991f1db9f81e3797e2dae0da13d3995e21341215f7ce56
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:xb:validation:3
+                briefing: briefing:docs-dev:xb:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T13:28:37.78285Z"
+                decision: approve
+                reason: Rebased exact candidate 642ca090 is patch-identical across all 15 commits, preserves 17 files and 1,310/1,310 changed LOC, and passes all six ACs plus full/race/docs on current base b0ca008d.
+                adoption-note: Captain granted the First Officer the conn to approve sprint gates, PRs, CI, and merge; land only 642ca0901a920c701acd5e1ec82aa11387764e43.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
         - id: gate:docs-dev:xb:ideation
           stage: ideation
           attempts:
