@@ -2260,3 +2260,22 @@ Implementation is limited to these 17 existing paths and obligation-based ranges
 | `docs/specs/scenario-testing-principles.md` | +1–4 / -1–4 |
 
 The **+250/-489** figure is a planning target derived from prior measured blocks, not a measured midpoint, deletion floor, or value AC. Actual per-file numstat decides conformance. A new path, production Go, or any per-file range breach stops implementation for design review before live work.
+
+## Stage Report: implementation (cycle 28)
+
+- DONE: Reimplement the normal gate lifecycle from the approved clean baseline.
+  Code commit `9577380debae43aca7508c0be1dc78922185f24b` binds and commits the selected Briefing folder before presentation, records and commits direct or delegated decisions, consumes and commits approval before the sole successor build, and preserves terminal merge routing. Public-CLI cases round-trip quote, backslash, newline, and combined delegated directives through production `gates.Document`.
+- DONE: Restore correction, Captain-call, and presentation ownership.
+  Shared core routes reviewer `REJECTED` before Captain presentation; the lifecycle owns all six deterministic Captain mappings and capability fail-closed behavior; `present-gate` alone emits exactly one semantic root review after the package commit and before decision mutation. Claude, Codex, and Pi retain separate root/order extractors with semantic mutation and duplicate controls.
+- DONE: Refit every no-authority path to the bound-open contract.
+  Shared Claude/Codex guardrails, the livescenario primitive, and standalone headless/no-conn coverage use the retained Briefing fixture. They require one committed open attempt and one semantic review while refusing Resolution, consume, post-bind dispatch, advance, completion, verdict, or archive. The standalone path starts at implementation and independently drives to the gate.
+- DONE: Keep the implementation inside the declared surface.
+  Exactly the declared 17 existing paths changed, with measured `+316/-485` from `13d70249`; every per-file delta is inside its Cycle-28 range. No production Go, new file, common native transport parser, assignment-custody oracle, prompt coaching, route-by-host matrix, legacy unbound compatibility, or Pi retention subsystem was added.
+- DONE: Pass deterministic and repository verification.
+  Focused lifecycle/contract/no-authority tests pass; `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, `go test -tags live ./... -run '^$'`, `mkdocs build --strict`, and `git diff --check` all pass. MkDocs used the repository-pinned requirements in an isolated temporary virtual environment.
+- SKIPPED: Spend live Claude, Codex, or Pi journeys, open a PR, or mutate the gate, review round, entity status, or merge state.
+  The approved sequence requires an independent staff review of this deterministic implementation before any live journey. Implementation stops at that review boundary.
+
+### Implementation summary
+
+The clean branch delivers the repaired AC-1 through AC-5 proof split with less machinery than the abandoned prototype: real CLI and Git own durable authority and barriers; structural and deterministic controls own correction/mapping/capability behavior; host-specific extractors own the single ordered root review; no-authority fixtures own bound-open refusal. Checklist accounting is **5 DONE, 1 SKIPPED, 0 FAILED**. Request independent staff review before live spend.
