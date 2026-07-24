@@ -40,6 +40,20 @@ gates:
                 digest: sha256:b1e0cf2b6b7300464550d7af90d873802f7f51550a908d9eeb8cc62e0ea34400
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:0c:ideation:1
+                briefing: briefing:docs-dev:0c:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T09:11:43.521688Z"
+                decision: approve
+                reason: Cycle 3 preserves the single-fetch boundary, proved the real-parser raw-span and mixed-newline mechanisms, stays within the declared surface, and independent staff re-review reports APPROVE with no material findings.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 started: 2026-07-24T08:41:39Z
 ---
 
