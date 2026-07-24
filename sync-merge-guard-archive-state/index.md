@@ -10,6 +10,20 @@ score: "1.0"
 worktree:
 issue:
 sprint: durable-decisions
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:rd:backlog
+    records:
+        - id: gate:docs-dev:rd:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:rd-backlog-1
+              briefing:
+                id: briefing:docs-dev:rd:backlog:attempt-1:revision-1
+                digest: sha256:a6109cdc4013c201d8a268c32dc6795d354718cfdeae85ba0fd84546ed720659
+                digest-domain: canonical-bytes
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Make a successful split-root `merge guard` finalization durable on the configured state remote, including restart after interruption, so another First Officer cannot resurrect an already archived task from the last pushed sentinel.
