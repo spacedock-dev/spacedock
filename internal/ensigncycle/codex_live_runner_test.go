@@ -95,18 +95,8 @@ func runCodexRecordedGateLifecycleScenario(t *testing.T, runner codexLiveRunner,
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	after := resolveRecordedGateEntity(fixture)
-	events := recordedGateEventsFromCommandLog(readFile(t, commandLog))
-	if err := assertRecordedGateRuntimeLoadOrder("codex", result.jsonl); err != nil {
-		t.Fatalf("recorded gate lifecycle load order graded FAIL: %v\nArtifacts: %s", err, result.artifactDir)
-	}
-	commit := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "-S"+recordedGateDispatchMarker, "--", "recorded-gate-task/index.md"))
-	dispatch := recordedGateDispatchProof{spawned: commit != "", handle: "durable-commit:" + commit, workerOutput: commit != "" && strings.Contains(after, recordedGateDispatchMarker)}
-	if err := assertRecordedGateLifecycle(recordedGateObservation{
-		events: events, before: before, after: after,
-		dispatch:   dispatch,
-		gateReview: recordedGateReviewFromCodexJSONL(result.jsonl), expectedNext: "handoff",
-	}); err != nil {
+	observation := recordedGateLiveObservation(t, fixture, before, commandLog, recordedGateReviewFromCodexJSONL(result.jsonl))
+	if err := assertRecordedGateLifecycle(observation); err != nil {
 		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
