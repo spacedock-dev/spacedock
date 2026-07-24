@@ -107,8 +107,11 @@ review-round:
         digest: sha256:61c4bffbec0dffc4eec7951e01d229f641ad98759a5f10be1c17a9390c88ba6a
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-16
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:564
+verdict: passed
+completed: 2026-07-24T14:01:37Z
+archived: 2026-07-24T14:01:37Z
 ---
 
 Gate presentation remains an overridable channel of the present-gate skill, not a
