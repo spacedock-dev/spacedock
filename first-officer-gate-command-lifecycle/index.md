@@ -191,6 +191,7 @@ review-round:
         digest: sha256:643adf43b3c9b3262bea9180cd933588e4d4a8932ccfbfb8dca9b19b4eb53d73
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-15
+mod-block: merge:pr-merge
 ---
 
 Make the normal First Officer gate path bind the exact reviewed package, record the authorized decision, and durably consume it before ordinary workflow dispatch.
