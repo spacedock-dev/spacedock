@@ -10,7 +10,7 @@ worktree: .worktrees/spacedock-ensign-gate-review-presentation-command
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:xb:validation
+        gate: gate:docs-dev:xb:ideation
     records:
         - id: gate:docs-dev:xb:validation
           stage: validation
@@ -35,6 +35,15 @@ gates:
                 target-stage: done
                 state: pending
                 blockers: []
+        - id: gate:docs-dev:xb:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:xb-ideation-1
+              briefing:
+                id: briefing:docs-dev:xb:ideation:attempt-1:revision-1
+                digest: sha256:a552c2b7978d9fb642beddba360b926bcf3c334072dba60d31744bba18cae552
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-4
 ---
 
 Gate presentation remains an overridable channel of the present-gate skill, not a
