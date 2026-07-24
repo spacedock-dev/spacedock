@@ -42,8 +42,8 @@ gates:
 Make gate-room preparation one mechanical operation. The First Officer supplies the
 decision question and selected files; Spacedock derives room placement, portable ids,
 locators, revisions, canonical digests, request authority, and the open gate attempt.
-Chat remains the default presentation channel, and every provider consumes the same
-frozen package.
+Chat remains the default when no override is selected. A selected provider consumes
+the same frozen package exactly once and owns every preflight and retained output.
 
 ## Problem
 
@@ -74,8 +74,8 @@ At filing, Subspace `main` was `5ce887c` and the last reported active `em` commi
 - `f3466bd`: package mode accepts one readable Briefing with any filename; Subspace
   allocates and owns the retained provider package and its Result, log, inventory, and
   diagnostics. Caller-supplied output paths are gone.
-- `27b32eb`: a provider package is retained and reported even when presenter discovery
-  or the capability preflight fails.
+- `27b32eb`: package allocation precedes presenter discovery and capability preflight,
+  so their failures retain and report the provider package plus diagnostics.
 - Package eligibility is the literal
   `subspace-tui --supports review-v1-provider-package-v1` capability, not an exact
   version. The one-file Markdown profile keeps its unrelated version rule.
@@ -197,20 +197,26 @@ substituted, duplicated, or changed.
 
 ## Presentation selection
 
-Chat is the unconditional default. It prepares/binds the canonical room, renders the
-gate review in the current conversation, and records the semantic chat decision.
+Chat is the default only when no override is selected. That arm prepares/binds the
+canonical room, renders the gate review in the current conversation, and records the
+semantic chat decision. It does not invoke or probe a provider.
 
-A declared override is eligible only if its documented literal provider-package
-capability probe exits successfully. Spacedock wording says “capability unavailable,”
-not “wrong version.” Before a successful probe there is no provider launch or provider
-retention. A failed probe selects chat and names the corrective install/upgrade action;
-ordinary chat preparation may then proceed. After a successful probe and launch, there
-is no chat fallback: the retained provider package remains evidence and an absent,
-advisory, or invalid Result leaves the gate open.
+Once a declared override is selected, the First Officer prepares the room and invokes
+that provider exactly once with the room. It does not independently discover the
+presenter, run a version check, run the literal capability probe, construct provider
+argv or output paths, retry the invocation, or select chat after any provider failure.
 
-The skill passes one prepared room to a declared provider transport and never constructs
-argv or output paths. It must not claim the future Subspace q0 transport exists before
-it lands.
+The invoked provider owns presenter discovery and the literal
+`review-v1-provider-package-v1` probe. Package-mode eligibility depends on that
+capability's zero exit, never release text. The provider allocates its retained package
+before discovery/probing, records capability stdout, stderr, and exit there, and reports
+the package on a nonzero preflight. Such a failure opens no host surface but is still
+the one completed provider invocation: the gate remains open with diagnostic evidence,
+and chat is not invoked. A false positive capability claim fails later at its concrete
+parser, loader, publication, or validation boundary with the same no-retry/no-chat rule.
+
+The skill must not claim the future Subspace q0 transport exists before it lands. It
+states only the provider-neutral one-room/one-invocation contract that q0 will implement.
 
 ## New mechanisms and rejected alternatives
 
@@ -219,7 +225,7 @@ it lands.
 | One `gate prepare` operation | AC-1 | Tell the FO to write two JSON files and call `gate record` | Preserves the manual ids/digests and partial-room failure that caused the task. |
 | Frozen local Briefing locator | AC-2, AC-5 | Keep joining `briefing.json` | Fails the reproduced valid room and contradicts the provider contract. |
 | One recursive duplicate-member reader | AC-3, AC-5 | Rely on `encoding/json` plus typed structs | Go accepts conflicting duplicates last-wins; the detached counterexample can close under the wrong authority. |
-| Literal capability gate in shared skill behavior | AC-4 | Match an exact Subspace version | Rejects compatible providers and couples Spacedock to another release train. |
+| Provider-owned literal capability preflight | AC-4 | Pre-probe or match an exact Subspace version in Spacedock | Duplicates provider mechanics, loses retained preflight evidence, and couples Spacedock to another release train. |
 | In-memory derived association | AC-5 | Persist `association.json` | Creates a second durable truth that can diverge from the four frozen inputs. |
 
 ## Expected surface and tolerance
@@ -276,13 +282,17 @@ last-wins counterexample. *Test:* detached adversarial table requires nonzero ex
 diagnostic naming the duplicate member, unchanged whole entity bytes, and no lock
 residue. Removing the recursive reader makes at least one case bind or close.
 
-**AC-4 — Presentation is chat-default and override eligibility is literal-capability
-based.** No override declaration takes the chat arm; a fake declared provider with a
-zero capability probe receives exactly one prepared room; a missing/nonzero capability
-receives no room or launch and emits the remedy before chat preparation. After launch,
-provider failure never invokes chat. *Test:* augment 6y's shared recorded-gate journey
-and its host bindings with an argv/event ledger. A version comparison or unconditional
-`/subspace:r` call fails the expected event sequence.
+**AC-4 — Presentation preserves the selected channel and delegates compatibility to
+one provider invocation.** With no override, only chat prepares, presents, and records.
+With an override selected, the provider receives exactly one prepared room and internally
+runs exactly one literal provider-package capability probe; varied `--version` text does
+not change eligibility. A missing presenter or nonzero capability retains one reported
+provider package with inputs and capability stdout/stderr/exit, opens no host surface,
+leaves the gate open, and invokes neither chat nor the recorder. A false capability
+claim retains its concrete downstream failure with no retry or chat. *Test:* augment
+6y's shared recorded-gate journey and host bindings with the exact event ledgers below;
+any Spacedock-side probe, version comparison, second provider invocation, chat fallback,
+or closed gate fails the sequence.
 
 **AC-5 — Provider recording has one recomputed association and no parallel durable
 artifact.** The full fixture prepares, receives fixed Result/inventory outputs, closes,
@@ -301,10 +311,19 @@ association input/file or omitting one frozen input fails.
    level and nested authority-bearing objects. Assert entity bytes and lock state, not
    only error substrings.
 3. **Shared FO journey, medium/high cost:** extend 6y's landed recorded-gate fixture
-   rather than building a second lifecycle harness. Exercise chat, capable fake
-   override, unavailable override, and post-launch failure with a provider-neutral
-   event ledger. Host adapters reuse the shared scenario; run only live lanes required
-   by the final skill/runtime diff.
+   rather than building a second lifecycle harness. Assert these exact provider-neutral
+   event ledgers:
+   - no override: `prepare → chat-present → chat-record`, with no provider event;
+   - capable override: `prepare → provider-invoke → provider-package →
+     capability-probe(0) → host-launch → result-retained → room-record`, with no chat or
+     version probe;
+   - missing/non-capable override: `prepare → provider-invoke → provider-package →
+     capability-probe(nonzero) → provider-failure`, with no host launch, chat, recorder,
+     retry, or gate closure;
+   - stale capability claim: one provider invocation and package, followed by its
+     concrete retained downstream failure, with no retry or chat.
+   Host adapters reuse the shared scenario; run only live lanes required by the final
+   skill/runtime diff.
 4. **Repository gates:** `gofmt -w ./cmd ./internal`, `go test ./...`,
    `go test ./... -race`, strict docs build, `git diff --check`, and verify
    `go list -deps ./cmd/spacedock` contains no Subspace package.
@@ -329,16 +348,18 @@ target file):
 +++ docs/site/concepts/gates-and-decisions.md
 @@
 -If the provider is missing or has the wrong version, the first officer names the remedy and returns to chat.
-+Chat is the default. A declared override is usable only when its literal provider-package capability probe succeeds; exact provider versions are not eligibility. A failed probe names the remedy, launches no provider, and selects chat. After launch, failure never falls back to chat.
++Chat is the default only when no override is selected. Once selected, an override receives one prepared room and owns presenter discovery plus the literal provider-package capability probe; exact provider versions are not eligibility. Preflight failure retains the reported provider package and diagnostics, leaves the gate open, and never retries or invokes chat.
 
 --- skills/present-gate/SKILL.md
 +++ skills/present-gate/SKILL.md
 @@
 -1. **Probe before side effects.** Run the override's read-only availability and version probe...
 -2. **Pass one prepared room.** The scaffold owns `request.json`, the canonical `briefing.json`...
-+1. **Select truthfully.** Chat is the default. Use a declared override only after its literal provider-package capability probe succeeds; do not compare an exact version.
++1. **Select once.** Chat is the default only when no override is selected. A selected override is invoked exactly once and never falls back to chat.
 +2. **Prepare mechanically.** Run `${SPACEDOCK_BIN:-spacedock} gate prepare ...`; pass the resulting room, never provider argv or output paths.
-+3. **Resolve the frozen Briefing.** The request's local locator, id, and digest identify the canonical Briefing; no filename is canonical.
++3. **Leave preflight with the provider.** The provider allocates retained state, discovers its presenter, and runs the literal provider-package capability probe; Spacedock does not pre-probe or compare a version.
++4. **Retain failed invocations.** A provider preflight or downstream failure reports its retained package, leaves the gate open, and triggers no retry, recorder call, or chat presentation.
++5. **Resolve the frozen Briefing.** The request's local locator, id, and digest identify the canonical Briefing; no filename is canonical.
 ```
 
 The normative spec makes the same substitutions, defines the closed request shape and
@@ -372,3 +393,18 @@ The design removes both manual room metadata and the recorder's canonical-basena
 fiction while preserving one provider-neutral, request-frozen authority boundary.
 Subspace's active `em` delta is recorded at `27b32eb`; implementation must re-check its
 landed form and reuse 6y's CLI path normalization before final validation.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Repair the provider-selection contract to match active Subspace em at `27b32eb`.
+  The design now distinguishes no-override chat from a selected override's single invocation; Subspace owns package allocation, discovery, and the literal capability probe, while preflight failure retains evidence, leaves the gate open, and invokes no chat or recorder.
+- DONE: Make AC-4 and its integration proof falsify pre-probing, version matching, retry, fallback, and lost preflight evidence.
+  Four exact event ledgers cover chat, capable override, non-capable override, and stale capability claims; forbidden Spacedock probes, second invocations, host launch after nonzero capability, chat fallback, recorder calls, or gate closure fail the sequence.
+- DONE: Align the proposed user and skill wording without expanding Spacedock into provider transport.
+  The concrete documentation diff now says one room/one provider invocation, provider-owned retained preflight, literal capability rather than version, and no chat after a selected override fails; q0 remains explicitly future Subspace work.
+
+### Summary
+
+Cycle 2 removes the material cross-repository mismatch: chat is a default channel, not
+a fallback from a selected provider. A selected provider is invoked once with the
+prepared room and owns retained compatibility evidence from its first preflight byte.
