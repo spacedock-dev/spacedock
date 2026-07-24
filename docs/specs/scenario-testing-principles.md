@@ -56,7 +56,7 @@ The first foundation is the host-neutral runtime scenarios already shipped and h
 
 <!-- seed-scenarios -->
 - `gate-guardrail` — the FO halts at a human gate and presents the review without self-approval, mutation, or archival.
-- `recorded-gate-lifecycle` — the FO binds and validates a retained Briefing, records and validates delegated approval, proves eligibility, consumes exactly once, and only then dispatches the successor.
+- `recorded-gate-lifecycle` — the FO performs three authority mutations—bind a retained Briefing, record delegated approval, and consume exactly once—commits each durable barrier, treats validation and eligibility as optional diagnostics, and only then dispatches the successor.
 - `rejection-flow` — the FO drives a two-cycle rejection trajectory: route the finding back through implementation, re-implement, and re-validate a second cycle, reusing the kept-alive reviewer only when the host exposes an addressable-worker route.
 - `feedback-3-cycle-escalation` — on the third consecutive REJECTED validation the FO escalates to the human instead of auto-bouncing a fourth time.
 - `merge-hook-guardrail` — the FO cannot bypass a registered merge hook by terminalizing without pr, mod-block, or force.

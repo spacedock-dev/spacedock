@@ -28,7 +28,7 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 		{
 			name:          "recorded-gate-lifecycle",
 			oldPythonTest: "durable-decisions 3k/h1 dogfood (net-new; no Python ancestor)",
-			intent:        "FO binds and validates a retained Briefing, records and validates delegated approval, proves eligibility, consumes exactly once, and only then dispatches the successor.",
+			intent:        "FO performs three authority mutations—bind a retained Briefing, record delegated approval, and consume exactly once—commits each durable barrier, treats validation and eligibility as optional diagnostics, and only then dispatches the successor.",
 		},
 		{
 			name:          "rejection-flow",
