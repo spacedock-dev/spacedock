@@ -62,40 +62,49 @@ The cheapest existing public boundary is therefore `state commit <slug>`, not `s
 
 ## Proposed approach
 
-1. Extract the post-commit publisher from `internal/cli/state_sync.go` into a small internal state-sync boundary with no CLI or status dependency. It owns ordinary push, non-fast-forward `pull --rebase` and re-push, same-task conflict discovery plus `rebase --abort`, peer-commit evidence, and the no-origin result. Both callers receive one typed outcome; neither may force-push or auto-resolve.
+1. Extract the post-commit publisher and rebase inspection from `internal/cli/state_sync.go` into a standard-library-only `internal/statesync` package. It has no CLI or status dependency, so both `internal/cli` and `internal/status` import it without a cycle. It owns ordinary push, non-fast-forward `pull --rebase` and re-push, conflict discovery plus `rebase --abort`, peer-commit evidence, and the no-origin result. Both callers receive one typed outcome; neither may force-push, auto-resolve, or autostash.
    - Serves AC-1, AC-2, and AC-3.
    - Simplest alternative considered: duplicate the Git sequence in `merge.go`. That creates a second policy whose conflict and no-origin behavior can drift, so it is insufficient.
-2. After `commitArchiveMove` succeeds, split-root `merge guard` calls that publisher before emitting its final signal. The archive commit remains the durable local boundary: a publication/network failure does not roll it back, and the error names `spacedock state commit <slug> --workflow-dir <dir>` as the supported restart. Inline workflows do not publish the code branch.
+2. Immediately after each caller resolves its checkout/roots, and before entity resolution, staging, or mutation, call a shared preflight. If a rebase is already in progress, the preflight captures unmerged paths and the peer commit first, aborts the rebase, and returns the existing exit-3 HALT outcome. `merge guard` must not terminalize an entity and `state commit` must not stage it before this check.
+   - Serves AC-3 by making restart from the exact interrupted rebase state deterministic.
+   - Simplest alternative considered: let the publisher notice only when it starts a new rebase. That misses a process restart with Git already mid-rebase and allows mutation against an unmerged index.
+3. After `commitArchiveMove` succeeds, split-root `merge guard` calls the publisher before emitting its final signal. The archive commit remains the durable local boundary: a publication/network failure does not roll it back, and the error names `spacedock state commit <slug> --workflow-dir <dir>` as the supported restart. Inline workflows do not publish the code branch.
    - Serves AC-1, AC-2, and AC-5.
    - Simplest alternative considered: add `git push` to the FO contract. That is not binary-owned, cannot enforce rebase/HALT behavior, and leaves restart unresolved.
-3. Extend `state commit <slug>` resolution so active form still wins, then archived flat/folder form is accepted as the same entity commit unit. If the entity has no new dirt but local HEAD is ahead of the configured state branch's remote-tracking ref, the command runs the extracted publisher instead of returning the current clean no-op. It creates no second archive commit. A genuinely clean, fully published entity remains `no-op`.
-   - Serves AC-2 and AC-4.
+4. Make `state commit <slug>` resolution return both the canonical path set and `active|archived` scope. Before any movement, fail closed if the slug exists in both active and archive scope or if archive scope contains both flat and folder forms; “active wins” is forbidden for these invalid shapes. Active scope retains today's path-scoped stage/commit behavior. Archived scope is publish-only: require its active-source and archived-destination pathspecs to be clean in both index and worktree, never run `git add` or `git commit`, and publish only existing ahead history. A dirty archived task refuses with HEAD and origin unchanged; a clean, fully published archive is `no-op`.
+   - Serves AC-2, AC-4, and AC-6.
    - Simplest alternative considered: rerun `merge guard`. Mutation resolution intentionally refuses archived entities, so widening that mutation surface would weaken read-only archive semantics.
-4. Final output binds lifecycle and durability: `merge guard --json` carries one valid object whose finalized result says `pushed`, `local-only`, or `inline`; prose says the equivalent. An exit-3 conflict uses the existing HALT class and does not print a remotely durable success. No new public command or flag is added.
+5. Final output binds lifecycle and durability: `merge guard --json` carries exactly one JSON value followed by EOF, whose finalized result says `pushed`, `local-only`, or `inline`; prose says the equivalent. An exit-3 conflict uses the existing HALT class and does not print a remotely durable success. No new public command or flag is added.
    - Serves AC-1, AC-3, and AC-5.
    - Simplest alternative considered: emit the current finalize object followed by a separate state-sync object. Two JSON documents are not one valid command result and could falsely announce success before publication.
 
 ## Scope boundaries
 
 - Preserve `commitArchiveMove` and its exact live/archive path-scoped staging.
-- Preserve archived entities as read-only to `status` and `merge guard`; only `state commit` gains archived resolution for publication.
+- Preserve archived entities as read-only to `status` and `merge guard`; `state commit` gains only clean, publish-only archived resolution and never commits archived dirt.
 - Reuse one state publisher for ordinary push, non-fast-forward integration, conflict abort/HALT, and no-origin behavior.
-- Never force-push, auto-resolve, or stage unrelated state.
+- Fail closed before movement on active/archive identity collisions and archived flat/folder shape collisions.
+- Never force-push, auto-resolve, autostash, or stage unrelated state.
 - Do not change gate authority, recorder/application schemas, presentation providers, PR-host behavior, worktree teardown, or 6y's lifecycle mechanics.
 - Do not add a public verb or require FO-authored raw Git.
 
+## Deferred trigger: sibling dirt plus non-fast-forward
+
+AC-4 promises immediate publication with unrelated sibling dirt only when the ordinary push succeeds. If that push is rejected and Git refuses `pull --rebase` because unrelated tracked sibling dirt remains, the supported behavior is a non-HALT exit 1: do not autostash, do not move either ref, retain the local archive commit, and allow `state commit <archived-slug>` to resume after the sibling dirt is settled. The real-Git suite characterizes that recoverability, but this task does not promise publication through unrelated dirt. Promote the case only if immediate publication under both conditions becomes a product promise.
+
 ## Expected surface
 
-Baseline: 9 files and about 520 changed lines (`+450/-70`), dominated by real-Git fixtures.
+Baseline: 10 files and about 560 changed lines (`+480/-80`), dominated by real-Git fixtures.
 
-- `internal/statesync/publish.go` (new, about 140 LOC): extracted publish/rebase/HALT engine and typed outcome.
-- `internal/cli/state_sync.go` (about 70 changed LOC): archived resolution, clean-but-ahead resume, and rendering through the shared publisher.
-- `internal/status/merge.go` (about 45 changed LOC): publish after archive commit and bind durability into the single finalize result.
-- `internal/cli/merge_state_sync_test.go` (new, about 230 LOC): two-host value, interruption, peer, conflict, isolation, and local-only fixtures.
-- `internal/cli/state_commit_test.go` (about 55 added/changed LOC): archived flat/folder resolution and idempotent clean-ahead resume.
+- `internal/statesync/publish.go` (new, about 155 LOC): standard-library-only publish/rebase/preflight/HALT engine and typed outcome.
+- `internal/cli/state_sync.go` (about 85 changed LOC): scoped resolver, corruption guards, publish-only archived resume, and shared rendering.
+- `internal/status/merge.go` (about 50 changed LOC): preflight, publish after archive commit, and one durability-bound finalize result.
+- `internal/cli/merge_state_sync_test.go` (new, about 185 LOC): two-host value, interruption, peer, pre-existing rebase, isolation, and local-only fixtures.
+- `internal/cli/state_commit_test.go` (about 55 added/changed LOC): publish-only archive, dirty refusal, duplicate-shape refusal, and idempotent resume.
+- `internal/status/merge_guard_test.go` (about 20 added/changed LOC): exact one-value-plus-EOF JSON and inline/local-only result assertions.
 - `internal/cli/help.go`, `docs/site/reference/command-reference.md`, `skills/first-officer/references/fo-merge-core.md`, and `docs/dev/_mods/pr-merge.md` (about 30 changed lines total): supported outcome and restart wording.
 
-Tolerance: at most 12 files and 900 changed lines. Exceeding either bound, adding a public verb/flag, or touching any excluded gate/provider/PR-host/lifecycle surface requires a return to ideation before implementation continues.
+Tolerance: the implementation should remain within 520–600 changed lines across these 10 files; at most 13 files and 900 changed lines are allowed for review-driven fixture or structural adjustments. Exceeding the upper tolerance, adding a public verb/flag, adding a second Git harness, introducing a non-standard-library `internal/statesync` dependency, or touching any excluded gate/provider/PR-host/lifecycle surface requires a return to ideation.
 
 ## Acceptance criteria
 
@@ -103,29 +112,35 @@ Tolerance: at most 12 files and 900 changed lines. Exceeding either bound, addin
 Verified by: a real two-clone fixture pushes the merge sentinel, runs the public `merge guard` command on host A, runs `state ready` on host B, and observes exactly one archived terminal task at origin's archive commit with no active sentinel row. Removing the post-archive publisher makes host B reproduce the stale active task.
 
 **AC-2 - Interruption after the local archive commit but before publication has a supported idempotent resume.**
-Verified by: a pre-push failure fixture stops after the archive commit, removes the injected failure, and reruns documented `state commit <slug>` against the archived slug. Origin advances to the existing archive commit, archive-commit count remains exactly one, a second resume is a no-op, and both worktree and index are clean. Reverting archived resolution or clean-but-ahead publication makes the test fail.
+Verified by: a pre-push failure fixture stops after the archive commit, removes the injected failure, and reruns documented `state commit <slug>` against the archived slug. Origin advances to the existing archive commit, archive-commit count remains exactly one, a second resume is a no-op, and both worktree and index are clean. Separate staged, unstaged, and untracked archived-dirt legs refuse before publication and prove both HEAD and origin byte-identical. Any archived `git add`/commit path, or reverting clean-ahead publication, makes a leg fail.
 
 **AC-3 - Peer synchronization retains the existing conflict safety.**
-Verified by: one two-host leg pushes a disjoint peer entity before host A publishes and observes a linear rebase/re-push with both entities present. A second leg changes the same active sentinel remotely and observes exit 3, named conflicting paths and peer commit, an aborted rebase, no force push, the remote peer version intact, and the local archive commit still recoverable. Removing abort/no-force behavior or bypassing the shared publisher fails the corresponding assertion.
+Verified by: one two-host leg pushes a disjoint peer entity before host A publishes and observes a linear rebase/re-push with both entities present. The conflict leg creates a local archive-rename commit, pushes a conflicting remote edit to the active task, manually starts the real `pull --rebase` until Git is mid-conflict, then invokes the supported command. Preflight exits 3, names the captured unmerged path and peer commit, aborts the rebase, leaves the remote peer edit intact, and restores the local archive commit as recoverable HEAD. Moving preflight after entity resolution/staging, omitting abort, or force-pushing fails the fixture.
 
 **AC-4 - Archive publication remains path-scoped and does not sweep sibling dirt.**
-Verified by: a sibling tracked entity is dirtied before finalization; the archive commit's name-only tree delta is exactly `{slug}.md` plus `_archive/{slug}.md` (or the two folder roots), the sibling remains dirty and absent from the pushed commit, and the resume creates no commit. Replacing path-scoped staging with broad add makes the fixture fail.
+Verified by: on the ordinary direct-push path, a sibling tracked entity is dirtied before finalization; the archive commit's name-only tree delta is exactly `{slug}.md` plus `_archive/{slug}.md` (or the two folder roots), the sibling remains dirty and absent from the pushed commit, and archived resume creates no commit. Replacing path-scoped staging with broad add makes the fixture fail. The separately recorded sibling-dirt/non-fast-forward characterization proves recoverability after dirt settles without promising or implementing autostash.
 
 **AC-5 - Inline and no-origin workflows report truthful local behavior.**
-Verified by: an inline fixture archives without invoking state publication and reports `inline`; a split-root checkout with no `origin` keeps its local archive commit and reports `local-only`. The origin-backed fixture reports `pushed`. Claiming pushed durability without a matching remote ref, or pushing the inline code branch, fails.
+Verified by: every `merge guard --json` leg decodes one JSON value and requires a second decoder call to return EOF. The origin-backed leg reports `pushed` only when the remote ref equals the local archive commit; a split-root checkout with no `origin` keeps its local archive commit and reports `local-only`; an inline fixture reports `inline` and proves its code-branch remote ref never moved. A second JSON value, a mismatched remote ref, or any inline push fails.
+
+**AC-6 - Invalid active/archive identity or archive-shape collisions cannot move local or remote state.**
+Verified by: real-Git fixtures create (a) the same slug in active and archive scope and (b) both `_archive/<slug>.md` and `_archive/<slug>/index.md`. `state commit <slug>` refuses before staging or publication in each case, with HEAD, index, worktree, and origin unchanged. Restoring “active wins”, folder preference, or any push-before-validation ordering makes the test fail.
 
 ## Test plan
 
-- Add red tests first by adapting `twoHostStateWorkflow`; the real bare-origin/two-clone harness serves AC-1 through AC-4. A mocked publisher was the simpler alternative, but it cannot expose the actual ref, worktree, rebase, index, or sibling-dirt states those criteria measure.
+- Add red tests by reusing `twoHostStateWorkflow`, `runStateCommitCmd`, and `runMergeCLI`; do not create a second Git harness. The existing real bare-origin/two-clone substrate serves AC-1 through AC-6. A mock or second bespoke harness was simpler locally, but would either miss real refs/indexes or duplicate fixture semantics.
 - Drive `run(...)` for public CLI behavior. The repository-local failing pre-push hook serves AC-2 by leaving a real archive commit at the exact network boundary. An injected Go callback was simpler, but it would not prove the supported binary survives a real Git publication failure.
-- Keep one focused state-sync test per branch: direct push, disjoint non-fast-forward, same-task conflict/HALT, no origin, and already-published no-op. The change that would falsify each is named in the AC above.
+- Add table legs for archived staged/unstaged/untracked dirt and both duplicate shapes, asserting zero HEAD/origin movement. These serve AC-2 and AC-6; checking only stderr was simpler but would not prove a refusal occurred before staging or push.
+- Create the AC-3 pre-existing conflict with real Git: local archive rename, remote active-task edit, explicit `pull --rebase` to the conflict, then invoke the binary. A synthetic rebase marker was simpler but cannot prove path capture, abort restoration, or peer preservation.
+- Characterize sibling dirt plus non-fast-forward as exit 1 with no autostash and a recoverable archive commit; settle the dirt and prove the same archived-slug command then publishes. This guards the deferred boundary without promoting immediate publication to an AC.
+- Decode JSON with `json.Decoder`, assert the first value's result against refs, and require the second decode to return `io.EOF`. Substring checks were simpler but accept concatenated JSON and false durability claims.
 - Run `gofmt -w ./cmd ./internal`, focused `go test ./internal/statesync ./internal/cli ./internal/status ./internal/contractlint`, then `go test ./...` and `go test ./... -race`.
 - Because the diff changes both a status mutation boundary and host-neutral FO contract text, run the detached adversarial audit plus every required host live lane from the diff-to-lane policy. The audit must delete/bypass the post-archive publish call and confirm the two-host value test turns red.
 
 ## Documentation diff
 
 - `spacedock merge --help`: change “terminalize and archive” to “terminalize, archive with a path-scoped commit, and publish split-root state”; add “after an interrupted publication, `spacedock state commit <slug>` resumes from the archived slug without creating another archive commit.”
-- Command reference `state commit`: change “one canonical top-level entity slug” to “one canonical active or archived top-level entity slug”; add that a clean-but-unpublished local commit is pushed, while fully published state remains a no-op.
+- Command reference `state commit`: change “one canonical top-level entity slug” to “one canonical active or clean archived top-level entity slug”; state that archived scope is publish-only, dirty/colliding archive shapes refuse before movement, a clean unpublished commit is pushed, and fully published state remains a no-op.
 - FO merge core `effect`: change “including the path-scoped archive commit” to “including the path-scoped archive commit and split-root publication”; define done as remote-durable when an origin exists and explicitly local-only otherwise.
 - Development `pr-merge` mod: change each “terminalizes, archives, and commits” description to “terminalizes, archives, commits path-scoped, and publishes through the shared state-sync discipline.” No raw Git instruction is added.
 
@@ -141,3 +156,16 @@ Verified by: an inline fixture archives without invoking state publication and r
 ### Summary
 
 The spike proved the remote-resurrection defect and that no current entry point publishes the already-committed archive. The design adds no public verb: `merge guard` uses the extracted state publisher, while `state commit <slug>` becomes the idempotent archived-slug restart path under the existing conflict discipline.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Reproduce the pushed-sentinel/local-archive split with a real two-clone fixture, including interruption after archive commit and the current inability to resume by active slug.
+  The accepted spike remains unchanged; cycle 2 adds the real mid-rebase restart shape that begins with the same local archive commit and remote active edit.
+- DONE: Design the smallest binary-owned publication/resume path by reusing the existing state-sync conflict discipline, with exact files/LOC and no raw-Git FO workaround.
+  The design keeps `state commit <slug>`, makes archive scope publish-only, adds pre-mutation corruption/rebase guards, and resets the baseline to 10 files/~560 LOC.
+- DONE: Define falsifiable two-host, interruption, non-fast-forward/conflict, sibling-isolation, and local-only evidence that measures durable finalization.
+  AC-1; AC-2; AC-3; AC-4; AC-5; and AC-6 now bind refs, HEAD/index/worktree state, one-value JSON EOF, duplicate refusals, and the no-autostash deferred boundary.
+
+### Summary
+
+Cycle 2 preserves the accepted no-new-verb seam while closing the unsafe archived-commit and restart gaps. Archived state is clean-and-publish-only, invalid identities halt before movement, and shared preflight handles a rebase already in progress before either caller can resolve or mutate an entity.
