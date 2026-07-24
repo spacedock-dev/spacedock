@@ -1,6 +1,6 @@
 ---
 title: Workflow-declared section reads assemble stage context by pointer
-status: validation
+status: done
 source: "Durable-decisions sprint audit of Subspace 198f762, Spacedock 6y, and held js6 stakes-read-through, 2026-07-24."
 score: "0.8"
 id: 0cj3qf6fefedfj7j9exq62jb
@@ -75,7 +75,7 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
 started: 2026-07-24T08:41:39Z
 worktree: .worktrees/spacedock-ensign-workflow-declared-section-reads
