@@ -245,7 +245,7 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	}
 	requestBytes, err := os.ReadFile(filepath.Join(roomPath, "request.json"))
 	if err != nil {
-		return err
+		return fmt.Errorf("read gate room request: %w", err)
 	}
 	requestDigest, err := CanonicalDigest(requestBytes)
 	if err != nil {
@@ -267,7 +267,7 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	resultPath := filepath.Join(roomPath, "provider", "result.json")
 	resultBytes, err := os.ReadFile(resultPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("read provider Result: %w", err)
 	}
 	var result providerResult
 	if err := json.Unmarshal(resultBytes, &result); err != nil {
@@ -305,7 +305,7 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	}
 	presentedBytes, err := os.ReadFile(filepath.Join(roomPath, "provider", "presented-inventory.json"))
 	if err != nil {
-		return err
+		return fmt.Errorf("read presented inventory: %w", err)
 	}
 	var presented presentedInventory
 	if err := json.Unmarshal(presentedBytes, &presented); err != nil {
