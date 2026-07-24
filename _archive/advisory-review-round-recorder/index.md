@@ -4,8 +4,8 @@ title: Extend 3k's recorder to persist advisory review rounds
 status: done
 source: "02av deferred round-recorder plumbing and 3j jobs 592/594/597 incident, 2026-07-23"
 started: 2026-07-23T00:55:59Z
-completed:
-verdict:
+completed: 2026-07-24T01:14:30Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-advisory-review-round-recorder
 issue:
@@ -190,8 +190,9 @@ review-round:
         digest: sha256:a1010da278264d22e1d9f22db43f35a3e58a316b6ba9e097b458ac443fc8bc77
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-6
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:562
+archived: 2026-07-24T01:14:30Z
 ---
 
 Provide one owned write surface for correction-round Briefings, reviewer Annotations and advisory Resolution, and the worker's triage Resolution, without selecting a gate or advancing workflow state.
