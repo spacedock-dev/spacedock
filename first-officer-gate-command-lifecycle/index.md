@@ -1755,3 +1755,123 @@ This design does not infer the missing cycle-23 wrapper/state facts, regrade Pi 
 ### Summary
 
 Cycle 24 replaces an ambiguous build-and-marker oracle with one native-event and Git-ancestry contract shared by all hosts, transports authority losslessly as data, and makes Pi failure evidence survive fixture cleanup. It cuts before expanding, keeps every product boundary fixed, and permits exactly one unchanged Pi proof only after deterministic and other-host evidence is independently reviewable. Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Canonical design repair (cycle 24 staff-review correction)
+
+Independent staff review returned **CHANGES REQUESTED**. This section supersedes cycle 24's native-start/common-SHA proof, automatic artifact-destination assumption, and +390 deletion checkpoint. The retained cycle-24 Stage Report remains historical accounting, not the approved design.
+
+### Restored Cycle-9 proof split
+
+The common live lifecycle contract is exactly:
+
+1. the approved gate is consumed and that state is committed;
+2. one successor `dispatch build` succeeds after the consumed commit;
+3. the active host's already-supported dispatch observation occurs after that build;
+4. one durable successor effect is introduced by a state commit descended from the consumed/build snapshot.
+
+The common evaluator owns those four order/ancestry facts, exactly-one build/effect, final nonterminal `handoff` state, exact marker/report counts, and the separate exact-one capability preflight. It does not prescribe a universal transport event. A build alone remains insufficient because it still needs the host-supported observation and descendant effect.
+
+Codex uses the approved multi-agent-v2 evidence already owned by `codex_dispatch_evidence_test.go`: a successful entity-targeted `dispatch build`, a completed foreground `wait` ordered after that build, and a later durable stage-report observation. `codexDispatchCompletionEvidenceFromJSONL` and its regression controls remain the transport-shape authority. The recorded lifecycle runner consumes that result; it does not require, synthesize, or infer `spawn_agent`, native-start, run-ID, or native-completion events that the Codex stream may omit.
+
+Claude may enrich its host observation by pairing the Task call/result IDs it exposes. Pi may enrich its host observation by pairing `subagent` call/result IDs and checking fresh context, cwd, successful completion, and the explicitly required child model. Those richer facts are host-owned evidence, not fields every host must manufacture. Pi's retained round-3 call/result is therefore a valid deterministic fixture input, but the missing wrapper/entity/history still prevents a retrospective lifecycle verdict.
+
+Capability preflight remains independently exact-one and ordered before mutation. Two help calls can fail preflight while an otherwise valid successor chain remains accurately classified; neither result overwrites the other.
+
+### No authoritative assignment-byte join
+
+Remove assignment SHA-256 from the common observation and from acceptance. A returned assignment path, displayed prompt, or optional diagnostic digest may help explain a failure, but no path/digest combination proves the bytes a worker consumed. The common value is the observed host dispatch followed by descendant durable state, not a synthetic assignment-byte custody claim.
+
+Pi/Claude structured calls may show that their native task argument references the emitted path because those hosts expose it. That is additional transport evidence only. Codex retains its successful-build/completed-wait ordering observation. No host needs a second harness, assignment interception protocol, or new recorder field.
+
+### Delegated-conn serialization and exact-byte controls
+
+The sentinel replacement remains one natural-language data sentence containing a `json.Marshal` result, with the decoded `conn` member defined as the exact grant. The prompt adds no command, review label, decision, actor, reason, recorder call, or lifecycle procedure. Durable grading decodes the single `adoption-note` scalar and compares its bytes for equality; substring, prefix, suffix, duplication, or sentinel wrapping cannot pass.
+
+The deterministic table now includes JSON values containing a double quote, a backslash, an actual newline, and one value combining all three. For each, marshal → prompt extraction → JSON unmarshal must reproduce the original bytes exactly. The durable directive matrix still proves exact keep passes while drop, mutation, substitution, duplicate, prefix/suffix, `BEGIN_CONN`/`END_CONN`, and encoded-object leakage fail independently.
+
+### Persistent Pi retention is a launch precondition
+
+The admitted `recorded_gate_lifecycle_pi_live_test.go` owner must resolve `SPACEDOCK_LIVE_ARTIFACT_DIR` before `runPiLiveCommand`. Empty, relative, uncreatable, or cleanup-owned destinations fail the test before Pi launches. The owner canonicalizes the configured directory, creates a run-specific child, and rejects any destination equal to or contained by the fixture root, Pi home, session directory, clean home, or other test cleanup root it created. There is no `t.TempDir` fallback for this scenario.
+
+Only after that preflight succeeds does the owner register cleanup retention and launch Pi. Last-added-first-run cleanup copies the wrapper log and exact before/after entity, writes state HEAD/status, creates `state.bundle` with all refs, and emits a per-artifact manifest into the persistent run directory. One copy failure records the failure, preserves every other available artifact, and fails the test safely.
+
+Deterministic owner controls exercise three paths without launching Pi:
+
+- missing `SPACEDOCK_LIVE_ARTIFACT_DIR` fails with a destination-precondition diagnostic;
+- a destination inside a supplied cleanup root fails before any launch callback can run;
+- an absolute, writable destination outside all supplied cleanup roots is accepted, receives the manifest/snapshots/bundle under the simulated-fatal cleanup path, and is explicitly removed by the control after inspection rather than registered as a launch cleanup root.
+
+The launch callback is a counter in these controls, so both invalid cases prove zero launches. These controls and the Pi-shaped host observation run before the single unchanged supported Pi run.
+
+### Corrected deletion-first surface and arithmetic
+
+Cycle 23 starts at **+497 additions** versus `13d70249`. With up to **+95** implementation additions, final additions can remain at or below **+465** only if deletion/consolidation first reaches **+370** or fewer cumulative additions. Therefore implementation must remove or consolidate at least **127 checkpoint-added lines before any expansion**. The prior +390 checkpoint is void.
+
+At the deletion checkpoint, record both:
+
+- checkpoint-relative `git diff --numstat ce436505 -- <declared surface>` totals, showing what cycle 24 removed; and
+- cumulative `git diff --numstat 13d70249 -- <full branch surface>` totals, whose additions must be **≤370**.
+
+Record both tables again at final tip. Final checkpoint-relative additions must be **≤95**; cumulative additions target **≤455**, must be **≤465** under the declared tolerance, and retain the absolute **+480 hard stop**. If deletion changes baseline-owned lines, only measured cumulative numstat—not subtraction by intent—decides whether expansion may start.
+
+The corrected implementation surface remains seven existing files plus the one admitted Pi owner:
+
+| File | Expected delta from `ce436505` |
+| --- | ---: |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +45 / -120 |
+| `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go` | +28 / -0 |
+| `internal/ensigncycle/claude_live_runner_test.go` | +6 / -8 |
+| `internal/ensigncycle/codex_live_runner_test.go` | +6 / -8 |
+| `internal/ensigncycle/gate_assert_test.go` | +0 / -16 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | +0 / -12 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +0 / -20 |
+
+Expected cycle-24 delta is **+85/-184**, with **+10 additions tolerance** and no deletion credit assumed until numstat measures it. `codex_dispatch_evidence_test.go` is an existing, unchanged proof owner, not a ninth repair file. The Pi file remains justified because it alone owns the configured persistent destination, before bytes, fixture lifetime, and pre-launch/cleanup ordering.
+
+The same reset triggers remain: failure to reach +370 before expansion, more than +95 checkpoint-relative additions, cumulative additions above +465 (or any +480 hard-stop breach), a nineteenth cumulative file, a second harness, production Go, recorder/provider/schema changes, host lifecycle duplication, prompt coaching, or weakened exact-once/ancestry/directive behavior.
+
+### Repaired acceptance criteria and test plan
+
+- **Supported-host lifecycle value:** Claude, Codex, and Pi each prove consumed commit → successful build → their supported dispatch observation → one descendant durable successor effect. Common deterministic negatives remove/reorder/duplicate each link. Codex regression fixtures specifically fail if wait precedes build, build fails, wait is incomplete, or durable report evidence precedes wait; no spawn event is required.
+- **Exact-authority value:** JSON data transport round-trips current, quoted, backslashed, newline, and combined grants byte-for-byte, and only one exactly equal durable scalar passes. Every drop/mutation/wrapper case fails.
+- **Failure-retention value:** Pi cannot launch without a verified persistent external destination. Missing and cleanup-owned controls observe zero launches; the accepted-destination simulated failure leaves command/entity/history artifacts and an inspectable bundle.
+- **Lean-contract value:** measured cumulative additions are ≤370 before expansion and ≤465 at final tip, with checkpoint-relative and cumulative numstat published at both points. This is the independent baseline that can move the wrong way.
+
+The simplest proof considered was the cycle-23 build-plus-marker count; it cannot distinguish host dispatch ordering or root-authored effects. A universal native-call schema was also considered and rejected because Codex intentionally exposes a different approved transport shape. The restored host observation plus common Git ancestry is the smallest mechanism that serves the supported-host lifecycle AC.
+
+The simplest retention alternative was copying after the live call; `t.Fatalf` and temp cleanup can erase the sources first. A cleanup hook without a persistent destination merely moves the same loss. Pre-launch destination validation plus last-added cleanup is the smallest mechanism that makes failure evidence survive.
+
+No spike runs during this repair. The mechanisms are already fixture-backed: Cycle-9 Codex dispatch evidence tests own build/wait/report ordering, Go JSON owns lossless string round-trip, Go cleanup ordering is established, and Git bundles preserve refs. Implementation's first work is the deterministic deletion checkpoint and the newly named missing/persistent-destination plus JSON edge controls. Then run focused offline controls, full/race/live compile/docs, unchanged Claude and Codex lifecycle proofs, independent staff review, and at most one unchanged Pi run. The first named failure stops with retained evidence.
+
+No skill text, user documentation, product command, provider/recorder/consumer boundary, bind-and-hold behavior, gate guardrail, global package, PR, gate, round, status, or merge state changes in this repair.
+
+## Stage Report: ideation (cycle 25)
+
+- DONE: Restore the binding Cycle-9 proof split without requiring or synthesizing Codex native start/completion events.
+  The common chain is consumed commit, successful build, host-supported dispatch observation, and descendant durable effect.
+  Codex reuses its existing successful-build/completed-wait/later-report evidence owner; Claude and Pi may retain richer matched events only where exposed.
+  Assignment paths and optional digests are diagnostic and cannot claim worker-consumed bytes.
+  Existing Codex temporal negatives remain the falsifier for failed, incomplete, or misordered waits.
+
+- DONE: Make persistent Pi retention a pre-launch requirement with deterministic invalid/valid destination controls.
+  Missing, relative, cleanup-owned, or uncreatable destinations fail before the launch callback.
+  A persistent external destination accepts cleanup retention and preserves command, before/after entity, state metadata, manifest, and Git bundle on simulated failure.
+  The admitted Pi live owner is still the only file that holds destination, fixture lifetime, and cleanup ordering together.
+  Invalid-destination controls assert a zero launch counter rather than relying on error text alone.
+
+- DONE: Complete lossless delegated-conn coverage and preserve exact durable authority grading.
+  JSON quote, backslash, actual-newline, and combined values round-trip to identical decoded bytes.
+  Exact keep is the sole pass; drop, mutate, substitute, duplicate, prefix/suffix, sentinel, and encoded-wrapper leakage remain independent failures.
+
+- DONE: Correct deletion arithmetic and publish an auditable checkpoint/final measurement plan.
+  Pre-expansion cumulative additions are now ≤370, requiring at least 127 measured checkpoint-added lines removed before up to +95 additions.
+  Both checkpoint-relative and cumulative numstat are recorded after deletion and at final tip.
+  Expected cycle delta is +85/-184; final target is ≤455, tolerance is ≤465, and +480 remains the hard stop.
+  Measured cumulative numstat, not intended deletions, decides whether implementation may expand.
+
+- SKIPPED: Implement, format, compile, test, launch a host, or mutate code, PR, gate, round, status, package, or merge state.
+  The staff-review repair changes only this entity body on the shared state branch.
+
+### Summary
+
+The repair restores Codex's approved host evidence instead of imposing an unavailable native-event schema, removes the false assignment-byte proof, and makes Pi evidence persistence a condition of launch. It also adds adversarial JSON round trips and corrects the deletion checkpoint so the promised final surface is arithmetically possible. Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**.
