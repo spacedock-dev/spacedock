@@ -95,8 +95,9 @@ target record but does not modify either record's earlier closures.
 ## Provider Result association
 
 The provider form consumes one prepared gate room. Its frozen `request.json` binds the
-logical gate, attempt, canonical Briefing id and digest, and equal actor/approver
-authority. The attempt's `request-digest` rejects any post-binding request change.
+logical gate, attempt, canonical Briefing id and digest, and captain actor/approver
+authority. Delegated First Officer decisions remain on the chat decision form with a
+quoted directive. The attempt's `request-digest` rejects any post-binding request change.
 The fixed provider outputs are `provider/result.json` and
 `provider/presented-inventory.json`; callers supply neither path nor provider argv.
 

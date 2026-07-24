@@ -175,6 +175,9 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 		if err != nil {
 			return err
 		}
+		if err := validateGateRoomRequest(briefingPath, binding, gateID, attemptID); err != nil {
+			return err
+		}
 		record = &GateRecord{ID: gateID, Stage: stage, Attempts: []Attempt{{ID: attemptID, Briefing: binding}}}
 		doc.Records = append(doc.Records, *record)
 		doc.Current = Selection{Gate: gateID}
@@ -182,6 +185,9 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	}
 	previous := &record.Attempts[len(record.Attempts)-1]
 	if previous.Resolution == nil {
+		if err := validateGateRoomRequest(briefingPath, binding, record.ID, previous.ID); err != nil {
+			return err
+		}
 		if (previous.Briefing.RequestDigest != "" || binding.RequestDigest != "") && !sameBinding(previous.Briefing, binding) {
 			return fmt.Errorf("open gate room binding is frozen and cannot be rebound")
 		}
@@ -204,6 +210,9 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	}
 	nextID, err := successorAttemptID(previous.ID)
 	if err != nil {
+		return err
+	}
+	if err := validateGateRoomRequest(briefingPath, binding, record.ID, nextID); err != nil {
 		return err
 	}
 	if previous.Application != nil && previous.Application.State == "pending" {
@@ -261,8 +270,8 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
 		request.Gate != record.ID || request.Attempt != attempt.ID ||
 		request.Briefing.ID != attempt.Briefing.ID || request.Briefing.Digest != attempt.Briefing.Digest ||
-		strings.TrimSpace(request.Actor) == "" || request.Actor != request.Approver {
-		return fmt.Errorf("gate room request does not bind the current gate, attempt, Briefing, and resolution authority")
+		request.Actor != "person:captain" || request.Approver != "person:captain" {
+		return fmt.Errorf("gate room request does not bind the current gate, attempt, Briefing, and captain authority")
 	}
 	resultPath := filepath.Join(roomPath, "provider", "result.json")
 	resultBytes, err := os.ReadFile(resultPath)
@@ -727,6 +736,34 @@ func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
 		return Briefing{}, fmt.Errorf("read gate room request: %w", err)
 	}
 	return binding, nil
+}
+
+func validateGateRoomRequest(briefingPath string, binding Briefing, gateID, attemptID string) error {
+	if binding.RequestDigest == "" {
+		return nil
+	}
+	requestBytes, err := os.ReadFile(filepath.Join(filepath.Dir(briefingPath), "request.json"))
+	if err != nil {
+		return fmt.Errorf("read gate room request: %w", err)
+	}
+	requestDigest, err := CanonicalDigest(requestBytes)
+	if err != nil {
+		return fmt.Errorf("canonicalize gate room request: %w", err)
+	}
+	if requestDigest != binding.RequestDigest {
+		return fmt.Errorf("gate room request does not match the bound request digest")
+	}
+	var request gateRoomRequest
+	if err := json.Unmarshal(requestBytes, &request); err != nil {
+		return fmt.Errorf("parse gate room request: %w", err)
+	}
+	if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
+		request.Gate != gateID || request.Attempt != attemptID ||
+		request.Briefing.ID != binding.ID || request.Briefing.Digest != binding.Digest ||
+		request.Actor != "person:captain" || request.Approver != "person:captain" {
+		return fmt.Errorf("gate room request does not bind the derived gate, attempt, Briefing, and captain authority")
+	}
+	return nil
 }
 
 func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManifest, error) {
