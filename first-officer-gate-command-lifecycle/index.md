@@ -178,6 +178,12 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+            - id: gate-attempt:6y-ideation-9
+              briefing:
+                id: briefing:docs-dev:6y:ideation:attempt-9:revision-1
+                digest: sha256:202522443343dc2cf1c18284f79459f4dc3b4bde62e30a9061c560df90822292
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-9
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:

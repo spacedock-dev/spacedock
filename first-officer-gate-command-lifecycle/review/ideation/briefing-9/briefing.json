@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:ideation:attempt-9:revision-1",
+  "question": "Should cycle 25 preserve host-specific dispatch evidence, transport delegated authority losslessly, and make Pi failure artifacts survive cleanup within the deletion-first eight-file repair?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f84546282c56d31ff93bcd8468ab4026b6424bc9c72c5180110c43d0236908e"
+    },
+    {
+      "id": "artifact:staff-review",
+      "uri": "staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d4d09d97b0f91824512288a67467d9e4642402535b4e4d3be753a6c3892e6985"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:501965548a83147ea490f9fde4966b887a0c24edf2e6e8384068878bf8fcdc94"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6425a361d95b0f5fc64d712aa9da8bd1b377ca9579ec6da5c6e3523fc8039003"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-cycle-25",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Implement the deletion-first proof repair",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the host proof boundary",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
