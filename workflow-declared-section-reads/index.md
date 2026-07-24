@@ -18,6 +18,19 @@ gates:
                 digest: sha256:116794807857c45a046d56cf9217b822e6c4fbe21077edb36f0951a02995f364
                 digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:0c:backlog:1
+                briefing: briefing:docs-dev:0c:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-24T03:59:33.82556Z"
+                decision: approve
+                reason: approve, no dispatch yet
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 A workflow can put a cross-stage policy in its README, but `dispatch show-stage-def` returns only the selected `### stage` subsection. Let workflow metadata point at additional relevant sections and let the dispatched ensign load those exact sections through the existing structured read path.
