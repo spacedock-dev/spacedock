@@ -13,7 +13,7 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
-func TestGateRecordAndValidateCLILeaveStatusUntouched(t *testing.T) {
+func TestGateRecordRelativeBriefingLeavesStatusUntouched(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n---\n# Workflow\n")
 	entity := filepath.Join(root, "task.md")
@@ -21,7 +21,7 @@ func TestGateRecordAndValidateCLILeaveStatusUntouched(t *testing.T) {
 	briefing := filepath.Join(root, "briefing.json")
 	writeFile(t, briefing, `{"type":"Briefing","version":"1","id":"briefing:provider","question":"Review task","artifacts":[{"id":"artifact:primary","uri":"artifact.md","rev":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}`)
 	var out, errOut bytes.Buffer
-	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Base(briefing)}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 0 {
 		t.Fatalf("record exit=%d stderr=%q", code, errOut.String())
 	}
@@ -296,7 +296,7 @@ func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) 
 
 	out.Reset()
 	errOut.Reset()
-	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--association", association, "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", filepath.Base(result), "--association", filepath.Base(association), "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 0 {
 		t.Fatalf("record result exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}

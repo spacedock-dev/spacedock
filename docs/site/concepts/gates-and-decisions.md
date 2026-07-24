@@ -50,7 +50,7 @@ Captain, an approval awaiting nonterminal advance, and an approval awaiting
 merge. Approval to a terminal target is consumed before the existing merge and
 terminalization path begins.
 
-Before the First Officer shows a gate, it binds the exact retained Briefing and validates the open attempt. After the decision, it records and validates the Resolution before any effect. An approval advances only when `gate eligibility` reports the expected current successor and `gate consume` spends that authorization; consume writes the new stage and the consumed mark together. Revise routes feedback instead, and hold stays at the gate.
+Before the First Officer shows a gate, it binds the exact retained Briefing and commits that package. After the decision, it records and commits the Resolution before every route. Approval then uses `gate consume`, which rechecks eligibility and atomically writes the successor stage and consumed mark; the consumed descendant commit lands before ordinary successor dispatch. Revise routes feedback after its close commit, and hold stays at the gate. `gate validate` and `gate eligibility` remain optional diagnostics, not positive-path lifecycle steps.
 
 The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.
 

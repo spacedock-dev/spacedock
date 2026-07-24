@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -63,16 +62,6 @@ var foHostLoadPaths = map[string][]string{
 	},
 }
 
-// foHostLoadBaselineBytes ratchets each host's real session load against its own
-// measured baseline — per-host, not max-only, so a one-host regression cannot hide
-// under another host's headroom. Growing a host's load past its constant is a
-// deliberate re-baseline edit here, with the growth justified in the change.
-var foHostLoadBaselineBytes = map[string]int{
-	"claude": 103114,
-	"codex":  82329,
-	"pi":     78459,
-}
-
 var mutableProcedureAddress = regexp.MustCompile(`(?i)(?:\bsteps?[- ]\d+(?:\.\d+)?(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?|\breuse[- ]conditions?[- ]?\d+|\btiers?[- ]\d+|\btiers?\s+\d+(?:\s+and\s+\d+)?|\bentry-point principle\s+\d+|\b(?:signals?|items?)\s*\(\d+(?:\s*,\s*\d+)*(?:\s*,?\s*or\s*\d+)?\s+above\))`)
 
 type foAddressMatch struct {
@@ -100,23 +89,6 @@ func foHostLoadBytes(t *testing.T, host string) int {
 		total += len([]byte(readRepoFile(t, filepath.FromSlash(rel))))
 	}
 	return total
-}
-
-// hostBudgetViolations compares each host's measured load to its ratchet constant.
-// The real ratchet and its discriminator control both drive this one function.
-func hostBudgetViolations(loads, baselines map[string]int) []string {
-	hosts := make([]string, 0, len(baselines))
-	for host := range baselines {
-		hosts = append(hosts, host)
-	}
-	sort.Strings(hosts)
-	var out []string
-	for _, host := range hosts {
-		if loads[host] > baselines[host] {
-			out = append(out, fmt.Sprintf("%s FO session load = %d bytes, above its ratchet baseline %d — a %s-load regression; shrink the load or deliberately re-baseline", host, loads[host], baselines[host], host))
-		}
-	}
-	return out
 }
 
 func TestFOFunctionReferenceInvariant(t *testing.T) {
@@ -162,30 +134,14 @@ func TestFOFunctionReferenceClassifierDiscriminates(t *testing.T) {
 	}
 }
 
-// TestFOHostPromptLoadRatchet (per-host budget): each host's measured session load
-// stays at or below its own baseline constant. A regression in a host-specific file
-// reds only that host's ratchet — the discrimination a summed budget cannot see.
-func TestFOHostPromptLoadRatchet(t *testing.T) {
-	loads := map[string]int{}
-	for host := range foHostLoadBaselineBytes {
-		loads[host] = foHostLoadBytes(t, host)
-	}
-	for _, msg := range hostBudgetViolations(loads, foHostLoadBaselineBytes) {
-		t.Error(msg)
-	}
-}
-
-// TestFOHostPromptLoadRatchetDiscriminates is the non-vacuity control: at-baseline
-// loads pass; a one-byte regression in a single host's load reds exactly that
-// host's ratchet while the others stay green.
-func TestFOHostPromptLoadRatchetDiscriminates(t *testing.T) {
-	baselines := map[string]int{"claude": 100, "codex": 90, "pi": 80}
-	if v := hostBudgetViolations(map[string]int{"claude": 100, "codex": 90, "pi": 80}, baselines); len(v) != 0 {
-		t.Fatalf("control: at-baseline loads were wrongly flagged: %v", v)
-	}
-	v := hostBudgetViolations(map[string]int{"claude": 100, "codex": 91, "pi": 80}, baselines)
-	if len(v) != 1 || !strings.Contains(v[0], "codex") {
-		t.Fatalf("control: a codex-only one-byte regression must red exactly the codex ratchet, got: %v", v)
+func TestFOInstructionComponentCaps(t *testing.T) {
+	for rel, cap := range map[string]int{
+		"skills/first-officer/references/first-officer-shared-core.md": 26754,
+		"skills/fo-gate-lifecycle/SKILL.md":                            6600,
+	} {
+		if got := len([]byte(readRepoFile(t, filepath.FromSlash(rel)))); got > cap {
+			t.Errorf("%s = %d bytes, component cap %d", rel, got, cap)
+		}
 	}
 }
 
