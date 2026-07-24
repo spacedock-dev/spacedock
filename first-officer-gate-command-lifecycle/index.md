@@ -924,3 +924,16 @@ The final implementation operates the recorded gate lifecycle with three load-be
 ### Summary
 
 Exact-tip implementation behavior, Git barriers, CLI normalization, identity invalidation controls, host handoff, caps, repository tests, strict docs, retained live evidence, and the scope-conscious Roborev dispositions all reproduce. Validation rejects only the missing AC-7 resume evidence; no ruled-out presenter redesign, generic child attribution, whole-host ratchet, advisory-round normalization, compatibility expansion, or second live harness is requested.
+
+## Implementation intended-change declaration (cycle 8)
+
+Validation rejected only AC-7 evidence at product tip `624a9c2e`; the branch currently has 1,461 added LOC against its merge base. The correction is limited to these four existing files:
+
+| File | Intended cycle-8 delta |
+| --- | ---: |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +65 / -27 |
+| `skills/fo-gate-lifecycle/SKILL.md` | +1 / -1 |
+| `internal/ensigncycle/shared_scenarios_test.go` | +1 / -1 |
+| `docs/specs/scenario-testing-principles.md` | +1 / -1 |
+
+The exact intended amendment is **+68/-30**. It replaces the existing consumed-resume subtest with a three-fresh-process approval resume proof: close and stop before commit; resume to commit the exact pending Resolution and stop; resume from committed pending state to consume and transition. The same fixture will assert one Resolution, one close commit, one successful consume, one status transition, byte-clean duplicate/repeated failures, and close → consumed → dispatch ancestry. The three prose substitutions make diagnostics optional and name the three authority mutations without adding commands or changing semantics. The resulting branch ceiling is 1,529 added LOC, 59 below the approved 1,588 cap. No new harness, presenter, host adapter/live lane, generic transport, exact-child attribution, total-host ratchet, advisory-round behavior, compatibility path, CLI, schema, or runtime surface is intended; any need outside this table stops for drift review before editing.
