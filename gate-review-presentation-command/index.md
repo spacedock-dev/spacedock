@@ -741,3 +741,34 @@ Exact tip `8fd1b869` closes the validation-cycle-5 authority hole with the autho
 ### Summary
 
 Exact tip `8fd1b869` strictly rejects the supported nested-authority conflict before mutation, preserves the canonical direct-Captain close, and passes every acceptance, repository, scope, and canonical-review check. Duplicate JSON members remain a real parser counterexample but are deferred under the recorded materiality rule until a supported producer can emit them or arbitrary external Result producers enter scope.
+
+## Stage Report: validation (cycle 7)
+
+- DONE: Prove rebased tip 642ca090 is patch-identical to approved 8fd1b869 across all 15 commits and preserves the exact 17-file/1,310-line surface.
+  `git range-diff dd6bd114..8fd1b869 origin/main..642ca090` pairs all 15 commits with `=`, and independent stable patch ids match pairwise; against `origin/main` `b0ca008d`, the clean exact tip is 17 files and `+1141/-169` = 1,310 changed lines.
+- DONE: Run focused room-authority tests, full/race suites, strict docs, format/diff/dependency checks against the new origin/main base; classify any integration regression.
+  Uncached focused CLI/gates tests, `go test -count=1 ./...`, `go test -count=1 -race ./...`, strict MkDocs, required gofmt with no diff, `git diff --check`, ancestry, and `subspace_dependency_count=0` all pass; no supported integration regression exists.
+- DONE: AC-1 (VALUE) — Only the exact authorized room can make a Captain decision durable.
+  The focused room matrices accept the canonical Captain close and reject request, Briefing, attempt, room, top-level/nested authority, and inventory mutations before the shared byte-identity assertion could pass incorrectly.
+- DONE: AC-2 — Request, Briefing, attempt, and authority identity are exact and frozen before recording.
+  Reproduced stale, moved, malformed, rebound, and post-bind-changed request/Briefing cases; weakening any frozen identity check makes a named mutation close or changes entity bytes.
+- DONE: AC-3 — A provider close contains one direct Captain Result and a complete recursively derived presentation.
+  Direct-Captain success plus advisory, unknown nested authority, wrong type/coverage, duplicate id, wrong revision, and Reference-primary rejections reproduce on the rebased tip.
+- DONE: AC-4 — Close is atomic and one-use, and closed history cannot be rebound.
+  Lifecycle, writer-CAS, prepared-room close, and eligibility/consume tests reproduce one closure/application, stale replay rejection, pre-write validation, and frozen history.
+- DONE: AC-5 — The closed attempt identifies the exact retained Result and inventory bytes.
+  The prepared-room test changes and deletes each fixed provider file, observes the path-specific validation failure, and succeeds again only after exact-byte restoration.
+- DONE: AC-6 (VALUE) — Provider coupling in the Spacedock binary remains zero.
+  The absent-verb side-effect test passes and `go list -deps ./cmd/spacedock` reports zero Subspace dependencies on the new base.
+- DONE: Preserve canonical review evidence and reassess only recorded promotion conditions.
+  `gate validate --round implementation/16` reports `triage=all-declines`, 12 entries; patch identity preserves Roborev 2070's semantic coverage, and none of its five promotion conditions is introduced by `origin/main`.
+- SKIPPED: Duplicate conflicting JSON object members.
+  The known last-wins parser counterexample remains outside the typed-provider promise; promote if arbitrary Result producers become supported or a supported encoder can emit duplicate members.
+- DONE: Confirm prior Resolution cannot authorize the new commit and issue a fresh exact-tip PASSED or REJECTED report with successor Briefing inputs.
+  Attempt-2 Resolution and adoption note freeze only `8fd1b869`; successor inputs are candidate `642ca0901a920c701acd5e1ec82aa11387764e43`, base `b0ca008dc0461dacf1d15425fbdee15e0db065af`, the 15-row identity proof, exact 17-file/1,310-line surface, this AC/repository evidence, canonical round 16, and the unchanged deferred duplicate-member trigger.
+- DONE: Fresh exact-tip recommendation.
+  **PASSED.** All six supported prepared-room ACs reproduce after composition with current `origin/main`, with no material, evidence, compatibility, or scope regression; a fresh candidate-bound Briefing and Resolution remain required before landing.
+
+### Summary
+
+Rebased exact tip `642ca090` is patch-identical to approved `8fd1b869` across all 15 commits and preserves the exact 17-file, 1,310-line product surface. Fresh focused, repository, race, documentation, formatting, dependency, and canonical-review checks pass on base `b0ca008d`; validation recommends **PASSED**, while correctly withholding landing authority until a successor Briefing binds the new candidate.
