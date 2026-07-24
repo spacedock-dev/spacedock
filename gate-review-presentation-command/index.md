@@ -636,3 +636,34 @@ Reset the binding design to the Captain-approved prepared-room recorder boundary
 ### Summary
 
 The Cycle 11 falsifiability gaps are closed with 38 test-only lines at exact tip `944e928e`. The candidate now explicitly proves post-bind Briefing immutability, content-complete inventory matching despite equal cardinality, and distinct changed-versus-missing retained-file diagnostics, while preserving byte-clean rejection, the Subspace transport boundary, and the 1,300-line cap.
+
+## Stage Report: validation (cycle 5)
+
+- FAILED: Reproduce all six rewritten prepared-room acceptance criteria at exact tip 944e928e, including every Cycle-11 proof variant and byte-clean rejection.
+  Uncached focused tests reproduce the post-bind Briefing edit, equal-cardinality duplicate-id/wrong-revision inventories, changed/deleted retained files, restoration, and byte-clean rejections, but AC-1 and AC-3 fail the independent nested-authority probe below.
+- FAILED: AC-1 (VALUE) — Only the exact authorized room can make a Captain decision durable.
+  A bound fixed room whose Result adds `resolution.actor:"agent:first-officer"` beside `resolution.by:"person:captain"` exits 0 and durably closes; rejecting that adjacent authority mutation would make the probe pass.
+- DONE: AC-2 — Request, Briefing, attempt, and authority identity are exact and frozen before recording.
+  The uncached room matrices reject wrong/stale/moved request, Briefing, attempt, room, and request authority, including the new post-bind question-byte change, while exact entity bytes remain unchanged.
+- FAILED: AC-3 — A provider close contains one direct Captain Result and a complete recursively derived presentation.
+  Recursive coverage, type, duplicate, primary-Artifact, and new equal-cardinality revision/id variants pass, but permissive nested `Resolution` decoding accepts a conflicting unknown authority field despite the wrapper-free Result boundary.
+- DONE: AC-4 — Close is atomic and one-use, and closed history cannot be rebound.
+  The lifecycle, writer-CAS, prepared-room, and eligibility/consume tests prove full pre-write validation, one closure/application, stale replay refusal, and frozen prior attempts; removing those guards fails the cited assertions.
+- DONE: AC-5 — The closed attempt identifies the exact retained Result and inventory bytes.
+  For each fixed provider file, the focused test observes changed bytes fail with path plus `frozen digest`, deletion fail with path plus read/not-found, and exact restoration pass.
+- DONE: AC-6 (VALUE) — Provider coupling in the Spacedock binary remains zero.
+  `TestGateReviewVerbIsAbsentAndSideEffectFree` passes and `go list -deps ./cmd/spacedock` reports zero Subspace entries; executable provider transport remains outside this repository.
+- FAILED: Adversarially audit authority/identity, recursive inventory, atomic one-use history, retained-byte validation, and zero coupling without importing provider transport or new mutation preconditions.
+  Material outcome defect: a supported prepared Result can carry conflicting nested authority and still close, violating AC-1/AC-3 and prepared-room contract §3; a narrow correction must reject unknown authority fields inside the Result Resolution before mutation and add this byte-clean matrix row.
+- DONE: Reassess Roborev 2039 only against its recorded promotion conditions.
+  Retained files remain an explicit `gate validate` promise, not an eligibility/consume precondition; provider orchestration remains Subspace-owned; the chat-close wording has no behavior/evidence impact. None of the three recorded declines has promoted.
+- SKIPPED: Deferred risks and polish from Roborev 2039.
+  Promote retained-file mutation checks only if application requires those files or archival gains a lifecycle; promote a provider smoke only if orchestration ownership moves here; revisit wording on demonstrated confusion or a production reset of that path.
+- DONE: Verify exact 17-file/1,293-line surface, focused/full/race/docs/dependency checks, Roborev 2039, and canonical all-declines round 13; issue a fresh PASSED or REJECTED verdict.
+  Exact tip is `944e928e`; diff is 17 files and `+1124/-169`; focused, `go test -count=1 ./...`, `go test -count=1 -race ./...`, strict MkDocs, gofmt-no-diff, diff/cleanliness, and zero-dependency checks pass. `gate validate --round implementation/13` reports `triage=all-declines`, 8 entries.
+- FAILED: Fresh exact-tip recommendation.
+  **REJECTED.** This is one material supported-path authority outcome defect, not a provider-transport, retention-lifecycle, compatibility, or exact-diagnostic request.
+
+### Summary
+
+Exact tip `944e928e` satisfies the Cycle-11 evidence additions, repository checks, scope cap, retained-byte validation promise, and all three Roborev 2039 decline conditions. Validation rejects because the direct prepared-room Result parser ignores an unknown conflicting authority field nested in `Resolution`, allowing a non-wrapper-free Result to make a Captain decision durable; the correction is confined to strict nested Result-authority validation and its failure-atomic matrix proof.
