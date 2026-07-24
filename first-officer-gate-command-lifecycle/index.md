@@ -1250,3 +1250,16 @@ Cycle 17 keeps one recorder vocabulary and one First Officer lifecycle. It resto
 ### Summary
 
 Independent staff review disposition **CHANGES REQUESTED** is fully accepted: both material corrections and the documentation/surface notes are incorporated without weakening Claude root-row scope or any no-schema/controller/harness boundary. Checklist accounting is **3 DONE, 1 SKIPPED, 0 FAILED**; this cycle changes only the canonical entity design and report.
+
+## Stage Report: implementation (cycle 19)
+
+- DONE: Implement the approved rejection and Captain-language contract in the existing shared core and lifecycle skill, preserving one recorder schema and all durable bind/close/consume barriers.
+  Commits `c4afd8f7` and `37d6980b` change exactly seven approved files, **+95/-14** from `13d70249`: automatic reviewer rejection has one shared-core owner, Captain calls map through `approve|revise|hold`, prompts are goal-only, Claude filters non-root rows, docs are qualified, and the identity fix remains.
+- FAILED: Make the existing prompts goal-only, structural/mapping mutants load-bearing, and Claude review extraction top-level-only; prove all four validation counterexamples red at their real boundaries without a new harness, controller, adapter, or procedure hint.
+  Focused controls red before implementation and pass afterward, including close-barrier deletion, reviewer-route deletion, every mapping plus `not yet` deletion/held resume, prompt-procedure exclusion, and child-only Claude rejection. But two unchanged goal-only Codex runs completed bind/close/consume/dispatch while omitting the root-visible six-field review; the second loaded the corrected label-bearing skill and failed the same oracle in 190.29s, firing the approved hard reset.
+- FAILED: Stay within the exact seven existing files and +95-addition hard stop, apply the qualified documentation diff, run all required focused/full/race/docs and Claude/Codex/Pi live lanes, request final-tip Roborev, and durably record its advisory round.
+  Surface and docs are exact; affected/full/race/strict-docs/live-compile passed at `c4afd8f7`, and final `37d6980b` passed focused/format/diff checks. The first Codex rejection run reached corrected Cycle 2 validation before the combined test hit its 10-minute ceiling, but the repeated recorded-gate failure required stopping before Claude/Pi, final-tip full/race/docs, Roborev, or an advisory round.
+
+### Summary
+
+Checklist accounting is **1 DONE, 0 SKIPPED, 2 FAILED**. The design’s hard-reset trigger worked as intended: skill text plus a goal-only prompt does not reliably produce the required root-visible review on Codex, so implementation stops without prompt coaching, oracle weakening, a new controller/harness, PR #565 changes, gate/status mutation, or merge; the First Officer must re-ideate skill-discovery/runtime ownership.
