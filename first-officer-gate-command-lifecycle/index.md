@@ -159,6 +159,15 @@ gates:
                 action: feedback
                 target-stage: implementation
                 state: pending
+review-round:
+    id: round:6yyyyemkqwsett3g1c991w9f:implementation:14
+    stage: implementation
+    cycle: 14
+    briefing:
+        id: briefing:first-officer-gate-command-lifecycle:implementation:round-14
+        digest: sha256:dddae6fe4695ec8f716cf89a6bef89e0daebd89e079027ca72fd309bb91eb1db
+        digest-domain: canonical-bytes
+        room-ref: ./review/implementation/round-14
 ---
 
 Make the normal First Officer gate path bind the exact reviewed package, record the authorized decision, and durably consume it before ordinary workflow dispatch.
@@ -531,6 +540,8 @@ Implemented and hardened the six-event integration and its deterministic/live or
 - Cycle 11: REVISE — independent ideation staff review; surface 1 design file with implementation not restarted vs expected implementation at or below 1,518 added LOC; AC end values unchanged. Preserve a state commit after every successful close, key the cached capability result to resolved executable identity, recompute task-attributable load at every tip/rebase, and prove consumed-commit ordering plus each omitted authority mutation through real traces.
 - Cycle 12: REJECTED — validation resume matrix; surface 17 files/1,461 added LOC vs estimate 1,588 added LOC (92%); AC unchanged
 - Cycle 13: DESIGN RESET — FO ruling after Roborev 2083. Preserve the three authority mutations and durability barriers; route a consumed terminal successor through the existing merge ceremony and only a nonterminal successor through ordinary dispatch. Replace the session identity/digest cache with one capability probe immediately before each gate lifecycle, deleting same-path/PATH cache machinery rather than adding a launcher-swap live laboratory. Pi review evidence must come from the root assistant message. Reuse the existing lifecycle fixture and host journey; no new harness, transport contract, or exact-child attribution.
+
+- Cycle 14: REJECTED — Roborev jobs 2145–2158; surface 9 files/88 LOC vs estimate 9 files/75 LOC (117%); AC unchanged
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
@@ -976,3 +987,22 @@ At exact product tip `d55ddca3`, the branch is 1,500 additions / 63 deletions ag
 ### Summary
 
 Cycle 13 resolves the dispatch/merge contradiction without changing gate authority: probe once per lifecycle, consume once, commit once, then dispatch only nonterminal targets and merge terminal targets. It also closes the actual terminal-PR resume gap and Pi evidence ambiguity while deleting the cache laboratory and remaining inside the existing fixture and host boundaries.
+
+## Stage Report: implementation (cycle 14)
+
+- DONE: Implement the approved recorded-gate operating contract inside the exact nine-file boundary.
+  Final code tip `ac36c5576a0b0881dac9e1cf1e97728ce225506f` changes exactly **9 files, +88/-120** from `d55ddca3`, meeting the +88 hard stop and adding no tenth file. The First Officer now resolves and probes one fresh `gate --help` immediately before each lifecycle with no session executable cache; preserves bind, decision, and consume plus every required state-commit barrier; sends consumed nonterminal targets through the existing dispatch path; and sends consumed terminal targets into the existing merge ceremony with zero successor dispatch.
+- DONE: Make terminal merge recovery restart-safe within the owned selector and guard boundary.
+  The shipped and split-root PR-merge templates select terminal rows carrying either canonical merged sentinel (`pr-merge:` or `local-merge:`), bypass `gh`, and resume `merge guard` directly. The shipped mod advances from `0.12.2` to `0.12.3`, while the local `0.12.4` template records `reconciled-from-shipped: 0.12.3`. The existing restart control constructs terminal status, each canonical sentinel, and an empty `mod-block` before proving guard archival. Template parity pins both selectors and the reconciled rollout version.
+- DONE: Tighten representative lifecycle evidence without adding a harness or transport contract.
+  The shared oracle proves terminal consume has no dispatchable successor, excludes `dispatch build --help` from successful-build cardinality, and selects only state-commit transitions for Git ancestry. Pi evidence comes from exactly one flat root session and accepts the six-field review only from a root assistant message between the durable bind and decision; nested/nonassistant text cannot satisfy it. Claude, Codex, and Pi retain their existing host-native dispatch transports.
+- DONE: Pass deterministic, repository, race, documentation, and representative live verification.
+  `gofmt -w ./cmd ./internal`, `git diff --check`, focused status/contract/lifecycle suites, `go test ./...`, `go test ./... -race`, and `uv run --with-requirements docs/requirements.txt mkdocs build --strict` pass. Recorded-lifecycle journeys pass on Codex in **247.815s** (`/tmp/spacedock-af8-final-codex`) and Claude in **322.933s** (`/tmp/spacedock-af8-final-claude`); final tip differs from those runs only by the test-only parity/name correction. Pi passes sequentially at exact final tip in **231.682s** (`/tmp/spacedock-ac36-final-pi-sequential`). A prior concurrent Pi attempt at `/tmp/spacedock-af8-final-pi` is excluded: Codex overwrote the shared `/tmp/spacedock-dispatch/...` fixture artifact, Pi detected the stale path, and the run timed out rather than false-green.
+- DONE: Request final-tip Roborev, apply the First Officer rulings, and record the complete advisory round through the command surface.
+  Jobs 2145–2158 drove sentinel-first finalize prose, cleared-sentinel selection, truthful fixture preconditions, both canonical sentinels, mod-version rollout, template parity, and the corrected test name. Exact-tip job **2158** identified no correctness regression and repeated the request for a new startup/idle execution harness. The First Officer declined that request as correct-but-disproportionate under the binding no-new-harness boundary; promotion requires an approved existing hook-execution harness or live discovery/`gh`-bypass failure. The split-root final-archive remote synchronization finding is material to the prerelease but remains owned by the separate durable-decisions synchronization task, outside this nine-file entity. After path-scoped normalization preserved all 13 historical cycle entries under one heading, `gate record --round implementation/14` and `gate validate --round implementation/14` recorded the **mixed, 18-entry** triage at `review/implementation/round-14`.
+- DONE: Push the code branch and leave an exact handoff.
+  Commits `e9415a17`, `60adfc1f`, `6f9108d1`, `af8d73be`, and `ac36c557` are pushed to `origin/spacedock-ensign/first-officer-gate-command-lifecycle`. The code worktree is clean. Validation should retain the separate remote-archive synchronization blocker as an integration prerequisite rather than expanding this entity.
+
+### Summary
+
+First Officers now operate the recorded gate lifecycle with three durable authority mutations, one fresh capability probe, root-assistant-only Pi review evidence, and an explicit consumed-target fork: ordinary dispatch for nonterminal successors and the existing merge ceremony for terminal successors. Terminal merged-sentinel recovery is restart-safe for both canonical sentinel types, rollout is versioned, the implementation is exactly at its nine-file/+88 boundary, all required deterministic/full/race/docs/live evidence is green, and the complete Roborev triage is durably recorded.
