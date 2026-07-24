@@ -3,7 +3,7 @@ id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
 status: ideation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
-started:
+started: 2026-07-24T14:54:10Z
 completed:
 verdict:
 score: "1.0"
