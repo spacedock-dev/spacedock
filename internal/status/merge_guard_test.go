@@ -122,7 +122,7 @@ func TestMergeGuardFinalizesFromMergedSentinelNonArmed(t *testing.T) {
 	}
 }
 
-func TestMergeGuardFinalizesTerminalBlockedEntityFromMergedSentinel(t *testing.T) {
+func TestMergeGuardFinalizesTerminalUnblockedEntityFromMergedSentinel(t *testing.T) {
 	for _, sentinel := range []string{"pr-merge:42", "local-merge:abc123"} {
 		root := stageFixture(t, "merge-pr-workflow")
 		writeFile(t, filepath.Join(root, "070-pr-pending.md"), strings.NewReplacer("status: implementation", "status: done", `pr: "#42"`, "pr: "+sentinel, "mod-block: merge:local-merge", "mod-block:").Replace(readBytes(t, filepath.Join(root, "070-pr-pending.md"))))

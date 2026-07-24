@@ -184,11 +184,11 @@ func TestNoUnexpectedPRViewScanIntroduced(t *testing.T) {
 func TestPRViewAllowListIsLoadBearing(t *testing.T) {
 	for path, want := range map[string]string{
 		filepath.Join(repoRoot(t), "mods", "pr-merge.md"):                 "valid merged sentinel (`pr-merge:` or `local-merge:`)",
-		filepath.Join(repoRoot(t), "docs", "dev", "_mods", "pr-merge.md"): "reconciled-from-shipped: 0.12.3",
+		filepath.Join(repoRoot(t), "docs", "dev", "_mods", "pr-merge.md"): "reconciled-from-shipped: 0.12.3|valid merged sentinel (`pr-merge:` or `local-merge:`)",
 		filepath.Join(skillsRoot(t), "fo-gate-lifecycle", "SKILL.md"):     "terminal current status resumes the existing merge ceremony",
 	} {
 		data := readFileString(t, path)
-		if !strings.Contains(data, want) {
+		if wants := strings.Split(want, "|"); !strings.Contains(data, wants[0]) || len(wants) > 1 && !strings.Contains(data, wants[1]) {
 			t.Errorf("%s must contain %q", path, want)
 		} else if strings.HasSuffix(path, filepath.Join("mods", "pr-merge.md")) && !strings.Contains(data, "gh pr view") {
 			t.Errorf("%s no longer carries the load-bearing `gh pr view` scan", path)
