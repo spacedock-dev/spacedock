@@ -2125,3 +2125,90 @@ No code, test, live host, PR, gate, review-round, status, or merge mutation occu
 ### Summary
 
 Cycle 27 removes proof inflation instead of compressing it. The minimum v1 contract is bind and commit, show one root review even under conn, record exact direct/delegated authority, consume and commit, then route; real CLI tests own exact state semantics, supported-host journeys own only visible review plus durable outcome, and native fixtures own transport. Checklist accounting is **3 DONE, 2 SKIPPED, 0 FAILED**; the design is ready for independent staff review.
+
+## Canonical authority repair (cycle 27 staff-review correction)
+
+Independent staff review returned **CHANGES REQUESTED**. This section supersedes Cycle 27’s cuts to dispatch observation, rejection/mapping ownership, semantic review ordering, no-authority coverage, folder durability, and its LOC-based AC/floor. The clean-baseline decision and the exclusions on common native transport, exact-child causality, assignment custody, prompt coaching, and new failure-forensics machinery remain binding.
+
+### Restored product obligations
+
+1. **Durable successor route.** A successful nonterminal approval has exactly one successful `dispatch build`, ordered after the descendant commit containing consumed application plus successor status, and exactly one later durable successor effect. The shared grader may use the logging wrapper and Git ancestry for these command/state facts. It does not require a common native call/result, child identity, model, cwd, session, or completion event; existing host-native fixtures own those facts.
+2. **Correction and Captain-language ownership.** No other integration owner currently connects a completed reviewer `REJECTED` result to correction before Captain presentation, so shared core retains that automatic pre-branch. The deferred lifecycle retains deterministic mappings: `approve → approve`; redo-with-feedback → `revise` with an accepts-direction reason; reject with `feedback-to` → `revise` with a rejects-direction reason; reject without `feedback-to`, explicit hold, and `not yet` → `hold`, with `not yet` requiring a nonblank reason. Structural/mapping deletion controls own this contract; there is no route × host live matrix.
+3. **Semantic root review.** Default chat emits exactly one qualifying root review after the selected-Briefing folder commit and before the decision invocation. A qualifying review semantically names entity/title and stage, the exact bound Briefing id and digest, one recommendation, and a decision ask. It need not use six exact labels. Claude, Codex, and Pi use their existing host-specific root-message and order filters; no common transcript/native-event schema is introduced.
+4. **Bound-open no-authority behavior.** `gate-guardrail`, `live_gate_stop`, `livescenario_adapter`, their registrations, and negative controls are refitted rather than deleted. A no-conn run binds the selected Briefing, commits the folder, presents one qualifying review, and stops open at the gated stage with no Resolution, consume, advance, dispatch, or archival. The standalone headless/no-conn path still proves drive-to-gate-and-stop; the primitive still proves self-approval refusal independently.
+5. **Package and capability boundary.** The positive path proves the selected Briefing folder commit includes the entity index and retained room files without sibling sweep. Capability prose stays fail-closed: an incomplete `gate --help` surface halts before room/entity mutation and names refresh/build remediation. Exact probe cardinality, executable identity/cache, and swap laboratories remain non-obligations.
+6. **Directive domain.** Exact delegated directive coverage is every argv-capable UTF-8 string except NUL. Public CLI cases include quotes, backslashes, actual newlines, and combined values; the durable value is read through production `gates.Document`, never a serialized-line or test-only YAML parser. Real Git snapshots prove bind, close, and consume barriers around the same record.
+
+Reviewer `REJECTED`, Captain mappings, exact-one semantic review, and bound-open no-authority behavior are therefore product/integration obligations, not compatibility aliases. Prototype `Gate review:`/`Decision:` marker matching and byte-identical unbound state remain deleted.
+
+### Repaired acceptance criteria
+
+**AC-1 (VALUE) — Every normal approved route is durably authorized before dispatch.** The real-CLI positive records and commits one selected Briefing, records and commits one approval, consumes and commits the successor, then performs exactly one successful `dispatch build` and produces exactly one later durable successor report/marker. Decision-before-bind count is **0**; build-before-consumed-descendant count is **0**; unauthorized advance/dispatch count across revise, hold, stale, blocked, and spent cases is **0**. The terminal complement has zero builds/effects and enters the existing merge path. *Verified by:* real CLI, logging wrapper, Git snapshots/ancestry, omission/reorder/duplicate controls, and one goal-only approved journey per supported host. No common native transport event is required.
+
+**AC-2 — Authority, correction ownership, and Captain meanings are durable and deterministic.** Direct close records `person:captain`; delegated close records `agent:first-officer`, a nonblank evidence reason, and exactly the supplied argv-capable UTF-8 directive bytes excluding NUL. Reviewer `REJECTED` enters `feedback-rejection-flow` before the Captain lifecycle with zero Resolution/consume/dispatch. Approve, redo, routed reject, unrouted reject, hold, and `not yet` map and route as stated above; reasons preserve accepted direction, rejected direction, or pause condition. *Verified by:* public CLI plus production `gates.Document`, real Git bind/close/consume snapshots, shared-core branch-deletion control, mapping delete/swap controls, and deterministic routed/held snapshots. Live host matrices do not own language mapping.
+
+**AC-3 (VALUE) — The Captain sees exactly one truthful root review before decision invocation.** On approved and no-authority paths, exactly one host-qualified root review occurs after the selected-Briefing folder commit and before `gate record --decision`. It semantically names the entity/title and stage, exact Briefing id and digest, recommendation, and decision ask. Child/tool/user output, pre-commit narration, post-decision summary, omission, or a second qualifying root review fails. Delegated conn never waives presentation. *Verified by:* presenter/lifecycle ownership controls, semantic keep/drop/mutate/duplicate cases, and existing host-specific Claude empty-parent, Codex root-agent interval, and Pi root-session assistant filters.
+
+**AC-4 (VALUE) — A no-authority First Officer binds, presents, and stops without self-approval.** The guarded entity changes from no selected attempt to exactly one committed open attempt before presentation, then remains at the gated stage with no Resolution, consume, advance, dispatch, completion, or archive. The headless scenario independently proves drive to the gate under no conn; the primitive independently proves an already-engaged gate cannot self-approve. *Verified by:* refitted `assertGateHeld`, its unbound/advanced/Resolution/self-approved/noncanonical-review negatives, refitted Claude/Codex guardrail runners, standalone `live_gate_stop`, and host-neutral primitive coverage.
+
+**AC-5 — The selected package and capability boundary fail closed.** The selected Briefing id/digest in review and Resolution equals durable state, one folder commit includes the index plus retained room files and excludes dirty siblings, and missing/incomplete capability or retained input halts before decision/consume/dispatch without manual frontmatter repair. *Verified by:* real-Git folder commit inspection, exact tuple mutations, existing CLI/gates refusal tests, and a structural capability-prose deletion control. Capability probe counts and binary-identity experiments are not acceptance requirements.
+
+Source size and numstat are implementation guardrails only. They are intentionally absent from the value ACs.
+
+### Repaired lean test plan
+
+1. **Clean branch setup, before edits:** create the explicit local archival ref `spacedock-archive/first-officer-gate-command-lifecycle-3c535105` at `3c53510529c095878f5156d490d498e6742fb31c`, then `git switch -c spacedock-ensign/first-officer-gate-command-lifecycle-cycle27 13d702492131df17dd3ac87245d6d773f4df959b`. Do not reset, force, delete, or rewrite either ref. If either name already resolves elsewhere, stop for First Officer direction. No ref operation occurs during ideation.
+2. **Direct CLI and Git (AC-1/AC-2/AC-5; medium):** retain bind/close/consume, omission, stale/blocked/spent, revise/hold, and terminal cases. Inspect the selected folder commit and exact tuple. Table-drive argv-capable UTF-8 directives excluding NUL through the public CLI; read `gates.Document` and assert bind, close, and consumed Git snapshots. The production parser replaces every test-only YAML/serialized-line mechanism.
+3. **Shared contracts (AC-2/AC-3; low):** pin reviewer-`REJECTED` before ordinary Captain lifecycle, all six Captain call classes, presenter sole ownership, lifecycle wait-before-decision, semantic review minimum, and capability fail-closed prose. Deleting one branch, mapping, semantic member, multiplicity rejection, or barrier must make its focused control red.
+4. **No-authority paths (AC-3/AC-4; medium/high):** refit the gate fixture with a retained Briefing and grade bound-open state. `assertGateHeld` requires one open binding and semantic review while forbidding Resolution/consume/advance/dispatch. Preserve separate shared guardrail, standalone headless no-conn, and primitive scenarios; do not accept legacy markers or unchanged bytes.
+5. **Approved supported hosts (AC-1/AC-3; high):** after deterministic/full/race/docs/live-compile and independent staff approval, run one unchanged goal-only approved journey on Claude, Codex, and Pi. Common proof is selected commit → one semantic root review → decision/consume commits → one later build → one durable effect. Each runner’s existing host-specific extractor owns root/order filtering; separate host-native fixture suites own dispatch transport.
+6. **Repository gates:** focused lifecycle/contract/no-authority controls, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, live compile, strict MkDocs, and `git diff --check`. No route-language live matrix, exact-child assertion, assignment-custody proof, prompt serializer, or new Pi retention harness.
+
+No new spike is needed: `13d70249` already contains the real CLI, production parser, Git fixture, guardrail/primitive runners, and host-specific extractors. Implementation first refits deterministic and no-authority controls, records measured per-file deltas, and stops for staff review before live spend.
+
+### Obligation-based surface ranges
+
+These are planning ranges from the actual `13d70249` file sizes, not subtraction credit or acceptance value. A path outside the table, a new file, or a per-file delta outside its range pauses implementation for design review. Shared helpers may reduce deletion safely; no global deletion floor applies.
+
+| Path | `13d70249` size | Expected implementation range |
+| --- | ---: | ---: |
+| `skills/first-officer/references/first-officer-shared-core.md` | 200 lines / 26,602 bytes | +1–3 / -1–3 |
+| `skills/fo-gate-lifecycle/SKILL.md` | 56 / 5,788 | +4–8 / -1–5 |
+| `skills/present-gate/SKILL.md` | 62 / 8,615 | +4–12 / -0–12 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | 436 / 20,889 | +20–45 / -0–10 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | 1,146 / 53,715 | +70–120 / -100–190 |
+| `internal/ensigncycle/gate_assert_impl_test.go` | 39 / 1,380 | +15–30 / -10–25 |
+| `internal/ensigncycle/gate_assert_test.go` | 62 / 1,741 | +10–25 / -20–45 |
+| `internal/ensigncycle/live_gate_stop_test.go` | 199 / 9,805 | +12–24 / -130–180 |
+| `internal/ensigncycle/livescenario_adapter_live_test.go` | 97 / 4,056 | +8–18 / -20–45 |
+| `internal/ensigncycle/shared_fixtures_test.go` | 809 / 41,480 | +5–15 / -25–55 |
+| `internal/ensigncycle/shared_scenarios_test.go` | 88 / 5,534 | +1–3 / -1–3 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | 477 / 27,457 | +5–15 / -10–30 |
+| `internal/ensigncycle/claude_live_runner_test.go` | 615 / 29,564 | +5–15 / -5–25 |
+| `internal/ensigncycle/codex_live_runner_test.go` | 483 / 20,943 | +5–15 / -5–20 |
+| `docs/site/concepts/gates-and-decisions.md` | 80 / 6,393 | +8–18 / -8–22 |
+| `docs/site/get-started/first-workflow.md` | 107 / 3,626 | +3–8 / -5–12 |
+| `docs/specs/scenario-testing-principles.md` | 98 / 10,032 | +1–4 / -1–4 |
+
+The measured center is approximately **+250/-489** across these 17 existing files; the abandoned cycle-23 implementation measured +497 additions across the same product area. This comparison is a review guardrail, not a mandate to delete useful proof. Production Go, host-native dispatch fixture files, `pi_shared_coverage_test.go`, and `shared_scenarios_meta_test.go` remain unchanged because the scenario names and transport owners remain intact.
+
+### Reset triggers and non-goals
+
+Stop before live work for any production Go/schema/provider/recorder change, new file/harness, common native dispatch parser, exact-child/model/cwd/session requirement, assignment custody, prompt coaching, route × host matrix, legacy marker/unbound compatibility, new Pi retention subsystem, ref rewrite/reset/force operation, or per-file range breach. A test that can pass on an unbound review, a build before consumed commit, two qualifying root reviews, or a changed directive is a design failure, not a reason to weaken the AC.
+
+No code, test, live host, branch/ref, PR, gate, review-round, status, or merge mutation occurs during this repair. Independent staff re-review must approve the authority and surface corrections before the clean branch is created.
+
+## Stage Report: ideation (cycle 27 repair)
+
+- DONE: Restore the durable successor, correction/mapping, semantic review, bound-open guardrail, folder commit, capability, and directive-domain obligations requested by staff.
+  The repaired ACs retain exactly one post-consume build/effect without native causality, deterministic rejection/mappings without host matrices, exact-one semantic root review with host-specific filters, and independent no-authority/self-approval coverage.
+- DONE: Replace deletion-as-value with obligation-based implementation guardrails.
+  Seventeen existing paths list actual `13d70249` line/byte sizes and per-file delta ranges; no global deletion floor or numstat AC remains.
+- DONE: Preserve a non-destructive clean-branch implementation plan.
+  Implementation first archives `3c535105` under an explicit local ref, then creates a fresh branch at `13d70249`; reset, force, ref deletion/rewriting, and all ideation-time ref changes are prohibited.
+- SKIPPED: Edit/reset code, create refs/branches, run tests or live hosts, push PR, or mutate gate/round/status.
+  The repair changes only this entity body in the shared state checkout.
+
+### Summary
+
+Cycle 27 repair restores product obligations that had no other integration owner while preserving the clean proof split. Direct CLI/Git tests own exact state, authority, mappings, and folder durability; supported-host journeys own one semantic root review plus durable route; host-native fixtures alone own transport. Checklist accounting is **3 DONE, 1 SKIPPED, 0 FAILED**; the repaired design is ready for independent staff re-review.
