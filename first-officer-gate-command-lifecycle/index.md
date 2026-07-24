@@ -1,7 +1,7 @@
 ---
 id: 6yyyyemkqwsett3g1c991w9f
 title: Make First Officers operate the recorded gate lifecycle
-status: implementation
+status: ideation
 source: "Durable-decisions dogfood audit: PRs #557/#560 shipped gate commands without the planned FO operating contract, 2026-07-23"
 started: 2026-07-23T02:01:56Z
 completed:
@@ -778,6 +778,7 @@ Implemented and hardened the six-event integration and its deterministic/live or
 - Cycle 18: DESIGN RESET — goal-only Codex lifecycle at `37d6980b`; surface 7 files/95 added LOC vs +95 hard stop (100%); AC unchanged; two unchanged runs omitted root-visible gate review after loading the corrected skill, triggering the approved skill-discovery/runtime-ownership reset
 - Cycle 19: DESIGN RESET — Roborev job 2170 and supported-host live evidence at `08675f02`; surface 8 files/174 added LOC vs +175 hard stop (99%); AC unchanged; Codex and deterministic presenter proof pass, but legacy gate presentation, successful-commit attribution, onboarding scope, distinct Claude obligations, Pi runtime availability, and unresolved-material round disposition require design authority
 - Cycle 20: DESIGN RESET — supported Pi lifecycle at `ce436505`; surface 17 files/497 added LOC vs +510 hard stop (97%); AC unchanged; Claude/Codex and offline gates pass, but Pi’s successful native successor is not attributable through the common oracle, its directive retains prompt delimiters, and the runner cleaned command/state evidence required to adjudicate either claim
+- Cycle 21: DESIGN RESET — independent checkpoint review and correction prototype at `3c535105`; surface 3 correction files/+191 additions vs +95 repair cap (201%) before seven deleted v1 invariants are restored; AC authority must be re-anchored because expanding the forensic proof surface would reward the same overdesign
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
