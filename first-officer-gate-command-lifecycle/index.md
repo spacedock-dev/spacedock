@@ -104,6 +104,20 @@ gates:
                 digest: sha256:af93b06086234aa95c8ad1a98bf52bea7866c4ceeb86ce8ba3140881aa761ad3
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-5
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:ideation:5
+                briefing: briefing:docs-dev:6y:ideation:attempt-5:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T13:55:08.534375Z"
+                decision: approve
+                reason: Cycle 13 preserves the three durable authority mutations, fixes the observed terminal merge deadlock through the existing ceremony, removes the false cache proof, constrains Pi evidence to root-assistant output, and declares a net-deleting nine-file implementation boundary.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
