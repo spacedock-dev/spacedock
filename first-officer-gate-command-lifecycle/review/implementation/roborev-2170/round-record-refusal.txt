@@ -1,0 +1,15 @@
+Candidate: 08675f02ff278bb16965ce583f00b15bd724e81f
+Roborev job: 2170
+Requested round: implementation/21
+
+Command:
+  spacedock gate record first-officer-gate-command-lifecycle --round implementation/21 --briefing briefing.json --log briefing.review.jsonl --feedback-cycle feedback-cycle.txt --workflow-dir docs/dev
+
+Exit: 1
+Error: worker triage contains an invalid disposition
+
+The recorder accepts only `class: material; disposition: fixed` or a canonical
+correct-but-disproportionate decline. Four findings remain material or need a
+Captain design decision, so neither accepted disposition is truthful. The
+refusal occurred before round publication or entity mutation. No failed round
+pointer was written.
