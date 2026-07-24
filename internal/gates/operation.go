@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -19,15 +20,10 @@ import (
 )
 
 type RecordInput struct {
-	BriefingPath    string
-	ResultPath      string
-	AssociationPath string
-	Actor           string
-	AdoptionNote    string
-	Decision        string
-	Reason          string
-	Directive       string
-	WorkflowDir     string
+	BriefingPath, ResultPath, AssociationPath string
+	LogPath, FeedbackCyclePath, Round         string
+	Actor, AdoptionNote, Decision             string
+	Reason, Directive, WorkflowDir            string
 }
 
 type artifactRef struct {
@@ -45,18 +41,14 @@ type briefingManifest struct {
 }
 
 type providerResult struct {
-	Type        string      `json:"type"`
-	Status      string      `json:"status"`
-	Briefing    string      `json:"briefing"`
-	Artifact    artifactRef `json:"artifact"`
-	Resolution  Resolution  `json:"resolution"`
-	Annotations []struct {
-		Type     string `json:"type"`
-		ID       string `json:"id"`
-		Briefing string `json:"briefing"`
-	} `json:"annotations"`
-	Binding bool   `json:"binding"`
-	Actor   string `json:"actor"`
+	Type        string       `json:"type"`
+	Status      string       `json:"status"`
+	Briefing    string       `json:"briefing"`
+	Artifact    artifactRef  `json:"artifact"`
+	Resolution  Resolution   `json:"resolution"`
+	Annotations []Annotation `json:"annotations"`
+	Binding     bool         `json:"binding"`
+	Actor       string       `json:"actor"`
 }
 
 type resultAssociation struct {
@@ -82,6 +74,29 @@ type resultAssociation struct {
 // held. Lifecycle operation, current-stage target, CAS, and ids are derived by
 // the recorder rather than supplied in a transaction envelope.
 func RecordSemantic(entityPath string, input RecordInput) error {
+	if input.Round != "" {
+		if input.BriefingPath == "" || input.LogPath == "" {
+			return fmt.Errorf("gate record --round requires --briefing and --log")
+		}
+		if input.ResultPath != "" || input.AssociationPath != "" || input.Actor != "" || input.AdoptionNote != "" || input.Decision != "" || input.Reason != "" || input.Directive != "" {
+			return fmt.Errorf("gate record --round is incompatible with gate-closing flags")
+		}
+		if filepath.Base(input.BriefingPath) != "briefing.json" || filepath.Base(input.LogPath) != "briefing.review.jsonl" {
+			return fmt.Errorf("--round inputs must name briefing.json and briefing.review.jsonl")
+		}
+		if filepath.Base(entityPath) != "index.md" {
+			return fmt.Errorf("gate record --round requires folder-form entity <slug>/index.md because review artifacts accumulate beside the entity")
+		}
+		unlock, err := lockEntity(entityPath)
+		if err != nil {
+			return err
+		}
+		defer unlock()
+		return recordRoundLockedWith(entityPath, input, nil, atomicWrite)
+	}
+	if input.LogPath != "" || input.FeedbackCyclePath != "" {
+		return fmt.Errorf("--log and --feedback-cycle require --round")
+	}
 	sources := 0
 	for _, source := range []string{input.BriefingPath, input.ResultPath, input.Decision} {
 		if source != "" {
@@ -355,29 +370,31 @@ func applicationForDecision(entityPath, workflowDir, stage, decision string) (*A
 	if err != nil {
 		return nil, err
 	}
-	for i, candidate := range stages {
-		if candidate.Name != stage {
-			continue
-		}
-		if decision == "revise" {
-			target := candidate.FeedbackTo
-			if target == "" {
-				target = stage
-			}
-			return &Application{Action: "feedback", TargetStage: target, State: "pending"}, nil
-		}
-		if i+1 >= len(stages) || strings.TrimSpace(stages[i+1].Name) == "" {
-			return nil, fmt.Errorf("workflow stage %s has no advance target", stage)
-		}
-		blockers := []Blocker{}
-		return &Application{Action: "advance", TargetStage: stages[i+1].Name, State: "pending", Blockers: &blockers}, nil
+	i := applicationStageIndex(stages, stage)
+	if i < 0 {
+		return nil, fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
 	}
-	return nil, fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
+	if decision == "revise" {
+		target := stages[i].FeedbackTo
+		if target == "" {
+			target = stage
+		}
+		return &Application{Action: "feedback", TargetStage: target, State: "pending"}, nil
+	}
+	if i+1 >= len(stages) || strings.TrimSpace(stages[i+1].Name) == "" {
+		return nil, fmt.Errorf("workflow stage %s has no advance target", stage)
+	}
+	blockers := []Blocker{}
+	return &Application{Action: "advance", TargetStage: stages[i+1].Name, State: "pending", Blockers: &blockers}, nil
 }
 
 type applicationStage struct {
 	Name       string
 	FeedbackTo string
+}
+
+func applicationStageIndex(stages []applicationStage, name string) int {
+	return slices.IndexFunc(stages, func(stage applicationStage) bool { return stage.Name == name })
 }
 
 func applicationStages(readme string) ([]applicationStage, error) {

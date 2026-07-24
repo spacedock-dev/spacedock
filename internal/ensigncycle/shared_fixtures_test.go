@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 // Shared scenario fixtures and prompts. These are host-neutral: each writes a
@@ -79,10 +81,35 @@ func gatePrompt(workflowRoot string) string {
 func writeRejectionWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), rejectionReadme())
-	entityPath := filepath.Join(root, "rejection-task.md")
+	entityPath := filepath.Join(root, "rejection-task", "index.md")
 	writeFile(t, entityPath, rejectionEntity())
+	writeFile(t, filepath.Join(root, "rejection-task", "candidate.txt"), rejectionCandidate)
+	writeFile(t, filepath.Join(root, "rejection-task", "inputs", "briefing.json"), rejectionBriefing())
+	writeFile(t, filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"), "")
+	writeFile(t, filepath.Join(root, "rejection-task", "inputs", "feedback-cycle.txt"), rejectionFeedbackCycle)
 	gitInit(t, root)
 	return entityPath
+}
+
+const (
+	rejectionCandidate     = "shared rejection candidate\n"
+	rejectionBriefingID    = "briefing:rejection-task:validation:round-1"
+	rejectionFeedbackCycle = "- Cycle 1: REJECTED — validation reviewer; surface 1 marker vs estimate 1 (100%); AC unchanged\n"
+	rejectionReviewerLog   = `{"type":"Annotation","id":"annotation:rejection-task:missing-marker","briefing":"briefing:rejection-task:validation:round-1","by":"software:validation-reviewer","at":"2026-07-23T01:00:00Z","target":"artifact:rejection-candidate","kind":"comment","body":"required fix marker is absent"}` + "\n" +
+		`{"type":"Resolution","id":"resolution:rejection-task:reviewer","briefing":"briefing:rejection-task:validation:round-1","by":"software:validation-reviewer","at":"2026-07-23T01:01:00Z","decision":"revise","includes":["annotation:rejection-task:missing-marker"]}` + "\n"
+	rejectionWorkerLog = `{"type":"Annotation","id":"annotation:rejection-task:fixed-marker","briefing":"briefing:rejection-task:validation:round-1","by":"actor:ensign","at":"2026-07-23T01:02:00Z","includes":["annotation:rejection-task:missing-marker"],"body":"class: material; disposition: fixed"}` + "\n" +
+		`{"type":"Resolution","id":"resolution:rejection-task:ensign","briefing":"briefing:rejection-task:validation:round-1","by":"actor:ensign","at":"2026-07-23T01:03:00Z","decision":"revise","reason":"triage: 1 material fixed; 0 declined","includes":["annotation:rejection-task:fixed-marker"]}` + "\n"
+)
+
+func rejectionBriefing() string {
+	return fmt.Sprintf(
+		`{"type":"Briefing","version":"1","id":"%s","question":"Does the first validation find the deliberately omitted fix marker?","artifacts":[{"id":"artifact:rejection-candidate","uri":"../../../candidate.txt","mediaType":"text/plain","rev":"%s"}]}`+"\n",
+		rejectionBriefingID, gates.RawDigest([]byte(rejectionCandidate)),
+	)
+}
+
+func rejectionCompleteLog() string {
+	return rejectionReviewerLog + rejectionWorkerLog
 }
 
 func rejectionReadme() string {
@@ -107,17 +134,20 @@ func rejectionReadme() string {
 		"# Rejection Fixture\n\n" +
 		"This fixture exercises the full two-cycle rejection trajectory LIVE, starting before the first validation: a first implementation deliberately omits the fix, a first validation REJECTS it and routes back to implementation, the rework applies the fix, and a second validation round (cycle 2) re-checks it and PASSES.\n\n" +
 		"### implementation\n\n" +
-		"This stage runs once per cycle. Decide which round you are in by checking `rejection-task.md` for a `## Stage Report: validation` section recommending REJECTED:\n\n" +
+		"This stage runs once per cycle. Decide which round you are in by checking `rejection-task/index.md` for a `## Stage Report: validation` section recommending REJECTED:\n\n" +
 		"- **First round (no REJECTED validation report present yet):** deliberately OMIT the fix marker. Append a `## Stage Report: implementation` section with one `- DONE:` item noting the initial implementation does not yet carry the fix marker. Do NOT write the marker line. This is the buggy round the first validation must reject.\n" +
-		"- **Rework round (a REJECTED validation report is present):** apply the fix by appending this exact standalone line to `rejection-task.md`:\n\n" +
+		"- **Rework round (a REJECTED validation report is present):** apply the fix by appending this exact standalone line to `rejection-task/index.md`:\n\n" +
 		"  `" + rejectionFixMarker + "`\n\n" +
-		"  Then append a second `## Stage Report: implementation` section with one `- DONE:` item naming the fix.\n\n" +
+		"  Then append a second `## Stage Report: implementation` section with one `- DONE:` item naming the fix. Finally append these exact two complete JSONL lines to `rejection-task/inputs/briefing.review.jsonl`:\n\n" +
+		"```jsonl\n" + rejectionWorkerLog + "```\n\n" +
 		"- **Outputs:** An implementation stage report; on the rework round, the exact fix marker as well.\n\n" +
 		"### validation\n\n" +
-		"Reject the implementation when the exact fix marker `" + rejectionFixMarker + "` is absent from `rejection-task.md`; report PASSED when it is present. Append a `## Stage Report: validation` section recording the verdict. Keep this review LIGHT — inspect only for the marker line; do not read or run unrelated code.\n\n" +
+		"Reject the implementation when the exact fix marker `" + rejectionFixMarker + "` is absent from `rejection-task/index.md`; report PASSED when it is present. Append a `## Stage Report: validation` section recording the verdict. On the first, REJECTED validation only, replace the empty `rejection-task/inputs/briefing.review.jsonl` with these exact two complete JSONL lines; do not change that log during the second validation:\n\n" +
+		"```jsonl\n" + rejectionReviewerLog + "```\n\n" +
+		"Keep this review LIGHT — inspect only for the marker line and perform the required log write; do not read or run unrelated code.\n\n" +
 		"- **Outputs:** A PASSED or REJECTED validation stage report.\n\n" +
 		"### Feedback Cycles\n\n" +
-		"Track every validation round in a `### Feedback Cycles` section in `rejection-task.md`: append one `- Cycle N: <verdict>` line per validation round, numbered in order. The first REJECTED round is `- Cycle 1: REJECTED`; record `- Cycle 2: PASSED` after the re-validation passes.\n\n" +
+		"The first rejected cycle is projected by the round recorder from `rejection-task/inputs/feedback-cycle.txt`; do not hand-write Cycle 1. Record `- Cycle 2: PASSED` after the re-validation passes.\n\n" +
 		"### done\n\nTerminal state.\n"
 }
 
@@ -129,6 +159,9 @@ func rejectionEntity() string {
 		"completed:\n" +
 		"verdict:\n" +
 		"worktree:\n" +
+		"workflow-state: preserve-me\n" +
+		"gate-state: preserve-me\n" +
+		"application-state: preserve-me\n" +
 		"---\n" +
 		"# Rejection Task\n\n" +
 		"This task starts at implementation, before any validation has run. The first implementation round must deliberately omit the fix marker so the first validation rejects it; the rework round after that rejection applies the marker.\n"
@@ -139,7 +172,7 @@ func rejectionPrompt(workflowRoot string) string {
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: "+workflowRoot,
 		"Process only the entity `rejection-task`, which starts at implementation, through a full two-cycle rejection feedback flow.",
-		"Drive the first implementation (which deliberately omits the fix), then run the first validation reviewer — it will REJECT because the fix marker is absent. Route that concrete finding back to the implementation target, wait for the rework to apply the fix, then re-run validation for a second cycle and record `- Cycle 2: PASSED` per the workflow README. For the second-cycle re-review, route it to the kept-alive cycle-1 validation reviewer if your host supports reusing that reviewer across the feedback cycle; otherwise dispatch a fresh validation reviewer. Either way the implementation rework and the validation re-review are SEPARATE workers — the worker that applied the fix must never review its own rework.",
+		"Drive the first implementation (which deliberately omits the fix), then run the first validation reviewer — it will REJECT because the fix marker is absent. Route that concrete finding back to the implementation target and wait for the rework to apply the fix and complete actor:ensign triage in the review log. After returning the entity to validation, and before the second validation reviewer runs, invoke `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl --feedback-cycle rejection-task/inputs/feedback-cycle.txt` exactly once. Then re-run validation for a second cycle and record `- Cycle 2: PASSED` per the workflow README. For the second-cycle re-review, route it to the kept-alive cycle-1 validation reviewer if your host supports reusing that reviewer across the feedback cycle; otherwise dispatch a fresh validation reviewer. Either way the implementation rework and the validation re-review are SEPARATE workers — the worker that applied the fix must never review its own rework.",
 		"Do not advance the entity to done. Your final response must mention the first-cycle rejection and the second-cycle re-validation result.",
 	)
 }

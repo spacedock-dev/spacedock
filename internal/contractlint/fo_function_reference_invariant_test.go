@@ -66,9 +66,9 @@ var foHostLoadPaths = map[string][]string{
 // under another host's headroom. Growing a host's load past its constant is a
 // deliberate re-baseline edit here, with the growth justified in the change.
 var foHostLoadBaselineBytes = map[string]int{
-	"claude": 96081,
-	"codex":  75296,
-	"pi":     71426,
+	"claude": 96435,
+	"codex":  75650,
+	"pi":     71780,
 }
 
 var mutableProcedureAddress = regexp.MustCompile(`(?i)(?:\bsteps?[- ]\d+(?:\.\d+)?(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?|\breuse[- ]conditions?[- ]?\d+|\btiers?[- ]\d+|\btiers?\s+\d+(?:\s+and\s+\d+)?|\bentry-point principle\s+\d+|\b(?:signals?|items?)\s*\(\d+(?:\s*,\s*\d+)*(?:\s*,?\s*or\s*\d+)?\s+above\))`)

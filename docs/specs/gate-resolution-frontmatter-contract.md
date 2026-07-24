@@ -144,10 +144,28 @@ represented by the triage Resolution is not triaged.
 
 No findings means no triage Resolution. An all-declines round instead has a real triage
 Resolution recording zero fixes and including every decline Annotation; those states
-must never project alike. The round's ordered log in the review room is the interim
-hand-authored home. Appending it, maintaining a frontmatter pointer, and projecting a
-`### Feedback Cycles` line are deferred generic round-recorder plumbing, not part of this
-contract section or recorder v1.
+must never project alike. Once reviewer and authorized worker triage entries are
+complete, `spacedock gate record <entity> --round STAGE/CYCLE --briefing
+PATH/briefing.json --log PATH/briefing.review.jsonl --feedback-cycle FILE` publishes
+the canonical two-file room at `review/<stage>/round-<cycle>`, then atomically writes
+the exact `review-round` pointer and Feedback Cycles projection. A complete no-findings
+log omits both worker triage and `--feedback-cycle`.
+
+Round recording requires a folder-form entity at `<slug>/index.md`, so its accumulating
+`review/` artifacts are scoped beside that entity. Flat entities refuse before locking
+or writing; the recorder does not alter the approved derived room path to compensate.
+`STAGE` must name a stage in the workflow definition, but need not equal current
+`status`: explicit historical backfill remains supported. Decline bodies must use the
+exact structured class/rationale/promotion fields above with substantive values. A
+projected Feedback Cycles line must match the complete documented grammar, its cycle
+must equal `CYCLE`, and its verdict must agree with the reviewer Resolution.
+
+The room is immutable: exact whole-room replay is a whole-tree no-op; any different
+Briefing, log, room shape, pointer, or projection fails closed. Findings-bearing
+reviewer-only logs are incomplete and never persist. New-room publication rolls back
+if the full-entity compare-and-swap or atomic pointer/projection replacement fails.
+`spacedock gate validate <entity> --round STAGE/CYCLE` reads the ordered log through
+the pointer and reports every Resolution as advisory.
 
 Narrowing a value AC to make a finding pass is not a round disposition. It opens a real
 gate attempt whose binding Resolution is captain-owned; the correction loop cannot
