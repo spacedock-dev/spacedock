@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:ideation:attempt-7:revision-1",
+  "question": "Should cycle 20 make present-gate the sole root-visible review owner and require presentation completion before decision recording within the revised eight-file boundary?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0bd1a7ced43f556da29ba578e6db2f9613cda548411b7e6df8ecd1a05dd8eeb2"
+    },
+    {
+      "id": "artifact:staff-review",
+      "uri": "staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6560a19f60508213c0cf8a9030da546fc7b514200ac040fc0c37b76baeb154d7"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1d88527196c535ec78b95fe2c0f0eb36537aa7c351c12f27e6b515f90759ea8a"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6425a361d95b0f5fc64d712aa9da8bd1b377ca9579ec6da5c6e3523fc8039003"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-cycle-20",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Repair the bounded implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the presentation ownership design",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
