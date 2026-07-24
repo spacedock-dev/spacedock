@@ -1,7 +1,7 @@
 ---
 id: 6yyyyemkqwsett3g1c991w9f
 title: Make First Officers operate the recorded gate lifecycle
-status: implementation
+status: ideation
 source: "Durable-decisions dogfood audit: PRs #557/#560 shipped gate commands without the planned FO operating contract, 2026-07-23"
 started: 2026-07-23T02:01:56Z
 completed:
@@ -731,6 +731,7 @@ Roborev 837 is fully triaged and both Medium findings are Material. The implemen
 - Cycle 10: DESIGN RESET — Captain audit ruling, 2026-07-24. Preserve authorized record/consume-before-dispatch, durable successor state, and representative host journeys. Remove repeated four-subcommand help probes, the absolute-path workaround as a permanent FO ritual, runtime-specific “very next host event” wording, and zero-headroom absolute total-host ceilings. Spike whether every separate validation command adds safety before retaining exact six-command cardinality; keep resident/deferred component caps and define an attributable rebaseline policy. AC end values unchanged.
 - Cycle 11: REVISE — independent ideation staff review; surface 1 design file with implementation not restarted vs expected implementation at or below 1,518 added LOC; AC end values unchanged. Preserve a state commit after every successful close, key the cached capability result to resolved executable identity, recompute task-attributable load at every tip/rebase, and prove consumed-commit ordering plus each omitted authority mutation through real traces.
 - Cycle 12: REJECTED — validation resume matrix; surface 17 files/1,461 added LOC vs estimate 1,588 added LOC (92%); AC unchanged
+- Cycle 13: DESIGN RESET — FO ruling after Roborev 2083. Preserve the three authority mutations and durability barriers; route a consumed terminal successor through the existing merge ceremony and only a nonterminal successor through ordinary dispatch. Replace the session identity/digest cache with one capability probe immediately before each gate lifecycle, deleting same-path/PATH cache machinery rather than adding a launcher-swap live laboratory. Pi review evidence must come from the root assistant message. Reuse the existing lifecycle fixture and host journey; no new harness, transport contract, or exact-child attribution.
 
 ## Stage Report: ideation (cycle 3)
 
