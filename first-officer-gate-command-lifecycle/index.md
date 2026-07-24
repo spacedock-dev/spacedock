@@ -1573,3 +1573,29 @@ Provider overrides, canonical package verification, Captain-language mapping, re
 ### Summary
 
 Cycle 22 establishes one unreleased-v1 gate path: commit the exact binding, present one truthful review, then record only exact authority. It preserves Codex success and every recorder/consumer/provider boundary, turns both Claude misses into lossless data-flow obligations, keeps Pi required after runner provisioning, and treats unresolved advisory publication as correctly fail-closed. Checklist accounting is **3 DONE, 1 SKIPPED, 0 FAILED**; the design is ready for independent staff review before implementation resumes.
+
+## Implementation intended-change declaration (cycle 23)
+
+Declared before code edits at local unpushed tip `08675f02ff278bb16965ce583f00b15bd724e81f`. This cycle implements the approved unreleased-v1 reset in exactly these 17 existing files:
+
+| File | Intended incremental delta |
+| --- | ---: |
+| `skills/first-officer/references/first-officer-shared-core.md` | +3 / -3 |
+| `skills/fo-gate-lifecycle/SKILL.md` | +12 / -6 |
+| `skills/present-gate/SKILL.md` | +12 / -5 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +90 / -25 |
+| `internal/ensigncycle/shared_fixtures_test.go` | +20 / -25 |
+| `internal/ensigncycle/gate_assert_impl_test.go` | +22 / -15 |
+| `internal/ensigncycle/gate_assert_test.go` | +12 / -8 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | +10 / -6 |
+| `internal/ensigncycle/shared_scenarios_test.go` | +2 / -2 |
+| `internal/ensigncycle/claude_live_runner_test.go` | +10 / -5 |
+| `internal/ensigncycle/codex_live_runner_test.go` | +10 / -5 |
+| `internal/ensigncycle/live_gate_stop_test.go` | +35 / -20 |
+| `internal/ensigncycle/livescenario_adapter_live_test.go` | +15 / -12 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +22 / -4 |
+| `docs/site/concepts/gates-and-decisions.md` | +8 / -4 |
+| `docs/site/get-started/first-workflow.md` | +10 / -13 |
+| `docs/specs/scenario-testing-principles.md` | +4 / -2 |
+
+Intended incremental total is **+297/-160**. The full branch intent versus `13d70249` is **+471/-224**; additions have a hard stop at **+510** versus that baseline. Shared core remains at or below **26,754 bytes**, lifecycle at or below **7,000 bytes**, and presenter at or below **7,500 bytes**. Any eighteenth file, cap breach, new recorder field/harness/protocol/host lifecycle, unbound presentation, prompt coaching, weakened tuple/directive grade, or repeated unchanged supported-host obligation returns to ideation before further edits.
