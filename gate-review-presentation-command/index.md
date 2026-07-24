@@ -107,7 +107,8 @@ review-round:
         digest: sha256:61c4bffbec0dffc4eec7951e01d229f641ad98759a5f10be1c17a9390c88ba6a
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-16
-mod-block:
+mod-block: merge:pr-merge
+pr: "#564"
 ---
 
 Gate presentation remains an overridable channel of the present-gate skill, not a
