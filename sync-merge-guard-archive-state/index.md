@@ -47,6 +47,20 @@ gates:
                 digest: sha256:3737281543bf5be0e7b815157905b792b8adaf1ca4a756da8b531b8ae5a9c8af
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:rd:ideation:1
+                briefing: briefing:docs-dev:rd:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T15:58:44.401791Z"
+                decision: approve
+                reason: The design reuses one state publisher, preserves archived read-only semantics, closes crash and duplicate-shape gaps with real-Git evidence, and passed independent staff review; implementation remains pending until 6y lands.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Make a successful split-root `merge guard` finalization durable on the configured state remote, including restart after interruption, so another First Officer cannot resurrect an already archived task from the last pushed sentinel.
