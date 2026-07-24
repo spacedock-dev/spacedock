@@ -589,6 +589,7 @@ Implemented and hardened the six-event integration and its deterministic/live or
 - Cycle 15: REVISE — GitHub Actions offline CI run 30112268591; surface 21 files/1,470 added LOC vs 1,588-addition branch cap (93%); AC unchanged
 
 - Cycle 16: REJECTED — Roborev job 2167 reviewing Cycle 15 CI feedback; surface 1 test file/2 added LOC vs estimate 1 test file/2 added LOC (100%); AC unchanged
+- Cycle 17: DESIGN RESET — detached validation audit at `13d70249`; the 2-line identity repair is valid, but supported rejection/decision outcomes and AC-1/AC-6/AC-8 live evidence cross product and harness-controller boundaries; AC unchanged
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
@@ -1119,3 +1120,40 @@ Exact endpoint `b99f9c664912b18e729b639e737ef203c00cacbe` preserves the closed 9
 ### Summary
 
 The CI-only red was an undeclared host-identity dependency in test setup, not a product lifecycle failure. The one-file/two-line correction persists the fixture helper's existing identity for independent product Git subprocesses, is clean-config/full/race green, is published at `13d70249`, and now has a durable implementation/16 advisory round carrying the Cycle 15 correction context; checklist accounting remains **3 DONE, 2 SKIPPED, 0 FAILED**.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: At exact tip 13d702492131df17dd3ac87245d6d773f4df959b, reproduce the identity-free Git failure turning red-to-green, verify the correction is exactly one test file +2/-0 with no product drift, and run the applicable focused/full/race/format evidence.
+  With isolated `user.useConfigOnly=true`, b99f9c66 fails its first fixture commit with `Author identity unknown` and 13d70249 passes; the exact delta is one test file +2/-0, and focused/full/race/format/diff/live-tag compilation pass.
+- DONE: Independently assess every Roborev 2167 finding preserved in advisory round implementation/16 against the current task ACs and supported First Officer workflow; reproduce the cheapest falsifiable control for each disputed materiality claim and do not accept “predates the two-line fix” as a release-scope argument.
+  Detached controls exercised goal-only rejection, unmapped reject/redo decisions, a deleted shipped close-commit barrier, and child-only Claude review evidence; all four findings were assessed on the complete candidate.
+- FAILED: Re-anchor AC-1 through AC-8 on the final tip and issue PASSED or REJECTED with each finding classified by defect kind and release scope; do not repair code, narrow ACs, mutate gate/PR state, or merge.
+  AC-1, AC-6, AC-7, and AC-8 retain material outcome/evidence defects below; AC-2 through AC-5 reproduce. Recommendation: **REJECTED — DESIGN RESET**.
+
+### Acceptance-criterion re-anchor
+
+- AC-1: REJECTED evidence — deleting the shipped close-commit barrier leaves focused tests green and the Codex recorded-gate live lane passes in 211.37s because its prompt independently scripts every barrier.
+- AC-2: PASSED — real-binary omitted bind/decision/consume and the malformed/stale/blocked/revise/hold/repeat-consume refusal matrix remain green.
+- AC-3: PASSED — direct/delegated/provider authority, actor-swap, exact directive, close durability, and stopped-route controls remain green.
+- AC-4: PASSED — canonical retained package digests, folder commit scope, dirty-sibling exclusion, and workflow-discovery equality remain green.
+- AC-5: PASSED — isolated identity repair, one fresh capability probe, relative retained inputs, byte-clean failures, and no lock residue reproduce.
+- AC-6: REJECTED outcome/evidence — captain-facing `reject`/`redo` have no recorder mapping, and a Claude child-only six-field review is accepted as if the root presented it.
+- AC-7: REJECTED outcome — existing approval resume is idempotent, but an ordinary captain rejection cannot enter a defined persisted decision/resume route without model-invented translation.
+- AC-8: REJECTED evidence — the host-neutral live prompt owns the procedure under test, and Claude extraction cannot establish root captain visibility; the three-host claim is therefore not validly proven.
+
+### Reviewer findings
+
+- MATERIAL / OUTCOME DEFECT / Medium — automatic reviewer-REJECTED routing was removed from the shared core.
+  Trigger: a supported feedback gate recommends REJECTED. The pre-branch contract routed it automatically; the candidate leaves routing to inference. A goal-only Codex run happened to load feedback routing but then skipped the initial implementation report while claiming success, so the supported journey is not contractually reliable.
+- MATERIAL / OUTCOME DEFECT / Medium — captain decision vocabulary has no durable mapping.
+  Trigger: the captain selects presented `reject` or `redo`; both real CLI controls refuse byte-clean because the recorder accepts only approve/revise/hold. This blocks a common supported gate route and leaves rejection versus redo semantics undefined.
+- MATERIAL / EVIDENCE DEFECT / Medium — the live prompt duplicates lifecycle procedure.
+  Adversarial edit: remove the shipped successful-close commit barrier while retaining command tokens. Focused lifecycle tests and the real Codex live grader both remain green, so AC-1/AC-8 can pass when the shipped contract regresses.
+- MATERIAL / EVIDENCE DEFECT / Medium — Claude review extraction accepts subagent-only output.
+  Adversarial stream: root binds, only a child row emits the six-field review, then root decides. The extractor returns the child review because row `parent_tool_use_id` is discarded, invalidating AC-6/AC-8 visibility evidence.
+- RULING: design reset, not another automatic narrow correction.
+  Restore the supported rejection branch and define captain-to-recorder semantics, then rebuild the live lane around a goal-only prompt and root-aware Claude rows. This crosses outcome and evidence layers/controllers, meeting the validation policy’s reset condition.
+
+### Summary
+
+The two-line Git-identity correction is correct, minimal, and green, but it only exposes a clean harness for a branch whose broader supported behavior and proof boundary remain unsound. Validation rejects exact tip `13d702492131df17dd3ac87245d6d773f4df959b` and recommends a design reset covering rejection routing, decision semantics, goal-only live ownership, and root-authoritative Claude evidence.
