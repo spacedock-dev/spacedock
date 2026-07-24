@@ -58,6 +58,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+review-round:
+    id: round:xbatj4hxtxw9t83vvmfem27f:implementation:13
+    stage: implementation
+    cycle: 13
+    briefing:
+        id: briefing:gate-review-presentation-command:implementation:round-13
+        digest: sha256:74c9675995b6a1deeb0cebc1925545b420719d99d4bf1c699b8dac7ea04c2fe5
+        digest-domain: canonical-bytes
+        room-ref: ./review/implementation/round-13
 ---
 
 Gate presentation remains an overridable channel of the present-gate skill, not a
@@ -381,6 +390,7 @@ The captain's question is well-founded and the answer is yes: the binary was the
 - Cycle 10: REJECTED — validation cycle 4 design/spec reset; surface 17 files/1,255 changed LOC vs Cycle-9 cap 1,300 (97%); AC reset required. The candidate has no material prepared-room defect, but AC-1 through AC-5 still require the retired override script, provider lifecycle, presenter fallback, and provider-minted-ID normalization. Decision: re-scope ideation only to replace those obsolete obligations with exact room authority/identity, derived recursive inventory, failure atomicity, one-use history, and retained-byte tamper detection while preserving the zero-coupling and decision-integrity end values; do not send implementation back to rebuild excluded provider machinery.
 - Cycle 11: REJECTED — independent ideation staff review; surface 17 files/1,255 changed LOC vs cap 1,300 (97%); AC unchanged. Three supported-path evidence gaps remain: no cited post-bind Briefing-byte mutation proves AC-2, the AC-3 inventory matrix lacks same-cardinality duplicate-id and wrong-revision cases, and AC-5 lacks deletion cases for both retained provider files. These are test-only falsifiability gaps, not new interface or provider obligations. Revise the test plan and intended surface around compact additions to the existing CLI matrices; do not add production behavior, a new harness, or provider transport.
 - Cycle 12: REJECTED — independent ideation staff re-review; surface unchanged at 17 files/1,255 changed LOC vs cap 1,300 (97%); AC unchanged. The Cycle-11 AC-5 test prose accidentally required missing retained files to emit “frozen digest,” but current supported behavior names the fixed path plus the read/not-found error; only byte mismatches use the frozen-digest diagnostic. Remove that invented message obligation, preserve the distinct assertions, and keep the test-only +42/-0 estimate unchanged.
+- Cycle 13: REJECTED — Roborev job 2039 implementation round 1; surface 17 files/1,293 changed LOC vs estimate 1,300 changed LOC (99%); AC unchanged
 
 ## Stage Report: implementation
 
