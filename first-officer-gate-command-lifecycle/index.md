@@ -204,6 +204,20 @@ gates:
                 digest: sha256:58dc4f8a7060b9d338526b4e30339c9d92e6de8c1a3019491b01121d60fa5b0f
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-10
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:ideation:10
+                briefing: briefing:docs-dev:6y:ideation:attempt-10:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T22:45:10.35744Z"
+                decision: approve
+                reason: Independent staff review found no material issue; the repaired authority audit preserves every product-owned gate behavior while removing compatibility and forensic proof inflation, and the clean-branch plan is non-destructive.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
