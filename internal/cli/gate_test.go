@@ -360,6 +360,39 @@ func TestGateRecordConsumesDirectBindingResultFromPreparedRoom(t *testing.T) {
 	}
 	copyGateTestdata(t, inventory, filepath.Join("gate-room", "provider", "presented-inventory.json"))
 
+	var referenceResult map[string]any
+	resultBytes, err := os.ReadFile(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(resultBytes, &referenceResult); err != nil {
+		t.Fatal(err)
+	}
+	referenceResult["artifact"] = map[string]any{
+		"id":  "reference:entity-snapshot",
+		"uri": "entity-snapshot.md",
+		"rev": "sha256:32af4e65fa5a60961b5181d9f2ae1da73001fe28f40d84fcea8be275b1be8684",
+	}
+	mistypedResult, err := json.Marshal(referenceResult)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, result, string(mistypedResult))
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "exact Result artifact") {
+		t.Fatalf("Reference primary artifact exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	afterFailed, err = os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(afterFailed, before) {
+		t.Fatal("rejected Reference primary artifact changed the entity")
+	}
+	copyGateTestdata(t, result, filepath.Join("gate-room", "provider", "result.json"))
+
 	out.Reset()
 	errOut.Reset()
 	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
@@ -401,6 +434,72 @@ func TestGateRecordConsumesDirectBindingResultFromPreparedRoom(t *testing.T) {
 		if _, ok := portable[wrapperField]; ok {
 			t.Fatalf("provider wrapper field %q crossed the portable boundary: %s", wrapperField, resolutionBytes)
 		}
+	}
+}
+
+func TestGateRoomRejectsRequestAuthorityRebindingWithoutMutation(t *testing.T) {
+	root, entity, room := unboundGateRoomFixture(t)
+	briefing := filepath.Join(room, "briefing.json")
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("bind room exit=%d stderr=%q", code, errOut.String())
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	requestPath := filepath.Join(room, "request.json")
+	request, err := os.ReadFile(requestPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, requestPath, strings.ReplaceAll(string(request), "person:captain", "agent:first-officer"))
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "request is frozen") {
+		t.Fatalf("authority rebind exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("rejected authority rebind changed the entity")
+	}
+}
+
+func TestGateRoomRejectsBriefingOnlyAttemptWithoutFrozenRequest(t *testing.T) {
+	root, entity, room := unboundGateRoomFixture(t)
+	requestPath := filepath.Join(room, "request.json")
+	if err := os.Remove(requestPath); err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("bind briefing-only attempt exit=%d stderr=%q", code, errOut.String())
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	copyGateTestdata(t, requestPath, filepath.Join("gate-room", "request.json"))
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "frozen request digest") {
+		t.Fatalf("briefing-only room exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("rejected briefing-only room changed the entity")
 	}
 }
 

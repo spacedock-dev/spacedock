@@ -182,6 +182,9 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	}
 	previous := &record.Attempts[len(record.Attempts)-1]
 	if previous.Resolution == nil {
+		if previous.Briefing.RequestDigest != "" && previous.Briefing.RequestDigest != binding.RequestDigest {
+			return fmt.Errorf("open gate room request is frozen and cannot be rebound")
+		}
 		selectionChanged := doc.Current.Gate != record.ID
 		doc.Current.Gate = record.ID
 		if sameBinding(previous.Briefing, binding) {
@@ -293,10 +296,6 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	if err != nil {
 		return err
 	}
-	inventory := make([]artifactRef, 0, len(canonicalItems))
-	for _, item := range canonicalItems {
-		inventory = append(inventory, item.artifactRef)
-	}
 	presentedBytes, err := os.ReadFile(filepath.Join(roomPath, "provider", "presented-inventory.json"))
 	if err != nil {
 		return err
@@ -309,7 +308,7 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	if err != nil {
 		return err
 	}
-	if err := verifyAssociation(resultBytes, &result, association, request.Approver, attempt.Briefing, inventory); err != nil {
+	if err := verifyAssociation(resultBytes, &result, association, request.Approver, attempt.Briefing, canonicalItems); err != nil {
 		return err
 	}
 	resolution := result.Resolution
@@ -509,7 +508,7 @@ func applicationStages(readme string) ([]applicationStage, error) {
 	return result, nil
 }
 
-func verifyAssociation(resultBytes []byte, result *providerResult, association *resultAssociation, actor string, binding Briefing, inventory []artifactRef) error {
+func verifyAssociation(resultBytes []byte, result *providerResult, association *resultAssociation, actor string, binding Briefing, inventory []presentedItem) error {
 	if result.Type != "review-v1-result" || result.Briefing == "" || result.Artifact.ID == "" || !digestRE.MatchString(result.Artifact.Rev) {
 		return fmt.Errorf("gate room Result is not a complete review-v1-result")
 	}
@@ -531,24 +530,25 @@ func verifyAssociation(resultBytes []byte, result *providerResult, association *
 	if len(inventory) == 0 || len(association.Canonical.Artifacts) != len(inventory) || len(association.Presentation) != len(inventory) {
 		return fmt.Errorf("association does not cover the complete presentation mapping")
 	}
-	canonical := make(map[string]string, len(inventory))
+	canonical := make(map[string]presentedItem, len(inventory))
 	for i, artifact := range inventory {
 		declared := association.Canonical.Artifacts[i]
-		if artifact.ID == "" || !digestRE.MatchString(artifact.Rev) || canonical[artifact.ID] != "" || declared.ID != artifact.ID || declared.Rev != artifact.Rev {
+		if artifact.ID == "" || !digestRE.MatchString(artifact.Rev) || canonical[artifact.ID].ID != "" || declared.ID != artifact.ID || declared.Rev != artifact.Rev {
 			return fmt.Errorf("association canonical artifacts do not match the bound Briefing inventory")
 		}
-		canonical[artifact.ID] = artifact.Rev
+		canonical[artifact.ID] = artifact
 	}
 	seenCanonical := map[string]bool{}
 	seenProvider := map[string]bool{}
 	resultArtifactPresent := false
 	for _, mapping := range association.Presentation {
-		if mapping.Provider.ID == "" || !digestRE.MatchString(mapping.Provider.Rev) || canonical[mapping.Canonical.ID] != mapping.Canonical.Rev || seenCanonical[mapping.Canonical.ID] || seenProvider[mapping.Provider.ID] {
+		canonicalItem := canonical[mapping.Canonical.ID]
+		if mapping.Provider.ID == "" || !digestRE.MatchString(mapping.Provider.Rev) || canonicalItem.Rev != mapping.Canonical.Rev || seenCanonical[mapping.Canonical.ID] || seenProvider[mapping.Provider.ID] {
 			return fmt.Errorf("association does not cover the complete presentation mapping")
 		}
 		seenCanonical[mapping.Canonical.ID] = true
 		seenProvider[mapping.Provider.ID] = true
-		if mapping.Provider.ID == result.Artifact.ID && mapping.Provider.Rev == result.Artifact.Rev {
+		if canonicalItem.Type == "Artifact" && mapping.Provider.ID == result.Artifact.ID && mapping.Provider.Rev == result.Artifact.Rev {
 			resultArtifactPresent = true
 		}
 	}
