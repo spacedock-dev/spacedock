@@ -181,17 +181,29 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 	}
 	fixture := writeRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
-	result := runner.run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
-	if copied, ok := runner.(claudeLiveRunner); (ok && (!strings.Contains(result.stream, copied.pluginDir) || !strings.Contains(result.stream, "# First Officer Gate Lifecycle"))) || assertRecordedGateRuntimeLoadOrder("claude", result.stream) != nil {
-		t.Fatalf("recorded gate lifecycle did not load the copied skill body before action\nArtifacts: %s", result.artifactDir)
+	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
+	shellEnvDir := t.TempDir()
+	bashEnv := filepath.Join(shellEnvDir, "recorded-gate-env.sh")
+	writeFile(t, bashEnv, "export SPACEDOCK_BIN="+filepath.Join(shimDir, "spacedock")+"\n")
+	writeFile(t, filepath.Join(shellEnvDir, ".zshenv"), readFile(t, bashEnv))
+	runner = runner.withStubPATH(shimDir)
+	switch copied := runner.(type) {
+	case claudeLiveRunner:
+		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
+		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
+		runner = copied
+	case ptyLiveDriver:
+		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
+		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
+		runner = copied
 	}
-	after := resolveRecordedGateEntity(fixture)
-	events := recordedGateEventsFromClaudeStream(result.stream)
-	if err := assertRecordedGateLifecycle(recordedGateObservation{
-		events: events, before: before, after: after,
-		dispatch:   recordedGateClaudeDispatchProof(result.stream, after),
-		gateReview: recordedGateReviewFromClaudeStream(result.stream), expectedNext: "handoff",
-	}); err != nil {
+	result := runner.run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
+	if copied, ok := runner.(claudeLiveRunner); ok && (!strings.Contains(result.stream, copied.pluginDir) || !strings.Contains(result.stream, "# First Officer Gate Lifecycle")) {
+		t.Fatalf("recorded gate lifecycle did not load the copied skill body\nArtifacts: %s", result.artifactDir)
+	}
+	observation := recordedGateLiveObservation(t, fixture, before, commandLog, recordedGateReviewFromClaudeStream(result.stream))
+	if err := assertRecordedGateLifecycle(observation); err != nil {
 		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())

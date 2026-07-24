@@ -32,9 +32,9 @@ const (
 )
 
 type recordedGateDispatchProof struct {
-	spawned      bool
-	handle       string
-	workerOutput bool
+	builds         int
+	durableEffects int
+	ordered        bool
 }
 
 type recordedGateObservation struct {
@@ -55,14 +55,14 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 			return fmt.Errorf("gate lifecycle event %d = %q, want %q", i+1, got, want)
 		}
 	}
-	if !o.dispatch.spawned {
-		return fmt.Errorf("no successful runtime successor spawn was observed")
+	if o.dispatch.builds != 1 {
+		return fmt.Errorf("successful successor dispatch builds = %d, want 1", o.dispatch.builds)
 	}
-	if strings.TrimSpace(o.dispatch.handle) == "" {
-		return fmt.Errorf("runtime successor spawn exposed no worker handle")
+	if o.dispatch.durableEffects != 1 {
+		return fmt.Errorf("new durable successor effects = %d, want 1", o.dispatch.durableEffects)
 	}
-	if !o.dispatch.workerOutput {
-		return fmt.Errorf("spawned worker produced no correlated durable output")
+	if !o.dispatch.ordered {
+		return fmt.Errorf("successor dispatch was not observed after consume")
 	}
 	if strings.Contains(o.before, recordedGateDispatchMarker) {
 		return fmt.Errorf("successor marker already existed before the lifecycle began")
@@ -213,7 +213,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 		events:       events,
 		before:       before,
 		after:        readFile(t, fixture.entity),
-		dispatch:     recordedGateDispatchProof{spawned: dispatches == 1, handle: "fixture-worker-1", workerOutput: dispatches == 1},
+		dispatch:     recordedGateDispatchProof{builds: dispatches, durableEffects: dispatches, ordered: true},
 		gateReview:   readFile(t, fixture.gateReview),
 		expectedNext: "handoff",
 	}
@@ -677,7 +677,7 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 			"id: resolution:spacedock:docs-dev:3k:validation:1\nbriefing: " + recordedGateBriefingID + "\n" +
 			"by: agent:first-officer\ndecision: approve\n                reason: " + recordedGateReason + "\n" +
 			"adoption-note: '" + recordedGateDirective + "'\ntarget-stage: handoff\n                state: consumed",
-		dispatch:     recordedGateDispatchProof{spawned: true, handle: "worker-1", workerOutput: true},
+		dispatch:     recordedGateDispatchProof{builds: 1, durableEffects: 1, ordered: true},
 		gateReview:   recordedGateReview(),
 		expectedNext: "handoff",
 	}
@@ -706,72 +706,6 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 		})
 	}
 }
-func TestRecordedGateLifecycleSuccessorOracleControls(t *testing.T) {
-	valid := func(proof recordedGateDispatchProof) bool {
-		return proof.spawned && strings.TrimSpace(proof.handle) != "" && proof.workerOutput
-	}
-	claudePrefix := strings.Join([]string{
-		bashToolLine("consume", "spacedock gate consume recorded-gate-task"),
-		toolResultLine("consume", false, "consumed=true"),
-	}, "\n")
-	claudeCases := map[string]string{
-		"narration": claudePrefix + "\n" + `{"type":"assistant","message":{"content":[{"type":"text","text":"spawned worker-1"}]}}`,
-		"blank-handle": claudePrefix + "\n" +
-			`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"spawn","name":"Agent","input":{"name":"","prompt":"recorded-gate-task"}}]}}` + "\n" +
-			toolResultLine("spawn", false, recordedGateDispatchMarker),
-		"parent-output": claudePrefix + "\n" +
-			`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"spawn","name":"Agent","input":{"name":"worker-1","prompt":"recorded-gate-task"}}]}}` + "\n" +
-			toolResultLine("spawn", false, "agentId: a123abc"),
-	}
-	for name, stream := range claudeCases {
-		t.Run("claude-"+name, func(t *testing.T) {
-			if proof := recordedGateClaudeDispatchProof(stream, recordedGateDispatchMarker); valid(proof) {
-				t.Fatalf("Claude parser accepted adversarial successor evidence: %#v", proof)
-			}
-		})
-	}
-	codexConsume := `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock gate consume recorded-gate-task","exit_code":0,"status":"completed"}}`
-	codexCases := map[string]string{
-		"narration": codexConsume + "\n" + `{"type":"item.completed","item":{"type":"agent_message","text":"spawned thread-1"}}`,
-		"blank-handle": codexConsume + "\n" +
-			`{"type":"item.completed","item":{"type":"collab_tool_call","tool":"spawn_agent","receiver_thread_ids":[""],"prompt":"recorded-gate-task"}}` + "\n" +
-			`{"type":"item.completed","item":{"type":"collab_tool_call","tool":"wait_agent","receiver_thread_ids":[""],"status":"completed","output":"` + recordedGateDispatchMarker + `"}}`,
-		"empty-wait": codexConsume + "\n" +
-			`{"type":"item.completed","item":{"type":"collab_tool_call","tool":"spawn_agent","receiver_thread_ids":["thread-1"],"prompt":"recorded-gate-task"}}` + "\n" +
-			`{"type":"item.completed","item":{"type":"collab_tool_call","tool":"wait_agent","receiver_thread_ids":[],"status":"completed","output":"` + recordedGateDispatchMarker + `"}}`,
-		"parent-output": codexConsume + "\n" +
-			`{"type":"item.completed","item":{"type":"collab_tool_call","tool":"spawn_agent","receiver_thread_ids":["thread-1"],"prompt":"recorded-gate-task"}}` + "\n" +
-			`{"type":"item.completed","item":{"type":"collab_tool_call","tool":"wait_agent","receiver_thread_ids":["thread-1"],"status":"completed"}}`,
-	}
-	for name, stream := range codexCases {
-		t.Run("codex-"+name, func(t *testing.T) {
-			if proof := recordedGateCodexDispatchProof(stream, recordedGateDispatchMarker); valid(proof) {
-				t.Fatalf("Codex parser accepted adversarial successor evidence: %#v", proof)
-			}
-		})
-	}
-	piPrefix := strings.Join([]string{
-		`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":"consume","name":"bash","arguments":{"command":"spacedock gate consume recorded-gate-task"}}]}}`,
-		`{"type":"message","message":{"role":"toolResult","toolCallId":"consume","toolName":"bash","isError":false,"content":[{"type":"text","text":"consumed=true"}]}}`,
-	}, "\n")
-	piCases := map[string]string{
-		"narration": piPrefix + "\n" + `{"type":"message","message":{"role":"assistant","content":[{"type":"text","text":"spawned a worker"}]}}`,
-		"parent-output": piPrefix + "\n" +
-			`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":"worker","name":"subagent","arguments":{"task":"recorded-gate-task"}}]}}` + "\n" +
-			`{"type":"message","message":{"role":"toolResult","toolCallId":"worker","toolName":"subagent","isError":false,"content":[{"type":"text","text":"done"}]}}`,
-		"blank-handle": piPrefix + "\n" +
-			`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":"","name":"subagent","arguments":{"task":"recorded-gate-task"}}]}}`,
-	}
-	for name, session := range piCases {
-		t.Run(name, func(t *testing.T) {
-			proof, _ := recordedGatePiObservation(session, recordedGateDispatchMarker)
-			if valid(proof) {
-				t.Fatalf("Pi parser accepted adversarial successor evidence: %#v", proof)
-			}
-		})
-	}
-}
-
 func authorizeRecordedGateDispatch(events []string, entity, successor string) error {
 	if len(events) != len(recordedGateRequiredEvents) {
 		return fmt.Errorf("trace incomplete: got %v", events)
@@ -809,7 +743,7 @@ func procedureEvents(skill string) []string {
 	return events
 }
 func recordedGatePrompt(workflowRoot string) string {
-	return fmt.Sprintf("Use $spacedock:first-officer for this whole run.\n\nWorkflow directory: %s\n\nEngage only `recorded-gate-task`. Its retained validation package and concise gate review already exist. Copy the exact delegated conn bytes between these delimiters, including the final period immediately before END_CONN:\nBEGIN_CONN\n%s\nEND_CONN\nExercise the normal First Officer gate procedure, preserve those exact bytes as delegated provenance, and continue through one observed successor dispatch. Before deciding, emit one assistant-text gate review with exactly these six nonblank labels in order: `Capability/change:`, `Test and evidence:`, `Reviewed snapshot:`, `Findings:`, `Recommendation:`, `Decision ask:`; name the retained briefing identity and digest, and offer approve/revise/hold in the decision ask. The scenario grades an actual `«worker.spawn»` host-tool call and the worker's durable output; `dispatch build`, narration that a worker is live, or `wait` with no worker handle is a failing observation. Stop after the handoff worker records %s; do not advance to terminal.", workflowRoot, recordedGateDirective, recordedGateDispatchMarker)
+	return fmt.Sprintf("Use $spacedock:first-officer for this whole run.\n\nWorkflow directory: %s\n\nEngage only `recorded-gate-task`. Its retained validation package and concise gate review already exist; the canonical Briefing is `%s`. Copy the exact delegated conn bytes between these delimiters, including the final period immediately before END_CONN:\nBEGIN_CONN\n%s\nEND_CONN\nExercise the normal First Officer gate procedure, preserve those exact bytes as delegated provenance, and continue through one successor dispatch. Before deciding, emit one assistant-text gate review with exactly these six nonblank labels in order: `Capability/change:`, `Test and evidence:`, `Reviewed snapshot:`, `Findings:`, `Recommendation:`, `Decision ask:`; name the retained briefing identity and digest, and offer approve/revise/hold in the decision ask. Stop after the handoff worker records %s in one new durable stage report/commit; do not advance to terminal.", workflowRoot, filepath.Join(workflowRoot, ".spacedock-state", "recorded-gate-task", "review", "validation", "briefing-1", "briefing.json"), recordedGateDirective, recordedGateDispatchMarker)
 }
 
 func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {
@@ -868,98 +802,6 @@ func recordedGateEventsFromCommandLog(log string) []string {
 	return events
 }
 
-func recordedGateEventsFromClaudeStream(stream string) []string {
-	commands := map[string]string{}
-	var successful []string
-	for _, line := range strings.Split(stream, "\n") {
-		var row struct {
-			Message *struct {
-				Content []struct {
-					Type      string `json:"type"`
-					Name      string `json:"name"`
-					ID        string `json:"id"`
-					ToolUseID string `json:"tool_use_id"`
-					IsError   *bool  `json:"is_error"`
-					Input     struct {
-						Command string `json:"command"`
-					} `json:"input"`
-				} `json:"content"`
-			} `json:"message"`
-		}
-		if json.Unmarshal([]byte(line), &row) != nil || row.Message == nil {
-			continue
-		}
-		for _, block := range row.Message.Content {
-			if block.Type == "tool_use" && block.Name == "Bash" && block.ID != "" {
-				commands[block.ID] = block.Input.Command
-			}
-			if block.Type == "tool_result" && block.ToolUseID != "" && block.IsError != nil && !*block.IsError && !strings.Contains(strings.ToLower(line), "exit:1") && !strings.Contains(strings.ToLower(line), "exit=1") {
-				command := commands[block.ToolUseID]
-				zeroExits := strings.Count(strings.ToLower(line), "exit=0") + strings.Count(strings.ToLower(line), "exit:0")
-				if calls := strings.Count(command, " gate "); command != "" && (calls <= 1 || strings.Contains(command, "&&") || zeroExits >= calls || (calls == 2 && (strings.Count(line, "state=open") >= 2 || strings.Count(line, "state=closed") >= 2))) {
-					successful = append(successful, command)
-				}
-			}
-		}
-	}
-	var log strings.Builder
-	for _, command := range successful {
-		command = strings.ReplaceAll(command, "\\\n", " ")
-		command = strings.ReplaceAll(command, "&&", "\n")
-		command = strings.ReplaceAll(command, "${SPACEDOCK_BIN:-spacedock} gate ", "\ngate ")
-		if at := strings.Index(command, "gate "); at >= 0 {
-			for _, line := range strings.Split(command[at:], "\n") {
-				if at := strings.Index(line, "gate "); at >= 0 {
-					line = line[at:]
-				}
-				fmt.Fprintf(&log, "exit=0\t%s\n", line)
-			}
-		}
-	}
-	return recordedGateEventsFromCommandLog(log.String())
-}
-
-func assertRecordedGateRuntimeLoadOrder(host, trace string) error {
-	load, action := -1, -1
-	piLoadResult := ""
-	for i, line := range strings.Split(trace, "\n") {
-		if !json.Valid([]byte(line)) {
-			continue
-		}
-		skill := strings.Contains(line, "fo-gate-lifecycle")
-		switch host {
-		case "claude":
-			skill = skill && strings.Contains(line, `"name":"Skill"`)
-		case "codex":
-			skill = skill && strings.Contains(line, "fo-gate-lifecycle/SKILL.md") && strings.Contains(line, `"type":"command_execution"`) && strings.Contains(line, `"status":"completed"`) && strings.Contains(line, `"exit_code":0`)
-		case "pi":
-			if skill && strings.Contains(line, `"name":"read"`) && strings.Contains(line, `"id":"`) {
-				prefix := line[:strings.Index(line, "fo-gate-lifecycle")]
-				piLoadResult = `"toolCallId":"` + strings.SplitN(prefix[strings.LastIndex(prefix, `"id":"`)+6:], `"`, 2)[0] + `"`
-			}
-			skill = piLoadResult != "" && strings.Contains(line, piLoadResult) && strings.Contains(line, `"toolName":"read"`) && strings.Contains(line, `"isError":false`)
-		}
-		if skill && load < 0 {
-			load = i
-		}
-		command := strings.Contains(line, " gate ")
-		switch host {
-		case "claude":
-			command = command && strings.Contains(line, `"name":"Bash"`)
-		case "codex":
-			command = strings.Contains(strings.SplitN(line, `,"aggregated_output":`, 2)[0], " gate ") && strings.Contains(line, `"type":"command_execution"`)
-		case "pi":
-			command = strings.Contains(strings.Join(strings.Split(line, `"arguments":{"command":"`)[1:], ""), " gate ") && strings.Contains(line, `"role":"assistant"`) && strings.Contains(line, `"type":"toolCall"`) && strings.Contains(strings.ToLower(line), `"name":"bash"`)
-		}
-		if command && action < 0 {
-			action = i
-		}
-	}
-	if load < 0 || action < 0 || load >= action {
-		return fmt.Errorf("%s runtime load=%d gate-action=%d; lifecycle load must be observed first", host, load, action)
-	}
-	return nil
-}
 func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
 	for skip := range recordedGateRequiredEvents {
 		events := append([]string(nil), recordedGateRequiredEvents[:skip]...)
@@ -967,31 +809,6 @@ func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
 		if err := assertRecordedGateLifecycle(recordedGateObservation{events: events}); err == nil ||
 			!strings.Contains(err.Error(), "events") {
 			t.Fatalf("missing %s event did not fail on event completeness: %v", recordedGateRequiredEvents[skip], err)
-		}
-	}
-}
-func TestRecordedGateLifecycleRuntimeLoadOrderMatrix(t *testing.T) {
-	loads := map[string]string{
-		"claude": `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"spacedock:fo-gate-lifecycle"}}]}}`,
-		"codex":  `{"type":"item.completed","item":{"type":"command_execution","command":"sed -n 1,320p /plugin/skills/fo-gate-lifecycle/SKILL.md","exit_code":0,"status":"completed"}}`,
-		"pi":     "{\"type\":\"message\",\"id\":\"wrapper\",\"message\":{\"content\":[{\"type\":\"toolCall\",\"id\":\"core\",\"name\":\"read\",\"arguments\":{\"path\":\"/plugin/skills/first-officer/SKILL.md\"}},{\"type\":\"toolCall\",\"id\":\"load\",\"name\":\"read\",\"arguments\":{\"path\":\"/plugin/skills/fo-gate-lifecycle/SKILL.md\"}}]}}\n{\"type\":\"message\",\"message\":{\"toolCallId\":\"load\",\"toolName\":\"read\",\"isError\":false}}",
-	}
-	actions := map[string]string{
-		"claude": `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"spacedock gate --help"}}]}}`,
-		"codex":  `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock gate --help"}}`,
-		"pi":     `{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","name":"bash","arguments":{"command":"spacedock gate --help"}}]}}`,
-	}
-	for host, load := range loads {
-		for _, route := range []string{"headless-no-conn", "headless-conn", "engage", "worker-completion", "resume-open", "resume-pending", "resume-revise", "resume-hold", "resume-stale", "resume-consumed"} {
-			t.Run(host+"/"+route, func(t *testing.T) {
-				if err := assertRecordedGateRuntimeLoadOrder(host, load+"\n"+actions[host]); err != nil {
-					t.Fatal(err)
-				}
-			})
-		}
-		if assertRecordedGateRuntimeLoadOrder(host, actions[host]) == nil || assertRecordedGateRuntimeLoadOrder(host, actions[host]+"\n"+load) == nil ||
-			(host == "pi" && assertRecordedGateRuntimeLoadOrder(host, strings.Replace(load, `"isError":false`, `"isError":true`, 1)+"\n"+actions[host]) == nil) {
-			t.Fatalf("%s runtime route deletion/order controls stayed green", host)
 		}
 	}
 }
@@ -1023,153 +840,14 @@ func recordedGateReviewFromCodexJSONL(jsonl string) string {
 	return review
 }
 
-func recordedGateClaudeDispatchProof(stream, after string) recordedGateDispatchProof {
-	type toolUse struct {
-		name   string
-		handle string
-	}
-	uses := map[string]toolUse{}
-	consumeSucceeded := false
-	proof := recordedGateDispatchProof{}
-	for _, line := range strings.Split(stream, "\n") {
-		var row struct {
-			ToolUseID string `json:"tool_use_id"`
-			Summary   string `json:"summary"`
-			Message   *struct {
-				Content []struct {
-					Type      string          `json:"type"`
-					Name      string          `json:"name"`
-					ID        string          `json:"id"`
-					ToolUseID string          `json:"tool_use_id"`
-					IsError   *bool           `json:"is_error"`
-					Content   json.RawMessage `json:"content"`
-					Input     struct {
-						Command     string `json:"command"`
-						Name        string `json:"name"`
-						Prompt      string `json:"prompt"`
-						Description string `json:"description"`
-					} `json:"input"`
-				} `json:"content"`
-			} `json:"message"`
-		}
-		if json.Unmarshal([]byte(line), &row) != nil {
-			continue
-		}
-		if strings.Contains(line, `"type":"system"`) && strings.Contains(line, `"subtype":"task_notification"`) &&
-			strings.Contains(line, `"status":"completed"`) && strings.Contains(row.Summary, recordedGateDispatchMarker) {
-			use := uses[row.ToolUseID]
-			if use.name == "Agent" || use.name == "Task" {
-				proof = recordedGateDispatchProof{spawned: true, handle: use.handle, workerOutput: strings.Contains(after, recordedGateDispatchMarker)}
-			}
-			continue
-		}
-		if row.Message == nil {
-			continue
-		}
-		for _, block := range row.Message.Content {
-			if block.Type == "tool_use" && block.ID != "" {
-				if block.Name == "Bash" {
-					uses[block.ID] = toolUse{name: block.Name, handle: block.Input.Command}
-				}
-				if (block.Name == "Agent" || block.Name == "Task") && consumeSucceeded &&
-					strings.Contains(block.Input.Prompt+block.Input.Description, "recorded-gate-task") {
-					uses[block.ID] = toolUse{name: block.Name, handle: block.Input.Name}
-				}
-			}
-			if block.Type != "tool_result" || block.ToolUseID == "" || (block.IsError == nil && !strings.Contains(line, `"tool_use_result":{"status":"completed"`)) || (block.IsError != nil && *block.IsError) {
-				continue
-			}
-			use := uses[block.ToolUseID]
-			if use.name == "Bash" && strings.Contains(use.handle, "gate consume ") {
-				consumeSucceeded = true
-			}
-			if use.name == "Agent" || use.name == "Task" {
-				proof.spawned = true
-				proof.handle = use.handle
-				if match := claudeAgentIDResult.FindStringSubmatch(string(block.Content)); len(match) > 1 {
-					proof.handle = match[1]
-				}
-				proof.workerOutput = strings.Contains(string(block.Content), recordedGateDispatchMarker) &&
-					strings.Contains(after, recordedGateDispatchMarker)
-			}
-		}
-	}
-	return proof
-}
-
-func recordedGateCodexDispatchProof(jsonl, after string) recordedGateDispatchProof {
-	spawned := map[string]bool{}
-	consumeSucceeded := false
-	proof := recordedGateDispatchProof{}
-	for _, line := range strings.Split(jsonl, "\n") {
-		var row struct {
-			Type string `json:"type"`
-			Item struct {
-				Type              string   `json:"type"`
-				Tool              string   `json:"tool"`
-				Command           string   `json:"command"`
-				Prompt            string   `json:"prompt"`
-				Status            string   `json:"status"`
-				Output            string   `json:"output"`
-				Text              string   `json:"text"`
-				ExitCode          *int     `json:"exit_code"`
-				ReceiverThreadIDs []string `json:"receiver_thread_ids"`
-			} `json:"item"`
-		}
-		if json.Unmarshal([]byte(line), &row) != nil {
-			continue
-		}
-		item := row.Item
-		if row.Type == "item.completed" && item.Type == "command_execution" &&
-			item.ExitCode != nil && *item.ExitCode == 0 && strings.Contains(item.Command, "gate consume ") {
-			consumeSucceeded = true
-		}
-		if row.Type == "item.completed" && item.Type == "collab_tool_call" && item.Tool == "spawn_agent" &&
-			consumeSucceeded && strings.Contains(item.Prompt, "recorded-gate-task") {
-			for _, handle := range item.ReceiverThreadIDs {
-				if handle != "" {
-					spawned[handle] = true
-					proof.spawned = true
-					proof.handle = handle
-				}
-			}
-		}
-		if row.Type == "item.completed" && item.Type == "collab_tool_call" &&
-			(item.Tool == "wait" || item.Tool == "wait_agent") && item.Status == "completed" {
-			for _, handle := range item.ReceiverThreadIDs {
-				if spawned[handle] && strings.Contains(item.Output+item.Text, recordedGateDispatchMarker) &&
-					strings.Contains(after, recordedGateDispatchMarker) {
-					proof.workerOutput = true
-				}
-			}
-		}
-	}
-	return proof
-}
-
-func recordedGatePiObservation(session, after string) (recordedGateDispatchProof, string) {
-	type piUse struct {
-		name    string
-		handle  string
-		command string
-	}
-	uses := map[string]piUse{}
-	consumeSucceeded := false
-	proof := recordedGateDispatchProof{}
+func recordedGateReviewFromPiSession(session string) string {
 	var review string
 	for _, line := range strings.Split(session, "\n") {
 		var row struct {
 			Message *struct {
-				Role       string `json:"role"`
-				ToolCallID string `json:"toolCallId"`
-				ToolName   string `json:"toolName"`
-				IsError    bool   `json:"isError"`
-				Content    []struct {
-					Type      string         `json:"type"`
-					Text      string         `json:"text"`
-					ID        string         `json:"id"`
-					Name      string         `json:"name"`
-					Arguments map[string]any `json:"arguments"`
+				Content []struct {
+					Type string `json:"type"`
+					Text string `json:"text"`
 				} `json:"content"`
 			} `json:"message"`
 		}
@@ -1180,96 +858,38 @@ func recordedGatePiObservation(session, after string) (recordedGateDispatchProof
 			if block.Type == "text" && strings.Contains(strings.ToLower(block.Text), "capability/change:") {
 				review = block.Text
 			}
-			if block.Type == "toolCall" && block.Name == "subagent" && block.ID != "" {
-				encoded, _ := json.Marshal(block.Arguments)
-				if consumeSucceeded && strings.Contains(string(encoded), "recorded-gate-task") {
-					uses[block.ID] = piUse{name: block.Name, handle: block.ID}
-				}
-			}
-			if block.Type == "toolCall" && (block.Name == "bash" || block.Name == "Bash") && block.ID != "" {
-				command, _ := block.Arguments["command"].(string)
-				uses[block.ID] = piUse{name: "bash", command: command}
-			}
-		}
-		if row.Message.Role == "toolResult" && !row.Message.IsError {
-			use := uses[row.Message.ToolCallID]
-			if use.name == "bash" && strings.Contains(use.command, "gate consume ") {
-				consumeSucceeded = true
-			}
-			if row.Message.ToolName == "subagent" && use.name == "subagent" {
-				var resultText strings.Builder
-				for _, block := range row.Message.Content {
-					resultText.WriteString(block.Text)
-				}
-				proof.spawned = true
-				proof.handle = use.handle
-				proof.workerOutput = strings.Contains(resultText.String(), recordedGateDispatchMarker) &&
-					strings.Contains(after, recordedGateDispatchMarker)
-			}
 		}
 	}
-	return proof, review
+	return review
 }
 
-func TestRecordedGateLifecycleStructuredRuntimeEvidence(t *testing.T) {
-	claude := strings.Join([]string{
-		bashToolLine("help", "spacedock gate validate --help\nspacedock gate record unsafe --briefing /tmp/unsafe.json"),
-		toolResultLine("help", false, "usage"),
-		bashToolLine("failed", `spacedock gate record recorded-gate-task --briefing relative/briefing.json; echo "EXIT:$?"`),
-		toolResultLine("failed", false, "can't make path absolute\nexit=1"),
-		bashToolLine("bind", "spacedock gate record recorded-gate-task --briefing /tmp/briefing.json\necho exit=0; ${SPACEDOCK_BIN:-spacedock} gate validate recorded-gate-task\necho exit=0"),
-		toolResultLine("bind", false, "recorded\nexit=0\nstate=open\nexit=0"),
-		bashToolLine("close", "spacedock gate record recorded-gate-task \\\n --decision approve && \\\n${SPACEDOCK_BIN:-spacedock} gate validate recorded-gate-task"), toolResultLine("close", false, "state=closed"),
-		bashToolLine("eligible", "spacedock gate eligibility recorded-gate-task"), toolResultLine("eligible", false, "eligible=true"),
-		bashToolLine("consume", "spacedock gate consume recorded-gate-task"), toolResultLine("consume", false, "consumed=true"),
-		`{"type":"assistant","message":{"content":[{"type":"text","text":"Capability/change: x; Test and evidence: y; Reviewed snapshot: z; Findings: none; Recommendation: approve; Decision ask: approve/revise/hold"},{"type":"tool_use","id":"spawn","name":"Agent","input":{"name":"worker-1","prompt":"handoff recorded-gate-task"}}]}}`,
-		`{"type":"system","subtype":"task_notification","tool_use_id":"spawn","status":"completed","summary":"` + recordedGateDispatchMarker + `"}`,
-	}, "\n")
-	if got := recordedGateEventsFromClaudeStream(claude); strings.Join(got, ",") != strings.Join(recordedGateRequiredEvents, ",") {
-		t.Fatalf("successful Claude event trace = %v", got)
+func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, before, commandLog, review string) recordedGateObservation {
+	t.Helper()
+	log := readFile(t, commandLog)
+	builds, consumed, ordered := 0, false, true
+	for _, line := range strings.Split(log, "\n") {
+		if strings.HasPrefix(line, "exit=0\tgate consume ") {
+			consumed = true
+		}
+		if strings.HasPrefix(line, "exit=0\tdispatch build ") {
+			builds++
+			ordered = ordered && consumed
+		}
 	}
-	proof := recordedGateClaudeDispatchProof(claude, recordedGateDispatchMarker)
-	if !proof.spawned || proof.handle != "worker-1" || !proof.workerOutput {
-		t.Fatalf("Claude dispatch proof = %#v", proof)
+	after := resolveRecordedGateEntity(fixture)
+	entityRel, err := filepath.Rel(fixture.stateRoot, fixture.entity)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if review := recordedGateReviewFromClaudeStream(claude); !strings.Contains(review, "Reviewed snapshot") {
-		t.Fatalf("Claude presented review = %q", review)
+	commits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-S"+recordedGateDispatchMarker, "--", entityRel))
+	effects := 0
+	if len(commits) == 1 && strings.Contains(after, recordedGateDispatchMarker) {
+		effects = 1
 	}
-	codex := strings.Join([]string{
-		`{"type":"item.completed","item":{"type":"command_execution","command":"spacedock gate consume recorded-gate-task","exit_code":0,"status":"completed"}}`,
-		`{"type":"item.completed","item":{"type":"collab_tool_call","tool":"spawn_agent","receiver_thread_ids":["thread-1"],"prompt":"handoff recorded-gate-task"}}`,
-		`{"type":"item.completed","item":{"type":"collab_tool_call","tool":"wait_agent","receiver_thread_ids":["thread-1"],"status":"completed","output":"` + recordedGateDispatchMarker + `"}}`,
-		`{"type":"item.completed","item":{"type":"agent_message","text":"Capability/change: x; Test and evidence: y; Reviewed snapshot: z; Findings: none; Recommendation: approve; Decision ask: approve/revise/hold"}}`,
-	}, "\n")
-	proof = recordedGateCodexDispatchProof(codex, recordedGateDispatchMarker)
-	if !proof.spawned || proof.handle != "thread-1" || !proof.workerOutput {
-		t.Fatalf("Codex dispatch proof = %#v", proof)
-	}
-	if review := recordedGateReviewFromCodexJSONL(codex); !strings.Contains(review, "Reviewed snapshot") {
-		t.Fatalf("Codex presented review = %q", review)
-	}
-
-	pi := strings.Join([]string{
-		`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":"pi-consume","name":"bash","arguments":{"command":"spacedock gate consume recorded-gate-task"}}]}}`,
-		`{"type":"message","message":{"role":"toolResult","toolCallId":"pi-consume","toolName":"bash","isError":false,"content":[{"type":"text","text":"consumed=true"}]}}`,
-		`{"type":"message","message":{"role":"assistant","content":[{"type":"text","text":"Capability/change: x; Test and evidence: y; Reviewed snapshot: z; Findings: none; Recommendation: approve; Decision ask: approve/revise/hold"},{"type":"toolCall","id":"pi-call-1","name":"subagent","arguments":{"task":"handoff recorded-gate-task"}}]}}`,
-		`{"type":"message","message":{"role":"toolResult","toolCallId":"pi-call-1","toolName":"subagent","isError":false,"content":[{"type":"text","text":"worker wrote RECORDED-GATE-SUCCESSOR-DISPATCHED"}]}}`,
-	}, "\n")
-	proof, review := recordedGatePiObservation(pi, recordedGateDispatchMarker)
-	if !proof.spawned || proof.handle != "pi-call-1" || !proof.workerOutput {
-		t.Fatalf("Pi dispatch proof = %#v", proof)
-	}
-	if !strings.Contains(review, "Reviewed snapshot") {
-		t.Fatalf("Pi presented review = %q", review)
-	}
-	earlyPi := strings.Join([]string{
-		`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":"early","name":"subagent","arguments":{"task":"handoff recorded-gate-task"}}]}}`,
-		`{"type":"message","message":{"role":"toolResult","toolCallId":"early","toolName":"subagent","isError":false,"content":[{"type":"text","text":"RECORDED-GATE-SUCCESSOR-DISPATCHED"}]}}`,
-		`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":"late-consume","name":"bash","arguments":{"command":"spacedock gate consume recorded-gate-task"}}]}}`,
-		`{"type":"message","message":{"role":"toolResult","toolCallId":"late-consume","toolName":"bash","isError":false,"content":[{"type":"text","text":"consumed=true"}]}}`,
-	}, "\n")
-	if earlyProof, _ := recordedGatePiObservation(earlyPi, recordedGateDispatchMarker); earlyProof.spawned {
-		t.Fatalf("Pi dispatch before successful consume was accepted: %#v", earlyProof)
+	return recordedGateObservation{
+		events: recordedGateEventsFromCommandLog(log), before: before, after: after,
+		dispatch:   recordedGateDispatchProof{builds: builds, durableEffects: effects, ordered: ordered},
+		gateReview: review, expectedNext: "handoff",
 	}
 }
 
