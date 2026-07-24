@@ -97,6 +97,27 @@ func TestGateImplicitWorkflowUsesOwningDefinitionFromNestedDirectory(t *testing.
 	}
 }
 
+func TestGateReviewVerbIsAbsentAndSideEffectFree(t *testing.T) {
+	root := t.TempDir()
+	before, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "review", "task"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: record|validate|eligibility|consume)") {
+		t.Fatalf("gate review exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(before) != len(after) {
+		t.Fatalf("rejected presentation verb changed working directory: before=%v after=%v", before, after)
+	}
+}
+
 func TestGateRecordRejectsNonCanonicalBriefingBasenameBeforeMutation(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n---\n# Workflow\n")
@@ -249,12 +270,14 @@ func TestGateEligibilityAndConsumeAuthorizeOnce(t *testing.T) {
 	}
 }
 
-func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) {
-	root, entity, briefing := unboundSemanticDecisionFixture(t)
-	result := filepath.Join(root, "result.json")
-	association := filepath.Join(root, "association.json")
-	copyGateTestdata(t, result, "exact-review-v1-result.json")
-	copyGateTestdata(t, association, "exact-review-v1-association.json")
+func TestGateRecordConsumesDirectBindingResultFromPreparedRoom(t *testing.T) {
+	root, entity, room := unboundGateRoomFixture(t)
+	briefing := filepath.Join(room, "briefing.json")
+	result := filepath.Join(room, "provider", "result.json")
+	exactResult, err := os.ReadFile(result)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var out, errOut bytes.Buffer
 	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
@@ -268,43 +291,135 @@ func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) 
 	if got := bound.Records[0].Attempts[0].Briefing.RoomRef; got != "./review/validation/briefing-1" {
 		t.Fatalf("accepted binding room-ref = %q", got)
 	}
+	if got := bound.Records[0].Attempts[0].Briefing.RequestDigest; got != "sha256:496172699eab13da987713c31a3ee9d01b9ccc0a694565ad4a6732c809a9cb91" {
+		t.Fatalf("accepted binding request-digest = %q", got)
+	}
 	out.Reset()
 	errOut.Reset()
-	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-	if code != 2 || !strings.Contains(errOut.String(), "--association") {
-		t.Fatalf("result without association exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--association", filepath.Join(root, "association.json"), "--actor", "person:captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 2 || !strings.Contains(errOut.String(), "unknown gate flag: --result") {
+		t.Fatalf("legacy verbose result handoff exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	before, err := os.ReadFile(entity)
 	if err != nil {
 		t.Fatal(err)
 	}
-	primaryOnlyPath := filepath.Join(root, "primary-only-association.json")
-	copyGateTestdata(t, primaryOnlyPath, "exact-review-v1-association-truncated.json")
+
+	inventory := filepath.Join(room, "provider", "presented-inventory.json")
+	var presented struct {
+		Items []map[string]any `json:"items"`
+	}
+	inventoryBytes, err := os.ReadFile(inventory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(inventoryBytes, &presented); err != nil {
+		t.Fatal(err)
+	}
+	presented.Items = presented.Items[:2]
+	truncated, err := json.Marshal(presented)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, inventory, string(truncated))
 	out.Reset()
 	errOut.Reset()
-	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--association", primaryOnlyPath, "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 1 || !strings.Contains(errOut.String(), "complete presentation mapping") {
-		t.Fatalf("primary-only association exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		t.Fatalf("truncated room inventory exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	afterFailed, err := os.ReadFile(entity)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !bytes.Equal(afterFailed, before) {
-		t.Fatal("rejected primary-only association changed the entity")
+		t.Fatal("rejected incomplete room changed the entity")
 	}
+	copyGateTestdata(t, inventory, filepath.Join("gate-room", "provider", "presented-inventory.json"))
+	if err := json.Unmarshal(inventoryBytes, &presented); err != nil {
+		t.Fatal(err)
+	}
+	presented.Items[1]["type"] = "Artifact"
+	mistyped, err := json.Marshal(presented)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, inventory, string(mistyped))
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "complete presentation mapping") {
+		t.Fatalf("mistyped Reference exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	afterFailed, err = os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(afterFailed, before) {
+		t.Fatal("rejected mistyped Reference changed the entity")
+	}
+	for _, tc := range []struct{ name, old, replacement string }{
+		{"duplicate id", `"id": "reference:recorder-contract"`, `"id": "reference:entity-snapshot"`},
+		{"wrong revision", `"rev": "sha256:32af4e65fa5a60961b5181d9f2ae1da73001fe28f40d84fcea8be275b1be8684"`, `"rev": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`},
+	} {
+		writeFile(t, inventory, strings.Replace(string(inventoryBytes), tc.old, tc.replacement, 1))
+		out.Reset()
+		errOut.Reset()
+		code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 1 || !strings.Contains(errOut.String(), "complete presentation mapping") {
+			t.Fatalf("%s inventory exit=%d stdout=%q stderr=%q", tc.name, code, out.String(), errOut.String())
+		}
+		afterFailed, err = os.ReadFile(entity)
+		if err != nil || !bytes.Equal(afterFailed, before) {
+			t.Fatalf("%s inventory changed entity: %v", tc.name, err)
+		}
+	}
+	copyGateTestdata(t, inventory, filepath.Join("gate-room", "provider", "presented-inventory.json"))
+
+	var referenceResult map[string]any
+	resultBytes, err := os.ReadFile(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(resultBytes, &referenceResult); err != nil {
+		t.Fatal(err)
+	}
+	referenceResult["artifact"] = map[string]any{
+		"id":  "reference:entity-snapshot",
+		"uri": "entity-snapshot.md",
+		"rev": "sha256:32af4e65fa5a60961b5181d9f2ae1da73001fe28f40d84fcea8be275b1be8684",
+	}
+	mistypedResult, err := json.Marshal(referenceResult)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, result, string(mistypedResult))
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "exact Result artifact") {
+		t.Fatalf("Reference primary artifact exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	afterFailed, err = os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(afterFailed, before) {
+		t.Fatal("rejected Reference primary artifact changed the entity")
+	}
+	copyGateTestdata(t, result, filepath.Join("gate-room", "provider", "result.json"))
 
 	out.Reset()
 	errOut.Reset()
-	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--result", result, "--association", association, "--actor", "person:reviewer", "--adoption-note", "Adopted by the captain"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 0 {
-		t.Fatalf("record result exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		t.Fatalf("record room exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	body, err := os.ReadFile(entity)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"id: resolution:actor-1784675152206198000", "briefing: briefing:docs-dev:3k:validation:attempt-1:revision-1", "decision: revise", "adoption-note: Adopted by the captain"} {
+	for _, want := range []string{"id: resolution:captain-validation-1", "briefing: briefing:docs-dev:3k:validation:attempt-1:revision-1", "by: person:captain", "decision: approve"} {
 		if !strings.Contains(string(body), want) {
 			t.Fatalf("recorded Result missing %q:\n%s", want, body)
 		}
@@ -312,6 +427,10 @@ func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) 
 	doc, _, err := gates.Read(entity)
 	if err != nil {
 		t.Fatal(err)
+	}
+	evidence := doc.Records[0].Attempts[0].ProviderEvidence
+	if evidence == nil || evidence.ResultDigest != gates.RawDigest(exactResult) || evidence.PresentedInventoryDigest != gates.RawDigest(inventoryBytes) {
+		t.Fatalf("stored provider evidence = %#v", evidence)
 	}
 	resolutionBytes, err := json.Marshal(doc.Records[0].Attempts[0].Resolution)
 	if err != nil {
@@ -326,20 +445,541 @@ func TestGateRecordConsumesExactResultOnlyWithCompleteAssociation(t *testing.T) 
 			t.Fatalf("provider wrapper field %q crossed the portable boundary: %s", wrapperField, resolutionBytes)
 		}
 	}
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "does not bind the derived gate") {
+		t.Fatalf("stale successor request exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	afterSuccessor, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(afterSuccessor, body) {
+		t.Fatal("stale successor request changed the closed entity")
+	}
+	for _, tc := range []struct {
+		path, want string
+		original   []byte
+	}{
+		{result, "provider/result.json", exactResult},
+		{inventory, "provider/presented-inventory.json", inventoryBytes},
+	} {
+		writeFile(t, tc.path, string(append(append([]byte{}, tc.original...), '\n')))
+		out.Reset()
+		errOut.Reset()
+		code = run(context.Background(), []string{"gate", "validate", "task", "--workflow-dir", root}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 1 || !strings.Contains(errOut.String(), tc.want) || !strings.Contains(errOut.String(), "frozen digest") {
+			t.Fatalf("tampered retained evidence exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		}
+		writeFile(t, tc.path, string(tc.original))
+		if err := os.Remove(tc.path); err != nil {
+			t.Fatal(err)
+		}
+		out.Reset()
+		errOut.Reset()
+		code = run(context.Background(), []string{"gate", "validate", "task", "--workflow-dir", root}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 1 || !strings.Contains(errOut.String(), tc.want) || !strings.Contains(errOut.String(), "no such file") {
+			t.Fatalf("missing retained evidence exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		}
+		writeFile(t, tc.path, string(tc.original))
+	}
+	out.Reset()
+	errOut.Reset()
+	if code = run(context.Background(), []string{"gate", "validate", "task", "--workflow-dir", root}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil); code != 0 {
+		t.Fatalf("restored retained evidence exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
 }
 
-func unboundSemanticDecisionFixture(t *testing.T) (root, entity, briefing string) {
+func TestGateRoomRejectsRequestAuthorityRebindingWithoutMutation(t *testing.T) {
+	root, entity, room := unboundGateRoomFixture(t)
+	briefing := filepath.Join(room, "briefing.json")
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("bind room exit=%d stderr=%q", code, errOut.String())
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	requestPath := filepath.Join(room, "request.json")
+	request, err := os.ReadFile(requestPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, requestPath, strings.ReplaceAll(string(request), "person:captain", "agent:first-officer"))
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "captain authority") {
+		t.Fatalf("authority rebind exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("rejected authority rebind changed the entity")
+	}
+}
+
+func TestGateRoomRejectsRequestBackedRoomMoveWithoutMutation(t *testing.T) {
+	root, entity, room := unboundGateRoomFixture(t)
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("bind room exit=%d stderr=%q", code, errOut.String())
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	movedRoom := filepath.Join(root, "review", "validation", "briefing-copy")
+	if err := os.MkdirAll(movedRoom, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	copyGateTestdata(t, filepath.Join(movedRoom, "briefing.json"), filepath.Join("gate-room", "briefing.json"))
+	copyGateTestdata(t, filepath.Join(movedRoom, "request.json"), filepath.Join("gate-room", "request.json"))
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(movedRoom, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "binding is frozen") {
+		t.Fatalf("room move exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("rejected room move changed the entity")
+	}
+}
+
+func TestGateRoomRejectsBriefingOnlyAttemptWithoutFrozenRequest(t *testing.T) {
+	root, entity, room := unboundGateRoomFixture(t)
+	requestPath := filepath.Join(room, "request.json")
+	if err := os.Remove(requestPath); err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("bind briefing-only attempt exit=%d stderr=%q", code, errOut.String())
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	copyGateTestdata(t, requestPath, filepath.Join("gate-room", "request.json"))
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "binding is frozen") {
+		t.Fatalf("briefing-only authority rebind exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("rejected briefing-only authority rebind changed the entity")
+	}
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "frozen request digest") {
+		t.Fatalf("briefing-only room exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err = os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("rejected briefing-only room changed the entity")
+	}
+}
+
+func TestGateBriefingRejectsMalformedReferenceBeforeBinding(t *testing.T) {
+	root, entity, room := unboundGateRoomFixture(t)
+	briefingPath := filepath.Join(room, "briefing.json")
+	var briefing map[string]any
+	briefingBytes, err := os.ReadFile(briefingPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(briefingBytes, &briefing); err != nil {
+		t.Fatal(err)
+	}
+	contextItems := briefing["context"].([]any)
+	contextItems[0].(map[string]any)["rev"] = "mutable"
+	malformed, err := json.Marshal(briefing)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, briefingPath, string(malformed))
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefingPath}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "canonical Briefing") {
+		t.Fatalf("malformed Reference bind exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("malformed Reference froze an attempt")
+	}
+}
+
+func TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(t *testing.T, room string)
+		want   string
+	}{
+		{
+			name: "advisory status",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
+				result["status"] = "advisory"
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "advisory Result remains evidence",
+		},
+		{
+			name: "advisory binding",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
+				result["binding"] = false
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "advisory Result remains evidence",
+		},
+		{
+			name: "advisory actor",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
+				result["actor"] = "agent:reviewer"
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "advisory Result remains evidence",
+		},
+		{
+			name: "advisory approver",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
+				result["approver"] = "person:captain"
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "advisory Result remains evidence",
+		},
+		{
+			name: "advisory resolution id",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
+				result["resolutionId"] = "resolution:wrapper"
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "advisory Result remains evidence",
+		},
+		{
+			name: "null advisory field is still present",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
+				result["binding"] = nil
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "advisory Result remains evidence",
+		},
+		{
+			name: "unknown top-level field",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
+				result["futureAuthority"] = "agent:other"
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "unknown top-level field",
+		},
+		{
+			name: "unknown nested Resolution authority",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, strings.Replace(string(body), `"by":"person:captain"`, `"by":"person:captain","actor":"agent:first-officer"`, 1))
+			},
+			want: "unknown field",
+		},
+		{
+			name: "nested adoption provenance",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, strings.Replace(string(body), `"decision":"approve"`, `"decision":"approve","adoption-note":"captain adopted advisory output"`, 1))
+			},
+			want: "cannot carry adoption provenance",
+		},
+		{
+			name: "wrong authority",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, strings.Replace(string(body), `"by":"person:captain"`, `"by":"agent:first-officer"`, 1))
+			},
+			want: "request authority",
+		},
+		{
+			name: "wrong provider briefing",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, strings.ReplaceAll(string(body), "briefing:docs-dev:3k:validation:attempt-1:revision-1", "briefing:provider:other"))
+			},
+			want: "canonical Briefing",
+		},
+		{
+			name: "canonical Briefing changed after binding",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "briefing.json")
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, strings.Replace(string(body), "Should this exact candidate proceed to merge?", "Should a different candidate proceed to merge?", 1))
+			},
+			want: "frozen digest",
+		},
+		{
+			name: "authority changed after binding",
+			mutate: func(t *testing.T, room string) {
+				requestPath := filepath.Join(room, "request.json")
+				request, err := os.ReadFile(requestPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, requestPath, strings.ReplaceAll(string(request), "person:captain", "agent:first-officer"))
+				resultPath := filepath.Join(room, "provider", "result.json")
+				result, err := os.ReadFile(resultPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, resultPath, strings.Replace(string(result), `"by":"person:captain"`, `"by":"agent:first-officer"`, 1))
+			},
+			want: "frozen request digest",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			root, entity, room := unboundGateRoomFixture(t)
+			var out, errOut bytes.Buffer
+			code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+			if code != 0 {
+				t.Fatalf("bind room exit=%d stderr=%q", code, errOut.String())
+			}
+			before, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tc.mutate(t, room)
+			out.Reset()
+			errOut.Reset()
+			code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+			if code != 1 || !strings.Contains(errOut.String(), tc.want) {
+				t.Fatalf("record room exit=%d stdout=%q stderr=%q, want %q", code, out.String(), errOut.String(), tc.want)
+			}
+			after, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(after, before) {
+				t.Fatal("rejected room changed entity")
+			}
+		})
+	}
+}
+
+func TestGateRoomRejectsDistinctAuthorityAndDifferentRoomWithoutMutation(t *testing.T) {
+	requestCases := []struct{ name, old, replacement string }{
+		{"distinct authority", `"actor": "person:captain"`, `"actor": "agent:first-officer"`},
+		{"wrong gate", `"gate": "gate:docs-dev:3k:validation"`, `"gate": "gate:other"`},
+		{"wrong attempt", `"attempt": "gate-attempt:3k-validation-1"`, `"attempt": "gate-attempt:other"`},
+		{"wrong Briefing", `"id": "briefing:docs-dev:3k:validation:attempt-1:revision-1"`, `"id": "briefing:other"`},
+		{"wrong Briefing digest", `"digest": "sha256:b7d818fc8d0355db7ca7543e7623fe38b6080c35be0602795eb8734ea6199ec5"`, `"digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`},
+	}
+	for _, tc := range requestCases {
+		t.Run(tc.name, func(t *testing.T) {
+			root, entity, room := unboundGateRoomFixture(t)
+			requestPath := filepath.Join(room, "request.json")
+			request, err := os.ReadFile(requestPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeFile(t, requestPath, strings.Replace(string(request), tc.old, tc.replacement, 1))
+			before, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var out, errOut bytes.Buffer
+			code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+			if code != 1 || !strings.Contains(errOut.String(), "does not bind the derived gate") {
+				t.Fatalf("invalid request bind exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+			}
+			after, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(after, before) {
+				t.Fatal("invalid request froze an entity binding")
+			}
+		})
+	}
+
+	t.Run("different room", func(t *testing.T) {
+		root, entity, room := unboundGateRoomFixture(t)
+		var out, errOut bytes.Buffer
+		code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 0 {
+			t.Fatalf("bind room exit=%d stderr=%q", code, errOut.String())
+		}
+		before, err := os.ReadFile(entity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out.Reset()
+		errOut.Reset()
+		code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", filepath.Join(root, "other-room")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 1 || !strings.Contains(errOut.String(), "bound gate room") {
+			t.Fatalf("different room exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		}
+		after, err := os.ReadFile(entity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(after, before) {
+			t.Fatal("different room changed entity")
+		}
+	})
+}
+
+func unboundGateRoomFixture(t *testing.T) (root, entity, room string) {
 	t.Helper()
 	root = t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n    - name: done\n      terminal: true\n---\n# Workflow\n")
 	entity = filepath.Join(root, "task.md")
 	writeFile(t, entity, "---\nstatus: validation\ntitle: Task\n---\n# Task\n")
-	briefing = filepath.Join(root, "review", "validation", "briefing-1", "briefing.json")
-	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
+	room = filepath.Join(root, "review", "validation", "briefing-1")
+	if err := os.MkdirAll(filepath.Join(room, "provider"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	copyGateTestdata(t, briefing, "exact-validation-briefing.json")
-	return root, entity, briefing
+	for _, name := range []string{"briefing.json", "request.json", filepath.Join("provider", "result.json"), filepath.Join("provider", "presented-inventory.json")} {
+		copyGateTestdata(t, filepath.Join(room, name), filepath.Join("gate-room", name))
+	}
+	return root, entity, room
 }
 
 func TestGateRecordChatDecisionAndRejectsOperationInterface(t *testing.T) {

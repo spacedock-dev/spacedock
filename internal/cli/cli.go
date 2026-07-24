@@ -165,7 +165,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing PATH/briefing.json [--workflow-dir DIR]\n       spacedock gate record <entity> --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]")
+				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing PATH/briefing.json [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]")
 				return nil
 			}
 			if len(args) < 2 || (args[0] != "record" && args[0] != "validate" && args[0] != "eligibility" && args[0] != "consume") {
@@ -184,14 +184,10 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					workflowDir = args[i+1]
 				case "--briefing":
 					input.BriefingPath = args[i+1]
-				case "--result":
-					input.ResultPath = args[i+1]
-				case "--association":
-					input.AssociationPath = args[i+1]
+				case "--room":
+					input.RoomPath = args[i+1]
 				case "--actor":
 					input.Actor = args[i+1]
-				case "--adoption-note":
-					input.AdoptionNote = args[i+1]
 				case "--decision":
 					input.Decision = args[i+1]
 				case "--reason":
@@ -281,24 +277,20 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				return printRound(summary, err, stdout, stderr)
 			}
 			sources := 0
-			for _, source := range []string{input.BriefingPath, input.ResultPath, input.Decision} {
+			for _, source := range []string{input.BriefingPath, input.RoomPath, input.Decision} {
 				if source != "" {
 					sources++
 				}
 			}
 			if sources != 1 {
-				fmt.Fprintln(stderr, "Error: gate record requires exactly one of --briefing, --result, or --decision")
-				return exitCodeError{2}
-			}
-			if input.ResultPath != "" && (input.AssociationPath == "" || input.Actor == "") {
-				fmt.Fprintln(stderr, "Error: --result requires --association FILE and --actor ID")
+				fmt.Fprintln(stderr, "Error: gate record requires exactly one of --briefing, --room, or --decision")
 				return exitCodeError{2}
 			}
 			if input.Decision != "" && input.Actor == "" {
 				fmt.Fprintln(stderr, "Error: --decision requires --actor ID")
 				return exitCodeError{2}
 			}
-			if input.BriefingPath != "" && (input.AssociationPath != "" || input.Actor != "" || input.AdoptionNote != "" || input.Reason != "" || input.Directive != "") || input.ResultPath != "" && (input.Reason != "" || input.Directive != "") || input.Decision != "" && (input.AssociationPath != "" || input.AdoptionNote != "") {
+			if input.BriefingPath != "" && (input.RoomPath != "" || input.Actor != "" || input.Reason != "" || input.Directive != "") || input.RoomPath != "" && (input.Actor != "" || input.Reason != "" || input.Directive != "") {
 				fmt.Fprintln(stderr, "Error: gate record flags do not match the selected semantic source")
 				return exitCodeError{2}
 			}

@@ -33,7 +33,11 @@ gates:
             id: briefing:sample-validation-1a
             digest: sha256:3333333333333333333333333333333333333333333333333333333333333333
             digest-domain: canonical-bytes
+            request-digest: sha256:4444444444444444444444444444444444444444444444444444444444444444
             room-ref: ./review/validation/briefing-1
+          provider-evidence:
+            result-digest: sha256:5555555555555555555555555555555555555555555555555555555555555555
+            presented-inventory-digest: sha256:6666666666666666666666666666666666666666666666666666666666666666
           resolution:
             type: Resolution
             id: resolution:captain-sample-validation-1a
@@ -68,6 +72,10 @@ reference. The approved domains are:
 - `raw-file-pin`: an explicitly labelled raw-byte pin that may remain in a canonical v1
   record. It is never silently reinterpreted as a canonical digest.
 
+A prepared provider room also binds `request-digest`, the JCS digest of its
+`request.json`. Chat-only attempts may omit it. Changing request authority after the
+attempt binds therefore fails before Result validation or entity mutation.
+
 ## Recorder lifecycle
 
 `spacedock gate record` derives lifecycle under the entity lock:
@@ -89,24 +97,31 @@ target record but does not modify either record's earlier closures.
 
 ## Provider Result association
 
-The provider form consumes exact `review-v1-result` bytes plus a retained
-`spacedock-result-association` v1. The association binds:
+The provider form consumes one prepared gate room. Its frozen `request.json` binds the
+logical gate, attempt, canonical Briefing id and digest, and captain actor/approver authority.
+Delegated First Officer decisions remain on the chat decision form with a quoted directive;
+the attempt's `request-digest` rejects post-binding request changes.
+The fixed provider outputs are `provider/result.json` and
+`provider/presented-inventory.json`; callers supply neither path nor provider argv.
 
-- the raw Result digest and provider Briefing id;
-- the authorized actor;
-- the canonical Briefing id and canonical revision;
-- the canonical artifact id/revision list; and
-- a one-to-one presentation mapping from provider artifacts to canonical artifacts.
+The recorder resolves the room's exact `briefing.json`, recomputes its JCS digest, and
+derives the canonical inventory from every Artifact and recursively reached Reference.
+It derives a private `spacedock-result-association` v1 by matching each presented id and
+revision to that inventory and binding the raw Result digest. The mapping must cover the
+whole inventory exactly once, including the Result's primary Artifact.
 
-The association is not trusted to declare package completeness. The recorder resolves
-the bound room's exact `briefing.json`, recomputes its frozen JCS digest, checks its id,
-and derives the complete artifact inventory from those independently authenticated
-bytes. The association's canonical list must equal that inventory and its presentation
-mapping must cover every inventory item exactly once, including the Result's primary
-artifact. Only after all checks and actor authorization pass does the recorder normalize
-the provider Resolution's Briefing id to the canonical binding. Advisory results also
-require an adoption note naming the authorizer. Artifact payloads may remain external
-URI + SHA references; the recorder does not copy them merely to establish inventory.
+A direct binding Result uses Review v1's minimal envelope: authority comes from nested
+`Resolution.by`, and redundant `status`, `binding`, `actor`, `approver`, or
+`resolutionId` fields are absent. The recorder requires `Resolution.by` to equal the
+request authority. Advisory output remains retained evidence; no adoption note can
+promote it into a binding Resolution. Artifact payloads may remain external URI and
+SHA references.
+
+On provider close, the recorder stores only the raw-byte digests of
+`provider/result.json` and `provider/presented-inventory.json` as `provider-evidence`.
+They are part of the frozen attempt. `gate validate` recomputes both from the fixed room
+files and fails if either is missing or changed. Chat-closed and open attempts carry no
+provider evidence; the derived association remains ephemeral.
 
 ## Round records and triage dispositions (advisory; owner: 02av)
 
@@ -191,7 +206,7 @@ data.
 
 ```text
 spacedock gate record ENTITY --briefing PATH/briefing.json [--workflow-dir DIR]
-spacedock gate record ENTITY --result FILE --association FILE --actor ID [--adoption-note TEXT] [--workflow-dir DIR]
+spacedock gate record ENTITY --room PATH [--workflow-dir DIR]
 spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]
 spacedock gate validate ENTITY [--workflow-dir DIR]
 spacedock gate eligibility ENTITY [--workflow-dir DIR]
@@ -226,5 +241,5 @@ The release tests must fail if any of these outcomes regress:
 4. A stale, invalid, or lock-contended write changes the entity.
 5. A canonical write changes bytes outside `gates` or alters opaque application data.
 6. Removing canonical artifacts and matching presentation entries together is accepted.
-7. Result identity is normalized before exact bytes, authority, bound Briefing digest,
-   complete inventory, and full presentation mapping are verified.
+7. A room Result closes before exact bytes, request authority, bound Briefing digest,
+   complete Artifact/Reference inventory, and full presentation mapping are verified.

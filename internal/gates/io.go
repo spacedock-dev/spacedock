@@ -51,7 +51,37 @@ func SummaryFile(path string) (Summary, error) {
 	if err != nil {
 		return Summary{}, err
 	}
+	if err := validateRetainedProviderEvidence(path, doc); err != nil {
+		return Summary{}, err
+	}
 	return CurrentSummary(doc), nil
+}
+
+func validateRetainedProviderEvidence(entityPath string, doc *Document) error {
+	for _, record := range doc.Records {
+		for _, attempt := range record.Attempts {
+			if attempt.ProviderEvidence == nil {
+				continue
+			}
+			room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef))
+			files := []struct {
+				name, digest string
+			}{
+				{"provider/result.json", attempt.ProviderEvidence.ResultDigest},
+				{"provider/presented-inventory.json", attempt.ProviderEvidence.PresentedInventoryDigest},
+			}
+			for _, file := range files {
+				body, err := os.ReadFile(filepath.Join(room, filepath.FromSlash(file.name)))
+				if err != nil {
+					return fmt.Errorf("attempt %s retained %s: %w", attempt.ID, file.name, err)
+				}
+				if RawDigest(body) != file.digest {
+					return fmt.Errorf("attempt %s retained %s does not match its frozen digest", attempt.ID, file.name)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func entityStatus(path string) (string, error) {

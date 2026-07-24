@@ -66,9 +66,11 @@ var foHostLoadPaths = map[string][]string{
 // under another host's headroom. Growing a host's load past its constant is a
 // deliberate re-baseline edit here, with the growth justified in the change.
 var foHostLoadBaselineBytes = map[string]int{
-	"claude": 96435,
-	"codex":  75650,
-	"pi":     71780,
+	// The presentation-channel contract adds 2,872 bytes to the gate-triggered
+	// present-gate skill for every host; no boot-resident or host adapter grew.
+	"claude": 99307,
+	"codex":  78522,
+	"pi":     74652,
 }
 
 var mutableProcedureAddress = regexp.MustCompile(`(?i)(?:\bsteps?[- ]\d+(?:\.\d+)?(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?|\breuse[- ]conditions?[- ]?\d+|\btiers?[- ]\d+|\btiers?\s+\d+(?:\s+and\s+\d+)?|\bentry-point principle\s+\d+|\b(?:signals?|items?)\s*\(\d+(?:\s*,\s*\d+)*(?:\s*,?\s*or\s*\d+)?\s+above\))`)
@@ -394,6 +396,7 @@ func TestFOLocalOrderedProceduresPreserved(t *testing.T) {
 		{"skills/first-officer/references/fo-dispatch-core.md", "## Dispatch", sequence(1, 9), []string{"entity file", "«dispatch.checklist»", "conflicts", "dispatch_agent_id", "status --workflow-dir", "Commit", "worktree", "«dispatch.build»", "«completion-signal»"}},
 		{"skills/first-officer/references/fo-dispatch-core.md", "## Reuse and Fresh Dispatch", sequence(0, 4), []string{"«context-budget»", "«addressable-worker»", "fresh: true", "worktree", "«reuse.model-match»"}},
 		{"skills/first-officer/references/fo-dispatch-core.md", "## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration", []string{"0.5", "1", "2", "3"}, []string{"«addressable-worker»", "mod-block", "status --next", "«hooks.run»", "«roster-reconcile»"}},
+		{"skills/present-gate/SKILL.md", "## Presentation channels", sequence(1, 7), []string{"Probe before side effects", "Pass one prepared room", "/subspace:r gate <gate-room>", "gate record <entity> --room <gate-room>", "Do not fall back to chat after launch"}},
 		{"skills/present-gate/SKILL.md", "### Captain-facing assembly rules", sequence(1, 11), []string{"Lede first", "Chosen direction", "Stage Report", "Reviewer findings", "Recommendation", "Bounce-back", "format-pedantry", "worktree", "Target length", "declared label", "verification state"}},
 		{"skills/feedback-rejection-flow/SKILL.md", "## Feedback Rejection Flow", sequence(1, 7), []string{"feedback-to", "Feedback Cycles", "cycle 3", "«context-budget»", "«addressable-worker»", "reviewer", "gate flow"}},
 	}

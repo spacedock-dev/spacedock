@@ -8,6 +8,22 @@ user-invocable: false
 
 This skill carries the first-officer's captain-facing gate-presentation rendering: the gate-review format template and the assembly rules for filling it. The decide-to-gate and AC-cross-check policy stays always-on in the FO contract; this skill loads at the gate point to render the decision the FO has already made.
 
+## Presentation channels
+
+Chat is the default channel. Render the gate template in the current conversation, then hand the captain's semantic decision to `${SPACEDOCK_BIN:-spacedock} gate record ... --decision`. An override changes only where the captain sees the review; gate policy and recorder ownership stay unchanged.
+
+A workflow or session may declare one presentation override. Apply this contract:
+
+1. **Probe before side effects.** Run the override's read-only availability and version probe before preparing or launching a room. If the presenter is missing or mismatched, launch nothing, create nothing, mutate nothing, and emit one line naming the install or upgrade remedy and the chat fallback. Then use chat.
+2. **Pass one prepared room.** The scaffold owns `request.json`, the canonical `briefing.json`, the bound gate attempt, and fixed provider outputs. Invoke a Subspace override as `/subspace:r gate <gate-room>`. Do not construct provider argv, paths, actor or approver flags, or an association.
+3. **Present the complete canonical Briefing.** The override shows the exact question, every Artifact, and every recursively reached Reference at its recorded revision. It derives the title from that Briefing. A one-file review remains advisory evidence.
+4. **Block through retention.** Keep the gate-attempt ensign addressable for the whole invocation. Pane or session creation and a `wait_agent` timeout are not completion. Re-wait after a timeout; complete only after the presenter exits, the Result validates, and retention finishes.
+5. **Retain from the first byte.** The provider writes its fixed room outputs from the first byte and retains the exact Result, review log, presented inventory, and diagnostics. It never deletes the room on success, hold, validation failure, child failure, or launcher death.
+6. **Record only direct binding authority.** After the provider returns, run `${SPACEDOCK_BIN:-spacedock} gate record <entity> --room <gate-room>`. The recorder verifies the room's frozen request digest, gate, attempt, Briefing digest, and captain actor/approver authority; derives the complete Artifact/Reference association; and accepts the wrapper-free binding Result through `Resolution.by`. Delegated First Officer approval stays on the chat decision form with its quoted directive. An advisory Result remains evidence and cannot close the gate through an adoption note.
+7. **Retain failures without inventing a decision.** After launch, a missing, advisory, or invalid Result leaves the gate open with its room recoverable. Do not fall back to chat after launch or write entity frontmatter directly.
+
+The provider owns its transport and retention tests. Spacedock's binary owns provider-neutral room verification and recording; it contains no Subspace launch code.
+
 ## Gate Presentation
 
 Present gate reviews in this format:

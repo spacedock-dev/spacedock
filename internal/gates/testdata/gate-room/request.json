@@ -1,0 +1,12 @@
+{
+  "type": "spacedock-gate-presentation-request",
+  "version": "1",
+  "gate": "gate:docs-dev:3k:validation",
+  "attempt": "gate-attempt:3k-validation-1",
+  "briefing": {
+    "id": "briefing:docs-dev:3k:validation:attempt-1:revision-1",
+    "digest": "sha256:b7d818fc8d0355db7ca7543e7623fe38b6080c35be0602795eb8734ea6199ec5"
+  },
+  "actor": "person:captain",
+  "approver": "person:captain"
+}

@@ -1,4 +1,4 @@
-// ABOUTME: Recorder operations, pointer-CAS checks, digest binding, and result adoption.
+// ABOUTME: Recorder operations, pointer-CAS checks, digest binding, and room-backed results.
 // ABOUTME: These operations never model application state or invoke workflow effects.
 package gates
 
@@ -20,10 +20,10 @@ import (
 )
 
 type RecordInput struct {
-	BriefingPath, ResultPath, AssociationPath string
-	LogPath, FeedbackCyclePath, Round         string
-	Actor, AdoptionNote, Decision             string
-	Reason, Directive, WorkflowDir            string
+	BriefingPath, RoomPath            string
+	LogPath, FeedbackCyclePath, Round string
+	Actor, Decision                   string
+	Reason, Directive, WorkflowDir    string
 }
 
 type artifactRef struct {
@@ -33,22 +33,42 @@ type artifactRef struct {
 }
 
 type briefingManifest struct {
-	Type      string        `json:"type"`
-	Version   string        `json:"version"`
-	ID        string        `json:"id"`
-	Question  string        `json:"question"`
-	Artifacts []artifactRef `json:"artifacts"`
+	Type      string            `json:"type"`
+	Version   string            `json:"version"`
+	ID        string            `json:"id"`
+	Question  string            `json:"question"`
+	Artifacts []artifactRef     `json:"artifacts"`
+	Context   []json.RawMessage `json:"context"`
 }
 
 type providerResult struct {
 	Type        string       `json:"type"`
-	Status      string       `json:"status"`
 	Briefing    string       `json:"briefing"`
 	Artifact    artifactRef  `json:"artifact"`
 	Resolution  Resolution   `json:"resolution"`
 	Annotations []Annotation `json:"annotations"`
-	Binding     bool         `json:"binding"`
-	Actor       string       `json:"actor"`
+}
+
+type gateRoomRequest struct {
+	Type     string `json:"type"`
+	Version  string `json:"version"`
+	Gate     string `json:"gate"`
+	Attempt  string `json:"attempt"`
+	Briefing struct {
+		ID     string `json:"id"`
+		Digest string `json:"digest"`
+	} `json:"briefing"`
+	Actor    string `json:"actor"`
+	Approver string `json:"approver"`
+}
+
+type presentedInventory struct {
+	Items []presentedItem `json:"items"`
+}
+
+type presentedItem struct {
+	Type string `json:"type"`
+	artifactRef
 }
 
 type resultAssociation struct {
@@ -78,7 +98,7 @@ func RecordSemantic(entityPath string, input RecordInput) error {
 		if input.BriefingPath == "" || input.LogPath == "" {
 			return fmt.Errorf("gate record --round requires --briefing and --log")
 		}
-		if input.ResultPath != "" || input.AssociationPath != "" || input.Actor != "" || input.AdoptionNote != "" || input.Decision != "" || input.Reason != "" || input.Directive != "" {
+		if input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "" || input.Directive != "" {
 			return fmt.Errorf("gate record --round is incompatible with gate-closing flags")
 		}
 		if filepath.Base(input.BriefingPath) != "briefing.json" || filepath.Base(input.LogPath) != "briefing.review.jsonl" {
@@ -98,15 +118,15 @@ func RecordSemantic(entityPath string, input RecordInput) error {
 		return fmt.Errorf("--log and --feedback-cycle require --round")
 	}
 	sources := 0
-	for _, source := range []string{input.BriefingPath, input.ResultPath, input.Decision} {
+	for _, source := range []string{input.BriefingPath, input.RoomPath, input.Decision} {
 		if source != "" {
 			sources++
 		}
 	}
 	if sources != 1 {
-		return fmt.Errorf("gate record requires exactly one of --briefing, --result, or --decision")
+		return fmt.Errorf("gate record requires exactly one of --briefing, --room, or --decision")
 	}
-	if input.BriefingPath != "" && (input.ResultPath != "" || input.AssociationPath != "" || input.Actor != "" || input.AdoptionNote != "" || input.Decision != "" || input.Reason != "" || input.Directive != "") || input.ResultPath != "" && (input.Decision != "" || input.Reason != "" || input.Directive != "") || input.Decision != "" && (input.AssociationPath != "" || input.AdoptionNote != "") {
+	if input.BriefingPath != "" && (input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "" || input.Directive != "") || input.RoomPath != "" && (input.Actor != "" || input.Decision != "" || input.Reason != "" || input.Directive != "") {
 		return fmt.Errorf("gate record flags do not match the selected semantic source")
 	}
 	if input.BriefingPath != "" && filepath.Base(input.BriefingPath) != "briefing.json" {
@@ -120,8 +140,8 @@ func RecordSemantic(entityPath string, input RecordInput) error {
 	if input.BriefingPath != "" {
 		return recordBriefingLocked(entityPath, input.BriefingPath)
 	}
-	if input.ResultPath != "" {
-		return recordResultLocked(entityPath, input)
+	if input.RoomPath != "" {
+		return recordRoomLocked(entityPath, input)
 	}
 	return recordChatLocked(entityPath, input)
 }
@@ -155,6 +175,9 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 		if err != nil {
 			return err
 		}
+		if err := validateGateRoomRequest(briefingPath, binding, gateID, attemptID); err != nil {
+			return err
+		}
 		record = &GateRecord{ID: gateID, Stage: stage, Attempts: []Attempt{{ID: attemptID, Briefing: binding}}}
 		doc.Records = append(doc.Records, *record)
 		doc.Current = Selection{Gate: gateID}
@@ -162,6 +185,12 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	}
 	previous := &record.Attempts[len(record.Attempts)-1]
 	if previous.Resolution == nil {
+		if err := validateGateRoomRequest(briefingPath, binding, record.ID, previous.ID); err != nil {
+			return err
+		}
+		if (previous.Briefing.RequestDigest != "" || binding.RequestDigest != "") && !sameBinding(previous.Briefing, binding) {
+			return fmt.Errorf("open gate room binding is frozen and cannot be rebound")
+		}
 		selectionChanged := doc.Current.Gate != record.ID
 		doc.Current.Gate = record.ID
 		if sameBinding(previous.Briefing, binding) {
@@ -183,6 +212,9 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	if err != nil {
 		return err
 	}
+	if err := validateGateRoomRequest(briefingPath, binding, record.ID, nextID); err != nil {
+		return err
+	}
 	if previous.Application != nil && previous.Application.State == "pending" {
 		previous.Application.State = "superseded"
 	}
@@ -198,10 +230,7 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	return writeDocument(entityPath, oldNode, doc)
 }
 
-func recordResultLocked(entityPath string, input RecordInput) error {
-	if input.AssociationPath == "" || input.Actor == "" {
-		return fmt.Errorf("--result requires --association FILE and --actor ID")
-	}
+func recordRoomLocked(entityPath string, input RecordInput) error {
 	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath)
 	if err != nil {
 		return err
@@ -212,35 +241,103 @@ func recordResultLocked(entityPath string, input RecordInput) error {
 	if !digestRE.MatchString(attempt.Briefing.Digest) {
 		return fmt.Errorf("open attempt %s has no verifiable digest", attempt.ID)
 	}
-	resultBytes, err := os.ReadFile(input.ResultPath)
+	roomPath, err := filepath.Abs(input.RoomPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("resolve gate room: %w", err)
 	}
-	associationBytes, err := os.ReadFile(input.AssociationPath)
+	boundRoomPath, err := filepath.Abs(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef)))
 	if err != nil {
-		return err
+		return fmt.Errorf("resolve bound gate room: %w", err)
+	}
+	if filepath.Clean(roomPath) != filepath.Clean(boundRoomPath) {
+		return fmt.Errorf("--room is not the current attempt's bound gate room")
+	}
+	requestBytes, err := os.ReadFile(filepath.Join(roomPath, "request.json"))
+	if err != nil {
+		return fmt.Errorf("read gate room request: %w", err)
+	}
+	requestDigest, err := CanonicalDigest(requestBytes)
+	if err != nil {
+		return fmt.Errorf("canonicalize gate room request: %w", err)
+	}
+	if attempt.Briefing.RequestDigest == "" || requestDigest != attempt.Briefing.RequestDigest {
+		return fmt.Errorf("gate room request does not match the frozen request digest")
+	}
+	var request gateRoomRequest
+	if err := json.Unmarshal(requestBytes, &request); err != nil {
+		return fmt.Errorf("parse gate room request: %w", err)
+	}
+	if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
+		request.Gate != record.ID || request.Attempt != attempt.ID ||
+		request.Briefing.ID != attempt.Briefing.ID || request.Briefing.Digest != attempt.Briefing.Digest ||
+		request.Actor != "person:captain" || request.Approver != "person:captain" {
+		return fmt.Errorf("gate room request does not bind the current gate, attempt, Briefing, and captain authority")
+	}
+	resultPath := filepath.Join(roomPath, "provider", "result.json")
+	resultBytes, err := os.ReadFile(resultPath)
+	if err != nil {
+		return fmt.Errorf("read provider Result: %w", err)
 	}
 	var result providerResult
 	if err := json.Unmarshal(resultBytes, &result); err != nil {
 		return fmt.Errorf("parse Result: %w", err)
 	}
-	var association resultAssociation
-	if err := json.Unmarshal(associationBytes, &association); err != nil {
-		return fmt.Errorf("parse result association: %w", err)
+	var envelope map[string]json.RawMessage
+	if err := json.Unmarshal(resultBytes, &envelope); err != nil {
+		return fmt.Errorf("parse Result envelope: %w", err)
+	}
+	for _, field := range []string{"status", "binding", "actor", "approver", "resolutionId"} {
+		if _, present := envelope[field]; present {
+			return fmt.Errorf("advisory Result remains evidence; closing a gate requires a separate minimal binding Result")
+		}
+	}
+	for field := range envelope {
+		switch field {
+		case "type", "briefing", "artifact", "resolution", "annotations":
+		default:
+			return fmt.Errorf("binding Result has unknown top-level field %q", field)
+		}
+	}
+	resolutionDecoder := json.NewDecoder(bytes.NewReader(envelope["resolution"]))
+	resolutionDecoder.DisallowUnknownFields()
+	if err := resolutionDecoder.Decode(&result.Resolution); err != nil {
+		return fmt.Errorf("parse Result Resolution: %w", err)
+	}
+	if result.Briefing != request.Briefing.ID {
+		return fmt.Errorf("binding Result does not bind the gate room's canonical Briefing")
+	}
+	if result.Resolution.By != request.Approver {
+		return fmt.Errorf("binding Result Resolution.by does not match the gate room request authority")
 	}
 	manifest, err := boundBriefingManifest(entityPath, attempt.Briefing)
 	if err != nil {
 		return err
 	}
-	if err := verifyAssociation(resultBytes, &result, &association, input.Actor, attempt.Briefing, manifest.Artifacts); err != nil {
+	canonicalItems, err := canonicalPresentationItems(manifest)
+	if err != nil {
 		return err
 	}
-	if !result.Binding && strings.TrimSpace(input.AdoptionNote) == "" {
-		return fmt.Errorf("advisory Result requires --adoption-note naming its authorizer")
+	presentedBytes, err := os.ReadFile(filepath.Join(roomPath, "provider", "presented-inventory.json"))
+	if err != nil {
+		return fmt.Errorf("read presented inventory: %w", err)
+	}
+	var presented presentedInventory
+	if err := json.Unmarshal(presentedBytes, &presented); err != nil {
+		return fmt.Errorf("parse presented inventory: %w", err)
+	}
+	association, err := deriveAssociation(resultBytes, &result, &presented, request.Approver, attempt.Briefing, canonicalItems)
+	if err != nil {
+		return err
+	}
+	if err := verifyAssociation(resultBytes, &result, association, request.Approver, attempt.Briefing, canonicalItems); err != nil {
+		return err
 	}
 	resolution := result.Resolution
 	resolution.Briefing = attempt.Briefing.ID
-	resolution.Adoption = input.AdoptionNote
+	attempt.ProviderEvidence = &ProviderEvidence{
+		ResultDigest:             RawDigest(resultBytes),
+		PresentedInventoryDigest: RawDigest(presentedBytes),
+	}
 	if err := closeAttempt(entityPath, input.WorkflowDir, doc, oldNode, record, attempt, &resolution); err != nil {
 		return err
 	}
@@ -318,7 +415,8 @@ func findRecord(doc *Document, id string) *GateRecord {
 }
 
 func sameBinding(left, right Briefing) bool {
-	return left.ID == right.ID && left.Digest == right.Digest && left.DigestDomain == right.DigestDomain && left.RoomRef == right.RoomRef
+	return left.ID == right.ID && left.Digest == right.Digest && left.DigestDomain == right.DigestDomain &&
+		left.RequestDigest == right.RequestDigest && left.RoomRef == right.RoomRef
 }
 
 func currentStageAttempt(entityPath string) (*Document, *yaml.Node, *GateRecord, *Attempt, error) {
@@ -435,17 +533,17 @@ func applicationStages(readme string) ([]applicationStage, error) {
 	return result, nil
 }
 
-func verifyAssociation(resultBytes []byte, result *providerResult, association *resultAssociation, actor string, binding Briefing, inventory []artifactRef) error {
+func verifyAssociation(resultBytes []byte, result *providerResult, association *resultAssociation, actor string, binding Briefing, inventory []presentedItem) error {
 	if result.Type != "review-v1-result" || result.Briefing == "" || result.Artifact.ID == "" || !digestRE.MatchString(result.Artifact.Rev) {
-		return fmt.Errorf("--result is not a complete review-v1-result")
+		return fmt.Errorf("gate room Result is not a complete review-v1-result")
 	}
 	if association.Type != "spacedock-result-association" || association.Version != "1" {
-		return fmt.Errorf("--association is not a spacedock-result-association v1")
+		return fmt.Errorf("derived presentation association is not spacedock-result-association v1")
 	}
 	if association.Result.Digest != RawDigest(resultBytes) || association.Result.Briefing != result.Briefing {
 		return fmt.Errorf("association does not bind the exact Result bytes and provider Briefing")
 	}
-	if association.Actor != actor || result.Actor != actor || result.Resolution.By != actor {
+	if association.Actor != actor || result.Resolution.By != actor {
 		return fmt.Errorf("Result actor is not authorized by the retained association")
 	}
 	if err := verifyProviderResolution(result); err != nil {
@@ -457,24 +555,25 @@ func verifyAssociation(resultBytes []byte, result *providerResult, association *
 	if len(inventory) == 0 || len(association.Canonical.Artifacts) != len(inventory) || len(association.Presentation) != len(inventory) {
 		return fmt.Errorf("association does not cover the complete presentation mapping")
 	}
-	canonical := make(map[string]string, len(inventory))
+	canonical := make(map[string]presentedItem, len(inventory))
 	for i, artifact := range inventory {
 		declared := association.Canonical.Artifacts[i]
-		if artifact.ID == "" || !digestRE.MatchString(artifact.Rev) || canonical[artifact.ID] != "" || declared.ID != artifact.ID || declared.Rev != artifact.Rev {
+		if artifact.ID == "" || !digestRE.MatchString(artifact.Rev) || canonical[artifact.ID].ID != "" || declared.ID != artifact.ID || declared.Rev != artifact.Rev {
 			return fmt.Errorf("association canonical artifacts do not match the bound Briefing inventory")
 		}
-		canonical[artifact.ID] = artifact.Rev
+		canonical[artifact.ID] = artifact
 	}
 	seenCanonical := map[string]bool{}
 	seenProvider := map[string]bool{}
 	resultArtifactPresent := false
 	for _, mapping := range association.Presentation {
-		if mapping.Provider.ID == "" || !digestRE.MatchString(mapping.Provider.Rev) || canonical[mapping.Canonical.ID] != mapping.Canonical.Rev || seenCanonical[mapping.Canonical.ID] || seenProvider[mapping.Provider.ID] {
+		canonicalItem := canonical[mapping.Canonical.ID]
+		if mapping.Provider.ID == "" || !digestRE.MatchString(mapping.Provider.Rev) || canonicalItem.Rev != mapping.Canonical.Rev || seenCanonical[mapping.Canonical.ID] || seenProvider[mapping.Provider.ID] {
 			return fmt.Errorf("association does not cover the complete presentation mapping")
 		}
 		seenCanonical[mapping.Canonical.ID] = true
 		seenProvider[mapping.Provider.ID] = true
-		if mapping.Provider.ID == result.Artifact.ID && mapping.Provider.Rev == result.Artifact.Rev {
+		if canonicalItem.Type == "Artifact" && mapping.Provider.ID == result.Artifact.ID && mapping.Provider.Rev == result.Artifact.Rev {
 			resultArtifactPresent = true
 		}
 	}
@@ -484,7 +583,48 @@ func verifyAssociation(resultBytes []byte, result *providerResult, association *
 	return nil
 }
 
+func deriveAssociation(resultBytes []byte, result *providerResult, presented *presentedInventory, actor string, binding Briefing, inventory []presentedItem) (*resultAssociation, error) {
+	if len(inventory) == 0 || len(presented.Items) != len(inventory) {
+		return nil, fmt.Errorf("presented inventory does not cover the complete presentation mapping")
+	}
+	canonical := make(map[string]presentedItem, len(inventory))
+	for _, item := range inventory {
+		if item.ID == "" || !digestRE.MatchString(item.Rev) || canonical[item.ID].ID != "" {
+			return nil, fmt.Errorf("canonical Briefing has incomplete or duplicate presentation identity")
+		}
+		canonical[item.ID] = item
+	}
+	association := &resultAssociation{Type: "spacedock-result-association", Version: "1", Actor: actor}
+	association.Result.Digest = RawDigest(resultBytes)
+	association.Result.Briefing = result.Briefing
+	association.Canonical.Briefing = binding.ID
+	association.Canonical.Revision = binding.Digest
+	for _, item := range inventory {
+		association.Canonical.Artifacts = append(association.Canonical.Artifacts, item.artifactRef)
+	}
+	seen := make(map[string]bool, len(presented.Items))
+	for _, item := range presented.Items {
+		expected := canonical[item.ID]
+		if (item.Type != "Artifact" && item.Type != "Reference") || expected.ID == "" ||
+			item.Type != expected.Type || item.Rev != expected.Rev || seen[item.ID] {
+			return nil, fmt.Errorf("presented inventory does not cover the complete presentation mapping")
+		}
+		seen[item.ID] = true
+		association.Presentation = append(association.Presentation, struct {
+			Provider  artifactRef `json:"provider"`
+			Canonical artifactRef `json:"canonical"`
+		}{
+			Provider:  item.artifactRef,
+			Canonical: expected.artifactRef,
+		})
+	}
+	return association, nil
+}
+
 func verifyProviderResolution(result *providerResult) error {
+	if result.Resolution.Adoption != "" {
+		return fmt.Errorf("binding Result cannot carry adoption provenance")
+	}
 	if result.Resolution.Briefing != result.Briefing {
 		return fmt.Errorf("provider Resolution does not bind its provider Briefing")
 	}
@@ -594,7 +734,48 @@ func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
 	} else if !strings.HasPrefix(roomRef, ".") {
 		roomRef = "./" + roomRef
 	}
-	return Briefing{ID: manifest.ID, Digest: digest, DigestDomain: "canonical-bytes", RoomRef: roomRef}, nil
+	binding := Briefing{ID: manifest.ID, Digest: digest, DigestDomain: "canonical-bytes", RoomRef: roomRef}
+	requestBytes, err := os.ReadFile(filepath.Join(filepath.Dir(briefingPath), "request.json"))
+	if err == nil {
+		if _, err := canonicalPresentationItems(manifest); err != nil {
+			return Briefing{}, err
+		}
+		binding.RequestDigest, err = CanonicalDigest(requestBytes)
+		if err != nil {
+			return Briefing{}, fmt.Errorf("canonicalize gate room request: %w", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return Briefing{}, fmt.Errorf("read gate room request: %w", err)
+	}
+	return binding, nil
+}
+
+func validateGateRoomRequest(briefingPath string, binding Briefing, gateID, attemptID string) error {
+	if binding.RequestDigest == "" {
+		return nil
+	}
+	requestBytes, err := os.ReadFile(filepath.Join(filepath.Dir(briefingPath), "request.json"))
+	if err != nil {
+		return fmt.Errorf("read gate room request: %w", err)
+	}
+	requestDigest, err := CanonicalDigest(requestBytes)
+	if err != nil {
+		return fmt.Errorf("canonicalize gate room request: %w", err)
+	}
+	if requestDigest != binding.RequestDigest {
+		return fmt.Errorf("gate room request does not match the bound request digest")
+	}
+	var request gateRoomRequest
+	if err := json.Unmarshal(requestBytes, &request); err != nil {
+		return fmt.Errorf("parse gate room request: %w", err)
+	}
+	if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
+		request.Gate != gateID || request.Attempt != attemptID ||
+		request.Briefing.ID != binding.ID || request.Briefing.Digest != binding.Digest ||
+		request.Actor != "person:captain" || request.Approver != "person:captain" {
+		return fmt.Errorf("gate room request does not bind the derived gate, attempt, Briefing, and captain authority")
+	}
+	return nil
 }
 
 func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManifest, error) {
@@ -639,6 +820,55 @@ func parseBriefingManifest(data []byte) (*briefingManifest, error) {
 		seen[artifact.ID] = true
 	}
 	return &manifest, nil
+}
+
+func canonicalPresentationItems(manifest *briefingManifest) ([]presentedItem, error) {
+	references, err := referenceInventory(manifest.Context)
+	if err != nil {
+		return nil, err
+	}
+	inventory := make([]presentedItem, 0, len(manifest.Artifacts)+len(references))
+	seen := make(map[string]bool, len(inventory)+len(references))
+	for _, artifact := range manifest.Artifacts {
+		inventory = append(inventory, presentedItem{Type: "Artifact", artifactRef: artifact})
+		seen[artifact.ID] = true
+	}
+	for _, reference := range references {
+		if seen[reference.ID] {
+			return nil, fmt.Errorf("canonical Briefing has an incomplete or duplicate Reference binding")
+		}
+		seen[reference.ID] = true
+		inventory = append(inventory, presentedItem{Type: "Reference", artifactRef: reference})
+	}
+	return inventory, nil
+}
+
+func referenceInventory(nodes []json.RawMessage) ([]artifactRef, error) {
+	var references []artifactRef
+	for _, raw := range nodes {
+		var node struct {
+			Type     string            `json:"type"`
+			ID       string            `json:"id"`
+			URI      string            `json:"uri"`
+			Rev      string            `json:"rev"`
+			Children []json.RawMessage `json:"children"`
+		}
+		if err := json.Unmarshal(raw, &node); err != nil {
+			return nil, fmt.Errorf("parse Briefing context: %w", err)
+		}
+		if node.Type == "Reference" {
+			if node.ID == "" || node.URI == "" || !digestRE.MatchString(node.Rev) {
+				return nil, fmt.Errorf("canonical Briefing has an incomplete or duplicate Reference binding")
+			}
+			references = append(references, artifactRef{ID: node.ID, URI: node.URI, Rev: node.Rev})
+		}
+		nested, err := referenceInventory(node.Children)
+		if err != nil {
+			return nil, err
+		}
+		references = append(references, nested...)
+	}
+	return references, nil
 }
 
 func ValidateTransition(oldNode *yaml.Node, next *Document) error {
