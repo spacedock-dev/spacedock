@@ -60,10 +60,14 @@ Its surface is the provider-neutral recorder path, focused fixtures and behavior
 the gate contract and user documentation, and the declarative present-gate seam. It
 contains no provider transport or modeled provider harness.
 
-This ideation reset requires no product edit. The tolerance remains the approved
-1,300-line cap with no file-count increase. Any proposed code or product-documentation
-change must first demonstrate a supported-path gap in the rewritten criteria and
-reconfirm the surface; superseded prose is not such a gap.
+Cycle 11 adds an exact estimated **`+42/-0` test-only lines** in the existing
+`internal/cli/gate_test.go`: 12 lines for the post-bind Briefing-question mutation, 18
+lines for the two compact presented-inventory matrix rows, and 12 lines for deleting
+each retained file through the existing validation loop. The projected surface is
+still 17 files and **1,297 changed lines**, three lines under the approved 1,300-line
+cap. No cap reset, production edit, fixture file, provider harness, or documentation
+change is proposed. Any larger implementation delta must first justify why the existing
+CLI matrices and retained-file loop cannot carry the proof.
 
 ## Problem
 
@@ -121,11 +125,14 @@ before mutation, and preserves enough immutable identity to detect later byte ch
 
 No mechanism in the reset is unverified. Exact-tip behavior tests already exercise the
 prepared-room success path, adjacent authority and identity mutations, recursive
-inventory rejection, failure atomicity, frozen history, and retained-file tampering.
-The complete repository and race suites, strict documentation build, formatting and
-dependency checks passed at `98ebb458`. Final-tip Roborev job **2028** reviewed
-`dd6bd114..98ebb458` and returned **P — No issues found**. A new provider harness would
-duplicate the validated recorder rather than test an unverified mechanism.
+inventory rejection, failure atomicity, frozen history, and retained-file byte
+tampering. Cycle 11 identifies three narrower falsifiability gaps in that same supported
+path: changed Briefing question bytes after binding, same-cardinality inventory
+substitutions, and missing retained files. They extend the existing CLI mutation
+matrices and retained-file loop; they do not require a spike, new harness, interface, or
+production behavior. The complete repository and race suites, strict documentation
+build, formatting and dependency checks passed at `98ebb458`. Final-tip Roborev job
+**2028** reviewed `dd6bd114..98ebb458` and returned **P — No issues found**.
 
 ## Acceptance criteria
 
@@ -136,6 +143,7 @@ Result authority, or presentation inventory is rejected, with **zero entity-byte
 changes across the rejection matrix**. The independently mutated room files are the
 baseline that can move the wrong way: any accepted mutation or any rejection-side
 entity delta fails the value. *Test:* `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`,
+including a valid Briefing whose question bytes change only after its attempt binds,
 `TestGateRoomRejectsRequestAuthorityRebindingWithoutMutation`,
 `TestGateRoomRejectsRequestBackedRoomMoveWithoutMutation`,
 `TestGateRoomRejectsBriefingOnlyAttemptWithoutFrozenRequest`,
@@ -145,9 +153,10 @@ entity delta fails the value. *Test:* `TestGateRecordConsumesDirectBindingResult
 **AC-2 — Request, Briefing, attempt, and authority identity are exact and frozen before recording.**
 The request must bind the derived current-stage gate and open attempt, the
 canonical Briefing id/digest, the bound room, and equal Captain actor/approver authority;
-post-bind changes fail before mutation. *Test:* the request-authority, room-move,
-briefing-only, malformed-Reference, and distinct-identity tests named under AC-1, plus
-`TestGateBriefingRejectsMalformedReferenceBeforeBinding`.
+post-bind changes fail before mutation. *Test:* bind a valid Briefing, mutate only its
+question, then require room recording to fail with a byte-identical entity; retain the
+request-authority, room-move, briefing-only, malformed-Reference, and distinct-identity
+tests named under AC-1, plus `TestGateBriefingRejectsMalformedReferenceBeforeBinding`.
 
 **AC-3 — A provider close contains one direct Captain Result and a complete recursively derived presentation.**
 Wrapper/advisory fields, adoption provenance, wrong authority,
@@ -155,7 +164,9 @@ provider-minted identity, incomplete or mistyped inventory, duplicate mapping, o
 Reference primary fail closed. The valid fixture records only the portable nested
 Resolution. *Test:* `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`,
 `TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation`, and
-`TestExactCanonicalBriefingIsIndependentAssociationInventory`.
+`TestExactCanonicalBriefingIsIndependentAssociationInventory`; the room matrix includes
+same-cardinality variants that duplicate one presented id and that replace one correct
+revision with a wrong revision, each rejected without entity mutation.
 
 **AC-4 — Close is atomic and one-use, and closed history cannot be rebound.** Every room
 validation completes before entity replacement; a valid room closes only the last open
@@ -168,10 +179,11 @@ application remains a separate one-use transition. *Test:*
 
 **AC-5 — The closed attempt identifies the exact retained Result and inventory bytes.**
 Successful close freezes both raw digests; appending even one byte to either retained
-file makes `gate validate` fail, and restoring the exact bytes makes it pass. No copied
-artifact or stored association is required. *Test:*
-`TestGateRecordConsumesDirectBindingResultFromPreparedRoom` exercises both tamper cases
-and the restored validation pass.
+file, or deleting either file, makes `gate validate` fail; restoring the exact bytes
+makes it pass. No copied artifact or stored association is required. *Test:* extend
+`TestGateRecordConsumesDirectBindingResultFromPreparedRoom`'s existing retained-file
+loop so each Result/inventory path is first byte-mutated and then deleted, with both
+failures naming that fixed path and the restored exact bytes passing validation.
 
 **AC-6 (VALUE) — Provider coupling in the Spacedock binary remains zero.** The CLI
 exposes no `gate review` presentation verb and `go list -deps ./cmd/spacedock` contains
@@ -216,15 +228,18 @@ the exact tip.
 
 1. **Canonical close and mutation matrix (AC-1, AC-2, AC-3).** Bind the fixture
    Briefing, record its room, and assert the portable Captain Resolution. Independently
-   mutate every request/Briefing/attempt/authority field, advisory wrapper, adoption
-   field, Result binding, inventory entry/type/revision/coverage, and room path; assert
-   non-zero exit and byte-identical entity for each rejection.
+   mutate every request/Briefing/attempt/authority field, including the question of a
+   valid Briefing after binding; mutate advisory wrappers, adoption fields, Result
+   binding, inventory entry/type/revision/coverage, and room path. The inventory matrix
+   includes a same-cardinality duplicate id and a same-cardinality wrong revision.
+   Assert non-zero exit and byte-identical entity for every rejection.
 2. **Lifecycle and atomicity (AC-4).** Exercise open, identical rebind, changed rebind,
    close, stale successor, frozen closure, compare-and-swap failure, and one-use
    application. Assert one closure and no mutation on every rejected replay.
-3. **Exact-byte validation (AC-5).** Close a valid room, append one byte separately to
-   Result and inventory, and require `gate validate` to name the changed fixed file and
-   frozen digest; restore the original bytes and require success.
+3. **Exact-byte validation (AC-5).** Close a valid room, then use the existing
+   retained-file loop to append one byte and separately delete each Result/inventory
+   file. Require `gate validate` to name the changed or missing fixed file and frozen
+   digest in every case; restore the original bytes and require success.
 4. **Zero-coupling boundary (AC-6).** Require `gate review` to remain absent and
    side-effect-free, inspect the real command surface, and require zero Subspace entries
    from `go list -deps ./cmd/spacedock`.
@@ -538,23 +553,25 @@ The Captain-approved prepared-room recorder passes its current behavioral, surfa
 
 - DONE: Replace obsolete provider-side obligations with the prepared-room recorder contract.
   Rewrote the problem, approach, acceptance criteria, mechanisms, test plan, documentation proposal, and exclusions around one scaffold-prepared room consumed by `spacedock gate record <entity> --room <gate-room>`. The binding design now requires exact request/Briefing/attempt identity and Captain authority, a direct wrapper-free Result, complete recursively derived presentation inventory, atomic one-use close, frozen raw Result/inventory digests, and later tamper detection. Override-script, pane/session, launcher-death, fallback, provider-minted-ID normalization, adoption-note, provider-harness, and duplicate-association obligations are explicitly outside xb rather than criteria implementation must satisfy.
-- DONE: Map every rewritten criterion to current exact-tip behavioral evidence.
-  AC-1 through AC-5 cite the existing CLI/gates tests for the canonical close, adjacent authority and identity mutations, recursive inventory, byte-clean rejection, frozen lifecycle, exact retained-byte digests, and tamper validation. AC-6 cites the absent-presentation-verb test and zero-Subspace dependency check. The proof basis records the full/race/docs/format checks at `98ebb458` and final-tip Roborev job 2028's `P — No issues found`; no replacement provider harness or new recording machinery is proposed.
+- DONE: Map every rewritten criterion to exact-tip evidence and explicit remaining gaps.
+  AC-1 through AC-5 cite the existing CLI/gates tests for the canonical close, adjacent authority and identity mutations, recursive inventory, byte-clean rejection, frozen lifecycle, exact retained-byte digests, and byte tampering; Cycle 11 now names the three missing negative cases without claiming they already ran. AC-6 cites the absent-presentation-verb test and zero-Subspace dependency check. The proof basis retains final-tip Roborev job 2028's `P — No issues found`; no replacement provider harness or recording machinery is proposed.
 - DONE: Rebaseline the approved surface and decide whether product work remains.
-  The clean candidate remains exactly 17 files and `+1086/-169` = 1,255 changed lines, below the approved 1,300-line cap and with no provider transport or second harness. No product edit remains necessary unless a fresh validation against the rewritten criteria reveals a genuine supported-path gap.
-- DONE: AC-1 — Prove only the exact authorized room makes a decision durable.
-  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom` closes the canonical fixture once, while `TestGateRoomRejectsRequestAuthorityRebindingWithoutMutation`, `TestGateRoomRejectsRequestBackedRoomMoveWithoutMutation`, `TestGateRoomRejectsBriefingOnlyAttemptWithoutFrozenRequest`, `TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation`, and `TestGateRoomRejectsDistinctAuthorityAndDifferentRoomWithoutMutation` reject the adjacent mutation matrix with byte-identical entity state.
-- DONE: AC-2 — Prove request, Briefing, attempt, and authority identity freeze.
-  At exact tip `98ebb458`, the AC-1 request-authority, room-move, briefing-only, and distinct-identity tests plus `TestGateBriefingRejectsMalformedReferenceBeforeBinding` reject malformed, stale, moved, and rebound identity before entity mutation.
-- DONE: AC-3 — Prove direct Captain Result and complete recursive presentation.
-  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`, `TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation`, and `TestExactCanonicalBriefingIsIndependentAssociationInventory` accept only the portable direct Captain Resolution and reject advisory wrappers, adoption provenance, wrong authority, incomplete or mistyped inventory, and a Reference primary.
+  The clean candidate remains exactly 17 files and `+1086/-169` = 1,255 changed lines. Cycle 11 budgets an exact estimated `+42/-0` in existing `internal/cli/gate_test.go`, projecting 17 files/1,297 changed lines under the approved 1,300-line cap. Only these three focused test gaps remain; no production, fixture-file, interface, provider, harness, or documentation edit is justified.
+- DONE: Fold the Cycle 11 staff-review evidence gaps into the existing proof surfaces.
+  The ACs and behavioral plan now require a post-bind Briefing-question mutation, same-cardinality duplicate-id and wrong-revision inventory variants, and deletion of each retained provider file after close. Each addition reuses the existing CLI mutation matrices or retained-file loop and asserts byte-clean rejection or read-only validation failure; no new mechanism or harness is introduced.
+- DONE: AC-1 — Specify proof that only the exact authorized room makes a decision durable.
+  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom` closes the canonical fixture once, while the existing authority, room, briefing-only, advisory, and distinct-identity matrices reject adjacent mutations with byte-identical entity state. Cycle 11 adds the missing valid-Briefing question mutation after binding to that same byte-clean room-record matrix.
+- DONE: AC-2 — Specify proof that request, Briefing, attempt, and authority identity freeze.
+  At exact tip `98ebb458`, the request-authority, room-move, briefing-only, malformed-Reference, and distinct-identity tests reject malformed, stale, moved, and rebound identity before mutation. Cycle 11 adds an explicit post-bind question-byte change and requires room recording to reject with the entity byte-identical.
+- DONE: AC-3 — Specify proof of direct Captain Result and complete recursive presentation.
+  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`, `TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation`, and `TestExactCanonicalBriefingIsIndependentAssociationInventory` cover direct authority and incomplete/mistyped presentation. Cycle 11 adds same-cardinality duplicate-id and wrong-revision rows to the existing inventory mutation matrix so cardinality alone cannot satisfy completeness.
 - DONE: AC-4 — Prove atomic one-use close and frozen history.
   At exact tip `98ebb458`, `TestCanonicalLifecycleRebindCloseFreezeAndSupersede`, `TestWriterCASValidationAtomicityAndLock`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`, and `TestGateEligibilityAndConsumeAuthorizeOnce` cover close-before-replace validation, byte-clean rejection, stale successor refusal, frozen closure, and one-use application.
-- DONE: AC-5 — Prove exact retained Result and inventory byte identity.
-  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom` freezes both raw digests, makes `gate validate` reject a one-byte change to either fixed provider file, and passes again only after exact bytes are restored.
+- DONE: AC-5 — Specify proof of exact retained Result and inventory byte identity.
+  At exact tip `98ebb458`, `TestGateRecordConsumesDirectBindingResultFromPreparedRoom` freezes both raw digests, makes `gate validate` reject a one-byte change to either fixed provider file, and passes after exact restoration. Cycle 11 extends that same two-path loop to delete each file and require validation failure before restoration.
 - DONE: AC-6 — Prove zero provider coupling in the binary.
   At exact tip `98ebb458`, `TestGateReviewVerbIsAbsentAndSideEffectFree` proves the presentation verb is absent without side effects, and `go list -deps ./cmd/spacedock` returns zero Subspace dependencies; either regression makes the measured count non-zero.
 
 ### Summary
 
-Reset the binding design to the Captain-approved prepared-room recorder boundary without changing the clean implementation candidate. The six criteria now measure exact authorized decision durability, frozen identity, complete derived presentation, atomic one-use history, retained-byte tamper detection, and zero provider coupling using the tests already green at `98ebb458`; obsolete transport obligations are removed, and no product edit remains.
+Reset the binding design to the Captain-approved prepared-room recorder boundary and folded Cycle 11's three test-only falsifiability gaps into its existing CLI matrices. Candidate `98ebb458` remains untouched at 17 files/1,255 changed lines; the next implementation pass is limited to an exact estimated `+42/-0` in `internal/cli/gate_test.go`, projecting 1,297 under the 1,300 cap. No production behavior, interface, provider transport, harness, fixture file, or documentation edit is proposed.
