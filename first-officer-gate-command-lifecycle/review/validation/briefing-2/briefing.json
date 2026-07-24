@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:validation:attempt-2:revision-1",
+  "question": "Should PR #565's clean-runner Git identity failure be routed back to implementation as a material evidence defect before any merge?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0ee5e6cd144d4d78b4288fed7cd2dfadf8ba93d7a8720e02c9d32d04e50147ce"
+    },
+    {
+      "id": "artifact:offline-ci-failure",
+      "uri": "offline-ci-failure.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:2776ee74e9a7fa2b99480f9077490770159a067446ba7ee899552d5fefa54788"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:fec172ce2f4c14775182d973bdc7daf8252081e84c5c5c88d6f7483ba1b85fa7"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6425a361d95b0f5fc64d712aa9da8bd1b377ca9579ec6da5c6e3523fc8039003"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:validation-correction",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Proceed toward merge despite the red evidence",
+          "to": "stage:done"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Correct the fixture in implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold the open pull request",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}

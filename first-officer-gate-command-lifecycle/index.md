@@ -182,6 +182,12 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+            - id: gate-attempt:6y-validation-2
+              briefing:
+                id: briefing:docs-dev:6y:validation:attempt-2:revision-1
+                digest: sha256:c5fc51c725cd43460b01b65af4558fcfed164eb141c9cd7b8ab67b87c606557a
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-2
 review-round:
     id: round:6yyyyemkqwsett3g1c991w9f:implementation:15
     stage: implementation
