@@ -10,6 +10,20 @@ score: "1.0"
 worktree:
 issue:
 sprint: durable-decisions
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:s4:backlog
+    records:
+        - id: gate:docs-dev:s4:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:s4-backlog-1
+              briefing:
+                id: briefing:docs-dev:s4:backlog:attempt-1:revision-1
+                digest: sha256:8d6888f2f9d067835f24c8845d703547638ff919f71f709c681e856551cfb80f
+                digest-domain: canonical-bytes
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Make a prepared gate room mechanical and self-consistent so a First Officer supplies judgment and artifact choices, while Spacedock derives recorder metadata and any presentation provider consumes one frozen package.
