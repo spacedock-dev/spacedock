@@ -317,3 +317,40 @@ Commit `396c92a3` adds generic ordered workflow context pointers, reconciles the
 ### Summary
 
 The authorized CI run repairs the implementation report's sole FAILED checklist item without changing product code or the reviewed implementation tip. The earlier local Claude revoked-token and Pi OAuth-refresh failures remain valid historical harness evidence, while the approved secret-bearing lanes now prove the candidate itself green on every required runtime.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce every canonical AC at exact candidate 396c92a3: exact mixed-newline selected bytes, ordered tri-state metadata, overlap/malformed refusals, live-read mutation behavior, undeclared byte identity, and host-neutral one-fetch envelopes.
+  Committed AC tests passed; throwaway literal-byte probes also covered all splitlines separators, UTF-8/nonblank spaces, EOF and endpoint siblings, no-artifact failure, and actual execution of each Claude/Codex/Pi envelope fetch.
+- DONE: Audit the 10-file/560-line surface against the approved exclusions and adversarially attack parser-coordinate identity, EOF/separator boundaries, duplicate/intersecting spans, current-version changes, allocation/work scaling, and tests that could pass on the wrong bytes.
+  Exact tip `396c92a3` is clean at 10 files/560 changed lines; no excluded surface appears, raw half-open coordinates and pairwise overlap held, and a 1,000-selector probe completed in 7.48 ms on Apple M4.
+- DONE: Verify focused/full/race/docs/Roborev evidence and exact-head Runtime Live E2E run 30087598672; issue a fresh PASSED or REJECTED recommendation with every finding classified by defect kind and release scope.
+  Focused, full, race, gofmt, and strict MkDocs gates passed; Roborev 1990 and CI run 30087598672 were inspected at exact SHA, with all five required CI jobs green. Recommendation: PASSED.
+- DONE: AC-1 (VALUE) - A dispatched worker receives the exact canonical bytes of the workflow policy selected for its stage, without copying that policy into the stage subsection.
+  `TestDeclaredContextBuildAndHostNeutralFetch` plus the independent literal probe fail on any UTF-8/newline/trim/separator/final-LF byte change; the dispatch artifact contains only the pointer.
+- DONE: AC-2 - Workflow-owned section selection is generic, ordered, and bounded.
+  Tri-state/reverse-order fixtures proved inheritance, replacement, explicit clear, unrelated exclusion, arbitrary heading names, fence safety, and declaration order.
+- DONE: AC-3 - Invalid section declarations stop dispatch before a worker artifact can be consumed.
+  Malformed, wrong-kind, missing, repeated, ambiguous, parent/stage, child/stage, and selected parent/child cases failed loudly; a fresh missing-selector probe observed empty stdout and zero matching dispatch artifacts.
+- DONE: AC-4 - Undeclared workflows preserve the stable dispatch and read contract byte-for-byte.
+  Existing build goldens and decorated/malformed/separator/CRLF/nested parity tests passed unchanged; independent decorated, fenced-stage, mixed-separator, and plain fixtures equaled the legacy extractor exactly.
+- DONE: AC-5 - The pointer adopts valid current workflow context and refuses invalid current context at bootstrap.
+  The temporal fixture adopted v2 after a v1 build and returned empty stdout/nonzero for current wrong-kind, missing, and newly overlapping edits.
+- DONE: AC-6 - Declared context is delivered through the same host-neutral bootstrap on every runtime.
+  A throwaway validator built the exact candidate and executed each emitted Claude/Codex/Pi shell command, obtaining identical canonical bytes; CI run 30087598672 independently kept all live host lanes green.
+- DONE: Material findings — none; no outcome defect or evidence defect affects a supported AC.
+  Exact-byte and lifecycle behavior are valid, and the fresh command-level proofs close the observable boundaries that substring-only assertions would miss.
+- DONE: Deferred risk — outcome risk, non-material: a column-zero YAML comment shaped as `## Heading` can collide with a selected body heading.
+  The crafted trigger is absent from templates/live evidence; supported body headings pass. Promote on a supported template, live workflow, user report, or explicit frontmatter-transparency promise.
+- DONE: Deferred risk — outcome risk, non-material: strict parsing rejects the requested stage when another stage has wrong-kind `context-sections`.
+  This requires an already-invalid workflow and matches the approved strict parse/AC-3; promote if partial operation with invalid unrelated metadata becomes supported.
+- DONE: Deferred risk — outcome risk, non-material: inline state-branch fallback could emit `spacedock-state/.` for an underivable workflow basename.
+  Resolved absolute workflow paths make the trigger unreachable in supported fixtures; promote if a supported root/dot path reaches dispatch build.
+- DONE: Deferred risk — outcome risk, non-material: selector lookup and overlap checks are quadratic at very large declaration counts.
+  The author-controlled unsupported stress shape remained 7.48 ms at 1,000 selectors; promote if supported workflows reach thousands of selected sections or resolver latency becomes observable.
+- DONE: Polish finding — neither outcome nor evidence defect, non-material: `extractStageSubsection` remains production-unused.
+  The wrapper supports an existing compatibility measurement and has no observable harm; remove only in later cleanup with that test migrated.
+
+### Summary
+
+Fresh validation recommends PASSED for exact candidate `396c92a302e1ac220d552d6f16600e9f08ccb622`. All six ACs have behavior-level evidence, required local and authorized CI gates are green, no material finding remains, and the advisory risks retain concrete promotion conditions without expanding this release.
