@@ -595,7 +595,7 @@ func TestRecordedGateLifecycleWorkflowDiscoveryEquality(t *testing.T) {
 		t.Fatal("planted discoverable workflow did not turn equality red")
 	}
 }
-func TestRecordedGateLifecycleShippedSkillMutantTurnsRed(t *testing.T) {
+func TestRecordedGateLifecycleCommandTextMutants(t *testing.T) {
 	root := recordedGateRepoRoot(t)
 	original := readFile(t, filepath.Join(root, "skills", "fo-gate-lifecycle", "SKILL.md"))
 	if events := procedureEvents(original); strings.Join(events, ",") != strings.Join(recordedGateRequiredEvents, ",") {
@@ -621,7 +621,7 @@ func TestRecordedGateLifecycleShippedSkillMutantTurnsRed(t *testing.T) {
 			copyPath := filepath.Join(t.TempDir(), "skills", "fo-gate-lifecycle", "SKILL.md")
 			writeFile(t, copyPath, mutant)
 			if events := procedureEvents(readFile(t, copyPath)); strings.Join(events, ",") == strings.Join(recordedGateRequiredEvents, ",") {
-				t.Fatalf("copied shipped-skill %s deletion kept the three-event grader green: %v", tc.event, events)
+				t.Fatalf("copied shipped-skill %s deletion kept the structural command-text check green: %v", tc.event, events)
 			}
 		})
 	}
@@ -771,6 +771,7 @@ func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
 	}
 }
 func recordedGateReviewFromClaudeStream(stream string) string {
+	stream = strings.SplitN(stream+"Committed recorded-gate-task", "Committed recorded-gate-task", 2)[1]
 	stream = strings.SplitN(stream, "gate record recorded-gate-task --decision ", 2)[0]
 	var review string
 	walkStreamBlocks(stream, func(block streamContentBlock) {
@@ -782,6 +783,7 @@ func recordedGateReviewFromClaudeStream(stream string) string {
 }
 
 func recordedGateReviewFromCodexJSONL(jsonl string) string {
+	jsonl = strings.SplitN(jsonl+"Committed recorded-gate-task", "Committed recorded-gate-task", 2)[1]
 	jsonl = strings.SplitN(jsonl, "gate record recorded-gate-task --decision ", 2)[0]
 	var review string
 	for _, line := range strings.Split(jsonl, "\n") {
@@ -801,6 +803,7 @@ func recordedGateReviewFromCodexJSONL(jsonl string) string {
 }
 
 func recordedGateReviewFromPiSession(session string) string {
+	session = strings.SplitN(session+"Committed recorded-gate-task", "Committed recorded-gate-task", 2)[1]
 	session = strings.SplitN(session, "gate record recorded-gate-task --decision ", 2)[0]
 	var review string
 	for _, line := range strings.Split(session, "\n") {
@@ -829,7 +832,7 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	log := readFile(t, commandLog)
 	builds, consumed, ordered := 0, false, true
 	ordered = strings.Count(log, "exit=0\tgate --help") == 1 && strings.Index(log, "exit=0\tgate record ") > strings.Index(log, "exit=0\tgate --help")
-	stateHeads, dispatchHead := []string{}, ""
+	dispatchHead := ""
 	for _, line := range strings.Split(log, "\n") {
 		if strings.HasPrefix(line, "exit=0\tgate consume ") {
 			consumed = true
@@ -837,9 +840,6 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 		if strings.HasPrefix(line, "exit=0\tdispatch build ") {
 			builds++
 			ordered = ordered && consumed
-		}
-		if strings.HasPrefix(line, "state-head\t") {
-			stateHeads = append(stateHeads, strings.TrimPrefix(line, "state-head\t"))
 		}
 		if strings.HasPrefix(line, "dispatch-head\t") {
 			dispatchHead = strings.TrimPrefix(line, "dispatch-head\t")
@@ -855,16 +855,8 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	if len(commits) == 1 && strings.Contains(after, recordedGateDispatchMarker) {
 		effects = 1
 	}
-	closeCommit, consumedCommit := "", ""
-	for _, head := range stateHeads {
-		snapshot := recordedGateEntityAt(t, fixture, head)
-		switch {
-		case closeCommit == "" && strings.Contains(snapshot, "decision: approve") && strings.Contains(snapshot, "state: pending"):
-			closeCommit = head
-		case consumedCommit == "" && strings.Contains(snapshot, "state: consumed"):
-			consumedCommit = head
-		}
-	}
+	closeCommit := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "-Sdecision: approve", "--", entityRel))
+	consumedCommit := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "-Sstate: consumed", "--", entityRel))
 	return recordedGateObservation{
 		events: recordedGateEventsFromCommandLog(log), before: before, after: after,
 		dispatch: recordedGateDispatchProof{
