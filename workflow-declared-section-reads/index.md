@@ -77,7 +77,16 @@ Do not reinterpret the current stage through the fence-safe selector scanner: th
 
 This is a reconciliation of the two shipped parsers, not a third parser and not a claim that their heading semantics are identical. The legacy extractor remains the authority for the mandatory current-stage subsection and therefore preserves every no-declaration byte. The fence-safe scanner remains the authority for declared context selectors, so fenced lookalikes never satisfy a selector. Existing decorated, malformed, separator, CRLF, nested-heading, and no-declaration fixtures plus the cycle-2 pre-refactor fenced-stage characterization pin both sides without golden regeneration.
 
-The current `### {stage}` subsection remains mandatory and is always first. `dispatch show-stage-def` then appends each resolved section in declaration order, with one blank line between sections and one final newline. With no effective `context-sections`, stdout is byte-identical to today's command.
+### Declared-context rendering
+
+The current `### {stage}` subsection remains mandatory and is always first. Its rendering is byte-for-byte the existing legacy result. Each selected raw source span then receives one explicit canonical rendering:
+
+1. Split with the existing `splitTextLines` semantics, so LF, CRLF, lone CR, VT, FF, FS, GS, RS, NEL, LS, and PS are logical line boundaries and every boundary is represented as LF in output.
+2. Remove only trailing logical lines whose `strings.TrimSpace` value is empty. Preserve the heading, every nonblank byte (including UTF-8 and trailing spaces on nonblank lines), and all leading or internal blank lines.
+3. Join the remaining logical lines with `\n`; the rendered component itself has no trailing terminator.
+4. Assemble the rendered stage followed by rendered context components in declaration order with exactly `\n\n` between components, then append exactly one final `\n` to command stdout.
+
+Thus a raw declared section `## Pølicy\r\nα\rβ\u0085γ\r\n \t\r\n` canonically renders as `## Pølicy\nα\nβ\nγ`; when appended after a stage it is preceded by two LF bytes and the entire command ends in one LF byte. This is the exact-byte contract: equality is against the canonical rendering, not the source's newline encoding. With no effective `context-sections`, assembly is the existing rendered stage plus its existing final LF and remains byte-identical to today's command.
 
 Repeated selector values are invalid rather than silently de-duplicated. A selector resolving to zero headings is missing; one resolving to more than one heading is ambiguous. After resolving unique headings, validate all half-open spans pairwise: every selected span must be disjoint from the current-stage span and from every other selected span. Intersection rejects all three material overlap shapes—selected parent containing the stage, selected child inside the stage, and selected parent containing another selected child—as well as exact duplicate spans. Sibling spans that only meet at an endpoint remain valid. Diagnostics name both headings and both `[start,end)` spans.
 
@@ -102,6 +111,7 @@ The First Officer therefore neither reads nor assembles policy sections. No `--i
 
 - `context-sections` serves AC-1 by giving an authored policy a stage-scoped pointer. The simplest alternative, copying policy prose into stage definitions, is insufficient because it creates multiple authorities that can diverge.
 - Raw-byte span reconciliation between the unchanged legacy stage extractor and unchanged fence-safe selector scanner serves AC-1, AC-2, AC-3, and AC-4. Forcing either parser's heading semantics onto the other is insufficient because it changes an existing stage byte contract or weakens fence-safe context selection; a third parser would add another divergence.
+- The canonical selected-span renderer serves AC-1 and AC-4 by making mixed newline input deterministic while leaving undeclared stage output untouched. Raw emission is insufficient because it combines a newline-normalized legacy stage with editor-dependent context terminators and leaves inter-section/final termination ambiguous.
 - Strict, presence-aware YAML decoding serves AC-2 and AC-3 by preserving absent/inherited, explicit-empty, replacement, and wrong-kind states. Reusing the scalar map is insufficient because it collapses sequences to `""` and has no parse-error channel.
 - Builder preflight plus live `show-stage-def` resolution serves AC-1, AC-3, and AC-5 by failing before spawn and again before work while preserving the worker's single fetch. FO assembly, snapshots, or one fetch per section are insufficient because they reintroduce hand assembly, stale copies, or a bootstrap multi-read protocol.
 
@@ -120,6 +130,18 @@ Cycle 2 exercised the previously unverified metadata and temporal path with a th
 The throwaway file was removed after the run. Its single-buffer resolver shape and the explicit-empty red case seed the first permanent implementation tests.
 
 A second throwaway characterization ran `go test ./internal/dispatch -run TestIdeationSpikeCharacterizeLegacyFencedStage -v` against the real `extractStageSubsection` and passed. With a fenced `### ideation` before a real one, today's extractor returns the fenced span exactly as `"### ideation\n\nfenced-body\n```"`. That measured compatibility behavior is why cycle 2 reconciles raw byte spans instead of moving stage identity onto the fence-safe selector scanner. The throwaway file was removed; implementation first commits this result as a permanent pre-refactor characterization.
+
+Cycle 3 exercised the load-bearing raw-span mapping with one buffer containing UTF-8 (`Wørkflow`, `Pärent`, `α`-`δ`), CRLF, lone CR, VT, a decorated stage, its level-4 child, a level-2 parent, and a disjoint level-2 sibling. A temporary bridge invoked the real fence-safe `scanHeadings(splitLines(...))`; the dispatch test invoked the real `extractStageSubsection` and independently mapped both shipped parsers' coordinates to source byte offsets.
+
+The first run failed with a slice-bounds panic: a naïve rune-range mapper advanced past a CRLF pair at CR, then visited its LF byte again and produced reversed bounds. The mapper was corrected to decode manually and advance over CRLF as one separator, exactly like `splitTextLines`. The rerun command `go test ./internal/dispatch -run TestIdeationSpikeMixedRawSpanReconciliation -v` passed and observed:
+
+- legacy rendered stage exactly ``### `build` *(captain)*\nstage β\ncontinuation\n\n#### Child\nchild γ``;
+- its raw interval sliced exactly ``### `build` *(captain)*\rstage β\vcontinuation\r\n\r\n#### Child\r\nchild γ\r\r``;
+- the fence-safe parent, child, and disjoint intervals each sliced their independently authored raw UTF-8/mixed-newline substrings exactly;
+- stage/parent, stage/child, and selected-parent/selected-child intersections were true;
+- stage/disjoint and selected-parent/disjoint intersections were false.
+
+Both temporary spike files were removed. The CRLF double-advance failure and the five interval outcomes seed permanent reconciliation tests; implementation must not replace them with line-number comparisons.
 
 ### Expected surface
 
@@ -143,8 +165,8 @@ The reviewed reconciliation raises the expected implementation surface to 9-12 f
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) - A dispatched worker receives every byte of the workflow policy selected for its stage, without copying that policy into the stage subsection.**
-Verified by: a fixture with a unique policy section measures the current undeclared baseline as 0 policy bytes, then drives `dispatch build`, executes its emitted one-file bootstrap fetch, and measures authored-policy-length bytes in the result with exact equality to `stage + separator + authored policy + final LF`. Removing the selector, changing one authored byte, or making the fetch stage-only makes the assertion fail.
+**AC-1 (VALUE) - A dispatched worker receives the exact canonical bytes of the workflow policy selected for its stage, without copying that policy into the stage subsection.**
+Verified by: a fixture with a unique raw policy `## Pølicy\r\nα\rβ\u0085γ\r\n \t\r\n` measures the current undeclared baseline as 0 policy bytes, then drives `dispatch build`, executes its emitted one-file bootstrap fetch, and asserts literal equality to `legacy stage bytes + "\n\n## Pølicy\nα\nβ\nγ\n"`. Removing the selector, emitting raw CR/CRLF/NEL, retaining the trailing whitespace-only line, changing a UTF-8 byte, using any separator other than two LF, or making the fetch stage-only fails the assertion.
 
 **AC-2 - Workflow-owned section selection is generic, ordered, and bounded.**
 Verified by: a custom-stage fixture selects two arbitrary heading names in reverse README order and asserts output follows declaration order, contains no unrelated section bytes, inherits a default when absent, replaces it at stage scope, and preserves explicit `[]` as a clear. A fenced lookalike heading is not selectable. Swapping order, merging defaults, collapsing absent with empty, leaking an unrelated section, or recognizing the fenced lookalike fails the fixture.
@@ -163,13 +185,14 @@ Verified by: the shared dispatch/integration fixture executes the emitted fetch 
 
 ## Test plan
 
-Implementation starts with the AC-1 red behavior fixture. It authors a README with a custom stage, one unique top-level policy, one unrelated section, and no copied policy in the stage subsection; the test builds the assignment, parses and executes its emitted fetch, and compares observed bytes to independently-authored fixture strings. Estimated cost: medium, about 80-120 test lines.
+Implementation starts with the AC-1 red behavior fixture. It authors a README with a custom stage, one unique top-level policy, one unrelated section, and no copied policy in the stage subsection. The policy mixes UTF-8, CRLF, lone CR, NEL, internal blanks, and trailing whitespace-only lines; the test builds the assignment, parses and executes its emitted fetch, and compares stdout to one independently authored LF-canonical literal including the two-LF component separator and one-LF final terminator. Estimated cost: medium, about 90-130 test lines.
 
 Add focused tests around the existing parser and stage metadata:
 
 - `internal/status`: strict in-memory YAML decoding with an error channel; absent/inherited, explicit-empty, replacement, ordering, and wrong-kind cases; exact half-open section spans; fenced-heading exclusion; and ambiguous-heading reporting. The permanent version of the cycle-2 spike must preserve present-empty as a non-nil empty slice or an equivalent explicit state. These exercise the existing parser; they do not add JSON fields or a second parser. Estimated cost: 130-180 test lines.
 - `internal/dispatch`: build-time validation and exact `show-stage-def` assembly for two arbitrary headings in declaration order; a pairwise interval matrix covering stage/parent, stage/child, selected parent/child, exact duplicate, and disjoint siblings; and a single-buffer resolver check. Extend `TestBuildStageDisciplineRidesFetchNotInlineAssignment` or its fixture rather than creating a parallel bootstrap harness. Estimated cost: 170-240 test lines.
-- Reconciliation: before refactoring, commit the cycle-2 fenced-stage characterization; then drive the in-memory legacy stage extractor through every existing decorated-stage, malformed-heading, VT/FF/FS/GS/RS/NEL/LS/PS separator, CRLF/lone-CR, nested-level-4, and no-declaration case without regenerating its golden. In the same raw source, prove a fenced context lookalike remains absent from the fence-safe selector table. Assert raw-byte spans from the two existing parsers, not their incompatible line numbers, drive overlap decisions.
+- Reconciliation: before refactoring, commit the cycle-2 fenced-stage characterization and cycle-3 mixed-buffer spike as permanent tests. Drive the in-memory legacy stage extractor through every existing decorated-stage, malformed-heading, VT/FF/FS/GS/RS/NEL/LS/PS separator, CRLF/lone-CR, nested-level-4, and no-declaration case without regenerating its golden. In the same raw source, prove a fenced context lookalike remains absent from the fence-safe selector table. Assert raw-byte spans from the two existing parsers, not their incompatible line numbers, drive overlap decisions.
+- Rendering: table-drive selected raw sections using LF, CRLF, lone CR, and one exotic separator; assert UTF-8 and nonblank spaces survive, internal blanks survive, trailing whitespace-only logical lines do not, components have exactly two LF between them, and stdout has exactly one final LF. Expected strings are literals, not output from the production canonicalizer.
 - Temporal behavior: build against v1; mutate the same README to valid v2 and execute the emitted fetch to prove live adoption; then mutate independently to wrong-kind, missing, and overlapping current states and require fetch failure. Each resolver invocation reads the README once so the test can detect version mixing.
 - Compatibility: leave every existing dispatch and `show-stage-def` golden untouched, then run the golden suites as the no-declaration byte baseline. Add only declared-context fixtures; do not regenerate unrelated goldens.
 - Runtime coverage: use the existing shared host-envelope fixture to run the same fetch for Claude, Codex, and Pi. Because this changes the host-neutral dispatch path, the existing approval-gated `claude-live`, `codex-live`, and `pi-live` lanes are required green; no new LLM scenario is justified unless the shared fixture proves unable to execute the fetch.
@@ -192,6 +215,8 @@ Update `docs/site/concepts/workflows-and-entities.md` after the frontmatter exam
 +replaces the default, and `[]` clears it. `dispatch build` validates every
 +selection before spawn; the worker's existing `show-stage-def` read returns
 +the stage definition followed by those sections in declaration order.
++Selected sections normalize newline boundaries to LF, drop trailing blank
++lines, use one blank line between sections, and end stdout with one LF.
 +The read uses the then-current valid README; an invalid current selection
 +fails before stage work. Workflows without the field keep existing output
 +unchanged.
@@ -229,3 +254,16 @@ The ideation now specifies one workflow-owned ordered selector contract whose va
 ### Summary
 
 Cycle 2 reconciles the incompatible shipped parsers without changing either one's public semantics: raw-byte spans provide one overlap coordinate while the stage and selector authorities stay distinct. It adds structural overlap rejection, records the real metadata spike, and makes the pointer's live-read semantics explicit and falsifiable.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Run and record a bounded spike using both shipped parsers over one raw buffer with UTF-8, CRLF/lone-CR, an exotic logical separator, and intersecting/disjoint headings; prove every mapped interval slices the intended bytes and yields the intended overlap result.
+  The mixed-buffer spike caught and fixed a CRLF double-advance panic, then passed exact legacy-stage/parent/child/disjoint raw slices and the three-true/two-false overlap matrix.
+- DONE: Define exact declared-context rendering for trailing blanks and LF/CRLF/lone-CR inputs, including the separator between assembled sections and final terminator.
+  Selected spans use legacy split-lines normalization, trim only trailing whitespace-only logical lines, preserve other bytes/blanks, join components with two LF, and end stdout with one LF.
+- DONE: Extend ACs and the existing fixture plan so the exact-byte value claim fails on a non-LF declared context without changing undeclared legacy output or adding a third parser.
+  AC-1 now pins a literal UTF-8 CRLF/lone-CR/NEL payload; AC-4 retains every undeclared golden; the fixture plan promotes both bounded spikes into the existing status/dispatch lanes.
+
+### Summary
+
+Cycle 3 proves the raw-byte reconciliation on the real parsers and records the mapping bug the spike exposed. The design now defines one exact canonical output for mixed-newline context and a literal non-LF value fixture, while leaving the legacy no-declaration path untouched.
