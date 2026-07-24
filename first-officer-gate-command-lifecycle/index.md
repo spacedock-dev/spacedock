@@ -1415,3 +1415,141 @@ Intended incremental total is **+65/-31**; total additions from baseline `13d702
 ### Summary
 
 Checklist accounting is **2 DONE, 1 SKIPPED, 2 FAILED**. The cycle-20 presenter correction succeeds on the decisive unchanged Codex journey and all deterministic checks, but supported-route compatibility, legacy presentation, commit-event attribution, onboarding scope, and non-Codex live evidence prevent fresh validation. Implementation stops at exact tip `08675f02` and returns the ticket to design-reset ideation with complete retained evidence.
+
+## Canonical v1 design reset (cycle 22; Feedback Cycle 19 authority)
+
+This section is the sole active delta over the canonical task body above. It replaces the prototype presentation assumptions in the Problem, Operational lifecycle, AC-1, AC-3, AC-6, AC-8, Minimum replay and test plan, Obligation delta, Expected surface, Documentation change proposal, Dependencies, Minimum value seed, and Boundary. AC-2, AC-4, AC-5, and AC-7 remain active except where this section strengthens their evidence boundary. Historical reports remain evidence, not competing authority.
+
+### Problem and evidence boundary
+
+Roborev job 2170 exposed a v1 contradiction rather than a compatibility requirement. The shared `gate-guardrail` journey and its Claude/Codex assertions still require the prototype-only `Gate review:` and `Decision:` markers and an entity that is presented without a recorded Briefing. The v1 presenter instead requires an exact bound Briefing identity and digest. Because v1 is unreleased, retaining both shapes would manufacture a compatibility layer and make the snapshot field false on the unbound path.
+
+The truthful v1 invariant is **bind before present**. A gate-stage entity with no selected attempt is `validating`, not presentation-ready. The FO retains a canonical Briefing, records the open binding, commits the package, and only then presents the six-field review. If no Captain decision or delegated conn exists, it stops with that open attempt; it does not close, consume, advance, or dispatch. The existing `gate-guardrail`, headless gate-stop, and live-scenario primitive journeys are refitted to this bind-and-hold outcome. Their old markers and byte-identical-entity expectation are deleted, not accepted as aliases.
+
+Cycle 21 retained only the exact Claude failure statements, not the full streams. The first Claude run completed the lifecycle but its review omitted the exact bound digest. The unchanged retry completed the lifecycle but durable state omitted the exact delegated directive. No evidence identifies the omitted command argument, actor spelling, or intermediate prose, so this design makes no claim about them. The supported diagnosis is two independent data-flow losses: the bound snapshot tuple did not survive into the rendered review, and the delegated authority token did not survive into the durable Resolution. The next Claude run must use a stable `SPACEDOCK_LIVE_ARTIFACT_DIR` and retain stream, final message, command log, before/after entity, and state Git history on pass or fail.
+
+### Proposed v1 contract
+
+1. **One bind-before-present path.** `first-officer-shared-core.md` and `fo-gate-lifecycle` remove “unbound legacy gate” behavior. The gate lifecycle owns `validating -> open/committed -> presented`; absence of a supplied package means the FO assembles and retains one from current stage evidence, not that it presents without binding.
+2. **Immutable presentation and authority inputs.** After the successful bind commit, the FO rereads the selected record and captures the exact `(Briefing.id, Briefing.digest)` pair. `present-gate` renders both values byte-for-byte in `Reviewed snapshot:` and blocks decision mutation if either is absent. At engage, an explicit conn is captured once as an opaque directive token; delegated close passes that exact token to `--directive`, never a summary, reconstructed grant, review text, or reason. These are shipped-skill obligations; the goal-only live prompt still carries only fixture, authority input, goal, and stop marker.
+3. **Successful-commit attribution, not narration.** The existing logging wrapper remains the only command substrate. It already records `begin`, `exit=0`, and `state-head` for successful `state commit`. Each host extractor pairs the structured state-commit command occurrence in its existing stream/session with the corresponding successful wrapper-log completion and state HEAD. Only a later root review and an eventual structured decision command form the review interval. Assistant narration containing `Committed`, a failed commit, text before the commit tool call, child output, and tool/skill output cannot open the interval. Codex additionally uses its existing `item.completed` command event; Claude correlates the existing Bash `tool_use` with the later successful wrapper entry; Pi correlates its root-session `toolCall` with the same wrapper entry. No new harness, recorder field, timestamp protocol, or host lifecycle is introduced.
+4. **Feedback rejection stays outside the Captain gate lifecycle.** A completed feedback reviewer `REJECTED` result is owned by `feedback-rejection-flow`, before Captain presentation. It loads that owner and routes correction without binding, Resolution, consume, or successor dispatch. `fo-gate-lifecycle` is intentionally not a precondition because no Captain gate is entered. The shared-core contract test must pin this branch before the ordinary lifecycle load, resolving job 2170's ordering question without duplicating lifecycle rules.
+5. **Provider and decision behavior stay settled.** Presentation overrides retain their blocking room/Result boundary. Captain phrase mappings remain deterministic and deletion-sensitive; no route-by-host live matrix is added absent an observed wrong goal-only mapping. Recorder, schema, application, provider, consume, resume, terminal merge, and one-use semantics do not change.
+
+The immutable tuple/token mechanism serves AC-3 and AC-6. The simpler alternative—repeat “exact” in the live prompt—is insufficient because it coaches the oracle and leaves shipped skills unproven. The structured-command/log pairing serves AC-1, AC-6, and AC-8. The simpler alternative—keep splitting on `Committed`—accepts narration; a second harness or recorder event is unnecessary because the existing stream and wrapper already expose command identity, exit, and committed HEAD. Refitting the guardrail journey serves AC-1 and AC-6. Keeping an unbound fallback is insufficient because no truthful digest exists; deleting all no-conn proof would lose the human-owned stop outcome.
+
+### Acceptance-criterion delta
+
+**AC-1 (VALUE, replacement) — Every v1 presentation is backed by one durable binding and every outcome reaches only its owner.** Across the refitted no-conn guardrail, delegated approved lifecycle, and terminal/rejection controls, the measured count of root reviews before a successful open-binding commit is **0**, decisions without a prior successful binding commit is **0**, advances/dispatches without a consumed descendant commit is **0**, and no-conn closes/consumes/dispatches is **0**. A no-attempt gate becomes open and committed before its one review, then stays at the gated stage. Reviewer `REJECTED` instead enters its feedback owner with zero Captain lifecycle mutations. *Verified by:* real-CLI bind-and-hold fixtures, structured command/log ordering controls, unchanged approved-route durable-state oracle, terminal and rejection controls, the refitted Claude/Codex guardrail journey, and the headless Claude gate-stop journey.
+
+**AC-3 (replacement) — Direct and delegated authority are durably distinguishable and delegated conn is lossless.** Direct Captain close records `person:captain`. Delegated close records `agent:first-officer`, a nonblank evidence reason, and exactly one byte-for-byte occurrence of the conn captured at engage. Any missing, changed, duplicated, or substituted directive refuses the provenance grade even if bind, review, consume, and dispatch otherwise succeed. Every successful close still has its commit barrier. *Verified by:* public CLI fixtures, exact-token keep/drop/mutate/substitute controls over the lifecycle command contract, actor-swap control, real-Git stopped-route controls, and each supported-host approved journey's durable entity.
+
+**AC-6 (replacement) — The Captain receives exactly one truthful six-field root review after durable bind and before chat decision.** The sole review uses the ordered nonblank fields already defined by `present-gate`; `Reviewed snapshot:` contains the exact captured Briefing id and digest. Prototype `Gate review:` and `Decision:` markers have no contractual meaning. The refitted no-conn journey binds and commits, emits the same review, and stops open. Two qualifying root reviews, a review with either tuple member changed/omitted, or a review bracketed only by narration/failed commit fails. *Verified by:* presenter ownership tests, id/digest keep/drop/mutate controls, host transcript controls using successful wrapper-log completion, exact-one multiplicity controls, and unchanged goal-only Codex/Claude/Pi approved journeys.
+
+**AC-8 (replacement) — Shipped skills own one runtime-portable v1 lifecycle and supported-host evidence remains required.** Goal-only prompts contain no gate command sequence or review labels. Codex, Claude, and Pi each prove the approved lifecycle with the same durable oracle; Codex's Cycle-21 success is preserved. Claude must pass both exact tuple and exact directive obligations with full retained artifacts. Pi must pass after selecting a package root whose `pi-subagents` imports resolve. A dependency failure before the Pi scenario is runner provisioning, not product behavior and not a waiver of the Pi lane. *Verified by:* prompt exclusion, structural owner/load-order controls, deterministic three-host stream/session controls, and one retained live approved journey per supported host.
+
+AC-2's minimum three mutations, AC-4's package durability, AC-5's capability/path boundary, and AC-7's retry/meaning rules are unchanged. Captain-language runtime expansion remains correct-but-disproportionate: existing delete/swap controls plus durable routed/held snapshots own it, promoting only if a goal-only Captain phrase records or routes incorrectly.
+
+### Test plan and reset conditions
+
+1. **Deterministic bind-and-hold (medium; AC-1/AC-6):** refit the existing guardrail fixture and assertions, do not add a scenario. Execute the real binary through the existing wrapper. Assert one successful help, bind, and state commit; the committed HEAD contains the exact open binding/package; one six-field review follows; decision, consume, status advance, dispatch, verdict, completion, and archive counts remain zero. Delete the bind, successful commit, or review and the control must red.
+2. **Commit-attribution controls (medium; AC-1/AC-6/AC-8):** table-test the existing Claude, Codex, and Pi stream/session shapes paired with wrapper logs. Narrated `Committed` plus pre-commit review fails; failed commit plus review fails; successful matching commit then review passes; duplicate root reviews fail. Change the logged exit or `state-head`, structured command, root role/parent, tuple value, or decision boundary and the grade must fail.
+3. **Immutable tuple/directive controls (low; AC-3/AC-6):** contract tests delete or mutate each captured Briefing id/digest and exact directive handoff independently. Run the real CLI with the resulting exact arguments and assert the durable entity, not prompt substrings. The tuple control fails before close; directive mutation fails provenance even when the rest of the lifecycle is valid.
+4. **No-conn and rejection ownership (medium; AC-1/AC-8):** the refitted shared guardrail and headless Claude drive prove bind-and-hold. A structural control pins feedback reviewer `REJECTED -> feedback-rejection-flow` before ordinary `gate.lifecycle` and proves zero Captain mutations; the existing positive rejection journey remains integration evidence.
+5. **Live lanes (high; AC-1/AC-3/AC-6/AC-8):** run deterministic/full/race/docs/live-compile first. Preserve the unchanged Codex pass. Run Claude once with stable retained artifacts; one unchanged retry is allowed only for a distinct obligation. For Pi, first set `PI_SUBAGENTS_PACKAGE_ROOT` to a read-only verified compatible installation (the current FNM root contains the older package and its `@mariozechner/pi-coding-agent` peer); keep isolated home/auth and explicit extension/skill wiring, then run the unchanged journey. No global install is part of 6y.
+6. **Repository and docs gates (low):** run `gofmt -w ./cmd ./internal`, focused contract/lifecycle tests, `go test ./...`, `go test ./... -race`, live-tag compilation, and strict MkDocs. Run final-tip Roborev only after all required host evidence is retained.
+
+No throwaway code spike is needed. The retained Codex stream proves structured completed command events with exit code; the existing Claude stream parser already correlates Bash tool-use ids with tool results; the existing Pi root-session parser consumes assistant `toolCall` blocks; and the wrapper already records successful exits plus state HEADs. Implementation first combines those proven inputs in deterministic controls before live spend.
+
+Hard reset before further editing if successful-commit attribution requires a new recorder field, second wrapper/harness, timestamp protocol, or host-specific lifecycle; if a gate must be presented without a canonical bound Briefing; if goal-only prompts gain procedure/labels; if exact tuple/directive grading is weakened; if supported Pi is dropped rather than provisioned; if any eighteenth file or the LOC cap below is needed; or if the same shipped obligation fails twice unchanged on a supported host.
+
+### Expected surface and tolerance
+
+Implementation starts from local unpushed tip `08675f02ff278bb16965ce583f00b15bd724e81f`. It may refit the existing guardrail tests beyond the former eight-file boundary, but the complete surface is these **17 existing files**:
+
+| File | Intended incremental delta |
+| --- | ---: |
+| `skills/first-officer/references/first-officer-shared-core.md` | +3 / -3 |
+| `skills/fo-gate-lifecycle/SKILL.md` | +12 / -6 |
+| `skills/present-gate/SKILL.md` | +12 / -5 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +90 / -25 |
+| `internal/ensigncycle/shared_fixtures_test.go` | +20 / -25 |
+| `internal/ensigncycle/gate_assert_impl_test.go` | +22 / -15 |
+| `internal/ensigncycle/gate_assert_test.go` | +12 / -8 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | +10 / -6 |
+| `internal/ensigncycle/shared_scenarios_test.go` | +2 / -2 |
+| `internal/ensigncycle/claude_live_runner_test.go` | +10 / -5 |
+| `internal/ensigncycle/codex_live_runner_test.go` | +10 / -5 |
+| `internal/ensigncycle/live_gate_stop_test.go` | +35 / -20 |
+| `internal/ensigncycle/livescenario_adapter_live_test.go` | +15 / -12 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +22 / -4 |
+| `docs/site/concepts/gates-and-decisions.md` | +8 / -4 |
+| `docs/site/get-started/first-workflow.md` | +10 / -13 |
+| `docs/specs/scenario-testing-principles.md` | +4 / -2 |
+
+Intended incremental total is **+297/-160**. The full branch intent versus baseline `13d70249` is **+471/-224**; additions have a hard stop at **+510** versus that baseline. Shared core remains at or below **26,754 bytes**, lifecycle at or below **7,000 bytes**, and presenter at or below **7,500 bytes**. Test refactoring may move lines among the listed `internal/ensigncycle` files, but neither an eighteenth file nor the full-addition cap may be crossed without re-ideation.
+
+`recorded_gate_lifecycle_test.go` owns the common structured-command/log interval and three-host deterministic controls. The existing host runners only supply their native stream and wrapper log; they do not gain lifecycle procedure. The guardrail fixture remains one shared scenario but changes its durable outcome from byte-identical unbound presentation to committed-open bind-and-hold.
+
+### Documentation delta
+
+In `docs/site/concepts/gates-and-decisions.md`, replace the ambiguous gate-entry paragraph:
+
+```diff
+-After completion verification, the first officer binds the retained Briefing
+-before presenting the gate.
++After completion verification, the first officer retains a canonical Briefing,
++binds it to the current attempt, and commits that package before presenting the
++gate. A gate with no selected attempt is still validating, not ready for an
++unbound review. Without decision authority, the First Officer presents the bound
++review and stops with the attempt open.
+```
+
+In `docs/site/get-started/first-workflow.md`, replace the prototype example:
+
+```diff
+-Gate review: Add rate limiting to the API — review
+-Chosen direction: token-bucket limiter at the API middleware layer
+-Recommend approve.
+-
+-Checklist (from ## Stage Report in docs/ship-features/add-rate-limiting-to-the-api.md):
+-- DONE: limiter implemented with per-client buckets
+-- DONE: tests cover burst and refill behavior
+-
+-Assessment: 2 done, 0 skipped, 0 failed.
+-
+-Decision: approve to close; reject to bounce back to implementation.
++Capability/change: add a token-bucket limiter at the API middleware layer.
++Test and evidence: 2 done, 0 skipped, 0 failed; burst and refill tests pass.
++Reviewed snapshot: Briefing `...` at digest `sha256:...`.
++Findings: none.
++Recommendation: approve because the acceptance checks pass.
++Decision ask: approve to close, revise with concrete feedback, or hold at review.
+```
+
+Follow it with: “The First Officer binds and commits that reviewed Briefing before this message. You approve, revise with feedback, or hold; delegated conn changes who makes the decision, not whether the review appears.”
+
+In `docs/specs/scenario-testing-principles.md`, replace `gate-guardrail`'s “without mutation” seed with: “the FO durably binds the retained Briefing, presents exactly one current six-field review, and halts without Resolution, consume, advance, dispatch, or archival when no decision authority is present.”
+
+### Classifications and non-goals
+
+The Pi failure is **runner provisioning friction** under `docs/runtime-support.md`: the explicitly loaded `pi-subagents` 0.28.0 package imports optional `@earendil-works/pi-coding-agent`, which is absent, so the scenario never launched. A compatible installed 0.24.0 package and `@mariozechner/pi-coding-agent` peer exist under the FNM root, and the runner already accepts `PI_SUBAGENTS_PACKAGE_ROOT`. Validation must select and verify that root in isolation. This is not product evidence, not permission to mutate global packages, and not grounds to remove Pi from AC-8; package-health UX, if desired, is a separate runtime-support task.
+
+The round recorder's refusal is **correct fail-closed behavior**. A published advisory round represents resolved worker triage, so unresolved material cannot truthfully use `disposition: fixed` or a non-material decline. Retaining the complete pre-publication Briefing/log/refusal and returning to design is the correct path. Draft/unresolved-round support may be proposed separately, but no recorder-contract change belongs in 6y.
+
+Provider overrides, canonical package verification, Captain-language mapping, recorder/schema/application code, CLI paths, one-use consume, resume, terminal merge, host adapters, prompts, retained Roborev evidence, and PR #565 remain outside this reset. No code, gate, status, PR, merge, global package, or review-round mutation occurs during ideation.
+
+## Stage Report: ideation (cycle 22)
+
+- DONE: Resolve the v1 contract contradictions exposed by Roborev 2170: retire prototype-only marker/legacy obligations rather than adding compatibility, define truthful bind-before-present behavior, and re-scope the onboarding/documentation surface explicitly.
+  The canonical reset deletes marker semantics and unbound presentation, refits the existing guardrail to committed-open bind-and-hold, and records concrete concepts/onboarding/spec diffs within 17 named existing files.
+- DONE: Design falsifiable fixes for successful state-commit attribution and the two distinct Claude misses, and classify the Pi dependency and unresolved-material round-recorder refusal without weakening the supported-host or durable-authority ACs.
+  Existing structured host events pair with wrapper `exit=0`/`state-head`; narration and failed commits red. Exact bound tuple and opaque conn capture red independently on omission/mutation. Pi is required runner provisioning; unresolved round refusal is correct fail-closed behavior.
+- DONE: Produce one coherent canonical design delta, expected file/LOC boundary, reset conditions, and test plan for independent staff review before implementation resumes.
+  The complete boundary is 17 existing files, intended +297/-160 from `08675f02`, full +471/-224 from `13d70249`, hard stop +510 additions, with per-file estimates, component caps, deterministic/live sequencing, and explicit reset triggers above.
+- SKIPPED: Modify code, PR #565, gate records, workflow status, global Pi packages, review-round state, or merge state.
+  This design-reset stage changes only the entity body; the four implementation commits remain local and unpushed.
+
+### Summary
+
+Cycle 22 establishes one unreleased-v1 gate path: commit the exact binding, present one truthful review, then record only exact authority. It preserves Codex success and every recorder/consumer/provider boundary, turns both Claude misses into lossless data-flow obligations, keeps Pi required after runner provisioning, and treats unresolved advisory publication as correctly fail-closed. Checklist accounting is **3 DONE, 1 SKIPPED, 0 FAILED**; the design is ready for independent staff review before implementation resumes.
