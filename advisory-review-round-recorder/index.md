@@ -190,7 +190,7 @@ review-round:
         digest: sha256:a1010da278264d22e1d9f22db43f35a3e58a316b6ba9e097b458ac443fc8bc77
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-6
-mod-block:
+mod-block: merge:pr-merge
 ---
 
 Provide one owned write surface for correction-round Briefings, reviewer Annotations and advisory Resolution, and the worker's triage Resolution, without selecting a gate or advancing workflow state.
