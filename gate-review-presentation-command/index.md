@@ -392,6 +392,7 @@ The captain's question is well-founded and the answer is yes: the binary was the
 - Cycle 12: REJECTED — independent ideation staff re-review; surface unchanged at 17 files/1,255 changed LOC vs cap 1,300 (97%); AC unchanged. The Cycle-11 AC-5 test prose accidentally required missing retained files to emit “frozen digest,” but current supported behavior names the fixed path plus the read/not-found error; only byte mismatches use the frozen-digest diagnostic. Remove that invented message obligation, preserve the distinct assertions, and keep the test-only +42/-0 estimate unchanged.
 - Cycle 13: REJECTED — Roborev job 2039 implementation round 1; surface 17 files/1,293 changed LOC vs estimate 1,300 changed LOC (99%); AC unchanged
 - Cycle 14: REJECTED — validation cycle 5 nested Resolution authority; surface 17 files/1,293 changed LOC vs estimate 1,300 changed LOC (99%); AC unchanged
+- Cycle 15: REJECTED — First Officer Cycle 14 scope reset; surface 17 files/1,293 changed LOC vs estimate 1,310 changed LOC (99%); AC unchanged
 
 ## Stage Report: implementation
 
