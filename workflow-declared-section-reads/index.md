@@ -7,7 +7,7 @@ id: 0cj3qf6fefedfj7j9exq62jb
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:0c:ideation
+        gate: gate:docs-dev:0c:validation
     records:
         - id: gate:docs-dev:0c:backlog
           stage: backlog
@@ -54,6 +54,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:0c:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:0c-validation-1
+              briefing:
+                id: briefing:docs-dev:0c:validation:attempt-1:revision-1
+                digest: sha256:fc9e60c5c84fb15d4aa4b5aaecb8f1001419c6c90cf36ffae3386403449ab14c
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-1
 started: 2026-07-24T08:41:39Z
 worktree: .worktrees/spacedock-ensign-workflow-declared-section-reads
 ---
