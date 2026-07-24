@@ -182,13 +182,19 @@ func TestNoUnexpectedPRViewScanIntroduced(t *testing.T) {
 // If the mod ever stopped carrying the token this control reds. Modeled on
 // TestPortabilityCheckDiscriminatesHostSpecific's load-bearing-exclusion assertion.
 func TestPRViewAllowListIsLoadBearing(t *testing.T) {
-	path := filepath.Join(repoRoot(t), "mods", "pr-merge.md")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read pr-merge mod %s: %v", path, err)
-	}
-	if !strings.Contains(string(data), "gh pr view") {
-		t.Error("positive control missing: mods/pr-merge.md no longer carries `gh pr view` — the allow-list entry is no longer load-bearing")
+	for path, want := range map[string]string{
+		filepath.Join(repoRoot(t), "mods", "pr-merge.md"):                 "terminal status with `mod-block: merge:pr-merge`",
+		filepath.Join(repoRoot(t), "docs", "dev", "_mods", "pr-merge.md"): "terminal status with `mod-block: merge:pr-merge`",
+		filepath.Join(skillsRoot(t), "fo-gate-lifecycle", "SKILL.md"):     "terminal current status resumes the existing merge ceremony",
+	} {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Errorf("read %s: %v", path, err)
+		} else if !strings.Contains(string(data), want) {
+			t.Errorf("%s must contain %q", path, want)
+		} else if strings.HasSuffix(path, filepath.Join("mods", "pr-merge.md")) && !strings.Contains(string(data), "gh pr view") {
+			t.Errorf("%s no longer carries the load-bearing `gh pr view` scan", path)
+		}
 	}
 }
 

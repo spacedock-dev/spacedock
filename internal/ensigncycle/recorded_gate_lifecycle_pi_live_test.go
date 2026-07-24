@@ -5,7 +5,6 @@ package ensigncycle
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -51,27 +50,25 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 		recordedGatePrompt(fixture.root)+"\n\nPi harness requirement: stamp the successor dispatch with explicit model `"+envOr("SPACEDOCK_PI_LIVE_CHILD_MODEL", "openrouter/openai/gpt-4.1-mini")+"`.",
 	)
 
-	session := readRecordedGatePiSessions(t, artifactDir)
+	session := readRecordedGatePiRootSession(t, artifactDir)
 	observation := recordedGateLiveObservation(t, fixture, before, commandLog, recordedGateReviewFromPiSession(session))
 	if err := assertRecordedGateLifecycle(observation); err != nil {
 		t.Fatalf("Pi recorded gate lifecycle graded FAIL: %v; artifacts in %s\n--- entity after ---\n%s", err, artifactDir, observation.after)
 	}
 }
 
-func readRecordedGatePiSessions(t *testing.T, artifactDir string) string {
+func readRecordedGatePiRootSession(t *testing.T, artifactDir string) string {
 	t.Helper()
 	paths, err := filepath.Glob(filepath.Join(artifactDir, "sessions", "*.jsonl"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var session strings.Builder
-	for _, path := range paths {
-		body, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		session.Write(body)
-		session.WriteByte('\n')
+	if len(paths) != 1 {
+		t.Fatalf("Pi root sessions=%d, want exactly one flat JSONL: %v", len(paths), paths)
 	}
-	return session.String()
+	body, err := os.ReadFile(paths[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(body)
 }
