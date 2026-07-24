@@ -407,3 +407,32 @@ The rebase, four-file boundary, provider retention suite, merged gate behavior, 
 ### Summary
 
 The corrected implementation exposes one room-only provider boundary, validates and freezes Captain authority before mutation, derives the complete presentation association internally, and binds the exact retained Result/inventory bytes to the closed attempt. It preserves zero Subspace binary coupling and the Subspace-owned transport boundary, passes all required checks, and cleared final-tip Roborev job 2028 with no findings.
+
+## Stage Report: validation (cycle 4)
+
+- FAILED: Reconcile all six acceptance criteria with the Captain-approved prepared-room recorder boundary; reject stale provider-side obligations rather than proving the wrong target.
+  The binding AC section still specifies the retired override script, provider-minted-id normalization, presenter fallback, and provider drive suite; Cycle 4-9 instead excludes provider transport and makes `gate record <entity> --room <gate-room>` the shipped boundary. This is a design/spec reset, not an implementation feedback cycle.
+- SKIPPED: AC-1 (VALUE) — No presented decision is lost on any exit path.
+  Its cited override-script retention matrix is provider-owned and intentionally absent after Cycle 6; it cannot prove the current Spacedock recorder deliverable.
+- SKIPPED: AC-2 — Retention survives every failure class, including launcher/controller death.
+  Launcher/controller lifecycle is outside the approved repository scope; Spacedock now consumes already-retained fixed room files and owns their post-close digest verification.
+- SKIPPED: AC-3 — Pane/session creation and wait-timeout are never completion.
+  Pane, session, and provider wait behavior belongs to `/subspace:r gate <gate-room>` and present-gate orchestration, not the recorder command.
+- SKIPPED: AC-4 — The recorded result is keyed to the attempt briefing id, only after digest validation (recorder-homed, proposed).
+  Provider-minted-id normalization is obsolete: the approved recorder requires the Result to name the exact canonical Briefing, then verifies frozen request/Briefing identity and raw Result bytes; the replacement invariant passes the focused matrix.
+- SKIPPED: AC-5 — The override channel validates the briefing and derives the title before any launch; an absent or version-mismatched presenter falls back to chat with zero side effects.
+  Title derivation, provider probing, and fallback are provider/orchestrator behavior excluded from the prepared-room recorder; the repository carries only the declarative seam.
+- DONE: AC-6 (VALUE) — Presentation adds zero Subspace coupling to the spacedock binary, and no channel mutates entity frontmatter.
+  `go list -deps ./cmd/spacedock` reports zero Subspace dependencies; the absent `gate review` verb and every recorder rejection case leave entity bytes unchanged.
+- DONE: Reproduce exact-tip authority, identity, recursive inventory, failure atomicity, one-use history, and post-close Result/inventory tamper detection across adjacent variants.
+  Uncached CLI tests at `98ebb458` reject distinct/rebound authority, wrong gate/attempt/Briefing/digest/room, advisory wrappers, nested adoption provenance, incomplete/mistyped recursive inventory, Reference primaries, stale successors, and both retained-file mutations without entity changes; valid close and consume occur once.
+- DONE: Audit the 17-file/1,255-line surface against Cycle 9's 1,300-line cap and exclusions; verify focused/full/race/docs/dependency checks plus final-tip Roborev 2028.
+  Diff from `main` is exactly 17 files and `+1086/-169` (1,255 changed lines), with no provider transport or second harness; focused tests, `go test ./...`, `go test ./... -race`, strict MkDocs, gofmt, diff/cleanliness, and zero-Subspace dependency checks pass. Roborev job 2028 covers `dd6bd114..98ebb458`, verdict P, `No issues found.`
+- SKIPPED: Deferred risk — closed provider attempts require retained room files forever.
+  Trigger is later archival, deletion, or reformatting of either fixed provider file; that is outside the current retain-in-place contract, whose supported path validates cleanly. Promote if room cleanup or archival becomes supported.
+- FAILED: Fresh exact-tip recommendation.
+  **REJECTED — DESIGN/SPEC RESET.** The implementation at `98ebb458` has no material prepared-room-recorder defect, but the six binding ACs must be replaced with criteria for exact room authority/identity, derived recursive inventory, failure atomicity, one-use history, and retained-byte tamper detection before this validation gate can pass.
+
+### Summary
+
+The Captain-approved prepared-room recorder passes its current behavioral, surface, repository, and final-tip review checks with no material implementation finding. Validation rejects only because the entity still binds acceptance to the superseded provider-script architecture; ideation must reset the ACs rather than implementation rebuilding intentionally excluded transport and retention machinery.
