@@ -238,7 +238,7 @@ Every nonzero command becomes explicit FO-visible friction with the command, exi
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — A normal FO-approved gated stage cannot advance or dispatch without one validated, consumed authorization.** In the real 3k validation-package replay, the FO emits the exact ordered lifecycle trace (briefing record, open validate, delegated decision record, closed validate, eligibility, consume), on-disk state ends at the expected successor with the same attempt's `application.state: consumed`, and the successor receives one observed dispatch. The measured count of advances/dispatches with no matching consumed application is **0**, versus the current contract's possible manual path of 1. *Verified by:* one representative engaged live FO journey per supported host, graded on command events, entity before/after bytes, and correlated durable child output—not transcript phrasing.
+**AC-1 (VALUE) — A normal FO-approved gated stage cannot advance or dispatch without one validated, consumed authorization.** In the real 3k validation-package replay, the FO emits the exact ordered lifecycle trace (briefing record, open validate, delegated decision record, closed validate, eligibility, consume), then exactly one successful successor `dispatch build`. On-disk state ends at the expected successor with the same attempt's `application.state: consumed`; the successor stage produces one new durable marker-bearing stage report/commit that was absent before dispatch. The measured count of advances or dispatches without a matching consumed application is **0**, versus the current contract's possible manual path of 1. *Verified by:* one representative engaged live FO journey on each supported host, graded from the command log, entity before/after bytes, state Git history, and marker/report cardinality. The live oracle does not require a public spawn event, a common transport schema, or exact-child attribution unavailable from that host.
 
 **AC-2 — Every required lifecycle call is load-bearing and advancement fails closed.** Deleting any one of briefing record, open validation, decision record, closure validation, eligibility, or consume from the expected trace makes the scenario grader refuse the successor dispatch; the entity either remains at the gate or the trace is incomplete and cannot grade PASS. Revise, hold, and ineligible controls produce zero advance/dispatch effects; revise invokes feedback routing and neither revise nor hold is consumed as advance. *Verified by:* copied-body provenance in the live positive, deterministic deletion of each of the six source-derived lifecycle events, and durable-state refusal controls; every event deletion must turn the successor grader red.
 
@@ -252,27 +252,40 @@ Every nonzero command becomes explicit FO-visible friction with the command, exi
 
 **AC-7 — Resume is idempotent and one-use.** Open same-Briefing retry creates no duplicate attempt; a closed pending approval is not re-recorded; consumed state never consumes twice; stale state becomes superseded without advancing and requires a replacement Briefing. Across three resume passes, the count of successful consumes and resulting stage transitions is exactly 1. *Verified by:* fresh-process fixture passes and byte comparisons after each retry.
 
-**AC-8 — The procedure is runtime-portable and fixture-backed.** The recorded-gate-lifecycle journey is a host-neutral shared scenario with Claude and Codex runners and explicit Pi live-capable coverage, alongside the deterministic CLI/trace fixture. A host adapter may differ only in launch/transport; the command order and durable oracle are identical. *Verified by:* source-derived per-route extraction/deletion controls, one representative engaged live route on Claude/Codex/Pi, Pi async-handle completion before grading, Codex public live durable-child correlation, and offline native-shape fixtures that require exact spawn handles and correlated results.
+**AC-8 — The procedure is runtime-portable and fixture-backed.** The recorded-gate-lifecycle journey remains one host-neutral scenario with Claude, Codex, and Pi runners. Each host executes one representative engaged route and must satisfy the same observable oracle: six ordered successful gate commands, consumed successor state, exactly one post-consume dispatch build, and exactly one new durable successor effect. Host-native fixtures—not the cross-host live oracle—prove each adapter's transport details and refusal controls. Static contract tests prove every gate-entry route funnels through the lifecycle; route-by-host live multiplication is not required. *Verified by:* the three live journeys, AC-2's six deterministic command-deletion controls, `TestFOGateLifecycleOwnsEveryEngagedEntry`, Claude's `TestMergedEnsignDispatchShape`, Codex's `TestCodexSmallestSufficientCreditsDispatchBuildWaitAndDurableRead` plus `TestCodexDispatchEvidenceRejectsOutOfOrderAndFailedBuilds`, and Pi's native subagent fixture/smoke. No host must expose another host's handle, spawn, wait, or child-completion event shape.
 
 ## Minimum replay and test plan
 
 The test package copies the real retained 3k validation Briefing and its declared artifacts into a temp folder-form workflow whose gated `validation` stage has a supported nonterminal successor. It preserves the package bytes and uses the historical delegated-approval shape: `--actor agent:first-officer`, `--reason "Captain directive: approved after reviewing the presented 3k validation gate."`, and `--directive "you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement."`. A command-logging wrapper delegates each gate operation to the freshly built real binary, records exit/stdout/stderr, and permits the dispatch stub only after the complete successful trace.
 
-1. **Baseline live journey (AC-1/AC-3/AC-6/AC-8; high):** launch the real FO, engage the held validation gate, validate its concise evidence review, supply/retain the delegated approval, and assert six ordered gate events, one consume, atomic advanced+consumed state, one state commit per mutation boundary, and one successor dispatch.
-2. **Skipped-step mutants (AC-2; medium):** table-delete each of the six required events from the trace accepted by the dispatch stub; every arm must deny dispatch. Run at least one copied-skill live mutant (remove one recorder call at the actual integration point) and prove the live grade reds.
+1. **Baseline live journey (AC-1/AC-3/AC-6/AC-8; high):** launch the real FO, engage the held validation gate, validate its concise evidence review, supply/retain the delegated approval, and assert six ordered gate events, one consume, atomic advanced+consumed state, exactly one post-consume `dispatch build`, and one new marker-bearing successor stage report/commit. Run this one representative route once on Claude, Codex, and Pi.
+2. **Skipped-step mutants (AC-2; medium):** deterministically delete each of the six source-derived lifecycle events from an otherwise complete trace; every arm must deny dispatch while retaining an otherwise-valid prospective dispatch observation. The grader, not model reconstruction of edited prose, must turn red.
 3. **Revise/hold/ineligible controls (AC-2/AC-5; medium):** use the same Briefing with each decision/condition. Revise records/validates and routes feedback with zero advance-consume; hold and blocked approval remain at the gate; stale materializes only supersession.
 4. **Provenance and package matrix (AC-3/AC-4/AC-5; medium):** direct versus delegated versus exact Result inputs; complete versus truncated association; canonical versus alternate basename; repo-root-relative versus absolute retained-input paths; reproducible URI+SHA versus frozen copy. Compare bytes and lock residue on every refusal, and prove the absolute-path retry binds the same bytes.
 5. **Resume passes (AC-7; low):** rerun fresh processes over open, pending, stale, and consumed snapshots; exactly one stage transition and consume across three passes.
 6. **Capability-stale launcher (AC-5; low):** shim a passing `--version` and top-level-only gate help; assert pre-mutation halt and fresh-build remedy. Then point `SPACEDOCK_BIN` at the newly built binary and run the baseline green.
-7. **Runtime lanes (AC-8; high):** add the host-neutral scenario once, runner bindings for Claude/Codex, and a Pi live replay using isolated auth/home and explicit local skills. Required CI artifacts retain command logs, gate review output, before/after entity, and dispatch evidence.
+7. **Runtime lanes (AC-8; high):** keep the host-neutral scenario once with Claude, Codex, and Pi bindings. Each live lane retains command logs, gate review output, before/after entity, state Git history, and the one durable successor effect. Host-native fixtures separately prove each adapter's transport event shape; live lanes do not require public event uniformity or every route on every host.
 8. **Repository gates:** `gofmt -w ./cmd ./internal`, focused scenario/skill tests, `go test ./...`, `go test ./... -race`, live-tag compilation, and the required live lanes.
 
-The primary independent oracle is durable state plus the command/dispatch event log. Static presence of command names in skill prose is inspection evidence only and cannot satisfy any behavioral AC.
+The primary independent live oracle is durable state plus the command/dispatch log and state Git history. Static presence of command names in skill prose is inspection evidence only and cannot satisfy a behavioral AC; deterministic source-derived deletion controls prove each of the six commands is load-bearing.
+
+At current `3cc6225b` line numbers, retain `recorded_gate_lifecycle_test.go:166-708`, `775-870`, `998-1024`, and `1276-1556`; all topology tests, especially `TestFOGateLifecycleOwnsEveryEngagedEntry` at `fo_function_reference_invariant_test.go:294-316`; and one live binding in `claude_live_runner_test.go:173-198`, `codex_live_runner_test.go:88-113`, and `recorded_gate_lifecycle_pi_live_test.go:19-71`. Simplify `recorded_gate_lifecycle_test.go:34-104` to grade one dispatch build plus one durable effect, its prompt at `811-813` to avoid prescribing a public handle, and the three live bindings to use the common command/state/Git oracle. Delete `TestRecordedGateLifecycleSuccessorOracleControls` at `709-773`, Claude stream reconstruction and the route-by-host runtime matrix at `871-997`, cross-host exact-child parsers/fixtures at `1026-1274` except at most 60 LOC of native fixture linkage, and Pi async child polling at `recorded_gate_lifecycle_pi_live_test.go:73-110`.
+
+## Obligation delta
+
+| Obligation | Authority | Bearer | Proof burden |
+| --- | --- | --- | --- |
+| Six ordered fail-closed gate commands; one consumed approval; zero unauthorized advances/dispatches | Canonical AC-1/AC-2 and `fo-gate-lifecycle` | First Officer lifecycle contract | Real CLI fixture, six deterministic event-deletion controls, and each host's representative live command/state trace |
+| Exactly one successor dispatch and one new durable successor effect | Canonical AC-1 | Existing dispatch loop after successful consume | One post-consume `dispatch build`, pre/post entity bytes, marker/report cardinality, and state Git history in each live journey |
+| Every engaged route loads the lifecycle before gate action | Deferred topology contract | Shared First Officer core | `TestFOGateLifecycleOwnsEveryEngagedEntry` and native load-before-action fixtures; not every route live on every host |
+| Host transport shape | Canonical AC-8 and each supported runtime adapter | Claude, Codex, and Pi adapter/fixture owners | Host-native fixtures, including Codex's supported build → wait → durable-report evidence when public spawn records are absent |
+
+Captain ruling of 2026-07-24 removes two invented burdens: a uniform public spawn/handle/child-completion event with exact-child filesystem attribution, and the route × host live matrix. No product obligation or bearer is removed: the FO still owes the lifecycle, consume, one dispatch, and durable effect; adapters still owe their native transport contract; the shared contract still owes every route. This canonical AC block, test plan, and obligation delta are the sole active proof authority. Later implementation reports are historical evidence, not competing requirements.
 
 ## Expected surface and tolerance
 
 - **FO contract:** `skills/first-officer/references/first-officer-shared-core.md`, approximately 35–60 lines at the existing gate branch. No host adapter wording, new skill, or new presentation template.
-- **Codified/live proof:** a common recorded-gate fixture/scenario under `internal/ensigncycle/`, the shared scenario table/meta/docs lock, narrow Claude/Codex runner bindings, Pi live-capable runner/coverage, and retained fixtures under `skills/integration/testdata/`; approximately 500–850 Go test LOC plus 150–300 fixture lines across 9–14 files. No production Go LOC.
+- **Codified/live proof:** retain the common recorded-gate fixture/scenario and narrow Claude/Codex/Pi bindings, but remove the cross-host exact-child parsers, route-by-host runtime matrix, and Pi async child-session polling. From implementation baseline `3cc6225b`, delete 479 lines and add at most 80 replacement/common-oracle lines, taking the branch from 1,879 to at most **1,480 added LOC** (at least 399 LOC/21.2% smaller). No production Go LOC.
 - **Docs:** `docs/site/concepts/gates-and-decisions.md` and a capability-readiness note in `docs/site/reference/command-reference.md`, approximately 15–30 lines.
 - **Tolerance:** 2×. Reconfirm if implementation needs production Go, a schema change, another gate/state command, a package/association generator, presenter UI, provider polling/transport, a new retry/idempotency engine, or more than 120 skill-contract lines. Those are new products, not integration variance.
 
@@ -329,7 +342,7 @@ This task owns the First Officer invocation contract and its behavioral proof. I
 
 Codified the successful 3k/h1 dogfood procedure as the proposed normal FO gate lifecycle: capability-check the selected binary, retain and bind canonical `briefing.json`, validate open, judge/present, record and validate the exact direct/delegated/provider decision, then use eligibility and one-use consume as the sole approval advance before ordinary dispatch. The ideation turns the sprint's full friction record into acceptance coverage or explicit sibling boundaries and defines a real 3k-package live replay plus skipped-step mutants that fail whenever an FO bypasses a required lifecycle call.
 
-## Implementation intended-change declaration
+## Historical implementation intended-change declaration (cycle 1)
 
 Declared before code edits on 2026-07-23. Production Go estimate: **0 LOC**. First-Officer contract estimate: **70-100 lines** (hard stop above 120). Test/live estimate: **650-900 LOC**. Documentation estimate: **18-30 lines**. This remains within the approved 2x tolerance and introduces no new mechanism.
 
@@ -413,9 +426,9 @@ Implemented and hardened the six-event integration and its deterministic/live or
 
 - Cycle 1: REVISE — independent topology audit; surface shared core +6,197 bytes vs available headroom 663 bytes (935%); AC unchanged
 
-## Topology re-ideation delta (cycle 2; authoritative)
+## Topology re-ideation delta (cycle 2; topology authority)
 
-This delta replaces only the rejected resident placement and incomplete proof plan. The Problem, six-event lifecycle, provenance rules, fail-closed routing, concise presentation, capability readiness, exact package behavior, AC-1 through AC-8, documentation wording, and no-production-Go boundary above remain binding. Commit `cabdef33` remains an untouched counterexample/checkpoint: implementation continues from it with a new commit and does not compress, amend, reset, or discard it.
+This delta remains authoritative only for deferred placement, byte budgets, and gate-entry ownership. The canonical acceptance criteria, test plan, and Obligation delta above own the proof boundary. The Problem, six-event lifecycle, provenance rules, fail-closed routing, concise presentation, capability readiness, exact package behavior, documentation wording, and no-production-Go boundary remain binding. Commit `cabdef33` remains an untouched counterexample/checkpoint.
 
 ### Deferred ownership and byte budget
 
@@ -427,7 +440,7 @@ The exact implementation budgets are:
 - `skills/fo-gate-lifecycle/SKILL.md`: new, **6,600 bytes maximum**, expected 62–75 lines. The 6,222-byte procedure may gain only frontmatter, an ownership heading, and load/write-order preconditions; lifecycle meaning may not be compressed away.
 - Worst-case host accounting: register the new skill in `foFunctionReferencePaths` and `foSharedLoadPaths`, because every host can reach a gate. The implementation ceiling is current baselines plus the 6,600-byte skill plus at most 662 resident bytes versus the 26,092-byte parent: Claude **103,343**, Codex **82,558**, Pi **78,688**. `foHostLoadBaselineBytes` must be set to each candidate's exact measured bytes, with no unused allowance; the ceilings are stop limits, not ratchet values. The set-equality discriminator must fail if the file disappears from either address lint or worst-case accounting.
 - Contract/topology guards: 40–80 test LOC across `internal/contractlint/boot_resident_closure_test.go`, `fo_function_reference_invariant_test.go`, and `structural_checks_test.go`. Register the skill in `lazyLoadSkills`/`deferredSkillCores`, require its lifecycle anchors, prove the resident pointer resolves, and prove it is absent from the user-invocable discovery set.
-- Behavioral proof: retain the seven checkpoint test/live files under `internal/ensigncycle/` and add 350–650 test LOC, chiefly in `recorded_gate_lifecycle_test.go`; a separate `fo_gate_lifecycle_topology_test.go` is allowed only if route-table readability requires it. The three checkpoint documentation edits remain as written and gain no new behavior.
+- Behavioral proof: follow the canonical test-plan retain/simplify/delete map and the current branch ceiling of 1,480 added LOC. The three checkpoint documentation edits remain as written and gain no new behavior.
 
 No other production or instruction file is expected. Any production Go, schema/command change, host-specific lifecycle copy, `present-gate` redesign, feedback-round change, or file outside this list is a design-reset trigger.
 
@@ -450,7 +463,7 @@ if the next action creates/changes room, entity, gate, or application state:
 retain/bind package -> validate open
 AC cross-check/judgment -> Skill(spacedock:present-gate) -> present
 record decision -> validate closed -> eligibility/route/consume
-only after durable consumed state: dispatch build -> runtime spawn -> returned handle
+only after durable consumed state: dispatch build -> host-native dispatch -> durable successor effect
 ```
 
 The required route table is:
@@ -466,34 +479,34 @@ The required route table is:
 
 Loading `fo-gate-lifecycle` never satisfies write authority. The existing `fo-write-core` read remains a separate completed event immediately before the first FO-authored room/state mutation. Conversely, a write-core read cannot substitute for the lifecycle load.
 
-Repository precedent already proves the adapter-less, non-user-invocable skill mechanism structurally (`fo-status-viewer` and `fo-dispatch-recovery`); no new loader or spike product is needed. The unproved value mechanism is real host execution at each route, so the first implementation checkpoint is the copied-plugin route/load-order replay and its deliberately broken trigger controls.
+Repository precedent already proves the adapter-less, non-user-invocable skill mechanism structurally (`fo-status-viewer` and `fo-dispatch-recovery`); no new loader or spike product is needed. Static contract tests own the complete route matrix, while one native load-before-action fixture per host and one representative live journey per host prove runtime portability.
 
 ### Checkpoint reuse and falsifiable proof
 
-Retain the checkpoint's fresh real-binary six-command replay, exact attempt/Briefing/digest/Resolution/provenance assertions, exact empty open-decision field, help-event exclusion, successful Claude tool-result pairing, Pi consume-before-subagent rule, Codex spawn/handle correlation, relative/absolute path pair, folder-form commit, revise/hold controls, shared-scenario parity, and command/dispatch evidence artifacts. Change contract-source reads from the shared core to the new skill and keep the resident trigger/topology assertions separate.
+Retain the checkpoint's fresh real-binary six-command replay, exact attempt/Briefing/digest/Resolution/provenance assertions, exact empty open-decision field, help-event exclusion, relative/absolute path pair, folder-form commit, revise/hold controls, shared-scenario parity, and command/dispatch evidence artifacts. Host-native fixtures own Claude, Codex, and Pi transport details; the shared live oracle owns only the ordered commands, consumed state, one dispatch build, and one durable successor effect. Change contract-source reads from the shared core to the new skill and keep the resident trigger/topology assertions separate.
 
 Replace two insufficient checkpoint checks:
 
-- Replace the static `procedureEvents(mutant)` eligibility deletion with a live copied-plugin replay that removes one actual lifecycle command from `skills/fo-gate-lifecycle/SKILL.md`. The model host must consume the mutated shipped tree, retain otherwise-valid spawn proof, and the common grader must go red solely because the command is missing.
+- Replace the static one-off eligibility check with deterministic source-derived deletion of each of the six lifecycle events. Every mutant retains an otherwise-valid prospective dispatch observation, and the common grader must go red because the required trace is incomplete; model reconstruction of edited prose is not the oracle.
 - Replace generic review substring acceptance with grading of the review actually emitted by the runtime: required structured fields, one recommendation/decision ask, retained snapshot identity, and no leading raw entity/Briefing/room dump.
 
 Add these exact matrices:
 
 | Matrix | Required arms and red control |
 | --- | --- |
-| Load topology | Interactive gated greet (no load); headless no-conn; headless conn; engage; worker-completion gate; open/pending/revise/hold/stale/consumed resume. For every engaged arm, a timestamped/ordered skill-load event precedes capability probes, room/gate writes, validate, presenter load, decision routing, and resume logic. Delete each route's funnel call in turn; that arm must red while non-gated greet remains green and load-free. |
-| Six load-bearing events | Baseline plus deletion of briefing-record, open-validate, decision-record, closed-validate, eligibility, and consume. Each mutant keeps a valid prospective spawn observation; the grader, not removal of dispatch evidence, refuses it. At least the eligibility deletion is the live copied-plugin mutant. |
+| Load topology | Interactive gated greet (no load); headless no-conn; headless conn; engage; worker-completion gate; open/pending/revise/hold/stale/consumed resume. Static shipped-contract extraction and route-deletion controls prove every funnel; one native load-before-action fixture per host proves transport parsing. The matrix is not multiplied into live route × host executions. |
+| Six load-bearing events | Baseline plus deterministic deletion of briefing-record, open-validate, decision-record, closed-validate, eligibility, and consume. Each mutant keeps a valid prospective dispatch observation; the grader, not removal of dispatch evidence, refuses it. |
 | Provenance/presentation | Delegated baseline; actor swapped to `person:captain`; blank reason; missing/exactly altered directive; raw entity dump; raw `briefing.json` dump. Actor/provenance mutants fail exact durable cardinality; raw-dump mutants fail the observed-review grader. |
 | AC-5 refusals | Capability-stale executable with every help form logged; missing and alternate-basename Briefing; invalid association, actor, reason, and directive; relative Briefing refusal then absolute success; forced close-validation mismatch; validate/eligibility reads; hold, blocked, repeat-consume, and stale consume. Assert nonzero/actionable output, whole-tree/entity byte identity and no lock residue on every promised byte-clean arm; stale may change only pending→superseded and never status. The actual FO stale-launcher entry remains a required live arm, not replaceable by the helper probe. |
 | AC-7 resume | Fresh processes over open/same package, open/changed package, closed approval-pending, closed revise, closed hold, stale, and consumed. Assert attempt/Resolution cardinality and bytes after each pass; across three passes exactly one successful consume and one transition. Stale must supersede, bind a replacement Briefing, and re-present without advancing. |
 | Discovery | Capture the real workflow-discovery candidate list, create/run all fixtures, capture it again, and require exact sorted equality. A planted discoverable workflow proves the comparison can red. |
-| Runtime successor | After consumed state, require one host spawn event, a nonblank returned handle, pre-dispatch absence of the marker, and marker-bearing durable output correlated to that worker result. `dispatch build`, narration, parent-written output, or wait without a handle all fail. |
+| Runtime successor | After consumed state, require exactly one successful `dispatch build`, pre-dispatch absence of the marker/report, and exactly one new marker-bearing successor report/commit. Zero/two builds, missing/duplicate effects, wrong ordering, or no durable commit fail. Host-native fixtures separately prove transport shapes; the common live oracle does not require public exact-child events. |
 
-Claude 401 and Pi reused-refresh-token/no-key failures are external validation conditions: retain their artifacts, repair credentials outside this entity, and later require green executions of the identical host-neutral scenario. They do not authorize fixture substitution or AC narrowing. Codex's repeated consume-without-spawn is an implementation blocker: the task cannot declare implementation complete or enter validation until a run observes the spawn, handle, and correlated worker output.
+Claude 401 and Pi reused-refresh-token/no-key failures remain historical external validation conditions. Final validation requires one green identical host-neutral journey per supported host. Codex's supported public evidence is its native `dispatch build` → completed wait → durable report shape; the absent public `spawn_agent` event is not a product blocker or a reason to add a runtime interface.
 
 ### Stop conditions and excluded reset defects
 
-Stop and return to ideation if the resident core reaches 26,755 bytes; the deferred file exceeds 6,600 bytes; any host worst-case file set omits the deferred skill or exceeds its ceiling; any engaged entry acts before the module load; the live shipped-skill mutant does not red; the full AC-5/AC-7/discovery matrices are incomplete; observed successor evidence is weakened; or implementation needs a surface excluded above. Full `go test ./...`, `go test ./... -race`, focused/live compilation, and the applicable live lanes remain final gates.
+Stop and return to ideation if the resident core reaches 26,755 bytes; the deferred file exceeds 6,600 bytes; any host worst-case file set omits the deferred skill or exceeds its ceiling; any engaged entry acts before the module load; any deterministic six-command deletion remains green; the full AC-5/AC-7/discovery matrices are incomplete; any live host lacks the six-command/consume/one-dispatch/one-durable-effect outcome; or implementation needs a surface excluded above. Full `go test ./...`, `go test ./... -race`, focused/live compilation, and one representative live lane per supported host remain final gates.
 
 Two observed workflow-reset defects are recorded but explicitly not absorbed: revise currently derives feedback to implementation, and clearing a worktree on backward routing falsely trips the merge guard. This entity changes neither reset target derivation nor worktree/merge-guard behavior; those require a separately scoped correction.
 
@@ -510,15 +523,15 @@ Two observed workflow-reset defects are recorded but explicitly not absorbed: re
 
 Re-ideated the rejected resident implementation as one gate-triggered, adapter-less `fo-gate-lifecycle` skill with a sub-26,755-byte boot core and honest all-host worst-case accounting. The revised plan closes the headless bypass and every other gate-entry route, preserves the detailed lifecycle and WIP checkpoint, and makes live mutation, complete refusal/resume matrices, discovery equality, and an actually observed successor spawn mandatory before validation.
 
-## Implementation intended-change declaration (cycle 2)
+## Historical implementation intended-change declaration (cycle 2)
 
 - `skills/first-officer/references/first-officer-shared-core.md`: extract the checkpoint's 6,222-byte lifecycle body, add only the common gate-entry/load-order trigger, and finish at no more than 26,754 bytes; this is the boot-resident detector and pointer, not the procedure owner.
 - `skills/fo-gate-lifecycle/SKILL.md`: add the sole adapter-less, non-user-invocable lifecycle owner at no more than 6,600 bytes; it is required for capability, package, provenance, closure, refusal, resume, consume, feedback, and dispatch handoff semantics.
 - `internal/contractlint/boot_resident_closure_test.go`: add 24 test LOC for lazy/deferred registration, lifecycle anchors, and resident-pointer ownership.
 - `internal/contractlint/fo_function_reference_invariant_test.go`: add 24 test LOC for address/worst-case set equality and exact per-host measured baselines that include the deferred skill.
 - `internal/contractlint/structural_checks_test.go`: add 20 test LOC proving the skill is non-user-invocable, adapter-less, and absent from user discovery.
-- `internal/ensigncycle/recorded_gate_lifecycle_test.go`: add 500 test LOC for route/load-order deletion controls, the copied-skill missing-command live mutant, exact observed-review/provenance mutants, complete AC-5 refusal and AC-7 resume matrices, discovery equality/red control, and strict spawn-handle/output correlation.
-- The seven checkpoint live/shared-scenario files under `internal/ensigncycle/` remain byte-for-byte unchanged in cycle 2: planned additional live LOC is 0 because they already carry the identical host-neutral scenario and host runners; only their successful executions may satisfy the live lanes.
+- `internal/ensigncycle/recorded_gate_lifecycle_test.go`: historical cycle-2 allocation; superseded by the canonical retain/simplify/delete map, deterministic six-event deletions, and common command/state/Git oracle above.
+- The live/shared-scenario files retain one host-neutral scenario and one representative journey per host; host-native fixtures own transport details.
 - `docs/dev/.spacedock-state/first-officer-gate-command-lifecycle/index.md`: append this declaration and the cycle-2 implementation report only; it owns workflow evidence, not product behavior.
 
 Planned cycle-2 test addition is exactly 568 LOC (68 contract/topology plus 500 behavioral) and planned cycle-2 live-runner addition is exactly 0 LOC. Production Go, schemas, commands, presenter behavior, advisory-round surfaces, host-specific lifecycle copies, and all other instruction/documentation files remain untouched.
@@ -662,50 +675,6 @@ Roborev 837 is fully triaged and both Medium findings are Material. The implemen
 
 - Cycle 9: DESIGN RESET — Captain-approved proof-boundary ruling, 2026-07-24. Preserve the six-command fail-closed lifecycle, one successor dispatch, and its durable effect. Preserve deterministic command-deletion proof and one representative live journey per supported host. Remove mandatory public transport-event uniformity, exact-child forensic attribution where the supported host surface does not expose it, and every-route-by-every-host live execution. Host-native fixtures own transport details; live journeys own the observable lifecycle and durable outcome. Return to ideation for the smallest AC-1/AC-8 and test-surface delta before further implementation.
 
-## Proof-boundary reset (cycle 3; authoritative)
-
-This delta replaces only AC-1, AC-8, and their dependent live/transport proof. AC-2 through AC-7, the six-command product lifecycle, deferred skill topology, route coverage, deterministic deletion controls, documentation, and zero-production-Go boundary remain unchanged. Commit `3cc6225b` is the read-only implementation baseline; implementation resumes with a new commit.
-
-### Replacement AC-1 and AC-8
-
-**AC-1 (VALUE) — A normal FO-approved gated stage cannot advance or dispatch without one validated, consumed authorization.** In the real 3k validation-package replay, the FO emits the exact ordered lifecycle trace (briefing record, open validate, delegated decision record, closed validate, eligibility, consume), then exactly one successful successor `dispatch build`. On-disk state ends at the expected successor with the same attempt's `application.state: consumed`; the successor stage produces one new durable marker-bearing stage report/commit that was absent before dispatch. The measured count of advances or dispatches without a matching consumed application is **0**, versus the current contract's possible manual path of 1. *Verified by:* one representative engaged live FO journey on each supported host, graded from the command log, entity before/after bytes, state Git history, and marker/report cardinality. The live oracle does not require a public spawn event, a common transport schema, or exact-child attribution unavailable from that host.
-
-**AC-8 — The procedure is runtime-portable and fixture-backed.** The recorded-gate-lifecycle journey remains one host-neutral scenario with Claude, Codex, and Pi runners. Each host executes one representative engaged route and must satisfy the same observable oracle: six ordered successful gate commands, consumed successor state, exactly one post-consume dispatch build, and exactly one new durable successor effect. Host-native fixtures—not the cross-host live oracle—prove each adapter's transport details and refusal controls. Static contract tests prove every gate-entry route funnels through the lifecycle; route-by-host live multiplication is not required. *Verified by:* the three live journeys, AC-2's six deterministic command-deletion controls, `TestFOGateLifecycleOwnsEveryEngagedEntry`, Claude's `TestMergedEnsignDispatchShape`, Codex's `TestCodexSmallestSufficientCreditsDispatchBuildWaitAndDurableRead` plus `TestCodexDispatchEvidenceRejectsOutOfOrderAndFailedBuilds`, and Pi's native subagent fixture/smoke. No host must expose another host's handle, spawn, wait, or child-completion event shape.
-
-### Dependent test-plan replacement
-
-The common live oracle records successful `spacedock` calls with the existing logging shim. It requires the six gate events in order, then one `dispatch build`; verifies `status: handoff`, one consumed application, exact provenance, and one new marker-bearing `## Stage Report: handoff` commit; and reds on zero/two dispatch builds, a pre-existing marker, a missing/duplicate marker or report, wrong ordering, or missing durable commit. This keeps one dispatch and its durable effect load-bearing without inferring which process wrote the bytes.
-
-Host-native fixture ownership is explicit:
-
-- Claude transport stays with `TestMergedEnsignDispatchShape` and existing stream/member-meta fixtures; the lifecycle live lane supplies only command, review, and durable-outcome evidence.
-- Codex transport stays with `codexDispatchCompletionEvidenceFromJSONL` and its regression tests, which intentionally accept the supported `dispatch build` → completed wait → durable report shape even when JSONL omits `spawn_agent`.
-- Pi transport stays with its `subagent(...)` fixture/live-smoke coverage; the lifecycle live lane no longer requires async-directory polling or exact child-session attribution.
-- `TestFOGateLifecycleOwnsEveryEngagedEntry` retains the complete headless/conn/engage/worker-completion/open/pending/revise/hold/stale/consumed route set. One native load-before-action fixture per host is sufficient; no route is dropped merely because it is not replayed live on all three hosts.
-
-At current `3cc6225b` line numbers, implementation keeps these test regions:
-
-- Keep `recorded_gate_lifecycle_test.go:166-708` unchanged: real CLI replay, relative/absolute path, revise/hold, stale capability, AC-5 refusal, AC-7 resume, discovery, shipped-skill six-command deletion, and provenance/presentation mutants.
-- Keep `recorded_gate_lifecycle_test.go:775-870` and `1276-1556`: deterministic authorization/source deletion, prompt/logging shim, command-log parser, real fixture, hashing, state-commit, and evidence helpers. Keep review extraction at `998-1024`.
-- Keep all topology additions in `boot_resident_closure_test.go`, `fo_function_reference_invariant_test.go`, and `structural_checks_test.go`, especially `TestFOGateLifecycleOwnsEveryEngagedEntry` (`fo_function_reference_invariant_test.go:294-316`).
-- Keep one live binding in `runClaudeRecordedGateLifecycleScenario` (`claude_live_runner_test.go:173-198`), `runCodexRecordedGateLifecycleScenario` (`codex_live_runner_test.go:88-113`), and `TestLivePiRecordedGateLifecycle` (`recorded_gate_lifecycle_pi_live_test.go:19-71`), but simplify each to the common command/durable oracle.
-
-Simplify these exact regions:
-
-- `recorded_gate_lifecycle_test.go:34-104`: replace `spawned/handle/workerOutput` with `dispatchBuilds == 1` and one new durable successor effect/commit; retain all lifecycle, identity, provenance, review, and before/after assertions.
-- `recorded_gate_lifecycle_test.go:811-813`: ask for one successor dispatch and durable stage result, without prescribing or grading a public `worker.spawn`/handle.
-- The three live bindings above: use the same logging shim and durable-state/Git oracle; keep native review extraction, remove cross-host transport parsing and fabricated handles.
-- Replace `recorded_gate_lifecycle_test.go:1026-1274` with at most 60 LOC of host-native fixture linkage or Pi-native parsing only; do not add a common spawn/completion schema.
-
-Delete these exact over-proof regions:
-
-- `TestRecordedGateLifecycleSuccessorOracleControls` (`recorded_gate_lifecycle_test.go:709-773`), whose cross-host handle/child controls exceed the supported public surfaces.
-- Claude command-stream reconstruction plus the route-by-host runtime matrix (`recorded_gate_lifecycle_test.go:871-997`); the command shim owns lifecycle events and structural tests own the route matrix.
-- The bespoke cross-host exact-child parsers and structured public-event fixture (`recorded_gate_lifecycle_test.go:1026-1274`), subject only to the ≤60-LOC Pi/native replacement above.
-- Pi async child-session polling (`recorded_gate_lifecycle_pi_live_test.go:73-110`); the live lane grades the shared observable outcome.
-
-The deletions remove 479 current lines (65 + 127 + 249 + 38). Replacement/common-oracle work is capped at 80 added lines, so the branch must fall from **1,879 to at most 1,480 added LOC**, a net reduction of at least **399 LOC (21.2%)**. No production Go, recorder, runtime, command, schema, or public host interface is added. Focused tests exercise every changed oracle; final validation remains `gofmt -w ./cmd ./internal`, focused contract/lifecycle tests, `go test ./...`, `go test ./... -race`, live-tag compilation, and one green recorded-gate journey on Claude, Codex, and Pi.
-
 ## Stage Report: ideation (cycle 3)
 
 - DONE: Rewrite only the AC-1/AC-8 proof boundary and dependent test plan so the six-command lifecycle, one successor dispatch, durable effect, deterministic command-deletion controls, and one representative live journey per supported host remain mandatory without requiring unavailable public transport events or every-route-by-every-host live execution.
@@ -718,3 +687,22 @@ The deletions remove 479 current lines (65 + 127 + 249 + 38). Replacement/common
 ### Summary
 
 Reset the proof mechanism without narrowing the product: every host must still execute the six-command lifecycle, consume once, dispatch once, and leave one durable successor effect. Transport details now stay in host-native fixtures, eliminating unsupported cross-host forensic requirements and at least 399 lines from the current implementation plan.
+
+## Stage Report: ideation (cycle 4 repair)
+
+- DONE: Edit the canonical `## Acceptance criteria` so AC-1 and AC-8 express the captain-approved proof boundary.
+  `spacedock status --read first-officer-gate-command-lifecycle --workflow-dir docs/dev --ac-scan --json` anchors AC-1 at line 241 and AC-8 at line 255; both now require six commands, one dispatch, durable effect, and one live journey per host without public exact-child forensics.
+- DONE: Update the canonical test plan and relevant design text rather than relying on a later override.
+  The canonical replay plan, expected surface, topology handoff, checkpoint matrices, and stop conditions now use the command/state/Git oracle and deterministic six-event deletion.
+- DONE: Remove or condense duplicate/competing authority so there is one legible specification.
+  The duplicate later AC/test-plan override is removed, cycle-2 is labeled topology-only, and prior intended-change declarations are labeled historical.
+- DONE: Add a concise `## Obligation delta` identifying preserved obligations and authority, removed invented obligations, and bearer/burden.
+  The table assigns lifecycle, dispatch/effect, route, and host-transport duties; the Captain ruling removes only uniform public exact-child evidence and route × host live multiplication.
+- DONE: Prove `status --read ... --ac-scan` returns the repaired ACs.
+  Scanner JSON returns canonical line anchors 241/255; resolving those lines through the returned entity path shows the repaired AC-1/AC-8 text, and `git diff --check` is clean.
+- DONE: Make no product-code changes and report exact files, evidence, and commit.
+  Only `docs/dev/.spacedock-state/first-officer-gate-command-lifecycle/index.md` changed; the state commit is path-scoped and the code worktree remains clean at `3cc6225b`.
+
+### Summary
+
+Repaired the authoritative body rather than stacking another override: scanners, readers, and implementers now see one proof boundary at the canonical AC/test-plan location. All product obligations remain; only unsupported proof inventions are removed.
