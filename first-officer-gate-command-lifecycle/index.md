@@ -1380,3 +1380,20 @@ Checklist accounting is **3 DONE, 1 SKIPPED, 0 FAILED**. Cycle 20 relocates the 
 ### Summary
 
 Independent staff **CHANGES REQUESTED** is fully incorporated. Checklist accounting is **3 DONE, 1 SKIPPED, 0 FAILED**: exact-one review cardinality is now falsifiable, the decisive runtime evidence survives temp cleanup, and the corrected budget preserves the same ownership boundary and existing test surface.
+
+## Implementation intended-change declaration (cycle 21)
+
+Declared before code edits at local failed tip `37d6980b`. This cycle repairs that tip in place and keeps it off PR #565 until validation. The complete surface is the approved eight existing files: the prior seven plus `skills/present-gate/SKILL.md`.
+
+| File | Intended incremental delta |
+| --- | ---: |
+| `skills/first-officer/references/first-officer-shared-core.md` | 0 / 0 |
+| `skills/fo-gate-lifecycle/SKILL.md` | +3 / -2 |
+| `skills/present-gate/SKILL.md` | +16 / -14 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +22 / -0 |
+| `internal/ensigncycle/shared_fixtures_test.go` | 0 / 0 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +16 / -0 |
+| `docs/site/concepts/gates-and-decisions.md` | +8 / -15 |
+| `docs/specs/scenario-testing-principles.md` | 0 / 0 |
+
+Intended incremental total is **+65/-31**; total additions from baseline `13d70249` have a hard stop at **+175**. `present-gate` will be the sole six-field root-visible render owner; `fo-gate-lifecycle` will preserve bind/close/consume and require completed presentation before chat decision mutation. Existing host extractors will expose exact-one multiplicity without a new harness. Provider override behavior, prompts, recorder/schema/application/CLI production code, host adapters, compatibility behavior, and every ninth file remain unchanged.
