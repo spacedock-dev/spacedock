@@ -308,3 +308,12 @@ Cycle 3 proves the raw-byte reconciliation on the real parsers and records the m
 ### Summary
 
 Commit `396c92a3` adds generic ordered workflow context pointers, reconciles the two shipped parsers through raw half-open spans from one README buffer, and preserves legacy output when no context is declared. Focused, full, race, docs, golden, integration, and Codex live proofs are green; Claude and Pi reached their real hosts but failed before workflow work on external credential state, so their approved CI-secret lanes remain required before merge.
+
+## Stage Report: implementation (CI repair)
+
+- DONE: Stay within 12 files/700 changed lines, add no status projection/snapshot/FO assembly/bootstrap multi-read/third parser/new harness, and run focused/full/race/docs plus required existing live lanes and final-tip Roborev.
+  Authorized Runtime Live E2E [run 30087598672](https://github.com/spacedock-dev/spacedock/actions/runs/30087598672) completed SUCCESS at exact head `396c92a302e1ac220d552d6f16600e9f08ccb622`: offline, pi-live, codex-live, claude-live sonnet, and claude-live claude-opus-4-8 were green; journey-delta-comment skipped by workflow design.
+
+### Summary
+
+The authorized CI run repairs the implementation report's sole FAILED checklist item without changing product code or the reviewed implementation tip. The earlier local Claude revoked-token and Pi OAuth-refresh failures remain valid historical harness evidence, while the approved secret-bearing lanes now prove the candidate itself green on every required runtime.
