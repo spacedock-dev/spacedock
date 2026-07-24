@@ -315,3 +315,22 @@ Fresh detached validation passed the four-file Spacedock deliverable and five cl
 ### Summary
 
 The previously skipped provider-owned evidence is now pinned and reproduced, and the exact provider Result/inventory/association crosses into Spacedock unchanged and fails closed under independent mutations. Validation recommends **PASSED** for all six ACs at the exact tips; the provider's verbose deterministic vector remains private plumbing, not a new public Spacedock or agent-facing interface.
+
+## Stage Report: implementation (rework)
+
+- DONE: Rebase `spacedock-ensign/gate-review-presentation-command` onto current `origin/main` and resolve only the two known semantic conflicts in `internal/cli/gate_test.go` and `internal/contractlint/fo_function_reference_invariant_test.go`.
+  Rebasing `612b72fc` onto `dd6bd114` produced only those conflicts; candidate `4779fff8` preserves main's gate tests and adds the presentation refusal beside them, while host baselines equal main plus xb's measured 2,872-byte load.
+- DONE: Preserve xb's approved behavior and intended four-file delta: presentation stays an overridable `present-gate` channel; complete association remains required; the binary remains Subspace-free.
+  The final diff against `origin/main` is exactly the original four files and `+49/-3`; complete provider Artifact/Reference mapping remains in the skill/docs, the recorder rejection test passes, and `go list -deps ./cmd/spacedock` names no Subspace dependency.
+- DONE: Reconcile with merged gate-lifecycle/advisory-round behavior from commits `03b1a7fc`, `f06cce04`, `c355fbe4`, and `c9dfc491`; do not invent compatibility constraints for prototype behavior.
+  All four commits are ancestors of `origin/main`; round record/validate, owning-workflow discovery, eligibility/consume-once, and presentation-refusal tests pass, with the latter expecting main's real `record|validate|eligibility|consume` command surface.
+- DONE: Before committing, report actual changed files/LOC versus xb's pre-rebase 4 files, +49/-3, and treat unexplained product-surface drift as a blocker.
+  Pre-commit audit reported docs `+8`, CLI test `+21`, load-ratchet test `+5/-3`, and present-gate skill `+15`; no extra file, production Go surface, provider/recorder change, or unexplained drift appeared.
+- DONE: Run focused affected tests, gofmt as applicable, `go test ./...`, `go test ./... -race`, mkdocs strict, and `git diff --check`.
+  Focused CLI/contractlint suites, `gofmt -w ./cmd ./internal`, normal/race suites, `uv run --with-requirements docs/requirements.txt mkdocs build --strict`, and diff checks all passed; removing a merged verb, complete association, or per-host load increment breaks its named test.
+- DONE: Commit the rebased integration candidate and write an implementation/rework report, but do not self-validate or mutate workflow frontmatter/gates.
+  Rebased commits are `f8fd5c2a` and `425812bc`; integration reconciliation is `4779fff8`. This append-only body report makes no validation recommendation and leaves frontmatter/gates untouched for a fresh validator.
+
+### Summary
+
+The rebased xb candidate preserves the approved four-file `+49/-3` boundary while composing with merged gate lifecycle and folder-form advisory rounds. Candidate `4779fff8` is clean and fully implementation-tested; independent validation remains the next gate.
