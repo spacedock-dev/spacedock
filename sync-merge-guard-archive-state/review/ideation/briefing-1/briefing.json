@@ -1,0 +1,65 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:rd:ideation:attempt-1:revision-1",
+  "question": "Should the restart-safe split-root merge-finalization design be approved, with implementation held until 6y lands?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6cb4e3a928aab8e6eeae8a6a32492abf80a86bdc0e07df9aac41ab77c8196647"
+    },
+    {
+      "id": "artifact:staff-review",
+      "uri": "staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d132d45a909aef93a123b40f434ffb9a16f95a2969a8e9f6f5d4c20cb67fb7c3"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:019b2c82d264c466d846136e81d2905e66b59b7f413ebf2bf0bb0c9509134dd8"
+    },
+    {
+      "id": "artifact:merge-contract",
+      "uri": "../../../../../../../skills/first-officer/references/fo-merge-core.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:7bc9ec5cd65da10dcb4ed31436be6a4ca94b9d7a15f6c8681e2bcbd2a5878b39"
+    },
+    {
+      "id": "artifact:workflow-definition",
+      "uri": "../../../../../../../docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c077d7c6e3c59b4d0d61a7d1c93c88dcb380528f65987f6860bf78c83bab5597"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Enter implementation after 6y lands",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the durable publication design",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}

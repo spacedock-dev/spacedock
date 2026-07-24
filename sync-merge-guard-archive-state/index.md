@@ -13,7 +13,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:rd:backlog
+        gate: gate:docs-dev:rd:ideation
     records:
         - id: gate:docs-dev:rd:backlog
           stage: backlog
@@ -38,6 +38,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:rd:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:rd-ideation-1
+              briefing:
+                id: briefing:docs-dev:rd:ideation:attempt-1:revision-1
+                digest: sha256:3737281543bf5be0e7b815157905b792b8adaf1ca4a756da8b531b8ae5a9c8af
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Make a successful split-root `merge guard` finalization durable on the configured state remote, including restart after interruption, so another First Officer cannot resurrect an already archived task from the last pushed sentinel.
