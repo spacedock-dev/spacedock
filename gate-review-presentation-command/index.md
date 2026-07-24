@@ -689,3 +689,34 @@ Exact tip `944e928e` satisfies the Cycle-11 evidence additions, repository check
 ### Summary
 
 Exact tip `8fd1b869` closes the validation-cycle-5 authority hole with the authorized five production lines and twelve test lines. Unknown nested Resolution authority can no longer disappear during decoding or close a gate, rejection remains byte-clean, the direct Captain path still works, and the candidate finishes exactly at the 1,310-line cap with all checks green.
+
+## Stage Report: validation (cycle 6)
+
+- DONE: Reproduce all six prepared-room ACs at exact tip 8fd1b869, including rejection of unknown/conflicting nested Resolution authority with byte-identical entity state.
+  Uncached focused tests exercise all named AC evidence; the `resolution.actor:"agent:first-officer"` conflict now exits non-zero before the shared exact-byte comparison, while the canonical portable direct-Captain Result still closes.
+- DONE: AC-1 (VALUE) — Only the exact authorized room can make a Captain decision durable.
+  Request, Briefing, attempt, room, top-level authority, nested unknown authority, and inventory mutations all reject without changing entity bytes; weakening strict nested decoding or the shared byte comparison fails the matrix.
+- DONE: AC-2 — Request, Briefing, attempt, and authority identity are exact and frozen before recording.
+  The focused request/room/Briefing suites reject stale, moved, malformed, rebound, or post-bind-changed inputs before mutation, including the question-only Briefing edit.
+- DONE: AC-3 — A provider close contains one direct Captain Result and a complete recursively derived presentation.
+  The canonical close, advisory/authority matrix, and inventory tests accept the wrapper-free Captain Resolution and reject wrong type, coverage, duplicate id, wrong revision, Reference primary, and nested unknown fields.
+- DONE: AC-4 — Close is atomic and one-use, and closed history cannot be rebound.
+  Lifecycle, writer-CAS, room-close, and eligibility/consume tests prove full pre-write validation, one closure/application, stale replay refusal, and frozen prior history.
+- DONE: AC-5 — The closed attempt identifies the exact retained Result and inventory bytes.
+  Each fixed provider file fails validation after byte append or deletion, names the expected evidence path, and passes again only after exact-byte restoration.
+- DONE: AC-6 (VALUE) — Provider coupling in the Spacedock binary remains zero.
+  The absent-verb side-effect test passes and `go list -deps ./cmd/spacedock` reports `subspace_dependency_count=0`.
+- DONE: Adversarially probe adjacent top-level/nested authority, direct-Captain success, recursive inventory, one-use history, retained-byte validation, and zero coupling without promoting recorded out-of-scope risks.
+  A detached exact-tip CLI audit rejects unknown nested `actor`, `approver`, and `delegate` fields byte-cleanly and accepts the canonical direct-Captain Result; the focused/full suites reproduce the remaining lifecycle invariants.
+- SKIPPED: Duplicate conflicting JSON object members.
+  A detached counterexample with First-Officer `by` followed by Captain `by` closes because `encoding/json` is last-wins, but supported provider output uses a typed Go encoder and cannot emit duplicate members; promote if arbitrary external Result producers become supported or a supported producer can emit duplicates.
+- DONE: Reassess Roborev 2070 only against recorded promotion conditions.
+  No supported room-to-chat abandonment, provider-orchestration ownership, archival/pruning lifecycle, resource-risk generated Briefing depth, or demonstrated diagnostic confusion exists; all five findings remain correct-but-disproportionate declines.
+- DONE: Verify exact 17-file/1,310-line cap, focused/full/race/docs/dependency checks, Roborev 2070, and canonical all-declines round 16; issue a fresh PASSED or REJECTED verdict.
+  Tip `8fd1b869` is clean at 17 files and `+1141/-169`; focused, full, race, pinned strict MkDocs, required gofmt, diff, and dependency checks pass, while round 16 validates as `triage=all-declines` with 12 entries.
+- DONE: Fresh exact-tip recommendation.
+  **PASSED.** All supported prepared-room ACs have reproduced behavioral evidence and no material finding remains.
+
+### Summary
+
+Exact tip `8fd1b869` strictly rejects the supported nested-authority conflict before mutation, preserves the canonical direct-Captain close, and passes every acceptance, repository, scope, and canonical-review check. Duplicate JSON members remain a real parser counterexample but are deferred under the recorded materiality rule until a supported producer can emit them or arbitrary external Result producers enter scope.
