@@ -200,7 +200,13 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:6y-validation-3
+              briefing:
+                id: briefing:docs-dev:6y:validation:attempt-3:revision-1
+                digest: sha256:0ae905b1aecc75768763f7d0c960af1f0894c7cf5d68c3f827e2b6ecfd6e957e
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-3
 review-round:
     id: round:6yyyyemkqwsett3g1c991w9f:implementation:16
     stage: implementation

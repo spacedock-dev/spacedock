@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:validation:attempt-3:revision-1",
+  "question": "Should 6y enter a design reset for four falsified lifecycle and evidence boundaries instead of merging PR #565 at 13d702492131df17dd3ac87245d6d773f4df959b?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:ea662bfbb8e7a62df9dc2336d6b8c010465566bfe2315351f4ec933ff47dd4e7"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5bf783575ddeccadb2ac361d3c1d8268ff5c9b0ecfd3999d44268333cc780620"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6425a361d95b0f5fc64d712aa9da8bd1b377ca9579ec6da5c6e3523fc8039003"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:validation-design-reset",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Proceed toward merge despite the falsified boundaries",
+          "to": "stage:done"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Enter feedback routing and reset ideation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold the open pull request",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}
