@@ -901,3 +901,25 @@ Total intended amendment: at most 156 additions and at least 66 deletions, withi
 ### Summary
 
 The final implementation operates the recorded gate lifecycle with three load-bearing authority mutations, durable package/Resolution/consume barriers, one identity-keyed capability probe, and a concise review ordered between bind commit and decision. It preserves legacy human-gate holds and the captain's transport/presentation boundaries, stays under every approved LOC and byte cap, and is green under full/race/docs plus Claude, Codex, and Pi live evidence.
+
+## Stage Report: validation
+
+- FAILED: Reproduce all eight acceptance criteria at exact tip 624a9c2e, including three authority mutations, Git ancestry, review ordering, executable-identity cache invalidation, cwd-relative inputs, and ordinary dispatch handoff.
+  AC-1 through AC-6 and AC-8 reproduce, but AC-7's cited resume proof omits the promised closed-but-uncommitted and pending-committed approval states; `TestRecordedGateLifecycleAC7ResumeMatrix` never proves one close commit precedes one consume across three resumed processes.
+- DONE: Adversarially audit the 17-file surface and every approved cap/exclusion against omitted writes, PATH/same-path replacement, stale or reordered commits, duplicate dispatch, compatibility inventions, and host-transport scope drift.
+  The three real-binary omission controls, capability identity controls, state-Git oracle, review extraction, legacy hold route, and exact-one successful dispatch checks red the approved mutants without adding exact-child, presenter, whole-host-ratchet, advisory-round, or second-harness obligations.
+- DONE: Verify focused/full/race/docs, retained exact-tip Claude/Codex/Pi transcripts, and Roborev triage; issue a fresh PASSED or REJECTED verdict with every finding classified.
+  Focused suites, `go test ./...`, `go test ./... -race`, live-tag compilation, `gofmt -d`, `git diff --check`, and `uvx ... mkdocs build --strict` pass; retained post-624a9c2e host transcripts reproduce bind-commit/review/close-commit/consume-commit/dispatch ordering. Verdict: **REJECTED**.
+
+### Reviewer findings
+
+- MATERIAL / EVIDENCE DEFECT / Medium — AC-7's required supported resume boundary is not reproduced.
+  Trigger: a session stops after a successful approval close, either before or after the close commit. Harm: the suite can stay green if resume re-records the decision, consumes before durably committing the exact Resolution, or produces more than one close/consume/transition. Narrow correction: add the existing-fixture fresh-process controls for closed-uncommitted and pending-committed snapshots, then assert one close commit, one successful consume, one transition, byte stability, and ancestry across three passes.
+- POLISH / OUTCOME DRIFT / Low — selected-state boot prose says “then `gate validate`” while the active resume rule makes diagnostics optional.
+  The three authority mutations and value boundary remain intact, but `skills/fo-gate-lifecycle/SKILL.md:13` should stop implying mandatory diagnostic ceremony already excluded by Cycle 6/7.
+- POLISH / DOCUMENTATION DRIFT / Low — the host-neutral scenario descriptions still narrate the superseded six-step lifecycle.
+  `shared_scenarios_test.go:31` and `scenario-testing-principles.md:59` should describe three authority mutations and optional diagnostics; the executable oracle itself already does.
+
+### Summary
+
+Exact-tip implementation behavior, Git barriers, CLI normalization, identity invalidation controls, host handoff, caps, repository tests, strict docs, retained live evidence, and the scope-conscious Roborev dispositions all reproduce. Validation rejects only the missing AC-7 resume evidence; no ruled-out presenter redesign, generic child attribution, whole-host ratchet, advisory-round normalization, compatibility expansion, or second live harness is requested.
