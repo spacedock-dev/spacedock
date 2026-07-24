@@ -408,9 +408,6 @@ func TestGateRecordConsumesDirectBindingResultFromPreparedRoom(t *testing.T) {
 			t.Fatalf("recorded Result missing %q:\n%s", want, body)
 		}
 	}
-	if strings.Contains(string(body), "adoption-note:") {
-		t.Fatalf("direct binding Result acquired adoption provenance:\n%s", body)
-	}
 	afterResult, err := os.ReadFile(result)
 	if err != nil {
 		t.Fatal(err)
@@ -752,6 +749,18 @@ func TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation
 				writeFile(t, path, string(mutated))
 			},
 			want: "unknown top-level field",
+		},
+		{
+			name: "nested adoption provenance",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, strings.Replace(string(body), `"decision":"approve"`, `"decision":"approve","adoption-note":"captain adopted advisory output"`, 1))
+			},
+			want: "cannot carry adoption provenance",
 		},
 		{
 			name: "wrong authority",

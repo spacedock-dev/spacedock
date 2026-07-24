@@ -613,6 +613,9 @@ func deriveAssociation(resultBytes []byte, result *providerResult, presented *pr
 }
 
 func verifyProviderResolution(result *providerResult) error {
+	if result.Resolution.Adoption != "" {
+		return fmt.Errorf("binding Result cannot carry adoption provenance")
+	}
 	if result.Resolution.Briefing != result.Briefing {
 		return fmt.Errorf("provider Resolution does not bind its provider Briefing")
 	}
