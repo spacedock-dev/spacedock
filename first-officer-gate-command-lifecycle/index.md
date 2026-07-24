@@ -1,7 +1,7 @@
 ---
 id: 6yyyyemkqwsett3g1c991w9f
 title: Make First Officers operate the recorded gate lifecycle
-status: validation
+status: implementation
 source: "Durable-decisions dogfood audit: PRs #557/#560 shipped gate commands without the planned FO operating contract, 2026-07-23"
 started: 2026-07-23T02:01:56Z
 completed:
@@ -586,6 +586,7 @@ Implemented and hardened the six-event integration and its deterministic/live or
 - Cycle 13: DESIGN RESET — FO ruling after Roborev 2083. Preserve the three authority mutations and durability barriers; route a consumed terminal successor through the existing merge ceremony and only a nonterminal successor through ordinary dispatch. Replace the session identity/digest cache with one capability probe immediately before each gate lifecycle, deleting same-path/PATH cache machinery rather than adding a launcher-swap live laboratory. Pi review evidence must come from the root assistant message. Reuse the existing lifecycle fixture and host journey; no new harness, transport contract, or exact-child attribution.
 
 - Cycle 14: REJECTED — Roborev jobs 2145–2158; surface 9 files/88 LOC vs estimate 9 files/75 LOC (117%); AC unchanged
+- Cycle 15: REVISE — GitHub Actions offline CI run 30112268591; surface 21 files/1,470 added LOC vs 1,588-addition branch cap (93%); AC unchanged
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
