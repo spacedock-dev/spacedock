@@ -65,36 +65,65 @@ stages:
       context-sections: []
 ```
 
-Each value is the exact parsed text of one ATX heading in the same workflow README. It has no product-specific meaning and may name a heading at any level. A stage-local sequence replaces the default sequence; an absent stage-local key inherits the default; an explicit empty sequence clears it. Replacement rather than merge makes the effective ordered list visible in one place and avoids implicit de-duplication.
+Each value is the exact parsed text of one ATX heading in the same workflow README. It has no product-specific meaning and may name a heading at any level. A stage-local sequence replaces the default sequence; an absent stage-local key inherits the default; an explicit empty sequence clears it. The typed metadata representation therefore retains both a presence bit and an ordered slice: absent is distinct from present-and-empty. Replacement rather than merge makes the effective ordered list visible in one place and avoids implicit de-duplication.
 
-The current `### {stage}` subsection remains mandatory and is always first. `dispatch show-stage-def` then appends each resolved section in declaration order, with one blank line between sections and one final newline. Each section spans its heading through the line before the next heading of equal or higher rank, exactly as the existing fence-safe reader defines ownership; trailing blank lines receive the same trim the current stage extractor applies. With no effective `context-sections`, stdout is byte-identical to today's command.
+### Precise parser reconciliation
 
-Repeated selector values are invalid rather than silently de-duplicated. A selector resolving to zero headings is missing; one resolving to more than one heading is ambiguous; selecting the already-selected stage heading is duplicate context. Selector comparison uses the existing parser's normalized heading text (whitespace and optional closing `#` run already stripped), not a new Markdown interpretation.
+Do not reinterpret the current stage through the fence-safe selector scanner: that would change undeclared output for inputs where the legacy stage parser treats a heading inside a fence—or after a non-LF `splitlines` separator—as eligible. Instead, preserve both existing parsers and give their results one comparison coordinate:
+
+- Extend the existing `extractStageSubsection` implementation to accept an in-memory README byte slice and return its existing rendered stage bytes plus the selected half-open **raw source byte span** `[startByte,endByte)`. Its decorated-token matching, fence treatment, `##`/`###` termination, malformed diagnostic, universal `splitTextLines` separators, trailing-blank trim, and output bytes remain unchanged.
+- Extend the existing fence-safe `internal/status/section_read.go` scan to expose each selected heading's existing rank/ownership result plus its half-open raw source byte span. Its exact heading text, fence skipping, level-aware ownership, and `status --read` projection remain unchanged.
+- Compare only raw byte intervals, never line numbers from the two incompatible line models. Both parsers receive the same immutable byte buffer, so parent/child/stage intersection is unambiguous even across CRLF or exotic logical separators.
+
+This is a reconciliation of the two shipped parsers, not a third parser and not a claim that their heading semantics are identical. The legacy extractor remains the authority for the mandatory current-stage subsection and therefore preserves every no-declaration byte. The fence-safe scanner remains the authority for declared context selectors, so fenced lookalikes never satisfy a selector. Existing decorated, malformed, separator, CRLF, nested-heading, and no-declaration fixtures plus the cycle-2 pre-refactor fenced-stage characterization pin both sides without golden regeneration.
+
+The current `### {stage}` subsection remains mandatory and is always first. `dispatch show-stage-def` then appends each resolved section in declaration order, with one blank line between sections and one final newline. With no effective `context-sections`, stdout is byte-identical to today's command.
+
+Repeated selector values are invalid rather than silently de-duplicated. A selector resolving to zero headings is missing; one resolving to more than one heading is ambiguous. After resolving unique headings, validate all half-open spans pairwise: every selected span must be disjoint from the current-stage span and from every other selected span. Intersection rejects all three material overlap shapes—selected parent containing the stage, selected child inside the stage, and selected parent containing another selected child—as well as exact duplicate spans. Sibling spans that only meet at an endpoint remain valid. Diagnostics name both headings and both `[start,end)` spans.
+
+Selector comparison uses the existing parser's normalized heading text (whitespace and optional closing `#` run already stripped), not a new Markdown interpretation. Span intersection is structural only and assigns no meaning to a heading name or rank.
 
 ### Builder and worker ownership
 
-Expose a narrow in-process selection operation from the existing `internal/status/section_read.go` parser. Both dispatch paths use it:
+Expose both existing extractors over an in-memory README byte slice, and add a strict in-memory stage-metadata parse that returns an error for malformed YAML, a wrong-kind `context-sections`, or a non-scalar sequence item. The existing path wrappers may retain their compatibility behavior, but build/read resolution uses one shared `resolveStageContext(readmeBytes, stage)` operation and one immutable byte buffer per invocation. No metadata/body reread can mix two README versions inside one command.
 
-1. `dispatch build` resolves the stage's effective `context-sections` and validates the complete selection before writing a dispatch artifact. A failure exits nonzero and names the README path, stage, selector, and failure kind.
+Both dispatch paths use that resolver:
+
+1. `dispatch build` reads the README once, resolves the stage's effective `context-sections`, validates metadata, headings, and non-intersecting spans, and only then writes a dispatch artifact. A failure exits nonzero and names the README path, stage, selector, and failure kind.
 2. The emitted assignment keeps exactly one existing fetch command:
    `dispatch show-stage-def --workflow-dir <dir> --stage <stage>`.
-3. When the ensign runs that command during its one-file bootstrap, `show-stage-def` reads the same metadata and returns the stage definition plus the selected context. It revalidates so a README edit between build and bootstrap cannot silently change the selection.
+3. When the ensign runs that command during its one-file bootstrap, `show-stage-def` reads the then-current README once and runs the same resolver. Valid current metadata/content is intentionally adopted; invalid current metadata, missing/ambiguous selectors, or newly intersecting spans make the fetch exit nonzero before stage work.
+
+This is a live-read contract, not a version pin. Build preflights the version it sees before spawn; the pointer intentionally does not carry a digest or snapshot, so build cannot reject a later valid edit. Bootstrap is authoritative for the bytes the worker receives and fails only when the current version violates the selection contract.
 
 The First Officer therefore neither reads nor assembles policy sections. No `--include-section` flag, `status --read` projection, README snapshot, extra bootstrap read, or second heading parser is introduced.
 
 ### Mechanism-to-value trace
 
 - `context-sections` serves AC-1 by giving an authored policy a stage-scoped pointer. The simplest alternative, copying policy prose into stage definitions, is insufficient because it creates multiple authorities that can diverge.
-- The shared fence-safe selector serves AC-1 and AC-2 by preserving authored section spans and generic order. A new dispatch-only parser is insufficient because fenced headings and ownership rules could diverge from the established reader.
-- Builder validation plus the existing `show-stage-def` fetch serves AC-1 and AC-3 by failing before spawn while preserving the worker's single fetch. FO assembly or one fetch per section is insufficient because it reintroduces hand assembly or a bootstrap multi-read protocol.
+- Raw-byte span reconciliation between the unchanged legacy stage extractor and unchanged fence-safe selector scanner serves AC-1, AC-2, AC-3, and AC-4. Forcing either parser's heading semantics onto the other is insufficient because it changes an existing stage byte contract or weakens fence-safe context selection; a third parser would add another divergence.
+- Strict, presence-aware YAML decoding serves AC-2 and AC-3 by preserving absent/inherited, explicit-empty, replacement, and wrong-kind states. Reusing the scalar map is insufficient because it collapses sequences to `""` and has no parse-error channel.
+- Builder preflight plus live `show-stage-def` resolution serves AC-1, AC-3, and AC-5 by failing before spawn and again before work while preserving the worker's single fetch. FO assembly, snapshots, or one fetch per section are insufficient because they reintroduce hand assembly, stale copies, or a bootstrap multi-read protocol.
 
 ### Spike basis
 
-No new spike is needed. The held `js6` spike exercised the risky byte path: the shipped fence-safe reader located an arbitrary README section, its offset/length slice matched the authored section byte-for-byte after the current trailing-blank trim, and a fenced heading did not enter the map. `TestBuildStageDisciplineRidesFetchNotInlineAssignment` already proves that the assignment's `show-stage-def` fetch—not inline FO prose—delivers workflow stage context. YAML sequence order is preserved by the `yaml.v3` node representation already used by `ParseStagesWithDefaults`; implementation begins with a red metadata/assembly behavior fixture rather than another throwaway parser.
+The held `js6` spike already exercised the byte path: the shipped fence-safe reader located an arbitrary README section, its offset/length slice matched the authored section byte-for-byte after the current trailing-blank trim, and a fenced heading did not enter the map. `TestBuildStageDisciplineRidesFetchNotInlineAssignment` proves that the assignment's `show-stage-def` fetch—not inline FO prose—delivers workflow stage context.
+
+Cycle 2 exercised the previously unverified metadata and temporal path with a throwaway Go test in `internal/status`, using the real `stagesNodeFromFrontmatter`, `mappingValue`, `scanHeadings`, and `splitLines` primitives. The first run failed on explicit `[]`: the prototype preserved the key's presence but returned a nil slice, while the oracle expected present-and-empty. Initializing an empty slice only when the YAML sequence node is present fixed that distinction. The rerun command `go test ./internal/status -run TestIdeationSpikeContextSectionsSingleBufferTriStateAndLiveRead -v` passed and observed:
+
+- absent stage metadata inherited `[Authority Safety]`;
+- explicit `[]` resolved to a present empty list;
+- stage replacement preserved `[Safety Authority]` order;
+- scalar `context-sections: Authority` returned a `want sequence` error;
+- one-buffer build resolution saw `authority-v1`, a subsequent valid README edit made one-buffer fetch resolution adopt `authority-v2`, and a subsequent `[Missing]` edit failed with `selector "Missing" matches 0 headings`.
+
+The throwaway file was removed after the run. Its single-buffer resolver shape and the explicit-empty red case seed the first permanent implementation tests.
+
+A second throwaway characterization ran `go test ./internal/dispatch -run TestIdeationSpikeCharacterizeLegacyFencedStage -v` against the real `extractStageSubsection` and passed. With a fenced `### ideation` before a real one, today's extractor returns the fenced span exactly as `"### ideation\n\nfenced-body\n```"`. That measured compatibility behavior is why cycle 2 reconciles raw byte spans instead of moving stage identity onto the fence-safe selector scanner. The throwaway file was removed; implementation first commits this result as a permanent pre-refactor characterization.
 
 ### Expected surface
 
-Expected implementation surface is 8-10 files and about 380-560 changed lines: 120-180 production lines in `internal/status/stages.go`, `internal/status/section_read.go`, `internal/dispatch/build.go`, `internal/dispatch/showstagedef.go`, and dispatch help; 220-330 fixture/test lines under `internal/status` and `internal/dispatch`; and 20-35 documentation lines. The approved tolerance is at most 12 files or 700 changed lines. Crossing either bound, adding a package, or touching a skill/runtime adapter requires returning to the captain before expanding scope.
+The reviewed reconciliation raises the expected implementation surface to 9-12 files and about 520-760 changed lines: 170-250 production lines in `internal/status/stages.go`, `internal/status/section_read.go`, `internal/dispatch/build.go`, `internal/dispatch/showstagedef.go`, and dispatch help; 320-460 fixture/test lines under `internal/status`, `internal/dispatch`, and existing integration fixtures; and 20-35 documentation lines. The cycle-2 tolerance is at most 14 files or 900 changed lines. Crossing either bound, adding a package, or touching a skill/runtime adapter requires returning to the captain before expanding scope.
 
 ## Obligation delta
 
@@ -118,15 +147,18 @@ Expected implementation surface is 8-10 files and about 380-560 changed lines: 1
 Verified by: a fixture with a unique policy section measures the current undeclared baseline as 0 policy bytes, then drives `dispatch build`, executes its emitted one-file bootstrap fetch, and measures authored-policy-length bytes in the result with exact equality to `stage + separator + authored policy + final LF`. Removing the selector, changing one authored byte, or making the fetch stage-only makes the assertion fail.
 
 **AC-2 - Workflow-owned section selection is generic, ordered, and bounded.**
-Verified by: a custom-stage fixture selects two arbitrary heading names in reverse README order and asserts output follows declaration order, contains no unrelated section bytes, inherits a default, replaces it at stage scope, and clears it with `[]`. A fenced lookalike heading is not selectable. Swapping order, merging defaults, leaking an unrelated section, or recognizing the fenced lookalike fails the fixture.
+Verified by: a custom-stage fixture selects two arbitrary heading names in reverse README order and asserts output follows declaration order, contains no unrelated section bytes, inherits a default when absent, replaces it at stage scope, and preserves explicit `[]` as a clear. A fenced lookalike heading is not selectable. Swapping order, merging defaults, collapsing absent with empty, leaking an unrelated section, or recognizing the fenced lookalike fails the fixture.
 
 **AC-3 - Invalid section declarations stop dispatch before a worker artifact can be consumed.**
-Verified by: table-driven `dispatch build` cases for a missing selector, repeated selector, ambiguous matching headings, selection of the current stage heading, and non-sequence YAML all exit nonzero, write no usable dispatch body, and identify the README path, stage, selector/key, and failure kind. Correcting each independent fixture makes only its corresponding case pass.
+Verified by: table-driven `dispatch build` cases for malformed/wrong-kind YAML, a missing selector, repeated selector, ambiguous matching headings, selected parent containing the stage, selected child inside the stage, and selected parent containing another selected child all exit nonzero, write no usable dispatch body, and identify the README path, stage, selector/key, failure kind, and both spans for overlap. Disjoint siblings pass. Correcting each independent fixture makes only its corresponding case pass.
 
 **AC-4 - Undeclared workflows preserve the stable dispatch and read contract byte-for-byte.**
-Verified by: every existing dispatch golden remains unchanged; existing `show-stage-def` parity goldens remain unchanged; an explicit regression fixture compares the no-declaration build body and fetch stdout to their checked-in bytes and asserts exactly one existing `show-stage-def` fetch command. Any extra flag, fetch, packet block, separator, or status projection fails the fixed baseline.
+Verified by: every existing dispatch golden remains unchanged; existing `show-stage-def` decorated-stage, malformed-heading, separator-set, CRLF, nested-heading, and no-declaration parity fixtures remain byte-identical. A new pre-refactor characterization pins the measured fenced-stage output `"### ideation\n\nfenced-body\n```"`, while a reconciliation fixture proves the fence-safe selector scanner does not resolve that fenced context lookalike. An explicit regression fixture asserts exactly one existing `show-stage-def` fetch command. Any extra flag, fetch, packet block, changed legacy byte, or status projection fails the fixed baseline.
 
-**AC-5 - Declared context is delivered through the same host-neutral bootstrap on every runtime.**
+**AC-5 - The pointer adopts valid current workflow context and refuses invalid current context at bootstrap.**
+Verified by: one fixture runs build against policy v1, rewrites the README to a valid policy v2 and observes the unchanged emitted fetch return v2 exactly, then rewrites to a missing selector, wrong-kind sequence, and newly overlapping span and observes nonzero fetch results before any worker action. Returning v1 after the valid edit, mixing v1 metadata with v2 body, or accepting any invalid-current edit fails the test.
+
+**AC-6 - Declared context is delivered through the same host-neutral bootstrap on every runtime.**
 Verified by: the shared dispatch/integration fixture executes the emitted fetch command for Claude, Codex, and Pi envelopes and observes the same exact assembled bytes, while the existing approval-gated `claude-live`, `codex-live`, and `pi-live` lanes remain green because the host-neutral dispatch path changed. Removing the fetch from any host envelope or changing one host's quoting fails the fixture; an unapproved live lane is not counted as a pass.
 
 ## Test plan
@@ -135,8 +167,10 @@ Implementation starts with the AC-1 red behavior fixture. It authors a README wi
 
 Add focused tests around the existing parser and stage metadata:
 
-- `internal/status`: ordered YAML-sequence decoding, default inheritance, stage replacement, explicit empty clear, exact section spans, fenced-heading exclusion, and ambiguous-heading reporting. These exercise the existing parser; they do not add JSON fields or a second parser. Estimated cost: 90-130 test lines.
-- `internal/dispatch`: build-time validation cases and exact `show-stage-def` assembly for two arbitrary headings in declaration order. Extend `TestBuildStageDisciplineRidesFetchNotInlineAssignment` or its fixture rather than creating a parallel bootstrap harness. Estimated cost: 120-170 test lines.
+- `internal/status`: strict in-memory YAML decoding with an error channel; absent/inherited, explicit-empty, replacement, ordering, and wrong-kind cases; exact half-open section spans; fenced-heading exclusion; and ambiguous-heading reporting. The permanent version of the cycle-2 spike must preserve present-empty as a non-nil empty slice or an equivalent explicit state. These exercise the existing parser; they do not add JSON fields or a second parser. Estimated cost: 130-180 test lines.
+- `internal/dispatch`: build-time validation and exact `show-stage-def` assembly for two arbitrary headings in declaration order; a pairwise interval matrix covering stage/parent, stage/child, selected parent/child, exact duplicate, and disjoint siblings; and a single-buffer resolver check. Extend `TestBuildStageDisciplineRidesFetchNotInlineAssignment` or its fixture rather than creating a parallel bootstrap harness. Estimated cost: 170-240 test lines.
+- Reconciliation: before refactoring, commit the cycle-2 fenced-stage characterization; then drive the in-memory legacy stage extractor through every existing decorated-stage, malformed-heading, VT/FF/FS/GS/RS/NEL/LS/PS separator, CRLF/lone-CR, nested-level-4, and no-declaration case without regenerating its golden. In the same raw source, prove a fenced context lookalike remains absent from the fence-safe selector table. Assert raw-byte spans from the two existing parsers, not their incompatible line numbers, drive overlap decisions.
+- Temporal behavior: build against v1; mutate the same README to valid v2 and execute the emitted fetch to prove live adoption; then mutate independently to wrong-kind, missing, and overlapping current states and require fetch failure. Each resolver invocation reads the README once so the test can detect version mixing.
 - Compatibility: leave every existing dispatch and `show-stage-def` golden untouched, then run the golden suites as the no-declaration byte baseline. Add only declared-context fixtures; do not regenerate unrelated goldens.
 - Runtime coverage: use the existing shared host-envelope fixture to run the same fetch for Claude, Codex, and Pi. Because this changes the host-neutral dispatch path, the existing approval-gated `claude-live`, `codex-live`, and `pi-live` lanes are required green; no new LLM scenario is justified unless the shared fixture proves unable to execute the fetch.
 
@@ -158,7 +192,9 @@ Update `docs/site/concepts/workflows-and-entities.md` after the frontmatter exam
 +replaces the default, and `[]` clears it. `dispatch build` validates every
 +selection before spawn; the worker's existing `show-stage-def` read returns
 +the stage definition followed by those sections in declaration order.
-+Workflows without the field keep the existing output unchanged.
++The read uses the then-current valid README; an invalid current selection
++fails before stage work. Workflows without the field keep existing output
++unchanged.
 ```
 
 Update `dispatch show-stage-def --help` from “Print the workflow README section for a stage.” to “Print a stage’s workflow README section followed by its declared context sections.”
@@ -179,3 +215,16 @@ Update `dispatch show-stage-def --help` from “Print the workflow README sectio
 ### Summary
 
 The ideation now specifies one workflow-owned ordered selector contract whose validation belongs to `dispatch build` and whose content reaches the ensign through the existing `show-stage-def` fetch. It preserves no-declaration bytes, reuses the fence-safe parser and current fixture/live lanes, and records exact failure, proof, documentation, and surface bounds.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Unify or explicitly reconcile stage extraction and fence-safe section spans while preserving every existing decorated-stage, separator, CRLF, nested-heading, and no-declaration byte contract.
+  Precisely reconciled the unchanged legacy stage extractor and fence-safe selector scanner through raw-byte spans from one buffer; AC-4 pins every named existing fixture without golden regeneration.
+- DONE: Define and test fail-before-spawn overlap rules for stage/parent/child selected spans, and exercise the real absent/inherit, explicit-empty, replacement, ordering, and wrong-kind YAML round-trip as the ideation spike.
+  Pairwise half-open-span rejection covers all requested intersections; the throwaway one-buffer Go spike red-marked nil-vs-empty, then passed inheritance, explicit clear, replacement order, and wrong-kind rejection.
+- DONE: Correct the temporal contract to live-read semantics: build preflights one version, bootstrap validates and adopts the then-current valid content, and invalid current metadata fails.
+  AC-5 now exercises v1 build, valid-v2 adoption, and independent wrong-kind/missing/overlap failures from one immutable README buffer per invocation.
+
+### Summary
+
+Cycle 2 reconciles the incompatible shipped parsers without changing either one's public semantics: raw-byte spans provide one overlap coordinate while the stage and selector authorities stay distinct. It adds structural overlap rejection, records the real metadata spike, and makes the pointer's live-read semantics explicit and falsifiable.
