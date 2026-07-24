@@ -20,7 +20,7 @@ Load this skill in one host event before gate probe, mutation, presentation, rou
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --briefing BRIEFING --workflow-dir WORKFLOW_DIR
 ```
 
-Require exit 0, the expected gate/attempt/Briefing, and `state=open`; record already validates before atomic write. `«state.commit»(slug)` must commit the folder room and index before presentation. Then invoke `«gate.ac-cross-check»`, make the evidence judgment, and invoke `«gate.assemble-verdict»`; show the concise review, not raw JSON/YAML.
+Require exit 0, the expected gate/attempt/Briefing, and `state=open`; record already validates before atomic write. Present the bound Briefing identity and digest read from entity state, never a recomputed file hash or artifact `rev`. `«state.commit»(slug)` must commit the folder room and index before presentation. Then invoke `«gate.ac-cross-check»`, make the evidence judgment, and invoke `«gate.assemble-verdict»`; show the concise review, not raw JSON/YAML.
 
 **Record and durably close.** Use exactly one semantic source:
 
