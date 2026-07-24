@@ -124,13 +124,12 @@ func TestMergeGuardFinalizesFromMergedSentinelNonArmed(t *testing.T) {
 
 func TestMergeGuardFinalizesTerminalBlockedEntityFromMergedSentinel(t *testing.T) {
 	root := stageFixture(t, "merge-pr-workflow")
-	entity := filepath.Join(root, "070-pr-pending.md")
-	body, err := os.ReadFile(entity)
+	body, err := os.ReadFile(filepath.Join(root, "070-pr-pending.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	updated := strings.ReplaceAll(strings.ReplaceAll(string(body), "status: implementation", "status: done"), `pr: "#42"`, "pr: pr-merge:42")
-	writeFile(t, entity, updated)
+	writeFile(t, filepath.Join(root, "070-pr-pending.md"), updated)
 	var out, errOut bytes.Buffer
 	if code := MergeGuard([]string{"--workflow-dir", root, "070-pr-pending", "--verdict", "passed"}, root, &out, &errOut); code != 0 {
 		t.Fatalf("terminal merged-sentinel finalize exit=%d stderr=%q", code, errOut.String())
