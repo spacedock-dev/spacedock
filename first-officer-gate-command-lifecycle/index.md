@@ -124,6 +124,20 @@ gates:
                 digest: sha256:47bcff38eb3425ded2ee321c3639ad3a016a8db4f455a0e7029d65ad335af584
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-6
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:ideation:6
+                briefing: briefing:docs-dev:6y:ideation:attempt-6:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T18:24:50.60913Z"
+                decision: approve
+                reason: Cycle 18 closes both staff-review findings, restores supported rejection semantics without a new schema, makes live procedure ownership falsifiable, and limits implementation to seven existing files with a +95-addition hard stop; independent staff re-review approves with no material finding.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
