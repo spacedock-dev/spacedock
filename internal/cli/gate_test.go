@@ -795,6 +795,18 @@ func TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation
 			want: "unknown top-level field",
 		},
 		{
+			name: "unknown nested Resolution authority",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, strings.Replace(string(body), `"by":"person:captain"`, `"by":"person:captain","actor":"agent:first-officer"`, 1))
+			},
+			want: "unknown field",
+		},
+		{
 			name: "nested adoption provenance",
 			mutate: func(t *testing.T, room string) {
 				path := filepath.Join(room, "provider", "result.json")

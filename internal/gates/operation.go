@@ -298,6 +298,11 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 			return fmt.Errorf("binding Result has unknown top-level field %q", field)
 		}
 	}
+	resolutionDecoder := json.NewDecoder(bytes.NewReader(envelope["resolution"]))
+	resolutionDecoder.DisallowUnknownFields()
+	if err := resolutionDecoder.Decode(&result.Resolution); err != nil {
+		return fmt.Errorf("parse Result Resolution: %w", err)
+	}
 	if result.Briefing != request.Briefing.ID {
 		return fmt.Errorf("binding Result does not bind the gate room's canonical Briefing")
 	}
