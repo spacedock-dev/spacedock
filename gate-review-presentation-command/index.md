@@ -376,3 +376,34 @@ The rebased xb candidate preserves the approved four-file `+49/-3` boundary whil
 ### Summary
 
 The rebase, four-file boundary, provider retention suite, merged gate behavior, and five ACs validate cleanly. One material handoff defect remains: the present-gate override contract must carry captain-authorized adoption for advisory Results and prove that exact invocation before a fresh candidate-bound Briefing can be approved.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Replace the rejected advisory-adoption handoff with one prepared-room recorder boundary.
+  Commit `d933db27` makes `spacedock gate record <entity> --room <gate-room>` the only provider form; callers no longer supply Result, association, actor, approver, output paths, adoption text, or provider argv.
+- DONE: Keep request/package origination in the scaffold and derive every provider input behind the room.
+  The recorder consumes fixed `request.json`, canonical `briefing.json`, `provider/result.json`, and `provider/presented-inventory.json`; no room-preparation command, provider launcher, Subspace import, or transport adapter was added.
+- DONE: Freeze the complete request-backed attempt before provider recording.
+  Commits `c49be15f`, `c0f8f45b`, `6e50dba5`, and `290b9249` bind the JCS request digest, reject open/successor rebinding, validate derived gate/attempt/Briefing identity before every write, and require `actor == approver == person:captain`.
+- DONE: Accept only a wrapper-free direct Captain Result and preserve honest provenance.
+  Independent status/binding/actor/approver/resolutionId cases, nested `adoption-note`, distinct authority, changed request authority, and advisory output all fail before mutation; delegated FO approval remains the separate `--decision ... --directive` chat path.
+- DONE: Require complete Artifact plus recursive Reference presentation and an Artifact-typed Result primary.
+  The recorder derives the canonical inventory recursively, rejects missing/mistyped/duplicate mappings and a Reference used as the primary Artifact, and never accepts a caller-built association.
+- DONE: Bind exact retained provider bytes to immutable durable state.
+  Commit `98ebb458` stores only raw Result and presented-inventory digests on the closed attempt; `gate validate` recomputes both fixed files and the focused test proves either post-close byte change fails until restored.
+- DONE: Preserve one-use/frozen history and failure atomicity.
+  Every malformed request, invalid inventory, unauthorized Result, stale successor, room move, advisory wrapper, and retained-file tamper test asserts rejected entity bytes are unchanged; whole-attempt transition validation freezes the stored evidence digests.
+- DONE: Keep executable provider transport at the ruled ownership boundary.
+  Cycle 6 removed the modeled 270-line interpreter; `/subspace:r gate <gate-room>` remains Subspace-owned executable evidence, while one contractlint assertion pins probe-before-side-effects, prepared-room invocation, room-only recording, and no post-launch chat fallback.
+- DONE: Reconcile actual surface against the declarations and approved resets.
+  Final diff from `main` is 17 files, `+1086/-169` = 1,255 changed LOC; this exceeds the original ~585-line rework declaration but stays below Cycle 9's approved 1,300-line cap. The authorized extra file is `internal/gates/io.go`; the proposed integration harness is absent.
+- DONE: Run focused, repository, race, documentation, formatting, dependency, and cleanliness checks.
+  PASS: focused CLI/gates/contractlint controls, `go test ./...`, `go test ./... -race`, `uv run --with-requirements docs/requirements.txt mkdocs build --strict`, `gofmt -w ./cmd ./internal`, `git diff --check`, clean worktree, and zero Subspace entries in `go list -deps ./cmd/spacedock`.
+- DONE: Request final-tip adversarial review and triage every correction round.
+  Jobs 1974, 1984, 1987, 1993, 2003, 2014, 2019, 2022, and 2025 drove the recorded authority, binding, inventory, provenance, scope, and retention corrections; final-tip job 2028 at `98ebb458` returned `No issues found.`
+- DONE: Commit a reviewable exact-tip candidate without mutating workflow frontmatter or gate state.
+  The implementation branch is clean at `98ebb458`; this append-only report changes only the entity body and leaves `status`, `gates`, and application state untouched for independent validation.
+
+### Summary
+
+The corrected implementation exposes one room-only provider boundary, validates and freezes Captain authority before mutation, derives the complete presentation association internally, and binds the exact retained Result/inventory bytes to the closed attempt. It preserves zero Subspace binary coupling and the Subspace-owned transport boundary, passes all required checks, and cleared final-tip Roborev job 2028 with no findings.
