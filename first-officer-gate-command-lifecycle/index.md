@@ -1895,3 +1895,21 @@ No skill text, user documentation, product command, provider/recorder/consumer b
 ### Summary
 
 The repair restores Codex's approved host evidence instead of imposing an unavailable native-event schema, removes the false assignment-byte proof, and makes Pi evidence persistence a condition of launch. It also adds adversarial JSON round trips and corrects the deletion checkpoint so the promised final surface is arithmetically possible. Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Implementation intended-change declaration (cycle 26)
+
+Declared before code edits at local unpushed checkpoint `ce4365053158ef80c1a4dc34c63256fd83da62d0`. This cycle changes exactly these eight files:
+
+| File | Expected delta from `ce436505` |
+| --- | ---: |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +45 / -120 |
+| `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go` | +28 / -0 |
+| `internal/ensigncycle/claude_live_runner_test.go` | +6 / -8 |
+| `internal/ensigncycle/codex_live_runner_test.go` | +6 / -8 |
+| `internal/ensigncycle/gate_assert_test.go` | +0 / -16 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | +0 / -12 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +0 / -20 |
+
+Expected checkpoint-relative delta is **+85/-184**, with at most **+95 additions**. Deletion/consolidation happens before expansion and must first produce measured cumulative additions **≤370** versus `13d70249`, removing at least 127 checkpoint-added lines without inferred credit. Checkpoint-relative and cumulative numstat are recorded after deletion and at final tip. Final cumulative target is **≤455**, tolerance is **≤465**, and **+480** is the absolute hard stop.
+
+Implementation stops before every live host after deterministic controls are green so independent staff can review the actual code and measured diff. The reset triggers and unchanged PR/workflow boundaries are those in the approved cycle-24 staff-review repair.
