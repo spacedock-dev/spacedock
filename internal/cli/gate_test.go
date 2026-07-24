@@ -358,6 +358,22 @@ func TestGateRecordConsumesDirectBindingResultFromPreparedRoom(t *testing.T) {
 	if !bytes.Equal(afterFailed, before) {
 		t.Fatal("rejected mistyped Reference changed the entity")
 	}
+	for _, tc := range []struct{ name, old, replacement string }{
+		{"duplicate id", `"id": "reference:recorder-contract"`, `"id": "reference:entity-snapshot"`},
+		{"wrong revision", `"rev": "sha256:32af4e65fa5a60961b5181d9f2ae1da73001fe28f40d84fcea8be275b1be8684"`, `"rev": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`},
+	} {
+		writeFile(t, inventory, strings.Replace(string(inventoryBytes), tc.old, tc.replacement, 1))
+		out.Reset()
+		errOut.Reset()
+		code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 1 || !strings.Contains(errOut.String(), "complete presentation mapping") {
+			t.Fatalf("%s inventory exit=%d stdout=%q stderr=%q", tc.name, code, out.String(), errOut.String())
+		}
+		afterFailed, err = os.ReadFile(entity)
+		if err != nil || !bytes.Equal(afterFailed, before) {
+			t.Fatalf("%s inventory changed entity: %v", tc.name, err)
+		}
+	}
 	copyGateTestdata(t, inventory, filepath.Join("gate-room", "provider", "presented-inventory.json"))
 
 	var referenceResult map[string]any
@@ -455,6 +471,16 @@ func TestGateRecordConsumesDirectBindingResultFromPreparedRoom(t *testing.T) {
 		code = run(context.Background(), []string{"gate", "validate", "task", "--workflow-dir", root}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 		if code != 1 || !strings.Contains(errOut.String(), tc.want) || !strings.Contains(errOut.String(), "frozen digest") {
 			t.Fatalf("tampered retained evidence exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		}
+		writeFile(t, tc.path, string(tc.original))
+		if err := os.Remove(tc.path); err != nil {
+			t.Fatal(err)
+		}
+		out.Reset()
+		errOut.Reset()
+		code = run(context.Background(), []string{"gate", "validate", "task", "--workflow-dir", root}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 1 || !strings.Contains(errOut.String(), tc.want) || !strings.Contains(errOut.String(), "no such file") {
+			t.Fatalf("missing retained evidence exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 		}
 		writeFile(t, tc.path, string(tc.original))
 	}
@@ -803,6 +829,18 @@ func TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation
 				writeFile(t, path, strings.ReplaceAll(string(body), "briefing:docs-dev:3k:validation:attempt-1:revision-1", "briefing:provider:other"))
 			},
 			want: "canonical Briefing",
+		},
+		{
+			name: "canonical Briefing changed after binding",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "briefing.json")
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, strings.Replace(string(body), "Should this exact candidate proceed to merge?", "Should a different candidate proceed to merge?", 1))
+			},
+			want: "frozen digest",
 		},
 		{
 			name: "authority changed after binding",
