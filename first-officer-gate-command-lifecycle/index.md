@@ -2232,3 +2232,31 @@ No code, test, live host, branch/ref, PR, gate, review-round, status, or merge m
 ### Summary
 
 Cycle 27 repair restores product obligations that had no other integration owner while preserving the clean proof split. Direct CLI/Git tests own exact state, authority, mappings, and folder durability; supported-host journeys own one semantic root review plus durable route; host-native fixtures alone own transport. Checklist accounting is **3 DONE, 1 SKIPPED, 0 FAILED**; the repaired design is ready for independent staff re-review.
+
+## Implementation intended-change declaration (cycle 28)
+
+Declared before code edits. The seven prototype commits are preserved at local ref `spacedock-archive/first-officer-gate-command-lifecycle-3c535105` (`3c53510529c095878f5156d490d498e6742fb31c`). The clean implementation branch `spacedock-ensign/first-officer-gate-command-lifecycle-cycle27` starts exactly at `13d702492131df17dd3ac87245d6d773f4df959b`; no reset, force, ref rewrite, deletion, or push was used.
+
+Implementation is limited to these 17 existing paths and obligation-based ranges:
+
+| Path | Allowed delta from `13d70249` |
+| --- | ---: |
+| `skills/first-officer/references/first-officer-shared-core.md` | +1–3 / -1–3 |
+| `skills/fo-gate-lifecycle/SKILL.md` | +4–8 / -1–5 |
+| `skills/present-gate/SKILL.md` | +4–12 / -0–12 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +20–45 / -0–10 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +70–120 / -100–190 |
+| `internal/ensigncycle/gate_assert_impl_test.go` | +15–30 / -10–25 |
+| `internal/ensigncycle/gate_assert_test.go` | +10–25 / -20–45 |
+| `internal/ensigncycle/live_gate_stop_test.go` | +12–24 / -130–180 |
+| `internal/ensigncycle/livescenario_adapter_live_test.go` | +8–18 / -20–45 |
+| `internal/ensigncycle/shared_fixtures_test.go` | +5–15 / -25–55 |
+| `internal/ensigncycle/shared_scenarios_test.go` | +1–3 / -1–3 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | +5–15 / -10–30 |
+| `internal/ensigncycle/claude_live_runner_test.go` | +5–15 / -5–25 |
+| `internal/ensigncycle/codex_live_runner_test.go` | +5–15 / -5–20 |
+| `docs/site/concepts/gates-and-decisions.md` | +8–18 / -8–22 |
+| `docs/site/get-started/first-workflow.md` | +3–8 / -5–12 |
+| `docs/specs/scenario-testing-principles.md` | +1–4 / -1–4 |
+
+The **+250/-489** figure is a planning target derived from prior measured blocks, not a measured midpoint, deletion floor, or value AC. Actual per-file numstat decides conformance. A new path, production Go, or any per-file range breach stops implementation for design review before live work.
