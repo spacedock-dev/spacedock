@@ -24,6 +24,19 @@ gates:
                 digest: sha256:8d6888f2f9d067835f24c8845d703547638ff919f71f709c681e856551cfb80f
                 digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:s4:backlog:1
+                briefing: briefing:docs-dev:s4:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-24T14:53:41.564011Z"
+                decision: approve
+                reason: Captain approved filing the narrow post-em alignment task and dispatching it through the sprint.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Make a prepared gate room mechanical and self-consistent so a First Officer supplies judgment and artifact choices, while Spacedock derives recorder metadata and any presentation provider consumes one frozen package.
