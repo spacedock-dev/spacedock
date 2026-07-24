@@ -519,6 +519,18 @@ Implemented and hardened the six-event integration and its deterministic/live or
 ### Feedback Cycles
 
 - Cycle 1: REVISE — independent topology audit; surface shared core +6,197 bytes vs available headroom 663 bytes (935%); AC unchanged
+- Cycle 2: CHANGES REQUESTED — Roborev job 700; surface 7 test/live files and 584 added LOC vs estimate 7 files and at most 615 added LOC (95%); AC unchanged
+- Cycle 3: CHANGES REQUESTED — Roborev job 708; surface 7 test/live files and 708 added LOC vs estimate 7 files and at most 615 added LOC (115%, below 2× tolerance); AC unchanged
+- Cycle 4: NEEDS DECISION — Roborev job 711; surface 7 test/live files and 741 added LOC vs estimate 7 files and at most 615 added LOC (120%, below 2× tolerance); AC unchanged, actual-route/live-mutant proof blocked
+- Cycle 5: CHANGES REQUESTED — Roborev job 744; resumed-cycle surface 4 files and 31 added LOC against the bounded 650-line behavioral and 59-line live caps; AC unchanged; 8n projection is an explicit integration dependency
+- Cycle 6: NEEDS DECISION — Roborev job 775; behavioral proof remains capped at 650 added LOC and live proof at 59; AC unchanged; command-only copied-skill mutant has a credentialed blocking counterexample
+- Cycle 7: REVISE — delegated proof-boundary ruling; surface 650 behavioral plus 59 live LOC vs caps 650 plus 59 (100%); AC unchanged, impossible/disproportionate proof mechanisms corrected
+- Cycle 8: REVISE — Roborev job 837; two Material successor-oracle findings accepted; declared caps remain 650 behavioral and 59 live LOC; ACs and production Go unchanged
+- Cycle 9: DESIGN RESET — Captain-approved proof-boundary ruling, 2026-07-24. Preserve the six-command fail-closed lifecycle, one successor dispatch, and its durable effect. Preserve deterministic command-deletion proof and one representative live journey per supported host. Remove mandatory public transport-event uniformity, exact-child forensic attribution where the supported host surface does not expose it, and every-route-by-every-host live execution. Host-native fixtures own transport details; live journeys own the observable lifecycle and durable outcome. Return to ideation for the smallest AC-1/AC-8 and test-surface delta before further implementation.
+- Cycle 10: DESIGN RESET — Captain audit ruling, 2026-07-24. Preserve authorized record/consume-before-dispatch, durable successor state, and representative host journeys. Remove repeated four-subcommand help probes, the absolute-path workaround as a permanent FO ritual, runtime-specific “very next host event” wording, and zero-headroom absolute total-host ceilings. Spike whether every separate validation command adds safety before retaining exact six-command cardinality; keep resident/deferred component caps and define an attributable rebaseline policy. AC end values unchanged.
+- Cycle 11: REVISE — independent ideation staff review; surface 1 design file with implementation not restarted vs expected implementation at or below 1,518 added LOC; AC end values unchanged. Preserve a state commit after every successful close, key the cached capability result to resolved executable identity, recompute task-attributable load at every tip/rebase, and prove consumed-commit ordering plus each omitted authority mutation through real traces.
+- Cycle 12: REJECTED — validation resume matrix; surface 17 files/1,461 added LOC vs estimate 1,588 added LOC (92%); AC unchanged
+- Cycle 13: DESIGN RESET — FO ruling after Roborev 2083. Preserve the three authority mutations and durability barriers; route a consumed terminal successor through the existing merge ceremony and only a nonterminal successor through ordinary dispatch. Replace the session identity/digest cache with one capability probe immediately before each gate lifecycle, deleting same-path/PATH cache machinery rather than adding a launcher-swap live laboratory. Pi review evidence must come from the root assistant message. Reuse the existing lifecycle fixture and host journey; no new harness, transport contract, or exact-child attribution.
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
@@ -651,10 +663,6 @@ The live-proof budget is now at most 47 LOC. The stale executable remains a requ
 - **Material — discovery equality queries a different root.** Released user/workflow: repository startup discovery after lifecycle fixtures; harm: a planted fixture workflow in the actual queried repository could pollute discovery undetected; AC/boundary: AC-8 exact workflow-discovery equality; trigger: `writeRecordedGateFixture` creates an unrelated temporary root. Fix by placing and exercising the fixture below the queried repository's ignored/test-owned directory, then proving the planted discoverable control changes that same root.
 - **Material — load topology is self-authored rather than runtime-derived.** Released user/workflow: every engaged gate entry on every host; harm: deleting or reordering a real funnel load can remain green because the test's event arrays do not come from the shipped contract/runtime trace; AC/boundary: AC-1/AC-2 engaged-entry load order and the cycle-2 topology stop condition; trigger: the matrix supplies its own events and deletes only event zero. Fix by extracting route events from the copied shipped core plus deferred skill, grading each route, and adding route deletion and interior-order mutants through that extractor.
 
-### Feedback Cycles
-
-- Cycle 2: CHANGES REQUESTED — Roborev job 700; surface 7 test/live files and 584 added LOC vs estimate 7 files and at most 615 added LOC (95%); AC unchanged
-
 ### Roborev follow-up triage (cycle 2, job 708)
 
 - **Material — AC-7 resume compares only entity bytes.** Released user/workflow: an FO replaying any open/closed/consumed gate after restart; harm: the replay may create or mutate sibling state while entity-only equality remains green; AC/boundary: AC-7 exact pass cardinality and byte preservation; trigger: same/open, revise, hold, and consumed arms compare only `fixture.entity`. Fix every idempotent arm against a complete state-root snapshot.
@@ -662,10 +670,6 @@ The live-proof budget is now at most 47 LOC. The stale executable remains a requ
 - **Material — successor controls bypass the real stream parsers.** Released user/workflow: post-consume successor dispatch on every host; harm: a parser regression could accept narration, a blank handle, parent-written output, or an empty wait; AC/boundary: AC-1 strict spawn/handle/correlated-output oracle; trigger: `TestRecordedGateLifecycleSuccessorOracleControls` constructs `recordedGateDispatchProof` directly. Fix by routing adversarial Claude, Codex, and Pi streams through their production test extractors.
 - **Polish — prompt-load growth note.** Released user/workflow: none; harm: none, because exact baselines and hard ceilings are already measured and the boot core shrank; AC/boundary: reporting clarity only; trigger: the rebaseline comment does not explicitly contrast full-lifetime growth with boot residency. Decline this round; promote if a reviewer or release note conflates the two metrics.
 - **Polish — byte-clean helper name includes stale caller.** Released user/workflow: none; harm: none, because the stale caller separately asserts the exact allowed mutation; AC/boundary: test naming only; trigger: `assertRecordedGateByteCleanFailure` checks nonzero/output/lock, not bytes itself. Decline; promote if a caller relies on the helper name without its own byte assertion.
-
-### Feedback Cycles
-
-- Cycle 3: CHANGES REQUESTED — Roborev job 708; surface 7 test/live files and 708 added LOC vs estimate 7 files and at most 615 added LOC (115%, below 2× tolerance); AC unchanged
 
 ### Intended-change amendment 4
 
@@ -679,10 +683,6 @@ This adds at most 12 live LOC to make the previously declared all-host topology 
 - **Needs decision — route labels do not execute distinct runtime paths.** Released user/workflow: headless conn/no-conn, engage, worker completion, and every resume state; harm: a host-specific route can bypass the load while synthetic route fixtures remain green; AC/boundary: the binding cycle-2 topology matrix and stop condition; trigger: every route subtest currently reuses one normalized load/action fixture. The required actual-host matrix cannot be made green in this cycle: Claude is 401-blocked, Pi cannot load its extension dependency, and Codex omits the required structured spawn event. Do not substitute fixtures or exceed the 650-LOC proof cap; return for captain/FO reset or repaired live hosts.
 - **Needs decision — copied-skill command deletion lacks green runtime execution.** Released user/workflow: a live FO consuming the shipped deferred skill; harm: a host could ignore a missing command while text-derived checks pass; AC/boundary: AC-2 and the copied-plugin live-mutant stop condition; trigger: deterministic deletion uses `procedureEvents`, while the actual Claude copied-plugin mutant cannot start because of 401 credentials. The original six-event baseline and all six deterministic deletions are now explicit, but the required runtime mutant remains blocked pending credential repair; do not claim validation readiness.
 - **Material, fixed — deterministic missing-event discriminator was removed.** Released user/workflow: the common successor grader; harm: an event-completeness regression could escape the more specialized source/runtime checks; AC/boundary: AC-2 six-event load-bearing proof; trigger: job 711 observed the removed deterministic control. Restored a compact six-arm control that requires the grader's event-completeness error.
-
-### Feedback Cycles
-
-- Cycle 4: NEEDS DECISION — Roborev job 711; surface 7 test/live files and 741 added LOC vs estimate 7 files and at most 615 added LOC (120%, below 2× tolerance); AC unchanged, actual-route/live-mutant proof blocked
 
 ## Stage Report: implementation (cycle 2)
 
@@ -704,10 +704,6 @@ Cycle 2 successfully moved the recorded gate lifecycle behind the approved defer
 - **Material, accepted — Pi load was not correlated to a successful read result.** Released user/workflow: Pi gate entry before action; observable harm: configuration text or a failed `read` could satisfy the load-order assertion; affected value/boundary: AC-1/AC-2 and the runtime-observed topology stop condition; trigger: job 744 observed path-only matching. Correlate the structured Pi `read` tool-call id to its non-error tool result before accepting the load.
 - **Polish, declined — split Pi provider/model flags onto separate source lines.** Released user/workflow: none; observable harm: none; affected value/boundary: readability only, while the approved live-test budget is exactly 59 added lines; trigger: job 744's style note. Promote only if the line becomes functionally ambiguous or the live budget is explicitly reset.
 
-### Feedback Cycles
-
-- Cycle 5: CHANGES REQUESTED — Roborev job 744; resumed-cycle surface 4 files and 31 added LOC against the bounded 650-line behavioral and 59-line live caps; AC unchanged; 8n projection is an explicit integration dependency
-
 ### Roborev final resumed-cycle triage (job 775)
 
 - **Material, accepted — reason validation must reject canonical empty scalars.** Released user/workflow: delegated FO approval; observable harm: whitespace or quoted-empty reason could pass as evidence; affected value/boundary: AC-3 nonblank evidence judgment; trigger: job 775 observed the relaxed substring check. Anchor the unique canonical Resolution `reason:` field and trim whitespace plus YAML quote characters before accepting it. Do not restore one historical sentence: the contract deliberately permits the FO's evidence judgment while exact actor and Captain directive remain pinned.
@@ -715,11 +711,6 @@ Cycle 2 successfully moved the recorded gate lifecycle behind the approved defer
 - **Low, accepted narrowly — prove the copied skill body as well as its directory.** Released user/workflow: mutant provenance; observable harm: another file in the copied directory could theoretically be consumed; affected value/boundary: AC-2 runtime mutant; trigger: job 775. Claude's native load event reports the base directory rather than `/SKILL.md`, so require that exact directory and absence of the removed placeholder command in the emitted loaded body.
 - **Low, declined — semicolon-joined multiple gate commands are conservatively discarded.** Released user/workflow: none in the controlled route; observable harm: false negative only, never false green; affected value/boundary: AC-1 successful-event attribution; trigger: a host emits multiple gate calls joined only by `;`. Promote if a supported route intentionally emits per-command exit capture for that shape.
 - **Low, declined — detect alteration from one historical reason sentence.** Released user/workflow: delegated approvals legitimately carry the FO's current evidence judgment; observable harm: pinning the historical sentence would reject correct live decisions; affected value/boundary: AC-3 requires nonblank evidence plus exact actor/directive, not exact prose; trigger: a binding specification changes to require a canonical reason string.
-
-### Feedback Cycles
-
-- Cycle 6: NEEDS DECISION — Roborev job 775; behavioral proof remains capped at 650 added LOC and live proof at 59; AC unchanged; command-only copied-skill mutant has a credentialed blocking counterexample
-- Cycle 7: REVISE — delegated proof-boundary ruling; surface 650 behavioral plus 59 live LOC vs caps 650 plus 59 (100%); AC unchanged, impossible/disproportionate proof mechanisms corrected
 
 ## Stage Report: implementation (cycle 3)
 
@@ -748,10 +739,6 @@ Hardened the deferred recorded-gate lifecycle and its host parsers to the exact 
 
 All binding correction boundaries are closed without duplicating 8n. Three credentialed hosts prove the lifecycle through correlated durable successor output; implementation is ready for validation.
 
-### Feedback Cycles
-
-- Cycle 8: REVISE — Roborev job 837; two Material successor-oracle findings accepted; declared caps remain 650 behavioral and 59 live LOC; ACs and production Go unchanged
-
 ## Stage Report: implementation (cycle 5)
 
 - FAILED: Require a correlated public Codex `spawn_agent` call, child completion, and exact-child durable output; parent writes, narration, waits without a receiver, and synthetic commit handles must fail.
@@ -764,14 +751,6 @@ All binding correction boundaries are closed without duplicating 8n. Three crede
 ### Summary
 
 Roborev 837 is fully triaged and both Medium findings are Material. The implementation remains blocked in implementation on a missing public Codex spawn/completion correlation; no validation-readiness claim is made.
-
-### Feedback Cycles
-
-- Cycle 9: DESIGN RESET — Captain-approved proof-boundary ruling, 2026-07-24. Preserve the six-command fail-closed lifecycle, one successor dispatch, and its durable effect. Preserve deterministic command-deletion proof and one representative live journey per supported host. Remove mandatory public transport-event uniformity, exact-child forensic attribution where the supported host surface does not expose it, and every-route-by-every-host live execution. Host-native fixtures own transport details; live journeys own the observable lifecycle and durable outcome. Return to ideation for the smallest AC-1/AC-8 and test-surface delta before further implementation.
-- Cycle 10: DESIGN RESET — Captain audit ruling, 2026-07-24. Preserve authorized record/consume-before-dispatch, durable successor state, and representative host journeys. Remove repeated four-subcommand help probes, the absolute-path workaround as a permanent FO ritual, runtime-specific “very next host event” wording, and zero-headroom absolute total-host ceilings. Spike whether every separate validation command adds safety before retaining exact six-command cardinality; keep resident/deferred component caps and define an attributable rebaseline policy. AC end values unchanged.
-- Cycle 11: REVISE — independent ideation staff review; surface 1 design file with implementation not restarted vs expected implementation at or below 1,518 added LOC; AC end values unchanged. Preserve a state commit after every successful close, key the cached capability result to resolved executable identity, recompute task-attributable load at every tip/rebase, and prove consumed-commit ordering plus each omitted authority mutation through real traces.
-- Cycle 12: REJECTED — validation resume matrix; surface 17 files/1,461 added LOC vs estimate 1,588 added LOC (92%); AC unchanged
-- Cycle 13: DESIGN RESET — FO ruling after Roborev 2083. Preserve the three authority mutations and durability barriers; route a consumed terminal successor through the existing merge ceremony and only a nonterminal successor through ordinary dispatch. Replace the session identity/digest cache with one capability probe immediately before each gate lifecycle, deleting same-path/PATH cache machinery rather than adding a launcher-swap live laboratory. Pi review evidence must come from the root assistant message. Reuse the existing lifecycle fixture and host journey; no new harness, transport contract, or exact-child attribution.
 
 ## Stage Report: ideation (cycle 3)
 
