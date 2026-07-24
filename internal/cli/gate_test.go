@@ -411,7 +411,7 @@ func TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation
 		want   string
 	}{
 		{
-			name: "advisory wrapper",
+			name: "advisory status",
 			mutate: func(t *testing.T, room string) {
 				path := filepath.Join(room, "provider", "result.json")
 				var result map[string]any
@@ -423,9 +423,90 @@ func TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation
 					t.Fatal(err)
 				}
 				result["status"] = "advisory"
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "advisory Result remains evidence",
+		},
+		{
+			name: "advisory binding",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
 				result["binding"] = false
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "advisory Result remains evidence",
+		},
+		{
+			name: "advisory actor",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
 				result["actor"] = "agent:reviewer"
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "advisory Result remains evidence",
+		},
+		{
+			name: "advisory approver",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
 				result["approver"] = "person:captain"
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "advisory Result remains evidence",
+		},
+		{
+			name: "advisory resolution id",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
+				result["resolutionId"] = "resolution:wrapper"
 				mutated, err := json.Marshal(result)
 				if err != nil {
 					t.Fatal(err)
