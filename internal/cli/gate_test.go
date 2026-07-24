@@ -459,7 +459,7 @@ func TestGateRoomRejectsRequestAuthorityRebindingWithoutMutation(t *testing.T) {
 	out.Reset()
 	errOut.Reset()
 	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-	if code != 1 || !strings.Contains(errOut.String(), "request is frozen") {
+	if code != 1 || !strings.Contains(errOut.String(), "binding is frozen") {
 		t.Fatalf("authority rebind exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	after, err := os.ReadFile(entity)
@@ -468,6 +468,39 @@ func TestGateRoomRejectsRequestAuthorityRebindingWithoutMutation(t *testing.T) {
 	}
 	if !bytes.Equal(after, before) {
 		t.Fatal("rejected authority rebind changed the entity")
+	}
+}
+
+func TestGateRoomRejectsRequestBackedRoomMoveWithoutMutation(t *testing.T) {
+	root, entity, room := unboundGateRoomFixture(t)
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("bind room exit=%d stderr=%q", code, errOut.String())
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	movedRoom := filepath.Join(root, "review", "validation", "briefing-copy")
+	if err := os.MkdirAll(movedRoom, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	copyGateTestdata(t, filepath.Join(movedRoom, "briefing.json"), filepath.Join("gate-room", "briefing.json"))
+	copyGateTestdata(t, filepath.Join(movedRoom, "request.json"), filepath.Join("gate-room", "request.json"))
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(movedRoom, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "binding is frozen") {
+		t.Fatalf("room move exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("rejected room move changed the entity")
 	}
 }
 
@@ -490,16 +523,67 @@ func TestGateRoomRejectsBriefingOnlyAttemptWithoutFrozenRequest(t *testing.T) {
 
 	out.Reset()
 	errOut.Reset()
-	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-	if code != 1 || !strings.Contains(errOut.String(), "frozen request digest") {
-		t.Fatalf("briefing-only room exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Join(room, "briefing.json")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "binding is frozen") {
+		t.Fatalf("briefing-only authority rebind exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	after, err := os.ReadFile(entity)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !bytes.Equal(after, before) {
+		t.Fatal("rejected briefing-only authority rebind changed the entity")
+	}
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "frozen request digest") {
+		t.Fatalf("briefing-only room exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err = os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
 		t.Fatal("rejected briefing-only room changed the entity")
+	}
+}
+
+func TestGateBriefingRejectsMalformedReferenceBeforeBinding(t *testing.T) {
+	root, entity, room := unboundGateRoomFixture(t)
+	briefingPath := filepath.Join(room, "briefing.json")
+	var briefing map[string]any
+	briefingBytes, err := os.ReadFile(briefingPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(briefingBytes, &briefing); err != nil {
+		t.Fatal(err)
+	}
+	contextItems := briefing["context"].([]any)
+	contextItems[0].(map[string]any)["rev"] = "mutable"
+	malformed, err := json.Marshal(briefing)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, briefingPath, string(malformed))
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefingPath}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errOut.String(), "canonical Briefing") {
+		t.Fatalf("malformed Reference bind exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("malformed Reference froze an attempt")
 	}
 }
 
@@ -634,6 +718,27 @@ func TestGateRoomRejectsAdvisoryEvidenceAndUnauthorizedResolutionWithoutMutation
 				writeFile(t, path, string(mutated))
 			},
 			want: "advisory Result remains evidence",
+		},
+		{
+			name: "unknown top-level field",
+			mutate: func(t *testing.T, room string) {
+				path := filepath.Join(room, "provider", "result.json")
+				var result map[string]any
+				body, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := json.Unmarshal(body, &result); err != nil {
+					t.Fatal(err)
+				}
+				result["futureAuthority"] = "agent:other"
+				mutated, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, string(mutated))
+			},
+			want: "unknown top-level field",
 		},
 		{
 			name: "wrong authority",

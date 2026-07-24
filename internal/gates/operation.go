@@ -182,8 +182,8 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	}
 	previous := &record.Attempts[len(record.Attempts)-1]
 	if previous.Resolution == nil {
-		if previous.Briefing.RequestDigest != "" && previous.Briefing.RequestDigest != binding.RequestDigest {
-			return fmt.Errorf("open gate room request is frozen and cannot be rebound")
+		if (previous.Briefing.RequestDigest != "" || binding.RequestDigest != "") && !sameBinding(previous.Briefing, binding) {
+			return fmt.Errorf("open gate room binding is frozen and cannot be rebound")
 		}
 		selectionChanged := doc.Current.Gate != record.ID
 		doc.Current.Gate = record.ID
@@ -280,6 +280,13 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	for _, field := range []string{"status", "binding", "actor", "approver", "resolutionId"} {
 		if _, present := envelope[field]; present {
 			return fmt.Errorf("advisory Result remains evidence; closing a gate requires a separate minimal binding Result")
+		}
+	}
+	for field := range envelope {
+		switch field {
+		case "type", "briefing", "artifact", "resolution", "annotations":
+		default:
+			return fmt.Errorf("binding Result has unknown top-level field %q", field)
 		}
 	}
 	if result.Briefing != request.Briefing.ID {
@@ -709,6 +716,9 @@ func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
 	binding := Briefing{ID: manifest.ID, Digest: digest, DigestDomain: "canonical-bytes", RoomRef: roomRef}
 	requestBytes, err := os.ReadFile(filepath.Join(filepath.Dir(briefingPath), "request.json"))
 	if err == nil {
+		if _, err := canonicalPresentationItems(manifest); err != nil {
+			return Briefing{}, err
+		}
 		binding.RequestDigest, err = CanonicalDigest(requestBytes)
 		if err != nil {
 			return Briefing{}, fmt.Errorf("canonicalize gate room request: %w", err)
@@ -776,7 +786,7 @@ func canonicalPresentationItems(manifest *briefingManifest) ([]presentedItem, er
 	}
 	for _, reference := range references {
 		if seen[reference.ID] {
-			return nil, fmt.Errorf("--briefing has an incomplete or duplicate Reference binding")
+			return nil, fmt.Errorf("canonical Briefing has an incomplete or duplicate Reference binding")
 		}
 		seen[reference.ID] = true
 		inventory = append(inventory, presentedItem{Type: "Reference", artifactRef: reference})
@@ -799,7 +809,7 @@ func referenceInventory(nodes []json.RawMessage) ([]artifactRef, error) {
 		}
 		if node.Type == "Reference" {
 			if node.ID == "" || node.URI == "" || !digestRE.MatchString(node.Rev) {
-				return nil, fmt.Errorf("--briefing has an incomplete or duplicate Reference binding")
+				return nil, fmt.Errorf("canonical Briefing has an incomplete or duplicate Reference binding")
 			}
 			references = append(references, artifactRef{ID: node.ID, URI: node.URI, Rev: node.Rev})
 		}
