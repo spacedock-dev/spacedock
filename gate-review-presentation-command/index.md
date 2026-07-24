@@ -41,6 +41,20 @@ gates:
                 digest: sha256:cd2fa1035f22eb79e6d63dccc887cb5023b19c4b007fe819e8d8ed7a8fd377d7
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:xb:validation:2
+                briefing: briefing:docs-dev:xb:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T13:20:05.387082Z"
+                decision: approve
+                reason: Exact candidate 8fd1b869 satisfies all six supported prepared-room ACs at 17 files and 1,310/1,310 changed LOC; validation reports PASSED and Roborev 2070 is canonically triaged with no material finding.
+                adoption-note: Captain granted the First Officer the conn to approve sprint gates, PRs, CI, and merge; land only exact candidate 8fd1b869eb9797a032ec5b7e6ed06f15707eb562.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
         - id: gate:docs-dev:xb:ideation
           stage: ideation
           attempts:
