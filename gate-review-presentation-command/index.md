@@ -615,3 +615,24 @@ The Captain-approved prepared-room recorder passes its current behavioral, surfa
 ### Summary
 
 Reset the binding design to the Captain-approved prepared-room recorder boundary and folded Cycle 11's three test-only falsifiability gaps into its existing CLI matrices. Cycle 12 keeps the deletion proof honest: missing files assert their fixed path and read/not-found error, while only present-but-changed files assert `frozen digest`. Candidate `98ebb458` remains untouched at 17 files/1,255 changed lines; the next implementation pass is limited to an exact estimated `+42/-0` in `internal/cli/gate_test.go`, projecting 1,297 under the 1,300 cap. No production behavior, interface, provider transport, harness, fixture file, or documentation edit is proposed.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Add only the three Cycle 11 proof variants to the existing CLI matrices.
+  Commit `944e928e` changes only `internal/cli/gate_test.go`, adding `+38/-0`: a post-bind canonical Briefing-question mutation; same-cardinality duplicate-id and wrong-revision presented inventories; and deletion of each retained Result/inventory file after close.
+- DONE: Prove every rejected room-record variant remains failure-atomic.
+  The post-bind Briefing edit rejects with `frozen digest`; both same-cardinality inventory corruptions reject with `complete presentation mapping`; all three reuse the existing byte-identity assertions and leave the entity unchanged.
+- DONE: Preserve the supported retained-file diagnostic split.
+  Present-but-byte-changed Result and inventory files make `gate validate` name the fixed path plus `frozen digest`; deleting either file makes validation name the fixed path plus its read/not-found error. Exact restoration makes validation pass again.
+- DONE: Stay inside the authorized surface and ownership boundary.
+  Final diff from `main` is 17 files and `+1124/-169` = 1,293 changed lines, below the Cycle 9 hard cap of 1,300. No production, documentation, fixture-file, provider, interface, harness, or diagnostic bytes changed; executable provider transport remains Subspace-owned.
+- DONE: Run focused, repository, race, documentation, formatting, dependency, and cleanliness checks.
+  PASS: focused CLI tests, `go test ./...`, `go test ./... -race`, `uv run --with-requirements docs/requirements.txt mkdocs build --strict`, `gofmt -w ./cmd ./internal`, `git diff --check`, clean code worktree, and zero Subspace entries in `go list -deps ./cmd/spacedock`.
+- DONE: Request final-tip adversarial review and canonically record its triage.
+  Roborev job 2039 reviewed exact tip `944e928e`. Canonical implementation round 13 records 0 material findings fixed and three correct-but-disproportionate declines with promotion conditions: global retained-file mutation preconditions promote if the contract makes retained files an application precondition or archival needs a lifecycle rule; an in-repo provider smoke promotes if executable orchestration ownership moves here; wording polish promotes on demonstrated user confusion or a production reset of that error path.
+- DONE: Leave a clean, reviewable exact-tip candidate without changing workflow control state.
+  The implementation branch is clean at `944e928e`; this append-only report changes only the entity body and leaves frontmatter, gates, and application state to the first officer.
+
+### Summary
+
+The Cycle 11 falsifiability gaps are closed with 38 test-only lines at exact tip `944e928e`. The candidate now explicitly proves post-bind Briefing immutability, content-complete inventory matching despite equal cardinality, and distinct changed-versus-missing retained-file diagnostics, while preserving byte-clean rejection, the Subspace transport boundary, and the 1,300-line cap.
