@@ -291,3 +291,20 @@ Cycle 2 reconciles the incompatible shipped parsers without changing either one'
 ### Summary
 
 Cycle 3 proves the raw-byte reconciliation on the real parsers and records the mapping bug the spike exposed. The design now defines one exact canonical output for mixed-newline context and a literal non-LF value fixture, while leaving the legacy no-declaration path untouched.
+
+## Stage Report: implementation
+
+- DONE: Before editing, declare intended files and LOC; implement the approved shared one-buffer resolver, ordered context-sections metadata, structural overlap rejection, live-read behavior, and exact selected-context rendering while preserving undeclared bytes.
+  Commit `396c92a3` delivers the resolver and docs in 10 files/560 changed lines; exact-byte, ordered, tri-state, overlap, fenced-stage, and live-edit tests fail if those contracts regress.
+- DONE: Promote the tri-state and mixed-buffer spikes into existing status/dispatch tests, extend existing host-envelope/golden fixtures, and make malformed, ambiguous, repeated, intersecting, and current-version invalid selections fail before worker action.
+  `go test ./internal/status ./internal/dispatch ./skills/integration` passed; the tests use literal outputs and invalid mutations, while every undeclared dispatch golden remained unchanged.
+- FAILED: Stay within 12 files/700 changed lines, add no status projection/snapshot/FO assembly/bootstrap multi-read/third parser/new harness, and run focused/full/race/docs plus required existing live lanes and final-tip Roborev.
+  Scope stayed at 10 files/560 lines with no forbidden surface; full and race suites, `mkdocs build --strict`, and offline live coverage passed, but the approval-gated Claude/Pi runs stopped before FO work on revoked/refresh OAuth and still require authorized CI secrets before merge.
+- DONE: Request Roborev at the final implementation tip and triage every finding before reporting completion.
+  Branch-final job `1990` reviewed `396c92a3`; its one medium and three low non-blocking findings were closed with advisory Deferred-risk/Polish dispositions, four-field evidence, and promotion conditions, with AC unchanged.
+- DONE: Exercise the existing runtime lanes against the committed candidate and preserve exact evidence.
+  Codex local-auth ran all 9 shared scenarios green in 1299.00s; Claude artifacts are under `/tmp/spacedock-live-workflow-declared-section-reads/artifacts/claude`, Codex under `artifacts/codex-local-auth`, and pinned Pi under `artifacts/pi-pinned`.
+
+### Summary
+
+Commit `396c92a3` adds generic ordered workflow context pointers, reconciles the two shipped parsers through raw half-open spans from one README buffer, and preserves legacy output when no context is declared. Focused, full, race, docs, golden, integration, and Codex live proofs are green; Claude and Pi reached their real hosts but failed before workflow work on external credential state, so their approved CI-secret lanes remain required before merge.
