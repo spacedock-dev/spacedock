@@ -2012,3 +2012,116 @@ Green deterministic/repository evidence:
 ### Summary
 
 Staff review found four material proof defects: substring host evidence, serialized rather than decoded authority comparison, unproven fatal cleanup retention, and deletion of v1 guardrails. The local counterexample implements and verifies the first three, but already costs +191 additions before the fourth, proving the approved +95 correction surface cannot truthfully satisfy the unchanged acceptance criteria. Checklist accounting is **3 DONE, 2 SKIPPED, 2 FAILED**; implementation stops for a new design rather than weakening invariants or exceeding the ceiling.
+
+## Canonical obligation-authority reset (cycle 27)
+
+This section replaces the canonical task body and every cycle-22 through cycle-26 correction. Historical reports and local commits remain diagnostic evidence, not implementation authority. The implementation baseline is the accepted remote tip `13d702492131df17dd3ac87245d6d773f4df959b`.
+
+### Reset decision
+
+Abandon all seven local commits after `13d70249` (`c4afd8f7`, `37d6980b`, `7419e61a`, `08675f02`, `ce436505`, `45c1a9a3`, and `3c535105`) and rebuild from the accepted tip. Preserve their SHAs as counterexamples; do not cherry-pick or incrementally salvage them.
+
+This is safer than salvage because those commits mix three different things in one dependency stack: two useful skill-contract corrections, prototype-only unbound-review compatibility, and progressively stronger transcript/retention laboratories. The stack reached +592/-513 while still omitting required contract controls. Starting from `13d70249` keeps the already-proven real CLI, runner, recorder, consumer, and host-native fixtures, then lets implementation add only the two product corrections and delete the obsolete compatibility/proof layers.
+
+There is no released-v1 compatibility authority: v1 is unreleased. Landed recorder and consumer behavior is a reusable implementation input, not a reason to preserve prototype markers, an unbound review, or a common live transport schema.
+
+### Canonical authority audit
+
+| Current obligation | Source classification | Cycle-27 disposition |
+| --- | --- | --- |
+| Bind one exact Briefing and commit it before review | Explicit Captain/product value; landed recorder contract | **KEEP.** Direct real-CLI proof reads the selected `(Briefing.id, digest)` from durable state. |
+| Show one legible root-visible review, including under delegated conn | Explicit Captain/product value | **KEEP.** `present-gate` owns the existing review template; `fo-gate-lifecycle` waits for one root emission before decision mutation. Live proof checks legibility and multiplicity, not six exact labels. |
+| Record direct Captain and delegated FO authority distinctly | Explicit Captain/product value; landed actor/directive contract | **KEEP.** Direct CLI cases prove `person:captain` versus `agent:first-officer`, nonblank reason, and exact decoded directive bytes. |
+| Commit close, consume once, commit consumed state, then route | Explicit Captain/product value; landed consume contract | **KEEP.** Zero dispatch/advance before the consumed commit is the primary measured outcome. |
+| Hold, revise, stale, blocked, and repeat-consume fail closed | Landed command semantics serving the product barrier | **KEEP, LEAN.** Existing lower-level tests remain authoritative; one direct lifecycle table covers only cross-command state/commit behavior. |
+| Terminal approval has no successor dispatch | Landed status/consume/merge behavior | **KEEP as deterministic complement.** It does not need a route-by-host matrix. |
+| Exact three-artifact 3k package, relative-path equivalence, folder commit, discovery equality | Validator/implementor expansion over already-landed CLI/state contracts | **CUT from 6y ACs.** Existing CLI, gates, and state tests own these mechanics; the representative fixture may reuse them without re-proving them. |
+| Exactly one `gate --help`, cache absence, path-swap and stale-launcher experiments | Implementation convenience prompted by one stale launcher incident | **CUT from end-value ACs.** Keep the shipped fail-closed capability sentence; do not add cardinality or identity laboratories. |
+| Reviewer `REJECTED` automatic routing before the Captain lifecycle | Existing feedback-flow behavior, not this Captain gate end value | **CUT from 6y.** `feedback-rejection-flow` and its own scenarios remain the owner; 6y neither changes nor re-proves it. |
+| Captain aliases `redo`, routed/unrouted `reject`, and `not yet` across every host | Prototype/validator attempt to prove model-language interpretation | **CUT.** Canonical `approve|revise|hold` and their durable routes remain; no phrase-by-host matrix or model-causality claim. |
+| Exact six-field labels, exact transcript interval, child/root row filters in the common grader | Prototype validator overlay | **CUT from common/live grading.** The shipped presenter template remains independently contract-tested; live journeys require one legible root review before durable decision. |
+| A universal native start/completion schema or exact child author | Explicitly removed by the Captain’s Cycle-9 ruling | **CUT.** Existing Claude, Codex, and Pi native fixture owners retain their own transport assertions. |
+| Assignment-path/byte custody, child model/cwd/context equality | Prototype forensics and implementor convenience | **CUT.** Successful durable successor outcome is the value; no test claims which bytes caused a model action. |
+| Common build/wait/call/result joins as lifecycle proof | Prototype validator overlay | **CUT from 6y live journeys.** Host-native dispatch fixtures own transport shape; the lifecycle journey observes the command/state outcome naturally exposed by its runner. |
+| JSON prompt encoding for arbitrary conn bytes and a new YAML frontmatter parser | Counterexample implementation mechanism | **CUT.** Direct CLI tests pass arbitrary directives and inspect the resulting `gates.Document` through the production parser. |
+| Pi persistent-destination preflight, fatal-child retention, manifest, and Git bundle | Failure-forensics expansion beyond the existing runner | **CUT.** The existing Pi runner’s normal artifact directory is sufficient; a missing artifact is a runner failure, not a new 6y subsystem. |
+| Legacy `Gate review:`/`Decision:` markers and byte-identical unbound gate hold | Prototype compatibility behavior | **DELETE.** A presentation-ready gate is bound; no alias, marker bridge, or unbound-review path remains. |
+| Goal-only prompts and shipped-skill ownership | Evidence-integrity requirement serving the product value | **KEEP.** Prompts name fixture, authority, desired outcome, and stop condition, never the command procedure or review text. |
+
+### Proposed minimum v1 behavior
+
+1. On an engaged gate with a retained package, `fo-gate-lifecycle` records the Briefing and commits the folder state.
+2. It rereads the selected Briefing identity/digest, performs the existing evidence judgment, and invokes `present-gate`. Chat presentation completes only after one legible root review is emitted. Delegated conn changes who may decide, not whether the Captain sees the review.
+3. It records exactly one canonical `approve`, `revise`, or `hold` decision. Direct Captain and delegated First Officer actors remain distinct; delegated authority carries the exact directive value and a nonblank reason. The close is committed before any route.
+4. Approval consumes once and commits the resulting state before nonterminal dispatch or terminal merge. Revise routes through the existing feedback owner after the close commit. Hold stops. Stale, blocked, wrong-stage, and spent approvals fail closed under existing command semantics.
+5. A gate without a selected Briefing is validating, not presentation-ready. The old unbound/byte-identical review path and its marker-based live scenarios are removed.
+
+### End-value acceptance criteria
+
+**AC-1 (VALUE) — The normal First Officer gate path has zero unauthorized routes.** In the real-CLI fixture, the durable sequence is one bound Briefing commit, one decision close commit, and for approval one consumed successor commit. The count of decision records before a successful bind commit is **0**, and the count of advances or dispatches before a consumed descendant commit is **0**. Revise, hold, stale, blocked, and repeat-consume cases have **0** unauthorized consumes/dispatches. *Verified by:* real CLI plus real Git snapshots; omission/reordering controls make the state or ancestry assertion fail.
+
+**AC-2 — Direct and delegated authority are lossless and fail closed.** Direct close records `person:captain`; delegated close records `agent:first-officer`, a nonblank reason, and one directive whose decoded value exactly equals the supplied bytes. Quote, backslash, newline, and combined directives round-trip through the real CLI and production `gates.Document` parser. Missing actor/reason/directive or a changed actor refuses or fails the durable grade. *Verified by:* table-driven public-CLI fixtures; no prompt serializer or test-only YAML parser.
+
+**AC-3 (VALUE) — Each supported host demonstrates the user-visible lifecycle without a common transport fiction.** One unchanged goal-only approved journey on Claude, Codex, and Pi emits exactly one legible root review under delegated conn and finishes with a durable consumed nonterminal state plus the successor’s durable report/marker. The review precedes the durable decision in the runner evidence naturally available on that host. Native dispatch call, wait, result, child, model, cwd, and session-shape assertions remain exclusively in existing host-native fixtures. *Verified by:* the three existing runners with a reduced outcome grader; the terminal deterministic control supplies the zero-dispatch complement.
+
+**AC-4 — The shipped contract is singular and the implementation is materially smaller than the abandoned stack.** `present-gate` is the sole review renderer; `fo-gate-lifecycle` owns bind/close/consume routing and waits for presentation. Goal-only prompts contain no procedure. No unbound-review compatibility, common native-event parser, assignment-custody oracle, or new retention subsystem exists. Against `13d70249`, additions remain at most 80 and the branch deletes at least 300 lines; the independent value measure is net source/test removal while AC-1 through AC-3 remain green.
+
+### Lean test and implementation plan
+
+1. **Reset and deletion checkpoint (no runtime cost; AC-4):** move the code branch to `13d70249`, preserve `3c535105` by SHA, remove the legacy gate-held assertion/live scenario and every registration/fixture/coverage entry that exists only for unbound marker compatibility, then record exact numstat before adding behavior.
+2. **Real CLI lifecycle (low/medium; AC-1/AC-2):** retain the existing positive bind/close/consume and terminal cases. Consolidate omission, revise/hold, stale/blocked/spent, tuple, actor, and commit controls around actual binary calls and Git snapshots. Add arbitrary directive cases by reading the durable entity with the production gates parser. Simplest alternative—serialized substring checks—cannot distinguish YAML encoding from decoded authority.
+3. **Skill ownership (low; AC-3/AC-4):** add one structural test that the presenter owns chat rendering/delegation visibility and the lifecycle waits before decision mutation; reject duplicate ownership and legacy unbound language. This serves root-visible review and has no model-causality claim.
+4. **Supported-host journeys (high; AC-3):** after deterministic/full/race/docs/live-compile and independent staff approval, run the existing goal-only approved journey once on Claude, Codex, and Pi. Grade root-visible review and durable outcome only. Do not parse a common native dispatch event or add a failure-retention harness; inspect the existing runner artifacts on failure.
+5. **Repository verification:** `gofmt -w ./cmd ./internal`, focused lifecycle/contract controls, `go test ./...`, `go test ./... -race`, live compile, strict MkDocs, and `git diff --check`. Host-native fixture suites remain unchanged and green.
+
+No new spike is needed. `13d70249` already proves the real CLI mutations, Git commits, production parser, and three supported runners exist; retained Codex runs prove the missing root-visible review, while `3c535105` proves that common event/YAML/retention machinery is expensive and unnecessary. Implementation starts with deletion and deterministic tests, not live spend.
+
+### Expected surface and evidence-based tolerance
+
+The clean implementation touches **17 existing paths**: four skill/test paths gain implementation or evidence, two documentation paths receive small wording edits, and eleven are deletion-only or remove legacy registrations. The estimate derives from measured baseline blocks: `live_gate_stop_test.go` is 199 lines, `gate_assert_{impl,test}.go` total 104 lines, the legacy adapter is 97 lines, and the abandoned stack demonstrated that the skill barrier itself needs only a few lines.
+
+| Path | Expected delta from `13d70249` |
+| --- | ---: |
+| `skills/fo-gate-lifecycle/SKILL.md` | +4 / -3 |
+| `skills/present-gate/SKILL.md` | +4 / -1 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +14 / -0 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +35 / -160 |
+| `internal/ensigncycle/gate_assert_impl_test.go` | +0 / -42 |
+| `internal/ensigncycle/gate_assert_test.go` | +0 / -62 |
+| `internal/ensigncycle/live_gate_stop_test.go` | +0 / -199 |
+| `internal/ensigncycle/livescenario_adapter_live_test.go` | +0 / -45 |
+| `internal/ensigncycle/shared_fixtures_test.go` | +0 / -30 |
+| `internal/ensigncycle/shared_scenarios_test.go` | +0 / -5 |
+| `internal/ensigncycle/shared_scenarios_meta_test.go` | +0 / -1 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | +0 / -25 |
+| `internal/ensigncycle/pi_shared_coverage_test.go` | +0 / -4 |
+| `internal/ensigncycle/claude_live_runner_test.go` | +0 / -25 |
+| `internal/ensigncycle/codex_live_runner_test.go` | +0 / -20 |
+| `docs/site/concepts/gates-and-decisions.md` | +6 / -4 |
+| `docs/specs/scenario-testing-principles.md` | +2 / -2 |
+| **Expected total** | **+65 / -628** |
+
+Tolerance is **+15/-120** around that estimate: at most **+80 additions**, at least **300 measured deletions**, no new file, and no production Go. The wide deletion tolerance reflects shared helpers that may still serve unrelated scenarios; the narrow addition tolerance reflects the measured 4-line skill barrier, one compact contract test, and one production-parser directive table. Numstat—not intended credit—decides the checkpoint.
+
+### Hard reset triggers
+
+Return to ideation before live work if implementation requires production Go/schema/provider/recorder changes, a new file or harness, a common native-event parser, exact-child or assignment-custody evidence, prompt coaching, an unbound-review compatibility path, new Pi artifact-retention machinery, more than one approved journey per existing host, more than +80 additions, fewer than 300 deletions, or any path outside the declared surface. A host journey failure is reported from its existing artifacts; it does not authorize coaching, retry laboratories, or cross-host schema growth.
+
+No code, test, live host, PR, gate, review-round, status, or merge mutation occurs during this ideation reset. Independent staff review must assess the authority cuts, AC sufficiency, and measured surface before implementation begins.
+
+## Stage Report: ideation (cycle 27)
+
+- DONE: Audit every current 6y obligation by authority and propose rigorous cuts.
+  The canonical table distinguishes explicit product value and landed command inputs from prototype, validator, and implementor inventions; unreleased v1 carries no compatibility authority.
+- DONE: Re-anchor the minimum product value and proof split.
+  AC-1/AC-2 put exact bytes, tuple binding, one-use state, stale/hold/revise, and commit/consume guards in direct real-CLI controls; AC-3 leaves live journeys with one root-visible review and durable outcome while host-native fixtures own transport.
+- DONE: Produce a clean reimplementation design from the accepted remote baseline.
+  The design discards all seven local commits, preserves their SHAs as counterexamples, limits additions to four skill/test and two documentation paths, makes eleven paths deletion-only, estimates +65/-628 with evidence-based +80/-300 bounds, and names hard reset triggers.
+- SKIPPED: Recover additional historical citations from AgentsView.
+  `agentsview session search` could not initialize because its configured `~/.agentsview` path is inaccessible as a directory; the ticket’s durable Captain rulings and repository commit history supplied the authoritative record.
+- SKIPPED: Edit/reset code, run tests or live hosts, push PR, or mutate gate/round/status.
+  Ideation changed only this entity body in the shared state checkout.
+
+### Summary
+
+Cycle 27 removes proof inflation instead of compressing it. The minimum v1 contract is bind and commit, show one root review even under conn, record exact direct/delegated authority, consume and commit, then route; real CLI tests own exact state semantics, supported-host journeys own only visible review plus durable outcome, and native fixtures own transport. Checklist accounting is **3 DONE, 2 SKIPPED, 0 FAILED**; the design is ready for independent staff review.
