@@ -191,7 +191,7 @@ review-round:
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-6
 mod-block: merge:pr-merge
-pr: "#562"
+pr: pr-merge:562
 ---
 
 Provide one owned write surface for correction-round Briefings, reviewer Annotations and advisory Resolution, and the worker's triage Resolution, without selecting a gate or advancing workflow state.
