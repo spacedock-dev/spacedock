@@ -1641,3 +1641,117 @@ Intended incremental total is **+297/-160**. The full branch intent versus `13d7
 ### Summary
 
 Checklist accounting is **2 DONE, 1 SKIPPED, 2 FAILED**. Cycle 23 proves the reset across deterministic controls, the repository, Claude, and Codex, and preserves the surviving artifacts from all three Pi rounds, but fails the complete Pi retention checklist. The repeated Pi successor boundary, exact-token mutation, and missing durable-state evidence require a new ideation decision about existing harness/host attribution; the implementation worker stopped at that first named boundary.
+
+## Canonical design reset (cycle 24)
+
+### Problem and evidence boundary
+
+The cycle-23 checkpoint `ce4365053158ef80c1a4dc34c63256fd83da62d0` is the only code starting point. Its retained Pi round-3 root session contains one real native `subagent` call with `context: "fresh"`, the fixture cwd, explicit model `openrouter/openai/gpt-4.1-mini`, and the emitted handoff assignment path. The result with the same tool-call ID reports `isError: false`, exit 0, that model, one child session/artifact, and one completed run; the child records the marker and reports a path-scoped commit. Those are valid structured inputs to a future oracle.
+
+They are not a retrospective pass. The cleaned fixture took away `command.log`, the before/after entity pair, and the state repository history, so the surviving marker and sessions cannot prove that the consumed commit preceded that spawn or that the child commit is the retained state descendant. The root session also contains two `gate --help` invocations. Cycle 23's observation folded `count(help)==1` into `ordered` and then reported the combined failure as “successor dispatch was not observed”; that is a design hypothesis for the misleading classification, not a regrade of the missing wrapper log.
+
+The retained Codex lifecycle stream likewise cannot be promoted to stronger proof: it shows successful `dispatch build`, root narration that a worker was dispatched, an empty collaboration wait, and a later marker commit, but no structured native spawn receipt. Narration is not dispatch. Claude's retained structured Task call/result remains useful, but all three hosts must satisfy the same new contract on their next evidence-producing run.
+
+### One host-neutral successor observation
+
+Replace the current boolean/count bundle with one normalized `successorObservation`. Host adapters only extract native event shapes; they do not own lifecycle rules. The common observation contains:
+
+- `consume`: the successful consume command, its consumed state commit OID, and its event position;
+- `build`: exactly one successful `dispatch build`, returned assignment path, assignment digest captured by the existing wrapper at build return, wrapper `dispatch-head`, and event position;
+- `start`: exactly one native worker-start receipt, native call/run identity, assignment path consumed, fresh-context value, cwd, stamped model, and event position;
+- `completion`: exactly one native result joined to the start's call/run identity, successful terminal state/exit, reported model, and event position;
+- `effect`: final entity bytes, exact marker/report count, the introducing commit OID, and retained state-history evidence.
+
+The common evaluator accepts only the chain `consume commit ancestor-or-equal to build dispatch-head` → successful build result → native start consuming that exact returned path → matched native completion → one marker-introducing commit descended from dispatch-head. It also requires final nonterminal `handoff` state, one build/start/completion/effect, the expected cwd and freshness, and the expected Pi model when the scenario declares one. A build without a native start is not dispatch; a native result without the matching call identity is not completion; a marker without its introducing descendant commit is not a worker effect.
+
+The assignment join is path plus build-time SHA-256, not path alone. The existing wrapper records the returned assignment path and digest immediately after the successful build, before another process can replace the shared `/tmp` pathname. Each native start must reference that exact path in its structured argument; the state ancestry and same-session event order complete the join. This extends the existing logging shim and host stream parsers, not a second harness or a host-specific lifecycle.
+
+Pi extraction pairs the retained `subagent` tool call/result by `toolCallId`, checks `agent: delegate`, `context: fresh`, cwd, task assignment path, result count/status/exit, run ID, and attempted/reported model. Claude extraction pairs Task tool-use/tool-result IDs and assignment pointer. Codex extraction pairs collaboration spawn/terminal events and assignment pointer. Each emits the same structure. If a host stream does not expose a native start—as in the retained Codex cycle-23 stream—the stronger lifecycle scenario fails honestly while its independent gate guardrail remains unaffected.
+
+Capability preflight is a separate observation and failure class. It still requires exactly one successful `gate --help` immediately before lifecycle mutation. An extra or missing help call fails `capability preflight cardinality/order`; it can no longer erase or masquerade as native successor evidence. This separates diagnostics without weakening either invariant.
+
+### Lossless delegated authority
+
+Replace sentinel framing with one natural-language data sentence whose payload is produced by `json.Marshal`, for example `Delegated authority data (JSON object; the decoded conn member is the exact grant): {"conn":"..."}`. JSON escaping is the transport; after decoding, only the member value is authority. The goal-only prompt still contains no shell command, review label, decision, actor, reason, lifecycle procedure, or recorder instruction.
+
+The durable grade parses the single `adoption-note` scalar and compares its decoded bytes to `recordedGateDirective`; substring presence is insufficient. It separately requires one directive-bearing scalar and zero `BEGIN_CONN`/`END_CONN` sentinel bytes anywhere in the prompt or durable value. Table controls prove exact keep passes and drop, byte mutation, substitution, duplication, prefix/suffix wrapping, sentinel wrapping, and JSON-object leakage all fail. Real CLI argument capture continues to require the exact directive bytes.
+
+### Fail-safe Pi artifact retention
+
+`recorded_gate_lifecycle_pi_live_test.go` becomes the justified eighteenth cumulative file because it alone owns all three values needed to beat cleanup: the permanent artifact directory, the captured pre-run entity bytes, and the temporary fixture/state-repository lifetime. After every temp directory has registered its cleanup and immediately before the fatal-capable Pi command, it registers a later `t.Cleanup`; Go's last-added-first-run cleanup order makes retention execute before `t.TempDir` removal even after `t.Fatalf`.
+
+That cleanup writes a manifest and independently attempts every artifact: wrapper `command.log`, exact before entity, resolved final entity, state HEAD/status, and `git bundle create state.bundle --all` for inspectable refs/ancestry. Existing permanent root/child Pi sessions stay where they are. Missing or unreadable required input is recorded in the manifest, does not prevent remaining copies, and fails the test via cleanup-safe error reporting. Thus even a process failure or oracle fatal leaves either the required evidence or an explicit per-artifact retention failure.
+
+Deterministic controls run before any live host:
+
+- a Pi-shaped valid call/result, build digest, consume ancestry, and child effect passes the common evaluator;
+- drop/duplicate/mismatched tool ID, wrong model, non-fresh context, wrong cwd/path, completion-before-start, effect-before-consume, non-descendant commit, root-authored marker, and build-only evidence each fail their named invariant;
+- a valid successor with two help calls still passes successor evaluation but fails the separate preflight evaluation;
+- retention under simulated fatal preserves all five required fixture artifacts and an inspectable bundle; simulated missing log preserves the other four plus manifest and returns failure;
+- delegated-conn controls independently falsify keep/drop/mutate/duplicate/wrapper leakage as specified above.
+
+Only after those controls, the focused offline suites, Claude lifecycle, Codex lifecycle, repository tests/race, live compile, and docs checks are green may implementation run Pi once with the unchanged supported-host scenario and model. Pass requires both observations and the retained package. Any same preflight or successor failure, missing retention artifact, auth/provisioning failure, directive inequality, or host-native proof gap stops immediately with no prompt adjustment, retry, fallback model, global package change, or second Pi run.
+
+### Deletion-first surface and implementation tolerance
+
+The 497 added lines at cycle 23 are not a new floor. Before adding the Pi owner file or successor fields, implementation must consolidate/delete at least 107 checkpoint-added lines and show measured cumulative additions at or below **390** versus `13d70249`. Table-drive repeated host-review and directive fixtures in `recorded_gate_lifecycle_test.go`; remove synthetic gate-assert and shared-negative cases duplicated by the real-CLI scenario; fold the two contract-lint lifecycle variants into their existing ownership table. No behavioral invariant above may be deleted to hit the number.
+
+The complete revised implementation surface is seven existing files plus the one newly admitted Pi live owner:
+
+| File | Intended delta from `ce436505` |
+| --- | ---: |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +55 / -120 |
+| `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go` | +24 / -0 |
+| `internal/ensigncycle/claude_live_runner_test.go` | +8 / -12 |
+| `internal/ensigncycle/codex_live_runner_test.go` | +8 / -12 |
+| `internal/ensigncycle/gate_assert_test.go` | +0 / -16 |
+| `internal/ensigncycle/shared_scenarios_negative_test.go` | +0 / -12 |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +0 / -20 |
+
+The intended cycle-24 delta is **+95/-192**. The final measured branch should be at or below **+465 additions** versus `13d70249`; **+480** is the hard stop, strictly below the cycle-23 checkpoint. Failure to reach the deletion checkpoint, a nineteenth cumulative file, more than 95 new lines, a second harness, new production Go, a recorder/provider/schema field, a host-owned lifecycle, prompt coaching, or weakened exact-once/ancestry/directive grade returns to ideation before live work.
+
+No skill or user documentation changes are designed: cycle 23 already states the user-visible v1 lifecycle. This reset changes test serialization, observation, attribution, and failure retention only. Existing bind-and-hold, provider, recorder, consumer, resume, terminal merge, failure-retention, and Claude/Codex gate-guardrail behavior remain unchanged.
+
+### Acceptance and independent-review plan
+
+- **AC-1 / AC-8 successor value:** each supported host yields one normalized native start/completion and one descendant worker effect after a consumed commit. The negative matrix proves no build, narration, root write, duplicate, wrong model, or reordered event can substitute.
+- **Exact authority value:** the only durable delegated grant equals the Captain bytes after JSON decoding; all loss/mutation/wrapper counterexamples fail independently, and the prompt adds no operating procedure.
+- **Failure-retention value:** every Pi outcome leaves independently inspectable command, entity, and Git ancestry evidence before cleanup, or a manifest that names the missing source while retaining the rest.
+- **Lean-contract value:** deletion precedes expansion, final additions fall below cycle 23, and the only eighteenth file is the fixture-lifetime owner.
+
+Independent staff review occurs after the deterministic controls and deletion checkpoint, before any live host. It inspects the normalized schema, native host joins, Git bundle, directive falsifiers, and measured diff. Implementation then follows one unchanged Claude/Codex proof sequence and at most one unchanged Pi run; the first named failure returns the retained package and resets rather than being coached around.
+
+### Classifications and non-goals
+
+This design does not infer the missing cycle-23 wrapper/state facts, regrade Pi or Codex, change runtime support, add a driver, alter the gate command surface, or mutate global Pi packages. It does not modify code, run tests, record a gate/round, change status, push PR #565, merge, or alter the checkpoint during ideation.
+
+## Stage Report: ideation (cycle 24)
+
+- DONE: Define one host-neutral successor-dispatch observation that accepts Pi's native completion and durable effect without weakening order, exactly-once, model, commit, or other-host proof.
+  The normalized chain joins consume commit, build-time assignment identity, native start, matched completion, and descendant effect.
+  Pi, Claude, and Codex adapters extract structured native events only; narration and `dispatch build` alone are explicitly insufficient.
+  Capability-preflight cardinality remains exact-one but is graded separately, preventing its failure from being mislabeled as missing dispatch.
+  The retained incomplete Pi and Codex records are inputs and counterexamples, not retroactive passes.
+
+- DONE: Define lossless delegated-conn serialization, exact durable grading, and cleanup-safe live artifact retention.
+  `json.Marshal` carries the conn as a data member in one natural-language sentence with no commands, labels, or procedure.
+  The decoded `adoption-note` must equal the exact directive bytes; keep/drop/mutate/substitute/duplicate/prefix/suffix/sentinel/JSON leakage are independent controls.
+  Pi's owning live test registers retention after temp setup and before the fatal-capable run so it executes before fixture cleanup.
+  It preserves command log, before/after entity, state HEAD/status, and a Git bundle, while a manifest records missing inputs without suppressing other copies.
+
+- DONE: Put deterministic Pi-shaped counterexamples and a one-run supported-host stop rule ahead of another live attempt.
+  The matrix falsifies identity, model, freshness, cwd/path, ordering, ancestry, authorship, duplicate, build-only, preflight, directive, and retention failures.
+  Offline, Claude, and Codex proofs must be green first.
+  Pi then runs once unchanged; the first repeated or new named failure stops with the retained package and no coaching, retry, or global mutation.
+
+- DONE: Produce a deletion-first, independently reviewable implementation boundary that challenges the 497-line checkpoint.
+  At least 107 checkpoint-added lines must disappear before expansion, reaching at most +390 cumulative additions.
+  Seven existing files plus the Pi fixture-lifetime owner target +95/-192 from `ce436505`, at most +465 additions versus baseline, with +480 a hard stop.
+  The eighteenth file is admitted only because it owns artifact destination, pre-run bytes, and cleanup ordering; a nineteenth file resets design.
+
+- SKIPPED: Implement, format, compile, test, run a live host, mutate a gate/round/status/PR, change global packages, or merge.
+  Ideation changed only this entity body on the shared state branch.
+
+### Summary
+
+Cycle 24 replaces an ambiguous build-and-marker oracle with one native-event and Git-ancestry contract shared by all hosts, transports authority losslessly as data, and makes Pi failure evidence survive fixture cleanup. It cuts before expanding, keeps every product boundary fixed, and permits exactly one unchanged Pi proof only after deterministic and other-host evidence is independently reviewable. Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**.
