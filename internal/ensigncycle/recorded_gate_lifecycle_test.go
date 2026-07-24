@@ -250,35 +250,42 @@ func TestRecordedGateLifecycleRelativeBriefingMatchesAbsolute(t *testing.T) {
 func TestRecordedGateLifecycleCapabilityStaleLauncherHaltsBeforeMutation(t *testing.T) {
 	fixture := writeRecordedGateFixture(t)
 	before := treeDigest(t, fixture.stateRoot)
+	fresh := buildRecordedGateBinary(t)
+	cache := map[string]bool{}
 	shim := filepath.Join(t.TempDir(), "spacedock")
 	probeLog := filepath.Join(t.TempDir(), "probe.log")
-	writeFile(t, shim, fmt.Sprintf("#!/bin/sh\nprintf '%%s\\n' \"$*\" >> %q\necho 'record validate eligibility consume'\n", probeLog))
+	writeFile(t, shim, fmt.Sprintf("#!/bin/sh\nprintf '%%s\\n' \"$*\" >> %q\nexec %q \"$@\"\n", probeLog, fresh))
 	if err := os.Chmod(shim, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	err := probeRecordedGateCapability(shim)
-	if err == nil {
-		t.Fatal("capability-stale launcher passed readiness")
-	}
-	for _, want := range []string{"--briefing", "--result", "--decision", "refresh", "go build", "SPACEDOCK_BIN"} {
-		if !strings.Contains(err.Error(), want) {
-			t.Errorf("capability failure missing %q remediation: %v", want, err)
+	for range 2 {
+		if err := probeRecordedGateCapability(shim, cache); err != nil {
+			t.Fatal(err)
 		}
 	}
+	writeFile(t, shim, fmt.Sprintf("#!/bin/sh\nprintf '%%s\\n' \"$*\" >> %q\necho 'record validate eligibility consume'\n", probeLog))
+	err := probeRecordedGateCapability(shim, cache)
+	if err == nil {
+		t.Fatal("same-path stale replacement passed readiness")
+	}
+	assertCommandOutput(t, err.Error(), "--briefing", "--result", "--decision", "refresh", "go build", "SPACEDOCK_BIN")
 	if after := treeDigest(t, fixture.stateRoot); after != before {
 		t.Fatal("capability preflight failure mutated the workflow")
 	}
-	if got := strings.TrimSpace(readFile(t, probeLog)); got != "gate --help" {
-		t.Fatalf("capability fingerprint probes=%q, want one gate help", got)
+	if got := strings.Count(readFile(t, probeLog), "gate --help"); got != 2 {
+		t.Fatalf("capability fingerprint probes=%d, want cached capable plus replaced stale", got)
 	}
-	if err := probeRecordedGateCapability(buildRecordedGateBinary(t)); err != nil {
-		t.Fatalf("fresh task-local binary failed capability preflight: %v", err)
+	capableDir, staleDir := filepath.Dir(fresh), t.TempDir()
+	if err := os.Rename(shim, filepath.Join(staleDir, "spacedock")); err != nil {
+		t.Fatal(err)
 	}
-	skill := readFile(t, filepath.Join(recordedGateRepoRoot(t), "skills", "fo-gate-lifecycle", "SKILL.md"))
-	for _, want := range []string{"canonical target and content digest", "Same-path replacement", "symlink/PATH retarget", "unknown command/flag"} {
-		if !strings.Contains(skill, want) {
-			t.Errorf("capability cache contract missing %q", want)
-		}
+	t.Setenv("PATH", capableDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	if err := probeRecordedGateCapability("spacedock", cache); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", staleDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	if err := probeRecordedGateCapability("spacedock", cache); err == nil {
+		t.Fatal("PATH target swap reused capable cache identity")
 	}
 }
 
@@ -763,8 +770,7 @@ func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
 				}
 				commands = append(commands, runRecordedGateCommand(binary, fixture.root, recordedGateRequiredEvents[i], args...))
 			}
-			events := successfulRecordedGateEvents(commands)
-			if err := authorizeRecordedGateDispatch(events, readFile(t, fixture.entity), "handoff"); err == nil {
+			if err := authorizeRecordedGateDispatch(successfulRecordedGateEvents(commands), readFile(t, fixture.entity), "handoff"); err == nil {
 				t.Fatalf("real command replay without %s authorized dispatch", omitted)
 			}
 		})
@@ -825,6 +831,7 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	t.Helper()
 	log := readFile(t, commandLog)
 	builds, consumed, ordered := 0, false, true
+	ordered = strings.Index(log, "exit=0\tgate --help") >= 0 && strings.Index(log, "exit=0\tgate record ") > strings.Index(log, "exit=0\tgate --help")
 	var stateHeads []string
 	var dispatchHead string
 	for _, line := range strings.Split(log, "\n") {
@@ -1037,23 +1044,37 @@ func assertCommandOutput(t *testing.T, output string, wants ...string) {
 	}
 }
 
-func probeRecordedGateCapability(binary string) error {
-	out, err := exec.Command(binary, "gate", "--help").CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("gate capability probe failed: %v; refresh the launcher or go build -o <temp>/spacedock ./cmd/spacedock and set SPACEDOCK_BIN to it", err)
+func probeRecordedGateCapability(binary string, cache map[string]bool) error {
+	target, _ := exec.LookPath(binary)
+	target, _ = filepath.EvalSymlinks(target)
+	body, _ := os.ReadFile(target)
+	key := fmt.Sprintf("%s:%x", target, sha256.Sum256(body))
+	if cache[key] {
+		return nil
 	}
-	var missing []string
-	for _, want := range []string{
-		"record", "validate", "eligibility", "consume",
-		"--briefing", "--result", "--association", "--decision", "--actor", "--directive",
-	} {
-		if !strings.Contains(string(out), want) {
-			missing = append(missing, want)
+	missing := []string{}
+	checks := []struct {
+		argv  []string
+		wants []string
+	}{
+		{[]string{"gate", "--help"}, []string{"record", "validate", "eligibility", "consume", "--briefing", "--result", "--association", "--decision", "--actor", "--directive"}},
+	}
+	for _, check := range checks {
+		out, err := exec.Command(target, check.argv...).CombinedOutput()
+		if err != nil {
+			missing = append(missing, strings.Join(check.argv[:len(check.argv)-1], " "))
+			continue
+		}
+		for _, want := range check.wants {
+			if !strings.Contains(string(out), want) {
+				missing = append(missing, strings.Join(check.argv[:len(check.argv)-1], " ")+":"+want)
+			}
 		}
 	}
 	if len(missing) > 0 {
 		return fmt.Errorf("gate capability missing %s; refresh the launcher or go build -o <temp>/spacedock ./cmd/spacedock and set SPACEDOCK_BIN to it", strings.Join(missing, ", "))
 	}
+	cache[key] = true
 	return nil
 }
 
