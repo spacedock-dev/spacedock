@@ -237,6 +237,7 @@ The captain's question is well-founded and the answer is yes: the binary was the
 - Cycle 3: REJECTED — fresh validation and Roborev job 1955; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
 - Cycle 4: REJECTED — Captain design reset after validation cycle 3: replace advisory-adoption plumbing with the gate-room/minimal-binding Result boundary and derive provider association behind the scaffold; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
 - Cycle 5: REJECTED — Roborev job 1974; surface 15 files/708 LOC vs pre-edit declaration 9 source/docs files plus fixture set/~585 changed lines (121%); AC unchanged.
+- Cycle 6: DESIGN RESET — First Officer scope ruling under the Captain's sprint conn; surface 17 files/1,410 changed LOC vs rework declaration ~585 (241%, beyond 2×); AC unchanged. Remove the 270-line modeled provider smoke/contract interpreter rather than repair it into a second implementation. Spacedock's existing CLI fixtures own prepared-room integrity and failure atomicity; Subspace owns executable `/subspace:r gate <room>` transport behavior; retain only a minimal structural assertion of the declarative seam if needed.
 
 ## Stage Report: implementation
 
