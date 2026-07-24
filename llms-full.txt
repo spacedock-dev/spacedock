@@ -397,6 +397,17 @@ stages:
 ---
 ```
 
+A stage can also select ordered context from other README sections:
+
+```
+stages:
+  defaults:
+    context-sections:
+      - Constraint Authority
+```
+
+`context-sections` contains exact README heading text. A stage-specific list replaces the default, and `[]` clears it. `dispatch build` validates every selection before spawn; the worker's existing `show-stage-def` read returns the stage definition followed by those sections in declaration order. Selected sections normalize newline boundaries to LF, drop trailing blank lines, use one blank line between sections, and end stdout with one LF. The read uses the then-current valid README; an invalid current selection fails before stage work. Workflows without the field keep existing output unchanged.
+
 ## Each work item is one file
 
 An entity lives as a flat file `{slug}.md`, or a folder `{slug}/index.md` when reports and artifacts accumulate beside it. The body is the human-readable record: the problem, the approach, the acceptance criteria, and the stage reports. On top sits YAML frontmatter, the machine-readable state: the item's id, its current stage, its outcome. The [frontmatter contract](../../reference/frontmatter-contract/) has the fields and the schemas that define them.

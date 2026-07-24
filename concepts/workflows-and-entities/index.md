@@ -2,7 +2,7 @@
 title: "Workflows & entities"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-07-24 01:14:08"
+last_updated: "2026-07-24 11:43:56"
 ---
 
 # Workflows & entities
@@ -40,6 +40,17 @@ stages:
       terminal: true
 ---
 ```
+
+A stage can also select ordered context from other README sections:
+
+```
+stages:
+  defaults:
+    context-sections:
+      - Constraint Authority
+```
+
+`context-sections` contains exact README heading text. A stage-specific list replaces the default, and `[]` clears it. `dispatch build` validates every selection before spawn; the worker's existing `show-stage-def` read returns the stage definition followed by those sections in declaration order. Selected sections normalize newline boundaries to LF, drop trailing blank lines, use one blank line between sections, and end stdout with one LF. The read uses the then-current valid README; an invalid current selection fails before stage work. Workflows without the field keep existing output unchanged.
 
 ## Each work item is one file
 
