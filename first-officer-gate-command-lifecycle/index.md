@@ -192,6 +192,7 @@ review-round:
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-15
 mod-block: merge:pr-merge
+pr: "#565"
 ---
 
 Make the normal First Officer gate path bind the exact reviewed package, record the authorized decision, and durably consume it before ordinary workflow dispatch.
