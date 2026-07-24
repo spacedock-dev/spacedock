@@ -321,22 +321,6 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			}
 		})
 	}
-	t.Run("association", func(t *testing.T) {
-		fixture := writeRecordedGateFixture(t)
-		bindRecordedGate(t, binary, fixture)
-		resultPath := filepath.Join(t.TempDir(), "result.json")
-		association := filepath.Join(t.TempDir(), "association.json")
-		testdata := filepath.Join(recordedGateRepoRoot(t), "internal", "gates", "testdata")
-		writeFile(t, resultPath, readFile(t, filepath.Join(testdata, "exact-review-v1-result.json")))
-		writeFile(t, association, readFile(t, filepath.Join(testdata, "exact-review-v1-association-truncated.json")))
-		before := treeDigest(t, fixture.stateRoot)
-		result := runRecordedGateCommand(binary, fixture.root, "", "gate", "record", "recorded-gate-task",
-			"--result", resultPath, "--association", association, "--actor", "person:reviewer", "--workflow-dir", fixture.root)
-		assertRecordedGateByteCleanFailure(t, fixture, result, "association")
-		if after := treeDigest(t, fixture.stateRoot); after != before {
-			t.Fatal("invalid association changed workflow bytes")
-		}
-	})
 	t.Run("validate-and-eligibility-reads", func(t *testing.T) {
 		fixture := writeRecordedGateFixture(t)
 		bindRecordedGate(t, binary, fixture)
@@ -746,7 +730,7 @@ func recordedGateEventsFromCommandLog(log string) []string {
 		case strings.Contains(line, "gate record ") && strings.Contains(line, " --briefing "):
 			started = true
 			events = append(events, "briefing-record")
-		case started && strings.Contains(line, "gate record ") && (strings.Contains(line, " --decision ") || strings.Contains(line, " --result ")):
+		case started && strings.Contains(line, "gate record ") && (strings.Contains(line, " --decision ") || strings.Contains(line, " --room ")):
 			events = append(events, "decision-record")
 		case started && strings.Contains(line, "gate consume "):
 			events = append(events, "consume")

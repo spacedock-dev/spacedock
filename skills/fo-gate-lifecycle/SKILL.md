@@ -12,7 +12,7 @@ Load this skill in one host event before gate probe, mutation, presentation, rou
 
 **Boot projection.** Use only unresolved actionable `ready_gates` rows from `status --boot --identify --json`, fixed keys `id`, `slug`, `current`, `readiness`: `awaiting-captain` = selected current-stage open Briefing; `approved-awaiting-merge` = unblocked approve + advance/pending to terminal; `approved-awaiting-advance` = nonterminal target. Gate-stage/no selected attempt is omitted `validating`; without a supplied retained Briefing or decision authority, present that legacy gate from existing stage evidence without mutation and stop. Malformed/stale selection, blocked/held, feedback, consumed/superseded/not-applicable are omitted. Opt-in human/JSON `gate-readiness` summarizes; `gate-*` retains optional diagnostics. Engage row `slug` and read the entity; never infer readiness from status/stage.
 
-**Capability preflight.** Immediately before every gate lifecycle, freshly resolve `${SPACEDOCK_BIN:-spacedock}` and run exactly one `gate --help`; do not cache it. Require `record`, `validate`, `eligibility`, `consume`, `--briefing`, `--result`, `--association`, `--decision`, `--actor`, `--directive`. If absent, halt before mutation; prescribe refresh or a fresh build selected with `SPACEDOCK_BIN`. Never hand-edit `gates:`.
+**Capability preflight.** Immediately before every gate lifecycle, freshly resolve `${SPACEDOCK_BIN:-spacedock}` and run exactly one `gate --help`; do not cache it. Require `record`, `validate`, `eligibility`, `consume`, `--briefing`, `--room`, `--decision`, `--actor`, `--directive`. If absent, halt before mutation; prescribe refresh or a fresh build selected with `SPACEDOCK_BIN`. Never hand-edit `gates:`.
 
 **Retain and bind.** Assemble `ROOM/briefing.json`: concise capability/change, tests/evidence, reviewed snapshot, material/deferred/polish findings, one recommendation, decision ask; link raw entity/spec/reports. Keep reproducible payloads as URI + SHA, else freeze a room copy. Relative retained-input paths resolve from launch cwd.
 
@@ -31,11 +31,11 @@ ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --
 # FO rendered it under an explicit Captain conn
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor agent:first-officer --reason EVIDENCE_JUDGMENT --directive EXACT_QUOTED_CAPTAIN_GRANT --workflow-dir WORKFLOW_DIR
 
-# Exact retained provider Result
-${SPACEDOCK_BIN:-spacedock} gate record ENTITY --result RESULT --association ASSOCIATION --actor AUTHORIZED_ACTOR [--adoption-note AUTHORIZER] --workflow-dir WORKFLOW_DIR
+# Exact retained provider Result from its prepared room
+${SPACEDOCK_BIN:-spacedock} gate record ENTITY --room ROOM --workflow-dir WORKFLOW_DIR
 ```
 
-`revise` and `hold` require a reason (or the provider's included same-Briefing Annotation). Delegated FO approval always carries both its nonblank evidence reason and the exact quoted grant; never relabel it `person:captain`. A provider Result requires its complete retained association and authorized actor.
+`revise` and `hold` require a reason (or the provider's included same-Briefing Annotation). Delegated FO approval always carries both its nonblank evidence reason and the exact quoted grant; never relabel it `person:captain`. A provider Result requires the prepared room's complete retained presentation mapping and authorized Resolution.
 
 Require exit 0, the bound attempt/Briefing, `state=closed`, and the decision; record already validates the Resolution/application before atomic write. After every successful close, `«state.commit»(slug)` must commit that exact Resolution before approve, revise, hold, or any consume attempt. Close/commit failure halts.
 
