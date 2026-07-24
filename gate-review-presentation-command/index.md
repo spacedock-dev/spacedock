@@ -108,7 +108,7 @@ review-round:
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-16
 mod-block: merge:pr-merge
-pr: "#564"
+pr: pr-merge:564
 ---
 
 Gate presentation remains an overridable channel of the present-gate skill, not a
