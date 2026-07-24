@@ -6,9 +6,7 @@ package ensigncycle
 
 import (
 	"context"
-	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/livescenario"
@@ -28,9 +26,6 @@ type claudeRunnerAdapter struct {
 }
 
 func (a claudeRunnerAdapter) Launch(ctx context.Context, dir, entityPath, runbook string) (string, error) {
-	// gitInit so the FO front door sees a workflow git root (the live adapter's
-	// fixtures are always git-initialized).
-	gitInit(a.t, dir)
 	scenario := sharedRuntimeScenario{name: "livescenario-primitive"}
 	result := a.runner.run(a.t, scenario, dir, runbook+" "+antiShutdownOverride)
 	return result.finalMessage + "\n" + result.stream, nil
@@ -46,26 +41,24 @@ func (a claudeRunnerAdapter) Launch(ctx context.Context, dir, entityPath, runboo
 // own `Verified by: live …` citation under AC-1's gate — p4 eating its own gate.
 func TestLivePrimitiveRunsAgainstClaudeAdapter(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
+	dir := t.TempDir()
+	commandLog := filepath.Join(dir, "evidence", "command.log")
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
+	runner = runner.withStubPATH(shimDir).(claudeLiveRunner)
 	adapter := claudeRunnerAdapter{t: t, runner: runner}
 
-	dir := t.TempDir()
 	sc := livescenario.Scenario{
 		Name:    "gate-held-via-primitive",
 		Runbook: gatePrompt(dir),
 		Setup: func(dir string) (string, error) {
-			// Reuse 8y's host-neutral gate fixture writer — the SETUP half of the
-			// triple — proving the primitive composes the existing setup substrate.
-			return writeGateWorkflowNoGit(dir)
+			return writeRecordedGateFixtureAt(t, dir).entity, nil
 		},
 		Assert: func(before, after livescenario.EntityState, observed string) error {
-			if after.Body != before.Body {
-				return errGraded("gated entity was mutated during the run")
+			if err := assertGateHeld(before.Body, after.Body, recordedGateReviewFromClaudeStream(observed)); err != nil {
+				return errGraded(err.Error())
 			}
-			if !strings.Contains(after.Body, "status: review") {
-				return errGraded("gated entity left its review status")
-			}
-			if !strings.Contains(observed, "Gate review") || !strings.Contains(observed, "Decision") {
-				return errGraded("observed output did not present the gate review + decision")
+			if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {
+				return errGraded(err.Error())
 			}
 			return nil
 		},
@@ -81,17 +74,3 @@ func errGraded(msg string) error { return &gradedErr{msg} }
 type gradedErr struct{ msg string }
 
 func (e *gradedErr) Error() string { return e.msg }
-
-// writeGateWorkflowNoGit stages the host-neutral gate fixture (README + entity)
-// into dir WITHOUT git-initializing — the adapter's Launch git-inits once the
-// primitive has captured the pre-run state, matching the live adapter's order.
-func writeGateWorkflowNoGit(dir string) (string, error) {
-	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte(gateReadme()), 0o644); err != nil {
-		return "", err
-	}
-	entityPath := filepath.Join(dir, "gate-check.md")
-	if err := os.WriteFile(entityPath, []byte(gateEntity()), 0o644); err != nil {
-		return "", err
-	}
-	return entityPath, nil
-}

@@ -1,62 +1,47 @@
 package ensigncycle
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestAssertGateHeld(t *testing.T) {
-	entity := "---\n" +
-		"id: gate-check\n" +
-		"title: Gate Check\n" +
-		"status: review\n" +
-		"completed:\n" +
-		"verdict:\n" +
-		"---\n" +
-		"# Gate Check\n\n" +
-		"## Stage Report: draft\n\n" +
-		"- DONE: Draft exists\n" +
-		"  fixture evidence\n" +
-		"\n### Summary\n\nReady for review.\n"
-	final := "Gate review: Gate Check - review\nRecommend approve.\nDecision: approve to enter done."
-
-	if err := assertGateHeld(entity, entity, final); err != nil {
+	before := recordedGateEntity()
+	after := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
+	if err := assertGateHeld(before, after, recordedGateReview()); err != nil {
 		t.Fatalf("gate-held assertion errored on held gate: %v", err)
 	}
 
-	t.Run("rejects_mutated_entity", func(t *testing.T) {
-		after := entity + "\nFO edited this file.\n"
-		if err := assertGateHeld(entity, after, final); err == nil {
-			t.Fatal("expected mutation to fail the gate-held assertion")
+	t.Run("rejects_unbound_entity", func(t *testing.T) {
+		if err := assertGateHeld(before, before, recordedGateReview()); err == nil {
+			t.Fatal("expected byte-identical unbound state to fail")
 		}
 	})
 
 	t.Run("rejects_advanced_status", func(t *testing.T) {
-		after := "---\n" +
-			"id: gate-check\n" +
-			"title: Gate Check\n" +
-			"status: done\n" +
-			"completed:\n" +
-			"verdict:\n" +
-			"---\n"
-		if err := assertGateHeld(after, after, final); err == nil {
+		advanced := strings.Replace(after, "status: validation", "status: handoff", 1)
+		if err := assertGateHeld(before, advanced, recordedGateReview()); err == nil {
 			t.Fatal("expected status: done to fail the gate-held assertion")
 		}
 	})
 
+	t.Run("rejects_resolution", func(t *testing.T) {
+		closed := after + "\ntype: Resolution\n"
+		if err := assertGateHeld(before, closed, recordedGateReview()); err == nil {
+			t.Fatal("expected a Resolution to fail the open-bound assertion")
+		}
+	})
+
 	t.Run("rejects_set_verdict", func(t *testing.T) {
-		after := "---\n" +
-			"id: gate-check\n" +
-			"title: Gate Check\n" +
-			"status: review\n" +
-			"completed:\n" +
-			"verdict: passed\n" +
-			"---\n"
-		if err := assertGateHeld(after, after, final); err == nil {
+		selfApproved := strings.Replace(after, "verdict:\n", "verdict: passed\n", 1)
+		if err := assertGateHeld(before, selfApproved, recordedGateReview()); err == nil {
 			t.Fatal("expected set verdict to fail the gate-held assertion")
 		}
 	})
 
-	t.Run("rejects_missing_gate_output", func(t *testing.T) {
-		if err := assertGateHeld(entity, entity, "No work available."); err == nil {
-			t.Fatal("expected missing gate output to fail the gate-held assertion")
+	t.Run("rejects_noncanonical_output", func(t *testing.T) {
+		if err := assertGateHeld(before, after, "Gate review: legacy\nDecision: approve?"); err == nil {
+			t.Fatal("expected legacy marker output to fail")
 		}
 	})
 }

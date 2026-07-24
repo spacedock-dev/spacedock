@@ -55,8 +55,8 @@ The `(scenario, mode, runtime)` tuple is the primary variant row that is **run, 
 The first foundation is the host-neutral runtime scenarios already shipped and held in host parity by the shared coverage tests. They are the named seed instances:
 
 <!-- seed-scenarios -->
-- `gate-guardrail` — the FO halts at a human gate and presents the review without self-approval, mutation, or archival.
-- `recorded-gate-lifecycle` — the FO performs three authority mutations—bind a retained Briefing, record delegated approval, and consume exactly once—commits each durable barrier, treats validation and eligibility as optional diagnostics, and only then dispatches the successor.
+- `gate-guardrail` — the FO binds and commits the retained package, presents exactly one semantic root review, then stops open without Resolution, consume, advance, dispatch, or archival.
+- `recorded-gate-lifecycle` — from a goal-only prompt, the FO binds, reviews, records delegated approval, consumes exactly once, commits every barrier, then performs one successor dispatch with one durable effect.
 - `rejection-flow` — the FO drives a two-cycle rejection trajectory: route the finding back through implementation, re-implement, and re-validate a second cycle, reusing the kept-alive reviewer only when the host exposes an addressable-worker route.
 - `feedback-3-cycle-escalation` — on the third consecutive REJECTED validation the FO escalates to the human instead of auto-bouncing a fourth time.
 - `merge-hook-guardrail` — the FO cannot bypass a registered merge hook by terminalizing without pr, mod-block, or force.

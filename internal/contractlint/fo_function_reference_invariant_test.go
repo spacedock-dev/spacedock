@@ -269,6 +269,47 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 	if !strings.Contains(completion, `Skill(skill="spacedock:fo-gate-lifecycle")`) {
 		t.Error("worker-completion gate route does not load the deferred lifecycle")
 	}
+	autoRoute := "reviewer recommends `REJECTED`"
+	if !strings.Contains(completion, autoRoute) ||
+		!strings.Contains(completion, "`«feedback.route»` before Captain presentation") ||
+		strings.Contains(strings.Replace(completion, autoRoute, "", 1), autoRoute) {
+		t.Error("reviewer-REJECTED correction is not uniquely owned before Captain presentation")
+	}
+	lifecycle := readRepoFile(t, filepath.Join("skills", "fo-gate-lifecycle", "SKILL.md"))
+	for _, mapping := range []string{
+		"`approve` maps to `approve`",
+		"`redo with feedback` maps to `revise`",
+		"`reject` with `feedback-to` maps to `revise`",
+		"`reject` without `feedback-to` maps to `hold`",
+		"`hold` maps to `hold`",
+		"`not yet` maps to `hold`",
+	} {
+		if strings.Count(lifecycle, mapping) != 1 {
+			t.Errorf("Captain mapping count=%d, want 1 for %q", strings.Count(lifecycle, mapping), mapping)
+		}
+	}
+	for _, want := range []string{
+		"If absent", "halt before mutation", "refresh or a fresh build",
+		"presentation completes only after", "exact bound Briefing id/digest",
+		"precede decision record", "delegated conn does not waive",
+	} {
+		if !strings.Contains(strings.ToLower(lifecycle), strings.ToLower(want)) {
+			t.Errorf("gate lifecycle missing fail-closed/presentation contract %q", want)
+		}
+	}
+	presenter := readRepoFile(t, filepath.Join("skills", "present-gate", "SKILL.md"))
+	for _, want := range []string{
+		"exactly one root-assistant message", "entity and stage",
+		"exact bound Briefing id and digest", "one recommendation",
+		"decision ask", "before the next decision-mutation tool call",
+	} {
+		if !strings.Contains(presenter, want) {
+			t.Errorf("present-gate missing semantic review owner %q", want)
+		}
+	}
+	if strings.Contains(lifecycle, "Gate review:") || strings.Contains(lifecycle, "Decision:") {
+		t.Error("lifecycle duplicates presenter markers instead of waiting for semantic presentation")
+	}
 }
 
 func TestFOEngageRetainsStartupPRAdvancement(t *testing.T) {

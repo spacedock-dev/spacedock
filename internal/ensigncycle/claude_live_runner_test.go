@@ -253,16 +253,24 @@ func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	entityPath := writeGateWorkflow(t, workflowRoot)
-	before := readFile(t, entityPath)
+	fixture := writeGateWorkflow(t, workflowRoot)
+	if scenario.name == "default-headless-recorded-gate-stop" {
+		writeFile(t, filepath.Join(fixture.root, "README.md"), strings.Replace(recordedGateReadme(), "### validation", "### implementation\n\nAppend an implementation stage report, then return completion.\n\n### validation", 1))
+		writeFile(t, fixture.entity, strings.Replace(recordedGateEntity(), "status: validation", "status: implementation", 1))
+		gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "start before gate")
+	}
+	before := readFile(t, fixture.entity)
+	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
+	runner = runner.withStubPATH(shimDir)
 
 	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
-	after := readFile(t, entityPath)
-	if err := assertGateHeld(before, after, result.finalMessage); err != nil {
+	after := readFile(t, fixture.entity)
+	if err := assertGateHeld(before, after, recordedGateReviewFromClaudeStream(result.stream)); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
-		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
+	if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }

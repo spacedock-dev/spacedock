@@ -23,7 +23,7 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 		{
 			name:          "gate-guardrail",
 			oldPythonTest: "tests/test_gate_guardrail.py",
-			intent:        "FO halts at a human gate and presents the review without self-approval, mutation, or archival.",
+			intent:        "FO binds and commits the retained package, presents exactly one semantic root review, then stops open without Resolution, consume, advance, dispatch, or archival.",
 		},
 		{
 			name:          "recorded-gate-lifecycle",

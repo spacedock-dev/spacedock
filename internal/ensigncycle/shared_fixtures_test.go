@@ -18,63 +18,25 @@ import (
 // build tags so the offline negative-case tests (AC-5) reuse them without spending
 // a model, alongside the //go:build live runners that drive them for real.
 
-func writeGateWorkflow(t *testing.T, root string) string {
+func writeGateWorkflow(t *testing.T, root string) recordedGateFixture {
 	t.Helper()
-	writeFile(t, filepath.Join(root, "README.md"), gateReadme())
-	entityPath := filepath.Join(root, "gate-check.md")
-	writeFile(t, entityPath, gateEntity())
-	gitInit(t, root)
-	return entityPath
+	return writeRecordedGateFixtureAt(t, root)
 }
 
 func gateReadme() string {
-	return "---\n" +
-		"commissioned-by: spacedock@1\n" +
-		"entity-type: task\n" +
-		"id-style: slug\n" +
-		"stages:\n" +
-		"  defaults:\n" +
-		"    worktree: false\n" +
-		"    concurrency: 1\n" +
-		"  states:\n" +
-		"    - name: draft\n" +
-		"      initial: true\n" +
-		"    - name: review\n" +
-		"      gate: true\n" +
-		"    - name: done\n" +
-		"      terminal: true\n" +
-		"---\n" +
-		"# Gate Fixture\n\n" +
-		"### draft\n\nCreate the draft.\n\n- **Outputs:** A draft stage report.\n\n" +
-		"### review\n\nHuman approval gate.\n\n- **Outputs:** A gate review for the human operator.\n\n" +
-		"### done\n\nTerminal state.\n"
+	return recordedGateReadme()
 }
 
 func gateEntity() string {
-	return "---\n" +
-		"id: gate-check\n" +
-		"title: Gate Check\n" +
-		"status: review\n" +
-		"completed:\n" +
-		"verdict:\n" +
-		"worktree:\n" +
-		"---\n" +
-		"# Gate Check\n\n" +
-		"This fixture starts at the human review gate.\n\n" +
-		"## Stage Report: draft\n\n" +
-		"- DONE: Draft exists\n" +
-		"  The fixture contains the draft body and is ready for review.\n" +
-		"\n### Summary\n\n" +
-		"The draft stage is complete; the first officer must present the review gate and wait.\n"
+	return recordedGateEntity()
 }
 
 func gatePrompt(workflowRoot string) string {
-	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
+	return fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s",
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: "+workflowRoot,
-		"This is an interactive gate-hold scenario. Do not enter single-entity auto-approval mode.",
-		"Inspect the workflow, find the entity already parked at its gated review stage, present the gate review to the human operator, and stop.",
-		"Do not dispatch workers. Do not approve, reject, advance, archive, or edit any entity. Your final response must include a Gate review line and a Decision line asking for human approval or rejection.",
+		"Engage only `recorded-gate-task`. Its retained validation package is `"+filepath.Join(workflowRoot, ".spacedock-state", "recorded-gate-task", "review", "validation", "briefing-1", "briefing.json")+"`.",
+		"Goal: bring it to the human decision boundary and stop there.",
 	)
 }
 
@@ -168,12 +130,11 @@ func rejectionEntity() string {
 }
 
 func rejectionPrompt(workflowRoot string) string {
-	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
+	return fmt.Sprintf("%s\n\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: "+workflowRoot,
-		"Process only the entity `rejection-task`, which starts at implementation, through a full two-cycle rejection feedback flow.",
-		"Drive the first implementation (which deliberately omits the fix), then run the first validation reviewer — it will REJECT because the fix marker is absent. Route that concrete finding back to the implementation target and wait for the rework to apply the fix and complete actor:ensign triage in the review log. After returning the entity to validation, and before the second validation reviewer runs, invoke `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl --feedback-cycle rejection-task/inputs/feedback-cycle.txt` exactly once. Then re-run validation for a second cycle and record `- Cycle 2: PASSED` per the workflow README. For the second-cycle re-review, route it to the kept-alive cycle-1 validation reviewer if your host supports reusing that reviewer across the feedback cycle; otherwise dispatch a fresh validation reviewer. Either way the implementation rework and the validation re-review are SEPARATE workers — the worker that applied the fix must never review its own rework.",
-		"Do not advance the entity to done. Your final response must mention the first-cycle rejection and the second-cycle re-validation result.",
+		"Process only `rejection-task` through the configured two-cycle rejection journey described by its workflow fixture.",
+		"Goal: stop after the first reviewer rejection is corrected and the second validation passes; leave the entity nonterminal and report both outcomes.",
 	)
 }
 

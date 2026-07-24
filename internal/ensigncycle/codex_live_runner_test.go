@@ -198,19 +198,24 @@ func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
 func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	entityPath := writeGateWorkflow(t, workflowRoot)
-	before := readFile(t, entityPath)
+	fixture := writeGateWorkflow(t, workflowRoot)
+	before := readFile(t, fixture.entity)
+	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
 
-	result, err := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
+	result, err := runner.withStubPATH(shimDir).run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	after := readFile(t, entityPath)
-	if err := assertGateHeld(before, after, result.finalMessage); err != nil {
+	after := readFile(t, fixture.entity)
+	if err := assertGateHeld(before, after, recordedGateReviewFromCodexJSONL(result.jsonl)); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
-		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
+	if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if resolveRecordedGateEntity(fixture) != after {
+		t.Fatal("recorded-gate-task was archived while waiting at the gate")
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
