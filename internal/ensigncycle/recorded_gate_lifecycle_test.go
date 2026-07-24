@@ -537,25 +537,64 @@ func TestRecordedGateLifecycleAC7ResumeMatrix(t *testing.T) {
 			t.Fatalf("stale resume did not supersede once and bind one replacement:\n%s", after)
 		}
 	})
-	t.Run("consumed", func(t *testing.T) {
+	t.Run("approval-close-commit-consume", func(t *testing.T) {
 		fixture := writeRecordedGateFixture(t)
 		bindRecordedGate(t, binary, fixture)
+		commitRecordedGateState(t, binary, fixture, "bind retained gate package")
+
+		// Fresh process 1 closes the gate and stops before its required state commit.
 		closeRecordedGate(t, binary, fixture, "approve")
-		mustRecordedGate(t, binary, fixture.root, "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
-		afterFirst := readFile(t, fixture.entity)
-		afterFirstTree := recordedGateTreeSnapshot(t, fixture.stateRoot)
-		for pass := 0; pass < 3; pass++ {
-			mustRecordedGate(t, binary, fixture.root, "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
-			repeat := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
-			if repeat.exit == 0 || !strings.Contains(repeat.stdout, "condition=consumed") {
-				t.Fatalf("consumed resume pass %d was not refused: %#v", pass, repeat)
+		closedUncommitted := recordedGateTreeSnapshot(t, fixture.stateRoot)
+		entityRel := strings.TrimPrefix(fixture.entity, fixture.stateRoot+string(os.PathSeparator))
+		if exec.Command("git", "-C", fixture.stateRoot, "diff", "--quiet", "--", entityRel).Run() == nil {
+			t.Fatal("successful close was already committed")
+		}
+		if commits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-Sdecision: approve", "--", entityRel)); len(commits) != 0 {
+			t.Fatalf("uncommitted close already has %d decision commits", len(commits))
+		}
+		repeatClose := runRecordedGateCommand(binary, fixture.root, "", "gate", "record", "recorded-gate-task",
+			"--decision", "approve", "--actor", "agent:first-officer", "--reason", "duplicate",
+			"--directive", recordedGateDirective, "--workflow-dir", fixture.root)
+		assertRecordedGateByteCleanFailure(t, fixture, repeatClose, "closed")
+		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, closedUncommitted)
+
+		// Fresh process 2 resumes the uncommitted close and commits the exact pending state.
+		closeCommit := commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
+		committedPending := recordedGateTreeSnapshot(t, fixture.stateRoot)
+		closeCommits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-Sdecision: approve", "--", entityRel))
+		if len(closeCommits) != 1 || closeCommits[0] != closeCommit {
+			t.Fatalf("close commits=%v, want exactly %s", closeCommits, closeCommit)
+		}
+		if parent := recordedGateEntityAt(t, fixture, closeCommit+"^"); strings.Contains(parent, "resolution:spacedock") {
+			t.Fatal("close commit parent already contains a Resolution")
+		}
+		repeatClose = runRecordedGateCommand(binary, fixture.root, "", "gate", "record", "recorded-gate-task",
+			"--decision", "approve", "--actor", "agent:first-officer", "--reason", "duplicate",
+			"--directive", recordedGateDirective, "--workflow-dir", fixture.root)
+		assertRecordedGateByteCleanFailure(t, fixture, repeatClose, "closed")
+		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, committedPending)
+
+		// Fresh process 3 resumes the committed pending approval and consumes it once.
+		consume := mustRecordedGate(t, binary, fixture.root, "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
+		assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
+		consumedCommit := commitRecordedGateState(t, binary, fixture, "consume gate authorization")
+		consumed := recordedGateTreeSnapshot(t, fixture.stateRoot)
+		if !recordedGateCommittedBeforeDispatch(t, fixture, closeCommit, consumedCommit, consumedCommit) {
+			t.Fatal("consumed commit is not a descendant of the exact close commit before dispatch")
+		}
+		for _, pickaxe := range []string{"state: consumed", "status: handoff"} {
+			if commits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-S"+pickaxe, "--", entityRel)); len(commits) != 1 || commits[0] != consumedCommit {
+				t.Fatalf("%s commits=%v, want exactly %s", pickaxe, commits, consumedCommit)
 			}
 		}
+		repeatConsume := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
+		assertRecordedGateByteCleanFailure(t, fixture, repeatConsume, "consumed")
+		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, consumed)
 		after := readFile(t, fixture.entity)
-		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, afterFirstTree)
-		if after != afterFirst || strings.Count(after, "state: consumed") != 1 ||
-			strings.Count(after, "resolution:spacedock") != 1 {
-			t.Fatal("consumed resume duplicated transition, application, or resolution")
+		if strings.Count(after, "resolution:spacedock") != 1 ||
+			strings.Count(after, "state: consumed") != 1 ||
+			strings.Count(after, "status: handoff") != 1 {
+			t.Fatal("resume duplicated decision, consume, or transition")
 		}
 	})
 }
