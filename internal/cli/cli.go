@@ -303,9 +303,9 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintln(stderr, "Error: gate record flags do not match the selected semantic source")
 				return exitCodeError{2}
 			}
-			for _, path := range []*string{&input.BriefingPath, &input.ResultPath, &input.AssociationPath} {
-				if *path != "" && !filepath.IsAbs(*path) {
-					*path = filepath.Join(dir, *path)
+			for _, retainedPath := range []*string{&input.BriefingPath, &input.ResultPath, &input.AssociationPath} {
+				if *retainedPath != "" && !filepath.IsAbs(*retainedPath) {
+					*retainedPath = filepath.Join(dir, *retainedPath)
 				}
 			}
 			input.WorkflowDir = definitionDir
