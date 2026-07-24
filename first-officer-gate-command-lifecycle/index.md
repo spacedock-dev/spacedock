@@ -202,14 +202,14 @@ gates:
                 target-stage: implementation
                 state: pending
 review-round:
-    id: round:6yyyyemkqwsett3g1c991w9f:implementation:15
+    id: round:6yyyyemkqwsett3g1c991w9f:implementation:16
     stage: implementation
-    cycle: 15
+    cycle: 16
     briefing:
-        id: briefing:first-officer-gate-command-lifecycle:implementation:round-15
-        digest: sha256:643adf43b3c9b3262bea9180cd933588e4d4a8932ccfbfb8dca9b19b4eb53d73
+        id: briefing:first-officer-gate-command-lifecycle:implementation:round-16
+        digest: sha256:5099e38f70c4c6de42a1a68a5abfab5e4666f34febd492fbf32b8cce0c8f12e2
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-15
+        room-ref: ./review/implementation/round-16
 mod-block:
 pr: "#565"
 ---
@@ -587,6 +587,8 @@ Implemented and hardened the six-event integration and its deterministic/live or
 
 - Cycle 14: REJECTED — Roborev jobs 2145–2158; surface 9 files/88 LOC vs estimate 9 files/75 LOC (117%); AC unchanged
 - Cycle 15: REVISE — GitHub Actions offline CI run 30112268591; surface 21 files/1,470 added LOC vs 1,588-addition branch cap (93%); AC unchanged
+
+- Cycle 16: REJECTED — Roborev job 2167 reviewing Cycle 15 CI feedback; surface 1 test file/2 added LOC vs estimate 1 test file/2 added LOC (100%); AC unchanged
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
@@ -1108,7 +1110,7 @@ Exact endpoint `b99f9c664912b18e729b639e737ef203c00cacbe` preserves the closed 9
 - DONE: Prove the exact isolated clean-config reproduction changes from red to green, then run the affected package plus required full/race/format/diff verification and diagnose any failure from this run.
   With `[user] useConfigOnly=true` and no identity, `TestRecordedGateLifecycleRealCLIReplay` first failed at the initial `spacedock state commit` with `Author identity unknown`; after the fix, all CI-failing replay/terminal/refusal/resume cases pass, the clean-config `internal/ensigncycle` package passes in **14.421s**, and `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and `git diff --check` pass.
 - DONE: Request final-tip Roborev, record exact correction surface and DONE/SKIPPED/FAILED evidence in the implementation Stage Report, and fast-forward the existing PR successor branch without advancing workflow state.
-  Branch-final panel job **2167** reviewed exact range `cc51e518..13d70249`: product passed with no issues; correctness repeated four branch-wide medium findings outside `b99f9c66..13d70249`. Rejection routing and captain-decision mapping require forbidden lifecycle/schema expansion; goal-only prompting and Claude root-row attribution require proof-surface redesign outside this setup correction. They remain declined under the binding one-file feedback boundary and promote only on a fresh validation failure at those pre-existing surfaces. The successor branch was fast-forwarded and remotely resolves exactly to `13d702492131df17dd3ac87245d6d773f4df959b`.
+  Branch-final panel job **2167** reviewed exact range `cc51e518..13d70249`: product passed with no issues; correctness repeated four branch-wide medium findings outside `b99f9c66..13d70249`. Rejection routing and captain-decision mapping require forbidden lifecycle/schema expansion; goal-only prompting and Claude root-row attribution require proof-surface redesign outside this setup correction. They remain worker-authored declines pending independent validation, with one-to-one promotion conditions in the **10-entry, all-declines** advisory package recorded and validated at `review/implementation/round-16`; no First Officer approval is claimed. The successor branch was fast-forwarded and remotely resolves exactly to `13d702492131df17dd3ac87245d6d773f4df959b`.
 - SKIPPED: Rebuild strict documentation.
   The final correction changes only Go test fixture setup; no documentation, generated site, command text, or user-visible contract changed.
 - SKIPPED: Advance workflow state, mutate gate records or PR metadata, or merge.
@@ -1116,4 +1118,4 @@ Exact endpoint `b99f9c664912b18e729b639e737ef203c00cacbe` preserves the closed 9
 
 ### Summary
 
-The CI-only red was an undeclared host-identity dependency in test setup, not a product lifecycle failure. The one-file/two-line correction persists the fixture helper's existing identity for independent product Git subprocesses, is clean-config/full/race green, and is published at `13d70249`; checklist accounting is **3 DONE, 2 SKIPPED, 0 FAILED**.
+The CI-only red was an undeclared host-identity dependency in test setup, not a product lifecycle failure. The one-file/two-line correction persists the fixture helper's existing identity for independent product Git subprocesses, is clean-config/full/race green, is published at `13d70249`, and now has a durable implementation/16 advisory round carrying the Cycle 15 correction context; checklist accounting remains **3 DONE, 2 SKIPPED, 0 FAILED**.
