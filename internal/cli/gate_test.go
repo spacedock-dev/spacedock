@@ -106,7 +106,7 @@ func TestGatePresentationRemainsOutsideBinary(t *testing.T) {
 
 	var out, errOut bytes.Buffer
 	code := run(context.Background(), []string{"gate", "review", "task"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-	if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: record|validate)") {
+	if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: record|validate|eligibility|consume)") {
 		t.Fatalf("gate review exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	after, err := os.ReadDir(root)
