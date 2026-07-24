@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-07-23 11:43:43",
+        "dateModified": "2026-07-24 01:14:08",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1397,8 +1397,16 @@ plugins must be installed persistently with <code>codex plugin add</code>.</p>
 <td>Record a chat decision and its derived one-use application; delegated decisions require the quoted directive. Recording never advances status or dispatches.</td>
 </tr>
 <tr>
+<td><code>spacedock gate record &lt;entity&gt; --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE]</code></td>
+<td>For a folder-form entity (<code>&lt;slug&gt;/index.md</code>), publish one complete advisory correction round to the immutable derived room <code>review/&lt;stage&gt;/round-&lt;cycle&gt;</code>, update the current <code>review-round</code> pointer, and optionally project its Feedback Cycles line. <code>STAGE</code> must exist in the workflow taxonomy but may differ from current status for historical backfill; cycle-line grammar and verdict binding are validated. Flat entities are refused because review artifacts accumulate beside the entity. Exact replay is a no-op; divergence is refused.</td>
+</tr>
+<tr>
 <td><code>spacedock gate validate &lt;entity&gt;</code></td>
 <td>Validate the canonical v1 logical-gate selection, ordered attempts, Briefing bindings, frozen closures, typed application, and Resolution shape; report the current recorded decision. Prototype fields and unknown binary-owned fields fail closed.</td>
+</tr>
+<tr>
+<td><code>spacedock gate validate &lt;entity&gt; --round STAGE/CYCLE</code></td>
+<td>Validate and read an advisory round through its entity pointer and immutable retained room. Every Resolution reports as advisory; no gate selection or workflow state changes.</td>
 </tr>
 <tr>
 <td><code>spacedock gate eligibility &lt;entity&gt;</code></td>
@@ -1454,7 +1462,7 @@ remain untouched.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 23, 2026 11:43:43 UTC">2026-07-23 11:43:43</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 24, 2026 01:14:08 UTC">2026-07-24 01:14:08</span>
   </span>
 
     
