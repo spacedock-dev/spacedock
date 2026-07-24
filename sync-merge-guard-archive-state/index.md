@@ -24,6 +24,20 @@ gates:
                 digest: sha256:a6109cdc4013c201d8a268c32dc6795d354718cfdeae85ba0fd84546ed720659
                 digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:rd:backlog:1
+                briefing: briefing:docs-dev:rd:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T15:38:08.065814Z"
+                decision: approve
+                reason: The split-root remote can retain an active merge sentinel after local archive finalization; a restart-safe supported publication path is a material durable-decisions prerelease requirement.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Make a successful split-root `merge guard` finalization durable on the configured state remote, including restart after interruption, so another First Officer cannot resurrect an already archived task from the last pushed sentinel.
