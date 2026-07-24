@@ -1023,3 +1023,35 @@ First Officers now operate the recorded gate lifecycle with three durable author
 ### Summary
 
 All assigned implementation outcomes account as **4 DONE, 1 SKIPPED, 0 FAILED**. The approved Cycle-13 range remains closed and separately auditable; the final integration endpoint is fully formatted, deterministic/full/race/docs green, live-green on Codex/Claude/Pi, no-findings under exact-tip Roborev, and available on a new non-force successor branch. No workflow advancement or merge was performed.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce AC-1 through AC-8 at exact candidate b99f9c664912b18e729b639e737ef203c00cacbe, including durable lifecycle ordering, fail-closed controls, authority provenance, retained package scope, idempotent resume, and terminal-versus-nonterminal routing.
+  Fresh real-CLI, refusal, mutant, resume, terminal, merge-guard, provider-room, and three-host live controls reproduce every cited boundary at the exact remote tip.
+- DONE: Perform the required detached semantic adversarial audit and check the implementation, tests, task body, and post-rebase reconciliation against the latest Captain rulings; classify every finding by defect kind and release scope.
+  A detached b99f9c66 checkout red-tested user-role Pi review acceptance and loss of `local-merge:` recovery; the intentional `b99f9c66` 3-file +6/-22 reconciliation is the only post-range drift.
+- DONE: Run every applicable focused/full/race/docs and existing Claude, Codex, and Pi recorded-gate live lane at the exact candidate tip, inspect the retained final-tip Roborev evidence, and issue a PASSED or REJECTED recommendation with concrete evidence.
+  Focused/full/race/live-tag/docs pass; fresh Codex 224.59s, Claude 249.03s, and Pi 226.18s pass; round-15 Roborev retains exact b99f9c66 and an approving Resolution with no annotations. Recommendation: **PASSED**.
+
+### Acceptance-criterion evidence
+
+- AC-1: `TestRecordedGateLifecycleRealCLIReplay`, terminal consume, both-sentinel merge guard, and all three live lanes fail on missing ancestry, nonempty terminal dispatchability, duplicate build/effect, or dispatch before consume.
+- AC-2: `TestRecordedGateLifecycleMissingEventControls` executes the remaining real commands for each omitted bind/decision/consume; the refusal matrix proves malformed, stale, blocked, revise, hold, and repeat-consume routes fail closed.
+- AC-3: the real replay and three-process resume pin the exact close commit; actor-swap, blank-reason, altered-directive, direct-chat, and provider-room authority controls reject indistinguishable or unauthorized provenance.
+- AC-4: the replay verifies canonical retained Briefing bytes, room artifacts, one folder-form state commit surface, exclusion of `dirty-sibling.md`, and unchanged workflow discovery.
+- AC-5: relative/absolute Briefing and relative prepared-room CLI tests pass; whole-tree refusal controls stay byte-clean; each live command log requires exactly one successful `gate --help` before mutation.
+- AC-6: the structured six-field review grader rejects raw dumps; the Pi parser accepts only one flat root-session assistant review between durable bind and decision, and its user-role mutant reds.
+- AC-7: the resume matrix proves open retry, replacement, revise, hold, stale, closed-uncommitted, pending-committed, and consumed one-use behavior across three fresh processes; terminal state routes only to merge recovery.
+- AC-8: one host-neutral scenario passes unchanged through fresh Claude, Codex, and Pi runners; native adapters retain their own transport while the shared oracle proves exact mutations, commits, dispatch cardinality, and durable effect.
+
+### Reviewer findings
+
+- No material outcome or evidence defect exists in the candidate scope.
+- DEFERRED RISK / EVIDENCE DEFECT / Low — startup/idle hook selection and `gh` bypass are structurally pinned rather than executed end to end.
+  Trigger: an actual hook runner diverges from the shipped selector prose. This is outside the approved no-new-harness proof boundary; direct both-sentinel guard behavior and paired template parity pass. Promote on an approved existing hook harness or observed discovery/`gh`-bypass failure.
+- EXTERNAL INTEGRATION PREREQUISITE / OUTCOME DEFECT / material to prerelease — split-root merge finalization still needs the separately owned conflict-safe remote archive synchronization.
+  This endpoint promises and proves the local path-scoped commit, not remote publication; it does not block this entity gate, but remains a release blocker if the synchronization owner does not land before prerelease.
+
+### Summary
+
+Exact endpoint `b99f9c664912b18e729b639e737ef203c00cacbe` preserves the closed 9-file Cycle-13 boundary and adds only the Captain-approved provider-room reconciliation. All ACs have independently reproduced behavioral evidence, the detached mutants red at the intended boundaries, repository and live lanes pass, and validation recommends **PASSED** with no candidate-scope material finding.
