@@ -183,7 +183,7 @@ func TestNoUnexpectedPRViewScanIntroduced(t *testing.T) {
 // TestPortabilityCheckDiscriminatesHostSpecific's load-bearing-exclusion assertion.
 func TestPRViewAllowListIsLoadBearing(t *testing.T) {
 	for path, want := range map[string]string{
-		filepath.Join(repoRoot(t), "mods", "pr-merge.md"):                 "pr=pr-merge:{N}",
+		filepath.Join(repoRoot(t), "mods", "pr-merge.md"):                 "valid `pr-merge:` sentinel",
 		filepath.Join(repoRoot(t), "docs", "dev", "_mods", "pr-merge.md"): "terminal status with `mod-block: merge:pr-merge`",
 		filepath.Join(skillsRoot(t), "fo-gate-lifecycle", "SKILL.md"):     "terminal current status resumes the existing merge ceremony",
 	} {

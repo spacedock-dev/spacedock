@@ -128,7 +128,7 @@ func TestMergeGuardFinalizesTerminalBlockedEntityFromMergedSentinel(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	updated := strings.ReplaceAll(strings.ReplaceAll(string(body), "status: implementation", "status: done"), `pr: "#42"`, "pr: pr-merge:42")
+	updated := strings.NewReplacer("status: implementation", "status: done", `pr: "#42"`, "pr: pr-merge:42", "mod-block: merge:pr-merge", "mod-block:").Replace(string(body))
 	writeFile(t, filepath.Join(root, "070-pr-pending.md"), updated)
 	var out, errOut bytes.Buffer
 	if code := MergeGuard([]string{"--workflow-dir", root, "070-pr-pending", "--verdict", "passed"}, root, &out, &errOut); code != 0 {
