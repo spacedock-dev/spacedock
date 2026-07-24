@@ -84,6 +84,20 @@ gates:
                 digest: sha256:ae9e79e14e9df46d29af40a9e570c2af47b0bb5dd049b9f30cf57b73a1607036
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:ideation:4
+                briefing: briefing:docs-dev:6y:ideation:attempt-4:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T09:08:13.257256Z"
+                decision: approve
+                reason: Cycle 7 preserves the authority and durability outcomes, removes unproven ceremony, passed the focused gate tests named in ideation, and independent staff re-review reports APPROVE with no material findings.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
