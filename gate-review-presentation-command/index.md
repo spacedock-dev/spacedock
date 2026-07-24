@@ -55,6 +55,12 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+            - id: gate-attempt:xb-validation-3
+              briefing:
+                id: briefing:docs-dev:xb:validation:attempt-3:revision-1
+                digest: sha256:cf920b3c5ee291361d991f1db9f81e3797e2dae0da13d3995e21341215f7ce56
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-4
         - id: gate:docs-dev:xb:ideation
           stage: ideation
           attempts:
