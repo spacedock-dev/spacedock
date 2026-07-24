@@ -1,0 +1,47 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:0c:backlog:attempt-1:revision-1",
+  "question": "Should 0c enter ideation with workflow metadata selecting context, dispatch build validating it, and the ensign fetching selected sections through show-stage-def, while excluding First Officer assembly, status projection, packet inlining, and a second section parser?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0476a2886a1af7946729e3751e8c6e449b9dd9f75c7b3753bc82243f7cc78cc7"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:21168df02d2b6c243c0a17e934103d0420965c077629c9d7397bd2f43aae5d92"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:backlog-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Authorize bounded ideation",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the dispatch-read boundary",
+          "to": "stage:backlog"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:backlog"
+        }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,20 @@ status: backlog
 source: "Durable-decisions sprint audit of Subspace 198f762, Spacedock 6y, and held js6 stakes-read-through, 2026-07-24."
 score: "0.8"
 id: 0cj3qf6fefedfj7j9exq62jb
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:0c:backlog
+    records:
+        - id: gate:docs-dev:0c:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:0c-backlog-1
+              briefing:
+                id: briefing:docs-dev:0c:backlog:attempt-1:revision-1
+                digest: sha256:116794807857c45a046d56cf9217b822e6c4fbe21077edb36f0951a02995f364
+                digest-domain: canonical-bytes
+                room-ref: ./review/backlog/briefing-1
 ---
 
 A workflow can put a cross-stage policy in its README, but `dispatch show-stage-def` returns only the selected `### stage` subsection. Let workflow metadata point at additional relevant sections and let the dispatched ensign load those exact sections through the existing structured read path.
