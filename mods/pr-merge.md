@@ -1,7 +1,7 @@
 ---
 name: pr-merge
 description: Push branches and create/track GitHub PRs for workflow entities
-version: 0.12.2
+version: 0.12.3
 ---
 
 # PR Merge
@@ -10,7 +10,7 @@ Manages the PR lifecycle for workflow entities processed in worktree stages. Pus
 
 ## Hook: startup
 
-Scan all entity files (in the workflow directory only, not `_archive/`) for entities with a non-empty `pr` field and either non-terminal status, terminal status with `mod-block: merge:pr-merge`, or terminal status carrying a valid `pr-merge:` sentinel. A sentinel row already proves MERGED: bypass `gh`, run `spacedock merge guard {slug} --workflow-dir {dir} --verdict passed` directly, and stop processing that row. For every bare PR row, extract the PR number (strip any `#`, `owner/repo#` prefix) and check: `gh pr view {number} --json state --jq '.state'`.
+Scan all entity files (in the workflow directory only, not `_archive/`) for entities with a non-empty `pr` field and either non-terminal status, terminal status with `mod-block: merge:pr-merge`, or terminal status carrying a valid merged sentinel (`pr-merge:` or `local-merge:`). A sentinel row already proves MERGED: bypass `gh`, run `spacedock merge guard {slug} --workflow-dir {dir} --verdict passed` directly, and stop processing that row. For every bare PR row, extract the PR number (strip any `#`, `owner/repo#` prefix) and check: `gh pr view {number} --json state --jq '.state'`.
 
 If `MERGED`, first record and commit the landed merge sentinel with `spacedock status --workflow-dir {dir} --set {slug} pr=pr-merge:{N}` then `spacedock state commit {slug} --workflow-dir {dir}`; next finalize through `spacedock merge guard {slug} --workflow-dir {dir} --verdict passed`. The sentinel is the restart-safe durable signal; the guard clears any in-flight `mod-block`, terminalizes, archives, and commits the archive move atomically. Clean up any worktree/branch and report each auto-advanced entity to the captain.
 
@@ -22,7 +22,7 @@ If `gh` is not available, warn the captain and skip PR state checks.
 
 ## Hook: idle
 
-Check PR-pending entities using the same logic as the startup hook: a terminal row carrying a valid `pr-merge:` sentinel bypasses `gh` and resumes `merge guard` directly, while bare PR rows (including terminal rows still carrying `mod-block: merge:pr-merge`) run `gh pr view` and advance through the same committed sentinel then guard path. This is the workflow's PR-pending scan: the generic event loop fires this idle hook and owns no PR scan of its own, so a workflow with no `pr-merge` mod never reaches for `gh` in its loop. Report any advanced entities to the captain.
+Check PR-pending entities using the same logic as the startup hook: a terminal row carrying a valid merged sentinel (`pr-merge:` or `local-merge:`) bypasses `gh` and resumes `merge guard` directly, while bare PR rows (including terminal rows still carrying `mod-block: merge:pr-merge`) run `gh pr view` and advance through the same committed sentinel then guard path. This is the workflow's PR-pending scan: the generic event loop fires this idle hook and owns no PR scan of its own, so a workflow with no `pr-merge` mod never reaches for `gh` in its loop. Report any advanced entities to the captain.
 
 ## Hook: merge
 

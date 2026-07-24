@@ -183,16 +183,14 @@ func TestNoUnexpectedPRViewScanIntroduced(t *testing.T) {
 // TestPortabilityCheckDiscriminatesHostSpecific's load-bearing-exclusion assertion.
 func TestPRViewAllowListIsLoadBearing(t *testing.T) {
 	for path, want := range map[string]string{
-		filepath.Join(repoRoot(t), "mods", "pr-merge.md"):                 "valid `pr-merge:` sentinel",
-		filepath.Join(repoRoot(t), "docs", "dev", "_mods", "pr-merge.md"): "terminal status with `mod-block: merge:pr-merge`",
+		filepath.Join(repoRoot(t), "mods", "pr-merge.md"):                 "valid merged sentinel (`pr-merge:` or `local-merge:`)",
+		filepath.Join(repoRoot(t), "docs", "dev", "_mods", "pr-merge.md"): "reconciled-from-shipped: 0.12.3",
 		filepath.Join(skillsRoot(t), "fo-gate-lifecycle", "SKILL.md"):     "terminal current status resumes the existing merge ceremony",
 	} {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			t.Errorf("read %s: %v", path, err)
-		} else if !strings.Contains(string(data), want) {
+		data := readFileString(t, path)
+		if !strings.Contains(data, want) {
 			t.Errorf("%s must contain %q", path, want)
-		} else if strings.HasSuffix(path, filepath.Join("mods", "pr-merge.md")) && !strings.Contains(string(data), "gh pr view") {
+		} else if strings.HasSuffix(path, filepath.Join("mods", "pr-merge.md")) && !strings.Contains(data, "gh pr view") {
 			t.Errorf("%s no longer carries the load-bearing `gh pr view` scan", path)
 		}
 	}
