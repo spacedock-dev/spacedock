@@ -735,3 +735,65 @@ Repaired the authoritative body rather than stacking another override: scanners,
 ### Summary
 
 The approved reduction is complete, committed, within its LOC cap, and green across deterministic, full/race, and all three representative live-host journeys. Integration is honestly stopped on a newly landed shared prompt-load collision. Return to a bounded 6y design reset that finds at least 125 bytes in 6y's own deferred-lifecycle/resident-pointer surface while preserving semantics, the 6,600/26,754 caps, and all proof; do not increase the baselines or edit fr's file. Rebase, final-tip replay, and Roborev follow only after that ruling.
+
+## Byte-budget re-ideation delta (cycle 5; composition authority)
+
+This delta owns only the 125-byte 6y integration repair. The canonical ACs, lifecycle, proof boundary, topology, ceilings, and exclusions above remain unchanged. `dd6bd114` plus the preserved 6y implementation measures Claude 103,468, Codex 82,683, and Pi 78,813 bytes; fr's required 354-byte addition is retained verbatim.
+
+### Exact reduction
+
+Apply two line-preserving rewrites in `skills/first-officer/references/first-officer-shared-core.md` at `86bad049`:
+
+1. Line 46, the deferred-load pointer, changes from:
+   ```text
+   - `Skill(skill="spacedock:fo-gate-lifecycle")` — every engaged gate entry: headless with or without conn, `engage`, gated worker completion, and open/pending/revise/hold/stale/consumed resume. Complete this load before every capability probe, gate read/write/validation, presenter load, decision route, replay, or dispatch; interactive gated greet only names the gate and stops load-free.
+   ```
+   to:
+   ```text
+   - `Skill(skill="spacedock:fo-gate-lifecycle")` — load for headless with or without conn, `engage`, gated worker completion, and open/pending/revise/hold/stale/consumed resume; interactive gated greet only names the gate and stops load-free. Complete before gate probe/read/write/validation, presenter, decision route, replay, or dispatch.
+   ```
+   The exact UTF-8 line size falls from 391 to 341 bytes: **-50 bytes**.
+2. Line 81, the gated-completion pointer, changes from:
+   ```text
+   If the stage is gated, first complete `Skill(skill="spacedock:fo-gate-lifecycle")`, then `«gate.lifecycle»(slug, stage)`. The deferred procedure binds and validates the package, presents, records and validates the decision, and authorizes approval through one-use consume before dispatch; revise routes through `«feedback.route»`, while hold and every ineligible condition stop.
+   ```
+   to:
+   ```text
+   If gated, complete `Skill(skill="spacedock:fo-gate-lifecycle")`, then `«gate.lifecycle»(slug, stage)`. It binds and validates the package, presents, records and validates the decision; approval permits dispatch only after one-use consume, revise invokes `«feedback.route»`, and hold/ineligibility stops.
+   ```
+   The exact UTF-8 line size falls from 383 to 308 bytes: **-75 bytes**.
+
+The total is exactly **-125 bytes**, the mathematical minimum that satisfies “at least 125.” The first rewrite retains every engaged route, the greet exception, and load-before-action ordering; only repeated determiners and “load” nouns disappear. The second retains load-before-call, bind/open and close validation, presentation, consume-before-approved-dispatch, revise routing, and fail-closed hold/ineligibility. The detailed 6,594-byte lifecycle remains the semantic owner, so neither pointer needs to restate its full ceremony.
+
+### Composition and cap proof
+
+| Surface | Rebased before | Reduction | Proposed | Hard cap | Margin |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Claude worst-case load | 103,468 | -125 | **103,343** | 103,343 | 0 |
+| Codex worst-case load | 82,683 | -125 | **82,558** | 82,558 | 0 |
+| Pi worst-case load | 78,813 | -125 | **78,688** | 78,688 | 0 |
+| Shared core | 26,526 | -125 | **26,401** | 26,754 | 353 |
+| Deferred lifecycle skill | 6,594 | 0 | **6,594** | 6,600 | 6 |
+
+An in-memory UTF-8 measurement of both replacements produced `load=391->341 completion=383->308 saved=125`; a token-presence control retained every literal route discriminator required by `TestFOGateLifecycleOwnsEveryEngagedEntry`. No fr, ratchet, host adapter, command, schema, runtime interface, test oracle, or AC changes.
+
+### Reapply and final-tip verification
+
+Replay the 6y implementation through `3cc6225b` onto `dd6bd114`, apply only the two pointer rewrites, then replay `86bad049` unchanged. Confirm its four approved test/live files remain **+71/-482** and the branch remains 1,468 added LOC; the line-preserving prose rewrite changes bytes, not LOC.
+
+Run the focused topology/load and lifecycle tests first: `TestFOGateLifecycleOwnsEveryEngagedEntry`, deferred-skill reachability/discovery/prose-pointer controls, `TestFOHostPromptLoadRatchet`, load-set equality, function-reference invariants/metrics, and the recorded lifecycle source-deletion/common-oracle suite. The metrics log must print exactly 103343/82558/78688 and `wc -c` must print shared core 26401 and lifecycle skill 6594.
+
+Then run `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, `go test ./... -race`, live-tag compilation, and the representative Claude/Codex/Pi journeys. Each live journey still owes six ordered commands, consumed successor state, one post-consume dispatch build, and one durable successor effect. Only after all final-tip evidence is green request Roborev and triage every finding; do not claim validation readiness before that review.
+
+## Stage Report: ideation (cycle 5)
+
+- DONE: Define the smallest semantics-preserving reduction of at least 125 bytes confined to 6y's deferred lifecycle and resident-pointer surface; do not edit fr or raise any host ceiling.
+  Two line-preserving resident-pointer rewrites save exactly 125 UTF-8 bytes while retaining every route, load-order, lifecycle, routing, and fail-closed obligation; fr and all ratchets remain untouched.
+- DONE: Prove the proposed rebased composition fits Claude 103343, Codex 82558, Pi 78688 while preserving the 26754 shared-core and 6600 lifecycle-skill caps.
+  Direct byte arithmetic and in-memory replacement measurement yield 103343/82558/78688; shared core becomes 26401 and the unchanged deferred skill remains 6594.
+- DONE: Name the exact files/lines, semantic equivalence argument, and focused verification needed to reapply preserved reduction commit 86bad049 and reach final-tip review without expanding product scope.
+  The cycle-5 delta names `first-officer-shared-core.md:46` and `:81`, exact before/after text, retained meanings, replay order, focused/full/race/live gates, and the final-tip Roborev boundary.
+
+### Summary
+
+The exact integration repair is a 125-byte resident-pointer compression with zero semantic or product-surface change. It composes the preserved `86bad049` reduction with `dd6bd114` exactly at all three canonical host ceilings while leaving both instruction-file caps green.
