@@ -393,6 +393,7 @@ The captain's question is well-founded and the answer is yes: the binary was the
 - Cycle 13: REJECTED — Roborev job 2039 implementation round 1; surface 17 files/1,293 changed LOC vs estimate 1,300 changed LOC (99%); AC unchanged
 - Cycle 14: REJECTED — validation cycle 5 nested Resolution authority; surface 17 files/1,293 changed LOC vs estimate 1,300 changed LOC (99%); AC unchanged
 - Cycle 15: REJECTED — First Officer Cycle 14 scope reset; surface 17 files/1,293 changed LOC vs estimate 1,310 changed LOC (99%); AC unchanged
+- Cycle 16: REJECTED — Roborev job 2070 implementation round; surface 17 files/1,310 changed LOC vs estimate 1,310 changed LOC (100%); AC unchanged
 
 ## Stage Report: implementation
 
