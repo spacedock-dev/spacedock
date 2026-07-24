@@ -7,7 +7,7 @@ id: 0cj3qf6fefedfj7j9exq62jb
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:0c:backlog
+        gate: gate:docs-dev:0c:ideation
     records:
         - id: gate:docs-dev:0c:backlog
           stage: backlog
@@ -31,6 +31,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:0c:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:0c-ideation-1
+              briefing:
+                id: briefing:docs-dev:0c:ideation:attempt-1:revision-1
+                digest: sha256:b1e0cf2b6b7300464550d7af90d873802f7f51550a908d9eeb8cc62e0ea34400
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-1
 started: 2026-07-24T08:41:39Z
 ---
 
