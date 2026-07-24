@@ -207,6 +207,19 @@ gates:
                 digest: sha256:0ae905b1aecc75768763f7d0c960af1f0894c7cf5d68c3f827e2b6ecfd6e957e
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:validation:3
+                briefing: briefing:docs-dev:6y:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T17:57:53.206098Z"
+                decision: revise
+                reason: Exact tip 13d70249 fixes clean-runner Git identity but detached controls prove four material defects across supported rejection routing, captain decision semantics, live prompt ownership, and root-visible Claude evidence; AC-1, AC-6, AC-7, and AC-8 fail and require a design reset.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 review-round:
     id: round:6yyyyemkqwsett3g1c991w9f:implementation:16
     stage: implementation
