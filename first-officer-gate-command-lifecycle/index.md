@@ -1100,3 +1100,20 @@ All assigned implementation outcomes account as **4 DONE, 1 SKIPPED, 0 FAILED**.
 ### Summary
 
 Exact endpoint `b99f9c664912b18e729b639e737ef203c00cacbe` preserves the closed 9-file Cycle-13 boundary and adds only the Captain-approved provider-room reconciliation. All ACs have independently reproduced behavioral evidence, the detached mutants red at the intended boundaries, repository and live lanes pass, and validation recommends **PASSED** with no candidate-scope material finding.
+
+## Stage Report: implementation (cycle 16)
+
+- DONE: Make the existing recorded-gate fixture self-contained by persisting repository-local test Git identity in its temporary state checkout, with no product, CI, global-config, or unrelated-fixture change.
+  Commit `13d702492131df17dd3ac87245d6d773f4df959b` adds only `git config user.email t@t` and `git config user.name t` after the fixture initializes its state checkout: **1 test file, +2/-0** from `b99f9c66`; removing either identity leaves product-owned commits dependent on the host.
+- DONE: Prove the exact isolated clean-config reproduction changes from red to green, then run the affected package plus required full/race/format/diff verification and diagnose any failure from this run.
+  With `[user] useConfigOnly=true` and no identity, `TestRecordedGateLifecycleRealCLIReplay` first failed at the initial `spacedock state commit` with `Author identity unknown`; after the fix, all CI-failing replay/terminal/refusal/resume cases pass, the clean-config `internal/ensigncycle` package passes in **14.421s**, and `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and `git diff --check` pass.
+- DONE: Request final-tip Roborev, record exact correction surface and DONE/SKIPPED/FAILED evidence in the implementation Stage Report, and fast-forward the existing PR successor branch without advancing workflow state.
+  Branch-final panel job **2167** reviewed exact range `cc51e518..13d70249`: product passed with no issues; correctness repeated four branch-wide medium findings outside `b99f9c66..13d70249`. Rejection routing and captain-decision mapping require forbidden lifecycle/schema expansion; goal-only prompting and Claude root-row attribution require proof-surface redesign outside this setup correction. They remain declined under the binding one-file feedback boundary and promote only on a fresh validation failure at those pre-existing surfaces. The successor branch was fast-forwarded and remotely resolves exactly to `13d702492131df17dd3ac87245d6d773f4df959b`.
+- SKIPPED: Rebuild strict documentation.
+  The final correction changes only Go test fixture setup; no documentation, generated site, command text, or user-visible contract changed.
+- SKIPPED: Advance workflow state, mutate gate records or PR metadata, or merge.
+  The routed assignment reserves fresh validation and replacement-gate handling to the First Officer; this implementation writes only its body report.
+
+### Summary
+
+The CI-only red was an undeclared host-identity dependency in test setup, not a product lifecycle failure. The one-file/two-line correction persists the fixture helper's existing identity for independent product Git subprocesses, is clean-config/full/race green, and is published at `13d70249`; checklist accounting is **3 DONE, 2 SKIPPED, 0 FAILED**.
