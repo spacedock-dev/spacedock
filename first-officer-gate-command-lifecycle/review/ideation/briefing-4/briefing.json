@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:ideation:attempt-4:revision-1",
+  "question": "Should cycle 7 replace the six-call gate ceremony with three authority mutations, durable close and consume commits, executable-identity capability caching, CLI-owned path normalization, ordinary dispatch handoff, and attributable component budgets?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:23e8c9185b03e392511fe7f5a64eef470834ab4be247990692e2bfa6c7789afc"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f70fccce8a45e63853377ec07d7dd3615be8ef1f7ec9cd27f37697f767d6aff3"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f7b0c9b2c2227528c45a0703c4545a8ef3242e868b21b632bf350ada79ce1a8b"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Resume bounded implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the lifecycle simplification",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
