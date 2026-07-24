@@ -46,6 +46,20 @@ gates:
                 digest: sha256:2185e46203b2e4747d8a7db557f14737492cf519c9c7d40b632dfe83c51a0074
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:s4:ideation:1
+                briefing: briefing:docs-dev:s4:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-24T15:41:06.723937Z"
+                decision: approve
+                reason: The corrected design removes manual room metadata and basename fiction, preserves provider neutrality, reuses existing proof surfaces, and passed independent staff review; implementation remains pending until 6y lands on xb-rebased main.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Make gate-room preparation one mechanical operation. The First Officer supplies the
