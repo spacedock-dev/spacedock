@@ -334,3 +334,38 @@ The previously skipped provider-owned evidence is now pinned and reproduced, and
 ### Summary
 
 The rebased xb candidate preserves the approved four-file `+49/-3` boundary while composing with merged gate lifecycle and folder-form advisory rounds. Candidate `4779fff8` is clean and fully implementation-tested; independent validation remains the next gate.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Independently verify rebased candidate 4779fff8 preserves xb’s six ACs, exact four-file +49/-3 boundary, and composes semantically with the merged gate lifecycle/advisory-round tests without compatibility inventions.
+  The diff from `dd6bd114` is exactly docs `+8`, CLI test `+21`, contractlint `+5/-3`, and skill `+15`; round record/validate, owning-workflow, eligibility/consume-once, absent-presentation-verb, association, and host-load tests pass against the real `record|validate|eligibility|consume` surface.
+- DONE: Reproduce the pinned Subspace 198f762 retained-delivery suite and complete Briefing/Result/association path against candidate 4779fff8; explicitly establish that the old 612b72fc approval cannot authorize this new candidate and identify the replacement Briefing inputs.
+  Exact provider commit `198f76238aeb74ff38900e17b751f0460d0c55ee` passed its 12-fixture suite; the exact Result/full-association recorder path passes, while an advisory Result with that association but no adoption note fails with `advisory Result requires --adoption-note`.
+- DONE: Establish approval freshness and replacement Briefing inputs.
+  The closed attempt’s immutable question and approval reason name only `612b72fc`; although `gate eligibility` reports its application pending/eligible, it cannot authorize `4779fff8`. A successor Briefing must freeze the `4779fff8`/`dd6bd114` four-file diff, current entity plus this validation, merged lifecycle/advisory evidence, provider `198f7623` suite evidence, and the corrected handoff; only its fresh exact Result and complete association can authorize landing.
+- DONE: AC-1 (VALUE) — No presented decision is lost on any exit path.
+  Provider rows for approve, revise, hold/open, blank/EOF, crash, invalid result, retention failure, and launcher death retain their promised bytes; deleting any retained artifact breaks the pinned suite.
+- DONE: AC-2 — Retention survives every failure class, including launcher/controller death.
+  The pinned suite preserves Result/log/inventory/diagnostics across child and launcher failures and proves nonzero status propagation without relaunch.
+- DONE: AC-3 — Pane/session creation and wait-timeout are never completion.
+  The alive-child row withholds delivery and validation until the blocking child exits, then publishes exactly once.
+- FAILED: AC-4 — The recorded result is keyed to the attempt briefing id, only after digest validation (recorder-homed, proposed).
+  The recorder’s complete association and digest normalization work, but the shipped skill’s prescribed command omits the required `--adoption-note`; Subspace’s advisory Result therefore fails at the supported handoff boundary. This is a material outcome defect and a narrow same-layer fix, not a design reset.
+- DONE: AC-5 — The override channel validates the briefing and derives the title before any launch; an absent or version-mismatched presenter falls back to chat with zero side effects.
+  Complete-package/title and missing/mismatched-presenter rows pass at the pinned provider revision before host launch or retention creation.
+- DONE: AC-6 (VALUE) — Presentation adds zero Subspace coupling to the spacedock binary, and no channel mutates entity frontmatter.
+  `go list -deps ./cmd/spacedock` reports zero Subspace dependencies; absent-verb and recorder rejection controls preserve the working directory/entity.
+- DONE: Run focused tests, gofmt, go test ./..., go test ./... -race, mkdocs strict, diff/cleanliness checks, detached adversarial review and Roborev as applicable; classify every finding by materiality and issue a fresh exact-tip PASSED or REJECTED report.
+  Final uncontaminated normal/race suites, strict MkDocs, gofmt-no-diff, diff check, and clean code worktree pass; Roborev panel job 1955 is REJECTED at exact tip.
+- FAILED: Material outcome finding — advisory Result handoff omits adoption authority.
+  Supported trigger: provider returns `status:"advisory"`; `gate record` exits 1 without `--adoption-note`. Fix AC-4 by branching on Result authority, supplying captain-authorized adoption text, and behaviorally testing the exact prescribed invocation.
+- SKIPPED: Deferred evidence risk — provider revision is not pinned by a code-repository release check.
+  Current gate evidence pins and reproduces `198f7623`, so no present AC lacks proof; promote if a stable release consumes the skill without a fresh exact provider pin and suite result.
+- SKIPPED: Deferred evidence risk — absent-verb test compares directory entry count, and host-load ratchets enforce ceilings rather than exact byte equality.
+  Current early-return path creates nothing and all hosts equal main plus 2,872 bytes; promote the first if the early-return guard moves, and the second if ratchets become exact accounting rather than upper bounds.
+- FAILED: Fresh exact-tip recommendation.
+  **REJECTED** at Spacedock `4779fff8` with provider `198f7623`: AC-4’s documented supported handoff cannot record the provider’s advisory Result; no old `612b72fc` Resolution authorizes this candidate.
+
+### Summary
+
+The rebase, four-file boundary, provider retention suite, merged gate behavior, and five ACs validate cleanly. One material handoff defect remains: the present-gate override contract must carry captain-authorized adoption for advisory Results and prove that exact invocation before a fresh candidate-bound Briefing can be approved.
