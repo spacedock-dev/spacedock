@@ -1,6 +1,6 @@
 # Cycle 23 counterexample evidence
 
-This package retains the smallest complete host artifacts from the cycle-23
+This package retains the surviving structured host artifacts from the cycle-23
 implementation checkpoint `ce4365053158ef80c1a4dc34c63256fd83da62d0`.
 No artifact is a published review round.
 
@@ -18,7 +18,7 @@ No artifact is a published review round.
   commit to the bind barrier.
 - Pi round 3: FAILED the unchanged successor-dispatch grade after 271.08s.
   The corrected bind barrier passed and a fresh `delegate` subagent exited 0,
-  used `openrouter/openai/gpt-4.1-mini`, and committed path-scoped. The root
+  used `openrouter/openai/gpt-4.1-mini`, and reported a path-scoped commit. The root
   nevertheless crossed the same reported successor-dispatch boundary and also
   persisted `BEGIN_CONN`/`END_CONN` around the opaque directive token. Resolving
   the remaining discrepancy requires the prohibited harness/host-lifecycle
@@ -29,13 +29,26 @@ Pi rounds 2 and 3 selected the existing compatible read-only package at
 no global package was changed. Round 2 used `openai/gpt-4.1`; round 3 used
 `openai/gpt-5.3-codex`.
 
+## Retention failure
+
+The approved host retention checklist required the wrapper command log, entity
+before/after snapshots, and state Git history for every pass or failure. The Pi
+fixture repositories were temporary and were cleaned when each test returned.
+Neither this package nor the surviving
+`/tmp/spacedock-cycle23-gate-lifecycle-evidence` tree contains those three Pi
+artifact classes. They cannot be recreated from the retained sessions, process
+output, or successor-subagent files, and this package must not imply otherwise.
+The Pi evidence is therefore incomplete: it preserves model-visible actions and
+the grader result, but not the independent durable-state history required to
+reconstruct that grade.
+
 ## Inventory
 
 Claude and Codex directories retain each root structured stream plus the final
 message; Codex also retains the process result. Pi retains every root session
-and process output needed to distinguish the auth failure from both product
-runs. Round 3 additionally retains the successful successor subagent metadata,
-output, and child session.
+and surviving process output. Round 3 additionally retains successor subagent
+metadata, output, and child session. The inventory does not include a Pi wrapper
+command log, entity before/after pair, or state Git history.
 
 | Artifact | SHA-256 |
 | --- | --- |
