@@ -670,3 +670,22 @@ The Cycle 11 falsifiability gaps are closed with 38 test-only lines at exact tip
 ### Summary
 
 Exact tip `944e928e` satisfies the Cycle-11 evidence additions, repository checks, scope cap, retained-byte validation promise, and all three Roborev 2039 decline conditions. Validation rejects because the direct prepared-room Result parser ignores an unknown conflicting authority field nested in `Resolution`, allowing a non-wrapper-free Result to make a Captain decision durable; the correction is confined to strict nested Result-authority validation and its failure-atomic matrix proof.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Before editing, declare exact production/test files, added/deleted LOC, and the smallest proposed cap reset from the current 1,293/1,300 surface.
+  Cycle 15 authorized `internal/gates/operation.go +5/-0` and `internal/cli/gate_test.go +12/-0`, total `+17/-0`, with the smallest hard-cap reset to exactly 1,310 changed lines.
+- DONE: Reject conflicting or unknown nested Resolution authority fields before mutation while preserving the portable direct-Captain Resolution contract and byte-clean failure.
+  Commit `8fd1b869` strictly decodes only the nested provider `Resolution`; the new matrix row first reproduced exit 0 and durable closure, then proves `resolution.actor:"agent:first-officer"` beside Captain `by` rejects while the shared assertion keeps entity bytes identical. The canonical direct-Captain fixture still closes successfully.
+- DONE: Stay within the authorized correction and exact surface.
+  Final diff from `main` is 17 files and `+1141/-169` = 1,310 changed LOC, exactly 1,310/1,310. No interface, provider transport, retention lifecycle, harness, documentation, fixture-file, or diagnostic contract changed.
+- DONE: Run focused, full, race, documentation, dependency, formatting, diff, and cleanliness checks.
+  PASS: the exact nested-authority subtest, the full room-authority/valid-close matrix, `internal/gates`, `go test -count=1 ./...`, `go test -count=1 -race ./...`, strict MkDocs, `gofmt -w ./cmd ./internal`, `git diff --check`, zero Subspace dependencies, and a clean code worktree.
+- DONE: Request fresh final-tip Roborev, triage every finding, and canonically record the round.
+  Roborev panel job 2070 reviewed exact tip `8fd1b869`; neither reviewer found a defect in the 17-line correction. Canonical implementation round 16 records 0 material fixes and five correct-but-disproportionate declines with promotion conditions for supported room-to-chat abandonment, provider-orchestration ownership, room archival/pruning, supported resource-risk Briefing depth, and demonstrated diagnostic confusion.
+- DONE: Commit a reviewable exact-tip candidate and append the implementation evidence without changing workflow control state.
+  The code branch is clean at `8fd1b869`; this report changes only the entity body and leaves frontmatter, gates, and application state to the first officer.
+
+### Summary
+
+Exact tip `8fd1b869` closes the validation-cycle-5 authority hole with the authorized five production lines and twelve test lines. Unknown nested Resolution authority can no longer disappear during decoding or close a gate, rejection remains byte-clean, the direct Captain path still works, and the candidate finishes exactly at the 1,310-line cap with all checks green.
