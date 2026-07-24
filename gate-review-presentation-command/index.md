@@ -1,6 +1,6 @@
 ---
 title: Gate presentation as an overridable channel with atomic result retention
-status: validation
+status: implementation
 source: "Split from the gate-recorder task (3k), captain-approved 2026-07-21. The subspace-coupled presentation half; 3k cycles 11-12 are its banked design history."
 id: xbatj4hxtxw9t83vvmfem27f
 sprint: durable-decisions
@@ -235,6 +235,7 @@ The captain's question is well-founded and the answer is yes: the binary was the
 - Cycle 1: REJECTED — Roborev job 541; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
 - Cycle 2: PASSED — Roborev job 542; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
 - Cycle 3: REJECTED — fresh validation and Roborev job 1955; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
+- Cycle 4: REJECTED — Captain design reset after validation cycle 3: replace advisory-adoption plumbing with the gate-room/minimal-binding Result boundary and derive provider association behind the scaffold; surface 4 files/49 added, 3 removed vs estimate skill 25-40 lines + tests 20-60 lines + docs 8-16 lines (within 2×); AC unchanged.
 
 ## Stage Report: implementation
 
