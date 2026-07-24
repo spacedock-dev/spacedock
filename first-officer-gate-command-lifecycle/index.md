@@ -1990,3 +1990,24 @@ Green deterministic/repository evidence:
 - `git diff --check`
 
 **STOP FOR INDEPENDENT STAFF REVIEW.** Review the actual commit/diff, especially the host-observation joins, exact directive falsifiers, symlink containment, cleanup ordering, manifest failure behavior, and bundle inspectability. Do not run a live host until that review explicitly approves this checkpoint.
+
+## Stage Report: implementation (cycle 26)
+
+- DONE: Replace Claude/Pi substring booleans with structured host-specific dispatch observations.
+  Counterexample commit `3c53510529c095878f5156d490d498e6742fb31c` joins successful build results to later root Claude Agent or Pi delegate calls and rejects pre-build, wrong-task/description/context, list-only, unrelated-result, and missing-successor shapes; deleting any join or field constraint makes `TestRecordedGateStructuredDispatchObservations` fail.
+- DONE: Parse frontmatter and the single Resolution adoption-note YAML scalar as decoded bytes.
+  The same commit parses complete YAML frontmatter, separates Resolution cardinality from exact decoded directive equality, reports JSON decode errors, and passes quoted, backslash, newline, combined, sentinel, and object controls; reverting to serialized-line comparison makes `TestRecordedGateDurableDirectiveYAMLScalars` fail.
+- DONE: Prove deterministic Pi artifact retention after fatal cleanup and a missing command log.
+  `TestRecordedGatePersistentArtifactControls` now forks a child that fatals after registering cleanup; removing cleanup retention, manifest independence, or bundle creation loses a required artifact or makes bundle verification fail.
+- FAILED: Restore/consolidate every deletion-sensitive v1 lifecycle invariant.
+  The reviewer-required unbound/byte-identical hold refusal, Resolution and noncanonical-review negatives, reviewer-REJECTED ordering, Captain mappings, presenter sole ownership, exact tuple/directive, and root-review-before-mutation barrier remain absent because the hard addition stop fired before restoration.
+- FAILED: Keep the correction within the checkpoint-relative +95 additions and cumulative +465 ceiling.
+  Exact `45c1a9a3..3c535105` numstat is +191/-22 across three authorized files: Claude +1/-1, Pi +41/-10, and recorded lifecycle +149/-11; cumulative `13d70249..3c535105` is +592/-513, beyond both +465 tolerance and +480 hard stop.
+- SKIPPED: Run full, race, live-compile, and documentation gates.
+  The approved reset rule requires an immediate design stop once the measured cap cannot hold; only the focused deterministic controls and `git diff --check` ran green.
+- SKIPPED: Request same-staff re-review or run any live host.
+  The prototype is deliberately local and unpushed; no Claude, Codex, or Pi live journey, PR push, gate, round, status, or Resolution mutation occurred.
+
+### Summary
+
+Staff review found four material proof defects: substring host evidence, serialized rather than decoded authority comparison, unproven fatal cleanup retention, and deletion of v1 guardrails. The local counterexample implements and verifies the first three, but already costs +191 additions before the fourth, proving the approved +95 correction surface cannot truthfully satisfy the unchanged acceptance criteria. Checklist accounting is **3 DONE, 2 SKIPPED, 2 FAILED**; implementation stops for a new design rather than weakening invariants or exceeding the ceiling.
