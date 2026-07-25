@@ -5,6 +5,20 @@ source: "Durable-decisions exact-tip close-out audit at deac7f8a, corrected and 
 score: "0.9"
 sprint: durable-decisions
 id: fh3n4w4jg7tk015512tn1tsd
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:fh3n:backlog
+    records:
+        - id: gate:docs-dev:fh3n:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:fh3n-backlog-1
+              briefing:
+                id: briefing:docs-dev:fh3n:backlog:attempt-1:revision-1
+                digest: sha256:c51c3611a1855ff5eab3eed3507559b676a6748faa133150ca681f7a02984de1
+                digest-domain: canonical-bytes
+                room-ref: ./review/backlog/briefing-1
 ---
 
 The recorded-gate lifecycle passes its supported outcome checks, but two test constructs make its evidence harder to trust and diagnose:

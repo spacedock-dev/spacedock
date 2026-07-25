@@ -1,0 +1,22 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:fh3n:backlog:attempt-1:revision-1",
+  "question": "Should the durable-decisions sprint add the narrow recorded-gate lifecycle proof-hygiene cleanup accepted by the close-out audit?",
+  "artifacts": [
+    {
+      "id": "artifact:fh3n-backlog-gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:30966ffdf015486517031f4077cb0e0ed623fd870750bedbf7c4462ddc86de76",
+      "summary": "Deletes one tautological prose test, makes live archive diagnostics explicit, and preserves all executable lifecycle evidence without changing product behavior."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:durable-decisions-close-out-audit",
+      "label": "Corrected exact-tip close-out audit committed on main as 4ff98d8cd97ebcf17b6a583070ce69234e24fc87."
+    }
+  ]
+}
