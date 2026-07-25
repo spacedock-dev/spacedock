@@ -1,6 +1,6 @@
 ---
 title: Clean recorded-gate lifecycle proof hygiene before v1
-status: validation
+status: done
 source: "Durable-decisions exact-tip close-out audit at deac7f8a, corrected and committed as 4ff98d8c."
 score: "0.9"
 sprint: durable-decisions
@@ -63,6 +63,19 @@ gates:
                 digest: sha256:a21ab988482ef787427d6735d3911787e724924753fbb27bfe27e17973cb6c50
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fh3n:validation:1
+                briefing: briefing:docs-dev:fh3n:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T18:24:19.911705Z"
+                decision: approve
+                reason: Independent validation proves the exact deletion-first four-test-file candidate satisfies all acceptance criteria, structural and archive controls, repository gates, and final Roborev; the credentialed journey red is byte-identical pre-existing canonical-open oracle debt, not a candidate regression.
+              application:
+                action: advance
+                target-stage: done
+                state: consumed
+                blockers: []
 worktree: .worktrees/spacedock-ensign-recorded-gate-lifecycle-proof-hygiene
 started: 2026-07-25T17:09:51Z
 review-round:
