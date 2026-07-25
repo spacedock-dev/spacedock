@@ -93,12 +93,12 @@ Baseline: `main` at `4ff98d8c`.
 | `internal/contractlint/layering_restore_test.go` | `+8/-12` | Separately restore the prior structural positive discriminator and delete the three-file prose map. |
 | **Total** | **`+14/-64`, net `-50` LOC** | Four test files; no product or instruction change. |
 
-Tolerance: exactly these four files and net deletion between 44 and 56 LOC after `gofmt`. Any extra file, any product/instruction diff, or a delta outside that band requires a design reset before another implementation pass. The fourth file is the pre-authorized direct-evidence branch, not tolerance drift.
+Estimate/checkpoint: the table's `+14/-64` (net `-50`) comes from exact current-main line ownership; it is not an acceptance band or an automatic design-reset trigger. The four declared test files and zero product/instruction changes remain the binding surface. At implementation review, report the actual numstat against this estimate; explain and triage any implementation-surface drift for materiality against the deletion-only task intent. LOC variance alone does not fail the design. The fourth file is the pre-authorized direct-evidence branch.
 
 ## Acceptance criteria
 
-1. **The recorded-gate proof surface is smaller by at least 44 net test LOC against `main`, across exactly the four declared files, with zero product, command, skill, prompt, provider, compatibility, or lifecycle-AC changes.**
-   Test: `git diff --numstat "$(git merge-base main HEAD)"..HEAD` and `git diff --name-only` show the declared surface; exact-name searches show the mutant and orphaned parser are gone.
+1. **The finished diff touches exactly the four declared test files, removes the named proof-hygiene constructs, and changes zero product, command, skill, prompt, provider, compatibility, or lifecycle-AC files.**
+   Test: `git diff --numstat "$(git merge-base main HEAD)"..HEAD` and `git diff --name-only` show the declared surface and actual LOC beside the `+14/-64` estimate; exact-name searches show the mutant and orphaned parser are gone, and any numeric variance is explained and triaged for materiality rather than failed by threshold.
 2. **No shipped-prose mapping remains in `TestPRViewAllowListIsLoadBearing`, while its structural `mods/pr-merge.md` / `gh pr view` positive discriminator and negative control remain executable.**
    Test: the focused contractlint command below passes; deleting `gh pr view` from the allowed mod makes the positive discriminator fail, while planting it outside the allow-list makes the negative control fail.
 3. **Both Codex and Claude guardrail journeys test archive absence before reading the active folder entity, and an archived fixture produces the named archive diagnostic rather than a generic active-file read error.**
@@ -146,3 +146,20 @@ At implementation end, after the branch diff and tests are final, run `roborev r
 ### Summary
 
 Ideation pinned a deletion-first, test-only cleanup against current `main`: remove the tautological lifecycle prose oracle, restore the adjacent contractlint test to structural-only proof, and make archive diagnostics direct and pre-read in both existing host runners. No product behavior or new obligation is proposed; executable lifecycle, merge, and live-journey owners remain the acceptance evidence.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — first officer; surface 0 code files/0 implementation LOC vs estimate 4 code files/+14/-64 (ideation correction); AC unchanged in task intent: removed the invented LOC band while preserving the exact four-file/no-product boundary.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: The design removes only the two proven proof-hygiene defects while preserving every executable lifecycle oracle and accepted runtime outcome.
+  The accepted four-file direction is unchanged; no product, instruction, runtime outcome, or executable owner was added or removed in this correction.
+- DONE: Each proposed assertion is falsifiable against on-disk state or command execution, with no shipped-prose behavioral grep and no new standing enforcement.
+  The archive and command oracles remain executable; LOC is now observed and triaged, not enforced as a new standing gate.
+- DONE: The exact current-main files/LOC, focused tests, full/race gates, and Roborev boundary are small enough for direct implementation review.
+  `+14/-64` remains the review checkpoint, while actual variance requires explanation and materiality triage rather than automatic rejection.
+
+### Summary
+
+Cycle 2 preserves the exact four-file, test-only design and removes the unauthorized `-44..-56` acceptance band. This report supersedes only the prior report's numeric tolerance claim; file scope, executable evidence, full/race gates, and the Roborev boundary remain unchanged.
