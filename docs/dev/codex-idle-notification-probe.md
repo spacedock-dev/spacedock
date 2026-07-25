@@ -21,7 +21,7 @@ must be treated as operator activity, not idle wake evidence.
 ## Async idle-monitoring comparison
 
 1. Dispatch a worker with the exact no-write prompt and record its handle.
-2. When the live Codex tool surface exposes `wait_agent`, use `«completion-signal»` async idle monitoring only when there is no ready workflow work.
+2. When the live Codex tool surface binds `«completion-signal»`, use async idle monitoring only when there is no ready workflow work.
 3. Record whether the call returns a timeout or a final status.
 4. If captain input resumes the FO's active loop, record the worker as unchanged
    and continue useful active-scope work. When the FO becomes idle again, resume
@@ -57,7 +57,7 @@ Use `«roster-reconcile»` only to inspect active/completed task paths for attri
 
 ## Interpretation Rules
 
-- `async_idle_monitoring`: `wait_agent` returned a timeout or final-status
+- `async_idle_monitoring`: `«completion-signal»` returned a timeout or final-status
   mailbox update. If captain input intervened, it resumed the FO's active loop
   while the worker remained unchanged, and monitoring resumed only after
   active-scope work was exhausted. Legacy fixtures may describe handle-scoped
