@@ -280,3 +280,28 @@ Validation independently reproduced five acceptance criteria and confirmed the p
 ### Summary
 
 The AC-4 repair is committed in `fb1c9dbb`: Git sees literal archive source/destination pathspecs in both the forward commit and rollback reset, while filesystem paths remain unchanged. The exact `:(glob)*` forward and rollback counterexamples now pass without sweeping or unstaging sibling state, and no public or lifecycle surface expanded.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce the `:(glob)*` forward archive and failing-commit rollback counterexamples; verify only literal source/destination paths change and sibling index/worktree state remains byte-identical.
+  Independent split-root replay pushed exactly `:(glob)*.md` and `_archive/:(glob)*.md`; sibling bytes and porcelain state stayed identical, and origin retained the sibling baseline.
+  `TestMergeGuardLiteralPathspecRollbackPreservesStagedSibling` preserves the pre-existing sibling binary diff byte-for-byte after a failing pre-commit hook and restores the literal-slug entity live.
+- DONE: AC-4 archive publication is path-scoped for ordinary and Git-pathspec-magic slugs.
+  `TestMergeGuardLiteralPathspecSlugDoesNotSweepSibling`, ordinary flat/folder archive tests, and the independent split-root replay prove exact two-path deltas while sibling dirt remains outside the commit and remote.
+- DONE: No raw Git pathspec remains on the archive/rollback path.
+  Both `archiveMovePathspecs` consumers literalize source and destination for `git add`, `git commit`, and symmetric rollback `git reset`; filesystem rename paths remain ordinary paths.
+- DONE: Confirm AC-1, AC-2, AC-3, AC-5, and AC-6 remain satisfied and rerun focused, full, race, formatting, and diff checks on the corrected tip.
+  Uncached two-host visibility, archived resume/dirt, peer/conflict, inline/no-origin/EOF, identity-collision, wrong-root/branch, and rebase-ownership tests all pass on `fb1c9dbb`.
+  `gofmt -w ./cmd ./internal`, `git diff --check`, focused packages, `go test ./...`, and `go test ./... -race` pass with a clean implementation worktree.
+- DONE: Detached adversarial audit proves both corrected regressions are falsifiable.
+  Removing forward literalization adds `070-pr-pending.md` to the archive delta; removing rollback literalization erases the staged sibling binary diff, and each permanent test fails at that exact boundary.
+- DONE: Update the validation report with exact AC-4 evidence, material/deferred classification, and a final PASSED or REJECTED recommendation.
+  The prior AC-4 outcome defect is closed by code commit `fb1c9dbb`; no material outcome or evidence finding remains.
+- DONE: Deferred risk — sibling dirt plus non-fast-forward remains outside the promised direct-push path.
+  Exact trigger is unrelated tracked sibling dirt plus peer advance; direct-push AC-4 remains proven, recovery succeeds after dirt settles, and the risk becomes material only if publication through both conditions is promised.
+- DONE: Recommendation: PASSED.
+  AC-1 through AC-6 now have independently reproduced behavioral evidence, the original material counterexample is fixed, and no material finding remains.
+
+### Summary
+
+Cycle-2 validation confirms symmetric literal Git path handling for forward archive and rollback, including the original split-root publication counterexample. All acceptance criteria and required suites pass; the recommendation is PASSED with only the already-declared sibling-dirt/non-fast-forward condition deferred.
