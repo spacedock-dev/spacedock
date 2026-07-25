@@ -257,6 +257,16 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 			},
 		},
 		{
+			name: "durable artifact has empty stage result",
+			want: "implementation stage result",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				mutateCodexSteeringReport(t, e,
+					"- DONE: Preserve the unresolved worker across captain steering.\n  The same task path and completion epoch produced the final-status signal.\n"+
+						"- DONE: Persist the stage result before completion was credited.\n  This report is the retained durable artifact read after final status.\n",
+					"")
+			},
+		},
+		{
 			name: "durable artifact lacks completed worker status",
 			want: "completed worker status",
 			mutate: func(t *testing.T, e *codexSteeringEvidence) {
@@ -536,8 +546,19 @@ func validateCodexSteeringReport(evidenceDir, artifactPath string, worker codexS
 	if !codexReportHasPlainLine(report, fmt.Sprintf("Completion epoch: `%d`", worker.CompletionEpoch)) {
 		return fmt.Errorf("artifact does not retain the correlated completion epoch")
 	}
-	if _, err := statuspkg.FindSectionSpans(data, []string{"Stage Report: implementation"}); err != nil {
+	stageSpans, err := statuspkg.FindSectionSpans(data, []string{"Stage Report: implementation"})
+	if err != nil {
 		return fmt.Errorf("artifact does not contain an implementation stage report")
+	}
+	stageReport := string(data[stageSpans[0].Start:stageSpans[0].End])
+	requiredResults := []string{
+		"- DONE: Preserve the unresolved worker across captain steering.",
+		"- DONE: Persist the stage result before completion was credited.",
+	}
+	for _, result := range requiredResults {
+		if !codexReportHasPlainLine(stageReport, result) {
+			return fmt.Errorf("artifact does not retain the required implementation stage result")
+		}
 	}
 	return nil
 }
