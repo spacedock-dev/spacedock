@@ -83,6 +83,14 @@ That path-base defect is already owned by 6y's CLI normalization seam. This task
 that one launch-directory policy to its new inputs and `--room`; it does not add a
 second resolver inside `internal/gates`.
 
+The original preparation design also confused a byte pin with a durable locator.
+6y's retained gate-contract Artifact uses
+`../../../../../../../docs/specs/gate-resolution-frontmatter-contract.md`; that URI
+reaches the main checkout only because the state checkout happens to be nested under
+`docs/dev`. Its `rev` verifies bytes after lookup but cannot identify the main Git
+history or reconstruct a missing file. Main and state are separate histories, so a
+cross-checkout `..` chain is not a portable source model.
+
 The unreleased-v1 ruling is direct alignment. A prepared request has one required
 Briefing locator, id, and digest. No old request shape, basename fallback, provider
 version match, caller-selected output vector, compatibility wrapper, or
@@ -133,6 +141,26 @@ recording, validation, and eligibility wherever code currently checks a basename
 appends `briefing.json`. The implementation's first red test is this same differential
 fixture with no `briefing.json` present.
 
+### Cycle-5 independent-checkout spike
+
+The correction spike used 6y's retained validation Briefing and its exact gate-contract
+bytes. In the current nested checkout, the seven-level `..` URI resolved to raw SHA
+`6425a361d95b0f5fc64d712aa9da8bd1b377ca9579ec6da5c6e3523fc8039003`.
+The spike then made an ordinary state-repository commit containing the Briefing and a
+room-local frozen copy, cloned that state history under an unrelated temporary root
+with no main checkout at the implied topology, and reopened from the cloned Briefing
+directory. The old URI was not found. The candidate
+`sources/artifact-gate-contract-6425a361d95b` URI resolved, its raw SHA was still
+`6425…9003`, and `cmp` found its bytes exact.
+
+This is the smallest falsifier because it removes only the hidden nesting assumption.
+It establishes the selected correction: preparation freezes every selected Artifact
+and Reference inside the retained room and gives Review v1 a clean room-local relative
+URI. A Git-address schema is unnecessary; the state commit already carries the frozen
+bytes and their history. The implementation test repeats this reopen with isolated
+main/state paths and fails if any generated Artifact or Reference escapes its room,
+disappears after the ordinary state commit, or differs from its full raw `rev`.
+
 ## Proposed command and room contract
 
 The new command is:
@@ -152,11 +180,13 @@ room, attempt, locator, provider path, actor, or approver.
 The CLI normalizes relative `--artifact`, `--reference`, `--briefing`, and `--room`
 values against the invocation directory through 6y's retained-input normalization
 helper before entering `internal/gates`. Each selected file must be a readable,
-non-symlink regular file. For each generated Artifact or Reference, Spacedock records
-the slash-relative path from the generated Briefing's directory to the selected source
-and its full raw SHA-256 revision; these source URIs may contain `..` and are distinct
-from the request locator's contained-path rules. References receive a deterministic
-media type from a closed, case-insensitive extension table: `.md`/`.markdown` =
+non-symlink regular file. Preparation reads each selection into the candidate room,
+derives its identity and full raw SHA-256 revision from those frozen bytes, and records
+a clean slash-relative URI below `sources/` from the generated Briefing's directory.
+Artifact and Reference URIs are contained by the room: they are never absolute, contain
+no `..` or backslash, and retain no original checkout path. References receive a
+deterministic media type from a closed, case-insensitive extension table:
+`.md`/`.markdown` =
 `text/markdown`, `.json` = `application/json`, `.yaml`/`.yml` =
 `application/yaml`, `.txt`/`.log` = `text/plain`, and every other extension =
 `application/octet-stream`. No host MIME database participates.
@@ -168,17 +198,21 @@ then publishes this fresh room as one operation:
 <entity-dir>/review/<stage>/briefing-<attempt-number>/
   gate-briefing.json
   request.json
+  sources/
+    <filesystem-safe Artifact id>
+    <filesystem-safe Reference id> ...
 ```
 
 `gate-briefing.json` is the generator's chosen filename, not a canonicality condition.
 Artifact and Reference ids are derived from type, a normalized basename slug, and the
 shortest unique raw-digest prefix. Prefixes start at 12 lowercase hex characters and
 extend all colliding ids together by four characters through the full 64. If distinct
-source URIs have identical full bytes and basename slug, append stable `-1`, `-2`, ...
-suffixes in slash-relative URI lexical order while preserving caller order in the
-Briefing; an exact repeated source path is rejected. Authoritative revisions always
-retain the full digest. The Briefing id, gate id, attempt id, JCS Briefing digest,
-request JCS digest, room reference, and Captain actor/approver are binary-owned.
+input paths have identical full bytes and basename slug, append stable `-1`, `-2`, ...
+suffixes in caller order; an exact repeated normalized input path is rejected. Each
+source leaf is its generated id with `:` replaced by `-`, so the id uniquely determines
+one contained frozen file without preserving a host path. Authoritative revisions
+always retain the full digest. The Briefing id, gate id, attempt id, JCS Briefing
+digest, request JCS digest, room reference, and Captain actor/approver are binary-owned.
 
 `request.json` has the closed v1 shape:
 
@@ -225,15 +259,19 @@ One shared resolver handles both cases: a request-backed binding validates
 resolves the exact stored file reference. Binding, room recording, validation, and
 application eligibility all call that resolver rather than appending a filename.
 
-Preparation stages a complete candidate room in a sibling temporary directory, validates
-the same bytes through the production request/Briefing loader, atomically publishes the
-fresh room, and binds the attempt under the same entity lock. Exact replay is a no-op.
-An occupied divergent room, stale entity comparison, or handled bind/write failure
-removes only the new candidate and leaves the entity and retained rooms byte-identical.
-That is error atomicity while the entity lock is held, not cross-file crash atomicity:
-a process or power loss after room rename but before entity replacement can leave an
-unbound room. This task adds no journal or recovery schema; a later prepare refuses
-divergent occupancy, and crash recovery remains an explicit operator concern.
+Preparation stages a complete candidate room in a sibling temporary directory, copies
+and hashes every selected source into that candidate, validates the same bytes through
+the production request/Briefing loader, atomically publishes the fresh room, and binds
+the attempt under the same entity lock. Validation resolves every generated URI from the
+Briefing directory, requires containment below the room, and recomputes its full raw
+`rev`; no original input path participates after capture. Exact replay is a no-op. An
+occupied divergent room, stale entity comparison, changed source captured on replay, or
+handled copy/bind/write failure removes only the new candidate and leaves the entity and
+retained rooms byte-identical. That is error atomicity while the entity lock is held,
+not cross-file crash atomicity: a process or power loss after room rename but before
+entity replacement can leave an unbound room. This task adds no journal or recovery
+schema; a later prepare refuses divergent occupancy, and crash recovery remains an
+explicit operator concern.
 
 ## Recorder and JSON authority
 
@@ -274,6 +312,16 @@ the rendering-only `present-gate`, and records the captain's semantic chat decis
 Folder-scoped state commit includes the generated room without taking its stdout path
 as an argument.
 
+6y's Cycle-31 authority-capture reset remains a separate authority boundary. This task
+freezes only the Artifact and Reference bytes explicitly selected for presentation; it
+does not turn `--reference` into a delegated-conn channel, add an authority flag, or let
+the First Officer author request actor/approver metadata. 6y owns the smallest
+recorder/scaffold reference that captures exact Captain bytes without agent retyping.
+Before s4 implementation, the landed 6y design must be compared with this closed
+prepared request. If 6y requires a new request field, a generated authority file, or
+different actor/approver derivation, s4 returns to ideation for a joint request-surface
+reset. It must not smuggle authority through a frozen content Reference.
+
 The lifecycle text may state the provider-neutral boundary: a landed presentation
 override receives the one prepared room, never caller-built provider argv or output
 paths; after that external transport returns, the same retained room is the
@@ -289,6 +337,7 @@ Spacedock tests do not fake those future events.
 | Mechanism | Value AC | Simplest alternative | Why insufficient |
 |---|---:|---|---|
 | One `gate prepare` operation | AC-1 | Tell the FO to write two JSON files and call `gate record` | Preserves the manual ids/digests and partial-room failure that caused the task. |
+| Room-frozen selected bytes | AC-1, AC-5 | Keep Briefing-relative `..` paths plus raw SHA pins | The exercised 6y path disappears when state and main are independently located; the SHA cannot locate or reconstruct it. |
 | Frozen local Briefing locator | AC-2, AC-5 | Keep joining `briefing.json` | Fails the reproduced valid room and contradicts the provider contract. |
 | One recursive duplicate-member reader | AC-3, AC-5 | Rely on `encoding/json` plus typed structs | Go accepts conflicting duplicates last-wins; the detached counterexample can close under the wrong authority. |
 | Stable room/identity stdout handoff | AC-1 | Omit the room or make callers reconstruct it from ids/directory layout | Hides the published artifact and can select the wrong attempt under retries. |
@@ -300,20 +349,21 @@ Baseline assumption: latest 6y (`60adfc1f`, including lifecycle owner `e9415a17`
 first. Relative retained-input normalization is then available in `internal/cli`, the
 existing recorded-gate journey targets `fo-gate-lifecycle`, and `present-gate` contains
 rendering only. Against that composition, the smallest expected implementation is these
-16 files and about `+986/-161` lines (**1,147 changed LOC**):
+16 files and about `+1,090/-161` lines (**1,251 changed LOC**):
 
 The inspected 6y tip is still pre-xb-rebase, so implementation must not start until
 6y's final xb rebase lands. Re-read that landed tip before creating the worktree; if it
-changes lifecycle ownership, recorder commands, shared live assertions, or any declared
-file/delta below, return to ideation for a surface reset rather than implementing
-against this provisional composition.
+changes lifecycle ownership, recorder commands, shared live assertions, exact-authority
+capture, the prepared request boundary, or any declared file/delta below, return to
+ideation for a surface reset rather than implementing against this provisional
+composition.
 
 | File | Expected delta | Purpose |
 |---|---:|---|
 | `internal/cli/cli.go` | `+60/-6` | Route `gate prepare`, normalize inputs, and print the stable four-line result. |
-| `internal/cli/gate_test.go` | `+175/-25` | Reuse CLI fixtures for preparation, stdout, arbitrary-locator eligibility, and byte-clean failures. |
-| `internal/gates/prepare.go` (new) | `+220/-0` | Derivation, ids/media types, and error-atomic room publication. |
-| `internal/gates/prepare_test.go` (new) | `+190/-0` | Focused replay, collision, URI, selection, and handled-error tests. |
+| `internal/cli/gate_test.go` | `+190/-25` | Reuse CLI fixtures for preparation, stdout, arbitrary-locator eligibility, and byte-clean failures. |
+| `internal/gates/prepare.go` (new) | `+255/-0` | Derivation, frozen-source capture/validation, ids/media types, and error-atomic room publication. |
+| `internal/gates/prepare_test.go` (new) | `+230/-0` | Focused replay, collision, contained-source URI, independent-checkout reopen, and handled-error tests. |
 | `internal/gates/operation.go` | `+80/-35` | Closed request locator and the one exact Briefing resolver. |
 | `internal/gates/application.go` | `+12/-4` | Route reviewed-input eligibility through that resolver instead of `briefing.json`. |
 | `internal/gates/io.go` | `+30/-8` | Recompute the four retained provider inputs through duplicate-safe reads. |
@@ -321,13 +371,13 @@ against this provisional composition.
 | `internal/gates/testdata/gate-room/request.json` | `+1/-0` | Add the locator to the canonical fixture. |
 | `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+24/-16` | Update the shared no-override observation used by existing Claude/Codex/Pi lanes; add no lane. |
 | `internal/contractlint/fo_function_reference_invariant_test.go` | `+18/-8` | Pin lifecycle ownership, forbidden provider mechanics, and rendering-only `present-gate`. |
-| `docs/specs/gate-resolution-frontmatter-contract.md` | `+60/-30` | Normative prepare/request/resolver/atomicity contract. |
-| `docs/site/reference/command-reference.md` | `+14/-6` | New verb, stdout, and arbitrary-name recording. |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | `+70/-30` | Normative prepare/request/frozen-source/resolver/atomicity contract. |
+| `docs/site/reference/command-reference.md` | `+18/-6` | New verb, frozen sources, stdout, and arbitrary-name recording. |
 | `docs/site/reference/frontmatter-contract.md` | `+3/-3` | Remove the manifest-basename claim. |
 | `docs/site/concepts/gates-and-decisions.md` | `+6/-6` | Mechanical no-override preparation and future handoff boundary. |
 | `skills/fo-gate-lifecycle/SKILL.md` | `+18/-14` | Replace hand bind/association wording with prepare and provider-neutral room recording. |
 
-Tolerance is **+2 files and +25% changed LOC** (hard cap 18 files / 1,434 changed
+Tolerance is **+2 files and +25% changed LOC** (hard cap 18 files / 1,564 changed
 LOC), for a focused resolver test or fixture split only. A change to
 `skills/present-gate/SKILL.md`, any schema field in `gates`, new dependency, provider
 executable/probe/transport, selected-provider harness, compatibility request shape,
@@ -339,15 +389,21 @@ design reset.
 **AC-1 (VALUE) — One command turns judgment and file choices into a validated open
 gate room with zero caller-authored metadata files.** Starting baseline: the fixture has
 one gate-review Markdown file, selected References, and no room. After `gate prepare`,
-the derived room contains exactly the request and located canonical Briefing, the attempt
-is open, and `gate validate` succeeds; source artifacts remain in place. The four stdout
-lines expose the exact cleaned absolute room, Briefing id, digest, and open state; the
-required Artifact is `text/markdown`, Reference media types follow the closed table, and
-every source URI is slash-relative to the generated Briefing directory. *Test:* real CLI
-fixture asserts pre-command metadata count 0, post-command count 2, exact stdout,
-paths/media types/full digests/relative URIs, and no copied source. It fails if the
-fixture must supply metadata, if stdout omits or misstates the published room, or if
-output changes under a launch directory containing spaces.
+the derived room contains exactly the request, located canonical Briefing, and one
+frozen file per selected Artifact/Reference; the attempt is open and `gate validate`
+succeeds. Original source files remain in place but are no longer needed to reopen the
+room. The four stdout lines expose the exact cleaned absolute room, Briefing id, digest,
+and open state; the required Artifact is `text/markdown`, Reference media types follow
+the closed table, and every source URI is a contained Briefing-relative `sources/...`
+path whose full raw `rev` matches its frozen bytes. After an ordinary state commit, the
+same room reopens from a state checkout independently located from main with every
+source exact. *Test:* a real split-root CLI/Git fixture asserts pre-command metadata
+count 0, post-command metadata count 2, exact `2 + selected-file-count` regular-file
+room tree, stdout, paths/media types/full digests, and no `..`; it commits the entity folder,
+reclones main and state under unrelated roots, and revalidates after the original source
+root is unavailable. It fails if the fixture must supply metadata, if stdout omits or
+misstates the room, if any source still needs the old checkout, or if output changes
+under a launch directory containing spaces.
 
 **AC-2 — Every request-backed operation uses the frozen readable Briefing locator,
 independent of basename.** A clean nested `decision-material.data` locator binds,
@@ -386,20 +442,26 @@ or fake override lane is added; q0 owns room-to-provider and retained-preflight 
 **AC-5 — Provider recording has one recomputed association and no parallel durable
 artifact.** The full fixture prepares, receives fixed Result/inventory outputs, closes,
 and validates with no `association.json`. Request, located Briefing, Result, and
-inventory are each deleted and byte-mutated independently; every variant fails
+inventory are each deleted and byte-mutated independently; each frozen
+Artifact/Reference is also deleted and byte-mutated independently. Every variant fails
 recording or read-only validation without changing the entity. *Test:* real CLI
-end-to-end fixture asserts the four frozen digest pins and exact room tree; adding an
-association input/file or omitting one frozen input fails.
+end-to-end fixture asserts the four provider digest pins, each source `rev`, and the
+exact room tree; adding an association input/file or omitting or changing one frozen
+input fails.
 
 ## Test plan and proof order
 
-0. **Baseline gate, before implementation:** require 6y's final xb rebase to be landed,
-   record its tip, and compare lifecycle ownership, recorder commands, shared assertions,
-   and the expected-surface table. Any mismatch returns to ideation for reset.
+0. **Baseline gate, before implementation:** require 6y's final xb rebase and
+   Cycle-31 authority-capture design to be landed, record its tip, and compare lifecycle
+   ownership, recorder commands, exact-authority capture, prepared-request fields,
+   shared assertions, and the expected-surface table. Any mismatch returns to ideation
+   for reset; a Captain conn is never passed as an ordinary frozen Reference.
 1. **Focused red/green, low cost:** add the arbitrary-name spike as the first command
    test using the existing gate-room fixture, then add focused `prepare_test.go` cases
-   for exact stdout data, relative URIs/media types, 12-to-64-character digest-prefix
-   extension/full-digest suffixes, replay, occupied room, and handled-error cleanup.
+   for exact stdout data, contained frozen URIs/media types/raw bytes, 12-to-64-character
+   digest-prefix extension/full-digest suffixes, replay, occupied room, and handled-error
+   cleanup. Add the split-root Git fixture that commits the room, independently reclones
+   main/state, and reopens every source with the original layout unavailable.
    Run `go test ./internal/gates ./internal/cli -count=1`.
 2. **Adversarial JSON, medium cost:** mutate each of the four room documents at top
    level and nested authority-bearing objects. Assert entity bytes and lock state, not
@@ -422,8 +484,11 @@ association input/file or omitting one frozen input fails.
    `subspace-tui`, `/subspace:r`, `--supports`, or `--version`.
 5. **High-stakes detached audit:** independently inject conflicting duplicate
    `by`, locator, digest, id, and inventory members and try to refute the byte-clean
-   claim. Re-check landed Subspace `em` only to confirm the ownership boundary; do not
-   run its future room transport as Spacedock evidence.
+   claim. Move independently cloned main/state roots again and try to reopen after
+   deleting the original selected-source locations; any lookup outside the retained
+   room or changed raw byte is a rejection. Re-check landed Subspace `em` only to
+   confirm the ownership boundary; do not run its future room transport as Spacedock
+   evidence.
 
 ## Documentation change proposal
 
@@ -435,7 +500,7 @@ target file):
 +++ docs/site/reference/command-reference.md
 @@
 -| `spacedock gate record <entity> --briefing PATH/briefing.json` | Bind a complete retained package manifest whose basename is exactly `briefing.json`. Other basenames fail before mutation. |
-+| `spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md [--reference FILE ...]` | Derive and bind one recorder-ready room. Success prints exactly `room`, `briefing`, `digest`, and `state` key/value lines; `room` is the clean absolute path the first officer uses directly. The required Artifact is Markdown; generated source URIs are relative to the generated Briefing directory. |
++| `spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md [--reference FILE ...]` | Derive and bind one recorder-ready room. Success prints exactly `room`, `briefing`, `digest`, and `state` key/value lines; `room` is the clean absolute path the first officer uses directly. The required Artifact is Markdown. Every selected file is frozen below the room's `sources/` directory; generated Artifact/Reference URIs are contained paths relative to the generated Briefing, and each raw `rev` verifies the frozen bytes after an independent-checkout reopen. |
 +| `spacedock gate record <entity> --briefing PATH` | Bind any readable canonical Briefing by its exact path. A prepared room instead freezes its Briefing locator, id, and digest in `request.json`; every later operation resolves that locator rather than a canonical basename. |
 
 --- docs/site/concepts/gates-and-decisions.md
@@ -448,26 +513,32 @@ target file):
 +++ skills/fo-gate-lifecycle/SKILL.md
 @@
 -**Retain and bind.** Assemble `ROOM/briefing.json` ... then run `gate record ENTITY --briefing BRIEFING`.
-+**Prepare and bind.** Select one Markdown gate-review Artifact and any References, then run `${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW [--reference FILE ...] --workflow-dir WORKFLOW_DIR`. Require the four stable output lines and `state=open`; commit the entity folder containing the generated room and binding before presentation. The emitted `room=` value is the sole future override/diagnostic locator and must never be reconstructed or searched for.
++**Prepare and bind.** Select one Markdown gate-review Artifact and any References, then run `${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW [--reference FILE ...] --workflow-dir WORKFLOW_DIR`. Require the four stable output lines and `state=open`; commit the entity folder containing the generated room, frozen `sources/`, and binding before presentation. The emitted `room=` value is the sole future override/diagnostic locator and must never be reconstructed or searched for. Selected source paths are transient command inputs, not durable cross-checkout locators.
 +**Presentation boundary.** With no override, render the generated review through `present-gate` and record chat. A future landed override receives the one prepared room and returns that retained room for `gate record --room`; this lifecycle does not name, discover, version-check, capability-probe, or launch a provider, and does not construct provider output paths or an association.
 ```
 
 The normative spec makes the same substitutions, defines the closed request shape and
-room publication/error-atomicity behavior, and states explicitly that association is
-recomputed and unstored. The frontmatter reference removes only its exact-basename
-claim; no `gates` schema change is proposed. `skills/present-gate/SKILL.md` remains
-unchanged and rendering-only after 6y.
+room publication/error-atomicity behavior, defines `sources/` as part of the retained
+room, and states explicitly that association is recomputed and unstored. The
+frontmatter reference removes only its exact-basename claim; no `gates` schema change
+is proposed. `skills/present-gate/SKILL.md` remains unchanged and rendering-only after
+6y.
 
-## Deferred mutable-source movement
+## Frozen-source and authority boundaries
 
-Preparation pins selected source bytes by full raw digest but does not copy them; their
-URIs remain relative references from the generated Briefing directory. Snapshotting or
-freezing mutable sources is deliberately deferred. Promote that policy into this task
-and reset the design before implementation only if a fixture or landed q0 contract
-requires a prepared provider to reopen those URIs after a normal state commit and shows
-that an allowed move, deletion, or byte change can occur before presentation. Without
-that evidence, source stability through the decision is the lifecycle precondition and
-the room stays the two generated metadata files.
+Preparation snapshots only explicitly selected presentation content. Original main- or
+state-checkout paths are transient inputs; they are neither serialized nor reopened.
+The full raw `rev` identifies the copied bytes, while the ordinary state commit supplies
+their durable history. This is deliberately smaller than a repository-address model:
+there is no remote URL, checkout id, Git object resolver, generic URI scheme, or
+provider-specific fetch.
+
+This content capture does not solve 6y's delegated-authority problem by accident.
+Exact Captain authority is not caller-authored metadata and is not a presentation
+Reference. 6y's recorder/scaffold owns that capture. If its landed correction composes
+with the current closed request, s4 remains unchanged; if it needs the prepared request
+to name or contain an authority artifact, that is an explicit pre-implementation design
+reset with joint acceptance evidence.
 
 ## Out of scope
 
@@ -479,7 +550,8 @@ the room stays the two generated metadata files.
 - `association.json`, caller-selected Result/log/inventory/diagnostic paths, or provider
   argv.
 - Broader lifecycle-next-action prose, advisory-round preparation, readiness projection,
-  crash-atomic multi-file transactions, artifact copying, or generic JSON framework work.
+  crash-atomic multi-file transactions, Git repository-address schemas, authority
+  transport through `--reference`, or generic URI/JSON framework work.
 
 ### Feedback Cycles
 
@@ -557,3 +629,21 @@ association remain, now within the smallest post-6y Spacedock-owned boundary.
 Cycle 4 makes proof match observable behavior: no no-override command consumes the
 reported room, while every existing live host must prove the revised lifecycle. The
 16-file / 1,147-LOC surface remains provisional until 6y's final xb rebase lands.
+
+## Stage Report: ideation (cycle 5)
+
+- DONE: Replace layout-dependent cross-checkout `..` source URIs with the smallest durable Git-addressed or room-frozen source model while retaining Briefing-relative URIs for room-owned files.
+  Every selected Artifact/Reference is now frozen below `sources/`, addressed by one clean contained Briefing-relative URI, and verified by its full raw SHA; the design adds no Git locator or generic URI schema.
+- DONE: Add a falsifiable independent-main/state-checkout reopen case that verifies exact source resolution and bytes after ordinary state commit, without provider-specific transport.
+  The spike made 6y's concrete `../../../../../../../docs/specs/gate-resolution-frontmatter-contract.md` disappear after an unrelated-path state clone while the frozen copy reopened at the same `6425…9003` SHA with exact bytes; the implementation fixture fails on any escape, absence, or byte drift.
+- DONE: Reconcile the correction with 6y's authority-capture boundary and publish a revised surface/LOC/test plan ready for a new ideation gate.
+  s4 freezes presentation content only and cannot carry Captain conn through `--reference`; landed 6y exact-authority capture is a pre-implementation request-boundary check, with a reset required for any request-field/authority-file change. The provisional surface remains 16 files at +1,090/-161 (1,251 changed LOC), with an 18-file/1,564-LOC cap.
+- SKIPPED: Consume the existing ideation approval or implement code.
+  Cycle 5 is a state-only design correction; it requires a fresh ideation gate and no provider, code worktree, gate application, or implementation test was launched.
+
+### Summary
+
+The revised design removes checkout topology from Review v1 resolution by making every
+selected source a retained room-owned file. The independent reopen spike falsified the
+old URI and preserved exact bytes under the frozen model; the authority and provider
+boundaries remain explicit, and the corrected surface is ready for a new ideation gate.
