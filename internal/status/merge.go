@@ -548,7 +548,7 @@ func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
 	// the working tree we just restored.
 	if gitRoot := FindGitRoot(entityDir); hasGitEntry(gitRoot) {
 		source, dest := archiveMovePathspecs(gitRoot, entityDir, slug, snap.isFolder)
-		if _, err := runGitCmd(gitRoot, "reset", "-q", "--", source, dest); err != nil {
+		if _, err := runGitCmd(gitRoot, "reset", "-q", "--", literalGitPathspec(source), literalGitPathspec(dest)); err != nil {
 			errs = append(errs, fmt.Errorf("unstage archive rename: %w", err))
 		}
 	}
@@ -577,14 +577,20 @@ func commitArchiveMove(entityDir, slug string, stderr io.Writer) int {
 	}
 	source, dest := archiveMovePathspecs(gitRoot, entityDir, slug, archivedAsFolder(entityDir, slug))
 	// Stage the vacated source (deletion) and the new dest. git records this as a
-	// rename in the commit. `git add -- <path>` is path-scoped; --all is never used.
-	if _, err := runGitCmd(gitRoot, "add", "--", source, dest); err != nil {
+	// rename in the commit. Literal pathspecs preserve valid entity names that look
+	// like Git magic; --all is never used.
+	sourcePathspec, destPathspec := literalGitPathspec(source), literalGitPathspec(dest)
+	if _, err := runGitCmd(gitRoot, "add", "--", sourcePathspec, destPathspec); err != nil {
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to stage archive move for %s: %v", slug, err))
 	}
-	if _, err := runGitCmd(gitRoot, "commit", "-q", "-m", "archive "+slug+" (merge guard)", "--", source, dest); err != nil {
+	if _, err := runGitCmd(gitRoot, "commit", "-q", "-m", "archive "+slug+" (merge guard)", "--", sourcePathspec, destPathspec); err != nil {
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to commit archive move for %s: %v", slug, err))
 	}
 	return 0
+}
+
+func literalGitPathspec(path string) string {
+	return ":(literal)" + path
 }
 
 // archiveMovePathspecs returns the source and dest pathspecs (relative to gitRoot)
