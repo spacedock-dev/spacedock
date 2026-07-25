@@ -400,7 +400,7 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 	if rc := runArchive(roots.definitionDir, roots.entityDir, roots.entityDirSpelling, slug, false, true, false, io.Discard, stderr); rc != 0 {
 		return rc
 	}
-	if rc := commitArchiveMove(roots.entityDir, slug, stderr); rc != 0 {
+	if rc := commitArchiveMove(roots.entityDir, slug, snapshot, stderr); rc != 0 {
 		if rbErr := rollbackArchive(roots.entityDir, slug, snapshot); rbErr != nil {
 			// The commit failed AND the rollback could not fully restore the
 			// pre-finalize state — the entity may be half-mutated with a partial archive
@@ -478,13 +478,15 @@ func signalMergeStateHalt(slug, branch string, outcome statesync.Outcome, asJSON
 
 // archiveSnapshot captures an entity's pre-archive state so finalize can reverse a
 // failed archive commit: the live source path (where the entity sat before the
-// rename), whether it was folder-form, the source file's exact bytes, and its mode.
+// rename), whether it was folder-form, the flat companion's filesystem and Git
+// membership, the source file's exact bytes, and its mode.
 type archiveSnapshot struct {
-	livePath     string
-	isFolder     bool
-	hasCompanion bool
-	content      []byte
-	mode         os.FileMode
+	livePath         string
+	isFolder         bool
+	companionPresent bool
+	companionTracked bool
+	content          []byte
+	mode             os.FileMode
 }
 
 // captureArchiveState reads an entity's pre-archive state. It resolves the live path
@@ -507,12 +509,15 @@ func captureArchiveState(entityDir, slug string) (archiveSnapshot, error) {
 	if err != nil {
 		return archiveSnapshot{}, err
 	}
+	companion := filepath.Join(entityDir, slug)
+	gitRoot := FindGitRoot(entityDir)
 	return archiveSnapshot{
-		livePath:     livePath,
-		isFolder:     isFolder,
-		hasCompanion: !isFolder && directoryExists(filepath.Join(entityDir, slug)),
-		content:      content,
-		mode:         info.Mode().Perm(),
+		livePath:         livePath,
+		isFolder:         isFolder,
+		companionPresent: !isFolder && directoryExists(companion),
+		companionTracked: !isFolder && trackedArchivePath(gitRoot, companion),
+		content:          content,
+		mode:             info.Mode().Perm(),
 	}, nil
 }
 
@@ -542,7 +547,7 @@ func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
 		if err := os.Rename(archivedFile, snap.livePath); err != nil {
 			errs = append(errs, fmt.Errorf("reverse file rename: %w", err))
 		}
-		if snap.hasCompanion {
+		if snap.companionPresent {
 			archivedCompanion := filepath.Join(entityDir, "_archive", slug)
 			liveCompanion := filepath.Join(entityDir, slug)
 			if err := os.Rename(archivedCompanion, liveCompanion); err != nil {
@@ -561,7 +566,14 @@ func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
 	// the same git-worktree guard. `git reset -- <paths>` only touches the index, not
 	// the working tree we just restored.
 	if gitRoot := FindGitRoot(entityDir); hasGitEntry(gitRoot) {
-		pathspecs := archiveMovePathspecs(gitRoot, entityDir, slug, snap.isFolder, snap.hasCompanion)
+		pathspecs := archiveMovePathspecs(
+			gitRoot,
+			entityDir,
+			slug,
+			snap.isFolder,
+			snap.companionPresent || snap.companionTracked,
+			snap.companionPresent,
+		)
 		for i := range pathspecs {
 			pathspecs[i] = literalGitPathspec(pathspecs[i])
 		}
@@ -585,17 +597,24 @@ func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
 // {slug}.md → _archive/{slug}.md (two file paths); a folder-form entity moves the
 // whole {slug}/ → _archive/{slug}/ (two directory paths, capturing index.md and any
 // siblings). The form is read from where the entity landed in _archive, since the
-// source has already been moved by the time this runs. When the entity root is not
-// under a git work tree the move is a plain on-disk archive and the commit is
-// skipped (no error). A real git failure exits 1 with stderr.
-func commitArchiveMove(entityDir, slug string, stderr io.Writer) int {
+// source has already been moved by the time this runs. The pre-archive snapshot
+// retains a tracked-but-deleted flat companion as a source-only pathspec. When the
+// entity root is not under a git work tree the move is a plain on-disk archive and
+// the commit is skipped (no error). A real git failure exits 1 with stderr.
+func commitArchiveMove(entityDir, slug string, snapshot archiveSnapshot, stderr io.Writer) int {
 	gitRoot := FindGitRoot(entityDir)
 	if !hasGitEntry(gitRoot) {
 		return 0
 	}
 	isFolder := archivedAsFolder(entityDir, slug)
-	hasCompanion := !isFolder && directoryExists(filepath.Join(entityDir, "_archive", slug))
-	pathspecs := archiveMovePathspecs(gitRoot, entityDir, slug, isFolder, hasCompanion)
+	pathspecs := archiveMovePathspecs(
+		gitRoot,
+		entityDir,
+		slug,
+		isFolder,
+		!isFolder && (snapshot.companionPresent || snapshot.companionTracked),
+		!isFolder && snapshot.companionPresent,
+	)
 	// Stage the vacated source (deletion) and the new dest. git records this as a
 	// rename in the commit. Literal pathspecs preserve valid entity names that look
 	// like Git magic; --all is never used.
@@ -620,11 +639,11 @@ func literalGitPathspec(path string) string {
 // archiveMovePathspecs returns the source and dest pathspecs (relative to gitRoot)
 // for the archive rename, mirroring runArchive's flat/folder resolution. A folder-
 // form entity renames the whole {slug}/ directory; a flat-form entity renames the
-// {slug}.md file. The caller supplies the form explicitly so the pathspecs are
-// stable regardless of where the entity currently sits on disk — rollback computes
-// them AFTER moving the entity back out of _archive, when a disk re-detection would
-// misread the form.
-func archiveMovePathspecs(gitRoot, entityDir, slug string, isFolder, hasCompanion bool) []string {
+// {slug}.md file. Flat companion source and destination membership are independent
+// so a tracked source deletion can be committed without naming an absent archive
+// destination. The caller supplies the form explicitly so the pathspecs are stable
+// regardless of where the entity currently sits on disk.
+func archiveMovePathspecs(gitRoot, entityDir, slug string, isFolder, companionSource, companionDest bool) []string {
 	if isFolder {
 		return []string{
 			relToGitRoot(gitRoot, filepath.Join(entityDir, slug)),
@@ -635,13 +654,22 @@ func archiveMovePathspecs(gitRoot, entityDir, slug string, isFolder, hasCompanio
 		relToGitRoot(gitRoot, filepath.Join(entityDir, slug+".md")),
 		relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug+".md")),
 	}
-	if hasCompanion {
-		pathspecs = append(pathspecs,
-			relToGitRoot(gitRoot, filepath.Join(entityDir, slug)),
-			relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug)),
-		)
+	if companionSource {
+		pathspecs = append(pathspecs, relToGitRoot(gitRoot, filepath.Join(entityDir, slug)))
+	}
+	if companionDest {
+		pathspecs = append(pathspecs, relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug)))
 	}
 	return pathspecs
+}
+
+func trackedArchivePath(gitRoot, path string) bool {
+	if !hasGitEntry(gitRoot) {
+		return false
+	}
+	rel := filepath.ToSlash(relToGitRoot(gitRoot, path))
+	out, err := runGitCmd(gitRoot, "ls-files", "--", ":(literal)"+rel)
+	return err == nil && strings.TrimSpace(out) != ""
 }
 
 // archivedAsFolder reports whether the entity landed in _archive as a folder

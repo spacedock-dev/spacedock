@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/gitsource"
+	"gopkg.in/yaml.v3"
 )
 
 func TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities(t *testing.T) {
@@ -183,6 +184,92 @@ func TestPreparedCandidateFailureLeavesNoRoomParents(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "task")); !os.IsNotExist(err) {
 		t.Fatalf("candidate validation changed prepared tree: %v", err)
+	}
+}
+
+func TestPrepareRejectsUnsafeOrUndefinedStatusBeforePublishing(t *testing.T) {
+	for _, status := range []string{"../../../outside", "rogue"} {
+		t.Run(status, func(t *testing.T) {
+			workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+			before, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			mutated := bytes.Replace(before, []byte("status: validation"), []byte("status: "+status), 1)
+			if err := os.WriteFile(entity, mutated, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Prepare(entity, PrepareInput{
+				WorkflowDir: workflow,
+				Question:    "Review?",
+				Artifact:    artifact,
+				Summary:     "summary",
+			}); err == nil || !strings.Contains(err.Error(), "workflow stage") {
+				t.Fatalf("status %q error=%v", status, err)
+			}
+			if _, err := os.Stat(filepath.Join(state, "task")); !os.IsNotExist(err) {
+				t.Fatalf("status %q published a flat companion: %v", status, err)
+			}
+			if _, err := os.Stat(filepath.Join(filepath.Dir(state), "outside")); !os.IsNotExist(err) {
+				t.Fatalf("status %q escaped the state root: %v", status, err)
+			}
+			after, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(after, mutated) {
+				t.Fatalf("status %q changed entity bytes", status)
+			}
+		})
+	}
+}
+
+func TestPrepareRollsBackPublishedRoomAfterBindingWriteFailure(t *testing.T) {
+	original := prepareWriteBinding
+	prepareWriteBinding = func(string, *yaml.Node, *Document) error {
+		return os.ErrPermission
+	}
+	t.Cleanup(func() { prepareWriteBinding = original })
+
+	for _, preexistingHome := range []bool{false, true} {
+		t.Run(map[bool]string{false: "new-home", true: "preexisting-home"}[preexistingHome], func(t *testing.T) {
+			workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+			home := filepath.Join(state, "task")
+			if preexistingHome {
+				if err := os.Mkdir(home, 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			before, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Prepare(entity, PrepareInput{
+				WorkflowDir: workflow,
+				Question:    "Review?",
+				Artifact:    artifact,
+				Summary:     "summary",
+			}); !os.IsPermission(err) {
+				t.Fatalf("post-publication error=%v, want permission failure", err)
+			}
+			if _, err := os.Stat(filepath.Join(home, "review")); !os.IsNotExist(err) {
+				t.Fatalf("rollback retained review parents: %v", err)
+			}
+			_, homeErr := os.Stat(home)
+			if preexistingHome && homeErr != nil {
+				t.Fatalf("rollback removed pre-existing home: %v", homeErr)
+			}
+			if !preexistingHome && !os.IsNotExist(homeErr) {
+				t.Fatalf("rollback retained newly created home: %v", homeErr)
+			}
+			after, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(before, after) {
+				t.Fatal("post-publication failure changed entity bytes")
+			}
+		})
 	}
 }
 

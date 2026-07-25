@@ -67,6 +67,39 @@ func TestRequestlessBriefingRetainsArbitraryExactFileReference(t *testing.T) {
 	}
 }
 
+func TestRequestlessBriefingIgnoresUnrelatedAncestorRequest(t *testing.T) {
+	entity := writeEntity(t, "status: ideation\ntitle: Unchanged\n")
+	ancestor := t.TempDir()
+	nested := filepath.Join(ancestor, "nested", "selected")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	briefing := filepath.Join(nested, "revision-1.json")
+	body := completeBriefing("briefing:local:ancestor:ideation:attempt-1:revision-1", "ignore unrelated request")
+	if err := os.WriteFile(briefing, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(ancestor, "other.json"), []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	request := `{"type":"spacedock-gate-presentation-request","version":"1","gate":"gate:other","attempt":"attempt:other-1","briefing":{"locator":"other.json","id":"briefing:other","digest":"sha256:` +
+		strings.Repeat("a", 64) + `"},"actor":"person:captain","approver":"person:captain"}`
+	if err := os.WriteFile(filepath.Join(ancestor, "request.json"), []byte(request), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := RecordBriefing(entity, briefing); err != nil {
+		t.Fatalf("unrelated ancestor request invalidated request-less Briefing: %v", err)
+	}
+	doc, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	binding := doc.Records[0].Attempts[0].Briefing
+	if binding.RequestDigest != "" || !strings.HasSuffix(binding.RoomRef, "/revision-1.json") {
+		t.Fatalf("unrelated ancestor request changed request-less binding: %#v", binding)
+	}
+}
+
 func TestCanonicalCrossGateReentryPreservesFrozenApplication(t *testing.T) {
 	entity := writeEntity(t, canonicalTwoGateFrontmatter())
 	doc, oldNode, err := Read(entity)
