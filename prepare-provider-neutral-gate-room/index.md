@@ -1981,3 +1981,48 @@ Correction revalidation closes the prior AC-1 outcome defect and AC-2 detector h
 and its positive selected-override live run is clean. The gate remains REJECTED because
 AC-4's new oracle still accepts three promised wrong traces; the fix stays inside the
 existing observation harness.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Make the selected-override oracle reject extra failed or successful gate-help attempts while preserving exactly one successful fresh preflight.
+  `countCommands` now requires one total help exit and one successful help exit; the
+  failed-help-before-success and duplicate-success mutants both fail the oracle.
+- DONE: Make the oracle reject Agent provider probes anywhere in the selected-override trajectory, including before prepare.
+  Root Agent actions now fail independent of `prepareAt`; the adjacent pre-prepare
+  Agent mutant fails, as does the existing post-bind Agent mutant.
+- DONE: Make the oracle reject a complete chat gate review anywhere in a selected-override trajectory, including before the Skill handoff.
+  Semantic root chat now fails independent of `overrideAt`; the adjacent pre-handoff
+  review mutant fails, as does the existing post-handoff fallback mutant.
+- DONE: Add the three adjacent-event mutants, run focused/full/race/format/diff checks and final Roborev, update the durable correction report, and stop without product or prompt changes.
+  Commit `2d7ee074` changes only the observer and its unit matrix (`+29/-9`);
+  focused tests, `go test ./...`, race, `gofmt`, and `git diff --check` pass, and
+  final Roborev job 2443 completed.
+
+### Final review triage
+
+The final panel reported no defect in the two-file correction. Its broad branch
+findings do not trigger another pass under the Captain-bound Cycle 13 evidence-only
+scope.
+
+The legacy request-profile finding is correct-but-disproportionate: no released v1
+user owns the prototype state, the observable harm is an upgrade stall, compatibility
+would reopen the explicitly excluded v1 boundary, and the trigger requires pre-v1
+persisted request bytes. Promote when the Captain adds prototype migration support.
+
+The crafted companion-symlink finding is a deferred risk: an operator selecting a
+crafted repository could redirect writes outside state, which would violate path
+containment, but the trigger is adversarial and outside the supported flow. Promote
+when a released user reaches that layout through an operator-selected repository.
+
+Historical-object revalidation repeats the approved fail-closed local-object policy;
+promote when ordinary merge/prune behavior strands a released workflow. The candidate
+cleanup-test note is polish because
+`TestPrepareRollsBackPublishedRoomAfterBindingWriteFailure` exercises post-publication
+rollback. The remaining status, malformed-request, subprocess, diagnostic, and weak
+assertion notes are pre-existing deferred risks or polish, not defects in Cycle 13.
+
+### Summary
+
+Cycle 3 closes the three adjacent-event oracle gaps without changing product behavior,
+prompt text, or the live harness. The complete selected-override trajectory now enforces
+one fresh help attempt and excludes every Agent probe and semantic chat presentation.
