@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-07-25 19:04:19",
+        "dateModified": "2026-07-25 20:21:59",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1436,12 +1436,14 @@ plugins must be installed persistently with <code>codex plugin add</code>.</p>
 </tbody>
 </table>
 <h3 id="state-commit"><code>state commit</code><a class="headerlink" href="#state-commit" title="Permanent link">&para;</a></h3>
-<p><code>spacedock state commit &lt;slug&gt;</code> commits and synchronizes one entity from a
-split-root state checkout. The operand is one canonical top-level entity slug,
+<p><code>spacedock state commit &lt;slug&gt;</code> commits and synchronizes one active or clean
+archived entity from a split-root state checkout. The operand is one canonical top-level entity slug,
 not a nested path. A flat entity commits exactly <code>&lt;slug&gt;.md</code>; a folder-form entity
 commits every changed, new, or deleted non-ignored path below <code>&lt;slug&gt;/</code>, including
 reports and artifacts. Dirty sibling entities and unrelated top-level state paths
-remain untouched.</p>
+remain untouched. Archived scope is publish-only: dirt or identity/shape collisions refuse before movement; clean unpublished history is pushed, and fully published state is a no-op.
+Because archived recovery never creates or amends a commit, <code>-m MSG</code> applies only
+to active entities and has no effect for an archived slug.</p>
 <p><a href="../../running-workflows/operating/">Operate a workflow</a> covers how the first officer uses <code>status</code> on your behalf. Run <code>spacedock status --help</code> (and the same for each command) for the full flag list, the mutation guards, and the exit codes.</p>
 
 
@@ -1463,7 +1465,7 @@ remain untouched.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 25, 2026 19:04:19 UTC">2026-07-25 19:04:19</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 25, 2026 20:21:59 UTC">2026-07-25 20:21:59</span>
   </span>
 
     
