@@ -80,6 +80,12 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+            - id: gate-attempt:s4-ideation-3
+              briefing:
+                id: briefing:docs-dev:s4:ideation:attempt-3:revision-1
+                digest: sha256:d80b23af1136b1caffb1786878d98b1933799f38f25fbcb99dee36466cea3469
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-3
 ---
 
 ## Cycle 11 governing design

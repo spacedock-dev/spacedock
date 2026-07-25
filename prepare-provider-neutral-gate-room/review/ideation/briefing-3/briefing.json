@@ -1,0 +1,77 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:s4:ideation:attempt-3:revision-1",
+  "question": "Should Cycle 11 become the implementation contract for mechanical provider-neutral gate preparation and the room-only provider handoff?",
+  "artifacts": [
+    {
+      "id": "artifact:s4-attempt-3-gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4e63b4c64888951c5e7cedef04f4d0a9272d3e984ab2e1a9700470bdfcc82acf",
+      "summary": "Explains the agent-facing prepare command, exact room files and output, Git-root and duplicate-member trust boundaries, flat-entity durability, room-only provider handoff, and validation capability."
+    },
+    {
+      "id": "artifact:s4-cycle-11-entity",
+      "uri": "git-root://state/2288a5dd54dfa471212e32c615767be88959c6b8/prepare-provider-neutral-gate-room/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c50313d0b8d13d2baa5d5abe3ca1aa4f048aa245f391107e4f4f2f406232f6c7",
+      "summary": "The immutable Cycle 11 governing design, acceptance criteria, test plan, owner map, advisory implementation surface, and full correction history."
+    },
+    {
+      "id": "artifact:s4-cycle-10-staff-review",
+      "uri": "staff-review-cycle10.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9787db24645dda4e6d99a2d64322f8bcb1d0e3069c12a5118dfe009d0f78d0ee",
+      "summary": "The independent REVISE review that identified numeric implementation authority and the stale-help/provider-probe owner-map mismatch."
+    },
+    {
+      "id": "artifact:s4-cycle-11-staff-review",
+      "uri": "staff-review-cycle11.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4124ebe6d7c63f9dc354b567d74d7e929317f959d3ef957f923c08954f8af624",
+      "summary": "The independent confirming APPROVE review with no material or polish findings after Cycle 11 corrected the owner contract."
+    },
+    {
+      "id": "artifact:gate-resolution-contract-baseline",
+      "uri": "git-root://main/4ff98d8cd97ebcf17b6a583070ce69234e24fc87/docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:001d7174b9a01201c284e717127ef26d61c0a3c087200eb92e5dee28fc19fa04",
+      "summary": "The immutable current-main gate and Resolution contract that implementation extends with preparation, arbitrary Briefing locators, and flat-room durability."
+    },
+    {
+      "id": "artifact:docs-dev-workflow",
+      "uri": "git-root://main/4ff98d8cd97ebcf17b6a583070ce69234e24fc87/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:46d44abcbdc596a0aa2c22cb94465cf4e2321a529c52679f14e7efcb071a5f62",
+      "summary": "The immutable development workflow governing ideation approval, implementation, independent validation, CI, and merge."
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:s4-attempt-3-ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin mechanical gate preparation implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise room, authority, or owner semantics",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold before implementation",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
