@@ -1886,3 +1886,64 @@ Validation reproduced the ordinary-path implementation evidence but found one ma
 product defect and two material proof defects under detached mutation. Recommend
 REJECTED; fix AC-1 narrowly, strengthen AC-2 with same-byte distinct paths, and reset
 AC-4 selected-override proof to observed post-bind behavior before re-entry.
+
+## Implementation Correction Surface Reconciliation
+
+The correction advances implementation from `f99af3df` to `6b18f6de`. Against
+baseline `4ff98d8c`, the final surface is 41 files at `+4,213/-342`; relative to the
+prior 37-file implementation, the only new paths are the AC-1 literal-path regression
+and three AC-4 selected-override harness files. AC-2 strengthens its existing test,
+and the final-review correction changes only existing lifecycle oracle files.
+
+No command, schema, provider, materializer, source locator, public argument, or
+compatibility boundary changed. The product correction is the literal Git pathspec
+used to commit archive moves; all other correction work strengthens independent
+evidence for already-approved behavior.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Triage and fix the material AC-1 literal flat-archive pathspec defect with a real Git regression covering wildcard-like slug plus sibling isolation and deletion.
+  Evidence: `TestMergeGuardFlatArchiveTreatsSlugAsLiteralPathspec` uses `020-[x]`,
+  proves the literal live deletion and archive destination in HEAD, and proves both
+  matching live/archive siblings retain committed bytes while remaining dirty.
+  Falsifier: removing `:(literal)` from archive move pathspecs commits a matching
+  sibling and omits the literal source deletion.
+- DONE: Strengthen AC-2 proof with same raw bytes at distinct repository paths so removing path equality fails independently.
+  Evidence: `TestSameLogicalRevisionIgnoresUnrelatedCommitButNotPathOrBytes` inspects
+  `review.md` and `same-bytes.md` with identical `review\n` bytes and rejects them as
+  different logical revisions.
+  Falsifier: the path-equality mutant compiles but fails at the new same-byte,
+  distinct-path assertion rather than at a raw-byte inequality.
+- DONE: Replace AC-4 instruction-text proof with observed behavior for exactly one post-bind room-only selected override and absence of probe, fallback, or reconstructed authority, using the smallest existing runtime fixture.
+  Evidence: the real Claude run passed in 119.93 seconds with one exact root
+  `Skill(skill="subspace:r", args="gate <emitted-room>")` after prepare and bind,
+  no Bash/provider probe, Agent detour, chat fallback, record, or consume.
+  The native Skill-call sink owns no provider behavior; state HEAD advanced, HEAD
+  contains the entity plus both room files byte-exactly, and the entity unit is clean.
+  Falsifier: unit mutants reject pre-bind/duplicate/reconstructed calls, probes,
+  fallback, post-handoff close, missing help, failed prepare, and no-op durability.
+- DONE: Run focused tests, full tests, race tests, formatting/diff/docs/skill checks affected by the correction, obtain final Roborev review, update the durable report, and stop.
+  Evidence: focused AC-1/AC-2/AC-4 and contract tests, `go test ./...`,
+  `go test ./... -race`, `gofmt -w ./cmd ./internal`, `git diff --check`, and strict
+  MkDocs all pass at `6b18f6de`; Roborev branch-final job 2440 completed.
+  Falsifier: either final material finding originally survived—dynamic-bound identity
+  and committed-binding durability—but both now have real-CLI/live regression proof.
+
+### Final review triage
+
+Roborev's High dynamic-digest finding was material and fixed: the hold oracle now
+reads the durable Briefing identity/digest, requires the review to name both exactly,
+and a real prepare proves a non-legacy digest against canonical room bytes. Its Medium
+durability finding was material and fixed with Git HEAD, committed-byte, and scoped
+cleanliness checks. Low performance, historical-status diagnostics, recovery prose,
+identity-cardinality, usage-polish, unreachable-guard, and test-naming notes are
+declined as correct-but-disproportionate for this validation correction; promote when
+a representative latency run is unacceptable, historical drift is observed, an
+operator recovery is required, or a Low note masks wrong observable behavior.
+
+### Summary
+
+Cycle 2 closes all three rejected acceptance-criterion findings and both material
+final-review findings without expanding the approved product boundary. The corrected
+implementation and its provider-neutral observed-behavior evidence are ready for
+validation re-entry.
