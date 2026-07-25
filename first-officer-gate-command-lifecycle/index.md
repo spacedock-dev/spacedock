@@ -244,6 +244,20 @@ gates:
                 digest: sha256:29e1bbeff0c131fe7ba31813e763d5f2b67773ae3e593387532762d5fb4381a9
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-12
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:ideation:12
+                briefing: briefing:docs-dev:6y:ideation:attempt-12:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T06:05:57.735338Z"
+                decision: approve
+                reason: Cycle 32 removes an unauthenticated provenance channel without weakening the behavioral no-authority boundary; independent staff review found no material issue and the nine-file correction is proportionate.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
