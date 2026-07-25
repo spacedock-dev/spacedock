@@ -265,3 +265,18 @@ Merge-guard finalization is now remote-durable across split-root hosts, and an i
 ### Summary
 
 Validation independently reproduced five acceptance criteria and confirmed the publication proof turns red when bypassed. AC-4 has one material, narrowly fixable outcome defect: archive finalization must treat canonical entity paths as literal Git pathspecs before this gate can pass.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Literalize every Git pathspec used for the active-to-archive move and its symmetric rollback, while preserving ordinary filesystem paths.
+  Commit `fb1c9dbb` leaves `archiveMovePathspecs` as ordinary relative paths and wraps only the `git add`, `git commit`, and `git reset` arguments with `:(literal)`.
+- DONE: Retain the valid `:(glob)*` real-Git counterexample and prove the archive delta excludes dirty siblings on both forward and rollback paths.
+  `TestMergeGuardLiteralPathspecSlugDoesNotSweepSibling` fails if forward arguments are raw; `TestMergeGuardLiteralPathspecRollbackPreservesStagedSibling` fails if rollback resets the pre-staged sibling.
+- DONE: Preserve ordinary flat/folder archive and rollback behavior.
+  Existing path-scoped flat/folder, failed-commit rollback, recovery rerun, and file-mode tests pass; removing literal handling makes the two counterexamples reproduce validation's sibling sweep.
+- DONE: Run focused, full, race, and final Roborev checks; update the implementation report without adding a command, flag, dependency, controller, or broader lifecycle behavior.
+  `gofmt`, `git diff --check`, focused packages, `go test ./...`, and `go test ./... -race` pass; Roborev job 2408 reports no issues on the two-file correction.
+
+### Summary
+
+The AC-4 repair is committed in `fb1c9dbb`: Git sees literal archive source/destination pathspecs in both the forward commit and rollback reset, while filesystem paths remain unchanged. The exact `:(glob)*` forward and rollback counterexamples now pass without sweeping or unstaging sibling state, and no public or lifecycle surface expanded.
