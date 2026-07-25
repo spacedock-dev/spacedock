@@ -24,6 +24,20 @@ gates:
                 digest: sha256:d620934ee0af1b72c38e80fdb640f6ea07bd95da9fd08729c38e9b9d04a4fce2
                 digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:rqh4:backlog:1
+                briefing: briefing:docs-dev:rqh4:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T06:28:30.836574Z"
+                decision: approve
+                reason: The task isolates the actual missing cross-repository consumer boundary, forbids durable source duplication, and requires a real moved-root Subspace proof before implementation.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Bridge recorder-ready Git-addressed Briefings to actual provider presentation without
