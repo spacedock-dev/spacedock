@@ -863,6 +863,7 @@ Implemented and hardened the six-event integration and its deterministic/live or
 - Cycle 20: DESIGN RESET — supported Pi lifecycle at `ce436505`; surface 17 files/497 added LOC vs +510 hard stop (97%); AC unchanged; Claude/Codex and offline gates pass, but Pi’s successful native successor is not attributable through the common oracle, its directive retains prompt delimiters, and the runner cleaned command/state evidence required to adjudicate either claim
 - Cycle 21: DESIGN RESET — independent checkpoint review and correction prototype at `3c535105`; surface 3 correction files/+191 additions vs +95 repair cap (201%) before seven deleted v1 invariants are restored; AC authority must be re-anchored because expanding the forensic proof surface would reward the same overdesign
 - Cycle 22: NEEDS DECISION — second clean-branch staff correction; `recorded_gate_lifecycle_test.go` requires measured +135/-152 vs approved +70..120/-100..190. Independent review found the +15 addition breach irreducible product proof for six durable Captain mappings and approved a one-file range amendment conditional on deleting redundant bind reparsing; AC unchanged
+- Cycle 23: REJECTED — Roborev job 2211 triage and repair; surface 11 files/183 changed LOC vs estimate 11 files/204 changed LOC (90%); AC unchanged
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
@@ -3742,3 +3743,51 @@ drive stopped at the first-phase harness predicate despite the transcript
 showing the intended open/no-grant behavior. Code remains uncommitted at
 `5ced64fc`; reviewer-only Roborev 2211 state remains untouched. Checklist
 accounting is **4 DONE, 2 FAILED, 1 SKIPPED**.
+
+## Stage Report: implementation (cycle 32 Roborev 2211 binding re-anchor)
+
+- DONE: Apply the binding Cycle-31 disposition to finding 3 and salvage only
+  the Material finding 2 repair.
+  The entire dirty `TestLivePtyRecordedGateLateGrant` addition was removed
+  surgically, and the eight current-tip contract-lint lines were restored
+  exactly. No reset or checkout was used. Finding 3 is
+  correct-but-disproportionate because the approved proof boundary is the
+  existing three initial-grant host journeys plus deterministic no-conn
+  fixtures and contract lint that permits a later grant; no released
+  later-grant failure exists.
+- DONE: Commit the deletion- and mutation-sensitive handoff report oracle.
+  Code commit `fa2d9de784ce68576a79abfb1d0050711837b84c` changes only
+  `internal/ensigncycle/recorded_gate_lifecycle_test.go` from its prior tip,
+  requires exactly one `## Stage Report: handoff` section with a `- DONE:`
+  item, and retains `heading-deleted` plus `mutated-handoff-done` controls
+  alongside actor, reason, adoption, ancestry, root-review, no-authority, and
+  marker controls.
+- DONE: Pass every authorized deterministic repository gate.
+  The focused real-CLI replay and provenance/presentation mutants passed in
+  3.669s. `gofmt -w ./cmd ./internal`, `go test ./...`,
+  `go test ./... -race`, and `git diff --check` all passed. No live-tag test,
+  provider, or Roborev execution ran.
+- DONE: Preserve the approved surface and exact fixed-base accounting.
+  Relative to `280733907f2d9f2c9b6b226a0e8bf06fea6b90db`, the clean code
+  tip is exactly 11 files, 129 additions, and 54 deletions: 183 changed LOC,
+  90% of the 204-LOC ceiling. The code worktree has no other drift.
+- DONE: Complete Roborev 2211 worker triage and prepare, but do not publish,
+  the next feedback projection.
+  `briefing.review.jsonl` now covers all four reviewer Annotations with one
+  Material/fixed disposition and three canonical
+  correct-but-disproportionate declines, followed by one actor:ensign
+  Resolution. Cycle 23 is projected as REJECTED at 11 files/183 changed LOC
+  versus 11 files/204 changed LOC, with AC unchanged.
+- SKIPPED: Invoke `gate record --round`, rerun Roborev, run any live/provider
+  lane, mutate gate/round/status/stage, push code or state, open a PR, merge, or
+  publish the final panel.
+  The First Officer owns round publication and final review.
+
+### Summary
+
+The binding re-anchor leaves finding 2 as the only code repair: its handoff
+report oracle and two falsifying mutants are green at clean tip `fa2d9de7`.
+Roborev 2211 now has complete v1 worker triage—one Material finding fixed and
+three disproportionate declines with promotion conditions—and the conforming
+Cycle 23 projection is prepared without recording the round. Checklist
+accounting is **5 DONE, 1 SKIPPED, 0 FAILED**.

@@ -1,15 +1,15 @@
-Candidate: 5ced64fc5101b5da5f7bb5b3cfa9b8b9e2afc457
+Reviewed candidate: 5ced64fc5101b5da5f7bb5b3cfa9b8b9e2afc457
+Repaired candidate: fa2d9de784ce68576a79abfb1d0050711837b84c
 Base: 280733907f2d9f2c9b6b226a0e8bf06fea6b90db
 Roborev job: 2211
 Publication: NOT INVOKED
 
-The retained JSONL is intentionally reviewer-only. Finding 2 is Material and
-unfixed. Finding 3 requires a First Officer/Captain design decision before a
-truthful worker disposition can exist. Findings 1 and 4 cannot be appended as
-partial worker triage because v1 requires every reviewer finding to be covered
-by one complete actor:ensign triage Resolution.
+The retained JSONL now has complete actor:ensign triage: one Material finding
+fixed at fa2d9de7 and three correct-but-disproportionate declines with explicit
+promotion conditions. Every reviewer Annotation is covered by exactly one
+worker disposition and the worker Resolution includes all four.
 
-Therefore `spacedock gate record --round` must refuse this draft with
-`findings-bearing round requires complete actor:ensign triage`. Publishing a
-round pointer, Feedback Cycles projection, or advisory worker Resolution would
-misrepresent unresolved findings as complete. No recorder command was run.
+The conforming Cycle 23 projection is prepared in the entity body. No
+`spacedock gate record --round` command was run, so no round pointer or durable
+round record exists. The First Officer owns round publication and the final
+panel.
