@@ -213,3 +213,7 @@ Ideation narrows the correction to Codex runtime wording, the Codex idle-notific
 ### Summary
 
 The correction changes authority, not behavior: file and LOC estimates now support reconciliation without acting as caps or automatic reset triggers. A design reset is reserved for semantic expansion beyond the accepted Codex-only steering correction, including cross-runtime/API/scheduler changes or weakened durable completion authority.
+
+### Feedback Cycles
+
+- Cycle 1: CHANGES REQUESTED — Roborev job 2362; surface 5 files/519 LOC vs estimate 5 files/190–285 LOC (182% of upper estimate); AC unchanged
