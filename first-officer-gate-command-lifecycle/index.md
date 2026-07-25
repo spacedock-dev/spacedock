@@ -3135,3 +3135,31 @@ approve-to-consume-and-advance decision while still rejecting missing,
 disposition-free, vague, and narrative substitutes; product and live surfaces
 remain unchanged. All deterministic gates pass at `3d107752`, with live retry
 still blocked. Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 presenter contract sync)
+
+- DONE: Remove the one stale shipped presenter sentence that contradicted the
+  cycle-32 authority contract.
+  Exact tip `659e1f8b` changes only present-gate's provider-boundary rule:
+  delegated chat approval records `agent:first-officer` with a nonblank
+  evidence reason and no directive or adoption note. Direct provider-room
+  authority and advisory-result behavior are unchanged.
+- DONE: Keep proof ownership behavioral and declare exact surface.
+  No tautological prose-presence test was added; existing CLI, recorder, and
+  lifecycle tests own the command behavior. The correction is
+  `skills/present-gate/SKILL.md` **+1/-1** from `3d107752`. From base
+  `28073390`, the complete implementation is **11 files, +146/-49 = 195
+  changed LOC**, within the approved 11-file / 204-LOC hard cap.
+- DONE: Run the checks owned by the changed shipped skill.
+  `gofmt -w ./cmd ./internal`, `go test ./internal/contractlint
+  ./skills/integration`, and `git diff --check` pass at `659e1f8b`.
+- SKIPPED: Retry a live host, request Roborev, push code or state, mutate a
+  gate/round/status, or advance the stage.
+  The exact tip stops for renewed review/authorization.
+
+### Summary
+
+Present-gate now describes the same delegated identity/evidence contract as
+the recorder and lifecycle skill, with no provenance text retained. The
+one-line shipped-skill correction is green at `659e1f8b`; live retry remains
+blocked. Checklist accounting is **3 DONE, 1 SKIPPED, 0 FAILED**.
