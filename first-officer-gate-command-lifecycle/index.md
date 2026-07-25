@@ -3019,3 +3019,65 @@ with complete byte-clean and lock-clean proof. It changes one test file by two
 lines, leaves the production mechanism and approved behavior untouched, and
 keeps live spend blocked at exact tip `1e9bf575`. Checklist accounting is
 **3 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 live phase)
+
+- DONE: Obtain independent deterministic approval for live spend at exact tip
+  `1e9bf575bc7dc6c5cb025e7728ce3818d328f9cd`.
+  Detached review returned APPROVE LIVE SPEND with no material findings. The
+  candidate binary, worktree skills, shared prompt, runner, model selection,
+  assertions, and transport were unchanged.
+- FAILED: Run the first authorized live journey, Claude, through the complete
+  recorded lifecycle.
+  The actually executed (not compile-only) test
+  `TestLiveClaudeSharedScenarios/recorded-gate-lifecycle` failed after
+  **246.54s**. Claude bound and committed the Briefing, emitted one root review,
+  recorded and committed approval, consumed and committed `handoff`, dispatched
+  exactly once, and produced the durable successor marker at fixture commit
+  `55714dd`. The grader nevertheless returned `gate review omits its decision
+  facts`.
+- DONE: Isolate the exact review failure without changing or rerunning the
+  product.
+  The root review named Recorded Gate Task/validation, the exact Briefing
+  `briefing:docs-dev:3k:validation:attempt-1:revision-1`, exact digest
+  `sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac`,
+  findings, and `Recommend approve`. Its decision line was only “Decision:
+  approve to consume this authorization and advance ...”; it did not offer
+  approve/revise/hold together as an actionable question. Therefore
+  `assertConciseRecordedGateReview` rejected the text, the ordered extractor
+  retained zero qualifying reviews, and the outer lifecycle grade reported the
+  missing-facts failure.
+- DONE: Confirm the approved cycle-32 authority behavior in the retained
+  failure evidence.
+  The real close command used `--actor agent:first-officer --reason <nonblank
+  evidence>` with no directive/provenance flag. The durable Resolution contains
+  `by: agent:first-officer`, the nonblank evidence reason, no
+  `adoption-note`, a consumed advance to `handoff`, and the successor marker.
+  Thus the authority cut and lifecycle effects succeeded; the visible review
+  contract failed independently. The existing diagnostic also retained a broad
+  `find <entity> -type f` sweep; it is secondary evidence, not the grader's
+  primary failure.
+- DONE: Retain the exact normal Claude artifact package.
+  Artifacts are under
+  `/tmp/spacedock-6y-cycle32-live-1e9bf575.1KxqyH/claude/claude-shared-scenarios/recorded-gate-lifecycle/`.
+  `claude-stream.jsonl` is 229 lines / 388172 bytes with SHA-256
+  `0da63837ae48a9e012bccbd28f0bfe1841bc8fbbf294b47c9f13d38c1c46775c`;
+  `claude-final-message.txt` is 8 lines / 1450 bytes with SHA-256
+  `a093cc2fef6701bd21f4a754486c9bf08c6a61ad2a9d805dc767bf397f9f0e4d`.
+- SKIPPED: Spend the Codex and Pi journeys.
+  The mandated stop-on-first-failure rule leaves both hosts unrun; there was no
+  retry, fallback model, prompt coaching, alternate transport, or diagnostic
+  journey.
+- SKIPPED: Modify product code, request Roborev, push code or state, mutate a
+  gate/round/status, or advance the stage.
+  The exact code tip remains clean at `1e9bf575`. The failed Claude evidence
+  returns to the First Officer for triage before any further live authorization.
+
+### Summary
+
+Claude exercised the real cycle-32 authority surface successfully and reached
+the durable handoff effect, but failed the independent one-review value
+invariant because its decision line did not present approve/revise/hold as an
+actionable ask. Exact normal artifacts are retained, Codex and Pi remain
+unspent, and no retry or product/workflow mutation followed the failure.
+Checklist accounting is **4 DONE, 1 FAILED, 2 SKIPPED**.
