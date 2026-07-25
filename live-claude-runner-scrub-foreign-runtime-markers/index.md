@@ -1,6 +1,6 @@
 ---
 title: Scrub foreign runtime markers from live Claude journeys
-status: validation
+status: done
 source: "Repeated 6y live evidence on 2026-07-25: nested Claude inherited CODEX_THREAD_ID from the Codex captain host and first failed dispatch host detection before recovering with explicit --host claude"
 started: 2026-07-25T16:30:35Z
 completed:
@@ -70,6 +70,19 @@ gates:
                 digest: sha256:8300e31f733d31c534070e90aeaddb5c2bbd5cb6e22564a2a1142222d5924869
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:v3v:validation:1
+                briefing: briefing:docs-dev:v3v:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T18:08:20.562217Z"
+                decision: approve
+                reason: Independent validation reproduced all four acceptance criteria on exact candidate 6ea4cdc8, including the failed-build mutant and byte-matched exit=0 proof; full, race, live-tag, production ambiguity controls, and final Roborev passed with no material finding.
+              application:
+                action: advance
+                target-stage: done
+                state: consumed
+                blockers: []
 review-round:
     id: round:v3vt8gp2yffmn62r8p95gkph:implementation:3
     stage: implementation
