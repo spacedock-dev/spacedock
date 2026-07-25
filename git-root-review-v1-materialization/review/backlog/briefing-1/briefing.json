@@ -1,0 +1,47 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:rqh4:backlog:attempt-1:revision-1",
+  "question": "Should the sprint add a dedicated cross-repository task to make recorder-ready Git-root Briefings presentable by real providers without durable source duplication?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1ccc596dea698a2134c703542d60d1b6d9639a9dce0725092ced5c80d6fc5a86"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:b241773a5f2c4fd341456a52f1f70a9ef4f947ed025ed70d5041aef836ed23ee"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:rqh4-backlog",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Enter ideation",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the seed scope",
+          "to": "stage:backlog"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold the dependency",
+          "to": "gate:backlog"
+        }
+      ]
+    }
+  ]
+}

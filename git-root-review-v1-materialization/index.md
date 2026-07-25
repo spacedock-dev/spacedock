@@ -10,6 +10,20 @@ worktree:
 issue:
 sprint: durable-decisions
 id: rqh46ey33aqq4rt72b4w1m2q
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:rqh4:backlog
+    records:
+        - id: gate:docs-dev:rqh4:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:rqh4-backlog-1
+              briefing:
+                id: briefing:docs-dev:rqh4:backlog:attempt-1:revision-1
+                digest: sha256:d620934ee0af1b72c38e80fdb640f6ea07bd95da9fd08729c38e9b9d04a4fce2
+                digest-domain: canonical-bytes
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Bridge recorder-ready Git-addressed Briefings to actual provider presentation without
