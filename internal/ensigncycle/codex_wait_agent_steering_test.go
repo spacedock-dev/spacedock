@@ -108,12 +108,41 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 			},
 		},
 		{
+			name: "correlated spawn after captain input",
+			want: "correlated spawn did not precede",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				moveCodexSteeringEvent(t, e, "spawn_agent_called", 5)
+			},
+		},
+		{
 			name: "monitoring before active scope is empty",
 			want: "before active scope became empty",
 			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				insertCodexSteeringEvent(e, 7, codexSteeringEvent{
 					Type: "wait_agent_called", TaskPath: target.TaskPath, CompletionEpoch: target.CompletionEpoch,
 				})
+			},
+		},
+		{
+			name: "worker no longer running after captain input",
+			want: "not still running",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				eventOfType(t, e, "list_agents_result").Status = "completed"
+			},
+		},
+		{
+			name: "no useful active work",
+			want: "active work was not exhausted",
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
+				removeCodexSteeringEvents(e, "active_work")
+			},
+		},
+		{
+			name: "no resumed second wait",
+			want: "not monitored again",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				event := nthEventOfType(t, e, "wait_agent_called", 2)
+				*event = codexSteeringEvent{Sequence: event.Sequence, Type: "agent_message", Message: "Monitoring ended."}
 			},
 		},
 		{
@@ -270,6 +299,7 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 	}
 
 	spawnCount := 0
+	correlatedSpawn := -1
 	firstWait := -1
 	harnessReturn := -1
 	harnessReturnCount := 0
@@ -277,6 +307,7 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 	runningAfterInput := -1
 	usefulWork := 0
 	activeScopeEmpty := -1
+	prematureWait := false
 	secondWait := -1
 	finalStatus := -1
 	durableReport := -1
@@ -308,6 +339,9 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 			if event.TaskPath == target.TaskPath || event.AssignmentID == target.AssignmentID {
 				spawnCount++
 			}
+			if event.AssignmentID == target.AssignmentID && sameCodexSteeringWorker(event, target) {
+				correlatedSpawn = i
+			}
 		case "wait_agent_called":
 			if !sameCodexSteeringWorker(event, target) {
 				continue
@@ -316,7 +350,7 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 				firstWait = i
 			} else if captainInput >= 0 {
 				if activeScopeEmpty < 0 {
-					return fmt.Errorf("monitoring resumed before active scope became empty at event %d", event.Sequence)
+					prematureWait = true
 				}
 				if secondWait < 0 {
 					secondWait = i
@@ -365,6 +399,9 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 	if spawnCount != 1 {
 		return fmt.Errorf("target spawn count = %d, want 1", spawnCount)
 	}
+	if correlatedSpawn < 0 || firstWait < 0 || correlatedSpawn >= firstWait {
+		return fmt.Errorf("unique correlated spawn did not precede the first monitoring call")
+	}
 	if harnessReturnCount != 1 {
 		return fmt.Errorf("expected exactly one harness wait-return event, got %d", harnessReturnCount)
 	}
@@ -376,6 +413,9 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 	}
 	if usefulWork < 1 || activeScopeEmpty < 0 {
 		return fmt.Errorf("captain-authorized active work was not exhausted before monitoring resumed")
+	}
+	if prematureWait {
+		return fmt.Errorf("monitoring resumed before active scope became empty")
 	}
 	if secondWait <= activeScopeEmpty || secondWait <= runningAfterInput {
 		return fmt.Errorf("same correlated worker was not monitored again after active work")
@@ -473,13 +513,21 @@ func cloneCodexSteeringEvidence(t *testing.T, evidence codexSteeringEvidence) co
 }
 
 func eventOfType(t *testing.T, evidence *codexSteeringEvidence, eventType string) *codexSteeringEvent {
+	return nthEventOfType(t, evidence, eventType, 1)
+}
+
+func nthEventOfType(t *testing.T, evidence *codexSteeringEvidence, eventType string, ordinal int) *codexSteeringEvent {
 	t.Helper()
+	count := 0
 	for i := range evidence.Events {
 		if evidence.Events[i].Type == eventType {
-			return &evidence.Events[i]
+			count++
+			if count == ordinal {
+				return &evidence.Events[i]
+			}
 		}
 	}
-	t.Fatalf("fixture has no %s event", eventType)
+	t.Fatalf("fixture has no %s event %d", eventType, ordinal)
 	return nil
 }
 
@@ -488,6 +536,13 @@ func insertCodexSteeringEvent(evidence *codexSteeringEvidence, at int, event cod
 	copy(evidence.Events[at+1:], evidence.Events[at:])
 	evidence.Events[at] = event
 	resequenceCodexSteeringEvents(evidence)
+}
+
+func moveCodexSteeringEvent(t *testing.T, evidence *codexSteeringEvidence, eventType string, to int) {
+	t.Helper()
+	event := *eventOfType(t, evidence, eventType)
+	removeCodexSteeringEvents(evidence, eventType)
+	insertCodexSteeringEvent(evidence, to, event)
 }
 
 func swapCodexSteeringEvents(t *testing.T, evidence *codexSteeringEvidence, first, second string) {
