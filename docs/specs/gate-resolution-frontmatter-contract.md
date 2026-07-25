@@ -207,7 +207,7 @@ data.
 ```text
 spacedock gate record ENTITY --briefing PATH/briefing.json [--workflow-dir DIR]
 spacedock gate record ENTITY --room PATH [--workflow-dir DIR]
-spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT] [--workflow-dir DIR]
+spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]
 spacedock gate validate ENTITY [--workflow-dir DIR]
 spacedock gate eligibility ENTITY [--workflow-dir DIR]
 spacedock gate consume ENTITY [--workflow-dir DIR]
@@ -217,10 +217,11 @@ Exactly one semantic source is required. The binary derives operation, ids, stag
 and compare-and-swap state; callers cannot submit an operation envelope or candidate
 identities. `gate validate` is read-only and reports the selected record's last attempt.
 
-Delegated chat decisions require the quoted directive. A delegated First Officer
-approval also requires a reason. The recorder constructs the portable Resolution and
-records it under the identity that actually rendered the decision; it does not apply the
-result.
+New delegated chat resolutions use `by: agent:first-officer`, require a nonblank
+evidence reason, and omit `adoption-note`. Readers continue to accept historical
+`adoption-note` values, but the chat recorder neither emits nor treats them as
+authority. The recorder constructs the portable Resolution under the asserted identity
+that rendered the decision; it does not authenticate chat or apply the result.
 
 ## Explicitly outside v1
 

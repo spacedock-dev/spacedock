@@ -26,6 +26,12 @@ Decision ask: approve to close, revise to bounce back, or hold at review.
 
 Material findings are the ones that should move your vote; polish never blocks. The decision ask tells you concretely what each call does. Every acceptance criterion is cross-checked before the review reaches you; delegated authority does not hide the review.
 
+The first officer may act only after an explicit grant in the active conversation,
+including a grant given later in that conversation. Durable gate state records the
+first officer as the decision renderer and its evidence reason; it does not quote or
+authenticate the grant's wording or scope. Keep any required chat provenance in the
+host's own audit system.
+
 ## How the review reaches you
 
 Gate reviews appear in chat by default. A workflow or session can opt into a review provider that presents the same canonical Briefing as a blocking review and returns an exact retained Result.

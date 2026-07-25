@@ -72,6 +72,9 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 			return fmt.Errorf("durable post-state missing %q", want)
 		}
 	}
+	if strings.Contains(o.after, "adoption-note:") {
+		return fmt.Errorf("durable post-state contains caller-controlled adoption note")
+	}
 	for _, exact := range []struct {
 		label string
 		value string
@@ -86,7 +89,6 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		{"approval decision", "\n                decision: approve", 1},
 		{"approval actor", "by: agent:first-officer", 1},
 		{"approval reason", "\n                reason:", 1},
-		{"delegated directive", recordedGateDirective, 1},
 		{"application target", "target-stage: " + o.expectedNext, 1},
 		{"consumed application", "\n                state: consumed", 1},
 	} {
@@ -162,7 +164,6 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	close := run("decision-record", "gate", "record", "recorded-gate-task",
 		"--decision", "approve", "--actor", "agent:first-officer",
 		"--reason", recordedGateReason,
-		"--directive", recordedGateDirective,
 		"--workflow-dir", fixture.root)
 	assertCommandOutput(t, close.stdout, "state=closed", "decision=approve")
 	commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
@@ -171,7 +172,10 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
 	commitRecordedGateState(t, binary, fixture, "consume gate authorization")
 	durable, _, durableErr := gates.Read(fixture.entity)
-	requireRecordedGate(t, durableErr == nil && durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason, "approve durable snapshot unreadable")
+	requireRecordedGate(t, durableErr == nil &&
+		durable.Records[0].Attempts[0].Resolution.By == "agent:first-officer" &&
+		durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason &&
+		durable.Records[0].Attempts[0].Resolution.Adoption == "", "approve durable snapshot unreadable")
 
 	events := successfulRecordedGateEvents(commands)
 	dispatches := 0
@@ -270,7 +274,7 @@ func bindRecordedGate(t *testing.T, binary string, fixture recordedGateFixture) 
 func closeRecordedGate(t *testing.T, binary string, fixture recordedGateFixture, decision string) {
 	mustRecordedGate(t, binary, fixture.root, "gate", "record", "recorded-gate-task",
 		"--decision", decision, "--actor", "agent:first-officer", "--reason", "evidence-backed route",
-		"--directive", recordedGateDirective, "--workflow-dir", fixture.root)
+		"--workflow-dir", fixture.root)
 }
 func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 	binary := buildRecordedGateBinary(t)
@@ -302,8 +306,8 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 		wants []string
 	}{
 		{"actor", []string{"--decision", "approve", "--reason", "evidence"}, []string{"actor"}},
-		{"reason", []string{"--decision", "revise", "--actor", "agent:first-officer", "--directive", recordedGateDirective}, []string{"reason"}},
-		{"directive", []string{"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence"}, []string{"directive"}},
+		{"unsupported-actor", []string{"--decision", "approve", "--actor", "agent:ensign", "--reason", "evidence"}, []string{"actor"}},
+		{"reason", []string{"--decision", "revise", "--actor", "agent:first-officer"}, []string{"reason"}},
 	} {
 		t.Run("invalid-"+tc.name, func(t *testing.T) {
 			fixture := writeRecordedGateFixture(t)
@@ -315,6 +319,26 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			assertRecordedGateByteCleanFailure(t, fixture, result, tc.wants...)
 			if after := treeDigest(t, fixture.stateRoot); after != before {
 				t.Fatalf("invalid %s changed workflow bytes", tc.name)
+			}
+		})
+	}
+	for _, tc := range []struct {
+		name, flag, value string
+	}{
+		{"exact-directive", "--directive", recordedGateDirective},
+		{"missing-period-directive", "--directive", strings.TrimSuffix(recordedGateDirective, ".")},
+		{"directive-file", "--directive-file", "authority.txt"},
+	} {
+		t.Run("retired-"+tc.name, func(t *testing.T) {
+			fixture := writeRecordedGateFixture(t)
+			bindRecordedGate(t, binary, fixture)
+			before := treeDigest(t, fixture.stateRoot)
+			result := runRecordedGateCommand(binary, fixture.root, "", "gate", "record", "recorded-gate-task",
+				"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence",
+				tc.flag, tc.value, "--workflow-dir", fixture.root)
+			assertRecordedGateByteCleanFailure(t, fixture, result, "unknown gate flag", tc.flag)
+			if after := treeDigest(t, fixture.stateRoot); after != before {
+				t.Fatalf("retired %s changed workflow bytes", tc.flag)
 			}
 		})
 	}
@@ -344,17 +368,16 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 	})
 	calls := []string{"redo with feedback", "reject with feedback-to", "reject without feedback-to", "hold", "not yet"}
 	reasons := []string{"accepts-direction: add the retry test", "rejects-direction: replace the rejected cache design", "rejects-direction: name a feedback owner", "pause: wait for security sign-off", "pause: rerun the failing CI lane"}
-	directives := []string{`path\segment`, "line one\nline two", "both \"quoted\"\\path\nnext", `quote "captain"`, "再試一次"}
 	for i, decision := range []string{"revise", "revise", "hold", "hold", "hold"} {
 		t.Run(calls[i]+"-consume", func(t *testing.T) {
 			fixture := writeRecordedGateFixture(t)
 			bindRecordedGate(t, binary, fixture)
 			commitRecordedGateState(t, binary, fixture, "bind "+calls[i])
-			mustRecordedGate(t, binary, fixture.root, "gate", "record", "recorded-gate-task", "--decision", decision, "--actor", "agent:first-officer", "--reason", reasons[i], "--directive", directives[i], "--workflow-dir", fixture.root)
+			mustRecordedGate(t, binary, fixture.root, "gate", "record", "recorded-gate-task", "--decision", decision, "--actor", "agent:first-officer", "--reason", reasons[i], "--workflow-dir", fixture.root)
 			closeCommit := commitRecordedGateState(t, binary, fixture, "durably record "+decision)
 			closed, _, err := gates.Read(fixture.entity)
 			attempt := closed.Records[0].Attempts[0]
-			requireRecordedGate(t, err == nil && readFile(t, fixture.entity) == recordedGateEntityAt(t, fixture, closeCommit) && attempt.Resolution.Decision == decision && attempt.Resolution.Reason == reasons[i] && attempt.Resolution.Adoption == directives[i] && attempt.Application.Action == map[string]string{"revise": "feedback", "hold": "none"}[decision], "%s close/route snapshot mismatch", calls[i])
+			requireRecordedGate(t, err == nil && readFile(t, fixture.entity) == recordedGateEntityAt(t, fixture, closeCommit) && attempt.Resolution.Decision == decision && attempt.Resolution.Reason == reasons[i] && attempt.Resolution.Adoption == "" && attempt.Application.Action == map[string]string{"revise": "feedback", "hold": "none"}[decision], "%s close/route snapshot mismatch", calls[i])
 			before := treeDigest(t, fixture.stateRoot)
 			result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 			assertRecordedGateByteCleanFailure(t, fixture, result, "condition")
@@ -511,7 +534,7 @@ func TestRecordedGateLifecycleAC7ResumeMatrix(t *testing.T) {
 		}
 		repeatClose := runRecordedGateCommand(binary, fixture.root, "", "gate", "record", "recorded-gate-task",
 			"--decision", "approve", "--actor", "agent:first-officer", "--reason", "duplicate",
-			"--directive", recordedGateDirective, "--workflow-dir", fixture.root)
+			"--workflow-dir", fixture.root)
 		assertRecordedGateByteCleanFailure(t, fixture, repeatClose, "closed")
 		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, closedUncommitted)
 
@@ -527,7 +550,7 @@ func TestRecordedGateLifecycleAC7ResumeMatrix(t *testing.T) {
 		}
 		repeatClose = runRecordedGateCommand(binary, fixture.root, "", "gate", "record", "recorded-gate-task",
 			"--decision", "approve", "--actor", "agent:first-officer", "--reason", "duplicate",
-			"--directive", recordedGateDirective, "--workflow-dir", fixture.root)
+			"--workflow-dir", fixture.root)
 		assertRecordedGateByteCleanFailure(t, fixture, repeatClose, "closed")
 		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, committedPending)
 
@@ -594,7 +617,7 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 			"id: " + recordedGateBriefingID + "\ndigest: " + recordedGateDigest + "\n" +
 			"id: resolution:spacedock:docs-dev:3k:validation:1\nbriefing: " + recordedGateBriefingID + "\n" +
 			"by: agent:first-officer\n                decision: approve\n                reason: " + recordedGateReason + "\n" +
-			"adoption-note: '" + recordedGateDirective + "'\ntarget-stage: handoff\n                state: consumed\nreport repeats decision: approve",
+			"target-stage: handoff\n                state: consumed\nreport repeats decision: approve",
 		dispatch:     recordedGateDispatchProof{builds: 1, durableEffects: 1, ordered: true, committed: true},
 		gateReview:   recordedGateReview(),
 		expectedNext: "handoff",
@@ -607,8 +630,8 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 			o.after = strings.Replace(o.after, "by: agent:first-officer", "by: person:captain", 1)
 		},
 		"blank-reason": func(o *recordedGateObservation) { o.after = strings.Replace(o.after, recordedGateReason, "", 1) },
-		"altered-directive": func(o *recordedGateObservation) {
-			o.after = strings.Replace(o.after, recordedGateDirective, "you have partial conn", 1)
+		"forged-adoption-note": func(o *recordedGateObservation) {
+			o.after = strings.Replace(o.after, "target-stage:", "adoption-note: forged\ntarget-stage:", 1)
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -710,7 +733,7 @@ func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
 			fixture := writeRecordedGateFixture(t)
 			steps := [][]string{
 				{"gate", "record", "recorded-gate-task", "--briefing", fixture.briefing, "--workflow-dir", fixture.root},
-				{"gate", "record", "recorded-gate-task", "--decision", "approve", "--actor", "agent:first-officer", "--reason", recordedGateReason, "--directive", recordedGateDirective, "--workflow-dir", fixture.root},
+				{"gate", "record", "recorded-gate-task", "--decision", "approve", "--actor", "agent:first-officer", "--reason", recordedGateReason, "--workflow-dir", fixture.root},
 				{"gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root},
 			}
 			var commands []recordedGateCommand

@@ -279,9 +279,17 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 		"If absent", "halt before mutation", "refresh or a fresh build",
 		"presentation completes only after", "exact bound Briefing id/digest",
 		"precede decision record", "delegated conn does not waive",
+		"explicit Captain grant in the active conversation",
+		"including one issued later in that conversation",
+		"leave the gate open",
 	} {
 		if !strings.Contains(strings.ToLower(lifecycle), strings.ToLower(want)) {
 			t.Errorf("gate lifecycle missing fail-closed/presentation contract %q", want)
+		}
+	}
+	for _, forbidden := range []string{"--directive", "--directive-file", "EXACT_QUOTED_CAPTAIN_GRANT"} {
+		if strings.Contains(lifecycle, forbidden) {
+			t.Errorf("gate lifecycle retains caller-controlled provenance surface %q", forbidden)
 		}
 	}
 	for _, want := range []string{

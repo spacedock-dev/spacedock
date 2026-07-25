@@ -23,7 +23,7 @@ type RecordInput struct {
 	BriefingPath, RoomPath            string
 	LogPath, FeedbackCyclePath, Round string
 	Actor, Decision                   string
-	Reason, Directive, WorkflowDir    string
+	Reason, WorkflowDir               string
 }
 
 type artifactRef struct {
@@ -98,7 +98,7 @@ func RecordSemantic(entityPath string, input RecordInput) error {
 		if input.BriefingPath == "" || input.LogPath == "" {
 			return fmt.Errorf("gate record --round requires --briefing and --log")
 		}
-		if input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "" || input.Directive != "" {
+		if input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "" {
 			return fmt.Errorf("gate record --round is incompatible with gate-closing flags")
 		}
 		if filepath.Base(input.BriefingPath) != "briefing.json" || filepath.Base(input.LogPath) != "briefing.review.jsonl" {
@@ -126,7 +126,7 @@ func RecordSemantic(entityPath string, input RecordInput) error {
 	if sources != 1 {
 		return fmt.Errorf("gate record requires exactly one of --briefing, --room, or --decision")
 	}
-	if input.BriefingPath != "" && (input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "" || input.Directive != "") || input.RoomPath != "" && (input.Actor != "" || input.Decision != "" || input.Reason != "" || input.Directive != "") {
+	if input.BriefingPath != "" && (input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "") || input.RoomPath != "" && (input.Actor != "" || input.Decision != "" || input.Reason != "") {
 		return fmt.Errorf("gate record flags do not match the selected semantic source")
 	}
 	if input.BriefingPath != "" && filepath.Base(input.BriefingPath) != "briefing.json" {
@@ -354,12 +354,11 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 	if (input.Decision == "revise" || input.Decision == "hold") && strings.TrimSpace(input.Reason) == "" {
 		return fmt.Errorf("%s decision requires --reason", input.Decision)
 	}
-	delegated := strings.HasPrefix(input.Actor, "agent:")
-	if delegated && strings.TrimSpace(input.Directive) == "" {
-		return fmt.Errorf("delegated chat decision requires --directive")
+	if input.Actor != "person:captain" && input.Actor != "agent:first-officer" {
+		return fmt.Errorf("unsupported chat decision actor %q", input.Actor)
 	}
-	if input.Actor == "agent:first-officer" && input.Decision == "approve" && strings.TrimSpace(input.Reason) == "" {
-		return fmt.Errorf("delegated First Officer approval requires --reason")
+	if input.Actor == "agent:first-officer" && strings.TrimSpace(input.Reason) == "" {
+		return fmt.Errorf("delegated First Officer decision requires --reason")
 	}
 	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath)
 	if err != nil {
@@ -379,7 +378,6 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 		At:       time.Now().UTC().Format(time.RFC3339Nano),
 		Decision: input.Decision,
 		Reason:   input.Reason,
-		Adoption: input.Directive,
 	}
 	if err := closeAttempt(entityPath, input.WorkflowDir, doc, oldNode, record, attempt, resolution); err != nil {
 		return err

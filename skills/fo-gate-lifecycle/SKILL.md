@@ -12,7 +12,7 @@ Load this skill in one host event before gate probe, mutation, presentation, rou
 
 **Boot projection.** Use only unresolved actionable `ready_gates` rows from `status --boot --identify --json`, fixed keys `id`, `slug`, `current`, `readiness`: `awaiting-captain` = selected current-stage open Briefing; `approved-awaiting-merge` = unblocked approve + advance/pending to terminal; `approved-awaiting-advance` = nonterminal target. Gate-stage/no selected attempt is omitted `validating`: retain and bind the selected Briefing before presentation, including when no decision authority is supplied. Malformed/stale selection, blocked/held, feedback, consumed/superseded/not-applicable are omitted. Opt-in human/JSON `gate-readiness` summarizes; `gate-*` retains optional diagnostics. Engage row `slug` and read the entity; never infer readiness from status/stage.
 
-**Capability preflight.** Immediately before every gate lifecycle, freshly resolve `${SPACEDOCK_BIN:-spacedock}` and run exactly one `gate --help`; do not cache it. Require `record`, `validate`, `eligibility`, `consume`, `--briefing`, `--room`, `--decision`, `--actor`, `--directive`. If absent, halt before mutation; prescribe refresh or a fresh build selected with `SPACEDOCK_BIN`. Never hand-edit `gates:`.
+**Capability preflight.** Immediately before every gate lifecycle, freshly resolve `${SPACEDOCK_BIN:-spacedock}` and run exactly one `gate --help`; do not cache it. Require `record`, `validate`, `eligibility`, `consume`, `--briefing`, `--room`, `--decision`, `--actor`, `--reason`. If absent, halt before mutation; prescribe refresh or a fresh build selected with `SPACEDOCK_BIN`. Never hand-edit `gates:`.
 
 **Retain and bind.** Assemble `ROOM/briefing.json`: concise capability/change, tests/evidence, reviewed snapshot, material/deferred/polish findings, one recommendation, decision ask; link raw entity/spec/reports. Keep reproducible payloads as URI + SHA, else freeze a room copy. Relative retained-input paths resolve from launch cwd.
 
@@ -29,13 +29,13 @@ Require exit 0, the expected gate/attempt/Briefing, and `state=open`; record alr
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor person:captain [--reason REASON] --workflow-dir WORKFLOW_DIR
 
 # FO rendered it under an explicit Captain conn
-${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor agent:first-officer --reason EVIDENCE_JUDGMENT --directive EXACT_QUOTED_CAPTAIN_GRANT --workflow-dir WORKFLOW_DIR
+${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor agent:first-officer --reason EVIDENCE_JUDGMENT --workflow-dir WORKFLOW_DIR
 
 # Exact retained provider Result from its prepared room
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --room ROOM --workflow-dir WORKFLOW_DIR
 ```
 
-`revise` and `hold` require a reason (or the provider's included same-Briefing Annotation). Delegated FO approval always carries both its nonblank evidence reason and the exact quoted grant; never relabel it `person:captain`. A provider Result requires the prepared room's complete retained presentation mapping and authorized Resolution.
+Without an explicit Captain grant in the active conversation, bind/present and leave the gate open. A grant including one issued later in that conversation permits an FO decision. Record it as `agent:first-officer` with a nonblank evidence reason; the recorder does not authenticate or retain the grant. `revise`/`hold` need reasons. Provider Results require authorized complete mappings.
 
 Map Captain calls before recording: `approve` maps to `approve` with an accepts-direction evidence reason; `redo with feedback` maps to `revise` with an accepts-direction reason; `reject` with `feedback-to` maps to `revise` with a rejects-direction reason; `reject` without `feedback-to` maps to `hold` with a pause reason; `hold` maps to `hold` with a pause reason; `not yet` maps to `hold` with a pause reason naming what remains. Routed redo/reject reasons include concrete asks and invoke `«feedback.route»` after the close commit; hold decisions commit and stop at the gate.
 
