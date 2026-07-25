@@ -711,6 +711,17 @@ This task owns the shared First Officer routing trigger, the deferred lifecycleâ
   a replacement design is approved. The same run's broad review-folder sweep is
   ergonomic evidence, not permission to add a search policy subsystem.
 
+- **Cycle 31 staff rejection â€” capture producer remains unowned (2026-07-25).**
+  `--directive-file` is not acceptable while only the test scaffold creates it. An
+  interactive Captain may grant conn after launch; an FO-authored file merely moves
+  lossy reconstruction from argv to a file. The repair must either bind delegated
+  authority to an existing shipped runtime-owned capture for every supported chat turn,
+  or narrow the product's delegated-authority semantics explicitly and handle later
+  grants without inventing exact provenance. Specify creator, message/session/workflow
+  binding, locator delivery, retention/supersession, and safe single-open reading; do
+  not treat an arbitrary readable file as authenticated authority. Keep the missing
+  final-period control and recalculate the surface around the actual producer.
+
 ## Stage Report: ideation
 
 - DONE: Map the current FO gate path to the demonstrated 3k/h1 lifecycle without redesigning judgment, presentation, recorder, or application semantics.
