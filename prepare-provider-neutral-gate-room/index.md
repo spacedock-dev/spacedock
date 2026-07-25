@@ -906,6 +906,13 @@ including its two leading/trailing spaces and non-ASCII code points.
   and use a whitespace-bearing non-ASCII sentinel in the downstream exact-display E2E.
   These are proof/scope clarifications, not an interface or architecture reset.
 
+- Cycle 10: REVISE — Subspace FO + independent staff review; surface state-only review,
+  0 product files/0 LOC vs estimate 19 files/1,694 LOC (0%); AC unchanged — bind a
+  fresh attempt over current main, define collision-free folder/flat room placement,
+  scope the two-file invariant to preparation before provider evidence exists, remove
+  the invented ordinary-ref retention policy, align rq on room-only invocation and
+  full Briefing-digest verification, and recompute the smallest owner/file/LOC surface.
+
 ## Stage Report: ideation
 
 - DONE: Reproduce xb's arbitrary-Briefing-basename failure with the smallest valid prepared room, then identify the minimum post-em Spacedock seam that makes it pass.
