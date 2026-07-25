@@ -136,6 +136,15 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 			},
 		},
 		{
+			name: "active work after empty without renewed empty",
+			want: "active work was not exhausted",
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
+				insertCodexSteeringEvent(e, 9, codexSteeringEvent{
+					Type: "active_work", Count: 1,
+				})
+			},
+		},
+		{
 			name: "worker no longer running after captain input",
 			want: "not still running",
 			mutate: func(t *testing.T, e *codexSteeringEvidence) {
@@ -443,8 +452,9 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 				runningAfterInput = i
 			}
 		case "active_work":
-			if captainInput >= 0 && i > captainInput && activeScopeEmpty < 0 && event.Count > 0 {
+			if captainInput >= 0 && i > captainInput && event.Count > 0 {
 				usefulWork += event.Count
+				activeScopeEmpty = -1
 			}
 		case "active_scope_empty":
 			if captainInput >= 0 && usefulWork > 0 && activeScopeEmpty < 0 {
