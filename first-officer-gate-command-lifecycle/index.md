@@ -699,6 +699,18 @@ From a goal-only prompt, one fixture-backed First Officer journey must package a
 
 This task owns the shared First Officer routing trigger, the deferred lifecycle’s Captain-word translation and durable route, the presenter’s canonical chat rendering/completion boundary, and their behavioral proof. It reuses the landed recorder/consumer, retained package, advisory correction flow, merge ceremony, host adapters, and repo-local fixture identity. It does not add a recorder schema or enum, product decision mapper, duplicate gate judgment, provider change, host-specific lifecycle, compatibility behavior, new harness, or advisory correction-round implementation.
 
+### Feedback Cycles
+
+- **Cycle 31 — live delegated-authority design reset (2026-07-25).** The unchanged
+  Claude journey delivered the full visible lifecycle and durable successor effect but
+  persisted zero exact copies of the Captain's delegated conn. Return to ideation:
+  authority capture must not depend on an agent retyping or shell-quoting Captain
+  bytes. Preserve the retained counterexample, reject prompt coaching/retry as a fix,
+  compare the smallest recorder/scaffold-owned reference mechanism with s4's prepared
+  request boundary, and keep the existing deterministic implementation isolated until
+  a replacement design is approved. The same run's broad review-folder sweep is
+  ergonomic evidence, not permission to add a search policy subsystem.
+
 ## Stage Report: ideation
 
 - DONE: Map the current FO gate path to the demonstrated 3k/h1 lifecycle without redesigning judgment, presentation, recorder, or application semantics.
