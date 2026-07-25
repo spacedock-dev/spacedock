@@ -62,14 +62,14 @@ gates:
                 state: consumed
                 blockers: []
 review-round:
-    id: round:v3vt8gp2yffmn62r8p95gkph:implementation:2
+    id: round:v3vt8gp2yffmn62r8p95gkph:implementation:3
     stage: implementation
-    cycle: 2
+    cycle: 3
     briefing:
-        id: briefing:v3vt8gp2yffmn62r8p95gkph:implementation:round-2
-        digest: sha256:64b41f6ecea822ae4e60c8378a3a13d9604ec428aaa3fe534aacb3f9f50ec306
+        id: briefing:v3vt8gp2yffmn62r8p95gkph:implementation:round-3
+        digest: sha256:cea9432b6c15da35c94e8737d24d7fa4d7da6e63d3269583f687e99449531e49
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-2
+        room-ref: ./review/implementation/round-3
 ---
 
 ## Problem
@@ -288,3 +288,16 @@ Candidate `16aa2ec3` is scope-correct and its reproduced focused, full, race,
 live-tag, production-control, and retained live evidence all pass. Validation
 rejects one material evidence defect: the recorded-gate oracle can qualify a
 failed build followed by break-glass successor dispatch, contrary to AC-3.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Pair the sole recorded-gate dispatch-build attempt with exactly one corresponding exit=0 before the successor effect can qualify; a failed build must never pass AC-3.
+  `recordedGateLiveObservation` now counts a success only when an `exit=0` command exactly matches the recorded `begin`; `assertRecordedGateLifecycle` requires attempts/successes `1/1`, so changing the exit status or command bytes fails qualification.
+- DONE: Add an adversarial mutant with one nonzero dispatch-build exit and a retained successor effect, and prove the observer rejects it.
+  `TestRecordedGateLifecycleRealCLIReplay/failed-build` changes only the valid log's dispatch-build exit to `exit=1` after the successor effect is committed; it failed red before the fix and passes only because the corrected observer rejects that mutant.
+- DONE: Keep the correction harness-only, preserve all existing host-scrubbing and ambiguity controls, rerun focused/full/race/live-tag verification, and request final Roborev review.
+  Correction commit `6ea4cdc8` changes only `recorded_gate_lifecycle_test.go`; focused live-tag builders, unchanged production ambiguity controls, `go test ./...`, and `go test ./... -race` passed, and Roborev job 2342 returned no issues in advisory round 3.
+
+### Summary
+
+The correction is a one-file, 26-LOC AC-3 oracle repair atop the existing six-file harness candidate, with no production or workflow behavior change. The aggregate candidate is six files/133 changed LOC; its successful retained Claude journey remains valid, while the new deterministic mutant closes the failed-build evidence hole.
