@@ -92,11 +92,11 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 			},
 		},
 		{
-			name: "target redispatch",
+			name: "target redispatch with new completion epoch",
 			want: "spawn count",
 			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				insertCodexSteeringEvent(e, 6, codexSteeringEvent{
-					Type: "spawn_agent_called", TaskPath: target.TaskPath, CompletionEpoch: target.CompletionEpoch,
+					Type: "spawn_agent_called", TaskPath: target.TaskPath, CompletionEpoch: target.CompletionEpoch + 1,
 				})
 			},
 		},
@@ -298,7 +298,7 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 
 		switch event.Type {
 		case "spawn_agent_called":
-			if sameCodexSteeringWorker(event, target) {
+			if event.TaskPath == target.TaskPath {
 				spawnCount++
 			}
 		case "wait_agent_called":
