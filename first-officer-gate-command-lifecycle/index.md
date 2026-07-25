@@ -2908,3 +2908,71 @@ obligation. The design explicitly discloses the lost audit detail, retains the
 missing-period failure as the decisive negative control, and leaves s4's provider-room
 contract intact. Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**; return this
 correction to the same independent ideation reviewer.
+
+## Stage Report: implementation (cycle 32 deterministic correction)
+
+- DONE: Remove both provenance flags and require delegated
+  `agent:first-officer` plus a nonblank evidence reason while preserving direct
+  Captain/provider sources and historical reads.
+  Code commit `15247f1e` starts at exact clean base `28073390`, removes
+  `--directive` from help/parser/`RecordInput`, rejects both `--directive` and
+  `--directive-file` before mutation, accepts only `person:captain` or
+  `agent:first-officer` for chat, and emits no new `adoption-note`. A production
+  `gates.Read` fixture proves historical adoption notes still decode; existing
+  provider-room verification is unchanged.
+- DONE: Update the existing lifecycle skill, tests, and docs without weakening
+  bind/present/close/consume/commit/dispatch ordering, decision mappings,
+  no-conn behavior, or the approved surface boundary.
+  The canonical real-CLI journey retains Briefing bind/commit, one root review,
+  six Captain mappings, close/commit, one-use consume/commit, terminal
+  complement, exactly one successor build/effect, capability preflight, and
+  folder-form state commits. The behavioral conn instruction now explicitly
+  binds/presents and leaves an unauthorized gate open, permits a later grant in
+  the same active conversation, and records only renderer plus evidence.
+- DONE: Declare the measured nine-file delta from `28073390` before review.
+  The exact surface is **9 files, +118/-45 = 163 changed LOC**, versus the
+  approved **9 files, approximately +72/-79 = 151 changed LOC**: 12 changed
+  lines / **7.9%** above estimate and below the 11-file / 204-LOC hard cap.
+  Per-file actuals and drift from the estimated addition/deletion counts are:
+
+  | Path | Estimated | Actual | Count drift |
+  | --- | ---: | ---: | ---: |
+  | `docs/site/concepts/gates-and-decisions.md` | +6/-0 | +6/-0 | +0/+0 |
+  | `docs/site/reference/command-reference.md` | +3/-3 | +1/-1 | -2/-2 |
+  | `docs/specs/gate-resolution-frontmatter-contract.md` | +12/-8 | +6/-5 | -6/-3 |
+  | `internal/cli/cli.go` | +0/-3 | +2/-4 | +2/+1 |
+  | `internal/cli/gate_test.go` | +12/-7 | +47/-8 | +35/+1 |
+  | `internal/contractlint/fo_function_reference_invariant_test.go` | +8/-0 | +8/-0 | +0/+0 |
+  | `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +24/-38 | +38/-15 | +14/-23 |
+  | `internal/gates/operation.go` | +2/-13 | +7/-9 | +5/-4 |
+  | `skills/fo-gate-lifecycle/SKILL.md` | +5/-7 | +3/-3 | -2/-4 |
+
+  The addition drift is the explicit byte-clean public-CLI table for exact,
+  missing-period, file, and legacy operation inputs plus historical
+  compatibility proof. The deletion drift retains the existing lifecycle
+  mapping and Git-barrier scaffolding instead of replacing or weakening it.
+- DONE: Run focused, full, race, live-compile, docs, format, and diff checks at
+  the committed deterministic correction.
+  The targeted chat/provenance CLI test, all `TestRecordedGateLifecycle*`
+  controls, lifecycle contract/cap checks, `gofmt -w ./cmd ./internal`,
+  `go test ./...`, `go test ./... -race`,
+  `go test -tags live ./... -run '^$' -count=1`,
+  `uv run --with-requirements docs/requirements.txt mkdocs build --strict`, and
+  `git diff --check` pass. The live-tag command compiled all runners and
+  executed no tests.
+- SKIPPED: Run Claude, Codex, or Pi, push PR code, request Roborev, or mutate a
+  gate, round, status, or merge.
+  The deterministic commit stops for independent staff review. After later
+  live-host approval, the final implementation phase must run the approved
+  journeys, then request Roborev and record/triage its advisory round before
+  validation.
+
+### Summary
+
+Cycle 32 deterministic implementation removes the unauthenticated directive
+writer and records delegated chat decisions only as asserted
+`agent:first-officer` plus required evidence, while keeping historical state
+readable and direct/provider semantics intact. Exact and missing-period legacy
+directives now fail byte-clean, all deterministic gates are green at
+`15247f1e`, and live spend remains blocked on independent staff approval.
+Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**.
