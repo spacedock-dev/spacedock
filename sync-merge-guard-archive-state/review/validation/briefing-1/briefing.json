@@ -1,0 +1,84 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:rd:validation:attempt-1:revision-1",
+  "question": "Should candidate fb1c9dbbd06e52f86d9fa3d073651ef9c0f4066a enter the merge and terminalization path?",
+  "artifacts": [
+    {
+      "id": "artifact:rd-validation-gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:be354bf29ec8aee4e37d8740d9c9d23abb102173831fc6174da981e1d2b77d22",
+      "summary": "Explains the delivered remote-durable archive capability, the supported interrupted-publication restart, the exact pathspec-magic correction, all validation evidence, the one deferred trigger, and the requested merge decision."
+    },
+    {
+      "id": "artifact:rd-validation-task",
+      "uri": "git-root://state/52f2ade5746f312fd73dcb8a3d7422109518a613/sync-merge-guard-archive-state/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:783ce26f10a480585b1ae2066d3f83040c04dcc6630b391079c5266c0d0c3024",
+      "summary": "The immutable task specification, six acceptance criteria, seven implementation review rounds, the original rejected validation counterexample, the narrow correction, and the final PASSED revalidation."
+    },
+    {
+      "id": "artifact:rd-archive-finalizer",
+      "uri": "git-root://main/fb1c9dbbd06e52f86d9fa3d073651ef9c0f4066a/internal/status/merge.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:33e8a6e818ec787ee1d669085d4a68177ea4878d3f8cf72784c5c1afea71c494",
+      "summary": "The exact candidate archive-finalization implementation, including publish-before-success behavior and literal source/destination pathspec handling for forward commit and symmetric rollback."
+    },
+    {
+      "id": "artifact:rd-pathspec-regressions",
+      "uri": "git-root://main/fb1c9dbbd06e52f86d9fa3d073651ef9c0f4066a/internal/status/merge_guard_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:6dcd6b1f1b4f252ac1fa3484edd3aba666c870c7b98577d4c31ead5dc74a04dd",
+      "summary": "The real-Git `:(glob)*` forward and failing-commit rollback regressions that prove exact archive deltas and byte-identical preservation of sibling state."
+    },
+    {
+      "id": "artifact:rd-state-publisher",
+      "uri": "git-root://main/fb1c9dbbd06e52f86d9fa3d073651ef9c0f4066a/internal/statesync/publish.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:4ca029490bc183d6731c074b26d7d219bc7f322c480de0757d2db6af9fe85916",
+      "summary": "The provider-neutral standard-library state publisher that synchronizes peers, publishes exact commits, and returns recoverable conflict evidence without force-push or autostash."
+    },
+    {
+      "id": "artifact:rd-two-host-proof",
+      "uri": "git-root://main/fb1c9dbbd06e52f86d9fa3d073651ef9c0f4066a/internal/cli/merge_state_sync_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:241c56c05050a7fad5bf414a1ea395aeb4d5b0e643685b1a9b93cc9f345d72ea",
+      "summary": "The two-host behavioral proof for fresh-host visibility, interrupted publication recovery, peer integration, conflict HALT evidence, and truthful local-only outcomes."
+    },
+    {
+      "id": "artifact:docs-dev-workflow",
+      "uri": "git-root://main/23c0fcf3f33239958bf17c8736c1fdc9b0319341/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:46d44abcbdc596a0aa2c22cb94465cf4e2321a529c52679f14e7efcb071a5f62",
+      "summary": "The immutable workflow contract governing independent validation, materiality triage, captain approval, merge, and terminalization."
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:rd-validation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Merge and terminalize the exact candidate",
+          "to": "stage:done"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return a material finding to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold before merge",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}

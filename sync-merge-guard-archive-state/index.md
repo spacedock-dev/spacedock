@@ -1,7 +1,7 @@
 ---
 id: rdjjq9hbv86skkw12z106z6q
 title: Make merge-guard archive finalization durable across split-root hosts
-status: validation
+status: done
 source: "Roborev 2146 during durable-decisions 6y final implementation review, 2026-07-24"
 started: 2026-07-24T15:38:16Z
 completed:
@@ -13,7 +13,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:rd:ideation
+        gate: gate:docs-dev:rd:validation
     records:
         - id: gate:docs-dev:rd:backlog
           stage: backlog
@@ -59,6 +59,28 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
+                state: consumed
+                blockers: []
+        - id: gate:docs-dev:rd:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:rd-validation-1
+              briefing:
+                id: briefing:docs-dev:rd:validation:attempt-1:revision-1
+                digest: sha256:5388622aea1ba0ff2c28f9c8cfa3a48afaf7952ab07a198aae4960c48750f017
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:rd:validation:1
+                briefing: briefing:docs-dev:rd:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T19:46:47.412659Z"
+                decision: approve
+                reason: Independent revalidation proves AC-1 through AC-6 on the corrected exact candidate; the pathspec-magic sibling-sweep defect is closed symmetrically, full and race suites pass, and only the declared sibling-dirt plus peer-advance condition remains deferred outside the promised direct-push path.
+              application:
+                action: advance
+                target-stage: done
                 state: consumed
                 blockers: []
 ---
