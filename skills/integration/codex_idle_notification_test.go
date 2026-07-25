@@ -11,7 +11,7 @@ import (
 )
 
 var codexIdleNotificationClassifications = map[string]bool{
-	"foreground_wait":          true,
+	"async_idle_monitoring":    true,
 	"queued_flush":             true,
 	"autonomous_idle_wake":     true,
 	"no_notification_observed": true,

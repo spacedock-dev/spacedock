@@ -1,9 +1,9 @@
 # Codex Idle Notification Probe
 
 Use this recipe when checking whether Codex can resume a first-officer turn from
-a background worker final-status notification without an explicit foreground
-wait. The probe separates foreground waiting, queued notification delivery, and
-autonomous idle wake-up.
+a background worker final-status notification without explicit async idle
+monitoring. The probe separates async idle monitoring, queued notification
+delivery, and autonomous idle wake-up.
 
 Use this exact no-write worker prompt:
 
@@ -18,25 +18,24 @@ During a no-wait idle window, avoid captain messages, shell-outs, terminal jobs,
 and tool calls. Any such activity can flush a queued mailbox notification and
 must be treated as operator activity, not idle wake evidence.
 
-## Foreground wait comparison
+## Async idle-monitoring comparison
 
 1. Dispatch a worker with the exact no-write prompt and record its handle.
-2. When the live Codex tool surface exposes a foreground wait binding, use `«completion-signal»` foreground waiting only when there is no ready workflow work.
+2. When the live Codex tool surface binds `«completion-signal»`, use async idle monitoring only when there is no ready workflow work.
 3. Record whether the call returns a timeout or a final status.
-4. If captain input, Esc, or another operator interruption returns control,
-   record it as a non-terminal foreground-wait return; do not classify it as a
-   worker final status, failure, closure, redispatch, or idle wake-up. If the
-   worker remains unresolved, reinstall the global wait when waiting is again
-   the next useful idle action and record the next timeout or final status.
+4. If captain input resumes the FO's active loop, record the worker as unchanged
+   and continue useful active-scope work. When the FO becomes idle again, resume
+   monitoring the same unresolved worker. The harness return label is not worker
+   completion, failure, closure, redispatch, or idle-wake evidence.
 5. Classify a final status observed through this explicit wait path as
-   `foreground_wait`.
+   `async_idle_monitoring`.
 
 Use `«roster-reconcile»` only to inspect active/completed task paths for attribution and debugging. Durable workflow state remains authoritative.
 
 ## No-wait idle probe
 
 1. Dispatch a worker with the exact no-write prompt and record its handle.
-2. Do not use foreground wait; end the FO turn.
+2. Do not use async idle monitoring; end the FO turn.
 3. Keep the session idle for the minimum idle window of 90 seconds after the FO
    turn ends.
 4. During that idle window, avoid captain messages, shell-outs, terminal jobs,
@@ -58,21 +57,20 @@ Use `«roster-reconcile»` only to inspect active/completed task paths for attri
 
 ## Interpretation Rules
 
-- `foreground_wait`: foreground wait returned
-  a timeout or final-status mailbox update, and any operator interruption that
-  returned control was recorded as a non-terminal foreground-wait return
-  followed by reinstalling the global wait only when waiting was again the next
-  useful idle action. Legacy fixtures may describe handle-scoped waiting, but
-  they must be explicitly marked as legacy evidence.
-- `queued_flush`: no foreground wait was used, but later captain, tool, or
+- `async_idle_monitoring`: `«completion-signal»` returned a timeout or final-status
+  mailbox update. If captain input intervened, it resumed the FO's active loop
+  while the worker remained unchanged, and monitoring resumed only after
+  active-scope work was exhausted. Legacy fixtures may describe handle-scoped
+  waiting, but they must be explicitly marked as legacy evidence.
+- `queued_flush`: no async idle monitoring was used, but later captain, tool, or
   shell-out activity caused a queued worker final-status notification to appear.
   This remains queued/activity-driven delivery unless an autonomous wake probe
   proves otherwise.
-- `autonomous_idle_wake`: no foreground wait and no later activity occurred, and
-  Codex began a new assistant turn from the worker final-status notification
-  alone.
-- `no_notification_observed`: no foreground wait was used and no final-status
-  notification appeared during the minimum idle window.
+- `autonomous_idle_wake`: no async idle monitoring and no later activity
+  occurred, and Codex began a new assistant turn from the worker final-status
+  notification alone.
+- `no_notification_observed`: no async idle monitoring was used and no
+  final-status notification appeared during the minimum idle window.
 
 Store run records as JSON under
 `docs/dev/_evidence/codex-idle-notification-probe/`. Use RFC3339 UTC timestamps

@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-07-23-dogfood",
+  "host": "codex",
+  "codex_cli_version": "0.145.0",
+  "source": "Reduced from the 2026-07-23 steering trace; the final-status and durable-report tail is the correlated completion fixture required by the accepted design.",
+  "worker": {
+    "assignment_id": "spacedock-ensign-r4xva464wf-implementation-correction",
+    "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
+    "completion_epoch": 2
+  },
+  "events": [
+    {
+      "sequence": 1,
+      "at_utc": null,
+      "type": "spawn_agent_called",
+      "assignment_id": "spacedock-ensign-r4xva464wf-implementation-correction",
+      "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
+      "completion_epoch": 2
+    },
+    {
+      "sequence": 2,
+      "at_utc": "2026-07-23T14:35:21.736Z",
+      "type": "agent_message",
+      "message": "Monitoring the unresolved worker while the active scope is idle."
+    },
+    {
+      "sequence": 3,
+      "at_utc": "2026-07-23T14:35:21.736Z",
+      "type": "wait_agent_called",
+      "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
+      "completion_epoch": 2
+    },
+    {
+      "sequence": 4,
+      "at_utc": "2026-07-23T14:39:46.715Z",
+      "type": "harness_output",
+      "message": "Wait interrupted by new input"
+    },
+    {
+      "sequence": 5,
+      "at_utc": "2026-07-23T14:39:46.715Z",
+      "type": "captain_input",
+      "message": "Steering payload omitted from the reduced record."
+    },
+    {
+      "sequence": 6,
+      "at_utc": "2026-07-23T14:39:54.317Z",
+      "type": "list_agents_result",
+      "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
+      "completion_epoch": 2,
+      "status": "running"
+    },
+    {
+      "sequence": 7,
+      "at_utc": null,
+      "type": "agent_message",
+      "message": "Handling the captain's request while the worker continues."
+    },
+    {
+      "sequence": 8,
+      "at_utc": null,
+      "type": "active_work",
+      "count": 20
+    },
+    {
+      "sequence": 9,
+      "at_utc": "2026-07-23T14:47:46.146Z",
+      "type": "active_scope_empty"
+    },
+    {
+      "sequence": 10,
+      "at_utc": "2026-07-23T14:47:46.147Z",
+      "type": "wait_agent_called",
+      "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
+      "completion_epoch": 2
+    },
+    {
+      "sequence": 11,
+      "at_utc": null,
+      "type": "final_status",
+      "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
+      "completion_epoch": 2,
+      "status": "completed"
+    },
+    {
+      "sequence": 12,
+      "at_utc": null,
+      "type": "durable_report_read",
+      "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
+      "completion_epoch": 2,
+      "status": "completed",
+      "artifact_path": "worker-report.md"
+    }
+  ]
+}
