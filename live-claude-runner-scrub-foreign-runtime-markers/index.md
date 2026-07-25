@@ -13,7 +13,7 @@ id: v3vt8gp2yffmn62r8p95gkph
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:v3:ideation
+        gate: gate:docs-dev:v3v:validation
     records:
         - id: gate:docs-dev:v3:backlog
           stage: backlog
@@ -61,6 +61,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:v3v:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:v3v-validation-1
+              briefing:
+                id: briefing:docs-dev:v3v:validation:attempt-1:revision-1
+                digest: sha256:8300e31f733d31c534070e90aeaddb5c2bbd5cb6e22564a2a1142222d5924869
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-1
 review-round:
     id: round:v3vt8gp2yffmn62r8p95gkph:implementation:3
     stage: implementation

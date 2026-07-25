@@ -1,0 +1,77 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:v3v:validation:attempt-1:revision-1",
+  "question": "Should candidate 6ea4cdc80ddc1be9b1bf7233211abb127bf56c90 enter the merge and terminalization path?",
+  "artifacts": [
+    {
+      "id": "artifact:v3v-validation-gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:933b2e408bbc0edb2e7956702cf2e149013a8bbbbc8edee7707b24b9919a8125",
+      "summary": "Summarizes the delivered runtime-isolation capability, exact candidate and base, validation evidence, corrected AC-3 oracle, deferred Pi CI risk, and requested merge decision."
+    },
+    {
+      "id": "artifact:v3v-validation-entity",
+      "uri": "git-root://state/5800bd0e18ac34343d478cf0ecd4975b6118e5c0/live-claude-runner-scrub-foreign-runtime-markers/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:31c347d10fcf315c8224b0d737e34c44d806eefab1c5325ec3575d8fe2507100",
+      "summary": "The immutable task specification, acceptance criteria, implementation and validation reports, two rejected feedback cycles, corrected evidence, and final PASSED recommendation."
+    },
+    {
+      "id": "artifact:v3v-roborev-round-3",
+      "uri": "../../implementation/round-3/briefing.json",
+      "mediaType": "application/json",
+      "rev": "sha256:ef112f2e6c4d0e1df328bfeed6d1289ad4eac9039a22a02be673d4d0d1c8e91f",
+      "summary": "The retained final implementation review round for candidate 6ea4cdc8; Roborev job 2342 returned no findings."
+    },
+    {
+      "id": "artifact:v3v-recorded-gate-oracle",
+      "uri": "git-root://main/6ea4cdc80ddc1be9b1bf7233211abb127bf56c90/internal/ensigncycle/recorded_gate_lifecycle_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:3345fdd4c8b95058a584cc0d3bb2eecefda6470f85c05ae7244e8bb18a4b6ba6",
+      "summary": "The exact candidate oracle and adversarial mutant requiring one byte-matching successful dispatch-build exit before a committed successor effect can satisfy AC-3."
+    },
+    {
+      "id": "artifact:v3v-runtime-marker-matrix",
+      "uri": "git-root://main/6ea4cdc80ddc1be9b1bf7233211abb127bf56c90/internal/ensigncycle/liveenv_decision_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:bfe5567585221811e32b8c92d099a5885cd9c912e84174692c59c31ccfe4eff8",
+      "summary": "The exact candidate host-environment matrix proving foreign marker removal and exact preservation of target markers and execution context."
+    },
+    {
+      "id": "artifact:docs-dev-workflow",
+      "uri": "git-root://main/4ff98d8cd97ebcf17b6a583070ce69234e24fc87/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:46d44abcbdc596a0aa2c22cb94465cf4e2321a529c52679f14e7efcb071a5f62",
+      "summary": "The immutable workflow contract governing independent validation, feedback routing, captain approval, CI, merge, and terminalization."
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:v3v-validation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Merge and terminalize the exact candidate",
+          "to": "stage:done"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return a material finding to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold before merge",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}
