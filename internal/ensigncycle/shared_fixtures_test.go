@@ -26,7 +26,7 @@ func singleRecordedGateReview(candidates []string) string {
 }
 
 func writeGateWorkflow(t *testing.T, root string) recordedGateFixture {
-	return writeRecordedGateFixtureAt(t, root)
+	return writePreparedRecordedGateFixtureAt(t, root)
 }
 func gateReadme() string { return recordedGateReadme() }
 func gateEntity() string { return recordedGateEntity() }
@@ -35,7 +35,7 @@ func gatePrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s",
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: "+workflowRoot,
-		"Engage only `recorded-gate-task`. Its retained validation package is `"+filepath.Join(workflowRoot, ".spacedock-state", "recorded-gate-task", "review", "validation", "briefing-1", "briefing.json")+"`.",
+		"Engage only `recorded-gate-task`. Prepare its recorder-ready room from the committed gate review and supporting References.",
 		"Goal: bring it to the human decision boundary and stop there.",
 	)
 }

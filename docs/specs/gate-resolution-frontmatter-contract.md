@@ -64,25 +64,72 @@ In particular, the pilot-only `gates.current.attempt`, `current-attempt`, `seque
 migration or compatibility rewrite. The `application` field is the typed one-use
 lifecycle boundary owned by the application layer on the same canonical-v1 writer surface.
 
-Every Briefing binding includes an id, SHA-256 digest, explicit digest domain, and room
-reference. The approved domains are:
+Every Briefing binding includes an id, SHA-256 digest, explicit digest domain, and exact
+file or room reference. A request-backed room additionally freezes its request digest;
+that request names the canonical Briefing with a clean room-relative locator, id, and
+digest. No reader infers a canonical basename. The approved digest domains are:
 
 - `canonical-bytes`: SHA-256 over RFC 8785/JCS canonical Briefing JSON bytes. New
   recorder binds always use this domain.
 - `raw-file-pin`: an explicitly labelled raw-byte pin that may remain in a canonical v1
   record. It is never silently reinterpreted as a canonical digest.
 
-A prepared provider room also binds `request-digest`, the JCS digest of its
-`request.json`. Chat-only attempts may omit it. Changing request authority after the
-attempt binds therefore fails before Result validation or entity mutation.
+A prepared provider-neutral room binds `request-digest`, the JCS digest of its
+`request.json`. Request-less and chat-only attempts may omit it. Changing the request,
+located Briefing, or a selected Git object after the attempt binds therefore fails
+before Result validation or entity mutation.
+
+## Provider-neutral preparation
+
+`gate prepare` is the single mechanical operation that turns First Officer judgment and
+committed file selections into an open recorder-ready attempt:
+
+```text
+spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md --summary TEXT \
+  [--reference FILE ...] [--workflow-dir DIR]
+```
+
+The caller supplies exactly one question, Markdown primary Artifact, and nonblank
+valid-UTF-8 primary summary; References may repeat in caller order. Spacedock preserves
+the summary string exactly, assigns deterministic ordinal item identities, and derives
+the gate, attempt, Briefing, Captain authority, digests, and room. It writes only
+`gate-briefing.json` and `request.json` at preparation time. It copies no selected
+source, writes no association, and creates no provider subtree.
+
+Folder and flat entities share the same companion-room layout:
+
+```text
+<state-root>/<slug>/review/<stage>/briefing-<attempt>/
+```
+
+For folder form, the entity is `<slug>/index.md`; for flat form it is `<slug>.md` and
+`<slug>/` is its artifact companion. State commit and archive operations treat the flat
+Markdown plus companion directory as one literal path-scoped unit, including tracked
+deletions and rollback, without sweeping siblings.
+
+Each selected source is a readable, committed, non-symlink regular file owned by the
+workflow's `main` or distinct `state` Git history. Its closed identity is
+`git-root://<main|state>/<full-commit>/<canonically-escaped-repository-path>` and its
+`rev` is the full raw-byte SHA-256. Preparation compares the selected worktree bytes
+with `<commit>:<path>`; later operations reopen only that local Git object. They never
+fetch, deepen, hydrate, retain a ref, search another checkout, or fall back to current
+worktree bytes. A clean detached or linked worktree is valid when it shares the
+expected Git history and the object is local.
+
+The primary Artifact alone carries the exact caller-supplied `summary`. References
+carry none. This stricter profile applies only to request-backed prepared rooms;
+request-less bindings and advisory-round Briefings retain their existing summary-free
+behavior. Exact prepare replay is a no-op, divergent occupancy fails closed, and
+handled validation, publish, or bind failure removes the new candidate and any
+newly-created empty parents. Success prints exactly `room`, `briefing`, `digest`, and
+`state=open` lines; the emitted absolute room is the only later handoff coordinate.
 
 ## Recorder lifecycle
 
 `spacedock gate record` derives lifecycle under the entity lock:
 
-1. `--briefing` requires the retained package manifest basename `briefing.json`, then
-   derives the logical gate from the entity's current workflow stage. Any other basename
-   is rejected before locking or mutation.
+1. `--briefing` binds the exact supplied canonical Briefing file, regardless of
+   basename, then derives the logical gate from the entity's current workflow stage.
 2. With no record for that stage, it opens the first attempt.
 3. With an open last attempt, an identical binding is a no-op and a changed binding
    replaces that attempt's Briefing.
@@ -104,7 +151,8 @@ the attempt's `request-digest` rejects post-binding request changes.
 The fixed provider outputs are `provider/result.json` and
 `provider/presented-inventory.json`; callers supply neither path nor provider argv.
 
-The recorder resolves the room's exact `briefing.json`, recomputes its JCS digest, and
+The recorder validates `request.json`, resolves its exact frozen Briefing locator,
+recomputes its JCS digest, and
 derives the canonical inventory from every Artifact and recursively reached Reference.
 It derives a private `spacedock-result-association` v1 by matching each presented id and
 revision to that inventory and binding the raw Result digest. The mapping must cover the
@@ -122,6 +170,14 @@ On provider close, the recorder stores only the raw-byte digests of
 They are part of the frozen attempt. `gate validate` recomputes both from the fixed room
 files and fails if either is missing or changed. Chat-closed and open attempts carry no
 provider evidence; the derived association remains ephemeral.
+
+Request, located Briefing, Result, and presented inventory all pass through one
+recursive token-stream duplicate-member check before typed decoding or
+canonicalization. Conflicting members at any object depth fail closed; Go's
+last-member-wins JSON behavior is never authority. Binding, room recording,
+validation, eligibility, and consumption all resolve and recheck the same frozen
+request/Briefing/source authority. Provider evidence is valid only on a prepared,
+request-digest-bound attempt.
 
 ## Round records and triage dispositions (advisory; owner: 02av)
 
@@ -205,7 +261,8 @@ data.
 ## Command surface
 
 ```text
-spacedock gate record ENTITY --briefing PATH/briefing.json [--workflow-dir DIR]
+spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]
+spacedock gate record ENTITY --briefing PATH [--workflow-dir DIR]
 spacedock gate record ENTITY --room PATH [--workflow-dir DIR]
 spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]
 spacedock gate validate ENTITY [--workflow-dir DIR]
@@ -229,6 +286,11 @@ that rendered the decision; it does not authenticate chat or apply the result.
   inside `gates`.
 - Provider launch, polling, result retention, presentation UI, and Subspace-specific
   behavior.
+- Remote Git-object acquisition, retention refs, copied selected-source payloads, or
+  generic URI/root registries.
+- Provider capability probing or fallback selection by the First Officer. A selected
+  presentation override receives only the committed `room=` value through
+  `/subspace:r gate <room>`; the provider entry owns all later mechanics.
 - Blocker-satisfaction evaluation, execution-hold authoring, dispatch identities, or effect receipts.
 - A second schema version or provider operation envelope.
 

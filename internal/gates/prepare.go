@@ -1,0 +1,498 @@
+// ABOUTME: Mechanical provider-neutral gate-room preparation and atomic binding.
+// ABOUTME: Successful preparation publishes only request plus canonical Briefing.
+package gates
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/spacedock-dev/spacedock/internal/gitsource"
+)
+
+const preparedBriefingLocator = "gate-briefing.json"
+
+type PrepareInput struct {
+	WorkflowDir string
+	Question    string
+	Artifact    string
+	Summary     string
+	References  []string
+}
+
+type PrepareResult struct {
+	Room     string
+	Briefing string
+	Digest   string
+	State    string
+}
+
+type preparedReference struct {
+	Type      string `json:"type"`
+	ID        string `json:"id"`
+	URI       string `json:"uri"`
+	MediaType string `json:"mediaType"`
+	Rev       string `json:"rev"`
+}
+
+type preparedBriefing struct {
+	Type      string              `json:"type"`
+	Version   string              `json:"version"`
+	ID        string              `json:"id"`
+	Question  string              `json:"question"`
+	Artifacts []briefingArtifact  `json:"artifacts"`
+	Context   []preparedReference `json:"context,omitempty"`
+}
+
+// Prepare validates selected committed sources, constructs one canonical open
+// room under the entity lock, publishes it, and binds it to the current stage.
+func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
+	if strings.TrimSpace(input.Question) == "" {
+		return PrepareResult{}, fmt.Errorf("--question must be nonblank")
+	}
+	if !utf8.ValidString(input.Question) {
+		return PrepareResult{}, fmt.Errorf("--question must be valid UTF-8")
+	}
+	if !utf8.ValidString(input.Summary) {
+		return PrepareResult{}, fmt.Errorf("--summary must be valid UTF-8")
+	}
+	if strings.TrimSpace(input.Summary) == "" {
+		return PrepareResult{}, fmt.Errorf("--summary must be nonblank")
+	}
+	if !isMarkdownPath(input.Artifact) {
+		return PrepareResult{}, fmt.Errorf("--artifact must name a .md or .markdown file")
+	}
+	if strings.TrimSpace(input.WorkflowDir) == "" {
+		return PrepareResult{}, fmt.Errorf("gate prepare requires a workflow directory")
+	}
+	paths := append([]string{input.Artifact}, input.References...)
+	normalized := make([]string, 0, len(paths))
+	seen := map[string]bool{}
+	for _, selected := range paths {
+		path, err := filepath.Abs(selected)
+		if err != nil {
+			return PrepareResult{}, fmt.Errorf("resolve selected source: %w", err)
+		}
+		path = filepath.Clean(path)
+		if seen[path] {
+			return PrepareResult{}, fmt.Errorf("gate prepare received the same selected path more than once")
+		}
+		seen[path] = true
+		normalized = append(normalized, path)
+	}
+
+	entityPath, err := filepath.Abs(entityPath)
+	if err != nil {
+		return PrepareResult{}, fmt.Errorf("resolve entity: %w", err)
+	}
+	unlock, err := lockEntity(entityPath)
+	if err != nil {
+		return PrepareResult{}, err
+	}
+	defer unlock()
+
+	stage, err := entityStatus(entityPath)
+	if err != nil {
+		return PrepareResult{}, err
+	}
+	doc, oldNode, readErr := Read(entityPath)
+	if readErr != nil && !strings.Contains(readErr.Error(), "no gates record") {
+		return PrepareResult{}, readErr
+	}
+	if doc == nil {
+		doc = &Document{Version: 1}
+	}
+	entityID, err := entityIdentity(entityPath)
+	if err != nil {
+		return PrepareResult{}, err
+	}
+	gateID, attemptID, attemptNumber, record, previous, err := prepareTarget(doc, entityID, stage)
+	if err != nil {
+		return PrepareResult{}, err
+	}
+	briefingID := "briefing:" + strings.TrimPrefix(gateID, "gate:") +
+		":attempt-" + strconv.Itoa(attemptNumber) + ":revision-1"
+	room := preparedRoomPath(entityPath, stage, attemptNumber)
+	room, err = filepath.Abs(room)
+	if err != nil {
+		return PrepareResult{}, fmt.Errorf("resolve prepared room: %w", err)
+	}
+
+	roots := gitsource.Roots{Main: input.WorkflowDir, State: filepath.Dir(entityPath)}
+	sources := make([]gitsource.Source, 0, len(normalized))
+	for _, selected := range normalized {
+		source, err := gitsource.Inspect(roots, selected)
+		if err != nil {
+			return PrepareResult{}, err
+		}
+		sources = append(sources, source)
+	}
+	primarySummary := input.Summary
+	manifest := preparedBriefing{
+		Type:     "Briefing",
+		Version:  "1",
+		ID:       briefingID,
+		Question: input.Question,
+		Artifacts: []briefingArtifact{{
+			artifactRef: artifactRef{
+				ID:  preparedItemID("artifact", briefingID, 1),
+				URI: sources[0].URI,
+				Rev: sources[0].Rev,
+			},
+			MediaType: "text/markdown",
+			Summary:   &primarySummary,
+		}},
+	}
+	for i, source := range sources[1:] {
+		manifest.Context = append(manifest.Context, preparedReference{
+			Type:      "Reference",
+			ID:        preparedItemID("reference", briefingID, i+2),
+			URI:       source.URI,
+			MediaType: mediaType(normalized[i+1]),
+			Rev:       source.Rev,
+		})
+	}
+	briefingBytes, err := indentedJSON(manifest)
+	if err != nil {
+		return PrepareResult{}, err
+	}
+	briefingDigest, err := CanonicalDigest(briefingBytes)
+	if err != nil {
+		return PrepareResult{}, fmt.Errorf("canonicalize prepared Briefing: %w", err)
+	}
+	request := gateRoomRequest{
+		Type:     "spacedock-gate-presentation-request",
+		Version:  "1",
+		Gate:     gateID,
+		Attempt:  attemptID,
+		Actor:    "person:captain",
+		Approver: "person:captain",
+	}
+	request.Briefing.Locator = preparedBriefingLocator
+	request.Briefing.ID = briefingID
+	request.Briefing.Digest = briefingDigest
+	requestBytes, err := indentedJSON(request)
+	if err != nil {
+		return PrepareResult{}, err
+	}
+	requestDigest, err := CanonicalDigest(requestBytes)
+	if err != nil {
+		return PrepareResult{}, fmt.Errorf("canonicalize prepared request: %w", err)
+	}
+	roomRef, err := relativeRoomRef(entityPath, room)
+	if err != nil {
+		return PrepareResult{}, err
+	}
+	binding := Briefing{
+		ID:            briefingID,
+		Digest:        briefingDigest,
+		DigestDomain:  "canonical-bytes",
+		RequestDigest: requestDigest,
+		RoomRef:       roomRef,
+	}
+
+	if previous != nil && previous.Resolution == nil && previous.Briefing.RequestDigest != "" &&
+		!sameBinding(previous.Briefing, binding) {
+		return PrepareResult{}, fmt.Errorf("open gate room binding is frozen and cannot be rebound")
+	}
+	if err := validatePreparedCandidate(entityPath, roots, room, binding, gateID, attemptID, briefingBytes, requestBytes); err != nil {
+		return PrepareResult{}, err
+	}
+	created, createdParents, err := publishPreparedRoom(room, briefingBytes, requestBytes)
+	if err != nil {
+		return PrepareResult{}, err
+	}
+
+	if previous == nil {
+		record.Attempts = append(record.Attempts, Attempt{ID: attemptID, Briefing: binding})
+	} else if previous.Resolution == nil {
+		previous.Briefing = binding
+	} else {
+		if previous.Application != nil && previous.Application.State == "pending" {
+			previous.Application.State = "superseded"
+		}
+		record.Attempts = append(record.Attempts, Attempt{ID: attemptID, Briefing: binding})
+	}
+	doc.Current.Gate = gateID
+	if err := Validate(doc); err != nil {
+		if created {
+			rollbackPreparedRoom(room, createdParents)
+		}
+		return PrepareResult{}, err
+	}
+	if oldNode != nil {
+		if err := ValidateTransition(oldNode, doc); err != nil {
+			if created {
+				rollbackPreparedRoom(room, createdParents)
+			}
+			return PrepareResult{}, err
+		}
+	}
+	if err := writeDocument(entityPath, oldNode, doc); err != nil {
+		if created {
+			rollbackPreparedRoom(room, createdParents)
+		}
+		return PrepareResult{}, err
+	}
+	return PrepareResult{Room: room, Briefing: briefingID, Digest: briefingDigest, State: "open"}, nil
+}
+
+func prepareTarget(doc *Document, entityID, stage string) (gateID, attemptID string, attemptNumber int, record *GateRecord, previous *Attempt, err error) {
+	record, lookupErr := recordForStage(doc, stage)
+	if lookupErr != nil && !strings.Contains(lookupErr.Error(), "no logical gate") {
+		return "", "", 0, nil, nil, lookupErr
+	}
+	if record == nil {
+		entity := entityID
+		if cut := strings.LastIndex(entity, ":"); cut >= 0 {
+			entity = entity[cut+1:]
+		}
+		if entity == "" {
+			return "", "", 0, nil, nil, fmt.Errorf("cannot derive gate identity from entity")
+		}
+		gateID = "gate:" + entityID + ":" + stage
+		attemptNumber = 1
+		attemptID = "gate-attempt:" + entity + "-" + stage + "-1"
+		doc.Records = append(doc.Records, GateRecord{ID: gateID, Stage: stage})
+		record = &doc.Records[len(doc.Records)-1]
+		return gateID, attemptID, attemptNumber, record, nil, nil
+	}
+	gateID = record.ID
+	previous = &record.Attempts[len(record.Attempts)-1]
+	attemptNumber, err = attemptSequence(previous.ID)
+	if err != nil {
+		return "", "", 0, nil, nil, err
+	}
+	if previous.Resolution == nil {
+		return gateID, previous.ID, attemptNumber, record, previous, nil
+	}
+	attemptNumber++
+	attemptID, err = successorAttemptID(previous.ID)
+	return gateID, attemptID, attemptNumber, record, previous, err
+}
+
+func entityIdentity(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	root, _, _, err := frontmatterNode(data)
+	if err != nil {
+		return "", err
+	}
+	id := mappingValue(root, "id")
+	if id == nil || strings.TrimSpace(id.Value) == "" {
+		return "", fmt.Errorf("entity has no identity")
+	}
+	return id.Value, nil
+}
+
+func validatePreparedCandidate(entityPath string, roots gitsource.Roots, room string, binding Briefing, gateID, attemptID string, briefingBytes, requestBytes []byte) error {
+	tmp, err := os.MkdirTemp("", "spacedock-gate-prepare-validate-*")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmp)
+	briefingPath := filepath.Join(tmp, preparedBriefingLocator)
+	if err := os.WriteFile(briefingPath, briefingBytes, 0o644); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(tmp, "request.json"), requestBytes, 0o644); err != nil {
+		return err
+	}
+	manifest, err := parseBriefingManifest(briefingBytes)
+	if err != nil {
+		return err
+	}
+	if err := validatePreparedSummary(manifest); err != nil {
+		return err
+	}
+	items, err := canonicalPresentationItems(manifest)
+	if err != nil {
+		return err
+	}
+	for _, item := range items {
+		if _, err := gitsource.Resolve(roots, item.URI, item.Rev); err != nil {
+			return err
+		}
+	}
+	candidateBinding := binding
+	candidateBinding.RoomRef = "./"
+	return validateGateRoomRequest(briefingPath, candidateBinding, gateID, attemptID)
+}
+
+func publishPreparedRoom(room string, briefing, request []byte) (bool, []string, error) {
+	info, err := os.Lstat(room)
+	if err == nil {
+		if !info.IsDir() {
+			return false, nil, fmt.Errorf("prepared room target is occupied")
+		}
+		entries, readErr := os.ReadDir(room)
+		if readErr != nil || len(entries) != 2 {
+			return false, nil, fmt.Errorf("prepared room target is occupied by divergent content")
+		}
+		currentBriefing, briefingErr := os.ReadFile(filepath.Join(room, preparedBriefingLocator))
+		currentRequest, requestErr := os.ReadFile(filepath.Join(room, "request.json"))
+		if briefingErr != nil || requestErr != nil || !bytes.Equal(currentBriefing, briefing) || !bytes.Equal(currentRequest, request) {
+			return false, nil, fmt.Errorf("prepared room target is occupied by divergent content")
+		}
+		return false, nil, nil
+	}
+	if !os.IsNotExist(err) {
+		return false, nil, err
+	}
+	parent := filepath.Dir(room)
+	createdParents, err := createPreparedParents(parent)
+	if err != nil {
+		return false, nil, err
+	}
+	tmp, err := os.MkdirTemp(parent, ".prepare-*")
+	if err != nil {
+		removePreparedParents(createdParents)
+		return false, nil, err
+	}
+	defer os.RemoveAll(tmp)
+	if err := writeSyncedFile(filepath.Join(tmp, preparedBriefingLocator), briefing); err != nil {
+		removePreparedParents(createdParents)
+		return false, nil, err
+	}
+	if err := writeSyncedFile(filepath.Join(tmp, "request.json"), request); err != nil {
+		removePreparedParents(createdParents)
+		return false, nil, err
+	}
+	if err := os.Rename(tmp, room); err != nil {
+		removePreparedParents(createdParents)
+		return false, nil, err
+	}
+	return true, createdParents, nil
+}
+
+func createPreparedParents(path string) ([]string, error) {
+	var missing []string
+	for current := path; ; current = filepath.Dir(current) {
+		info, err := os.Lstat(current)
+		if err == nil {
+			if !info.IsDir() {
+				return nil, fmt.Errorf("prepared room parent is not a directory")
+			}
+			break
+		}
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+		missing = append(missing, current)
+		parent := filepath.Dir(current)
+		if parent == current {
+			return nil, fmt.Errorf("prepared room has no existing parent")
+		}
+	}
+	created := make([]string, 0, len(missing))
+	for i := len(missing) - 1; i >= 0; i-- {
+		if err := os.Mkdir(missing[i], 0o755); err != nil {
+			removePreparedParents(created)
+			return nil, err
+		}
+		created = append(created, missing[i])
+	}
+	return created, nil
+}
+
+func rollbackPreparedRoom(room string, createdParents []string) {
+	_ = os.RemoveAll(room)
+	removePreparedParents(createdParents)
+}
+
+func removePreparedParents(created []string) {
+	for i := len(created) - 1; i >= 0; i-- {
+		_ = os.Remove(created[i])
+	}
+}
+
+func validatePreparedSummary(manifest *briefingManifest) error {
+	if len(manifest.Artifacts) == 0 || manifest.Artifacts[0].Summary == nil || strings.TrimSpace(*manifest.Artifacts[0].Summary) == "" {
+		return fmt.Errorf("request-backed Briefing requires a nonblank primary Artifact summary")
+	}
+	for _, artifact := range manifest.Artifacts[1:] {
+		if artifact.Summary != nil {
+			return fmt.Errorf("request-backed Briefing References must not carry summaries")
+		}
+	}
+	return nil
+}
+
+func preparedRoomPath(entityPath, stage string, attempt int) string {
+	slug := entitySlug(entityPath)
+	home := filepath.Dir(entityPath)
+	if filepath.Base(entityPath) != "index.md" {
+		home = filepath.Join(home, slug)
+	}
+	return filepath.Join(home, "review", stage, "briefing-"+strconv.Itoa(attempt))
+}
+
+func relativeRoomRef(entityPath, room string) (string, error) {
+	ref, err := filepath.Rel(filepath.Dir(entityPath), room)
+	if err != nil {
+		return "", fmt.Errorf("resolve prepared room reference: %w", err)
+	}
+	ref = filepath.ToSlash(ref)
+	if !strings.HasPrefix(ref, ".") {
+		ref = "./" + ref
+	}
+	return ref, nil
+}
+
+func entitySlug(entityPath string) string {
+	if filepath.Base(entityPath) == "index.md" {
+		return filepath.Base(filepath.Dir(entityPath))
+	}
+	return strings.TrimSuffix(filepath.Base(entityPath), filepath.Ext(entityPath))
+}
+
+func attemptSequence(id string) (int, error) {
+	cut := strings.LastIndex(id, "-")
+	if cut < 0 || cut == len(id)-1 {
+		return 0, fmt.Errorf("cannot derive attempt sequence from %s", id)
+	}
+	n, err := strconv.Atoi(id[cut+1:])
+	if err != nil || n < 1 {
+		return 0, fmt.Errorf("cannot derive attempt sequence from %s", id)
+	}
+	return n, nil
+}
+
+func preparedItemID(kind, briefingID string, ordinal int) string {
+	return kind + ":" + strings.TrimPrefix(briefingID, "briefing:") + ":item-" + strconv.Itoa(ordinal)
+}
+
+func mediaType(path string) string {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".md", ".markdown":
+		return "text/markdown"
+	case ".json":
+		return "application/json"
+	case ".yaml", ".yml":
+		return "application/yaml"
+	case ".txt", ".log":
+		return "text/plain"
+	default:
+		return "application/octet-stream"
+	}
+}
+
+func isMarkdownPath(path string) bool {
+	ext := strings.ToLower(filepath.Ext(path))
+	return ext == ".md" || ext == ".markdown"
+}
+
+func indentedJSON(value any) ([]byte, error) {
+	body, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	return append(body, '\n'), nil
+}

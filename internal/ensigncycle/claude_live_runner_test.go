@@ -179,7 +179,7 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 		}
 		runner = copied
 	}
-	fixture := writeRecordedGateFixture(t)
+	fixture := writePreparedRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)

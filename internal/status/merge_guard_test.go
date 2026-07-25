@@ -966,6 +966,18 @@ func TestMergeGuardFinalizeRollsBackOnCommitFailure(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			root := stageFixture(t, "merge-pr-workflow")
+			companion := ""
+			if tc.name == "flat-form" {
+				companion = filepath.Join(root, tc.slug, "review", "validation", "briefing-1", "request.json")
+				if err := os.MkdirAll(filepath.Dir(companion), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(companion, []byte("request bytes\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				gitOutput(t, root, "add", tc.slug)
+				gitOutput(t, root, "commit", "-q", "-m", "seed flat companion")
+			}
 			installFailingPreCommitHook(t, root)
 
 			entity := filepath.Join(root, tc.liveRel)
@@ -992,6 +1004,14 @@ func TestMergeGuardFinalizeRollsBackOnCommitFailure(t *testing.T) {
 			}
 			if fileExists(filepath.Join(root, tc.archiveRel)) {
 				t.Fatal("rollback must remove the entity from _archive")
+			}
+			if companion != "" {
+				if got, err := os.ReadFile(companion); err != nil || string(got) != "request bytes\n" {
+					t.Fatalf("rollback must restore flat companion bytes, got %q err=%v", got, err)
+				}
+				if fileExists(filepath.Join(root, "_archive", tc.slug)) {
+					t.Fatal("rollback must remove the flat companion from _archive")
+				}
 			}
 			// Frontmatter restored to pre-finalize values, no `archived` stamp leaked.
 			if got := frontmatterField(t, entity, "status"); got != preStatus {
@@ -1042,6 +1062,9 @@ func TestMergeGuardFinalizeRollsBackOnCommitFailure(t *testing.T) {
 			}
 			if fileExists(entity) {
 				t.Fatal("recovery re-run must move the entity out of the live location")
+			}
+			if companion != "" && !fileExists(filepath.Join(root, "_archive", tc.slug, "review", "validation", "briefing-1", "request.json")) {
+				t.Fatal("recovery re-run must archive the flat companion room")
 			}
 		})
 	}

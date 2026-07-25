@@ -266,12 +266,12 @@ func Validate(doc *Document) error {
 				}
 				continue
 			}
-			if a.Briefing.RequestDigest != "" {
-				if a.ProviderEvidence == nil || !digestRE.MatchString(a.ProviderEvidence.ResultDigest) || !digestRE.MatchString(a.ProviderEvidence.PresentedInventoryDigest) {
+			if a.ProviderEvidence != nil {
+				if a.Briefing.RequestDigest == "" ||
+					!digestRE.MatchString(a.ProviderEvidence.ResultDigest) ||
+					!digestRE.MatchString(a.ProviderEvidence.PresentedInventoryDigest) {
 					return fmt.Errorf("provider-closed attempt %s has invalid provider evidence", a.ID)
 				}
-			} else if a.ProviderEvidence != nil {
-				return fmt.Errorf("chat-closed attempt %s cannot carry provider evidence", a.ID)
 			}
 			if err := validateResolution(a.Resolution, a.Briefing.ID); err != nil {
 				return fmt.Errorf("attempt %s: %w", a.ID, err)

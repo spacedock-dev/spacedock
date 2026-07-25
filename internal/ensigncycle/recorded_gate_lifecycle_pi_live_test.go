@@ -18,7 +18,7 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
 	binary := buildRecordedGateBinary(t)
-	fixture := writeRecordedGateFixture(t)
+	fixture := writePreparedRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
 
 	piHome := t.TempDir()

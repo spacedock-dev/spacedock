@@ -480,10 +480,11 @@ func signalMergeStateHalt(slug, branch string, outcome statesync.Outcome, asJSON
 // failed archive commit: the live source path (where the entity sat before the
 // rename), whether it was folder-form, the source file's exact bytes, and its mode.
 type archiveSnapshot struct {
-	livePath string
-	isFolder bool
-	content  []byte
-	mode     os.FileMode
+	livePath     string
+	isFolder     bool
+	hasCompanion bool
+	content      []byte
+	mode         os.FileMode
 }
 
 // captureArchiveState reads an entity's pre-archive state. It resolves the live path
@@ -506,7 +507,13 @@ func captureArchiveState(entityDir, slug string) (archiveSnapshot, error) {
 	if err != nil {
 		return archiveSnapshot{}, err
 	}
-	return archiveSnapshot{livePath: livePath, isFolder: isFolder, content: content, mode: info.Mode().Perm()}, nil
+	return archiveSnapshot{
+		livePath:     livePath,
+		isFolder:     isFolder,
+		hasCompanion: !isFolder && directoryExists(filepath.Join(entityDir, slug)),
+		content:      content,
+		mode:         info.Mode().Perm(),
+	}, nil
 }
 
 // rollbackArchive reverses runArchive AND its index staging after a failed commit. It
@@ -535,6 +542,13 @@ func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
 		if err := os.Rename(archivedFile, snap.livePath); err != nil {
 			errs = append(errs, fmt.Errorf("reverse file rename: %w", err))
 		}
+		if snap.hasCompanion {
+			archivedCompanion := filepath.Join(entityDir, "_archive", slug)
+			liveCompanion := filepath.Join(entityDir, slug)
+			if err := os.Rename(archivedCompanion, liveCompanion); err != nil {
+				errs = append(errs, fmt.Errorf("reverse companion rename: %w", err))
+			}
+		}
 	}
 	// Restore the pre-archive content+mode only if the file is back at its live path
 	// (a failed reverse-rename leaves nothing to write to).
@@ -547,8 +561,12 @@ func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
 	// the same git-worktree guard. `git reset -- <paths>` only touches the index, not
 	// the working tree we just restored.
 	if gitRoot := FindGitRoot(entityDir); hasGitEntry(gitRoot) {
-		source, dest := archiveMovePathspecs(gitRoot, entityDir, slug, snap.isFolder)
-		if _, err := runGitCmd(gitRoot, "reset", "-q", "--", literalGitPathspec(source), literalGitPathspec(dest)); err != nil {
+		pathspecs := archiveMovePathspecs(gitRoot, entityDir, slug, snap.isFolder, snap.hasCompanion)
+		for i := range pathspecs {
+			pathspecs[i] = literalGitPathspec(pathspecs[i])
+		}
+		args := append([]string{"reset", "-q", "--"}, pathspecs...)
+		if _, err := runGitCmd(gitRoot, args...); err != nil {
 			errs = append(errs, fmt.Errorf("unstage archive rename: %w", err))
 		}
 	}
@@ -575,15 +593,21 @@ func commitArchiveMove(entityDir, slug string, stderr io.Writer) int {
 	if !hasGitEntry(gitRoot) {
 		return 0
 	}
-	source, dest := archiveMovePathspecs(gitRoot, entityDir, slug, archivedAsFolder(entityDir, slug))
+	isFolder := archivedAsFolder(entityDir, slug)
+	hasCompanion := !isFolder && directoryExists(filepath.Join(entityDir, "_archive", slug))
+	pathspecs := archiveMovePathspecs(gitRoot, entityDir, slug, isFolder, hasCompanion)
 	// Stage the vacated source (deletion) and the new dest. git records this as a
 	// rename in the commit. Literal pathspecs preserve valid entity names that look
 	// like Git magic; --all is never used.
-	sourcePathspec, destPathspec := literalGitPathspec(source), literalGitPathspec(dest)
-	if _, err := runGitCmd(gitRoot, "add", "--", sourcePathspec, destPathspec); err != nil {
+	for i := range pathspecs {
+		pathspecs[i] = literalGitPathspec(pathspecs[i])
+	}
+	addArgs := append([]string{"add", "--"}, pathspecs...)
+	if _, err := runGitCmd(gitRoot, addArgs...); err != nil {
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to stage archive move for %s: %v", slug, err))
 	}
-	if _, err := runGitCmd(gitRoot, "commit", "-q", "-m", "archive "+slug+" (merge guard)", "--", sourcePathspec, destPathspec); err != nil {
+	commitArgs := append([]string{"commit", "-q", "-m", "archive " + slug + " (merge guard)", "--"}, pathspecs...)
+	if _, err := runGitCmd(gitRoot, commitArgs...); err != nil {
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to commit archive move for %s: %v", slug, err))
 	}
 	return 0
@@ -600,13 +624,24 @@ func literalGitPathspec(path string) string {
 // stable regardless of where the entity currently sits on disk — rollback computes
 // them AFTER moving the entity back out of _archive, when a disk re-detection would
 // misread the form.
-func archiveMovePathspecs(gitRoot, entityDir, slug string, isFolder bool) (source, dest string) {
+func archiveMovePathspecs(gitRoot, entityDir, slug string, isFolder, hasCompanion bool) []string {
 	if isFolder {
-		return relToGitRoot(gitRoot, filepath.Join(entityDir, slug)),
-			relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug))
+		return []string{
+			relToGitRoot(gitRoot, filepath.Join(entityDir, slug)),
+			relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug)),
+		}
 	}
-	return relToGitRoot(gitRoot, filepath.Join(entityDir, slug+".md")),
-		relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug+".md"))
+	pathspecs := []string{
+		relToGitRoot(gitRoot, filepath.Join(entityDir, slug+".md")),
+		relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug+".md")),
+	}
+	if hasCompanion {
+		pathspecs = append(pathspecs,
+			relToGitRoot(gitRoot, filepath.Join(entityDir, slug)),
+			relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug)),
+		)
+	}
+	return pathspecs
 }
 
 // archivedAsFolder reports whether the entity landed in _archive as a folder
@@ -614,6 +649,11 @@ func archiveMovePathspecs(gitRoot, entityDir, slug string, isFolder bool) (sourc
 // from where the entity sits post-move.
 func archivedAsFolder(entityDir, slug string) bool {
 	return isRegularFile(filepath.Join(entityDir, "_archive", slug, "index.md"))
+}
+
+func directoryExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
 }
 
 // relToGitRoot renders path relative to gitRoot for a path-scoped `git add`/`commit`

@@ -216,6 +216,48 @@ func TestStateCommitIsPathScoped(t *testing.T) {
 	}
 }
 
+func TestStateCommitFlatIncludesExactCompanionDirectoryAndTrackedDeletions(t *testing.T) {
+	_, workflowA, _, _ := twoHostStateWorkflow(t)
+	checkout := filepath.Join(workflowA, ".spacedock-state")
+	host := filepath.Dir(filepath.Dir(workflowA))
+	const slug = "first-task"
+
+	writeEntity(t, workflowA, slug, "---\nstatus: implementation\n---\n# Flat with room\n")
+	companion := filepath.Join(checkout, slug, "review", "validation", "briefing-1")
+	if err := os.MkdirAll(companion, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(companion, "request.json"), []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(checkout, "sibling-junk.md"), []byte("sibling\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, errOut := runStateCommitCmd(t, host, workflowA, slug, "-m", "flat room unit"); code != 0 {
+		t.Fatalf("flat companion commit exit=%d stderr=%q", code, errOut)
+	}
+	names := strings.Fields(git(t, checkout, "show", "--name-only", "--pretty=format:", "HEAD"))
+	want := []string{"first-task.md", "first-task/review/validation/briefing-1/request.json"}
+	if strings.Join(names, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("flat companion commit paths=%q want %q", names, want)
+	}
+	if porcelain := git(t, checkout, "status", "--porcelain"); !strings.Contains(porcelain, "sibling-junk.md") {
+		t.Fatalf("sibling dirt was swept or lost:\n%s", porcelain)
+	}
+
+	if err := os.RemoveAll(filepath.Join(checkout, slug)); err != nil {
+		t.Fatal(err)
+	}
+	writeEntity(t, workflowA, slug, "---\nstatus: validation\n---\n# Flat after provider\n")
+	if code, _, errOut := runStateCommitCmd(t, host, workflowA, slug, "-m", "flat room deletion"); code != 0 {
+		t.Fatalf("flat tracked deletion commit exit=%d stderr=%q", code, errOut)
+	}
+	names = strings.Fields(git(t, checkout, "show", "--name-only", "--pretty=format:", "HEAD"))
+	if strings.Join(names, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("flat deletion commit paths=%q want %q", names, want)
+	}
+}
+
 // TestStateCommitFolderIncludesWholeEntity pins AC-1 through AC-3: a folder-form
 // entity is one commit unit. Its index, tracked report modification, tracked
 // deletion, and untracked artifact land together while flat/folder siblings and

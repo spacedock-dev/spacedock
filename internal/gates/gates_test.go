@@ -48,22 +48,22 @@ func TestCanonicalLifecycleRebindCloseFreezeAndSupersede(t *testing.T) {
 	}
 }
 
-func TestNonCanonicalBriefingBasenameFailsBeforeLockOrMutation(t *testing.T) {
+func TestRequestlessBriefingRetainsArbitraryExactFileReference(t *testing.T) {
 	entity := writeEntity(t, "status: ideation\ntitle: Unchanged\n")
 	room := t.TempDir()
 	briefing := filepath.Join(room, "revision-1.json")
 	if err := os.WriteFile(briefing, []byte(completeBriefing("briefing:local:basename:ideation:attempt-1:revision-1", "reject basename")), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	before := readFile(t, entity)
-	if err := RecordBriefing(entity, briefing); err == nil || !strings.Contains(err.Error(), "named briefing.json") {
-		t.Fatalf("noncanonical basename = %v, want refusal", err)
+	if err := RecordBriefing(entity, briefing); err != nil {
+		t.Fatal(err)
 	}
-	if got := readFile(t, entity); got != before {
-		t.Fatal("noncanonical basename changed entity")
+	doc, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
-		t.Fatalf("noncanonical basename left lock residue: %v", err)
+	if got := doc.Records[0].Attempts[0].Briefing.RoomRef; !strings.HasSuffix(got, "/revision-1.json") {
+		t.Fatalf("requestless exact Briefing reference=%q", got)
 	}
 }
 
@@ -126,7 +126,7 @@ func TestSameBriefingBindSelectsCurrentStageWithoutDuplicateAttempt(t *testing.T
 		"          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: 'sha256:" + strings.Repeat("1", 64) + "', digest-domain: raw-file-pin, room-ref: ./review/ideation/briefing-1}\n" +
 		"    - id: gate:task:validation\n      stage: validation\n      attempts:\n" +
 		"        - id: gate-attempt:task-validation-1\n" +
-		"          briefing: {id: 'briefing:task:validation:attempt-1:revision-1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1}\n" +
+		"          briefing: {id: 'briefing:task:validation:attempt-1:revision-1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1/briefing.json}\n" +
 		"---\n# Task\nBody keeps   spaces.\n"
 	if err := os.WriteFile(entity, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
@@ -336,13 +336,35 @@ func TestExactCanonicalBriefingIsIndependentAssociationInventory(t *testing.T) {
 		t.Fatal(err)
 	}
 	entity := filepath.Join(filepath.Dir(room), "entity.md")
-	binding := Briefing{ID: "briefing:docs-dev:3k:validation:attempt-1:revision-1", Digest: "sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac", DigestDomain: "canonical-bytes", RoomRef: "./room"}
+	binding := Briefing{ID: "briefing:docs-dev:3k:validation:attempt-1:revision-1", Digest: "sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac", DigestDomain: "canonical-bytes", RoomRef: "./room/briefing.json"}
 	manifest, err := boundBriefingManifest(entity, binding)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(manifest.Artifacts) != 3 {
 		t.Fatalf("independent artifact inventory = %d, want 3", len(manifest.Artifacts))
+	}
+}
+
+func TestAuthorityDocumentDecodersRejectRecursiveDuplicateMembers(t *testing.T) {
+	duplicateBriefing := []byte(`{"type":"Briefing","version":"1","id":"briefing:a","question":"Review?","artifacts":[{"id":"artifact:a","uri":"a.md","rev":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","extra":{"owner":"one","owner":"two"}}]}`)
+	if _, err := parseBriefingManifest(duplicateBriefing); err == nil || !strings.Contains(err.Error(), "duplicate JSON object member") {
+		t.Fatalf("Briefing duplicate error=%v", err)
+	}
+
+	duplicateRequest := []byte(`{"type":"spacedock-gate-presentation-request","version":"1","gate":"gate:a","attempt":"attempt:a-1","briefing":{"locator":"gate.json","id":"briefing:a","digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","extra":{"pin":"one","pin":"two"}},"actor":"person:captain","approver":"person:captain"}`)
+	if _, err := decodeGateRoomRequest(duplicateRequest); err == nil || !strings.Contains(err.Error(), "duplicate JSON object member") {
+		t.Fatalf("request duplicate error=%v", err)
+	}
+
+	duplicateResult := []byte(`{"type":"review-v1-result","briefing":"briefing:a","artifact":{"id":"artifact:a","rev":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"resolution":{"type":"Resolution","id":"resolution:a","briefing":"briefing:a","by":"person:captain","at":"now","decision":"approve","extra":{"authority":"one","authority":"two"}},"annotations":[]}`)
+	if _, err := decodeProviderResult(duplicateResult); err == nil || !strings.Contains(err.Error(), "duplicate JSON object member") {
+		t.Fatalf("Result duplicate error=%v", err)
+	}
+
+	duplicateInventory := []byte(`{"items":[{"type":"Artifact","id":"artifact:a","rev":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","extra":{"source":"one","source":"two"}}]}`)
+	if _, err := decodePresentedInventory(duplicateInventory); err == nil || !strings.Contains(err.Error(), "duplicate JSON object member") {
+		t.Fatalf("inventory duplicate error=%v", err)
 	}
 }
 

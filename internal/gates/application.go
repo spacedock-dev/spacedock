@@ -83,8 +83,19 @@ func EvaluateEligibility(doc *Document, status string, reviewedInputCurrent bool
 }
 
 func EligibilityFile(path string) (Eligibility, error) {
+	return eligibilityFileAt(path, nearestWorkflowDir(filepath.Dir(path)))
+}
+
+func EligibilityFileAt(path, workflowDir string) (Eligibility, error) {
+	return eligibilityFileAt(path, workflowDir)
+}
+
+func eligibilityFileAt(path, workflowDir string) (Eligibility, error) {
 	doc, _, err := Read(path)
 	if err != nil {
+		return Eligibility{}, err
+	}
+	if err := validateRetainedAuthority(path, workflowDir, doc); err != nil {
 		return Eligibility{}, err
 	}
 	status, err := entityStatus(path)
@@ -98,18 +109,6 @@ func EligibilityFile(path string) (Eligibility, error) {
 	result := EvaluateEligibility(doc, status, inputState == reviewedInputCurrent)
 	if inputState == reviewedInputUnknown && result.Condition == "stale" {
 		result.Condition = "ineligible"
-	}
-	return result, nil
-}
-
-func EligibilityFileAt(path, workflowDir string) (Eligibility, error) {
-	result, err := EligibilityFile(path)
-	if err != nil {
-		return Eligibility{}, err
-	}
-	status, err := entityStatus(path)
-	if err != nil {
-		return Eligibility{}, err
 	}
 	if result.Eligible && !applicationTargetMatches(workflowDir, status, result.TargetStage) {
 		result.Eligible = false
@@ -132,6 +131,9 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 	defer unlock()
 	doc, oldNode, err := Read(path)
 	if err != nil {
+		return ConsumeResult{}, err
+	}
+	if err := validateRetainedAuthority(path, workflowDir, doc); err != nil {
 		return ConsumeResult{}, err
 	}
 	status, err := entityStatus(path)
@@ -217,18 +219,33 @@ const (
 
 func inspectReviewedInput(entityPath string, binding Briefing) reviewedInputCheck {
 	path := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
-	if info, err := os.Stat(path); err == nil && info.IsDir() {
-		path = filepath.Join(path, "briefing.json")
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return reviewedInputUnknown
-	}
 	var digest string
+	var err error
 	switch binding.DigestDomain {
 	case "canonical-bytes":
+		var data []byte
+		if binding.RequestDigest == "" {
+			if info, statErr := os.Stat(path); statErr == nil && info.IsDir() {
+				path = filepath.Join(path, "briefing.json")
+			}
+			data, err = os.ReadFile(path)
+		} else {
+			data, _, err = boundBriefingBytes(entityPath, binding)
+		}
+		if err != nil {
+			return reviewedInputUnknown
+		}
 		digest, err = CanonicalDigest(data)
 	case "raw-file-pin":
+		if info, statErr := os.Stat(path); statErr == nil && info.IsDir() {
+			// Historical raw-file bindings used the room directory. Canonical
+			// bindings retain the exact locator and never enter this branch.
+			path = filepath.Join(path, "briefing.json")
+		}
+		data, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return reviewedInputUnknown
+		}
 		digest = RawDigest(data)
 	default:
 		return reviewedInputUnknown
