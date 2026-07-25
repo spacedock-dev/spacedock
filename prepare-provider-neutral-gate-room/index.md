@@ -677,6 +677,21 @@ joint acceptance evidence.
   `/private/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/subspace-r-provider.FAUeX8`.
   Do not consume the pending approval; a corrected Briefing must supersede it.
 
+- **Cycle 6 staff rejection — recorder-ready is not presentation-ready
+  (2026-07-25).** `git-root://root/commit/path` plus raw `rev` can identify and verify
+  the historical blob for Spacedock, but current Subspace package mode receives the
+  Briefing unchanged, treats Artifact URIs as filesystem paths, and rejects Reference
+  URIs containing `://`. The room carries no logical-root map, and Spacedock's
+  `git cat-file` resolver is not in the provider presentation path. Decide and name the
+  cross-repository contract: either narrow s4 honestly to a recorder-ready
+  Git-addressed room and file the resolved-byte/provider work as a release dependency,
+  or define the actual consumer/materialization API and exercise it end to end before
+  claiming presentation readiness. Rebaseline the surface around that owner. Drop
+  `<object-format>` unless a concrete ambiguity proves it necessary; root + full commit
+  + repository-relative path plus raw SHA is the smaller Captain-directed form. Keep
+  local-object retention, dirty/untracked/third-repository rejection, and production
+  moved-checkout resolution explicit.
+
 ## Stage Report: ideation
 
 - DONE: Reproduce xb's arbitrary-Briefing-basename failure with the smallest valid prepared room, then identify the minimum post-em Spacedock seam that makes it pass.
