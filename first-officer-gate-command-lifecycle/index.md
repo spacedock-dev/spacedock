@@ -3547,3 +3547,70 @@ concurrency failure, and the one alternate-provider proof failed without
 producing countable lifecycle evidence. Claude and Codex remain complete
 same-tip passes; Pi remains incomplete at clean `5ced64fc`. Checklist
 accounting is **1 DONE, 2 FAILED, 1 SKIPPED**.
+
+## Stage Report: implementation (cycle 32 Roborev 2211 triage)
+
+- DONE: Retain the exact branch-final review package before disposition.
+  `review/implementation/roborev-2211/` binds diff
+  `280733907f2d9f2c9b6b226a0e8bf06fea6b90db..5ced64fc5101b5da5f7bb5b3cfa9b8b9e2afc457`
+  at SHA-256 `e88e2cc7106010376e06f704a801a97ec3c4f4c66fdf61550fef18d8def54413`,
+  Cycle-32 entity authority at state commit `1372548a`, and the canonical gate
+  contract at `5ced64fc`, without duplicating product files.
+- DONE: Triage finding 1, delegated actor attribution, as **False**.
+  Released user/workflow: a Captain delegates an interactive gate decision to
+  the FO. Observable harm claimed: durable state names the Captain as renderer.
+  Boundary: AC-2 recording identity. Trigger evidence refutes the claim:
+  `fo-gate-lifecycle` labels the two sources, instructs delegated recording as
+  `agent:first-officer`, the live oracle requires that actor, and the existing
+  `actor-swap` mutation to `person:captain` fails. No missing prohibition or
+  regression remains to fix.
+- DONE: Triage finding 2, omitted handoff report verification, as **Material**.
+  Released user/workflow: an approved nonterminal gate dispatches a handoff
+  worker whose declared output is a `## Stage Report: handoff` with one DONE
+  item. Observable harm: marker-only state can be accepted as completed while
+  the worker report is absent or malformed. Boundary: AC-1's durable successor
+  report/effect and the stage-report protocol. Trigger evidence: the oracle
+  counts only Git introduction of `RECORDED-GATE-SUCCESSOR-DISPATCHED`; deleting
+  or mutating the heading/DONE text leaves that marker and the grade green.
+- DONE: Triage finding 3, late-grant behavioral proof, as **Needs decision**.
+  Released user/workflow: a Captain binds/presents without conn and grants it
+  later in the same active conversation. Observable harm if wrong: the gate
+  remains stuck or the FO acts before authority. Boundary: Cycle-32's explicit
+  behavioral conn ruling and proof policy. Trigger evidence: repository search
+  finds the promise in the skill/site and only same-file contractlint matching;
+  live proof supplies conn in the initial prompt, so no multi-turn transition is
+  exercised. Preserving the promise requires a behavioral mechanism beyond the
+  approved structural plan and nearly exhausted 11-file/204-LOC cap; narrowing
+  it requires a Captain-owned binding decision.
+- DONE: Triage finding 4, stale roadmap quote text, as
+  **correct-but-disproportionate / Deferred risk**.
+  Released user/workflow: no runtime or public-doc path consumes the historical
+  sprint roadmap. Observable harm is limited to a future contributor following
+  its stale “reason quoting” clause instead of the canonical spec. Boundary:
+  AC-2/AC-5 provenance retirement. Trigger evidence is the real conflict between
+  `docs/roadmap/durable-decisions/index.md:27` and the exact `5ced64fc` contract,
+  but changing a twelfth file breaches the approved surface for no current
+  released-path loss. Promote to Material if a supported command/doc change
+  derives quote semantics from that roadmap or the roadmap is declared current
+  implementation authority.
+- DONE: Preserve a truthful reviewer-only draft and the fail-closed reason.
+  `briefing.review.jsonl` contains all four reviewer Annotations and the
+  Roborev revise Resolution, with no invented worker entries.
+  `round-record-preflight.txt` records that v1 must refuse publication with
+  `findings-bearing round requires complete actor:ensign triage`; no recorder
+  command, round pointer, or Feedback Cycles projection was attempted.
+- SKIPPED: Add worker dispositions, record a review round, change code or state
+  lifecycle, run checks/live/Roborev, push, open a PR, or merge.
+  Finding 2 is unfixed and finding 3 is unresolved, so complete worker triage
+  would be false.
+
+### Summary
+
+Roborev 2211 is not a publishable advisory round: one finding is false, one is
+Material, one needs a design decision, and one is a deferred
+correct-but-disproportionate documentation risk. The exact next action is for
+the First Officer to return 6y to design authority: decide whether to preserve
+late-grant behavior with an approved behavioral proof or narrow it by a
+Captain-owned gate decision, then dispatch implementation to make the handoff
+heading/DONE oracle deletion- and mutation-sensitive before another Roborev
+round. Checklist accounting is **6 DONE, 1 SKIPPED, 0 FAILED**.

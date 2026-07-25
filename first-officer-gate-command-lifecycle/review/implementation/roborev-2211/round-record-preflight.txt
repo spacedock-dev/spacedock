@@ -1,0 +1,15 @@
+Candidate: 5ced64fc5101b5da5f7bb5b3cfa9b8b9e2afc457
+Base: 280733907f2d9f2c9b6b226a0e8bf06fea6b90db
+Roborev job: 2211
+Publication: NOT INVOKED
+
+The retained JSONL is intentionally reviewer-only. Finding 2 is Material and
+unfixed. Finding 3 requires a First Officer/Captain design decision before a
+truthful worker disposition can exist. Findings 1 and 4 cannot be appended as
+partial worker triage because v1 requires every reviewer finding to be covered
+by one complete actor:ensign triage Resolution.
+
+Therefore `spacedock gate record --round` must refuse this draft with
+`findings-bearing round requires complete actor:ensign triage`. Publishing a
+round pointer, Feedback Cycles projection, or advisory worker Resolution would
+misrepresent unresolved findings as complete. No recorder command was run.
