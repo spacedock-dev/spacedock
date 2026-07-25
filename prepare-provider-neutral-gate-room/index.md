@@ -99,6 +99,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+review-round:
+    id: round:s4ykctf21g60dvfgdd6cy9ny:implementation:12
+    stage: implementation
+    cycle: 12
+    briefing:
+        id: briefing:s4ykctf21g60dvfgdd6cy9ny:implementation:round-12
+        digest: sha256:700c9d8a200a05d208d3cf931419ba0cbffd2373860bd35cf6b5a72a09448996
+        digest-domain: canonical-bytes
+        room-ref: ./review/implementation/round-12
 ---
 
 ## Cycle 11 governing design
