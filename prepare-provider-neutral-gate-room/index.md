@@ -1780,3 +1780,24 @@ Cycle 11 removes numerical planning gates and aligns the current-main skills wit
 actual room-only ownership boundary. The approved preparation contract is unchanged;
 stale launcher help now fails before effects, and provider capability/failure remains
 entirely behind rq's fixed post-bind room handoff.
+
+## Implementation Intended Surface Declaration
+
+Before the first product edit, implementation intends to follow the Cycle 11 advisory
+surface exactly: `internal/cli/{cli.go,gate_test.go,state_sync.go,state_commit_test.go}`;
+new `internal/gates/{prepare.go,prepare_test.go,json.go}`; new
+`internal/gitsource/{source.go,source_test.go}`; existing
+`internal/gates/{operation.go,application.go,io.go}` and the two `gate-room` JSON
+fixtures; `internal/status/{mutate.go,native_mutation_test.go,merge.go,merge_guard_test.go}`;
+`internal/ensigncycle/recorded_gate_lifecycle_test.go`;
+`internal/contractlint/fo_function_reference_invariant_test.go`;
+`docs/specs/gate-resolution-frontmatter-contract.md`;
+`docs/site/reference/{command-reference.md,frontmatter-contract.md}`;
+`docs/site/concepts/gates-and-decisions.md`; and
+`skills/{fo-gate-lifecycle,present-gate}/SKILL.md`.
+
+The pre-edit estimate is the advisory table's per-path total of approximately
+`+1,717/-187`. There are no known path, ownership, command-surface, schema, provider,
+validator, or compatibility deviations at declaration time. Actual path and line
+deltas will be reconciled semantically before review; counts are planning evidence,
+not acceptance authority.
