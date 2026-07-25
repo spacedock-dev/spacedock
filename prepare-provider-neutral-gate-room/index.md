@@ -66,6 +66,20 @@ gates:
                 digest: sha256:706374c6491bbf8b3a43a6469aa85eefbeb513d16f1dcfad1297b6eff97bb949
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:s4:ideation:2
+                briefing: briefing:docs-dev:s4:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T05:51:29.330095Z"
+                decision: approve
+                reason: Frozen room-owned sources remove checkout-topology coupling, the independent reopen spike falsifies the old locator, and staff review found no material issue; implementation remains dependency-held behind 6y.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Make gate-room preparation one mechanical operation. The First Officer supplies the
