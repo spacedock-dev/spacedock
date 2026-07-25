@@ -2197,7 +2197,7 @@ These are planning ranges from the actual `13d70249` file sizes, not subtraction
 | `skills/fo-gate-lifecycle/SKILL.md` | 56 / 5,788 | +4–8 / -1–5 |
 | `skills/present-gate/SKILL.md` | 62 / 8,615 | +4–12 / -0–12 |
 | `internal/contractlint/fo_function_reference_invariant_test.go` | 436 / 20,889 | +20–45 / -0–10 |
-| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | 1,146 / 53,715 | +70–120 / -100–190 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | 1,146 / 53,715 | +70–135 / -100–190 |
 | `internal/ensigncycle/gate_assert_impl_test.go` | 39 / 1,380 | +15–30 / -10–25 |
 | `internal/ensigncycle/gate_assert_test.go` | 62 / 1,741 | +10–25 / -20–45 |
 | `internal/ensigncycle/live_gate_stop_test.go` | 199 / 9,805 | +12–24 / -130–180 |
@@ -2246,7 +2246,7 @@ Implementation is limited to these 17 existing paths and obligation-based ranges
 | `skills/fo-gate-lifecycle/SKILL.md` | +4–8 / -1–5 |
 | `skills/present-gate/SKILL.md` | +4–12 / -0–12 |
 | `internal/contractlint/fo_function_reference_invariant_test.go` | +20–45 / -0–10 |
-| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +70–120 / -100–190 |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +70–135 / -100–190 |
 | `internal/ensigncycle/gate_assert_impl_test.go` | +15–30 / -10–25 |
 | `internal/ensigncycle/gate_assert_test.go` | +10–25 / -20–45 |
 | `internal/ensigncycle/live_gate_stop_test.go` | +12–24 / -130–180 |
@@ -2299,3 +2299,22 @@ The clean branch delivers the repaired AC-1 through AC-5 proof split with less m
 ### Correction summary
 
 The correction replaces all four weak proof boundaries without expanding the declared surface: commit evidence is structured and host-specific, Captain meanings are six-case durable data rather than substring counts, successor dispatch is an actual command/Git lifecycle, and review qualification requires a real decision ask. Checklist accounting is **5 DONE, 1 SKIPPED, 0 FAILED**. Return the deterministic implementation to the same independent staff reviewer.
+
+## Canonical narrow range amendment (cycle 29)
+
+Independent staff approved one and only one Cycle-28 surface amendment: `internal/ensigncycle/recorded_gate_lifecycle_test.go` changes from **+70–120 / -100–190** to **+70–135 / -100–190** relative to `13d70249`. The extra 15 additions are direct product proof for six real Captain mappings through the public CLI, Git barriers, and production `gates.Read`, including quote, backslash, actual-newline, combined, and UTF-8 directives plus durable advance/feedback/hold and consume outcomes. The other 16 path ranges, AC-1 through AC-5, proof ownership, non-goals, live block, branch/ref plan, and reset triggers remain byte-for-byte authoritative.
+
+The amendment is conditional, not slack: implementation must delete the redundant per-case bind `gates.Read`/byte-equality assertion because the close snapshot and existing folder-commit test already own that fact. Before any code commit, the exact measured delta for `internal/ensigncycle/recorded_gate_lifecycle_test.go` must be **+135/-152** from `13d70249`. Any other delta or path/range change returns to design review.
+
+## Stage Report: ideation (cycle 29)
+
+- DONE: Record the one-file range amendment for recorded_gate_lifecycle_test.go as +70..135/-100..190, with every other Cycle-28 path range and AC unchanged.
+  Both canonical surface tables now show `+70–135 / -100–190`; the amendment text preserves all other Cycle-28 ranges, AC-1 through AC-5, proof splits, non-goals, and reset triggers.
+- DONE: Bind the amendment to the exact staff condition: remove the redundant per-case bind reparse and require measured +135/-152 before commit.
+  The canonical amendment requires deletion of that duplicate bind `gates.Read`/byte-equality check and makes exact `13d70249..tip` numstat `+135/-152` a pre-commit condition.
+- DONE: Append a complete ideation amendment report and stop without changing or committing code, running live hosts, or mutating PR/gate state.
+  This path-scoped state-only amendment cites the independent staff ruling; the dirty code worktree remains uncommitted for a fresh implementation dispatch, and no live host or external workflow mutation ran.
+
+### Summary
+
+Cycle 29 widens only the recorded-gate lifecycle test’s addition ceiling by 15 lines so direct six-case product evidence can replace synthetic mapping proof. The staff condition prevents the amendment from becoming general budget: exact `+135/-152` is required after removing the redundant bind reparse. Checklist accounting is **3 DONE, 0 SKIPPED, 0 FAILED**; return to a fresh recorded ideation gate before implementation resumes.
