@@ -61,6 +61,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+review-round:
+    id: round:v3vt8gp2yffmn62r8p95gkph:implementation:2
+    stage: implementation
+    cycle: 2
+    briefing:
+        id: briefing:v3vt8gp2yffmn62r8p95gkph:implementation:round-2
+        digest: sha256:64b41f6ecea822ae4e60c8378a3a13d9604ec428aaa3fe534aacb3f9f50ec306
+        digest-domain: canonical-bytes
+        room-ref: ./review/implementation/round-2
 ---
 
 ## Problem
@@ -229,3 +238,20 @@ The ideation confines the fix to per-host live environment construction and its
 behavioral tests, with no production resolver change. It converts the repeated 6y
 recovery into a one-attempt, flag-free Claude journey and records exact scope,
 controls, and evidence.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — Roborev job 2307; surface 6/112 vs estimate 88 (127%); AC unchanged
+
+## Stage Report: implementation
+
+- DONE: Each live host child environment removes every foreign runtime-family detector while preserving credentials, PATH, isolated HOME, and the target host's state exactly once.
+  `TestIsolatedClaudeEnvDropsForeignRuntimeMarkers`, `TestCodexLiveEnvDropsForeignRuntimeMarkers`, and `TestPiLiveEnvDropsForeignRuntimeMarkers` seed all detector families and fail on a retained foreign key, duplicate replacement, lost credential, or wrong HOME/PATH/host state.
+- DONE: The Claude recorded-gate journey performs one flag-free dispatch build with no ambiguity recovery and still commits the successor effect.
+  `TestLiveClaudeSharedScenarios/recorded-gate-lifecycle` passed in 256.26s; retained `command.log` records one attempt/one success after consume, and the oracle fails on another attempt, either `--host` form, mixed-marker ambiguity, or missing committed successor ancestry.
+- DONE: Production mixed-marker refusal remains unchanged, and focused, full, race, live-tag, credentialed Claude, and Roborev evidence are retained.
+  Commit `16aa2ec3`; `go test ./...`, `go test ./... -race`, the focused live-tag builder suite, and both unchanged ambiguity controls passed; Roborev job 2318 returned no issues after cycle-1 triage was recorded in advisory rounds 1 and 2.
+
+### Summary
+
+The six-file, 111-LOC harness-only change scrubs foreign detector keys at each existing host environment seam and leaves production host resolution untouched. The recorded-gate proof now observes every build attempt, forbids both explicit-host flag forms, and retains its stream and command log under `/tmp/spacedock-v3vt8gp2yf-claude-live-reviewed/claude-shared-scenarios/recorded-gate-lifecycle`.
