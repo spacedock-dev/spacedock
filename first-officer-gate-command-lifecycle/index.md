@@ -2618,3 +2618,273 @@ decisions. The design uses the retained missing-period failure as a byte-level c
 keeps locator ergonomics narrow, and makes s4 explicitly downstream. Checklist
 accounting is **3 DONE, 1 SKIPPED, 0 FAILED**; the amendment is ready for ideation gate
 review.
+
+## Canonical provenance cut (cycle 32 staff correction)
+
+This correction supersedes the whole Cycle 31 exact-authority amendment. In particular,
+there is no `--directive-file`, scaffold capture, authority locator, raw-byte
+authentication claim, file lifecycle, or later-grant supersession rule. The Cycle 31
+staff rejection is correct: the proposed file had no supported interactive producer,
+and an arbitrary path selected by the First Officer could not prove who created its
+bytes or which launch, session, workflow, or Captain message authorized them. Moving
+agent-supplied text from argv to a file did not repair that trust boundary.
+
+The corrected v1 contract makes the narrower claim the shipped system can prove:
+
+```text
+spacedock gate record ENTITY --decision approve|revise|hold \
+  --actor agent:first-officer --reason EVIDENCE_JUDGMENT \
+  --workflow-dir WORKFLOW_DIR
+```
+
+A delegated chat close records the identity that rendered the resolution and a
+nonblank evidence judgment. It does not accept, authenticate, retain, or quote the
+Captain's chat grant. A direct Captain close remains `--actor person:captain`.
+Provider-room recording remains the frozen `--room` Result path and rejects chat-only
+inputs. The existing `Resolution.adoption-note` field remains readable for historical
+state compatibility, but new chat recording does not emit it.
+
+### Authority ruling and explicit audit loss
+
+Repository history distinguishes the load-bearing ruling from the mechanism later
+attached to it:
+
+- The original entity seed at `fcfd123c` required an evidence-bearing delegated
+  approval; it did not require exact grant bytes.
+- The first detailed design at `069b51e7` added exact quoted `--directive` bytes after
+  adopting the then-current recorder surface.
+- The archived durable-recorder Cycle 21 report grouped renderer identity among four
+  Captain-directed amendments: a chat-directed close is recorded under
+  `agent:first-officer`, the identity that rendered it. Exact quotation was outside
+  its seven retained resolution acceptance criteria.
+- Archive recovery at `codex:019f855d-8be8-7112-b467-7197851a2dc5`, AgentsView
+  `#371-403 @391`, found that `--adoption-note` originated in 3k re-ideation and was
+  only implicitly approved inside a larger package via “lgtm. add the fixture”; it was
+  not presented as a direct exact-byte ruling. The same archived conversation later
+  records the Captain questioning that invented ceremony and authorizing
+  simplification.
+- Shipped code at `28073390` accepts arbitrary caller-supplied `--directive` bytes and
+  copies them into `adoption-note`; no independent Captain-message producer,
+  authenticator, launch/session binding, or retention owner exists.
+- The retained Claude journey omitted only the grant's final period while completing
+  every lifecycle effect. The exact-byte comparison existed only in the fixture
+  grader. It did not prove runtime authority.
+
+Therefore this correction preserves the recording-identity ruling and retires the
+unauthenticated quote. The audit tradeoff is deliberate and visible: new durable chat
+records prove only the asserted renderer identity, decision, reason, and lifecycle
+route. They do **not** preserve the grant's wording, punctuation, scope, author,
+message identity, delivery, session, workflow association, later supersession, or
+revocation. A transcript or external host log may supply context, but it is not gate
+authority and this ticket does not join or authenticate one.
+
+If exact durable chat provenance becomes a product requirement, a separate design must
+name a real host-turn producer for every supported interactive grant and define
+creator/message/session/workflow binding, delivery, retention, cleanup, revocation, and
+later-grant precedence. This ticket neither simulates that producer with a fixture nor
+accepts an arbitrary file as authorization.
+
+The First Officer skill still owns the behavioral conn boundary. Without an explicit
+Captain grant in the active interactive conversation, the First Officer binds or
+presents the gate and leaves it open. With an explicit grant—including one issued
+later in that conversation—it may render the decision and record
+`agent:first-officer` plus its evidence reason. That is a session-behavior obligation,
+not a claim that the recorder authenticates chat.
+
+### Missing-period control
+
+The retained missing-period case remains the falsifying control, but its expected
+result changes. It proves that neither inline text nor a copied file can serve as
+authenticated Captain provenance.
+
+The first deterministic test must invoke the public CLI twice with the legacy
+`--directive` flag: once with the exact fixture grant and once without its final
+period. Both forms must fail byte-clean as a retired/unknown flag before entity
+mutation. The canonical delegated command without any directive must then succeed,
+persist `by: agent:first-officer` plus its reason, and omit `adoption-note`.
+
+The shared live prompt may continue to contain the exact grant because the prompt
+establishes the behavioral conn for the value journey. The durable grader must stop
+comparing prompt bytes with state. It instead proves one truthful review, the delegated
+renderer identity and reason, the expected route, consume behavior, and one durable
+successor effect. The missing-period artifact remains retained evidence explaining why
+the false exact-provenance claim was removed; it is not a product failure under the
+corrected contract.
+
+### Acceptance-criterion correction
+
+**AC-2 (replacement) — A chat resolution records renderer identity and evidence, not
+unauthenticated grant text.** Direct decisions persist `by: person:captain`. Delegated
+decisions persist `by: agent:first-officer` and require a nonblank `--reason`; new chat
+records omit `adoption-note`. `--directive`, `--directive-file`, an empty delegated
+reason, actor/source mismatch, or simultaneous provider/chat source forms exit
+nonzero before mutation and leave no lock residue. Historical documents containing
+`adoption-note` remain readable. *Verified by:* public CLI tests, production
+`gates.Read`, byte-clean tree/lock controls, and a historical-state read fixture.
+
+**AC-3 (replacement) — Supported hosts exercise an explicit behavioral conn without
+claiming durable quotation.** The unchanged goal-only Claude, Codex, and Pi fixtures
+give the First Officer explicit authority in the interactive prompt. Each host must
+produce one truthful root review, record `agent:first-officer` with a nonblank
+evidence reason, preserve the Captain meaning and route, consume once, dispatch once,
+and produce one durable successor effect. The durable oracle does not compare grant
+bytes or inspect host transcripts. Existing no-conn fixtures remain the proof that a
+First Officer must not self-approve before an explicit grant. *Verified by:* the
+existing three live runners only after deterministic/staff approval, plus the
+deterministic no-conn behavior fixtures.
+
+**AC-5 (replacement) — The public command exposes no caller-controlled provenance
+channel.** `gate record` accepts actor, decision, reason, workflow directory, and the
+separate provider `--room` source; it exposes neither inline directive text nor a
+directive file. Help text, parser behavior, the FO skill, and contract lint agree on
+that surface. Room discovery remains s4's independent `gate prepare` stdout contract.
+*Verified by:* help/unknown-flag tests, command-reference lint, and explicit rejection
+of both legacy provenance flags.
+
+AC-1 and AC-4 remain unchanged. Their one-review, Git-barrier, decision-mapping,
+consume, dispatch, and durable-successor obligations do not depend on retaining grant
+bytes.
+
+### Corrected test and implementation plan
+
+1. **Retired-provenance control (low; AC-2/AC-5):** before product changes, add the
+   public-CLI table for exact and missing-period legacy `--directive` values and show
+   both currently pass parsing or reach the recorder. Remove the flag and make both,
+   plus `--directive-file`, fail before mutation. Add the positive delegated
+   actor/reason case and assert no new `adoption-note`.
+2. **Recorder contract (medium; AC-2):** remove `Directive` from `RecordInput` and the
+   delegated-directive validation/copy path. Require nonblank reason for
+   `agent:first-officer`, retain direct `person:captain`, retain provider `--room`
+   exclusivity, and keep historical `adoption-note` decoding. Table-test blank reason,
+   actor/source mismatch, direct/provider behavior, byte-clean refusal, and historical
+   read compatibility through production `gates.Read`.
+3. **Lifecycle proof (medium; AC-1/AC-2/AC-3):** remove directive construction,
+   command-log directive assertions, exact-grant counting, and punctuation/escaping
+   mapping cases from `recorded_gate_lifecycle_test.go`. Keep the six real Captain
+   decision/reason mappings through the public CLI, production `gates.Read`, exact Git
+   barriers, semantic presentation controls, terminal complement, one build, and one
+   durable successor effect. Assert delegated actor, nonblank reason, expected route,
+   and absent adoption note.
+4. **Behavioral conn controls (medium; AC-3):** keep the exact conn sentence in the
+   shared live prompt and retain existing no-conn fixtures. Contract lint must require
+   FO instructions to leave the gate open without an explicit conversational grant,
+   permit a later grant in the same active conversation, and use only actor plus reason
+   when recording.
+5. **Repository and live gates (high):** run focused tests, `gofmt -w ./cmd ./internal`,
+   `go test ./...`, `go test ./... -race`, live-tag compile, strict MkDocs, and
+   `git diff --check`. Only after independent deterministic approval may the unchanged
+   Claude, Codex, and Pi value journeys run once each at the final tip. Stop on the
+   first product failure; do not retry or add transcript diagnostics.
+
+No spike is needed. The repository and retained journey already establish both
+counterexamples: the recorder blindly copies caller-controlled text, and the exact
+fixture comparison rejected a semantically unchanged grant after all intended
+lifecycle effects succeeded.
+
+### Corrected expected surface and tolerance
+
+Against exact tip `28073390`, the expected incremental surface is these **nine existing
+files**, approximately **+72/-79**:
+
+| Path | Expected incremental delta | Purpose |
+| --- | ---: | --- |
+| `internal/cli/cli.go` | +0/-3 | Remove public `--directive` help and parser surface. |
+| `internal/cli/gate_test.go` | +12/-7 | Pin retired flags, delegated reason, and byte-clean refusal. |
+| `internal/gates/operation.go` | +2/-13 | Remove directive input/validation/copy; require delegated reason. |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +24/-38 | Replace exact-byte oracle with identity/reason/route proof and retained legacy control. |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +8/-0 | Pin no-conn behavior and forbid provenance flags. |
+| `skills/fo-gate-lifecycle/SKILL.md` | +5/-7 | Record delegated renderer and reason; support later conversational grants. |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | +12/-8 | Specify identity/evidence and historical adoption-note compatibility. |
+| `docs/site/reference/command-reference.md` | +3/-3 | Remove directive syntax and state the narrower durable claim. |
+| `docs/site/concepts/gates-and-decisions.md` | +6/-0 | Disclose behavioral conn and durable audit limitation. |
+
+Tolerance is **+2 files and +35% changed LOC** (hard cap 11 existing files / 204 changed
+LOC) for focused fixture/helper movement only. There is no expected
+`internal/gates/model.go` change: the historical YAML field remains. A new authority
+artifact, host-event/transcript parser, message/session schema, compatibility alias,
+prompt procedure, live-runner file, search subsystem, or change to direct/provider
+semantics requires re-ideation.
+
+### Corrected documentation proposal
+
+In `docs/site/reference/command-reference.md`:
+
+```diff
+-`spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT]`
+-Delegated decisions require the Captain's quoted directive.
++`spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT]`
++Delegated chat decisions are recorded under `agent:first-officer` with a required evidence reason. The recorder does not accept or authenticate Captain-message text.
+```
+
+In `docs/site/concepts/gates-and-decisions.md`, after the delegated-conn sentence:
+
+```diff
++The First Officer may act only after an explicit grant in the active conversation,
++including a grant given later in that conversation. Durable gate state records the
++First Officer as the decision renderer and its evidence reason; it does not quote or
++authenticate the grant's wording or scope. Keep any required chat provenance in the
++host's own audit system.
+```
+
+In `docs/specs/gate-resolution-frontmatter-contract.md`, remove the chat
+`--directive` requirement and specify: “New delegated chat resolutions use
+`by: agent:first-officer`, require a nonblank evidence reason, and omit
+`adoption-note`. Readers continue to accept historical `adoption-note` values, but the
+chat recorder does not emit or treat them as authority.”
+
+### s4 dependency, sequencing, and non-goals
+
+`prepare-provider-neutral-gate-room` (s4) remains downstream from the final landed 6y
+tip because the two tickets overlap in `internal/cli/cli.go`,
+`internal/gates/operation.go`, `internal/ensigncycle/recorded_gate_lifecycle_test.go`,
+`internal/contractlint/fo_function_reference_invariant_test.go`,
+`skills/fo-gate-lifecycle/SKILL.md`, and documentation. After 6y lands, s4 re-reads
+those files and rebases its ranges.
+
+This correction does **not** reset s4's provider request or frozen-source design. s4
+continues to own `gate prepare`, direct `person:captain` provider authority,
+`request.json`, frozen selected sources, and authoritative `room=` stdout. There is no
+delegated authority artifact for s4 to carry, preserve, bind, or jointly verify.
+Any s4 wording that assumes Cycle 31 exact capture must be updated to the narrower
+identity/reason contract before s4 implementation, but no request-schema change or
+joint acceptance evidence is required.
+
+No code edit, test, live host, provider interaction, PR #565 push, state push, gate
+consumption, review round, status mutation, merge, prompt coaching, retry, fallback,
+transcript scrape, host-proof machinery, or search-policy work occurs in this
+correction.
+
+## Stage Report: ideation (cycle 32)
+
+- DONE: Correct the unowned capture producer by deleting delegated directive
+  provenance and define behavior for grants issued later in the active conversation.
+  No artifact authorizes the close. The FO skill owns the conversational conn check;
+  the recorder persists only `agent:first-officer` and a nonblank evidence reason.
+- DONE: Resolve creator, message, launch/session/workflow binding, delivery, retention,
+  cleanup, revocation, and supersession without accepting an arbitrary authority file.
+  Those properties are explicitly absent from the v1 durable claim because there is no
+  authority artifact. A future authenticated-provenance feature must own all of them as
+  a separate design.
+- DONE: Remove the unsafe file boundary and every raw-byte authentication claim.
+  `--directive-file` is deleted from the design, historical `adoption-note` stays
+  read-compatible only, and no path, symlink, file-descriptor, or replacement-race
+  behavior remains in scope.
+- DONE: Retain the missing-period counterexample and revise acceptance criteria,
+  deterministic/live tests, documentation, expected surface, and s4 dependencies.
+  Exact and missing-period legacy flags now share a byte-clean rejection control; the
+  canonical positive proves renderer identity, required reason, routing, and no new
+  adoption note across a nine-file, approximately +72/-79 correction.
+- SKIPPED: Implement code, run deterministic or live tests, push code or state, or
+  mutate gate/workflow state.
+  This append-only correction changes only the 6y entity body and returns it to the
+  same independent staff reviewer.
+
+### Summary
+
+Cycle 32 removes the false provenance promise instead of inventing an unowned capture
+producer: delegated chat closure now durably records the First Officer as renderer and
+its evidence judgment, while conversational authorization remains a behavioral
+obligation. The design explicitly discloses the lost audit detail, retains the
+missing-period failure as the decisive negative control, and leaves s4's provider-room
+contract intact. Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**; return this
+correction to the same independent ideation reviewer.
