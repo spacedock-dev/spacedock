@@ -1,6 +1,6 @@
 ---
 title: Codex wait_agent steering semantics describe captain input as active-loop resumption
-status: validation
+status: done
 source: "Captain request 2026-07-23: replace misleading wait-interruption language and use the corrected behavior in-session"
 started: 2026-07-23T14:43:01Z
 completed:
@@ -12,7 +12,7 @@ id: 6gkz4z2qweheyj17ck5tythn
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:6g:ideation
+        gate: gate:docs-dev:6g:validation
     records:
         - id: gate:docs-dev:6g:ideation
           stage: ideation
@@ -72,6 +72,28 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
+                state: consumed
+                blockers: []
+        - id: gate:docs-dev:6g:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:6g-validation-1
+              briefing:
+                id: briefing:docs-dev:6g:validation:attempt-1:revision-1
+                digest: sha256:12ef44e574a581df377d90ae4b3e321558a8ad8fb44c480af40705b9dae506ca
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6g:validation:1
+                briefing: briefing:docs-dev:6g:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T20:08:14.744192Z"
+                decision: approve
+                reason: The real Codex steering drive demonstrates the intended active-loop resumption, all 36 adversarial mutants and repository gates pass, the stale-empty false pass is closed, and the proposed evidence-line schema was correctly declined as an acceptance narrowing.
+              application:
+                action: advance
+                target-stage: done
                 state: consumed
                 blockers: []
 ---

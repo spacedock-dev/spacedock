@@ -1,0 +1,91 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6g:validation:attempt-1:revision-1",
+  "question": "Should candidate 9e3a5ca0b28723850427735611110a720b8bd0b6 enter the merge and terminalization path?",
+  "artifacts": [
+    {
+      "id": "artifact:6g-validation-gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5ab94e8cdb8162c0e2c3fe0e1cd1593afc99448e88c8786495d50fdd4622f67f",
+      "summary": "Summarizes the delivered active-loop-resumption capability, live steering evidence, corrected stale-empty ordering proof, durable completion authority, declined report-format narrowing, and requested merge decision."
+    },
+    {
+      "id": "artifact:6g-validation-task",
+      "uri": "git-root://state/15a5a1a6ab24cdb0cb48b0cadf6ad2e3c1345012/codex-wait-agent-steering-semantics/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:bcf5745bd23d642e375dc25c8b9c1f82e530f1f557129bbaec05fa4c8e6a2a53",
+      "summary": "The immutable task specification, four acceptance criteria, advisory surface authority, nine review/validation cycles, materiality dispositions, implementation evidence, live validation, and final PASSED revalidation."
+    },
+    {
+      "id": "artifact:6g-steering-proof",
+      "uri": "git-root://main/9e3a5ca0b28723850427735611110a720b8bd0b6/internal/ensigncycle/codex_wait_agent_steering_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:85053fe8ef2958d5fac1fe6a4971e02d73dce8d129aa68c6a35569b4cf6ceea6",
+      "summary": "The exact candidate ordered-event validator and 36 independent mutants covering assignment identity, lifecycle order, stale empty scope, completion authority, and captain-facing language."
+    },
+    {
+      "id": "artifact:6g-codex-runtime-contract",
+      "uri": "git-root://main/9e3a5ca0b28723850427735611110a720b8bd0b6/skills/first-officer/references/codex-first-officer-runtime.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4523c13f3d4a44e79afadfbb7eaa89568738fcb4a9547eed9a063b1bbf7f97d8",
+      "summary": "The shipped Codex-only contract wording: captain input resumes the active loop, unresolved workers continue, monitoring resumes when idle, and the harness wait label is never repeated as FO language."
+    },
+    {
+      "id": "artifact:6g-reduced-steering-evidence",
+      "uri": "git-root://main/9e3a5ca0b28723850427735611110a720b8bd0b6/docs/dev/_evidence/codex-wait-agent-steering-semantics/2026-07-23-dogfood.json",
+      "mediaType": "application/json",
+      "rev": "sha256:fe843c24e4bd963b84b81ff6753bb6deefb30e1ea0548b3dda6cd18be6f136e0",
+      "summary": "The reduced, non-private event slice binding one assignment, task path, completion epoch, steering event order, active work, resumed monitoring, final status, and durable report read."
+    },
+    {
+      "id": "artifact:6g-durable-worker-report",
+      "uri": "git-root://main/9e3a5ca0b28723850427735611110a720b8bd0b6/docs/dev/_evidence/codex-wait-agent-steering-semantics/worker-report.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6330502be55d760d1fe838f72fb0ce52165bc85dc02f363b96c372122fc0a82d",
+      "summary": "The durable completed-worker report referenced by the final-status correlation proof, retaining the expected assignment identity, completion epoch, stage status, and checklist results."
+    },
+    {
+      "id": "artifact:6g-probe-runbook",
+      "uri": "git-root://main/9e3a5ca0b28723850427735611110a720b8bd0b6/docs/dev/codex-idle-notification-probe.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:29d47a4f9f6e654957ca289b59d3421de21a2ad31838725a5fbd3c3ed572135f",
+      "summary": "The capability-scoped probe runbook distinguishing queued activity-driven delivery, autonomous wake-up, captain steering, and ordinary idle monitoring without runtime-version inference."
+    },
+    {
+      "id": "artifact:docs-dev-workflow",
+      "uri": "git-root://main/23c0fcf3f33239958bf17c8736c1fdc9b0319341/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:46d44abcbdc596a0aa2c22cb94465cf4e2321a529c52679f14e7efcb071a5f62",
+      "summary": "The immutable workflow contract governing live validation, evidence-defect materiality, narrowing-AC rejection, captain approval, merge, and terminalization."
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:6g-validation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Merge and terminalize the exact candidate",
+          "to": "stage:done"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return a material finding to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold before merge",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}
