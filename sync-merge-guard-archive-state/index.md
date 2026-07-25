@@ -192,3 +192,44 @@ The spike proved the remote-resurrection defect and that no current entry point 
 ### Summary
 
 Cycle 2 preserves the accepted no-new-verb seam while closing the unsafe archived-commit and restart gaps. Archived state is clean-and-publish-only, invalid identities halt before movement, and shared preflight handles a rebase already in progress before either caller can resolve or mutate an entity.
+
+### Feedback Cycles
+
+- Cycle 1 (Roborev 2304): CHANGES REQUESTED — invalid-branch ref safety, continuation wording, verified no-op, HALT evidence, and JSON behavior were corrected. Actual surface was 10 files/~899 LOC versus 10/~560 estimated; acceptance criteria were unchanged.
+- Cycle 2 (Roborev 2323): CHANGES REQUESTED — success-output compatibility, archive-folder dirt coverage, and diagnostics were corrected. Actual surface was 11 files/~1,006 LOC; the accepted dirty-sibling/non-fast-forward boundary remained no-autostash/recover-after-settlement.
+- Cycle 3 (Roborev 2328): CHANGES REQUESTED — exact checkout/branch preflight, clean active retry, and post-archive cleanup guidance were corrected. Actual surface was 11 files/~1,131 LOC; acceptance criteria were unchanged.
+- Cycle 4 (Roborev 2347): CHANGES REQUESTED — wrong/unknown-branch rebases are now left untouched and abort failures report possible residual conflict. Same configured-branch abort was retained because AC-3 requires archive-HEAD restoration.
+- Cycle 5 (Roborev 2367): CHANGES REQUESTED — abort diagnostics, neutral ready errors, clean peer-only narration, finalized HALT evidence, and stale comments were corrected. Archived dirt remains refusal-only because AC-2 forbids committing it.
+- Cycle 6 (Roborev 2383): CHANGES REQUESTED — remote-ref no-op verification, root/branch remedies, action-specific recovery prose, archived Git-error classification, exit documentation, and FO recovery contract assertions were corrected.
+- Cycle 7 (Roborev 2395): CHANGES REQUESTED — the ineffective negative assertion, HALT-renderer comment, and archived `-m` documentation were corrected. Active/archive collision refusal and same-branch rebase abort were retained as explicit AC-6 and AC-3 requirements.
+- Design-reset decision: no product-design reset. Final surface is 15 files/1,443 changed lines versus 10/~560 estimated (150% of files, 258% of LOC); the excess is real-Git counterexample coverage and review-driven safety/diagnostics, with no new verb, flag, dependency, raw-Git FO step, lifecycle authority, or second publisher.
+
+## Stage Report: implementation
+
+- DONE: Split-root `merge guard` now publishes the exact archive commit before reporting remote durability, while inline and no-origin workflows remain truthful.
+  Evidence: code commit `3d034e07`; `TestMergeGuardPublishesArchiveVisibleToFreshHost`, `TestMergeGuardNoOriginReportsLocalOnly`, and `TestMergeGuardInlineJSONReportsOneDurabilityBoundResult`.
+  Falsifier: removing `publishMergeArchive` leaves the fresh host on the active sentinel and makes the origin-ref equality assertion fail.
+- DONE: A clean archived slug resumes an interrupted publish without staging archive dirt or creating a second archive commit.
+  Evidence: `TestArchivedStateCommitResumesInterruptedPublication` proves one archive commit, origin equality, clean index/worktree, and a second no-op.
+  Evidence: `TestStateCommitRefusesDirtyArchivedEntityBeforePublication` covers staged, unstaged, and untracked folder dirt with unchanged HEAD and origin.
+  Falsifier: adding an archived `git add`/commit path makes the dirty refusal and one-archive-commit assertions fail.
+- DONE: The shared standard-library publisher preserves multi-host linear history, conflict evidence, and local recovery without force-push, autostash, or unrelated staging.
+  Evidence: `TestMergeGuardAndStateCommitPreflightInterruptedArchiveRebase`, `TestMergeGuardSiblingDirtNonFastForwardRemainsRecoverable`, and `TestStateCommitMultiWriterHappyPath`.
+  Evidence: `TestPublishVerifiesNoOpWithoutRemoteTrackingRef`, wrong-root/branch preflight tests, and clean retry/peer-only narration tests cover review-discovered boundaries.
+- DONE: Invalid identity shapes fail closed before mutation or publication.
+  Evidence: `TestStateCommitRefusesActiveArchiveAndArchiveShapeCollisions` proves active/archive and archived flat/folder collisions preserve HEAD, index, worktree, and origin.
+  Review disposition: “active wins” was declined because it directly invalidates AC-6's same-slug counterexample.
+- DONE: Rebase ownership behavior matches the accepted restart contract without touching unrelated operator rebases.
+  Evidence: a rebase whose `head-name` is the configured state branch is captured and aborted to restore the recoverable archive HEAD required by AC-3.
+  Evidence: `TestPreflightLeavesWrongBranchRebaseUntouched` proves a different/unknown branch is refused without abort; an abort failure returns `failed` and warns that conflict may remain.
+  Review disposition: preserving every same-branch manual rebase was declined because removing the abort fails AC-3's required HEAD restoration.
+- DONE: Documentation and FO recovery text bind cleanup to durable publication.
+  Evidence: merge help, command reference, PR-merge mod, and `fo-merge-core.md` name archived `state commit` resume, exit-3 HALT, exit-1 recovery, local-only behavior, and publish-only archived `-m`.
+  Evidence: `TestFOFunctionRequiredCallSites` pins both recovery branches in the declarative FO contract.
+- DONE: Required verification is green on commit `3d034e07`.
+  Evidence: `gofmt -w ./cmd ./internal`; `git diff --check`; focused statesync/CLI/status/ensigncycle/contractlint packages; `go test ./...`; and `go test ./... -race`.
+  Review evidence: Roborev jobs 2304, 2323, 2328, 2347, 2367, 2383, and 2395 were triaged; demonstrated defects were fixed, while only the two acceptance-contract reversals above were declined.
+
+### Summary
+
+Merge-guard finalization is now remote-durable across split-root hosts, and an interrupted archive publication has one supported idempotent restart through the existing `state commit <slug>` command. The implementation keeps archived scope publish-only, preserves conflict and sibling-dirt recovery, reports durability in one result, and introduces no new public command surface.
