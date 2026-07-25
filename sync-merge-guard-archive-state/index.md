@@ -1,7 +1,7 @@
 ---
 id: rdjjq9hbv86skkw12z106z6q
 title: Make merge-guard archive finalization durable across split-root hosts
-status: validation
+status: implementation
 source: "Roborev 2146 during durable-decisions 6y final implementation review, 2026-07-24"
 started: 2026-07-24T15:38:16Z
 completed:
@@ -202,6 +202,7 @@ Cycle 2 preserves the accepted no-new-verb seam while closing the unsafe archive
 - Cycle 5 (Roborev 2367): CHANGES REQUESTED — abort diagnostics, neutral ready errors, clean peer-only narration, finalized HALT evidence, and stale comments were corrected. Archived dirt remains refusal-only because AC-2 forbids committing it.
 - Cycle 6 (Roborev 2383): CHANGES REQUESTED — remote-ref no-op verification, root/branch remedies, action-specific recovery prose, archived Git-error classification, exit documentation, and FO recovery contract assertions were corrected.
 - Cycle 7 (Roborev 2395): CHANGES REQUESTED — the ineffective negative assertion, HALT-renderer comment, and archived `-m` documentation were corrected. Active/archive collision refusal and same-branch rebase abort were retained as explicit AC-6 and AC-3 requirements.
+- Cycle 8: REJECTED — independent validation; surface 15 files/1,443 LOC vs estimate 10 files/~560 LOC (258%); AC unchanged; material AC-4 counterexample `:(glob)*` is interpreted as Git pathspec magic and sweeps sibling dirt, requiring literal archive-move pathspecs plus symmetric rollback coverage.
 - Design-reset decision: no product-design reset. Final surface is 15 files/1,443 changed lines versus 10/~560 estimated (150% of files, 258% of LOC); the excess is real-Git counterexample coverage and review-driven safety/diagnostics, with no new verb, flag, dependency, raw-Git FO step, lifecycle authority, or second publisher.
 
 ## Stage Report: implementation
