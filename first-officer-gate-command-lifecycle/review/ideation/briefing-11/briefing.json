@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:ideation:attempt-11:revision-1",
+  "question": "Should the recorded lifecycle test addition range widen by 15 lines for direct six-case Captain mapping proof under the exact staff condition?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c7ec7c5a8626354c5a074c905bc70f94bf0874b4a8f8f0091c1ac7f287aa365a"
+    },
+    {
+      "id": "artifact:staff-review",
+      "uri": "staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e2355aebe8ebda71c882da6bfa342e33786d2ba02db8ffd7341cfa5da5d61469"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0dbda56e1f61f39f2b56129cc34c2a2c22603bf096086b48332fb28568365c29"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-cycle-29",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Resume conditional implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the proof range",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
