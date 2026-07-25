@@ -967,13 +967,9 @@ func requestForBriefing(briefingPath string) (string, []byte, *gateRoomRequest, 
 		requestPath := filepath.Join(room, "request.json")
 		requestBytes, readErr := os.ReadFile(requestPath)
 		if readErr == nil {
-			var probe struct {
-				Briefing struct {
-					Locator string `json:"locator"`
-				} `json:"briefing"`
-			}
-			if json.Unmarshal(requestBytes, &probe) == nil {
-				located, locateErr := resolveBriefingLocator(room, probe.Briefing.Locator)
+			locators := requestLocatorCandidates(requestBytes)
+			for _, locator := range locators {
+				located, locateErr := resolveBriefingLocator(room, locator)
 				if locateErr == nil && filepath.Clean(located) == filepath.Clean(briefingPath) {
 					request, err := decodeGateRoomRequest(requestBytes)
 					if err != nil {
@@ -991,6 +987,48 @@ func requestForBriefing(briefingPath string) (string, []byte, *gateRoomRequest, 
 			return "", nil, nil, nil
 		}
 	}
+}
+
+func requestLocatorCandidates(data []byte) []string {
+	var locators []string
+	for _, briefing := range duplicatePreservingObjectValues(data, "briefing") {
+		for _, raw := range duplicatePreservingObjectValues(briefing, "locator") {
+			var locator string
+			if json.Unmarshal(raw, &locator) == nil {
+				locators = append(locators, locator)
+			}
+		}
+	}
+	return locators
+}
+
+// duplicatePreservingObjectValues is only a membership probe. Matching request
+// bytes still pass through decodeGateRoomRequest's strict duplicate rejection.
+func duplicatePreservingObjectValues(data []byte, want string) []json.RawMessage {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	token, err := decoder.Token()
+	if err != nil || token != json.Delim('{') {
+		return nil
+	}
+	var values []json.RawMessage
+	for decoder.More() {
+		keyToken, err := decoder.Token()
+		if err != nil {
+			return values
+		}
+		key, ok := keyToken.(string)
+		if !ok {
+			return values
+		}
+		var raw json.RawMessage
+		if err := decoder.Decode(&raw); err != nil {
+			return values
+		}
+		if key == want {
+			values = append(values, raw)
+		}
+	}
+	return values
 }
 
 func resolveBriefingLocator(room, locator string) (string, error) {
