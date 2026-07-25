@@ -242,6 +242,7 @@ controls, and evidence.
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — Roborev job 2307; surface 6/112 vs estimate 88 (127%); AC unchanged
+- Cycle 2: REJECTED — validation adversarial pass; surface 6/111 vs estimate 88 (126%); AC unchanged; adversarial edit: make the sole dispatch-build exit non-zero while retaining the successor effect
 
 ## Stage Report: implementation
 
@@ -287,7 +288,3 @@ Candidate `16aa2ec3` is scope-correct and its reproduced focused, full, race,
 live-tag, production-control, and retained live evidence all pass. Validation
 rejects one material evidence defect: the recorded-gate oracle can qualify a
 failed build followed by break-glass successor dispatch, contrary to AC-3.
-
-### Feedback Cycles
-
-- Cycle 2: REJECTED — validation adversarial pass; surface 6/111 vs estimate 88 (126%); AC unchanged; adversarial edit: make the sole dispatch-build exit non-zero while retaining the successor effect
