@@ -1,0 +1,63 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6g:ideation:attempt-3:revision-1",
+  "question": "Should the corrected Codex-only captain-steering design enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:6g-attempt-3-gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8ae82c86e2d03fe8780b8f684b8e60f703faa8874ca91aee55b3451e55359749",
+      "summary": "Explains the agent-visible steering behavior, retained evidence, semantic scope boundary, advisory surface estimate, attempt-2 correction, and requested decision."
+    },
+    {
+      "id": "artifact:6g-cycle-2-entity",
+      "uri": "git-root://state/f103e11966bac561dc5fd7c946ac48d2cfdd72eb/codex-wait-agent-steering-semantics/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6f85947fa8c940974ac364a63bcabdac29fc49aacf7c26a0f2c4ab8bbe9f0035",
+      "summary": "The immutable governing design, real steering spike, acceptance criteria, behavioral proof plan, advisory implementation surface, semantic reset triggers, and corrected ideation report."
+    },
+    {
+      "id": "artifact:6g-attempt-2-stale-review",
+      "uri": "../briefing-2/gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f78b186b3b08a74d83a1e28613d332f4ec7485f00667258ac1b282a3ac40d6d3",
+      "summary": "The superseded gate review whose steering direction remains valid but whose numeric file and LOC tolerance incorrectly acted as gate authority."
+    },
+    {
+      "id": "artifact:docs-dev-workflow",
+      "uri": "git-root://main/4ff98d8cd97ebcf17b6a583070ce69234e24fc87/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:46d44abcbdc596a0aa2c22cb94465cf4e2321a529c52679f14e7efcb071a5f62",
+      "summary": "The immutable development workflow governing ideation approval, implementation, independent validation, feedback routing, CI, and merge."
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:6g-attempt-3-ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Enter bounded Codex implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the semantic boundary or evidence model",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold before implementation",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}

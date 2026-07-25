@@ -54,7 +54,13 @@ gates:
               application:
                 action: feedback
                 target-stage: ideation
-                state: pending
+                state: superseded
+            - id: gate-attempt:6g-ideation-3
+              briefing:
+                id: briefing:docs-dev:6g:ideation:attempt-3:revision-1
+                digest: sha256:d14f37ba0ac249ae495ebc96e3c90f3144cae9780546d0d645ae8c142d74b227
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-3
 ---
 
 ## Problem
