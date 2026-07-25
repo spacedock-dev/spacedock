@@ -3263,3 +3263,56 @@ misidentify `220e783` as the approval close and reject valid ancestry. Exact
 artifacts are retained, Codex and Pi remain unspent, and no retry, code change,
 push, Roborev request, or workflow mutation followed the failure. Checklist
 accounting is **4 DONE, 1 FAILED, 2 SKIPPED**.
+
+## Stage Report: implementation (cycle 32 Git ancestry oracle correction)
+
+- DONE: Reproduce the retained Claude failure with the smallest real-Git
+  deterministic control before repairing it.
+  The existing valid bind/close/consume/dispatch/effect replay now commits one
+  later worker-report echo containing both `decision: approve` and
+  `state: consumed`. At rejected tip `bb67a072`, the new observation failed
+  with the same `successor dispatch was not observed after consume` grade,
+  independently confirming that the search-based commit selector—not the
+  product lifecycle—was the root cause.
+- DONE: Repair only the ancestry oracle's transition selection.
+  Exact tip `b34c5bdb3155faf659145755323aee9c1260deb0` selects the
+  chronological first Git introduction of the canonical Resolution ID for the
+  close and the canonical indented `state: consumed` field for consumption.
+  The existing snapshot checks remain unchanged: the close parent has the
+  retained digest and no Resolution, the close contains pending approval, the
+  consumed snapshot contains handoff plus consumed state, and merge-base
+  ancestry still requires close → consume → dispatch head → sole effect.
+  Product recorder/CLI behavior, FO and presenter skills, shared prompt, live
+  runners, host transport, and worker-report wording are byte-unchanged.
+- DONE: Preserve the negative controls and prove the later echo is harmless.
+  The real-Git echo observation now passes while zero effect, zero build,
+  build-before-consume, missing dispatch ancestry, two builds, and two effects
+  remain rejected. The folder-form history window changes only from
+  `HEAD~5..HEAD` to `HEAD~6..HEAD` because the regression deliberately adds one
+  committed report.
+- DONE: Declare exact range and run all deterministic verification.
+  The correction changes only
+  `internal/ensigncycle/recorded_gate_lifecycle_test.go` by **+6/-3** from
+  `bb67a072`. From base `28073390`, the complete implementation is **11 files,
+  +153/-53 = 206 changed LOC**. This is an explicit two-line amendment to the
+  prior 204-LOC ceiling for the required real-Git regression and exact history
+  range; no product or shipped-skill surface expands.
+  `gofmt -w ./cmd ./internal`, focused lifecycle/review suites, focused
+  gates/CLI/contract/integration suites, `go test -tags live ./... -run '^$'
+  -count=1`, `go test ./...`, `go test ./... -race`,
+  `uv run --with-requirements docs/requirements.txt mkdocs build --strict`,
+  and `git diff --check` all pass. The live-tag command compiled all runners
+  and executed no live tests.
+- SKIPPED: Retry Claude, spend Codex/Pi, request Roborev, push code or state,
+  mutate a gate/round/status/stage, or advance the workflow.
+  The exact deterministic correction stops for independent review and renewed
+  live authorization.
+
+### Summary
+
+The ancestry oracle now identifies canonical state transitions instead of the
+latest prose occurrence, so a later worker report cannot overwrite the observed
+approval or consume commits. The exact live failure is reproduced and fixed in
+real Git while every existing snapshot and ancestry negative remains active.
+All deterministic gates pass at `b34c5bdb`; live retry remains blocked.
+Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**.
