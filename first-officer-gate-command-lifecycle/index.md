@@ -3425,3 +3425,69 @@ was absent, so the mandated sequential run stopped without retry or mutation.
 All exact artifacts are retained, including the passing Claude mixed-marker
 recovery evidence, and code remains unchanged at `5ced64fc`. Checklist
 accounting is **5 DONE, 1 FAILED, 1 SKIPPED**.
+
+## Stage Report: implementation (cycle 32 canonical Pi substrate retry)
+
+- DONE: Reproduce the repository's canonical compatible Pi substrate without
+  changing the operator installation. A fresh temporary npm prefix at
+  `/tmp/spacedock-pi-pinned-prefix.lllT9U` uses Node `v24.13.1` and the exact
+  workflow pair `@earendil-works/pi-coding-agent@0.80.10` plus
+  `pi-subagents@0.35.1`; no `pi-intercom` was installed. Registry integrity
+  was checked before installing both packed tarballs together. The exact
+  package names, versions, Pi binary, subagent extension and skill files, and
+  the installed `@earendil-works/pi-ai` `/compat` entry all verified.
+- DONE: Isolate both package and authentication setup from global Pi state.
+  The retry prepended the temporary prefix's `node_modules/.bin`, set
+  `PI_SUBAGENTS_PACKAGE_ROOT` to that prefix's installed `pi-subagents`, and
+  left `~/.pi` untouched. The first pinned attempt proved the stale
+  operator-local Pi OAuth copy could not refresh before lifecycle entry. A
+  fresh temporary HOME at `/tmp/spacedock-pi-auth-source.KqMIcI` then reused
+  the current Codex OAuth tokens without printing secrets or modifying either
+  global credential store.
+- FAILED: Complete the unchanged Pi lifecycle at exact clean code tip
+  `5ced64fc5101b5da5f7bb5b3cfa9b8b9e2afc457`.
+  The isolated-auth run entered the real lifecycle and ran for **87.55s**.
+  Pi loaded the shared gate-lifecycle skills, bound and presented the gate,
+  recorded delegated First Officer approval, and successfully ran both
+  `gate record --decision approve` and `gate consume`; the durable state
+  commit was `f1cc0ee`. Subsequent provider WebSocket/server errors ended in
+  `{"error":"Too many concurrent requests"}` before successor dispatch and
+  effect. Per the stop condition, no further retry or environment adjustment
+  was attempted.
+- DONE: Retain integrity, version, compatibility, authentication-metadata, and
+  Pi execution evidence beneath
+  `/tmp/spacedock-6y-cycle32-live-5ced64fc.4FreHB/`.
+  In `pi-pinned-setup`, `setup.log` is **1009 bytes**, SHA-256
+  `960fbc5849ddf560a1e52d5a3d2b4aa90f426f5488fe29e49e9d7110431cd209`;
+  `versions.log` is **366 bytes**, SHA-256
+  `99951d131d0875bba816bb2a4882da059c5ffcad916165f9e08aa9e6fa350446`;
+  `compat-guard.log` is **186 bytes**, SHA-256
+  `69935f313e2f071480256986cd43fe53ffbaf4f4310940031e4225a801b4ebc6`;
+  and `auth-seed.log` is **184 bytes**, SHA-256
+  `b5eba83d4d0b3e46060f47c9578303445ac20c4e223d5d2950b8c58f605f775b`.
+  The final `pi-pinned-auth` session is **181070 bytes**, SHA-256
+  `84f4086801e562e4c0421b0ac3a00142deba2df087ed867333dfc2ef71a182a0`;
+  `pi-stderr.txt` is **58 bytes**, SHA-256
+  `d692475271920cf8b8f6294f964f38cb4a8f9b27a706885e311e68659a14ecb3`;
+  and empty `pi-stdout.txt` has SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- DONE: Preserve the prior same-tip host conclusions. Claude and Codex remain
+  complete actual-lifecycle passes at the same unchanged `5ced64fc` tip. This
+  retry corrects the original Pi result's classification: the extension-load
+  failure was operator-local harness substrate setup, not a 6y product
+  failure. The canonical pair reaches and durably consumes the lifecycle; the
+  remaining incomplete Pi result is provider capacity after lifecycle entry.
+- SKIPPED: Retry after lifecycle entry, switch provider or model, change global
+  Pi state, product code, prompt, tests, or runtime command surface, request
+  Roborev, push code or state, mutate a gate/round/status/stage, or advance the
+  workflow. The exact code worktree remains clean at `5ced64fc`.
+
+### Summary
+
+The repository-pinned Pi package pair is integrity-checked, compatible, and
+able to execute the unchanged 6y lifecycle through durable approval and
+consume. Provider capacity then prevented successor dispatch and effect, so
+the required stop was observed. Together with the prior same-tip evidence,
+Claude and Codex pass completely; Pi's local substrate defect is resolved, but
+its provider-limited lifecycle run is incomplete. Checklist accounting is
+**5 DONE, 1 FAILED, 1 SKIPPED**.
