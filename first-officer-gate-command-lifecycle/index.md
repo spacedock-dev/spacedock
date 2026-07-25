@@ -3081,3 +3081,57 @@ invariant because its decision line did not present approve/revise/hold as an
 actionable ask. Exact normal artifacts are retained, Codex and Pi remain
 unspent, and no retry or product/workflow mutation followed the failure.
 Checklist accounting is **4 DONE, 1 FAILED, 2 SKIPPED**.
+
+## Stage Report: implementation (cycle 32 Claude review-oracle correction)
+
+- DONE: Correct the root cause identified in the retained Claude failure
+  without changing the presenter contract or live prompt.
+  Commit `3d107752` removes the inferred all-alternatives/question-marker
+  requirement introduced at `75b4aaca`. The recorded-gate oracle now recognizes
+  one semantic decision line whose disposition (`approve`, `reject`, `revise`,
+  or `hold`) is tied to a concrete scenario effect such as consume, advance,
+  handoff, bounce, implementation, or worktree entry. It does not require one
+  line to enumerate approve plus revise/reject/hold, a question mark, `choose`,
+  or `please decide`.
+- DONE: Reproduce the retained Claude decision as a deterministic positive and
+  preserve falsifiable negatives.
+  The exact retained wording—“Decision: approve to consume this authorization
+  and advance recorded-gate-task from validation into the handoff stage for
+  dispatch.”—now passes alongside the baseline fixture and a semantic
+  non-heading variant. Missing decision text, a line with no disposition,
+  connector-shaped vagueness (“approve with confidence”), and non-actionable
+  narration all fail. Ordered root-review extractor and lifecycle/presentation
+  mutant controls remain green.
+- DONE: Keep authority, lifecycle, presenter, prompt, and runtime surfaces
+  unchanged and declare exact drift.
+  The correction changes only
+  `internal/ensigncycle/gate_assert_test.go` (**+18/-1**) and
+  `internal/ensigncycle/recorded_gate_lifecycle_test.go` (**+7/-2**) from
+  `1e9bf575`: **2 files, +25/-3 = 28 changed LOC**. From base `28073390`, the
+  whole implementation is **10 files, +145/-48 = 193 changed LOC**, 42 lines /
+  **27.8%** above the 151-line estimate and within the approved 11-file /
+  204-LOC hard cap. Production recorder/CLI behavior, the FO and present-gate
+  skills, shared live prompt, host runners, and retained Claude artifacts are
+  byte-unchanged. The entity-local broad `find` diagnostic remains secondary
+  friction and is not addressed here.
+- DONE: Run final-tree deterministic verification at exact tip `3d107752`.
+  Focused semantic review controls, ordered Claude/Codex/Pi extractor controls,
+  recorded lifecycle/presentation mutants, all recorded-gate controls, focused
+  CLI/contract checks, `gofmt -w ./cmd ./internal`, `go test ./...`,
+  `go test ./... -race`, `go test -tags live ./... -run '^$' -count=1`,
+  `uv run --with-requirements docs/requirements.txt mkdocs build --strict`,
+  and `git diff --check` pass. Live-tag verification compiled all runners and
+  executed no live tests.
+- SKIPPED: Retry Claude, spend Codex/Pi, request Roborev, push code or state,
+  mutate gate/round/status, or advance the stage.
+  The corrected exact tip returns for independent deterministic review before
+  any renewed live authorization.
+
+### Summary
+
+The Claude journey exposed a test-only obligation that the shipped presenter
+never imposed. The corrected semantic oracle accepts Claude's concrete
+approve-to-consume-and-advance decision while still rejecting missing,
+disposition-free, vague, and narrative substitutes; product and live surfaces
+remain unchanged. All deterministic gates pass at `3d107752`, with live retry
+still blocked. Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**.
