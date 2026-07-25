@@ -3,8 +3,8 @@ title: Codex wait_agent steering semantics describe captain input as active-loop
 status: done
 source: "Captain request 2026-07-23: replace misleading wait-interruption language and use the corrected behavior in-session"
 started: 2026-07-23T14:43:01Z
-completed:
-verdict:
+completed: 2026-07-25T21:01:05Z
+verdict: passed
 score: 0.9
 worktree: .worktrees/spacedock-ensign-codex-wait-agent-steering-semantics
 issue:
@@ -96,8 +96,9 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:569
+archived: 2026-07-25T21:01:05Z
 ---
 
 ## Problem
