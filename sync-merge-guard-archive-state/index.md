@@ -7,7 +7,7 @@ started: 2026-07-24T15:38:16Z
 completed:
 verdict:
 score: "1.0"
-worktree:
+worktree: .worktrees/spacedock-ensign-sync-merge-guard-archive-state
 issue:
 sprint: durable-decisions
 gates:
