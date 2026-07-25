@@ -83,6 +83,7 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+mod-block: merge:pr-merge
 ---
 
 Make a successful split-root `merge guard` finalization durable on the configured state remote, including restart after interruption, so another First Officer cannot resurrect an already archived task from the last pushed sentinel.
