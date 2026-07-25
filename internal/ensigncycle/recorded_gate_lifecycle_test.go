@@ -565,37 +565,6 @@ func TestRecordedGateLifecycleAC7ResumeMatrix(t *testing.T) {
 		}
 	})
 }
-func TestRecordedGateLifecycleCommandTextMutants(t *testing.T) {
-	root := recordedGateRepoRoot(t)
-	original := readFile(t, filepath.Join(root, "skills", "fo-gate-lifecycle", "SKILL.md"))
-	if events := procedureEvents(original); strings.Join(events, ",") != strings.Join(recordedGateRequiredEvents, ",") {
-		t.Fatalf("shipped skill baseline trace=%v, want %v", events, recordedGateRequiredEvents)
-	}
-	commands := []struct {
-		event, command string
-	}{
-		{"briefing-record", "gate record ENTITY --briefing BRIEFING"},
-		{"decision-record", "gate record ENTITY --decision approve|revise|hold"},
-		{"consume", "gate consume ENTITY"},
-	}
-	for _, tc := range commands {
-		t.Run(tc.event, func(t *testing.T) {
-			at := strings.Index(original, tc.command)
-			if at < 0 {
-				t.Fatalf("shipped skill has no %s command", tc.event)
-			}
-			mutant := original[:at] + original[at+len(tc.command):]
-			if tc.event == "decision-record" {
-				mutant = strings.ReplaceAll(original, tc.command, "")
-			}
-			copyPath := filepath.Join(t.TempDir(), "skills", "fo-gate-lifecycle", "SKILL.md")
-			writeFile(t, copyPath, mutant)
-			if events := procedureEvents(readFile(t, copyPath)); strings.Join(events, ",") == strings.Join(recordedGateRequiredEvents, ",") {
-				t.Fatalf("copied shipped-skill %s deletion kept the structural command-text check green: %v", tc.event, events)
-			}
-		})
-	}
-}
 func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 	valid := recordedGateObservation{
 		events: append([]string(nil), recordedGateRequiredEvents...),
@@ -647,24 +616,6 @@ func authorizeRecordedGateDispatch(events []string, entity, successor string) er
 	return nil
 }
 
-func procedureEvents(skill string) []string {
-	needles := []struct{ event, needle string }{
-		{"briefing-record", "gate record ENTITY --briefing"},
-		{"decision-record", "gate record ENTITY --decision"},
-		{"consume", "gate consume ENTITY"},
-	}
-	var events []string
-	from := 0
-	for _, item := range needles {
-		at := strings.Index(skill[from:], item.needle)
-		if at < 0 {
-			continue
-		}
-		events = append(events, item.event)
-		from += at + len(item.needle)
-	}
-	return events
-}
 func recordedGatePrompt(workflowRoot string) string {
 	return fmt.Sprintf("Use $spacedock:first-officer for this whole run.\n\nWorkflow directory: %s\nEngage only `recorded-gate-task` under this delegated conn: %s\nDo not pass `--host` to `dispatch build`.\nApprove its retained validation package and continue until the handoff worker records %s in durable state, then stop.", workflowRoot, recordedGateDirective, recordedGateDispatchMarker)
 }

@@ -275,6 +275,9 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	runner = runner.withStubPATH(shimDir)
 
 	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
+	if _, err := os.Stat(filepath.Join(fixture.stateRoot, "_archive", "recorded-gate-task", "index.md")); !os.IsNotExist(err) {
+		t.Fatalf("recorded-gate-task was archived while waiting at the gate; stat err=%v", err)
+	}
 	after := readFile(t, fixture.entity)
 	if err := assertGateHeld(before, after, recordedGateReviewFromClaudeStream(result.stream)); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)

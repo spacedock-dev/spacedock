@@ -207,15 +207,15 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
+	if _, err := os.Stat(filepath.Join(fixture.stateRoot, "_archive", "recorded-gate-task", "index.md")); !os.IsNotExist(err) {
+		t.Fatalf("recorded-gate-task was archived while waiting at the gate; stat err=%v", err)
+	}
 	after := readFile(t, fixture.entity)
 	if err := assertGateHeld(before, after, recordedGateReviewFromCodexJSONL(result.jsonl)); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	if resolveRecordedGateEntity(fixture) != after {
-		t.Fatal("recorded-gate-task was archived while waiting at the gate")
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
