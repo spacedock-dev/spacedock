@@ -3614,3 +3614,76 @@ late-grant behavior with an approved behavioral proof or narrow it by a
 Captain-owned gate decision, then dispatch implementation to make the handoff
 heading/DONE oracle deletion- and mutation-sensitive before another Roborev
 round. Checklist accounting is **6 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 Roborev 2211 repair plan)
+
+- DONE: Inspect the immutable implementation boundary before proposing edits.
+  Code is clean at exact tip
+  `5ced64fc5101b5da5f7bb5b3cfa9b8b9e2afc457`; its cumulative diff from
+  `280733907f2d9f2c9b6b226a0e8bf06fea6b90db` is 11 files and 203 changed LOC.
+  The reviewer-only `review/implementation/roborev-2211/briefing.review.jsonl`
+  remains untouched and has no worker triage.
+- DONE: Plan finding 2 in the existing
+  `internal/ensigncycle/recorded_gate_lifecycle_test.go` only.
+  Estimated tip delta is **+11/-32**: add a section-bounded oracle requiring
+  exactly `## Stage Report: handoff` and a `- DONE:` item before the next H2;
+  table-drive deletion of that heading and mutation/deletion of DONE beside
+  the existing actor/reason controls. Recover 32 current-only added lines by
+  consolidating duplicate exact-state assertions and mutant setup, without
+  removing actor, reason, ancestry, root-review, no-authority, or marker
+  controls. The cheapest falsifier is that either report mutant must turn the
+  current green observation red while the marker remains present.
+- DONE: Plan preserved late-grant behavior in the existing
+  `internal/ensigncycle/pty_team_mode_live_test.go` only.
+  Estimated tip delta is **+29/-0** for
+  `TestLivePtyRecordedGateLateGrant`: reuse `ptyLiveDriver`,
+  `writeRecordedGateFixture`, the recorded-gate shim, review extractor, and
+  lifecycle oracle; make the first Captain turn bind/present with no conn,
+  prove open state plus zero decision/consume/dispatch/effect, then send the
+  explicit conn grant in a later turn and require the complete lifecycle.
+  Omission of the second turn detects a stuck path; premature decision in the
+  first phase detects self-grant; failure after the second detects a broken
+  late-grant transition. No new harness, file, schema, command, production Go,
+  transport/provider contract, provider semantics, or compatibility layer is
+  involved.
+- DONE: Plan the file/LOC exchange needed to respect both hard caps.
+  Return the current **+8/-0** late-grant prose-only additions in
+  `internal/contractlint/fo_function_reference_invariant_test.go` exactly to
+  base (**+0/-8** from tip); behavioral ownership moves to the recorded-gate
+  and PTY tests. The estimates yield 11 changed files and 203 changed LOC:
+  `203 - 8 - 21 + 29 = 203`, leaving one LOC of headroom. Recount against the
+  fixed base after gofmt; estimates do not authorize a cap overrun.
+- DONE: Define the focused proof and mutation order for a later implementation.
+  First run
+  `go test ./internal/ensigncycle -run '^(TestRecordedGateLifecycleRealCLIReplay|TestRecordedGateLifecycleProvenanceAndPresentationMutants)$' -count=1`;
+  verify heading deletion and DONE deletion/mutation each fail the oracle while
+  the unmutated fixture passes; compile live tests with
+  `go test -tags live ./internal/ensigncycle -run '^$' -count=1`; then run only
+  `go test -tags live ./internal/ensigncycle -run '^TestLivePtyRecordedGateLateGrant$' -count=1`.
+  Full required Go, race, and formatting checks follow only after those focused
+  falsifiers pass.
+- DONE: Set a hard implementation stop.
+  Stop before any code commit if gofmt/base-relative numstat exceeds 11 files
+  or 204 changed LOC, if the named trims weaken an existing falsifier, or if
+  late-grant proof requires any forbidden surface. Return to FO/conn authority
+  for a cap or design amendment; do not narrow the supported late-grant path.
+- DONE: Predeclare the eventual complete worker triage.
+  Findings 2 and 3 become **Material / fixed** only after their mutants and
+  behavioral proof pass. Finding 1 remains substantively False; v1 publication
+  will encode its canonical decline as **correct-but-disproportionate** because
+  source separation and the actor-swap mutant already prevent released harm,
+  promoted only if delegated live state can name `person:captain` while passing.
+  Finding 4 remains **correct-but-disproportionate** with its recorded roadmap
+  promotion condition. Append those worker entries only after fixes and
+  verification; preserve the reviewer-only draft byte-for-byte until then.
+- SKIPPED: Edit code/product/tests, run tests or live providers, request
+  Roborev, append worker triage, record a round, mutate gate/round/status/stage,
+  push, open a PR, or merge. This report is planning authority only.
+
+### Summary
+
+The binding ruling preserves the supported later-turn conn grant. The cheapest
+falsifiable repair augments the existing recorded-gate oracle and existing PTY
+driver, replacing prose-only late-grant matching so the approved 11-file and
+204-LOC bounds remain feasible. Checklist accounting is **7 DONE, 1 SKIPPED,
+0 FAILED**.
