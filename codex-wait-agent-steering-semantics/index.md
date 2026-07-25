@@ -277,3 +277,18 @@ The live Codex drive exhibited the intended outcome: captain steering resumed ac
 ### Summary
 
 The correction closes the stale-empty ordering false pass by making later active work revoke the prior idle observation. A fresh empty-scope event is now required before monitoring can resume, with no runtime, adapter, or durable-report schema change.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce the active-work-after-empty mutant at corrected commit `9e3a5ca0`; verify it fails until a renewed empty-scope event precedes the second wait, while the original reduced trace still passes.
+  A detached three-state audit passed: the original trace succeeds, later active work without renewed empty scope fails at `captain-authorized active work was not exhausted`, and inserting a new empty-scope event before the second wait succeeds.
+- DONE: Confirm all prior mutants, focused, containment, live-tag, full, and race checks remain green and that the runtime adapter plus durable report schema are byte-unchanged by this correction.
+  The original trace and all 36 planted mutants passed their assertions; focused steering/idle, contractlint containment, live-tag compile, `go test ./...`, and `go test ./... -race` passed. Diff and function-slice comparisons show only `internal/ensigncycle/codex_wait_agent_steering_test.go` changed; the adapter, evidence fixture, report artifact, and report parser are byte-unchanged.
+- DONE: Re-enter AC-1 through AC-4 judgment, preserve the evidence-line decline unless an accepted AC is actually violated, and report PASSED or REJECTED.
+  PASSED: AC-1 is covered by the successful live drive plus the corrected order matrix; AC-2 by all lifecycle, identity, epoch, authority, and ordering mutants; AC-3 by the repeated-disclaimer mutant and zero live captain-facing uses; AC-4 by the one-file correction and containment/full/race gates. Evidence lines are not an accepted completion-schema requirement, so the declined proposal does not affect any AC.
+- DONE: Reviewer findings and release scope.
+  The detached correction audit is clean; there are no material findings, deferred risks, or polish-only findings.
+
+### Summary
+
+Cycle-2 validation confirms that later active work now invalidates a stale empty-scope observation and that monitoring becomes valid again only after a fresh empty boundary. All acceptance evidence and repository gates pass without runtime, adapter, or durable-report changes. Recommendation: PASSED.
