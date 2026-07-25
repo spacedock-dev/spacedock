@@ -119,6 +119,22 @@ func TestCodexLiveEnvOmitsEmptyAPIKey(t *testing.T) {
 	}
 }
 
+func TestCodexLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
+	for key, value := range map[string]string{"CODEX_THREAD_ID": "codex", "CLAUDECODE": "claude", "PI_CODING_AGENT": "pi",
+		"PI_CODING_AGENT_DIR": "/parent/pi", "CODEX_HOME": "/parent/codex", "HOME": "/parent/home", "OPENAI_API_KEY": "parent-key", "PATH": "/parent/bin"} {
+		t.Setenv(key, value)
+	}
+
+	env := codexLiveEnv("/target/codex", "/target/home", "/spacedock/bin", "target-key")
+
+	want := map[string]string{"CLAUDECODE": "", "PI_CODING_AGENT": "", "PI_CODING_AGENT_DIR": "",
+		"CODEX_THREAD_ID": "codex", "CODEX_HOME": "/target/codex", "HOME": "/target/home",
+		"OPENAI_API_KEY": "target-key", "PATH": "/spacedock/bin" + string(os.PathListSeparator) + "/parent/bin"}
+	for key, value := range want {
+		assertEnvValue(t, env, key, value)
+	}
+}
+
 func TestCodexLiveHomeParentUsesUserCacheOutsideSystemTemp(t *testing.T) {
 	cacheDir := filepath.Join(string(os.PathSeparator), "home", "runner", ".cache")
 	parent, err := codexLiveIsolatedHomeParent(cacheDir)
@@ -174,7 +190,8 @@ func TestCodexLiveHomeParentCandidatesRejectArtifactRootInsidePluginCheckout(t *
 }
 
 func codexLiveEnv(codexHome, home, pathPrefix, openAIAPIKey string) []string {
-	env := cleanEnviron("CODEX_HOME", "HOME", "OPENAI_API_KEY", "CLAUDECODE")
+	env := cleanEnviron("CODEX_HOME", "HOME", "OPENAI_API_KEY", "PATH",
+		"CLAUDECODE", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR")
 	path := os.Getenv("PATH")
 	if pathPrefix != "" {
 		path = pathPrefix + string(os.PathListSeparator) + path

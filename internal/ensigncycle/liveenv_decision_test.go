@@ -27,6 +27,20 @@ func envValue(env []string, key string) (string, bool) {
 	return "", false
 }
 
+func assertEnvValue(t *testing.T, env []string, key, want string) {
+	t.Helper()
+	prefix := key + "="
+	var values []string
+	for _, kv := range env {
+		if strings.HasPrefix(kv, prefix) {
+			values = append(values, strings.TrimPrefix(kv, prefix))
+		}
+	}
+	if (want == "" && len(values) != 0) || (want != "" && (len(values) != 1 || values[0] != want)) {
+		t.Errorf("%s = %q, want exactly %q", key, values, want)
+	}
+}
+
 // TestDecideClaudeEnv covers the pure decision tree directly: it returns the
 // chosen auth mode (and OAuth token) from explicit inputs, with no skip/abort
 // and no temp dir, so all three branches — including the neither-credential
@@ -240,5 +254,35 @@ func TestIsolatedClaudeEnvAPIKeyPath(t *testing.T) {
 	}
 	if home == fakeHome {
 		t.Errorf("HOME = %q must be a fresh dir, not the real home %q", home, fakeHome)
+	}
+}
+
+func TestIsolatedClaudeEnvDropsForeignRuntimeMarkers(t *testing.T) {
+	for _, tc := range []struct{ name, token, credential, credentialValue string }{
+		{"api-key", "", "ANTHROPIC_API_KEY", "api-key"}, {"oauth", "oauth-token", "CLAUDE_CODE_OAUTH_TOKEN", "oauth-token"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeHome := t.TempDir()
+			if tc.token != "" {
+				writeFile(t, filepath.Join(fakeHome, ".claude", "benchmark-token"), tc.token)
+			}
+			for key, value := range map[string]string{"ANTHROPIC_API_KEY": "api-key", "CLAUDECODE": "parent-claude", "CODEX_THREAD_ID": "codex",
+				"PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/parent/pi", "CLAUDE_CONFIG_DIR": "/target/claude", "PATH": "/parent/bin"} {
+				t.Setenv(key, value)
+			}
+
+			env := isolatedClaudeEnv(t, fakeHome)
+
+			for key, want := range map[string]string{
+				"CLAUDECODE": "", "CODEX_THREAD_ID": "", "PI_CODING_AGENT": "", "PI_CODING_AGENT_DIR": "",
+				"CLAUDE_CONFIG_DIR": "/target/claude", "PATH": "/parent/bin", tc.credential: tc.credentialValue} {
+				assertEnvValue(t, env, key, want)
+			}
+			if home, _ := envValue(env, "HOME"); home == fakeHome {
+				t.Errorf("HOME = %q, want an isolated value", home)
+			} else {
+				assertEnvValue(t, env, "HOME", home)
+			}
+		})
 	}
 }

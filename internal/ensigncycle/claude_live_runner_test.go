@@ -199,6 +199,16 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 		runner = copied
 	}
 	result := runner.run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
+	writeFile(t, filepath.Join(result.artifactDir, "command.log"), readFile(t, commandLog))
+	commandLog = filepath.Join(result.artifactDir, "command.log")
+	if strings.Contains(result.stream, "multiple runtime markers are set (CODEX_THREAD_ID, CLAUDECODE)") {
+		t.Fatalf("recorded gate lifecycle hit mixed-marker ambiguity\nArtifacts: %s", result.artifactDir)
+	}
+	for _, line := range strings.Split(readFile(t, commandLog), "\n") {
+		if strings.Contains(line, "\tdispatch build ") && (strings.Contains(line, " --host ") || strings.Contains(line, " --host=")) {
+			t.Fatalf("recorded gate lifecycle recovered with an explicit host: %s\nArtifacts: %s", line, result.artifactDir)
+		}
+	}
 	if copied, ok := runner.(claudeLiveRunner); ok && (!strings.Contains(result.stream, copied.pluginDir) || !strings.Contains(result.stream, "# First Officer Gate Lifecycle")) {
 		t.Fatalf("recorded gate lifecycle did not load the copied skill body\nArtifacts: %s", result.artifactDir)
 	}

@@ -57,7 +57,7 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		}
 	}
 	if o.dispatch.builds != 1 {
-		return fmt.Errorf("successful successor dispatch builds = %d, want 1", o.dispatch.builds)
+		return fmt.Errorf("successor dispatch build attempts = %d, want 1", o.dispatch.builds)
 	}
 	if o.dispatch.durableEffects != 1 {
 		return fmt.Errorf("new durable successor effects = %d, want 1", o.dispatch.durableEffects)
@@ -195,7 +195,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 		t.Fatal(err)
 	}
 	validLog := readFile(t, commandLog)
-	for name, log := range map[string]string{"zero-build": strings.Replace(validLog, "exit=0\tdispatch build ", "exit=0\tignored build ", 1), "build-before-consume": strings.Replace(validLog, "exit=0\tgate consume ", "exit=0\tignored consume ", 1) + "\nexit=0\tgate consume late", "missing-ancestry": strings.Replace(validLog, "dispatch-head\t", "missing-head\t", 1)} {
+	for name, log := range map[string]string{"zero-build": strings.Replace(validLog, "begin\tdispatch build ", "begin\tignored build ", 1), "build-before-consume": strings.Replace(validLog, "exit=0\tgate consume ", "exit=0\tignored consume ", 1) + "\nexit=0\tgate consume late", "missing-ancestry": strings.Replace(validLog, "dispatch-head\t", "missing-head\t", 1)} {
 		writeFile(t, commandLog, log)
 		requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))) != nil, "%s control qualified", name)
 	}
@@ -666,7 +666,7 @@ func procedureEvents(skill string) []string {
 	return events
 }
 func recordedGatePrompt(workflowRoot string) string {
-	return fmt.Sprintf("Use $spacedock:first-officer for this whole run.\n\nWorkflow directory: %s\nEngage only `recorded-gate-task` under this delegated conn: %s\nApprove its retained validation package and continue until the handoff worker records %s in durable state, then stop.", workflowRoot, recordedGateDirective, recordedGateDispatchMarker)
+	return fmt.Sprintf("Use $spacedock:first-officer for this whole run.\n\nWorkflow directory: %s\nEngage only `recorded-gate-task` under this delegated conn: %s\nDo not pass `--host` to `dispatch build`.\nApprove its retained validation package and continue until the handoff worker records %s in durable state, then stop.", workflowRoot, recordedGateDirective, recordedGateDispatchMarker)
 }
 
 func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {
@@ -840,7 +840,7 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 		if strings.HasPrefix(line, "exit=0\tgate consume ") {
 			consumed = true
 		}
-		if strings.HasPrefix(line, "exit=0\tdispatch build ") && !strings.Contains(line, " --help") {
+		if strings.HasPrefix(line, "begin\tdispatch build ") && !strings.Contains(line, " --help") {
 			builds++
 			ordered = ordered && consumed
 		}

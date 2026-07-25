@@ -243,7 +243,10 @@ func seedPiLiveAuth(t *testing.T, piHome, realHome, openAIAPIKey, required strin
 }
 
 func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string) []string {
-	env := os.Environ()
+	env := cleanEnviron(
+		"CODEX_THREAD_ID", "CLAUDECODE", "HOME", "PI_CODING_AGENT_DIR",
+		"PI_CODING_AGENT_SESSION_DIR", "PI_SUBAGENTS_PACKAGE_ROOT", "PI_OFFLINE",
+	)
 	env = append(env,
 		"HOME="+cleanHome,
 		"PI_CODING_AGENT_DIR="+piHome,
@@ -252,6 +255,25 @@ func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string)
 		"PI_OFFLINE=1",
 	)
 	return withBinaryOnPath(env, filepath.Join(binaryDir, "spacedock"))
+}
+
+func TestPiLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
+	for key, value := range map[string]string{"CODEX_THREAD_ID": "codex", "CLAUDECODE": "claude", "PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/parent/pi",
+		"PI_CODING_AGENT_SESSION_DIR": "/parent/sessions", "PI_SUBAGENTS_PACKAGE_ROOT": "/parent/package",
+		"PI_OFFLINE": "0", "HOME": "/parent/home", "OPENAI_API_KEY": "key", "PATH": "/parent/bin"} {
+		t.Setenv(key, value)
+	}
+
+	env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin", "/target/package")
+
+	want := map[string]string{"CODEX_THREAD_ID": "", "CLAUDECODE": "",
+		"PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/target/pi",
+		"PI_CODING_AGENT_SESSION_DIR": "/target/sessions", "PI_SUBAGENTS_PACKAGE_ROOT": "/target/package",
+		"PI_OFFLINE": "1", "HOME": "/target/home", "OPENAI_API_KEY": "key",
+		"PATH": "/spacedock/bin" + string(os.PathListSeparator) + "/parent/bin"}
+	for key, value := range want {
+		assertEnvValue(t, env, key, value)
+	}
 }
 
 func piSubagentsPackageRoot(t *testing.T) string {
