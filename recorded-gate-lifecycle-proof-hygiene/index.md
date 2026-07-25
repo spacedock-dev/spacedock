@@ -34,9 +34,115 @@ gates:
                 blockers: []
 ---
 
-The recorded-gate lifecycle passes its supported outcome checks, but two test constructs make its evidence harder to trust and diagnose:
+## Problem
 
-- `TestRecordedGateLifecycleCommandTextMutants` reads shipped skill prose outside the contractlint quarantine and deletes superstrings of the same tokens its test-local `procedureEvents` parser searches. Existing real-CLI replay, missing-event controls, refusal/resume matrices, and live journeys already own the behavior. Delete the tautological test and its orphaned helper; do not replace it with another prose check.
-- The Codex live runner reads the active entity before comparing it with `resolveRecordedGateEntity`, so archival fails first as a generic read error and the named assertion is tautological. Replace it with the existing explicit pre-read archive-absence check and add the same diagnostic to the Claude runner. This improves attribution; it is not a missing product-outcome fix.
+At current `main` (`4ff98d8c`), the recorded-gate lifecycle has executable command and live-journey coverage, but two proof-hygiene defects obscure that evidence:
 
-Ideation must verify the smallest current-main surface, inspect the adjacent in-quarantine `layering_restore_test.go` prose mapping without assuming it belongs in the task, and preserve every executable lifecycle control. No product behavior, command surface, prompt obligation, provider rule, compatibility layer, new detector, or new standing cap belongs here. Request Roborev after implementation and triage findings before edits.
+1. The prose-as-proof defect has two directly verified sites. `internal/ensigncycle/recorded_gate_lifecycle_test.go:568-598` reads the shipped `skills/fo-gate-lifecycle/SKILL.md` and deletes command superstrings before asking its own substring parser whether the corresponding substring disappeared. `procedureEvents` at `:650-667` has only the two call sites inside that test. The check runs no product behavior and survives meaning-inverting prose.
+2. `internal/ensigncycle/codex_live_runner_test.go:210` reads the active entity before `:217-219` compares those bytes with `resolveRecordedGateEntity`. If the entity was archived, the read fails first; otherwise the resolver re-reads the same active file. The named archive assertion therefore cannot diagnose the failure it names.
+
+The directly inspected adjacent site is `internal/contractlint/layering_restore_test.go:184-197`. Its three-file `path -> want prose` map is a shipped-prose grep forbidden by `internal/contractlint/doc_test.go:11-13`. Git history supplies the deletion-safe boundary: restore only the prior `c049d1eef` structural positive discriminator that verifies the allow-listed `mods/pr-merge.md` really contains `gh pr view`. Do not delete or weaken that structural owner.
+
+## Current executable owners
+
+Deleting prose checks does not delete lifecycle proof:
+
+- `TestRecordedGateLifecycleRealCLIReplay` drives the real binary through briefing record, decision record, consume, commit ordering, and successor dispatch, with negative controls.
+- `TestRecordedGateLifecycleMissingEventControls`, `TestRecordedGateLifecycleAC5RefusalMatrix`, and `TestRecordedGateLifecycleAC7ResumeMatrix` fail on missing, refused, duplicate, or resumed lifecycle events.
+- `TestRecordedGateLifecycleTerminalConsumeHasNoDispatchableSuccessor` runs the terminal consume path and observes `dispatchable: []`.
+- The Claude, Codex, and Pi recorded-gate live journeys grade command execution and durable state produced from the shipped skill.
+- `TestMergeGuardFinalizesFromMergedSentinelNonArmed`, `TestMergeGuardFinalizesTerminalUnblockedEntityFromMergedSentinel`, `TestMergeGuardBlocksOnOpenPRNoModBlock`, `TestPRIndicatesMerged`, and the CLI merge-guard end-to-end tests execute the terminal merge behavior formerly represented by prose-map values.
+- `TestNoUnexpectedPRViewScanIntroduced`, `TestPRViewAllowListIsLoadBearing`, and `TestPRViewAllowListConstrains` continue to own the structural `gh pr view` quarantine and its non-vacuity controls.
+
+## Proposed approach
+
+Treat the work as two proof-hygiene corrections, with the verified contractlint cleanup included in the prose-as-proof correction:
+
+1. Delete `TestRecordedGateLifecycleCommandTextMutants` and `procedureEvents` without replacement. Keep `recordedGateRepoRoot`, `readFile`, all real-CLI tests, lifecycle observation/assertion helpers, and live journeys.
+2. Restore `TestPRViewAllowListIsLoadBearing` to its prior structural-only form: read `mods/pr-merge.md` and require the allow-listed `gh pr view` token. Delete the three-file shipped-prose map. Add no prose token, behavior claim, detector, cap, or owner.
+3. In `runCodexGateGuardrailScenario`, check the known folder-form archive path with `os.Stat` immediately after the runner returns and before reading `fixture.entity`. Delete the post-read `resolveRecordedGateEntity(fixture) != after` comparison. Keep `resolveRecordedGateEntity` because `recordedGateLiveObservation` uses its archive fallback at `recorded_gate_lifecycle_test.go:851`.
+4. Add the same pre-read folder-archive absence assertion to `runClaudeGateGuardrailScenario`. That function owns both the shared `gate-guardrail` journey and `TestLiveDefaultHeadlessStopsAtGate`, so parity lands only where the same scenario already exists.
+
+The archive assertion is against concrete on-disk state:
+
+```go
+if _, err := os.Stat(filepath.Join(fixture.stateRoot, "_archive", "recorded-gate-task", "index.md")); !os.IsNotExist(err) {
+    t.Fatalf("recorded-gate-task was archived while waiting at the gate; stat err=%v", err)
+}
+```
+
+No spike is needed: the repo already uses this explicit `os.Stat`/`os.IsNotExist` pattern in both live runners, the fixture has a deterministic folder-form archive path, the audit deletion experiment passed, and the prior structural-only contractlint implementation is in git history.
+
+## Alternatives rejected
+
+- Moving the command-text mutant into `internal/contractlint` would legalize the file read location but preserve the banned prose-grep tautology.
+- Expanding the AST instruction-read detector would add a standing enforcement mechanism to remove one known orphan and would not prove lifecycle behavior.
+- Comparing `resolveRecordedGateEntity` after reading the active path retains the unreachable diagnostic; reading only through the resolver would also allow archival instead of asserting its absence.
+- Deleting all of `TestPRViewAllowListIsLoadBearing` would remove the positive discriminator for a real allow-list entry. Restoring its prior structural-only form deletes the prose map while preserving that executable owner.
+- Adding prompt wording, a new behavior detector, a compatibility rule, or a component cap would create obligations unrelated to either defect.
+
+## Expected surface
+
+Baseline: `main` at `4ff98d8c`.
+
+| File | Expected delta | Purpose |
+|---|---:|---|
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+0/-49` | Delete the command-text mutant and orphaned parser only. |
+| `internal/ensigncycle/codex_live_runner_test.go` | `+3/-3` | Replace the post-read comparison with a pre-read archive absence assertion. |
+| `internal/ensigncycle/claude_live_runner_test.go` | `+3/-0` | Add the same pre-read assertion to the existing scenario runner. |
+| `internal/contractlint/layering_restore_test.go` | `+8/-12` | Separately restore the prior structural positive discriminator and delete the three-file prose map. |
+| **Total** | **`+14/-64`, net `-50` LOC** | Four test files; no product or instruction change. |
+
+Tolerance: exactly these four files and net deletion between 44 and 56 LOC after `gofmt`. Any extra file, any product/instruction diff, or a delta outside that band requires a design reset before another implementation pass. The fourth file is the pre-authorized direct-evidence branch, not tolerance drift.
+
+## Acceptance criteria
+
+1. **The recorded-gate proof surface is smaller by at least 44 net test LOC against `main`, across exactly the four declared files, with zero product, command, skill, prompt, provider, compatibility, or lifecycle-AC changes.**
+   Test: `git diff --numstat "$(git merge-base main HEAD)"..HEAD` and `git diff --name-only` show the declared surface; exact-name searches show the mutant and orphaned parser are gone.
+2. **No shipped-prose mapping remains in `TestPRViewAllowListIsLoadBearing`, while its structural `mods/pr-merge.md` / `gh pr view` positive discriminator and negative control remain executable.**
+   Test: the focused contractlint command below passes; deleting `gh pr view` from the allowed mod makes the positive discriminator fail, while planting it outside the allow-list makes the negative control fail.
+3. **Both Codex and Claude guardrail journeys test archive absence before reading the active folder entity, and an archived fixture produces the named archive diagnostic rather than a generic active-file read error.**
+   Test: run the three targeted live commands below; a temporary control that moves the entity to `_archive/recorded-gate-task/index.md` after the runner returns must fail at the named pre-read assertion.
+4. **Every executable lifecycle and supported runtime outcome that passed before the cleanup still passes after it.**
+   Test: the focused real-CLI/refusal/resume suite, live-tag compile, targeted live journeys, full suite, and race suite below pass. Removing or reordering record/consume events, allowing terminal successor dispatch, or archiving at the held gate makes an owner test fail.
+
+## Test plan
+
+Run focused executable owners before the edit and again after it:
+
+```bash
+go test ./internal/ensigncycle -run 'TestRecordedGateLifecycle(RealCLIReplay|TerminalConsumeHasNoDispatchableSuccessor|AC5RefusalMatrix|AC7ResumeMatrix|ProvenanceAndPresentationMutants|MissingEventControls)$' -count=1
+go test ./internal/contractlint -run 'Test(NoInstructionReadsOutsideQuarantine|NoUnexpectedPRViewScanIntroduced|PRViewAllowListIsLoadBearing|PRViewAllowListConstrains)$' -count=1
+go test -tags live ./internal/ensigncycle -run '^$' -count=1
+```
+
+Exercise the existing host journeys when their credentials are available (CI remains the required host-backed lane otherwise):
+
+```bash
+go test -tags live ./internal/ensigncycle -run '^TestLiveCodexSharedScenarios$/^gate-guardrail$' -count=1
+go test -tags live ./internal/ensigncycle -run '^TestLiveClaudeSharedScenarios$/^gate-guardrail$' -count=1
+go test -tags live ./internal/ensigncycle -run '^TestLiveDefaultHeadlessStopsAtGate$' -count=1
+```
+
+Then run repository gates in the required order:
+
+```bash
+gofmt -w ./cmd ./internal
+go test ./...
+go test ./... -race
+```
+
+At implementation end, after the branch diff and tests are final, run `roborev review --branch --panel branch_final`. Triage every finding against the declared surface and acceptance criteria before making edits; record a feedback cycle if a finding triggers another pass. Roborev does not authorize a new standing obligation or surface expansion.
+
+## Stage Report: ideation
+
+- DONE: The design removes only the two proven proof-hygiene defects while preserving every executable lifecycle oracle and accepted runtime outcome.
+  Current-main call sites were verified at `4ff98d8c`; focused lifecycle owners passed, and the adjacent prose map was admitted only through its pre-authorized direct-evidence branch.
+- DONE: Each proposed assertion is falsifiable against on-disk state or command execution, with no shipped-prose behavioral grep and no new standing enforcement.
+  Archive absence uses the fixture's real `_archive/recorded-gate-task/index.md`; real CLI, merge-guard, allow-list mutation controls, and host journeys own behavior.
+- DONE: The exact current-main files/LOC, focused tests, full/race gates, and Roborev boundary are small enough for direct implementation review.
+  Expected surface is four test files, `+14/-64` (net `-50`, tolerance `-44..-56`), with the contractlint `+8/-12` delta recorded separately.
+
+### Summary
+
+Ideation pinned a deletion-first, test-only cleanup against current `main`: remove the tautological lifecycle prose oracle, restore the adjacent contractlint test to structural-only proof, and make archive diagnostics direct and pre-read in both existing host runners. No product behavior or new obligation is proposed; executable lifecycle, merge, and live-journey owners remain the acceptance evidence.
