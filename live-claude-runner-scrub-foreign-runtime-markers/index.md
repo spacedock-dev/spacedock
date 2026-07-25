@@ -301,3 +301,33 @@ failed build followed by break-glass successor dispatch, contrary to AC-3.
 ### Summary
 
 The correction is a one-file, 26-LOC AC-3 oracle repair atop the existing six-file harness candidate, with no production or workflow behavior change. The aggregate candidate is six files/133 changed LOC; its successful retained Claude journey remains valid, while the new deterministic mutant closes the failed-build evidence hole.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce the corrected observer against candidate 6ea4cdc8 and prove the sole dispatch-build begin must have one byte-matching exit=0 before the retained successor effect can satisfy AC-3.
+  `recordedGateLiveObservation` records attempts and byte-matched zero exits independently; `assertRecordedGateLifecycle` requires exactly `1/1`, and the retained log reproduces that exact pair after consume.
+- DONE: Run the planted nonzero-exit mutant and the previously green focused/live-tag/full/race/ambiguity controls, then re-evaluate all four acceptance criteria on the aggregate candidate.
+  The failed-build case in `TestRecordedGateLifecycleRealCLIReplay`, focused default/live-tag builders, full and race suites, and both unchanged production ambiguity controls passed.
+- DONE: Classify any remaining finding by defect kind and release scope and issue a PASSED/REJECTED recommendation without broadening beyond the rejected AC-3 evidence boundary.
+  No material outcome or evidence defect remains; the six-file/133-LOC arithmetic is advisory because the aggregate remains the accepted harness-only semantic surface.
+- DONE: AC-1 — every target child drops all foreign runtime-family detectors and flag-free Claude derives successfully.
+  Exact-slice Claude/Codex/Pi tests passed; the retained Claude build has no host flag or ambiguity and exits 0.
+- DONE: AC-2 — credentials, PATH, isolated HOME, and target-host state are preserved exactly once.
+  Both Claude auth paths and the Codex/Pi exact-cardinality tests passed with the existing auth/config/PATH controls.
+- DONE: AC-3 — one successful flag-free build, no ambiguity or retry, and one committed successor effect.
+  The planted nonzero-exit log retains the successor effect but is rejected; the real log yields attempts/successes `1/1`, exact command bytes, and terminal Claude success.
+- DONE: AC-4 — production still refuses Codex+Claude and Codex+Pi mixed markers.
+  The aggregate changes no production file, and both unchanged command-level ambiguity controls passed.
+- SKIPPED: Re-run the credentialed Claude journey.
+  Candidate `6ea4cdc8` changes only the offline observer/mutant; the retained candidate-specific stream/log remains unambiguous and satisfies the corrected observer.
+- SKIPPED: Promote the Pi live-tag CI-selection concern to material.
+  Deferred risk unchanged: a future Pi builder regression could escape CI; current explicit live-tag proof passes, promoting only if CI coverage becomes promised or a supported Pi journey exhibits contamination.
+- DONE: Recommendation — PASSED/REJECTED.
+  PASSED; all four accepted ACs have reproduced evidence and no material finding remains.
+
+### Summary
+
+Candidate `6ea4cdc8` closes the sole AC-3 evidence defect with an exact
+attempt/success pairing and a retained-effect failed-build mutant. Focused,
+live-tag, full, race, production, and retained credentialed evidence pass, so
+validation recommends PASSED with only the unchanged Pi CI-selection deferred risk.
