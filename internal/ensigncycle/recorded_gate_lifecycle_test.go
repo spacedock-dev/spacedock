@@ -307,6 +307,8 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 	}{
 		{"actor", []string{"--decision", "approve", "--reason", "evidence"}, []string{"actor"}},
 		{"unsupported-actor", []string{"--decision", "approve", "--actor", "agent:ensign", "--reason", "evidence"}, []string{"actor"}},
+		{"approve-missing-reason", []string{"--decision", "approve", "--actor", "agent:first-officer"}, []string{"reason"}},
+		{"approve-whitespace-reason", []string{"--decision", "approve", "--actor", "agent:first-officer", "--reason", " \t"}, []string{"reason"}},
 		{"reason", []string{"--decision", "revise", "--actor", "agent:first-officer"}, []string{"reason"}},
 	} {
 		t.Run("invalid-"+tc.name, func(t *testing.T) {
