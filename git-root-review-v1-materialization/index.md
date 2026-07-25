@@ -1158,3 +1158,264 @@ Cycle 3 closes the last two pre-implementation gaps without changing the selecte
 architecture. Frozen semantic identity now precedes package allocation and every
 provider action, and trusted delivery recognizes only the exact resolved-source child
 argv selected by the fixed entry.
+
+## Ideation correction: room-only authority and full Briefing binding (cycle 4)
+
+Cycle 4 supersedes the cycle 2 and cycle 3 public argument vectors, caller-supplied
+materializer coordinates, manifest Briefing field, surface estimates, and acceptance
+wording wherever they conflict with this section. The resolved-source package,
+provider-owned evidence, cleanup, validator separation, and unchanged-canonical-
+Briefing decisions still stand.
+
+Implementation remains blocked on corrected s4. rq must consume the landed s4 room
+resolver and request/root-map contract rather than duplicate it. If landed s4 cannot
+derive every coordinate below from a room alone, places flat and folder entities
+differently from this correction, or changes the frozen summary/Briefing contract, rq
+returns to joint s4/rq ideation. It must not add public flags as a compatibility
+fallback.
+
+### Sole public provider entry and fixed derivation
+
+The complete agent-facing provider invocation is:
+
+```text
+/subspace:r gate <room>
+```
+
+There are no optional arguments. The agent supplies no entity, workflow directory,
+actor, approver, Briefing, destination, provider path, manifest path, terminal vector,
+or request fields. It does not open or parse `request.json`. rq owns this public
+provider grammar; s4 owns room preparation and the metadata contract, not a second
+provider invocation.
+
+The Subspace skill's fixed `gate` branch canonicalizes the one room operand and invokes
+one integration-private Spacedock operation:
+
+```text
+${SPACEDOCK_BIN:-spacedock} gate materialize --room ROOM
+```
+
+That operation accepts no caller-selected authority or source coordinate. Before any
+Git read, provider directory allocation, TUI lookup/capability probe, host preflight,
+diagnostic write, supervisor launch, or TUI launch, fixed Spacedock code uses the
+landed s4 room resolver to derive and validate all of the following:
+
+1. canonical room, entity slug and form, entity path, state root, workflow definition
+   root, current gate and attempt, and the split-root map;
+2. the two immutable authoritative room metadata files, their bound request, canonical
+   Briefing locator, canonical Briefing id, and canonical Briefing SHA-256;
+3. request-frozen actor and approver, plus the exact recorder/validator rendezvous;
+4. provider root `ROOM/provider`, payload child
+   `ROOM/provider/resolved-sources`, and manifest path
+   `ROOM/provider/resolved-sources/resolved-sources.json`; and
+5. the local Git-root Artifact/Reference tuples and every repository/object coordinate
+   needed to resolve them without fetch.
+
+The required s4 placement is collision-free for both entity forms:
+`<entity-root>/<slug>/review/<stage>/briefing-N` is the room; a folder entity is
+`<entity-root>/<slug>/index.md`, while a flat entity is
+`<entity-root>/<slug>.md`. The resolver rejects zero, two, symlinked, escaped, or
+noncanonical entity candidates. rq does not infer an entity by searching arbitrary
+parents and does not serialize a caller-derived root map.
+
+Only after room/request/Briefing/identity/root-map validation and complete in-memory
+Git resolution succeed may Spacedock atomically create mode-0700 `ROOM/provider` and
+its payload child, write mode-0600 payloads, and publish the mode-0600 manifest last.
+It prints the derived private launch tuple only on success. The fixed Subspace branch
+owns that output directly; it is not an agent copy/paste interface. It then resolves
+the TUI, probes the two literal capabilities, runs host preflight, and launches the
+existing supervised child with the derived actor, approver, provider root, manifest,
+and original Briefing path.
+
+Immediately after successful s4 preparation, a room therefore has exactly two
+immutable authoritative metadata files and zero copied payloads. After provider
+presentation begins, `ROOM/provider` may exist and is provider-owned evidence:
+Result, log, inventory, and diagnostics may remain there. Catchable exits remove
+`ROOM/provider/resolved-sources`; an uncatchable hard kill may honestly leave that
+payload child. No retained package is described as a supported retry surface, and
+current-attempt discovery never resumes it.
+
+### Closed manifest and full Briefing identity
+
+The closed manifest changes its Briefing member from a string to this required object:
+
+```json
+{
+  "type": "spacedock-resolved-sources",
+  "version": "1",
+  "briefing": {
+    "id": "<canonical Briefing id>",
+    "digest": "sha256:<64 lowercase hexadecimal characters>"
+  },
+  "items": []
+}
+```
+
+`items` retains cycle 2's exact closed Artifact/Reference catalog and payload binding.
+Unknown, missing, duplicate, alternate-spelling, or wrong-type members fail closed.
+The digest is the full SHA-256 of the canonical Briefing's unchanged bytes, not a
+prefix, path hash, rewritten-document hash, or summary hash.
+
+Before it installs any resolved bytes into the review model or displays any review
+chrome, Subspace reads the original canonical Briefing, derives its canonical id,
+recomputes the full byte digest, and requires both values to match the manifest and the
+room-bound values passed by fixed code. Any mismatch fails before display and removes
+the payload child at the catchable boundary. Subspace never rewrites, annotates, copies,
+or associates the Briefing. Verified Artifact/Reference bytes exist only in memory
+after loading; the canonical Briefing remains byte-identical.
+
+The primary Artifact summary is required only for s4-prepared request-backed
+Briefings. Its exact whitespace and printable Unicode survive unchanged. UI controls
+use one reversible safe rendering: `\` becomes `\\`; LF, CR, and TAB become `\n`,
+`\r`, and `\t`; other control/format code points and U+2028/U+2029 become
+`\u{HEX}` with uppercase hexadecimal. This transformation is display-only. Neither
+the manifest nor retained inventory stores the summary, and no normalized or
+synthesized string can replace it.
+
+### Corrected acceptance and proof
+
+**AC-1 (VALUE) — one room-only public path works after a real root move.** A
+black-box E2E prepares an s4 request-backed room, moves the main and state roots to new
+absolute locations, and invokes exactly `/subspace:r gate ROOM`. It runs the real TUI,
+shows the old-commit Artifact and Reference bytes plus the exact summary sentinel,
+records through `gate record --room`, and passes `gate validate`. The test has folder-
+entity and flat-entity cases so room-to-entity derivation cannot depend on one shape.
+Any public flag beyond `gate ROOM`, manual primitive composition, network fetch, q0,
+`association.json`, copied payload in the prepared room, or rewritten Briefing fails.
+
+**AC-2 — the room is the complete authority input.** Focused Spacedock tests mutate
+each room/request/root-map/attempt/identity/Briefing binding while passing the same
+room operand. Every case fails before Git reads or provider effects and leaves the
+two authoritative files byte-identical with no `ROOM/provider`. CLI and skill contract
+tests reject legacy `--actor`, `--approver`, `--spacedock-entity`,
+`--spacedock-workflow-dir`, Briefing, destination, manifest, and terminal arguments.
+
+**AC-3 — canonical Briefing id and digest gate display.** Positive tests bind the
+canonical id and full digest, load the original file, and preserve its bytes. Negative
+tests independently mutate id, every digest position, digest length/case/prefix,
+Briefing bytes, manifest spelling, duplicates, and unknown members. Each fails before
+model installation or display. Exact-space/Unicode and control-rich summary fixtures
+prove lossless model data, reversible safe rendering, and absence from inventory.
+
+**AC-4 — provider evidence and payload cleanup have distinct lifetimes.** Success and
+every catchable error/signal remove `resolved-sources` before trusted delivery while
+retaining only provider-owned evidence appropriate to the reached phase. Pre-allocation
+failures create nothing. A hard-kill fixture may observe residue and documentation says
+so. Result/log/inventory continue to name no manifest, payload path, local repository
+path, or summary.
+
+**AC-5 — production validator authority remains separate.** The real fixed entry, not
+an E2E-only path, uses the canonical resolved-profile validator. It verifies exact
+derived child argv, Briefing bytes and digest, Result/capture equality, inventory
+projection, log/Resolution authority, provider paths, and cleanup ordering. Recomputed
+argv hashes cannot authorize an alternate path, flag, count, order, actor, approver,
+manifest, or Briefing. The ordinary request-less one-file profile remains separate and
+does not gain the s4 summary guarantee.
+
+The moved-root E2E runs after the focused folder/flat resolver, manifest parser,
+digest, summary, allocation-order, supervisor, and validator matrices. Repository
+gates remain `gofmt -w ./cmd ./internal`, `go test ./...`, and
+`go test ./... -race` in both repositories. The committed unresolved Git-root fixture
+still proves no fallback to current bytes or network. Tests use the public room-only
+entry for behavior and private seams only for focused fault injection.
+
+### Rebaselined cross-repository implementation surface
+
+This estimate was re-read against Spacedock main
+`4ff98d8cd97` and the current Subspace tree at `63a26f63a3de`; the selected Subspace
+provider/code paths were last changed by `cac4eb106f`. It is incremental after
+corrected s4 lands. A changed s4 resolver or metadata shape triggers the explicit
+return-to-ideation rule above rather than tolerance.
+
+| Spacedock file | Expected delta | Purpose |
+|---|---:|---|
+| `internal/cli/cli.go` | `+48/-8` | Integration-private room-only materializer route; reject extra coordinates. |
+| `internal/cli/gate_test.go` | `+125/-0` | Stable room-only argv/stdout and pre-side-effect rejection matrix. |
+| `internal/gates/materialize.go` (new) | `+210/-0` | Consume s4 resolver, validate all authority, resolve bytes, allocate last. |
+| `internal/gates/materialize_test.go` (new) | `+390/-0` | Folder/flat rooms, binding mutations, coverage, containment, and atomicity. |
+| `internal/gitsource/source.go` | `+58/-8` | Return verified local blob bytes through the canonical resolver. |
+| `internal/gitsource/source_test.go` | `+95/-0` | Moved-root, pruned/shallow, raw-SHA, and no-fetch controls. |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | `+35/-8` | Pin the one room-only semantic route and forbid coordinate reconstruction. |
+| `skills/fo-gate-lifecycle/SKILL.md` | `+24/-14` | Invoke `/subspace:r gate ROOM`; retain record/validate continuation. |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | `+78/-6` | Normative derivation, full Briefing binding, and room/provider lifecycle. |
+| `docs/site/concepts/gates-and-decisions.md` | `+20/-4` | Explain the sole public entry and provider evidence without exposing private argv. |
+
+Spacedock baseline: **10 named files, +1,083/-48 = 1,131 changed LOC**. Tolerance is at
+most +2 genuinely new files and +20% changed LOC, hard cap **12 files / 1,358 changed
+LOC**. The s4 resolver itself is a landed dependency, not rq implementation LOC.
+
+| Subspace file | Expected delta | Purpose |
+|---|---:|---|
+| `plugins/subspace/skills/r/SKILL.md` | `+42/-24` | Define exactly `/subspace:r gate ROOM` and no caller coordinates. |
+| `plugins/subspace/skills/r/scripts/invocation-common` | `+170/-55` | Call room-only materialization, consume derived output, launch, and clean up. |
+| `plugins/subspace/skills/r/scripts/validate-one-file-result` | `+76/-18` | Canonical resolved profile with exact derived argv and full Briefing binding. |
+| `scripts/tests/subspace-r-contract-test.sh` | `+60/-8` | Pin sole public grammar, both validator modes, and fixed-entry ownership. |
+| `scripts/tests/subspace-r-provider-retained-delivery-test.sh` | `+235/-30` | Argument rejection, exact argv, retention, signal, and cleanup matrix. |
+| `scripts/tests/subspace-r-git-root-provider-e2e.sh` (new) | `+380/-0` | Real moved-root folder/flat public-entry presentation and recording. |
+| `internal/reviewv1/model.go` | `+18/-4` | Verified in-memory Reference bytes and exact summary data. |
+| `internal/reviewv1/loader.go` | `+32/-6` | Shared pre-display canonical Briefing validation. |
+| `internal/reviewv1/resolved_sources.go` (new) | `+245/-0` | Closed manifest, id/full-digest binding, coverage, and containment. |
+| `internal/reviewv1/resolved_sources_test.go` (new) | `+370/-0` | Digest/id/parser adversaries, exact catalog, controls, and cleanup. |
+| `internal/reviewv1/testdata/git-root-negative.json` (new) | `+25/-0` | Committed unresolved Artifact/Reference boundary. |
+| `internal/reviewv1/log.go` | `+25/-12` | Selector text uses verified in-memory Reference bytes. |
+| `cmd/subspace-tui/main.go` | `+48/-10` | Private manifest flag and literal resolved-source capability. |
+| `cmd/subspace-tui/profile_dispatch_test.go` | `+90/-0` | Capability and exact private TUI argv surface. |
+| `cmd/subspace-tui/provider_supervisor.go` | `+82/-16` | Validate cleanup child, forward signals, wait, delete, then publish exit. |
+| `cmd/subspace-tui/provider_supervisor_test.go` | `+145/-0` | Failure, signal, invalid root, exact-exit, and cleanup-order proof. |
+| `cmd/subspace-tui/v1_tui.go` | `+38/-8` | Resolve manifest, verify Briefing, and delete before TUI display. |
+| `cmd/subspace-tui/v1_sources.go` | `+62/-10` | Reference rendering and reversible control-safe Artifact summary. |
+| `cmd/subspace-tui/v1_sources_test.go` | `+115/-0` | Complete catalog and no synthesized/normalized summary. |
+| `cmd/subspace-tui/v1_review_chrome_labels_test.go` | `+105/-0` | Exact Unicode/spacing sentinel, safe controls, width, and title isolation. |
+| `cmd/subspace-tui/SPEC.md` | `+55/-8` | Private resolved-source, digest, validator, and cleanup lifecycle. |
+| `docs/review-and-gate.md` | `+38/-4` | Room-only profile, summary display, evidence, and recorder rendezvous. |
+
+Subspace baseline: **22 named files, +2,456/-213 = 2,669 changed LOC**. Tolerance is
+at most +2 genuinely new files and +20% changed LOC, hard cap **24 files / 3,203
+changed LOC**. The fixed entry, canonical validator, and both exact-argv test owners
+are baseline work, not tolerance.
+
+### Documentation diff
+
+Spacedock's normative gate contract will define the collision-free folder/flat room
+mapping, room-derived authority, canonical Briefing id/full digest, two-file prepared
+state, provider-owned evidence, and catchable versus hard-kill cleanup. Its gate
+concept page will show only `/subspace:r gate <room>` as the provider handoff and will
+not advertise private materializer argv.
+
+Subspace's skill and review guide will define the same sole public invocation, the
+request-backed-only summary guarantee, reversible control rendering, retained evidence,
+and no-retry wording. The TUI spec will own private manifest schema, pre-display
+id/digest verification, in-memory byte injection, exact validator profile, and cleanup
+ordering. No document introduces q0, `association.json`, a compatibility wrapper, or a
+rewritten Briefing.
+
+## Stage Report: ideation (cycle 4)
+
+- DONE: Make the sole public provider entry room-only, with fixed code deriving all
+  workflow, authority, Briefing, package, validator, and recorder coordinates before
+  side effects. The public grammar is exactly `/subspace:r gate <room>`; legacy caller
+  flags and positional Briefing/terminal inputs are explicit negative tests.
+- DONE: Bind the resolved-source manifest to canonical Briefing id and full SHA-256,
+  verify both before display, keep resolved bytes ephemeral in memory, and leave the
+  canonical Briefing byte-identical. Exact summary whitespace/Unicode and reversible
+  control-safe rendering apply only to s4-prepared request-backed Briefings.
+- DONE: Rebaseline corrected cross-repository files/LOC and the real moved-root E2E
+  behind s4. Spacedock is 10 named files/1,131 changed LOC; Subspace is 22 named
+  files/2,669 changed LOC; the public E2E covers folder and flat entity rooms.
+- DONE: Preserve `ROOM/provider` evidence, catchable payload cleanup, honest hard-kill
+  residue, canonical validator separation, local Git-object authority, and the bans on
+  q0, association storage, copied prepared-room payloads, and rewritten Briefings.
+- DONE: Define the dependency boundary. Implementation waits for corrected s4 and
+  returns to ideation if room-only derivation, placement, root mapping, or frozen
+  summary/Briefing binding lands differently; it never compensates with public flags.
+- SKIPPED: Implement either repository, launch a provider, record a gate, mutate
+  gate/status frontmatter, or change s4. Cycle 4 edits only this rq ideation entity and
+  requires the next independent staff review.
+
+### Summary
+
+rq now has one authority-bearing input: the prepared room. Fixed Spacedock/Subspace
+code derives and validates every private coordinate before provider effects; the
+manifest proves the unchanged canonical Briefing by id and full digest; and the
+corrected, post-s4 surface includes folder/flat moved-root proof and exact safe summary
+display.
