@@ -3491,3 +3491,59 @@ the required stop was observed. Together with the prior same-tip evidence,
 Claude and Codex pass completely; Pi's local substrate defect is resolved, but
 its provider-limited lifecycle run is incomplete. Checklist accounting is
 **5 DONE, 1 FAILED, 1 SKIPPED**.
+
+## Stage Report: implementation (cycle 32 exhausted Pi provider attempts)
+
+- FAILED: Complete the one authorized serial canonical-provider retry at exact
+  clean tip `5ced64fc5101b5da5f7bb5b3cfa9b8b9e2afc457`.
+  The unchanged `openai-codex` / `gpt-5.3-codex` run on the verified pinned Pi
+  substrate failed after **68.88s** with the repeated exact provider error
+  `{"error":"Too many concurrent requests"}`. It reached lifecycle bind/open
+  and `gate validate`, then failed before delegated decision, consume,
+  successor dispatch, or effect. The exhausted retry is retained at
+  `/tmp/spacedock-6y-cycle32-live-5ced64fc.4FreHB/pi-pinned-serial-rerun.n5trMt/`:
+  `go-test.txt` is **465 bytes**, SHA-256
+  `898664ecea9096840a06cc3dde4ef34c0c8be4e888be2418002b9b926bcbed71`;
+  the Pi session is **177654 bytes**, SHA-256
+  `6a940709392e683dc65a58c16b8ac69046a0e4a66bceacdab0c511bb897a88f3`;
+  `pi-stderr.txt` is **58 bytes**, SHA-256
+  `d692475271920cf8b8f6294f964f38cb4a8f9b27a706885e311e68659a14ecb3`;
+  and empty `pi-stdout.txt` has SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- FAILED: Complete the single authorized provider-independent Pi proof.
+  The explicit `openrouter` / `openai/gpt-4.1` run retained the existing child
+  model `openrouter/openai/gpt-4.1-mini` and left the prompt, runner, fixture,
+  oracle, code, tests, and isolated-auth behavior unchanged. It failed after
+  **174.25s** with `Request timed out.` The transcript confirms the requested
+  provider/model, but the root first tried an unknown `first-officer` subagent,
+  then loaded the FO/runtime/gate skills without binding a gate record; its
+  delegated decision returned `entity has no gates record` before provider
+  termination/timeouts. It produced no close, consume, dispatch, or effect and
+  is therefore not counted as lifecycle evidence. Its artifacts are retained
+  at
+  `/tmp/spacedock-6y-cycle32-live-5ced64fc.4FreHB/pi-openrouter-proof.HP2CJP/`:
+  `go-test.txt` is **425 bytes**, SHA-256
+  `841fd149a2e038f78d308c4d28f78c4e5f03dec236f4a8d6cfc54a1bfe2f1c47`;
+  the Pi session is **62973 bytes**, SHA-256
+  `09ba0b982bf6e7926ed7f4b0ff044e7551a03eede02610157da29e66933a3f68`;
+  `pi-stderr.txt` is **19 bytes**, SHA-256
+  `d88928f480d2b6ea3a3d2c6c7fc49cb00147553eab487b67cbad932e50063b00`;
+  and empty `pi-stdout.txt` has SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- DONE: Preserve the exact combined host conclusion.
+  Claude and Codex pass the complete recorded-gate lifecycle at `5ced64fc`.
+  Pi remains incomplete: the canonical provider repeated its capacity failure,
+  and the alternate-provider run is not counted. No successful Pi lifecycle
+  proof exists for this implementation stage.
+- SKIPPED: Make any further provider/model attempt, edit product code, tests,
+  prompt, runner, fixture, or oracle, request Roborev, push code or state,
+  mutate a gate/round/status/stage, or advance the workflow.
+  No further provider/model attempt is authorized.
+
+### Summary
+
+The canonical-provider retry allowance is exhausted by a second identical
+concurrency failure, and the one alternate-provider proof failed without
+producing countable lifecycle evidence. Claude and Codex remain complete
+same-tip passes; Pi remains incomplete at clean `5ced64fc`. Checklist
+accounting is **1 DONE, 2 FAILED, 1 SKIPPED**.
