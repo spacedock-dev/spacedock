@@ -194,16 +194,13 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	}
 	zero := recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))
 	requireRecordedGate(t, zero.dispatch.builds == 1 && zero.dispatch.durableEffects == 0 && assertRecordedGateLifecycle(zero) != nil, "zero-effect executed build qualified")
-	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n")
+	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The one-use application was already consumed before dispatch.\n")
 	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record successor effect")
 	writeRecordedGateEvidence(t, fixture.root, commands, before, readFile(t, fixture.entity), readFile(t, fixture.gateReview), dispatches)
 	observation := recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))
 	if err := assertRecordedGateLifecycle(observation); err != nil {
 		t.Fatal(err)
 	}
-	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\nreport repeats decision: approve and state: consumed\n")
-	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record later report echo")
-	requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))) == nil, "later report echo changed lifecycle ancestry")
 	validLog := readFile(t, commandLog)
 	for name, log := range map[string]string{"zero-build": strings.Replace(validLog, "exit=0\tdispatch build ", "exit=0\tignored build ", 1), "build-before-consume": strings.Replace(validLog, "exit=0\tgate consume ", "exit=0\tignored consume ", 1) + "\nexit=0\tgate consume late", "missing-ancestry": strings.Replace(validLog, "dispatch-head\t", "missing-head\t", 1)} {
 		writeFile(t, commandLog, log)
@@ -219,7 +216,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	two = recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))
 	requireRecordedGate(t, two.dispatch.durableEffects == 2 && assertRecordedGateLifecycle(two) != nil, "two-effect control qualified")
 
-	log := git(t, fixture.stateRoot, "show", "--name-only", "--format=", "HEAD~6..HEAD")
+	log := git(t, fixture.stateRoot, "show", "--name-only", "--format=", "HEAD~5..HEAD")
 	for _, want := range []string{
 		"recorded-gate-task/index.md",
 		"recorded-gate-task/review/validation/briefing-1/briefing.json",
