@@ -100,14 +100,14 @@ gates:
                 state: consumed
                 blockers: []
 review-round:
-    id: round:s4ykctf21g60dvfgdd6cy9ny:implementation:12
+    id: round:s4ykctf21g60dvfgdd6cy9ny:implementation:13
     stage: implementation
-    cycle: 12
+    cycle: 13
     briefing:
-        id: briefing:s4ykctf21g60dvfgdd6cy9ny:implementation:round-12
-        digest: sha256:700c9d8a200a05d208d3cf931419ba0cbffd2373860bd35cf6b5a72a09448996
+        id: briefing:s4ykctf21g60dvfgdd6cy9ny:implementation:round-13
+        digest: sha256:d25e3d5cf7887d1d30a12572b9f44de34c385ab7bb7b37657828ed7382c79d5d
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-12
+        room-ref: ./review/implementation/round-13
 ---
 
 ## Cycle 11 governing design
