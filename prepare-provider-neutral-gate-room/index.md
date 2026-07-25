@@ -1,7 +1,7 @@
 ---
 id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
-status: validation
+status: implementation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
 completed:
@@ -1572,15 +1572,14 @@ including its two leading/trailing spaces and non-ASCII code points.
   effects, replace the agent-owned provider probe/fallback with the exact post-bind
   room handoff, and keep manifest duplicate parsing with rq.
 
-- **Cycle 12 — validation REJECTED by detached adversarial audit (2026-07-26).**
-  At implementation `f99af3df`, a valid flat slug `020-[x]` made archive finalize
-  sweep wildcard-matching siblings while omitting the literal live deletion (AC-1
-  outcome defect). Removing Git repository-path equality still passed the named
-  path-identity test (AC-2 evidence defect), and adding an explicit provider probe
-  plus chat fallback still passed both selected-override contract tests (AC-4
-  evidence defect). Repair the flat archive with literal pathspecs, isolate
-  same-byte/different-path identity, and reset selected-override proof to observed
-  post-bind host behavior rather than another instruction-file substring check.
+- Cycle 12: REJECTED — fresh validation + detached adversarial audit at `f99af3df`;
+  surface 37 files/+3,683/-330 vs advisory estimate 26 files/+1,717/-187 (211%
+  changed LOC); AC unchanged — under the delegated sprint conn, reconfirm the
+  approved interface and architecture because the reconciled expansion is support
+  and proof coverage, not semantic drift. Correct only the literal flat-archive
+  pathspec outcome defect, the masked same-byte/different-path identity detector,
+  and the selected-override observed-behavior proof defect; add no protocol,
+  controller, compatibility layer, public argument, or narrowed AC.
 
 ## Stage Report: ideation
 
