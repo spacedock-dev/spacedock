@@ -1804,8 +1804,8 @@ not acceptance authority.
 
 ## Implementation Surface Reconciliation
 
-The staged implementation diff against `4ff98d8c` contains 33 files at
-`+2,552/-290`. Every declared path is present. The larger delta comes chiefly from
+The final implementation diff against `4ff98d8c` contains 33 files at
+`+2,933/-300`. Every declared path is present. The larger delta comes chiefly from
 complete production Git-source resolution and failure-path tests rather than a change
 to the approved command, schema, provider, authority, or compatibility boundaries.
 
@@ -1816,3 +1816,13 @@ making prepared request-backed closure and arbitrary Briefing locators falsifiab
 routes every existing host lane through the same prepared recorded-gate fixture and
 shared oracle. No declared path was omitted, and no provider implementation,
 materializer, retained provider output, or sibling workflow entity was changed.
+
+The first final-panel round found two material and three supporting correctness gaps.
+The follow-up commit rejects unsafe or undefined stage paths, binds live review
+evidence to the exact generated Briefing and selected-source inventory, ignores
+unrelated ancestor requests, commits tracked flat-companion deletions, and exercises
+post-publication rollback. It also propagates post-record summary errors and restores
+ordered lifecycle mutation coverage. The panel's historical-object performance and
+recovery suggestions would change the approved fail-closed or frozen-open boundaries;
+the companion-conflict claim did not reproduce because Git's conflict list already
+reports the actual path. The other panel result named files outside this branch.
