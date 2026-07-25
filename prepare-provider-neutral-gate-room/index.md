@@ -585,6 +585,21 @@ reset with joint acceptance evidence.
   independently located. Preserve Review v1's Briefing-relative rule for room-owned
   files and avoid adding provider-specific transport.
 
+- **Cycle 6 — Captain Subspace rejection of frozen copies (2026-07-25).** The
+  presentation prototype retained one arbitrary `gate-briefing.json`, a closed
+  locator-bearing request, and frozen gate-review/staff-review/entity sources. Subspace
+  returned `revise`: “no, i thought we'd reference the object in one of the split-root
+  repo instead of copying. they should be addressible and we just need a
+  name/path/sha.” Reason: “i don't like duplicating files.” Replace copied sources with
+  one provider-neutral split-root object reference that names the owning root
+  (`main`/`state` or the workflow-defined equivalent), repository-relative path, and
+  immutable Git object/revision plus raw-byte SHA. Define how a resolver reopens the
+  exact bytes when checkouts move independently, without depending on a `..` topology,
+  remote URL, provider transport, or compatibility layer. The exact provider package
+  is retained at
+  `/private/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/subspace-r-provider.FAUeX8`.
+  Do not consume the pending approval; a corrected Briefing must supersede it.
+
 ## Stage Report: ideation
 
 - DONE: Reproduce xb's arbitrary-Briefing-basename failure with the smallest valid prepared room, then identify the minimum post-em Spacedock seam that makes it pass.
