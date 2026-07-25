@@ -214,6 +214,79 @@ func TestPrepareReplaySurvivesRequiredStateCommit(t *testing.T) {
 	}
 }
 
+func TestPrepareReplayAcceptsEntitySelectedAsArtifactOrReference(t *testing.T) {
+	for _, entityRole := range []string{"artifact", "reference"} {
+		t.Run(entityRole, func(t *testing.T) {
+			workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+			input := PrepareInput{
+				WorkflowDir: workflow,
+				Question:    "Should this gate advance?",
+				Artifact:    artifact,
+				Summary:     "Exact summary.",
+			}
+			if entityRole == "artifact" {
+				input.Artifact = entity
+			} else {
+				input.References = []string{entity}
+			}
+			result, err := Prepare(entity, input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			beforeEntity, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			replayed, err := Prepare(entity, input)
+			if err != nil {
+				t.Fatalf("pre-commit replay: %v", err)
+			}
+			if replayed != result {
+				t.Fatalf("pre-commit replay=%#v want %#v", replayed, result)
+			}
+			afterEntity, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(afterEntity, beforeEntity) {
+				t.Fatal("pre-commit replay changed entity bytes")
+			}
+
+			prepareGitRun(t, state, "add", "task.md", "task")
+			prepareGitRun(t, state, "commit", "-q", "-m", "bind entity-selected room")
+			beforeHead := strings.TrimSpace(prepareGitOutput(t, state, "rev-parse", "HEAD"))
+			replayed, err = Prepare(entity, input)
+			if err != nil {
+				t.Fatalf("post-commit replay: %v", err)
+			}
+			if replayed != result {
+				t.Fatalf("post-commit replay=%#v want %#v", replayed, result)
+			}
+			if afterHead := strings.TrimSpace(prepareGitOutput(t, state, "rev-parse", "HEAD")); afterHead != beforeHead {
+				t.Fatal("post-commit replay changed state HEAD")
+			}
+			if status := prepareGitOutput(t, state, "status", "--porcelain"); strings.TrimSpace(status) != "" {
+				t.Fatalf("post-commit replay dirtied state repository: %q", status)
+			}
+
+			changed := bytes.Replace(beforeEntity, []byte("title: Task"), []byte("title: Changed"), 1)
+			if err := os.WriteFile(entity, changed, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Prepare(entity, input); err == nil {
+				t.Fatal("replay accepted an entity change outside binary-owned gate state")
+			}
+			afterRejected, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(afterRejected, changed) {
+				t.Fatal("rejected replay changed entity bytes")
+			}
+		})
+	}
+}
+
 func TestPreparedCandidateFailureLeavesNoRoomParents(t *testing.T) {
 	root := t.TempDir()
 	room := filepath.Join(root, "task", "review", "validation", "briefing-1")
