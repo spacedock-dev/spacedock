@@ -8,7 +8,7 @@ id: fh3n4w4jg7tk015512tn1tsd
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:fh3n:ideation
+        gate: gate:docs-dev:fh3n:validation
     records:
         - id: gate:docs-dev:fh3n:backlog
           stage: backlog
@@ -54,6 +54,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:fh3n:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:fh3n-validation-1
+              briefing:
+                id: briefing:docs-dev:fh3n:validation:attempt-1:revision-1
+                digest: sha256:a21ab988482ef787427d6735d3911787e724924753fbb27bfe27e17973cb6c50
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-1
 worktree: .worktrees/spacedock-ensign-recorded-gate-lifecycle-proof-hygiene
 started: 2026-07-25T17:09:51Z
 review-round:

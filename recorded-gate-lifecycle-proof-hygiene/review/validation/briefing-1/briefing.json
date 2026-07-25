@@ -1,0 +1,84 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:fh3n:validation:attempt-1:revision-1",
+  "question": "Should candidate 1fa8ead5acf643bd00233068a1b57130d6b14081 enter the merge and terminalization path?",
+  "artifacts": [
+    {
+      "id": "artifact:fh-validation-gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:bc3794b5f94c1b03393582b97c4f155341eeb1cbe1ee837d1d75234e80831f98",
+      "summary": "Summarizes the executable proof cleanup, exact deletion-first candidate, structural and archive controls, green repository gates, deferred baseline live-oracle defect, and requested merge decision."
+    },
+    {
+      "id": "artifact:fh-validation-entity",
+      "uri": "git-root://state/ccfd5a5280be6b8a968218132dbe7b09b1d573a1/recorded-gate-lifecycle-proof-hygiene/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:ff40b0be7667103126fdf2cf8583552d469ab3ffe5d2a8cc476780d01c5cdb45",
+      "summary": "The immutable task specification, acceptance criteria, corrected advisory surface authority, implementation evidence, independent validation, and baseline-versus-candidate risk classification."
+    },
+    {
+      "id": "artifact:fh-roborev-round-2",
+      "uri": "../../implementation/round-2/briefing.json",
+      "mediaType": "application/json",
+      "rev": "sha256:6b5d33102f9f7d877e6c1508d99691ce712dfaf27b0a9e63e8375684284cf8eb",
+      "summary": "The retained final implementation review round; Roborev job 2331 passed both reviewers with no findings."
+    },
+    {
+      "id": "artifact:fh-pr-view-structural-control",
+      "uri": "git-root://main/1fa8ead5acf643bd00233068a1b57130d6b14081/internal/contractlint/layering_restore_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:91ece0fc31a098ccbb24de5e3d9b9c5bdecafbaaa2970eb1315c2a3a3c8fee69",
+      "summary": "The exact candidate structural PR-view allow-list discriminator after removal of the shipped-prose mapping."
+    },
+    {
+      "id": "artifact:fh-codex-archive-control",
+      "uri": "git-root://main/1fa8ead5acf643bd00233068a1b57130d6b14081/internal/ensigncycle/codex_live_runner_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:3969352d67ee25467d67aaee745d14ad94d36ffd99de25dd722f68218b215d40",
+      "summary": "The exact candidate Codex guardrail runner, which checks archive absence before reading the active held-gate entity."
+    },
+    {
+      "id": "artifact:fh-claude-archive-control",
+      "uri": "git-root://main/1fa8ead5acf643bd00233068a1b57130d6b14081/internal/ensigncycle/claude_live_runner_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:e8d0563b63f5356829d068188855dda9d795f59a653ec78efca91831577b4e2a",
+      "summary": "The exact candidate Claude guardrail runner, which applies the same pre-read archive diagnostic."
+    },
+    {
+      "id": "artifact:docs-dev-workflow",
+      "uri": "git-root://main/4ff98d8cd97ebcf17b6a583070ce69234e24fc87/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:46d44abcbdc596a0aa2c22cb94465cf4e2321a529c52679f14e7efcb071a5f62",
+      "summary": "The immutable workflow contract governing independent validation, materiality, captain approval, CI, merge, and terminalization."
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:fh-validation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Merge and terminalize the exact candidate",
+          "to": "stage:done"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return a material finding to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold before merge",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}
