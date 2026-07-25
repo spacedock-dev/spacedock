@@ -58,6 +58,7 @@ func buildMergeGuardForeignCwdFixture(t *testing.T) (coderoot, defDir, wtDir str
 	gitC(t, state, "config", "user.name", "spacedock-test")
 	gitC(t, state, "add", "010-repro.md")
 	gitC(t, state, "commit", "-q", "-m", "seed")
+	gitC(t, state, "branch", "-M", "spacedock-state/dev")
 
 	wtDir = filepath.Join(coderoot, ".worktrees", "agent-x")
 	gitC(t, coderoot, "worktree", "add", "--detach", wtDir)

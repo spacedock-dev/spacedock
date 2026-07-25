@@ -10,9 +10,9 @@ The terminal merge-and-cleanup ceremony, the mod-block guard that protects it, a
 
 ## «merge.guard»(slug): auto-arm → block-on-open-PR → finalize-on-merge-sentinel, then archive
 
-- **effect:** drive the terminal merge-finalize ceremony (including the path-scoped archive commit), the same under both `merge:` policies. Invoke it once per phase. Armed names `«hooks.run»("merge")` as the next action; blocked waits for the sentinel; finalized names worktree/branch/worker cleanup or the manual merge when no registration exists.
-- **done-when:** the entity is archived terminal, or `«merge.guard»` left it armed/blocked with its next step named in its own output.
-- **block:** `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten.
+- **effect:** drive the terminal merge-finalize ceremony (including the path-scoped archive commit and split-root publication), the same under both `merge:` policies. Invoke it once per phase. Armed names `«hooks.run»("merge")` as the next action; blocked waits for the sentinel; finalized names worktree/branch/worker cleanup or the manual merge when no registration exists.
+- **done-when:** the entity is archived terminal and remote-durable when state has an origin (explicitly local-only otherwise), or `«merge.guard»` left it armed/blocked with its next step named in its own output.
+- **block:** exit 3 is `«halt.rebase-conflict»(paths)` — HALT and surface path/peer evidence, never rerun guard. Exit 1 after the archive commit resumes through `«state.commit»(slug)`; only an ordinary pre-mutation guard refusal means a step was skipped. `--force` is never part of the happy path.
 - → **shipped**: `` `spacedock merge guard <slug>` `` — invoke it directly per phase (via `${SPACEDOCK_BIN:-spacedock}`, per the launcher invariant above).
 
 At the terminal boundary, invoke `«worker.shutdown»()` for the entity's worker cohort: derive the cohort, cooperatively shut each member down (best-effort, fire-and-forget through the runtime binding), then drop them from session memory. This is mandatory whether the merge ran locally or via a PR host. A runtime may add further teardown, such as bounded team-registry cleanup, in its binding.

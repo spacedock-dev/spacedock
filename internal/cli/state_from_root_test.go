@@ -222,6 +222,7 @@ func setupStandaloneSplitWorkflow(t *testing.T, root, relPath, slug string) (wor
 	git(t, checkout, "init", "-q")
 	git(t, checkout, "config", "user.email", "t@t")
 	git(t, checkout, "config", "user.name", "t")
+	git(t, checkout, "branch", "-M", "spacedock-state/"+filepath.Base(workflowDir))
 	if err := os.WriteFile(filepath.Join(checkout, slug+".md"),
 		[]byte("---\nstatus: ideation\n---\n# "+slug+"\n"), 0o644); err != nil {
 		t.Fatal(err)

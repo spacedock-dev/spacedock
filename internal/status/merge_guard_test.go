@@ -4,13 +4,48 @@ package status
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestMergeGuardInlineJSONReportsOneDurabilityBoundResult(t *testing.T) {
+	root := stageFixture(t, "merge-pr-workflow")
+	bare := filepath.Join(t.TempDir(), "origin.git")
+	gitOutput(t, root, "init", "--bare", bare)
+	gitOutput(t, root, "remote", "add", "origin", bare)
+	gitOutput(t, root, "push", "origin", "HEAD:main")
+	remoteBefore := gitOutput(t, bare, "rev-parse", "refs/heads/main")
+	var stdout, stderr bytes.Buffer
+	code := MergeGuard([]string{"--workflow-dir", root, "080-pr-merged", "--verdict", "passed", "--json"}, root, &stdout, &stderr)
+	out, errOut := stdout.String(), stderr.String()
+	if code != 0 {
+		t.Fatalf("inline finalize should exit 0: stderr=%q", errOut)
+	}
+	dec := json.NewDecoder(strings.NewReader(out))
+	var result map[string]any
+	if err := dec.Decode(&result); err != nil {
+		t.Fatalf("decode finalize JSON: %v\n%s", err, out)
+	}
+	var extra any
+	if err := dec.Decode(&extra); err != io.EOF {
+		t.Fatalf("finalize JSON must be one value plus EOF; err=%v extra=%v\n%s", err, extra, out)
+	}
+	if result["result"] != "inline" {
+		t.Fatalf("inline finalize must report result=inline, got %#v", result)
+	}
+	if _, err := os.Stat(filepath.Join(root, "_archive", "080-pr-merged.md")); err != nil {
+		t.Fatalf("inline finalize did not archive: %v", err)
+	}
+	if remoteAfter := gitOutput(t, bare, "rev-parse", "refs/heads/main"); remoteAfter != remoteBefore {
+		t.Fatalf("inline finalization moved the code remote: before=%s after=%s", remoteBefore, remoteAfter)
+	}
+}
 
 // driveMergeGuard runs `merge guard` against a fresh staged fixture, returning the
 // staged root plus the three channels. The fixture is git-initialized (mutations

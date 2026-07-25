@@ -348,7 +348,7 @@ func TestFOFunctionRequiredCallSites(t *testing.T) {
 		{"skills/first-officer/references/fo-dispatch-core.md", "## Dispatch", []string{"«dispatch.checklist»(entity, stage)"}},
 		{"skills/fo-dispatch-recovery/SKILL.md", "## Break-Glass Manual Dispatch", []string{"«dispatch.checklist»(entity, stage)"}},
 		{"skills/first-officer/references/fo-dispatch-core.md", "## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration", []string{"«roster-reconcile»()", "«hooks.run»(\"idle\")"}},
-		{"skills/first-officer/references/fo-merge-core.md", "## «merge.guard»(slug): auto-arm → block-on-open-PR → finalize-on-merge-sentinel, then archive", []string{"«worker.shutdown»()", "«hooks.run»(\"merge\")"}},
+		{"skills/first-officer/references/fo-merge-core.md", "## «merge.guard»(slug): auto-arm → block-on-open-PR → finalize-on-merge-sentinel, then archive", []string{"«worker.shutdown»()", "«hooks.run»(\"merge\")", "exit 3 is `«halt.rebase-conflict»(paths)`", "Exit 1 after the archive commit resumes through `«state.commit»(slug)`"}},
 		{"skills/feedback-rejection-flow/SKILL.md", "## Feedback Rejection Flow", []string{"«context-budget»()", "«addressable-worker»"}},
 	}
 	for _, tc := range sites {

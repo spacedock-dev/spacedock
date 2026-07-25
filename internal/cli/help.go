@@ -193,12 +193,15 @@ Usage:
 
 Drive the terminal merge ceremony for an entity as one ordered envelope: arm the
 mod-block before the hook, detect hook completion by the state delta, clear the
-mod-block in a standalone step, then terminalize and archive. The verb owns the
+mod-block in a standalone step, then terminalize, archive with a path-scoped commit,
+and publish split-root state. The verb owns the
 sequence so the steps cannot be combined, skipped, or reordered; it does NOT
 invoke the merge hook or make the merge verdict (you pass that in with --verdict).
 
 Re-run guard after invoking the hook: it resumes from the entity's current state
 (armed -> blocked on an open PR, or armed -> finalized once the merge has landed).
+After interrupted publication, spacedock state commit <slug> resumes the archived slug without creating another archive commit.
+Exit 3 means Git rebase conflict: the rebase was aborted; stop and surface its path/peer evidence instead of rerunning guard.
 
 Flags:
   --verdict passed|rejected   The merge decision (required; a verdict-less finalize is refused)

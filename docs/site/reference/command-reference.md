@@ -79,11 +79,13 @@ The first officer runs these against workflow state as it moves entities; you op
 
 ### `state commit`
 
-`spacedock state commit <slug>` commits and synchronizes one entity from a
-split-root state checkout. The operand is one canonical top-level entity slug,
+`spacedock state commit <slug>` commits and synchronizes one active or clean
+archived entity from a split-root state checkout. The operand is one canonical top-level entity slug,
 not a nested path. A flat entity commits exactly `<slug>.md`; a folder-form entity
 commits every changed, new, or deleted non-ignored path below `<slug>/`, including
 reports and artifacts. Dirty sibling entities and unrelated top-level state paths
-remain untouched.
+remain untouched. Archived scope is publish-only: dirt or identity/shape collisions refuse before movement; clean unpublished history is pushed, and fully published state is a no-op.
+Because archived recovery never creates or amends a commit, `-m MSG` applies only
+to active entities and has no effect for an archived slug.
 
 [Operate a workflow](../running-workflows/operating.md) covers how the first officer uses `status` on your behalf. Run `spacedock status --help` (and the same for each command) for the full flag list, the mutation guards, and the exit codes.
