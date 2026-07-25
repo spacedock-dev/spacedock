@@ -1801,3 +1801,18 @@ The pre-edit estimate is the advisory table's per-path total of approximately
 validator, or compatibility deviations at declaration time. Actual path and line
 deltas will be reconciled semantically before review; counts are planning evidence,
 not acceptance authority.
+
+## Implementation Surface Reconciliation
+
+The staged implementation diff against `4ff98d8c` contains 33 files at
+`+2,552/-290`. Every declared path is present. The larger delta comes chiefly from
+complete production Git-source resolution and failure-path tests rather than a change
+to the approved command, schema, provider, authority, or compatibility boundaries.
+
+Seven supporting paths were added beyond the advisory declaration:
+`internal/gates/{gates_test.go,model.go}` preserves request-less compatibility while
+making prepared request-backed closure and arbitrary Briefing locators falsifiable;
+`internal/ensigncycle/{claude_live_runner_test.go,codex_live_runner_test.go,livescenario_adapter_live_test.go,recorded_gate_lifecycle_pi_live_test.go,shared_fixtures_test.go}`
+routes every existing host lane through the same prepared recorded-gate fixture and
+shared oracle. No declared path was omitted, and no provider implementation,
+materializer, retained provider output, or sibling workflow entity was changed.
