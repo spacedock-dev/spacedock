@@ -361,14 +361,14 @@ gates:
                 target-stage: implementation
                 state: pending
 review-round:
-    id: round:6yyyyemkqwsett3g1c991w9f:implementation:23
+    id: round:6yyyyemkqwsett3g1c991w9f:implementation:24
     stage: implementation
-    cycle: 23
+    cycle: 24
     briefing:
-        id: briefing:first-officer-gate-command-lifecycle:implementation:roborev-2211
-        digest: sha256:a069d899e7a9e2576dc397a8cc297af6750fd9e310c8e51de3b562084cc116a0
+        id: briefing:first-officer-gate-command-lifecycle:implementation:roborev-2224
+        digest: sha256:6169bd38b5374fd3609ee8f8508fa89cb45778d4ae555e987363dcc1ae82c3c9
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-23
+        room-ref: ./review/implementation/round-24
 mod-block:
 pr: "#565"
 ---
@@ -864,6 +864,8 @@ Implemented and hardened the six-event integration and its deterministic/live or
 - Cycle 21: DESIGN RESET — independent checkpoint review and correction prototype at `3c535105`; surface 3 correction files/+191 additions vs +95 repair cap (201%) before seven deleted v1 invariants are restored; AC authority must be re-anchored because expanding the forensic proof surface would reward the same overdesign
 - Cycle 22: NEEDS DECISION — second clean-branch staff correction; `recorded_gate_lifecycle_test.go` requires measured +135/-152 vs approved +70..120/-100..190. Independent review found the +15 addition breach irreducible product proof for six durable Captain mappings and approved a one-file range amendment conditional on deleting redundant bind reparsing; AC unchanged
 - Cycle 23: REJECTED — Roborev job 2211 triage and repair; surface 11/183 vs estimate 11/204 (90%); AC unchanged
+
+- Cycle 24: REJECTED — Roborev job 2224 triage and correction; surface 12/195 vs estimate 12/204 (96%); AC unchanged
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
