@@ -112,7 +112,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if doc == nil {
 		doc = &Document{Version: 1}
 	}
-	entityID, err := entityIdentity(entityPath)
+	entityID, err := entityIdentity(entityPath, input.WorkflowDir)
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -408,7 +408,18 @@ func prepareTarget(doc *Document, entityID, stage string) (gateID, attemptID str
 	return gateID, attemptID, attemptNumber, record, previous, err
 }
 
-func entityIdentity(path string) (string, error) {
+func entityIdentity(path, workflowDir string) (string, error) {
+	readme, err := os.ReadFile(filepath.Join(workflowDir, "README.md"))
+	if err != nil {
+		return "", err
+	}
+	workflow, _, _, err := frontmatterNode(readme)
+	if err != nil {
+		return "", err
+	}
+	if style := mappingValue(workflow, "id-style"); style != nil && strings.TrimSpace(style.Value) == "slug" {
+		return entitySlug(path), nil
+	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
