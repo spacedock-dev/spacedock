@@ -88,6 +88,7 @@ review-round:
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-2
 mod-block: merge:pr-merge
+pr: "#567"
 ---
 
 ## Problem
