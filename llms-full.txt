@@ -87,17 +87,12 @@ Everything is plain text in your repo: a README that holds the workflow's rules 
 On accept, commission dispatches your seed items in parallel, each moving through the stages until everything is idle or waiting on you. When a work item reaches the `review` gate, you get a gate review:
 
 ```
-Gate review: Add rate limiting to the API — review
-Chosen direction: token-bucket limiter at the API middleware layer
-Recommend approve.
-
-Checklist (from ## Stage Report in docs/ship-features/add-rate-limiting-to-the-api.md):
-- DONE: limiter implemented with per-client buckets
-- DONE: tests cover burst and refill behavior
-
-Assessment: 2 done, 0 skipped, 0 failed.
-
-Decision: approve to close; reject to bounce back to implementation.
+Capability/change: token-bucket limiter at the API middleware layer.
+Test and evidence: the Stage Report records 2 DONE, 0 SKIPPED, 0 FAILED.
+Reviewed snapshot: Briefing `...` at digest `sha256:...`.
+Findings: none.
+Recommendation: approve the implementation.
+Decision ask: approve to close, revise with feedback, or hold at review.
 ```
 
 You approve, send it back with feedback, or reject. Details: [gates and decisions](../../concepts/gates-and-decisions/).
@@ -227,27 +222,20 @@ Until then, the gates are yours.
 
 ## What you see at a gate
 
-A gate review has a fixed spine: the first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
+A chat gate review has one concise evidence spine. The first officer emits it before recording either your decision or a decision made under delegated conn:
 
 ```
-Gate review: Fix the flaky login test — review
-Chosen direction: replace sleep-based waits with event polling
-Recommend reject: the AC-2 retry scenario has no covering test.
-
-Checklist (from ## Stage Report in docs/ship-features/fix-the-flaky-login-test.md):
-- DONE: login test stable across 50 consecutive runs
-- FAILED: retry scenario unproven — no test exercises it
-
-Reviewer findings
-  Material: AC-2 cites a test file that does not exist
-  Polish:   stage report wording drifts from the template
-
-Assessment: 1 done, 0 skipped, 1 failed.
-
-Decision: approve to close; reject to bounce back to implementation.
+Capability/change: replace sleep-based waits with event polling.
+Test and evidence: login is stable across 50 runs; AC-2 retry has no covering test.
+Reviewed snapshot: Briefing `...` at digest `sha256:...`.
+Findings: material: AC-2 cites a test file that does not exist.
+Recommendation: revise to add the retry scenario.
+Decision ask: approve to close, revise to bounce back, or hold at review.
 ```
 
-Material findings are the ones that should move your vote; Polish never blocks. The Decision line tells you concretely what your vote does. Every acceptance criterion is cross-checked before the review reaches you; a criterion without cited evidence is named rather than passed over.
+Material findings are the ones that should move your vote; polish never blocks. The decision ask tells you concretely what each call does. Every acceptance criterion is cross-checked before the review reaches you; delegated authority does not hide the review.
+
+The first officer may act only after an explicit grant in the active conversation, including a grant given later in that conversation. Durable gate state records the first officer as the decision renderer and its evidence reason; it does not quote or authenticate the grant's wording or scope. Keep any required chat provenance in the host's own audit system.
 
 ## How the review reaches you
 
@@ -258,12 +246,16 @@ The provider owns its presentation transport and retained files. The `spacedock`
 ## The three calls
 
 - **Approve.** The decision is recorded first. A separate application step may then advance eligible work exactly once.
-- **Redo with feedback.** You accept the direction but send concrete fixes back. Name the specific asks ("tighten the AC-2 substring assertion, correct the file path claim"), not "address the reviewer's notes".
-- **Reject.** The work bounces back to the stage that owns the fix, carrying your findings.
+- **Redo with feedback.** You accept the direction but send concrete fixes back. The recorded decision is `revise`, and its reason says the direction is accepted.
+- **Reject.** With a configured feedback target, the recorded decision is `revise`, its reason says the direction is rejected, and the work bounces to that owner. Without a feedback target, the decision is `hold` and the first officer stops for routing help.
 
-Redo and reject differ only in whether you accept the direction; both carry your concrete asks so the next worker has something to act on. Nothing closes without its verdict on the record.
+Redo and reject differ only in whether you accept the direction; both carry your concrete asks so the next worker has something to act on. Nothing closes without its verdict on the record. Your call translates into the existing `approve`, `revise`, and `hold` record; automatic bounce applies only when a reviewer recommends `REJECTED` at a configured feedback gate.
 
-After completion verification, the first officer binds the retained Briefing before presenting the gate. That bind selects the current-stage gate attempt, letting startup distinguish work still validating, an open attempt awaiting the Captain, an approval awaiting nonterminal advance, and an approval awaiting merge. Approval to a terminal target is consumed before the existing merge and terminalization path begins.
+After completion verification, a gate with no selected attempt remains `validating`. The first officer binds and commits the retained Briefing before presenting anything. That bind selects the current-stage gate attempt, letting startup distinguish work still validating, an open attempt awaiting the Captain, an approval awaiting nonterminal advance, and an approval awaiting merge. Approval to a terminal target is consumed before the existing merge and terminalization path begins.
+
+Before the first officer shows a gate, it captures the exact bound Briefing identity and digest from committed entity state. A run without decision authority stops with that attempt open: it writes no Resolution, consumes nothing, advances nothing, and dispatches nothing. After an authorized decision, it records and commits the Resolution before every route. Approval then uses `gate consume`, which rechecks eligibility and atomically writes the successor stage and consumed mark; the consumed descendant commit lands before ordinary successor dispatch. Revise routes feedback after its close commit, and hold stays at the gate. `gate validate` and `gate eligibility` remain optional diagnostics, not positive-path lifecycle steps.
+
+The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.
 
 ## Rejections
 
@@ -598,6 +590,8 @@ An unsandboxed bootstrap launch carries no safehouse isolation, so per-action pe
 
 Both take `--host claude|codex|pi` (default `claude`). When `doctor` reports the plugin is out of date, refresh it with `spacedock install`. When the plugin is still contract-compatible but a newer one is available, `doctor` and the front-door launch print an opt-in upgrade hint (`run spacedock install --host <host> to refresh`); the hint never blocks the launch. See [Install Spacedock](../../get-started/install/) for the full setup path.
 
+For source-checkout or retained development launchers, version compatibility is not a command-capability check. Immediately before every gate lifecycle, freshly resolve the launcher and run `spacedock gate --help` exactly once; do not cache the result. It must list `record`, `validate`, `eligibility`, `consume`, and the semantic record flags. If it fails, refresh the installed launcher or build the current checkout and select that executable with `SPACEDOCK_BIN`; do not hand-edit gate frontmatter as a fallback. Relative Briefing, Result, and association inputs resolve from the launch working directory.
+
 ## Workflow
 
 The first officer runs these against workflow state as it moves entities; you operate through it, not by hand. They are documented here for completeness and for the rare direct use (scripting, debugging, restoring a state checkout on a fresh clone).
@@ -607,7 +601,7 @@ The first officer runs these against workflow state as it moves entities; you op
 | `spacedock status`                                                                                                                          | Read or mutate the state: the entity table (omits the SOURCE column by default; `--fields source` or `--all-fields` restores it), `--next`, `--where`, `--set`, `--validate`, `--boot` (with `--identify`, the first officer's Startup identify — discovers the managed workflow(s), folds in the stage taxonomy and canonical ready-gate scheduling rows, and reports the boot sections; each row carries only `id`, `slug`, `current`, and `readiness`, while entity read and gate commands provide the complete decision record at engage; a gate stage alone is not ready; PR_STATE is a local `pr:` view, live PR state is checked at engage; local reads only, no mutation), `--read <ref-or-path>` (a file's structured frontmatter — including the nested `stages:` taxonomy, and projectable with `--fields` — plus a heading offset/lines map, for section-scoped reads; with `--checklist` / `--ac-scan` it extracts a stage report's checklist items with line ranges and per-AC evidence citations for the first officer's gate prep; `--stage` defaults to the entity's current `status` when omitted (so a bare `--read <entity> --checklist` reads the current stage's report), and `--stage X` reads a non-current stage) |
 | `spacedock gate record <entity> --briefing PATH/briefing.json`                                                                              | Bind a complete retained package manifest whose basename is exactly `briefing.json`. Other basenames fail before mutation. The recorder derives the current-stage logical gate and whether this opens, rebinds, or supersedes an attempt.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `spacedock gate record <entity> --room PATH`                                                                                                | Verify a prepared gate room and record its direct binding Result. The recorder checks the frozen request digest, derives fixed provider paths and the complete Artifact/Reference association, and leaves advisory output as retained evidence.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `spacedock gate record <entity> --decision approve\|revise\|hold --actor ID [--reason TEXT] [--directive TEXT]`                             | Record a chat decision and its derived one-use application; delegated decisions require the quoted directive. Recording never advances status or dispatches.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `spacedock gate record <entity> --decision approve\|revise\|hold --actor ID [--reason TEXT]`                                                | Record a chat decision and its derived one-use application. Supported chat actor IDs are `person:captain` and `agent:first-officer`. Delegated First Officer decisions require an evidence reason; the recorder does not accept or authenticate Captain-message text. Recording never advances status or dispatches.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE]` | For a folder-form entity (`<slug>/index.md`), publish one complete advisory correction round to the immutable derived room `review/<stage>/round-<cycle>`, update the current `review-round` pointer, and optionally project its Feedback Cycles line. `STAGE` must exist in the workflow taxonomy but may differ from current status for historical backfill; cycle-line grammar and verdict binding are validated. Flat entities are refused because review artifacts accumulate beside the entity. Exact replay is a no-op; divergence is refused.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `spacedock gate validate <entity>`                                                                                                          | Validate the canonical v1 logical-gate selection, ordered attempts, Briefing bindings, frozen closures, typed application, and Resolution shape; report the current recorded decision. Prototype fields and unknown binary-owned fields fail closed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `spacedock gate validate <entity> --round STAGE/CYCLE`                                                                                      | Validate and read an advisory round through its entity pointer and immutable retained room. Every Resolution reports as advisory; no gate selection or workflow state changes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
