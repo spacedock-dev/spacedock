@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:ideation:attempt-12:revision-1",
+  "question": "Should delegated chat decisions delete unauthenticated directive provenance and durably retain only asserted renderer identity, evidence reason, decision, application, and route?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4bd26ac8f5a93a7c1a19f29aca1368c6ec08105b28955e9464d0827fe6dab422"
+    },
+    {
+      "id": "artifact:staff-review",
+      "uri": "staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:070ed224611469d1dd1daa168fd4741f8254a90f2f7dc037132713b501a74138"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:30769781398966e190bfe36be88c7b81a07246a9db4b5d1a4363b8521845220e"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:6y-ideation-cycle-32",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Return the rigorous cut to implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the authority boundary",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold the lifecycle correction",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
