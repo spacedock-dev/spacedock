@@ -276,7 +276,7 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 	}
 	lifecycle, presenter := readRepoFile(t, filepath.Join("skills", "fo-gate-lifecycle", "SKILL.md")), readRepoFile(t, filepath.Join("skills", "present-gate", "SKILL.md"))
 	for _, want := range []string{
-		"If absent", "halt before mutation", "refresh or a fresh build",
+		"absence or exposure", "halt before mutation", "refresh or a fresh build", "reject retired `--directive` exposure",
 		"presentation completes only after", "exact bound Briefing id/digest",
 		"precede decision record", "delegated conn does not waive",
 		"explicit Captain grant in the active conversation",
@@ -287,7 +287,7 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 			t.Errorf("gate lifecycle missing fail-closed/presentation contract %q", want)
 		}
 	}
-	for _, forbidden := range []string{"--directive", "--directive-file", "EXACT_QUOTED_CAPTAIN_GRANT"} {
+	for _, forbidden := range []string{"--directive-file", "EXACT_QUOTED_CAPTAIN_GRANT"} {
 		if strings.Contains(lifecycle, forbidden) {
 			t.Errorf("gate lifecycle retains caller-controlled provenance surface %q", forbidden)
 		}
