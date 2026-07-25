@@ -3687,3 +3687,58 @@ falsifiable repair augments the existing recorded-gate oracle and existing PTY
 driver, replacing prose-only late-grant matching so the approved 11-file and
 204-LOC bounds remain feasible. Checklist accounting is **7 DONE, 1 SKIPPED,
 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 Roborev 2211 repair attempt)
+
+- DONE: Implement finding 2 test-first in the approved existing lifecycle file.
+  The red run made `heading-deleted` and `mutated-handoff-done` fail as
+  “mutant graded PASS”; after the section-bounded oracle, the exact focused
+  replay/mutant command passed in 3.987s. Actor, reason, adoption, ancestry,
+  root-review, no-authority, marker, and retired-flag controls remain present.
+- DONE: Implement the approved existing-driver late-grant journey without
+  product, schema, command, transport, provider, or compatibility changes.
+  The dirty test starts with no conn, waits for a committed presented open gate
+  with only the briefing event and no dispatch/effect, then would send the exact
+  later-turn grant and reuse the complete lifecycle oracle.
+- DONE: Preserve the exact hard boundary in the uncommitted worktree.
+  HEAD remains `5ced64fc5101b5da5f7bb5b3cfa9b8b9e2afc457`; base-relative
+  numstat is exactly 11 files and 204 changed LOC. Only the three approved files
+  are dirty: contractlint returns to base, PTY is +29/-0, and recorded lifecycle
+  is +29/-21. `gofmt` and `git diff --check` passed.
+- DONE: Pass deterministic and compile-only proof after the final local repair.
+  The focused replay, report mutants, held-gate negatives, and three-host
+  structured review-extractor controls passed in 4.177s; live-tag compilation
+  passed in 0.494s without executing a provider.
+- FAILED: Complete the one later-turn conn live journey.
+  The first invocation failed after 79.91s because the predicate read
+  `command.log` before creation; a cap-neutral empty-log initialization fixed
+  that harness ordering error. The next run reached a real committed/presented
+  open gate but timed out after 474.84s before the harness sent conn; its
+  transcript exposed omitted default `state: open` YAML and Markdown-bold
+  decision-label assumptions, repaired locally without changing product input.
+  The FO-authorized final same-Claude/provider/model rerun again reached a
+  committed semantic review and terminal `end_turn`, explicitly stating gate
+  open, no decision, and no grant, but the compound held predicate remained
+  false. It failed after 464.38s (package 464.734s) at
+  `open recorded gate without conn`; no later grant was sent, so finding 3 has
+  no complete behavioral proof.
+- FAILED: Retain filesystem artifacts from the final failed live process.
+  The runner reported
+  `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLivePtyRecordedGateLateGrant433482416/002/recorded-gate-late-grant`,
+  but Go removed its `t.TempDir` tree at process exit. This report retains the
+  exact terminal timings, predicate, and transcript conclusion; no durable live
+  artifact directory survives.
+- SKIPPED: Run full `go test ./...` or `go test ./... -race`, commit code, append
+  Roborev worker triage, record a round, request another panel, mutate
+  gate/round/status/stage, push, open a PR, or merge.
+  The binding final-rerun stop rule fired; no coaching, fallback, retry, or other
+  live/provider lane was attempted afterward.
+
+### Summary
+
+Finding 2's deterministic repair is implemented and falsifiable in a
+cap-compliant dirty worktree, but finding 3 remains unproved because every live
+drive stopped at the first-phase harness predicate despite the transcript
+showing the intended open/no-grant behavior. Code remains uncommitted at
+`5ced64fc`; reviewer-only Roborev 2211 state remains untouched. Checklist
+accounting is **4 DONE, 2 FAILED, 1 SKIPPED**.
