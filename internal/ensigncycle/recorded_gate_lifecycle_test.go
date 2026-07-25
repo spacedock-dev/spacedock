@@ -24,11 +24,6 @@ var recordedGateRequiredEvents = []string{
 
 const recordedGateDispatchMarker = "RECORDED-GATE-SUCCESSOR-DISPATCHED"
 
-var (
-	recordedGateDecisionLead   = regexp.MustCompile(`(?i)^\s*(?:decision(?:\s+ask)?\s*[:—-]|choose\b|please decide\b)`)
-	recordedGateDecisionEffect = regexp.MustCompile(`(?i)\b(?:approve|reject|revise|hold)\b\s+(?:to|with|for)\s+(?:\S+\s+){0,8}(?:advance|bounce|close|consume|dispatch|enter|finding|handoff|implementation|merge|prerequisite|return|route|send|stage|worktree)\b`)
-)
-
 const (
 	recordedGateBriefingID = "briefing:docs-dev:3k:validation:attempt-1:revision-1"
 	recordedGateDigest     = "sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac"
@@ -78,9 +73,6 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 			return fmt.Errorf("durable post-state missing %q", want)
 		}
 	}
-	if strings.Contains(o.after, "adoption-note:") {
-		return fmt.Errorf("durable post-state contains caller-controlled adoption note")
-	}
 	for _, exact := range []struct {
 		label string
 		value string
@@ -95,12 +87,16 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		{"approval decision", "\n                decision: approve", 1},
 		{"approval actor", "by: agent:first-officer", 1},
 		{"approval reason", "\n                reason:", 1},
+		{"forged adoption note", "adoption-note:", 0},
 		{"application target", "target-stage: " + o.expectedNext, 1},
 		{"consumed application", "\n                state: consumed", 1},
 	} {
 		if got := strings.Count(o.after, exact.value); got != exact.count || (exact.label == "approval reason" && strings.Trim(strings.TrimSpace(strings.SplitN(strings.SplitN(o.after, exact.value, 2)[1], "\n", 2)[0]), `"'`) == "") {
 			return fmt.Errorf("durable post-state %s count = %d, want %d for %q", exact.label, got, exact.count, exact.value)
 		}
+	}
+	if report := strings.Split(o.after, "\n## Stage Report: handoff\n"); len(report) != 2 || !strings.Contains(strings.SplitN(report[1], "\n## ", 2)[0], "\n- DONE: ") {
+		return fmt.Errorf("durable post-state lacks exactly one handoff Stage Report with DONE evidence")
 	}
 	if o.before == o.after {
 		return fmt.Errorf("gate lifecycle left entity byte-identical")
@@ -122,7 +118,7 @@ func assertConciseRecordedGateReview(review string) error {
 		return fmt.Errorf("gate review leads with raw state instead of the decision")
 	}
 	for _, line := range strings.Split(lower, "\n") {
-		if recordedGateDecisionLead.MatchString(line) && recordedGateDecisionEffect.MatchString(line) {
+		if regexp.MustCompile(`(?i)^\s*\**(?:decision(?:\s+ask)?\s*[:—-]|choose\b|please decide\b)[^\n]*\b(?:approve|reject|revise|hold)\b\s+(?:to|with|for)\s+(?:\S+\s+){0,8}(?:advance|bounce|close|consume|dispatch|enter|finding|handoff|implementation|merge|prerequisite|return|route|send|stage|worktree)\b`).MatchString(line) {
 			return nil
 		}
 	}
@@ -177,10 +173,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
 	commitRecordedGateState(t, binary, fixture, "consume gate authorization")
 	durable, _, durableErr := gates.Read(fixture.entity)
-	requireRecordedGate(t, durableErr == nil &&
-		durable.Records[0].Attempts[0].Resolution.By == "agent:first-officer" &&
-		durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason &&
-		durable.Records[0].Attempts[0].Resolution.Adoption == "", "approve durable snapshot unreadable")
+	requireRecordedGate(t, durableErr == nil && durable.Records[0].Attempts[0].Resolution.By == "agent:first-officer" && durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason && durable.Records[0].Attempts[0].Resolution.Adoption == "", "approve durable snapshot unreadable")
 
 	events := successfulRecordedGateEvents(commands)
 	dispatches := 0
@@ -315,6 +308,9 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 		{"approve-missing-reason", []string{"--decision", "approve", "--actor", "agent:first-officer"}, []string{"reason"}},
 		{"approve-whitespace-reason", []string{"--decision", "approve", "--actor", "agent:first-officer", "--reason", " \t"}, []string{"reason"}},
 		{"reason", []string{"--decision", "revise", "--actor", "agent:first-officer"}, []string{"reason"}},
+		{"retired-exact-directive", []string{"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence", "--directive", recordedGateDirective}, []string{"unknown gate flag", "--directive"}},
+		{"retired-altered-directive", []string{"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence", "--directive", strings.TrimSuffix(recordedGateDirective, ".")}, []string{"unknown gate flag", "--directive"}},
+		{"retired-directive-file", []string{"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence", "--directive-file", "authority.txt"}, []string{"unknown gate flag", "--directive-file"}},
 	} {
 		t.Run("invalid-"+tc.name, func(t *testing.T) {
 			fixture := writeRecordedGateFixture(t)
@@ -326,26 +322,6 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			assertRecordedGateByteCleanFailure(t, fixture, result, tc.wants...)
 			if after := treeDigest(t, fixture.stateRoot); after != before {
 				t.Fatalf("invalid %s changed workflow bytes", tc.name)
-			}
-		})
-	}
-	for _, tc := range []struct {
-		name, flag, value string
-	}{
-		{"exact-directive", "--directive", recordedGateDirective},
-		{"missing-period-directive", "--directive", strings.TrimSuffix(recordedGateDirective, ".")},
-		{"directive-file", "--directive-file", "authority.txt"},
-	} {
-		t.Run("retired-"+tc.name, func(t *testing.T) {
-			fixture := writeRecordedGateFixture(t)
-			bindRecordedGate(t, binary, fixture)
-			before := treeDigest(t, fixture.stateRoot)
-			result := runRecordedGateCommand(binary, fixture.root, "", "gate", "record", "recorded-gate-task",
-				"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence",
-				tc.flag, tc.value, "--workflow-dir", fixture.root)
-			assertRecordedGateByteCleanFailure(t, fixture, result, "unknown gate flag", tc.flag)
-			if after := treeDigest(t, fixture.stateRoot); after != before {
-				t.Fatalf("retired %s changed workflow bytes", tc.flag)
 			}
 		})
 	}
@@ -624,7 +600,7 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 			"id: " + recordedGateBriefingID + "\ndigest: " + recordedGateDigest + "\n" +
 			"id: resolution:spacedock:docs-dev:3k:validation:1\nbriefing: " + recordedGateBriefingID + "\n" +
 			"by: agent:first-officer\n                decision: approve\n                reason: " + recordedGateReason + "\n" +
-			"target-stage: handoff\n                state: consumed\nreport repeats decision: approve",
+			"target-stage: handoff\n                state: consumed\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.",
 		dispatch:     recordedGateDispatchProof{builds: 1, durableEffects: 1, ordered: true, committed: true},
 		gateReview:   recordedGateReview(),
 		expectedNext: "handoff",
@@ -636,10 +612,12 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 		"actor-swap": func(o *recordedGateObservation) {
 			o.after = strings.Replace(o.after, "by: agent:first-officer", "by: person:captain", 1)
 		},
-		"blank-reason": func(o *recordedGateObservation) { o.after = strings.Replace(o.after, recordedGateReason, "", 1) },
-		"forged-adoption-note": func(o *recordedGateObservation) {
-			o.after = strings.Replace(o.after, "target-stage:", "adoption-note: forged\ntarget-stage:", 1)
+		"blank-reason":         func(o *recordedGateObservation) { o.after = strings.Replace(o.after, recordedGateReason, "", 1) },
+		"forged-adoption-note": func(o *recordedGateObservation) { o.after = "adoption-note: forged\n" + o.after },
+		"heading-deleted": func(o *recordedGateObservation) {
+			o.after = strings.ReplaceAll(o.after, "## Stage Report: handoff", "")
 		},
+		"mutated-handoff-done": func(o *recordedGateObservation) { o.after = strings.Replace(o.after, "- DONE:", "- FAILED:", 1) },
 	} {
 		t.Run(name, func(t *testing.T) {
 			mutant := valid
