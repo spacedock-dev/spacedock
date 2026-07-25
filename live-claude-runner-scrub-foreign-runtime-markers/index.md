@@ -2,11 +2,11 @@
 title: Scrub foreign runtime markers from live Claude journeys
 status: implementation
 source: "Repeated 6y live evidence on 2026-07-25: nested Claude inherited CODEX_THREAD_ID from the Codex captain host and first failed dispatch host detection before recovering with explicit --host claude"
-started:
+started: 2026-07-25T16:30:35Z
 completed:
 verdict:
 score: 0.7
-worktree:
+worktree: .worktrees/spacedock-ensign-live-claude-runner-scrub-foreign-runtime-markers
 issue:
 sprint: durable-decisions
 id: v3vt8gp2yffmn62r8p95gkph
