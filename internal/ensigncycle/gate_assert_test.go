@@ -36,7 +36,7 @@ func TestAssertGateHeld(t *testing.T) {
 	final := "Gate review: Gate Check - review\nRecommend approve.\nDecision: approve to enter done."
 
 	before := recordedGateEntity()
-	after := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
+	after := before + "\ngates:\n  records:\n    - id: gate:recorded-gate-task:validation\n      attempts:\n        - id: gate-attempt:recorded-gate-task-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
 	requireRecordedGate(t, assertGateHeld(before, after, recordedGateReview()) == nil, "held gate failed")
 	decision := "Decision ask: approve, revise with a concrete finding, or hold for a named prerequisite?"
 	for name, line := range map[string]string{

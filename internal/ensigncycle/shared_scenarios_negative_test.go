@@ -26,7 +26,7 @@ type recordedGatePiEvent struct {
 
 func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
 	before := recordedGateEntity()
-	held := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
+	held := before + "\ngates:\n  records:\n    - id: gate:recorded-gate-task:validation\n      attempts:\n        - id: gate-attempt:recorded-gate-task-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
 	review := recordedGateReview()
 	requireRecordedGate(t, assertGateHeld(before, held, review) == nil, "held-gate baseline failed")
 

@@ -17,7 +17,7 @@ func assertGateHeld(before, after, review string) error {
 	if before == after || !validatingStatus.MatchString(after) || completedSet.MatchString(after) || verdictSetFM.MatchString(after) {
 		return fmt.Errorf("gated entity is not held at its open validation boundary")
 	}
-	for _, exact := range []string{"state: open", "id: gate-attempt:3k-validation-1", "id: " + recordedGateBriefingID, "digest: " + recordedGateDigest} {
+	for _, exact := range []string{"state: open", "id: gate-attempt:recorded-gate-task-validation-1", "id: " + recordedGateBriefingID, "digest: " + recordedGateDigest} {
 		if strings.Count(after, exact) != 1 {
 			return fmt.Errorf("open bound entity count for %q is not 1", exact)
 		}
