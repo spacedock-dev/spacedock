@@ -4,8 +4,8 @@ title: Make merge-guard archive finalization durable across split-root hosts
 status: done
 source: "Roborev 2146 during durable-decisions 6y final implementation review, 2026-07-24"
 started: 2026-07-24T15:38:16Z
-completed:
-verdict:
+completed: 2026-07-25T20:22:13Z
+verdict: passed
 score: "1.0"
 worktree: .worktrees/spacedock-ensign-sync-merge-guard-archive-state
 issue:
@@ -83,8 +83,9 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:568
+archived: 2026-07-25T20:22:13Z
 ---
 
 Make a successful split-root `merge guard` finalization durable on the configured state remote, including restart after interruption, so another First Officer cannot resurrect an already archived task from the last pushed sentinel.
