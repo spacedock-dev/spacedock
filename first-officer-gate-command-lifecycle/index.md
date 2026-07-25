@@ -3874,3 +3874,37 @@ binding roadmap ruling and fails closed when a gate candidate exposes the
 retired flag. Roborev 2231 now has complete worker triage and a canonical
 Cycle 25 source at clean code tip `537f443e`; no round or lifecycle state was
 mutated. Checklist accounting is **5 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: validation (cycle 33)
+
+- DONE: Re-anchor the active Cycle-31 AC-1 through AC-5 end values at clean tip 537f443e, reproduce every cited evidence class, and reject obsolete quoted-directive, compatibility, or multi-turn-harness obligations.
+  AC-1/AC-4 remain the Cycle-27 repair values; Cycle-32 replaces AC-2/AC-3/AC-5. Exact tip `537f443e05f412b94972e82a1b0f438b9160d8fe` is clean at 13 files, +139/-60 = 199 changed LOC versus `28073390`, under the amended 204 ceiling.
+- DONE: Adversarially verify direct versus delegated authority, no-conn behavior, Claude/runtime contract coherence, retired-flag preflight, one-use consume-before-dispatch, and deletion-sensitive handoff report evidence; classify every finding by outcome/evidence kind and release scope.
+  Real-CLI/Git controls fail on actor/reason swaps, retired `--directive`/`--directive-file`, missing/reordered bind-close-consume, forged `adoption-note`, premature/duplicate dispatch, and deleted/mutated handoff report evidence; no product outcome defect was found.
+- FAILED: Fast-forward PR #565 to the exact validated tip, obtain applicable deterministic and CI/live-lane evidence on the canonical CI substrate, and report exact checks/artifacts without treating skipped, cancelled, or provider-blocked lanes as green.
+  PR #565 fast-forwarded without force from `13d70249` to `537f443e`; run `30159150175` offline, docs, install-macOS, install-Ubuntu, and Pi jobs passed, but the Pi artifacts contain only `TestPiSharedScenarioCoverage` and `TestLivePiFrontDoorSmoke`, not `TestLivePiRecordedGateLifecycle`.
+- DONE: AC-1 — durable authorization, consume-before-dispatch, terminal complement, and successor report.
+  `TestRecordedGateLifecycleRealCLIReplay`, terminal, omission/order, resume, and handoff mutants passed; deleting an authority event, consumed ancestry, build/effect cardinality, heading, or DONE evidence makes the oracle fail.
+- DONE: AC-2 — direct/delegated identity and evidence fail closed without provenance text.
+  Public CLI plus production `gates.Read` preserve `person:captain` versus `agent:first-officer`, require a nonblank delegated reason, omit new `adoption-note`, read historical state, and reject both retired flags byte-clean.
+- FAILED: AC-3 — one exact-tip approved recorded-gate journey on Claude, Codex, and Pi.
+  **Material evidence defect:** the canonical exact-tip Pi lane is green for a different smoke; its uploaded JSONL has no recorded-gate lifecycle event. Prior local Pi attempts are incomplete predecessor evidence. At report time Codex and both Claude shared-scenario steps remain in progress, while both Claude broad live-ensign steps are red and untriaged.
+- DONE: AC-4 — singular ownership and bounded implementation.
+  Presenter/lifecycle ownership controls pass, no compatibility or transport fiction was added, and the final 13-file/199-LOC amendment stays within the Captain-approved ceiling.
+- DONE: AC-5 — public capability and retained-input boundary.
+  Help/parser/contract agree on actor+reason and no caller-controlled provenance; the preflight rejects stale `--directive` exposure and names refresh/fresh-build remediation.
+- DONE: Run required deterministic repository gates.
+  Focused suites, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, live-tag compile-only, pinned `mkdocs build --strict`, and `git diff --check` passed locally; exact-tip CI offline/docs/install jobs also passed.
+- DONE: Preserve advisory Rounds 23, 24, and 25 and their binding declines.
+  Durable round 25 points at Roborev 2231; no re-panel ran. Deferred risks remain later-turn conn behavior, reason-schema expansion, fixed ask vocabulary, unreleased prototype compatibility, actor-error ordering, serializer indentation, and alternate producer/report shapes, promoted only by their recorded supported-path triggers.
+- FAILED: Validation recommendation.
+  **REJECTED — AC-3 evidence defect, Material.** The smallest failing boundary is the canonical Pi job invocation: it must execute and retain `TestLivePiRecordedGateLifecycle` at `537f443e`; a coverage declaration and unrelated front-door smoke cannot establish the required gate lifecycle.
+
+### Summary
+
+Exact tip `537f443e` passes all deterministic, race, docs, install, lifecycle,
+authority, no-conn, refusal, ordering, and deletion-sensitive controls, and PR
+#565 now points to that tip. Validation nevertheless recommends **REJECTED**
+because the approved canonical Pi lane does not run the AC-3 recorded-gate
+journey it claims as live coverage; pending or red Claude/Codex work is not
+counted green. Checklist accounting is **8 DONE, 3 FAILED, 0 SKIPPED**.
