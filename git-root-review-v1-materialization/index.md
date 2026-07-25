@@ -897,3 +897,254 @@ Cycle 2 preserves the closed resolved-source design but gives it one real caller
 one existing recorder rendezvous. It also replaces impossible universal cleanup and
 literal-control rendering claims with explicit ownership, recoverable hard-crash
 residue, no invented resume, and lossless terminal-safe presentation.
+
+## Ideation correction: validator and frozen authority (cycle 3)
+
+This section supersedes only cycle 2's allocation order, materializer argv, validator
+assumption, per-repository estimates, and affected AC/E2E cases. The approved
+agent-facing `fo-gate-lifecycle → subspace:r → fixed entry → Spacedock → supervised
+Subspace → gate record` rendezvous, fixed `ROOM/provider` recorder location, closed
+manifest, unchanged canonical Briefing, exact/lossless summary display, cleanup and
+hard-kill honesty, no q0, and no stored association remain unchanged.
+
+### Two baseline omissions
+
+At Subspace `9e218f00a565e8353adbc834619140f1770783ba`,
+`plugins/subspace/skills/r/scripts/validate-one-file-result` authenticates the
+supervisor's `argv.json` digest and then requires exactly this nine-element child argv:
+
+```text
+[SUBSPACE_TUI,
+ "--review-v1","--actor",ACTOR,"--approver",APPROVER,
+ "--provider-package",PROVIDER_ROOT,BRIEFING]
+```
+
+Cycle 2's resolved child has eleven elements because it inserts
+`"--resolved-sources", MANIFEST` before `BRIEFING`. The existing validator would reject
+that otherwise-correct Result after presentation. This is a canonical-validator
+contract change, not tolerance or an incidental test update.
+
+Cycle 2 also let `invocation-common` allocate `ROOM/provider` before
+`gate materialize`, while materialization received neither semantic identity. The
+request already freezes `actor` and `approver`; passing different values could occupy
+the one-shot provider location and probe or launch Subspace before Spacedock discovered
+the mismatch during recording. Path equality and later recorder refusal are not launch
+authority.
+
+### Revised materialization and allocation order
+
+The public `subspace:r` semantic request remains:
+
+```text
+--review-v1 --actor ACTOR --approver APPROVER \
+  --spacedock-entity ENTITY --spacedock-room ROOM \
+  --spacedock-workflow-dir WORKFLOW_DIR BRIEFING [TERMINAL]
+```
+
+For an s4-bound request, the First Officer copies `ACTOR` and `APPROVER` from the
+frozen `request.json`; it does not substitute the invoking session, reviewer, or
+Captain identity. The selected fixed entry passes those strings unchanged to
+`invocation-common`.
+
+Before resolving or capability-probing `subspace-tui`, running host preflight, creating
+diagnostics, allocating `ROOM/provider`, or opening a terminal, `invocation-common`
+resolves only `${SPACEDOCK_BIN:-spacedock}` and invokes exactly:
+
+```text
+${SPACEDOCK_BIN:-spacedock} gate materialize ENTITY \
+  --room ROOM --briefing BRIEFING \
+  --actor ACTOR --approver APPROVER \
+  --destination ROOM/provider/resolved-sources \
+  --workflow-dir WORKFLOW_DIR
+```
+
+Spacedock is the single pre-launch authority owner. `gate materialize` performs these
+steps in order:
+
+1. resolve the active entity through `WORKFLOW_DIR`, current definition/state roots,
+   and the current open gate attempt;
+2. require `ROOM` to equal the frozen room and require the canonical request digest,
+   gate id, attempt id, Briefing locator/id/digest, `actor`, and `approver` to match that
+   attempt exactly;
+3. require `BRIEFING` to be the frozen locator and exact bytes, require
+   `--destination` to equal the clean absolute
+   `ROOM/provider/resolved-sources`, and require both `ROOM/provider` and the
+   destination to be absent and non-symlink;
+4. resolve every local Git-root object, verify every raw SHA-256, and build the complete
+   closed manifest in memory or private error-clean staging, with no fetch or provider
+   process;
+5. only after all preceding checks succeed, atomically allocate mode-0700
+   `ROOM/provider` and `resolved-sources`, write mode-0600 payloads, and publish the
+   mode-0600 manifest last.
+
+Wrong actor and wrong approver therefore fail before Git reads, provider-package
+allocation, TUI resolution/capability probes, host preflight, or launch. The room
+remains the byte-identical s4 request + Briefing pair, provider launch count is zero,
+and `manifest=` is never printed.
+
+On successful materialization, package ownership transfers to the Subspace fixed-entry
+lifecycle. `invocation-common` creates/stamps diagnostics, checks both literal TUI
+capabilities, performs host preflight, and launches the same supervised child. Any
+failure after that transfer retains `ROOM/provider` as **diagnostic/recovery evidence**,
+removes `resolved-sources` at the already-defined catchable ownership boundary, and
+does not call the package a supported retry. Ordinary request-less explicit Briefings
+keep the existing temporary allocator and nine-element validator mode.
+
+### Canonical validator extension
+
+`validate-one-file-result` retains its current ordinary interface and adds one
+unambiguous resolved profile:
+
+```text
+validate-one-file-result --review-v1 --resolved-sources MANIFEST \
+  BRIEFING BRIEFING_SHA256 ACTOR APPROVER \
+  RESULT LOG INVENTORY CHILD_EXIT CAPTURE
+```
+
+In that profile, `MANIFEST` must be the clean absolute
+`PROVIDER_ROOT/resolved-sources/resolved-sources.json` derived from `RESULT`; the
+resolved-source directory must already be absent at successful validation because the
+TUI/supervisor cleanup boundary has completed. The script verifies the existing
+`argvSha256`, then requires exactly this eleven-element child argv:
+
+```text
+[SUBSPACE_TUI,
+ "--review-v1","--actor",ACTOR,"--approver",APPROVER,
+ "--provider-package",PROVIDER_ROOT,
+ "--resolved-sources",MANIFEST,BRIEFING]
+```
+
+The ordinary `--review-v1 BRIEFING ...` mode continues to require the old exact
+nine-element argv. The modes do not infer from Briefing content or accept one another's
+shape. Both continue to verify exact Briefing bytes, Result/capture equality,
+inventory projection, log/Resolution authority, and provider output paths.
+
+`scripts/tests/subspace-r-provider-retained-delivery-test.sh` owns the behavioral
+exact-argv matrix: resolved mode accepts only the eleven-element array; deleting,
+duplicating, reordering, or changing either new element fails; an alternate manifest,
+an old nine-element array under resolved mode, and an eleven-element array under
+ordinary mode fail even with recomputed `argvSha256`. The positive case also proves
+`resolved-sources` is absent before validator invocation.
+`scripts/tests/subspace-r-contract-test.sh` pins the new private validator interface and
+requires `invocation-common` to choose it only for the Spacedock profile.
+The unrelated one-file matrix in
+`scripts/tests/subspace-tui-agent-contract-fixture-test.sh` remains unchanged.
+
+### Rebaselined expected surface
+
+The complete Spacedock surface, incremental after s4 design
+`b739a0165590f111dbb88082b374468aee5b5985`, is now:
+
+| File | Expected delta | Purpose |
+|---|---:|---|
+| `internal/cli/cli.go` | `+72/-8` | Route/document identity-bound `gate materialize` and its exact destination. |
+| `internal/cli/gate_test.go` | `+165/-0` | Stable argv/stdout plus wrong-actor/wrong-approver byte-clean CLI cases. |
+| `internal/gates/materialize.go` (new) | `+235/-0` | Frozen request authority, local resolution, closed manifest, and allocate-last publication. |
+| `internal/gates/materialize_test.go` (new) | `+350/-0` | Identity ordering, coverage, containment, allocation atomicity, and room immutability. |
+| `internal/gitsource/source.go` | `+58/-8` | Expose s4's verified local blob bytes without a second resolver. |
+| `internal/gitsource/source_test.go` | `+95/-0` | Moved-root, pruned/shallow, raw-SHA, and no-fetch controls. |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | `+42/-8` | Pin one semantic skill route and forbid direct binary composition. |
+| `skills/fo-gate-lifecycle/SKILL.md` | `+36/-14` | Pass the request-frozen actor/approver and retain record/validate continuation. |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | `+80/-8` | Normative identity-before-allocation and manifest lifecycle. |
+| `docs/site/reference/command-reference.md` | `+26/-4` | Exact command, authority, output, and failure semantics. |
+
+Spacedock baseline: **10 named files, +1,159/-50 = 1,209 changed LOC**. Tolerance is
+at most +2 genuinely new files and +20% changed LOC, hard cap **12 files / 1,451
+changed LOC**. Identity checks, package allocation, request parsing, or their tests
+cannot move to an unnamed file under tolerance.
+
+The complete Subspace surface is now:
+
+| File | Expected delta | Purpose |
+|---|---:|---|
+| `plugins/subspace/skills/r/SKILL.md` | `+58/-18` | Agent-facing Spacedock profile, frozen identity, permission text, and retention ownership. |
+| `plugins/subspace/skills/r/scripts/invocation-common` | `+185/-50` | Invoke Spacedock before provider effects, select validator mode, launch, and cleanup. |
+| `plugins/subspace/skills/r/scripts/validate-one-file-result` | `+72/-18` | Exact resolved manifest path and eleven-element child-argv authority. |
+| `scripts/tests/subspace-r-contract-test.sh` | `+45/-5` | Pin public grammar, both validator modes, capabilities, and one-entry ownership. |
+| `scripts/tests/subspace-r-provider-retained-delivery-test.sh` | `+245/-30` | Exact-argv mutations, identity preflight, retention, signal, and cleanup matrix. |
+| `scripts/tests/subspace-r-git-root-provider-e2e.sh` (new) | `+315/-0` | Real moved-root public entry plus wrong-identity zero-launch cases. |
+| `internal/reviewv1/model.go` | `+18/-4` | Verified in-memory Reference bytes; canonical summary extra data. |
+| `internal/reviewv1/loader.go` | `+32/-6` | Shared canonical validation for resolved input. |
+| `internal/reviewv1/resolved_sources.go` (new) | `+220/-0` | Closed manifest, coverage, containment, and digest checks. |
+| `internal/reviewv1/resolved_sources_test.go` (new) | `+325/-0` | Positive/negative fixture, adversarial tuples, controls, and cleanup. |
+| `internal/reviewv1/testdata/git-root-negative.json` (new) | `+25/-0` | Committed unresolved Artifact/Reference boundary. |
+| `internal/reviewv1/log.go` | `+25/-12` | Selector text uses verified in-memory Reference bytes. |
+| `cmd/subspace-tui/main.go` | `+48/-10` | Private manifest flag and literal resolved-source capability. |
+| `cmd/subspace-tui/profile_dispatch_test.go` | `+82/-0` | Capability and exact private TUI argv surface. |
+| `cmd/subspace-tui/provider_supervisor.go` | `+82/-16` | Validate cleanup child, forward signals, wait, delete, then publish exit. |
+| `cmd/subspace-tui/provider_supervisor_test.go` | `+145/-0` | Failure, signal, invalid root, exact-exit, and cleanup-order proof. |
+| `cmd/subspace-tui/v1_tui.go` | `+38/-8` | Resolved load and delete-before-TUI boundary. |
+| `cmd/subspace-tui/v1_sources.go` | `+62/-10` | Reference rendering and lossless control-safe Artifact summary. |
+| `cmd/subspace-tui/v1_sources_test.go` | `+115/-0` | Complete catalog and no synthesized/normalized summary. |
+| `cmd/subspace-tui/v1_review_chrome_labels_test.go` | `+92/-0` | Exact sentinel, safe controls, spacing, width, and title isolation. |
+| `cmd/subspace-tui/SPEC.md` | `+48/-8` | Private resolved-source, validator, and cleanup lifecycle. |
+| `docs/review-and-gate.md` | `+32/-4` | Public profile, summary display, recovery evidence, and recorder rendezvous. |
+
+Subspace baseline: **22 named files, +2,309/-199 = 2,508 changed LOC**. Tolerance is
+at most +2 genuinely new files and +20% changed LOC, hard cap **24 files / 3,010
+changed LOC**. The validator script and both exact-argv test owners are baseline work,
+not tolerance.
+
+### Revised acceptance and proof deltas
+
+**AC-1 (VALUE)** retains cycle 2's real public fixed-entry moved-root presentation and
+recording proof. It additionally requires canonical validator success through the
+resolved profile; substituting the old validator or nine-element argv makes the same
+E2E fail after presentation and before trusted delivery.
+
+**AC-2** retains diagnostic/recovery evidence and cleanup semantics. A failed package
+is never described as a retry surface. Wrong actor/approver allocate no package at all;
+post-materialization failures retain the fixed package but remove the payload child at
+the defined catchable boundary.
+
+**AC-3** retains canonical tuple, no-path/no-summary inventory, exact summary, and
+control-safe display proof. Validator mode adds no manifest content or path to Result,
+inventory, association, or canonical Briefing.
+
+**AC-4 — Frozen semantic identity gates every provider effect.** Wrong actor and wrong
+approver independently fail inside Spacedock before Git reads, `ROOM/provider`
+allocation, TUI resolution/capability probe, host preflight, supervisor/TUI launch, or
+gate mutation. *Test:* focused Spacedock cases hash the two-file room and count Git
+calls; public fixed-entry cases count materializer, capability, host, supervisor, and
+TUI calls and assert only one rejecting Spacedock invocation. Reordering identity
+validation after allocation or dropping either comparison makes its case fail.
+
+**AC-5** retains cycle 2's explicit cleanup/hard-kill/no-current-resume boundaries and
+adds exact validator-mode separation. Recomputed argv digests cannot make an alternate
+flag, path, count, or ordering canonical.
+
+The real E2E still enters through one `review-tmux` fixed entry, not manual primitive
+composition. Before its positive moved-root run, it changes only `ACTOR` and only
+`APPROVER` in two separate public invocations and requires nonzero status, byte-identical
+request/Briefing, absent `ROOM/provider`, zero TUI capability/host/supervisor launches,
+and no gate/status mutation. The positive run then requires the eleven-element
+resolved child argv, successful canonical validator delivery, absent payload child,
+exact old Artifact/Reference bytes and summary sentinel, retained inventory, and real
+`gate record --room`/`gate validate`.
+
+The focused Subspace proof mutates all eleven argv positions, the manifest spelling,
+mode, and digest. The focused Spacedock proof mutates request actor/approver and semantic
+argv actor/approver independently. Repository gates and the negative unresolved fixture
+remain as specified in cycle 2.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Add the canonical validator and exact resolved-source child argv to the named Subspace contract.
+  `validate-one-file-result` now has an explicit resolved profile requiring the fixed manifest path and eleven-element argv; the provider-retained and contract tests reject cross-mode, missing, duplicate, reordered, alternate-path, and recomputed-digest variants.
+- DONE: Bind actor and approver to the frozen request before every provider side effect.
+  The revised materializer receives both identities, validates request/gate/attempt/Briefing/identity/destination and all Git bytes, then allocates `ROOM/provider`; separate wrong-actor and wrong-approver cases require an unchanged two-file room and zero provider calls.
+- DONE: Preserve the approved rendezvous, evidence lifecycle, summary, and canonical source boundaries.
+  Public `subspace:r`/fixed-entry E2E, `ROOM/provider` recording, catchable payload cleanup, honest hard-kill residue, diagnostic/recovery wording, exact summary escaping, closed manifest, unchanged Briefing, no q0, and no stored association remain unchanged.
+- DONE: Rebaseline every known implementation and proof file after the two corrections.
+  Spacedock is 10 named files/1,209 changed LOC; Subspace is 22 named files/2,508 changed LOC, including the validator itself and both exact-argv test owners outside tolerance.
+- DONE: Run the repository-required deterministic gates against the unchanged implementation baseline.
+  `gofmt -w ./cmd ./internal` produced no Go diff, and `go test ./...` plus `go test ./... -race` completed green; any current CLI, recorder, status, or skill-integration regression would fail its package lane.
+- SKIPPED: Implement code, invoke a live approval provider, record a decision, mutate gate/status frontmatter, or dispatch another worker.
+  Cycle 3 changes only the ideation entity body and requires another independent staff review.
+
+### Summary
+
+Cycle 3 closes the last two pre-implementation gaps without changing the selected
+architecture. Frozen semantic identity now precedes package allocation and every
+provider action, and trusted delivery recognizes only the exact resolved-source child
+argv selected by the fixed entry.
