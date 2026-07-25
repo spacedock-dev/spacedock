@@ -82,12 +82,15 @@ gates:
                 blockers: []
 ---
 
-## Cycle 10 governing design
+## Cycle 11 governing design
 
-This section supersedes all cycles 1–9 design, surface table, acceptance criterion,
-test plan, documentation proposal, and ownership statement retained later in this file.
-Those sections remain only as the correction record. The feedback history and prior
-stage reports remain authoritative history, but they do not authorize implementation.
+This section carries forward the independently approved Cycle 10 room, schema,
+Git-root, summary, and association design with the Cycle 11 planning and current-main
+owner corrections. It supersedes all cycles 1–10 design, surface table, acceptance
+criterion, test plan, documentation proposal, and ownership statement retained later
+in this file. Those sections remain only as the correction record. The feedback
+history and prior stage reports remain authoritative history, but they do not
+authorize implementation.
 
 Make gate preparation one mechanical, provider-neutral operation. The First Officer
 supplies a question, one Markdown gate-review Artifact, its concise summary, and any
@@ -144,19 +147,21 @@ to future provider presentation.
 
 | Boundary | Single owner | Required behavior |
 |---|---|---|
-| Question, primary summary, and selected files | First Officer via `fo-gate-lifecycle` | Author human judgment, commit newly authored selections, call `gate prepare`, and never author JSON or reconstruct ids/paths. |
+| Lifecycle capability preflight | First Officer via `fo-gate-lifecycle` | Resolve the launcher once and run exactly one fresh `gate --help`; require `prepare`, `record`, `validate`, `eligibility`, `consume`, and every flag used by prepare: `--question`, `--artifact`, `--summary`, `--reference`, and `--workflow-dir`. Stale help halts before source commits, preparation, or state effects. |
+| Question, primary summary, and selected files | First Officer via `fo-gate-lifecycle` | After the capability preflight, author human judgment, commit newly authored selections, call `gate prepare`, and never author JSON or reconstruct ids/paths. |
 | Entity resolution and room placement | `status.ResolveActivePath` plus `internal/gates` | Resolve the canonical folder/flat entity once and derive its collision-free room under lock. |
 | Git source identity and bytes | new `internal/gitsource` package | Classify `main`/`state`, address `<full-commit>:<repo-path>`, compare selected bytes, and reopen only local objects. |
 | Canonical request, Briefing, ids, digests, and binding | `internal/gates` | Publish the two metadata files, validate them through production readers, and bind the attempt atomically on handled outcomes. |
 | Flat entity commit/archive durability | existing state/status machinery | Commit and archive the flat Markdown plus its exact companion directory without sweeping siblings. |
-| Chat versus override routing | `present-gate` | Render chat by default; an override exposes only `/subspace:r gate <room>`. |
-| Git-root materialization and provider invocation | `git-root-review-v1-materialization` (`rqh46ey33aqq4rt72b4w1m2q`) | Derive every internal argument from the bound room, resolve sources, invoke Subspace, and retain provider evidence. |
+| Chat versus override routing | `present-gate` | Render chat when no override is selected. After prepare succeeds and the bound room is committed, a selected override performs exactly `/subspace:r gate <room>` with the emitted room and performs no provider probe or fallback selection. |
+| Git-root materialization and provider invocation | `git-root-review-v1-materialization` (`rqh46ey33aqq4rt72b4w1m2q`) | Its fixed room-only entry derives every internal argument, owns provider discovery/capability/failure semantics, resolves sources, invokes Subspace, and retains provider evidence. |
 | Provider Result recording | existing `gate record --room` | Re-read the room authority, derive association in memory, and pin exact provider Result/inventory bytes. |
 
-There is no hybrid lifecycle owner. s4 changes `fo-gate-lifecycle` for preparation and
-`present-gate` only where its current-main channel contract must stop naming
-`briefing.json` or caller-reconstructed authority. s4 does not launch, probe, fake, or
-otherwise invoke a provider.
+There is no hybrid lifecycle owner. s4 changes `fo-gate-lifecycle` for capability
+preflight and preparation, and `present-gate` only where its current-main channel
+contract must stop naming `briefing.json`, probing a selected provider, selecting a
+probe-driven chat fallback, or reconstructing authority. s4 does not launch, probe,
+fake, or otherwise invoke a provider.
 
 ### Agent-facing command
 
@@ -166,6 +171,12 @@ The new command is:
 spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md \
   --summary TEXT [--reference FILE ...] [--workflow-dir DIR]
 ```
+
+Before committing a newly authored selection or causing any preparation/state effect,
+the First Officer performs the one fresh help preflight above. Missing `prepare` or
+any of `--question`, `--artifact`, `--summary`, `--reference`, or `--workflow-dir` is
+a stale launcher failure, not permission to continue with an older command or manual
+frontmatter.
 
 `--artifact`, `--question`, and `--summary` are each required exactly once.
 `--reference` may repeat and preserves caller order. The Artifact filename ends in
@@ -326,7 +337,7 @@ uses a remote.
 The prior independently moved main/state spike remains the risk proof: after both
 worktrees moved and later commits removed the current paths, `git show
 <commit>:<path>` reopened the exact pinned bytes while the old `..` locator failed.
-No new spike is needed for Cycle 10: current entity discovery already distinguishes
+No new spike is needed for Cycle 11: current entity discovery already distinguishes
 flat `<slug>.md` from folder `<slug>/index.md`, and the implementation's first flat
 test owns the new commit/archive behavior. The future room-to-provider consumer is not
 an s4 premise; rqh owns and must exercise it end to end.
@@ -401,10 +412,10 @@ resolver. None appends `briefing.json`.
 
 ### JSON authority and derived association
 
-One recursive token-stream reader rejects duplicate object member names before typed
-decode or canonicalization in the request, located Briefing, Result, presented
-inventory, and future resolved-source manifest. Detection covers every object depth,
-including extra fields; Go's last-member-wins behavior is never authority.
+One s4 recursive token-stream reader rejects duplicate object member names before
+typed decode or canonicalization in the request, located Briefing, Result, and
+presented inventory. Detection covers every object depth, including extra fields;
+Go's last-member-wins behavior is never authority.
 
 Provider recording derives one in-memory `spacedock-result-association` from the exact
 request, located canonical Briefing, Result, and presented inventory. It writes no
@@ -430,6 +441,12 @@ arbitrary directory is insufficient: the derived entity, current gate attempt, r
 reference, request digest, Briefing locator/id/digest, actor, and approver must all
 match before provider side effects.
 
+The First Officer reaches this handoff only after successful preparation and the
+state commit that durably binds the emitted room. It invokes the exact command once,
+reconstructs no coordinate, and performs no availability, version, capability, or
+fallback probe. The rqh fixed entry owns provider discovery, capability refusal,
+launch failure, and retained-failure semantics after it receives the room.
+
 rqh's closed resolved-source manifest must bind the canonical Briefing as well as its
 source tuples:
 
@@ -443,11 +460,12 @@ source tuples:
 That pair is copied from validated room authority, then independently checked against
 the unchanged canonical Briefing bytes. A manifest with correct source items but a
 different Briefing id or digest fails before presentation. The manifest carries no
-summary; Subspace reads the exact summary from the canonical Briefing. rqh owns all
-materialization, capability probing, provider allocation/invocation, cleanup,
-terminal-safe display, retained evidence, and the real moved-root presentation E2E.
-s4 owns no provider call, fake, selected-provider success lane, or copied provider
-fixture.
+summary; Subspace reads the exact summary from the canonical Briefing. rqh's closed
+manifest parser rejects duplicate object member names recursively before display.
+rqh owns all materialization, capability probing, provider allocation/invocation,
+cleanup, terminal-safe display, retained evidence, and the real moved-root
+presentation E2E. s4 owns no provider call, fake, selected-provider success lane, or
+copied provider fixture.
 
 ### Mechanism-to-value ledger
 
@@ -463,16 +481,17 @@ fixture.
 | Room-only `/subspace:r gate` and Briefing-bound manifest | AC-4 | Let the model repeat entity/workflow/identity argv | Reconstructed values can drift from the one frozen request authority. |
 | In-memory association and four existing pins | AC-5 | Persist `association.json` | Adds a second durable truth that can diverge. |
 
-## Expected surface and tolerance
+## Advisory expected surface and semantic reconciliation
 
-The estimate is against current `main` `4ff98d8c`, not the pre-rebase 6y branch. The
-smallest coherent implementation is **26 files, approximately +1,717/-187 lines =
-1,904 changed LOC**:
+The named table is an advisory planning estimate against current `main` `4ff98d8c`,
+not the pre-rebase 6y branch. It currently names **26 files, approximately
++1,717/-187 lines = 1,904 changed LOC**, but neither the per-file deltas nor those
+totals authorize, reject, or reset an implementation:
 
 | File | Expected delta | Purpose |
 |---|---:|---|
 | `internal/cli/cli.go` | `+80/-8` | Route/help/validate `gate prepare`, exact flag cardinality, path normalization, and four-line output. |
-| `internal/cli/gate_test.go` | `+175/-18` | Folder/flat CLI, exact summary/stdout/errors, arbitrary locator, and byte-clean command cases. |
+| `internal/cli/gate_test.go` | `+175/-18` | Folder/flat CLI, exact summary/stdout/errors, arbitrary locator, byte-clean command cases, and the complete `gate --help` prepare surface. |
 | `internal/cli/state_sync.go` | `+34/-10` | Treat flat Markdown plus its exact companion directory as one literal commit unit. |
 | `internal/cli/state_commit_test.go` | `+90/-4` | Prove flat room inclusion, deletions, sibling isolation, and replay. |
 | `internal/gates/prepare.go` (new) | `+230/-0` | Derived layouts/ids/media, request/Briefing construction, validation, publication, and bind. |
@@ -489,27 +508,34 @@ smallest coherent implementation is **26 files, approximately +1,717/-187 lines 
 | `internal/status/native_mutation_test.go` | `+50/-4` | Active/archive flat-room path and sibling controls. |
 | `internal/status/merge.go` | `+40/-16` | Snapshot, rollback, stage, and commit both flat archive paths. |
 | `internal/status/merge_guard_test.go` | `+75/-4` | Finalize/rollback/durability proof for flat rooms. |
-| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+28/-14` | Reuse the real no-override journey with prepare and two-file durable state; add no provider lane. |
-| `internal/contractlint/fo_function_reference_invariant_test.go` | `+20/-6` | Pin current-main owner split, room-only handoff, and forbidden provider composition. |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+28/-14` | Reuse the real journey with one fresh complete help preflight, prepare, bind commit, and presentation; stale prepare help halts before effects and an agent-run provider probe is forbidden without adding a provider lane. |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | `+20/-6` | Pin the complete preflight, post-bind room-only handoff, current-main owner split, and forbidden provider probe/composition. |
 | `docs/specs/gate-resolution-frontmatter-contract.md` | `+90/-26` | Normative prepare/layout/locator/summary/two-state/provider-boundary contract. |
-| `docs/site/reference/command-reference.md` | `+22/-5` | New command, room layouts, exact output, arbitrary Briefing names, and local-object failures. |
+| `docs/site/reference/command-reference.md` | `+22/-5` | Complete fresh-help preflight, new command, room layouts, exact output, arbitrary Briefing names, and local-object failures. |
 | `docs/site/reference/frontmatter-contract.md` | `+3/-3` | Remove the `briefing.json` canonical-basename claim. |
 | `docs/site/concepts/gates-and-decisions.md` | `+14/-5` | Mechanical prepare, exact summary, recorder-ready state, and room-only handoff. |
-| `skills/fo-gate-lifecycle/SKILL.md` | `+26/-12` | Current-main preparation owner, source commit, exact summary, bind commit, and room forwarding. |
-| `skills/present-gate/SKILL.md` | `+10/-5` | Preserve `/subspace:r gate <room>` and prohibit caller-reconstructed authority. |
+| `skills/fo-gate-lifecycle/SKILL.md` | `+26/-12` | Require complete fresh help before effects; own source commit, exact-summary preparation, bind commit, and room forwarding. |
+| `skills/present-gate/SKILL.md` | `+10/-5` | Replace provider probe/fallback with the exact post-bind `/subspace:r gate <room>` handoff and prohibit caller-reconstructed authority. |
 
-Tolerance is **+2 files and +20% changed LOC**, hard cap **28 files / 2,285 changed
-LOC**, only for a focused fixture/helper split needed by the named behavior. The
-additional current-main surface over Cycle 9 is not hidden expansion: six files are the
-Captain-required flat commit/archive durability seam and `present-gate` is the actual
-landed override owner the stale table omitted. Removing ordinary-ref/reflog/prune lanes,
-digest-prefix identity machinery, and selected-provider fixtures makes the resolver and
-test allocation smaller.
+Before the first product edit, the implementation worker must declare the intended
+paths, expected additions/deletions, and every known deviation from this table. That
+declaration makes review drift visible; it is not a numerical budget or permission to
+expand scope. Before implementation review, the worker must reconcile the path-scoped
+`git diff --stat` and `git diff --numstat` against the declaration, explaining every
+added, omitted, renamed, or materially different path in semantic owner/behavior
+terms. The reviewer judges those explanations against this design and AC coverage,
+never against a total or percentage.
 
-A request schema field beyond the locator, dependency, compatibility parser, source
-cache/copy, remote acquisition, generic URI registry, provider executable/probe,
-selected-provider harness, stored association, or caller-supplied provider authority
-requires a new design gate. rqh's manifest and Subspace files are not s4 surface.
+No test, fixture, lint, worker instruction, or gate may assert aggregate file totals,
+aggregate changed-LOC totals, percentage variance, or any other implementation-surface
+count as a pass/fail condition. A numerical deviation alone neither authorizes
+expansion nor returns the work to ideation.
+
+Only semantic expansion resets the design: another public argument, caller-selected
+authority, a third authoritative prepared metadata file, copied sources, remote
+acquisition, stored association, compatibility behavior, weaker Briefing binding, or
+a changed provider/validator owner. rqh's manifest and Subspace files remain outside
+s4 surface.
 
 ## Acceptance criteria
 
@@ -551,16 +577,25 @@ through close and eligibility, inject normalization-sensitive summary values and
 last-wins duplicates, and assert whole-tree bytes plus lock absence on failure.
 
 **AC-4 — The only future provider-facing authority is the prepared room.** Current-main
-`fo-gate-lifecycle` prepares and commits; `present-gate` keeps chat as default and names
-only `/subspace:r gate <room>` for an override. No s4 Go code or skill constructs a
+`fo-gate-lifecycle` first runs one fresh help preflight requiring `prepare` and all
+prepare flags, then prepares and commits. Missing help capability fails before source
+commit, preparation, or state effects. `present-gate` keeps chat as the unselected
+default; after successful prepare and bind commit, a selected override performs exactly
+`/subspace:r gate <room>`. It neither probes a provider nor selects a fallback, and it
+reconstructs no room coordinate or authority. No s4 Go code or skill constructs a
 provider executable, probe, materializer argv, or caller-reconstructed entity/workflow/
-Briefing/actor/approver/destination. The rqh manifest must bind the exact canonical
-Briefing id plus canonical SHA-256 digest, preserve the canonical Briefing unchanged,
-exclude summary duplication, and render the exact string through a reversible
-terminal-safe view. *Test:* the existing no-override host journey observes prepare
-before bind commit and chat presentation, while structural process checks require zero
-provider invocations. rqh's separate public-entry E2E must fail when only its manifest
-Briefing id or digest changes or when its caller surface adds any authority field.
+Briefing/actor/approver/destination. The rqh fixed entry owns provider capability and
+failure behavior. Its manifest must bind the exact canonical Briefing id plus canonical
+SHA-256 digest, preserve the canonical Briefing unchanged, exclude summary duplication,
+reject manifest duplicates recursively, and render the exact string through a
+reversible terminal-safe view. *Test:* extend the existing contract and lifecycle
+fixtures so deleting `prepare` or any prepare flag from fresh help halts before every
+source/preparation/state effect, and adding an agent-run availability/version/capability
+probe fails. The no-override host journey observes prepare before bind commit and chat
+presentation; the selected-override contract observes one exact handoff only after the
+bind commit, without adding a provider lane. rqh's separate public-entry E2E must fail
+when only its manifest Briefing id or digest changes, when its manifest has a recursive
+duplicate, or when its caller surface adds any authority field.
 
 **AC-5 — Recording derives one association from four recomputed pins and permits
 provider-owned evidence only after preparation.** A request-backed room records fixed
@@ -577,7 +612,10 @@ the post-provider tree as a two-file invariant fails.
 
 1. **Baseline and first reds:** pin `4ff98d8c`; add folder/flat `gate prepare` CLI reds,
    the arbitrary `decision-material.data` locator differential, exact/repeated/invalid
-   summary cases, and the flat state-commit/archive tests before implementation.
+   summary cases, complete `gate --help` command/flag coverage, and the flat
+   state-commit/archive tests before implementation. Extend the existing lifecycle
+   preflight fixture first: removing `prepare` or any prepare flag from fresh help must
+   halt before source commits, preparation, or state effects.
 2. **Local objects:** implement the closed Git-root package against real independent
    main/state repositories. Prove linked and detached classification, moved roots,
    later worktree deletion, canonical escaping, full object ids, raw SHA, missing
@@ -593,18 +631,26 @@ the post-provider tree as a two-file invariant fails.
    dirt and prove the archived room reference still resolves. Folder behavior remains
    the unchanged control.
 5. **Current-main lifecycle:** update the existing shared recorded-gate observation in
-   place to prepare/commit/present/record/consume. Run its existing Claude, Codex, and
-   Pi lanes at final tip only for the no-override behavior s4 changes. Add no provider
-   lane, fake, new host, or prose-token proof.
+   place to one complete fresh help preflight, source commit, prepare, bind commit,
+   present, record, and consume. Run its existing Claude, Codex, and Pi lanes at final
+   tip for the no-override behavior s4 changes. Extend the existing contract fixture
+   with the selected-override sequence: after the bind commit it emits exactly
+   `/subspace:r gate <room>`, and a mutation that adds any agent-run availability,
+   version, or capability probe fails. Add no provider lane, fake, new host, or
+   prose-token proof.
 6. **Repository gates:** `gofmt -w ./cmd ./internal`, `go test ./...`,
    `go test ./... -race`, strict docs build, and `git diff --check`. Verify no s4 Go
    dependency or process path names Subspace; only the local Git helper executes a
    process and its argv begins with literal `git` and contains no acquisition command.
+   Verify no test, lint, or gate treats aggregate file/LOC totals or percentage variance
+   as pass/fail.
 7. **Independent re-review:** move both roots again, use a detached source commit,
    inject duplicate authority members, test flat archive rollback, and try to find a
-   caller-reconstructed provider field. Bind fresh ideation attempt 3 only after this
-   corrected design and its staff review are committed. The 0.27 pre-release remains
-   separately blocked on rqh's real room-only Subspace E2E.
+   caller-reconstructed provider field. Reconcile path-scoped `git diff --stat` and
+   `git diff --numstat` semantically against the worker's pre-edit declaration; totals
+   carry no verdict. Bind fresh ideation attempt 3 only after this corrected design and
+   its staff review are committed. The 0.27 pre-release remains separately blocked on
+   rqh's real room-only Subspace E2E.
 
 ## Documentation change proposal
 
@@ -613,6 +659,9 @@ Implementation applies these concrete semantics:
 ```diff
 --- docs/site/reference/command-reference.md
 +++ docs/site/reference/command-reference.md
+@@
+-For source-checkout or retained development launchers ... It must list `record`, `validate`, `eligibility`, `consume`, and the semantic record flags.
++For source-checkout or retained development launchers, immediately before every gate lifecycle resolve the launcher and run `spacedock gate --help` exactly once. It must list `prepare`, `record`, `validate`, `eligibility`, `consume`, and the prepare flags `--question`, `--artifact`, `--summary`, `--reference`, and `--workflow-dir`, as well as the existing semantic record flags. Missing capability halts before committing selected sources, preparing a room, or mutating state.
 @@
 -| `spacedock gate record <entity> --briefing PATH/briefing.json` | Bind a complete retained package manifest whose basename is exactly `briefing.json`. |
 +| `spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...]` | Derive and bind a recorder-ready room. Folder `<slug>/index.md` and flat `<slug>.md` entities both use `<slug>/review/<stage>/briefing-N`. Immediately after preparation the room contains exactly `request.json` plus its located canonical Briefing and no copied sources. Selected files are exact local `git-root://<main|state>/<full-commit>/<path>` objects with raw SHA-256 revisions; no containing ref, fetch, or worktree fallback is required. Success prints `room`, `briefing`, `digest`, and `state`. |
@@ -627,14 +676,18 @@ Implementation applies these concrete semantics:
 --- skills/fo-gate-lifecycle/SKILL.md
 +++ skills/fo-gate-lifecycle/SKILL.md
 @@
+-**Capability preflight.** Per lifecycle ... Require `record`, `validate`, `eligibility`, `consume`, ...
++**Capability preflight.** Per lifecycle, resolve `${SPACEDOCK_BIN:-spacedock}` and run exactly one fresh `gate --help`. Require `prepare`, `record`, `validate`, `eligibility`, `consume`, `--question`, `--artifact`, `--summary`, `--reference`, `--workflow-dir`, and the existing semantic record flags. Missing capability halts before selected-source commits, preparation, or state mutation.
+@@
 -**Retain and bind.** Assemble `ROOM/briefing.json` ... then run `gate record ENTITY --briefing BRIEFING`.
 +**Prepare and bind.** Select one Markdown gate-review Artifact and any References, author one concise exact primary-Artifact summary, commit every newly authored selection in its owning main/state history, then run `${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR`. Require the four output lines and `state=open`; commit the entity's folder/flat room unit before presentation. Supply judgment and paths, never JSON or derived authority.
 
 --- skills/present-gate/SKILL.md
 +++ skills/present-gate/SKILL.md
 @@
--Invoke a Subspace override as `/subspace:r gate <gate-room>`.
-+Invoke a Subspace override only as `/subspace:r gate <gate-room>`, using the exact `room=` value returned by preparation. Do not pass or reconstruct entity, workflow, Briefing, actor, approver, destination, provider, manifest, or output fields; the bound room is the sole authority input.
+-Probe before side effects ... If the presenter is missing or mismatched ... use chat.
+-Pass one prepared room ... Invoke a Subspace override as `/subspace:r gate <gate-room>`.
++For a selected override, wait until `gate prepare` succeeds and `«state.commit»` commits the bound room, then invoke exactly `/subspace:r gate <gate-room>` once using the emitted `room=` value. Do not probe provider availability, version, or capability; do not select a probe-driven chat fallback; and do not pass or reconstruct entity, workflow, Briefing, actor, approver, destination, provider, manifest, or output fields. The rqh fixed entry owns provider capability and failure behavior from the room-only handoff.
 ```
 
 The normative spec adds the exact folder/flat commit/archive contract, prepare-time
@@ -1494,6 +1547,12 @@ including its two leading/trailing spaces and non-ASCII code points.
   the invented ordinary-ref retention policy, align rq on room-only invocation and
   full Briefing-digest verification, and recompute the smallest owner/file/LOC surface.
 
+- Cycle 11: REVISE — independent staff review at `1132eecb`; surface state-only review,
+  0 product files/0 LOC vs advisory estimate 26 files/1,904 LOC (0%); AC unchanged —
+  remove numerical surface authority, require complete fresh prepare help before
+  effects, replace the agent-owned provider probe/fallback with the exact post-bind
+  room handoff, and keep manifest duplicate parsing with rq.
+
 ## Stage Report: ideation
 
 - DONE: Reproduce xb's arbitrary-Briefing-basename failure with the smallest valid prepared room, then identify the minimum post-em Spacedock seam that makes it pass.
@@ -1684,3 +1743,21 @@ Cycle 10 replaces the stale pre-rebase hybrid with one current-main, room-author
 contract. It makes flat rooms durably committable/archivable, removes the invented ref
 policy, narrows “two files” to preparation, and hands rqh one room-only interface with
 canonical Briefing identity and digest intact.
+
+## Stage Report: ideation (cycle 11)
+
+- DONE: Remove numerical implementation authority while retaining the named table as an advisory estimate.
+  The design has no file/LOC/percentage tolerance or cap. The implementation worker instead declares intended paths and deltas before editing, reconciles path-scoped `git diff --stat` and `git diff --numstat` semantically before review, and no test, lint, worker instruction, or gate may decide by aggregate totals.
+- DONE: Correct the current-main capability and provider-handoff owner map.
+  One fresh `fo-gate-lifecycle` help preflight requires `prepare` and every prepare flag before source, preparation, or state effects; after preparation and the bind commit, `present-gate` emits exactly `/subspace:r gate <room>` without reconstructing coordinates, probing a provider, or choosing a fallback. The existing command, contract, and lifecycle fixture plans fail on stale help or an agent-run probe (AC-4).
+- DONE: Keep recursive duplicate parsing with the document owner.
+  s4's shared reader covers only request, located Briefing, Result, and presented inventory; rq's closed manifest parser independently rejects recursive duplicates before display (AC-3, AC-4, AC-5).
+- SKIPPED: Implement product changes, bind ideation attempt 3, mutate gate frontmatter, invoke a provider, or edit rq.
+  Cycle 11 changes only s4's governing ideation body and leaves the approved room/schema/Git-root/summary/association design intact.
+
+### Summary
+
+Cycle 11 removes numerical planning gates and aligns the current-main skills with the
+actual room-only ownership boundary. The approved preparation contract is unchanged;
+stale launcher help now fails before effects, and provider capability/failure remains
+entirely behind rq's fixed post-bind room handoff.
