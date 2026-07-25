@@ -2052,3 +2052,48 @@ one fresh help attempt and excludes every Agent probe and semantic chat presenta
 Final correction revalidation closes the Agent/chat position gaps and confirms the
 two-file correction stayed evidence-only. The gate remains REJECTED because the AC-4
 oracle cannot accept its own valid live trace; no product-behavior defect was found.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Count exactly one terminal exit record per gate-help attempt, with all exit statuses contributing to attempts and only exit=0 contributing to success.
+  Evidence: `countCommands` ignores `begin` rows, counts every `exit=*` help row,
+  and counts only `exit=0` as successful.
+  Falsifier: the exact real-shim positive fails on two attempts, or a failed-only
+  help trace satisfies the success requirement.
+- DONE: Give the unit positive and failed/duplicate help controls the real shim begin-plus-exit log shape and prove one valid preflight passes while extra failed/successful attempts fail.
+  Evidence: `shimLog` emits paired `begin` and `exit=*` rows; the valid preflight
+  passes, while missing, failed-only, failed-before-success, and duplicate-success
+  controls fail.
+  Falsifier: counting `begin` rows rejects the positive, or ignoring failed exits
+  accepts the failed-before-success control.
+- DONE: Confirm Agent/chat trajectory mutants remain closed and the diff changes only the existing observer/unit proof boundary.
+  Evidence: all pre/post Agent and semantic-chat controls reject; `2d7ee074..5484cee6`
+  changes only the observer and unit matrix, at `+15/-7`.
+  Falsifier: any Agent/chat position passes, or the correction changes product,
+  prompt, skill, or runtime-harness behavior.
+- DONE: Run focused/full/race/format/diff checks and final Roborev, update the durable correction report, and stop.
+  Evidence: focused tests, `go test ./...`, `go test ./... -race`,
+  `gofmt -w ./cmd ./internal`, and `git diff --check` pass at `5484cee6`;
+  branch-final Roborev job 2454 completed.
+  Falsifier: any required check fails or final review exposes a defect introduced
+  by the two-file terminal-record correction.
+
+### Runtime and final-review triage
+
+The live replay stopped before product work because Claude OAuth had expired and
+could not refresh. Its artifacts are under
+`/tmp/spacedock-s4-terminal-help-records/claude-shared-scenarios/selected-gate-override`;
+the deterministic unit uses the exact observed shim row shape.
+
+Roborev found no Critical or High issue. Its one Medium note asks the pre-existing
+handoff oracle to extract the emitted room and reject other provider-namespace Skill
+calls. Blame places that assertion at `701aba71`, outside this cycle's terminal-help
+and Agent/chat correction; promote when the Captain opens the room-identity oracle
+boundary. The remaining state-layout, object-retention, republish, compatibility,
+coverage, and usage notes repeat earlier deferred risks or polish.
+
+### Summary
+
+Commit `5484cee6` closes the last rejected AC-4 evidence defect: one real-shim-shaped
+help preflight passes, every extra terminal attempt fails, and Agent/chat controls
+remain closed without product, prompt, skill, or live-harness changes.
