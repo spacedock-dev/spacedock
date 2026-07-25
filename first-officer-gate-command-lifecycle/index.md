@@ -361,14 +361,14 @@ gates:
                 target-stage: implementation
                 state: pending
 review-round:
-    id: round:6yyyyemkqwsett3g1c991w9f:implementation:25
+    id: round:6yyyyemkqwsett3g1c991w9f:implementation:26
     stage: implementation
-    cycle: 25
+    cycle: 26
     briefing:
-        id: briefing:first-officer-gate-command-lifecycle:implementation:roborev-2231
-        digest: sha256:e5267105d780272b63a18fc1a2a115785699cac5e60fffb26280b0f0294b63ba
+        id: briefing:first-officer-gate-command-lifecycle:implementation:validation-cycle-33
+        digest: sha256:7bf8a834c70d964f7aef8f503bbcbd102e68dcf5d2ff1d7a1c249de65161e80a
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-25
+        room-ref: ./review/implementation/round-26
 mod-block:
 pr: "#565"
 ---
