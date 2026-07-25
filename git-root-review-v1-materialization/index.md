@@ -469,6 +469,16 @@ precondition assertion to fail.
 - NLP summary generation, Reference summaries, authority capture, source mutation,
   suggestion application, or broader Review v1 schema work.
 
+### Feedback Cycles
+
+- Cycle 4: REVISE — Subspace FO + independent staff review; surface state-only review,
+  0 product files/0 LOC vs estimate 32 files/3,717 LOC (0%); AC unchanged — make
+  `/subspace:r gate <room>` the sole public entry, derive entity/workflow/authority/
+  Briefing/package mechanics from the bound room, bind both canonical Briefing id and
+  `sha256:` digest in the resolved-source manifest before display, preserve separate
+  in-memory Artifact/Reference bytes and exact control-safe summary rendering, and
+  rebaseline both repositories after corrected s4 lands.
+
 ## Stage Report: ideation
 
 - DONE: Exercise the actual current Spacedock Git-root Briefing to Subspace package-mode boundary and preserve the concrete failure that separates local object resolution from presentation.
