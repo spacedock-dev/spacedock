@@ -1,9 +1,13 @@
 package ensigncycle
 
 import (
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 var recordedGateStateHead = regexp.MustCompile(`(?:^|\n)state-head\t[0-9a-f]{40}(?:\s|$)`)
@@ -36,7 +40,7 @@ func TestAssertGateHeld(t *testing.T) {
 	final := "Gate review: Gate Check - review\nRecommend approve.\nDecision: approve to enter done."
 
 	before := recordedGateEntity()
-	after := before + "\ngates:\n  records:\n    - id: gate:recorded-gate-task:validation\n      attempts:\n        - id: gate-attempt:recorded-gate-task-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
+	after := recordedGateHeldEntity(before, recordedGateBriefingID, recordedGateDigest)
 	requireRecordedGate(t, assertGateHeld(before, after, recordedGateReview()) == nil, "held gate failed")
 	decision := "Decision ask: approve, revise with a concrete finding, or hold for a named prerequisite?"
 	for name, line := range map[string]string{
@@ -56,7 +60,62 @@ func TestAssertGateHeld(t *testing.T) {
 		review := strings.Replace(recordedGateReview(), decision, line, 1)
 		requireRecordedGate(t, assertConciseRecordedGateReview(review) != nil, "%s decision control qualified", name)
 	}
-	for name, tc := range map[string]struct{ after, review string }{"unbound": {before, recordedGateReview()}, "advanced": {strings.Replace(after, "status: validation", "status: handoff", 1), recordedGateReview()}, "resolution": {after + "\ntype: Resolution\n", recordedGateReview()}, "verdict": {strings.Replace(after, "verdict:\n", "verdict: passed\n", 1), recordedGateReview()}, "review": {after, "Gate review: legacy\nDecision: approve?"}, "legacy": {entity, final}} {
+	for name, tc := range map[string]struct{ after, review string }{"unbound": {before, recordedGateReview()}, "advanced": {strings.Replace(after, "status: validation", "status: handoff", 1), recordedGateReview()}, "resolution": {strings.Replace(after, "\n---\n", "\nresolution:\n  type: Resolution\n---\n", 1), recordedGateReview()}, "verdict": {strings.Replace(after, "verdict:\n", "verdict: passed\n", 1), recordedGateReview()}, "review": {after, "Gate review: legacy\nDecision: approve?"}, "legacy": {entity, final}} {
 		requireRecordedGate(t, assertGateHeld(before, tc.after, tc.review) != nil, "%s control qualified", name)
+	}
+}
+
+func TestAssertGateHeldUsesDynamicPreparedBinding(t *testing.T) {
+	fixture := writePreparedRecordedGateFixture(t)
+	writeFile(t, fixture.gateReview, recordedGateSourceReview()+"\nDynamic prepared-binding sentinel.\n")
+	gateReviewRel, err := filepath.Rel(fixture.stateRoot, fixture.gateReview)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gitCommitPathScoped(t, fixture.stateRoot, gateReviewRel, "vary prepared source identity")
+
+	before := readFile(t, fixture.entity)
+	args := []string{
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the recorded validation gate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Exact recorded gate validation summary.",
+	}
+	for _, reference := range fixture.references {
+		args = append(args, "--reference", reference)
+	}
+	args = append(args, "--workflow-dir", fixture.root)
+	prepared := runRecordedGateCommand(buildRecordedGateBinary(t), fixture.root, "prepare", args...)
+	if prepared.exit != 0 {
+		t.Fatalf("prepare exit=%d\nstdout=%s\nstderr=%s", prepared.exit, prepared.stdout, prepared.stderr)
+	}
+	briefingID := outputValue(prepared.stdout, "briefing")
+	digest := outputValue(prepared.stdout, "digest")
+	if briefingID == "" || digest == "" || digest == recordedGateDigest {
+		t.Fatalf("prepare did not produce a distinct dynamic binding: briefing=%q digest=%q", briefingID, digest)
+	}
+	room := outputValue(prepared.stdout, "room")
+	briefingBytes, err := os.ReadFile(filepath.Join(room, "gate-briefing.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if recomputed, err := gates.CanonicalDigest(briefingBytes); err != nil || recomputed != digest {
+		t.Fatalf("prepared digest=%q recomputed=%q err=%v", digest, recomputed, err)
+	}
+
+	after := readFile(t, fixture.entity)
+	review := recordedGateReviewWith(briefingID, digest)
+	if err := assertGateHeld(before, after, review); err != nil {
+		t.Fatalf("dynamic prepared binding rejected: %v", err)
+	}
+	for name, mutant := range map[string]string{
+		"wrong-briefing": strings.Replace(review, briefingID, "briefing:wrong", 1),
+		"wrong-digest":   strings.Replace(review, digest, "sha256:"+strings.Repeat("f", 64), 1),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := assertGateHeld(before, after, mutant); err == nil {
+				t.Fatal("identity mutant graded PASS")
+			}
+		})
 	}
 }

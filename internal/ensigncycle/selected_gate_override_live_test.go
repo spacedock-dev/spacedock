@@ -52,6 +52,7 @@ func TestLiveClaudeSelectedGateOverride(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 	fixture := writePreparedRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
+	beforeStateHead := strings.TrimSpace(git(t, fixture.stateRoot, "rev-parse", "HEAD"))
 	commandLog := filepath.Join(fixture.root, "evidence", "selected-override-command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
 	runner = runner.withStubPATH(shimDir).(claudeLiveRunner)
@@ -98,6 +99,30 @@ func TestLiveClaudeSelectedGateOverride(t *testing.T) {
 	}
 	if want := []string{"gate-briefing.json", "request.json"}; !reflect.DeepEqual(names, want) {
 		t.Fatalf("selected gate room files = %v, want %v\nArtifacts: %s", names, want, result.artifactDir)
+	}
+	afterStateHead := strings.TrimSpace(git(t, fixture.stateRoot, "rev-parse", "HEAD"))
+	if afterStateHead == beforeStateHead {
+		t.Fatalf("selected gate state HEAD did not advance\nArtifacts: %s", result.artifactDir)
+	}
+	entityRel, relErr := filepath.Rel(fixture.stateRoot, fixture.entity)
+	if relErr != nil {
+		t.Fatal(relErr)
+	}
+	roomRel, relErr := filepath.Rel(fixture.stateRoot, room)
+	if relErr != nil {
+		t.Fatal(relErr)
+	}
+	for path, want := range map[string]string{
+		entityRel:                                    after,
+		filepath.Join(roomRel, "request.json"):       readFile(t, filepath.Join(room, "request.json")),
+		filepath.Join(roomRel, "gate-briefing.json"): readFile(t, filepath.Join(room, "gate-briefing.json")),
+	} {
+		if got := git(t, fixture.stateRoot, "show", afterStateHead+":"+filepath.ToSlash(path)); got != want {
+			t.Fatalf("state HEAD bytes for %q differ from the prepared binding\nArtifacts: %s", path, result.artifactDir)
+		}
+	}
+	if dirty := git(t, fixture.stateRoot, "status", "--porcelain", "--untracked-files=all", "--", entityRel, roomRel); dirty != "" {
+		t.Fatalf("selected gate entity unit remains dirty after bind commit:\n%s\nArtifacts: %s", dirty, result.artifactDir)
 	}
 	if !strings.Contains(result.finalMessage, selectedGateSkillSinkRefusal) {
 		t.Fatalf("Skill-call sink refusal did not return to the root session: %q\nArtifacts: %s", result.finalMessage, result.artifactDir)

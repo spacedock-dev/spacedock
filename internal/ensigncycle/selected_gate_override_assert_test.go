@@ -47,10 +47,11 @@ func selectedOverrideRootActions(stream string) []selectedOverrideAction {
 }
 
 func assertSelectedGateOverride(commandLog, stream, room string) error {
-	successful := func(prefix string) int {
+	successful := func(command string) int {
 		count := 0
+		prefix := "exit=0\t" + strings.TrimSpace(command)
 		for _, line := range strings.Split(commandLog, "\n") {
-			if strings.HasPrefix(line, "exit=0\t"+prefix) {
+			if line == prefix || strings.HasPrefix(line, prefix+" ") {
 				count++
 			}
 		}
