@@ -5,6 +5,15 @@ import (
 	"testing"
 )
 
+type recordedGatePiEvent struct {
+	Message *struct {
+		Role       string        `json:"role"`
+		ToolCallID string        `json:"toolCallId"`
+		IsError    bool          `json:"isError"`
+		Content    []streamBlock `json:"content"`
+	} `json:"message"`
+}
+
 // Negative-case discipline: each shared scenario's assertion is behavior/state
 // oriented, not a transcript-shape tautology. For every shared scenario these cases build the
 // SPECIFIC broken end-state the scenario guards against — from the real shared
@@ -16,33 +25,13 @@ import (
 // entity-state + observed strings, so the negative cases spend no model.
 
 func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
-	before := gateEntity()
-	// The held-gate baseline passes: the entity is unmutated, still at review, and
-	// the final message presents the gate review + decision.
-	heldFinal := "Gate review: Gate Check at review.\nDecision: approve or reject?"
-	if err := assertGateHeld(before, before, heldFinal); err != nil {
-		t.Fatalf("held-gate baseline must pass: %v", err)
-	}
+	before := recordedGateEntity()
+	held := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
+	review := recordedGateReview()
+	requireRecordedGate(t, assertGateHeld(before, held, review) == nil, "held-gate baseline failed")
 
-	// Broken state transition: the FO advanced the gated entity to done instead of
-	// presenting the gate. Even if it ALSO emitted a gate-review-shaped final
-	// message, the state assertion must catch the advanced status.
-	advanced := strings.Replace(before, "status: review", "status: done", 1)
-	if advanced == before {
-		t.Fatal("fixture must contain `status: review` to advance")
-	}
-	if err := assertGateHeld(before, advanced, heldFinal); err == nil {
-		t.Fatal("expected a gate advanced to status: done to fail assertGateHeld even with a gate-review final message")
-	}
-
-	// Broken state transition: the FO self-approved by setting a verdict on the
-	// gated entity.
-	withVerdict := strings.Replace(before, "verdict:\n", "verdict: passed\n", 1)
-	if withVerdict == before {
-		t.Fatal("fixture must contain an empty `verdict:` line")
-	}
-	if err := assertGateHeld(before, withVerdict, heldFinal); err == nil {
-		t.Fatal("expected a self-approved (verdict set) gate to fail assertGateHeld")
+	for name, after := range map[string]string{"unbound": before, "advanced": strings.Replace(held, "status: validation", "status: done", 1), "self-approved": strings.Replace(held, "verdict:\n", "verdict: passed\n", 1)} {
+		requireRecordedGate(t, assertGateHeld(before, after, review) != nil, "%s gate qualified", name)
 	}
 }
 

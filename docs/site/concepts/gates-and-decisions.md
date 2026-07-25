@@ -13,27 +13,24 @@ Until then, the gates are yours.
 
 ## What you see at a gate
 
-A gate review has a fixed spine: the first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
+A chat gate review has one concise evidence spine. The first officer emits it before recording either your decision or a decision made under delegated conn:
 
 ```text
-Gate review: Fix the flaky login test — review
-Chosen direction: replace sleep-based waits with event polling
-Recommend reject: the AC-2 retry scenario has no covering test.
-
-Checklist (from ## Stage Report in docs/ship-features/fix-the-flaky-login-test.md):
-- DONE: login test stable across 50 consecutive runs
-- FAILED: retry scenario unproven — no test exercises it
-
-Reviewer findings
-  Material: AC-2 cites a test file that does not exist
-  Polish:   stage report wording drifts from the template
-
-Assessment: 1 done, 0 skipped, 1 failed.
-
-Decision: approve to close; reject to bounce back to implementation.
+Capability/change: replace sleep-based waits with event polling.
+Test and evidence: login is stable across 50 runs; AC-2 retry has no covering test.
+Reviewed snapshot: Briefing `...` at digest `sha256:...`.
+Findings: material: AC-2 cites a test file that does not exist.
+Recommendation: revise to add the retry scenario.
+Decision ask: approve to close, revise to bounce back, or hold at review.
 ```
 
-Material findings are the ones that should move your vote; Polish never blocks. The Decision line tells you concretely what your vote does. Every acceptance criterion is cross-checked before the review reaches you; a criterion without cited evidence is named rather than passed over.
+Material findings are the ones that should move your vote; polish never blocks. The decision ask tells you concretely what each call does. Every acceptance criterion is cross-checked before the review reaches you; delegated authority does not hide the review.
+
+The first officer may act only after an explicit grant in the active conversation,
+including a grant given later in that conversation. Durable gate state records the
+first officer as the decision renderer and its evidence reason; it does not quote or
+authenticate the grant's wording or scope. Keep any required chat provenance in the
+host's own audit system.
 
 ## How the review reaches you
 
@@ -45,17 +42,23 @@ The provider owns its presentation transport and retained files. The `spacedock`
 ## The three calls
 
 - **Approve.** The decision is recorded first. A separate application step may then advance eligible work exactly once.
-- **Redo with feedback.** You accept the direction but send concrete fixes back. Name the specific asks ("tighten the AC-2 substring assertion, correct the file path claim"), not "address the reviewer's notes".
-- **Reject.** The work bounces back to the stage that owns the fix, carrying your findings.
+- **Redo with feedback.** You accept the direction but send concrete fixes back. The recorded decision is `revise`, and its reason says the direction is accepted.
+- **Reject.** With a configured feedback target, the recorded decision is `revise`, its reason says the direction is rejected, and the work bounces to that owner. Without a feedback target, the decision is `hold` and the first officer stops for routing help.
 
 Redo and reject differ only in whether you accept the direction; both carry your concrete asks so the next worker has something to act on. Nothing closes without its verdict on the record.
+Your call translates into the existing `approve`, `revise`, and `hold` record; automatic bounce applies only when a reviewer recommends `REJECTED` at a configured feedback gate.
 
-After completion verification, the first officer binds the retained Briefing
-before presenting the gate. That bind selects the current-stage gate attempt,
+After completion verification, a gate with no selected attempt remains
+`validating`. The first officer binds and commits the retained Briefing before
+presenting anything. That bind selects the current-stage gate attempt,
 letting startup distinguish work still validating, an open attempt awaiting the
 Captain, an approval awaiting nonterminal advance, and an approval awaiting
 merge. Approval to a terminal target is consumed before the existing merge and
 terminalization path begins.
+
+Before the first officer shows a gate, it captures the exact bound Briefing identity and digest from committed entity state. A run without decision authority stops with that attempt open: it writes no Resolution, consumes nothing, advances nothing, and dispatches nothing. After an authorized decision, it records and commits the Resolution before every route. Approval then uses `gate consume`, which rechecks eligibility and atomically writes the successor stage and consumed mark; the consumed descendant commit lands before ordinary successor dispatch. Revise routes feedback after its close commit, and hold stays at the gate. `gate validate` and `gate eligibility` remain optional diagnostics, not positive-path lifecycle steps.
+
+The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.
 
 ## Rejections
 

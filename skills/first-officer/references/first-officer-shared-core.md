@@ -19,7 +19,7 @@ Shared first-officer semantics — the boot-resident core. The active runtime ad
 Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary from the `«state.boot»()` record.
 
 - **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch or render a `present-gate` review at the greet. NAME any ready `gate: true` gate, but assemble its review only when «engage» reaches it.
-- **Headless:** do NOT greet-stop. Drive every dispatchable entity through the event loop, converging each workflow at its first «engage», to its first `gate: true` stage or terminal/blocked; then EXIT with each stop reason. Read the deferred dispatch owner before the first dispatch and before invoking its capabilities. At each gate, invoke `Skill(skill="spacedock:present-gate")`, render the review per `## Completion and Gates`, and stop without resolving it.
+- **Headless:** do NOT greet-stop. Drive every dispatchable entity through the event loop, converging each workflow at its first «engage», to its first `gate: true` stage or terminal/blocked; then EXIT with each stop reason. Read the deferred dispatch owner before the first dispatch and before invoking its capabilities. At each gate enter through `«gate.lifecycle»`; without the conn, retain and bind the selected Briefing, commit it, present the semantic review, then stop without deciding.
 - **Headless + given the conn to auto-approve:** additionally resolve gates per `## Completion and Gates` and drive to terminal. The grant must be a phrase quoted from the prompt ("auto-approve gates", "drive to done", or "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is not a grant.
 
 - **done-when:** interactive has presented the summary and stopped; headless has reported every bounded stop reason; given-the-conn headless has driven the requested scope to terminal.
@@ -43,8 +43,9 @@ A greet-and-stop boot loads NONE of these — it composes its summary from `«st
 **Combined-boundary order:** evaluate the write trigger before the merge trigger. A terminal status transition is both an FO-authored mutation and a terminal boundary, so complete the write-core read first, then the merge-core read, then issue the transition. Never select merge first merely because the requested action is terminal. Each deferred read must complete in its own host event; do not batch either read with the other or with the mutation command.
 
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
+- `Skill(skill="spacedock:fo-gate-lifecycle")` — every engaged gate entry: headless with or without conn, `engage`, gated worker completion, and open/pending/revise/hold/stale/consumed resume. Complete this load before every capability probe, gate read/write/validation, presenter load, decision route, replay, or dispatch; interactive gated greet only names the gate and stops load-free.
 - `references/fo-dispatch-core.md` — read before the first worker dispatch, before invoking `«dispatch.next-action»()`, or before mutating dispatch state. `«dispatch.build»` output is not a dispatch: forward every ready entity's artifact to `«worker.spawn»`; never author its stage report or claim completion without the worker's `«completion-signal»`.
-- `{first_officer_base}/references/fo-write-core.md` — read in its own completed host event immediately before the first FO-authored mutation. The read activates `«write.classify»`; no FO-owned file, state, process-doc, archive, or mutation command may precede it.
+- `{first_officer_base}/references/fo-write-core.md` — read in its own completed host event immediately before the first FO-authored mutation, after the gate-lifecycle load when both apply. The read activates `«write.classify»`; no FO-owned file, state, process-doc, archive, or mutation command may precede it, and neither deferred read substitutes for the other.
 - `{first_officer_base}/references/fo-merge-core.md` — read in its own completed host event at the first terminal boundary, or when `«engage»` begins recovery for `mod-block=merge:*`, before a terminal status transition, merge hook/guard, archive, shutdown, or other merge-owned action.
 - `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the host dispatch module — no boot and no happy-path dispatch loads it.
 
@@ -77,9 +78,7 @@ If not gated: terminal → merge; else decide reuse-or-fresh.
 
 **Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module, already loaded by the time a completion reaches this point. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
 
-If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on the outcome:
-- on a feedback gate recommending `REJECTED`, or on captain reject at a `feedback-to` stage (priority over generic rejection), `«feedback.route»(slug, stage)` instead of waiting for manual review
-- on captain approve to a non-terminal next stage, advance reuse-or-fresh per the deferred dispatch module's reuse conditions.
+If gated and a reviewer recommends `REJECTED` at a configured feedback gate, invoke `«feedback.route»` before Captain presentation; otherwise complete `Skill(skill="spacedock:fo-gate-lifecycle")`, then `«gate.lifecycle»(slug, stage)`. It commits the bound package before presentation, every successful close before routing, and consumed approval before routing: nonterminal → ordinary dispatch, terminal → existing merge ceremony; revise invokes `«feedback.route»`, while hold/ineligibility stops.
 
 ## «gate.ac-cross-check»(slug, stage): every acceptance criterion has evidence, re-anchored on the end value
 

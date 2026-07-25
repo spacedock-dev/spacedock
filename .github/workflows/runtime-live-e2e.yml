@@ -788,7 +788,7 @@ jobs:
       - name: Run live Pi front-door smoke
         run: |
           set -o pipefail
-          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle
+          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -run 'TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle' ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()

@@ -64,17 +64,12 @@ through the stages until everything is idle or waiting on you. When a work
 item reaches the `review` gate, you get a gate review:
 
 ```text
-Gate review: Add rate limiting to the API — review
-Chosen direction: token-bucket limiter at the API middleware layer
-Recommend approve.
-
-Checklist (from ## Stage Report in docs/ship-features/add-rate-limiting-to-the-api.md):
-- DONE: limiter implemented with per-client buckets
-- DONE: tests cover burst and refill behavior
-
-Assessment: 2 done, 0 skipped, 0 failed.
-
-Decision: approve to close; reject to bounce back to implementation.
+Capability/change: token-bucket limiter at the API middleware layer.
+Test and evidence: the Stage Report records 2 DONE, 0 SKIPPED, 0 FAILED.
+Reviewed snapshot: Briefing `...` at digest `sha256:...`.
+Findings: none.
+Recommendation: approve the implementation.
+Decision ask: approve to close, revise with feedback, or hold at review.
 ```
 
 You approve, send it back with feedback, or reject. Details:

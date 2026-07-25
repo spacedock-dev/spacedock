@@ -13,7 +13,7 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
-func TestGateRecordAndValidateCLILeaveStatusUntouched(t *testing.T) {
+func TestGateRecordRelativeBriefingLeavesStatusUntouched(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: ideation\n      initial: true\n---\n# Workflow\n")
 	entity := filepath.Join(root, "task.md")
@@ -21,7 +21,7 @@ func TestGateRecordAndValidateCLILeaveStatusUntouched(t *testing.T) {
 	briefing := filepath.Join(root, "briefing.json")
 	writeFile(t, briefing, `{"type":"Briefing","version":"1","id":"briefing:provider","question":"Review task","artifacts":[{"id":"artifact:primary","uri":"artifact.md","rev":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}`)
 	var out, errOut bytes.Buffer
-	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", briefing}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--briefing", filepath.Base(briefing)}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 0 {
 		t.Fatalf("record exit=%d stderr=%q", code, errOut.String())
 	}
@@ -411,7 +411,7 @@ func TestGateRecordConsumesDirectBindingResultFromPreparedRoom(t *testing.T) {
 
 	out.Reset()
 	errOut.Reset()
-	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", filepath.Join("review", "validation", "briefing-1")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 0 {
 		t.Fatalf("record room exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
@@ -982,10 +982,10 @@ func unboundGateRoomFixture(t *testing.T) (root, entity, room string) {
 	return root, entity, room
 }
 
-func TestGateRecordChatDecisionAndRejectsOperationInterface(t *testing.T) {
+func TestGateRecordChatDecisionAndRejectsProvenanceAndOperationInterfaces(t *testing.T) {
 	root, entity := semanticDecisionFixture(t)
 	var out, errOut bytes.Buffer
-	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--decision", "approve", "--actor", "agent:first-officer", "--reason", "All retained ACs reproduced", "--directive", "Captain: approve after the reset"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--decision", "approve", "--actor", "agent:first-officer", "--reason", "All retained ACs reproduced"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 0 {
 		t.Fatalf("record decision exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
@@ -993,17 +993,56 @@ func TestGateRecordChatDecisionAndRejectsOperationInterface(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"by: agent:first-officer", "decision: approve", "reason: All retained ACs reproduced", "adoption-note: 'Captain: approve after the reset'"} {
+	for _, want := range []string{"by: agent:first-officer", "decision: approve", "reason: All retained ACs reproduced"} {
 		if !strings.Contains(string(body), want) {
 			t.Fatalf("chat Resolution missing %q:\n%s", want, body)
 		}
 	}
+	if strings.Contains(string(body), "adoption-note:") {
+		t.Fatalf("new chat Resolution retained caller-controlled provenance:\n%s", body)
+	}
+	historical := strings.Replace(string(body),
+		"reason: All retained ACs reproduced",
+		"reason: All retained ACs reproduced\n                adoption-note: historical delegated context", 1)
+	writeFile(t, entity, historical)
+	doc, _, err := gates.Read(entity)
+	if err != nil {
+		t.Fatalf("historical adoption-note became unreadable: %v", err)
+	}
+	if got := doc.Records[0].Attempts[0].Resolution.Adoption; got != "historical delegated context" {
+		t.Fatalf("historical adoption-note = %q", got)
+	}
 
-	out.Reset()
-	errOut.Reset()
-	code = run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--operation", "old.yml"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-	if code != 2 || !strings.Contains(errOut.String(), "unknown gate flag: --operation") {
-		t.Fatalf("legacy operation exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	for _, tc := range []struct {
+		name, flag, value string
+	}{
+		{"exact-directive", "--directive", "you have the conn."},
+		{"missing-period-directive", "--directive", "you have the conn"},
+		{"directive-file", "--directive-file", "authority.txt"},
+		{"operation", "--operation", "old.yml"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root, entity := semanticDecisionFixture(t)
+			before, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var out, errOut bytes.Buffer
+			code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence", tc.flag, tc.value}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+			if code != 2 || !strings.Contains(errOut.String(), "unknown gate flag: "+tc.flag) {
+				t.Fatalf("legacy %s exit=%d stdout=%q stderr=%q", tc.flag, code, out.String(), errOut.String())
+			}
+			after, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(after, before) {
+				t.Fatalf("legacy %s changed entity", tc.flag)
+			}
+			if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
+				t.Fatalf("legacy %s left lock residue: %v", tc.flag, err)
+			}
+		})
 	}
 }
 

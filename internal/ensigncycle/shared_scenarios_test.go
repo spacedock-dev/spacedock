@@ -23,7 +23,12 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 		{
 			name:          "gate-guardrail",
 			oldPythonTest: "tests/test_gate_guardrail.py",
-			intent:        "FO halts at a human gate and presents the review without self-approval, mutation, or archival.",
+			intent:        "FO binds and commits the retained package, presents exactly one semantic root review, then stops open without Resolution, consume, advance, dispatch, or archival.",
+		},
+		{
+			name:          "recorded-gate-lifecycle",
+			oldPythonTest: "durable-decisions 3k/h1 dogfood (net-new; no Python ancestor)",
+			intent:        "FO performs three authority mutations—bind a retained Briefing, record delegated approval, and consume exactly once—commits each durable barrier, treats validation and eligibility as optional diagnostics, and only then dispatches the successor.",
 		},
 		{
 			name:          "rejection-flow",

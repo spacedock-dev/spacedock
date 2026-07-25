@@ -122,6 +122,23 @@ func TestMergeGuardFinalizesFromMergedSentinelNonArmed(t *testing.T) {
 	}
 }
 
+func TestMergeGuardFinalizesTerminalUnblockedEntityFromMergedSentinel(t *testing.T) {
+	for _, sentinel := range []string{"pr-merge:42", "local-merge:abc123"} {
+		root := stageFixture(t, "merge-pr-workflow")
+		writeFile(t, filepath.Join(root, "070-pr-pending.md"), strings.NewReplacer("status: implementation", "status: done", `pr: "#42"`, "pr: "+sentinel, "mod-block: merge:local-merge", "mod-block:").Replace(readBytes(t, filepath.Join(root, "070-pr-pending.md"))))
+		if entity := filepath.Join(root, "070-pr-pending.md"); frontmatterField(t, entity, "status") != "done" || frontmatterField(t, entity, "pr") != sentinel || frontmatterField(t, entity, "mod-block") != "" {
+			t.Fatalf("restart precondition does not model terminal %s sentinel with empty mod-block", sentinel)
+		}
+		var out, errOut bytes.Buffer
+		if code := MergeGuard([]string{"--workflow-dir", root, "070-pr-pending", "--verdict", "passed"}, root, &out, &errOut); code != 0 {
+			t.Fatalf("terminal %s finalize exit=%d stderr=%q", sentinel, code, errOut.String())
+		}
+		if archived := filepath.Join(root, "_archive", "070-pr-pending.md"); !fileExists(archived) || frontmatterField(t, archived, "status") != "done" || frontmatterField(t, archived, "mod-block") != "" {
+			t.Fatalf("terminal %s did not finalize through existing guard: %s", sentinel, out.String())
+		}
+	}
+}
+
 // TestMergeGuardBlocksOnOpenPRNoModBlock (the premature-finalize gate): a bare,
 // OPEN PR reference (pr: #42) with an EMPTY mod-block must signal blocked/await-pr
 // and must NOT finalize or archive. The verb must NEVER finalize on pr-presence

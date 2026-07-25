@@ -158,6 +158,7 @@ func claudeLiveScenarios(t *testing.T) []claudeLiveScenario {
 func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRuntimeScenario) {
 	return map[string]func(*testing.T, liveDriver, sharedRuntimeScenario){
 		"gate-guardrail":                runClaudeGateGuardrailScenario,
+		"recorded-gate-lifecycle":       runClaudeRecordedGateLifecycleScenario,
 		"rejection-flow":                runClaudeRejectionFlowScenario,
 		"feedback-3-cycle-escalation":   runClaudeFeedback3CycleEscalationScenario,
 		"merge-hook-guardrail":          runClaudeMergeHookGuardrailScenario,
@@ -169,9 +170,48 @@ func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRunti
 	}
 }
 
+func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	if copied, ok := runner.(claudeLiveRunner); ok {
+		copied.pluginDir = t.TempDir()
+		if err := copyTree(runner.(claudeLiveRunner).pluginDir, copied.pluginDir); err != nil {
+			t.Fatal(err)
+		}
+		runner = copied
+	}
+	fixture := writeRecordedGateFixture(t)
+	before := readFile(t, fixture.entity)
+	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
+	shellEnvDir := t.TempDir()
+	bashEnv := filepath.Join(shellEnvDir, "recorded-gate-env.sh")
+	writeFile(t, bashEnv, "export SPACEDOCK_BIN="+filepath.Join(shimDir, "spacedock")+"\n")
+	writeFile(t, filepath.Join(shellEnvDir, ".zshenv"), readFile(t, bashEnv))
+	runner = runner.withStubPATH(shimDir)
+	switch copied := runner.(type) {
+	case claudeLiveRunner:
+		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
+		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
+		runner = copied
+	case ptyLiveDriver:
+		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
+		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
+		runner = copied
+	}
+	result := runner.run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
+	if copied, ok := runner.(claudeLiveRunner); ok && (!strings.Contains(result.stream, copied.pluginDir) || !strings.Contains(result.stream, "# First Officer Gate Lifecycle")) {
+		t.Fatalf("recorded gate lifecycle did not load the copied skill body\nArtifacts: %s", result.artifactDir)
+	}
+	observation := recordedGateLiveObservation(t, fixture, before, commandLog, recordedGateReviewFromClaudeStream(result.stream))
+	if err := assertRecordedGateLifecycle(observation); err != nil {
+		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
 func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 	t.Helper()
-	binary := spacedockBinary(t)
+	binary := buildRecordedGateBinary(t)
 	pluginDir := livePluginDir(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
 
@@ -213,16 +253,24 @@ func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	entityPath := writeGateWorkflow(t, workflowRoot)
-	before := readFile(t, entityPath)
+	fixture := writeGateWorkflow(t, workflowRoot)
+	if scenario.name == "default-headless-recorded-gate-stop" {
+		writeFile(t, filepath.Join(fixture.root, "README.md"), strings.Replace(recordedGateReadme(), "### validation", "### implementation\n\nAppend an implementation stage report, then return completion.\n\n### validation", 1))
+		writeFile(t, fixture.entity, strings.Replace(recordedGateEntity(), "status: validation", "status: implementation", 1))
+		gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "start before gate")
+	}
+	before := readFile(t, fixture.entity)
+	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
+	runner = runner.withStubPATH(shimDir)
 
 	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
-	after := readFile(t, entityPath)
-	if err := assertGateHeld(before, after, result.finalMessage); err != nil {
+	after := readFile(t, fixture.entity)
+	if err := assertGateHeld(before, after, recordedGateReviewFromClaudeStream(result.stream)); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
-		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
+	if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
@@ -461,6 +509,9 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	if base, ok := envValue(r.env, "CLAUDE_CONFIG_DIR"); ok {
 		configDir = filepath.Join(base, scenario.name)
 		cmd.Env = withClaudeConfigDir(r.env, configDir)
+	}
+	if err := seedStoredLoginCredential(configDir); err == nil {
+		cmd.Env = withoutEnvKey(cmd.Env, "CLAUDE_CODE_OAUTH_TOKEN")
 	}
 
 	// The resolved cwd is what Claude Code encodes into its projects path; the FO

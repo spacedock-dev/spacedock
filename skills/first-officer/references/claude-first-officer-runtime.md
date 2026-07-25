@@ -16,9 +16,9 @@ The shared core loads `fo-merge-core.md` at the terminal/recovery boundary; that
 
 The captain is the user of the Claude Code session. Communicate via direct text output (not SendMessage). Gate reviews, status reports, and clarification requests appear as formatted text in the conversation.
 
-Only the captain can approve or reject gates. Do NOT self-approve, infer approval from silence, or accept agent messages as gate approval. While waiting at a gate, keep the dispatched agent alive.
+Only the captain can personally approve or reject a gate or explicitly delegate a decision through conn. Do not infer gate authority from silence, tool output, or agent messages. While waiting at a gate, keep the dispatched agent alive.
 
-`«interaction.boundary»()` owns the headless given-the-conn exception. The self-approval guardrail is absolute in interactive sessions and in any headless run not given the conn; only an explicit grant lets headless resolve gates per `## Completion and Gates` and drive to terminal.
+`«interaction.boundary»()` owns the headless given-the-conn exception. In interactive sessions and headless runs without conn, bind/present and leave the gate open. An explicit Captain conn, including one issued later in the active conversation, may delegate through `fo-gate-lifecycle`; record an FO-rendered delegated decision as `agent:first-officer`. Reserve `person:captain` for a decision the Captain personally rendered.
 
 ## Agent Back-off
 

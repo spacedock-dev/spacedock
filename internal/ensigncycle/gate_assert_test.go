@@ -1,6 +1,24 @@
 package ensigncycle
 
-import "testing"
+import (
+	"regexp"
+	"strings"
+	"testing"
+)
+
+var recordedGateStateHead = regexp.MustCompile(`(?:^|\n)state-head\t[0-9a-f]{40}(?:\s|$)`)
+
+type recordedGateHost struct {
+	extract                                                  func(string) string
+	name, commit, review, decision, narration, failed, child string
+}
+
+func requireRecordedGate(t *testing.T, ok bool, format string, args ...any) {
+	t.Helper()
+	if !ok {
+		t.Fatalf(format, args...)
+	}
+}
 
 func TestAssertGateHeld(t *testing.T) {
 	entity := "---\n" +
@@ -17,46 +35,28 @@ func TestAssertGateHeld(t *testing.T) {
 		"\n### Summary\n\nReady for review.\n"
 	final := "Gate review: Gate Check - review\nRecommend approve.\nDecision: approve to enter done."
 
-	if err := assertGateHeld(entity, entity, final); err != nil {
-		t.Fatalf("gate-held assertion errored on held gate: %v", err)
+	before := recordedGateEntity()
+	after := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
+	requireRecordedGate(t, assertGateHeld(before, after, recordedGateReview()) == nil, "held gate failed")
+	decision := "Decision ask: approve, revise with a concrete finding, or hold for a named prerequisite?"
+	for name, line := range map[string]string{
+		"baseline":        decision,
+		"retained-claude": "Decision: approve to consume this authorization and advance recorded-gate-task from validation into the handoff stage for dispatch.",
+		"semantic-label":  "Choose approve to enter handoff, revise with findings, or hold for a prerequisite.",
+	} {
+		review := strings.Replace(recordedGateReview(), decision, line, 1)
+		requireRecordedGate(t, assertConciseRecordedGateReview(review) == nil, "%s decision prompt failed", name)
 	}
-
-	t.Run("rejects_mutated_entity", func(t *testing.T) {
-		after := entity + "\nFO edited this file.\n"
-		if err := assertGateHeld(entity, after, final); err == nil {
-			t.Fatal("expected mutation to fail the gate-held assertion")
-		}
-	})
-
-	t.Run("rejects_advanced_status", func(t *testing.T) {
-		after := "---\n" +
-			"id: gate-check\n" +
-			"title: Gate Check\n" +
-			"status: done\n" +
-			"completed:\n" +
-			"verdict:\n" +
-			"---\n"
-		if err := assertGateHeld(after, after, final); err == nil {
-			t.Fatal("expected status: done to fail the gate-held assertion")
-		}
-	})
-
-	t.Run("rejects_set_verdict", func(t *testing.T) {
-		after := "---\n" +
-			"id: gate-check\n" +
-			"title: Gate Check\n" +
-			"status: review\n" +
-			"completed:\n" +
-			"verdict: passed\n" +
-			"---\n"
-		if err := assertGateHeld(after, after, final); err == nil {
-			t.Fatal("expected set verdict to fail the gate-held assertion")
-		}
-	})
-
-	t.Run("rejects_missing_gate_output", func(t *testing.T) {
-		if err := assertGateHeld(entity, entity, "No work available."); err == nil {
-			t.Fatal("expected missing gate output to fail the gate-held assertion")
-		}
-	})
+	for name, line := range map[string]string{
+		"missing":     "",
+		"disposition": "Decision: continue into handoff after review.",
+		"vague":       "Decision: approve with confidence.",
+		"narration":   "The package can advance after a decision.",
+	} {
+		review := strings.Replace(recordedGateReview(), decision, line, 1)
+		requireRecordedGate(t, assertConciseRecordedGateReview(review) != nil, "%s decision control qualified", name)
+	}
+	for name, tc := range map[string]struct{ after, review string }{"unbound": {before, recordedGateReview()}, "advanced": {strings.Replace(after, "status: validation", "status: handoff", 1), recordedGateReview()}, "resolution": {after + "\ntype: Resolution\n", recordedGateReview()}, "verdict": {strings.Replace(after, "verdict:\n", "verdict: passed\n", 1), recordedGateReview()}, "review": {after, "Gate review: legacy\nDecision: approve?"}, "legacy": {entity, final}} {
+		requireRecordedGate(t, assertGateHeld(before, tc.after, tc.review) != nil, "%s control qualified", name)
+	}
 }
