@@ -4,8 +4,8 @@ title: Make First Officers operate the recorded gate lifecycle
 status: done
 source: "Durable-decisions dogfood audit: PRs #557/#560 shipped gate commands without the planned FO operating contract, 2026-07-23"
 started: 2026-07-23T02:01:56Z
-completed:
-verdict:
+completed: 2026-07-25T14:23:19Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-first-officer-gate-command-lifecycle
 issue:
@@ -390,6 +390,7 @@ review-round:
         room-ref: ./review/implementation/round-26
 mod-block:
 pr: pr-merge:565
+archived: 2026-07-25T14:23:19Z
 ---
 
 Make the normal First Officer gate path bind the exact reviewed package, record the authorized decision, and durably consume it before ordinary workflow dispatch.
