@@ -1590,6 +1590,16 @@ including its two leading/trailing spaces and non-ASCII code points.
   selected-override observed-behavior proof defect; add no protocol, controller,
   compatibility layer, public argument, or narrowed AC.
 
+- **Cycle 13 — correction revalidation REJECTED by detached adjacent-event audit
+  (2026-07-26).** AC-1 literal archive and AC-2 same-byte path mutants are now caught,
+  and the positive selected-override Claude run passed. However,
+  `assertSelectedGateOverride` still grades PASS when the trace adds an extra failed
+  `gate --help` before the success, performs an Agent provider probe before prepare, or
+  renders a complete chat gate review before the selected Skill handoff. These are
+  promised AC-4 violations, not unsupported edges. Strengthen the existing oracle to
+  count every help invocation and reject provider detours or chat presentation across
+  the whole selected-channel trace; add no provider implementation or new controller.
+
 ## Stage Report: ideation
 
 - DONE: Reproduce xb's arbitrary-Briefing-basename failure with the smallest valid prepared room, then identify the minimum post-em Spacedock seam that makes it pass.
@@ -1956,3 +1966,21 @@ Cycle 2 closes all three rejected acceptance-criterion findings and both materia
 final-review findings without expanding the approved product boundary. The corrected
 implementation and its provider-neutral observed-behavior evidence are ready for
 validation re-entry.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce the AC-1 valid flat-slug literal archive regression and prove exact source deletion/archive destination plus sibling isolation in Git HEAD and dirty worktree.
+  `TestMergeGuardFlatArchiveTreatsSlugAsLiteralPathspec` passed for `020-[x]`; removing `:(literal)` made it fail after committing dirty sibling bytes, while the corrected run deletes the live source, commits the archive destination, and leaves both matching siblings dirty at their prior HEAD bytes.
+- DONE: Reproduce the AC-2 same-byte/different-path mutant and confirm repository-path identity is independently detected.
+  The equal-byte `review.md`/`same-bytes.md` control passed at `6b18f6de`; deleting path equality made `TestSameLogicalRevisionIgnoresUnrelatedCommitButNotPathOrBytes` fail with `same=true`, independently of raw revision.
+- FAILED: Reproduce AC-4 observed selected-override behavior: exact dynamic Briefing identity, committed entity plus two room files, one post-bind room-only Skill call, and no probe/fallback/reconstructed authority/provider behavior.
+  Dynamic prepare/state tests and `TestLiveClaudeSelectedGateOverride` passed in 113.03s, but detached adjacent traces with an extra failed help call, a pre-prepare Agent provider probe, or chat presentation before the override all graded PASS; material AC-4 evidence defect at the oracle boundary.
+- DONE: Recheck AC-3 and AC-5 plus applicable focused/full/race/format/diff/docs/skill gates, reconcile correction scope to the approved unreleased-v1 design, and report PASSED or REJECTED with material/deferred/polish classification.
+  PASS: focused AC-3/AC-5 suites; `go test ./...`; `go test ./... -race`; `test -z "$(gofmt -l ./cmd ./internal)"`; `git diff --check f99af3df..HEAD`; `uv run --with-requirements docs/requirements.txt mkdocs build --strict`; and `go test ./skills/integration ./internal/contractlint -count=1`. Scope remains the approved v1; one material evidence defect remains, no deferred risk was found, earlier Low notes remain nonblocking polish, and recommendation is REJECTED.
+
+### Summary
+
+Correction revalidation closes the prior AC-1 outcome defect and AC-2 detector hole,
+and its positive selected-override live run is clean. The gate remains REJECTED because
+AC-4's new oracle still accepts three promised wrong traces; the fix stays inside the
+existing observation harness.
