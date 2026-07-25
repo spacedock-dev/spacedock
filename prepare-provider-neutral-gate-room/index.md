@@ -1,7 +1,7 @@
 ---
 id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
-status: ideation
+status: implementation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
 completed:
@@ -86,6 +86,19 @@ gates:
                 digest: sha256:d80b23af1136b1caffb1786878d98b1933799f38f25fbcb99dee36466cea3469
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:s4:ideation:3
+                briefing: briefing:docs-dev:s4:ideation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T17:34:49.721839Z"
+                decision: approve
+                reason: Cycle 11 provides one mechanical provider-neutral prepare command, collision-free folder and flat rooms, exact Git-root and Briefing authority, no copied sources or stored association, and the sole room-only provider handoff; independent re-review found no remaining issue.
+              application:
+                action: advance
+                target-stage: implementation
+                state: consumed
+                blockers: []
 ---
 
 ## Cycle 11 governing design
