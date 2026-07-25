@@ -136,6 +136,42 @@ func TestMatchingAncestorRequestRejectsRecursiveDuplicateMembers(t *testing.T) {
 	}
 }
 
+func TestMatchingAncestorRequestRejectsDuplicateLocatorHiddenByFinalValue(t *testing.T) {
+	entity := writeEntity(t, "status: ideation\ntitle: Unchanged\n")
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	room := t.TempDir()
+	briefing := filepath.Join(room, "selected", "revision-1.json")
+	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	body := []byte(completeBriefing("briefing:local:hidden:ideation:attempt-1:revision-1", "hidden duplicate locator"))
+	if err := os.WriteFile(briefing, body, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	digest, err := CanonicalDigest(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := `{"type":"spacedock-gate-presentation-request","version":"1","gate":"gate:local:hidden:ideation","attempt":"gate-attempt:hidden-ideation-1","briefing":{"locator":"selected/revision-1.json","locator":"unrelated.json","id":"briefing:local:hidden:ideation:attempt-1:revision-1","digest":"` +
+		digest + `"},"actor":"person:captain","approver":"person:captain"}`
+	if err := os.WriteFile(filepath.Join(room, "request.json"), []byte(request), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := RecordBriefing(entity, briefing); err == nil || !strings.Contains(err.Error(), "duplicate JSON object member") {
+		t.Fatalf("matching hidden duplicate request error=%v", err)
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(after) != string(before) {
+		t.Fatal("matching hidden duplicate request changed entity bytes")
+	}
+}
+
 func TestCanonicalCrossGateReentryPreservesFrozenApplication(t *testing.T) {
 	entity := writeEntity(t, canonicalTwoGateFrontmatter())
 	doc, oldNode, err := Read(entity)
