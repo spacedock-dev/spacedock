@@ -1572,6 +1572,16 @@ including its two leading/trailing spaces and non-ASCII code points.
   effects, replace the agent-owned provider probe/fallback with the exact post-bind
   room handoff, and keep manifest duplicate parsing with rq.
 
+- **Cycle 12 — validation REJECTED by detached adversarial audit (2026-07-26).**
+  At implementation `f99af3df`, a valid flat slug `020-[x]` made archive finalize
+  sweep wildcard-matching siblings while omitting the literal live deletion (AC-1
+  outcome defect). Removing Git repository-path equality still passed the named
+  path-identity test (AC-2 evidence defect), and adding an explicit provider probe
+  plus chat fallback still passed both selected-override contract tests (AC-4
+  evidence defect). Repair the flat archive with literal pathspecs, isolate
+  same-byte/different-path identity, and reset selected-override proof to observed
+  post-bind host behavior rather than another instruction-file substring check.
+
 ## Stage Report: ideation
 
 - DONE: Reproduce xb's arbitrary-Briefing-basename failure with the smallest valid prepared room, then identify the minimum post-em Spacedock seam that makes it pass.
@@ -1849,3 +1859,31 @@ Implementation is complete at `f99af3df`. Full tests, race tests, formatting,
 `git diff --check`, strict documentation build, focused skill smoke tests, Codex live,
 and durable Claude lifecycle evidence are complete; Pi remains an external runtime
 installation/authentication blocker rather than an s4 behavior failure.
+
+## Stage Report: validation
+
+- FAILED: Independently verify AC-1 folder and flat gate prepare, exact two-file preparation, replay, atomic state commit/archive, sibling isolation, rollback, and readable archived room.
+  Ordinary-form suites passed, but detached `TestValidationFlatArchiveTreatsValidSlugAsLiteralPathspec` failed: `020-[x]` finalize committed `020-x.md` and `_archive/020-x.md` and omitted the literal live deletion; material AC-1 outcome defect in nonliteral archive pathspecs.
+- FAILED: Independently verify AC-2 exact git-root main/state identities across moved roots, detached local objects, literal paths, dirty/missing/mismatch failures, and absence of fetch/ref/worktree fallback.
+  Positive/moved/detached/literal/failure suites passed, but deleting repository-path equality from `SameLogicalRevision` still passed `TestSameLogicalRevisionIgnoresUnrelatedCommitButNotPathOrBytes`; material AC-2 evidence defect because raw-byte inequality masks the promised path detector.
+- DONE: Independently verify AC-3 arbitrary Briefing locator/id/digest, exact summary bytes, request-less/advisory controls, recursive duplicate-member rejection, and byte-clean failure behavior.
+  Arbitrary-locator close/eligibility, compatibility controls, duplicate-depth, invalid/cardinality, and cleanup tests passed; trimming the whitespace/non-ASCII summary made `TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities` fail.
+- FAILED: Independently verify AC-4 one fresh help preflight before effects and the sole selected-provider handoff /subspace:r gate <room>, with no provider probe, fallback, or caller-reconstructed authority.
+  Fresh-help and no-override lifecycle tests passed, but adding `subspace --version` plus chat fallback to `present-gate` still passed both contract tests; selected override has only instruction-file substring proof, a material AC-4 evidence/mechanism defect requiring an observed-behavior harness reset.
+- DONE: Independently verify AC-5 association derivation from recomputed request/Briefing/Result/inventory pins, no association.json, and provider evidence only after preparation.
+  Prepared-room record/validate mutation matrices passed and fail on missing/drifted request, Briefing, Result, inventory, locator, rev, summary, coverage, persisted association, or prepare-time provider evidence.
+- DONE: Perform the required semantic adversarial matrix and detached audit for changed high-stakes CLI/skill surfaces; reject tests that pass while observable authority, identity, order, bytes, or cleanup is wrong.
+  Detached audit caught the AC-1 sibling sweep and the AC-2/AC-4 surviving mutants; CLI four-line order and exact-summary normalization mutants were correctly rejected.
+- DONE: Reconcile implementation against the latest captain rulings and approved design; report any compatibility preservation, inferred precondition, extra public argument, or provider dependency as drift.
+  All declared paths plus eleven explained support paths stay within approved owners; no extra public argument, copied source, stored association, compatibility fallback, or s4 provider dependency was found.
+- DONE: Run applicable focused tests, go test ./..., go test ./... -race, gofmt check, git diff --check, strict docs build, skill smoke/contract checks, and a cheapest-first Pi infrastructure probe; report exact commands and results.
+  PASS: focused AC regex suite; `go test ./...`; `go test ./... -race`; `test -z "$(gofmt -l ./cmd ./internal)"`; `git diff --check 4ff98d8c..HEAD`; `uv run --with-requirements docs/requirements.txt mkdocs build --strict`; `go test ./skills/integration ./internal/contractlint -count=1`; Pi coverage guard. Pi live failed pre-product because installed `pi-subagents` lacks `@earendil-works/pi-coding-agent`.
+- FAILED: Report 8 done, 0 skipped, 0 failed only if all promised ACs have valid evidence and no material finding remains; separately classify deferred risks/polish and recommend PASSED or REJECTED.
+  Substantive result is 5 done, 0 skipped, 3 failed; three material findings remain, no deferred-risk or polish finding blocks, Pi is external infrastructure, and the recommendation is REJECTED.
+
+### Summary
+
+Validation reproduced the ordinary-path implementation evidence but found one material
+product defect and two material proof defects under detached mutation. Recommend
+REJECTED; fix AC-1 narrowly, strengthen AC-2 with same-byte distinct paths, and reset
+AC-4 selected-override proof to observed post-bind behavior before re-entry.
