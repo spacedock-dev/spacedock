@@ -361,14 +361,14 @@ gates:
                 target-stage: implementation
                 state: pending
 review-round:
-    id: round:6yyyyemkqwsett3g1c991w9f:implementation:16
+    id: round:6yyyyemkqwsett3g1c991w9f:implementation:23
     stage: implementation
-    cycle: 16
+    cycle: 23
     briefing:
-        id: briefing:first-officer-gate-command-lifecycle:implementation:round-16
-        digest: sha256:5099e38f70c4c6de42a1a68a5abfab5e4666f34febd492fbf32b8cce0c8f12e2
+        id: briefing:first-officer-gate-command-lifecycle:implementation:roborev-2211
+        digest: sha256:a069d899e7a9e2576dc397a8cc297af6750fd9e310c8e51de3b562084cc116a0
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-16
+        room-ref: ./review/implementation/round-23
 mod-block:
 pr: "#565"
 ---
@@ -719,7 +719,7 @@ From a goal-only prompt, one fixture-backed First Officer journey must package a
 
 This task owns the shared First Officer routing trigger, the deferred lifecycle’s Captain-word translation and durable route, the presenter’s canonical chat rendering/completion boundary, and their behavioral proof. It reuses the landed recorder/consumer, retained package, advisory correction flow, merge ceremony, host adapters, and repo-local fixture identity. It does not add a recorder schema or enum, product decision mapper, duplicate gate judgment, provider change, host-specific lifecycle, compatibility behavior, new harness, or advisory correction-round implementation.
 
-### Feedback Cycles
+### Historical feedback context
 
 - **Cycle 31 — live delegated-authority design reset (2026-07-25).** The unchanged
   Claude journey delivered the full visible lifecycle and durable successor effect but
@@ -863,7 +863,7 @@ Implemented and hardened the six-event integration and its deterministic/live or
 - Cycle 20: DESIGN RESET — supported Pi lifecycle at `ce436505`; surface 17 files/497 added LOC vs +510 hard stop (97%); AC unchanged; Claude/Codex and offline gates pass, but Pi’s successful native successor is not attributable through the common oracle, its directive retains prompt delimiters, and the runner cleaned command/state evidence required to adjudicate either claim
 - Cycle 21: DESIGN RESET — independent checkpoint review and correction prototype at `3c535105`; surface 3 correction files/+191 additions vs +95 repair cap (201%) before seven deleted v1 invariants are restored; AC authority must be re-anchored because expanding the forensic proof surface would reward the same overdesign
 - Cycle 22: NEEDS DECISION — second clean-branch staff correction; `recorded_gate_lifecycle_test.go` requires measured +135/-152 vs approved +70..120/-100..190. Independent review found the +15 addition breach irreducible product proof for six durable Captain mappings and approved a one-file range amendment conditional on deleting redundant bind reparsing; AC unchanged
-- Cycle 23: REJECTED — Roborev job 2211 triage and repair; surface 11 files/183 changed LOC vs estimate 11 files/204 changed LOC (90%); AC unchanged
+- Cycle 23: REJECTED — Roborev job 2211 triage and repair; surface 11/183 vs estimate 11/204 (90%); AC unchanged
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
