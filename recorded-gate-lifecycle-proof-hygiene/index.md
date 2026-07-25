@@ -1,6 +1,6 @@
 ---
 title: Clean recorded-gate lifecycle proof hygiene before v1
-status: implementation
+status: validation
 source: "Durable-decisions exact-tip close-out audit at deac7f8a, corrected and committed as 4ff98d8c."
 score: "0.9"
 sprint: durable-decisions
