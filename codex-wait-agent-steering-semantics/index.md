@@ -262,3 +262,18 @@ Implementation now describes captain input as resuming the First Officer's activ
 ### Summary
 
 The live Codex drive exhibited the intended outcome: captain steering resumed active work without cancelling or redispatching the unresolved worker, and monitoring resumed afterward. The shipped tests reject every planted mutant and all required suites pass, but the detached audit found two supported false-pass traces in ordering and durable-report authority. Both material findings affect AC-1/AC-2 evidence and require a narrow correction before validation can recommend PASSED; there are no deferred risks or polish-only findings.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Invalidate the latched active-scope-empty observation whenever later active work occurs, and require a renewed empty-scope event before the second monitoring call.
+  Commit `9e3a5ca0` resets the observed empty boundary on every later positive active-work event; monitoring without a renewed empty event is rejected while runtime behavior remains unchanged.
+- DONE: Add the exact active-work-after-empty mutant and prove it fails at the stale-empty ordering boundary without changing runtime behavior or the durable report schema.
+  The new focused mutant first passed before the fix, then failed with `captain-authorized active work was not exhausted before monitoring resumed`; all prior steering mutants and the original trace still pass.
+- DONE: Run focused, containment, live-tag, full, race, and one targeted final Roborev pass; update the implementation report with the narrow disposition.
+  Focused steering/idle tests, contractlint containment, live-tag compile, `go test ./...`, and `go test ./... -race` passed; targeted Roborev job 2419 found no issues.
+  The final surface is 6 files/896 changed LOC versus the advisory 5 files/190–285 LOC estimate, a 10-line net increase confined to the existing Codex behavioral proof; AC remains unchanged.
+  Validation's mandatory evidence-line proposal remains declined as an AC-narrowing report-format schema; parsed durable stage-report authority is unchanged.
+
+### Summary
+
+The correction closes the stale-empty ordering false pass by making later active work revoke the prior idle observation. A fresh empty-scope event is now required before monitoring can resume, with no runtime, adapter, or durable-report schema change.
