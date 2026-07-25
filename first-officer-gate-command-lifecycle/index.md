@@ -871,7 +871,7 @@ Implemented and hardened the six-event integration and its deterministic/live or
 
 - Cycle 26: REJECTED — validation cycle 33 canonical Pi lane gap; surface 13/199 vs estimate 13/204 (98%); AC unchanged
 
-- Cycle 27: REJECTED — validation cycle 35 Pi provider-auth mismatch; surface 15/203 vs estimate 15/204 (100%); AC unchanged
+- Cycle 27: REJECTED — validation cycle 35 Pi provider-auth mismatch; surface 15/203 vs estimate 15/204 (100%); AC unchanged; captain-authorized correction cap 16/205 for the exact provider/model-override deletion only
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
