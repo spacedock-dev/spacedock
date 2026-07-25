@@ -56,6 +56,15 @@ gates:
                 blockers: []
 worktree: .worktrees/spacedock-ensign-recorded-gate-lifecycle-proof-hygiene
 started: 2026-07-25T17:09:51Z
+review-round:
+    id: round:fh3n4w4jg7tk015512tn1tsd:implementation:2
+    stage: implementation
+    cycle: 2
+    briefing:
+        id: briefing:fh3n4w4jg7tk015512tn1tsd:implementation:round-2
+        digest: sha256:b009e6c313cfdc0319281f1a02be8b788a698f6cf9cef90d51d4f1ebe4149eeb
+        digest-domain: canonical-bytes
+        room-ref: ./review/implementation/round-2
 ---
 
 ## Problem
@@ -187,3 +196,20 @@ Ideation pinned a deletion-first, test-only cleanup against current `main`: remo
 ### Summary
 
 Cycle 2 preserves the exact four-file, test-only design and removes the unauthorized `-44..-56` acceptance band. This report supersedes only the prior report's numeric tolerance claim; file scope, executable evidence, full/race gates, and the Roborev boundary remain unchanged.
+
+## Stage Report: implementation
+
+- DONE: The finished diff touches exactly the four declared test files, removes the named proof-hygiene constructs, and changes no product or instruction files.
+  Commit `1fa8ead5` is `+13/-63` (net `-50`): the one-line-per-side variance from `+14/-64` is immaterial line accounting, with identical four-file scope and deletion-first net change; exact-name searches find neither removed construct.
+- DONE: The structural `mods/pr-merge.md` / `gh pr view` positive discriminator remains executable while the shipped-prose map is gone.
+  Focused contractlint passed; deleting the allowed token fails the retained positive discriminator, while its existing planted-path negative control still rejects an outside occurrence.
+- DONE: Codex and Claude guardrail journeys check archive absence before reading the active entity and produce the named archive diagnostic.
+  A temporary post-run archive control failed both paths with `recorded-gate-task was archived while waiting at the gate; stat err=<nil>` before any active-file read; the control file was removed before commit.
+- DONE: Focused lifecycle and contractlint tests, live-tag compilation, gofmt, full tests, race tests, and a final Roborev panel pass or have explicit evidence-backed dispositions.
+  Focused suites, live-tag compilation, `go test ./...`, and `go test ./... -race` passed; Roborev job 2331 passed 2/2 with no findings and is recorded as advisory round `implementation/2`.
+- DONE: Exercise the credentialed Codex, Claude, and default-headless guardrail journeys when credentials are available.
+  All three reached and presented the recorded gate, then failed the unchanged hold-shape oracle because `state: open` count was not one; each executed the new pre-read archive assertion first without firing, so this host-output drift is non-material to the approved proof-hygiene cleanup.
+
+### Summary
+
+The committed four-test-file cleanup removes the tautological command-text oracle and shipped-prose map, preserves the structural PR-view discriminator, and makes both guardrail runners diagnose archival before active-file reads. Deterministic gates are green; the credentialed host runs exposed an unrelated exact-state-shape drift after clearing the new assertion, and the final two-reviewer Roborev panel found no issues.
