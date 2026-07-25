@@ -1,6 +1,6 @@
 ---
 title: Materialize Git-root Review v1 sources for provider presentation
-status: backlog
+status: ideation
 source: "s4 cycle-6 staff rejection: recorder-valid git-root:// sources are not renderable by current Subspace package mode, 2026-07-25"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
