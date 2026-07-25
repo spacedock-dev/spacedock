@@ -3982,3 +3982,45 @@ provider cannot use the lane's available authentication, so no Pi gate
 lifecycle occurred. PR #565 remains not gate-clear on AC-3 evidence despite green
 deterministic/docs/install checks; pending Claude/Codex work is not counted.
 Checklist accounting is **6 DONE, 3 FAILED, 0 SKIPPED**.
+
+## Stage Report: implementation (cycle 36 Pi default correction)
+
+- DONE: Apply only the Captain-authorized provider/model-override deletion.
+  Commit `cc5b27dc8c43423672e4cd8c89c428d2ebd65f75` removes explicit
+  `openai-codex`/`gpt-5.3-codex` argv only from
+  `TestLivePiRecordedGateLifecycle`, inheriting the lane's authenticated Pi
+  default without changing any selector, artifact, job, pin, harness, or code.
+- DONE: Report intended-versus-actual scope exactly.
+  Intended and actual correction are one existing test file at +1/-1 from
+  `e617f947`; cumulative scope is 16 files, +142/-63 = 205 changed LOC,
+  matching the exact Captain amendment recorded in Cycle 27.
+- DONE: Pass focused and required deterministic checks before push.
+  Focused live-tag Pi coverage and existing workflow-owner guards, `gofmt -w
+  ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff
+  --check` passed; no local provider journey ran.
+- DONE: Fast-forward exact PR #565 tip without force.
+  Local, SSH remote, and PR branch were advanced from `e617f947` to exact clean
+  tip `cc5b27dc`; Runtime Live E2E run `30160643514` binds that SHA.
+- FAILED: The canonical Pi lane passes the existing recorded-gate lifecycle
+  oracle by inheriting the same authenticated default as the front-door smoke.
+  Job `89685355685` authenticated and ran the test for 173.43s, consumed the
+  approval, advanced to handoff, and retained successor commit `d630e06`, but
+  failed the existing oracle with `gate review omits its decision facts`.
+- DONE: Retain and classify the exact stopping evidence.
+  The same job passed `TestLivePiFrontDoorSmoke` in 72.57s and uploaded
+  `pi-front-door-smoke-detail.jsonl`, root session JSONL, stdout/stderr, and
+  lifecycle artifacts; this is a post-lifecycle review-evidence gap, not the
+  retired authentication refusal.
+- SKIPPED: Chase the new Pi review gap, alter a prompt/oracle/provider/model,
+  add a harness/job/test, run local live/provider, rerun Roborev, record a
+  round, mutate status/stage/gate, or merge.
+  Captain direction makes canonical Pi red the stopping boundary and defers
+  further correction.
+
+### Summary
+
+The simplest default-inheritance correction is committed and pushed exactly,
+and canonical Pi now completes the durable lifecycle instead of failing
+authentication. Its retained review still fails the existing decision-facts
+oracle, so implementation stops with that evidence gap deferred and no further
+scope expansion. Checklist accounting is **6 DONE, 1 FAILED, 1 SKIPPED**.
