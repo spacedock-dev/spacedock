@@ -127,28 +127,35 @@ type resultAssociation struct {
 // held. Lifecycle operation, current-stage target, CAS, and ids are derived by
 // the recorder rather than supplied in a transaction envelope.
 func RecordSemantic(entityPath string, input RecordInput) error {
+	_, err := RecordSemanticSummary(entityPath, input)
+	return err
+}
+
+// RecordSemanticSummary performs one semantic record and returns the exact
+// post-write summary while the entity lock is still held.
+func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error) {
 	if input.Round != "" {
 		if input.BriefingPath == "" || input.LogPath == "" {
-			return fmt.Errorf("gate record --round requires --briefing and --log")
+			return Summary{}, fmt.Errorf("gate record --round requires --briefing and --log")
 		}
 		if input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "" {
-			return fmt.Errorf("gate record --round is incompatible with gate-closing flags")
+			return Summary{}, fmt.Errorf("gate record --round is incompatible with gate-closing flags")
 		}
 		if filepath.Base(input.BriefingPath) != "briefing.json" || filepath.Base(input.LogPath) != "briefing.review.jsonl" {
-			return fmt.Errorf("--round inputs must name briefing.json and briefing.review.jsonl")
+			return Summary{}, fmt.Errorf("--round inputs must name briefing.json and briefing.review.jsonl")
 		}
 		if filepath.Base(entityPath) != "index.md" {
-			return fmt.Errorf("gate record --round requires folder-form entity <slug>/index.md because review artifacts accumulate beside the entity")
+			return Summary{}, fmt.Errorf("gate record --round requires folder-form entity <slug>/index.md because review artifacts accumulate beside the entity")
 		}
 		unlock, err := lockEntity(entityPath)
 		if err != nil {
-			return err
+			return Summary{}, err
 		}
 		defer unlock()
-		return recordRoundLockedWith(entityPath, input, nil, atomicWrite)
+		return Summary{}, recordRoundLockedWith(entityPath, input, nil, atomicWrite)
 	}
 	if input.LogPath != "" || input.FeedbackCyclePath != "" {
-		return fmt.Errorf("--log and --feedback-cycle require --round")
+		return Summary{}, fmt.Errorf("--log and --feedback-cycle require --round")
 	}
 	sources := 0
 	for _, source := range []string{input.BriefingPath, input.RoomPath, input.Decision} {
@@ -157,30 +164,39 @@ func RecordSemantic(entityPath string, input RecordInput) error {
 		}
 	}
 	if sources != 1 {
-		return fmt.Errorf("gate record requires exactly one of --briefing, --room, or --decision")
+		return Summary{}, fmt.Errorf("gate record requires exactly one of --briefing, --room, or --decision")
 	}
 	if input.BriefingPath != "" && (input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "") || input.RoomPath != "" && (input.Actor != "" || input.Decision != "" || input.Reason != "") {
-		return fmt.Errorf("gate record flags do not match the selected semantic source")
+		return Summary{}, fmt.Errorf("gate record flags do not match the selected semantic source")
 	}
 	unlock, err := lockEntity(entityPath)
 	if err != nil {
-		return err
+		return Summary{}, err
 	}
 	defer unlock()
+	var recordErr error
 	if input.BriefingPath != "" {
-		return recordBriefingLocked(entityPath, input.BriefingPath)
+		recordErr = recordBriefingLocked(entityPath, input.BriefingPath, input.WorkflowDir)
+	} else if input.RoomPath != "" {
+		recordErr = recordRoomLocked(entityPath, input)
+	} else {
+		recordErr = recordChatLocked(entityPath, input)
 	}
-	if input.RoomPath != "" {
-		return recordRoomLocked(entityPath, input)
+	if recordErr != nil {
+		return Summary{}, recordErr
 	}
-	return recordChatLocked(entityPath, input)
+	doc, _, err := Read(entityPath)
+	if err != nil {
+		return Summary{}, err
+	}
+	return CurrentSummary(doc), nil
 }
 
 func RecordBriefing(entityPath, briefingPath string) error {
 	return RecordSemantic(entityPath, RecordInput{BriefingPath: briefingPath})
 }
 
-func recordBriefingLocked(entityPath, briefingPath string) error {
+func recordBriefingLocked(entityPath, briefingPath, workflowDir string) error {
 	binding, err := bindingFromManifest(entityPath, briefingPath)
 	if err != nil {
 		return err
@@ -193,12 +209,28 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 	if readErr != nil && !strings.Contains(readErr.Error(), "no gates record") {
 		return readErr
 	}
+	hadDocument := doc != nil
 	if doc == nil {
 		doc = &Document{Version: 1}
 	}
 	record, lookupErr := recordForStage(doc, stage)
 	if lookupErr != nil && !strings.Contains(lookupErr.Error(), "no logical gate") {
 		return lookupErr
+	}
+	if hadDocument {
+		if workflowDir == "" {
+			workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
+		}
+		skipGate, skipAttempt := "", ""
+		if record != nil && len(record.Attempts) != 0 {
+			current := &record.Attempts[len(record.Attempts)-1]
+			if current.Resolution == nil {
+				skipGate, skipAttempt = record.ID, current.ID
+			}
+		}
+		if err := validateRetainedAuthorityExcept(entityPath, workflowDir, doc, skipGate, skipAttempt); err != nil {
+			return err
+		}
 	}
 	if record == nil {
 		gateID, attemptID, err := initialIDs(binding.ID, entityPath, stage)
@@ -263,6 +295,13 @@ func recordBriefingLocked(entityPath, briefingPath string) error {
 func recordRoomLocked(entityPath string, input RecordInput) error {
 	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath)
 	if err != nil {
+		return err
+	}
+	workflowDir := input.WorkflowDir
+	if workflowDir == "" {
+		workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
+	}
+	if err := validateRetainedAuthorityExcept(entityPath, workflowDir, doc, record.ID, attempt.ID); err != nil {
 		return err
 	}
 	if attempt.Resolution != nil {
@@ -350,10 +389,6 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	if err != nil {
 		return err
 	}
-	workflowDir := input.WorkflowDir
-	if workflowDir == "" {
-		workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
-	}
 	roots := gitsource.Roots{Main: workflowDir, State: filepath.Dir(entityPath)}
 	gitItems := 0
 	for _, item := range canonicalItems {
@@ -412,6 +447,13 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 	}
 	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath)
 	if err != nil {
+		return err
+	}
+	workflowDir := input.WorkflowDir
+	if workflowDir == "" {
+		workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
+	}
+	if err := validateRetainedAuthority(entityPath, workflowDir, doc); err != nil {
 		return err
 	}
 	if attempt.Resolution != nil {
@@ -925,20 +967,23 @@ func requestForBriefing(briefingPath string) (string, []byte, *gateRoomRequest, 
 		requestPath := filepath.Join(room, "request.json")
 		requestBytes, readErr := os.ReadFile(requestPath)
 		if readErr == nil {
-			request, err := decodeGateRoomRequest(requestBytes)
-			if err != nil {
-				continue
+			var probe struct {
+				Briefing struct {
+					Locator string `json:"locator"`
+				} `json:"briefing"`
 			}
-			located, err := resolveBriefingLocator(room, request.Briefing.Locator)
-			if err != nil {
-				continue
+			if json.Unmarshal(requestBytes, &probe) == nil {
+				located, locateErr := resolveBriefingLocator(room, probe.Briefing.Locator)
+				if locateErr == nil && filepath.Clean(located) == filepath.Clean(briefingPath) {
+					request, err := decodeGateRoomRequest(requestBytes)
+					if err != nil {
+						return "", nil, nil, err
+					}
+					return room, requestBytes, request, nil
+				}
 			}
-			if filepath.Clean(located) != filepath.Clean(briefingPath) {
-				continue
-			}
-			return room, requestBytes, request, nil
 		}
-		if !os.IsNotExist(readErr) {
+		if readErr != nil && !os.IsNotExist(readErr) {
 			return "", nil, nil, fmt.Errorf("read gate room request: %w", readErr)
 		}
 		parent := filepath.Dir(room)

@@ -571,7 +571,7 @@ func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
 			entityDir,
 			slug,
 			snap.isFolder,
-			snap.companionPresent || snap.companionTracked,
+			snap.companionTracked,
 			snap.companionPresent,
 		)
 		for i := range pathspecs {
@@ -612,7 +612,7 @@ func commitArchiveMove(entityDir, slug string, snapshot archiveSnapshot, stderr 
 		entityDir,
 		slug,
 		isFolder,
-		!isFolder && (snapshot.companionPresent || snapshot.companionTracked),
+		!isFolder && snapshot.companionTracked,
 		!isFolder && snapshot.companionPresent,
 	)
 	// Stage the vacated source (deletion) and the new dest. git records this as a

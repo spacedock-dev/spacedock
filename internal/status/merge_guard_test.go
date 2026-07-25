@@ -881,6 +881,37 @@ func TestMergeGuardFinalizeCommitsDeletedFlatCompanion(t *testing.T) {
 	}
 }
 
+func TestMergeGuardFinalizeArchivesUntrackedFlatCompanion(t *testing.T) {
+	root := stageFixture(t, "merge-local-workflow")
+	slug := "020-no-sentinel"
+	liveRequest := filepath.Join(root, slug, "review", "validation", "briefing-1", "request.json")
+	writeFile(t, liveRequest, "untracked request\n")
+
+	var armOut, armErr bytes.Buffer
+	if code := MergeGuard([]string{"--workflow-dir", root, slug, "--verdict", "passed"}, root, &armOut, &armErr); code != 0 {
+		t.Fatalf("arm exit=%d stderr=%q", code, armErr.String())
+	}
+	var finalOut, finalErr bytes.Buffer
+	if code := MergeGuard([]string{"--workflow-dir", root, slug, "--verdict", "passed"}, root, &finalOut, &finalErr); code != 0 {
+		t.Fatalf("finalize exit=%d stderr=%q", code, finalErr.String())
+	}
+
+	archivedRequest := filepath.Join(root, "_archive", slug, "review", "validation", "briefing-1", "request.json")
+	if got, err := os.ReadFile(archivedRequest); err != nil || string(got) != "untracked request\n" {
+		t.Fatalf("archived untracked companion bytes=%q err=%v", got, err)
+	}
+	if fileExists(liveRequest) {
+		t.Fatal("finalize left the untracked flat companion at its live path")
+	}
+	changed := gitOutput(t, root, "show", "--name-only", "--format=", "HEAD")
+	if !strings.Contains(changed, filepath.ToSlash(filepath.Join("_archive", slug, "review", "validation", "briefing-1", "request.json"))) {
+		t.Fatalf("archive commit omitted the untracked companion destination:\n%s", changed)
+	}
+	if porcelain := gitOutput(t, root, "status", "--porcelain", "--", slug, filepath.Join("_archive", slug)); porcelain != "" {
+		t.Fatalf("untracked companion archive remains dirty:\n%s", porcelain)
+	}
+}
+
 // TestMergeGuardFinalizesFolderFormEntity (FIX 1): a FOLDER-FORM entity
 // ({slug}/index.md) finalizes — terminalize + archive the whole folder to
 // _archive/{slug}/ — and the archive move is committed PATH-SCOPED by the verb. This

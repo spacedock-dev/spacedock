@@ -945,7 +945,7 @@ func validatePreparedRecordedGateInventory(fixture recordedGateFixture, entity, 
 	selected := append([]string{fixture.gateReview}, fixture.references...)
 	roots := gitsource.Roots{Main: fixture.root, State: fixture.stateRoot}
 	for i, path := range selected {
-		expected, err := gitsource.Inspect(roots, path)
+		expectedIdentity, err := expectedRecordedGateLocatorIdentity(fixture, path)
 		if err != nil {
 			return err
 		}
@@ -958,7 +958,7 @@ func validatePreparedRecordedGateInventory(fixture recordedGateFixture, entity, 
 			return err
 		}
 		if actual[i].ID == "" ||
-			recordedGateLocatorIdentity(actual[i].URI) != recordedGateLocatorIdentity(expected.URI) ||
+			recordedGateLocatorIdentity(actual[i].URI) != expectedIdentity ||
 			actual[i].Rev != gitsource.RawDigest(expectedBytes) ||
 			!bytes.Equal(resolvedBytes, expectedBytes) {
 			return fmt.Errorf("prepared item %d does not match selected source", i)
@@ -989,6 +989,35 @@ func validatePreparedRecordedGateInventory(fixture recordedGateFixture, entity, 
 		return fmt.Errorf("prepared request does not bind the independently verified inventory")
 	}
 	return nil
+}
+
+func expectedRecordedGateLocatorIdentity(fixture recordedGateFixture, selected string) (string, error) {
+	selected, err := filepath.Abs(selected)
+	if err != nil {
+		return "", err
+	}
+	for _, candidate := range []struct {
+		name string
+		root string
+	}{
+		{name: "state", root: fixture.stateRoot},
+		{name: "main", root: fixture.root},
+	} {
+		root, err := filepath.Abs(candidate.root)
+		if err != nil {
+			return "", err
+		}
+		rel, err := filepath.Rel(root, selected)
+		if err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			continue
+		}
+		parts := strings.Split(filepath.ToSlash(rel), "/")
+		for i, part := range parts {
+			parts[i] = url.PathEscape(part)
+		}
+		return candidate.name + "/" + strings.Join(parts, "/"), nil
+	}
+	return "", fmt.Errorf("selected source is outside the independently expected roots")
 }
 
 func recordedGateLocatorIdentity(locator string) string {

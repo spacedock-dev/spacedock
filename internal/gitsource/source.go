@@ -123,6 +123,21 @@ func Resolve(roots Roots, locator, rev string) ([]byte, error) {
 	return body, nil
 }
 
+// SameLogicalRevision reports whether two immutable coordinates name the same
+// logical root, repository path, and raw bytes. Commit identity may differ when
+// an unrelated state commit advances the selected file's repository.
+func SameLogicalRevision(left, right Source) (bool, error) {
+	leftRoot, _, leftPath, err := parse(left.URI)
+	if err != nil {
+		return false, err
+	}
+	rightRoot, _, rightPath, err := parse(right.URI)
+	if err != nil {
+		return false, err
+	}
+	return leftRoot == rightRoot && leftPath == rightPath && left.Rev == right.Rev, nil
+}
+
 func RawDigest(data []byte) string {
 	sum := sha256.Sum256(data)
 	return "sha256:" + hex.EncodeToString(sum[:])

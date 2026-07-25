@@ -166,6 +166,54 @@ func TestPrepareRejectsDivergentOccupancyAndLeavesEntityUnchanged(t *testing.T) 
 	}
 }
 
+func TestPrepareReplaySurvivesRequiredStateCommit(t *testing.T) {
+	workflow, state, entity, artifact, reference := prepareFixture(t, "flat")
+	input := PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Should this gate advance?",
+		Artifact:    artifact,
+		Summary:     "Exact summary.",
+		References:  []string{reference},
+	}
+	result, err := Prepare(entity, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prepareGitRun(t, state, "add", "task.md", "task")
+	prepareGitRun(t, state, "commit", "-q", "-m", "bind prepared room")
+	beforeHead := strings.TrimSpace(prepareGitOutput(t, state, "rev-parse", "HEAD"))
+	beforeEntity, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeBriefing, err := os.ReadFile(filepath.Join(result.Room, preparedBriefingLocator))
+	if err != nil {
+		t.Fatal(err)
+	}
+	replayed, err := Prepare(entity, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if replayed != result {
+		t.Fatalf("replay=%#v want %#v", replayed, result)
+	}
+	afterHead := strings.TrimSpace(prepareGitOutput(t, state, "rev-parse", "HEAD"))
+	afterEntity, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterBriefing, err := os.ReadFile(filepath.Join(result.Room, preparedBriefingLocator))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if afterHead != beforeHead || !bytes.Equal(afterEntity, beforeEntity) || !bytes.Equal(afterBriefing, beforeBriefing) {
+		t.Fatal("post-commit replay changed state HEAD or durable bytes")
+	}
+	if status := prepareGitOutput(t, state, "status", "--porcelain"); strings.TrimSpace(status) != "" {
+		t.Fatalf("post-commit replay dirtied state repository: %q", status)
+	}
+}
+
 func TestPreparedCandidateFailureLeavesNoRoomParents(t *testing.T) {
 	root := t.TempDir()
 	room := filepath.Join(root, "task", "review", "validation", "briefing-1")
@@ -331,6 +379,45 @@ func TestPreparedAuthorityIsRecomputedDuringReadOnlyValidation(t *testing.T) {
 				t.Fatal("read-only validation accepted drifted prepared authority")
 			}
 		})
+	}
+}
+
+func TestChatDecisionValidatesPreparedAuthorityBeforeMutation(t *testing.T) {
+	workflow, _, entity, artifact, _ := prepareFixture(t, "flat")
+	result, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Review?",
+		Artifact:    artifact,
+		Summary:     "summary",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	requestPath := filepath.Join(result.Room, "request.json")
+	request, err := os.ReadFile(requestPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(requestPath, bytes.Replace(request, []byte(`"actor": "person:captain"`), []byte(`"actor": "agent:other"`), 1), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := RecordSemantic(entity, RecordInput{
+		Decision:    "approve",
+		Actor:       "person:captain",
+		WorkflowDir: workflow,
+	}); err == nil || !strings.Contains(err.Error(), "retained request.json") {
+		t.Fatalf("drifted authority chat decision error=%v", err)
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("drifted retained authority chat decision changed entity bytes")
 	}
 }
 

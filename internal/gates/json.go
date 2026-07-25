@@ -9,6 +9,8 @@ import (
 	"io"
 )
 
+const maxAuthorityJSONDepth = 128
+
 func decodeAuthorityJSON(data []byte, label string, target any) error {
 	if err := rejectDuplicateMembers(data); err != nil {
 		return fmt.Errorf("%s: %w", label, err)
@@ -22,7 +24,7 @@ func decodeAuthorityJSON(data []byte, label string, target any) error {
 func rejectDuplicateMembers(data []byte) error {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.UseNumber()
-	if err := checkJSONValue(decoder); err != nil {
+	if err := checkJSONValue(decoder, 0); err != nil {
 		return err
 	}
 	if token, err := decoder.Token(); err != io.EOF {
@@ -34,7 +36,10 @@ func rejectDuplicateMembers(data []byte) error {
 	return nil
 }
 
-func checkJSONValue(decoder *json.Decoder) error {
+func checkJSONValue(decoder *json.Decoder, depth int) error {
+	if depth > maxAuthorityJSONDepth {
+		return fmt.Errorf("authority JSON nesting exceeds %d levels", maxAuthorityJSONDepth)
+	}
 	token, err := decoder.Token()
 	if err != nil {
 		return err
@@ -59,7 +64,7 @@ func checkJSONValue(decoder *json.Decoder) error {
 				return fmt.Errorf("duplicate JSON object member %q", key)
 			}
 			seen[key] = true
-			if err := checkJSONValue(decoder); err != nil {
+			if err := checkJSONValue(decoder, depth+1); err != nil {
 				return err
 			}
 		}
@@ -72,7 +77,7 @@ func checkJSONValue(decoder *json.Decoder) error {
 		}
 	case '[':
 		for decoder.More() {
-			if err := checkJSONValue(decoder); err != nil {
+			if err := checkJSONValue(decoder, depth+1); err != nil {
 				return err
 			}
 		}

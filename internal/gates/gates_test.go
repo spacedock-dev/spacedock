@@ -100,6 +100,42 @@ func TestRequestlessBriefingIgnoresUnrelatedAncestorRequest(t *testing.T) {
 	}
 }
 
+func TestMatchingAncestorRequestRejectsRecursiveDuplicateMembers(t *testing.T) {
+	entity := writeEntity(t, "status: ideation\ntitle: Unchanged\n")
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	room := t.TempDir()
+	briefing := filepath.Join(room, "nested", "selected", "revision-1.json")
+	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	body := []byte(completeBriefing("briefing:local:matching:ideation:attempt-1:revision-1", "matching request"))
+	if err := os.WriteFile(briefing, body, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	digest, err := CanonicalDigest(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := `{"type":"spacedock-gate-presentation-request","version":"1","gate":"gate:local:matching:ideation","attempt":"gate-attempt:matching-ideation-1","briefing":{"locator":"nested/selected/revision-1.json","id":"briefing:local:matching:ideation:attempt-1:revision-1","digest":"` +
+		digest + `","extra":{"pin":"one","pin":"two"}},"actor":"person:captain","approver":"person:captain"}`
+	if err := os.WriteFile(filepath.Join(room, "request.json"), []byte(request), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := RecordBriefing(entity, briefing); err == nil || !strings.Contains(err.Error(), "duplicate JSON object member") {
+		t.Fatalf("matching malformed request error=%v", err)
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(after) != string(before) {
+		t.Fatal("matching malformed request changed entity bytes")
+	}
+}
+
 func TestCanonicalCrossGateReentryPreservesFrozenApplication(t *testing.T) {
 	entity := writeEntity(t, canonicalTwoGateFrontmatter())
 	doc, oldNode, err := Read(entity)
@@ -398,6 +434,11 @@ func TestAuthorityDocumentDecodersRejectRecursiveDuplicateMembers(t *testing.T) 
 	duplicateInventory := []byte(`{"items":[{"type":"Artifact","id":"artifact:a","rev":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","extra":{"source":"one","source":"two"}}]}`)
 	if _, err := decodePresentedInventory(duplicateInventory); err == nil || !strings.Contains(err.Error(), "duplicate JSON object member") {
 		t.Fatalf("inventory duplicate error=%v", err)
+	}
+
+	deep := strings.Repeat(`{"nested":`, maxAuthorityJSONDepth+1) + `null` + strings.Repeat(`}`, maxAuthorityJSONDepth+1)
+	if err := rejectDuplicateMembers([]byte(deep)); err == nil || !strings.Contains(err.Error(), "nesting exceeds") {
+		t.Fatalf("deep authority JSON error=%v", err)
 	}
 }
 
