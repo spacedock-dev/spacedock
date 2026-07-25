@@ -255,3 +255,39 @@ controls, and evidence.
 ### Summary
 
 The six-file, 111-LOC harness-only change scrubs foreign detector keys at each existing host environment seam and leaves production host resolution untouched. The recorded-gate proof now observes every build attempt, forbids both explicit-host flag forms, and retains its stream and command log under `/tmp/spacedock-v3vt8gp2yf-claude-live-reviewed/claude-shared-scenarios/recorded-gate-lifecycle`.
+
+## Stage Report: validation
+
+- DONE: The exact candidate removes every foreign runtime-family detector from each live host child while preserving target-host credentials, PATH, HOME, and state exactly once.
+  The three builder tests seed all four detector keys and fail on a foreign key, duplicate replacement, or changed credential/PATH/HOME/state value; default- and live-tag runs passed.
+- DONE: The Claude recorded-gate journey performs one successful flag-free dispatch build with no explicit host, ambiguity recovery, or retry and still commits the successor effect.
+  Retained `command.log` has one attempt, one matching `exit=0`, no explicit host, and dispatch after consume; the successful stream records committed marker `RECORDED-GATE-SUCCESSOR-DISPATCHED`.
+- DONE: Production mixed-marker refusal remains unchanged and its existing Codex+Claude and Codex+Pi controls pass.
+  Both unchanged `TestBuildHostResolutionFromFlagJSONAndEnv` ambiguity controls passed and would fail if refusal, error identity, or explicit-host guidance weakened.
+- FAILED: The six-file harness-only diff, Roborev rounds, focused/full/race/live-tag tests, and retained credentialed Claude evidence support every acceptance criterion without a new product or instruction obligation.
+  AC-3's live oracle does not verify dispatch-build exit status: one failed attempt followed by supported break-glass dispatch can retain one attempt and one durable effect while grading PASS.
+- DONE: AC-1 — foreign runtime-family detectors are absent from each target child and flag-free Claude derivation succeeds.
+  Exact-slice builder assertions passed; the retained Claude command is flag-free and exits 0, so changing a scrubbed key or derived host would fail the reproduced evidence.
+- DONE: AC-2 — credentials, PATH, isolated HOME, and target-host state are preserved exactly once.
+  Both Claude auth branches plus Codex and Pi exact-cardinality tests passed alongside the existing auth/config/PATH controls.
+- FAILED: AC-3 — exactly one successful flag-free build with no ambiguity or retry and a committed successor effect.
+  Outcome evidence is healthy, but `recordedGateLiveObservation` counts `begin` lines without requiring an `exit=0` line; this is a material evidence defect on the promised one-successful-build boundary.
+- DONE: AC-4 — production mixed-marker detection still refuses Codex+Claude and Codex+Pi.
+  The candidate changes no production file, and both unchanged command-level refusal controls passed.
+- SKIPPED: Re-run the credentialed Claude journey.
+  The retained stream/log is candidate-specific: the candidate-added artifact copy exists, records one successful attempt, has no exact ambiguity or host flag, and ends in a successful Claude result.
+- SKIPPED: Promote the Pi live-tag CI-selection concern to material.
+  Deferred risk: only a future unrun Pi builder regression triggers it; the required current live-tag proof passes, and it becomes material if CI coverage is promised or a supported Pi journey exhibits contamination.
+- FAILED: Recommendation — PASSED/REJECTED.
+  REJECTED; return to implementation for a narrow AC-3 evidence fix that pairs the sole attempt with exactly one successful exit and adds a non-zero-exit mutant.
+
+### Summary
+
+Candidate `16aa2ec3` is scope-correct and its reproduced focused, full, race,
+live-tag, production-control, and retained live evidence all pass. Validation
+rejects one material evidence defect: the recorded-gate oracle can qualify a
+failed build followed by break-glass successor dispatch, contrary to AC-3.
+
+### Feedback Cycles
+
+- Cycle 2: REJECTED — validation adversarial pass; surface 6/111 vs estimate 88 (126%); AC unchanged; adversarial edit: make the sole dispatch-build exit non-zero while retaining the successor effect
