@@ -3835,3 +3835,40 @@ delegated actor attribution and actor refusals explicit without changing
 runtime semantics. Roborev 2224 now has complete worker triage and a canonical
 Cycle 24 source at clean code tip `aa04e95d`; no round was recorded. Checklist
 accounting is **5 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 Roborev 2231 final disposition)
+
+- DONE: Add the accepted final corrections test-first.
+  The focused contract first failed only on the absent retired-`--directive`
+  rejection, then passed; removing the rejection, halt, or refresh remedy makes
+  `TestFOGateLifecycleOwnsEveryEngagedEntry` fail.
+- DONE: Implement only the three authorized correction files.
+  Commit `537f443e05f412b94972e82a1b0f438b9160d8fe` amends the binding
+  roadmap ruling, rejects a stale gate candidate, and pins that fail-closed
+  behavior without changing any declined schema, compatibility, harness,
+  vocabulary, error-order, serializer, production, or command surface.
+- DONE: Pass every required deterministic verification gate.
+  The focused contract/cap lane, `gofmt -w ./cmd ./internal`, `go test ./...`,
+  `go test ./... -race`, pinned `mkdocs build --strict`, and `git diff
+  --check` passed; the skill is 6,596 bytes under its 6,600-byte cap.
+- DONE: Preserve the amended cumulative surface ceiling.
+  Relative to `280733907f2d9f2c9b6b226a0e8bf06fea6b90db`, the clean code tip
+  is exactly 13 files, 139 additions, and 60 deletions: 199 changed LOC,
+  98% of the 204-LOC ceiling.
+- DONE: Retain complete Roborev 2231 triage and the Cycle 25 source.
+  `review/implementation/roborev-2231/` binds the reviewed `aa04e95d` tip,
+  preserves eight reviewer findings, records two Material fixes and six
+  canonical declines with promotion conditions, and supplies the conforming
+  unpublished Cycle 25 projection.
+- SKIPPED: Change declined surfaces, run live/provider work, record Round 25,
+  rerun Roborev, mutate status/stage/gate state, push, open a PR, or merge.
+  The Captain fixed those boundaries; the First Officer owns fresh validation,
+  CI, Round 25 publication, and the subsequent lifecycle.
+
+### Summary
+
+The final bounded correction retires quoted directive provenance in the last
+binding roadmap ruling and fails closed when a gate candidate exposes the
+retired flag. Roborev 2231 now has complete worker triage and a canonical
+Cycle 25 source at clean code tip `537f443e`; no round or lifecycle state was
+mutated. Checklist accounting is **5 DONE, 1 SKIPPED, 0 FAILED**.
