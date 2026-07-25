@@ -271,8 +271,8 @@ source identity; the retained canonical Briefing remains its authority.
 This clarification adds no rqh Spacedock file because s4 owns generation. In Subspace
 it adds approximately `+35/-0` LOC inside the already-planned source/chrome files;
 `model.go` is already touched for in-memory Reference bytes. The coordinated s4 surface
-is now **19 files, +1,533/-161 = 1,694 changed LOC**, capped at **21 files / 2,118
-changed LOC**. rqh does not invent a second summary input.
+is estimated at **19 files, +1,533/-161 = 1,694 changed LOC**. rqh does not invent a
+second summary input.
 
 ## Ephemeral ownership and cleanup
 
@@ -313,7 +313,7 @@ Only Spacedock maps logical roots and reads Git:
 This lifecycle makes the local-object retention precondition observable rather than
 pretending the raw SHA can recover absent bytes.
 
-## Expected surface and tolerance
+## Expected surface and planning estimates
 
 The rqh implementation begins only after s4 lands its exact command, URI, summary, and
 root-map contract. Planned Spacedock surface:
@@ -330,10 +330,9 @@ root-map contract. Planned Spacedock surface:
 | `docs/specs/gate-resolution-frontmatter-contract.md` | `+70/-5` | Normative resolved-source/lifecycle contract. |
 | `docs/site/reference/command-reference.md` | `+20/-2` | Provider-facing command and failure semantics. |
 
-Spacedock baseline: **9 files, +1,290/-12 = 1,302 changed LOC**. Tolerance is +2 files
-and +25% changed LOC, hard cap **11 files / 1,628 changed LOC**, only for a fixture or
-focused test split. A new request field, provider executable, remote fetch, durable
-cache, or generic URI resolver resets ideation.
+Spacedock planning estimate: **9 files, +1,290/-12 = 1,302 changed LOC**. Counts are
+reconciliation evidence only; they neither authorize nor reject a fixture or focused
+test split and do not reset implementation.
 
 Planned Subspace surface:
 
@@ -353,10 +352,9 @@ Planned Subspace surface:
 | `cmd/subspace-tui/SPEC.md` | `+35/-5` | Private package/materialization lifecycle. |
 | `docs/review-and-gate.md` | `+25/-4` | Resolved-source profile and Artifact summary semantics. |
 
-Subspace baseline: **13 files, +942/-52 = 994 changed LOC**. Tolerance is +2 files
-and +25% changed LOC, hard cap **15 files / 1,243 changed LOC**, only for provider
-cleanup or one E2E fixture split. A Git dependency/command, root map, terminal wrapper,
-second canonical Briefing, Reference summary, or retained source cache resets ideation.
+Subspace planning estimate: **13 files, +942/-52 = 994 changed LOC**. Counts are
+reconciliation evidence only; they neither authorize nor reject provider cleanup or
+an E2E fixture split and do not reset implementation.
 
 ## Acceptance criteria
 
@@ -723,11 +721,9 @@ The Spacedock table is incremental after s4:
 | `docs/specs/gate-resolution-frontmatter-contract.md` | `+72/-8` | Normative materialization authority, manifest, and retained-package boundary. |
 | `docs/site/reference/command-reference.md` | `+22/-4` | Exact provider-facing command and failure semantics. |
 
-Spacedock baseline: **10 named files, +1,032/-50 = 1,082 changed LOC**. Tolerance is
-at most +2 genuinely new files and +20% changed LOC, hard cap **12 files / 1,298
-changed LOC**. Every currently known file is named above; the tolerance cannot absorb
-the public rendezvous, a second resolver, recorder adoption, provider executable,
-request field, remote acquisition, or cache.
+Spacedock planning estimate: **10 named files, +1,032/-50 = 1,082 changed LOC**. Every
+currently known file is named above. File/LOC variance requires reconciliation and
+materiality review, never authorization or rejection by count.
 
 The Subspace table is likewise fully named:
 
@@ -755,11 +751,10 @@ The Subspace table is likewise fully named:
 | `cmd/subspace-tui/SPEC.md` | `+48/-8` | Private resolved-source and cleanup lifecycle. |
 | `docs/review-and-gate.md` | `+32/-4` | Public profile, summary display, recovery, and recorder rendezvous. |
 
-Subspace baseline: **21 named files, +2,125/-167 = 2,292 changed LOC**. Tolerance is
-at most +2 genuinely new files and +20% changed LOC, hard cap **23 files / 2,750
-changed LOC**. No named rendezvous, supervisor, fixture, lifecycle test, or E2E file is
-deferred into tolerance. Git commands, workflow discovery, a second package allocator,
-generic transport, rewritten Briefing, or retained source cache reset ideation.
+Subspace planning estimate: **21 named files, +2,125/-167 = 2,292 changed LOC**. No
+known rendezvous, supervisor, fixture, lifecycle test, or E2E file is omitted from the
+table. File/LOC variance requires reconciliation and materiality review, never
+authorization or rejection by count.
 
 ### Revised acceptance criteria
 
@@ -895,7 +890,7 @@ its already-supported location.
 - DONE: Correct crash/resume and Artifact-summary claims without weakening the accepted low-level contract.
   Catchable paths remove only `resolved-sources`; hard kill may leave named private residue, current Review v1 has no resume surface, and exact canonical summary bytes use lossless control-safe display with the coordinated two-space `Résumé` sentinel.
 - DONE: Name and rebaseline every post-s4 implementation and proof file.
-  Spacedock is 10 named files/1,082 changed LOC and Subspace is 21 named files/2,292 changed LOC; the real E2E enters through `review-tmux`, retains the negative fixture, and no rendezvous/supervisor/test file is hidden under tolerance.
+  Spacedock is estimated at 10 named files/1,082 changed LOC and Subspace at 21 named files/2,292 changed LOC; the real E2E enters through `review-tmux`, retains the negative fixture, and the planning tables name every known rendezvous/supervisor/test file.
 - DONE: Run the repository-required deterministic gates against the unchanged implementation baseline.
   `gofmt -w ./cmd ./internal` produced no Go diff, and both `go test ./...` and `go test ./... -race` completed green; any current launcher, recorder, status, or skill-integration regression would fail its package lane.
 - SKIPPED: Implement code, invoke a live approval provider, record a decision, mutate gate/status frontmatter, or dispatch another worker.
@@ -932,7 +927,7 @@ supervisor's `argv.json` digest and then requires exactly this nine-element chil
 Cycle 2's resolved child has eleven elements because it inserts
 `"--resolved-sources", MANIFEST` before `BRIEFING`. The existing validator would reject
 that otherwise-correct Result after presentation. This is a canonical-validator
-contract change, not tolerance or an incidental test update.
+contract change, not an incidental test update.
 
 Cycle 2 also let `invocation-common` allocate `ROOM/provider` before
 `gate materialize`, while materialization received neither semantic identity. The
@@ -1058,10 +1053,10 @@ The complete Spacedock surface, incremental after s4 design
 | `docs/specs/gate-resolution-frontmatter-contract.md` | `+80/-8` | Normative identity-before-allocation and manifest lifecycle. |
 | `docs/site/reference/command-reference.md` | `+26/-4` | Exact command, authority, output, and failure semantics. |
 
-Spacedock baseline: **10 named files, +1,159/-50 = 1,209 changed LOC**. Tolerance is
-at most +2 genuinely new files and +20% changed LOC, hard cap **12 files / 1,451
-changed LOC**. Identity checks, package allocation, request parsing, or their tests
-cannot move to an unnamed file under tolerance.
+Spacedock planning estimate: **10 named files, +1,159/-50 = 1,209 changed LOC**.
+Identity checks, package allocation, request parsing, and their tests are all named
+planning work. Actual variance requires explanation and materiality review, not a
+count-based pass or failure.
 
 The complete Subspace surface is now:
 
@@ -1090,10 +1085,10 @@ The complete Subspace surface is now:
 | `cmd/subspace-tui/SPEC.md` | `+48/-8` | Private resolved-source, validator, and cleanup lifecycle. |
 | `docs/review-and-gate.md` | `+32/-4` | Public profile, summary display, recovery evidence, and recorder rendezvous. |
 
-Subspace baseline: **22 named files, +2,309/-199 = 2,508 changed LOC**. Tolerance is
-at most +2 genuinely new files and +20% changed LOC, hard cap **24 files / 3,010
-changed LOC**. The validator script and both exact-argv test owners are baseline work,
-not tolerance.
+Subspace planning estimate: **22 named files, +2,309/-199 = 2,508 changed LOC**. The
+validator script and both exact-argv test owners are named planning work. Actual
+variance requires explanation and materiality review, not a count-based pass or
+failure.
 
 ### Revised acceptance and proof deltas
 
@@ -1146,7 +1141,7 @@ remain as specified in cycle 2.
 - DONE: Preserve the approved rendezvous, evidence lifecycle, summary, and canonical source boundaries.
   Public `subspace:r`/fixed-entry E2E, `ROOM/provider` recording, catchable payload cleanup, honest hard-kill residue, diagnostic/recovery wording, exact summary escaping, closed manifest, unchanged Briefing, no q0, and no stored association remain unchanged.
 - DONE: Rebaseline every known implementation and proof file after the two corrections.
-  Spacedock is 10 named files/1,209 changed LOC; Subspace is 22 named files/2,508 changed LOC, including the validator itself and both exact-argv test owners outside tolerance.
+  Spacedock is estimated at 10 named files/1,209 changed LOC; Subspace at 22 named files/2,508 changed LOC, including the validator itself and both exact-argv test owners as named planning work.
 - DONE: Run the repository-required deterministic gates against the unchanged implementation baseline.
   `gofmt -w ./cmd ./internal` produced no Go diff, and `go test ./...` plus `go test ./... -race` completed green; any current CLI, recorder, status, or skill-integration regression would fail its package lane.
 - SKIPPED: Implement code, invoke a live approval provider, record a decision, mutate gate/status frontmatter, or dispatch another worker.
@@ -1325,7 +1320,7 @@ This estimate was re-read against Spacedock main
 `4ff98d8cd97` and the current Subspace tree at `63a26f63a3de`; the selected Subspace
 provider/code paths were last changed by `cac4eb106f`. It is incremental after
 corrected s4 lands. A changed s4 resolver or metadata shape triggers the explicit
-return-to-ideation rule above rather than tolerance.
+return-to-ideation rule above; file/LOC variance does not.
 
 | Spacedock file | Expected delta | Purpose |
 |---|---:|---|
@@ -1340,9 +1335,9 @@ return-to-ideation rule above rather than tolerance.
 | `docs/specs/gate-resolution-frontmatter-contract.md` | `+78/-6` | Normative derivation, full Briefing binding, and room/provider lifecycle. |
 | `docs/site/concepts/gates-and-decisions.md` | `+20/-4` | Explain the sole public entry and provider evidence without exposing private argv. |
 
-Spacedock baseline: **10 named files, +1,083/-48 = 1,131 changed LOC**. Tolerance is at
-most +2 genuinely new files and +20% changed LOC, hard cap **12 files / 1,358 changed
-LOC**. The s4 resolver itself is a landed dependency, not rq implementation LOC.
+Spacedock planning estimate: **10 named files, +1,083/-48 = 1,131 changed LOC**. The
+s4 resolver itself is a landed dependency, not rq implementation LOC. The estimate is
+non-authoritative and is reconciled after implementation.
 
 | Subspace file | Expected delta | Purpose |
 |---|---:|---|
@@ -1369,10 +1364,9 @@ LOC**. The s4 resolver itself is a landed dependency, not rq implementation LOC.
 | `cmd/subspace-tui/SPEC.md` | `+55/-8` | Private resolved-source, digest, validator, and cleanup lifecycle. |
 | `docs/review-and-gate.md` | `+38/-4` | Room-only profile, summary display, evidence, and recorder rendezvous. |
 
-Subspace baseline: **22 named files, +2,456/-213 = 2,669 changed LOC**. Tolerance is
-at most +2 genuinely new files and +20% changed LOC, hard cap **24 files / 3,203
-changed LOC**. The fixed entry, canonical validator, and both exact-argv test owners
-are baseline work, not tolerance.
+Subspace planning estimate: **22 named files, +2,456/-213 = 2,669 changed LOC**. The
+fixed entry, canonical validator, and both exact-argv test owners are named planning
+work. The estimate is non-authoritative and is reconciled after implementation.
 
 ### Documentation diff
 
@@ -1419,3 +1413,101 @@ code derives and validates every private coordinate before provider effects; the
 manifest proves the unchanged canonical Briefing by id and full digest; and the
 corrected, post-s4 surface includes folder/flat moved-root proof and exact safe summary
 display.
+
+## Feedback Cycle 5
+
+Independent staff review `f35b93d0` returned **REVISE** on one Material issue: cycle 4
+promoted file and changed-LOC forecasts into hard implementation limits. Counts do not
+prove the value, authority, safety, or compatibility contract and cannot authorize or
+reject an implementation. Optimizing for a limit could hide a useful helper split;
+remaining below it could still conceal a semantic expansion.
+
+The review affirmed the cycle 4 architecture in full: room-only public entry, fixed
+derivation, corrected folder/flat placement, canonical Briefing id/full digest,
+unchanged Briefing, exact request-backed summary, two-file prepared state, local-only
+Git resolution, provider-owned ephemeral payload, catchable cleanup, honest hard-kill
+residue, and separate production validator authority.
+
+## Ideation correction: estimates are reconciliation evidence (cycle 5)
+
+All file lists and expected deltas in this entity are planning estimates, including
+the latest cycle 4 Spacedock and Subspace tables. They help the implementer declare
+scope and help reviewers spot drift. They are not budgets, gates, ceilings, floors, or
+permission boundaries. No file count, addition/deletion count, percentage, or variance
+can by itself authorize, reject, pause, or reset implementation.
+
+Before product edits, the implementation worker must append an intended-surface
+declaration for each repository. It starts from the cycle 4 named-file table and calls
+out every already-known addition, omission, rename, merge, or helper split, with the
+semantic responsibility that explains it. The declaration is a review aid, not a
+promise to preserve the forecast.
+
+After implementation and before staff review, the worker must reconcile actual
+path-scoped `git diff --stat` and `git diff --numstat` results against that declaration
+and the planning estimates. Reconciliation identifies:
+
+- planned files that changed, did not change, moved, merged, or split;
+- unplanned files and the contract or proof responsibility that required them;
+- actual additions/deletions by repository; and
+- whether each variance is non-semantic structure/proof work or exposes a semantic
+  expansion.
+
+Reviewers triage the explanation and implementation behavior for materiality. Large
+variance can justify scrutiny but not count-based rejection; zero variance confers no
+approval. Repository tests, contract tests, fixture tests, E2E tests, CI, and review
+scripts must not assert total changed files, total changed LOC, estimated deltas, or a
+percentage deviation. They assert the cycle 4 behavior and authority boundaries.
+
+rq returns to ideation only if implementation proposes or discovers one of these
+semantic expansions:
+
+1. another public argument beyond `/subspace:r gate <room>`;
+2. any caller-selected authority;
+3. inability to derive mechanics from the bound room;
+4. a third authoritative prepared metadata file;
+5. copied source payloads in the prepared room;
+6. remote source acquisition;
+7. `association.json`;
+8. a compatibility path;
+9. weaker canonical Briefing identity or digest binding; or
+10. a changed provider/validator ownership boundary.
+
+The corrected-s4 dependency check remains semantic: if landed s4 changes room
+resolution, folder/flat placement, request/root-map authority, the two-file preparation
+state, or exact summary/Briefing binding such that cycle 4 cannot be implemented, that
+is the applicable inability/authority/metadata/binding expansion and returns to joint
+s4/rq ideation. A table mismatch alone never does.
+
+No cycle 4 runtime, manifest, display, cleanup, evidence, validator, or acceptance
+decision changes in cycle 5. The implementation remains blocked until corrected s4
+lands.
+
+## Stage Report: ideation (cycle 5)
+
+- DONE: Remove the Spacedock and Subspace hard file/LOC caps and any implication that
+  tolerance can authorize, reject, or reset implementation.
+  Every count paragraph now labels its totals as non-authoritative planning estimates;
+  count variance alone cannot pass, fail, pause, authorize, or reopen the design.
+- DONE: Keep named-file tables/deltas as planning estimates and require intended
+  surface declaration plus post-implementation reconciliation/materiality triage.
+  The implementation worker declares planned paths before editing and reconciles
+  actual per-repository stat/numstat variance before staff review.
+- DONE: Return to ideation only for the semantic expansions named by the reviewer.
+  Cycle 5 records the exact ten triggers and makes corrected-s4 divergence use those
+  semantic categories rather than a numeric proxy.
+- DONE: Ensure no tests assert repository file/LOC totals.
+  Tests and gates prove cycle 4 behavior and authority; total files, total LOC,
+  estimated deltas, and variance percentages are explicitly forbidden assertions.
+- DONE: Preserve Cycle 4 architecture unchanged.
+  Room-only entry, fixed derivation, full Briefing binding, two-file preparation,
+  provider evidence/cleanup, safe summary display, and validator ownership all stand.
+- SKIPPED: Implement product code, run a provider, record a decision, mutate
+  gate/status frontmatter, or touch s4.
+  Cycle 5 changes only rq ideation state and requires the next independent staff
+  review after this correction.
+
+### Summary
+
+Cycle 5 removes numeric authority without weakening scope visibility. The named
+cross-repository tables remain useful forecasts, while declaration, reconciliation,
+and semantic materiality—not file or LOC totals—govern implementation review.
