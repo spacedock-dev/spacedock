@@ -24,6 +24,7 @@ type codexSteeringEvidence struct {
 }
 
 type codexSteeringWorker struct {
+	AssignmentID    string `json:"assignment_id"`
 	TaskPath        string `json:"task_path"`
 	CompletionEpoch int    `json:"completion_epoch"`
 }
@@ -32,6 +33,7 @@ type codexSteeringEvent struct {
 	Sequence        int     `json:"sequence"`
 	AtUTC           *string `json:"at_utc"`
 	Type            string  `json:"type"`
+	AssignmentID    string  `json:"assignment_id"`
 	TaskPath        string  `json:"task_path"`
 	CompletionEpoch int     `json:"completion_epoch"`
 	Status          string  `json:"status"`
@@ -40,10 +42,12 @@ type codexSteeringEvent struct {
 	ArtifactPath    string  `json:"artifact_path"`
 }
 
+// These offline tests validate the accepted reduced-fixture evidence model.
+// Validation owns the live Codex replay; this oracle does not inspect instruction text.
 func TestCodexWaitAgentSteeringEvidence(t *testing.T) {
 	evidence := loadCodexSteeringEvidence(t)
 	if err := assertCodexWaitAgentSteering(evidence); err != nil {
-		t.Fatalf("reduced Codex steering trace must prove active-loop resumption: %v", err)
+		t.Fatalf("reduced Codex steering trace must satisfy the active-loop-resumption evidence model: %v", err)
 	}
 }
 
@@ -92,11 +96,14 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 			},
 		},
 		{
-			name: "target redispatch with new completion epoch",
+			name: "cycle-suffixed replacement for the same assignment",
 			want: "spawn count",
 			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				insertCodexSteeringEvent(e, 6, codexSteeringEvent{
-					Type: "spawn_agent_called", TaskPath: target.TaskPath, CompletionEpoch: target.CompletionEpoch + 1,
+					Type:            "spawn_agent_called",
+					AssignmentID:    target.AssignmentID,
+					TaskPath:        target.TaskPath + "_cycle3",
+					CompletionEpoch: target.CompletionEpoch + 1,
 				})
 			},
 		},
@@ -258,7 +265,7 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 		return fmt.Errorf("invalid Codex steering evidence metadata")
 	}
 	target := evidence.Worker
-	if target.TaskPath == "" || target.CompletionEpoch < 1 {
+	if target.AssignmentID == "" || target.TaskPath == "" || target.CompletionEpoch < 1 {
 		return fmt.Errorf("invalid correlated worker identity")
 	}
 
@@ -298,7 +305,7 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 
 		switch event.Type {
 		case "spawn_agent_called":
-			if event.TaskPath == target.TaskPath {
+			if event.TaskPath == target.TaskPath || event.AssignmentID == target.AssignmentID {
 				spawnCount++
 			}
 		case "wait_agent_called":

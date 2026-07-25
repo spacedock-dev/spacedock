@@ -5,6 +5,7 @@
   "codex_cli_version": "0.145.0",
   "source": "Reduced from the 2026-07-23 steering trace; the final-status and durable-report tail is the correlated completion fixture required by the accepted design.",
   "worker": {
+    "assignment_id": "spacedock-ensign-r4xva464wf-implementation-correction",
     "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
     "completion_epoch": 2
   },
@@ -13,6 +14,7 @@
       "sequence": 1,
       "at_utc": null,
       "type": "spawn_agent_called",
+      "assignment_id": "spacedock-ensign-r4xva464wf-implementation-correction",
       "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
       "completion_epoch": 2
     },
