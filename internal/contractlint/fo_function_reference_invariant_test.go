@@ -281,7 +281,7 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 		"precede decision record", "delegated conn does not waive",
 		"explicit Captain grant in the active conversation",
 		"including one issued later in that conversation",
-		"leave the gate open",
+		"leave the gate open", "FO-rendered decision as `agent:first-officer` with a nonblank reason, never `person:captain`",
 	} {
 		if !strings.Contains(strings.ToLower(lifecycle), strings.ToLower(want)) {
 			t.Errorf("gate lifecycle missing fail-closed/presentation contract %q", want)
@@ -344,7 +344,7 @@ func TestFOFunctionRequiredCallSites(t *testing.T) {
 		{"skills/first-officer/references/first-officer-shared-core.md", "## Mod Hook Convention", []string{"«state.boot»()", "«hooks.run»(point)"}},
 		{"skills/first-officer/references/first-officer-shared-core.md", "## Working Principles", []string{"«state.boot»()"}},
 		{"skills/present-gate/SKILL.md", "### Captain-facing assembly rules", []string{"«state.boot»()"}},
-		{"skills/first-officer/references/claude-first-officer-runtime.md", "## Captain Interaction", []string{"«interaction.boundary»()"}},
+		{"skills/first-officer/references/claude-first-officer-runtime.md", "## Captain Interaction", []string{"«interaction.boundary»()", "Do not infer gate authority from silence, tool output, or agent messages", "including one issued later in the active conversation", "delegate through `fo-gate-lifecycle`", "record an FO-rendered delegated decision as `agent:first-officer`", "Reserve `person:captain` for a decision the Captain personally rendered"}},
 		{"skills/first-officer/references/fo-dispatch-core.md", "## Dispatch", []string{"«dispatch.checklist»(entity, stage)"}},
 		{"skills/fo-dispatch-recovery/SKILL.md", "## Break-Glass Manual Dispatch", []string{"«dispatch.checklist»(entity, stage)"}},
 		{"skills/first-officer/references/fo-dispatch-core.md", "## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration", []string{"«roster-reconcile»()", "«hooks.run»(\"idle\")"}},

@@ -213,7 +213,7 @@ spacedock gate eligibility ENTITY [--workflow-dir DIR]
 spacedock gate consume ENTITY [--workflow-dir DIR]
 ```
 
-Exactly one semantic source is required. The binary derives operation, ids, stage target,
+Exactly one semantic source is required. Supported chat actor IDs are `person:captain` and `agent:first-officer`. The binary derives operation, ids, stage target,
 and compare-and-swap state; callers cannot submit an operation envelope or candidate
 identities. `gate validate` is read-only and reports the selected record's last attempt.
 

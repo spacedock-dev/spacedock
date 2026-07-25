@@ -320,6 +320,10 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			args = append(args, "--workflow-dir", fixture.root)
 			result := runRecordedGateCommand(binary, fixture.root, "", args...)
 			assertRecordedGateByteCleanFailure(t, fixture, result, tc.wants...)
+			wantExit := map[string]int{"actor": 2, "unsupported-actor": 1}[tc.name]
+			if exact := map[string]string{"actor": "Error: --decision requires --actor ID\n", "unsupported-actor": "Error: unsupported chat decision actor \"agent:ensign\"\n"}[tc.name]; exact != "" && (result.exit != wantExit || result.stderr != exact) {
+				t.Fatalf("invalid %s exit/stderr = %d/%q, want %d/%q", tc.name, result.exit, result.stderr, wantExit, exact)
+			}
 			if after := treeDigest(t, fixture.stateRoot); after != before {
 				t.Fatalf("invalid %s changed workflow bytes", tc.name)
 			}
