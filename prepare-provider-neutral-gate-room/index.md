@@ -1597,6 +1597,15 @@ including its two leading/trailing spaces and non-ASCII code points.
   chat gate presentation anywhere in the selected-override trajectory, change no
   prompt or product behavior, and add no new harness mechanism.
 
+- Cycle 14: REJECTED — final correction revalidation and detached real-log/live positive audit; surface 41 files and 4,575 changed LOC vs estimate 26 files and 1,904 changed LOC (240%); AC unchanged
+
+  The Agent/chat position matrix is closed, but the help-attempt observer counts both
+  the real shim's `begin` and `exit=0` rows. One successful fresh preflight is therefore
+  graded as two attempts by both a detached real-log control and the live Claude
+  journey. Correct only the AC-4 observer's exit-record boundary and make its unit
+  baseline use the real logging shape; change no product, prompt, provider, or harness
+  architecture.
+
 ## Stage Report: ideation
 
 - DONE: Reproduce xb's arbitrary-Briefing-basename failure with the smallest valid prepared room, then identify the minimum post-em Spacedock seam that makes it pass.
@@ -2026,3 +2035,20 @@ assertion notes are pre-existing deferred risks or polish, not defects in Cycle 
 Cycle 3 closes the three adjacent-event oracle gaps without changing product behavior,
 prompt text, or the live harness. The complete selected-override trajectory now enforces
 one fresh help attempt and excludes every Agent probe and semantic chat presentation.
+
+## Stage Report: validation (cycle 3)
+
+- FAILED: Confirm extra failed/successful help attempts are rejected while exactly one successful fresh preflight passes.
+  The committed failed/duplicate-help mutants reject, but a detached real-shim-shaped positive and `TestLiveClaudeSelectedGateOverride` both fail with `fresh gate help attempts = 2, want 1`; removing the `begin` row makes the same positive pass, exposing the AC-4 evidence boundary.
+- DONE: Confirm Agent provider probes and complete chat gate reviews are rejected anywhere in the selected-override trajectory.
+  A detached eight-case matrix inserted each event before prepare, between prepare/bind, between bind/override, and after override; all were rejected, while making either check position-dependent would let its corresponding cases pass.
+- DONE: Confirm the Cycle 13 diff is observer/unit-test only and rerun focused plus necessary repository checks at exact tip 2d7ee074.
+  `6b18f6de..2d7ee074` is exactly two `internal/ensigncycle` observer/unit files at `+29/-9`; focused packages, `go test ./...`, `go test ./... -race`, format/diff checks, strict MkDocs, and skill/contract checks pass.
+- DONE: Reconcile all AC-1 through AC-5 evidence and recommend PASSED only with no material finding remaining; classify deferred risk and polish separately.
+  AC-1 literal archive, AC-2 equal-byte path identity, AC-3 locator/summary/duplicates, and AC-5 four-pin recording remain green and production-unchanged; AC-4 has one material evidence defect, so recommendation is REJECTED. The crafted companion-symlink and locally pruned-object triggers remain deferred until supported operator flows reach them; cleanup naming/diagnostics remain polish.
+
+### Summary
+
+Final correction revalidation closes the Agent/chat position gaps and confirms the
+two-file correction stayed evidence-only. The gate remains REJECTED because the AC-4
+oracle cannot accept its own valid live trace; no product-behavior defect was found.
