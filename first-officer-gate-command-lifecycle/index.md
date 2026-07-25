@@ -2279,3 +2279,22 @@ The **+250/-489** figure is a planning target derived from prior measured blocks
 ### Implementation summary
 
 The clean branch delivers the repaired AC-1 through AC-5 proof split with less machinery than the abandoned prototype: real CLI and Git own durable authority and barriers; structural and deterministic controls own correction/mapping/capability behavior; host-specific extractors own the single ordered root review; no-authority fixtures own bound-open refusal. Checklist accounting is **5 DONE, 1 SKIPPED, 0 FAILED**. Request independent staff review before live spend.
+
+## Stage Report: implementation correction (cycle 28 staff response)
+
+- DONE: Replace narrated review boundaries with successful host-native commit evidence.
+  Correction commits `75b4aacae42e84e8a998f7e75e02f1697202883e` and `72302472650149a1939e37b7cedd1d1061c00269` make Claude require a root Bash `state commit` tool use plus its matching successful tool result/state head, Codex require a completed zero-exit command item/state head, and Pi require a matching successful bash tool result/state head. Every host has narration-before-commit, failed-commit, order, root, and multiplicity red controls; no common transport schema was added.
+- DONE: Replace substring-only Captain mapping evidence with six durable semantic cases.
+  Approve, redo, routed reject, unrouted reject, hold, and not-yet each round-trip a production `gates.Document` snapshot containing the canonical decision, semantic reason class, concrete ask, route/hold result, and argv-capable UTF-8 directive. Mapping, reason, and route mutations all turn the grade red while the skill declaration remains a separate ownership input.
+- DONE: Replace synthesized successor counts with executed command and Git evidence.
+  The real replay now invokes the public `dispatch build` command against a fresh binary/logging wrapper, commits the successor marker, and proves one build plus one descendant effect. Executed/log-and-Git controls prove zero/two builds, zero/two effects, build-before-consume ordering, and missing ancestry all fail.
+- DONE: Make the review decision ask semantic rather than label-dependent.
+  Qualifying reviews may use canonical question prose or alternate “Choose …” wording, but must actually ask for approve plus another supported decision. Ask removal and informational-text mutation fail independently of the old `Decision ask:` label.
+- DONE: Re-run repository verification and restore every Cycle-28 range.
+  Final code tip `72302472650149a1939e37b7cedd1d1061c00269` changes exactly the declared 17 paths at measured `+341/-550` from `13d70249`; every per-file delta is within its approved range. `gofmt -w ./cmd ./internal`, focused correction tests, `go test ./...`, `go test ./... -race`, live compile without execution, strict MkDocs in an isolated requirements-pinned environment, and `git diff --check` pass.
+- SKIPPED: Run live Claude, Codex, or Pi, push the code branch/PR, or mutate gate, review-round, status, or merge state.
+  The staff correction explicitly forbids live spend and external workflow mutation before independent re-review.
+
+### Correction summary
+
+The correction replaces all four weak proof boundaries without expanding the declared surface: commit evidence is structured and host-specific, Captain meanings are six-case durable data rather than substring counts, successor dispatch is an actual command/Git lifecycle, and review qualification requires a real decision ask. Checklist accounting is **5 DONE, 1 SKIPPED, 0 FAILED**. Return the deterministic implementation to the same independent staff reviewer.
