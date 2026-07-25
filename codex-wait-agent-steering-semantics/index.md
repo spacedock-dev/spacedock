@@ -142,9 +142,9 @@ The simplest alternative, a contractlint phrase check over the adapter, is insuf
 
 **AC-4** The shipped change is limited to the Codex adapter, Codex probe/evidence, and Codex behavioral tests; Claude, Pi, shared core, and runtime tool/API behavior remain unchanged. Verified by scoped diff review, `go test` focused/full/race gates, and live-tag compile or replay appropriate to the touched paths.
 
-## Expected surface
+## Intended surface and reconciliation
 
-Expected implementation surface is 5 files, approximately 190-285 added/changed LOC with a tolerance of ±60 LOC:
+The intended implementation surface remains the following advisory planning estimate:
 
 - `skills/first-officer/references/codex-first-officer-runtime.md`: 6-10 changed lines, net negative or flat.
 - `docs/dev/codex-idle-notification-probe.md`: 12-20 changed lines.
@@ -152,7 +152,9 @@ Expected implementation surface is 5 files, approximately 190-285 added/changed 
 - `docs/dev/_evidence/codex-wait-agent-steering-semantics/2026-07-23-dogfood.json`: 35-55 new lines containing only the reduced event slice, not the full private transcript.
 - `internal/ensigncycle/codex_wait_agent_steering_test.go`: 135-195 new lines for ordered replay, handle/epoch correlation, output-channel separation, and the seven planted negative cases.
 
-No production Go package, shared scenario table, Claude/Pi runner, or shared skill file should change. Exceeding 5 files or adding a runtime/PTY harness requires re-gating because it changes the chosen proof mechanism.
+These five likely files and their roughly 190-285 changed LOC are drift evidence, not a cap, tolerance, or reset trigger. Implementation reports the actual surface against this estimate and explains additions, removals, helper extraction, or larger/smaller LOC; no arithmetic delta alone blocks the stage or forces a design reset.
+
+The intended semantic surface is authoritative: the Codex adapter, Codex probe/evidence, and Codex behavioral proof needed for this correction. A design reset is required only if implementation changes shared-core, Claude, or Pi behavior; changes the `wait_agent` or runtime API; adds cancellation/restart state; broadens into scheduler redesign; weakens final-status plus durable-report completion authority; or creates another obligation outside this Codex-only correction. A different file count, fixture placement, helper split, or test harness within that semantic boundary requires reconciliation, not re-gating by arithmetic.
 
 ## Test plan
 
@@ -164,7 +166,7 @@ No production Go package, shared scenario table, Claude/Pi runner, or shared ski
 ## Stage test gates
 
 - Ideation identifies every current clause and behavioral fixture affected, proposes an exact wording delta, and spikes the cheapest scenario that distinguishes steering from worker interruption.
-- Implementation changes only the approved contract/test surfaces, runs focused and full/race gates, and requests Roborev because this is shipped runtime scaffolding.
+- Implementation reconciles its actual file/LOC surface against the advisory estimate, stays within the semantic boundary above, runs focused and full/race gates, and requests Roborev because this is shipped runtime scaffolding.
 - Validation performs the required detached adversarial audit and a Codex behavioral drive capable of catching cancellation, redispatch, stale completion, and repetitive-disclaimer regressions.
 
 ## Stage Report: ideation
@@ -179,3 +181,16 @@ No production Go package, shared scenario table, Claude/Pi runner, or shared ski
 ### Summary
 
 Ideation narrows the correction to Codex runtime wording, the Codex idle-notification vocabulary, and a behavioral replay based on the real session that prompted the task. The design treats captain input as active-loop resumption, preserves durable completion authority, and explicitly rejects cancellation, redispatch, premature monitoring, stale completion, and repetitive disclaimer variants.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Replace the exact-file/LOC tolerance and automatic re-gate clauses with advisory surface reconciliation; only semantic expansion beyond the Codex-only correction may trigger a design reset.
+  `Intended surface and reconciliation` keeps the five-file/190-285 LOC estimate as drift evidence, removes the ±60/cap authority, and enumerates the semantic reset triggers.
+- DONE: Preserve the proven active-loop-resumption behavior, durable completion authority, planted negative controls, and exclusions for shared core, Claude, Pi, runtime API behavior, and scheduler redesign.
+  Problem, wording, spike, AC-1 through AC-4, and the seven negative cases remain unchanged; the authoritative boundary restates every exclusion from the captain's correction.
+- DONE: Append a corrected ideation report that states the chosen boundary clearly and gives the First Officer enough evidence to prepare a clean successor Briefing.
+  This cycle records advisory numeric reconciliation versus binding semantic expansion and supersedes the prior gate package's arithmetic reset condition.
+
+### Summary
+
+The correction changes authority, not behavior: file and LOC estimates now support reconciliation without acting as caps or automatic reset triggers. A design reset is reserved for semantic expansion beyond the accepted Codex-only steering correction, including cross-runtime/API/scheduler changes or weakened durable completion authority.
