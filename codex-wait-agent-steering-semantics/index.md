@@ -240,3 +240,24 @@ The correction changes authority, not behavior: file and LOC estimates now suppo
 ### Summary
 
 Implementation now describes captain input as resuming the First Officer's active loop while unresolved workers continue unchanged, then reinstalls monitoring only after active work is exhausted. Completion remains gated by one matching final-status signal plus a parsed durable implementation report; the Codex-only semantic boundary is preserved.
+
+## Stage Report: validation
+
+- DONE: Run the required real Codex steering drive: one unresolved assignment across captain input, useful active work, resumed idle monitoring, matching final status, and a parsed durable implementation report; retain only a reduced evidence record.
+  Live task `/root/spacedock_ensign_6gkz4z2qwe_validation/live_steering_sentinel`, epoch 1, remained running after routed captain input; active work verified candidate `9c903da6402c82fbc595143c64392733d761d243` and a clean worktree, a later 10-second wait monitored the same unresolved task, and the matching final status completed once. `spacedock status --read ... --json` parsed the durable implementation report; only these reduced facts were retained.
+- DONE: Reproduce every planted fixture mutant and run focused, containment, live-tag, full, and race checks; verify repeated captain-facing harness/disclaimer language fails and Claude/Pi/shared-runtime behavior is untouched.
+  All 35 independent planted mutant subtests rejected their target changes; focused steering/idle, contractlint containment, live-tag compile, `go test ./...`, and `go test ./... -race` passed. A repeated captain-facing disclaimer is one rejecting mutant, and the six-file diff contains only Codex adapter/probe/evidence/test paths.
+- DONE: Perform a semantic adversarial audit of assignment/path/epoch attribution, event order, uniqueness, and durable completion authority; classify findings and recommend PASSED or REJECTED.
+  A detached checkout at `9c903da6` reproduced assignment/path/epoch, order, uniqueness, and completion-authority controls, then exposed two material evidence false passes. Recommendation: REJECTED; both are narrow AC-1/AC-2 evidence defects, with no observed outcome defect or design reset.
+- FAILED: AC-1/AC-2 material evidence defect — resumed-monitoring order can be falsely established after later active work.
+  In the detached audit, inserting `active_work(count=1)` after `active_scope_empty` and before the second wait passed `assertCodexWaitAgentSteering`; lines 445-452 latch the first empty observation and never invalidate it. Reset that observation on later active work and require a renewed empty-scope event before monitoring.
+- FAILED: AC-1/AC-2 material evidence defect — a durable stage report with result bullets but no evidence lines is credited as authoritative completion.
+  In the detached audit, deleting both evidence lines while retaining the two required `DONE` bullets passed; lines 553-563 validate bullet presence only. Require a non-empty, unfenced evidence line for each required result, or validate the complete stage-report record atomically.
+- DONE: AC-3 captain-facing language verification.
+  The live drive used two monitoring calls with zero captain-facing harness-label/disclaimer messages, and the planted repeated-disclaimer mutant fails if either forbidden phrase is accepted.
+- DONE: AC-4 containment verification.
+  Scoped diff review and the contractlint/full/race gates show no Claude, Pi, shared-core, scheduler, or runtime-API change; `git diff --check` is clean.
+
+### Summary
+
+The live Codex drive exhibited the intended outcome: captain steering resumed active work without cancelling or redispatching the unresolved worker, and monitoring resumed afterward. The shipped tests reject every planted mutant and all required suites pass, but the detached audit found two supported false-pass traces in ordering and durable-report authority. Both material findings affect AC-1/AC-2 evidence and require a narrow correction before validation can recommend PASSED; there are no deferred risks or polish-only findings.
