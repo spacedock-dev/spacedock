@@ -97,6 +97,7 @@ gates:
                 state: consumed
                 blockers: []
 mod-block: merge:pr-merge
+pr: "#569"
 ---
 
 ## Problem
