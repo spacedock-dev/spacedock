@@ -366,6 +366,19 @@ gates:
                 digest: sha256:fea2cdd89a67f8c168f9f8216f310feae38109da9c4cc8caaad71ab59b874839
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6y:validation:4
+                briefing: briefing:docs-dev:6y:validation:attempt-4:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T14:21:45.762758Z"
+                decision: approve
+                reason: Validation proves bind, delegated approval, consume, handoff, and durable successor effect on every applicable runtime; the remaining post-lifecycle Pi decision-facts extraction miss is Captain-deferred and no material outcome defect remains.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 review-round:
     id: round:6yyyyemkqwsett3g1c991w9f:implementation:26
     stage: implementation
