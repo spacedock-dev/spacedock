@@ -43,6 +43,18 @@ gates:
                 digest: sha256:85cca2e27e401b206fa7d0d375f3a331256c520bfd1af66f3c7416851b3eeaec
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6g:ideation:2
+                briefing: briefing:docs-dev:6g:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T17:48:22.634251Z"
+                decision: revise
+                reason: The steering semantics and adversarial proof are sound, but the gate package still makes file and LOC estimates binding reset authority; revise them to advisory drift evidence and retain only semantic scope expansion as a reset trigger.
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem
