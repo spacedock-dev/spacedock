@@ -2384,3 +2384,226 @@ The amended deterministic correction replaces synthetic mapping proof with six p
 ### Summary
 
 At exact tip `28073390`, Claude completed the intended lifecycle and durable successor effect but failed the load-bearing delegated-authority invariant because its persisted directive did not equal the exact grant. The retained normal artifact package also records the broad review-folder sweep diagnostic. Checklist accounting is **2 DONE, 2 SKIPPED, 2 FAILED**; Codex and Pi remain unspent and the implementation returns to the First Officer without retry or mutation.
+
+## Canonical exact-authority amendment (cycle 31)
+
+This amendment supersedes only Cycle 27 repair's agent-supplied delegated-directive
+mechanism, the related portions of AC-2/AC-3/AC-5, the test plan, documentation, and
+expected surface. The remaining Cycle 27 repair obligations, Cycle 29 range history,
+and deterministic implementation at `28073390` stay authoritative reference artifacts.
+Implementation must start from `28073390`; it does not edit, rerun, or salvage the
+retained Claude stream.
+
+### Exact failure and interface boundary
+
+The single Claude journey invoked:
+
+```text
+--directive "you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement"
+```
+
+The Captain grant supplied by the fixture was byte-identical except for its final
+period. Bind, commit, root presentation, decision, consume, successor dispatch, and the
+durable successor marker all succeeded. This is not a semantic-authority failure: it is
+an interface failure caused by asking an agent to reconstruct provenance bytes in argv.
+The exact retained grant remains the independent baseline, and a missing final period
+must continue to fail the durable grade.
+
+The same stream ran a root-wide `find ... -iname "*recorded-gate*"` and then
+`find <entity>/review -type f` before gate preflight. That is locator ergonomics
+evidence only. It does not authorize transcript scraping, a repository search policy,
+common host events, or a second live diagnostic.
+
+### Smallest mechanism and rejected alternatives
+
+The selected mechanism is one scaffold-captured raw authority file and one recorder-read
+reference:
+
+```text
+spacedock gate record ENTITY --decision approve|revise|hold \
+  --actor agent:first-officer --reason EVIDENCE_JUDGMENT \
+  --directive-file CAPTURED_AUTHORITY_PATH --workflow-dir WORKFLOW_DIR
+```
+
+Before the agent starts, the launch/request scaffold writes the Captain grant once as
+its exact raw UTF-8 bytes and gives the run one explicit locator. The goal-only request
+names that locator instead of embedding bytes for the model to copy. The First Officer
+selects the capture by path; it never rewrites, quotes, trims, normalizes, or exports the
+grant. The recorder resolves a relative locator from launch cwd, requires a readable
+non-symlink regular file, rejects invalid UTF-8, NUL, and blank content, reads it while
+holding the existing entity lock, and persists those exact bytes as
+`Resolution.adoption-note`. It does not strip a trailing newline or punctuation.
+
+The public inline `--directive TEXT` form is deleted, not retained as a fallback or
+alias. A delegated `agent:*` decision requires exactly one `--directive-file`; a direct
+`person:captain` decision rejects it. Direct Captain recording remains the existing
+actor/decision/reason form, and provider recording remains the existing frozen
+`--room` Result path. Missing, unreadable, blank, non-UTF-8, NUL-containing, directory,
+or symlink captures fail before entity mutation and leave no lock residue. A valid but
+byte-changed capture is persisted exactly and therefore fails comparison with the
+independent scaffold-retained baseline; the recorder does not claim to authenticate
+file history.
+
+| Option | Disposition | Reason |
+| --- | --- | --- |
+| Inline `--directive` plus stronger skill wording | Reject | The retained final-period miss proves the model-copy boundary is lossy; wording would coach rather than remove it. |
+| Retry, alternate model, transcript extraction, or host-event join | Reject | None changes the command interface, and each violates the retained evidence boundary. |
+| Environment variable or stdin | Reject | Both remain ephemeral agent-controlled byte channels with no stable selected artifact to inspect or replay. |
+| Add delegated authority to s4's `request.json` | Reject | That request freezes provider `person:captain` authority; mixing chat delegation into it conflates distinct decision sources and blocks 6y on an unlanded command. |
+| New typed delegated-authority JSON request | Reject for v1 | Type/version/digest schema adds no value over one opaque captured byte string and creates duplicate parsing/authority surface. |
+| Raw `--directive-file` reference | Select | It is the narrowest inspectable capture: one existing path-normalization/read boundary, no new schema, id, digest, store, or host transport. |
+
+This mechanism serves the exact-authority value AC. Its simplest alternative is inline
+argv, which the retained Claude counterexample refutes. The explicit authority locator
+also removes any need to discover that input by scanning. Room discovery remains s4's
+separate `gate prepare` stdout contract; this ticket adds no general locator or search
+subsystem.
+
+### Acceptance-criterion amendment
+
+**AC-2 (replacement) — Delegated authority is selected from exact captured bytes, never
+reconstructed by the agent.** Every delegated close command contains one
+`--directive-file` locator and contains zero inline grant occurrences. The durable
+decoded `Resolution.adoption-note` equals the scaffold capture byte-for-byte for the
+final-period fixture and for quote, backslash, actual-newline, combined, and UTF-8
+captures. Removing or changing the final period fails. Inline `--directive`, a missing
+capture, symlink, directory, blank/invalid/NUL capture, actor swap, or simultaneous
+authority forms exits nonzero before mutation; a valid byte mutation closes with those
+mutated bytes and fails the independent durable grade. *Verified by:* public CLI,
+production `gates.Document`, byte-clean tree/lock controls, exact command-log controls,
+and the existing lifecycle durable-state oracle.
+
+**AC-3 (amendment) — The supported-host value journey selects the same prepared
+authority reference.** The shared goal-only fixture supplies one explicit absolute
+authority-file locator and no retypeable grant text. Claude, Codex, and Pi must each
+retain one root review, close through `--directive-file`, consume, dispatch once, and
+produce one durable successor effect; the post-state must contain exactly the captured
+grant. Host-native transport remains outside the shared grader. *Verified by:* the
+existing three runners after deterministic/staff approval, with no retry, fallback,
+prompt procedure, common event parser, or new artifact harness.
+
+**AC-5 (amendment) — Exact input locators are explicit and narrow.** The delegated
+request identifies its prepared authority file directly; after s4 lands, `gate prepare`
+identifies its published room through `room=` stdout. Neither lifecycle requires a
+root-wide or review-folder search, and this ticket introduces no scan policy. *Verified
+by:* a structural fixture assertion that the prompt contains the authority locator but
+not the grant, CLI relative/absolute locator equivalence, and s4's independent stdout
+contract after composition. Model search cardinality is not an acceptance requirement.
+
+AC-1 and AC-4 remain unchanged. AC-3 still measures one truthful review and durable
+route; this amendment changes only how its delegated authority reaches the recorder.
+
+### Test and implementation plan
+
+1. **Retained-counterexample control (low; AC-2):** first refactor the real-CLI positive
+   to a scaffold-written file containing the exact grant with final period. Assert the
+   command log contains `--directive-file`, not the grant or `--directive`; remove the
+   period in the capture and require the existing durable grade to fail.
+2. **Recorder boundary (medium; AC-2/AC-5):** replace the public inline flag with
+   `--directive-file`; normalize relative paths at the CLI boundary and read/validate
+   raw bytes under the existing gate lock. Table-test relative/absolute equivalence,
+   punctuation, quote, backslash, newline, combined and UTF-8 bytes, plus missing,
+   symlink, directory, blank, invalid UTF-8, NUL, actor mismatch, and legacy-inline
+   byte-clean refusals. Read durable state only through production `gates.Read`.
+3. **Existing lifecycle proof (medium; AC-1/AC-2/AC-3):** update the shared fixture and
+   its public-CLI Captain mapping cases to create authority files. Preserve the exact
+   bind/close/consume Git barriers, semantic presentation controls, mapping routes,
+   terminal complement, one build, and one durable successor effect. No new scenario,
+   parser, or runner file is added.
+4. **Repository and live gates (high):** run focused tests, `gofmt -w ./cmd ./internal`,
+   `go test ./...`, `go test ./... -race`, live-tag compile, strict MkDocs, and
+   `git diff --check`. After independent deterministic approval, run one unchanged
+   goal-only journey on Claude, Codex, and Pi at the final tip. Stop on the first
+   product failure; do not retry or add diagnostics.
+
+No spike is needed. The current recorder already round-trips arbitrary argv-capable
+UTF-8 through production `gates.Document`, retained path normalization already resolves
+relative Briefing/room inputs from launch cwd, and `os.ReadFile` preserves raw bytes.
+The first red control is the retained one-period difference, so implementation cannot
+mistake semantic similarity for success.
+
+### Expected surface and tolerance
+
+Against exact tip `28073390`, the expected incremental surface is these **nine existing
+files**, approximately **+168/-53**:
+
+| Path | Expected incremental delta | Purpose |
+| --- | ---: | --- |
+| `internal/cli/cli.go` | +12/-5 | Replace help/parser/path handling with `--directive-file`. |
+| `internal/cli/gate_test.go` | +42/-5 | Exact file reads and byte-clean refusal table. |
+| `internal/gates/operation.go` | +28/-6 | Recorder-owned file validation/read and source exclusivity. |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +42/-22 | Scaffold capture, no-inline command proof, mappings, final-period control. |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +12/-5 | Pin file-reference ownership and forbid inline fallback. |
+| `skills/fo-gate-lifecycle/SKILL.md` | +8/-4 | Replace quoted argv grant with selected captured locator. |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | +12/-3 | Normative raw-byte and failure contract. |
+| `docs/site/reference/command-reference.md` | +6/-2 | Public command replacement. |
+| `docs/site/concepts/gates-and-decisions.md` | +6/-1 | Captain-facing capture/reference behavior. |
+
+Tolerance is **+2 files and +35% changed LOC** (hard cap 11 existing files / 298 changed
+LOC) for focused fixture/helper movement only. A new schema/file type, authority id or
+digest store, inline compatibility alias, environment/stdin path, transcript/host-event
+parser, search subsystem, live-runner file, prompt procedure, or change to direct or
+provider decision semantics requires re-ideation.
+
+### Documentation change proposal
+
+In `docs/site/reference/command-reference.md`:
+
+```diff
+-`spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive TEXT]`
+-Record a chat decision and its derived one-use application; delegated decisions require the quoted directive.
++`spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--directive-file PATH]`
++Record a chat decision and its derived one-use application. Delegated decisions require a scaffold-captured authority file; the recorder preserves its raw UTF-8 bytes exactly. Direct Captain decisions do not accept that flag.
+```
+
+In `docs/site/concepts/gates-and-decisions.md`, after the delegated-conn sentence:
+
+```diff
++For a delegated decision, the launch request captures your grant before the First
++Officer starts. The First Officer selects that file; it never reconstructs your words
++in a shell argument. The recorder rejects an invalid capture before closing and copies
++valid raw bytes exactly, so durable evidence exposes any mismatch with your captured
++grant.
+```
+
+In `docs/specs/gate-resolution-frontmatter-contract.md`, replace the chat command and
+quoted-directive clause with the `--directive-file PATH` form and state: “The recorder
+reads the selected non-symlink regular file under the entity lock and copies its valid,
+nonblank UTF-8 bytes without trimming. Inline directive text is not a command surface.”
+
+### Dependency, sequencing, and non-goals
+
+`prepare-provider-neutral-gate-room` (s4) is downstream and currently assumes the
+pre-amendment 6y lifecycle. 6y lands this exact-authority interface first. s4 must then
+re-read the landed tip and re-ideate its overlapping `internal/cli/cli.go`,
+`internal/gates/operation.go`, `internal/ensigncycle/recorded_gate_lifecycle_test.go`,
+`internal/contractlint/fo_function_reference_invariant_test.go`,
+`skills/fo-gate-lifecycle/SKILL.md`, and documentation ranges before implementation.
+s4 continues to own `gate prepare`, provider `request.json`, and authoritative `room=`
+stdout; its request remains direct `person:captain` authority. It must preserve
+`--directive-file` for the later delegated chat close, not absorb that grant into the
+provider request. No s4 file or state is changed by this ticket.
+
+No code edit, test, live host, PR #565 push, gate consumption, review round, status,
+merge, prompt coaching, retry, fallback, transcript scrape, host-proof machinery, or
+search-policy work occurs in this ideation cycle.
+
+## Stage Report: ideation (cycle 31)
+
+- DONE: Replace agent-retyped delegated authority with the smallest exact, recorder- or scaffold-owned capture/reference mechanism while preserving direct and provider decisions.
+  The design deletes inline `--directive`, selects one scaffold-captured raw UTF-8 file through `--directive-file`, and leaves direct `person:captain` plus provider `--room` semantics unchanged.
+- DONE: Use the retained Claude failure and current 28073390 implementation as counterexamples; amend the design, ACs, test plan, expected files, and LOC without prompt coaching, retries, or unrelated host-proof machinery.
+  The one-period miss is the first falsifying control; nine expected existing files total about +168/-53, while the shared runners, prompts-as-procedure, transcript parsers, retries, and new harnesses remain excluded.
+- DONE: Resolve the dependency boundary with s4 and leave a gate-ready ideation report that declares exactly what implementation would change.
+  6y lands first; s4 must re-ideate six overlapping code/skill/test surfaces and docs, while retaining sole ownership of `gate prepare`, provider request authority, and `room=` stdout.
+- SKIPPED: Edit code, run tests or live hosts, push PR #565, or consume another gate.
+  Cycle 31 changed only this entity body in the shared state checkout, as required by the dispatch boundary.
+
+### Summary
+
+Cycle 31 replaces lossy model-copied argv authority with one exact scaffold capture
+selected by file and read by the recorder, without changing direct Captain or provider
+decisions. The design uses the retained missing-period failure as a byte-level control,
+keeps locator ergonomics narrow, and makes s4 explicitly downstream. Checklist
+accounting is **3 DONE, 1 SKIPPED, 0 FAILED**; the amendment is ready for ideation gate
+review.
