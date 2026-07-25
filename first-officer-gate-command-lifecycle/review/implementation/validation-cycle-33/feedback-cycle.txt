@@ -1,0 +1,1 @@
+- Cycle 26: REJECTED — validation cycle 33 canonical Pi lane gap; surface 13/199 vs estimate 13/204 (98%); AC unchanged

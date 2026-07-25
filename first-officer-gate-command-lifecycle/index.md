@@ -3910,3 +3910,43 @@ authority, no-conn, refusal, ordering, and deletion-sensitive controls, and PR
 because the approved canonical Pi lane does not run the AC-3 recorded-gate
 journey it claims as live coverage; pending or red Claude/Codex work is not
 counted green. Checklist accounting is **8 DONE, 3 FAILED, 0 SKIPPED**.
+
+## Stage Report: implementation (cycle 34 CI evidence correction)
+
+- DONE: Inspect and declare the exact intended correction before edits.
+  The declaration is exactly `.github/workflows/runtime-live-e2e.yml` and
+  `internal/release/workflow_exec_guard_test.go`, one replacement line each:
+  +2/-2 changed LOC, projecting 15 cumulative files and 203/204 changed LOC.
+- DONE: Tighten the existing workflow owner test-first.
+  `TestWorkflowsPreserveAndPublishJourneyCosts` first failed because the Pi
+  command lacked the exact recorded-gate selector; removing either selector
+  from the paired command makes that owner test fail.
+- DONE: Correct only the existing Pi invocation and evidence boundary.
+  Commit `e617f94796f8fbe424a55ba9a12d97a85be5210f` adds
+  `TestLivePiRecordedGateLifecycle` to the existing front-door gotestsum
+  selector; its existing `pi-front-door-smoke-detail.jsonl` output and upload
+  remain unchanged.
+- DONE: Pass every required deterministic verification gate.
+  Focused release/Pi controls, live-tag compile-only, `gofmt -w ./cmd
+  ./internal`, `go test ./...`, `go test ./... -race`, pinned `mkdocs build
+  --strict`, and `git diff --check` passed without a local provider journey.
+- DONE: Preserve the declared scope and fast-forward PR #565 exactly.
+  The delta is exactly two files at +2/-2; cumulative scope is 15 files,
+  +141/-62 = 203 changed LOC. HTTPS lacked workflow scope and changed nothing;
+  SSH then fast-forwarded without force, and PR head equals `e617f947`.
+- DONE: Prepare complete advisory Round 26 source without publication.
+  `review/implementation/validation-cycle-33/` retains Aquinas's one Material
+  EVIDENCE finding/Resolution, the actor:ensign Material/fixed disposition and
+  Resolution, and the exact already-recorded Cycle 26 feedback line.
+- SKIPPED: Add a test, harness, job, refactor, cleanup, or provider/model/pin
+  change; run local live/provider; record Round 26; request Roborev; mutate
+  status/stage/gate; merge.
+  The Captain limited the repair to the existing selector and evidence upload;
+  Aquinas remains the validation reviewer for re-review.
+
+### Summary
+
+The canonical Pi job now invokes and retains the exact AC-3 recorded-gate
+lifecycle evidence through its existing boundary, with no new lane or
+mechanism. PR #565 is exactly at clean tip `e617f947`; Round 26 is prepared but
+unpublished. Checklist accounting is **6 DONE, 1 SKIPPED, 0 FAILED**.
