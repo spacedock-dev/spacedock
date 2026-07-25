@@ -3316,3 +3316,51 @@ approval or consume commits. The exact live failure is reproduced and fixed in
 real Git while every existing snapshot and ancestry negative remains active.
 All deterministic gates pass at `b34c5bdb`; live retry remains blocked.
 Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 Git oracle LOC cut)
+
+- DONE: Preserve the canonical transition selectors while removing the
+  extra-report history inflation rejected by detached review.
+  Exact tip `5ced64fc5101b5da5f7bb5b3cfa9b8b9e2afc457` keeps the
+  chronological first introduction of the canonical Resolution ID and
+  canonical consumed YAML field. It removes the separate echo
+  write/commit/assert block and restores the folder history range from
+  `HEAD~6..HEAD` to `HEAD~5..HEAD`.
+- DONE: Fold the live-shaped ambiguity into the sole successor-effect commit.
+  The existing marker-only effect write now appends the marker plus a real
+  `## Stage Report: handoff`. Its DONE item repeats `decision: approve`, while
+  its evidence separately says the one-use application was already consumed
+  before dispatch. The positive lifecycle observation remains immediately
+  after that single effect commit; zero-effect proof still runs before it.
+- DONE: Prove the canonical selector is necessary and preserve every negative.
+  With the canonical selector the real-Git replay passes. Replacing only that
+  selector with the old `git log -1 -S'decision: approve'` form makes the same
+  replay fail with `successor dispatch was not observed after consume`.
+  Zero build, zero effect, build-before-consume, missing dispatch ancestry, two
+  builds, and two effects remain rejected; all parent/open, pending-close,
+  consumed-handoff, and close → consume → dispatch → effect checks are
+  unchanged.
+- DONE: Return to the approved range and rerun deterministic verification.
+  The final correction is exactly **+3/-3** from `bb67a072`, confined to
+  `internal/ensigncycle/recorded_gate_lifecycle_test.go`. From base
+  `28073390`, the complete implementation is **11 files, +150/-53 = 203
+  changed LOC**, below the approved 204-LOC hard cap.
+  `gofmt -w ./cmd ./internal`, focused lifecycle/review suites, focused
+  gates/CLI/contract/integration suites, `go test -tags live ./... -run '^$'
+  -count=1`, `go test ./...`, `go test ./... -race`,
+  `uv run --with-requirements docs/requirements.txt mkdocs build --strict`,
+  and `git diff --check` all pass. The live-tag command compiled all runners
+  and executed no live tests.
+- SKIPPED: Retry a live host, request Roborev, push code or state, mutate a
+  gate/round/status/stage, or advance the workflow.
+  The exact corrected tip stops for detached review and renewed live
+  authorization.
+
+### Summary
+
+The sole successor-effect commit now carries the exact report echo that broke
+the Claude journey, making the canonical first-transition selector
+deletion-sensitive without adding history. Every lifecycle and ancestry
+negative remains active, cumulative scope is back under cap at 203 changed LOC,
+and all deterministic gates pass at `5ced64fc`. Checklist accounting is
+**4 DONE, 1 SKIPPED, 0 FAILED**.
