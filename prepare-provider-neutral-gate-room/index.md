@@ -7,7 +7,7 @@ started: 2026-07-24T14:54:10Z
 completed:
 verdict:
 score: "1.0"
-worktree:
+worktree: .worktrees/spacedock-ensign-prepare-provider-neutral-gate-room
 issue:
 sprint: durable-decisions
 gates:
