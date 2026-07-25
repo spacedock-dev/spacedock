@@ -13,7 +13,7 @@ sprint-readiness:
 id: 6cccykszyvxz5mxhrf270fa2
 mod-block:
 pr: pr-merge:419
-archived:
+archived: 2026-07-25T19:09:55Z
 ---
 
 The v0.22.0-to-current contract token comparison showed `skills/first-officer/references/first-officer-shared-core.md` grew by about 943 `o200k_base` tokens. The largest new section is `«state.commit»(slug)` at roughly 587 tokens. This task should determine whether that body can collapse now that the binary/state-verb path exists, and then implement a safe reduction or produce a documented no-cut decision if the mechanics remain load-bearing.
