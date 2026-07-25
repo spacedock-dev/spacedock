@@ -133,10 +133,25 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 
 	roots := gitsource.Roots{Main: input.WorkflowDir, State: filepath.Dir(entityPath)}
 	sources := make([]gitsource.Source, 0, len(normalized))
-	for _, selected := range normalized {
-		source, err := gitsource.Inspect(roots, selected)
-		if err != nil {
-			return PrepareResult{}, err
+	for i, selected := range normalized {
+		var source gitsource.Source
+		usedRecovered := false
+		if selected == entityPath {
+			prior, ok, err := preparedEntityReplaySource(entityPath, roots, previous, i)
+			if err != nil {
+				return PrepareResult{}, err
+			}
+			if ok {
+				source = prior
+				usedRecovered = true
+			}
+		}
+		if !usedRecovered {
+			var err error
+			source, err = gitsource.Inspect(roots, selected)
+			if err != nil {
+				return PrepareResult{}, err
+			}
 		}
 		sources = append(sources, source)
 	}
@@ -253,6 +268,57 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 		return PrepareResult{}, err
 	}
 	return PrepareResult{Room: room, Briefing: briefingID, Digest: briefingDigest, State: "open"}, nil
+}
+
+func preparedEntityReplaySource(entityPath string, roots gitsource.Roots, previous *Attempt, ordinal int) (gitsource.Source, bool, error) {
+	if previous == nil || previous.Resolution != nil || previous.Briefing.RequestDigest == "" {
+		return gitsource.Source{}, false, nil
+	}
+	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
+	if err != nil {
+		return gitsource.Source{}, false, err
+	}
+	items, err := canonicalPresentationItems(manifest)
+	if err != nil {
+		return gitsource.Source{}, false, err
+	}
+	if ordinal >= len(items) || !strings.HasPrefix(items[ordinal].URI, "git-root://") {
+		return gitsource.Source{}, false, nil
+	}
+	source := gitsource.Source{URI: items[ordinal].URI, Rev: items[ordinal].Rev}
+	frozen, err := gitsource.Resolve(roots, source.URI, source.Rev)
+	if err != nil {
+		return gitsource.Source{}, false, err
+	}
+	current, err := os.ReadFile(entityPath)
+	if err != nil {
+		return gitsource.Source{}, false, err
+	}
+	frozenOutside, err := entityWithoutGates(frozen)
+	if err != nil {
+		return gitsource.Source{}, false, err
+	}
+	currentOutside, err := entityWithoutGates(current)
+	if err != nil {
+		return gitsource.Source{}, false, err
+	}
+	if !bytes.Equal(frozenOutside, currentOutside) {
+		return gitsource.Source{}, false, nil
+	}
+	return source, true, nil
+}
+
+func entityWithoutGates(data []byte) ([]byte, error) {
+	root, fmStart, fmEnd, err := frontmatterNode(data)
+	if err != nil {
+		return nil, err
+	}
+	start, end, ok := topLevelRange(root, fmStart, fmEnd, "gates")
+	if !ok {
+		return append([]byte(nil), data...), nil
+	}
+	startByte, endByte := lineOffset(data, start), lineOffset(data, end)
+	return append(append([]byte(nil), data[:startByte]...), data[endByte:]...), nil
 }
 
 func preparedReplay(entityPath, workflowDir string, doc *Document, previous *Attempt, briefingID, question, summary string, sources []gitsource.Source) (PrepareResult, bool, error) {
