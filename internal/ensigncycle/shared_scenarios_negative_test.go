@@ -5,6 +5,15 @@ import (
 	"testing"
 )
 
+type recordedGatePiEvent struct {
+	Message *struct {
+		Role       string        `json:"role"`
+		ToolCallID string        `json:"toolCallId"`
+		IsError    bool          `json:"isError"`
+		Content    []streamBlock `json:"content"`
+	} `json:"message"`
+}
+
 // Negative-case discipline: each shared scenario's assertion is behavior/state
 // oriented, not a transcript-shape tautology. For every shared scenario these cases build the
 // SPECIFIC broken end-state the scenario guards against — from the real shared
@@ -19,22 +28,10 @@ func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
 	before := recordedGateEntity()
 	held := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
 	review := recordedGateReview()
-	if err := assertGateHeld(before, held, review); err != nil {
-		t.Fatalf("held-gate baseline must pass: %v", err)
-	}
+	requireRecordedGate(t, assertGateHeld(before, held, review) == nil, "held-gate baseline failed")
 
-	if err := assertGateHeld(before, before, review); err == nil {
-		t.Fatal("expected an unbound gate to fail assertGateHeld")
-	}
-
-	advanced := strings.Replace(held, "status: validation", "status: done", 1)
-	if err := assertGateHeld(before, advanced, review); err == nil {
-		t.Fatal("expected a gate advanced to status: done to fail assertGateHeld even with a gate-review final message")
-	}
-
-	withVerdict := strings.Replace(held, "verdict:\n", "verdict: passed\n", 1)
-	if err := assertGateHeld(before, withVerdict, review); err == nil {
-		t.Fatal("expected a self-approved (verdict set) gate to fail assertGateHeld")
+	for name, after := range map[string]string{"unbound": before, "advanced": strings.Replace(held, "status: validation", "status: done", 1), "self-approved": strings.Replace(held, "verdict:\n", "verdict: passed\n", 1)} {
+		requireRecordedGate(t, assertGateHeld(before, after, review) != nil, "%s gate qualified", name)
 	}
 }
 

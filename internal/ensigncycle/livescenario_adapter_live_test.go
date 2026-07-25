@@ -7,10 +7,20 @@ package ensigncycle
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/livescenario"
 )
+
+func assertRecordedGateHoldLog(log string) error {
+	bind, commit, head := strings.Index(log, "exit=0\tgate record recorded-gate-task --briefing "), strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task"), strings.LastIndex(log, "state-head\t")
+	if bind < 0 || commit < bind || head < commit || strings.Count(log, "exit=0\tgate record recorded-gate-task --briefing ") != 1 ||
+		strings.Contains(log[bind:], " --decision ") || strings.Contains(log[bind:], "gate consume recorded-gate-task") || strings.Contains(log[bind:], "dispatch build ") {
+		return errGraded("gate hold crossed its committed no-authority boundary")
+	}
+	return nil
+}
 
 // claudeRunnerAdapter wraps the existing package-private claudeLiveRunner (the
 // launch + observed-extract adapter 8y built) as a livescenario.Runner. This is

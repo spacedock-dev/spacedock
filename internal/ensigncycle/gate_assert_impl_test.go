@@ -13,26 +13,11 @@ var (
 	verdictSetFM     = regexp.MustCompile(`(?im)^verdict:[^\S\n]*\S.*$`)
 )
 
-// assertGateHeld grades the v1 no-authority boundary: one committed open
-// binding and one semantic review, without close, consume, advance, or dispatch.
 func assertGateHeld(before, after, review string) error {
-	if before == after {
-		return fmt.Errorf("gated entity stayed unbound")
+	if before == after || !validatingStatus.MatchString(after) || completedSet.MatchString(after) || verdictSetFM.MatchString(after) {
+		return fmt.Errorf("gated entity is not held at its open validation boundary")
 	}
-	if !validatingStatus.MatchString(after) {
-		return fmt.Errorf("gated entity is no longer validating")
-	}
-	if completedSet.MatchString(after) {
-		return fmt.Errorf("gated entity has completed set")
-	}
-	if verdictSetFM.MatchString(after) {
-		return fmt.Errorf("gated entity has verdict set")
-	}
-	for _, exact := range []string{
-		"state: open", "id: gate-attempt:3k-validation-1",
-		"id: " + recordedGateBriefingID,
-		"digest: " + recordedGateDigest,
-	} {
+	for _, exact := range []string{"state: open", "id: gate-attempt:3k-validation-1", "id: " + recordedGateBriefingID, "digest: " + recordedGateDigest} {
 		if strings.Count(after, exact) != 1 {
 			return fmt.Errorf("open bound entity count for %q is not 1", exact)
 		}
@@ -46,4 +31,16 @@ func assertGateHeld(before, after, review string) error {
 		return fmt.Errorf("semantic gate review: %w", err)
 	}
 	return nil
+}
+
+type recordedGateCodexEvent struct {
+	Type string `json:"type"`
+	Item struct {
+		Type             string `json:"type"`
+		Text             string `json:"text"`
+		Command          string `json:"command"`
+		Status           string `json:"status"`
+		AggregatedOutput string `json:"aggregated_output"`
+		ExitCode         *int   `json:"exit_code"`
+	} `json:"item"`
 }

@@ -18,18 +18,18 @@ import (
 // build tags so the offline negative-case tests (AC-5) reuse them without spending
 // a model, alongside the //go:build live runners that drive them for real.
 
+func singleRecordedGateReview(candidates []string) string {
+	if len(candidates) == 1 {
+		return candidates[0]
+	}
+	return ""
+}
+
 func writeGateWorkflow(t *testing.T, root string) recordedGateFixture {
-	t.Helper()
 	return writeRecordedGateFixtureAt(t, root)
 }
-
-func gateReadme() string {
-	return recordedGateReadme()
-}
-
-func gateEntity() string {
-	return recordedGateEntity()
-}
+func gateReadme() string { return recordedGateReadme() }
+func gateEntity() string { return recordedGateEntity() }
 
 func gatePrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s",

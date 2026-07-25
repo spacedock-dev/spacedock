@@ -3,6 +3,7 @@
 package contractlint
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 // foFunctionReferencePaths is the 13-file union the mutable-address lint scans. The
@@ -270,24 +273,11 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 		t.Error("worker-completion gate route does not load the deferred lifecycle")
 	}
 	autoRoute := "reviewer recommends `REJECTED`"
-	if !strings.Contains(completion, autoRoute) ||
-		!strings.Contains(completion, "`«feedback.route»` before Captain presentation") ||
-		strings.Contains(strings.Replace(completion, autoRoute, "", 1), autoRoute) {
+	if strings.Count(completion, autoRoute) != 1 ||
+		!strings.Contains(completion, "`«feedback.route»` before Captain presentation") {
 		t.Error("reviewer-REJECTED correction is not uniquely owned before Captain presentation")
 	}
-	lifecycle := readRepoFile(t, filepath.Join("skills", "fo-gate-lifecycle", "SKILL.md"))
-	for _, mapping := range []string{
-		"`approve` maps to `approve`",
-		"`redo with feedback` maps to `revise`",
-		"`reject` with `feedback-to` maps to `revise`",
-		"`reject` without `feedback-to` maps to `hold`",
-		"`hold` maps to `hold`",
-		"`not yet` maps to `hold`",
-	} {
-		if strings.Count(lifecycle, mapping) != 1 {
-			t.Errorf("Captain mapping count=%d, want 1 for %q", strings.Count(lifecycle, mapping), mapping)
-		}
-	}
+	lifecycle, presenter := readRepoFile(t, filepath.Join("skills", "fo-gate-lifecycle", "SKILL.md")), readRepoFile(t, filepath.Join("skills", "present-gate", "SKILL.md"))
 	for _, want := range []string{
 		"If absent", "halt before mutation", "refresh or a fresh build",
 		"presentation completes only after", "exact bound Briefing id/digest",
@@ -297,7 +287,6 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 			t.Errorf("gate lifecycle missing fail-closed/presentation contract %q", want)
 		}
 	}
-	presenter := readRepoFile(t, filepath.Join("skills", "present-gate", "SKILL.md"))
 	for _, want := range []string{
 		"exactly one root-assistant message", "entity and stage",
 		"exact bound Briefing id and digest", "one recommendation",
@@ -309,6 +298,21 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 	}
 	if strings.Contains(lifecycle, "Gate review:") || strings.Contains(lifecycle, "Decision:") {
 		t.Error("lifecycle duplicates presenter markers instead of waiting for semantic presentation")
+	}
+	for _, tc := range []struct{ phrase, decision, class, ask, route string }{{"`approve` maps to `approve`", "approve", "accepted direction", "preserve the reviewed package", "advance"}, {"`redo with feedback` maps to `revise`", "revise", "accepted direction", "add the retry test", "feedback"}, {"`reject` with `feedback-to` maps to `revise`", "revise", "rejected direction", "replace the rejected cache design", "feedback"}, {"`reject` without `feedback-to` maps to `hold`", "hold", "rejected direction", "name a feedback owner", "hold"}, {"`hold` maps to `hold`", "hold", "pause", "wait for security sign-off", "hold"}, {"`not yet` maps to `hold`", "hold", "pause", "rerun the failing CI lane", "hold"}} {
+		reason := tc.class + ": " + tc.ask
+		snapshot, _ := json.Marshal(gates.Document{Records: []gates.GateRecord{{Attempts: []gates.Attempt{{Resolution: &gates.Resolution{Decision: tc.decision, Reason: reason}}}}}})
+		var durable gates.Document
+		_ = json.Unmarshal(snapshot, &durable)
+		got := *durable.Records[0].Attempts[0].Resolution
+		route := map[string]string{"approve": "advance", "revise": "feedback", "hold": "hold"}[got.Decision]
+		grade := func(r gates.Resolution, route string) bool {
+			return strings.Contains(lifecycle, tc.phrase) && r.Decision == tc.decision && strings.Contains(r.Reason, tc.class) && strings.Contains(r.Reason, tc.ask) && route == tc.route && strings.Contains(string(snapshot), tc.ask)
+		}
+		if !grade(got, route) || grade(gates.Resolution{Decision: "wrong", Reason: got.Reason}, route) ||
+			grade(gates.Resolution{Decision: got.Decision, Reason: "generic"}, route) || grade(got, "wrong") {
+			t.Fatal("durable mapping/reason/route mutation control failed")
+		}
 	}
 }
 

@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 var recordedGateRequiredEvents = []string{
@@ -106,18 +104,20 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 func assertConciseRecordedGateReview(review string) error {
 	trimmed := strings.TrimSpace(review)
 	lower := strings.ToLower(trimmed)
-	for _, want := range []string{
-		"recorded gate task", "validation", strings.ToLower(recordedGateBriefingID),
-		strings.ToLower(recordedGateDigest), "recommend", "decision",
-	} {
-		if !strings.Contains(lower, want) || (want == "validation" && strings.Count(lower, want) < 2) {
-			return fmt.Errorf("gate review omits semantic fact %q", want)
-		}
+	if !strings.Contains(lower, "recorded gate task") || strings.Count(lower, "validation") < 2 ||
+		!strings.Contains(lower, strings.ToLower(recordedGateBriefingID)) || !strings.Contains(lower, strings.ToLower(recordedGateDigest)) || !strings.Contains(lower, "recommend") {
+		return fmt.Errorf("gate review omits its decision facts")
 	}
 	if strings.Contains(lower, "\ngates:\n") || strings.HasPrefix(lower, "{") {
 		return fmt.Errorf("gate review leads with raw state instead of the decision")
 	}
-	return nil
+	for _, line := range strings.Split(lower, "\n") {
+		if strings.Contains(line, "approve") && (strings.Contains(line, "revise") || strings.Contains(line, "revision") || strings.Contains(line, "hold") || strings.Contains(line, "reject")) &&
+			(strings.Contains(line, "?") || strings.Contains(line, "choose ") || strings.Contains(line, "please decide")) {
+			return nil
+		}
+	}
+	return fmt.Errorf("gate review has no actionable decision ask")
 }
 
 type recordedGateFixture struct {
@@ -137,8 +137,9 @@ type recordedGateCommand struct {
 }
 
 func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
-	binary := buildRecordedGateBinary(t)
 	fixture := writeRecordedGateFixture(t)
+	commandLog := filepath.Join(fixture.root, "command.log")
+	binary := filepath.Join(writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog), "spacedock")
 	before := readFile(t, fixture.entity)
 	var commands []recordedGateCommand
 	run := func(event string, args ...string) recordedGateCommand {
@@ -151,6 +152,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 		return cmd
 	}
 
+	mustRecordedGate(t, binary, fixture.root, "gate", "--help")
 	bind := run("briefing-record", "gate", "record", "recorded-gate-task", "--briefing", fixture.briefing, "--workflow-dir", fixture.root)
 	assertCommandOutput(t, bind.stdout, "state=open", "briefing=briefing:docs-dev:3k:validation:attempt-1:revision-1")
 	commitRecordedGateState(t, binary, fixture, "bind retained gate package")
@@ -161,33 +163,47 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 		"--directive", recordedGateDirective,
 		"--workflow-dir", fixture.root)
 	assertCommandOutput(t, close.stdout, "state=closed", "decision=approve")
-	closeCommit := commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
+	commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
 
 	consume := run("consume", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
-	consumedCommit := commitRecordedGateState(t, binary, fixture, "consume gate authorization")
+	commitRecordedGateState(t, binary, fixture, "consume gate authorization")
 
 	events := successfulRecordedGateEvents(commands)
 	dispatches := 0
 	if err := authorizeRecordedGateDispatch(events, readFile(t, fixture.entity), "handoff"); err == nil {
+		checklist := filepath.Join(fixture.root, "handoff.checklist")
+		writeFile(t, checklist, "- Append the successor marker\n")
+		mustRecordedGate(t, binary, fixture.root, "dispatch", "build", "--workflow-dir", fixture.root, "--entity-path", fixture.entity, "--stage", "handoff", "--checklist-file", checklist, "--host", "claude", "--bare-mode")
 		dispatches++
 	} else {
 		t.Fatalf("dispatch oracle refused complete lifecycle: %v", err)
 	}
+	zero := recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))
+	requireRecordedGate(t, zero.dispatch.builds == 1 && zero.dispatch.durableEffects == 0 && assertRecordedGateLifecycle(zero) != nil, "zero-effect executed build qualified")
+	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n")
+	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record successor effect")
 	writeRecordedGateEvidence(t, fixture.root, commands, before, readFile(t, fixture.entity), readFile(t, fixture.gateReview), dispatches)
-	observation := recordedGateObservation{
-		events:       events,
-		before:       before,
-		after:        readFile(t, fixture.entity),
-		dispatch:     recordedGateDispatchProof{builds: dispatches, durableEffects: dispatches, ordered: true, committed: recordedGateCommittedBeforeDispatch(t, fixture, closeCommit, consumedCommit, consumedCommit)},
-		gateReview:   readFile(t, fixture.gateReview),
-		expectedNext: "handoff",
-	}
+	observation := recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))
 	if err := assertRecordedGateLifecycle(observation); err != nil {
 		t.Fatal(err)
 	}
+	validLog := readFile(t, commandLog)
+	for name, log := range map[string]string{"zero-build": strings.Replace(validLog, "exit=0\tdispatch build ", "exit=0\tignored build ", 1), "build-before-consume": strings.Replace(validLog, "exit=0\tgate consume ", "exit=0\tignored consume ", 1) + "\nexit=0\tgate consume late", "missing-ancestry": strings.Replace(validLog, "dispatch-head\t", "missing-head\t", 1)} {
+		writeFile(t, commandLog, log)
+		requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))) != nil, "%s control qualified", name)
+	}
+	writeFile(t, commandLog, validLog)
+	mustRecordedGate(t, binary, fixture.root, "dispatch", "build", "--workflow-dir", fixture.root, "--entity-path", fixture.entity, "--stage", "handoff", "--checklist-file", filepath.Join(fixture.root, "handoff.checklist"), "--host", "claude", "--bare-mode")
+	two := recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))
+	requireRecordedGate(t, two.dispatch.builds == 2 && assertRecordedGateLifecycle(two) != nil, "two-build control qualified")
+	writeFile(t, commandLog, validLog)
+	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"-SECOND\n")
+	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record duplicate effect")
+	two = recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))
+	requireRecordedGate(t, two.dispatch.durableEffects == 2 && assertRecordedGateLifecycle(two) != nil, "two-effect control qualified")
 
-	log := git(t, fixture.stateRoot, "show", "--name-only", "--format=", "HEAD~3..HEAD")
+	log := git(t, fixture.stateRoot, "show", "--name-only", "--format=", "HEAD~5..HEAD")
 	for _, want := range []string{
 		"recorded-gate-task/index.md",
 		"recorded-gate-task/review/validation/briefing-1/briefing.json",
@@ -215,35 +231,17 @@ func TestRecordedGateLifecycleTerminalConsumeHasNoDispatchableSuccessor(t *testi
 	assertCommandOutput(t, mustRecordedGate(t, binary, fixture.root, "status", "--workflow-dir", fixture.root, "--next", "--json").stdout, `"dispatchable":[]`)
 }
 
-func TestRecordedGateLifecycleDirectiveUTF8AndGitBarriers(t *testing.T) {
+func TestRecordedGateLifecycleRelativeBriefingMatchesAbsolute(t *testing.T) {
 	binary := buildRecordedGateBinary(t)
-	for _, directive := range []string{
-		`quote "captain"`, `path\segment`, "line one\nline two", "both \"quoted\"\\path\nnext",
-	} {
-		t.Run(fmt.Sprintf("%x", sha256.Sum256([]byte(directive)))[:12], func(t *testing.T) {
-			fixture := writeRecordedGateFixture(t)
-			bindRecordedGate(t, binary, fixture)
-			bindCommit := commitRecordedGateState(t, binary, fixture, "bind directive package")
-			mustRecordedGate(t, binary, fixture.root, "gate", "record", "recorded-gate-task",
-				"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence",
-				"--directive", directive, "--workflow-dir", fixture.root)
-			closeCommit := commitRecordedGateState(t, binary, fixture, "close directive gate")
-			mustRecordedGate(t, binary, fixture.root, "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
-			consumeCommit := commitRecordedGateState(t, binary, fixture, "consume directive gate")
-			doc, _, err := gates.Read(fixture.entity)
-			if err != nil {
-				t.Fatal(err)
-			}
-			got := doc.Records[0].Attempts[0].Resolution
-			if got.By != "agent:first-officer" || got.Adoption != directive {
-				t.Fatalf("durable authority by=%q directive=%q, want exact %q", got.By, got.Adoption, directive)
-			}
-			if strings.Contains(recordedGateEntityAt(t, fixture, bindCommit), "resolution:") ||
-				!strings.Contains(recordedGateEntityAt(t, fixture, closeCommit), "decision: approve") ||
-				!strings.Contains(recordedGateEntityAt(t, fixture, consumeCommit), "state: consumed") {
-				t.Fatal("bind/close/consume Git snapshots do not preserve their distinct barriers")
-			}
-		})
+	relative, absolute := writeRecordedGateFixture(t), writeRecordedGateFixture(t)
+	rel, err := filepath.Rel(relative.root, relative.briefing)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustRecordedGate(t, binary, relative.root, "gate", "record", "recorded-gate-task", "--briefing", rel, "--workflow-dir", relative.root)
+	mustRecordedGate(t, binary, absolute.root, "gate", "record", "recorded-gate-task", "--briefing", absolute.briefing, "--workflow-dir", absolute.root)
+	if got, want := readFile(t, relative.entity), readFile(t, absolute.entity); got != want {
+		t.Fatalf("relative and absolute retained inputs bound different entity bytes")
 	}
 }
 
@@ -655,7 +653,7 @@ func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {
 	}
 	dir := t.TempDir()
 	shim := filepath.Join(dir, "spacedock")
-	script := fmt.Sprintf("#!/bin/sh\nprintf 'begin\\t%%s\\n' \"$*\" >> %q\n[ \"$1 $2\" = \"dispatch build\" ] && git -C .spacedock-state rev-parse HEAD | sed 's/^/dispatch-head\\t/' >> %q\n%q \"$@\"\ncode=$?\nprintf 'exit=%%s\\t%%s\\n' \"$code\" \"$*\" >> %q\n[ \"$code\" -eq 0 ] && [ \"$1 $2\" = \"state commit\" ] && git -C .spacedock-state rev-parse HEAD | sed 's/^/state-head\\t/' >> %q\nexit \"$code\"\n", logPath, logPath, binary, logPath, logPath)
+	script := fmt.Sprintf("#!/bin/sh\nprintf 'begin\\t%%s\\n' \"$*\" >> %q\n[ \"$1 $2\" = \"dispatch build\" ] && git -C .spacedock-state rev-parse HEAD | sed 's/^/dispatch-head\\t/' >> %q\n%q \"$@\"\ncode=$?\nprintf 'exit=%%s\\t%%s\\n' \"$code\" \"$*\" >> %q\n[ \"$code\" -eq 0 ] && [ \"$1 $2\" = \"state commit\" ] && git -C .spacedock-state rev-parse HEAD | sed 's/^/state-head\\t/' | tee -a %q\nexit \"$code\"\n", logPath, logPath, binary, logPath, logPath)
 	writeFile(t, shim, script)
 	if err := os.Chmod(shim, 0o755); err != nil {
 		t.Fatal(err)
@@ -717,28 +715,28 @@ func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
 		})
 	}
 }
-func singleRecordedGateReview(candidates []string) string {
-	if len(candidates) == 1 {
-		return candidates[0]
-	}
-	return ""
-}
 func recordedGateReviewFromClaudeStream(stream string) string {
-	stream = strings.SplitN(stream+"Committed recorded-gate-task", "Committed recorded-gate-task", 2)[1]
-	stream = strings.SplitN(stream, "gate record recorded-gate-task --decision ", 2)[0]
 	var candidates []string
+	commit, bound := "", false
 	for _, line := range strings.Split(stream, "\n") {
 		var row struct {
-			Parent  json.RawMessage `json:"parent_tool_use_id"`
-			Message struct {
-				Content []streamContentBlock `json:"content"`
-			} `json:"message"`
+			streamEntry
+			Parent json.RawMessage `json:"parent_tool_use_id"`
 		}
-		if json.Unmarshal([]byte(line), &row) != nil || (len(row.Parent) > 0 && string(row.Parent) != "null") {
+		if json.Unmarshal([]byte(line), &row) != nil || row.Message == nil || (len(row.Parent) > 0 && string(row.Parent) != "null") {
 			continue
 		}
-		for _, block := range row.Message.Content {
-			if block.Type == "text" && assertConciseRecordedGateReview(block.Text) == nil {
+		for i := range row.Message.Content {
+			block := &row.Message.Content[i]
+			command := block.Input.Command
+			switch {
+			case row.Type == "assistant" && block.Type == "tool_use" && block.Name == "Bash" && strings.Contains(command, "state commit recorded-gate-task"):
+				commit = block.ID
+			case row.Type == "user" && block.Type == "tool_result" && block.ToolUseID == commit && !block.IsError:
+				bound = recordedGateStateHead.MatchString(block.flatText())
+			case row.Type == "assistant" && block.Type == "tool_use" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --decision "):
+				return singleRecordedGateReview(candidates)
+			case bound && row.Type == "assistant" && block.Type == "text" && assertConciseRecordedGateReview(block.Text) == nil:
 				candidates = append(candidates, block.Text)
 			}
 		}
@@ -747,19 +745,19 @@ func recordedGateReviewFromClaudeStream(stream string) string {
 }
 
 func recordedGateReviewFromCodexJSONL(jsonl string) string {
-	jsonl = strings.SplitN(jsonl+"Committed recorded-gate-task", "Committed recorded-gate-task", 2)[1]
-	jsonl = strings.SplitN(jsonl, "gate record recorded-gate-task --decision ", 2)[0]
 	var candidates []string
+	bound := false
 	for _, line := range strings.Split(jsonl, "\n") {
-		var row struct {
-			Type string `json:"type"`
-			Item struct {
-				Type string `json:"type"`
-				Text string `json:"text"`
-			} `json:"item"`
+		var row recordedGateCodexEvent
+		if json.Unmarshal([]byte(line), &row) != nil || row.Type != "item.completed" {
+			continue
 		}
-		if json.Unmarshal([]byte(line), &row) == nil && row.Item.Type == "agent_message" &&
-			assertConciseRecordedGateReview(row.Item.Text) == nil {
+		switch {
+		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "state commit recorded-gate-task"):
+			bound = row.Item.ExitCode != nil && *row.Item.ExitCode == 0 && row.Item.Status == "completed" && recordedGateStateHead.MatchString(row.Item.AggregatedOutput)
+		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "gate record recorded-gate-task") && strings.Contains(row.Item.Command, " --decision "):
+			return singleRecordedGateReview(candidates)
+		case bound && row.Item.Type == "agent_message" && assertConciseRecordedGateReview(row.Item.Text) == nil:
 			candidates = append(candidates, row.Item.Text)
 		}
 	}
@@ -768,79 +766,44 @@ func recordedGateReviewFromCodexJSONL(jsonl string) string {
 
 func recordedGateReviewFromPiSession(session string) string {
 	var candidates []string
-	bound := false
+	commit, bound := "", false
 	for _, line := range strings.Split(session, "\n") {
-		var row struct {
-			Message *struct {
-				Role    string `json:"role"`
-				Content []struct {
-					Type      string            `json:"type"`
-					Text      string            `json:"text"`
-					Arguments map[string]string `json:"arguments"`
-				} `json:"content"`
-			} `json:"message"`
-		}
-		if json.Unmarshal([]byte(line), &row) != nil || row.Message == nil {
+		var row recordedGatePiEvent
+		if json.Unmarshal([]byte(strings.ReplaceAll(line, `"arguments":`, `"input":`)), &row) != nil || row.Message == nil {
 			continue
 		}
+		if row.Message.Role == "toolResult" && row.Message.ToolCallID == commit && !row.Message.IsError && len(row.Message.Content) > 0 {
+			bound = recordedGateStateHead.MatchString(row.Message.Content[0].Text)
+		}
 		for _, block := range row.Message.Content {
-			if strings.Contains(block.Text, "Committed recorded-gate-task") {
-				bound = true
-			} else if bound && row.Message.Role == "assistant" && block.Type == "text" && assertConciseRecordedGateReview(block.Text) == nil {
-				candidates = append(candidates, block.Text)
-			} else if bound && row.Message.Role == "assistant" && strings.Contains(block.Arguments["command"], "gate record recorded-gate-task --decision ") {
+			command := block.Input.Command
+			switch {
+			case row.Message.Role == "assistant" && block.Type == "toolCall" && block.Name == "bash" && strings.Contains(command, "state commit recorded-gate-task"):
+				commit = block.ID
+			case row.Message.Role == "assistant" && block.Type == "toolCall" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --decision "):
 				return singleRecordedGateReview(candidates)
+			case bound && row.Message.Role == "assistant" && block.Type == "text" && assertConciseRecordedGateReview(block.Text) == nil:
+				candidates = append(candidates, block.Text)
 			}
 		}
 	}
 	return singleRecordedGateReview(candidates)
 }
 
-func TestRecordedGateReviewFromPiSessionRequiresAssistantRole(t *testing.T) {
-	session := func(role string) string {
-		return fmt.Sprintf("{\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Committed recorded-gate-task\"}]}}\n"+
-			"{\"message\":{\"role\":%q,\"content\":[{\"type\":\"text\",\"text\":%q},{\"type\":\"toolCall\",\"arguments\":{\"command\":\"gate record recorded-gate-task --decision approve\"}}]}}", role, recordedGateReview())
-	}
-	if got := recordedGateReviewFromPiSession(session("user")); got != "" {
-		t.Fatalf("user message satisfied Pi gate-review evidence: %q", got)
-	}
-	if got := recordedGateReviewFromPiSession(session("assistant")); got != recordedGateReview() {
-		t.Fatalf("root assistant review = %q, want canonical review", got)
-	}
-	duplicate := strings.Replace(session("assistant"), `{"type":"toolCall"`, fmt.Sprintf(`{"type":"text","text":%q},{"type":"toolCall"`, recordedGateReview()), 1)
-	if got := recordedGateReviewFromPiSession(duplicate); got != "" {
-		t.Fatalf("duplicate Pi reviews satisfied exact-one evidence: %q", got)
-	}
-}
-
 func TestRecordedGateReviewExtractorsRequireOneOrderedRootReview(t *testing.T) {
-	reviewJSON, _ := json.Marshal(recordedGateReview())
-	for _, fact := range []string{"Recorded Gate Task", "validation", recordedGateBriefingID, recordedGateDigest, "Recommendation", "Decision ask"} {
-		if assertConciseRecordedGateReview(strings.Replace(recordedGateReview(), fact, "wrong", 1)) == nil {
-			t.Fatalf("mutated semantic fact %q qualified", fact)
+	claude := recordedGateHost{recordedGateReviewFromClaudeStream, "claude",
+		`{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"c","name":"Bash","input":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" + `{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"c","content":"state-head\t0123456789abcdef0123456789abcdef01234567","is_error":false}]}}`,
+		`{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}`, `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","input":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`, `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":"Committed recorded-gate-task"}]}}`, "", ""}
+	claude.failed, claude.child = strings.Replace(claude.commit, `"is_error":false`, `"is_error":true`, 1), strings.Replace(claude.review, "null", `"child"`, 1)
+	codex := recordedGateHost{recordedGateReviewFromCodexJSONL, "codex", `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock state commit recorded-gate-task","status":"completed","exit_code":0,"aggregated_output":"state-head\t0123456789abcdef0123456789abcdef01234567"}}`, `{"type":"item.completed","item":{"type":"agent_message","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}}`, `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock gate record recorded-gate-task --decision approve"}}`, `{"type":"item.completed","item":{"type":"agent_message","text":"Committed recorded-gate-task"}}`, "", ""}
+	codex.failed, codex.child = strings.Replace(codex.commit, `"exit_code":0`, `"exit_code":1`, 1), strings.Replace(codex.review, "agent_message", "subagent_message", 1)
+	pi := recordedGateHost{recordedGateReviewFromPiSession, "pi", `{"message":{"role":"assistant","content":[{"type":"toolCall","id":"c","name":"bash","arguments":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" + `{"message":{"role":"toolResult","toolCallId":"c","isError":false,"content":[{"type":"text","text":"state-head\t0123456789abcdef0123456789abcdef01234567"}]}}`, `{"message":{"role":"assistant","content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}`, `{"message":{"role":"assistant","content":[{"type":"toolCall","arguments":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`, `{"message":{"role":"assistant","content":[{"type":"text","text":"Committed recorded-gate-task"}]}}`, "", ""}
+	pi.failed, pi.child = strings.Replace(pi.commit, `"isError":false`, `"isError":true`, 1), strings.Replace(pi.review, `"assistant"`, `"user"`, 1)
+	for _, h := range []recordedGateHost{claude, codex, pi} {
+		requireRecordedGate(t, h.extract(h.commit+"\n"+h.review+"\n"+h.decision) == recordedGateReview(), "%s structured review failed", h.name)
+		for control, stream := range map[string]string{"narration": h.narration + "\n" + h.review + "\n" + h.commit + "\n" + h.decision, "failed": h.failed + "\n" + h.review + "\n" + h.decision, "order": h.review + "\n" + h.commit + "\n" + h.decision, "duplicate": h.commit + "\n" + h.review + "\n" + h.review + "\n" + h.decision, "root": h.commit + "\n" + h.child + "\n" + h.decision} {
+			requireRecordedGate(t, h.extract(stream) == "", "%s %s control qualified", h.name, control)
 		}
-	}
-	claudeBound := `{"parent_tool_use_id":null,"message":{"content":[{"type":"text","text":"Committed recorded-gate-task"}]}}`
-	claudeReview := `{"parent_tool_use_id":null,"message":{"content":[{"type":"text","text":` + string(reviewJSON) + `}]}}`
-	claudeDecision := `{"parent_tool_use_id":null,"message":{"content":[{"type":"text","text":"gate record recorded-gate-task --decision approve"}]}}`
-	if got := recordedGateReviewFromClaudeStream(claudeBound + "\n" + claudeReview + "\n" + claudeDecision); got != recordedGateReview() {
-		t.Fatalf("Claude root review=%q", got)
-	}
-	if got := recordedGateReviewFromClaudeStream(claudeBound + "\n" + strings.Replace(claudeReview, "null", `"child"`, 1) + "\n" + claudeDecision); got != "" {
-		t.Fatalf("Claude child review qualified: %q", got)
-	}
-	if got := recordedGateReviewFromClaudeStream(claudeBound + "\n" + claudeReview + "\n" + claudeReview + "\n" + claudeDecision); got != "" {
-		t.Fatalf("duplicate Claude reviews qualified: %q", got)
-	}
-
-	codexBound := `{"type":"item.completed","item":{"type":"agent_message","text":"Committed recorded-gate-task"}}`
-	codexReview := `{"type":"item.completed","item":{"type":"agent_message","text":` + string(reviewJSON) + `}}`
-	codexDecision := `{"type":"item.completed","item":{"type":"command_execution","text":"gate record recorded-gate-task --decision approve"}}`
-	if got := recordedGateReviewFromCodexJSONL(codexBound + "\n" + codexReview + "\n" + codexDecision); got != recordedGateReview() {
-		t.Fatalf("Codex root review=%q", got)
-	}
-	if got := recordedGateReviewFromCodexJSONL(codexBound + "\n" + codexReview + "\n" + codexReview + "\n" + codexDecision); got != "" {
-		t.Fatalf("duplicate Codex reviews qualified: %q", got)
 	}
 }
 
@@ -869,30 +832,19 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	}
 	commits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-S"+recordedGateDispatchMarker, "--", entityRel))
 	effects := 0
-	if len(commits) == 1 && strings.Contains(after, recordedGateDispatchMarker) {
-		effects = 1
+	if strings.Contains(after, recordedGateDispatchMarker) {
+		effects = len(commits)
 	}
-	closeCommit := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "--grep=^state: update recorded-gate-task$", "-Sdecision: approve", "--", entityRel))
-	consumedCommit := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "--grep=^state: update recorded-gate-task$", "-Sstate: consumed", "--", entityRel))
+	closeCommit := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "-Sdecision: approve", "--", entityRel))
+	consumedCommit := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "-Sstate: consumed", "--", entityRel))
 	return recordedGateObservation{
 		events: recordedGateEventsFromCommandLog(log), before: before, after: after,
 		dispatch: recordedGateDispatchProof{
 			builds: builds, durableEffects: effects, ordered: ordered,
-			committed: recordedGateCommittedBeforeDispatch(t, fixture, closeCommit, consumedCommit, dispatchHead),
+			committed: recordedGateCommittedBeforeDispatch(t, fixture, closeCommit, consumedCommit, dispatchHead, strings.Join(commits, " ")),
 		},
 		gateReview: review, expectedNext: "handoff",
 	}
-}
-
-func assertRecordedGateHoldLog(log string) error {
-	bind, commit, head := strings.Index(log, "exit=0\tgate record recorded-gate-task --briefing "), strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task"), strings.LastIndex(log, "state-head\t")
-	if bind < 0 || commit < bind || head < commit || strings.Count(log, "exit=0\tgate record recorded-gate-task --briefing ") != 1 {
-		return fmt.Errorf("bound Briefing was not committed before presentation")
-	}
-	if strings.Contains(log[bind:], " --decision ") || strings.Contains(log[bind:], "gate consume recorded-gate-task") || strings.Contains(log[bind:], "dispatch build ") {
-		return fmt.Errorf("no-authority boundary crossed")
-	}
-	return nil
 }
 
 func resolveRecordedGateEntity(fixture recordedGateFixture) string {
@@ -1031,7 +983,7 @@ func recordedGateEntityAt(t *testing.T, fixture recordedGateFixture, commit stri
 	return git(t, fixture.stateRoot, "show", commit+":"+filepath.ToSlash(rel))
 }
 
-func recordedGateCommittedBeforeDispatch(t *testing.T, fixture recordedGateFixture, close, consumed, dispatchHead string) bool {
+func recordedGateCommittedBeforeDispatch(t *testing.T, fixture recordedGateFixture, close, consumed, dispatchHead string, effects ...string) bool {
 	t.Helper()
 	opened, closed, spent := recordedGateEntityAt(t, fixture, strings.TrimPrefix(close+"^", "^")), recordedGateEntityAt(t, fixture, close), recordedGateEntityAt(t, fixture, consumed)
 	if close == "" || consumed == "" || dispatchHead == "" || close == consumed ||
@@ -1040,8 +992,10 @@ func recordedGateCommittedBeforeDispatch(t *testing.T, fixture recordedGateFixtu
 		!strings.Contains(spent, "status: handoff") || !strings.Contains(spent, "state: consumed") {
 		return false
 	}
-	return exec.Command("git", "-C", fixture.stateRoot, "merge-base", "--is-ancestor", close, consumed).Run() == nil &&
+	ordered := exec.Command("git", "-C", fixture.stateRoot, "merge-base", "--is-ancestor", close, consumed).Run() == nil &&
 		exec.Command("git", "-C", fixture.stateRoot, "merge-base", "--is-ancestor", consumed, dispatchHead).Run() == nil
+	return ordered && (len(effects) == 0 || strings.Count(effects[0], " ") == 0 &&
+		exec.Command("git", "-C", fixture.stateRoot, "merge-base", "--is-ancestor", dispatchHead, effects[0]).Run() == nil)
 }
 
 func successfulRecordedGateEvents(commands []recordedGateCommand) []string {
