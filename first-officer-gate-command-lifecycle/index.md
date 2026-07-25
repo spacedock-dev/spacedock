@@ -3163,3 +3163,45 @@ Present-gate now describes the same delegated identity/evidence contract as
 the recorder and lifecycle skill, with no provenance text retained. The
 one-line shipped-skill correction is green at `659e1f8b`; live retry remains
 blocked. Checklist accounting is **3 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 normative spec sync)
+
+- DONE: Replace the final contradictory normative directive requirement in the
+  cumulative changed surface.
+  Exact tip `bb67a072` changes only the provider-association paragraph in
+  `docs/specs/gate-resolution-frontmatter-contract.md`: delegated chat
+  decisions record `agent:first-officer` with a nonblank evidence reason and no
+  directive or `adoption-note`. Provider request-digest and room semantics are
+  unchanged.
+- DONE: Target-search the exact 11-file cumulative surface and classify every
+  remaining provenance mention.
+  No current `quoted directive` or directive-provenance requirement remains.
+  Legitimate historical/read-compatibility mentions are the spec's explicit
+  historical `adoption-note` reader rule and the CLI fixture that proves it.
+  Legitimate negative controls are the CLI/lifecycle rejection tables for
+  `--directive` and `--directive-file`, contract lint forbidding those flags,
+  the no-new-adoption-note lifecycle mutant, and provider rejection of adoption
+  provenance. The named `recordedGateDirective` is only the unchanged
+  conversational conn sentence in the live prompt; it is not recorder
+  provenance. Concepts, present-gate, and this spec now explicitly state that
+  new delegated records carry no directive/adoption note.
+- DONE: Declare the exact delta and run the checks owned by the changed spec.
+  The correction is one existing file at **+1/-1** from `659e1f8b`. From base
+  `28073390`, the complete implementation remains **11 files, +147/-50 = 197
+  changed LOC**, within the approved 11-file / 204-LOC hard cap.
+  `gofmt -w ./cmd ./internal`, `go test ./internal/gates ./internal/cli
+  ./internal/contractlint`,
+  `uv run --with-requirements docs/requirements.txt mkdocs build --strict`,
+  and `git diff --check` pass.
+- SKIPPED: Retry a live host, request Roborev, push code or state, mutate a
+  gate/round/status, or advance the stage.
+  The exact corrected tip stops for renewed review/authorization.
+
+### Summary
+
+The normative gate-resolution spec now agrees with the recorder, lifecycle,
+presenter, concepts, and command reference: delegated chat writes renderer
+identity plus evidence and no provenance text. The targeted surface audit found
+only deliberate compatibility and refusal controls after the correction; all
+owned checks pass at `bb67a072`. Checklist accounting is **3 DONE, 1 SKIPPED,
+0 FAILED**.
