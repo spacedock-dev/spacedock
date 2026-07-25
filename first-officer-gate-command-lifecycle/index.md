@@ -3205,3 +3205,61 @@ identity plus evidence and no provenance text. The targeted surface audit found
 only deliberate compatibility and refusal controls after the correction; all
 owned checks pass at `bb67a072`. Checklist accounting is **3 DONE, 1 SKIPPED,
 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 live retry)
+
+- DONE: Obtain independent approval for one unchanged sequential live retry at
+  exact tip `bb67a072847d432e1e97e11229f1a340e90b90a6`.
+  Detached review returned APPROVE LIVE RETRY. The candidate binary, worktree
+  skills, shared prompt, runner, model selection, assertions, and transport
+  were unchanged, and the required order remained Claude, then Codex, then Pi
+  with an immediate stop on the first failure.
+- FAILED: Run the first authorized host, Claude, through the recorded gate
+  lifecycle.
+  The actually executed
+  `TestLiveClaudeSharedScenarios/recorded-gate-lifecycle` failed after
+  **248.16s** with `successor dispatch was not observed after consume`.
+  Claude nevertheless bound, presented, and approved the retained package as
+  `agent:first-officer`, committed and consumed the one-use handoff
+  authorization, built the handoff dispatch, spawned the ensign, and obtained
+  the durable marker and stage report at fixture commit `220e783`.
+- DONE: Isolate the exact ancestry-proof failure from retained execution
+  evidence without a retry or code change.
+  The real approval close was fixture commit `d741c7b`; consume was
+  `97717a9`; the handoff dispatch head was `94c5996`; and the worker effect was
+  `220e783`. The worker's new stage report repeated the literal
+  `decision: approve`. The grader derives the close commit with
+  `git log -1 -S'decision: approve'`, so it selected the later worker commit
+  `220e783` instead of `d741c7b`; the derived close no longer preceded consume
+  and dispatch, and `recordedGateCommittedBeforeDispatch` returned false.
+  Thus the lifecycle effect succeeded while the text-search ancestry oracle
+  failed on a later evidence echo.
+- DONE: Retain the exact normal Claude artifacts and actual-execution evidence.
+  Artifacts are under
+  `/tmp/spacedock-6y-cycle32-live-bb67a072.yINIFj/claude/claude-shared-scenarios/recorded-gate-lifecycle/`.
+  `claude-stream.jsonl` is **416935 bytes** with SHA-256
+  `b51477effd5ad745e3669bf86b04e6cc5d0e4c4ab83e546a10221fb55dbfa7af`;
+  `claude-final-message.txt` is **1095 bytes** with SHA-256
+  `6e02c0faeed579702bbe10824913f41b8d9056949dd895a2c541d480ad82ea2d`.
+  The stream also shows one initial `dispatch build` refusal caused by
+  simultaneous `CODEX_THREAD_ID` and `CLAUDECODE` runtime markers, followed by
+  the successful unchanged explicit `--host claude` build. A broad
+  project-root README `find` and broader state-tree `find` calls remain
+  secondary diagnostic friction, not the lifecycle grader's failure.
+- SKIPPED: Run Codex or Pi.
+  The mandatory stop-on-first-failure rule leaves both hosts unrun. There was
+  no live retry, fallback model, prompt coaching, alternate transport, or
+  diagnostic journey after Claude failed.
+- SKIPPED: Modify product code, request Roborev, push code or state, mutate a
+  gate/round/status/stage, or advance the workflow.
+  Exact code tip `bb67a072` remains unchanged. This failure report is retained
+  locally for First Officer triage.
+
+### Summary
+
+Claude completed the real delegated gate lifecycle and durable handoff effect,
+but a worker-stage evidence echo caused the search-based close-commit oracle to
+misidentify `220e783` as the approval close and reject valid ancestry. Exact
+artifacts are retained, Codex and Pi remain unspent, and no retry, code change,
+push, Roborev request, or workflow mutation followed the failure. Checklist
+accounting is **4 DONE, 1 FAILED, 2 SKIPPED**.
