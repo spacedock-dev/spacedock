@@ -92,6 +92,7 @@ review-round:
         digest: sha256:cea9432b6c15da35c94e8737d24d7fa4d7da6e63d3269583f687e99449531e49
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-3
+mod-block: merge:pr-merge
 ---
 
 ## Problem
