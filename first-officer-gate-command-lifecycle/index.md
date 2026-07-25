@@ -3993,7 +3993,8 @@ Checklist accounting is **6 DONE, 3 FAILED, 0 SKIPPED**.
 - DONE: Report intended-versus-actual scope exactly.
   Intended and actual correction are one existing test file at +1/-1 from
   `e617f947`; cumulative scope is 16 files, +142/-63 = 205 changed LOC,
-  matching the exact Captain amendment recorded in Cycle 27.
+  but this one-line variance is reported rather than deciding acceptance; the
+  canonical Pi outcome does.
 - DONE: Pass focused and required deterministic checks before push.
   Focused live-tag Pi coverage and existing workflow-owner guards, `gofmt -w
   ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff
