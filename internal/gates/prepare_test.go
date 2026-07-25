@@ -139,6 +139,44 @@ func TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities(t *testing
 	}
 }
 
+func TestPrepareUsesSlugIdentityWhenEntityHasNoStoredID(t *testing.T) {
+	for _, form := range []string{"folder", "flat"} {
+		t.Run(form, func(t *testing.T) {
+			workflow, state, entity, artifact, _ := prepareFixture(t, form)
+			body, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			body = bytes.Replace(body, []byte("id: task\n"), nil, 1)
+			if err := os.WriteFile(entity, body, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			prepareGitRun(t, state, "add", ".")
+			prepareGitRun(t, state, "commit", "-q", "-m", "slug identity fixture")
+
+			result, err := Prepare(entity, PrepareInput{
+				WorkflowDir: workflow,
+				Question:    "Should this gate advance?",
+				Artifact:    artifact,
+				Summary:     "Exact summary.",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result.Briefing != "briefing:task:validation:attempt-1:revision-1" {
+				t.Fatalf("briefing=%q", result.Briefing)
+			}
+			doc, _, err := Read(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if doc.Current.Gate != "gate:task:validation" {
+				t.Fatalf("gate=%q", doc.Current.Gate)
+			}
+		})
+	}
+}
+
 func TestPrepareRejectsDivergentOccupancyAndLeavesEntityUnchanged(t *testing.T) {
 	workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
 	room := filepath.Join(state, "task", "review", "validation", "briefing-1")
