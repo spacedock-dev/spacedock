@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:s4:ideation:frozen-source-room-preview",
+  "question": "Should gate preparation freeze every selected source inside the retained room and hold implementation until 6y's delegated-authority interface lands?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "sources/gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:99b843659a3e26aa46a7fe823cee41b718cab63c21a5f7e80611e135a86ca34a"
+    },
+    {
+      "id": "artifact:staff-review",
+      "uri": "sources/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:a9f25da65c3a5ed865818614faf33a50a8db81857ced538c8ae04b297f3f9aa8"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "sources/entity.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:18171b55aa8dc79e2337961d44566372e92a05da0cfc3021328871cdac4b8e10"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:s4-frozen-source-preview",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Approve frozen sources; retain dependency hold",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise package construction",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold the direction",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
