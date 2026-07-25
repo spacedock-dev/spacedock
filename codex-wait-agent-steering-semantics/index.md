@@ -1,6 +1,6 @@
 ---
 title: Codex wait_agent steering semantics describe captain input as active-loop resumption
-status: validation
+status: implementation
 source: "Captain request 2026-07-23: replace misleading wait-interruption language and use the corrected behavior in-session"
 started: 2026-07-23T14:43:01Z
 completed:
@@ -224,6 +224,7 @@ The correction changes authority, not behavior: file and LOC estimates now suppo
 - Cycle 6: CHANGES REQUESTED — Roborev job 2404; surface 6 files/768 LOC vs estimate 5 files/190–285 LOC (269% of upper estimate); AC unchanged
 - Cycle 7: CHANGES REQUESTED — Roborev job 2405; surface 6 files/865 LOC vs estimate 5 files/190–285 LOC (304% of upper estimate); AC unchanged
 - Cycle 8: CHANGES REQUESTED — Roborev job 2409; surface 6 files/886 LOC vs estimate 5 files/190–285 LOC (311% of upper estimate); AC unchanged
+- Cycle 9: REJECTED — independent validation; surface 6 files/886 LOC vs estimate 5 files/190–285 LOC (311%); AC unchanged; material stale-empty ordering false pass routed to implementation, while a new mandatory evidence-line schema was declined as an AC-narrowing report-format obligation.
 
 ## Stage Report: implementation
 
