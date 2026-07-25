@@ -219,3 +219,4 @@ The correction changes authority, not behavior: file and LOC estimates now suppo
 - Cycle 1: CHANGES REQUESTED — Roborev job 2362; surface 5 files/519 LOC vs estimate 5 files/190–285 LOC (182% of upper estimate); AC unchanged
 - Cycle 2: CHANGES REQUESTED — Roborev job 2378; surface 6 files/704 LOC vs estimate 5 files/190–285 LOC (247% of upper estimate); AC unchanged
 - Cycle 3: CHANGES REQUESTED — Roborev job 2386; surface 6 files/704 LOC vs estimate 5 files/190–285 LOC (247% of upper estimate); AC unchanged
+- Cycle 4: CHANGES REQUESTED — Roborev job 2392; surface 6 files/713 LOC vs estimate 5 files/190–285 LOC (250% of upper estimate); AC unchanged
