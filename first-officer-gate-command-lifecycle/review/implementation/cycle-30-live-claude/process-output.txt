@@ -1,0 +1,28 @@
+Command:
+SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-cycle30-live-28073390/claude go test -tags live ./internal/ensigncycle -run '^TestLiveClaudeSharedScenarios/recorded-gate-lifecycle$' -count=1 -v -timeout 20m
+
+Result:
+=== RUN   TestLiveClaudeSharedScenarios
+=== RUN   TestLiveClaudeSharedScenarios/recorded-gate-lifecycle
+=== PAUSE TestLiveClaudeSharedScenarios/recorded-gate-lifecycle
+=== CONT  TestLiveClaudeSharedScenarios/recorded-gate-lifecycle
+    claude_live_runner_test.go:130: recorded gate lifecycle graded FAIL: durable post-state delegated directive count = 0, want 1 for "you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement."
+        Final message:
+        **Done.** `recorded-gate-task` bounded run complete:
+
+        1. **Bound the retained validation Briefing** (`briefing:docs-dev:3k:validation:attempt-1:revision-1`) and committed it.
+        2. **Presented the gate review** to you (chat, per contract — delegated conn doesn't waive presentation), then **approved** it under the explicit grant ("you have the conn... authorized to approve gates... use your judgement"), citing the retained evidence (fresh-binary replay, byte comparisons, skipped-step mutants all green; no material findings; AC-1 satisfied via the fail-closed consume mechanism).
+        3. **Consumed** the one-use authorization (`eligible=true, consumed=true`) → advanced to nonterminal `handoff`, committed.
+        4. **Dispatched the handoff ensign** (bare mode, blocking, single-entity scope), which appended the exact marker `RECORDED-GATE-SUCCESSOR-DISPATCHED` and a `## Stage Report: handoff` (1 done, 0 skipped, 0 failed), without advancing status or archiving — committed to durable state at `7629b57`.
+        5. Verified the marker is present at `HEAD` in the state checkout, and sent a cooperative shutdown to the now-unneeded ensign.
+
+        Stopping here per the bounded instruction — entity `recorded-gate-task` remains at `status: handoff` (not advanced further, as directed).
+        Artifacts: /tmp/spacedock-cycle30-live-28073390/claude/claude-shared-scenarios/recorded-gate-lifecycle
+    claude_live_failure_diagnostic_impl_test.go:24: Additional diagnostic: FO broad-searched the filesystem at boot: command "find \"/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLiveClaudeSharedScenariosrecorded-gate-lifecycle120212255/002/.spacedock-state/recorded-gate-task/review\" -type f" runs find over the project root "/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLiveClaudeSharedScenariosrecorded-gate-lifecycle120212255/002" — a boot-preamble filesystem sweep, not the scenario's own assertion
+--- FAIL: TestLiveClaudeSharedScenarios (0.25s)
+    --- FAIL: TestLiveClaudeSharedScenarios/recorded-gate-lifecycle (219.88s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	220.363s
+FAIL
+
+Exit code: 1

@@ -2353,3 +2353,22 @@ Cycle 29 widens only the recorded-gate lifecycle test’s addition ceiling by 15
 ### Summary
 
 The amended deterministic correction replaces synthetic mapping proof with six public-CLI, production-`gates.Read`, and Git-backed Captain cases while retaining exact structured commit/review ordering and prior successor dispatch evidence. Exact range, repository, race, live-compile, docs, and diff gates are green at `28073390`; live spend remains blocked on same-staff approval. Checklist accounting is **2 DONE, 2 SKIPPED, 0 FAILED**.
+
+## Stage Report: implementation (cycle 30 live phase)
+
+- DONE: Obtain final deterministic staff approval before any live host.
+  Independent staff approved live spend at exact code tip `28073390`; the runner prompt, grader, skills, models, and transport remained unchanged.
+- FAILED: After staff approval, run one unchanged approved journey per supported host.
+  The first and only Claude journey failed after **219.88s** (package **220.363s**). It successfully bound and committed the Briefing, emitted the root review, approved, consumed and committed, dispatched handoff, and committed the successor marker, but the durable exact grant count was **0**, wanted **1** for `you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement.`.
+- DONE: Preserve the smallest complete normal Claude artifact package.
+  Root `claude-stream.jsonl`, `claude-final-message.txt`, and the exact process output/exit code are retained under `review/implementation/cycle-30-live-claude/`. No separate command/state files existed in the normal artifact directory; the root stream retains the command and state evidence.
+- FAILED: Preserve host/runtime discipline through the approved journey.
+  The normal failure diagnostic also observed a broad `find ".../.spacedock-state/recorded-gate-task/review" -type f` review-folder sweep. This is retained evidence, not a trigger for transport forensics or an in-place fix.
+- SKIPPED: Run the Codex and Pi approved journeys.
+  The explicit stop-on-first-failure rule left both host spends unconsumed; no retry, fallback model, altered prompt, or alternate transport ran.
+- SKIPPED: Run final verification, request final-tip Roborev, triage findings, or record an advisory round.
+  The Claude failure stops the phase before those actions. No code change, PR push, gate/round/status mutation, or merge action followed the failed journey.
+
+### Summary
+
+At exact tip `28073390`, Claude completed the intended lifecycle and durable successor effect but failed the load-bearing delegated-authority invariant because its persisted directive did not equal the exact grant. The retained normal artifact package also records the broad review-folder sweep diagnostic. Checklist accounting is **2 DONE, 2 SKIPPED, 2 FAILED**; Codex and Pi remain unspent and the implementation returns to the First Officer without retry or mutation.

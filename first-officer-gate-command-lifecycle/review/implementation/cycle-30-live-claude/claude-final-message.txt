@@ -1,0 +1,9 @@
+**Done.** `recorded-gate-task` bounded run complete:
+
+1. **Bound the retained validation Briefing** (`briefing:docs-dev:3k:validation:attempt-1:revision-1`) and committed it.
+2. **Presented the gate review** to you (chat, per contract — delegated conn doesn't waive presentation), then **approved** it under the explicit grant ("you have the conn... authorized to approve gates... use your judgement"), citing the retained evidence (fresh-binary replay, byte comparisons, skipped-step mutants all green; no material findings; AC-1 satisfied via the fail-closed consume mechanism).
+3. **Consumed** the one-use authorization (`eligible=true, consumed=true`) → advanced to nonterminal `handoff`, committed.
+4. **Dispatched the handoff ensign** (bare mode, blocking, single-entity scope), which appended the exact marker `RECORDED-GATE-SUCCESSOR-DISPATCHED` and a `## Stage Report: handoff` (1 done, 0 skipped, 0 failed), without advancing status or archiving — committed to durable state at `7629b57`.
+5. Verified the marker is present at `HEAD` in the state checkout, and sent a cooperative shutdown to the now-unneeded ensign.
+
+Stopping here per the bounded instruction — entity `recorded-gate-task` remains at `status: handoff` (not advanced further, as directed).
