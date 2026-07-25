@@ -1,12 +1,12 @@
 ---
 title: Codex wait_agent steering semantics describe captain input as active-loop resumption
-status: ideation
+status: implementation
 source: "Captain request 2026-07-23: replace misleading wait-interruption language and use the corrected behavior in-session"
 started: 2026-07-23T14:43:01Z
 completed:
 verdict:
 score: 0.9
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-wait-agent-steering-semantics
 issue:
 id: 6gkz4z2qweheyj17ck5tythn
 gates:
@@ -61,6 +61,19 @@ gates:
                 digest: sha256:d14f37ba0ac249ae495ebc96e3c90f3144cae9780546d0d645ae8c142d74b227
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:6g:ideation:3
+                briefing: briefing:docs-dev:6g:ideation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T17:55:05.089935Z"
+                decision: approve
+                reason: The corrected design preserves the proven Codex-only steering semantics and durable completion authority, supplies falsifiable lifecycle and messaging controls, and makes file/LOC projections advisory while semantic scope remains binding.
+              application:
+                action: advance
+                target-stage: implementation
+                state: consumed
+                blockers: []
 ---
 
 ## Problem
