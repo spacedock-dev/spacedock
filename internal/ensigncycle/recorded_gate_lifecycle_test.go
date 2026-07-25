@@ -201,6 +201,9 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	if err := assertRecordedGateLifecycle(observation); err != nil {
 		t.Fatal(err)
 	}
+	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\nreport repeats decision: approve and state: consumed\n")
+	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record later report echo")
+	requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))) == nil, "later report echo changed lifecycle ancestry")
 	validLog := readFile(t, commandLog)
 	for name, log := range map[string]string{"zero-build": strings.Replace(validLog, "exit=0\tdispatch build ", "exit=0\tignored build ", 1), "build-before-consume": strings.Replace(validLog, "exit=0\tgate consume ", "exit=0\tignored consume ", 1) + "\nexit=0\tgate consume late", "missing-ancestry": strings.Replace(validLog, "dispatch-head\t", "missing-head\t", 1)} {
 		writeFile(t, commandLog, log)
@@ -216,7 +219,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	two = recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))
 	requireRecordedGate(t, two.dispatch.durableEffects == 2 && assertRecordedGateLifecycle(two) != nil, "two-effect control qualified")
 
-	log := git(t, fixture.stateRoot, "show", "--name-only", "--format=", "HEAD~5..HEAD")
+	log := git(t, fixture.stateRoot, "show", "--name-only", "--format=", "HEAD~6..HEAD")
 	for _, want := range []string{
 		"recorded-gate-task/index.md",
 		"recorded-gate-task/review/validation/briefing-1/briefing.json",
@@ -876,8 +879,8 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	if strings.Contains(after, recordedGateDispatchMarker) {
 		effects = len(commits)
 	}
-	closeCommit := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "-Sdecision: approve", "--", entityRel))
-	consumedCommit := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "-Sstate: consumed", "--", entityRel))
+	closeCommit := strings.SplitN(strings.TrimSpace(git(t, fixture.stateRoot, "log", "--reverse", "--format=%H", "-Sid: resolution:spacedock:docs-dev:3k:validation:1", "--", entityRel)), "\n", 2)[0]
+	consumedCommit := strings.SplitN(strings.TrimSpace(git(t, fixture.stateRoot, "log", "--reverse", "--format=%H", "-S\n                state: consumed", "--", entityRel)), "\n", 2)[0]
 	return recordedGateObservation{
 		events: recordedGateEventsFromCommandLog(log), before: before, after: after,
 		dispatch: recordedGateDispatchProof{
