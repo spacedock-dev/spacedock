@@ -142,12 +142,14 @@ func isolatedClaudeEnv(t *testing.T, realHome string) []string {
 	switch decision.mode {
 	case authOAuthToken:
 		// Operator-local: drop the API key so the OAuth token is authoritative.
-		env := cleanEnviron("CLAUDECODE", "HOME", "ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CONFIG_DIR")
+		env := cleanEnviron("CLAUDECODE", "CODEX_THREAD_ID", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR",
+			"HOME", "ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CONFIG_DIR")
 		env = append(env, "HOME="+cleanHome, "CLAUDE_CODE_OAUTH_TOKEN="+decision.oauthToken, "CLAUDE_CONFIG_DIR="+configDir)
 		return env
 	case authAPIKey:
 		// CI: pass ANTHROPIC_API_KEY through against the fresh HOME.
-		env := cleanEnviron("CLAUDECODE", "HOME", "CLAUDE_CONFIG_DIR")
+		env := cleanEnviron("CLAUDECODE", "CODEX_THREAD_ID", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR",
+			"HOME", "CLAUDE_CONFIG_DIR")
 		env = append(env, "HOME="+cleanHome, "CLAUDE_CONFIG_DIR="+configDir)
 		return env
 	default:

@@ -32,10 +32,10 @@ const (
 )
 
 type recordedGateDispatchProof struct {
-	builds         int
-	durableEffects int
-	ordered        bool
-	committed      bool
+	builds, successfulBuilds int
+	durableEffects           int
+	ordered                  bool
+	committed                bool
 }
 
 type recordedGateObservation struct {
@@ -56,8 +56,8 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 			return fmt.Errorf("gate lifecycle event %d = %q, want %q", i+1, got, want)
 		}
 	}
-	if o.dispatch.builds != 1 {
-		return fmt.Errorf("successful successor dispatch builds = %d, want 1", o.dispatch.builds)
+	if o.dispatch.builds != 1 || o.dispatch.successfulBuilds != 1 {
+		return fmt.Errorf("successor dispatch build attempts/successes = %d/%d, want 1/1", o.dispatch.builds, o.dispatch.successfulBuilds)
 	}
 	if o.dispatch.durableEffects != 1 {
 		return fmt.Errorf("new durable successor effects = %d, want 1", o.dispatch.durableEffects)
@@ -195,7 +195,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 		t.Fatal(err)
 	}
 	validLog := readFile(t, commandLog)
-	for name, log := range map[string]string{"zero-build": strings.Replace(validLog, "exit=0\tdispatch build ", "exit=0\tignored build ", 1), "build-before-consume": strings.Replace(validLog, "exit=0\tgate consume ", "exit=0\tignored consume ", 1) + "\nexit=0\tgate consume late", "missing-ancestry": strings.Replace(validLog, "dispatch-head\t", "missing-head\t", 1)} {
+	for name, log := range map[string]string{"zero-build": strings.Replace(validLog, "begin\tdispatch build ", "begin\tignored build ", 1), "failed-build": strings.Replace(validLog, "exit=0\tdispatch build ", "exit=1\tdispatch build ", 1), "build-before-consume": strings.Replace(validLog, "exit=0\tgate consume ", "exit=0\tignored consume ", 1) + "\nexit=0\tgate consume late", "missing-ancestry": strings.Replace(validLog, "dispatch-head\t", "missing-head\t", 1)} {
 		writeFile(t, commandLog, log)
 		requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))) != nil, "%s control qualified", name)
 	}
@@ -605,7 +605,7 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 			"id: resolution:spacedock:docs-dev:3k:validation:1\nbriefing: " + recordedGateBriefingID + "\n" +
 			"by: agent:first-officer\n                decision: approve\n                reason: " + recordedGateReason + "\n" +
 			"target-stage: handoff\n                state: consumed\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.",
-		dispatch:     recordedGateDispatchProof{builds: 1, durableEffects: 1, ordered: true, committed: true},
+		dispatch:     recordedGateDispatchProof{builds: 1, successfulBuilds: 1, durableEffects: 1, ordered: true, committed: true},
 		gateReview:   recordedGateReview(),
 		expectedNext: "handoff",
 	}
@@ -666,7 +666,7 @@ func procedureEvents(skill string) []string {
 	return events
 }
 func recordedGatePrompt(workflowRoot string) string {
-	return fmt.Sprintf("Use $spacedock:first-officer for this whole run.\n\nWorkflow directory: %s\nEngage only `recorded-gate-task` under this delegated conn: %s\nApprove its retained validation package and continue until the handoff worker records %s in durable state, then stop.", workflowRoot, recordedGateDirective, recordedGateDispatchMarker)
+	return fmt.Sprintf("Use $spacedock:first-officer for this whole run.\n\nWorkflow directory: %s\nEngage only `recorded-gate-task` under this delegated conn: %s\nDo not pass `--host` to `dispatch build`.\nApprove its retained validation package and continue until the handoff worker records %s in durable state, then stop.", workflowRoot, recordedGateDirective, recordedGateDispatchMarker)
 }
 
 func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {
@@ -833,16 +833,20 @@ func TestRecordedGateReviewExtractorsRequireOneOrderedRootReview(t *testing.T) {
 func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, before, commandLog, review string) recordedGateObservation {
 	t.Helper()
 	log := readFile(t, commandLog)
-	builds, consumed, ordered := 0, false, true
+	builds, successfulBuilds, consumed, ordered := 0, 0, false, true
 	ordered = strings.Count(log, "exit=0\tgate --help") == 1 && strings.Index(log, "exit=0\tgate record ") > strings.Index(log, "exit=0\tgate --help")
-	dispatchHead := ""
+	dispatchHead, buildCommand := "", ""
 	for _, line := range strings.Split(log, "\n") {
 		if strings.HasPrefix(line, "exit=0\tgate consume ") {
 			consumed = true
 		}
-		if strings.HasPrefix(line, "exit=0\tdispatch build ") && !strings.Contains(line, " --help") {
+		if strings.HasPrefix(line, "begin\tdispatch build ") && !strings.Contains(line, " --help") {
 			builds++
+			buildCommand = strings.TrimPrefix(line, "begin\t")
 			ordered = ordered && consumed
+		}
+		if strings.HasPrefix(line, "exit=0\tdispatch build ") && strings.TrimPrefix(line, "exit=0\t") == buildCommand {
+			successfulBuilds++
 		}
 		if strings.HasPrefix(line, "dispatch-head\t") {
 			dispatchHead = strings.TrimPrefix(line, "dispatch-head\t")
@@ -863,7 +867,7 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	return recordedGateObservation{
 		events: recordedGateEventsFromCommandLog(log), before: before, after: after,
 		dispatch: recordedGateDispatchProof{
-			builds: builds, durableEffects: effects, ordered: ordered,
+			builds: builds, successfulBuilds: successfulBuilds, durableEffects: effects, ordered: ordered,
 			committed: recordedGateCommittedBeforeDispatch(t, fixture, closeCommit, consumedCommit, dispatchHead, strings.Join(commits, " ")),
 		},
 		gateReview: review, expectedNext: "handoff",
