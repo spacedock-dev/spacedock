@@ -4025,3 +4025,51 @@ and canonical Pi now completes the durable lifecycle instead of failing
 authentication. Its retained review still fails the existing decision-facts
 oracle, so implementation stops with that evidence gap deferred and no further
 scope expansion. Checklist accounting is **6 DONE, 1 FAILED, 1 SKIPPED**.
+
+## Stage Report: validation (cycle 37)
+
+- DONE: Verify the exact review target and correction boundary.
+  Worktree and PR #565 are clean at `cc5b27dc8c43423672e4cd8c89c428d2ebd65f75`;
+  the sole post-`e617f947` change removes one forced Pi provider/model pair.
+- DONE: Report scope without turning it into an acceptance criterion.
+  The correction is one file at +1/-1; cumulative scope is 16 files,
+  +142/-63 = 205 changed LOC. This variance is factual and non-blocking.
+- DONE: Independently reproduce the applicable deterministic boundary.
+  `TestWorkflowsPreserveAndPublishJourneyCosts`, live-tag compile-only, and
+  `git diff --check` pass at the exact tip.
+- DONE: Verify exact-tip CI state without counting waiting work green.
+  Run `30160643514` offline, docs, and both install jobs passed; current
+  Claude Sonnet, Claude Opus, and Codex jobs remain WAITING, while Pi job
+  `89685355685` completed FAILURE and uploaded its artifacts.
+- DONE: Reuse only applicable predecessor runtime evidence.
+  At `537f443e`, recorded-gate scenarios passed on Claude Sonnet in 180.38s,
+  Claude Opus in 369.17s, and Codex in 92.2s; those runners are unchanged.
+- DONE: AC-3 — verify the canonical authenticated Pi lifecycle outcome.
+  `TestLivePiRecordedGateLifecycle` ran for 173.43s, bound the retained
+  briefing id/digest, recorded `agent:first-officer` approval with evidence,
+  consumed it, advanced to handoff, and retained successor commit `d630e06`.
+- DONE: Verify the durable successor effect rather than infer it from prose.
+  State contains `RECORDED-GATE-SUCCESSOR-DISPATCHED` and the handoff report;
+  Git records `d630e06`, while the dirty-sibling fixture stayed uncommitted.
+- DONE: Classify the Pi job's remaining red result at its narrow boundary.
+  **Captain-deferred Pi evidence gap:** `gate review omits its decision facts`
+  arose only after every lifecycle outcome check had succeeded.
+- DONE: State the deferred risk and promotion condition.
+  Revisit if a supported Pi journey fails to bind, record, consume, advance,
+  dispatch, or commit its durable effect, or if decision-facts extraction is
+  restored as an explicit release/value requirement.
+- DONE: AC-1, AC-2, AC-4, and AC-5 remain satisfied.
+  The one-line test invocation correction changes no authority, command,
+  presenter, state semantics, documentation, or lifecycle implementation.
+- SKIPPED: Retry providers, approve waiting lanes, alter prompt/oracle/harness,
+  request Roborev, amend scope, mutate workflow state, or merge.
+  Captain direction makes the retained canonical Pi outcome stopping evidence.
+- DONE: Validation recommendation.
+  **PASSED — no Material outcome defect.** The delivered recorded gate
+  lifecycle operates through its durable successor effect on every applicable
+  runtime; the remaining Pi review-text extraction miss is explicitly deferred.
+
+### Summary
+
+Exact-tip evidence proves approval, consume, handoff, and successor commit.
+Waiting lanes are not called green. Checklist: **11 DONE, 1 SKIPPED, 0 FAILED**.
