@@ -33,8 +33,12 @@ func TestSelectedGateOverrideObservedBehavior(t *testing.T) {
 		log    string
 		stream string
 	}{
-		"missing-help":       {strings.Replace(commandLog, "exit=0\tgate --help\n", "", 1), valid},
-		"duplicate-help":     {commandLog + "exit=0\tgate --help\n", valid},
+		"missing-help":   {strings.Replace(commandLog, "exit=0\tgate --help\n", "", 1), valid},
+		"duplicate-help": {commandLog + "exit=0\tgate --help\n", valid},
+		"failed-help-before-success": {
+			"exit=1\tgate --help\n" + commandLog,
+			valid,
+		},
 		"failed-prepare":     {strings.Replace(commandLog, "exit=0\tgate prepare", "exit=1\tgate prepare", 1), valid},
 		"pre-bind-override":  {commandLog, strings.Join([]string{prepare, override, commit, refusal}, "\n")},
 		"duplicate-override": {commandLog, strings.Join([]string{prepare, commit, override, override, refusal}, "\n")},
@@ -50,9 +54,17 @@ func TestSelectedGateOverrideObservedBehavior(t *testing.T) {
 			commandLog,
 			strings.Join([]string{prepare, commit, selectedOverrideTool("Agent", `"description":"probe provider"`), override, refusal}, "\n"),
 		},
+		"agent-probe-before-prepare": {
+			commandLog,
+			strings.Join([]string{selectedOverrideTool("Agent", `"description":"probe provider"`), prepare, commit, override, refusal}, "\n"),
+		},
 		"chat-fallback": {
 			commandLog,
 			valid + "\n" + selectedOverrideAssistant(fmt.Sprintf(`{"type":"text","text":%q}`, recordedGateReview())),
+		},
+		"chat-review-before-override": {
+			commandLog,
+			strings.Join([]string{prepare, commit, selectedOverrideAssistant(fmt.Sprintf(`{"type":"text","text":%q}`, recordedGateReview())), override, refusal}, "\n"),
 		},
 		"record-after-handoff": {
 			commandLog + "exit=0\tgate record recorded-gate-task --result /tmp/result.json\n",

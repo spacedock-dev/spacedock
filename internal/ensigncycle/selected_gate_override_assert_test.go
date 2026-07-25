@@ -47,15 +47,23 @@ func selectedOverrideRootActions(stream string) []selectedOverrideAction {
 }
 
 func assertSelectedGateOverride(commandLog, stream, room string) error {
-	successful := func(command string) int {
+	countCommands := func(command string, successOnly bool) int {
 		count := 0
-		prefix := "exit=0\t" + strings.TrimSpace(command)
+		command = strings.TrimSpace(command)
 		for _, line := range strings.Split(commandLog, "\n") {
-			if line == prefix || strings.HasPrefix(line, prefix+" ") {
+			fields := strings.SplitN(line, "\t", 2)
+			if len(fields) != 2 || (successOnly && fields[0] != "exit=0") {
+				continue
+			}
+			if fields[1] == command || strings.HasPrefix(fields[1], command+" ") {
 				count++
 			}
 		}
 		return count
+	}
+	successful := func(command string) int { return countCommands(command, true) }
+	if got := countCommands("gate --help", false); got != 1 {
+		return fmt.Errorf("fresh gate help attempts = %d, want 1", got)
 	}
 	if got := successful("gate --help"); got != 1 {
 		return fmt.Errorf("successful fresh gate help calls = %d, want 1", got)
@@ -96,8 +104,8 @@ func assertSelectedGateOverride(commandLog, stream, room string) error {
 				return fmt.Errorf("gate was closed after selected override handoff: %q", action.value)
 			}
 		}
-		if action.kind == "tool" && action.name == "Agent" && prepareAt >= 0 {
-			return fmt.Errorf("Agent detour observed after gate preparation")
+		if action.kind == "tool" && action.name == "Agent" {
+			return fmt.Errorf("Agent detour observed in selected override trajectory")
 		}
 		if action.kind == "tool" && action.name == "Skill" {
 			skill, args, _ := strings.Cut(action.text, "\x00")
@@ -112,8 +120,8 @@ func assertSelectedGateOverride(commandLog, stream, room string) error {
 				return fmt.Errorf("selected override args = %q, want exact room-only %q", args, "gate "+room)
 			}
 		}
-		if action.kind == "text" && overrideAt >= 0 && i > overrideAt && assertConciseRecordedGateReview(action.text) == nil {
-			return fmt.Errorf("chat gate review observed after selected override")
+		if action.kind == "text" && assertConciseRecordedGateReview(action.text) == nil {
+			return fmt.Errorf("chat gate review observed in selected override trajectory")
 		}
 	}
 	if prepareAt < 0 || commitAt < 0 || overrideAt < 0 || !(prepareAt < commitAt && commitAt < overrideAt) {
