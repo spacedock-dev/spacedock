@@ -481,6 +481,18 @@ the room stays the two generated metadata files.
 - Broader lifecycle-next-action prose, advisory-round preparation, readiness projection,
   crash-atomic multi-file transactions, artifact copying, or generic JSON framework work.
 
+### Feedback Cycles
+
+- **Cycle 5 — cross-checkout source-locator correction (2026-07-25).** Do not consume
+  the current ideation approval. A Briefing-relative URI is sound for room-owned files,
+  but a `..` chain that escapes the state checkout into the main checkout depends on
+  one local nesting layout. A raw SHA verifies bytes only after lookup; it cannot locate
+  or reconstruct them. Revise the design so Git-owned inputs identify the checkout
+  history, exact commit, repository-relative path, and raw-byte digest, or are frozen in
+  the retained room. Prove the choice by reopening the package when main and state are
+  independently located. Preserve Review v1's Briefing-relative rule for room-owned
+  files and avoid adding provider-specific transport.
+
 ## Stage Report: ideation
 
 - DONE: Reproduce xb's arbitrary-Briefing-basename failure with the smallest valid prepared room, then identify the minimum post-em Spacedock seam that makes it pass.
