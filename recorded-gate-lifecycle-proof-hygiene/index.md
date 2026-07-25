@@ -19,6 +19,19 @@ gates:
                 digest: sha256:c51c3611a1855ff5eab3eed3507559b676a6748faa133150ca681f7a02984de1
                 digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fh3n:backlog:1
+                briefing: briefing:docs-dev:fh3n:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T16:53:40.939705Z"
+                decision: approve
+                reason: The exact-tip audit reproduces both proof defects, existing executable controls preserve lifecycle value, and the accepted cleanup adds no product behavior or standing obligation.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 The recorded-gate lifecycle passes its supported outcome checks, but two test constructs make its evidence harder to trust and diagnose:
