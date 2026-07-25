@@ -1,7 +1,7 @@
 ---
 id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
-status: validation
+status: implementation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
 completed:
@@ -1590,15 +1590,12 @@ including its two leading/trailing spaces and non-ASCII code points.
   selected-override observed-behavior proof defect; add no protocol, controller,
   compatibility layer, public argument, or narrowed AC.
 
-- **Cycle 13 — correction revalidation REJECTED by detached adjacent-event audit
-  (2026-07-26).** AC-1 literal archive and AC-2 same-byte path mutants are now caught,
-  and the positive selected-override Claude run passed. However,
-  `assertSelectedGateOverride` still grades PASS when the trace adds an extra failed
-  `gate --help` before the success, performs an Agent provider probe before prepare, or
-  renders a complete chat gate review before the selected Skill handoff. These are
-  promised AC-4 violations, not unsupported edges. Strengthen the existing oracle to
-  count every help invocation and reject provider detours or chat presentation across
-  the whole selected-channel trace; add no provider implementation or new controller.
+- Cycle 13: REJECTED — correction revalidation and detached adjacent-trace audit; surface 41 files and 4,555 changed LOC vs estimate 26 files and 1,904 changed LOC (239%); AC unchanged
+
+  Under the delegated sprint conn, the cycle-limit decision reconfirms a final bounded
+  evidence-only correction: count every help attempt, reject Agent provider probes and
+  chat gate presentation anywhere in the selected-override trajectory, change no
+  prompt or product behavior, and add no new harness mechanism.
 
 ## Stage Report: ideation
 
