@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -22,6 +23,11 @@ var recordedGateRequiredEvents = []string{
 }
 
 const recordedGateDispatchMarker = "RECORDED-GATE-SUCCESSOR-DISPATCHED"
+
+var (
+	recordedGateDecisionLead   = regexp.MustCompile(`(?i)^\s*(?:decision(?:\s+ask)?\s*[:—-]|choose\b|please decide\b)`)
+	recordedGateDecisionEffect = regexp.MustCompile(`(?i)\b(?:approve|reject|revise|hold)\b\s+(?:to|with|for)\s+(?:\S+\s+){0,8}(?:advance|bounce|close|consume|dispatch|enter|finding|handoff|implementation|merge|prerequisite|return|route|send|stage|worktree)\b`)
+)
 
 const (
 	recordedGateBriefingID = "briefing:docs-dev:3k:validation:attempt-1:revision-1"
@@ -116,8 +122,7 @@ func assertConciseRecordedGateReview(review string) error {
 		return fmt.Errorf("gate review leads with raw state instead of the decision")
 	}
 	for _, line := range strings.Split(lower, "\n") {
-		if strings.Contains(line, "approve") && (strings.Contains(line, "revise") || strings.Contains(line, "revision") || strings.Contains(line, "hold") || strings.Contains(line, "reject")) &&
-			(strings.Contains(line, "?") || strings.Contains(line, "choose ") || strings.Contains(line, "please decide")) {
+		if recordedGateDecisionLead.MatchString(line) && recordedGateDecisionEffect.MatchString(line) {
 			return nil
 		}
 	}
