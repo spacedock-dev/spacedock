@@ -213,3 +213,32 @@ Cycle 2 preserves the exact four-file, test-only design and removes the unauthor
 ### Summary
 
 The committed four-test-file cleanup removes the tautological command-text oracle and shipped-prose map, preserves the structural PR-view discriminator, and makes both guardrail runners diagnose archival before active-file reads. Deterministic gates are green; the credentialed host runs exposed an unrelated exact-state-shape drift after clearing the new assertion, and the final two-reviewer Roborev panel found no issues.
+
+## Stage Report: validation
+
+- DONE: Reproduce the exact four-test-file deletion-first diff and verify the removed prose-as-proof/parser constructs, retained structural PR-view discriminator, and pre-read archive diagnostic controls against acceptance criteria 1–3.
+  `4ff98d8c..1fa8ead5` is exactly the declared four test files at `+13/-63`; both removed names are absent, and the candidate changes no product or instruction file.
+- DONE: Reproduce focused lifecycle/contractlint tests, live-tag compilation, full tests, race tests, and the relevant host-journey evidence; determine from this candidate’s evidence whether the reported hold-shape drift is material or a separately triggered deferred risk.
+  Focused lifecycle and contractlint, live-tag compile, `go test ./...`, `go test ./... -race`, and gofmt passed; Roborev job 2331 is 2/2 with no findings.
+- DONE: Perform the semantic adversarial pass for all four acceptance criteria, classify every finding by defect kind and release scope, and give a PASSED/REJECTED recommendation without inventing product or workflow obligations.
+  File/prose, allow-list present/absent/outside, active/archive, repeated/out-of-order/terminal lifecycle, and baseline/candidate variants were exercised; recommendation is PASSED.
+- DONE: Acceptance criterion 1 has direct scope and deletion evidence.
+  Numstat/name-status and exact-name searches prove the four-file boundary, zero product/instruction drift, and removal of the tautological mutant/parser.
+- DONE: Acceptance criterion 2 has load-bearing positive and negative controls.
+  Focused tests passed; deleting both allowed-mod `gh pr view` tokens failed the positive control, while stubbing the shared scanner failed the planted-path negative control.
+- DONE: Acceptance criterion 3 has direct on-disk mutation evidence in both runner paths.
+  Post-run moves to `_archive/recorded-gate-task/index.md` made Codex and Claude fail first with the named archive diagnostic and `stat err=<nil>`, never a generic active-read error.
+- DONE: Acceptance criterion 4 has no-regression evidence against the exact base.
+  Executable owners and repository gates pass; the canonical writer, fixtures, held-state oracle, CLI, lifecycle skill, and default-headless test are byte-identical at base and candidate.
+- FAILED: The three credentialed journey commands exit zero after exercising the new assertion.
+  Codex and Claude failed later at the unchanged explicit-`state: open` count; default-headless twice failed the unchanged held-boundary oracle after binding/presenting and clearing archive absence.
+- DONE: Finding classification — pre-existing canonical-open hold oracle.
+  Defect kind: evidence defect; release scope: deferred risk for this cleanup, not a value regression. Trigger: the supported canonical writer encodes open by Resolution absence while the old live oracle demands forbidden explicit attempt state.
+- DONE: Deferred-risk boundary and promotion condition are recorded.
+  The trigger is outside this cleanup's archive/proof-deletion promise and exists identically at `4ff98d8c`; promote it to material here only if this candidate changes gate state semantics or fails to diagnose actual archival before the active read.
+- DONE: Recommendation — PASSED with no material finding.
+  The credentialed red remains actionable follow-up for the live harness, but assigning obsolete canonical-state semantics to this four-file cleanup would invent a value regression absent from the diff and baseline.
+
+### Summary
+
+Validation reproduced the deletion-first diff, all deterministic gates, Roborev, both structural mutation controls, and named archive failures through both live runners. Credentialed journeys cleared the new archive assertion and exposed a byte-identical baseline oracle that contradicts canonical-v1 serialization; it is recorded as a separately triggered evidence risk, not a candidate regression. The candidate satisfies all four acceptance criteria and is recommended PASSED.
