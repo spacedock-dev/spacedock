@@ -3950,3 +3950,33 @@ The canonical Pi job now invokes and retains the exact AC-3 recorded-gate
 lifecycle evidence through its existing boundary, with no new lane or
 mechanism. PR #565 is exactly at clean tip `e617f947`; Round 26 is prepared but
 unpublished. Checklist accounting is **6 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: validation (cycle 35)
+
+- DONE: Re-anchor the active Cycle-31 AC-1 through AC-5 end values at clean tip 537f443e, reproduce every cited evidence class, and reject obsolete quoted-directive, compatibility, or multi-turn-harness obligations.
+  AC-1/AC-4 remain the Cycle-27 values and Cycle-32 owns AC-2/AC-3/AC-5; `e617f94796f8fbe424a55ba9a12d97a85be5210f` changes only the existing Pi selector and owner guard, for cumulative 15 files and 203/204 changed LOC.
+- DONE: Adversarially verify direct versus delegated authority, no-conn behavior, Claude/runtime contract coherence, retired-flag preflight, one-use consume-before-dispatch, and deletion-sensitive handoff report evidence; classify every finding by outcome/evidence kind and release scope.
+  Cycle-33 real-CLI/Git, actor/reason, no-conn, ordering, retired-flag, and handoff mutants remain exact product evidence because `e617f947` changes no product/runtime contract; no new product outcome defect was found.
+- FAILED: Fast-forward PR #565 to the exact validated tip, obtain applicable deterministic and CI/live-lane evidence on the canonical CI substrate, and report exact checks/artifacts without treating skipped, cancelled, or provider-blocked lanes as green.
+  PR #565 is exactly at `e617f947`; run `30159813519` offline, docs, and both install jobs passed, but its Pi job failed. Codex and both Claude lanes were still in progress at the rejection boundary and are not counted green.
+- DONE: Verify the Cycle-34 selector correction independently.
+  The +2/-2 diff preserves the existing `pi-front-door-smoke-detail.jsonl` upload and adds `TestLivePiRecordedGateLifecycle`; the workflow owner positive, deletion-sensitive guard, live-tag compile-only, formatting, and diff checks pass locally.
+- DONE: Verify that the exact recorded-gate Pi test actually ran and retained evidence.
+  Uploaded `pi-front-door-smoke-detail.jsonl` records `TestLivePiRecordedGateLifecycle` run at `13:38:21Z` and fail after 1.36s; `live-artifacts/pi/pi-recorded-gate-lifecycle/run/pi-stderr.txt` is retained.
+- FAILED: AC-3 — one exact-tip approved recorded-gate journey on Claude, Codex, and Pi.
+  **Material evidence defect:** the Pi front-door smoke passed in 77.25s, then the recorded-gate test exited before lifecycle work with `No API key found for openai-codex`; its forced `openai-codex`/`gpt-5.3-codex` selection is not authenticated by the lane's available `OPENAI_API_KEY`.
+- DONE: AC-1, AC-2, AC-4, and AC-5 remain satisfied.
+  The new tip changes no authority, state, presenter, command, skill, documentation, or lifecycle behavior; exact-tip CI offline is green and the prior deletion-sensitive evidence remains applicable.
+- DONE: Preserve advisory Rounds 23 through 26 and their binding dispositions.
+  Round 26 correctly fixes the missing selector, while Rounds 23–25 declines retain their recorded promotion conditions; no Roborev, local provider retry, gate mutation, or compatibility expansion ran.
+- FAILED: Validation recommendation.
+  **REJECTED — AC-3 evidence defect, Material.** The narrow failing boundary is provider authentication in `TestLivePiRecordedGateLifecycle`: the canonical CI invocation must reach and pass the durable lifecycle oracle on the configured Pi provider; a retained pre-lifecycle auth refusal is not value evidence.
+
+### Summary
+
+Cycle 34 repaired the selector and the canonical artifact now proves the exact
+Pi test ran. That proof is red, not green: the configured `openai-codex`
+provider cannot use the lane's available authentication, so no Pi gate
+lifecycle occurred. PR #565 remains not gate-clear on AC-3 evidence despite green
+deterministic/docs/install checks; pending Claude/Codex work is not counted.
+Checklist accounting is **6 DONE, 3 FAILED, 0 SKIPPED**.
