@@ -233,3 +233,34 @@ Cycle 2 preserves the accepted no-new-verb seam while closing the unsafe archive
 ### Summary
 
 Merge-guard finalization is now remote-durable across split-root hosts, and an interrupted archive publication has one supported idempotent restart through the existing `state commit <slug>` command. The implementation keeps archived scope publish-only, preserves conflict and sibling-dirt recovery, reports durability in one result, and introduces no new public command surface.
+
+## Stage Report: validation
+
+- FAILED: Reproduce AC-1 through AC-6 with exact fresh-host remote visibility, idempotent interrupted-publication recovery, conflict evidence, and fail-closed identity-shape results.
+  AC-1, AC-2, AC-3, AC-5, and AC-6 reproduced; AC-4 fails for a supported Git-pathspec-magic slug.
+- DONE: AC-1 fresh-host value and AC-2 interrupted-publication recovery.
+  `TestMergeGuardPublishesArchiveVisibleToFreshHost` proves origin/local ref equality and one fresh-host terminal archive; `TestArchivedStateCommitResumesInterruptedPublication` proves one archive commit, idempotent publish/no-op, and clean checkout.
+- DONE: AC-3 peer synchronization and recoverable conflict HALT.
+  `TestMergeGuardAndStateCommitPreflightInterruptedArchiveRebase` proves path/peer evidence, exit 3, rebase abort, peer preservation, and exact archive-HEAD restoration; `TestStateCommitMultiWriterHappyPath` proves linear disjoint integration.
+- FAILED: AC-4 archive publication remains path-scoped and does not sweep sibling dirt.
+  Independent real-Git probe with valid slug `:(glob)*` produced archive delta `{:(glob)*.md, _archive/:(glob)*.md, sibling-task.md}` and pushed the dirty sibling because `commitArchiveMove` passes raw pathspecs to Git.
+- DONE: AC-5 truthful inline, origin-backed, and no-origin outcomes with one JSON value plus EOF.
+  The origin test binds `pushed` to remote-ref equality; inline keeps the code remote fixed; no-origin returns `local-only` with the local archive retained.
+- DONE: AC-6 invalid identity shapes fail closed.
+  `TestStateCommitRefusesActiveArchiveAndArchiveShapeCollisions` preserves HEAD, index, worktree, and origin for both required collision forms.
+- DONE: Run the focused, full, and race suites plus a semantic adversarial matrix covering split-root, inline, no-origin, peer-advance, sibling-dirt, wrong-root/branch, and rebase-abort boundaries.
+  Uncached matrix tests, focused packages, `go test ./...`, and `go test ./... -race` passed; `gofmt -w ./cmd ./internal` and `git diff --check` left the implementation worktree clean.
+- DONE: Detached adversarial audit proves the AC-1 test is falsifiable.
+  In a throwaway detached checkout, bypassing `publishMergeArchive` made `TestMergeGuardPublishesArchiveVisibleToFreshHost` fail on exact local/origin SHA inequality.
+- DONE: Independently audit the shared state-sync implementation and final Roborev dispositions; report material findings separately from deferred risks and recommend PASSED or REJECTED.
+  Dirty archived mutation remains correctly declined by AC-2's publish-only boundary; preserving a configured-branch interrupted rebase remains correctly declined because AC-3 requires recoverable archive-HEAD restoration.
+- FAILED: Material finding — outcome defect, narrow mechanism fix, AC-4.
+  Literalize both archive-move Git pathspecs (including symmetric rollback handling) and retain the split-root counterexample as a regression; no new controller or design reset is needed.
+- DONE: Deferred risk — sibling dirt plus non-fast-forward remains outside the promised direct-push path.
+  Exact trigger is unrelated tracked sibling dirt plus peer advance; the supported direct-push path satisfies AC-4, recovery succeeds after dirt settles, and the risk becomes material only if publication through both conditions is promised.
+- FAILED: Recommendation: REJECTED.
+  The ordinary suites are green, but a supported slug can sweep and publish sibling dirt, violating AC-4's path-scoping/data-integrity promise.
+
+### Summary
+
+Validation independently reproduced five acceptance criteria and confirmed the publication proof turns red when bypassed. AC-4 has one material, narrowly fixable outcome defect: archive finalization must treat canonical entity paths as literal Git pathspecs before this gate can pass.
