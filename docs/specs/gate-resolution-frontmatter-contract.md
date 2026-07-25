@@ -99,7 +99,7 @@ target record but does not modify either record's earlier closures.
 
 The provider form consumes one prepared gate room. Its frozen `request.json` binds the
 logical gate, attempt, canonical Briefing id and digest, and captain actor/approver authority.
-Delegated First Officer decisions remain on the chat decision form with a quoted directive;
+Delegated chat decisions record `agent:first-officer` with a nonblank evidence reason and no directive or `adoption-note`;
 the attempt's `request-digest` rejects post-binding request changes.
 The fixed provider outputs are `provider/result.json` and
 `provider/presented-inventory.json`; callers supply neither path nor provider argv.
