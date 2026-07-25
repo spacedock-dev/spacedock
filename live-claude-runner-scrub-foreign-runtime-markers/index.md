@@ -13,7 +13,7 @@ id: v3vt8gp2yffmn62r8p95gkph
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:v3:backlog
+        gate: gate:docs-dev:v3:ideation
     records:
         - id: gate:docs-dev:v3:backlog
           stage: backlog
@@ -38,6 +38,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:v3:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:v3-ideation-1
+              briefing:
+                id: briefing:docs-dev:v3:ideation:attempt-1:revision-1
+                digest: sha256:39164702899552b7c9c24b4e4067d0776eead9834ad958da907f50da8f2654d2
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-1
 ---
 
 ## Problem

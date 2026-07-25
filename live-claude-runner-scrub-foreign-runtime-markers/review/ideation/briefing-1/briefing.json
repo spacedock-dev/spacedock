@@ -1,0 +1,16 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:v3:ideation:attempt-1:revision-1",
+  "question": "Should live host builders scrub only foreign runtime detector keys and require the 6y Claude lifecycle proof to use one flag-free dispatch build?",
+  "artifacts": [
+    {
+      "id": "artifact:v3-ideation-gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:ea6024497d43c7ac4e084f74242533334d4f1fadf7cbd6b94e8cfd263cd41e4a",
+      "summary": "Summarizes the selected per-host marker-isolation boundary, exact implementation surface, falsifiable proof, unchanged production guard, and dependency on landed 6y."
+    }
+  ],
+  "context": []
+}
