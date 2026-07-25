@@ -1,6 +1,6 @@
 ---
 title: Scrub foreign runtime markers from live Claude journeys
-status: ideation
+status: implementation
 source: "Repeated 6y live evidence on 2026-07-25: nested Claude inherited CODEX_THREAD_ID from the Codex captain host and first failed dispatch host detection before recovering with explicit --host claude"
 started:
 completed:
@@ -59,7 +59,7 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
