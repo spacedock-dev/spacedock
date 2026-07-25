@@ -1126,7 +1126,7 @@ func recordedGateReadme() string {
 		"    - name: done\n      terminal: true\n" +
 		"---\n# Recorded Gate Lifecycle Fixture\n\n" +
 		"### validation\n\nValidate and present the retained package.\n\n" +
-		"### handoff\n\nAppend the exact marker `" + recordedGateDispatchMarker + "` and a `## Stage Report: handoff` with one DONE item, then return completion. Do not advance or archive the entity.\n\n- **Outputs:** The marker and handoff stage report.\n"
+		"### handoff\n\nAppend the exact marker `" + recordedGateDispatchMarker + "` and a `## Stage Report: handoff` with one DONE item, then return completion. Do not advance or archive the entity. In report prose, do not repeat any `target-stage:` frontmatter field; that authority remains singular in frontmatter.\n\n- **Outputs:** The marker and handoff stage report.\n"
 }
 
 func recordedGateEntity() string {
