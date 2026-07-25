@@ -1804,25 +1804,48 @@ not acceptance authority.
 
 ## Implementation Surface Reconciliation
 
-The final implementation diff against `4ff98d8c` contains 33 files at
-`+2,933/-300`. Every declared path is present. The larger delta comes chiefly from
-complete production Git-source resolution and failure-path tests rather than a change
-to the approved command, schema, provider, authority, or compatibility boundaries.
+The final implementation diff against `4ff98d8c` contains 37 files at
+`+3,683/-330`. Every declared path is present. The larger delta comes chiefly from
+complete production Git-source resolution, atomic flat-companion failure proof, and
+the shared host-neutral lifecycle oracle rather than a change to the approved command,
+schema, provider, authority, or compatibility boundaries.
 
-Seven supporting paths were added beyond the advisory declaration:
-`internal/gates/{gates_test.go,model.go}` preserves request-less compatibility while
-making prepared request-backed closure and arbitrary Briefing locators falsifiable;
-`internal/ensigncycle/{claude_live_runner_test.go,codex_live_runner_test.go,livescenario_adapter_live_test.go,recorded_gate_lifecycle_pi_live_test.go,shared_fixtures_test.go}`
-routes every existing host lane through the same prepared recorded-gate fixture and
+Eleven supporting paths were added beyond the advisory declaration:
+`internal/cli/state.go`; `internal/gates/{gates_test.go,model.go}`; and
+`internal/ensigncycle/{claude_live_runner_test.go,codex_live_runner_test.go,gate_assert_impl_test.go,gate_assert_test.go,livescenario_adapter_live_test.go,recorded_gate_lifecycle_pi_live_test.go,shared_fixtures_test.go,shared_scenarios_negative_test.go}`.
+They isolate machine-readable Git stdout, reject authority-document duplicate members,
+and route every existing host lane through one prepared recorded-gate fixture and
 shared oracle. No declared path was omitted, and no provider implementation,
 materializer, retained provider output, or sibling workflow entity was changed.
 
-The first final-panel round found two material and three supporting correctness gaps.
-The follow-up commit rejects unsafe or undefined stage paths, binds live review
-evidence to the exact generated Briefing and selected-source inventory, ignores
-unrelated ancestor requests, commits tracked flat-companion deletions, and exercises
-post-publication rollback. It also propagates post-record summary errors and restores
-ordered lifecycle mutation coverage. The panel's historical-object performance and
-recovery suggestions would change the approved fail-closed or frozen-open boundaries;
-the companion-conflict claim did not reproduce because Git's conflict list already
-reports the actual path. The other panel result named files outside this branch.
+Final-panel rounds found and closed unsafe stage placement, exact live identity,
+entity-selected replay, hidden duplicate-locator authority loss, slug-style identity,
+and stderr-corrupted atomic flat commits. The final detector correction scopes exact
+authority counts to YAML frontmatter while leaving Stage Report proof body-scoped.
+The final panel's locator-less legacy-room and historical-object recommendations remain
+declined: this is the approved unreleased v1 contract, whose retained authority is
+fail-closed and whose prepared request is frozen. The valid resume wording finding was
+fixed by distinguishing mutable request-less binds from frozen request-backed prepared
+binds; no additional panel cycle was opened.
+
+## Stage Report: implementation
+
+- DONE: One `gate prepare` command produces one durable recorder-ready room for folder and flat entities with zero caller-authored metadata and zero copied selected-source payloads.
+  Evidence: `TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities`, slug-style folder/flat coverage, atomic publication rollback, and flat commit/archive tests including injected successful Git stderr. Falsifier: any third prepare-time file, copied source, sibling sweep, partial companion commit, or leaked room after a handled failure.
+- DONE: Every selected file is an exact movable local Git object bound by logical root, full commit, repository path, and raw SHA-256, with no fetch, worktree fallback, or ref-retention precondition.
+  Evidence: `internal/gitsource` moved-root, linked-worktree, detached-object, literal-path, dirty-source, and missing-object tests. Falsifier: resolution from current worktree bytes, a remote fetch, path/root/commit drift, or raw digest mismatch.
+- DONE: The request freezes an arbitrary canonical Briefing locator, id, full digest, and exact request-backed primary summary; request-less/advisory inputs remain unchanged and authority documents reject duplicate members.
+  Evidence: arbitrary-locator bind/record/eligibility tests, exact whitespace-bearing summary tests, request-less/advisory controls, recursive depth/duplicate tests, and the hidden-final-locator mutation. Falsifier: basename reconstruction, normalized summary bytes, global summary enforcement, last-member-wins parsing, or byte mutation on refusal.
+- DONE: The First Officer performs one complete fresh help preflight before effects, and the only selected-provider handoff is post-bind `/subspace:r gate <room>` with no agent probe, fallback, or reconstructed coordinate.
+  Evidence: contractlint and integration smoke tests, the shared deterministic lifecycle, final-product-tip Codex PASS, and two Claude durable-flow completions whose string-scope false positives are now covered structurally. Falsifier: missing/duplicate help, any pre-bind effect, provider probe/fallback, or a handoff coordinate not copied from emitted `room=`.
+- DONE: Room-backed recording derives association from recomputed request, Briefing, Result, and inventory pins, writes no association.json, and permits provider evidence only after preparation.
+  Evidence: `TestGateRecordConsumesDirectBindingResultFromPreparedRoom`, retained-authority mutation matrices, inventory checks, and the two-file preparation oracle. Falsifier: any pin drift accepted, unknown authority used, `association.json` written, or provider evidence present at prepare time.
+- FAILED: Run the final-product-tip Pi live recorded-gate lane.
+  The repository scenario did not start: the installed global `pi-subagents` extension requires unavailable `@earendil-works/pi-coding-agent`. Earlier local auth was also externally stale; no product command or repository assertion failed.
+
+### Summary
+
+Implementation is complete at `f99af3df`. Full tests, race tests, formatting,
+`git diff --check`, strict documentation build, focused skill smoke tests, Codex live,
+and durable Claude lifecycle evidence are complete; Pi remains an external runtime
+installation/authentication blocker rather than an s4 behavior failure.
