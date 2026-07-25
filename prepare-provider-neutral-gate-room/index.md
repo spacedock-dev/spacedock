@@ -248,6 +248,12 @@ path twice is an error. References receive no generated `summary`. The First Off
 owns the question, summary, and file choices; it never supplies JSON, an id, digest,
 room, attempt, locator, provider path, actor, or approver.
 
+The CLI counts `--summary` occurrences before path normalization or Git work. Repeating
+the flag—whether the values match or differ—fails with
+`gate prepare accepts --summary exactly once`; an argument containing invalid UTF-8
+fails with `--summary must be valid UTF-8`. Both are deterministic handled errors
+before lock acquisition, filesystem mutation, or Git process execution.
+
 The CLI normalizes relative `--artifact`, `--reference`, `--briefing`, and `--room`
 values against the invocation directory through 6y's retained-input normalization
 helper before entering `internal/gates`. Each selected file must be a readable,
@@ -327,7 +333,7 @@ itself, not only inside the Markdown payload:
       "uri": "git-root://state/0123456789abcdef0123456789abcdef01234567/review/validation/gate-review.md",
       "mediaType": "text/markdown",
       "rev": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-      "summary": "Explains the proposed recorder boundary, evidence, and release dependency."
+      "summary": "  Résumé — validates Git-root presentation exactly.  "
     }
   ],
   "context": [
@@ -344,10 +350,16 @@ itself, not only inside the Markdown payload:
 
 `summary` uses Review v1's existing Artifact extra-field model; s4 does not add a
 Briefing version, a generic extension registry, a summary object, or a Reference
-variant. The duplicate-safe raw reader validates only the primary
-`artifacts[0].summary` as a nonblank string. Canonical Briefing bytes retain it, while
-identity-only inventory and association projections remain id/URI/media type/revision
-and do not duplicate the prose.
+variant. For an s4-prepared/request-backed Briefing, the duplicate-safe raw reader
+validates the primary `artifacts[0].summary` as a nonblank valid-UTF-8 string. Canonical
+Briefing bytes retain it, while identity-only inventory and association projections
+remain id/URI/media type/revision and do not duplicate the prose.
+
+That mandatory-summary profile is not retroactive. A request-less
+`gate record --briefing PATH` binding and an advisory-round Briefing keep their existing
+Review v1 behavior: no primary summary is required, an absent summary is not synthesized,
+and their canonical bytes are neither rewritten nor migrated. The request boundary,
+not the basename or a global Briefing parser switch, selects the stricter s4 profile.
 
 `request.json` has the closed v1 shape:
 
@@ -552,6 +564,12 @@ composition.
 | `docs/site/concepts/gates-and-decisions.md` | `+14/-6` | Caller-authored primary summary, committed-source preparation, recorder-ready boundary, and presentation dependency. |
 | `skills/fo-gate-lifecycle/SKILL.md` | `+30/-14` | Replace hand bind/association wording with source commit, summary, prepare, recorder-ready recording, and provider halt. |
 
+Cycle 9 changes no expected file or LOC allocation. Repeated-flag/invalid-UTF-8 cases
+fit the existing `internal/cli/gate_test.go` budget; request-backed versus request-less/
+advisory profile cases fit the existing `internal/gates/operation.go`, gate fixture, and
+CLI test allocations; the non-ASCII whitespace sentinel replaces, rather than adds, an
+ordinary exact-summary value.
+
 Tolerance is **+2 files and +25% changed LOC** (hard cap 21 files / 2,118 changed
 LOC), for a focused resolver test or fixture split only. A change to
 `skills/present-gate/SKILL.md`, any schema field in `gates`, new dependency, provider
@@ -580,16 +598,23 @@ and every selected source URI names its `main`/`state` root, full commit, and
 repository-relative path while `rev` matches the Git object's raw bytes. *Test:* a real
 split-root CLI/Git fixture commits selected main/state files and gives the Markdown a
 conflicting `## Summary` section. It invokes prepare with a different sentinel
-`--summary`, asserts pre-command metadata count 0, post-command count 2, the sentinel
-exactly once at `artifacts[0].summary`, zero Reference summaries, and exact room/stdout/
-locators/media types, then makes later commits that move both worktree paths. It
+`--summary '  Résumé — validates Git-root presentation exactly.  '`, asserts
+pre-command metadata count 0, post-command count 2, that whitespace-bearing/non-ASCII
+sentinel exactly at `artifacts[0].summary`, zero Reference summaries, and exact room/
+stdout/locators/media types, then makes later commits that move both worktree paths. It
 relocates main and state checkouts independently, supplies their new logical root map,
 and revalidates the exact old bytes from both local object databases. Missing or
-whitespace-only `--summary` exits nonzero before mutation; removing the CLI value and
-extracting the Markdown section makes the positive sentinel assertion fail. The test
-also fails if the fixture supplies metadata, the room copies either source, a locator
-omits any identity component, output changes under a launch directory containing
-spaces, or resolution needs the old `..` topology.
+whitespace-only `--summary` exits nonzero before mutation. Two deterministic CLI cases
+also run before any Git call or mutation: repeated same and different values both exit
+1 with exactly `gate prepare accepts --summary exactly once\n`; an in-process argument
+`string([]byte{0xff})` exits 1 with exactly
+`--summary must be valid UTF-8\n`. Removing the cardinality check permits last-value
+wins and fails the repeated case; allowing `encoding/json` replacement of invalid bytes
+fails the invalid-UTF-8 case. Removing the CLI value and extracting the Markdown section
+makes the positive sentinel assertion fail. The test also fails if the fixture supplies
+metadata, the room copies either source, a locator omits any identity component, output
+changes under a launch directory containing spaces, or resolution needs the old `..`
+topology.
 Dirty, untracked, third-repository, abbreviated-object, and missing-local-object cases
 exit nonzero with byte-identical entity/room state. A retained ordinary ref containing
 the source commit remains green after worktree movement. Reflog-only/detached
@@ -606,7 +631,11 @@ command-level table seeded by the spike uses the existing gate-room fixture, clo
 through `gate record --room`, then calls CLI `gate eligibility` and requires
 `approved-pending eligible=true`. Deleting any one call to the exact resolver in bind,
 room record, validation, or `internal/gates/application.go` makes the arbitrary-locator
-positive case fail.
+positive case fail. That request-backed fixture contains the mandatory primary summary.
+A paired request-less `gate record --briefing` fixture and existing advisory-round
+fixture deliberately omit it; both retain their prior success behavior and exact input
+Briefing bytes, with no synthesized summary. Applying the request-backed summary check
+globally makes those two positive compatibility controls fail.
 
 **AC-3 — Conflicting duplicate members in every authority-bearing room document fail
 before mutation.** Request, located Briefing (including nested context), Result
@@ -626,7 +655,10 @@ handoff promise because current Subspace cannot consume `git-root://` Artifacts 
 References. That sibling owns the resolved-byte consumer/materialization contract and
 an actual Spacedock-to-Subspace presentation proof before the 0.27 pre-release; its
 consumer must preserve the canonical Briefing unchanged and expose the exact primary
-Artifact `summary` rather than copying or deriving it in a resolved-source manifest. No
+Artifact `summary` rather than copying or deriving it in a resolved-source manifest.
+Its E2E uses `  Résumé — validates Git-root presentation exactly.  ` and asserts the
+Artifact chrome retains both leading spaces, both trailing spaces, and the exact
+non-ASCII code points. No
 Spacedock Go or skill change in s4 names a provider executable, runs a provider
 availability/version/capability probe, allocates or mutates provider outputs, fetches
 source objects, materializes presentation files, or simulates invocation. *Test:* the
@@ -667,8 +699,9 @@ fails.
    for reset; a Captain conn is never passed as an ordinary frozen Reference.
 1. **Focused red/green, low cost:** add the arbitrary-name spike as the first command
    test using the existing gate-room fixture, then add focused `prepare_test.go` cases
-   for exact stdout data, exact primary summary/no Reference summary, Git-root
-   URIs/media types/raw digests,
+   for exact stdout data, exact primary summary/no Reference summary, repeated
+   `--summary` with stable stderr, invalid UTF-8 constructed in-process with stable
+   stderr, Git-root URIs/media types/raw digests,
    12-to-64-character digest-prefix extension/full-digest suffixes, two-file replay,
    occupied room, and handled-error cleanup. `internal/gitsource` first gets the
    split-root Git fixture that commits both sources, advances/moves their worktree paths,
@@ -684,7 +717,8 @@ fails.
    prove it is never substituted. Assert entity bytes and lock state, not only error
    substrings. The arbitrary-locator positive case continues through provider room
    closure and CLI eligibility, so `application.go` cannot silently retain its basename
-   join.
+   join. Run request-less bind and advisory-round controls with summary-free Briefings;
+   they must keep their existing behavior and exact input bytes.
 3. **Existing no-override FO journey only, high cost at final tip:** update 6y's shared
    recorded-gate observation in place to assert
    `gate-help → selected-source-commit → prepare → room/binding-commit → chat-render →
@@ -696,7 +730,9 @@ fails.
    lane, harness, provider fake, provider-capability ledger, prose-derived room mutant,
    selected-provider success lane, or cross-repo invocation test. A selected override
    halts before invocation and names `rqh46ey33aqq4rt72b4w1m2q`; that sibling owns the
-   actual provider-neutral resolved-byte API and Spacedock-to-Subspace E2E.
+   actual provider-neutral resolved-byte API and Spacedock-to-Subspace E2E, including
+   exact Artifact-chrome display of
+   `  Résumé — validates Git-root presentation exactly.  `.
 4. **Repository gates:** `gofmt -w ./cmd ./internal`, `go test ./...`,
    `go test ./... -race`, strict docs build, `git diff --check`, and verify
    `go list -deps ./cmd/spacedock` contains no Subspace package, only
@@ -728,7 +764,7 @@ target file):
 @@
 -| `spacedock gate record <entity> --briefing PATH/briefing.json` | Bind a complete retained package manifest whose basename is exactly `briefing.json`. Other basenames fail before mutation. |
 +| `spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...]` | Derive and bind one recorder-ready two-file room. `--summary` is required caller-authored prose stored unchanged as the primary Artifact's Review v1 `summary`; Spacedock does not extract it from Markdown, and References receive none. Selected files must be committed objects in the workflow's main or state Git history and retained by an ordinary ref; the generated Briefing records `git-root://<root>/<full-commit>/<path>` and raw SHA-256 `rev` without copying payloads. The required objects must already be local; no fetch, deepen, hydration, worktree fallback, or retention ref is created. Success prints exactly `room`, `briefing`, `digest`, and `state` key/value lines. Current Subspace cannot present these locators; `rqh46ey33aqq4rt72b4w1m2q` owns that pre-release dependency and must display the canonical summary. |
-+| `spacedock gate record <entity> --briefing PATH` | Bind any readable canonical Briefing by its exact path. A prepared room instead freezes its Briefing locator, id, and digest in `request.json`; every later operation resolves that locator rather than a canonical basename. |
++| `spacedock gate record <entity> --briefing PATH` | Bind any readable canonical Briefing by its exact path. This request-less/advisory-compatible path does not require or synthesize a primary summary. A prepared request-backed room instead requires the primary Artifact summary and freezes its Briefing locator, id, and digest in `request.json`; every later operation resolves that locator rather than a canonical basename. |
 
 --- docs/site/concepts/gates-and-decisions.md
 +++ docs/site/concepts/gates-and-decisions.md
@@ -744,10 +780,11 @@ target file):
 +**Presentation boundary.** Call the result recorder-ready. With no override, render the generated review through `present-gate` and record chat. With a selected override, halt before invocation and name `git-root-review-v1-materialization`/`rqh46ey33aqq4rt72b4w1m2q`; current Subspace cannot consume the Git-root Artifacts/References. This lifecycle does not promise a room/root handoff, name/discover/version-check/capability-probe/launch a provider, materialize sources, or construct or mutate provider output paths.
 ```
 
-The normative spec makes the same substitutions, defines the required exact
-primary-Artifact `summary`/summary-free Reference behavior without a generic extension
-schema, defines the closed request shape and room publication/error-atomicity behavior,
-defines the closed
+The normative spec makes the same substitutions, scopes the required exact
+primary-Artifact `summary`/summary-free Reference behavior to s4-prepared/request-backed
+Briefings without a generic extension schema, preserves request-less/advisory Briefings
+unchanged, defines the closed request shape and room publication/error-atomicity
+behavior, defines the closed
 `git-root://<root>/<full-commit>/<repo-path>` URI grammar, ordinary-ref source-commit
 rule, and local-only shallow/partial/prune failure behavior, and states explicitly that
 association is recomputed and unstored. It labels the output recorder-ready and names
@@ -789,7 +826,8 @@ sibling's presentation gate passes. A root map merely passed through q0 is not e
 for that gate. The sibling must pass the canonical Briefing unchanged through its
 resolved-source flow, keep `summary` out of the duplicated resolved-source manifest,
 and prove Subspace reads Review v1 Artifact `Extra["summary"]` and renders the exact
-string in Artifact chrome.
+`  Résumé — validates Git-root presentation exactly.  ` string in Artifact chrome,
+including its two leading/trailing spaces and non-ASCII code points.
 
 ## Out of scope
 
@@ -860,6 +898,13 @@ string in Artifact chrome.
   extra-field model, generate no Reference summaries, and require the downstream
   materialization/presentation dependency to retain and display the canonical value
   without copying it into a parallel manifest.
+
+- **Cycle 9 — approved staff polish (2026-07-25).** Staff returned APPROVE with no
+  material findings. Before the superseding gate, make repeated `--summary` and invalid
+  UTF-8 refusal deterministic, scope mandatory summary validation to
+  s4-prepared/request-backed Briefings so request-less/advisory inputs remain unchanged,
+  and use a whitespace-bearing non-ASCII sentinel in the downstream exact-display E2E.
+  These are proof/scope clarifications, not an interface or architecture reset.
 
 ## Stage Report: ideation
 
@@ -1014,3 +1059,22 @@ Cycle 8 makes the human description a first-class part of the canonical Briefing
 without turning Spacedock into a prose generator or making the First Officer author
 JSON. The exact summary now has one source of truth from prepare through the filed
 materialization dependency, with a rebaselined recorder-only implementation surface.
+
+## Stage Report: ideation (cycle 9)
+
+- DONE: Make repeated `--summary` and invalid-UTF-8 refusal explicit deterministic tests.
+  Same-value and different-value repetition both require exit 1 and exact `gate prepare accepts --summary exactly once\n`; an in-process `string([]byte{0xff})` requires exit 1 and exact `--summary must be valid UTF-8\n`, with zero Git calls and byte-identical state.
+- DONE: Scope mandatory primary summary to s4-prepared/request-backed Briefings.
+  The request boundary selects the stricter profile; paired request-less bind and advisory-round fixtures remain summary-free, retain prior behavior and exact Briefing bytes, and fail if the new validation is applied globally.
+- DONE: Hand the downstream exact-display proof a whitespace-bearing, non-ASCII sentinel.
+  The coordinated E2E value is `  Résumé — validates Git-root presentation exactly.  ` and must retain both leading spaces, both trailing spaces, `é`, and the em dash in Subspace Artifact chrome without manifest duplication or normalization.
+- DONE: Preserve the approved interface, architecture, docs surface, and LOC plan.
+  These cases fit the existing 19-file +1,533/-161 (1,694 changed LOC) allocation and 21-file/2,118-LOC cap; no command, request, provider, or ownership boundary changed.
+- SKIPPED: Implement, consume the obsolete approval, invoke a provider, or mutate provider outputs.
+  Cycle 9 is a state-only pre-gate clarification and leaves code, gate application, Subspace, and retained provider evidence untouched.
+
+### Summary
+
+Cycle 9 closes the approved reviewer’s three nonblocking proof gaps without reopening
+the design. Cardinality/encoding failures are deterministic, compatibility scope is
+explicit, and downstream exact display now has a normalization-sensitive sentinel.
