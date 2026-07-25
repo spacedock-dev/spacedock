@@ -54,6 +54,8 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+worktree: .worktrees/spacedock-ensign-recorded-gate-lifecycle-proof-hygiene
+started: 2026-07-25T17:09:51Z
 ---
 
 ## Problem
