@@ -140,6 +140,11 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 		}
 		sources = append(sources, source)
 	}
+	if replay, matched, err := preparedReplay(entityPath, input.WorkflowDir, doc, previous, briefingID, input.Question, input.Summary, sources); err != nil {
+		return PrepareResult{}, err
+	} else if matched {
+		return replay, nil
+	}
 	primarySummary := input.Summary
 	manifest := preparedBriefing{
 		Type:     "Briefing",
@@ -248,6 +253,59 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 		return PrepareResult{}, err
 	}
 	return PrepareResult{Room: room, Briefing: briefingID, Digest: briefingDigest, State: "open"}, nil
+}
+
+func preparedReplay(entityPath, workflowDir string, doc *Document, previous *Attempt, briefingID, question, summary string, sources []gitsource.Source) (PrepareResult, bool, error) {
+	if previous == nil || previous.Resolution != nil || previous.Briefing.RequestDigest == "" {
+		return PrepareResult{}, false, nil
+	}
+	if err := validateRetainedAuthority(entityPath, workflowDir, doc); err != nil {
+		return PrepareResult{}, false, err
+	}
+	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
+	if err != nil {
+		return PrepareResult{}, false, err
+	}
+	if manifest.ID != briefingID || manifest.Question != question || len(manifest.Artifacts) != 1 ||
+		manifest.Artifacts[0].Summary == nil || *manifest.Artifacts[0].Summary != summary {
+		return PrepareResult{}, false, nil
+	}
+	items, err := canonicalPresentationItems(manifest)
+	if err != nil {
+		return PrepareResult{}, false, err
+	}
+	if len(items) != len(sources) {
+		return PrepareResult{}, false, nil
+	}
+	for i, item := range items {
+		wantType := "Reference"
+		if i == 0 {
+			wantType = "Artifact"
+		}
+		if item.Type != wantType {
+			return PrepareResult{}, false, nil
+		}
+		same, err := gitsource.SameLogicalRevision(
+			gitsource.Source{URI: item.URI, Rev: item.Rev},
+			sources[i],
+		)
+		if err != nil {
+			return PrepareResult{}, false, err
+		}
+		if !same {
+			return PrepareResult{}, false, nil
+		}
+	}
+	room, err := filepath.Abs(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(previous.Briefing.RoomRef)))
+	if err != nil {
+		return PrepareResult{}, false, fmt.Errorf("resolve prepared room: %w", err)
+	}
+	return PrepareResult{
+		Room:     room,
+		Briefing: previous.Briefing.ID,
+		Digest:   previous.Briefing.Digest,
+		State:    "open",
+	}, true, nil
 }
 
 func prepareTarget(doc *Document, entityID, stage string) (gateID, attemptID string, attemptNumber int, record *GateRecord, previous *Attempt, err error) {

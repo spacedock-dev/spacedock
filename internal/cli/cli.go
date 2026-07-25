@@ -364,11 +364,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				}
 			}
 			input.WorkflowDir = definitionDir
-			if err := gates.RecordSemantic(path, input); err != nil {
-				fmt.Fprintln(stderr, "Error:", err)
-				return exitCodeError{1}
-			}
-			s, err := gates.SummaryFileAt(path, definitionDir)
+			s, err := gates.RecordSemanticSummary(path, input)
 			if err != nil {
 				fmt.Fprintln(stderr, "Error:", err)
 				return exitCodeError{1}

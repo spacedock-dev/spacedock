@@ -258,6 +258,39 @@ func TestStateCommitFlatIncludesExactCompanionDirectoryAndTrackedDeletions(t *te
 	}
 }
 
+func TestStateCommitFlatCompanionRenameIncludesSourceAndDestination(t *testing.T) {
+	_, workflow, _, _ := twoHostStateWorkflow(t)
+	checkout := filepath.Join(workflow, ".spacedock-state")
+	host := filepath.Dir(filepath.Dir(workflow))
+	const slug = "first-task"
+
+	oldPath := filepath.Join(checkout, slug, "review", "old.json")
+	newPath := filepath.Join(checkout, slug, "review", "new.json")
+	if err := os.MkdirAll(filepath.Dir(oldPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(oldPath, []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, errOut := runStateCommitCmd(t, host, workflow, slug, "-m", "seed flat companion"); code != 0 {
+		t.Fatalf("seed companion exit=%d stderr=%q", code, errOut)
+	}
+	if err := os.Rename(oldPath, newPath); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, errOut := runStateCommitCmd(t, host, workflow, slug, "-m", "rename flat companion"); code != 0 {
+		t.Fatalf("rename companion exit=%d stderr=%q", code, errOut)
+	}
+	nameStatus := strings.Fields(git(t, checkout, "show", "--name-status", "--no-renames", "--pretty=format:", "HEAD"))
+	want := []string{"A", "first-task/review/new.json", "D", "first-task/review/old.json"}
+	if strings.Join(nameStatus, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("rename commit paths=%q want %q", nameStatus, want)
+	}
+	if staged := strings.TrimSpace(git(t, checkout, "diff", "--cached", "--name-only")); staged != "" {
+		t.Fatalf("rename left source staged outside commit: %q", staged)
+	}
+}
+
 // TestStateCommitFolderIncludesWholeEntity pins AC-1 through AC-3: a folder-form
 // entity is one commit unit. Its index, tracked report modification, tracked
 // deletion, and untracked artifact land together while flat/folder siblings and

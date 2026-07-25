@@ -283,7 +283,7 @@ func commitEntityPathsScoped(checkout string, entityPaths []string, msg string) 
 	// Commit only paths with staged changes. A flat entity's companion path is
 	// part of its commit unit, but an absent, never-tracked companion is not a
 	// valid `git commit -- <path>` operand.
-	ok, stagedNames := runGit(checkout, "diff", "--cached", "--name-only", "-z")
+	ok, stagedNames := runGit(checkout, "diff", "--cached", "--name-only", "--no-renames", "-z")
 	if !ok {
 		return false, stagedNames
 	}

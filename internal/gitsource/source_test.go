@@ -155,10 +155,9 @@ func TestResolveRejectsNoncanonicalOrUnverifiableGitRootCoordinates(t *testing.T
 		t.Fatalf("raw digest mismatch error=%v", err)
 	}
 
-	if err := os.Remove(filepath.Join(mainRoot, ".git", "objects", commit[:2], commit[2:])); err == nil {
-		// A commit may be packed by a user's Git configuration; absence is covered by
-		// the syntactically valid, nonexistent full object id below in either case.
-	}
+	// A commit may be packed by a user's Git configuration; absence is covered by
+	// the syntactically valid, nonexistent full object id below in either case.
+	_ = os.Remove(filepath.Join(mainRoot, ".git", "objects", commit[:2], commit[2:]))
 	missing := "git-root://main/" + strings.Repeat("f", len(commit)) + "/review.md"
 	if _, err := Resolve(roots, missing, source.Rev); err == nil {
 		t.Fatal("missing local object resolved")
@@ -183,6 +182,47 @@ func TestInspectTreatsRepositoryPathAsLiteralGitPathspec(t *testing.T) {
 	}
 	if string(body) != "literal review\n" {
 		t.Fatalf("resolved pathspec neighbor instead of literal file: %q", body)
+	}
+}
+
+func TestSameLogicalRevisionIgnoresUnrelatedCommitButNotPathOrBytes(t *testing.T) {
+	mainRoot := initRepository(t, "main", map[string]string{
+		"review.md": "review\n",
+		"other.md":  "other\n",
+	})
+	roots := Roots{Main: mainRoot}
+	before, err := Inspect(roots, filepath.Join(mainRoot, "review.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(mainRoot, "other.md"), []byte("changed\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	gitRun(t, mainRoot, "add", "other.md")
+	gitRun(t, mainRoot, "commit", "-q", "-m", "unrelated")
+	after, err := Inspect(roots, filepath.Join(mainRoot, "review.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	same, err := SameLogicalRevision(before, after)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !same {
+		t.Fatalf("same logical revision rejected:\nbefore=%+v\nafter=%+v", before, after)
+	}
+
+	other, err := Inspect(roots, filepath.Join(mainRoot, "other.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if same, err := SameLogicalRevision(before, other); err != nil || same {
+		t.Fatalf("different logical path accepted: same=%t err=%v", same, err)
+	}
+	changed := after
+	changed.Rev = RawDigest([]byte("different\n"))
+	if same, err := SameLogicalRevision(before, changed); err != nil || same {
+		t.Fatalf("different raw revision accepted: same=%t err=%v", same, err)
 	}
 }
 

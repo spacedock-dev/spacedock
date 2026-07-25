@@ -63,11 +63,18 @@ func SummaryFileAt(path, workflowDir string) (Summary, error) {
 }
 
 func validateRetainedAuthority(entityPath, workflowDir string, doc *Document) error {
+	return validateRetainedAuthorityExcept(entityPath, workflowDir, doc, "", "")
+}
+
+func validateRetainedAuthorityExcept(entityPath, workflowDir string, doc *Document, skipGate, skipAttempt string) error {
 	roots := gitsource.Roots{Main: workflowDir, State: filepath.Dir(entityPath)}
 	for ri := range doc.Records {
 		record := &doc.Records[ri]
 		for ai := range record.Attempts {
 			attempt := &record.Attempts[ai]
+			if record.ID == skipGate && attempt.ID == skipAttempt {
+				continue
+			}
 			if attempt.Briefing.RequestDigest == "" {
 				continue
 			}
