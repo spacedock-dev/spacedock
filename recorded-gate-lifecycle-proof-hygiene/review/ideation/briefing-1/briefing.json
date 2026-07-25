@@ -1,0 +1,63 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:fh3n:ideation:attempt-1:revision-1",
+  "question": "Should the corrected four-file, test-only recorded-gate proof-hygiene design become the implementation contract?",
+  "artifacts": [
+    {
+      "id": "artifact:fh3n-ideation-gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d52099bc528efaaace76dad7634fe0f97705b97615c8146986faba07582d7334",
+      "summary": "Explains the deletion-first capability, executable evidence, exact four-test-file boundary, and why LOC remains an estimate rather than gate authority."
+    },
+    {
+      "id": "artifact:fh3n-corrected-entity",
+      "uri": "git-root://state/6d0618619bdd0480345c01b57ea988bb58abe8d3/recorded-gate-lifecycle-proof-hygiene/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:96b5a115f8129415884a063e38356d32b984e3b7972045eccfae239b285c8d56",
+      "summary": "The immutable corrected entity and ideation report, including the problem, current executable owners, four-file design, acceptance criteria, tests, and feedback-cycle disposition."
+    },
+    {
+      "id": "artifact:docs-dev-workflow",
+      "uri": "git-root://main/4ff98d8cd97ebcf17b6a583070ce69234e24fc87/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:46d44abcbdc596a0aa2c22cb94465cf4e2321a529c52679f14e7efcb071a5f62",
+      "summary": "The immutable development workflow contract governing ideation approval, implementation, validation, CI, and merge."
+    },
+    {
+      "id": "artifact:durable-decisions-close-out",
+      "uri": "git-root://main/4ff98d8cd97ebcf17b6a583070ce69234e24fc87/docs/roadmap/durable-decisions/staff-review-sprint-close.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:dd792bb90f7252e6aac5fef8a0a8a055cd8ea726f0470c05d53a3fd64cca0e8d",
+      "summary": "The corrected exact-tip sprint-close audit that reproduced both proof defects and established this cleanup as pre-release work."
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:fh3n-ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin the four-file test-only implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the proof boundary",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold outside the pre-release close",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}

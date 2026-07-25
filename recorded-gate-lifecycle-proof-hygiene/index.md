@@ -8,7 +8,7 @@ id: fh3n4w4jg7tk015512tn1tsd
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:fh3n:backlog
+        gate: gate:docs-dev:fh3n:ideation
     records:
         - id: gate:docs-dev:fh3n:backlog
           stage: backlog
@@ -32,6 +32,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:fh3n:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:fh3n-ideation-1
+              briefing:
+                id: briefing:docs-dev:fh3n:ideation:attempt-1:revision-1
+                digest: sha256:fcf51be338b2fa7929c8b54ba6ea5577653f13866877bb0364e497f86b03fe64
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-1
 ---
 
 ## Problem
