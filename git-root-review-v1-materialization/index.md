@@ -320,7 +320,7 @@ root-map contract. Planned Spacedock surface:
 
 | File | Expected delta | Purpose |
 |---|---:|---|
-| `internal/cli/gate.go` | `+55/-5` | Route and document `gate materialize`. |
+| `internal/cli/cli.go` | `+55/-5` | Route and document `gate materialize`. |
 | `internal/cli/gate_test.go` | `+100/-0` | Stable output, argument, and byte-clean failure cases. |
 | `internal/gates/materialize.go` (new) | `+135/-0` | Resolve bound room and publish the closed manifest. |
 | `internal/gates/materialize_test.go` (new) | `+260/-0` | Exact coverage, atomicity, and room immutability. |
@@ -487,3 +487,412 @@ provider-neutral manifest over provider-side Git or a rewritten Briefing. It pre
 canonical identities and the exact caller-authored Artifact summary, assigns cleanup to
 the private provider package, and makes the first implementation proof a real
 Spacedock-to-Subspace moved-root E2E.
+
+## Ideation correction: production rendezvous (cycle 2)
+
+This section supersedes the earlier command surface, cleanup claims, file/LOC tables,
+acceptance criteria, E2E composition, and documentation proposal. The low-level
+decision remains unchanged: the canonical Briefing is never rewritten; Spacedock owns
+Git-root resolution and raw-SHA verification; a closed resolved-source manifest carries
+verified ephemeral bytes; Subspace keeps Git and workflow topology out of the provider;
+and no `association.json`, q0 dependency, generic resolver, Reference summary, or
+generated prose is added.
+
+The rejected design stopped between two real owners. Current Subspace
+`invocation-common` allocates the provider package only inside a selected fixed entry,
+while the proposed materializer expected a package path from an undefined caller. A
+manual test that ran Spacedock and Subspace as independent binaries could not prove the
+agent-facing gate route. The corrected design makes the existing `subspace:r` fixed
+entry lifecycle that caller and uses the recorder's already-supported
+`ROOM/provider/{result.json,review.jsonl,presented-inventory.json}` rendezvous.
+
+### Exact baselines and post-s4 assumption
+
+- Spacedock implementation baseline remains
+  `cc51e518a3420b01fd4b455e9710d38803dc6d3e`.
+- Subspace implementation baseline is
+  `9e218f00a565e8353adbc834619140f1770783ba`.
+- s4's summary-corrected post-baseline is its planned 19-file
+  `+1,533/-161` surface. rqh estimates below are incremental after that surface lands;
+  overlapping files are existing post-s4 files, not recreated files.
+- The required s4 sentinel is exactly
+  `  Résumé — validates Git-root presentation exactly.  `: two leading and two
+  trailing ASCII spaces, composed `é`, and an em dash. Preparation and every retained
+  canonical Briefing preserve those UTF-8 bytes without trimming or normalization.
+
+At the Subspace baseline, `invocation_prepare_provider` in
+`plugins/subspace/skills/r/scripts/invocation-common` allocates
+`subspace-r-provider.XXXXXX`, and its private child receives that path through
+`--provider-package`. At the Spacedock baseline, `recordRoomLocked` in
+`internal/gates/operation.go` reads only
+`ROOM/provider/result.json` and `ROOM/provider/presented-inventory.json`. Neither
+repository currently moves, adopts, or discovers the other's package. The corrected
+profile replaces the temporary allocator only for a Spacedock-bound room; ordinary
+explicit Briefings keep their current temporary retained-package behavior.
+
+### One supported agent-facing path
+
+The selected-provider branch in post-s4
+`skills/fo-gate-lifecycle/SKILL.md` invokes the installed `subspace:r` skill once with
+this semantic request:
+
+```text
+--review-v1 --actor ACTOR --approver APPROVER \
+  --spacedock-entity ENTITY \
+  --spacedock-room ROOM \
+  --spacedock-workflow-dir WORKFLOW_DIR \
+  BRIEFING [TERMINAL]
+```
+
+The three `--spacedock-*` values are all-or-none and are valid only with
+`--review-v1`. `ROOM` is the exact `room=` returned by landed s4; `BRIEFING` is the
+exact bound Briefing locator in that room; `WORKFLOW_DIR` is the definition checkout
+used to resolve the linked state root; and `ENTITY` is resolved by Spacedock within
+that workflow. The ordinary explicit-Briefing form remains available for filesystem
+Briefings and does not infer this profile from JSON or a URI. The optional terminal
+retains the existing skill-level selection grammar and is never forwarded as semantic
+gate data.
+
+The skill selects one existing `review-<terminal>` entry and calls it once with the
+same semantic argv. The entry sources
+`plugins/subspace/skills/r/scripts/invocation-common`; no model-authored materializer,
+provider-package path, TUI command, validator, recorder command, cleanup command, or
+second entry is permitted.
+
+Inside `invocation-common`, the Spacedock profile performs this exact sequence:
+
+1. Parse the closed argv; canonicalize `WORKFLOW_DIR`, `ROOM`, and `BRIEFING`; reject
+   a pre-existing `ROOM/provider`; allocate exactly that path as a new mode-0700
+   non-symlink directory; and stamp the existing private diagnostics. Allocation stays
+   before executable/capability/host preflight so the current explicit-Briefing rule
+   continues to retain and report a package for every failure after semantic entry.
+2. Resolve `${SPACEDOCK_BIN:-spacedock}` and `subspace-tui` to exact executable regular
+   files. Probe both literal TUI capabilities,
+   `review-v1-provider-package-v1` and
+   `review-v1-resolved-sources-v1`, then run the selected host's existing structural
+   preflight. No terminal opens yet.
+3. Allocate the package's `resolved-sources` child as mode 0700. The caller never
+   chooses Result, log, inventory, diagnostics, source payload, or manifest paths.
+4. Invoke exactly:
+
+   ```text
+   ${SPACEDOCK_BIN:-spacedock} gate materialize ENTITY \
+     --room ROOM --briefing BRIEFING \
+     --destination ROOM/provider/resolved-sources \
+     --workflow-dir WORKFLOW_DIR
+   ```
+
+   The command re-resolves `ENTITY`, requires `ROOM` to equal the current attempt's
+   bound room, requires `BRIEFING` to equal the request locator and digest, derives the
+   definition/state logical-root map, and requires `--destination` to be exactly the
+   new private child of that bound room. Thus path possession alone is insufficient
+   authority. It writes mode-0600 payloads, publishes
+   `resolved-sources.json` last, and prints exactly `manifest=...` and `sources=N`.
+   The entry captures stdout, stderr, exit status, and exact Spacedock argv under
+   diagnostics and accepts only the expected manifest path and canonical source count.
+5. Launch one existing Go provider supervisor through the selected host. Its child is:
+
+   ```text
+   subspace-tui --review-v1 --actor ACTOR --approver APPROVER \
+     --provider-package ROOM/provider \
+     --resolved-sources ROOM/provider/resolved-sources/resolved-sources.json \
+     BRIEFING
+   ```
+
+   The supervisor also receives the exact
+   `ROOM/provider/resolved-sources` cleanup root through private
+   `--ephemeral-root` wiring. It validates that this is the one expected child of the
+   provider package before starting the TUI.
+6. Subspace reads the canonical Briefing unchanged, validates exact manifest coverage,
+   reads and re-hashes every payload, installs Artifact and Reference bytes in memory,
+   and removes the exact resolved-source child before setting the terminal title or
+   opening Bubble Tea. Result and presented inventory continue to derive solely from
+   the canonical Briefing.
+7. The existing common lifecycle waits for exact child exit, calls
+   `validate-one-file-result` once, returns its trusted bytes, and reports the retained
+   provider package. Because that package is already the recorder's fixed
+   `ROOM/provider`, the First Officer runs existing
+   `spacedock gate record ENTITY --room ROOM --workflow-dir WORKFLOW_DIR` and
+   `gate validate`; no adoption, copy, association file, or external-output flag is
+   required.
+
+This is one production path from the intended agent-facing gate choice through package
+allocation, resolution, presentation, retained evidence, recording, and validation.
+The public skill owns semantic routing; `invocation-common` owns allocation and
+pre-dispatch orchestration; Spacedock owns room/root/object authority; the Go supervisor
+and TUI own post-dispatch cleanup; and the existing recorder owns durable association.
+
+### Closed manifest and summary behavior
+
+The earlier `spacedock-resolved-sources` version 1 manifest shape and exact
+`type/id/uri/mediaType/rev/path` rules remain unchanged. It covers every Git-root
+Artifact and recursively reached Git-root Reference in canonical order, contains no
+summary, and permits only clean contained regular payload paths. Subspace's inventory
+contains canonical identity tuples only and never exposes a provider path.
+
+Mandatory summary validation is scoped to s4-prepared, request-backed rooms. Arbitrary
+request-less or advisory Briefings keep current behavior: Subspace displays a summary
+when a primary Artifact supplies a JSON string but does not newly require one. The
+canonical string remains unchanged in `Artifact.Extra["summary"]`; neither manifest,
+inventory, Result, Reference, nor source bytes duplicate it.
+
+Terminal rendering is lossless but never emits caller-authored terminal controls.
+Printable Unicode code points and ordinary ASCII spaces, including the sentinel's
+leading/trailing spaces, render unchanged. Backslash renders as `\\`; LF, CR, and TAB
+render as `\n`, `\r`, and `\t`; every remaining Unicode control or format code point
+(`Cc`/`Cf`, including ESC, BEL, DEL, bidi controls, and zero-width format controls) and
+the `U+2028`/`U+2029` line/paragraph separators renders as uppercase `\u{HEX}`. No
+normalization, trimming, ANSI interpretation, terminal-title interpolation, or
+format-string use occurs. The reversible display encoding decodes to the exact
+canonical UTF-8 string, while the bytes sent to the terminal contain no control from
+the summary. A focused test uses spaces, composed and decomposed Unicode, backslash,
+LF, TAB, ESC, BEL, RLO, and the two separators to prove both round-trip identity and
+control-free output.
+
+### Retention, cleanup, signals, crashes, and continuation
+
+`ROOM/provider` is retained evidence/recovery state, not wholly transient scratch.
+Existing explicit-Briefing behavior is preserved: after allocation, preflight,
+materialization, host-launch, signal, child, validation, and delivery failures report
+the recoverable provider-package path and retain diagnostics plus any provider evidence
+already produced. Normal, feedback, binding, and open outcomes also retain Result, log,
+inventory, child-exit, argv, capability, materializer, and stderr evidence for the
+recorder. The earlier claim that every outcome leaves a two-file room was wrong; two
+files is the pre-provider and no-override baseline only.
+
+Only `ROOM/provider/resolved-sources` is always intended for deletion:
+
+- before dispatch, `invocation-common` removes that exact child on materializer,
+  capability, host-preflight, or launch failure, then preserves the rest of the package;
+- after dispatch, the TUI removes it immediately after successful in-memory loading,
+  before interactive presentation;
+- if loading or the child fails earlier, the Go supervisor removes it after exact child
+  exit and before atomically publishing child-exit evidence;
+- on HUP, INT, or TERM, the supervisor forwards the signal to the exact child, waits,
+  removes the child, then records the status. If only the invoking shell is interrupted,
+  it reports recovery and does not race deletion against the still-running supervisor;
+  cleanup occurs when that supervisor reaches its child-exit boundary;
+- an uncatchable process-group kill or power loss can leave the private child. This is
+  reported honestly as recoverable residue inside the already-named provider package;
+  neither Git state nor another directory is scanned or deleted automatically.
+
+Current Review v1 package mode has no supported resume command. A later user-directed
+retry is a fresh one-entry invocation and is blocked while `ROOM/provider` exists; it
+does not silently delete or reuse failure evidence. A future continuation feature must
+take the emitted package explicitly, remove only its validated `resolved-sources`
+child after proving no child is alive, re-resolve the canonical Git objects, and
+re-verify all revisions. rqh does not claim that absent resume surface or hide hard-kill
+residue behind “resume cleanup.”
+
+### Negative boundary fixture
+
+The beta.4 room-to-provider spike remains warranted as a committed negative boundary,
+not as the success E2E. Subspace adds
+`internal/reviewv1/testdata/git-root-negative.json` with one Git-root Artifact and one
+Git-root Reference. The resolved-source tests prove ordinary
+`review-v1-provider-package-v1` still fails that fixture at Artifact filesystem
+resolution, the Reference selector still refuses unresolved `://`, and only the
+literal resolved-source capability plus complete manifest advances. Removing the new
+capability/manifest from the positive path must restore the recorded failure.
+
+### Rebaselined expected surface
+
+The Spacedock table is incremental after s4:
+
+| File | Expected delta | Purpose |
+|---|---:|---|
+| `internal/cli/cli.go` | `+62/-8` | Route/document `gate materialize` and its exact room/Briefing/destination authority. |
+| `internal/cli/gate_test.go` | `+125/-0` | Stable argv/stdout, bound-room, bound-Briefing, and exact-destination cases. |
+| `internal/gates/materialize.go` (new) | `+215/-0` | Closed recursive manifest and atomic manifest-last publication. |
+| `internal/gates/materialize_test.go` (new) | `+305/-0` | Coverage, room immutability, destination containment, and failure atomicity. |
+| `internal/gitsource/source.go` | `+58/-8` | Expose s4's verified local blob bytes to materialization without a second resolver. |
+| `internal/gitsource/source_test.go` | `+95/-0` | Moved-root, pruned/shallow, raw-SHA, and no-fetch materialization controls. |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | `+42/-8` | Pin one `subspace:r` semantic route and forbid direct TUI/materializer composition in FO prose. |
+| `skills/fo-gate-lifecycle/SKILL.md` | `+36/-14` | Replace the selected-override halt with the one skill invocation and record/validate continuation. |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | `+72/-8` | Normative materialization authority, manifest, and retained-package boundary. |
+| `docs/site/reference/command-reference.md` | `+22/-4` | Exact provider-facing command and failure semantics. |
+
+Spacedock baseline: **10 named files, +1,032/-50 = 1,082 changed LOC**. Tolerance is
+at most +2 genuinely new files and +20% changed LOC, hard cap **12 files / 1,298
+changed LOC**. Every currently known file is named above; the tolerance cannot absorb
+the public rendezvous, a second resolver, recorder adoption, provider executable,
+request field, remote acquisition, or cache.
+
+The Subspace table is likewise fully named:
+
+| File | Expected delta | Purpose |
+|---|---:|---|
+| `plugins/subspace/skills/r/SKILL.md` | `+58/-18` | Agent-facing Spacedock profile, permission text, one-entry rule, and retention ownership. |
+| `plugins/subspace/skills/r/scripts/invocation-common` | `+165/-38` | Parse authority, allocate `ROOM/provider`, invoke materialization, build exact child, and clean pre-dispatch payloads. |
+| `scripts/tests/subspace-r-contract-test.sh` | `+38/-5` | Pin public grammar, fixed-entry ownership, capabilities, and forbidden manual composition. |
+| `scripts/tests/subspace-r-provider-retained-delivery-test.sh` | `+190/-28` | Preflight/materialize/signal/child/validation retention and payload-cleanup matrix. |
+| `scripts/tests/subspace-r-git-root-provider-e2e.sh` (new) | `+285/-0` | Real moved-root prepare-to-entry-to-record/validate journey. |
+| `internal/reviewv1/model.go` | `+18/-4` | Verified in-memory Reference bytes; summary remains canonical extra data. |
+| `internal/reviewv1/loader.go` | `+32/-6` | Share canonical validation with resolved input. |
+| `internal/reviewv1/resolved_sources.go` (new) | `+220/-0` | Closed manifest, coverage, containment, and digest checks. |
+| `internal/reviewv1/resolved_sources_test.go` (new) | `+325/-0` | Positive/negative fixture, adversarial tuples, controls, and cleanup. |
+| `internal/reviewv1/testdata/git-root-negative.json` (new) | `+25/-0` | Committed unresolved Artifact/Reference boundary from the spike. |
+| `internal/reviewv1/log.go` | `+25/-12` | Selector text uses verified in-memory Reference bytes. |
+| `cmd/subspace-tui/main.go` | `+48/-10` | Private manifest flag and literal resolved-source capability. |
+| `cmd/subspace-tui/profile_dispatch_test.go` | `+82/-0` | Capability and exact private argv surface. |
+| `cmd/subspace-tui/provider_supervisor.go` | `+82/-16` | Validate one cleanup child, forward signals, wait, delete, then publish exit. |
+| `cmd/subspace-tui/provider_supervisor_test.go` | `+145/-0` | Child failure, signal, invalid root, exact-exit, and cleanup-order proof. |
+| `cmd/subspace-tui/v1_tui.go` | `+38/-8` | Resolved load and delete-before-TUI boundary. |
+| `cmd/subspace-tui/v1_sources.go` | `+62/-10` | Reference rendering and lossless control-safe Artifact summary. |
+| `cmd/subspace-tui/v1_sources_test.go` | `+115/-0` | Complete source catalog and no synthesized/normalized summary. |
+| `cmd/subspace-tui/v1_review_chrome_labels_test.go` | `+92/-0` | Exact sentinel, safe controls, spacing, width, and title isolation. |
+| `cmd/subspace-tui/SPEC.md` | `+48/-8` | Private resolved-source and cleanup lifecycle. |
+| `docs/review-and-gate.md` | `+32/-4` | Public profile, summary display, recovery, and recorder rendezvous. |
+
+Subspace baseline: **21 named files, +2,125/-167 = 2,292 changed LOC**. Tolerance is
+at most +2 genuinely new files and +20% changed LOC, hard cap **23 files / 2,750
+changed LOC**. No named rendezvous, supervisor, fixture, lifecycle test, or E2E file is
+deferred into tolerance. Git commands, workflow discovery, a second package allocator,
+generic transport, rewritten Briefing, or retained source cache reset ideation.
+
+### Revised acceptance criteria
+
+**AC-1 (VALUE) — The intended selected-provider gate route presents and records both
+old Git-root sources after independent checkout movement.** Starting from landed s4,
+the First Officer's declared Subspace route invokes one `subspace:r` semantic request.
+The selected fixed entry allocates the bound `ROOM/provider`, materializes through
+Spacedock, launches one real Subspace TUI, returns trusted evidence, and existing
+`gate record --room`/`gate validate` close the attempt. The Artifact and Reference old
+sentinels, exact `  Résumé — validates Git-root presentation exactly.  ` summary, and
+two canonical inventory tuples are visible/retained after both current worktree paths
+move. *Falsifier:* bypass the fixed entry, precreate the provider package manually,
+call either binary directly, omit any room/root argument, or move provider outputs
+from another package; the E2E's entry/argv/allocation/recorder assertions fail.
+
+**AC-2 — Durable state contains provider evidence but no selected-source copy.** Before
+provider invocation the room has exactly request + canonical Briefing. After a
+recordable outcome it additionally has the existing provider Result/log/inventory and
+diagnostics, while `resolved-sources` is absent. Catchable preflight, load, child,
+signal, validation, and delivery failures retain recovery evidence but not the payload
+child; an uncatchable group kill may retain only that named private residue and never
+mutates gate frontmatter. *Falsifier:* remove each cleanup owner in turn; its lifecycle
+case retains a sentinel payload after the owner reaches its defined boundary.
+
+**AC-3 — Canonical association and summary survive the rendezvous without path or
+control injection.** Manifest and presented inventory match every original
+`type/id/uri/mediaType/rev` exactly once; no temporary path, summary, or association
+file enters identity evidence. Printable summary text and spaces display unchanged;
+unsafe code points use the reversible escape form, never raw terminal controls or
+title bytes. *Falsifier:* mutate any tuple, payload, summary byte, spacing, Unicode
+composition, escape, or temporary path and require failure or a changed expected
+lossless view.
+
+**AC-4 — Room/root/object authority fails before host launch and never acquires
+objects.** Wrong entity, unbound room, mismatched Briefing locator/digest, non-exact
+destination, unknown root, absent/pruned/shallow object, or raw-SHA mismatch yields
+zero host launches, no manifest, no gate mutation, and no fetch/deepen/hydration.
+*Falsifier:* a fake `git` records every argv and fails the test on remote acquisition;
+destination and room hashes detect partial writes outside the owned package.
+
+**AC-5 — Cleanup and recovery claims match current supported surfaces.** The shell owns
+pre-dispatch cleanup, the TUI owns delete-after-load, and the Go supervisor owns
+post-dispatch child/signal cleanup. Provider evidence remains on every existing
+explicit-Briefing preservation path. The test explicitly records that SIGKILL can leave
+private residue and that current Review v1 has no resume command; a fresh invocation
+refuses to reuse the occupied package. *Falsifier:* any test that silently deletes
+retained diagnostics, claims a nonexistent resume, scans other temp packages, or races
+a live child is rejected.
+
+### Real E2E and proof order
+
+1. Land s4 and record its final implementation tip. Verify its post-baseline files and
+   exact summary contract before rqh red tests.
+2. Preserve the committed unresolved fixture as the first red: ordinary package mode
+   fails Git-root Artifact/Reference resolution, while the resolved capability is
+   absent from the invocation. This is a boundary fixture, not success evidence.
+3. Red/green focused Spacedock tests for exact bound room/Briefing/destination
+   authority, closed recursive manifest, moved roots, local-only object failures,
+   atomic publication, and stable output.
+4. Red/green focused Subspace tests for both literal capabilities, manifest coverage,
+   Artifact/Reference bytes, summary safety, provider-supervisor cleanup ordering, and
+   the current retention matrix.
+5. Run `scripts/tests/subspace-r-git-root-provider-e2e.sh` with checked-out Spacedock
+   and Subspace repositories supplied explicitly by the test job. It builds both exact
+   binaries, creates independent main/state repositories, runs landed `gate prepare`,
+   commits the two-file room, relocates both roots, deletes current worktree paths,
+   and invokes `review-tmux` once using the public Spacedock profile. A private real
+   tmux session drives Artifact, Reference, selector, and binding decision. The test
+   asserts one entry, one package allocation at bound `ROOM/provider`, one materializer
+   argv, one supervisor/TUI, visible old sentinels and exact printable summary, complete
+   inventory, absent resolved child, then real `gate record --room` and `gate validate`.
+   The script fails if replaced by manual `git cat-file`, direct `subspace-tui`,
+   separate materialize/TUI calls, rewritten Briefing, copied provider outputs, or a
+   provider fixture.
+6. Run the retention negative after final-ref deletion, reflog expiry, and prune, plus
+   a shallow clone missing the commit. Require failure before host launch, zero remote
+   Git argv, no manifest, unchanged gate binding, and only the explicitly retained
+   preflight diagnostics allowed by the lifecycle.
+7. Run both repositories' full Go, race, shell, docs, formatting, and diff checks. A
+   detached audit verifies only Spacedock invokes Git, the FO skill names only
+   `subspace:r`, the Subspace skill calls exactly one fixed entry, summary bytes never
+   enter a terminal title, and no room/provider tree retains selected-source payload
+   after a catchable owner boundary.
+
+### Corrected documentation changes
+
+The implementation updates these exact public contracts:
+
+```diff
+--- skills/fo-gate-lifecycle/SKILL.md
++++ skills/fo-gate-lifecycle/SKILL.md
+@@
+-With a selected provider override, halt and name rqh.
++With a selected Subspace override, invoke `subspace:r` once with actor, approver,
++the exact s4 entity/room/workflow/Briefing values, and optional terminal. Accept only
++the returned trusted package at `ROOM/provider`; then run existing `gate record
++ENTITY --room ROOM` and `gate validate`. Do not allocate paths or compose binaries.
+
+--- docs/site/reference/command-reference.md
++++ docs/site/reference/command-reference.md
+@@
++| `spacedock gate materialize ENTITY --room ROOM --briefing BRIEFING --destination ROOM/provider/resolved-sources --workflow-dir DIR` | Resolve the current bound s4 room through local main/state Git objects into one closed provider-private manifest. All authority is revalidated; no fetch occurs; the canonical Briefing and gate state remain unchanged. |
+
+--- plugins/subspace/skills/r/SKILL.md
++++ plugins/subspace/skills/r/SKILL.md
+@@
++The all-or-none Spacedock Review v1 profile carries entity, bound room, workflow
++directory, and canonical Briefing to the same one-entry lifecycle. The entry allocates
++only the fixed `ROOM/provider`, calls Spacedock materialization, launches one
++supervised TUI, preserves ordinary provider evidence/recovery semantics, and removes
++only the resolved-source child at its defined ownership boundaries.
+
+--- docs/review-and-gate.md
++++ docs/review-and-gate.md
+@@
++Git-root presentation requires `review-v1-resolved-sources-v1` and the public
++Spacedock profile. Artifact summaries remain canonical strings: printable text and
++spaces render unchanged, while terminal-control and format code points use a
++reversible visible escape and never enter terminal control channels.
+```
+
+The normative Spacedock spec and Subspace `SPEC.md` carry the same allocation,
+authority, cleanup, hard-crash, and no-current-resume boundaries. The existing
+`gate record --room` contract is unchanged because the provider package now lands at
+its already-supported location.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Close the missing production rendezvous from the intended agent-facing gate route through recording.
+  The corrected route is `fo-gate-lifecycle → subspace:r → one fixed entry → invocation-common → gate materialize → provider supervisor/TUI → validate-one-file-result → gate record --room/validate`; `ROOM/provider` is both the private package and the recorder's existing evidence location.
+- DONE: Assign exact package allocation, room/root authority, launch, retention, and cleanup owners.
+  `invocation-common` allocates the bound package and owns pre-dispatch cleanup, Spacedock revalidates entity/room/Briefing/root/destination and resolves bytes, the TUI deletes after load, and the supervisor deletes after child/signal failure while preserving all non-source recovery evidence.
+- DONE: Correct crash/resume and Artifact-summary claims without weakening the accepted low-level contract.
+  Catchable paths remove only `resolved-sources`; hard kill may leave named private residue, current Review v1 has no resume surface, and exact canonical summary bytes use lossless control-safe display with the coordinated two-space `Résumé` sentinel.
+- DONE: Name and rebaseline every post-s4 implementation and proof file.
+  Spacedock is 10 named files/1,082 changed LOC and Subspace is 21 named files/2,292 changed LOC; the real E2E enters through `review-tmux`, retains the negative fixture, and no rendezvous/supervisor/test file is hidden under tolerance.
+- DONE: Run the repository-required deterministic gates against the unchanged implementation baseline.
+  `gofmt -w ./cmd ./internal` produced no Go diff, and both `go test ./...` and `go test ./... -race` completed green; any current launcher, recorder, status, or skill-integration regression would fail its package lane.
+- SKIPPED: Implement code, invoke a live approval provider, record a decision, mutate gate/status frontmatter, or dispatch another worker.
+  This rejection cycle changes only the ideation entity body and requires a new independent staff review.
+
+### Summary
+
+Cycle 2 preserves the closed resolved-source design but gives it one real caller and
+one existing recorder rendezvous. It also replaces impossible universal cleanup and
+literal-control rendering claims with explicit ownership, recoverable hard-crash
+residue, no invented resume, and lossless terminal-safe presentation.
