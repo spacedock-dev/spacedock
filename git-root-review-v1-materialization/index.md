@@ -512,7 +512,8 @@ entry lifecycle that caller and uses the recorder's already-supported
   `cc51e518a3420b01fd4b455e9710d38803dc6d3e`.
 - Subspace implementation baseline is
   `9e218f00a565e8353adbc834619140f1770783ba`.
-- s4's summary-corrected post-baseline is its planned 19-file
+- s4's summary-corrected post-baseline is state design
+  `b739a0165590f111dbb88082b374468aee5b5985`, with its planned 19-file
   `+1,533/-161` surface. rqh estimates below are incremental after that surface lands;
   overlapping files are existing post-s4 files, not recreated files.
 - The required s4 sentinel is exactly
