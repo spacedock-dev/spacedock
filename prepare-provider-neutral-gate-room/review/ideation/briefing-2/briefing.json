@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:s4:ideation:attempt-2:revision-1",
+  "question": "Should s4 freeze every selected gate source inside the retained room and hold implementation until 6y's exact-authority interface lands?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:2777a0abc06485cb4baeaad2c93d69d71b98a774665509b3c0a210215422d4ee"
+    },
+    {
+      "id": "artifact:staff-review",
+      "uri": "staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:a9f25da65c3a5ed865818614faf33a50a8db81857ced538c8ae04b297f3f9aa8"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1f812407d2ae9a0cec3a6368baf8f71b33d72c6f6f121116af5e3169c280a855"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:s4-ideation-cycle-5",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Approve direction; hold implementation behind 6y",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise source retention",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold the design",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}

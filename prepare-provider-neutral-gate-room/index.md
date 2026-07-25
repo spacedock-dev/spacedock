@@ -58,8 +58,14 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: superseded
                 blockers: []
+            - id: gate-attempt:s4-ideation-2
+              briefing:
+                id: briefing:docs-dev:s4:ideation:attempt-2:revision-1
+                digest: sha256:706374c6491bbf8b3a43a6469aa85eefbeb513d16f1dcfad1297b6eff97bb949
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-2
 ---
 
 Make gate-room preparation one mechanical operation. The First Officer supplies the
