@@ -2976,3 +2976,46 @@ readable and direct/provider semantics intact. Exact and missing-period legacy
 directives now fail byte-clean, all deterministic gates are green at
 `15247f1e`, and live spend remains blocked on independent staff approval.
 Checklist accounting is **4 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 deterministic review correction)
+
+- DONE: Close the staff-identified false-green gap with real public-CLI
+  delegated-approve controls.
+  Exact code tip `1e9bf575` adds `agent:first-officer` approve cases with a
+  missing `--reason` and with whitespace-only `--reason`. Both execute the
+  production binary, require an actionable reason refusal, compare the complete
+  workflow tree byte-for-byte with its pre-command digest, and prove no
+  `.gates.lock` residue. The existing revise blank-reason control remains, but
+  no longer stands in for the FO-specific approve branch.
+- DONE: Keep the repair at the smallest production-path proof boundary.
+  The correction changes only
+  `internal/ensigncycle/recorded_gate_lifecycle_test.go` by **+2/-0** from
+  rejected tip `15247f1e`; no operation-level duplicate, product code, docs,
+  skill, fixture, host parser, or harness change was needed. From clean base
+  `28073390`, the complete implementation is still exactly **9 files,
+  +120/-45 = 165 changed LOC**, 14 lines / **9.3%** above the 151-line estimate
+  and below the 11-file / 204-LOC hard cap. The only revised per-file actual is
+  `internal/ensigncycle/recorded_gate_lifecycle_test.go` at **+40/-15**
+  versus estimated **+24/-38**; the other eight actuals remain those declared
+  in the preceding report.
+- DONE: Rerun the owned deterministic verification at the new exact tip.
+  The two focused approve-refusal cases, all
+  `TestRecordedGateLifecycle*` controls, the focused CLI and FO lifecycle
+  contract/cap tests, `gofmt -w ./cmd ./internal`, `go test ./...`,
+  `go test ./... -race`, `go test -tags live ./... -run '^$' -count=1`,
+  `uv run --with-requirements docs/requirements.txt mkdocs build --strict`,
+  and `git diff --check` pass. Live-tag verification compiled the runners and
+  executed no tests.
+- SKIPPED: Spend a live Claude/Codex/Pi journey, request Roborev, push code or
+  state, mutate a gate/round/status, or advance the stage.
+  The corrected deterministic tip returns to independent staff review exactly
+  as directed.
+
+### Summary
+
+The review correction makes the delegated-approve evidence rule independently
+falsifiable through the public CLI for both absent and whitespace-only reasons,
+with complete byte-clean and lock-clean proof. It changes one test file by two
+lines, leaves the production mechanism and approved behavior untouched, and
+keeps live spend blocked at exact tip `1e9bf575`. Checklist accounting is
+**3 DONE, 1 SKIPPED, 0 FAILED**.
