@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	statuspkg "github.com/spacedock-dev/spacedock/internal/status"
 )
 
 type codexSteeringEvidence struct {
@@ -102,6 +103,17 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 				insertCodexSteeringEvent(e, 6, codexSteeringEvent{
 					Type:            "spawn_agent_called",
 					AssignmentID:    target.AssignmentID,
+					TaskPath:        target.TaskPath + "_cycle3",
+					CompletionEpoch: target.CompletionEpoch + 1,
+				})
+			},
+		},
+		{
+			name: "cycle-suffixed replacement omits assignment identity",
+			want: "complete correlation identity",
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
+				insertCodexSteeringEvent(e, 6, codexSteeringEvent{
+					Type:            "spawn_agent_called",
 					TaskPath:        target.TaskPath + "_cycle3",
 					CompletionEpoch: target.CompletionEpoch + 1,
 				})
@@ -203,6 +215,13 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 			},
 		},
 		{
+			name: "durable artifact quotes worker identity",
+			want: "worker identity",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				mutateCodexSteeringReport(t, e, "Worker task path: `"+target.TaskPath+"`", "> Worker task path: `"+target.TaskPath+"`")
+			},
+		},
+		{
 			name: "durable artifact has stale epoch",
 			want: "completion epoch",
 			mutate: func(t *testing.T, e *codexSteeringEvidence) {
@@ -210,10 +229,31 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 			},
 		},
 		{
+			name: "durable artifact fences completion epoch",
+			want: "completion epoch",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				mutateCodexSteeringReport(t, e, "Completion epoch: `2`", "```\nCompletion epoch: `2`\n```")
+			},
+		},
+		{
+			name: "durable artifact status appears only in body",
+			want: "implementation entity status",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				mutateCodexSteeringReport(t, e, "status: implementation\n---", "status: review\n---\n\nstatus: implementation")
+			},
+		},
+		{
 			name: "durable artifact lacks stage report",
 			want: "implementation stage report",
 			mutate: func(t *testing.T, e *codexSteeringEvidence) {
 				mutateCodexSteeringReport(t, e, "## Stage Report: implementation", "## Notes")
+			},
+		},
+		{
+			name: "durable artifact fences stage report heading",
+			want: "implementation stage report",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				mutateCodexSteeringReport(t, e, "## Stage Report: implementation", "```\n## Stage Report: implementation\n```")
 			},
 		},
 		{
@@ -254,6 +294,22 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 			want: "matching final status",
 			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				removeCodexSteeringEvents(e, "final_status")
+			},
+		},
+		{
+			name: "duplicate matching final status before resumed monitoring",
+			want: "matching final status count",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				event := *eventOfType(t, e, "final_status")
+				insertCodexSteeringEvent(e, 6, event)
+			},
+		},
+		{
+			name: "duplicate matching durable report before final status",
+			want: "matching durable report count",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				event := *eventOfType(t, e, "durable_report_read")
+				insertCodexSteeringEvent(e, 6, event)
 			},
 		},
 		{
@@ -310,7 +366,9 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 	prematureWait := false
 	secondWait := -1
 	finalStatus := -1
+	finalStatusCount := 0
 	durableReport := -1
+	durableReportCount := 0
 	var lastTimestamp time.Time
 
 	for i, event := range evidence.Events {
@@ -336,6 +394,9 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 
 		switch event.Type {
 		case "spawn_agent_called":
+			if event.AssignmentID == "" || event.TaskPath == "" || event.CompletionEpoch < 1 {
+				return fmt.Errorf("spawn event %d lacks complete correlation identity", event.Sequence)
+			}
 			if event.TaskPath == target.TaskPath || event.AssignmentID == target.AssignmentID {
 				spawnCount++
 			}
@@ -381,14 +442,20 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 			}
 		case "final_status":
 			if sameCodexSteeringWorker(event, target) && event.Status == "completed" {
-				finalStatus = i
+				if finalStatus < 0 {
+					finalStatus = i
+				}
+				finalStatusCount++
 			}
 		case "durable_report_read":
 			if sameCodexSteeringWorker(event, target) && event.Status == "completed" {
 				if err := validateCodexSteeringReport(evidence.EvidenceDir, event.ArtifactPath, target); err != nil {
 					return fmt.Errorf("durable report is invalid: %w", err)
 				}
-				durableReport = i
+				if durableReport < 0 {
+					durableReport = i
+				}
+				durableReportCount++
 			}
 		case "agent_message", "interrupt_agent_called", "close_agent_called":
 		default:
@@ -420,6 +487,12 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 	if secondWait <= activeScopeEmpty || secondWait <= runningAfterInput {
 		return fmt.Errorf("same correlated worker was not monitored again after active work")
 	}
+	if finalStatusCount != 1 {
+		return fmt.Errorf("matching final status count = %d, want 1", finalStatusCount)
+	}
+	if durableReportCount != 1 {
+		return fmt.Errorf("matching durable report count = %d, want 1", durableReportCount)
+	}
 	if finalStatus <= secondWait {
 		return fmt.Errorf("matching final status was not observed after resumed monitoring")
 	}
@@ -442,8 +515,6 @@ func isTargetLifecycleMutation(event codexSteeringEvent, worker codexSteeringWor
 	}
 }
 
-var codexImplementationStageReport = regexp.MustCompile(`(?m)^## Stage Report: implementation[ \t]*$`)
-
 func validateCodexSteeringReport(evidenceDir, artifactPath string, worker codexSteeringWorker) error {
 	if evidenceDir == "" || artifactPath == "" || filepath.Base(artifactPath) != artifactPath {
 		return fmt.Errorf("artifact path must name one file in the evidence directory")
@@ -452,23 +523,49 @@ func validateCodexSteeringReport(evidenceDir, artifactPath string, worker codexS
 	if err != nil {
 		return fmt.Errorf("read artifact: %w", err)
 	}
-	report := string(data)
-	if !codexDurableStatusForEntity(report, "implementation") {
+	if statuspkg.ParseFrontmatterData(data)["status"] != "implementation" {
 		return fmt.Errorf("artifact does not retain implementation entity status")
 	}
-	if !strings.Contains(report, "Worker status: `completed`") {
+	report := string(data)
+	if !codexReportHasPlainLine(report, "Worker status: `completed`") {
 		return fmt.Errorf("artifact does not retain completed worker status")
 	}
-	if !strings.Contains(report, "Worker task path: `"+worker.TaskPath+"`") {
+	if !codexReportHasPlainLine(report, "Worker task path: `"+worker.TaskPath+"`") {
 		return fmt.Errorf("artifact does not retain the correlated worker identity")
 	}
-	if !strings.Contains(report, fmt.Sprintf("Completion epoch: `%d`", worker.CompletionEpoch)) {
+	if !codexReportHasPlainLine(report, fmt.Sprintf("Completion epoch: `%d`", worker.CompletionEpoch)) {
 		return fmt.Errorf("artifact does not retain the correlated completion epoch")
 	}
-	if !codexImplementationStageReport.MatchString(report) {
+	if _, err := statuspkg.FindSectionSpans(data, []string{"Stage Report: implementation"}); err != nil {
 		return fmt.Errorf("artifact does not contain an implementation stage report")
 	}
 	return nil
+}
+
+func codexReportHasPlainLine(report, expected string) bool {
+	fence := ""
+	for _, line := range strings.Split(strings.ReplaceAll(report, "\r\n", "\n"), "\n") {
+		trimmed := strings.TrimSpace(line)
+		marker := ""
+		switch {
+		case strings.HasPrefix(trimmed, "```"):
+			marker = "```"
+		case strings.HasPrefix(trimmed, "~~~"):
+			marker = "~~~"
+		}
+		if marker != "" {
+			if fence == "" {
+				fence = marker
+			} else if marker == fence {
+				fence = ""
+			}
+			continue
+		}
+		if fence == "" && line == expected {
+			return true
+		}
+	}
+	return false
 }
 
 func isOldCodexWaitDisclaimer(message string) bool {
