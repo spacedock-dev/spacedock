@@ -3791,3 +3791,45 @@ Roborev 2211 now has complete v1 worker triage—one Material finding fixed and
 three disproportionate declines with promotion conditions—and the conforming
 Cycle 23 projection is prepared without recording the round. Checklist
 accounting is **5 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 Roborev 2224 correction)
+
+- DONE: Add the accepted authority and attribution boundaries test-first.
+  Contract controls first failed on the absent skill/runtime wording. The actor
+  refusal control exposed and now pins missing `--actor` as exit 2 with
+  `Error: --decision requires --actor ID`, while unsupported `agent:ensign` is
+  exit 1 with its exact semantic error.
+- DONE: Implement only the six-file Roborev 2224 correction.
+  Commit `aa04e95d8ecb2badad240b23018c8ab20e66689b` clarifies Claude's
+  later-turn conn path, forbids delegated `person:captain` attribution, lists
+  the two supported chat actor IDs, and adds no production, command, schema,
+  compatibility, harness, or live-proof mechanism.
+- DONE: Pass the focused, repository, race, documentation, and formatting
+  gates.
+  Focused contract/cap and recorded-gate suites passed. `gofmt -w ./cmd
+  ./internal`, `go test ./...`, `go test ./... -race`, pinned
+  `mkdocs build --strict`, and `git diff --check` passed. The skill is 6,599
+  bytes under its 6,600-byte cap.
+- DONE: Preserve the unchanged cumulative LOC ceiling.
+  The correction is six files at +11/-7 from `fa2d9de7`. Relative to
+  `280733907f2d9f2c9b6b226a0e8bf06fea6b90db`, the clean tip is exactly
+  12 files, 137 additions, and 58 deletions: 195 changed LOC, 96% of the
+  204-LOC ceiling.
+- DONE: Retain complete Roborev 2224 triage and the next cycle source without
+  publication.
+  `review/implementation/roborev-2224/` contains one Briefing, seven reviewer
+  findings, four Material/fixed dispositions, three canonical declines, one
+  complete actor:ensign Resolution, and the conforming Cycle 24 source.
+- SKIPPED: Add the declined prompt/handoff proof expansions, run live/provider
+  tests, invoke `gate record --round`, rerun Roborev, mutate
+  status/stage/gate, push, open a PR, or merge.
+  Cycle 31 and the ensign report protocol own those boundaries; the First
+  Officer owns round publication and final re-panel.
+
+### Summary
+
+The bounded correction removes the Claude wording contradiction and makes
+delegated actor attribution and actor refusals explicit without changing
+runtime semantics. Roborev 2224 now has complete worker triage and a canonical
+Cycle 24 source at clean code tip `aa04e95d`; no round was recorded. Checklist
+accounting is **5 DONE, 1 SKIPPED, 0 FAILED**.
