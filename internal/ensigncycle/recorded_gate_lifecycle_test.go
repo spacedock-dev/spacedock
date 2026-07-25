@@ -101,6 +101,12 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 			return fmt.Errorf("durable post-state missing %q", want)
 		}
 	}
+	authority := o.after
+	if strings.HasPrefix(o.after, "---\n") {
+		if end := strings.Index(o.after[len("---\n"):], "\n---\n"); end >= 0 {
+			authority = o.after[:len("---\n")+end]
+		}
+	}
 	for _, exact := range []struct {
 		label string
 		value string
@@ -119,7 +125,7 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		{"application target", "target-stage: " + o.expectedNext, 1},
 		{"consumed application", "\n                state: consumed", 1},
 	} {
-		if got := strings.Count(o.after, exact.value); got != exact.count || (exact.label == "approval reason" && strings.Trim(strings.TrimSpace(strings.SplitN(strings.SplitN(o.after, exact.value, 2)[1], "\n", 2)[0]), `"'`) == "") {
+		if got := strings.Count(authority, exact.value); got != exact.count || (exact.label == "approval reason" && strings.Trim(strings.TrimSpace(strings.SplitN(strings.SplitN(authority, exact.value, 2)[1], "\n", 2)[0]), `"'`) == "") {
 			return fmt.Errorf("durable post-state %s count = %d, want %d for %q", exact.label, got, exact.count, exact.value)
 		}
 	}
@@ -644,6 +650,12 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 	if err := assertRecordedGateLifecycle(valid); err != nil {
 		t.Fatalf("baseline: %v", err)
 	}
+	fenced := valid
+	fenced.after = "---\n" + strings.Replace(valid.after, "\n## Stage Report: handoff", "\n---\n## Stage Report: handoff", 1)
+	fenced.after = strings.Replace(fenced.after, "- DONE: Successor dispatch", "- DONE: target-stage: handoff successor dispatch", 1)
+	if err := assertRecordedGateLifecycle(fenced); err != nil {
+		t.Fatalf("frontmatter-scoped authority: %v", err)
+	}
 	for name, mutate := range map[string]func(*recordedGateObservation){
 		"actor-swap": func(o *recordedGateObservation) {
 			o.after = strings.Replace(o.after, "by: agent:first-officer", "by: person:captain", 1)
@@ -1126,7 +1138,7 @@ func recordedGateReadme() string {
 		"    - name: done\n      terminal: true\n" +
 		"---\n# Recorded Gate Lifecycle Fixture\n\n" +
 		"### validation\n\nValidate and present the retained package.\n\n" +
-		"### handoff\n\nAppend the exact marker `" + recordedGateDispatchMarker + "` and a `## Stage Report: handoff` with one DONE item, then return completion. Do not advance or archive the entity. In report prose, do not repeat any `target-stage:` frontmatter field; that authority remains singular in frontmatter.\n\n- **Outputs:** The marker and handoff stage report.\n"
+		"### handoff\n\nAppend the exact marker `" + recordedGateDispatchMarker + "` and a `## Stage Report: handoff` with one DONE item, then return completion. Do not advance or archive the entity.\n\n- **Outputs:** The marker and handoff stage report.\n"
 }
 
 func recordedGateEntity() string {
