@@ -7,12 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
+	"github.com/spacedock-dev/spacedock/internal/statesync"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
@@ -44,9 +44,9 @@ func emitSync(stdout io.Writer, jsonOut bool, res syncResult, code int) int {
 	return code
 }
 
-// runStateCommit implements `spacedock state commit <slug>`. It resolves <slug> to
-// its entity commit unit under the split-root state checkout, then runs the path-scoped
-// commit → push → on-reject pull --rebase → re-push sequence. A same-entity rebase
+// runStateCommit implements `spacedock state commit <slug>`. Active scope commits
+// path-scoped; clean archived scope publishes existing history. Both use the
+// shared push → on-reject pull --rebase → re-push sequence. A same-entity rebase
 // conflict HALTS: the rebase is aborted (clean tree restored), no force-push is
 // ever issued, and the verb exits 3 with the conflicting path named — so a caller
 // cannot proceed on an unmerged tree. The halt is the exit code, not the model's
@@ -68,66 +68,104 @@ func runStateCommit(ctx context.Context, args []string, env []string, dir string
 		}, 0)
 	}
 
-	entityPath, ok := resolveEntityCommitPath(checkout, slug)
-	if !ok {
-		fmt.Fprintf(stderr, "spacedock state commit: no entity %q under %s (looked for %s.md and %s/index.md)\n", slug, checkout, slug, slug)
+	if outcome := statesync.Preflight(checkout, branch); outcome.Result == statesync.ResultHalted {
+		return emitSyncHalt(stdout, stderr, jsonOut, "state commit", slug, branch, outcome)
+	} else if outcome.Result == statesync.ResultFailed {
+		fmt.Fprintf(stderr, "spacedock state commit: state-sync preflight failed: %s\n", outcome.Detail)
+		return 1
+	}
+
+	target, found, resolveErr := resolveEntityCommitTarget(checkout, slug)
+	if resolveErr != nil {
+		fmt.Fprintf(stderr, "spacedock state commit: %v\n", resolveErr)
+		return 1
+	}
+	if !found {
+		fmt.Fprintf(stderr, "spacedock state commit: no entity %q under %s (looked in active and _archive scope)\n", slug, checkout)
 		return 1
 	}
 	if msg == "" {
 		msg = fmt.Sprintf("state: update %s", slug)
 	}
 
-	// Path-scoped commit. A clean tree (nothing staged for this entity) is a no-op
-	// success, not an error — the FO may call commit defensively after a --set that
-	// changed nothing.
-	if ok, out := commitEntityPathScoped(checkout, entityPath, msg); !ok {
-		fmt.Fprintf(stderr, "spacedock state commit: git commit failed:\n%s\n", out)
+	committed := false
+	if target.scope == entityScopeArchived {
+		clean, detail, checkErr := archivedTargetClean(checkout, target.pathspecs)
+		if checkErr != nil {
+			fmt.Fprintf(stderr, "spacedock state commit: could not inspect archived entity %q before publication: %v\n", slug, checkErr)
+			return 1
+		}
+		if !clean {
+			fmt.Fprintf(stderr, "spacedock state commit: archived entity %q is dirty; archived scope is publish-only and will not stage or commit it:\n%s\n", slug, detail)
+			return 1
+		}
+	} else {
+		// Active scope retains the path-scoped stage+commit behavior.
+		if ok, out := commitEntityPathScoped(checkout, target.entityPath, msg); !ok {
+			fmt.Fprintf(stderr, "spacedock state commit: git commit failed:\n%s\n", out)
+			return 1
+		} else {
+			committed = out != ""
+		}
+	}
+
+	outcome := statesync.Publish(checkout, branch)
+	switch outcome.Result {
+	case statesync.ResultHalted:
+		return emitSyncHalt(stdout, stderr, jsonOut, "state commit", slug, branch, outcome)
+	case statesync.ResultFailed:
+		switch {
+		case target.scope == entityScopeArchived:
+			fmt.Fprintf(stderr, "spacedock state commit: state publication failed; the existing archive commit remains recoverable:\n%s\n", outcome.Detail)
+		case committed:
+			fmt.Fprintf(stderr, "spacedock state commit: state publication failed; the new local commit remains recoverable:\n%s\n", outcome.Detail)
+		default:
+			fmt.Fprintf(stderr, "spacedock state commit: state synchronization failed; no new commit was created in this invocation, and existing local history remains recoverable:\n%s\n", outcome.Detail)
+		}
 		return 1
-	} else if out == "" {
-		// out=="" is the no-op sentinel from commitEntityPathScoped (nothing staged).
+	case statesync.ResultLocalOnly:
+		if target.scope == entityScopeActive && !committed {
+			return emitSync(stdout, jsonOut, syncResult{
+				Command: "state commit", Slug: slug, Result: "no-op", StateBranch: branch,
+				Reason: fmt.Sprintf("Nothing to commit for %s — state checkout already up to date.", slug),
+			}, 0)
+		}
+		reason := fmt.Sprintf("Committed %s locally; no origin remote — state is local-only until an origin is configured.", slug)
+		if target.scope == entityScopeArchived {
+			reason = fmt.Sprintf("Archived state for %s is committed locally; no origin remote — state is local-only.", slug)
+		}
+		return emitSync(stdout, jsonOut, syncResult{
+			Command: "state commit", Slug: slug, Result: "local-only", StateBranch: branch,
+			Reason: reason,
+		}, 0)
+	case statesync.ResultNoOp:
 		return emitSync(stdout, jsonOut, syncResult{
 			Command: "state commit", Slug: slug, Result: "no-op", StateBranch: branch,
 			Reason: fmt.Sprintf("Nothing to commit for %s — state checkout already up to date.", slug),
 		}, 0)
-	}
-
-	// No origin → local-only success (mirrors the boot `remote: none` carve-out).
-	if !stateHasOrigin(checkout) {
-		return emitSync(stdout, jsonOut, syncResult{
-			Command: "state commit", Slug: slug, Result: "local-only", StateBranch: branch,
-			Reason: fmt.Sprintf("Committed %s locally; no origin remote — state is local-only until an origin is configured.", slug),
-		}, 0)
-	}
-
-	// Push; on a non-fast-forward rejection, pull --rebase and re-push.
-	if ok, _ := runGit(checkout, "push", "origin", branch); ok {
+	case statesync.ResultPushed:
+		if target.scope == entityScopeActive && !committed && !outcome.PublishedLocal {
+			return emitSync(stdout, jsonOut, syncResult{
+				Command: "state commit", Slug: slug, Result: "no-op", StateBranch: branch,
+				Reason: fmt.Sprintf("Nothing to commit for %s — integrated peers' state; checkout is up to date.", slug),
+			}, 0)
+		}
+		reason := fmt.Sprintf("Committed and pushed %s to %s.", slug, branch)
+		if target.scope == entityScopeArchived {
+			reason = fmt.Sprintf("Published existing archived state for %s to %s.", slug, branch)
+		} else if !committed {
+			reason = fmt.Sprintf("Published previously committed state for %s to %s.", slug, branch)
+		} else if outcome.IntegratedPeers {
+			reason = fmt.Sprintf("Committed %s, integrated peers' state, and pushed to %s.", slug, branch)
+		}
 		return emitSync(stdout, jsonOut, syncResult{
 			Command: "state commit", Slug: slug, Result: "pushed", StateBranch: branch,
-			Reason: fmt.Sprintf("Committed and pushed %s to %s.", slug, branch),
+			Reason: reason,
 		}, 0)
-	}
-
-	// Push rejected (non-ff or other). Integrate peers' state via pull --rebase,
-	// reading git's OWN exit status (never piped through anything that swallows it).
-	rebaseOK, rebaseOut := runGit(checkout, "pull", "--rebase", "origin", branch)
-	if !rebaseOK {
-		if rebaseInProgress(checkout) {
-			return haltOnConflict(stdout, stderr, jsonOut, "state commit", slug, branch, checkout, entityPath, rebaseOut)
-		}
-		// Non-conflict pull failure (network, auth) — leave the local commit, report.
-		fmt.Fprintf(stderr, "spacedock state commit: push rejected and pull --rebase failed (not a conflict):\n%s\n", rebaseOut)
+	default:
+		fmt.Fprintln(stderr, "spacedock state commit: unexpected state publication result")
 		return 1
 	}
-
-	// Clean rebase replayed our commit atop the peer's — re-push.
-	if ok, out := runGit(checkout, "push", "origin", branch); !ok {
-		fmt.Fprintf(stderr, "spacedock state commit: re-push after pull --rebase failed:\n%s\n", out)
-		return 1
-	}
-	return emitSync(stdout, jsonOut, syncResult{
-		Command: "state commit", Slug: slug, Result: "pushed", StateBranch: branch,
-		Reason: fmt.Sprintf("Committed %s, integrated peers' state, and pushed to %s.", slug, branch),
-	}, 0)
 }
 
 // runStateReady implements `spacedock state ready`. It is the boot gate: an inline
@@ -166,27 +204,27 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 		}
 	}
 
-	// No origin → ready, local-only (no network integration to do).
-	if !stateHasOrigin(checkout) {
+	outcome := statesync.Pull(checkout, branch)
+	switch outcome.Result {
+	case statesync.ResultLocalOnly:
 		return emitSync(stdout, jsonOut, syncResult{
 			Command: "state ready", Result: "ready", StateBranch: branch,
 			Reason: "State checkout ready (no origin remote — state is local-only).",
 		}, 0)
-	}
-
-	// Integrate peers' state with one pull --rebase, reading git's own exit status.
-	rebaseOK, rebaseOut := runGit(checkout, "pull", "--rebase", "origin", branch)
-	if !rebaseOK {
-		if rebaseInProgress(checkout) {
-			return haltOnConflict(stdout, stderr, jsonOut, "state ready", "", branch, checkout, "", rebaseOut)
-		}
-		fmt.Fprintf(stderr, "spacedock state ready: pull --rebase failed (not a conflict):\n%s\n", rebaseOut)
+	case statesync.ResultHalted:
+		return emitSyncHalt(stdout, stderr, jsonOut, "state ready", "", branch, outcome)
+	case statesync.ResultFailed:
+		fmt.Fprintf(stderr, "spacedock state ready: state synchronization failed:\n%s\n", outcome.Detail)
+		return 1
+	case statesync.ResultReady:
+		return emitSync(stdout, jsonOut, syncResult{
+			Command: "state ready", Result: "ready", StateBranch: branch,
+			Reason: fmt.Sprintf("State checkout ready — integrated peers' state from %s.", branch),
+		}, 0)
+	default:
+		fmt.Fprintln(stderr, "spacedock state ready: unexpected state synchronization result")
 		return 1
 	}
-	return emitSync(stdout, jsonOut, syncResult{
-		Command: "state ready", Result: "ready", StateBranch: branch,
-		Reason: fmt.Sprintf("State checkout ready — integrated peers' state from %s.", branch),
-	}, 0)
 }
 
 // runStateSweep implements `spacedock state sweep`. It is the state-repo's
@@ -202,27 +240,19 @@ func runStateSweep(ctx context.Context, args []string, env []string, dir string,
 	return dispatch.Sweep(workflowDir, dispatch.GhRunnerExec, jsonOut, stdout, stderr)
 }
 
-// haltOnConflict is the shared HALT both verbs run on a same-entity rebase
-// conflict: abort the rebase to restore a clean tree, NEVER force-push, NEVER
-// auto-resolve, and exit 3 with the conflicting paths named on stderr. The exit
-// code is the enforcement: a caller cannot proceed on an unmerged tree.
-func haltOnConflict(stdout, stderr io.Writer, jsonOut bool, command, slug, branch, checkout, entityPath, rebaseOut string) int {
-	conflicting := conflictingPaths(checkout)
-	// The peer commit that survived: the pull's fetch phase already updated
-	// origin/{branch} before the rebase conflicted, and --abort does not touch
-	// that ref, so this resolves network-free (spiked in ideation).
-	peerCommit := peerCommitSHA(checkout, branch)
-	// Restore a clean tree so the next operation starts fresh. abort failure is
-	// surfaced but the exit is still the halt.
-	runGit(checkout, "rebase", "--abort")
-	if len(conflicting) == 0 && entityPath != "" {
-		// Fall back to the named entity when git's conflict list could not be read.
-		conflicting = []string{relToCheckout(checkout, entityPath)}
+// emitSyncHalt renders the shared HALT after statesync captured the conflict
+// evidence and aborted its same-branch rebase. It never discovers paths or
+// mutates Git itself; the exit code enforces that a caller cannot proceed.
+func emitSyncHalt(stdout, stderr io.Writer, jsonOut bool, command, slug, branch string, outcome statesync.Outcome) int {
+	conflicting := outcome.ConflictingPaths
+	reportedPaths := strings.Join(conflicting, ", ")
+	if reportedPaths == "" {
+		reportedPaths = "none reported by Git"
 	}
 	fmt.Fprintf(stderr, "spacedock %s: HALT — same-entity rebase conflict on %s.\n", command, branch)
-	fmt.Fprintf(stderr, "Conflicting path(s): %s\n", strings.Join(conflicting, ", "))
-	if peerCommit != "" {
-		fmt.Fprintf(stderr, "Peer commit: %s (origin/%s)\n", peerCommit, branch)
+	fmt.Fprintf(stderr, "Conflicting path(s): %s\n", reportedPaths)
+	if outcome.PeerCommit != "" {
+		fmt.Fprintf(stderr, "Peer commit: %s (origin/%s)\n", outcome.PeerCommit, branch)
 	}
 	fmt.Fprintf(stderr, "The rebase was aborted (checkout left clean) and nothing was force-pushed; a peer's edit is preserved on origin.\n")
 	fmt.Fprintf(stderr, "Next: HALT dispatch — do not dispatch against this state tree. Surface the conflicting path(s) and peer commit to the operator and stop.\n")
@@ -230,25 +260,9 @@ func haltOnConflict(stdout, stderr io.Writer, jsonOut bool, command, slug, branc
 	return emitSync(stdout, jsonOut, syncResult{
 		Command: command, Slug: slug, Result: "halted", StateBranch: branch,
 		ConflictingPaths: conflicting,
-		PeerCommit:       peerCommit,
-		Reason:           fmt.Sprintf("HALT: same-entity rebase conflict on %s — rebase aborted, nothing force-pushed, manual intervention required.", strings.Join(conflicting, ", ")),
+		PeerCommit:       outcome.PeerCommit,
+		Reason:           fmt.Sprintf("HALT: same-entity rebase conflict on %s — rebase aborted, nothing force-pushed, manual intervention required.", reportedPaths),
 	}, 3)
-}
-
-// peerCommitSHA resolves the peer's pushed commit on origin/{branch} — the edit
-// preserved when this side's rebase conflicted. Runs BEFORE `rebase --abort`
-// clears the conflict, though the ref itself does not depend on abort timing (the
-// pull's fetch phase already updated it). Returns "" on any git failure rather
-// than surfacing an error for what is purely diagnostic context.
-func peerCommitSHA(checkout, branch string) string {
-	if branch == "" {
-		return ""
-	}
-	ok, out := runGit(checkout, "rev-parse", "--short", "origin/"+branch)
-	if !ok {
-		return ""
-	}
-	return strings.TrimSpace(out)
 }
 
 // commitEntityPathScoped stages and commits exactly entityPath with `add -A`
@@ -289,65 +303,85 @@ func runGitRetryLock(checkout string, gitArgs ...string) (bool, string) {
 	}
 }
 
-// rebaseInProgress reports whether a rebase is in progress in checkout, asking git
-// for the worktree-correct path (`git rev-parse --git-path`) rather than assuming
-// `<checkout>/.git/rebase-merge` — a linked-worktree state checkout keeps its git
-// dir elsewhere, so a hardcoded path would miss the conflict and let the halt slip.
-func rebaseInProgress(checkout string) bool {
-	for _, name := range []string{"rebase-merge", "rebase-apply"} {
-		ok, out := runGit(checkout, "rev-parse", "--git-path", name)
-		if !ok {
-			continue
-		}
-		p := strings.TrimSpace(out)
-		if !filepath.IsAbs(p) {
-			p = filepath.Join(checkout, p)
-		}
-		if _, err := os.Stat(p); err == nil {
-			return true
-		}
-	}
-	return false
+type entityCommitScope int
+
+const (
+	entityScopeActive entityCommitScope = iota
+	entityScopeArchived
+)
+
+type entityCommitTarget struct {
+	scope      entityCommitScope
+	entityPath string
+	pathspecs  []string
 }
 
-// conflictingPaths returns the entity paths git reports as unmerged during the
-// in-progress rebase (`git diff --name-only --diff-filter=U`), relative to the
-// checkout. Read BEFORE the rebase --abort clears the conflict state.
-func conflictingPaths(checkout string) []string {
-	ok, out := runGit(checkout, "diff", "--name-only", "--diff-filter=U")
+// resolveEntityCommitTarget validates identity shape before staging or
+// publication. Active scope is a commit unit; archive scope is publish-only and
+// carries both sides of the canonical archive move for dirt checks.
+func resolveEntityCommitTarget(checkout, slug string) (entityCommitTarget, bool, error) {
+	activeFlat := filepath.Join(checkout, slug+".md")
+	activeIndex := filepath.Join(checkout, slug, "index.md")
+	archiveFlat := filepath.Join(checkout, "_archive", slug+".md")
+	archiveIndex := filepath.Join(checkout, "_archive", slug, "index.md")
+
+	activeFlatExists := fileExists(activeFlat) && status.EntitySlug(activeFlat) == slug
+	activeFolderExists := fileExists(activeIndex) && status.EntitySlug(activeIndex) == slug
+	archiveFlatExists := fileExists(archiveFlat) && status.EntitySlug(archiveFlat) == slug
+	archiveFolderExists := fileExists(archiveIndex) && status.EntitySlug(archiveIndex) == slug
+
+	if archiveFlatExists && archiveFolderExists {
+		return entityCommitTarget{}, false, fmt.Errorf("archive-shape collision for %q: both _archive/%s.md and _archive/%s/index.md exist; remove the invalid duplicate, then rerun state commit", slug, slug, slug)
+	}
+	if (activeFlatExists || activeFolderExists) && (archiveFlatExists || archiveFolderExists) {
+		return entityCommitTarget{}, false, fmt.Errorf("active/archive identity collision for %q: the slug exists in both scopes; resolve the duplicate identity, then rerun state commit", slug)
+	}
+	if archiveFolderExists {
+		return entityCommitTarget{
+			scope: entityScopeArchived,
+			pathspecs: []string{
+				slug,
+				filepath.Join("_archive", slug),
+			},
+		}, true, nil
+	}
+	if archiveFlatExists {
+		return entityCommitTarget{
+			scope: entityScopeArchived,
+			pathspecs: []string{
+				slug + ".md",
+				filepath.Join("_archive", slug+".md"),
+			},
+		}, true, nil
+	}
+	if activeFolderExists {
+		return entityCommitTarget{scope: entityScopeActive, entityPath: filepath.Dir(activeIndex)}, true, nil
+	}
+	if activeFlatExists {
+		return entityCommitTarget{scope: entityScopeActive, entityPath: activeFlat}, true, nil
+	}
+	// Preserve deletion commits for active entities that have not moved into
+	// archive scope: tracked-but-missing canonical paths remain commit units.
+	if gitTracksPath(checkout, activeIndex) && status.EntitySlug(activeIndex) == slug {
+		return entityCommitTarget{scope: entityScopeActive, entityPath: filepath.Dir(activeIndex)}, true, nil
+	}
+	if gitTracksPath(checkout, activeFlat) && status.EntitySlug(activeFlat) == slug {
+		return entityCommitTarget{scope: entityScopeActive, entityPath: activeFlat}, true, nil
+	}
+	return entityCommitTarget{}, false, nil
+}
+
+func archivedTargetClean(checkout string, paths []string) (bool, string, error) {
+	args := []string{"status", "--porcelain=v1", "--untracked-files=all", "--"}
+	for _, path := range paths {
+		args = append(args, literalGitPathspec(path))
+	}
+	ok, out := runGit(checkout, args...)
 	if !ok {
-		return nil
+		return false, "", fmt.Errorf("%s", strings.TrimSpace(out))
 	}
-	var paths []string
-	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
-		if line = strings.TrimSpace(line); line != "" {
-			paths = append(paths, line)
-		}
-	}
-	return paths
-}
-
-// resolveEntityCommitPath finds the commit unit for slug under checkout. Folder
-// form wins when present, matching canonical entity discovery, and commits the
-// whole folder; flat form commits only `{slug}.md`. A tracked candidate remains
-// resolvable after deletion so the exact same commit unit can record its removal.
-// EntitySlug remains the authority for the slug represented by either path.
-func resolveEntityCommitPath(checkout, slug string) (string, bool) {
-	nested := filepath.Join(checkout, slug, "index.md")
-	if fileExists(nested) && status.EntitySlug(nested) == slug {
-		return filepath.Dir(nested), true
-	}
-	flat := filepath.Join(checkout, slug+".md")
-	if fileExists(flat) && status.EntitySlug(flat) == slug {
-		return flat, true
-	}
-	if gitTracksPath(checkout, nested) && status.EntitySlug(nested) == slug {
-		return filepath.Dir(nested), true
-	}
-	if gitTracksPath(checkout, flat) && status.EntitySlug(flat) == slug {
-		return flat, true
-	}
-	return "", false
+	detail := strings.TrimSpace(out)
+	return detail == "", detail, nil
 }
 
 func gitTracksPath(checkout, path string) bool {
@@ -489,14 +523,4 @@ func resolveWorkflowDir(workflowDir, dir string, stderr io.Writer) (string, int)
 		return filepath.Join(dir, workflowDir), 0
 	}
 	return workflowDir, 0
-}
-
-// stateHasOrigin reports whether the state checkout has a named `origin` remote,
-// asking the exact named-remote question via `git remote get-url origin` (network-
-// free, true iff exit 0). Mirrors status.stateHasOrigin so these verbs agree with
-// boot's STATE_BACKEND origin line by construction. A non-repo dir or any git
-// failure reports false → the verb degrades to local-only.
-func stateHasOrigin(checkout string) bool {
-	ok, _ := runGit(checkout, "remote", "get-url", "origin")
-	return ok
 }

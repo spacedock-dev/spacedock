@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/spacedock-dev/spacedock/internal/statesync"
 )
 
 // MergeGuard is the entry point for `spacedock merge guard <slug>`. It owns the
@@ -22,9 +24,9 @@ import (
 // args is the post-`guard` argv: the positional <slug>, --workflow-dir DIR,
 // --verdict {passed|rejected}, and --json/--quiet. dir is the working directory
 // used to resolve a relative --workflow-dir and to discover the enclosing
-// workflow when no --workflow-dir is passed. The exit domain is {0,1}: 0 for a
+// workflow when no --workflow-dir is passed. The exit domain is {0,1,3}: 0 for a
 // completed signal (armed / blocked / finalized), 1 for a usage error or a
-// propagated guard refusal.
+// propagated guard/publication refusal, and 3 for an aborted state-rebase HALT.
 func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	workflowDir, rest, err := parseWorkflowDir(args)
 	if err != nil {
@@ -85,6 +87,9 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	}
 
 	if rc := mergeRootsGuard(workflowDir, roots, dir, stderr); rc != 0 {
+		return rc
+	}
+	if rc := preflightMergeState(roots, slug, asJSON, stdout, stderr); rc != 0 {
 		return rc
 	}
 
@@ -198,6 +203,31 @@ func mergeRootsGuard(workflowDirSpelling string, roots roots, dir string, stderr
 			"merge guard: workflow at %s declares state: %s but the state checkout is missing at %s",
 			roots.definitionDir, relPath, roots.entityDir)
 		return errExit(stderr, appendHint(msg, hint))
+	}
+	return 0
+}
+
+// preflightMergeState runs before entity resolution or mutation so a process
+// restart with Git already mid-rebase cannot terminalize against an unmerged
+// index. Inline workflows have no separate state branch to preflight.
+func preflightMergeState(roots roots, slug string, asJSON bool, stdout, stderr io.Writer) int {
+	mode, _, err := ClassifyState(ParseFrontmatter(filepath.Join(roots.definitionDir, "README.md"))["state"])
+	if err != nil {
+		return errExit(stderr, err.Error())
+	}
+	if mode == StateInline {
+		return 0
+	}
+	branch, err := StateBranch(roots.definitionDir)
+	if err != nil {
+		return errExit(stderr, err.Error())
+	}
+	outcome := statesync.Preflight(roots.entityDir, branch)
+	if outcome.Result == statesync.ResultHalted {
+		return signalMergeStateHalt(slug, branch, outcome, asJSON, stdout, stderr)
+	}
+	if outcome.Result == statesync.ResultFailed {
+		return errExit(stderr, "merge guard: state-sync preflight failed: "+outcome.Detail)
 	}
 	return 0
 }
@@ -384,7 +414,66 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 		}
 		return rc
 	}
-	return signalFinalized(roots.definitionDir, slug, terminal, verdict, worktree, hookRegistered, prIndicatesMerged(pr), quiet, asJSON, stdout)
+	durability, syncOutcome, rc := publishMergeArchive(roots, slug, stdout, stderr)
+	if durability == "" {
+		durability = "unpublished"
+	}
+	signalFinalized(roots.definitionDir, slug, terminal, verdict, worktree, hookRegistered, prIndicatesMerged(pr), durability, syncOutcome, quiet, asJSON, stdout)
+	return rc
+}
+
+func publishMergeArchive(roots roots, slug string, stdout, stderr io.Writer) (string, statesync.Outcome, int) {
+	mode, _, err := ClassifyState(ParseFrontmatter(filepath.Join(roots.definitionDir, "README.md"))["state"])
+	if err != nil {
+		return "", statesync.Outcome{}, errExit(stderr, err.Error())
+	}
+	if mode == StateInline {
+		return "inline", statesync.Outcome{}, 0
+	}
+	branch, err := StateBranch(roots.definitionDir)
+	if err != nil {
+		return "", statesync.Outcome{}, errExit(stderr, err.Error())
+	}
+	outcome := statesync.Publish(roots.entityDir, branch)
+	switch outcome.Result {
+	case statesync.ResultPushed, statesync.ResultNoOp:
+		return "pushed", outcome, 0
+	case statesync.ResultLocalOnly:
+		return "local-only", outcome, 0
+	case statesync.ResultHalted:
+		return "halted", outcome, signalMergeStateHalt(slug, branch, outcome, false, stdout, stderr)
+	case statesync.ResultFailed:
+		fmt.Fprintf(stderr,
+			"merge guard: archive commit for %s is durable locally, but split-root publication failed:\n%s\n"+
+				"Settle unrelated state-checkout dirt if Git refused rebase, then resume with `spacedock state commit %s --workflow-dir %s`; archived resume publishes the existing commit without creating another archive commit.\n",
+			slug, outcome.Detail, slug, roots.definitionDir)
+		return "unpublished", outcome, 1
+	default:
+		fmt.Fprintf(stderr, "merge guard: archive commit for %s was not published (unexpected state-sync result %s)\n", slug, outcome.Result)
+		return "unpublished", outcome, 1
+	}
+}
+
+func signalMergeStateHalt(slug, branch string, outcome statesync.Outcome, asJSON bool, stdout, stderr io.Writer) int {
+	paths := strings.Join(outcome.ConflictingPaths, ", ")
+	if paths == "" {
+		paths = "none reported by Git"
+	}
+	fmt.Fprintf(stderr, "merge guard: HALT — same-entity rebase conflict on %s.\n", branch)
+	fmt.Fprintf(stderr, "Conflicting path(s): %s\n", paths)
+	if outcome.PeerCommit != "" {
+		fmt.Fprintf(stderr, "Peer commit: %s (origin/%s)\n", outcome.PeerCommit, branch)
+	}
+	fmt.Fprintln(stderr, "The rebase was aborted and nothing was force-pushed; the local archive commit and peer edit remain recoverable.")
+	fmt.Fprintln(stderr, "Next: HALT dispatch — surface the conflicting paths and peer commit to the operator; never force-push or auto-resolve.")
+	if asJSON {
+		emitJSON(stdout, newJSONObj().
+			set("command", "merge-guard").set("slug", slug).set("signal", "halted").
+			set("result", "halted").set("state_branch", branch).
+			setValue("conflicting_paths", jsonStrArr(outcome.ConflictingPaths)).set("peer_commit", outcome.PeerCommit).
+			set("reason", "HALT: rebase aborted; manual conflict resolution required."))
+	}
+	return 3
 }
 
 // archiveSnapshot captures an entity's pre-archive state so finalize can reverse a
@@ -459,7 +548,7 @@ func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
 	// the working tree we just restored.
 	if gitRoot := FindGitRoot(entityDir); hasGitEntry(gitRoot) {
 		source, dest := archiveMovePathspecs(gitRoot, entityDir, slug, snap.isFolder)
-		if _, err := runGitCmd(gitRoot, "reset", "-q", "--", source, dest); err != nil {
+		if _, err := runGitCmd(gitRoot, "reset", "-q", "--", literalGitPathspec(source), literalGitPathspec(dest)); err != nil {
 			errs = append(errs, fmt.Errorf("unstage archive rename: %w", err))
 		}
 	}
@@ -488,14 +577,20 @@ func commitArchiveMove(entityDir, slug string, stderr io.Writer) int {
 	}
 	source, dest := archiveMovePathspecs(gitRoot, entityDir, slug, archivedAsFolder(entityDir, slug))
 	// Stage the vacated source (deletion) and the new dest. git records this as a
-	// rename in the commit. `git add -- <path>` is path-scoped; --all is never used.
-	if _, err := runGitCmd(gitRoot, "add", "--", source, dest); err != nil {
+	// rename in the commit. Literal pathspecs preserve valid entity names that look
+	// like Git magic; --all is never used.
+	sourcePathspec, destPathspec := literalGitPathspec(source), literalGitPathspec(dest)
+	if _, err := runGitCmd(gitRoot, "add", "--", sourcePathspec, destPathspec); err != nil {
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to stage archive move for %s: %v", slug, err))
 	}
-	if _, err := runGitCmd(gitRoot, "commit", "-q", "-m", "archive "+slug+" (merge guard)", "--", source, dest); err != nil {
+	if _, err := runGitCmd(gitRoot, "commit", "-q", "-m", "archive "+slug+" (merge guard)", "--", sourcePathspec, destPathspec); err != nil {
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to commit archive move for %s: %v", slug, err))
 	}
 	return 0
+}
+
+func literalGitPathspec(path string) string {
+	return ":(literal)" + path
 }
 
 // archiveMovePathspecs returns the source and dest pathspecs (relative to gitRoot)
@@ -606,8 +701,18 @@ func signalBlocked(slug, pr string, quiet, asJSON bool, stdout io.Writer) int {
 // removal/branch-cleanup/teardown sequence; an entity finalizing with no merge
 // hook registered and no merge sentinel (the default-local-merge path) also
 // names the manual `--no-ff` merge onto trunk that nothing automated.
-func signalFinalized(definitionDir, slug, terminal, verdict, worktree string, hookRegistered, hasSentinel bool, quiet, asJSON bool, stdout io.Writer) int {
+func signalFinalized(definitionDir, slug, terminal, verdict, worktree string, hookRegistered, hasSentinel bool, durability string, syncOutcome statesync.Outcome, quiet, asJSON bool, stdout io.Writer) int {
 	base := fmt.Sprintf("finalized: %s -> %s (verdict %s), archived.", slug, terminal, verdict)
+	switch durability {
+	case "pushed":
+		base += " State durability: pushed to the split-root origin."
+	case "local-only":
+		base += " State durability: local-only (no origin remote)."
+	case "unpublished":
+		base += " State durability: unpublished; the local archive commit is retained."
+	case "halted":
+		base += " State durability: HALT after the local archive commit; remote publication requires manual conflict resolution."
+	}
 	var next []string
 	if worktree != "" {
 		next = append(next, fmt.Sprintf(
@@ -627,11 +732,17 @@ func signalFinalized(definitionDir, slug, terminal, verdict, worktree string, ho
 	}
 	switch {
 	case asJSON:
-		emitJSON(stdout, newJSONObj().
+		doc := newJSONObj().
 			set("command", "merge-guard").set("slug", slug).
-			set("signal", "finalized").set("status", terminal).set("verdict", verdict))
+			set("signal", "finalized").set("status", terminal).set("verdict", verdict).set("result", durability)
+		if durability == "halted" {
+			doc.setValue("conflicting_paths", jsonStrArr(syncOutcome.ConflictingPaths)).
+				set("peer_commit", syncOutcome.PeerCommit).
+				set("reason", "HALT: local archive committed; rebase aborted; manual conflict resolution required.")
+		}
+		emitJSON(stdout, doc)
 	case quiet:
-		fmt.Fprintf(stdout, "merge-guard slug=%s signal=finalized status=%s verdict=%s\n", slug, terminal, verdict)
+		fmt.Fprintf(stdout, "merge-guard slug=%s signal=finalized status=%s verdict=%s result=%s\n", slug, terminal, verdict, durability)
 	default:
 		fmt.Fprintln(stdout, base)
 		for _, line := range next {

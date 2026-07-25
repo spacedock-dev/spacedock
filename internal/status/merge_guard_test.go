@@ -4,13 +4,48 @@ package status
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestMergeGuardInlineJSONReportsOneDurabilityBoundResult(t *testing.T) {
+	root := stageFixture(t, "merge-pr-workflow")
+	bare := filepath.Join(t.TempDir(), "origin.git")
+	gitOutput(t, root, "init", "--bare", bare)
+	gitOutput(t, root, "remote", "add", "origin", bare)
+	gitOutput(t, root, "push", "origin", "HEAD:main")
+	remoteBefore := gitOutput(t, bare, "rev-parse", "refs/heads/main")
+	var stdout, stderr bytes.Buffer
+	code := MergeGuard([]string{"--workflow-dir", root, "080-pr-merged", "--verdict", "passed", "--json"}, root, &stdout, &stderr)
+	out, errOut := stdout.String(), stderr.String()
+	if code != 0 {
+		t.Fatalf("inline finalize should exit 0: stderr=%q", errOut)
+	}
+	dec := json.NewDecoder(strings.NewReader(out))
+	var result map[string]any
+	if err := dec.Decode(&result); err != nil {
+		t.Fatalf("decode finalize JSON: %v\n%s", err, out)
+	}
+	var extra any
+	if err := dec.Decode(&extra); err != io.EOF {
+		t.Fatalf("finalize JSON must be one value plus EOF; err=%v extra=%v\n%s", err, extra, out)
+	}
+	if result["result"] != "inline" {
+		t.Fatalf("inline finalize must report result=inline, got %#v", result)
+	}
+	if _, err := os.Stat(filepath.Join(root, "_archive", "080-pr-merged.md")); err != nil {
+		t.Fatalf("inline finalize did not archive: %v", err)
+	}
+	if remoteAfter := gitOutput(t, bare, "rev-parse", "refs/heads/main"); remoteAfter != remoteBefore {
+		t.Fatalf("inline finalization moved the code remote: before=%s after=%s", remoteBefore, remoteAfter)
+	}
+}
 
 // driveMergeGuard runs `merge guard` against a fresh staged fixture, returning the
 // staged root plus the three channels. The fixture is git-initialized (mutations
@@ -647,6 +682,101 @@ func gitOutput(t *testing.T, dir string, args ...string) string {
 		t.Fatalf("git %v: %v\n%s", args, err, out)
 	}
 	return strings.TrimSpace(string(out))
+}
+
+const magicArchiveSlug = ":(glob)*"
+
+// stageMagicArchiveSlug renames the ordinary merged fixture to a valid filesystem
+// slug that Git would interpret as pathspec magic if merge guard passed it raw.
+func stageMagicArchiveSlug(t *testing.T) string {
+	t.Helper()
+	root := stageFixture(t, "merge-pr-workflow")
+	if err := os.Rename(
+		filepath.Join(root, "080-pr-merged.md"),
+		filepath.Join(root, magicArchiveSlug+".md"),
+	); err != nil {
+		t.Fatalf("rename magic-pathspec fixture: %v", err)
+	}
+	gitOutput(t, root, "add", "-A")
+	gitOutput(t, root, "commit", "-q", "-m", "seed magic-pathspec slug")
+	return root
+}
+
+func TestMergeGuardLiteralPathspecSlugDoesNotSweepSibling(t *testing.T) {
+	root := stageMagicArchiveSlug(t)
+	siblingRel := "070-pr-pending.md"
+	sibling := filepath.Join(root, siblingRel)
+	f, err := os.OpenFile(sibling, os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatalf("open sibling: %v", err)
+	}
+	if _, err := f.WriteString("\nunstaged sibling must remain outside the archive commit\n"); err != nil {
+		f.Close()
+		t.Fatalf("dirty sibling: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatalf("close sibling: %v", err)
+	}
+
+	var out, errBuf bytes.Buffer
+	if code := MergeGuard([]string{"--workflow-dir", root, magicArchiveSlug, "--verdict", "passed"}, root, &out, &errBuf); code != 0 {
+		t.Fatalf("magic-pathspec slug finalize: exit=%d stderr=%q", code, errBuf.String())
+	}
+
+	changed := strings.Fields(gitOutput(t, root, "show", "--no-renames", "--name-only", "--format=", "HEAD"))
+	want := map[string]bool{
+		magicArchiveSlug + ".md":                          true,
+		filepath.Join("_archive", magicArchiveSlug+".md"): true,
+	}
+	if len(changed) != len(want) {
+		t.Fatalf("archive delta must contain exactly the literal source/destination, got %v", changed)
+	}
+	for _, path := range changed {
+		if !want[path] {
+			t.Fatalf("archive delta swept non-entity path %q: %v", path, changed)
+		}
+	}
+	if porcelain := gitOutput(t, root, "status", "--porcelain", "--", siblingRel); !strings.Contains(porcelain, siblingRel) {
+		t.Fatalf("unstaged sibling must survive outside the archive commit, status=%q", porcelain)
+	}
+}
+
+func TestMergeGuardLiteralPathspecRollbackPreservesStagedSibling(t *testing.T) {
+	root := stageMagicArchiveSlug(t)
+	siblingRel := "070-pr-pending.md"
+	sibling := filepath.Join(root, siblingRel)
+	f, err := os.OpenFile(sibling, os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatalf("open sibling: %v", err)
+	}
+	if _, err := f.WriteString("\nstaged sibling must survive archive rollback\n"); err != nil {
+		f.Close()
+		t.Fatalf("dirty sibling: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatalf("close sibling: %v", err)
+	}
+	gitOutput(t, root, "add", "--", siblingRel)
+	stagedBefore := gitOutput(t, root, "diff", "--cached", "--binary", "--", siblingRel)
+	installFailingPreCommitHook(t, root)
+
+	var out, errBuf bytes.Buffer
+	if code := MergeGuard([]string{"--workflow-dir", root, magicArchiveSlug, "--verdict", "passed"}, root, &out, &errBuf); code != 1 {
+		t.Fatalf("failing magic-pathspec archive commit: exit=%d stdout=%q stderr=%q", code, out.String(), errBuf.String())
+	}
+	stagedAfter := gitOutput(t, root, "diff", "--cached", "--binary", "--", siblingRel)
+	if stagedAfter != stagedBefore {
+		t.Fatalf("rollback changed the staged sibling:\n--- before ---\n%s\n--- after ---\n%s", stagedBefore, stagedAfter)
+	}
+	if staged := strings.Fields(gitOutput(t, root, "diff", "--cached", "--name-only")); len(staged) != 1 || staged[0] != siblingRel {
+		t.Fatalf("rollback index must contain only the pre-staged sibling, got %v", staged)
+	}
+	if !fileExists(filepath.Join(root, magicArchiveSlug+".md")) {
+		t.Fatal("rollback did not restore the literal-slug entity to its live path")
+	}
+	if fileExists(filepath.Join(root, "_archive", magicArchiveSlug+".md")) {
+		t.Fatal("rollback left the literal-slug entity archived")
+	}
 }
 
 // TestMergeGuardFinalizeCommitsArchivePathScoped (AC-3): the finalize archive move

@@ -200,8 +200,10 @@ func TestStateCommitIsPathScoped(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if code, _, errOut := runStateCommitCmd(t, hostA, workflowA, "first-task", "-m", "A: scoped"); code != 0 {
+	if code, out, errOut := runStateCommitCmd(t, hostA, workflowA, "first-task", "-m", "A: scoped"); code != 0 {
 		t.Fatalf("commit should succeed; got exit=%d stderr=%q", code, errOut)
+	} else if want := "Committed and pushed first-task to spacedock-state/dev.\n"; out != want {
+		t.Fatalf("direct-push prose changed: got=%q want=%q", out, want)
 	}
 	// The commit lists ONLY the entity path.
 	names := strings.Fields(git(t, checkoutA, "show", "--name-only", "--pretty=format:", "HEAD"))
@@ -573,9 +575,12 @@ func TestStateCommitMultiWriterHappyPath(t *testing.T) {
 
 	// B commits a DIFFERENT new entity — push rejected non-ff → pull --rebase → re-push.
 	writeEntity(t, workflowB, "beta-task", "---\nstatus: ideation\n---\n# Beta (B)\n")
-	code, _, errOut := runStateCommitCmd(t, hostB, workflowB, "beta-task", "-m", "B: add beta")
+	code, stdout, errOut := runStateCommitCmd(t, hostB, workflowB, "beta-task", "-m", "B: add beta")
 	if code != 0 {
 		t.Fatalf("B's commit should succeed via pull --rebase + re-push (exit 0); got exit=%d stderr=%q", code, errOut)
+	}
+	if want := "Committed beta-task, integrated peers' state, and pushed to spacedock-state/dev.\n"; stdout != want {
+		t.Fatalf("rebase-push prose changed: got=%q want=%q", stdout, want)
 	}
 	// Both entities present in B's tree after the rebase.
 	for _, slug := range []string{"alpha-task", "beta-task"} {
@@ -612,8 +617,9 @@ func TestStateCommitNoOriginLocalOnly(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("no-origin commit should succeed local-only (exit 0); got exit=%d stderr=%q", code, errOut)
 	}
-	if !strings.Contains(stdout, `"result": "local-only"`) {
-		t.Fatalf("no-origin commit should report result local-only; json:\n%s", stdout)
+	result := decodeOneJSON(t, stdout)
+	if result["result"] != "local-only" || result["reason"] != "Committed first-task locally; no origin remote — state is local-only until an origin is configured." {
+		t.Fatalf("no-origin result/prose contract changed: %#v", result)
 	}
 	// The commit landed locally (HEAD advanced).
 	headAfter := strings.TrimSpace(git(t, checkoutA, "rev-parse", "HEAD"))
@@ -628,11 +634,226 @@ func TestStateCommitNoOpWhenClean(t *testing.T) {
 	_, workflowA, _, _ := twoHostStateWorkflow(t)
 	hostA := filepath.Dir(filepath.Dir(workflowA))
 
-	code, stdout, errOut := runStateCommitCmd(t, hostA, workflowA, "first-task", "--json")
+	code, stdout, errOut := runStateCommitCmd(t, hostA, workflowA, "first-task")
 	if code != 0 {
 		t.Fatalf("clean no-op commit should be exit 0; got exit=%d stderr=%q", code, errOut)
 	}
-	if !strings.Contains(stdout, `"result": "no-op"`) {
-		t.Fatalf("clean commit should report result no-op; json:\n%s", stdout)
+	if want := "Nothing to commit for first-task — state checkout already up to date.\n"; stdout != want {
+		t.Fatalf("clean no-op prose changed: got=%q want=%q", stdout, want)
+	}
+}
+
+func TestStateCommitCleanActiveIntegratesPeerWithoutClaimingCommit(t *testing.T) {
+	_, workflowA, workflowB, _ := twoHostStateWorkflow(t)
+	hostA := filepath.Dir(filepath.Dir(workflowA))
+	hostB := filepath.Dir(filepath.Dir(workflowB))
+
+	writeEntity(t, workflowA, "peer-task", "---\nstatus: ideation\n---\n# Peer\n")
+	if code, _, errOut := runStateCommitCmd(t, hostA, workflowA, "peer-task", "-m", "peer state"); code != 0 {
+		t.Fatalf("peer commit: exit=%d stderr=%q", code, errOut)
+	}
+
+	code, stdout, errOut := runStateCommitCmd(t, hostB, workflowB, "first-task")
+	if code != 0 {
+		t.Fatalf("clean active peer integration: exit=%d stderr=%q", code, errOut)
+	}
+	if want := "Nothing to commit for first-task — integrated peers' state; checkout is up to date.\n"; stdout != want {
+		t.Fatalf("clean peer-only sync claimed a local commit: got=%q want=%q", stdout, want)
+	}
+	if _, err := os.Stat(filepath.Join(workflowB, ".spacedock-state", "peer-task.md")); err != nil {
+		t.Fatalf("clean peer-only sync did not integrate peer state: %v", err)
+	}
+}
+
+func TestStateCommitCleanActiveResumesEarlierFailedPush(t *testing.T) {
+	bare, workflow, _, branch := twoHostStateWorkflow(t)
+	host := filepath.Dir(filepath.Dir(workflow))
+	checkout := filepath.Join(workflow, ".spacedock-state")
+	hooks := t.TempDir()
+	if err := os.WriteFile(filepath.Join(hooks, "pre-push"), []byte("#!/bin/sh\nexit 1\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	git(t, checkout, "config", "core.hooksPath", hooks)
+	writeEntity(t, workflow, "first-task", "---\nstatus: implementation\n---\n# Locally committed\n")
+
+	if code, _, _ := runStateCommitCmd(t, host, workflow, "first-task", "-m", "local before network failure"); code == 0 {
+		t.Fatal("pre-push hook should fail the first publication")
+	}
+	localHead := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD"))
+	if origin := strings.TrimSpace(git(t, bare, "rev-parse", branch)); origin == localHead {
+		t.Fatal("failed push unexpectedly moved origin")
+	}
+	git(t, checkout, "config", "--unset", "core.hooksPath")
+
+	if code, stdout, errOut := runStateCommitCmd(t, host, workflow, "first-task", "--json"); code != 0 {
+		t.Fatalf("clean active retry must publish outstanding history: exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+	} else if result := decodeOneJSON(t, stdout); result["result"] != "pushed" || result["reason"] != "Published previously committed state for first-task to spacedock-state/dev." {
+		t.Fatalf("clean active retry must describe publication without claiming a new commit: %#v", result)
+	}
+	if head := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD")); head != localHead {
+		t.Fatalf("clean active retry created another commit: before=%s after=%s", localHead, head)
+	}
+	if origin := strings.TrimSpace(git(t, bare, "rev-parse", branch)); origin != localHead {
+		t.Fatalf("clean active retry left origin behind: origin=%s local=%s", origin, localHead)
+	}
+}
+
+func TestStateCommitCleanActiveSyncFailureDoesNotClaimNewCommit(t *testing.T) {
+	_, workflowA, workflowB, _ := twoHostStateWorkflow(t)
+	hostA := filepath.Dir(filepath.Dir(workflowA))
+	hostB := filepath.Dir(filepath.Dir(workflowB))
+
+	writeEntity(t, workflowA, "peer-task", "---\nstatus: ideation\n---\n# Peer\n")
+	if code, _, errOut := runStateCommitCmd(t, hostA, workflowA, "peer-task", "-m", "peer state"); code != 0 {
+		t.Fatalf("peer commit: exit=%d stderr=%q", code, errOut)
+	}
+	writeEntity(t, workflowB, "peer-task", "---\nstatus: validation\n---\n# Untracked sibling collision\n")
+
+	code, _, errOut := runStateCommitCmd(t, hostB, workflowB, "first-task")
+	if code == 0 {
+		t.Fatal("dirty sibling must block peer integration after non-fast-forward push")
+	}
+	if !strings.Contains(errOut, "no new commit was created in this invocation") ||
+		strings.Contains(errOut, "new local commit remains recoverable") ||
+		strings.Contains(errOut, "existing archive commit remains recoverable") {
+		t.Fatalf("clean active sync failure misstated commit recovery:\n%s", errOut)
+	}
+}
+
+func TestArchivedTargetCleanSeparatesGitFailureFromDirt(t *testing.T) {
+	if clean, detail, err := archivedTargetClean(t.TempDir(), []string{"_archive/task.md"}); clean || detail != "" || err == nil {
+		t.Fatalf("non-Git checkout must return a Git inspection error, got clean=%v detail=%q err=%v", clean, detail, err)
+	}
+}
+
+func TestStateCommitRefusesActiveArchiveAndArchiveShapeCollisions(t *testing.T) {
+	tests := []struct {
+		name  string
+		setup func(t *testing.T, checkout string)
+	}{
+		{
+			name: "active and archived",
+			setup: func(t *testing.T, checkout string) {
+				if err := os.MkdirAll(filepath.Join(checkout, "_archive"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(filepath.Join(checkout, "_archive", "first-task.md"), []byte("---\nstatus: done\n---\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "archived flat and folder",
+			setup: func(t *testing.T, checkout string) {
+				if err := os.Remove(filepath.Join(checkout, "first-task.md")); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.MkdirAll(filepath.Join(checkout, "_archive", "first-task"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(filepath.Join(checkout, "_archive", "first-task.md"), []byte("---\nstatus: done\n---\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(filepath.Join(checkout, "_archive", "first-task", "index.md"), []byte("---\nstatus: done\n---\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bare, workflow, _, branch := twoHostStateWorkflow(t)
+			host := filepath.Dir(filepath.Dir(workflow))
+			checkout := filepath.Join(workflow, ".spacedock-state")
+			tt.setup(t, checkout)
+			headBefore := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD"))
+			statusBefore := git(t, checkout, "status", "--porcelain=v1", "--untracked-files=all")
+			originBefore := strings.TrimSpace(git(t, bare, "rev-parse", branch))
+
+			code, _, errOut := runStateCommitCmd(t, host, workflow, "first-task")
+			if code == 0 || !strings.Contains(errOut, "collision") {
+				t.Fatalf("invalid identity shape must refuse clearly: exit=%d stderr=%q", code, errOut)
+			}
+			if got := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD")); got != headBefore {
+				t.Fatalf("collision moved HEAD: before=%s after=%s", headBefore, got)
+			}
+			if got := git(t, checkout, "status", "--porcelain=v1", "--untracked-files=all"); got != statusBefore {
+				t.Fatalf("collision changed index/worktree:\nbefore=%q\nafter=%q", statusBefore, got)
+			}
+			if got := strings.TrimSpace(git(t, bare, "rev-parse", branch)); got != originBefore {
+				t.Fatalf("collision moved origin: before=%s after=%s", originBefore, got)
+			}
+		})
+	}
+}
+
+func TestStateCommitRefusesDirtyArchivedEntityBeforePublication(t *testing.T) {
+	for _, kind := range []string{"staged", "unstaged", "untracked"} {
+		t.Run(kind, func(t *testing.T) {
+			bare, workflow, _, branch := twoHostStateWorkflow(t)
+			host := filepath.Dir(filepath.Dir(workflow))
+			checkout := filepath.Join(workflow, ".spacedock-state")
+			const slug = "folder-task"
+
+			writeFolderFile(t, workflow, slug, "index.md", "---\nstatus: implementation\n---\n# Folder\n")
+			if code, _, errOut := runStateCommitCmd(t, host, workflow, slug, "-m", "seed folder"); code != 0 {
+				t.Fatalf("seed folder: exit=%d stderr=%q", code, errOut)
+			}
+			if err := os.MkdirAll(filepath.Join(checkout, "_archive"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Rename(filepath.Join(checkout, slug), filepath.Join(checkout, "_archive", slug)); err != nil {
+				t.Fatal(err)
+			}
+			git(t, checkout, "add", "--", slug, "_archive/"+slug)
+			git(t, checkout, "commit", "-q", "-m", "archive "+slug+" (merge guard)", "--", slug, "_archive/"+slug)
+
+			index := filepath.Join(checkout, "_archive", slug, "index.md")
+			switch kind {
+			case "staged":
+				if err := os.WriteFile(index, []byte("staged archive dirt\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				git(t, checkout, "add", "--", "_archive/"+slug)
+			case "unstaged":
+				if err := os.WriteFile(index, []byte("unstaged archive dirt\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			case "untracked":
+				if err := os.WriteFile(filepath.Join(checkout, "_archive", slug, "artifact.txt"), []byte("untracked\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			headBefore := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD"))
+			statusBefore := git(t, checkout, "status", "--porcelain=v1", "--untracked-files=all")
+			originBefore := strings.TrimSpace(git(t, bare, "rev-parse", branch))
+			code, _, errOut := runStateCommitCmd(t, host, workflow, slug)
+			if code == 0 || !strings.Contains(errOut, "archived entity") || !strings.Contains(errOut, "dirty") {
+				t.Fatalf("%s archived dirt must refuse: exit=%d stderr=%q", kind, code, errOut)
+			}
+			if got := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD")); got != headBefore {
+				t.Fatalf("%s archived dirt moved HEAD: before=%s after=%s", kind, headBefore, got)
+			}
+			if got := git(t, checkout, "status", "--porcelain=v1", "--untracked-files=all"); got != statusBefore {
+				t.Fatalf("%s refusal changed index/worktree:\nbefore=%q\nafter=%q", kind, statusBefore, got)
+			}
+			if got := strings.TrimSpace(git(t, bare, "rev-parse", branch)); got != originBefore {
+				t.Fatalf("%s archived dirt moved origin: before=%s after=%s", kind, originBefore, got)
+			}
+
+			git(t, checkout, "reset", "--hard", "HEAD")
+			if kind == "untracked" {
+				if err := os.Remove(filepath.Join(checkout, "_archive", slug, "artifact.txt")); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if code, stdout, errOut := runStateCommitCmd(t, host, workflow, slug, "--json"); code != 0 || decodeOneJSON(t, stdout)["result"] != "pushed" {
+				t.Fatalf("clean folder archive should publish: exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+			}
+			if code, stdout, errOut := runStateCommitCmd(t, host, workflow, slug, "--json"); code != 0 || decodeOneJSON(t, stdout)["result"] != "no-op" {
+				t.Fatalf("published folder archive should no-op: exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+			}
+		})
 	}
 }
