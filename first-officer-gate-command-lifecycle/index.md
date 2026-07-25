@@ -2338,3 +2338,18 @@ The amendment is conditional, not slack: implementation must delete the redundan
 ### Summary
 
 Cycle 29 widens only the recorded-gate lifecycle test’s addition ceiling by 15 lines so direct six-case product evidence can replace synthetic mapping proof. The staff condition prevents the amendment from becoming general budget: exact `+135/-152` is required after removing the redundant bind reparse. Checklist accounting is **3 DONE, 0 SKIPPED, 0 FAILED**; return to a fresh recorded ideation gate before implementation resumes.
+
+## Stage Report: implementation (cycle 30 deterministic correction)
+
+- DONE: Remove the redundant bind reparse, measure exactly +135/-152 for recorded_gate_lifecycle_test.go, and commit the already-reviewed correction without changing any other boundary.
+  Code commit `28073390` removes the duplicate per-case bind reparse and measures exactly `+135/-152` from `13d70249`; all 17 files remain within their approved ranges. Six public-CLI cases fail if canonical decisions, accepted/rejected/pause reasons, exact quote/backslash/newline/combined/UTF-8 directives, persisted feedback/hold routes, or consume behavior drift.
+- DONE: Run focused/full/race/live-compile/docs/diff checks.
+  Focused lifecycle/contract controls, `go test ./...`, `go test ./... -race`, live-tag compile with no tests executed, requirements-pinned `mkdocs build --strict`, `gofmt -w ./cmd ./internal`, and `git diff --check` pass at `28073390`. The host batching controls fail if a same-event decision can qualify as a commit; the ask control fails if the informational question qualifies.
+- SKIPPED: Obtain final deterministic staff approval before any live host.
+  The committed deterministic correction is returned to the same independent reviewer now; no live host can run until that approval arrives.
+- SKIPPED: After staff approval, run one unchanged approved journey per supported host, final verification and Roborev, then commit a validation-ready implementation report.
+  This is the next explicitly gated phase. No Claude, Codex, or Pi journey, retry laboratory, Roborev, PR push, gate/round/status mutation, or merge action ran in this phase.
+
+### Summary
+
+The amended deterministic correction replaces synthetic mapping proof with six public-CLI, production-`gates.Read`, and Git-backed Captain cases while retaining exact structured commit/review ordering and prior successor dispatch evidence. Exact range, repository, race, live-compile, docs, and diff gates are green at `28073390`; live spend remains blocked on same-staff approval. Checklist accounting is **2 DONE, 2 SKIPPED, 0 FAILED**.
