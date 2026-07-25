@@ -299,15 +299,15 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 	if strings.Contains(lifecycle, "Gate review:") || strings.Contains(lifecycle, "Decision:") {
 		t.Error("lifecycle duplicates presenter markers instead of waiting for semantic presentation")
 	}
-	for _, tc := range []struct{ phrase, decision, class, ask, route string }{{"`approve` maps to `approve`", "approve", "accepted direction", "preserve the reviewed package", "advance"}, {"`redo with feedback` maps to `revise`", "revise", "accepted direction", "add the retry test", "feedback"}, {"`reject` with `feedback-to` maps to `revise`", "revise", "rejected direction", "replace the rejected cache design", "feedback"}, {"`reject` without `feedback-to` maps to `hold`", "hold", "rejected direction", "name a feedback owner", "hold"}, {"`hold` maps to `hold`", "hold", "pause", "wait for security sign-off", "hold"}, {"`not yet` maps to `hold`", "hold", "pause", "rerun the failing CI lane", "hold"}} {
+	for _, tc := range []struct{ phrase, decision, class, ask, route, directive string }{{"`approve` maps to `approve`", "approve", "accepted direction", "preserve the reviewed package", "advance", `quote "captain"`}, {"`redo with feedback` maps to `revise`", "revise", "accepted direction", "add the retry test", "feedback", `path\segment`}, {"`reject` with `feedback-to` maps to `revise`", "revise", "rejected direction", "replace the rejected cache design", "feedback", "line one\nline two"}, {"`reject` without `feedback-to` maps to `hold`", "hold", "rejected direction", "name a feedback owner", "hold", "both \"quoted\"\\path\nnext"}, {"`hold` maps to `hold`", "hold", "pause", "wait for security sign-off", "hold", "批准"}, {"`not yet` maps to `hold`", "hold", "pause", "rerun the failing CI lane", "hold", "再試一次"}} {
 		reason := tc.class + ": " + tc.ask
-		snapshot, _ := json.Marshal(gates.Document{Records: []gates.GateRecord{{Attempts: []gates.Attempt{{Resolution: &gates.Resolution{Decision: tc.decision, Reason: reason}}}}}})
+		snapshot, _ := json.Marshal(gates.Document{Records: []gates.GateRecord{{Attempts: []gates.Attempt{{Resolution: &gates.Resolution{Decision: tc.decision, Reason: reason, Adoption: tc.directive}}}}}})
 		var durable gates.Document
 		_ = json.Unmarshal(snapshot, &durable)
 		got := *durable.Records[0].Attempts[0].Resolution
 		route := map[string]string{"approve": "advance", "revise": "feedback", "hold": "hold"}[got.Decision]
 		grade := func(r gates.Resolution, route string) bool {
-			return strings.Contains(lifecycle, tc.phrase) && r.Decision == tc.decision && strings.Contains(r.Reason, tc.class) && strings.Contains(r.Reason, tc.ask) && route == tc.route && strings.Contains(string(snapshot), tc.ask)
+			return strings.Contains(lifecycle, tc.phrase) && r.Decision == tc.decision && r.Adoption == tc.directive && strings.Contains(r.Reason, tc.class) && strings.Contains(r.Reason, tc.ask) && route == tc.route && strings.Contains(string(snapshot), tc.ask)
 		}
 		if !grade(got, route) || grade(gates.Resolution{Decision: "wrong", Reason: got.Reason}, route) ||
 			grade(gates.Resolution{Decision: got.Decision, Reason: "generic"}, route) || grade(got, "wrong") {
