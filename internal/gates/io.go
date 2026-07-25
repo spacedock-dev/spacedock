@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/spacedock-dev/spacedock/internal/gitsource"
 	"gopkg.in/yaml.v3"
 )
 
@@ -47,37 +48,99 @@ func readData(data []byte) (*Document, *yaml.Node, error) {
 }
 
 func SummaryFile(path string) (Summary, error) {
+	return SummaryFileAt(path, nearestWorkflowDir(filepath.Dir(path)))
+}
+
+func SummaryFileAt(path, workflowDir string) (Summary, error) {
 	doc, _, err := Read(path)
 	if err != nil {
 		return Summary{}, err
 	}
-	if err := validateRetainedProviderEvidence(path, doc); err != nil {
+	if err := validateRetainedAuthority(path, workflowDir, doc); err != nil {
 		return Summary{}, err
 	}
 	return CurrentSummary(doc), nil
 }
 
-func validateRetainedProviderEvidence(entityPath string, doc *Document) error {
-	for _, record := range doc.Records {
-		for _, attempt := range record.Attempts {
-			if attempt.ProviderEvidence == nil {
+func validateRetainedAuthority(entityPath, workflowDir string, doc *Document) error {
+	roots := gitsource.Roots{Main: workflowDir, State: filepath.Dir(entityPath)}
+	for ri := range doc.Records {
+		record := &doc.Records[ri]
+		for ai := range record.Attempts {
+			attempt := &record.Attempts[ai]
+			if attempt.Briefing.RequestDigest == "" {
 				continue
 			}
 			room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef))
-			files := []struct {
-				name, digest string
-			}{
-				{"provider/result.json", attempt.ProviderEvidence.ResultDigest},
-				{"provider/presented-inventory.json", attempt.ProviderEvidence.PresentedInventoryDigest},
+			requestBytes, err := os.ReadFile(filepath.Join(room, "request.json"))
+			if err != nil {
+				return fmt.Errorf("attempt %s retained request.json: %w", attempt.ID, err)
 			}
-			for _, file := range files {
-				body, err := os.ReadFile(filepath.Join(room, filepath.FromSlash(file.name)))
-				if err != nil {
-					return fmt.Errorf("attempt %s retained %s: %w", attempt.ID, file.name, err)
+			requestDigest, err := CanonicalDigest(requestBytes)
+			if err != nil || requestDigest != attempt.Briefing.RequestDigest {
+				return fmt.Errorf("attempt %s retained request.json does not match its frozen digest", attempt.ID)
+			}
+			request, err := decodeGateRoomRequest(requestBytes)
+			if err != nil {
+				return err
+			}
+			if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
+				request.Gate != record.ID || request.Attempt != attempt.ID ||
+				request.Briefing.ID != attempt.Briefing.ID || request.Briefing.Digest != attempt.Briefing.Digest ||
+				request.Actor != "person:captain" || request.Approver != "person:captain" {
+				return fmt.Errorf("attempt %s request does not bind its gate, attempt, Briefing, and captain authority", attempt.ID)
+			}
+			manifest, err := boundBriefingManifest(entityPath, attempt.Briefing)
+			if err != nil {
+				return err
+			}
+			items, err := canonicalPresentationItems(manifest)
+			if err != nil {
+				return err
+			}
+			gitItems := 0
+			for _, item := range items {
+				if strings.HasPrefix(item.URI, "git-root://") {
+					gitItems++
+					if _, err := gitsource.Resolve(roots, item.URI, item.Rev); err != nil {
+						return fmt.Errorf("attempt %s selected source: %w", attempt.ID, err)
+					}
 				}
-				if RawDigest(body) != file.digest {
-					return fmt.Errorf("attempt %s retained %s does not match its frozen digest", attempt.ID, file.name)
-				}
+			}
+			if gitItems != 0 && gitItems != len(items) {
+				return fmt.Errorf("attempt %s mixes Git-root and non-Git selected source identities", attempt.ID)
+			}
+			if attempt.ProviderEvidence == nil {
+				continue
+			}
+			resultBytes, err := os.ReadFile(filepath.Join(room, "provider", "result.json"))
+			if err != nil {
+				return fmt.Errorf("attempt %s retained provider/result.json: %w", attempt.ID, err)
+			}
+			inventoryBytes, err := os.ReadFile(filepath.Join(room, "provider", "presented-inventory.json"))
+			if err != nil {
+				return fmt.Errorf("attempt %s retained provider/presented-inventory.json: %w", attempt.ID, err)
+			}
+			if RawDigest(resultBytes) != attempt.ProviderEvidence.ResultDigest {
+				return fmt.Errorf("attempt %s retained provider/result.json does not match its frozen digest", attempt.ID)
+			}
+			if RawDigest(inventoryBytes) != attempt.ProviderEvidence.PresentedInventoryDigest {
+				return fmt.Errorf("attempt %s retained provider/presented-inventory.json does not match its frozen digest", attempt.ID)
+			}
+			result, err := decodeProviderResult(resultBytes)
+			if err != nil {
+				return err
+			}
+			inventory, err := decodePresentedInventory(inventoryBytes)
+			if err != nil {
+				return err
+			}
+			association, err := deriveAssociation(resultBytes, result, inventory, request.Approver, attempt.Briefing, items)
+			if err != nil {
+				return err
+			}
+			if err := verifyAssociation(resultBytes, result, association, request.Approver, attempt.Briefing, items); err != nil {
+				return err
 			}
 		}
 	}

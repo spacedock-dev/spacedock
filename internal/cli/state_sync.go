@@ -101,7 +101,7 @@ func runStateCommit(ctx context.Context, args []string, env []string, dir string
 		}
 	} else {
 		// Active scope retains the path-scoped stage+commit behavior.
-		if ok, out := commitEntityPathScoped(checkout, target.entityPath, msg); !ok {
+		if ok, out := commitEntityPathsScoped(checkout, target.entityPaths, msg); !ok {
 			fmt.Fprintf(stderr, "spacedock state commit: git commit failed:\n%s\n", out)
 			return 1
 		} else {
@@ -265,23 +265,46 @@ func emitSyncHalt(stdout, stderr io.Writer, jsonOut bool, command, slug, branch 
 	}, 3)
 }
 
-// commitEntityPathScoped stages and commits exactly entityPath with `add -A`
-// restricted to its literal pathspec, retrying staging on index.lock contention.
+// commitEntityPathsScoped stages and commits exactly the entity unit with `add
+// -A` restricted to literal pathspecs, retrying staging on index.lock contention.
 // It returns (true, "") for a
 // clean no-op (nothing staged for the entity → success), (true, output) for a
 // landed commit, and (false, output) on a real git failure. The `git -C` argv
 // form (via runGit) has no rendered command string for a weak model to paraphrase.
-func commitEntityPathScoped(checkout, entityPath, msg string) (ok bool, output string) {
-	rel := relToCheckout(checkout, entityPath)
-	pathspec := literalGitPathspec(rel)
-	if ok, out := runGitRetryLock(checkout, "add", "-A", "--", pathspec); !ok {
+func commitEntityPathsScoped(checkout string, entityPaths []string, msg string) (ok bool, output string) {
+	pathspecs := make([]string, 0, len(entityPaths))
+	for _, entityPath := range entityPaths {
+		pathspecs = append(pathspecs, literalGitPathspec(relToCheckout(checkout, entityPath)))
+	}
+	addArgs := append([]string{"add", "-A", "--"}, pathspecs...)
+	if ok, out := runGitRetryLock(checkout, addArgs...); !ok {
 		return false, out
 	}
-	// Nothing staged for this entity → clean no-op success.
-	if clean, _ := runGit(checkout, "diff", "--cached", "--quiet", "--", pathspec); clean {
+	// Commit only paths with staged changes. A flat entity's companion path is
+	// part of its commit unit, but an absent, never-tracked companion is not a
+	// valid `git commit -- <path>` operand.
+	ok, stagedNames := runGit(checkout, "diff", "--cached", "--name-only", "-z")
+	if !ok {
+		return false, stagedNames
+	}
+	var changedPathspecs []string
+	for _, staged := range strings.Split(stagedNames, "\x00") {
+		if staged == "" {
+			continue
+		}
+		for _, entityPath := range entityPaths {
+			rel := filepath.ToSlash(relToCheckout(checkout, entityPath))
+			if staged == rel || strings.HasPrefix(staged, rel+"/") {
+				changedPathspecs = append(changedPathspecs, literalGitPathspec(staged))
+				break
+			}
+		}
+	}
+	if len(changedPathspecs) == 0 {
 		return true, ""
 	}
-	ok, out := runGitRetryLock(checkout, "commit", "-m", msg, "--", pathspec)
+	commitArgs := append([]string{"commit", "-m", msg, "--"}, changedPathspecs...)
+	ok, out := runGitRetryLock(checkout, commitArgs...)
 	if !ok {
 		return false, out
 	}
@@ -311,9 +334,9 @@ const (
 )
 
 type entityCommitTarget struct {
-	scope      entityCommitScope
-	entityPath string
-	pathspecs  []string
+	scope       entityCommitScope
+	entityPaths []string
+	pathspecs   []string
 }
 
 // resolveEntityCommitTarget validates identity shape before staging or
@@ -351,24 +374,35 @@ func resolveEntityCommitTarget(checkout, slug string) (entityCommitTarget, bool,
 			pathspecs: []string{
 				slug + ".md",
 				filepath.Join("_archive", slug+".md"),
+				slug,
+				filepath.Join("_archive", slug),
 			},
 		}, true, nil
 	}
 	if activeFolderExists {
-		return entityCommitTarget{scope: entityScopeActive, entityPath: filepath.Dir(activeIndex)}, true, nil
+		return entityCommitTarget{scope: entityScopeActive, entityPaths: []string{filepath.Dir(activeIndex)}}, true, nil
 	}
 	if activeFlatExists {
-		return entityCommitTarget{scope: entityScopeActive, entityPath: activeFlat}, true, nil
+		return entityCommitTarget{scope: entityScopeActive, entityPaths: flatEntityCommitPaths(checkout, activeFlat, slug)}, true, nil
 	}
 	// Preserve deletion commits for active entities that have not moved into
 	// archive scope: tracked-but-missing canonical paths remain commit units.
 	if gitTracksPath(checkout, activeIndex) && status.EntitySlug(activeIndex) == slug {
-		return entityCommitTarget{scope: entityScopeActive, entityPath: filepath.Dir(activeIndex)}, true, nil
+		return entityCommitTarget{scope: entityScopeActive, entityPaths: []string{filepath.Dir(activeIndex)}}, true, nil
 	}
 	if gitTracksPath(checkout, activeFlat) && status.EntitySlug(activeFlat) == slug {
-		return entityCommitTarget{scope: entityScopeActive, entityPath: activeFlat}, true, nil
+		return entityCommitTarget{scope: entityScopeActive, entityPaths: flatEntityCommitPaths(checkout, activeFlat, slug)}, true, nil
 	}
 	return entityCommitTarget{}, false, nil
+}
+
+func flatEntityCommitPaths(checkout, flatPath, slug string) []string {
+	paths := []string{flatPath}
+	companion := filepath.Join(checkout, slug)
+	if dirExists(companion) || gitTracksPathTree(checkout, companion) {
+		paths = append(paths, companion)
+	}
+	return paths
 }
 
 func archivedTargetClean(checkout string, paths []string) (bool, string, error) {
@@ -387,6 +421,11 @@ func archivedTargetClean(checkout string, paths []string) (bool, string, error) 
 func gitTracksPath(checkout, path string) bool {
 	ok, _ := runGit(checkout, "ls-files", "--error-unmatch", "--", literalGitPathspec(relToCheckout(checkout, path)))
 	return ok
+}
+
+func gitTracksPathTree(checkout, path string) bool {
+	ok, out := runGit(checkout, "ls-files", "-z", "--", literalGitPathspec(relToCheckout(checkout, path)))
+	return ok && out != ""
 }
 
 func literalGitPathspec(path string) string {

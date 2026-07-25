@@ -61,7 +61,7 @@ func TestLivePrimitiveRunsAgainstClaudeAdapter(t *testing.T) {
 		Name:    "gate-held-via-primitive",
 		Runbook: gatePrompt(dir),
 		Setup: func(dir string) (string, error) {
-			return writeRecordedGateFixtureAt(t, dir).entity, nil
+			return writePreparedRecordedGateFixtureAt(t, dir).entity, nil
 		},
 		Assert: func(before, after livescenario.EntityState, observed string) error {
 			if err := assertGateHeld(before.Body, after.Body, recordedGateReviewFromClaudeStream(observed)); err != nil {

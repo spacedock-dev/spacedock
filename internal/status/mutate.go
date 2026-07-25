@@ -389,6 +389,8 @@ func runArchive(definitionDir, entityDir, spellingDir, slug string, force, quiet
 
 	archiveDir := filepath.Join(entityDir, "_archive")
 	var destPath, destSpelling string
+	companionSource, companionDest := "", ""
+	companionExists := false
 	if isFolder {
 		destPath = filepath.Join(archiveDir, slug)
 		destSpelling = PyJoin(spellingDir, "_archive", slug)
@@ -403,6 +405,25 @@ func runArchive(definitionDir, entityDir, spellingDir, slug string, force, quiet
 			fmt.Fprintf(stderr, "Error: already archived: %s.md\n", slug)
 			return 1
 		}
+		companionSource = filepath.Join(entityDir, slug)
+		companionDest = filepath.Join(archiveDir, slug)
+		if info, err := os.Stat(companionSource); err == nil {
+			if !info.IsDir() {
+				fmt.Fprintf(stderr, "Error: flat entity companion is not a directory: %s\n", companionSource)
+				return 1
+			}
+			companionExists = true
+		} else if !os.IsNotExist(err) {
+			fmt.Fprintf(stderr, "Error: %s\n", err)
+			return 1
+		}
+		if _, err := os.Stat(companionDest); err == nil {
+			fmt.Fprintf(stderr, "Error: already archived companion: %s/\n", slug)
+			return 1
+		} else if !os.IsNotExist(err) {
+			fmt.Fprintf(stderr, "Error: %s\n", err)
+			return 1
+		}
 	}
 
 	if err := os.MkdirAll(archiveDir, 0o755); err != nil {
@@ -410,6 +431,16 @@ func runArchive(definitionDir, entityDir, spellingDir, slug string, force, quiet
 		return 1
 	}
 
+	original, originalErr := os.ReadFile(sourcePath)
+	if originalErr != nil {
+		fmt.Fprintf(stderr, "Error: %s\n", originalErr)
+		return 1
+	}
+	originalInfo, originalErr := os.Stat(sourcePath)
+	if originalErr != nil {
+		fmt.Fprintf(stderr, "Error: %s\n", originalErr)
+		return 1
+	}
 	if _, err := updateFrontmatter(sourcePath, []fieldUpdate{{field: "archived", value: nowTimestamp(), hasValue: true}}); err != nil {
 		fmt.Fprintf(stderr, "Error: %s\n", err)
 		return 1
@@ -420,8 +451,17 @@ func runArchive(definitionDir, entityDir, spellingDir, slug string, force, quiet
 		moveErr = os.Rename(folderRoot, destPath)
 	} else {
 		moveErr = os.Rename(sourcePath, destPath)
+		if moveErr == nil && companionExists {
+			moveErr = os.Rename(companionSource, companionDest)
+			if moveErr != nil {
+				_ = os.Rename(destPath, sourcePath)
+			}
+		}
 	}
 	if moveErr != nil {
+		if isRegularFile(sourcePath) {
+			_ = os.WriteFile(sourcePath, original, originalInfo.Mode().Perm())
+		}
 		fmt.Fprintf(stderr, "Error: %s\n", moveErr)
 		return 1
 	}

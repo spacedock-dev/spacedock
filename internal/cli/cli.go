@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 
@@ -170,21 +171,23 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 // CAS values, and durable ids belong to the recorder.
 func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
-		Use:                "gate record|validate|eligibility|consume <entity>",
-		Short:              "Record, inspect, or consume durable gate resolutions",
+		Use:                "gate prepare|record|validate|eligibility|consume <entity>",
+		Short:              "Prepare, record, inspect, or consume durable gate resolutions",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate record <entity> --briefing PATH/briefing.json [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]")
+				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate record <entity> --briefing PATH [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]")
 				return nil
 			}
-			if len(args) < 2 || (args[0] != "record" && args[0] != "validate" && args[0] != "eligibility" && args[0] != "consume") {
-				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: record|validate|eligibility|consume)")
+			if len(args) < 2 || (args[0] != "prepare" && args[0] != "record" && args[0] != "validate" && args[0] != "eligibility" && args[0] != "consume") {
+				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: prepare|record|validate|eligibility|consume)")
 				return exitCodeError{2}
 			}
 			workflowDir := ""
 			input := gates.RecordInput{}
+			prepareInput := gates.PrepareInput{}
+			questionCount, artifactCount, summaryCount := 0, 0, 0
 			for i := 2; i < len(args); i++ {
 				if i+1 >= len(args) {
 					fmt.Fprintf(stderr, "Error: %s requires an argument\n", args[i])
@@ -209,11 +212,43 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					input.LogPath = args[i+1]
 				case "--feedback-cycle":
 					input.FeedbackCyclePath = args[i+1]
+				case "--question":
+					prepareInput.Question = args[i+1]
+					questionCount++
+				case "--artifact":
+					prepareInput.Artifact = args[i+1]
+					artifactCount++
+				case "--summary":
+					prepareInput.Summary = args[i+1]
+					summaryCount++
+				case "--reference":
+					prepareInput.References = append(prepareInput.References, args[i+1])
 				default:
 					fmt.Fprintf(stderr, "Error: unknown gate flag: %s\n", args[i])
 					return exitCodeError{2}
 				}
 				i++
+			}
+			if args[0] == "prepare" {
+				if summaryCount != 1 {
+					fmt.Fprintln(stderr, "gate prepare accepts --summary exactly once")
+					return exitCodeError{1}
+				}
+				if !utf8.ValidString(prepareInput.Summary) {
+					fmt.Fprintln(stderr, "--summary must be valid UTF-8")
+					return exitCodeError{1}
+				}
+				if questionCount != 1 || artifactCount != 1 {
+					fmt.Fprintln(stderr, "Error: gate prepare requires --question and --artifact exactly once")
+					return exitCodeError{2}
+				}
+				if input != (gates.RecordInput{}) {
+					fmt.Fprintln(stderr, "Error: gate prepare accepts only --question, --artifact, --summary, --reference, and --workflow-dir")
+					return exitCodeError{2}
+				}
+			} else if questionCount != 0 || artifactCount != 0 || summaryCount != 0 || len(prepareInput.References) != 0 {
+				fmt.Fprintf(stderr, "Error: gate %s does not accept prepare flags\n", args[0])
+				return exitCodeError{2}
 			}
 			definitionDir := workflowDir
 			if definitionDir == "" {
@@ -222,11 +257,31 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				if code != 0 {
 					return exitCodeError{code}
 				}
+			} else if !filepath.IsAbs(definitionDir) {
+				definitionDir = filepath.Join(dir, definitionDir)
 			}
 			path, err := status.ResolveActivePath(definitionDir, dir, args[1], stderr)
 			if err != nil {
 				fmt.Fprintln(stderr, "Error:", err)
 				return exitCodeError{1}
+			}
+			if args[0] == "prepare" {
+				if !filepath.IsAbs(prepareInput.Artifact) {
+					prepareInput.Artifact = filepath.Join(dir, prepareInput.Artifact)
+				}
+				for i := range prepareInput.References {
+					if !filepath.IsAbs(prepareInput.References[i]) {
+						prepareInput.References[i] = filepath.Join(dir, prepareInput.References[i])
+					}
+				}
+				prepareInput.WorkflowDir = definitionDir
+				result, err := gates.Prepare(path, prepareInput)
+				if err != nil {
+					fmt.Fprintln(stderr, "Error:", err)
+					return exitCodeError{1}
+				}
+				fmt.Fprintf(stdout, "room=%s\nbriefing=%s\ndigest=%s\nstate=%s\n", result.Room, result.Briefing, result.Digest, result.State)
+				return nil
 			}
 			if args[0] == "validate" {
 				if input.Round != "" {
@@ -243,7 +298,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					fmt.Fprintln(stderr, "Error: gate validate accepts only --workflow-dir")
 					return exitCodeError{2}
 				}
-				s, err := gates.SummaryFile(path)
+				s, err := gates.SummaryFileAt(path, definitionDir)
 				if err != nil {
 					fmt.Fprintln(stderr, "Error:", err)
 					return exitCodeError{1}
@@ -313,7 +368,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintln(stderr, "Error:", err)
 				return exitCodeError{1}
 			}
-			s, _ := gates.SummaryFile(path)
+			s, _ := gates.SummaryFileAt(path, definitionDir)
 			fmt.Fprintf(stdout, "recorded gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
 			return nil
 		},
