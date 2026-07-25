@@ -292,6 +292,36 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 			t.Errorf("gate lifecycle retains caller-controlled provenance surface %q", forbidden)
 		}
 	}
+	lifecycleOrder := []string{
+		"**Capability preflight.**",
+		"exactly one fresh `gate --help`",
+		"**Prepare and bind.**",
+		"gate prepare ENTITY",
+		"Require the emitted `room`, `briefing`, `digest`, and `state=open` lines",
+		"**Record and durably close.**",
+		"gate record ENTITY --decision",
+		"**Route fail-closed.**",
+		"gate consume ENTITY",
+	}
+	orderedLifecycle := func(body string) bool {
+		offset := 0
+		for _, anchor := range lifecycleOrder {
+			i := strings.Index(body[offset:], anchor)
+			if i < 0 {
+				return false
+			}
+			offset += i + len(anchor)
+		}
+		return true
+	}
+	if !orderedLifecycle(lifecycle) {
+		t.Fatal("gate lifecycle does not preserve preflight -> prepare/bind -> close -> consume order")
+	}
+	for _, anchor := range lifecycleOrder {
+		if orderedLifecycle(strings.ReplaceAll(lifecycle, anchor, "removed")) {
+			t.Fatalf("ordered gate lifecycle mutation survived removal of %q", anchor)
+		}
+	}
 	for _, want := range []string{
 		"exactly one fresh `gate --help`", "`prepare`, `record`, `validate`, `eligibility`, `consume`",
 		"`--question`, `--artifact`, `--summary`, `--reference`, `--workflow-dir`",

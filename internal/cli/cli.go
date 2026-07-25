@@ -358,7 +358,11 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintln(stderr, "Error:", err)
 				return exitCodeError{1}
 			}
-			s, _ := gates.SummaryFileAt(path, definitionDir)
+			s, err := gates.SummaryFileAt(path, definitionDir)
+			if err != nil {
+				fmt.Fprintln(stderr, "Error:", err)
+				return exitCodeError{1}
+			}
 			fmt.Fprintf(stdout, "recorded gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
 			return nil
 		},

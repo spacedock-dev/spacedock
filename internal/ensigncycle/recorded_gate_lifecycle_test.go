@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
+	"github.com/spacedock-dev/spacedock/internal/gitsource"
 )
 
 var recordedGateRequiredEvents = []string{
@@ -50,6 +52,8 @@ type recordedGateObservation struct {
 	briefingID   string
 	digest       string
 	resolutionID string
+	inventoryOK  bool
+	inventoryErr string
 }
 
 func assertRecordedGateLifecycle(o recordedGateObservation) error {
@@ -126,7 +130,23 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 	if err := assertConciseRecordedGateReview(o.gateReview); err != nil {
 		return err
 	}
+	if reviewTokenCount(o.gateReview, briefingID) != 1 || reviewTokenCount(o.gateReview, digest) != 1 {
+		return fmt.Errorf("gate review does not name the exact bound Briefing identity and digest once")
+	}
+	if !o.inventoryOK {
+		return fmt.Errorf("prepared Briefing inventory does not match the independently selected sources: %s", o.inventoryErr)
+	}
 	return nil
+}
+
+func reviewTokenCount(review, token string) int {
+	count := 0
+	for _, field := range strings.Fields(review) {
+		if strings.Trim(field, "`'\"()[]{}.,;") == token {
+			count++
+		}
+	}
+	return count
 }
 
 func assertConciseRecordedGateReview(review string) error {
@@ -617,6 +637,7 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 		dispatch:     recordedGateDispatchProof{builds: 1, successfulBuilds: 1, durableEffects: 1, ordered: true, committed: true},
 		gateReview:   recordedGateReview(),
 		expectedNext: "handoff",
+		inventoryOK:  true,
 	}
 	if err := assertRecordedGateLifecycle(valid); err != nil {
 		t.Fatalf("baseline: %v", err)
@@ -631,6 +652,13 @@ func TestRecordedGateLifecycleProvenanceAndPresentationMutants(t *testing.T) {
 			o.after = strings.ReplaceAll(o.after, "## Stage Report: handoff", "")
 		},
 		"mutated-handoff-done": func(o *recordedGateObservation) { o.after = strings.Replace(o.after, "- DONE:", "- FAILED:", 1) },
+		"review-wrong-briefing": func(o *recordedGateObservation) {
+			o.gateReview = strings.Replace(o.gateReview, recordedGateBriefingID, "briefing:wrong", 1)
+		},
+		"review-wrong-digest": func(o *recordedGateObservation) {
+			o.gateReview = strings.Replace(o.gateReview, recordedGateDigest, "sha256:"+strings.Repeat("f", 64), 1)
+		},
+		"wrong-reference-inventory": func(o *recordedGateObservation) { o.inventoryOK = false },
 	} {
 		t.Run(name, func(t *testing.T) {
 			mutant := valid
@@ -865,6 +893,11 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	briefingID := firstRecordedGateMatch(after, `(?m)^\s+id: (briefing:[^\s]+)$`)
 	digest := firstRecordedGateMatch(after, `(?m)^\s+digest: (sha256:[0-9a-f]{64})$`)
 	resolutionID := firstRecordedGateMatch(after, `(?m)^\s+id: (resolution:[^\s]+)$`)
+	inventoryErr := validatePreparedRecordedGateInventory(fixture, after, gateID, attemptID, briefingID, digest)
+	inventoryErrorText := ""
+	if inventoryErr != nil {
+		inventoryErrorText = inventoryErr.Error()
+	}
 	return recordedGateObservation{
 		events: recordedGateEventsFromCommandLog(log), before: before, after: after,
 		dispatch: recordedGateDispatchProof{
@@ -873,8 +906,101 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 		},
 		gateReview: review, expectedNext: "handoff",
 		gateID: gateID, attemptID: attemptID, briefingID: briefingID,
-		digest: digest, resolutionID: resolutionID,
+		digest: digest, resolutionID: resolutionID, inventoryOK: inventoryErr == nil,
+		inventoryErr: inventoryErrorText,
 	}
+}
+
+func validatePreparedRecordedGateInventory(fixture recordedGateFixture, entity, gateID, attemptID, briefingID, digest string) error {
+	room := filepath.Join(filepath.Dir(fixture.entity), "review", "validation", "briefing-1")
+	entries, err := os.ReadDir(room)
+	if err != nil {
+		return err
+	}
+	if len(entries) != 2 || entries[0].Name() != "gate-briefing.json" || entries[1].Name() != "request.json" {
+		return fmt.Errorf("prepared room entries=%v, want only gate-briefing.json and request.json", entries)
+	}
+	briefingBytes, err := os.ReadFile(filepath.Join(room, "gate-briefing.json"))
+	if err != nil {
+		return err
+	}
+	if got, err := gates.CanonicalDigest(briefingBytes); err != nil || got != digest {
+		return fmt.Errorf("prepared Briefing digest=%s err=%v, want %s", got, err, digest)
+	}
+	type item struct {
+		ID, URI, Rev string
+	}
+	var manifest struct {
+		ID        string
+		Artifacts []item
+		Context   []item
+	}
+	if err := json.Unmarshal(briefingBytes, &manifest); err != nil {
+		return err
+	}
+	if manifest.ID != briefingID || len(manifest.Artifacts) != 1 || len(manifest.Context) != len(fixture.references) {
+		return fmt.Errorf("prepared Briefing identity or item cardinality mismatch")
+	}
+	actual := append(append([]item(nil), manifest.Artifacts...), manifest.Context...)
+	selected := append([]string{fixture.gateReview}, fixture.references...)
+	roots := gitsource.Roots{Main: fixture.root, State: fixture.stateRoot}
+	for i, path := range selected {
+		expected, err := gitsource.Inspect(roots, path)
+		if err != nil {
+			return err
+		}
+		expectedBytes, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		resolvedBytes, err := gitsource.Resolve(roots, actual[i].URI, actual[i].Rev)
+		if err != nil {
+			return err
+		}
+		if actual[i].ID == "" ||
+			recordedGateLocatorIdentity(actual[i].URI) != recordedGateLocatorIdentity(expected.URI) ||
+			actual[i].Rev != gitsource.RawDigest(expectedBytes) ||
+			!bytes.Equal(resolvedBytes, expectedBytes) {
+			return fmt.Errorf("prepared item %d does not match selected source", i)
+		}
+	}
+	requestBytes, err := os.ReadFile(filepath.Join(room, "request.json"))
+	if err != nil {
+		return err
+	}
+	var request struct {
+		Gate, Attempt string
+		Briefing      struct {
+			Locator, ID, Digest string
+		}
+	}
+	if err := json.Unmarshal(requestBytes, &request); err != nil {
+		return err
+	}
+	requestDigest, err := gates.CanonicalDigest(requestBytes)
+	if err != nil {
+		return err
+	}
+	boundRequestDigest := firstRecordedGateMatch(entity, `(?m)^\s+request-digest: (sha256:[0-9a-f]{64})$`)
+	if request.Gate != gateID || request.Attempt != attemptID ||
+		request.Briefing.Locator != "gate-briefing.json" ||
+		request.Briefing.ID != briefingID || request.Briefing.Digest != digest ||
+		requestDigest != boundRequestDigest {
+		return fmt.Errorf("prepared request does not bind the independently verified inventory")
+	}
+	return nil
+}
+
+func recordedGateLocatorIdentity(locator string) string {
+	u, err := url.Parse(locator)
+	if err != nil {
+		return ""
+	}
+	parts := strings.SplitN(strings.TrimPrefix(u.EscapedPath(), "/"), "/", 2)
+	if u.Scheme != "git-root" || len(parts) != 2 {
+		return ""
+	}
+	return u.Host + "/" + parts[1]
 }
 
 func firstRecordedGateMatch(body, pattern string) string {

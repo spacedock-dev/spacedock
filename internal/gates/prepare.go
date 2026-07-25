@@ -17,6 +17,8 @@ import (
 
 const preparedBriefingLocator = "gate-briefing.json"
 
+var prepareWriteBinding = writeDocument
+
 type PrepareInput struct {
 	WorkflowDir string
 	Question    string
@@ -100,6 +102,9 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, err
 	}
+	if err := validatePreparedStage(input.WorkflowDir, stage); err != nil {
+		return PrepareResult{}, err
+	}
 	doc, oldNode, readErr := Read(entityPath)
 	if readErr != nil && !strings.Contains(readErr.Error(), "no gates record") {
 		return PrepareResult{}, readErr
@@ -117,7 +122,10 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	}
 	briefingID := "briefing:" + strings.TrimPrefix(gateID, "gate:") +
 		":attempt-" + strconv.Itoa(attemptNumber) + ":revision-1"
-	room := preparedRoomPath(entityPath, stage, attemptNumber)
+	room, err := preparedRoomPath(entityPath, stage, attemptNumber)
+	if err != nil {
+		return PrepareResult{}, err
+	}
 	room, err = filepath.Abs(room)
 	if err != nil {
 		return PrepareResult{}, fmt.Errorf("resolve prepared room: %w", err)
@@ -233,7 +241,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 			return PrepareResult{}, err
 		}
 	}
-	if err := writeDocument(entityPath, oldNode, doc); err != nil {
+	if err := prepareWriteBinding(entityPath, oldNode, doc); err != nil {
 		if created {
 			rollbackPreparedRoom(room, createdParents)
 		}
@@ -425,13 +433,35 @@ func validatePreparedSummary(manifest *briefingManifest) error {
 	return nil
 }
 
-func preparedRoomPath(entityPath, stage string, attempt int) string {
+func validatePreparedStage(workflowDir, stage string) error {
+	if stage == "" || strings.TrimSpace(stage) != stage ||
+		stage == "." || stage == ".." || strings.ContainsAny(stage, `/\`) ||
+		filepath.Base(stage) != stage {
+		return fmt.Errorf("workflow stage %q is not a safe room path segment", stage)
+	}
+	stages, err := applicationStages(filepath.Join(workflowDir, "README.md"))
+	if err != nil {
+		return err
+	}
+	if applicationStageIndex(stages, stage) < 0 {
+		return fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
+	}
+	return nil
+}
+
+func preparedRoomPath(entityPath, stage string, attempt int) (string, error) {
 	slug := entitySlug(entityPath)
 	home := filepath.Dir(entityPath)
 	if filepath.Base(entityPath) != "index.md" {
 		home = filepath.Join(home, slug)
 	}
-	return filepath.Join(home, "review", stage, "briefing-"+strconv.Itoa(attempt))
+	reviewRoot := filepath.Join(home, "review")
+	room := filepath.Join(reviewRoot, stage, "briefing-"+strconv.Itoa(attempt))
+	rel, err := filepath.Rel(reviewRoot, room)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("prepared room escapes the entity review directory")
+	}
+	return room, nil
 }
 
 func relativeRoomRef(entityPath, room string) (string, error) {

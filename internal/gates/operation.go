@@ -927,14 +927,14 @@ func requestForBriefing(briefingPath string) (string, []byte, *gateRoomRequest, 
 		if readErr == nil {
 			request, err := decodeGateRoomRequest(requestBytes)
 			if err != nil {
-				return "", nil, nil, err
+				continue
 			}
 			located, err := resolveBriefingLocator(room, request.Briefing.Locator)
 			if err != nil {
-				return "", nil, nil, err
+				continue
 			}
 			if filepath.Clean(located) != filepath.Clean(briefingPath) {
-				return "", nil, nil, fmt.Errorf("gate room request locator does not name the supplied canonical Briefing")
+				continue
 			}
 			return room, requestBytes, request, nil
 		}
