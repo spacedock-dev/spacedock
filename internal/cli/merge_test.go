@@ -164,6 +164,77 @@ func TestMergeGuardEndToEndArmFinalize(t *testing.T) {
 	}
 }
 
+// TestMergeGuardFlatArchiveTreatsSlugAsLiteralPathspec covers a flat entity whose
+// valid filename contains Git pathspec metacharacters. Finalize must commit the
+// literal source deletion and archive destination while matching live/archive
+// siblings remain dirty and retain their committed bytes.
+func TestMergeGuardFlatArchiveTreatsSlugAsLiteralPathspec(t *testing.T) {
+	root := stageMergeFixture(t, "merge-no-hook-workflow")
+	const slug = "020-[x]"
+	const target = slug + ".md"
+	const archivedTarget = "_archive/" + target
+	const liveSibling = "020-x.md"
+	const archivedSibling = "_archive/020-x.md"
+	const entity = "---\n" +
+		"id: \"020-[x]\"\n" +
+		"title: Literal Pathspec Entity\n" +
+		"status: implementation\n" +
+		"score: \"0.40\"\n" +
+		"source: roadmap\n" +
+		"---\n" +
+		"# Literal Pathspec Entity\n"
+
+	if err := os.MkdirAll(filepath.Join(root, "_archive"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for path, body := range map[string]string{
+		target:          entity,
+		liveSibling:     "committed live sibling\n",
+		archivedSibling: "committed archived sibling\n",
+	} {
+		if err := os.WriteFile(filepath.Join(root, path), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	git(t, root, "--literal-pathspecs", "add", "--", target, liveSibling, archivedSibling)
+	git(t, root, "--literal-pathspecs", "commit", "-q", "-m", "seed literal archive case", "--", target, liveSibling, archivedSibling)
+
+	for path, body := range map[string]string{
+		liveSibling:     "dirty live sibling\n",
+		archivedSibling: "dirty archived sibling\n",
+	} {
+		if err := os.WriteFile(filepath.Join(root, path), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	out, errOut, code := runMergeCLI(t, root, "merge", "guard", slug, "--verdict", "passed", "--workflow-dir", root)
+	if code != 0 {
+		t.Fatalf("literal flat finalize exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	if _, ok := gitOK(t, root, "cat-file", "-e", "HEAD:"+target); ok {
+		t.Fatalf("HEAD retains literal live source %q after archive", target)
+	}
+	if _, ok := gitOK(t, root, "cat-file", "-e", "HEAD:"+archivedTarget); !ok {
+		t.Fatalf("HEAD omits literal archive destination %q", archivedTarget)
+	}
+	for path, want := range map[string]string{
+		liveSibling:     "committed live sibling\n",
+		archivedSibling: "committed archived sibling\n",
+	} {
+		got := git(t, root, "show", "HEAD:"+path)
+		if got != want {
+			t.Fatalf("HEAD sibling %q = %q, want committed baseline %q", path, got, want)
+		}
+	}
+	porcelain := git(t, root, "status", "--porcelain", "--untracked-files=all")
+	for _, sibling := range []string{liveSibling, archivedSibling} {
+		if !strings.Contains(porcelain, sibling) {
+			t.Fatalf("matching sibling %q should remain dirty; porcelain:\n%s", sibling, porcelain)
+		}
+	}
+}
+
 // TestMergeGuardEndToEndRefusalPropagated drives the AC-5 refusal through cobra:
 // under merge: pr the verb auto-arms an empty-mod-block entity, but if the hook is
 // never invoked (no merge sentinel) the re-run finalize hits the merge-hook guard,

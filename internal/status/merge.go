@@ -646,29 +646,32 @@ func literalGitPathspec(path string) string {
 func archiveMovePathspecs(gitRoot, entityDir, slug string, isFolder, companionSource, companionDest bool) []string {
 	if isFolder {
 		return []string{
-			relToGitRoot(gitRoot, filepath.Join(entityDir, slug)),
-			relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug)),
+			literalArchivePathspec(relToGitRoot(gitRoot, filepath.Join(entityDir, slug))),
+			literalArchivePathspec(relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug))),
 		}
 	}
 	pathspecs := []string{
-		relToGitRoot(gitRoot, filepath.Join(entityDir, slug+".md")),
-		relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug+".md")),
+		literalArchivePathspec(relToGitRoot(gitRoot, filepath.Join(entityDir, slug+".md"))),
+		literalArchivePathspec(relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug+".md"))),
 	}
 	if companionSource {
-		pathspecs = append(pathspecs, relToGitRoot(gitRoot, filepath.Join(entityDir, slug)))
+		pathspecs = append(pathspecs, literalArchivePathspec(relToGitRoot(gitRoot, filepath.Join(entityDir, slug))))
 	}
 	if companionDest {
-		pathspecs = append(pathspecs, relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug)))
+		pathspecs = append(pathspecs, literalArchivePathspec(relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug))))
 	}
 	return pathspecs
+}
+
+func literalArchivePathspec(path string) string {
+	return ":(literal)" + filepath.ToSlash(path)
 }
 
 func trackedArchivePath(gitRoot, path string) bool {
 	if !hasGitEntry(gitRoot) {
 		return false
 	}
-	rel := filepath.ToSlash(relToGitRoot(gitRoot, path))
-	out, err := runGitCmd(gitRoot, "ls-files", "--", ":(literal)"+rel)
+	out, err := runGitCmd(gitRoot, "ls-files", "--", literalArchivePathspec(relToGitRoot(gitRoot, path)))
 	return err == nil && strings.TrimSpace(out) != ""
 }
 

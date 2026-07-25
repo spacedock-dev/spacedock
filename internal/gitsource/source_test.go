@@ -187,8 +187,9 @@ func TestInspectTreatsRepositoryPathAsLiteralGitPathspec(t *testing.T) {
 
 func TestSameLogicalRevisionIgnoresUnrelatedCommitButNotPathOrBytes(t *testing.T) {
 	mainRoot := initRepository(t, "main", map[string]string{
-		"review.md": "review\n",
-		"other.md":  "other\n",
+		"review.md":     "review\n",
+		"same-bytes.md": "review\n",
+		"other.md":      "other\n",
 	})
 	roots := Roots{Main: mainRoot}
 	before, err := Inspect(roots, filepath.Join(mainRoot, "review.md"))
@@ -210,6 +211,14 @@ func TestSameLogicalRevisionIgnoresUnrelatedCommitButNotPathOrBytes(t *testing.T
 	}
 	if !same {
 		t.Fatalf("same logical revision rejected:\nbefore=%+v\nafter=%+v", before, after)
+	}
+
+	sameBytesAtOtherPath, err := Inspect(roots, filepath.Join(mainRoot, "same-bytes.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if same, err := SameLogicalRevision(before, sameBytesAtOtherPath); err != nil || same {
+		t.Fatalf("different logical path with identical raw bytes accepted: same=%t err=%v", same, err)
 	}
 
 	other, err := Inspect(roots, filepath.Join(mainRoot, "other.md"))

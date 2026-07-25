@@ -8,19 +8,19 @@ user-invocable: false
 
 ## «gate.lifecycle»(slug, stage): bind, decide, and apply one recorded gate authorization
 
-Load this skill in one host event before gate probe, mutation, presentation, route, replay, or dispatch. It grants no write authority; read `fo-write-core.md` before FO mutation.
+Load in one host event before any engaged gate action. It grants no writes; read `fo-write-core.md` before FO mutation.
 
 **Boot projection.** Use unresolved actionable `ready_gates` rows from `status --boot --identify --json`: `awaiting-captain` is an open current-stage Briefing; `approved-awaiting-merge` and `approved-awaiting-advance` are unblocked pending approvals. No selected attempt is omitted `validating` and must be prepared before presentation. Engage row `slug` and read the entity; never infer readiness from stage alone.
 
 **Capability preflight.** Per lifecycle, resolve `${SPACEDOCK_BIN:-spacedock}` and run exactly one fresh `gate --help`. Require `prepare`, `record`, `validate`, `eligibility`, `consume`, the prepare flags `--question`, `--artifact`, `--summary`, `--reference`, `--workflow-dir`, and the semantic record flags `--briefing`, `--room`, `--decision`, `--actor`, `--reason`; reject retired `--directive` exposure. On absence or exposure, halt before mutation: do not commit selected sources, prepare a room, or change state; prescribe refresh or a fresh build via `SPACEDOCK_BIN`. Never hand-edit `gates:`.
 
-**Prepare and bind.** Select one Markdown gate-review Artifact and References, author its exact concise summary, and commit newly authored selections in their owning main/state histories after preflight. Supply judgment and paths only; never author JSON, ids, digests, Git-root locators, or room coordinates. Relative paths resolve from launch cwd.
+**Prepare and bind.** Select one Markdown gate-review Artifact and References, author its exact concise summary, and after preflight commit new selections in their main/state histories. Supply only judgment and paths; never author JSON, ids, digests, Git-root locators, or room coordinates. Relative paths resolve from launch cwd.
 
 ```text
 ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
 ```
 
-Require the emitted `room`, `briefing`, `digest`, and `state=open` lines. The emitted clean absolute room is the only room authority; never reconstruct it. Preparation binds a two-file recorder-ready room with no copied sources. `«state.commit»(slug)` commits the folder entity or flat Markdown-plus-companion room unit before presentation. Invoke `«gate.ac-cross-check»`, judge evidence, then `«gate.assemble-verdict»`. On chat, presentation completes only after one root review names entity/stage, exact bound Briefing id/digest, recommendation, and decision ask. It follows the bind commit and must precede decision record; delegated conn does not waive it.
+Require the emitted `room`, `briefing`, `digest`, and `state=open` lines. The emitted clean absolute room is sole authority; never reconstruct it. Preparation binds two recorder-ready files with no copied sources. `«state.commit»(slug)` commits the folder entity or flat Markdown-plus-companion room unit. Before either channel, load `Skill(skill="spacedock:present-gate")`; an override replaces only chat display. Invoke `«gate.ac-cross-check»`, judge evidence, then `«gate.assemble-verdict»`. On chat, presentation completes only after one root review names entity/stage, exact bound Briefing id/digest, recommendation, and decision ask. It follows the bind commit and must precede decision record; delegated conn does not waive it.
 
 **Record and durably close.** Use exactly one semantic source:
 

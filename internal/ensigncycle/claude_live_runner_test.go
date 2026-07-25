@@ -37,11 +37,12 @@ const antiShutdownOverride = "Do not shut down your team or prepare your final "
 // fixtures, prompts, and assertions are shared with the Codex runner.
 
 type claudeLiveRunner struct {
-	binary       string
-	pluginDir    string
-	env          []string
-	modelName    string
-	artifactRoot string
+	binary          string
+	pluginDir       string
+	extraPluginDirs []string
+	env             []string
+	modelName       string
+	artifactRoot    string
 	// homeDir is the isolated HOME the env sets (a per-run temp dir). The
 	// shallow-boot scenario checks ~/.claude/teams/{...}/config.json under it for the
 	// lazy-TeamCreate proof — scoped to THIS run, never a stale prior team.
@@ -257,6 +258,11 @@ func (r claudeLiveRunner) home() string  { return r.homeDir }
 // race-free.
 func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 	r.env = withPATHPrefix(r.env, dir)
+	return r
+}
+
+func (r claudeLiveRunner) withExtraPluginDir(dir string) claudeLiveRunner {
+	r.extraPluginDirs = append(append([]string(nil), r.extraPluginDirs...), dir)
 	return r
 }
 
@@ -500,16 +506,21 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	streamPath := filepath.Join(artifactDir, "claude-stream.jsonl")
 	finalPath := filepath.Join(artifactDir, "claude-final-message.txt")
 
-	cmd := exec.Command(r.binary, "claude",
+	argv := []string{"claude",
 		"--plugin-dir", r.pluginDir,
 		"--skip-compat-check",
-		"--",
+		"--"}
+	for _, dir := range r.extraPluginDirs {
+		argv = append(argv, "--plugin-dir", dir)
+	}
+	argv = append(argv,
 		"-p", prompt+" "+antiShutdownOverride,
 		"--permission-mode", "bypassPermissions",
 		"--output-format", "stream-json",
 		"--verbose",
 		"--model", r.modelName,
 	)
+	cmd := exec.Command(r.binary, argv...)
 	cmd.Dir = workflowRoot
 	// Per-scenario CLAUDE_CONFIG_DIR so parallel scenarios never share claude's
 	// session/config state. It nests under the runner's base config dir (the
