@@ -1572,14 +1572,14 @@ including its two leading/trailing spaces and non-ASCII code points.
   effects, replace the agent-owned provider probe/fallback with the exact post-bind
   room handoff, and keep manifest duplicate parsing with rq.
 
-- Cycle 12: REJECTED — fresh validation + detached adversarial audit at `f99af3df`;
-  surface 37 files/+3,683/-330 vs advisory estimate 26 files/+1,717/-187 (211%
-  changed LOC); AC unchanged — under the delegated sprint conn, reconfirm the
-  approved interface and architecture because the reconciled expansion is support
-  and proof coverage, not semantic drift. Correct only the literal flat-archive
-  pathspec outcome defect, the masked same-byte/different-path identity detector,
-  and the selected-override observed-behavior proof defect; add no protocol,
-  controller, compatibility layer, public argument, or narrowed AC.
+- Cycle 12: REJECTED — fresh validation and detached adversarial audit; surface 37 files and 4,013 changed LOC vs estimate 26 files and 1,904 changed LOC (211%); AC unchanged
+
+  Under the delegated sprint conn, the design-reset decision reconfirms the approved
+  interface and architecture because the reconciled expansion is support and proof
+  coverage, not semantic drift. Correct only the literal flat-archive pathspec outcome
+  defect, the masked same-byte/different-path identity detector, and the
+  selected-override observed-behavior proof defect; add no protocol, controller,
+  compatibility layer, public argument, or narrowed AC.
 
 ## Stage Report: ideation
 
