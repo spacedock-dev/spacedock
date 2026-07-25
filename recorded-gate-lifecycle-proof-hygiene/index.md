@@ -1,6 +1,6 @@
 ---
 title: Clean recorded-gate lifecycle proof hygiene before v1
-status: ideation
+status: implementation
 source: "Durable-decisions exact-tip close-out audit at deac7f8a, corrected and committed as 4ff98d8c."
 score: "0.9"
 sprint: durable-decisions
@@ -41,6 +41,19 @@ gates:
                 digest: sha256:fcf51be338b2fa7929c8b54ba6ea5577653f13866877bb0364e497f86b03fe64
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:fh3n:ideation:1
+                briefing: briefing:docs-dev:fh3n:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T17:08:33.585106Z"
+                decision: approve
+                reason: The corrected design removes the two proven proof-hygiene defects within an exact four-test-file, no-product boundary; executable lifecycle owners remain, and LOC is an estimate rather than gate authority.
+              application:
+                action: advance
+                target-stage: implementation
+                state: consumed
+                blockers: []
 ---
 
 ## Problem
