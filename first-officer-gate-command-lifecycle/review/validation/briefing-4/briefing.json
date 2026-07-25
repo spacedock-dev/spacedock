@@ -1,0 +1,53 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:6y:validation:attempt-4:revision-1",
+  "question": "Should validated PR #565 at cc5b27dc enter done with the post-lifecycle Pi decision-facts extraction miss recorded as deferred?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:14448824b41ac9da08687f1836628f741a43868928af9d703a3d844475932235"
+    },
+    {
+      "id": "artifact:entity",
+      "uri": "../../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:514c5378f16e2eccf2da2e411343162ddf5becc09afab5a5fbbfed812d1aa195"
+    },
+    {
+      "id": "artifact:gate-contract",
+      "uri": "../../../../../../../docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6425a361d95b0f5fc64d712aa9da8bd1b377ca9579ec6da5c6e3523fc8039003"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:validation-final",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Accept the validated lifecycle and deferred Pi evidence gap",
+          "to": "stage:done"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Return to implementation for a material correction",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Keep the validation gate open",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}

@@ -13,7 +13,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:6y:ideation
+        gate: gate:docs-dev:6y:validation
     records:
         - id: gate:docs-dev:6y:ideation
           stage: ideation
@@ -359,7 +359,13 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:6y-validation-4
+              briefing:
+                id: briefing:docs-dev:6y:validation:attempt-4:revision-1
+                digest: sha256:fea2cdd89a67f8c168f9f8216f310feae38109da9c4cc8caaad71ab59b874839
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-4
 review-round:
     id: round:6yyyyemkqwsett3g1c991w9f:implementation:26
     stage: implementation
