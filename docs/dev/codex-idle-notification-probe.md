@@ -58,10 +58,10 @@ Use `«roster-reconcile»` only to inspect active/completed task paths for attri
 ## Interpretation Rules
 
 - `async_idle_monitoring`: `wait_agent` returned a timeout or final-status
-  mailbox update. Captain input resumed the FO's active loop while the worker
-  remained unchanged, and monitoring resumed only after active-scope work was
-  exhausted. Legacy fixtures may describe handle-scoped waiting, but they must
-  be explicitly marked as legacy evidence.
+  mailbox update. If captain input intervened, it resumed the FO's active loop
+  while the worker remained unchanged, and monitoring resumed only after
+  active-scope work was exhausted. Legacy fixtures may describe handle-scoped
+  waiting, but they must be explicitly marked as legacy evidence.
 - `queued_flush`: no async idle monitoring was used, but later captain, tool, or
   shell-out activity caused a queued worker final-status notification to appear.
   This remains queued/activity-driven delivery unless an autonomous wake probe

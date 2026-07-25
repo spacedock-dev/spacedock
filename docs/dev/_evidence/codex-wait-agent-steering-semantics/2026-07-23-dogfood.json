@@ -6,7 +6,7 @@
   "source": "Reduced from the 2026-07-23 steering trace; the final-status and durable-report tail is the correlated completion fixture required by the accepted design.",
   "worker": {
     "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
-    "completion_epoch": 1
+    "completion_epoch": 2
   },
   "events": [
     {
@@ -14,7 +14,7 @@
       "at_utc": null,
       "type": "spawn_agent_called",
       "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
-      "completion_epoch": 1
+      "completion_epoch": 2
     },
     {
       "sequence": 2,
@@ -27,7 +27,7 @@
       "at_utc": "2026-07-23T14:35:21.736Z",
       "type": "wait_agent_called",
       "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
-      "completion_epoch": 1
+      "completion_epoch": 2
     },
     {
       "sequence": 4,
@@ -46,7 +46,7 @@
       "at_utc": "2026-07-23T14:39:54.317Z",
       "type": "list_agents_result",
       "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
-      "completion_epoch": 1,
+      "completion_epoch": 2,
       "status": "running"
     },
     {
@@ -71,14 +71,14 @@
       "at_utc": "2026-07-23T14:47:46.147Z",
       "type": "wait_agent_called",
       "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
-      "completion_epoch": 1
+      "completion_epoch": 2
     },
     {
       "sequence": 11,
       "at_utc": null,
       "type": "final_status",
       "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
-      "completion_epoch": 1,
+      "completion_epoch": 2,
       "status": "completed"
     },
     {
@@ -86,8 +86,9 @@
       "at_utc": null,
       "type": "durable_report_read",
       "task_path": "/root/skill_wiring_commander/spacedock_ensign_r4xva464wf_implementation_correction",
-      "completion_epoch": 1,
-      "status": "completed"
+      "completion_epoch": 2,
+      "status": "completed",
+      "artifact_path": "worker-report.md"
     }
   ]
 }

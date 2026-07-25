@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -19,6 +20,7 @@ type codexSteeringEvidence struct {
 	Source          string               `json:"source"`
 	Worker          codexSteeringWorker  `json:"worker"`
 	Events          []codexSteeringEvent `json:"events"`
+	EvidenceDir     string               `json:"-"`
 }
 
 type codexSteeringWorker struct {
@@ -35,6 +37,7 @@ type codexSteeringEvent struct {
 	Status          string  `json:"status"`
 	Message         string  `json:"message"`
 	Count           int     `json:"count"`
+	ArtifactPath    string  `json:"artifact_path"`
 }
 
 func TestCodexWaitAgentSteeringEvidence(t *testing.T) {
@@ -50,21 +53,48 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 	cases := []struct {
 		name   string
 		want   string
-		mutate func(*codexSteeringEvidence)
+		mutate func(*testing.T, *codexSteeringEvidence)
 	}{
 		{
 			name: "target cancellation",
 			want: "lifecycle mutation",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				insertCodexSteeringEvent(e, 6, codexSteeringEvent{
 					Type: "interrupt_agent_called", TaskPath: target.TaskPath, CompletionEpoch: target.CompletionEpoch,
 				})
 			},
 		},
 		{
+			name: "target cancellation with omitted epoch",
+			want: "lifecycle mutation",
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
+				insertCodexSteeringEvent(e, 6, codexSteeringEvent{
+					Type: "interrupt_agent_called", TaskPath: target.TaskPath,
+				})
+			},
+		},
+		{
+			name: "target cancellation with invalid epoch",
+			want: "lifecycle mutation",
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
+				insertCodexSteeringEvent(e, 6, codexSteeringEvent{
+					Type: "interrupt_agent_called", TaskPath: target.TaskPath, CompletionEpoch: -1,
+				})
+			},
+		},
+		{
+			name: "target cancellation with stale epoch",
+			want: "lifecycle mutation",
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
+				insertCodexSteeringEvent(e, 6, codexSteeringEvent{
+					Type: "interrupt_agent_called", TaskPath: target.TaskPath, CompletionEpoch: target.CompletionEpoch - 1,
+				})
+			},
+		},
+		{
 			name: "target redispatch",
 			want: "spawn count",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				insertCodexSteeringEvent(e, 6, codexSteeringEvent{
 					Type: "spawn_agent_called", TaskPath: target.TaskPath, CompletionEpoch: target.CompletionEpoch,
 				})
@@ -73,51 +103,101 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 		{
 			name: "monitoring before active scope is empty",
 			want: "before active scope became empty",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				insertCodexSteeringEvent(e, 7, codexSteeringEvent{
 					Type: "wait_agent_called", TaskPath: target.TaskPath, CompletionEpoch: target.CompletionEpoch,
 				})
 			},
 		},
 		{
+			name: "missing harness wait return",
+			want: "exactly one harness wait-return",
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
+				removeCodexSteeringEvents(e, "harness_output")
+			},
+		},
+		{
+			name: "harness wait return after captain input",
+			want: "did not occur between",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				swapCodexSteeringEvents(t, e, "harness_output", "captain_input")
+			},
+		},
+		{
+			name: "duplicate harness wait return",
+			want: "exactly one harness wait-return",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				event := *eventOfType(t, e, "harness_output")
+				insertCodexSteeringEvent(e, 4, event)
+			},
+		},
+		{
 			name: "wrong completion identity",
 			want: "matching final status",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
 				eventOfType(t, e, "final_status").TaskPath = "/root/unrelated-worker"
 			},
 		},
 		{
 			name: "stale completion epoch",
 			want: "matching final status",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
 				eventOfType(t, e, "final_status").CompletionEpoch--
 			},
 		},
 		{
 			name: "wrong durable-report identity",
 			want: "durable report",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
 				eventOfType(t, e, "durable_report_read").TaskPath = "/root/unrelated-worker"
 			},
 		},
 		{
 			name: "stale durable-report epoch",
 			want: "durable report",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
 				eventOfType(t, e, "durable_report_read").CompletionEpoch--
+			},
+		},
+		{
+			name: "durable artifact has wrong identity",
+			want: "worker identity",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				mutateCodexSteeringReport(t, e, target.TaskPath, "/root/unrelated-worker")
+			},
+		},
+		{
+			name: "durable artifact has stale epoch",
+			want: "completion epoch",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				mutateCodexSteeringReport(t, e, "Completion epoch: `2`", "Completion epoch: `1`")
+			},
+		},
+		{
+			name: "durable artifact lacks stage report",
+			want: "implementation stage report",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				mutateCodexSteeringReport(t, e, "## Stage Report: implementation", "## Notes")
+			},
+		},
+		{
+			name: "durable artifact lacks completed worker status",
+			want: "completed worker status",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				mutateCodexSteeringReport(t, e, "Worker status: `completed`", "Worker status: `running`")
 			},
 		},
 		{
 			name: "wait return alone",
 			want: "matching final status",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				removeCodexSteeringEvents(e, "final_status", "durable_report_read")
 			},
 		},
 		{
 			name: "repeated captain-facing interruption disclaimer",
 			want: "captain-facing harness label",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				disclaimer := codexSteeringEvent{
 					Type:    "agent_message",
 					Message: "Wait interrupted by new input; an interruption returns control and the worker is not failed, closed, or redispatched.",
@@ -129,15 +209,30 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 		{
 			name: "final status without durable report",
 			want: "durable report",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				removeCodexSteeringEvents(e, "durable_report_read")
 			},
 		},
 		{
 			name: "durable report without final status",
 			want: "matching final status",
-			mutate: func(e *codexSteeringEvidence) {
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
 				removeCodexSteeringEvents(e, "final_status")
+			},
+		},
+		{
+			name: "invalid event sequence",
+			want: "declares sequence",
+			mutate: func(_ *testing.T, e *codexSteeringEvidence) {
+				e.Events[3].Sequence = 99
+			},
+		},
+		{
+			name: "timestamp moves backward",
+			want: "precedes the prior",
+			mutate: func(t *testing.T, e *codexSteeringEvidence) {
+				timestamp := "2026-07-23T14:30:00Z"
+				eventOfType(t, e, "list_agents_result").AtUTC = &timestamp
 			},
 		},
 	}
@@ -145,7 +240,7 @@ func TestCodexWaitAgentSteeringRejectsIndependentMutants(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			evidence := cloneCodexSteeringEvidence(t, base)
-			tc.mutate(&evidence)
+			tc.mutate(t, &evidence)
 			err := assertCodexWaitAgentSteering(evidence)
 			if err == nil {
 				t.Fatal("mutated steering trace unexpectedly passed")
@@ -169,6 +264,8 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 
 	spawnCount := 0
 	firstWait := -1
+	harnessReturn := -1
+	harnessReturnCount := 0
 	captainInput := -1
 	runningAfterInput := -1
 	usefulWork := 0
@@ -180,7 +277,7 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 
 	for i, event := range evidence.Events {
 		if event.Sequence != i+1 {
-			return fmt.Errorf("event sequence %d has ordinal %d", i+1, event.Sequence)
+			return fmt.Errorf("event at position %d declares sequence %d", i+1, event.Sequence)
 		}
 		if event.AtUTC != nil {
 			timestamp, err := time.Parse(time.RFC3339Nano, *event.AtUTC)
@@ -218,6 +315,12 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 					secondWait = i
 				}
 			}
+		case "harness_output":
+			if strings.TrimSpace(event.Message) != "Wait interrupted by new input" {
+				return fmt.Errorf("event %d has unrecognized harness wait-return label", event.Sequence)
+			}
+			harnessReturn = i
+			harnessReturnCount++
 		case "captain_input":
 			if captainInput >= 0 {
 				return fmt.Errorf("multiple captain-input events in reduced trace")
@@ -241,9 +344,12 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 			}
 		case "durable_report_read":
 			if sameCodexSteeringWorker(event, target) && event.Status == "completed" {
+				if err := validateCodexSteeringReport(evidence.EvidenceDir, event.ArtifactPath, target); err != nil {
+					return fmt.Errorf("durable report is invalid: %w", err)
+				}
 				durableReport = i
 			}
-		case "agent_message", "harness_output", "interrupt_agent_called", "close_agent_called":
+		case "agent_message", "interrupt_agent_called", "close_agent_called":
 		default:
 			return fmt.Errorf("event %d has unknown type %q", event.Sequence, event.Type)
 		}
@@ -252,8 +358,11 @@ func assertCodexWaitAgentSteering(evidence codexSteeringEvidence) error {
 	if spawnCount != 1 {
 		return fmt.Errorf("target spawn count = %d, want 1", spawnCount)
 	}
-	if firstWait < 0 || captainInput <= firstWait {
-		return fmt.Errorf("captain input did not follow the first monitoring call")
+	if harnessReturnCount != 1 {
+		return fmt.Errorf("expected exactly one harness wait-return event, got %d", harnessReturnCount)
+	}
+	if firstWait < 0 || harnessReturn <= firstWait || captainInput <= harnessReturn {
+		return fmt.Errorf("harness wait return did not occur between the first monitoring call and captain input")
 	}
 	if runningAfterInput <= captainInput {
 		return fmt.Errorf("same correlated worker was not still running after captain input")
@@ -278,15 +387,41 @@ func sameCodexSteeringWorker(event codexSteeringEvent, worker codexSteeringWorke
 }
 
 func isTargetLifecycleMutation(event codexSteeringEvent, worker codexSteeringWorker) bool {
-	if !sameCodexSteeringWorker(event, worker) {
-		return false
-	}
 	switch event.Type {
 	case "interrupt_agent_called", "close_agent_called":
-		return true
+		return event.TaskPath == "" || event.TaskPath == worker.TaskPath
 	default:
 		return false
 	}
+}
+
+var codexImplementationStageReport = regexp.MustCompile(`(?m)^## Stage Report: implementation[ \t]*$`)
+
+func validateCodexSteeringReport(evidenceDir, artifactPath string, worker codexSteeringWorker) error {
+	if evidenceDir == "" || artifactPath == "" || filepath.Base(artifactPath) != artifactPath {
+		return fmt.Errorf("artifact path must name one file in the evidence directory")
+	}
+	data, err := os.ReadFile(filepath.Join(evidenceDir, artifactPath))
+	if err != nil {
+		return fmt.Errorf("read artifact: %w", err)
+	}
+	report := string(data)
+	if !codexDurableStatusForEntity(report, "implementation") {
+		return fmt.Errorf("artifact does not retain implementation entity status")
+	}
+	if !strings.Contains(report, "Worker status: `completed`") {
+		return fmt.Errorf("artifact does not retain completed worker status")
+	}
+	if !strings.Contains(report, "Worker task path: `"+worker.TaskPath+"`") {
+		return fmt.Errorf("artifact does not retain the correlated worker identity")
+	}
+	if !strings.Contains(report, fmt.Sprintf("Completion epoch: `%d`", worker.CompletionEpoch)) {
+		return fmt.Errorf("artifact does not retain the correlated completion epoch")
+	}
+	if !codexImplementationStageReport.MatchString(report) {
+		return fmt.Errorf("artifact does not contain an implementation stage report")
+	}
+	return nil
 }
 
 func isOldCodexWaitDisclaimer(message string) bool {
@@ -312,6 +447,7 @@ func loadCodexSteeringEvidence(t *testing.T) codexSteeringEvidence {
 	if err := json.Unmarshal(data, &evidence); err != nil {
 		t.Fatalf("parse Codex steering evidence: %v", err)
 	}
+	evidence.EvidenceDir = filepath.Dir(path)
 	return evidence
 }
 
@@ -325,6 +461,7 @@ func cloneCodexSteeringEvidence(t *testing.T, evidence codexSteeringEvidence) co
 	if err := json.Unmarshal(data, &cloned); err != nil {
 		t.Fatal(err)
 	}
+	cloned.EvidenceDir = evidence.EvidenceDir
 	return cloned
 }
 
@@ -344,6 +481,32 @@ func insertCodexSteeringEvent(evidence *codexSteeringEvidence, at int, event cod
 	copy(evidence.Events[at+1:], evidence.Events[at:])
 	evidence.Events[at] = event
 	resequenceCodexSteeringEvents(evidence)
+}
+
+func swapCodexSteeringEvents(t *testing.T, evidence *codexSteeringEvidence, first, second string) {
+	t.Helper()
+	firstEvent := eventOfType(t, evidence, first)
+	secondEvent := eventOfType(t, evidence, second)
+	*firstEvent, *secondEvent = *secondEvent, *firstEvent
+	resequenceCodexSteeringEvents(evidence)
+}
+
+func mutateCodexSteeringReport(t *testing.T, evidence *codexSteeringEvidence, old, replacement string) {
+	t.Helper()
+	event := eventOfType(t, evidence, "durable_report_read")
+	data, err := os.ReadFile(filepath.Join(evidence.EvidenceDir, event.ArtifactPath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := string(data)
+	if !strings.Contains(report, old) {
+		t.Fatalf("durable report lacks mutation target %q", old)
+	}
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, event.ArtifactPath), []byte(strings.Replace(report, old, replacement, 1)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	evidence.EvidenceDir = dir
 }
 
 func removeCodexSteeringEvents(evidence *codexSteeringEvidence, eventTypes ...string) {
