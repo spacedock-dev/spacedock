@@ -83,8 +83,9 @@ gates:
 ---
 
 Make gate-room preparation one mechanical operation. The First Officer supplies the
-decision question and selected files; Spacedock derives room placement, portable ids,
-locators, revisions, canonical digests, request authority, and the open gate attempt.
+decision question, one concise primary-Artifact summary, and selected files; Spacedock
+derives room placement, portable ids, locators, revisions, canonical digests, request
+authority, and the open gate attempt.
 Chat remains the complete no-override path. The command emits one frozen room suitable
 for recorder binding and validation. It is not presentation-ready for current Subspace
 package mode; `git-root-review-v1-materialization`
@@ -232,14 +233,19 @@ The new command is:
 
 ```text
 spacedock gate prepare ENTITY --question TEXT --artifact GATE-REVIEW.md \
-  [--reference FILE ...] [--workflow-dir DIR]
+  --summary TEXT [--reference FILE ...] [--workflow-dir DIR]
 ```
 
 `--artifact` is required exactly once and is the concise gate review. Its filename must
 end in `.md` or `.markdown` case-insensitively, and the generated Artifact always carries
-`"mediaType": "text/markdown"`. `--reference` selects zero or more existing supporting
-files in caller order; selecting the same normalized absolute path twice is an error.
-The First Officer owns the question and file choices; it never supplies an id, digest,
+`"mediaType": "text/markdown"`. `--summary` is required exactly once and is the First
+Officer's concise human-readable summary of that primary Artifact. The value must be a
+JSON-string-compatible UTF-8 string that is nonblank after trimming, but Spacedock
+stores the exact supplied string: it does not trim, rewrite, summarize, inspect a
+Markdown heading, or derive prose from Artifact bytes. `--reference` selects zero or
+more existing supporting files in caller order; selecting the same normalized absolute
+path twice is an error. References receive no generated `summary`. The First Officer
+owns the question, summary, and file choices; it never supplies JSON, an id, digest,
 room, attempt, locator, provider path, actor, or approver.
 
 The CLI normalizes relative `--artifact`, `--reference`, `--briefing`, and `--room`
@@ -306,6 +312,43 @@ exact repeated normalized input path is rejected. Authoritative revisions always
 the full digest. The Briefing id, gate id, attempt id, JCS Briefing digest, request JCS
 digest, room reference, and Captain actor/approver are binary-owned.
 
+The generated canonical Briefing carries the supplied prose on the primary Artifact
+itself, not only inside the Markdown payload:
+
+```json
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:task:validation:attempt-1:revision-1",
+  "question": "Should this candidate advance?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-review-0123456789ab",
+      "uri": "git-root://state/0123456789abcdef0123456789abcdef01234567/review/validation/gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "summary": "Explains the proposed recorder boundary, evidence, and release dependency."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:staff-review-fedcba987654",
+      "uri": "git-root://state/fedcba9876543210fedcba9876543210fedcba98/review/validation/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+    }
+  ]
+}
+```
+
+`summary` uses Review v1's existing Artifact extra-field model; s4 does not add a
+Briefing version, a generic extension registry, a summary object, or a Reference
+variant. The duplicate-safe raw reader validates only the primary
+`artifacts[0].summary` as a nonblank string. Canonical Briefing bytes retain it, while
+identity-only inventory and association projections remain id/URI/media type/revision
+and do not duplicate the prose.
+
 `request.json` has the closed v1 shape:
 
 ```json
@@ -324,12 +367,13 @@ digest, room reference, and Captain actor/approver are binary-owned.
 }
 ```
 
-Cycle 6 adds no request field and no command flag. The schema delta is the one closed
-`git-root` Artifact/Reference URI profile; raw-byte SHA remains Review v1's existing
-`rev`. The CLI constructs the current `main`/`state` root map from the same resolved
-definition and entity roots already used for recorder operations and passes it to
-`internal/gitsource`; it never serializes checkout paths. No current provider handoff
-consumes that map. This task stops at recorder readiness; sibling
+Cycle 8 adds `--summary` but no request field. The schema delta remains one closed
+`git-root` Artifact/Reference URI profile plus the required primary-Artifact `summary`
+string within Review v1's existing extra-field model; raw-byte SHA remains Review v1's
+existing `rev`. The CLI constructs the current `main`/`state` root map from the same
+resolved definition and entity roots already used for recorder operations and passes
+it to `internal/gitsource`; it never serializes checkout paths. No current provider
+handoff consumes that map. This task stops at recorder readiness; sibling
 `git-root-review-v1-materialization` owns the actual resolved-byte consumer contract
 instead of assuming q0 transport will carry roots.
 
@@ -425,12 +469,15 @@ and capability anchor do not survive: provider-backed recording uses the retaine
 surface and derives the association in memory. The lifecycle's Spacedock-only
 `gate --help` preflight requires `prepare` and `--room`, not `--association`.
 
-For the no-override path, `fo-gate-lifecycle` first commits any newly authored selected
-source in its owning Git history, then runs `gate prepare`, commits the entity folder
-containing the two-file room and binding, passes the gate-review Artifact to the
-rendering-only `present-gate`, and records the captain's semantic chat decision. The
-source commit makes each selected worktree byte an immutable reachable object; the
-later folder-scoped state commit includes only the generated metadata room and binding
+For the no-override path, `fo-gate-lifecycle` writes one concise sentence summarizing
+the primary gate-review Artifact, commits any newly authored selected source in its
+owning Git history, then passes that exact sentence through `--summary` to
+`gate prepare`. It commits the entity folder containing the two-file room and binding,
+passes the gate-review Artifact to the rendering-only `present-gate`, and records the
+captain's semantic chat decision. The First Officer supplies prose but never edits
+Briefing JSON; a Markdown summary section is neither read nor substituted. The source
+commit makes each selected worktree byte an immutable reachable object; the later
+folder-scoped state commit includes only the generated metadata room and binding
 without taking its stdout path as an argument.
 
 6y's Cycle-31 authority-capture reset remains a separate authority boundary. This task
@@ -460,6 +507,7 @@ future event.
 | Mechanism | Value AC | Simplest alternative | Why insufficient |
 |---|---:|---|---|
 | One `gate prepare` operation | AC-1 | Tell the FO to write two JSON files and call `gate record` | Preserves the manual ids/digests and partial-room failure that caused the task. |
+| Required caller-authored primary Artifact `summary` | AC-1, AC-4 | Extract a heading or summary section from the Markdown | A buried section is not canonical Briefing metadata and extraction makes Spacedock invent or reinterpret prose; the provider needs one directly exposed human description. |
 | Closed Git-root locator and local-object resolver | AC-1, AC-5 | Copy selected bytes into the room | Copies survive the reopen but duplicate objects the Captain requires to remain singular; path plus raw SHA alone cannot locate bytes after checkout movement. |
 | Explicit presentation dependency `rqh46ey33aqq4rt72b4w1m2q` | AC-4 | Say q0 will carry logical roots later | Transport does not turn Git objects into filesystem bytes current Subspace accepts; only a real consumer/materialization API plus end-to-end presentation can close that gap. |
 | Frozen local Briefing locator | AC-2, AC-5 | Keep joining `briefing.json` | Fails the reproduced valid room and contradicts the provider contract. |
@@ -473,7 +521,7 @@ Baseline assumption: latest 6y (`60adfc1f`, including lifecycle owner `e9415a17`
 first. Relative retained-input normalization is then available in `internal/cli`, the
 existing recorded-gate journey targets `fo-gate-lifecycle`, and `present-gate` contains
 rendering only. Against that composition, the smallest expected implementation is these
-18 files and about `+1,413/-161` lines (**1,574 changed LOC**):
+19 files and about `+1,533/-161` lines (**1,694 changed LOC**):
 
 The inspected 6y tip is still pre-xb-rebase, so implementation must not start until
 6y's final xb rebase lands. Re-read that landed tip before creating the worktree; if it
@@ -484,26 +532,27 @@ composition.
 
 | File | Expected delta | Purpose |
 |---|---:|---|
-| `internal/cli/cli.go` | `+60/-6` | Route `gate prepare`, normalize inputs, and print the stable four-line result. |
-| `internal/cli/gate_test.go` | `+190/-25` | Reuse CLI fixtures for preparation, stdout, committed-source refusal, arbitrary-locator eligibility, and byte-clean failures. |
-| `internal/gates/prepare.go` (new) | `+220/-0` | Derivation, recorder-ready Git-root locators, ids/media types, and error-atomic room publication. |
-| `internal/gates/prepare_test.go` (new) | `+210/-0` | Focused replay, collision, locator selection, two-file room, and handled-error tests. |
+| `internal/cli/cli.go` | `+68/-6` | Route `gate prepare`, require/pass the primary summary, normalize inputs, and print the stable four-line result. |
+| `internal/cli/gate_test.go` | `+215/-25` | Reuse CLI fixtures for summary/source preparation, stdout, committed-source refusal, arbitrary-locator eligibility, and byte-clean failures. |
+| `internal/gates/prepare.go` (new) | `+232/-0` | Derivation, exact primary summary, recorder-ready Git-root locators, ids/media types, and error-atomic room publication. |
+| `internal/gates/prepare_test.go` (new) | `+235/-0` | Focused exact-summary/no-derived-prose, replay, collision, locator selection, two-file room, and handled-error tests. |
 | `internal/gitsource/source.go` (new) | `+175/-0` | Closed root/commit/path URI grammar, root map, ref-retention checks, common-history classification, and local `git cat-file` resolution. |
 | `internal/gitsource/source_test.go` (new) | `+170/-0` | Independent moved-checkout, linked-worktree classification, later-worktree, shallow/pruned/missing-object, escaping, and raw-SHA controls. |
-| `internal/gates/operation.go` | `+80/-35` | Closed request locator and the one exact Briefing resolver. |
+| `internal/gates/operation.go` | `+94/-35` | Closed request locator, primary-summary validation without identity duplication, and the one exact Briefing resolver. |
 | `internal/gates/application.go` | `+12/-4` | Route reviewed-input eligibility through that resolver instead of `briefing.json`. |
 | `internal/gates/io.go` | `+30/-8` | Recompute the four retained provider inputs through duplicate-safe reads. |
 | `internal/gates/json.go` (new) | `+75/-0` | Recursive duplicate-member rejection. |
 | `internal/gates/testdata/gate-room/request.json` | `+1/-0` | Add the locator to the canonical fixture. |
-| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+28/-16` | Add the selected-source commit before prepare to the shared no-override observation; add no lane. |
+| `internal/gates/testdata/gate-room/briefing.json` | `+1/-0` | Give the canonical primary Artifact its required human summary. |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+33/-16` | Add the source commit and caller-authored summary before prepare to the shared no-override observation; add no lane. |
 | `internal/contractlint/fo_function_reference_invariant_test.go` | `+22/-8` | Pin lifecycle ownership, Git-only process boundary, forbidden provider mechanics, and rendering-only `present-gate`. |
-| `docs/specs/gate-resolution-frontmatter-contract.md` | `+85/-30` | Normative recorder-ready prepare/request/Git-root/retention/resolver/atomicity contract. |
-| `docs/site/reference/command-reference.md` | `+20/-6` | New verb, committed-source locator, stdout, and arbitrary-name recording. |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | `+98/-30` | Normative summary/prepare/request/Git-root/retention/resolver/atomicity contract. |
+| `docs/site/reference/command-reference.md` | `+25/-6` | New verb, primary summary, committed-source locator, stdout, and arbitrary-name recording. |
 | `docs/site/reference/frontmatter-contract.md` | `+3/-3` | Remove the manifest-basename claim. |
-| `docs/site/concepts/gates-and-decisions.md` | `+10/-6` | Committed-source preparation, recorder-ready boundary, and presentation dependency. |
-| `skills/fo-gate-lifecycle/SKILL.md` | `+22/-14` | Replace hand bind/association wording with source commit, prepare, recorder-ready recording, and provider halt. |
+| `docs/site/concepts/gates-and-decisions.md` | `+14/-6` | Caller-authored primary summary, committed-source preparation, recorder-ready boundary, and presentation dependency. |
+| `skills/fo-gate-lifecycle/SKILL.md` | `+30/-14` | Replace hand bind/association wording with source commit, summary, prepare, recorder-ready recording, and provider halt. |
 
-Tolerance is **+2 files and +25% changed LOC** (hard cap 20 files / 1,968 changed
+Tolerance is **+2 files and +25% changed LOC** (hard cap 21 files / 2,118 changed
 LOC), for a focused resolver test or fixture split only. A change to
 `skills/present-gate/SKILL.md`, any schema field in `gates`, new dependency, provider
 executable/probe/transport, selected-provider harness, compatibility request shape,
@@ -525,16 +574,22 @@ the derived room contains exactly the request and located canonical Briefing—*
 regular files regardless of selected-source count, with **0** duplicated source
 payloads. The attempt is open and `gate validate` succeeds. The four stdout lines expose
 the exact cleaned absolute room, Briefing id, digest, and open state; the required
-Artifact is `text/markdown`, Reference media types follow the closed table, and every
-selected source URI names its `main`/`state` root, full commit, and
+Artifact is `text/markdown`, its `summary` is the exact caller-supplied nonblank string,
+no Reference gains a generated summary, Reference media types follow the closed table,
+and every selected source URI names its `main`/`state` root, full commit, and
 repository-relative path while `rev` matches the Git object's raw bytes. *Test:* a real
-split-root CLI/Git fixture commits selected main/state files, asserts pre-command
-metadata count 0, post-command count 2, exact two-file room/stdout/locators/media types,
-and then makes later commits that move both worktree paths. It relocates main and state
-checkouts independently, supplies their new logical root map, and revalidates the exact
-old bytes from both local object databases. It fails if the fixture supplies metadata,
-the room copies either source, a locator omits any identity component, output changes
-under a launch directory containing spaces, or resolution needs the old `..` topology.
+split-root CLI/Git fixture commits selected main/state files and gives the Markdown a
+conflicting `## Summary` section. It invokes prepare with a different sentinel
+`--summary`, asserts pre-command metadata count 0, post-command count 2, the sentinel
+exactly once at `artifacts[0].summary`, zero Reference summaries, and exact room/stdout/
+locators/media types, then makes later commits that move both worktree paths. It
+relocates main and state checkouts independently, supplies their new logical root map,
+and revalidates the exact old bytes from both local object databases. Missing or
+whitespace-only `--summary` exits nonzero before mutation; removing the CLI value and
+extracting the Markdown section makes the positive sentinel assertion fail. The test
+also fails if the fixture supplies metadata, the room copies either source, a locator
+omits any identity component, output changes under a launch directory containing
+spaces, or resolution needs the old `..` topology.
 Dirty, untracked, third-repository, abbreviated-object, and missing-local-object cases
 exit nonzero with byte-identical entity/room state. A retained ordinary ref containing
 the source commit remains green after worktree movement. Reflog-only/detached
@@ -569,7 +624,9 @@ lifecycle halts before provider invocation with an unavailable diagnostic naming
 `git-root-review-v1-materialization`/`rqh46ey33aqq4rt72b4w1m2q`; it makes no room/root
 handoff promise because current Subspace cannot consume `git-root://` Artifacts or
 References. That sibling owns the resolved-byte consumer/materialization contract and
-an actual Spacedock-to-Subspace presentation proof before the 0.27 pre-release. No
+an actual Spacedock-to-Subspace presentation proof before the 0.27 pre-release; its
+consumer must preserve the canonical Briefing unchanged and expose the exact primary
+Artifact `summary` rather than copying or deriving it in a resolved-source manifest. No
 Spacedock Go or skill change in s4 names a provider executable, runs a provider
 availability/version/capability probe, allocates or mutates provider outputs, fetches
 source objects, materializes presentation files, or simulates invocation. *Test:* the
@@ -590,8 +647,10 @@ owns actual presentation evidence.
 **AC-5 — Provider recording has one recomputed association and no parallel durable
 artifact.** The full fixture prepares, receives fixed Result/inventory outputs, closes,
 and validates with no `association.json`. Request, located Briefing, Result, and
-inventory are each deleted and byte-mutated independently. Each selected Git locator is
-also changed one component at a time: root, full commit, path, and raw
+inventory are each deleted and byte-mutated independently. The primary summary is
+deleted, changed to whitespace, and byte-mutated independently; every Reference remains
+summary-free. Each selected Git locator is also changed one component at a time: root,
+full commit, path, and raw
 SHA. Every variant fails recording or read-only validation without changing the entity,
 while a later worktree edit/move remains green because it does not change the pinned
 object. *Test:* real CLI end-to-end fixture asserts the four provider digest pins, each
@@ -608,7 +667,8 @@ fails.
    for reset; a Captain conn is never passed as an ordinary frozen Reference.
 1. **Focused red/green, low cost:** add the arbitrary-name spike as the first command
    test using the existing gate-room fixture, then add focused `prepare_test.go` cases
-   for exact stdout data, Git-root URIs/media types/raw digests,
+   for exact stdout data, exact primary summary/no Reference summary, Git-root
+   URIs/media types/raw digests,
    12-to-64-character digest-prefix extension/full-digest suffixes, two-file replay,
    occupied room, and handled-error cleanup. `internal/gitsource` first gets the
    split-root Git fixture that commits both sources, advances/moves their worktree paths,
@@ -619,10 +679,12 @@ fails.
    was no fetch, deepen, hydration, or worktree fallback. Run
    `go test ./internal/gitsource ./internal/gates ./internal/cli -count=1`.
 2. **Adversarial JSON, medium cost:** mutate each of the four room documents at top
-   level and nested authority-bearing objects. Assert entity bytes and lock state, not
-   only error substrings. The arbitrary-locator positive case continues through provider
-   room closure and CLI eligibility, so `application.go` cannot silently retain its
-   basename join.
+   level and nested authority-bearing objects. Delete, blank, type-change, duplicate,
+   and byte-change `artifacts[0].summary`; keep a conflicting Markdown `## Summary` and
+   prove it is never substituted. Assert entity bytes and lock state, not only error
+   substrings. The arbitrary-locator positive case continues through provider room
+   closure and CLI eligibility, so `application.go` cannot silently retain its basename
+   join.
 3. **Existing no-override FO journey only, high cost at final tip:** update 6y's shared
    recorded-gate observation in place to assert
    `gate-help → selected-source-commit → prepare → room/binding-commit → chat-render →
@@ -665,30 +727,33 @@ target file):
 +++ docs/site/reference/command-reference.md
 @@
 -| `spacedock gate record <entity> --briefing PATH/briefing.json` | Bind a complete retained package manifest whose basename is exactly `briefing.json`. Other basenames fail before mutation. |
-+| `spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md [--reference FILE ...]` | Derive and bind one recorder-ready two-file room. Selected files must be committed objects in the workflow's main or state Git history and retained by an ordinary ref; the generated Briefing records `git-root://<root>/<full-commit>/<path>` and raw SHA-256 `rev` without copying payloads. The required objects must already be local; no fetch, deepen, hydration, worktree fallback, or retention ref is created. Success prints exactly `room`, `briefing`, `digest`, and `state` key/value lines. Current Subspace cannot present these locators; `rqh46ey33aqq4rt72b4w1m2q` owns that pre-release dependency. |
++| `spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...]` | Derive and bind one recorder-ready two-file room. `--summary` is required caller-authored prose stored unchanged as the primary Artifact's Review v1 `summary`; Spacedock does not extract it from Markdown, and References receive none. Selected files must be committed objects in the workflow's main or state Git history and retained by an ordinary ref; the generated Briefing records `git-root://<root>/<full-commit>/<path>` and raw SHA-256 `rev` without copying payloads. The required objects must already be local; no fetch, deepen, hydration, worktree fallback, or retention ref is created. Success prints exactly `room`, `briefing`, `digest`, and `state` key/value lines. Current Subspace cannot present these locators; `rqh46ey33aqq4rt72b4w1m2q` owns that pre-release dependency and must display the canonical summary. |
 +| `spacedock gate record <entity> --briefing PATH` | Bind any readable canonical Briefing by its exact path. A prepared room instead freezes its Briefing locator, id, and digest in `request.json`; every later operation resolves that locator rather than a canonical basename. |
 
 --- docs/site/concepts/gates-and-decisions.md
 +++ docs/site/concepts/gates-and-decisions.md
 @@
 -Before the First Officer shows a gate, it binds the exact retained Briefing and commits that package.
-+Before the First Officer shows a no-override gate, it commits newly authored selected sources, prepares and binds the two-file room mechanically, commits the entity folder containing that room, then renders in chat. Git-root locators reopen exact committed objects through the current main/state root map after checkout movement. This is recorder-ready, not presentation-ready: a selected override halts before invocation and names `git-root-review-v1-materialization`/`rqh46ey33aqq4rt72b4w1m2q`, which owns the resolved-byte consumer and actual provider E2E. Spacedock does not fetch objects or discover, probe, launch, or materialize for a provider.
++Before the First Officer shows a no-override gate, it writes one concise primary-Artifact summary, commits newly authored selected sources, and passes the summary and file choices to `gate prepare`; Spacedock writes the canonical JSON and binds the two-file room mechanically. It then commits the entity folder containing that room and renders in chat. Git-root locators reopen exact committed objects through the current main/state root map after checkout movement. This is recorder-ready, not presentation-ready: a selected override halts before invocation and names `git-root-review-v1-materialization`/`rqh46ey33aqq4rt72b4w1m2q`, which owns the resolved-byte consumer, exact canonical-summary display, and actual provider E2E. Spacedock does not fetch objects or discover, probe, launch, or materialize for a provider.
 
 --- skills/fo-gate-lifecycle/SKILL.md
 +++ skills/fo-gate-lifecycle/SKILL.md
 @@
 -**Retain and bind.** Assemble `ROOM/briefing.json` ... then run `gate record ENTITY --briefing BRIEFING`.
-+**Prepare and bind.** Select one Markdown gate-review Artifact and any References; commit every newly authored selection in its owning main/state Git history, then run `${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW [--reference FILE ...] --workflow-dir WORKFLOW_DIR`. Require the four stable output lines and `state=open`; commit the entity folder containing the generated two-file room and binding before presentation. The emitted `room=` value is the sole recorder/diagnostic locator and must never be reconstructed or searched for. Do not copy selected repository objects into the room.
++**Prepare and bind.** Select one Markdown gate-review Artifact and any References, and write one concise human-readable sentence summarizing the primary Artifact. Do not substitute a Markdown `Summary` section. Commit every newly authored selection in its owning main/state Git history, then run `${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR`. Require the generated primary Artifact's `summary` to equal `SUMMARY`, require References to carry no generated summary, require the four stable output lines and `state=open`, then commit the entity folder containing the generated two-file room and binding before presentation. The FO supplies prose and choices, never JSON. The emitted `room=` value is the sole recorder/diagnostic locator and must never be reconstructed or searched for. Do not copy selected repository objects into the room.
 +**Presentation boundary.** Call the result recorder-ready. With no override, render the generated review through `present-gate` and record chat. With a selected override, halt before invocation and name `git-root-review-v1-materialization`/`rqh46ey33aqq4rt72b4w1m2q`; current Subspace cannot consume the Git-root Artifacts/References. This lifecycle does not promise a room/root handoff, name/discover/version-check/capability-probe/launch a provider, materialize sources, or construct or mutate provider output paths.
 ```
 
-The normative spec makes the same substitutions, defines the closed request shape and
-room publication/error-atomicity behavior, defines the closed
+The normative spec makes the same substitutions, defines the required exact
+primary-Artifact `summary`/summary-free Reference behavior without a generic extension
+schema, defines the closed request shape and room publication/error-atomicity behavior,
+defines the closed
 `git-root://<root>/<full-commit>/<repo-path>` URI grammar, ordinary-ref source-commit
 rule, and local-only shallow/partial/prune failure behavior, and states explicitly that
 association is recomputed and unstored. It labels the output recorder-ready and names
-the separate presentation dependency. The frontmatter reference removes only its
-exact-basename claim; no `gates` schema or request field changes.
+the separate presentation dependency, which preserves the canonical Briefing and
+exposes its exact summary without manifest duplication. The frontmatter reference
+removes only its exact-basename claim; no `gates` schema or request field changes.
 `skills/present-gate/SKILL.md` remains unchanged and rendering-only after 6y.
 
 ## Git-root and authority boundaries
@@ -721,7 +786,10 @@ packages can consume, any required ephemeral materialization and retention polic
 the first actual Spacedock-to-Subspace presentation E2E. s4 may merge when its
 recorder-ready acceptance criteria pass, but 0.27 pre-release cannot proceed until that
 sibling's presentation gate passes. A root map merely passed through q0 is not evidence
-for that gate.
+for that gate. The sibling must pass the canonical Briefing unchanged through its
+resolved-source flow, keep `summary` out of the duplicated resolved-source manifest,
+and prove Subspace reads Review v1 Artifact `Extra["summary"]` and renders the exact
+string in Artifact chrome.
 
 ## Out of scope
 
@@ -734,6 +802,9 @@ for that gate.
   migration wrappers.
 - `association.json`, caller-selected Result/log/inventory/diagnostic paths, or provider
   argv.
+- Summary extraction/NLP, Markdown-heading conventions, summary objects, Reference
+  summaries, generic Artifact-extension machinery, or copying the primary summary into
+  identity inventory, association, or a resolved-source manifest.
 - Broader lifecycle-next-action prose, advisory-round preparation, readiness projection,
   crash-atomic multi-file transactions, copied selected sources, remote object
   acquisition, configurable root registries, authority transport through `--reference`,
@@ -780,6 +851,15 @@ for that gate.
   + repository-relative path plus raw SHA is the smaller Captain-directed form. Keep
   local-object retention, dirty/untracked/third-repository rejection, and production
   moved-checkout resolution explicit.
+
+- **Cycle 8 — canonical primary-Artifact summary (2026-07-25).** The canonical
+  Briefing must expose a concise human-readable summary on its primary gate-review
+  Artifact; a summary section buried inside the Markdown payload is insufficient.
+  Spacedock must not invent prose and the First Officer must not handcraft JSON.
+  Preserve the caller-authored summary through Review v1's existing Artifact
+  extra-field model, generate no Reference summaries, and require the downstream
+  materialization/presentation dependency to retain and display the canonical value
+  without copying it into a parallel manifest.
 
 ## Stage Report: ideation
 
@@ -914,3 +994,23 @@ Git-addressed recorder room, not a currently presentable Subspace package. The f
 dependency now owns the missing consumer and real E2E, while s4 retains a smaller
 root/full-commit/path locator, explicit local-object retention rules, and a rebaselined
 recorder-only proof surface.
+
+## Stage Report: ideation (cycle 8)
+
+- DONE: Add the smallest honest canonical primary-Artifact summary interface.
+  `gate prepare` now requires one `--summary TEXT`; Spacedock rejects missing/blank/invalid UTF-8, stores the exact caller-authored string at `artifacts[0].summary`, never extracts Markdown prose, and generates no Reference summaries or caller-authored JSON.
+- DONE: Reconcile Review v1 preservation with the downstream materialization/presentation owner.
+  `summary` uses the existing Artifact extra-field model; canonical Briefing bytes retain it, identity projections and the resolved-source manifest do not duplicate it, and `rqh46ey33aqq4rt72b4w1m2q` must prove Subspace renders the exact canonical value in Artifact chrome.
+- DONE: Update the command/room example, acceptance criteria, tests, docs, and LOC delta.
+  The example shows primary `summary` beside Git-root identity and a summary-free Reference; AC-1/AC-4/AC-5 and the proof order falsify Markdown extraction, missing/blank/type-changed/duplicate summaries, prose duplication, and provider-side derivation. The surface is 19 files at +1,533/-161 (1,694 changed LOC), capped at 21 files/2,118 LOC.
+- DONE: Update the retained preview room while keeping provider evidence immutable.
+  The historical frozen-source preview's primary Artifact now has one concise summary and `request.json` pins recomputed canonical digest `sha256:5898364167a01112a01ab4fbededf06aad4f2c01b844fa7d703565b060336fd5`; supporting entries gained no summaries.
+- SKIPPED: Consume/apply the obsolete ideation approval, dispatch implementation, invoke a provider, relaunch Subspace, materialize Git-root inputs, or mutate provider outputs.
+  Cycle 8 changes only s4's state design and retained local preview metadata; the external provider package and provider-owned Result/log/inventory/diagnostics remain untouched.
+
+### Summary
+
+Cycle 8 makes the human description a first-class part of the canonical Briefing
+without turning Spacedock into a prose generator or making the First Officer author
+JSON. The exact summary now has one source of truth from prepare through the filed
+materialization dependency, with a rebaselined recorder-only implementation surface.

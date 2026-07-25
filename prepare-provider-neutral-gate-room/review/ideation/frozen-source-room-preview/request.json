@@ -6,7 +6,7 @@
   "briefing": {
     "locator": "gate-briefing.json",
     "id": "briefing:docs-dev:s4:ideation:frozen-source-room-preview",
-    "digest": "sha256:a748fbb18d283ec9c6d7b80f3032c3108119f39594cc107ad861ee17c005bad1"
+    "digest": "sha256:5898364167a01112a01ab4fbededf06aad4f2c01b844fa7d703565b060336fd5"
   },
   "actor": "person:captain",
   "approver": "person:captain"

@@ -8,7 +8,8 @@
       "id": "artifact:gate-review",
       "uri": "sources/gate-review.md",
       "mediaType": "text/markdown",
-      "rev": "sha256:99b843659a3e26aa46a7fe823cee41b718cab63c21a5f7e80611e135a86ca34a"
+      "rev": "sha256:99b843659a3e26aa46a7fe823cee41b718cab63c21a5f7e80611e135a86ca34a",
+      "summary": "Proposes freezing selected sources inside the retained room while holding implementation for delegated-authority work."
     },
     {
       "id": "artifact:staff-review",
