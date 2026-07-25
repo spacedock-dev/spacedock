@@ -86,8 +86,11 @@ Make gate-room preparation one mechanical operation. The First Officer supplies 
 decision question and selected files; Spacedock derives room placement, portable ids,
 locators, revisions, canonical digests, request authority, and the open gate attempt.
 Chat remains the complete no-override path. The command emits one frozen room suitable
-for a future provider handoff, but this task adds no provider discovery, probe,
-executable, invocation, or retained-provider simulation.
+for recorder binding and validation. It is not presentation-ready for current Subspace
+package mode; `git-root-review-v1-materialization`
+(`rqh46ey33aqq4rt72b4w1m2q`) owns that required pre-v0.27 bridge. This task adds no
+provider discovery, probe, executable, invocation, materialization, or retained-provider
+simulation.
 
 ## Problem
 
@@ -116,6 +119,13 @@ Briefing locator, id, and digest. No old request shape, basename fallback, provi
 version match, caller-selected output vector, compatibility wrapper, or
 `association.json` is introduced.
 
+Recorder-ready and presentation-ready are now explicit separate states. Current
+Subspace package mode receives the canonical Briefing unchanged, opens Artifact URIs as
+filesystem paths, and rejects Reference URIs containing `://`. It has no logical-root
+map and never calls Spacedock's Git resolver. Therefore a `git-root` Briefing can be
+bound, validated, and associated by Spacedock but cannot be claimed as renderable by
+Subspace.
+
 ## Cross-repository contract observed
 
 At filing, Subspace `main` was `5ce887c` and the last reported active `em` commit was
@@ -134,10 +144,14 @@ At filing, Subspace `main` was `5ce887c` and the last reported active `em` commi
 
 Implementation must re-check the landed `em` tip. These deltas strengthen, rather than
 change, the boundary here: Subspace owns provider outputs, probing, retained preflight
-failures, and eventual room-to-provider invocation; Spacedock owns room preparation and
-recording. At `27b32eb`, room/request composition is still future q0 work. This task
-therefore documents only a provider-neutral one-room handoff and neither implements nor
-simulates a selected-provider transport.
+failures, and eventual room-to-provider invocation; Spacedock owns recorder-ready room
+preparation and recording. At `27b32eb`, room/request composition is still future q0
+work, but q0 transport alone cannot resolve Git-root content. This task therefore
+documents only a provider-neutral recorder boundary and neither implements nor
+simulates presentation. The filed sibling
+`git-root-review-v1-materialization`/`rqh46ey33aqq4rt72b4w1m2q` is the explicit
+cross-repository presentation owner and blocks the 0.27 pre-release until its actual
+Subspace end-to-end proof passes.
 
 ## Riskiest-first spike
 
@@ -194,8 +208,8 @@ and the old seven-level `..` URI was not found.
 The selected locator is therefore:
 
 ```text
-git-root://main/sha1/cc51e518a3420b01fd4b455e9710d38803dc6d3e/docs/specs/gate-resolution-frontmatter-contract.md
-git-root://state/sha1/6a2ea132e2ef125a8996378c1306009b25c979fd/prepare-provider-neutral-gate-room/index.md
+git-root://main/cc51e518a3420b01fd4b455e9710d38803dc6d3e/docs/specs/gate-resolution-frontmatter-contract.md
+git-root://state/6a2ea132e2ef125a8996378c1306009b25c979fd/prepare-provider-neutral-gate-room/index.md
 ```
 
 The URI locates an immutable commit/path object in an already-present local Git object
@@ -204,6 +218,13 @@ Checkout paths are runtime root-map values, not durable metadata. The implementa
 fixture repeats the move/later-worktree-commit case and fails if resolution consults
 current worktree bytes, needs the old nesting, fetches a remote, or returns bytes that
 do not match `rev`.
+
+That is a local address/reopen spike only. It did not invoke `gate prepare`, did not
+exercise a production Spacedock resolver, and did not send a Git-root Briefing through
+Subspace. It proves the commit/path identity can recover bytes from moved local object
+databases; it is not presentation evidence. Current Subspace's filesystem-path/`://`
+rules are the retained negative boundary, and sibling `rqh46ey33aqq4rt72b4w1m2q` owns
+the first real resolved-byte presentation proof.
 
 ## Proposed command and room contract
 
@@ -231,17 +252,24 @@ Preparation derives the full `HEAD` commit and repository-relative path from tha
 selected checkout, reads `<commit>:<path>` from its local object database, and requires
 those bytes to equal the selected worktree file. Untracked, dirty, missing-object, or
 third-repository selections fail before mutation with an instruction to commit the
-selected source.
+selected source. The full commit must be reachable from at least one ordinary local,
+remote-tracking, or tag ref reported by `git for-each-ref --contains`; reflog-only and
+detached unreachable commits are rejected. For newly authored state content, the First
+Officer makes the path-scoped source commit before prepare, so the later room/binding
+commit retains it as an ancestor. Main/worktree content likewise remains on a retained
+branch through the gate lifecycle.
 
 Each generated Artifact or Reference records a closed locator of the form
-`git-root://<root>/<object-format>/<full-commit>/<repo-path>` plus its full raw SHA-256
-`rev`. V1 root names are `main` for the definition Git history and `state` for a distinct
-entity Git history; an inline workflow emits only `main`. The object format is the exact
-`git rev-parse --show-object-format` result. Each UTF-8 repository path segment uses
-canonical RFC 3986 escaping while `/` remains the segment separator; empty/dot segments,
-`..`, backslashes, query, fragment, userinfo, ports, unknown roots/formats, abbreviated
-object ids, and noncanonical escapes fail. References receive a deterministic media
-type from a closed, case-insensitive extension table: `.md`/`.markdown` =
+`git-root://<root>/<full-commit>/<repo-path>` plus its full raw SHA-256 `rev`. V1 root
+names are `main` for the definition Git history and `state` for a distinct entity Git
+history; an inline workflow emits only `main`. The commit is the owning repository's
+full lowercase object id; that repository's local Git object database determines its
+hash format, so no separate format segment is serialized absent a demonstrated
+cross-root ambiguity. Each UTF-8 repository path segment uses canonical RFC 3986
+escaping while `/` remains the segment separator; empty/dot segments, `..`,
+backslashes, query, fragment, userinfo, ports, unknown roots, abbreviated object ids,
+and noncanonical escapes fail. References receive a deterministic media type from a
+closed, case-insensitive extension table: `.md`/`.markdown` =
 `text/markdown`, `.json` = `application/json`, `.yaml`/`.yml` =
 `application/yaml`, `.txt`/`.log` = `text/plain`, and every other extension =
 `application/octet-stream`. No host MIME database participates.
@@ -299,10 +327,11 @@ digest, room reference, and Captain actor/approver are binary-owned.
 Cycle 6 adds no request field and no command flag. The schema delta is the one closed
 `git-root` Artifact/Reference URI profile; raw-byte SHA remains Review v1's existing
 `rev`. The CLI constructs the current `main`/`state` root map from the same resolved
-definition and entity roots already used for the operation and passes it to
-`internal/gitsource`; it never serializes checkout paths. A future provider handoff must
-carry those same logical roots through its provider-neutral project context, which q0
-owns. This task does not add that transport or infer roots by directory search.
+definition and entity roots already used for recorder operations and passes it to
+`internal/gitsource`; it never serializes checkout paths. No current provider handoff
+consumes that map. This task stops at recorder readiness; sibling
+`git-root-review-v1-materialization` owns the actual resolved-byte consumer contract
+instead of assuming q0 transport will carry roots.
 
 On success, stdout is exactly four newline-terminated `key=value` lines:
 
@@ -341,6 +370,16 @@ read current worktree bytes, search neighboring directories, or fetch a remote. 
 missing root/object/path or digest mismatch fails before mutation. A fresh clone works
 when its local object database already contains the pinned commit; object acquisition
 and remote identity remain outside this task.
+
+That local-object requirement is a lifecycle precondition, not hidden recovery.
+Recorder bind/close/validate each recheck that the full commit and addressed blob exist
+in the named root. A shallow or partial clone is supported only when both objects are
+already local; Spacedock never deepens, fetches, hydrates, or substitutes current
+worktree bytes. The owning ref must remain reachable until the gate and all read-only
+validation are complete. Deleting/rewriting its last containing ref can make Git prune
+the object and makes the room fail closed; s4 creates no retention ref or cache. Cross-
+machine object acquisition and any provider-side retention/materialization belong to
+`rqh46ey33aqq4rt72b4w1m2q`.
 
 Preparation stages the two-file candidate room in a sibling temporary directory,
 validates its request, Briefing, and every Git-root/room-relative source through the
@@ -404,15 +443,17 @@ this closed prepared request. If 6y requires a new request field, a generated au
 object, or different actor/approver derivation, s4 returns to ideation for a joint
 request-surface reset. It must not smuggle authority through a content Reference.
 
-The lifecycle text may state the provider-neutral boundary: a landed presentation
-override receives the one prepared room, never caller-built provider argv or output
-paths; after that external transport returns, the same retained room is the
-provider-backed recorder input. It must also state that this repository does not
-discover, version-check, capability-probe, or launch a provider. There is no
-selected-override execution arm in this task. Subspace q0 owns room-to-provider
-invocation and its cross-repository proof; Subspace `27b32eb` already owns and proves
-package allocation plus retained discovery and capability-preflight failures.
-Spacedock tests do not fake those future events.
+The lifecycle text must call the output **recorder-ready**, not presentation-ready.
+No-override chat remains complete because the First Officer already has the selected
+filesystem paths and renders the gate review through `present-gate`. A selected override
+must halt as unavailable before provider invocation until
+`git-root-review-v1-materialization` lands; neither the room nor stdout is a promise that
+current Subspace can render Git-root content. This repository does not discover,
+version-check, capability-probe, launch, or materialize for a provider. There is no
+selected-override execution arm in this task. Subspace q0 still owns transport and
+retained preflight, but sibling `rqh46ey33aqq4rt72b4w1m2q` owns resolved-byte
+presentation and the real cross-repository proof. Spacedock tests do not fake either
+future event.
 
 ## New mechanisms and rejected alternatives
 
@@ -420,6 +461,7 @@ Spacedock tests do not fake those future events.
 |---|---:|---|---|
 | One `gate prepare` operation | AC-1 | Tell the FO to write two JSON files and call `gate record` | Preserves the manual ids/digests and partial-room failure that caused the task. |
 | Closed Git-root locator and local-object resolver | AC-1, AC-5 | Copy selected bytes into the room | Copies survive the reopen but duplicate objects the Captain requires to remain singular; path plus raw SHA alone cannot locate bytes after checkout movement. |
+| Explicit presentation dependency `rqh46ey33aqq4rt72b4w1m2q` | AC-4 | Say q0 will carry logical roots later | Transport does not turn Git objects into filesystem bytes current Subspace accepts; only a real consumer/materialization API plus end-to-end presentation can close that gap. |
 | Frozen local Briefing locator | AC-2, AC-5 | Keep joining `briefing.json` | Fails the reproduced valid room and contradicts the provider contract. |
 | One recursive duplicate-member reader | AC-3, AC-5 | Rely on `encoding/json` plus typed structs | Go accepts conflicting duplicates last-wins; the detached counterexample can close under the wrong authority. |
 | Stable room/identity stdout handoff | AC-1 | Omit the room or make callers reconstruct it from ids/directory layout | Hides the published artifact and can select the wrong attempt under retries. |
@@ -431,7 +473,7 @@ Baseline assumption: latest 6y (`60adfc1f`, including lifecycle owner `e9415a17`
 first. Relative retained-input normalization is then available in `internal/cli`, the
 existing recorded-gate journey targets `fo-gate-lifecycle`, and `present-gate` contains
 rendering only. Against that composition, the smallest expected implementation is these
-18 files and about `+1,439/-161` lines (**1,600 changed LOC**):
+18 files and about `+1,413/-161` lines (**1,574 changed LOC**):
 
 The inspected 6y tip is still pre-xb-rebase, so implementation must not start until
 6y's final xb rebase lands. Re-read that landed tip before creating the worktree; if it
@@ -444,10 +486,10 @@ composition.
 |---|---:|---|
 | `internal/cli/cli.go` | `+60/-6` | Route `gate prepare`, normalize inputs, and print the stable four-line result. |
 | `internal/cli/gate_test.go` | `+190/-25` | Reuse CLI fixtures for preparation, stdout, committed-source refusal, arbitrary-locator eligibility, and byte-clean failures. |
-| `internal/gates/prepare.go` (new) | `+230/-0` | Derivation, Git-root locators, ids/media types, and error-atomic room publication. |
+| `internal/gates/prepare.go` (new) | `+220/-0` | Derivation, recorder-ready Git-root locators, ids/media types, and error-atomic room publication. |
 | `internal/gates/prepare_test.go` (new) | `+210/-0` | Focused replay, collision, locator selection, two-file room, and handled-error tests. |
-| `internal/gitsource/source.go` (new) | `+190/-0` | Closed URI grammar, main/state root map, common-history classification, and local `git cat-file` resolution. |
-| `internal/gitsource/source_test.go` (new) | `+180/-0` | Independent moved-checkout, linked-worktree classification, later-worktree, missing-object, escaping, object-format, and raw-SHA controls. |
+| `internal/gitsource/source.go` (new) | `+175/-0` | Closed root/commit/path URI grammar, root map, ref-retention checks, common-history classification, and local `git cat-file` resolution. |
+| `internal/gitsource/source_test.go` (new) | `+170/-0` | Independent moved-checkout, linked-worktree classification, later-worktree, shallow/pruned/missing-object, escaping, and raw-SHA controls. |
 | `internal/gates/operation.go` | `+80/-35` | Closed request locator and the one exact Briefing resolver. |
 | `internal/gates/application.go` | `+12/-4` | Route reviewed-input eligibility through that resolver instead of `briefing.json`. |
 | `internal/gates/io.go` | `+30/-8` | Recompute the four retained provider inputs through duplicate-safe reads. |
@@ -455,18 +497,24 @@ composition.
 | `internal/gates/testdata/gate-room/request.json` | `+1/-0` | Add the locator to the canonical fixture. |
 | `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+28/-16` | Add the selected-source commit before prepare to the shared no-override observation; add no lane. |
 | `internal/contractlint/fo_function_reference_invariant_test.go` | `+22/-8` | Pin lifecycle ownership, Git-only process boundary, forbidden provider mechanics, and rendering-only `present-gate`. |
-| `docs/specs/gate-resolution-frontmatter-contract.md` | `+80/-30` | Normative prepare/request/Git-root/resolver/atomicity contract. |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | `+85/-30` | Normative recorder-ready prepare/request/Git-root/retention/resolver/atomicity contract. |
 | `docs/site/reference/command-reference.md` | `+20/-6` | New verb, committed-source locator, stdout, and arbitrary-name recording. |
 | `docs/site/reference/frontmatter-contract.md` | `+3/-3` | Remove the manifest-basename claim. |
-| `docs/site/concepts/gates-and-decisions.md` | `+8/-6` | Committed-source preparation and future handoff boundary. |
-| `skills/fo-gate-lifecycle/SKILL.md` | `+20/-14` | Replace hand bind/association wording with source commit, prepare, and provider-neutral room recording. |
+| `docs/site/concepts/gates-and-decisions.md` | `+10/-6` | Committed-source preparation, recorder-ready boundary, and presentation dependency. |
+| `skills/fo-gate-lifecycle/SKILL.md` | `+22/-14` | Replace hand bind/association wording with source commit, prepare, recorder-ready recording, and provider halt. |
 
-Tolerance is **+2 files and +25% changed LOC** (hard cap 20 files / 2,000 changed
+Tolerance is **+2 files and +25% changed LOC** (hard cap 20 files / 1,968 changed
 LOC), for a focused resolver test or fixture split only. A change to
 `skills/present-gate/SKILL.md`, any schema field in `gates`, new dependency, provider
 executable/probe/transport, selected-provider harness, compatibility request shape,
 caller output path, association artifact, or broader lifecycle routing requires a
 design reset.
+
+This surface deliberately excludes every file in
+`git-root-review-v1-materialization`. That sibling owns any resolved-source manifest,
+ephemeral materialization, provider API, Subspace change, and real provider E2E. If s4
+implementation needs one of those to make its own recorder tests pass, the boundary is
+wrong and returns to ideation rather than borrowing sibling scope.
 
 ## Acceptance criteria
 
@@ -478,7 +526,7 @@ regular files regardless of selected-source count, with **0** duplicated source
 payloads. The attempt is open and `gate validate` succeeds. The four stdout lines expose
 the exact cleaned absolute room, Briefing id, digest, and open state; the required
 Artifact is `text/markdown`, Reference media types follow the closed table, and every
-selected source URI names its `main`/`state` root, object format, full commit, and
+selected source URI names its `main`/`state` root, full commit, and
 repository-relative path while `rev` matches the Git object's raw bytes. *Test:* a real
 split-root CLI/Git fixture commits selected main/state files, asserts pre-command
 metadata count 0, post-command count 2, exact two-file room/stdout/locators/media types,
@@ -488,7 +536,11 @@ old bytes from both local object databases. It fails if the fixture supplies met
 the room copies either source, a locator omits any identity component, output changes
 under a launch directory containing spaces, or resolution needs the old `..` topology.
 Dirty, untracked, third-repository, abbreviated-object, and missing-local-object cases
-exit nonzero with byte-identical entity/room state.
+exit nonzero with byte-identical entity/room state. A retained ordinary ref containing
+the source commit remains green after worktree movement. Reflog-only/detached
+unreachable commits, a shallow clone missing the commit or blob, and a fixture that
+deletes the last containing ref and prunes the object all fail closed without fetch,
+deepen, hydration, worktree fallback, or state mutation.
 
 **AC-2 — Every request-backed operation uses the frozen readable Briefing locator,
 independent of basename.** A clean nested `decision-material.data` locator binds,
@@ -508,15 +560,20 @@ last-wins counterexample. *Test:* detached adversarial table requires nonzero ex
 diagnostic naming the duplicate member, unchanged whole entity bytes, and no lock
 residue. Removing the recursive reader makes at least one case bind or close.
 
-**AC-4 — Spacedock owns a truthful one-room lifecycle boundary without implementing a
-provider transport.** With no override, 6y's `fo-gate-lifecycle` runs prepare once,
+**AC-4 — Spacedock truthfully produces a recorder-ready room and does not claim current
+provider presentation.** With no override, 6y's `fo-gate-lifecycle` runs prepare once,
 after committing every newly authored selected source, commits the entity folder
 containing the generated two-file room and binding, renders through the unchanged
-rendering-only `present-gate`, and records chat. Its future-override wording promises
-only that a landed override receives that one room and logical root contract. No
-Spacedock Go or skill change names a provider executable, runs a provider availability,
-version, or capability probe, allocates provider outputs, fetches source objects, or
-simulates invocation. *Test:* the shared recorded-gate observation requires
+rendering-only `present-gate`, and records chat. With a selected override, the
+lifecycle halts before provider invocation with an unavailable diagnostic naming
+`git-root-review-v1-materialization`/`rqh46ey33aqq4rt72b4w1m2q`; it makes no room/root
+handoff promise because current Subspace cannot consume `git-root://` Artifacts or
+References. That sibling owns the resolved-byte consumer/materialization contract and
+an actual Spacedock-to-Subspace presentation proof before the 0.27 pre-release. No
+Spacedock Go or skill change in s4 names a provider executable, runs a provider
+availability/version/capability probe, allocates or mutates provider outputs, fetches
+source objects, materializes presentation files, or simulates invocation. *Test:* the
+shared no-override recorded-gate observation requires
 `gate-help → selected-source-commit → prepare → room/binding-commit → chat-render →
 decision-record`, followed by 6y's unchanged
 decision-commit/consume/consumed-commit barriers. At final tip, the existing Claude,
@@ -524,15 +581,17 @@ Codex, and Pi live lanes must each satisfy that same observation. Legitimate str
 checks require `fo-gate-lifecycle` ownership, keep `present-gate` rendering-only, confine
 process execution to `internal/gitsource`'s literal `git` object reads, and reject
 `subspace-tui`, `/subspace:r`, `--supports`, `--version`, remote fetch, or process-launch
-imports elsewhere in the changed gate/lifecycle surface. No prose-derived
-room-consumption mutant or fake override lane is added; q0 owns room-to-provider and
-retained-preflight proof.
+imports elsewhere in the changed gate/lifecycle surface. A selected-override command
+fixture requires zero provider invocations, byte-identical state, and the dependency id
+in its diagnostic; deleting that halt must fail the fixture. No fake success lane or
+prose-derived room-consumption mutant is added. The sibling's acceptance gate, not s4,
+owns actual presentation evidence.
 
 **AC-5 — Provider recording has one recomputed association and no parallel durable
 artifact.** The full fixture prepares, receives fixed Result/inventory outputs, closes,
 and validates with no `association.json`. Request, located Briefing, Result, and
 inventory are each deleted and byte-mutated independently. Each selected Git locator is
-also changed one component at a time: root, object format, full commit, path, and raw
+also changed one component at a time: root, full commit, path, and raw
 SHA. Every variant fails recording or read-only validation without changing the entity,
 while a later worktree edit/move remains green because it does not change the pinned
 object. *Test:* real CLI end-to-end fixture asserts the four provider digest pins, each
@@ -554,14 +613,17 @@ fails.
    occupied room, and handled-error cleanup. `internal/gitsource` first gets the
    split-root Git fixture that commits both sources, advances/moves their worktree paths,
    relocates both checkouts independently, and resolves the old commits through the new
-   root map with the original layout unavailable. Run
+   root map with the original layout unavailable. Add ordinary-ref reachability,
+   reflog-only/detached-unreachable, shallow/partial missing-object, and simulated
+   last-ref deletion plus prune controls; every missing-object lane must prove there
+   was no fetch, deepen, hydration, or worktree fallback. Run
    `go test ./internal/gitsource ./internal/gates ./internal/cli -count=1`.
 2. **Adversarial JSON, medium cost:** mutate each of the four room documents at top
    level and nested authority-bearing objects. Assert entity bytes and lock state, not
    only error substrings. The arbitrary-locator positive case continues through provider
    room closure and CLI eligibility, so `application.go` cannot silently retain its
    basename join.
-3. **Existing FO journey only, high cost at final tip:** update 6y's shared
+3. **Existing no-override FO journey only, high cost at final tip:** update 6y's shared
    recorded-gate observation in place to assert
    `gate-help → selected-source-commit → prepare → room/binding-commit → chat-render →
    decision-record` before its unchanged decision-commit/consume/consumed-commit
@@ -570,7 +632,9 @@ fails.
    `recorded-gate-lifecycle` cases plus `TestLivePiRecordedGateLifecycle` against the
    final implementation tip; all three must observe the revised sequence. Add no host
    lane, harness, provider fake, provider-capability ledger, prose-derived room mutant,
-   or cross-repo invocation test. q0 owns those proofs after its room command exists.
+   selected-provider success lane, or cross-repo invocation test. A selected override
+   halts before invocation and names `rqh46ey33aqq4rt72b4w1m2q`; that sibling owns the
+   actual provider-neutral resolved-byte API and Spacedock-to-Subspace E2E.
 4. **Repository gates:** `gofmt -w ./cmd ./internal`, `go test ./...`,
    `go test ./... -race`, strict docs build, `git diff --check`, and verify
    `go list -deps ./cmd/spacedock` contains no Subspace package, only
@@ -583,8 +647,13 @@ fails.
    moved/deleted source paths, and reopen the pinned commits through only the new root
    map. Any worktree lookup, neighboring-directory search, remote fetch, copied payload,
    missing identity component, or changed raw byte is a rejection. Re-check landed
-   Subspace `em` only to confirm the ownership boundary; do not run its future room
-   transport as Spacedock evidence.
+   Subspace `em` only to confirm the ownership boundary; do not launch Subspace,
+   materialize sources, or treat the local Git helper result as presentation evidence.
+6. **Separate release dependency:** s4 may merge after its recorder-ready criteria
+   pass, but the 0.27 pre-release remains blocked until
+   `git-root-review-v1-materialization`/`rqh46ey33aqq4rt72b4w1m2q` demonstrates the
+   actual consumer/materialization path and provider presentation E2E. Do not import
+   that sibling implementation into s4 to manufacture a presentation claim.
 
 ## Documentation change proposal
 
@@ -596,29 +665,31 @@ target file):
 +++ docs/site/reference/command-reference.md
 @@
 -| `spacedock gate record <entity> --briefing PATH/briefing.json` | Bind a complete retained package manifest whose basename is exactly `briefing.json`. Other basenames fail before mutation. |
-+| `spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md [--reference FILE ...]` | Derive and bind one recorder-ready two-file room. Selected files must be committed objects in the workflow's main or state Git history; the generated Briefing records `git-root://<root>/<format>/<commit>/<path>` and raw SHA-256 `rev` without copying payloads. Success prints exactly `room`, `briefing`, `digest`, and `state` key/value lines. |
++| `spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md [--reference FILE ...]` | Derive and bind one recorder-ready two-file room. Selected files must be committed objects in the workflow's main or state Git history and retained by an ordinary ref; the generated Briefing records `git-root://<root>/<full-commit>/<path>` and raw SHA-256 `rev` without copying payloads. The required objects must already be local; no fetch, deepen, hydration, worktree fallback, or retention ref is created. Success prints exactly `room`, `briefing`, `digest`, and `state` key/value lines. Current Subspace cannot present these locators; `rqh46ey33aqq4rt72b4w1m2q` owns that pre-release dependency. |
 +| `spacedock gate record <entity> --briefing PATH` | Bind any readable canonical Briefing by its exact path. A prepared room instead freezes its Briefing locator, id, and digest in `request.json`; every later operation resolves that locator rather than a canonical basename. |
 
 --- docs/site/concepts/gates-and-decisions.md
 +++ docs/site/concepts/gates-and-decisions.md
 @@
 -Before the First Officer shows a gate, it binds the exact retained Briefing and commits that package.
-+Before the First Officer shows a no-override gate, it commits newly authored selected sources, prepares and binds the two-file room mechanically, commits the entity folder containing that room, then renders in chat. Git-root locators reopen exact committed objects through the current main/state root map after checkout movement. A future presentation override receives the command's authoritative `room=` value and logical roots through its own landed transport; Spacedock does not fetch objects or discover, probe, or launch a provider.
++Before the First Officer shows a no-override gate, it commits newly authored selected sources, prepares and binds the two-file room mechanically, commits the entity folder containing that room, then renders in chat. Git-root locators reopen exact committed objects through the current main/state root map after checkout movement. This is recorder-ready, not presentation-ready: a selected override halts before invocation and names `git-root-review-v1-materialization`/`rqh46ey33aqq4rt72b4w1m2q`, which owns the resolved-byte consumer and actual provider E2E. Spacedock does not fetch objects or discover, probe, launch, or materialize for a provider.
 
 --- skills/fo-gate-lifecycle/SKILL.md
 +++ skills/fo-gate-lifecycle/SKILL.md
 @@
 -**Retain and bind.** Assemble `ROOM/briefing.json` ... then run `gate record ENTITY --briefing BRIEFING`.
-+**Prepare and bind.** Select one Markdown gate-review Artifact and any References; commit every newly authored selection in its owning main/state Git history, then run `${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW [--reference FILE ...] --workflow-dir WORKFLOW_DIR`. Require the four stable output lines and `state=open`; commit the entity folder containing the generated two-file room and binding before presentation. The emitted `room=` value is the sole future override/diagnostic locator and must never be reconstructed or searched for. Do not copy selected repository objects into the room.
-+**Presentation boundary.** With no override, render the generated review through `present-gate` and record chat. A future landed override receives the one prepared room and returns that retained room for `gate record --room`; this lifecycle does not name, discover, version-check, capability-probe, or launch a provider, and does not construct provider output paths or an association.
++**Prepare and bind.** Select one Markdown gate-review Artifact and any References; commit every newly authored selection in its owning main/state Git history, then run `${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW [--reference FILE ...] --workflow-dir WORKFLOW_DIR`. Require the four stable output lines and `state=open`; commit the entity folder containing the generated two-file room and binding before presentation. The emitted `room=` value is the sole recorder/diagnostic locator and must never be reconstructed or searched for. Do not copy selected repository objects into the room.
++**Presentation boundary.** Call the result recorder-ready. With no override, render the generated review through `present-gate` and record chat. With a selected override, halt before invocation and name `git-root-review-v1-materialization`/`rqh46ey33aqq4rt72b4w1m2q`; current Subspace cannot consume the Git-root Artifacts/References. This lifecycle does not promise a room/root handoff, name/discover/version-check/capability-probe/launch a provider, materialize sources, or construct or mutate provider output paths.
 ```
 
 The normative spec makes the same substitutions, defines the closed request shape and
-room publication/error-atomicity behavior, defines the closed `git-root` URI grammar and
-local-object resolver, and states explicitly that association is recomputed and
-unstored. The frontmatter reference removes only its exact-basename claim; no `gates`
-schema or request field changes. `skills/present-gate/SKILL.md` remains unchanged and
-rendering-only after 6y.
+room publication/error-atomicity behavior, defines the closed
+`git-root://<root>/<full-commit>/<repo-path>` URI grammar, ordinary-ref source-commit
+rule, and local-only shallow/partial/prune failure behavior, and states explicitly that
+association is recomputed and unstored. It labels the output recorder-ready and names
+the separate presentation dependency. The frontmatter reference removes only its
+exact-basename claim; no `gates` schema or request field changes.
+`skills/present-gate/SKILL.md` remains unchanged and rendering-only after 6y.
 
 ## Git-root and authority boundaries
 
@@ -636,11 +707,29 @@ with the current closed request, s4 remains unchanged; if it needs the prepared 
 to name an authority object, that is an explicit pre-implementation design reset with
 joint acceptance evidence.
 
+## Release dependency and readiness language
+
+`room` publication, `state=open`, and a successful `gate validate` mean
+**recorder-ready** only. s4 adds no `presentation-ready` flag, output, or implication.
+The no-override chat path is complete because it renders the already selected review
+file; a selected provider override is unavailable and halts before invocation.
+
+The backlog entity `git-root-review-v1-materialization`
+(`rqh46ey33aqq4rt72b4w1m2q`, durable-decisions) is the named release dependency. It owns
+the provider-neutral API that turns the frozen Git address into bytes current provider
+packages can consume, any required ephemeral materialization and retention policy, and
+the first actual Spacedock-to-Subspace presentation E2E. s4 may merge when its
+recorder-ready acceptance criteria pass, but 0.27 pre-release cannot proceed until that
+sibling's presentation gate passes. A root map merely passed through q0 is not evidence
+for that gate.
+
 ## Out of scope
 
-- Subspace q0, room-to-provider invocation, terminal transport, provider discovery or
-  capability probing, provider output allocation, retained-preflight proof, or provider
-  retention implementation.
+- Subspace q0, room-to-provider invocation, Git-root consumer/materialization,
+  terminal transport, provider discovery or capability probing, provider output
+  allocation/mutation, retained-preflight proof, provider retention implementation, or
+  presentation E2E; these presentation concerns are owned by
+  `rqh46ey33aqq4rt72b4w1m2q`.
 - Compatibility request parsing, a `briefing.json` fallback for prepared requests, or
   migration wrappers.
 - `association.json`, caller-selected Result/log/inventory/diagnostic paths, or provider
@@ -800,3 +889,28 @@ Cycle 6 replaces the rejected copy model with one logical-root, commit/path, raw
 reference to each existing Git object. The moved-checkout spike exercises local-object
 recovery without topology or provider transport, and the revised design is ready for a
 superseding ideation gate.
+
+## Stage Report: ideation (cycle 7)
+
+- DONE: Narrow s4 from presentation-ready to recorder-ready after checking current Subspace package semantics.
+  Current Subspace receives the Briefing unchanged, treats Artifact URIs as filesystem paths, and rejects Reference URIs containing `://`; s4 therefore proves preparation, binding, recording, and validation only, while a selected override halts before invocation.
+- DONE: File and name the actual provider-presentation dependency before the 0.27 pre-release.
+  `git-root-review-v1-materialization` (`rqh46ey33aqq4rt72b4w1m2q`) owns the resolved-byte consumer/materialization contract, provider-side retention as needed, and the first actual Spacedock-to-Subspace E2E; merely carrying logical roots through q0 cannot satisfy it.
+- DONE: Reduce the durable source address to the Captain-directed form and make source-lifecycle preconditions falsifiable.
+  The v1 locator is `git-root://<root>/<full-commit>/<repo-path>` plus raw SHA-256 `rev`; source bytes must match committed history, the commit must remain on an ordinary local/remote-tracking/tag ref, and missing shallow/partial/pruned objects fail closed without fetch, deepen, hydration, cache, retention ref, or worktree fallback.
+- DONE: Rebaseline acceptance criteria, docs, and implementation tolerance around the recorder/provider ownership split.
+  AC-4 and the FO/docs wording now call the result recorder-ready, require zero provider invocation for selected overrides, and name the dependency diagnostic. The implementation remains 18 files at +1,413/-161 (1,574 changed LOC), capped at 20 files/1,968 LOC, and excludes every sibling materialization/provider file.
+- DONE: Distinguish the independent Git helper spike from production and presentation evidence.
+  The spike proves only that a root/full-commit/path address can recover exact bytes from moved local object databases; it did not exercise `gate prepare`, the production resolver, Subspace, or an end-to-end presentation.
+- DONE: Preserve the accepted recorder authority boundaries.
+  Arbitrary frozen Briefing locators, recursive duplicate-member rejection, four recomputed provider pins, unstored association, two-file rooms, no-override chat, and 6y's separate exact-Captain-authority seam remain in scope.
+- SKIPPED: Implement code, consume or apply a gate, launch Subspace, materialize sources, invoke a provider, or mutate provider outputs.
+  This cycle is a state-only ideation correction; the retained provider package remains read-only and a superseding ideation gate is required.
+
+### Summary
+
+Cycle 7 makes the readiness claim match the current consumer: s4 produces a durable
+Git-addressed recorder room, not a currently presentable Subspace package. The filed
+dependency now owns the missing consumer and real E2E, while s4 retains a smaller
+root/full-commit/path locator, explicit local-object retention rules, and a rebaselined
+recorder-only proof surface.
