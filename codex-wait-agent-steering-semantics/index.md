@@ -224,3 +224,19 @@ The correction changes authority, not behavior: file and LOC estimates now suppo
 - Cycle 6: CHANGES REQUESTED — Roborev job 2404; surface 6 files/768 LOC vs estimate 5 files/190–285 LOC (269% of upper estimate); AC unchanged
 - Cycle 7: CHANGES REQUESTED — Roborev job 2405; surface 6 files/865 LOC vs estimate 5 files/190–285 LOC (304% of upper estimate); AC unchanged
 - Cycle 8: CHANGES REQUESTED — Roborev job 2409; surface 6 files/886 LOC vs estimate 5 files/190–285 LOC (311% of upper estimate); AC unchanged
+
+## Stage Report: implementation
+
+- DONE: Implement the Codex-only active-loop-resumption wording and probe/evidence vocabulary while preserving final-status plus durable-report completion authority and all cross-runtime/API exclusions.
+  Commits `12c9a123` through `2e6e88c5` update only the Codex adapter, Codex probe/evidence, and Codex-focused test vocabulary; shared core, Claude, Pi, runtime APIs, scheduler behavior, and cancellation state are unchanged.
+- DONE: Add the ordered correlated-worker behavioral proof and independent mutants for cancellation/redispatch, premature monitoring, wrong identity or stale epoch, wait-return completion, and repeated captain-facing disclaimer language.
+  Commits `c1950744`, `134460f5`, `dbc58d04`, `88ad9121`, `6ff6361d`, and `9c903da6` make each listed mutant fail independently and also reject unattributable spawns, duplicate completion authorities, quoted/fenced report claims, and empty durable stage results.
+- DONE: Declare and reconcile the actual semantic surface, run focused/live-tag/full/race verification, request final Roborev review, triage findings by materiality, and report exact acceptance evidence.
+  The final surface is 6 files/886 changed LOC versus the advisory 5 files/190–285 LOC estimate: the sixth file is the retained durable report, and the additional LOC are explicit ordered-event validation and independent mutants added through review without semantic expansion.
+  `go test ./internal/ensigncycle ./skills/integration -run 'TestCodex.*(Steering|IdleNotification)' -count=1`, the contractlint containment test, and the live-tag compile passed.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed after the final change.
+  Roborev jobs 2362–2405 produced material correlation, ordering, uniqueness, containment, and durable-report fixes; job 2409 repeated the raw/private live-replay request, declined because the approved plan assigns that evidence to validation.
+
+### Summary
+
+Implementation now describes captain input as resuming the First Officer's active loop while unresolved workers continue unchanged, then reinstalls monitoring only after active work is exhausted. Completion remains gated by one matching final-status signal plus a parsed durable implementation report; the Codex-only semantic boundary is preserved.
