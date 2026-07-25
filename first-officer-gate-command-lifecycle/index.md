@@ -1,7 +1,7 @@
 ---
 id: 6yyyyemkqwsett3g1c991w9f
 title: Make First Officers operate the recorded gate lifecycle
-status: validation
+status: implementation
 source: "Durable-decisions dogfood audit: PRs #557/#560 shipped gate commands without the planned FO operating contract, 2026-07-23"
 started: 2026-07-23T02:01:56Z
 completed:
@@ -868,6 +868,8 @@ Implemented and hardened the six-event integration and its deterministic/live or
 - Cycle 24: REJECTED — Roborev job 2224 triage and correction; surface 12/195 vs estimate 12/204 (96%); AC unchanged
 
 - Cycle 25: REJECTED — Roborev job 2231 final triage and correction; surface 13/199 vs estimate 13/204 (98%); AC unchanged
+
+- Cycle 26: REJECTED — validation cycle 33 canonical Pi lane gap; surface 13/199 vs estimate 13/204 (98%); AC unchanged
 
 ## Topology re-ideation delta (cycle 2; topology authority)
 
