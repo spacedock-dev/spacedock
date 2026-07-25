@@ -3,7 +3,6 @@
 package contractlint
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 // foFunctionReferencePaths is the 13-file union the mutable-address lint scans. The
@@ -299,19 +296,17 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 	if strings.Contains(lifecycle, "Gate review:") || strings.Contains(lifecycle, "Decision:") {
 		t.Error("lifecycle duplicates presenter markers instead of waiting for semantic presentation")
 	}
-	for _, tc := range []struct{ phrase, decision, class, ask, route, directive string }{{"`approve` maps to `approve`", "approve", "accepted direction", "preserve the reviewed package", "advance", `quote "captain"`}, {"`redo with feedback` maps to `revise`", "revise", "accepted direction", "add the retry test", "feedback", `path\segment`}, {"`reject` with `feedback-to` maps to `revise`", "revise", "rejected direction", "replace the rejected cache design", "feedback", "line one\nline two"}, {"`reject` without `feedback-to` maps to `hold`", "hold", "rejected direction", "name a feedback owner", "hold", "both \"quoted\"\\path\nnext"}, {"`hold` maps to `hold`", "hold", "pause", "wait for security sign-off", "hold", "批准"}, {"`not yet` maps to `hold`", "hold", "pause", "rerun the failing CI lane", "hold", "再試一次"}} {
-		reason := tc.class + ": " + tc.ask
-		snapshot, _ := json.Marshal(gates.Document{Records: []gates.GateRecord{{Attempts: []gates.Attempt{{Resolution: &gates.Resolution{Decision: tc.decision, Reason: reason, Adoption: tc.directive}}}}}})
-		var durable gates.Document
-		_ = json.Unmarshal(snapshot, &durable)
-		got := *durable.Records[0].Attempts[0].Resolution
-		route := map[string]string{"approve": "advance", "revise": "feedback", "hold": "hold"}[got.Decision]
-		grade := func(r gates.Resolution, route string) bool {
-			return strings.Contains(lifecycle, tc.phrase) && r.Decision == tc.decision && r.Adoption == tc.directive && strings.Contains(r.Reason, tc.class) && strings.Contains(r.Reason, tc.ask) && route == tc.route && strings.Contains(string(snapshot), tc.ask)
-		}
-		if !grade(got, route) || grade(gates.Resolution{Decision: "wrong", Reason: got.Reason}, route) ||
-			grade(gates.Resolution{Decision: got.Decision, Reason: "generic"}, route) || grade(got, "wrong") {
-			t.Fatal("durable mapping/reason/route mutation control failed")
+	mapping := "Map Captain calls before recording: `approve` maps to `approve` with an accepts-direction evidence reason; `redo with feedback` maps to `revise` with an accepts-direction reason; `reject` with `feedback-to` maps to `revise` with a rejects-direction reason; `reject` without `feedback-to` maps to `hold` with a pause reason; `hold` maps to `hold` with a pause reason; `not yet` maps to `hold` with a pause reason naming what remains. Routed redo/reject reasons include concrete asks and invoke `«feedback.route»` after the close commit; hold decisions commit and stop at the gate."
+	gradeMapping := func(body string) bool {
+		parts := strings.SplitN(body, "Map Captain calls before recording: ", 2)
+		return len(parts) == 2 && strings.SplitN(parts[1], "\n\n", 2)[0] == strings.TrimPrefix(mapping, "Map Captain calls before recording: ")
+	}
+	if !gradeMapping(lifecycle) {
+		t.Fatal("Captain mapping must preserve all six decisions, reason classes, concrete asks, and route/hold behavior")
+	}
+	for _, token := range []string{"`approve`", "`redo with feedback`", "`reject` with `feedback-to`", "`reject` without `feedback-to`", "`hold` maps", "`not yet`", "accepts-direction", "rejects-direction", "pause reason", "concrete asks", "`«feedback.route»`", "commit and stop at the gate"} {
+		if gradeMapping(strings.Replace(lifecycle, token, "swapped", 1)) {
+			t.Fatalf("Captain mapping mutation survived for %q", token)
 		}
 	}
 }

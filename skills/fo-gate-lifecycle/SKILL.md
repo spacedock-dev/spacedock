@@ -37,7 +37,7 @@ ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --room ROOM --workflow-dir WORKFL
 
 `revise` and `hold` require a reason (or the provider's included same-Briefing Annotation). Delegated FO approval always carries both its nonblank evidence reason and the exact quoted grant; never relabel it `person:captain`. A provider Result requires the prepared room's complete retained presentation mapping and authorized Resolution.
 
-Map Captain calls before recording: `approve` maps to `approve`; `redo with feedback` maps to `revise` with an accepts-direction reason; `reject` with `feedback-to` maps to `revise` with a rejects-direction reason; `reject` without `feedback-to` maps to `hold`; `hold` maps to `hold`; `not yet` maps to `hold` with a nonblank reason naming what remains. Routed redo/reject reasons include concrete asks; hold decisions commit and stop.
+Map Captain calls before recording: `approve` maps to `approve` with an accepts-direction evidence reason; `redo with feedback` maps to `revise` with an accepts-direction reason; `reject` with `feedback-to` maps to `revise` with a rejects-direction reason; `reject` without `feedback-to` maps to `hold` with a pause reason; `hold` maps to `hold` with a pause reason; `not yet` maps to `hold` with a pause reason naming what remains. Routed redo/reject reasons include concrete asks and invoke `«feedback.route»` after the close commit; hold decisions commit and stop at the gate.
 
 Require exit 0, the bound attempt/Briefing, `state=closed`, and the decision; record already validates the Resolution/application before atomic write. After every successful close, `«state.commit»(slug)` must commit that exact Resolution before approve, revise, hold, or any consume attempt. Close/commit failure halts.
 

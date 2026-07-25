@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 var recordedGateRequiredEvents = []string{
@@ -24,7 +26,7 @@ const recordedGateDispatchMarker = "RECORDED-GATE-SUCCESSOR-DISPATCHED"
 const (
 	recordedGateBriefingID = "briefing:docs-dev:3k:validation:attempt-1:revision-1"
 	recordedGateDigest     = "sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac"
-	recordedGateReason     = "Captain directive: approved after reviewing the presented 3k validation gate."
+	recordedGateReason     = "accepts-direction evidence: preserve the reviewed package after the presented 3k validation gate."
 	recordedGateDirective  = "you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement."
 )
 
@@ -168,6 +170,8 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	consume := run("consume", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
 	commitRecordedGateState(t, binary, fixture, "consume gate authorization")
+	durable, _, durableErr := gates.Read(fixture.entity)
+	requireRecordedGate(t, durableErr == nil && durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason, "approve durable snapshot unreadable")
 
 	events := successfulRecordedGateEvents(commands)
 	dispatches := 0
@@ -338,12 +342,19 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			t.Fatal("close-validation mismatch changed workflow bytes")
 		}
 	})
-	for _, decision := range []string{"hold", "revise"} {
-		t.Run(decision+"-consume", func(t *testing.T) {
+	calls := []string{"redo with feedback", "reject with feedback-to", "reject without feedback-to", "hold", "not yet"}
+	reasons := []string{"accepts-direction: add the retry test", "rejects-direction: replace the rejected cache design", "rejects-direction: name a feedback owner", "pause: wait for security sign-off", "pause: rerun the failing CI lane"}
+	directives := []string{`path\segment`, "line one\nline two", "both \"quoted\"\\path\nnext", `quote "captain"`, "再試一次"}
+	for i, decision := range []string{"revise", "revise", "hold", "hold", "hold"} {
+		t.Run(calls[i]+"-consume", func(t *testing.T) {
 			fixture := writeRecordedGateFixture(t)
 			bindRecordedGate(t, binary, fixture)
-			closeRecordedGate(t, binary, fixture, decision)
+			commitRecordedGateState(t, binary, fixture, "bind "+calls[i])
+			mustRecordedGate(t, binary, fixture.root, "gate", "record", "recorded-gate-task", "--decision", decision, "--actor", "agent:first-officer", "--reason", reasons[i], "--directive", directives[i], "--workflow-dir", fixture.root)
 			closeCommit := commitRecordedGateState(t, binary, fixture, "durably record "+decision)
+			closed, _, err := gates.Read(fixture.entity)
+			attempt := closed.Records[0].Attempts[0]
+			requireRecordedGate(t, err == nil && readFile(t, fixture.entity) == recordedGateEntityAt(t, fixture, closeCommit) && attempt.Resolution.Decision == decision && attempt.Resolution.Reason == reasons[i] && attempt.Resolution.Adoption == directives[i] && attempt.Application.Action == map[string]string{"revise": "feedback", "hold": "none"}[decision], "%s close/route snapshot mismatch", calls[i])
 			before := treeDigest(t, fixture.stateRoot)
 			result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 			assertRecordedGateByteCleanFailure(t, fixture, result, "condition")
@@ -730,12 +741,12 @@ func recordedGateReviewFromClaudeStream(stream string) string {
 			block := &row.Message.Content[i]
 			command := block.Input.Command
 			switch {
+			case row.Type == "assistant" && block.Type == "tool_use" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --decision "):
+				return singleRecordedGateReview(candidates)
 			case row.Type == "assistant" && block.Type == "tool_use" && block.Name == "Bash" && strings.Contains(command, "state commit recorded-gate-task"):
 				commit = block.ID
 			case row.Type == "user" && block.Type == "tool_result" && block.ToolUseID == commit && !block.IsError:
 				bound = recordedGateStateHead.MatchString(block.flatText())
-			case row.Type == "assistant" && block.Type == "tool_use" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --decision "):
-				return singleRecordedGateReview(candidates)
 			case bound && row.Type == "assistant" && block.Type == "text" && assertConciseRecordedGateReview(block.Text) == nil:
 				candidates = append(candidates, block.Text)
 			}
@@ -753,10 +764,10 @@ func recordedGateReviewFromCodexJSONL(jsonl string) string {
 			continue
 		}
 		switch {
-		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "state commit recorded-gate-task"):
-			bound = row.Item.ExitCode != nil && *row.Item.ExitCode == 0 && row.Item.Status == "completed" && recordedGateStateHead.MatchString(row.Item.AggregatedOutput)
 		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "gate record recorded-gate-task") && strings.Contains(row.Item.Command, " --decision "):
 			return singleRecordedGateReview(candidates)
+		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "state commit recorded-gate-task"):
+			bound = row.Item.ExitCode != nil && *row.Item.ExitCode == 0 && row.Item.Status == "completed" && recordedGateStateHead.MatchString(row.Item.AggregatedOutput)
 		case bound && row.Item.Type == "agent_message" && assertConciseRecordedGateReview(row.Item.Text) == nil:
 			candidates = append(candidates, row.Item.Text)
 		}
@@ -778,10 +789,10 @@ func recordedGateReviewFromPiSession(session string) string {
 		for _, block := range row.Message.Content {
 			command := block.Input.Command
 			switch {
-			case row.Message.Role == "assistant" && block.Type == "toolCall" && block.Name == "bash" && strings.Contains(command, "state commit recorded-gate-task"):
-				commit = block.ID
 			case row.Message.Role == "assistant" && block.Type == "toolCall" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --decision "):
 				return singleRecordedGateReview(candidates)
+			case row.Message.Role == "assistant" && block.Type == "toolCall" && block.Name == "bash" && strings.Contains(command, "state commit recorded-gate-task"):
+				commit = block.ID
 			case bound && row.Message.Role == "assistant" && block.Type == "text" && assertConciseRecordedGateReview(block.Text) == nil:
 				candidates = append(candidates, block.Text)
 			}
@@ -801,7 +812,7 @@ func TestRecordedGateReviewExtractorsRequireOneOrderedRootReview(t *testing.T) {
 	pi.failed, pi.child = strings.Replace(pi.commit, `"isError":false`, `"isError":true`, 1), strings.Replace(pi.review, `"assistant"`, `"user"`, 1)
 	for _, h := range []recordedGateHost{claude, codex, pi} {
 		requireRecordedGate(t, h.extract(h.commit+"\n"+h.review+"\n"+h.decision) == recordedGateReview(), "%s structured review failed", h.name)
-		for control, stream := range map[string]string{"narration": h.narration + "\n" + h.review + "\n" + h.commit + "\n" + h.decision, "failed": h.failed + "\n" + h.review + "\n" + h.decision, "order": h.review + "\n" + h.commit + "\n" + h.decision, "duplicate": h.commit + "\n" + h.review + "\n" + h.review + "\n" + h.decision, "root": h.commit + "\n" + h.child + "\n" + h.decision} {
+		for control, stream := range map[string]string{"narration": h.narration + "\n" + h.review + "\n" + h.commit + "\n" + h.decision, "failed": h.failed + "\n" + h.review + "\n" + h.decision, "order": h.review + "\n" + h.commit + "\n" + h.decision, "duplicate": h.commit + "\n" + h.review + "\n" + h.review + "\n" + h.decision, "root": h.commit + "\n" + h.child + "\n" + h.decision, "batched": strings.Replace(h.commit, "state commit recorded-gate-task", "state commit recorded-gate-task && spacedock gate record recorded-gate-task --decision approve", 1) + "\n" + h.review + "\n" + h.decision} {
 			requireRecordedGate(t, h.extract(stream) == "", "%s %s control qualified", h.name, control)
 		}
 	}
