@@ -3364,3 +3364,64 @@ deletion-sensitive without adding history. Every lifecycle and ancestry
 negative remains active, cumulative scope is back under cap at 203 changed LOC,
 and all deterministic gates pass at `5ced64fc`. Checklist accounting is
 **4 DONE, 1 SKIPPED, 0 FAILED**.
+
+## Stage Report: implementation (cycle 32 three-host live retry)
+
+- DONE: Obtain detached approval for one unchanged sequential live retry at
+  exact tip `5ced64fc5101b5da5f7bb5b3cfa9b8b9e2afc457`.
+  Review returned APPROVE LIVE RETRY. The exact candidate binary and worktree
+  skills, current shared prompt, runner, model selection, and transport were
+  used in Claude → Codex → Pi order with stop-on-first-failure.
+- DONE: Pass the actually executed Claude lifecycle.
+  `TestLiveClaudeSharedScenarios/recorded-gate-lifecycle` passed in
+  **265.05s**. Claude bound, presented, approved with delegated FO identity and
+  evidence, consumed, dispatched, and obtained the durable successor marker
+  and handoff report at fixture commit `a4da6c6`.
+- DONE: Pass the actually executed Codex lifecycle.
+  `TestLiveCodexSharedScenarios/recorded-gate-lifecycle` passed in
+  **264.32s**. Codex completed the same durable lifecycle and obtained the
+  successor marker and handoff report at fixture commit `7437c8d`.
+- FAILED: Execute the final host, Pi, through the lifecycle.
+  `TestLivePiRecordedGateLifecycle` failed after **3.72s**, before prompt or
+  lifecycle execution. Pi could not load
+  `/Users/clkao/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts`
+  because `pi-subagents/src/tui/render.ts` could not resolve module
+  `@earendil-works/pi-coding-agent`. The host sequence stopped immediately;
+  there was no scenario result to grade and no retry or dependency change.
+- DONE: Record the separately owned mixed-runtime-marker behavior truthfully.
+  During the passing Claude journey, its first host-derived `dispatch build`
+  refused simultaneous `CODEX_THREAD_ID` and `CLAUDECODE`; the current FO then
+  used explicit `--host claude` and completed the journey. Codex did not surface
+  the ambiguity. This is current-harness evidence owned by the approved-pending
+  v3 runtime-marker work; no 6y prompt, runner, environment, or command surface
+  was changed or coached around it.
+- DONE: Retain the complete actual-execution artifact packages.
+  The common root is
+  `/tmp/spacedock-6y-cycle32-live-5ced64fc.4FreHB/`. Claude's
+  `claude-stream.jsonl` is **394597 bytes**, SHA-256
+  `c5a3410cc9a81efb55d5f0b3c16cd38462ceb0ca708227feb86dd09b24d69bcb`;
+  `claude-final-message.txt` is **1320 bytes**, SHA-256
+  `2864ea73ea00e6a8ff6cd5a7a0d420114943cd221aa6cd5d04b3433437a20bc1`.
+  Codex's full `_setup` evidence and run package are retained;
+  `codex-exec.jsonl` is **124308 bytes**, SHA-256
+  `007a71fcc5193697e9db653ed17d72706bcc64be6202f21aaa0a6f1fe39fb065`;
+  `codex-final-message.txt` is **269 bytes**, SHA-256
+  `271a98da106a8cff59ee1c54c629d7452690a078b7f2062264f5014f7a6b0e11`;
+  `codex-process-result.txt` is **93 bytes**, SHA-256
+  `364e8b75c211af228925d20e2328bab244f3f80972444b66c3dce52e870d3865`.
+  Pi's `pi-stderr.txt` is **278 bytes**, SHA-256
+  `edd9c39298a28841483f27824aaaed89731a005a4a97b98bad229a5331c1b9de`;
+  `pi-stdout.txt` is empty, SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- SKIPPED: Retry Pi, alter dependencies or product code, request Roborev, push
+  code or state, mutate a gate/round/status/stage, or advance the workflow.
+  The exact code tip remains clean and unchanged for First Officer triage.
+
+### Summary
+
+Claude and Codex passed the complete unchanged delegated gate lifecycle. Pi
+failed at extension load before the lifecycle began because a required module
+was absent, so the mandated sequential run stopped without retry or mutation.
+All exact artifacts are retained, including the passing Claude mixed-marker
+recovery evidence, and code remains unchanged at `5ced64fc`. Checklist
+accounting is **5 DONE, 1 FAILED, 1 SKIPPED**.
