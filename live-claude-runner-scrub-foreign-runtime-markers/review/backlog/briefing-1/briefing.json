@@ -1,0 +1,16 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:v3:backlog:attempt-1:revision-1",
+  "question": "Should the sprint add a narrow live-runner dependency that removes foreign runtime markers before launching each host while preserving production ambiguity refusal?",
+  "artifacts": [
+    {
+      "id": "artifact:v3-backlog-gate-review",
+      "uri": "gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:2fc05fcdcfc023fd19f92e69e767b0b1e6465293b87f85a5775f14cfde0eea19",
+      "summary": "Explains the repeated mixed-runtime-marker leak, the narrow harness-only correction, required evidence, and the unchanged production boundary."
+    }
+  ],
+  "context": []
+}

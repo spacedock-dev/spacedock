@@ -10,6 +10,20 @@ worktree:
 issue:
 sprint: durable-decisions
 id: v3vt8gp2yffmn62r8p95gkph
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:v3:backlog
+    records:
+        - id: gate:docs-dev:v3:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:v3-backlog-1
+              briefing:
+                id: briefing:docs-dev:v3:backlog:attempt-1:revision-1
+                digest: sha256:2cda6cc97a6f5db6ef432781f25aae29f9781316c73999451d134ac549d26dc6
+                digest-domain: canonical-bytes
+                room-ref: ./review/backlog/briefing-1
 ---
 
 The cross-host live harness must simulate the launched host, not leak the captain host's runtime identity. `isolatedClaudeEnv` removes `CLAUDECODE` before the front door but currently retains `CODEX_THREAD_ID` (and potentially Pi markers). The launched Claude session therefore sees multiple runtime families, making ordinary `spacedock dispatch build` fail as ambiguous and encouraging an explicit-host recovery that a real top-level Claude session would not need.
