@@ -47,6 +47,20 @@ gates:
                 digest: sha256:39164702899552b7c9c24b4e4067d0776eead9834ad958da907f50da8f2654d2
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:v3:ideation:1
+                briefing: briefing:docs-dev:v3:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-25T08:24:47.475905Z"
+                decision: approve
+                reason: The design isolates the proven harness leak at existing per-host environment seams, preserves production ambiguity refusal, and supplies falsifiable builder plus live evidence within a declared six-file surface; implementation must wait for landed 6y.
+                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 ## Problem
