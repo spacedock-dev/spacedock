@@ -52,7 +52,8 @@ func assertSelectedGateOverride(commandLog, stream, room string) error {
 		command = strings.TrimSpace(command)
 		for _, line := range strings.Split(commandLog, "\n") {
 			fields := strings.SplitN(line, "\t", 2)
-			if len(fields) != 2 || (successOnly && fields[0] != "exit=0") {
+			if len(fields) != 2 || !strings.HasPrefix(fields[0], "exit=") ||
+				(successOnly && fields[0] != "exit=0") {
 				continue
 			}
 			if fields[1] == command || strings.HasPrefix(fields[1], command+" ") {

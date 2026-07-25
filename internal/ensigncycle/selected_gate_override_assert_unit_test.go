@@ -17,9 +17,12 @@ func selectedOverrideTool(name, input string) string {
 
 func TestSelectedGateOverrideObservedBehavior(t *testing.T) {
 	const room = "/tmp/workflow/.spacedock-state/recorded-gate-task/review/validation/briefing-1"
-	const commandLog = "exit=0\tgate --help\n" +
-		"exit=0\tgate prepare recorded-gate-task --question Advance?\n" +
-		"exit=0\tstate commit recorded-gate-task --workflow-dir /tmp/workflow\n"
+	shimLog := func(exit int, command string) string {
+		return fmt.Sprintf("begin\t%s\nexit=%d\t%s\n", command, exit, command)
+	}
+	commandLog := shimLog(0, "gate --help") +
+		shimLog(0, "gate prepare recorded-gate-task --question Advance?") +
+		shimLog(0, "state commit recorded-gate-task --workflow-dir /tmp/workflow")
 	prepare := selectedOverrideTool("Bash", `"command":"spacedock gate prepare recorded-gate-task --question Advance?"`)
 	commit := selectedOverrideTool("Bash", `"command":"spacedock state commit recorded-gate-task --workflow-dir /tmp/workflow"`)
 	override := selectedOverrideTool("Skill", `"skill":"subspace:r","args":"gate `+room+`"`)
@@ -33,10 +36,14 @@ func TestSelectedGateOverrideObservedBehavior(t *testing.T) {
 		log    string
 		stream string
 	}{
-		"missing-help":   {strings.Replace(commandLog, "exit=0\tgate --help\n", "", 1), valid},
-		"duplicate-help": {commandLog + "exit=0\tgate --help\n", valid},
+		"missing-help":   {strings.Replace(commandLog, shimLog(0, "gate --help"), "", 1), valid},
+		"duplicate-help": {commandLog + shimLog(0, "gate --help"), valid},
+		"failed-help-only": {
+			strings.Replace(commandLog, shimLog(0, "gate --help"), shimLog(1, "gate --help"), 1),
+			valid,
+		},
 		"failed-help-before-success": {
-			"exit=1\tgate --help\n" + commandLog,
+			shimLog(1, "gate --help") + commandLog,
 			valid,
 		},
 		"failed-prepare":     {strings.Replace(commandLog, "exit=0\tgate prepare", "exit=1\tgate prepare", 1), valid},
