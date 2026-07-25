@@ -51,7 +51,7 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	if piCoverageRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi shared scenario coverage guard")
 	}
-	piSmokeRun := findExecutableStep(steps, "Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke")
+	piSmokeRun := findExecutableStep(steps, "Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle")
 	if piSmokeRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi front-door smoke")
 	}
