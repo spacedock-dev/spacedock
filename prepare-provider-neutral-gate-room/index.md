@@ -2667,3 +2667,79 @@ cleanup, compatibility path, provider harness, or authority routing is in
 scope. Reproduce both failures first, then run focused, full, race, and one
 successor cumulative Roborev. A genuine new Medium-or-higher successor finding
 requires design-reset escalation without another edit.
+
+## Stage Report: implementation (cycle 20)
+
+- DONE: Reset the correction to the commander-authorized surface.
+  Commit `b822b4bd` deletes the three selected-override files, removes Claude
+  extra-plugin plumbing and the false rollback test, and rejects symlinked flat
+  companion ancestry. Exact candidate replay proved the shared keep-moving
+  expansion materially grades a successful consume that the old oracle misses,
+  so the declared exception retained it.
+- DONE: Correct Roborev 2738's three release-boundary findings.
+  Commit `05ebb7ff` validates retained authority before every prepare, resolves
+  Git inventory before request-backed freeze, and requires exact entity-scoped
+  `consumed=true` evidence. The durable four-field triage above records each
+  supported path, harm, AC boundary, trigger, and bounded disposition.
+- DONE: Correct Roborev 2745's two AC-5 findings.
+  Both reproduced red: altered durable provider resolution made eligibility and
+  consumption succeed, and an identical `request.json` symlink made exact
+  prepare replay succeed. Commit `8c9aa160` requires exact Result-to-attempt
+  Resolution equality and non-symlink regular prepared-room entries on replay
+  and after publication, before binding.
+- DONE: Verify the final bounded correction.
+  Focused mutation tests, `gofmt -w ./cmd ./internal`, `go test ./...`,
+  `go test ./... -race`, and `git diff --check` pass at `8c9aa160`.
+  The exact isolated Codex keep-moving candidate also passed in 378.122 seconds
+  with a worktree-built and pinned `SPACEDOCK_BIN`.
+- DISPOSITIONED: Successor cumulative Roborev job 2748 found a real pilot-state
+  trigger outside the released product contract.
+  Existing persisted request-backed rooms may omit `briefing.locator`, and
+  their Briefings may omit the new primary summary. Current retained readers
+  reject those rooms. The supported s4 producer cannot create either shape:
+  prepare writes the locator and refuses a blank primary summary before
+  publication.
+
+### Job 2748 decline disposition
+
+- Released supported path: final v1's request-backed producer writes
+  `briefing.locator`, and its prepared Briefing carries a nonblank primary
+  summary. v1 is unreleased; prototype and pilot compatibility is not promised.
+- Observable harm: an old pilot room with either omitted field becomes
+  unreadable across retained-authority operations, but no released producer can
+  create that state.
+- Boundary and trigger: historical prototype code selected `briefing.json`
+  directly, while current code resolves the explicit locator and enforces the
+  prepared profile. Supporting the prototype shape would add the compatibility
+  path that Cycle 20 forbids.
+- Disposition: no product edit. Current retained-state audit found three real
+  request rooms; all name `gate-briefing.json`, and all three primary artifacts
+  have nonblank summaries. There is no currently retained cleanup target.
+  Any locator-less or summary-less pilot room found elsewhere is a one-off
+  state cleanup or transform target, separate from product behavior.
+- `class: correct-but-disproportionate; why-not-material: unreleased prototype
+  state is outside the supported v1 producer and consumer contract;
+  promotes-when: final v1 can create the legacy shape or released v1 promises to
+  consume it`
+
+### Surface reconciliation
+
+- The final bounded correction was estimated at three files, `+118/-2`, and is
+  exactly the same three files at `+179/-0`. The 61-line overage is entirely
+  falsifiable test setup and assertions; product code is only `+34/-0`.
+- The `+145` test surface is the smallest sufficient end-to-end coverage using
+  existing fixtures and package helpers. It constructs a real prepared
+  provider inventory and Result, closes the attempt, mutates only the durable
+  resolution/application, checks both eligibility and consumption, and proves
+  byte cleanliness. Its second regression substitutes identical external
+  authority bytes for each room entry, checks exact replay refusal, and proves
+  state, external bytes, and symlink identity remain unchanged. No new harness,
+  fixture file, compatibility branch, or adjacent product path was added.
+- Cycle 20 totals nine files, `+444/-431`. The cumulative branch totals 40 files,
+  `+4488/-323`, or 4,811 changed lines.
+
+### Commander hold
+
+No push, CI dispatch, gate or PR mutation, or merge occurred in Cycle 20.
+Local code tip is `8c9aa160`. Job 2748 is declined at the release boundary;
+this report is not overall s4 acceptance or a merge recommendation.
