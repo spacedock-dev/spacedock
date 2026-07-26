@@ -3299,3 +3299,18 @@ supported live journey, two required Claude lanes are red, and Codex remains exp
 The intended and actual cycle-26 surface is only the fail-closed lifecycle instruction plus the no-authority and round-record observer corrections; no product behavior changed, and neither Roborev finding changes `7fd42abf`.
 Roborev finding 1, legacy request-backed v1 compatibility, is DECLINED because the Captain already ruled out compatibility for unreleased prototypes: current request-backed rooms require locator plus summary, no fallback is added, and promotion occurs only if an old-schema artifact enters a released or supported producer.
 Roborev finding 2, cold gate discoverability, is MATERIAL but transferred to approved sprint member `sk/gate-agent-ergonomics`; s4 makes no patch because the promotion owner is already active.
+
+## Stage Report: implementation (cycle 27)
+
+- DONE: Diagnose the two independent Claude gate-prepare retries from CI run 30207273090 and identify the smallest s4-owned correction without weakening committed-source validation.
+  Sonnet job `89807509250` and Opus job `89807509207` each selected fixture-created untracked `evidence/command.log`, received the exact byte-clean committed-source refusal, removed that Reference, and retried; `5081d120` moves only this observer log outside the workflow.
+- DONE: Make the focused Sonnet and Opus default-headless recorded-gate-stop scenarios pass locally with exactly one successful prepare and no retry after a rejected selection.
+  Exact isolated-home runs passed for Opus in `481.18s` and Sonnet in `529.67s`; the log oracle fails on any rejected prepare, retry, duplicate successful prepare, decision, consume, or dispatch.
+- DONE: Run focused tests, required full/race/format checks, and a classified Roborev review; do not trigger CI.
+  The fixture-containment and gate-hold controls passed; `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and merge-base `git diff --check` passed; Roborev `2937` was classified below, and code remained unpushed with no CI trigger.
+
+### Summary
+
+The cycle-27 correction is local code commit `5081d120`, exactly 1 fixture file at `+18/-1` (cumulative branch: 43 files at `+5009/-357`); product code, skill text, the no-retry boundary, and committed-source validation are unchanged.
+Roborev's cold-gate discoverability finding is MATERIAL but already transferred to active approved owner `sk/gate-agent-ergonomics`, so s4 adds no duplicate patch.
+Roborev's shell finding is DECLINED as non-material because the cited test is live-tagged rather than default/race and passed on the supported Ubuntu live host; promote if a supported `-tags live` host lacks either explicitly exercised tool shell.
