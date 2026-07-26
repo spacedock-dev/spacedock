@@ -2148,3 +2148,30 @@ Cycle-4 validation independently closes the terminal help-row evidence defect wi
 expanding product or harness scope. The recommendation is PASSED; the failed Claude
 authentication is external infrastructure, and deferred/pre-existing notes remain
 separate from the clean governing acceptance criteria.
+
+## Rebase Integration Report
+
+Rebased the 16-commit s4 series from `5484cee6` onto `origin/main` at `50f8d1fb`.
+The rebased feature tip is `e3837583`.
+
+- Resolved the command-reference conflict by retaining current-main publication and
+  archived recovery semantics together with s4's flat file and companion directory.
+- Resolved state-sync and status conflicts by retaining current-main preflight,
+  publication, refusal, and archive behavior while preserving s4's two-path unit,
+  scoped commits, and literal archive moves.
+- Resolved the recorded lifecycle fixture by retaining s4's prepare, bind, decision,
+  and named-source proof while adopting current-main's branch preflight and
+  no-`--host` dispatch contract.
+- Focused tests exposed two integration defects. Commit `e3837583` removed duplicate
+  pathspec literalization and kept successful Git stderr warnings out of parsed
+  stdout without weakening failed-command diagnostics.
+- The final path set matches the original s4 series except for
+  `internal/statesync/publish.go`, the current-main owner required for the warning
+  integration fix. No unrelated drift was found.
+- Focused affected suites, `gofmt -w ./cmd ./internal`, `go test ./...`,
+  `go test ./... -race`, and `git diff --check` passed.
+- Safely force-pushed the feature branch with an exact lease on old tip `5484cee6`;
+  the remote advanced to `e3837583`.
+
+This integration did not change gate status, Resolution, application, mod-block, or
+entity frontmatter.
