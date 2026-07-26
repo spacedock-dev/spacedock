@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"testing"
 )
 
 // The keep-moving-posture scenario grades the FO's MOTION TRACE — its tool calls plus its
@@ -112,6 +113,36 @@ func kmMergeGuardTerminalizes(command, entity string) bool {
 	return false
 }
 
+func kmConsumesGate(command, entity string) bool {
+	for _, segment := range strings.FieldsFunc(command, func(r rune) bool {
+		return r == '\n' || r == ';' || r == '&' || r == '|'
+	}) {
+		fields := strings.Fields(segment)
+		for i := 1; i+2 < len(fields); i++ {
+			launcher := strings.Trim(fields[i-1], `"'`)
+			if fields[i] != "gate" || fields[i+1] != "consume" || strings.Trim(fields[i+2], `"'`) != entity ||
+				!(launcher == "spacedock" || strings.HasSuffix(launcher, "/spacedock") ||
+					strings.Contains(launcher, "SPACEDOCK_BIN") || strings.HasPrefix(launcher, "$")) {
+				continue
+			}
+			validPrefix := true
+			for _, prefix := range fields[:i-1] {
+				prefix = strings.Trim(prefix, `"'`)
+				if prefix != "command" && prefix != "env" && prefix != "bash" && prefix != "/bin/bash" &&
+					prefix != "sh" && prefix != "/bin/sh" && prefix != "-c" && prefix != "-lc" &&
+					!strings.Contains(prefix, "=") {
+					validPrefix = false
+					break
+				}
+			}
+			if validPrefix {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // keepMovingTrace is the host-neutral view of the FO's motion the grader consumes. Each host
 // extractor fills it from its own transcript dialect plus the shared final message.
 type keepMovingTrace struct {
@@ -159,22 +190,27 @@ func gradeKeepMoving(tr keepMovingTrace, independent []string) error {
 }
 
 // claudeKeepMovingTrace extracts the motion trace from a Claude stream-json transcript
-// (actions) plus the final message. Claude advances/re-opens via a `status --set` Bash
-// command, dispatches (including a routed re-shape) via the Agent/Task tools, and re-shapes
-// in-house via the Edit/Write tools.
+// (actions) plus the final message. Claude advances through a successful gate consume or
+// legacy `status --set`, re-opens via `status --set`, dispatches via Agent/Task, and
+// re-shapes in-house via Edit/Write.
 func claudeKeepMovingTrace(stream, finalMessage string, independent []string) keepMovingTrace {
 	tr := newKeepMovingTrace()
+	pendingConsumes := map[string]bool{}
 	for _, line := range strings.Split(stream, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 		var entry struct {
+			Type    string `json:"type"`
 			Message *struct {
 				Content []struct {
-					Type  string `json:"type"`
-					Name  string `json:"name"`
-					Input struct {
+					Type      string `json:"type"`
+					ID        string `json:"id"`
+					Name      string `json:"name"`
+					ToolUseID string `json:"tool_use_id"`
+					IsError   bool   `json:"is_error"`
+					Input     struct {
 						Command     string `json:"command"`
 						FilePath    string `json:"file_path"`
 						Prompt      string `json:"prompt"`
@@ -187,12 +223,18 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 			continue
 		}
 		for _, block := range entry.Message.Content {
+			if entry.Type == "user" && block.Type == "tool_result" && pendingConsumes[block.ToolUseID] && !block.IsError {
+				tr.approvedAdvanced = true
+			}
 			if block.Type != "tool_use" {
 				continue
 			}
 			switch block.Name {
 			case "Bash":
 				c := block.Input.Command
+				if kmConsumesGate(c, kmApprovedGate) && block.ID != "" {
+					pendingConsumes[block.ID] = true
+				}
 				if kmAdvancesToStatus(c, kmApprovedGate, kmNextStage) {
 					tr.approvedAdvanced = true
 				}
@@ -230,10 +272,9 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 }
 
 // codexKeepMovingTrace extracts the motion trace from a `codex exec --json` transcript
-// (actions) plus the final message. It reads structured item types: advances/re-opens and
-// the standing-loop dispatch surface from command_execution; re-shapes from a `file_change`
-// item (codex 0.142.5) or an apply_patch command; dispatches (including a routed re-shape)
-// from a spawn_agent naming the entity.
+// (actions) plus the final message. It reads successful gate consumes, legacy status
+// advances/re-opens, and the standing-loop dispatch surface from command_execution;
+// re-shapes from file_change or apply_patch; and dispatches from spawn_agent.
 func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keepMovingTrace {
 	tr := newKeepMovingTrace()
 	evidenceEntities := append([]string{kmApprovedGate, kmQuestioned}, independent...)
@@ -243,9 +284,21 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
 		if line == "" {
 			continue
 		}
-		var cmd codexCommandItem
+		var cmd struct {
+			Type string `json:"type"`
+			Item struct {
+				Type     string `json:"type"`
+				Command  string `json:"command"`
+				Status   string `json:"status"`
+				ExitCode *int   `json:"exit_code"`
+			} `json:"item"`
+		}
 		if err := json.Unmarshal([]byte(line), &cmd); err == nil && cmd.Item.Type == "command_execution" {
 			c := cmd.Item.Command
+			if cmd.Type == "item.completed" && cmd.Item.Status == "completed" && cmd.Item.ExitCode != nil &&
+				*cmd.Item.ExitCode == 0 && kmConsumesGate(c, kmApprovedGate) {
+				tr.approvedAdvanced = true
+			}
 			if kmAdvancesToStatus(c, kmApprovedGate, kmNextStage) {
 				tr.approvedAdvanced = true
 			}
@@ -320,4 +373,82 @@ func assertClaudeKeepMoving(stream, finalMessage string, independent []string) e
 // host-neutral patterns the Claude assertion feeds.
 func assertCodexKeepMoving(jsonl, finalMessage string, independent []string) error {
 	return gradeKeepMoving(codexKeepMovingTrace(jsonl, finalMessage, independent), independent)
+}
+
+func kmClaudeCompletedBash(id, command string, failed bool) string {
+	return fmt.Sprintf(
+		"{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"id\":%q,\"name\":\"Bash\",\"input\":{\"command\":%q}}]}}\n"+
+			"{\"type\":\"user\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":%q,\"content\":\"command finished\",\"is_error\":%t}]}}",
+		id, command, id, failed,
+	)
+}
+
+func kmCodexCompletedCommand(command string, exitCode int) string {
+	return fmt.Sprintf(
+		`{"type":"item.completed","item":{"type":"command_execution","command":%q,"status":"completed","exit_code":%d}}`,
+		command, exitCode,
+	)
+}
+
+func TestKeepMovingGateConsumeAdvancement(t *testing.T) {
+	independent := kmIndependent()
+	claudeRemainder := strings.Join([]string{
+		claudeToolUse("Agent", `{"prompt":"Dispatch the `+kmNextStage+` stage for `+kmApprovedGate+`."}`),
+		claudeToolUse("Agent", `{"prompt":"Dispatch `+kmNextStage+` for `+kmReadyOne+`."}`),
+		claudeToolUse("Agent", `{"prompt":"Dispatch `+kmNextStage+` for `+kmReadyTwo+`."}`),
+		claudeToolUse("Edit", `{"file_path":"`+kmQuestioned+`.md"}`),
+	}, "\n")
+	codexRemainder := strings.Join([]string{
+		codexSpawn("Dispatch the " + kmNextStage + " stage for " + kmApprovedGate + "."),
+		codexSpawn("Dispatch " + kmNextStage + " for " + kmReadyOne + "."),
+		codexSpawn("Dispatch " + kmNextStage + " for " + kmReadyTwo + "."),
+		codexFileChange(kmQuestioned + ".md"),
+	}, "\n")
+
+	claudeConsume := kmClaudeCompletedBash("consume-approved", "spacedock gate consume "+kmApprovedGate+" --workflow-dir .", false)
+	if err := assertClaudeKeepMoving(claudeConsume+"\n"+claudeRemainder, kmCorrectFinal(), independent); err != nil {
+		t.Fatalf("successful Claude gate consume must count as the approved transition: %v", err)
+	}
+	codexConsume := kmCodexCompletedCommand(
+		"spacedock gate record "+kmApprovedGate+" --decision approve; spacedock state commit "+kmApprovedGate+
+			"; spacedock gate consume "+kmApprovedGate+" --workflow-dir .; spacedock state commit "+kmApprovedGate,
+		0,
+	)
+	if err := assertCodexKeepMoving(codexConsume+"\n"+codexRemainder, kmCorrectFinal(), independent); err != nil {
+		t.Fatalf("successful Codex gate consume must count as the approved transition: %v", err)
+	}
+
+	claudeControls := map[string]string{
+		"absent":       claudeRemainder,
+		"other entity": kmClaudeCompletedBash("consume-other", "spacedock gate consume other-task --workflow-dir .", false) + "\n" + claudeRemainder,
+		"failed":       kmClaudeCompletedBash("consume-failed", "spacedock gate consume "+kmApprovedGate+" --workflow-dir .", true) + "\n" + claudeRemainder,
+	}
+	for name, stream := range claudeControls {
+		t.Run("claude/"+name, func(t *testing.T) {
+			if err := assertClaudeKeepMoving(stream, kmCorrectFinal(), independent); err == nil || !strings.Contains(err.Error(), "advance") {
+				t.Fatalf("control must fail on the missing approved advance, got %v", err)
+			}
+		})
+	}
+	codexControls := map[string]string{
+		"absent":       codexRemainder,
+		"other entity": kmCodexCompletedCommand("spacedock gate consume other-task --workflow-dir .", 0) + "\n" + codexRemainder,
+		"failed":       kmCodexCompletedCommand("spacedock gate consume "+kmApprovedGate+" --workflow-dir .", 1) + "\n" + codexRemainder,
+	}
+	for name, stream := range codexControls {
+		t.Run("codex/"+name, func(t *testing.T) {
+			if err := assertCodexKeepMoving(stream, kmCorrectFinal(), independent); err == nil || !strings.Contains(err.Error(), "advance") {
+				t.Fatalf("control must fail on the missing approved advance, got %v", err)
+			}
+		})
+	}
+
+	claudeNoDispatch := strings.Replace(claudeRemainder, claudeToolUse("Agent", `{"prompt":"Dispatch the `+kmNextStage+` stage for `+kmApprovedGate+`."}`)+"\n", "", 1)
+	if err := assertClaudeKeepMoving(claudeConsume+"\n"+claudeNoDispatch, kmCorrectFinal(), independent); err == nil || !strings.Contains(err.Error(), "dispatch") {
+		t.Fatalf("Claude consume without a separate approved dispatch must fail on dispatch, got %v", err)
+	}
+	codexNoDispatch := strings.Replace(codexRemainder, codexSpawn("Dispatch the "+kmNextStage+" stage for "+kmApprovedGate+".")+"\n", "", 1)
+	if err := assertCodexKeepMoving(codexConsume+"\n"+codexNoDispatch, kmCorrectFinal(), independent); err == nil || !strings.Contains(err.Error(), "dispatch") {
+		t.Fatalf("Codex consume without a separate approved dispatch must fail on dispatch, got %v", err)
+	}
 }

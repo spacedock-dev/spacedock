@@ -14,12 +14,49 @@ import (
 )
 
 func assertRecordedGateHoldLog(log string) error {
-	bind, commit, head := strings.Index(log, "exit=0\tgate record recorded-gate-task --briefing "), strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task"), strings.LastIndex(log, "state-head\t")
-	if bind < 0 || commit < bind || head < commit || strings.Count(log, "exit=0\tgate record recorded-gate-task --briefing ") != 1 ||
-		strings.Contains(log[bind:], " --decision ") || strings.Contains(log[bind:], "gate consume recorded-gate-task") || strings.Contains(log[bind:], "dispatch build ") {
+	const successfulPrepare = "exit=0\tgate prepare recorded-gate-task "
+	prepare := strings.Index(log, successfulPrepare)
+	commit := strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task")
+	head := strings.LastIndex(log, "state-head\t")
+	if prepare < 0 || commit < prepare || head < commit || strings.Count(log, successfulPrepare) != 1 ||
+		strings.Contains(log[prepare:], " --decision ") || strings.Contains(log[prepare:], "gate consume recorded-gate-task") || strings.Contains(log[prepare:], "dispatch build ") {
 		return errGraded("gate hold crossed its committed no-authority boundary")
 	}
 	return nil
+}
+
+func TestAssertRecordedGateHoldLog(t *testing.T) {
+	valid := strings.Join([]string{
+		"begin\tgate prepare recorded-gate-task --question Approve? --artifact gate-review.md",
+		"exit=0\tgate prepare recorded-gate-task --question Approve? --artifact gate-review.md",
+		"begin\tstate commit recorded-gate-task",
+		"exit=0\tstate commit recorded-gate-task",
+		"state-head\t0123456789abcdef0123456789abcdef01234567",
+	}, "\n")
+	if err := assertRecordedGateHoldLog(valid); err != nil {
+		t.Fatalf("successful prepare plus binding commit must hold at the no-authority boundary: %v", err)
+	}
+
+	controls := map[string]string{
+		"absent prepare":       strings.Replace(valid, "gate prepare", "gate inspect", 2),
+		"failed prepare":       strings.Replace(valid, "exit=0\tgate prepare", "exit=1\tgate prepare", 1),
+		"other entity":         strings.ReplaceAll(valid, "recorded-gate-task", "other-task"),
+		"absent commit":        strings.Replace(valid, "exit=0\tstate commit recorded-gate-task", "exit=0\tstate inspect recorded-gate-task", 1),
+		"failed commit":        strings.Replace(valid, "exit=0\tstate commit recorded-gate-task", "exit=1\tstate commit recorded-gate-task", 1),
+		"absent state head":    strings.Replace(valid, "state-head\t", "missing-head\t", 1),
+		"duplicate prepare":    valid + "\nexit=0\tgate prepare recorded-gate-task --question Again?",
+		"legacy briefing bind": strings.Replace(valid, "gate prepare recorded-gate-task --question Approve? --artifact gate-review.md", "gate record recorded-gate-task --briefing gate-review.md", 2),
+		"decision":             valid + "\nexit=0\tgate record recorded-gate-task --decision approve",
+		"consume":              valid + "\nexit=0\tgate consume recorded-gate-task",
+		"dispatch":             valid + "\nexit=0\tdispatch build --entity-path recorded-gate-task/index.md",
+	}
+	for name, log := range controls {
+		t.Run(name, func(t *testing.T) {
+			if err := assertRecordedGateHoldLog(log); err == nil {
+				t.Fatal("control crossed the recorded gate hold oracle")
+			}
+		})
+	}
 }
 
 // claudeRunnerAdapter wraps the existing package-private claudeLiveRunner (the
