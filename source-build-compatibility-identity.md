@@ -1,8 +1,8 @@
 ---
 title: Source builds use checkout compatibility identity, not Git-tag provenance
-status: backlog
+status: ideation
 source: Captain ruling after repeated post-release auto-pre0 source-build drift, 2026-07-26
-started:
+started: 2026-07-26T00:17:26Z
 completed:
 verdict:
 score: 1.0
@@ -35,7 +35,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
