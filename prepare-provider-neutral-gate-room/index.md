@@ -13,7 +13,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:s4:ideation
+        gate: gate:s4ykctf21g60dvfgdd6cy9ny:validation
     records:
         - id: gate:docs-dev:s4:backlog
           stage: backlog
@@ -99,6 +99,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:s4ykctf21g60dvfgdd6cy9ny:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:s4ykctf21g60dvfgdd6cy9ny-validation-1
+              briefing:
+                id: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-1:revision-1
+                digest: sha256:41d147c7fa54768f565ea9b38576ddbbbb0ac6e5ca5857dd38b2be54a1dfc822
+                digest-domain: canonical-bytes
+                request-digest: sha256:eadaef834634c369adfee4b1aaa18136ca5ffa56baf85a19eef3285f824939da
+                room-ref: ./review/validation/briefing-1
 review-round:
     id: round:s4ykctf21g60dvfgdd6cy9ny:implementation:13
     stage: implementation

@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-1:revision-1",
+  "question": "Should the captain approve the independently validated provider-neutral gate-room preparation and advance it to merge?",
+  "artifacts": [
+    {
+      "id": "artifact:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ba128eca0e65d6ebcdad2ab493b278ba2db52089/prepare-provider-neutral-gate-room/index.md",
+      "rev": "sha256:d70448833573edceb50950b830a00691cd48a677dd5fd96d55bdfcdb433208b9",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED at code tip 5484cee6: gate prepare creates collision-free two-file authoritative rooms for folder and flat tasks, freezes exact Git-root sources and Briefing summary/digest, rejects recursive duplicate JSON members, preserves provider-neutral room-only handoff, and records provider evidence by recomputing four durable pins without association.json."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/5484cee6523fe7c284d629ffc5d78641db3efa72/docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8938eb157f2a5fe2309dfd154774da4cd99e9ac8d329dbfbda2fce8f5cca1040"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/5484cee6523fe7c284d629ffc5d78641db3efa72/skills/fo-gate-lifecycle/SKILL.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:2e85186fa68fa4ca30ceb3b51815b700c80541aa4d33923bb925964fffddffab"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/5484cee6523fe7c284d629ffc5d78641db3efa72/skills/present-gate/SKILL.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5ca870344f65982cf0b9e2141394c67c5317eb2e0c095b5d2acb3c75d9378941"
+    }
+  ]
+}
