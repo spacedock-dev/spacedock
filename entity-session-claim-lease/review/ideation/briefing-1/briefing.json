@@ -1,0 +1,42 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:79:ideation:attempt-1:revision-1",
+  "question": "Is the entity-session claim design ready to enter implementation — two flat frontmatter fields acquired through a new `state claim` verb riding statesync as a git-level compare-and-swap, guarded at two mutation doors, with an owner-renewed expiry lease?",
+  "summary": "Approve entering implementation. The claim is two flat frontmatter fields (`claim-session`, `claim-expiry`) on the claimed entity, acquired by a new `state claim` verb that rides the existing statesync publisher as a git-level compare-and-swap rather than adding a second writer. Enforcement is the ruled two points: boot surfaces peer claims, and the state-mutation seam refuses a non-owner. The riskiest mechanism was exercised before the design was written: a real two-clone race proved the acquire/lose/recover loop resolves to exactly one owner, and falsified the assumption that git guarantees a conflict — divergently placed claim writes automerge into a pushed split-brain double claim, so canonical fixed placement and duplicate-fail-closed reads are now load-bearing requirements with an AC-7 fixture. Captain review folded two changes: the claim is per entity and never per (entity, stage), and `claim-at` became `claim-expiry`, an owner-renewed 24h lease whose expiry marks and never frees — AC-5 exists specifically to fail if anyone implements 'expired means free', with a companion leg proving identity authorizes renewal, not lease liveness. Seven acceptance criteria, each with an explicit falsifier; AC-1 measures the end value against a baseline that can move the wrong way (4 successful non-owner mutations on the pre-change binary, driven to 0, with over-fire legs proving the guard does not misfire). Declared surface 14 files / ~950 lines, tolerance 850-1,150, cap 18 files / 1,500.",
+  "artifacts": [
+    {
+      "id": "artifact:entity-session-claim-lease-design",
+      "uri": "git-root://state/c52373c71461bf8ed4ccbd02a00a57b6b4319c6f/entity-session-claim-lease.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:49806c8615ac21c22f054d280d64f440c7c6685e44324565efde7d0f7d09bbf4"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Enter implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design before implementation",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
