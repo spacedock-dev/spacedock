@@ -219,12 +219,16 @@ func dispatchAnalysis(entities []*entity, stages []Stage) ([]dispatchable, map[*
 			reasons[e] = "worktree-set"
 			continue
 		}
-		if idx+1 >= len(stageNames) {
-			reasons[e] = ""
-			continue
+		nextName := status
+		nextStage := stg
+		if !enteredStageAwaitingCompletion(e, stg) {
+			if idx+1 >= len(stageNames) {
+				reasons[e] = ""
+				continue
+			}
+			nextName = stageNames[idx+1]
+			nextStage = stageByName[nextName]
 		}
-		nextName := stageNames[idx+1]
-		nextStage := stageByName[nextName]
 		if nextCounts[nextName] >= nextStage.concurrency {
 			reasons[e] = "concurrency-full"
 			continue

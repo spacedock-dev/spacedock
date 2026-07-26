@@ -8,6 +8,8 @@ The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly,
 
 For each entity reported by `status --next`:
 
+Interpret the scheduler row before mutation. `current == next` dispatches that entered stage itself with idempotent `status={current} started`; neither FO nor helper manufactures its report/signal. On cold boot, a non-initial `current != next` row may reflect structural committed-report recovery: reconstruct `«dispatch.checklist»` for `current`, verify every obligation/evidence/summary and the report-bearing commit's ensign write scope per `## Completion and Gates`, then dispatch `next` without duplicating `current`. On failure, veto the successor and dispatch/repair `current` once. Initial-stage successor rows retain legacy meaning.
+
 1. Read the entity file and the target stage definition.
 2. Invoke `«dispatch.checklist»(entity, stage)` and retain its numbered output.
 3. Check for obvious conflicts if multiple worktree stages would touch overlapping files.
@@ -16,7 +18,7 @@ For each entity reported by `status --next`:
    ```
    ${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage} worktree=.worktrees/{worker_key}-{slug} started
    ```
-   Omit `worktree=...` for non-worktree stages. Bare `started` auto-fills a UTC ISO 8601 timestamp (skipped if already set).
+   Here `{next_stage}` is the row's selected target, including `current` for a `current == next` row. Omit `worktree=...` for non-worktree stages. Bare `started` auto-fills a UTC ISO 8601 timestamp (skipped if already set).
 6. Commit the state transition on main: `dispatch: {slug} entering {next_stage}`.
 7. Create the worktree on first dispatch to a worktree stage.
 8. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`). On rejection reflow, that file carries the already-authorized package and concrete revise assignment with workflow labels unchanged; it never asks the target worker to classify again.

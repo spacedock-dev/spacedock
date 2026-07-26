@@ -41,6 +41,15 @@ func stageMergeFixture(t *testing.T, fixture string) string {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	entity := filepath.Join(dst, "020-no-sentinel.md")
+	body, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := "\n## Stage Report: implementation\n\n- DONE: Complete the merge fixture implementation.\n  The fixture commit contains the durable implementation proof.\n\n### Summary\n\nThe implementation is ready for its merge ceremony.\n"
+	if err := os.WriteFile(entity, append(body, []byte(report)...), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	// Set a PERSISTENT local identity on the temp repo. The verb's own commits
 	// (commitArchiveMove) run plain `git commit` without `-c`, so they must resolve
 	// an identity from the repo's config — independent of global/system config and

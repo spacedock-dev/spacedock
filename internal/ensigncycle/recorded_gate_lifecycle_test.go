@@ -193,6 +193,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	commitRecordedGateState(t, binary, fixture, "consume gate authorization")
 	durable, _, durableErr := gates.Read(fixture.entity)
 	requireRecordedGate(t, durableErr == nil && durable.Records[0].Attempts[0].Resolution.By == "agent:first-officer" && durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason, "approve durable snapshot unreadable")
+	assertRecordedGateDispatchRow(t, binary, fixture, "handoff", "handoff")
 
 	events := successfulRecordedGateEvents(commands)
 	dispatches := 0
@@ -206,8 +207,9 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	}
 	zero := recordedGateLiveObservation(t, fixture, before, commandLog)
 	requireRecordedGate(t, zero.dispatch.builds == 1 && zero.dispatch.durableEffects == 0 && assertRecordedGateLifecycle(zero) != nil, "zero-effect executed build qualified")
-	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The one-use application was already consumed before dispatch.\n")
+	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The one-use application was already consumed before dispatch.\n\n### Summary\n\nThe entered handoff completed after the consumed approval.\n")
 	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record successor effect")
+	assertRecordedGateDispatchRow(t, binary, fixture, "handoff", "done")
 	writeRecordedGateEvidence(t, fixture.root, commands, before, readFile(t, fixture.entity), dispatches)
 	observation := recordedGateLiveObservation(t, fixture, before, commandLog)
 	if err := assertRecordedGateLifecycle(observation); err != nil {
@@ -247,6 +249,31 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	}
 }
 
+func assertRecordedGateDispatchRow(t *testing.T, binary string, fixture recordedGateFixture, current, next string) {
+	t.Helper()
+	for _, args := range [][]string{
+		{"status", "--workflow-dir", fixture.root, "--next", "--json"},
+		{"status", "--workflow-dir", fixture.root, "--boot", "--identify", "--json"},
+	} {
+		result := mustRecordedGate(t, binary, fixture.root, args...)
+		var envelope struct {
+			Dispatchable []struct {
+				Current string `json:"current"`
+				Next    string `json:"next"`
+			} `json:"dispatchable"`
+		}
+		if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil {
+			t.Fatalf("parse spacedock %v: %v\n%s", args, err, result.stdout)
+		}
+		if len(envelope.Dispatchable) != 1 ||
+			envelope.Dispatchable[0].Current != current ||
+			envelope.Dispatchable[0].Next != next {
+			t.Fatalf("spacedock %v dispatchable=%+v, want current=%s next=%s",
+				args, envelope.Dispatchable, current, next)
+		}
+	}
+}
+
 func TestRecordedGateLifecycleTerminalConsumeHasNoDispatchableSuccessor(t *testing.T) {
 	binary, fixture := buildRecordedGateBinary(t), writeRecordedGateFixture(t)
 	writeFile(t, filepath.Join(fixture.root, "README.md"), strings.Replace(readFile(t, filepath.Join(fixture.root, "README.md")), "    - name: handoff\n", "", 1))
@@ -259,6 +286,41 @@ func TestRecordedGateLifecycleTerminalConsumeHasNoDispatchableSuccessor(t *testi
 	assertCommandOutput(t, mustRecordedGate(t, binary, fixture.root, "status", "--workflow-dir", fixture.root, "--next", "--json").stdout, `"dispatchable":[]`)
 }
 
+func TestRecordedGateLifecycleEnteredStageRecoveryMatrix(t *testing.T) {
+	binary := buildRecordedGateBinary(t)
+	complete := "\n## Stage Report: handoff\n\n- DONE: Complete the entered handoff.\n  Commit abc123 contains the durable handoff evidence.\n\n### Summary\n\nThe entered handoff is complete and ready for done.\n"
+	cases := []struct {
+		name   string
+		report string
+		dirty  bool
+		next   string
+	}{
+		{"committed heading only", "\n## Stage Report: handoff\n", false, "handoff"},
+		{"committed item without evidence", "\n## Stage Report: handoff\n\n- DONE: Complete the handoff.\n\n### Summary\n\nIncomplete evidence.\n", false, "handoff"},
+		{"committed failed item", "\n## Stage Report: handoff\n\n- FAILED: Complete the handoff.\n  The handoff remains broken.\n\n### Summary\n\nIncomplete work.\n", false, "handoff"},
+		{"committed wrong stage", strings.Replace(complete, "Stage Report: handoff", "Stage Report: implementation", 1), false, "handoff"},
+		{"later malformed masks older valid", complete + "\n## Stage Report: handoff (cycle 2)\n\n- DONE: Later report has no evidence.\n\n### Summary\n\nLater but malformed.\n", false, "handoff"},
+		{"dirty valid report", complete, true, "handoff"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fixture := writeRecordedGateFixture(t)
+			bindRecordedGate(t, binary, fixture)
+			commitRecordedGateState(t, binary, fixture, "bind retained gate package")
+			closeRecordedGate(t, binary, fixture, "approve")
+			commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
+			mustRecordedGate(t, binary, fixture.root, "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
+			commitRecordedGateState(t, binary, fixture, "consume gate authorization")
+
+			writeFile(t, fixture.entity, readFile(t, fixture.entity)+tc.report)
+			gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record handoff report")
+			if tc.dirty {
+				writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\nUncommitted entity dirt.\n")
+			}
+			assertRecordedGateDispatchRow(t, binary, fixture, "handoff", tc.next)
+		})
+	}
+}
 func assertRecordedGateByteCleanFailure(t *testing.T, fixture recordedGateFixture, result recordedGateCommand, wants ...string) {
 	if result.exit == 0 {
 		t.Fatalf("refusal unexpectedly exited 0: stdout=%q stderr=%q", result.stdout, result.stderr)
