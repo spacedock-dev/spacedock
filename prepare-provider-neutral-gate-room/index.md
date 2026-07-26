@@ -2743,3 +2743,39 @@ requires design-reset escalation without another edit.
 No push, CI dispatch, gate or PR mutation, or merge occurred in Cycle 20.
 Local code tip is `8c9aa160`. Job 2748 is declined at the release boundary;
 this report is not overall s4 acceptance or a merge recommendation.
+
+## Stage Report: implementation (cycle 20 evidence repair)
+
+- DONE: Run focused offline evidence and repository verification.
+  At `8c9aa160`, the focused gate/contract/skill suites, `gofmt -w ./cmd
+  ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check`
+  passed. These regressions fail on symlinked retained authority, divergent
+  provider Resolution, unresolved Git pins, or false consume evidence.
+- DONE: Run the exact local Codex candidate scenarios.
+  With the worktree-built binary pinned through `SPACEDOCK_BIN`,
+  `go test -tags live ./internal/ensigncycle -run
+  '^TestLiveCodexSharedScenarios/rejection-flow$' -v -count=1 -timeout 12m`
+  passed; the corresponding `keep-moving-posture` command passed in 378.122s
+  and fails unless approval is actually consumed before successor dispatch.
+- FAILED: Run the exact Claude default recorded-gate stop and gate-guardrail.
+  A fresh binary (`0.26.0+dev`, SHA-256
+  `9d35de68f5e1b88ab1066916c8a26297301c3748a5d15f0c266015843dcb63cd`)
+  used current checkout skills and an isolated HOME seeded only with copied
+  auth. `go test -tags live ./internal/ensigncycle -run
+  '^TestLiveDefaultHeadlessStopsAtGate$' -v -count=1 -timeout 40m` failed in
+  6.428s package time / 15.32s wall time before First Officer work: Claude
+  2.1.220 returned HTTP 401, “OAuth access token has been revoked.”
+  The required `^TestLiveClaudeSharedScenarios/gate-guardrail$` command was not
+  attempted because the evidence-repair stop rule applies at the first failure.
+- SKIPPED: Run the exact Pi recorded-gate scenario.
+  `go test -tags live ./internal/ensigncycle -run
+  '^TestLivePiRecordedGateLifecycle$' -v -count=1 -timeout 40m` was not attempted
+  after the required Claude case failed; Pi 0.68.0 and copied local Pi auth had
+  passed setup checks, but no model or product verdict was produced.
+
+### Summary
+
+The missing live checklist evidence remains FAILED because the copied Claude
+OAuth credential is revoked; this is a pre-product authentication failure, not
+a code result. No product edit, offline rerun, successor review, push, CI
+request, or gate/PR mutation occurred during this evidence repair.
