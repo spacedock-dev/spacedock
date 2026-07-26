@@ -2270,3 +2270,24 @@ Cycle 16 supplies Pi with the presenter that `fo-gate-lifecycle` requires, witho
 weakening the semantic review oracle or changing product behavior. Static, focused,
 full, and race proof is green; exact live confirmation awaits CI because local Pi
 authentication failed before scenario execution.
+
+## Cycle 16 Independent Validation
+
+- **Recommendation: PASSED.**
+- `a78ce122..8aaf96af` is exactly one insertion in
+  `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go`: the isolated Pi
+  launch now exposes `<repo>/skills/present-gate`. No product, contract, CLI, skill,
+  prompt, interface, expected review text, or oracle code changed.
+- In failed run `30182197083`, the old launch exposed `first-officer`,
+  `fo-gate-lifecycle`, and `ensign` but not `present-gate`. Its retained root session
+  prepared and committed the room, never loaded the presenter or emitted a qualifying
+  review, then called `gate record`; the unchanged oracle rejected the missing facts.
+- Prior passing run `30169681271` is not presenter proof: its retained session read
+  `recorded_gate_lifecycle_test.go` before emitting helper-shaped review prose.
+- Focused Pi static/meta tests, contractlint, skills integration, exact `+1/-0` scope,
+  and `git diff --check` passed at `8aaf96af`.
+- Fresh run `30182888034` exact Pi job `89742470196` is green. Its artifact records
+  `TestLivePiRecordedGateLifecycle` passing in 212.98s; the root loaded
+  `present-gate`, emitted the semantic review, and called `gate record` in that order.
+  Later test-source reads occurred only after dispatch recovery and cannot supply the
+  already-observed review.
