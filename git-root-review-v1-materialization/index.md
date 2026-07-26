@@ -1838,3 +1838,287 @@ Cycle 6 removes the last Briefing identity ambiguity by carrying the frozen RFC
 distinction with a real indented s4 artifact. It also assigns agent behavior to the
 existing live walking lane, leaves contract lint structural, and rebaselines the
 post-s4 implementation surface without restoring numeric authority.
+
+## Feedback Cycle 7
+
+Independent re-review returned **REVISE** on three narrow ownership/order defects in
+cycle 6. The JCS/raw separation and exact indented control are correct and remain
+unchanged.
+
+First, `durable-decisions-release-walking-skeleton` (`ph`) cannot prove rq before rq
+terminates because its declared preconditions require rq to be terminal `PASSED`.
+ph remains the later sprint-wide final composition. rq itself must run one real,
+pre-terminal First Officer drive on landed s4 plus the rq candidates, through the real
+installed skills and an existing supported runtime, with no new harness.
+
+Second, cycle 6 inherited an incorrect allocation order from cycle 4. The Subspace
+fixed entry's `invocation-common` lifecycle already owns allocation of
+`ROOM/provider`; Spacedock materialization must not take that ownership. Complete
+payload materialization and manifest-last publication still precede TUI loading,
+model installation, and display, but they do not precede provider-root allocation.
+
+Third, structural contract lint cannot prove that an agent or process performed
+commands in semantic order. Its assertions must be limited to structural
+closure/presence and forbidden-surface absence. The production fixed-entry E2E and
+rq's one-off live First Officer drive own observable sequencing.
+
+## Ideation correction: allocation and pre-terminal live ownership (cycle 7)
+
+This section supersedes cycle 6's allocation chronology, assignment of the live
+First Officer proof to ph, contract-lint sequencing claim, affected acceptance/proof
+wording, and surface estimates. Cycle 6's closed manifest with distinct
+`jcsDigest`/`rawSha256`, the exact `...278f != ...fb1b` indented control, arbitrary
+canonical Briefing locator, and full negative matrix remain unchanged. Cycle 5's
+numeric non-authority and semantic-only reset triggers also remain unchanged.
+
+### Provider allocation and manifest-last order
+
+The sole public agent entry remains exactly:
+
+```text
+/subspace:r gate <room>
+```
+
+The model supplies no other coordinate. The real installed Subspace skill selects its
+fixed `gate` branch, and `invocation-common` performs this ownership sequence:
+
+1. canonicalize the one room operand, reject an unsafe/non-directory/symlinked room,
+   derive the exact fixed provider root `ROOM/provider`, and refuse an occupied or
+   symlinked provider root;
+2. atomically allocate mode-0700 `ROOM/provider`; from this point
+   `invocation-common` owns its retention, diagnostics, and pre-dispatch failure
+   behavior;
+3. invoke exactly `${SPACEDOCK_BIN:-spacedock} gate materialize --room ROOM`;
+4. after materialization returns success, resolve/probe the real TUI capabilities,
+   perform the existing host preflight, and launch the supervised child with the
+   materializer's derived original Briefing and resolved-manifest paths; and
+5. run the resolved validator and return only trusted retained evidence to the
+   invoking First Officer.
+
+The integration-private materializer accepts only `--room ROOM`; it derives
+`ROOM/provider/resolved-sources` from landed s4 authority and requires the already
+allocated `ROOM/provider` to be a mode-0700 non-symlink directory. It neither creates,
+removes, selects, nor relocates the provider root.
+
+Inside that provider root, Spacedock validates the current room/request/attempt,
+arbitrary Briefing locator, full JCS binding, separate raw file pin, actor/approver,
+root map, and every local Git object. It writes payloads only under a private candidate
+child. Every payload is complete, mode 0600, contained, and raw-revision verified
+before Spacedock publishes `resolved-sources.json` last and makes the exact
+`resolved-sources` child visible. A failure before publication removes the candidate
+and any resolved-source child but leaves `ROOM/provider` to its Subspace owner.
+
+Only a complete published manifest can reach Subspace. The TUI then independently
+recomputes Briefing id/JCS/raw identity, validates catalog coverage and payload bytes,
+installs all verified bytes in memory, deletes the resolved-source child at its
+defined boundary, and only then constructs selectors, summary chrome, or display.
+Thus source materialization precedes manifest publication, and manifest publication
+precedes TUI/model installation/display; provider-root allocation deliberately
+precedes materialization.
+
+This order changes the failure-state wording but not durable authority. Immediately
+after s4 preparation and before a selected provider entry, the room still contains
+exactly its two authoritative metadata files. Once `/subspace:r gate ROOM` begins,
+`ROOM/provider` may exist even when semantic room validation, object resolution,
+materialization, capability, or launch later fails. It is provider-owned
+diagnostic/recovery evidence, never a third authoritative prepared file. Catchable
+failures remove `resolved-sources`; they do not pretend the provider root was never
+allocated.
+
+Path-safety or occupied-provider checks can fail before allocation. Room/request,
+Briefing, identity, Git-object, digest, capability, and launch failures occur after
+allocation and retain only the phase-appropriate provider evidence. No failure
+mutates the request, located Briefing, entity gate state, Result binding, or source
+Git objects; no path fetches, deepens, hydrates, or falls back to worktree bytes.
+
+### rq-owned pre-terminal live First Officer drive
+
+rq owns one one-off live drive before rq can receive a terminal `PASSED` verdict. It
+is validation evidence, not a standing test or a substitute for the production
+fixed-entry E2E.
+
+The drive has these preconditions:
+
+- corrected s4 is landed and its exact commit is an ancestor of the Spacedock rq
+  candidate;
+- the Spacedock and Subspace rq candidate commits are clean, their required offline,
+  race, shell, docs, and fixed-entry E2E lanes are green, and exact candidate binary
+  SHA-256 values are recorded;
+- a fresh supported First Officer runtime is launched through that candidate
+  Spacedock binary, with the candidate Spacedock plugin and the real candidate
+  Subspace plugin installed through their ordinary plugin mechanisms; and
+- rq has one real current prepared request-backed room committed by landed s4, with
+  local main/state Git objects available and no existing `ROOM/provider`.
+
+The Captain/operator gives that fresh First Officer ordinary-language intent selecting
+Subspace for the prepared rq gate. The First Officer loads the real
+`fo-gate-lifecycle` and `present-gate` skills, then the runtime's real installed
+`subspace:r` skill. It must issue exactly one semantic skill invocation:
+
+```text
+/subspace:r gate <exact emitted room>
+```
+
+It must not use Bash to invoke Subspace, call materialization/TUI primitives directly,
+install a test skill, reconstruct coordinates, probe/fallback in the First Officer,
+or render a chat decision after the selected entry. The real fixed entry allocates
+`ROOM/provider`, materializes through the candidate Spacedock binary, launches the
+candidate TUI, and returns trusted binding evidence.
+
+After that one skill invocation returns successfully, the same live First Officer
+continues through the existing recorder surface:
+
+```text
+${SPACEDOCK_BIN:-spacedock} gate record <rq-entity> \
+  --room <exact emitted room> --workflow-dir <workflow-dir>
+```
+
+It requires exit 0 with the current gate/attempt/Briefing and closed binding decision,
+then commits the rq entity/room unit through the existing path-scoped state commit.
+The drive stops before `gate consume`, status advance, successor dispatch, terminal
+verdict, or merge. An advisory/open/invalid Result, second skill invocation, chat
+fallback, recorder omission, alternate room, or frontmatter edit fails the drive.
+
+Evidence is appended to this rq entity under one `### Pre-terminal live First Officer
+drive` subsection before the terminal validation report. It records:
+
+- exact Spacedock/s4/Subspace commits, binary SHA-256 values, and installed skill blob
+  ids;
+- runtime/version, native session/transcript locator and raw digest, and the single
+  observed native `subspace:r` skill event with its exact room-only argument;
+- room tree digest before entry, provider Result/inventory/raw evidence digests after
+  entry, absence of `resolved-sources`, and absence of `association.json`;
+- the exact recorder command/exit, entity and state-commit before/after ids, and the
+  resulting provider-evidence pins; and
+- elapsed time plus any friction and its owner.
+
+This is a manual one-off drive on existing runtime and provider substrates. rq adds no
+Go live test, workflow job, shell controller, fake provider, test-only skill,
+transcript parser, fixture framework, retry loop, or sidecar schema. An independent
+reviewer checks the native event and retained on-disk evidence directly; a prose claim
+without those citations is not completion.
+
+`ph` remains unchanged. After rq is terminal `PASSED`, its Track B independently
+repeats the route as part of the sprint-wide role-separated release-candidate
+composition. ph does not backfill, waive, or replace rq's pre-terminal drive.
+
+### Structural lint and behavioral sequencing owners
+
+`internal/contractlint/fo_function_reference_invariant_test.go` may assert only that
+the installed First Officer/present-gate instruction closure:
+
+- contains the room-only `/subspace:r gate <gate-room>` form and the semantic
+  `gate record <entity> --room <gate-room>` closure;
+- contains no caller-selected entity/workflow/Briefing/actor/approver/destination/
+  provider/manifest/terminal coordinate on the public Subspace form; and
+- contains no direct materializer/TUI composition, provider probe, selected-provider
+  chat fallback, or `association.json` instruction.
+
+It must not use heading order, ordered markers, substring position, command count, or
+prose sequence to claim prepare-before-entry, one invocation, entry-before-recorder,
+allocation order, recorder success, or no fallback at runtime. Those are semantic
+behavior claims.
+
+The production fixed-entry E2E owns process sequencing: one entry call, provider-root
+allocation by `invocation-common`, materialization and manifest-last publication,
+TUI/display, validator, cleanup, and recorder result. The rq pre-terminal live drive
+owns agent sequencing: one real installed skill invocation followed by the recorder
+continuation and no chat fallback. Each proof has state/byte/event mutants that fail
+if its sequence changes.
+
+### Corrected post-s4 surface estimates
+
+The cycle 6 Spacedock table remains except that contract lint is now an explicit
+correction surface:
+
+| Additional/corrected Spacedock file | Expected delta | Purpose |
+|---|---:|---|
+| `internal/contractlint/fo_function_reference_invariant_test.go` | `+25/-15` | Keep structural closure/absence checks and remove semantic ordering claims. |
+
+The full Spacedock planning estimate is therefore **9 named files,
++1,082/-25 = 1,107 changed LOC**. `internal/gitsource/source.go`,
+`skills/fo-gate-lifecycle/SKILL.md`, and `skills/present-gate/SKILL.md` remain
+zero-delta s4 reuse unless behavior reveals a semantic defect. The one-off live drive
+adds retained evidence to this entity, not a product or harness file.
+
+The cycle 6 Subspace table remains with these allocation/sequence reconciliations:
+
+| Corrected Subspace file | Revised expected delta | Corrected purpose |
+|---|---:|---|
+| `plugins/subspace/skills/r/scripts/invocation-common` | `+190/-55` | Allocate `ROOM/provider`, invoke room-only materialization, consume complete output, then preflight/launch/validate/clean. |
+| `scripts/tests/subspace-r-provider-retained-delivery-test.sh` | `+285/-30` | Prove allocation-before-materialization, manifest-last, retained-root, catchable-child cleanup, signals, and validator modes. |
+| `scripts/tests/subspace-r-git-root-provider-e2e.sh` (new) | `+440/-0` | Prove one production fixed entry through allocation, moved-root materialization, TUI, cleanup, and recorder continuation. |
+
+The full Subspace planning estimate becomes **25 named files,
++2,763/-213 = 2,976 changed LOC**. The real installed-skill First Officer drive is
+one-off validation evidence and adds no Subspace harness file.
+
+As in cycle 5, these numbers are planning and reconciliation evidence only. They are
+not budgets, gates, tolerances, permission boundaries, pass/fail signals, or reset
+conditions. Pre-edit declaration, path-scoped post-edit reconciliation, and reviewer
+semantic materiality triage remain required; numeric variance alone does nothing.
+
+### Acceptance and proof corrections
+
+Cycle 6 AC-1 remains the value criterion, but its two behavioral layers are now
+non-circular: the fixed-entry E2E proves production composition, and rq's own
+pre-terminal live drive proves one real First Officer invocation plus recorder
+continuation before rq can pass. ph is later sprint-wide composition only.
+
+Cycle 6 AC-2 is corrected so the two-file count ends when selected provider entry
+begins. `invocation-common` may allocate `ROOM/provider` before semantic
+materialization validation. Every catchable failure after that allocation retains
+only phase-appropriate provider evidence and removes the resolved-source child; no
+provider root is reclassified as prepared authority.
+
+Cycle 6 AC-3 and AC-4 remain unchanged: the exact indented positive has distinct full
+JCS/raw pins, both are recomputed before display, arbitrary canonical filenames work,
+canonical source tuples survive, and no identity helper or `association.json` enters
+Result/inventory.
+
+Cycle 6 AC-5 is corrected so structural lint proves only instruction closure and
+forbidden-surface absence. The fixed-entry E2E proves product order; the pre-terminal
+live drive proves agent order. A contract-lint test that passes or fails based on
+semantic command order is itself a failing implementation.
+
+The corrected proof order is:
+
+1. land corrected s4 and pin the candidate Spacedock/Subspace tips;
+2. red/green the exact indented JCS/raw control and unresolved Git-root boundary;
+3. run focused authority, allocation, manifest-last, parser, summary, supervisor,
+   validator, retention, and cleanup matrices;
+4. run the production moved-root fixed-entry E2E through recorder continuation;
+5. run both repositories' complete deterministic/race/shell/docs/format gates;
+6. perform rq's one-off pre-terminal live First Officer drive on the exact candidates,
+   append its native-event/on-disk evidence to this entity, and independently review
+   it; and
+7. only then allow rq's terminal validation/verdict path. ph remains blocked until rq
+   and its other named prerequisites are terminal `PASSED`.
+
+No live drive, provider invocation, product edit, s4 edit, gate/status/frontmatter
+mutation, or ph change occurs in this ideation correction.
+
+## Stage Report: ideation (cycle 7)
+
+- DONE: rq owns a pre-terminal one-off live FO drive on landed s4 + rq candidate, using real installed skill and existing runtime substrate, proving exactly `/subspace:r gate <room>` then `gate record --room`; no harness.
+  The drive now blocks rq terminal validation, uses candidate binaries/plugins in a fresh supported runtime, and retains native skill-event plus recorder/on-disk evidence in this entity.
+- DONE: ph remains final composition evidence and keeps rq terminal prerequisite.
+  ph is explicitly unchanged and downstream; it neither supplies nor waives rq's pre-terminal live evidence.
+- DONE: Preserve invocation-common allocation of ROOM/provider; materialization must complete before resolved-source manifest publication and before TUI/model installation/display, not before provider allocation.
+  `invocation-common` allocates/owns the provider root first; Spacedock completes verified payloads and publishes the manifest last before any TUI load or display.
+- DONE: Remove semantic command-order claims from contractlint; keep only structural closure/absence, with fixed-entry E2E + rq live drive owning sequencing.
+  Contract lint is limited to required/forbidden instruction surfaces; product order belongs to the real E2E and agent order to the one-off live drive.
+- DONE: Preserve the JCS/raw fix and numeric non-authority.
+  Cycle 6's distinct full pins and exact unequal control remain unchanged, while all revised file/LOC totals remain advisory reconciliation evidence.
+- DONE: Run the repository-required deterministic gates against the unchanged product baseline.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` are rerun before the path-scoped state commit; any failure will replace this DONE line with FAILED evidence.
+- SKIPPED: Implement product code, run the live drive/provider, mutate gate/status frontmatter, touch s4/ph, or add a harness.
+  Cycle 7 changes only this rq ideation entity; implementation and pre-terminal live evidence wait for landed corrected s4.
+
+### Summary
+
+Cycle 7 makes the proof non-circular and restores the existing Subspace package
+ownership boundary. rq must prove its own real First Officer handoff before passing;
+`invocation-common` allocates provider state before manifest-last materialization; and
+contract lint returns to structural checks while behavioral sequencing stays with
+exercised production and live paths.
