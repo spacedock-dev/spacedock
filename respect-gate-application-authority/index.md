@@ -356,3 +356,20 @@ Cycle 2 makes authority precedence explicit and moves all semantic proof out of
 contractlint into the two cold live sessions. The uncoached broad-conn positive phase
 cannot run until landed gqs supplies entered-stage dispatch, and implementation size
 is advisory unless it crosses one of the named mechanism boundaries.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Cite the record-and-handoff negative cold phase.
+  AC-1 evidence: `Proof design` gives the exact first cold prompt an express application reservation and requires one committed Briefing record plus one decision record, unchanged `status: validation`, `advance/pending`, `approved-awaiting-advance`, and zero consume, `status --set`, or dispatch events.
+- DONE: Cite the broad-conn cold Commander consume and gqs dispatch phase.
+  AC-2 evidence: `Proof design` gives the second cold prompt only the workflow, entity, and exact unqualified `you have the conn`; after terminal `PASSED`, merged, owner-suite-green gqs, its observed post-consume `current=<entered>,next=<entered>` row and the existing final oracle require one committed consume, one dispatch, and one durable successor effect without a replacement decision or prompt/status workaround.
+- DONE: Cite general precedence, absence of new authority machinery, and with-conn compatibility.
+  AC-3 evidence: `Host-neutral contract` makes express reservation control and otherwise treats exact unqualified `you have the conn` as application authority; `Expected surface and estimates` keeps zero product Go changes and requires reconfirmation for authority state, command/schema mechanics, a harness, role registry, or duplicated scheduler, while the broad-conn cold phase proves ordinary with-conn drive still consumes and dispatches.
+- DONE: Cite structural-only contractlint and the two-cold-session live lane.
+  AC-4 evidence: `Proof design` limits contractlint to existing reference closure, skill frontmatter, structural absence/deduplication, and byte caps, then assigns all authority and routing behavior to the existing shared `recorded-gate-lifecycle` scenario's two cold sessions through its current Claude, Codex, and Pi runners with no new scenario, harness, event format, or provider.
+
+### Summary
+
+Cycle 3 is a report-only evidence repair. Each acceptance criterion now has a
+concrete citation inside the latest ideation checklist range; no design, product,
+frontmatter, or prior report was changed.
