@@ -302,6 +302,20 @@ The registered live FO gate-stop lane starts from a durably withdrawn prepared a
 and proves that the shipped FO uses `gate prepare`, commits N+1, presents the emitted
 room, and stops open without `record --briefing`, decision, consume, or dispatch.
 
+### Proof ownership
+
+Model-read Markdown is not a behavioral oracle. This task deletes the committed s4
+contractlint assertions that search the FO lifecycle or presenter prose for
+`gate prepare`, emitted-room text, lifecycle headings, or prepare/record/consume
+ordering. It adds no contractlint assertion for `gate withdraw`, `state commit`,
+`gate prepare`, their arguments, output, or relative order.
+
+Contractlint may retain only structural closure, skill/capability/reference wiring,
+frontmatter validity, absence/dedup invariants, and byte caps. The fresh-binary
+split-root lifecycle owns command behavior and durable order; the existing registered
+live FO lane owns whether the model follows the recovery sequence. No prose substring
+test may substitute for either proof.
+
 ## Behavior-first test plan
 
 1. Add model and transition tests first in `internal/gates/gates_test.go`: the three
@@ -326,10 +340,11 @@ room, and stops open without `record --briefing`, decision, consume, or dispatch
    orchestration with a withdrawn-start variant. The live oracle requires exactly one
    successful N+1 prepare and commit, the emitted-room presentation, and no legacy
    Briefing bind/close/consume/dispatch.
-6. Extend `internal/contractlint/fo_function_reference_invariant_test.go` before skill
-   text changes. This test is structural only: it checks preflight tokens and
-   withdraw/commit/prepare ordering, but it is not evidence that the binary or a live
-   FO performs the lifecycle.
+6. Delete from `internal/contractlint/fo_function_reference_invariant_test.go` every
+   model-read assertion of prepare/record/consume command text, emitted output,
+   presenter instructions, and lifecycle ordering. Add no
+   withdraw/commit/prepare-content oracle. Preserve only the file's allowed structural
+   closure, wiring, frontmatter, absence/dedup, and byte-cap checks.
 7. Run focused packages and the registered applicable live lane when credentials are
    available, then `gofmt -w ./cmd ./internal`, `go test ./...`, and
    `go test ./... -race`.
@@ -337,7 +352,7 @@ room, and stops open without `record --briefing`, decision, consume, or dispatch
 ## Expected implementation surface
 
 Estimate baseline: s4 tip `e328ecc6`. The expected delta is 21 existing files,
-approximately +1,000/-105 LOC. These are planning estimates, not line-count claims:
+approximately +980/-160 LOC. These are planning estimates, not line-count claims:
 test/doc files may vary ±25% and production files ±15 lines as s4 lands. A new
 production package, dependency, persistence shape, writer, or proof substitution
 requires design re-entry; ordinary estimate variance is reported in the next Stage
@@ -359,7 +374,7 @@ Report.
 | `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +220/-8 | Fresh-binary supported sequence and Git/byte oracles |
 | `internal/ensigncycle/live_gate_stop_test.go` | +42/-2 | Registered withdrawn-start live variant |
 | `internal/ensigncycle/claude_live_runner_test.go` | +56/-6 | Existing lane fixture/oracle orchestration |
-| `internal/contractlint/fo_function_reference_invariant_test.go` | +20/-4 | Structural skill-order smoke only |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +0/-60 | Remove model-read command/content/order assertions; retain allowed structural checks |
 | `skills/fo-gate-lifecycle/SKILL.md` | +22/-8 | Preflight, withdrawal, commit, cold-boot prepare |
 | `docs/specs/gate-resolution-frontmatter-contract.md` | +48/-18 | Canonical third state, authority, retained validation |
 | `docs/site/concepts/gates-and-decisions.md` | +20/-5 | Operator-facing truthful recovery |
@@ -460,3 +475,24 @@ Cycle 2 replaces the obsolete recorder-source design with a narrow FO-owned
 withdrawn attempt remains Resolution-free, provider-evidence-free, application-free,
 fully retained-authority-validated, and frozen while N+1 follows the ordinary s4
 prepare, provider record, and consume lifecycle.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Remove every committed contractlint assertion of withdraw/commit/prepare command content or ordering in model-read prose.
+  The governing proof policy now deletes s4's `gate prepare`, emitted-room,
+  presenter-text, and lifecycle-order substring assertions and forbids replacement
+  withdraw/commit/prepare prose oracles.
+- DONE: Keep contractlint within its structural proof boundary.
+  The retained allowance is limited to structural closure,
+  skill/capability/reference wiring, frontmatter validity, absence/dedup invariants,
+  and byte caps; the expected surface records the contractlint change as deletion-only.
+- DONE: Preserve the accepted withdrawal, preparation, retained-authority, and behavioral proof design.
+  The exact grammar, implicit FO attribution, explicit three-state audit, frozen
+  history, unchanged provider-evidence rules, O(history) validator, fresh-binary
+  lifecycle, and registered live FO lane remain unchanged.
+
+### Summary
+
+Cycle 3 removes model-read command content and ordering from contractlint's authority.
+Real-binary split-root tests own the durable command sequence, and the existing live FO
+lane owns model behavior; contractlint remains structural only.
