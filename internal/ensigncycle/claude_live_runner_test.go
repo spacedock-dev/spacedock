@@ -37,12 +37,11 @@ const antiShutdownOverride = "Do not shut down your team or prepare your final "
 // fixtures, prompts, and assertions are shared with the Codex runner.
 
 type claudeLiveRunner struct {
-	binary          string
-	pluginDir       string
-	extraPluginDirs []string
-	env             []string
-	modelName       string
-	artifactRoot    string
+	binary       string
+	pluginDir    string
+	env          []string
+	modelName    string
+	artifactRoot string
 	// homeDir is the isolated HOME the env sets (a per-run temp dir). The
 	// shallow-boot scenario checks ~/.claude/teams/{...}/config.json under it for the
 	// lazy-TeamCreate proof — scoped to THIS run, never a stale prior team.
@@ -280,11 +279,6 @@ func TestRecordedGateShellShimBindsInsideToolShell(t *testing.T) {
 			t.Fatalf("%s SPACEDOCK_BIN = %q, %v; want %q", shell, got, err, want)
 		}
 	}
-}
-
-func (r claudeLiveRunner) withExtraPluginDir(dir string) claudeLiveRunner {
-	r.extraPluginDirs = append(append([]string(nil), r.extraPluginDirs...), dir)
-	return r
 }
 
 func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
@@ -531,9 +525,6 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		"--plugin-dir", r.pluginDir,
 		"--skip-compat-check",
 		"--"}
-	for _, dir := range r.extraPluginDirs {
-		argv = append(argv, "--plugin-dir", dir)
-	}
 	argv = append(argv,
 		"-p", prompt+" "+antiShutdownOverride,
 		"--permission-mode", "bypassPermissions",

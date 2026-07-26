@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spacedock-dev/spacedock/internal/gitsource"
 	"gopkg.in/yaml.v3"
 )
 
@@ -325,24 +324,52 @@ func TestPrepareReplayAcceptsEntitySelectedAsArtifactOrReference(t *testing.T) {
 	}
 }
 
-func TestPreparedCandidateFailureLeavesNoRoomParents(t *testing.T) {
-	root := t.TempDir()
-	room := filepath.Join(root, "task", "review", "validation", "briefing-1")
-	err := validatePreparedCandidate(
-		filepath.Join(root, "task.md"),
-		gitsource.Roots{},
-		room,
-		Briefing{},
-		"gate:task:validation",
-		"gate-attempt:task-validation-1",
-		[]byte(`{"type":"Briefing","type":"duplicate"}`),
-		[]byte(`{}`),
-	)
-	if err == nil {
-		t.Fatal("invalid candidate unexpectedly passed")
+func TestPrepareRejectsSymlinkedFlatCompanionWithoutChangingBytes(t *testing.T) {
+	workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+	external := filepath.Join(filepath.Dir(state), "external")
+	if err := os.MkdirAll(filepath.Join(external, "review"), 0o755); err != nil {
+		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(root, "task")); !os.IsNotExist(err) {
-		t.Fatalf("candidate validation changed prepared tree: %v", err)
+	if err := os.WriteFile(filepath.Join(external, "sentinel"), []byte("outside\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	companion := filepath.Join(state, "task")
+	if err := os.Symlink(external, companion); err != nil {
+		t.Fatal(err)
+	}
+	beforeEntity, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeExternal := treeDigest(t, external)
+	beforeStatus := prepareGitOutput(t, state, "status", "--porcelain")
+
+	if _, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Review?",
+		Artifact:    artifact,
+		Summary:     "summary",
+	}); err == nil || !strings.Contains(err.Error(), "symlink") {
+		t.Fatalf("symlinked flat companion error=%v", err)
+	}
+	afterEntity, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(afterEntity, beforeEntity) {
+		t.Fatal("symlink rejection changed entity bytes")
+	}
+	if got := treeDigest(t, external); got != beforeExternal {
+		t.Fatal("symlink rejection changed external bytes")
+	}
+	if got := prepareGitOutput(t, state, "status", "--porcelain"); got != beforeStatus {
+		t.Fatalf("symlink rejection changed state tree: before=%q after=%q", beforeStatus, got)
+	}
+	if target, err := os.Readlink(companion); err != nil || target != external {
+		t.Fatalf("flat companion symlink changed: target=%q err=%v", target, err)
+	}
+	if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
+		t.Fatalf("prepare left lock residue: %v", err)
 	}
 }
 

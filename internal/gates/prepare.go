@@ -231,6 +231,9 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if err := validatePreparedCandidate(entityPath, roots, room, binding, gateID, attemptID, briefingBytes, requestBytes); err != nil {
 		return PrepareResult{}, err
 	}
+	if err := validatePreparedRoomAncestry(entityPath, room); err != nil {
+		return PrepareResult{}, err
+	}
 	created, createdParents, err := publishPreparedRoom(room, briefingBytes, requestBytes)
 	if err != nil {
 		return PrepareResult{}, err
@@ -467,6 +470,36 @@ func validatePreparedCandidate(entityPath string, roots gitsource.Roots, room st
 	candidateBinding := binding
 	candidateBinding.RoomRef = "./"
 	return validateGateRoomRequest(briefingPath, candidateBinding, gateID, attemptID)
+}
+
+func validatePreparedRoomAncestry(entityPath, room string) error {
+	trustedHome := filepath.Dir(entityPath)
+	parent := filepath.Dir(room)
+	rel, err := filepath.Rel(trustedHome, parent)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("prepared room parent escapes the trusted entity home")
+	}
+	current := trustedHome
+	for _, component := range strings.Split(rel, string(filepath.Separator)) {
+		if component == "." || component == "" {
+			continue
+		}
+		current = filepath.Join(current, component)
+		info, err := os.Lstat(current)
+		if os.IsNotExist(err) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("prepared room parent %s is a symlink", current)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("prepared room parent %s is not a directory", current)
+		}
+	}
+	return nil
 }
 
 func publishPreparedRoom(room string, briefing, request []byte) (bool, []string, error) {
