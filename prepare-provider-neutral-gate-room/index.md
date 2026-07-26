@@ -3182,3 +3182,35 @@ the intentional zsh transcript-parser coverage.
 Runtime Live E2E run 30203203948 completed its Ubuntu `offline` job successfully,
 including the full offline test suite. Live lanes remained waiting and were not
 approved or otherwise mutated.
+
+## Stage Report: implementation (cycle 24 exact gate-room replay)
+
+- DONE: Replay the Captain's exact split-root prepared-room path at current tip.
+  The binary built from `b32d64b5` published only root `gate-briefing.json` and
+  `request.json`; no `briefing.json` existed, and explicit record/approve closed it.
+- DONE: Verify all positive surfaces agree and approval consumes.
+  Validate/status reported closed approve; eligibility/status reported
+  advance/pending, approved-pending, eligible, target done; consume atomically
+  produced done, advance/consumed, condition consumed.
+- DONE: Replay a mutated located manifest without write fallout.
+  Validate, eligibility, and consume each exited 1 with `Error: bound canonical
+  Briefing bytes do not match the frozen digest`; no ineligible collapse occurred.
+- DONE: Replay a deleted located manifest without write fallout.
+  All three exited 1 with `Error: resolve canonical Briefing locator: lstat
+  .../gate-briefing.json: no such file or directory`; no ineligible collapse occurred.
+- DONE: Verify negative-path byte cleanliness.
+  Entity/request/manifest hashes and Git dirty shape remained exactly at the
+  deliberate mutation/deletion after every command, with no gate-lock residue.
+- DONE: Re-run the existing focused regression coverage.
+  The two CLI locator/lifecycle tests passed in 2.15s, and read-only prepared
+  authority recomputation passed in 1.89s; removing locator-aware validation fails them.
+- SKIPPED: Change implementation or tests.
+  Existing tests plus the exact replay are green; no supported-path gap remains.
+- SKIPPED: Expand into withdrawal or compatibility.
+  Both are explicitly outside this replay and remain separately owned.
+
+### Summary
+
+Request-backed manifest failures reach actionable retained-authority errors before
+the legacy reviewed-input-unknown collapse can emit `condition=ineligible`. The exact
+real-sprint positive and negative paths need no code change at `b32d64b5`.
