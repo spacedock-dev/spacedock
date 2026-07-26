@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0m6vtrw4qh9w4x6bn06x5hen:ideation:attempt-1:revision-1",
+  "question": "Is the corrected truthful withdrawal design ready for implementation after s4 lands?",
+  "artifacts": [
+    {
+      "id": "artifact:0m6vtrw4qh9w4x6bn06x5hen:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/eeabcd604ce765cc28415e1f4b47d926594e6745/withdraw-stale-open-gate-attempt/index.md",
+      "rev": "sha256:0c40e41a3d1e634dcd00453c3773a281ed57a5e7ebe6c0d65a546c1246db41fa",
+      "mediaType": "text/markdown",
+      "summary": "Add a canonical FO-owned gate withdraw operation that freezes a Resolution-free retired attempt, preserves request-backed authority, and lets ordinary gate prepare append N+1 after cold boot without weakening provider evidence."
+    }
+  ]
+}

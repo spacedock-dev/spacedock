@@ -13,7 +13,7 @@ id: 0m6vtrw4qh9w4x6bn06x5hen
 gates:
     version: 1
     current:
-        gate: gate:0m6vtrw4qh9w4x6bn06x5hen:backlog
+        gate: gate:0m6vtrw4qh9w4x6bn06x5hen:ideation
     records:
         - id: gate:0m6vtrw4qh9w4x6bn06x5hen:backlog
           stage: backlog
@@ -37,6 +37,29 @@ gates:
                 action: advance
                 target-stage: ideation
                 state: consumed
+                blockers: []
+        - id: gate:0m6vtrw4qh9w4x6bn06x5hen:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:0m6vtrw4qh9w4x6bn06x5hen-ideation-1
+              briefing:
+                id: briefing:0m6vtrw4qh9w4x6bn06x5hen:ideation:attempt-1:revision-1
+                digest: sha256:8319f9b10709cca9e5ae3f6c547b1fd2db6abef666f020013f38bdf845da5c0d
+                digest-domain: canonical-bytes
+                request-digest: sha256:d0bc5693618ca77595374a51ae615385e9c3cb0fd4f62f740be8263ccdb6c2a7
+                room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0m6vtrw4qh9w4x6bn06x5hen:ideation:1
+                briefing: briefing:0m6vtrw4qh9w4x6bn06x5hen:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T12:16:38.514969Z"
+                decision: approve
+                reason: AC-1 through AC-3 are evidenced and staff corrections are closed. Record approval now; apply only after s4 lands so implementation rebases on the final prepare and retained-authority surface.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
                 blockers: []
 ---
 
