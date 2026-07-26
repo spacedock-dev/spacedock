@@ -2,8 +2,10 @@
 title: Make recorded gate operation self-guiding for First Officers
 status: backlog
 source: "Durable-decisions sprint dogfood: manual 0c and xb gate/round operation, 2026-07-24."
-score: "0.8"
+score: 1.0
 id: skwchfe30ac6ntr63j1g0txj
+sprint: durable-decisions
+started: 2026-07-26T12:36:08Z
 ---
 
 The recorded gate model is trustworthy but still makes the First Officer construct and
