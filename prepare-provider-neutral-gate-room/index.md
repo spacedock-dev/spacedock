@@ -109,6 +109,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:eadaef834634c369adfee4b1aaa18136ca5ffa56baf85a19eef3285f824939da
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:s4ykctf21g60dvfgdd6cy9ny:validation:1
+                briefing: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T00:26:46.530886Z"
+                decision: approve
+                reason: Independent validation reproduces AC-1 through AC-5 at 5484cee6; full/race/format checks and detached adversarial controls pass, with no material finding remaining.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 review-round:
     id: round:s4ykctf21g60dvfgdd6cy9ny:implementation:13
     stage: implementation
