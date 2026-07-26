@@ -93,11 +93,11 @@ Cheaper alternatives considered:
 
 **AC-1 (VALUE)** In a real two-cycle rejection journey, the durable ticket contains the original implementation report, first REJECTED validation, rework implementation report, and second PASSED validation in order; the existing strict rejection assertion remains unchanged and passes. **Test:** run only the real Codex `rejection-flow` scenario and inspect its archived entity/JSONL; removing current-stage projection or the mutation guard reproduces run `30197794474` and fails on one implementation report.
 
-**AC-2 (DISPATCH)** After gate consume or equivalent first entry reaches a non-initial working stage, `status --next` and boot name that same stage until completion proof is durable. Every away-status mutation—including successor, backward, terminal, repeated/chained update, and `--force` forms—is refused byte-clean, while same-stage dispatch mutation is allowed. An observed worker spawn, the host completion signal, and an FO-validated committed report precede a live transition; build output, `started`, narration, an FO-authored report, and a syntactic heading do not satisfy the oracle. **Test:** a real-CLI table snapshots bytes around each direction/force/chained mutation and a focused live trace orders implementation spawn and completion before the first validation transition.
+**AC-2 (DISPATCH)** After gate consume or equivalent first entry reaches a non-initial working stage, `status --next` and boot name that same stage until completion proof is durable. Every away-status mutation—including successor, backward, terminal, repeated/chained update, and `--force` forms—is refused byte-clean, while same-stage dispatch mutation is allowed. An observed worker spawn, the host completion signal, and an FO-validated committed report precede a live transition; build output, `started`, narration, an FO-authored report, and a syntactic heading do not satisfy the oracle. **Test:** a real-CLI table snapshots bytes around each direction/force/chained mutation; the existing Claude and Codex `recorded-gate-lifecycle`/`rejection-flow` runners and Pi `TestLivePiRecordedGateLifecycle` order entered-stage dispatch/completion before the next transition.
 
 **AC-3 (RECOVERY)** A cold boot after consume but before spawn exposes exactly one row with `current=<target>,next=<target>`. A heading-only, empty, structurally partial, failed, wrong-stage, later-malformed-over-older-valid, or uncommitted report does not change that row and cannot unlock mutation. A conforming, semantically complete, path-clean committed report is sufficient cold-recovery evidence: boot exposes the ordinary successor, the FO revalidates it against the reconstructed checklist and worker write scope, and no duplicate target worker is spawned. A structurally complete report that omits a reconstructed checklist obligation remains vetoed by the FO and is never credited as recovery. **Test:** extend the recorded-gate real-CLI fixture with committed malformed-report and dirty-valid-report mutants plus a committed-complete control; each exact JSON/bytes assertion fails if report validation is weakened.
 
-**AC-4 (SCOPE)** The correction composes with consume, `status --next`, boot parity, initial/gate/terminal/worktree suppression, standing dispatch, fresh/reuse, and direct feedback routing without new scheduler state, report epochs, frontmatter, or fixture/runtime branches. Same-stage re-entry remains explicitly out of scope until topology or feedback scheduling can reach it. **Test:** table controls keep initial-stage successor projection, gate/terminal suppression, worktree-set suppression, terminal consume, and report-present direct feedback behavior byte-identical; full and race suites plus adversarial predicate mutations turn focused tests red.
+**AC-4 (SCOPE)** The correction composes with consume, `status --next`, boot parity, initial/gate/terminal/worktree suppression, standing dispatch, fresh/reuse, and direct feedback routing without new scheduler state, report epochs, frontmatter, or fixture/runtime branches. Same-stage re-entry remains explicitly out of scope until topology or feedback scheduling can reach it. **Test:** table controls keep initial-stage successor projection, gate/terminal suppression, worktree-set suppression, terminal consume, and report-present direct feedback behavior byte-identical; full and race suites plus the README path→lane gate require both `claude-live` model legs, `codex-live`, and `pi-live` green.
 
 ## Test plan
 
@@ -112,13 +112,29 @@ go test ./...
 go test ./... -race
 ```
 
-Focused live command (two existing scenarios, no new runner or scheduler):
+Focused live preflight (existing runners/scenarios only; no new harness):
 
 ```bash
-go test -tags live -count=1 -timeout 20m -run 'TestLiveCodexSharedScenarios/(rejection-flow|recorded-gate-lifecycle)$' ./internal/ensigncycle -v
+SPACEDOCK_LIVE_MODEL=sonnet go test -tags live -count=1 -timeout 40m -run 'TestLiveClaudeSharedScenarios/(recorded-gate-lifecycle|rejection-flow)$' ./internal/ensigncycle -v
+SPACEDOCK_LIVE_MODEL=claude-opus-4-8 go test -tags live -count=1 -timeout 40m -run 'TestLiveClaudeSharedScenarios/(recorded-gate-lifecycle|rejection-flow)$' ./internal/ensigncycle -v
+go test -tags live -count=1 -timeout 40m -run 'TestLiveCodexSharedScenarios/(rejection-flow|recorded-gate-lifecycle)$' ./internal/ensigncycle -v
+go test -tags live -count=1 -run 'TestSharedScenarioRunnerCoverage|TestPiSharedScenarioCoverage' ./internal/ensigncycle -v
+go test -tags live -count=1 -run 'TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle' ./internal/ensigncycle -v
 ```
 
-The offline focus is expected to cost seconds and no model calls; the focused live pair is expected to cost 6–10 minutes and two Codex scenario calls. Falsifiers are load-bearing:
+The preflight is not the merge gate. Both planned reference edits are shared and host-neutral, so `docs/dev/README.md` requires every host lane that loads them. The implementation remains at validation until these exact registered jobs are genuinely green:
+
+| Required lane | Existing registered surface (unchanged) | Cost and liveness bound | Stop/green rule |
+|---|---|---|---|
+| `offline` | `go test ./...` after build; local plan also runs `go test ./... -race` | No model spend; seconds to low minutes | Must pass before any environment-approved live job starts |
+| `claude-live` / `sonnet` / `CI-E2E` | `TestLiveEnsignCycle\|TestLiveDefaultHeadlessStopsAtGate\|TestLiveZeroDiscoverReportsAndStops`; all `TestLiveClaudeSharedScenarios`; pty pair; `TestLiveMergedTeamModeDispatch` | Focus: 2 model journeys in parallel, about 9–15 minutes wall (the README records rejection-flow at 8.98m). Full job: 3 basic + 10 shared + 2 pty + 1 merged registrations. Each Go step has a 40m loose backstop; the shared runner kills 60s of stream silence. | Separate environment approval; recorded-gate stops after exactly one durable handoff dispatch/report, rejection-flow after cycle-2 PASSED validation. Shared/pty/merged steps use `if: !cancelled()`, so an earlier red does not skip their evidence; only cancellation stops them. Any red is rerun serial/isolated to green, never waived. |
+| `claude-live` / `claude-opus-4-8` / `CI-E2E-OPUS` | Same four registered test steps as the sonnet leg | Same call count and bounds; independently approved and artifacted | This leg is independently required; a green sonnet leg cannot substitute for it. |
+| `codex-live` / `CI-E2E-CODEX` | All 10 `TestLiveCodexSharedScenarios` through the current-checkout local marketplace | Focus: 2 serial `codex exec` calls (previous pair estimate 6–10 minutes). Full lane: 10 calls. Each call has a fixed 15m wall limit, no activity extension and no retry; suite step has a 40m outer backstop. | Missing auth fails after approval. Exit 0 plus durable assertions is required; timeout/red is evidence to diagnose and rerun isolated, not a skip. |
+| `pi-live` / `CI-E2E-PI` | `TestSharedScenarioRunnerCoverage\|TestPiSharedScenarioCoverage`, then `TestLivePiFrontDoorSmoke\|TestLivePiRecordedGateLifecycle` | Coverage guard has no model spend. Two serial Pi launches, each with the existing fixed 5m process context (the registered Go step keeps its default 10m outer limit). | Front-door smoke stops after a committed implementation report; recorded-gate stops after exactly one durable handoff dispatch/report. Pi's `rejection-flow` entry remains the documented `gap`; do not add a harness or claim it ran. |
+
+Local missing-auth skips are useful setup diagnostics but do not satisfy this matrix. A CI deployment left waiting/unapproved is likewise not green; validation stops until each approved lane actually runs and passes. The two shared scenarios are the focused change proof, while the full registered jobs are the path→lane merge gate.
+
+Falsifiers are load-bearing:
 
 - Make the predicate accept only the report heading: the heading-only, empty, missing-evidence/summary, `FAILED`, and dirty-report cases must turn red.
 - Skip the literal path cleanliness check: the uncommitted-report case must turn red while the unrelated-dirty-sibling control stays green.
@@ -177,3 +193,14 @@ Ideation chooses the smallest status-owned correction because the archived trace
 ### Summary
 
 Cycle 2 incorporates the binding staff ruling without adding product implementation. The corrected design keeps status as the sole stage selector, makes recovery proof durable and falsifiable, and gives the First Officer an explicit host-neutral rule for live provenance versus crash recovery.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Require every registered applicable host lane for the two shared First Officer reference edits.
+  The proof matrix now requires offline, both independently approved Claude model legs, Codex, and Pi, with exact registered test surfaces, call counts, liveness bounds, auth behavior, and stop conditions.
+- DONE: Reuse existing runners and scenarios without hiding Pi's documented coverage gap.
+  Claude and Codex reuse recorded-gate-lifecycle plus rejection-flow; Pi reuses its coverage guard, front-door smoke, and live recorded-gate lifecycle while rejection-flow remains explicitly `gap` and no harness is added.
+
+### Summary
+
+Cycle 3 corrects only the proof matrix. All accepted cycle-2 completion, recovery, guard, and first-entry-deferral semantics remain unchanged, and the full README path-to-lane gate—not a Codex-only focused run—now controls implementation completion.
