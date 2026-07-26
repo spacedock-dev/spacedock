@@ -1,0 +1,1088 @@
+diff --git a/docs/site/concepts/gates-and-decisions.md b/docs/site/concepts/gates-and-decisions.md
+index ecc84814..23818e81 100644
+--- a/docs/site/concepts/gates-and-decisions.md
++++ b/docs/site/concepts/gates-and-decisions.md
+@@ -56,7 +56,7 @@ Captain, an approval awaiting nonterminal advance, and an approval awaiting
+ merge. Approval to a terminal target is consumed before the existing merge and
+ terminalization path begins.
+ 
+-Before the first officer shows a gate, it captures the exact bound Briefing identity and digest from committed entity state. A run without decision authority stops with that attempt open: it writes no Resolution, consumes nothing, advances nothing, and dispatches nothing. After an authorized decision, it records and commits the Resolution before every route. Approval then uses `gate consume`, which rechecks eligibility and atomically writes the successor stage and consumed mark; the consumed descendant commit lands before ordinary successor dispatch. Revise routes feedback after its close commit, and hold stays at the gate. `gate validate` and `gate eligibility` remain optional diagnostics, not positive-path lifecycle steps.
++Before the first officer shows a gate, it captures the exact bound Briefing identity and digest from committed entity state. A run without decision authority stops with that attempt open: it writes no Resolution, consumes nothing, advances nothing, and dispatches nothing. After an authorized decision, it records and commits the Resolution before every route. Approval then uses `gate consume`, which rechecks eligibility and atomically writes the successor stage and consumed mark. Until that first-entered working stage has a durable, complete Stage Report, `status --next` and boot name it as both `current` and `next`, and every away-status `status --set`—backward or forward, even with `--force`—is refused. Live completion requires the runtime completion signal plus the verified report; after a cold restart, the committed report alone is sufficient only when the first officer reconstructs the checklist and verifies every item and summary. The consumed descendant commit therefore lands before exactly one recoverable successor dispatch. Revise routes feedback after its close commit, and hold stays at the gate. `gate validate` and `gate eligibility` remain optional diagnostics, not positive-path lifecycle steps.
+ 
+ The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.
+ 
+diff --git a/internal/cli/merge_test.go b/internal/cli/merge_test.go
+index 0bfa8aa8..91bbdd7b 100644
+--- a/internal/cli/merge_test.go
++++ b/internal/cli/merge_test.go
+@@ -41,6 +41,15 @@ func stageMergeFixture(t *testing.T, fixture string) string {
+ 	}); err != nil {
+ 		t.Fatal(err)
+ 	}
++	entity := filepath.Join(dst, "020-no-sentinel.md")
++	body, err := os.ReadFile(entity)
++	if err != nil {
++		t.Fatal(err)
++	}
++	report := "\n## Stage Report: implementation\n\n- DONE: Complete the merge fixture implementation.\n  The fixture commit contains the durable implementation proof.\n\n### Summary\n\nThe implementation is ready for its merge ceremony.\n"
++	if err := os.WriteFile(entity, append(body, []byte(report)...), 0o644); err != nil {
++		t.Fatal(err)
++	}
+ 	// Set a PERSISTENT local identity on the temp repo. The verb's own commits
+ 	// (commitArchiveMove) run plain `git commit` without `-c`, so they must resolve
+ 	// an identity from the repo's config — independent of global/system config and
+diff --git a/internal/ensigncycle/recorded_gate_lifecycle_test.go b/internal/ensigncycle/recorded_gate_lifecycle_test.go
+index 73a23809..ea75ec75 100644
+--- a/internal/ensigncycle/recorded_gate_lifecycle_test.go
++++ b/internal/ensigncycle/recorded_gate_lifecycle_test.go
+@@ -174,6 +174,17 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
+ 	commitRecordedGateState(t, binary, fixture, "consume gate authorization")
+ 	durable, _, durableErr := gates.Read(fixture.entity)
+ 	requireRecordedGate(t, durableErr == nil && durable.Records[0].Attempts[0].Resolution.By == "agent:first-officer" && durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason && durable.Records[0].Attempts[0].Resolution.Adoption == "", "approve durable snapshot unreadable")
++	assertRecordedGateDispatchRow(t, binary, fixture, "handoff", "handoff")
++
++	beforeAway := readFile(t, fixture.entity)
++	away := runRecordedGateCommand(binary, fixture.root, "", "status", "--workflow-dir", fixture.root,
++		"--set", "recorded-gate-task", "status=done", "--force")
++	if away.exit == 0 || away.stdout != "" || !strings.Contains(away.stderr, "Stage Report") {
++		t.Fatalf("entered-stage away mutation was not refused: exit=%d stdout=%q stderr=%q", away.exit, away.stdout, away.stderr)
++	}
++	if afterAway := readFile(t, fixture.entity); afterAway != beforeAway {
++		t.Fatalf("entered-stage away mutation changed entity bytes")
++	}
+ 
+ 	events := successfulRecordedGateEvents(commands)
+ 	dispatches := 0
+@@ -187,8 +198,9 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
+ 	}
+ 	zero := recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))
+ 	requireRecordedGate(t, zero.dispatch.builds == 1 && zero.dispatch.durableEffects == 0 && assertRecordedGateLifecycle(zero) != nil, "zero-effect executed build qualified")
+-	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The one-use application was already consumed before dispatch.\n")
++	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The one-use application was already consumed before dispatch.\n\n### Summary\n\nThe entered handoff completed after the consumed approval.\n")
+ 	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record successor effect")
++	assertRecordedGateDispatchRow(t, binary, fixture, "handoff", "done")
+ 	writeRecordedGateEvidence(t, fixture.root, commands, before, readFile(t, fixture.entity), readFile(t, fixture.gateReview), dispatches)
+ 	observation := recordedGateLiveObservation(t, fixture, before, commandLog, readFile(t, fixture.gateReview))
+ 	if err := assertRecordedGateLifecycle(observation); err != nil {
+@@ -225,6 +237,31 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
+ 	}
+ }
+ 
++func assertRecordedGateDispatchRow(t *testing.T, binary string, fixture recordedGateFixture, current, next string) {
++	t.Helper()
++	for _, args := range [][]string{
++		{"status", "--workflow-dir", fixture.root, "--next", "--json"},
++		{"status", "--workflow-dir", fixture.root, "--boot", "--identify", "--json"},
++	} {
++		result := mustRecordedGate(t, binary, fixture.root, args...)
++		var envelope struct {
++			Dispatchable []struct {
++				Current string `json:"current"`
++				Next    string `json:"next"`
++			} `json:"dispatchable"`
++		}
++		if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil {
++			t.Fatalf("parse spacedock %v: %v\n%s", args, err, result.stdout)
++		}
++		if len(envelope.Dispatchable) != 1 ||
++			envelope.Dispatchable[0].Current != current ||
++			envelope.Dispatchable[0].Next != next {
++			t.Fatalf("spacedock %v dispatchable=%+v, want current=%s next=%s",
++				args, envelope.Dispatchable, current, next)
++		}
++	}
++}
++
+ func TestRecordedGateLifecycleTerminalConsumeHasNoDispatchableSuccessor(t *testing.T) {
+ 	binary, fixture := buildRecordedGateBinary(t), writeRecordedGateFixture(t)
+ 	writeFile(t, filepath.Join(fixture.root, "README.md"), strings.Replace(readFile(t, filepath.Join(fixture.root, "README.md")), "    - name: handoff\n", "", 1))
+@@ -237,6 +274,42 @@ func TestRecordedGateLifecycleTerminalConsumeHasNoDispatchableSuccessor(t *testi
+ 	assertCommandOutput(t, mustRecordedGate(t, binary, fixture.root, "status", "--workflow-dir", fixture.root, "--next", "--json").stdout, `"dispatchable":[]`)
+ }
+ 
++func TestRecordedGateLifecycleEnteredStageRecoveryMatrix(t *testing.T) {
++	binary := buildRecordedGateBinary(t)
++	complete := "\n## Stage Report: handoff\n\n- DONE: Complete the entered handoff.\n  Commit abc123 contains the durable handoff evidence.\n\n### Summary\n\nThe entered handoff is complete and ready for done.\n"
++	cases := []struct {
++		name   string
++		report string
++		dirty  bool
++		next   string
++	}{
++		{"committed heading only", "\n## Stage Report: handoff\n", false, "handoff"},
++		{"committed item without evidence", "\n## Stage Report: handoff\n\n- DONE: Complete the handoff.\n\n### Summary\n\nIncomplete evidence.\n", false, "handoff"},
++		{"committed failed item", "\n## Stage Report: handoff\n\n- FAILED: Complete the handoff.\n  The handoff remains broken.\n\n### Summary\n\nIncomplete work.\n", false, "handoff"},
++		{"committed wrong stage", strings.Replace(complete, "Stage Report: handoff", "Stage Report: implementation", 1), false, "handoff"},
++		{"later malformed masks older valid", complete + "\n## Stage Report: handoff (cycle 2)\n\n- DONE: Later report has no evidence.\n\n### Summary\n\nLater but malformed.\n", false, "handoff"},
++		{"dirty valid report", complete, true, "handoff"},
++	}
++	for _, tc := range cases {
++		t.Run(tc.name, func(t *testing.T) {
++			fixture := writeRecordedGateFixture(t)
++			bindRecordedGate(t, binary, fixture)
++			commitRecordedGateState(t, binary, fixture, "bind retained gate package")
++			closeRecordedGate(t, binary, fixture, "approve")
++			commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
++			mustRecordedGate(t, binary, fixture.root, "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
++			commitRecordedGateState(t, binary, fixture, "consume gate authorization")
++
++			writeFile(t, fixture.entity, readFile(t, fixture.entity)+tc.report)
++			gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record handoff report")
++			if tc.dirty {
++				writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\nUncommitted entity dirt.\n")
++			}
++			assertRecordedGateDispatchRow(t, binary, fixture, "handoff", tc.next)
++		})
++	}
++}
++
+ func TestRecordedGateLifecycleRelativeBriefingMatchesAbsolute(t *testing.T) {
+ 	binary := buildRecordedGateBinary(t)
+ 	relative, absolute := writeRecordedGateFixture(t), writeRecordedGateFixture(t)
+diff --git a/internal/status/entered_stage.go b/internal/status/entered_stage.go
+new file mode 100644
+index 00000000..bc598716
+--- /dev/null
++++ b/internal/status/entered_stage.go
+@@ -0,0 +1,145 @@
++// ABOUTME: Entered working stages remain their own dispatch target until their
++// ABOUTME: latest stage report is structurally complete and committed cleanly.
++package status
++
++import (
++	"os"
++	"os/exec"
++	"path/filepath"
++	"strings"
++)
++
++// enteredStageAwaitingCompletion reports whether a current working stage must
++// be dispatched before ordinary successor projection resumes. Initial stages
++// and gate, terminal, and worktree suppression are handled by the caller.
++func enteredStageAwaitingCompletion(e *entity, stage Stage) bool {
++	if stage.initial || stage.gate || stage.terminal {
++		return false
++	}
++	return !hasCompleteCommittedStageReport(e.path, stage.Name)
++}
++
++// hasCompleteCommittedStageReport applies the status-owned, mechanical half of
++// completion proof. The existing report selector chooses only the latest exact
++// stage token. Its checklist must be non-empty, contain no FAILED or blank
++// items, give every item a non-empty evidence/rationale line, and end with a
++// non-empty Summary. The current entity bytes must also be tracked and clean
++// against the local HEAD; sibling dirt is deliberately outside that pathspec.
++func hasCompleteCommittedStageReport(path, stage string) bool {
++	data, err := os.ReadFile(path)
++	if err != nil {
++		return false
++	}
++	return hasCompleteStageReport(data, stage) && entityPathCleanInHEAD(path)
++}
++
++func hasCompleteStageReport(data []byte, stage string) bool {
++	lines := splitLines(string(data))
++	start, end, ok := selectStageReport(lines, stage)
++	if !ok {
++		return false
++	}
++	items := extractChecklist(lines, start, end)
++	if len(items) == 0 {
++		return false
++	}
++	for _, item := range items {
++		if (item.status != "DONE" && item.status != "SKIPPED") || strings.TrimSpace(item.text) == "" || !checklistItemHasEvidence(lines, item) {
++			return false
++		}
++	}
++	return stageReportHasSummary(lines, start, end)
++}
++
++// hasMergeCeremonyCompletionProof lets merge guard retain durable completion
++// proof across only its own mod-block/pr frontmatter bookkeeping. The report
++// and body must match HEAD byte-for-byte; any other same-path dirt refuses.
++// Direct status scheduling and status --set still require the entire path clean.
++func hasMergeCeremonyCompletionProof(path, stage string) bool {
++	gitRoot, rel, ok := entityGitPath(path)
++	if !ok {
++		return false
++	}
++	show := exec.Command("git", "show", "HEAD:"+filepath.ToSlash(rel))
++	show.Dir = gitRoot
++	headData, err := show.Output()
++	if err != nil || !hasCompleteStageReport(headData, stage) {
++		return false
++	}
++	currentData, err := os.ReadFile(path)
++	if err != nil || stripFrontmatter(headData) != stripFrontmatter(currentData) {
++		return false
++	}
++	headFields := parseFrontmatterContent(headData)
++	currentFields := parseFrontmatterContent(currentData)
++	for field, headValue := range headFields {
++		if currentFields[field] != headValue && field != "mod-block" && field != "pr" {
++			return false
++		}
++	}
++	for field, currentValue := range currentFields {
++		if headFields[field] != currentValue && field != "mod-block" && field != "pr" {
++			return false
++		}
++	}
++	return true
++}
++
++func checklistItemHasEvidence(lines []string, item checklistItem) bool {
++	for line := item.start + 1; line <= item.end; line++ {
++		if strings.TrimSpace(lines[line-1]) != "" {
++			return true
++		}
++	}
++	return false
++}
++
++func stageReportHasSummary(lines []string, start, end int) bool {
++	for line := start; line <= end; line++ {
++		if strings.TrimSpace(lines[line-1]) != "### Summary" {
++			continue
++		}
++		for bodyLine := line + 1; bodyLine <= end; bodyLine++ {
++			level, _, heading := parseATXHeading(lines[bodyLine-1])
++			if heading && level <= 3 {
++				break
++			}
++			if strings.TrimSpace(lines[bodyLine-1]) != "" {
++				return true
++			}
++		}
++		return false
++	}
++	return false
++}
++
++// entityPathCleanInHEAD is deliberately literal and path-scoped. A tracked
++// entity whose working-tree/index bytes differ from HEAD is not durable proof;
++// an unrelated dirty sibling does not affect the answer.
++func entityPathCleanInHEAD(path string) bool {
++	gitRoot, rel, ok := entityGitPath(path)
++	if !ok {
++		return false
++	}
++	rel = filepath.ToSlash(rel)
++	tracked := exec.Command("git", "--literal-pathspecs", "ls-files", "--error-unmatch", "--", rel)
++	tracked.Dir = gitRoot
++	if err := tracked.Run(); err != nil {
++		return false
++	}
++	clean := exec.Command("git", "--literal-pathspecs", "diff", "--quiet", "HEAD", "--", rel)
++	clean.Dir = gitRoot
++	return clean.Run() == nil
++}
++
++func entityGitPath(path string) (gitRoot, rel string, ok bool) {
++	gitRoot = FindGitRoot(filepath.Dir(path))
++	if !hasGitEntry(gitRoot) {
++		return "", "", false
++	}
++	rel, err := filepath.Rel(gitRoot, path)
++	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
++		return "", "", false
++	}
++	return gitRoot, rel, true
++}
+diff --git a/internal/status/entered_stage_test.go b/internal/status/entered_stage_test.go
+new file mode 100644
+index 00000000..980ce02a
+--- /dev/null
++++ b/internal/status/entered_stage_test.go
+@@ -0,0 +1,310 @@
++// ABOUTME: Entered-stage scheduling requires a committed, structurally complete
++// ABOUTME: current-stage report before projecting or mutating to another stage.
++package status
++
++import (
++	"encoding/json"
++	"os"
++	"path/filepath"
++	"strings"
++	"testing"
++)
++
++const enteredStageReadme = `---
++commissioned-by: spacedock@1
++entity-type: task
++id-style: slug
++state: .spacedock-state
++stages:
++  defaults:
++    worktree: false
++    concurrency: 2
++  states:
++    - name: backlog
++      initial: true
++    - name: implementation
++      worktree: true
++      concurrency: 3
++    - name: validation
++      gate: true
++    - name: handoff
++    - name: done
++      terminal: true
++---
++
++# Entered Stage Workflow
++`
++
++const enteredStageEntity = `---
++id: entered-task
++title: Entered Task
++status: implementation
++completed:
++verdict:
++worktree:
++---
++# Entered Task
++`
++
++const completeImplementationReport = `
++## Stage Report: implementation
++
++- DONE: Produce the entered implementation.
++  Commit abc123 contains the exercised implementation evidence.
++
++### Summary
++
++The entered implementation is complete and ready for independent validation.
++`
++
++type enteredStageRow struct {
++	ID       string `json:"id"`
++	Slug     string `json:"slug"`
++	Current  string `json:"current"`
++	Next     string `json:"next"`
++	Worktree string `json:"worktree"`
++}
++
++func TestEnteredStageProjectionRequiresCommittedCompleteReport(t *testing.T) {
++	cases := []struct {
++		name   string
++		report string
++	}{
++		{"no report", ""},
++		{"heading only", "\n## Stage Report: implementation\n"},
++		{"empty checklist", "\n## Stage Report: implementation\n\n### Summary\n\nNot enough.\n"},
++		{"blank checklist item", "\n## Stage Report: implementation\n\n- DONE:\n  Evidence without an obligation.\n\n### Summary\n\nNot enough.\n"},
++		{"item without evidence", "\n## Stage Report: implementation\n\n- DONE: Produce the implementation.\n\n### Summary\n\nNot enough.\n"},
++		{"failed item", "\n## Stage Report: implementation\n\n- FAILED: Produce the implementation.\n  The required behavior is still broken.\n\n### Summary\n\nNot enough.\n"},
++		{"missing summary", "\n## Stage Report: implementation\n\n- DONE: Produce the implementation.\n  Commit abc123 contains evidence.\n"},
++		{"empty summary", "\n## Stage Report: implementation\n\n- DONE: Produce the implementation.\n  Commit abc123 contains evidence.\n\n### Summary\n\n"},
++		{"wrong stage", strings.ReplaceAll(completeImplementationReport, "Stage Report: implementation", "Stage Report: handoff")},
++		{"later malformed masks older valid", completeImplementationReport + "\n## Stage Report: implementation (cycle 2)\n\n- DONE: Later report has no evidence.\n\n### Summary\n\nLater but malformed.\n"},
++	}
++	for _, tc := range cases {
++		t.Run(tc.name, func(t *testing.T) {
++			def, _, _ := buildEnteredStageFixture(t, enteredStageEntity+tc.report)
++			assertEnteredStageRows(t, def, enteredStageRow{
++				ID: "entered-task", Slug: "entered-task",
++				Current: "implementation", Next: "implementation", Worktree: "yes",
++			})
++		})
++	}
++	t.Run("uncommitted complete report", func(t *testing.T) {
++		def, _, entity := buildEnteredStageFixture(t, enteredStageEntity)
++		writeFile(t, entity, enteredStageEntity+completeImplementationReport)
++		assertEnteredStageRows(t, def, enteredStageRow{
++			ID: "entered-task", Slug: "entered-task",
++			Current: "implementation", Next: "implementation", Worktree: "yes",
++		})
++	})
++	t.Run("dirty committed report", func(t *testing.T) {
++		def, _, entity := buildEnteredStageFixture(t, enteredStageEntity+completeImplementationReport)
++		f, err := os.OpenFile(entity, os.O_APPEND|os.O_WRONLY, 0o644)
++		if err != nil {
++			t.Fatal(err)
++		}
++		if _, err := f.WriteString("\nUncommitted entity dirt.\n"); err != nil {
++			f.Close()
++			t.Fatal(err)
++		}
++		if err := f.Close(); err != nil {
++			t.Fatal(err)
++		}
++		assertEnteredStageRows(t, def, enteredStageRow{
++			ID: "entered-task", Slug: "entered-task",
++			Current: "implementation", Next: "implementation", Worktree: "yes",
++		})
++	})
++	t.Run("committed complete report ignores sibling dirt", func(t *testing.T) {
++		def, state, _ := buildEnteredStageFixture(t, enteredStageEntity+completeImplementationReport)
++		writeFile(t, filepath.Join(state, "unrelated-dirty-sibling.md"), "concurrent sibling dirt\n")
++		assertEnteredStageRows(t, def, enteredStageRow{
++			ID: "entered-task", Slug: "entered-task",
++			Current: "implementation", Next: "validation", Worktree: "no",
++		})
++	})
++
++	t.Run("skipped item with rationale is structurally complete", func(t *testing.T) {
++		report := "\n## Stage Report: implementation\n\n- SKIPPED: Optional benchmark.\n  Not applicable because this change has no performance path.\n\n### Summary\n\nThe required implementation is complete.\n"
++		def, _, _ := buildEnteredStageFixture(t, enteredStageEntity+report)
++		assertEnteredStageRows(t, def, enteredStageRow{
++			ID: "entered-task", Slug: "entered-task",
++			Current: "implementation", Next: "validation", Worktree: "no",
++		})
++	})
++}
++
++func TestEnteredStageAwayStatusMutationsAreByteClean(t *testing.T) {
++	cases := []struct {
++		name string
++		args []string
++	}{
++		{"successor", []string{"status=validation"}},
++		{"backward", []string{"status=backlog"}},
++		{"terminal", []string{"status=done"}},
++		{"force successor", []string{"status=validation", "--force"}},
++		{"force terminal", []string{"status=done", "--force"}},
++		{"same then away", []string{"status=implementation", "status=validation"}},
++		{"away then same", []string{"status=validation", "status=implementation"}},
++	}
++	for _, tc := range cases {
++		t.Run(tc.name, func(t *testing.T) {
++			def, _, entity := buildEnteredStageFixture(t, enteredStageEntity)
++			before, err := os.ReadFile(entity)
++			if err != nil {
++				t.Fatal(err)
++			}
++			args := append([]string{"--workflow-dir", def, "--set", "entered-task"}, tc.args...)
++			stdout, stderr, code := runNative(t, def, pinnedEnv(t), args...)
++			if code != 1 {
++				t.Fatalf("away mutation exit=%d, want 1; stdout=%q stderr=%q", code, stdout, stderr)
++			}
++			if stdout != "" {
++				t.Fatalf("away mutation emitted success stdout: %q", stdout)
++			}
++			for _, want := range []string{"implementation", "Stage Report"} {
++				if !strings.Contains(stderr, want) {
++					t.Fatalf("stderr=%q, want actionable %q", stderr, want)
++				}
++			}
++			after, err := os.ReadFile(entity)
++			if err != nil {
++				t.Fatal(err)
++			}
++			if string(after) != string(before) {
++				t.Fatalf("away mutation changed entity bytes\n--- before ---\n%s\n--- after ---\n%s", before, after)
++			}
++		})
++	}
++}
++
++func TestEnteredStageMutationControls(t *testing.T) {
++	t.Run("same-stage dispatch mutation remains allowed", func(t *testing.T) {
++		def, _, entity := buildEnteredStageFixture(t, enteredStageEntity)
++		stdout, stderr, code := runNative(t, def, pinnedEnv(t),
++			"--workflow-dir", def, "--set", "entered-task", "status=implementation", "started")
++		if code != 0 || !strings.Contains(stdout, "started:") {
++			t.Fatalf("same-stage dispatch exit=%d stdout=%q stderr=%q", code, stdout, stderr)
++		}
++		if !strings.Contains(readBytes(t, entity), "status: implementation") {
++			t.Fatal("same-stage dispatch changed the current status")
++		}
++	})
++
++	t.Run("unrelated mutation remains allowed", func(t *testing.T) {
++		def, _, _ := buildEnteredStageFixture(t, enteredStageEntity)
++		stdout, stderr, code := runNative(t, def, pinnedEnv(t),
++			"--workflow-dir", def, "--set", "entered-task", "score=0.7")
++		if code != 0 || !strings.Contains(stdout, "score:") {
++			t.Fatalf("unrelated mutation exit=%d stdout=%q stderr=%q", code, stdout, stderr)
++		}
++	})
++
++	t.Run("committed completion unlocks successor", func(t *testing.T) {
++		def, _, entity := buildEnteredStageFixture(t, enteredStageEntity+completeImplementationReport)
++		stdout, stderr, code := runNative(t, def, pinnedEnv(t),
++			"--workflow-dir", def, "--set", "entered-task", "status=validation")
++		if code != 0 || !strings.Contains(stdout, "status: implementation -> validation") {
++			t.Fatalf("completed transition exit=%d stdout=%q stderr=%q", code, stdout, stderr)
++		}
++		if !strings.Contains(readBytes(t, entity), "status: validation") {
++			t.Fatal("completed transition did not update status")
++		}
++	})
++	t.Run("worktree-set stage stays outside first-entry guard", func(t *testing.T) {
++		def := stageFixtureWithoutEnteredReports(t, "suppress-workflow")
++		if _, stderr, code := runNative(t, def, pinnedEnv(t), "--workflow-dir", def, "--set", "building", "status=review"); code != 0 {
++			t.Fatalf("worktree transition exit=%d stderr=%q", code, stderr)
++		}
++	})
++}
++
++func TestEnteredStageLegacySuppressionControls(t *testing.T) {
++	cases := []struct {
++		name       string
++		entityBody string
++		want       []enteredStageRow
++	}{
++		{
++			name:       "initial stage keeps successor projection",
++			entityBody: strings.Replace(enteredStageEntity, "status: implementation", "status: backlog", 1),
++			want: []enteredStageRow{{
++				ID: "entered-task", Slug: "entered-task",
++				Current: "backlog", Next: "implementation", Worktree: "yes",
++			}},
++		},
++		{
++			name:       "gate stage remains suppressed",
++			entityBody: strings.Replace(enteredStageEntity, "status: implementation", "status: validation", 1),
++		},
++		{
++			name:       "terminal stage remains suppressed",
++			entityBody: strings.Replace(enteredStageEntity, "status: implementation", "status: done", 1),
++		},
++		{
++			name:       "set worktree remains suppressed before first-entry rule",
++			entityBody: strings.Replace(enteredStageEntity, "worktree:", "worktree: .worktrees/entered-task", 1),
++		},
++	}
++	for _, tc := range cases {
++		t.Run(tc.name, func(t *testing.T) {
++			def, _, _ := buildEnteredStageFixture(t, tc.entityBody)
++			assertEnteredStageRows(t, def, tc.want...)
++		})
++	}
++}
++
++func buildEnteredStageFixture(t *testing.T, body string) (def, state, entity string) {
++	t.Helper()
++	def, state = buildSplitRoot(t, enteredStageReadme, map[string]string{"entered-task.md": body})
++	entity = filepath.Join(state, "entered-task.md")
++	gitC(t, state, "init", "-q")
++	gitC(t, state, "config", "user.email", "test@example.com")
++	gitC(t, state, "config", "user.name", "test")
++	gitC(t, state, "add", "--", "entered-task.md")
++	gitC(t, state, "commit", "-q", "-m", "seed entered stage", "--", "entered-task.md")
++	return def, state, entity
++}
++
++func assertEnteredStageRows(t *testing.T, def string, want ...enteredStageRow) {
++	t.Helper()
++	nextOut, nextErr, nextCode := runNative(t, def, pinnedEnv(t),
++		"--workflow-dir", def, "--next", "--json")
++	if nextCode != 0 {
++		t.Fatalf("--next exit=%d stderr=%q", nextCode, nextErr)
++	}
++	bootOut, bootErr, bootCode := runNative(t, def, pinnedEnv(t),
++		"--workflow-dir", def, "--boot", "--identify", "--json")
++	if bootCode != 0 {
++		t.Fatalf("--boot exit=%d stderr=%q", bootCode, bootErr)
++	}
++	var next, boot struct {
++		Dispatchable []enteredStageRow `json:"dispatchable"`
++	}
++	if err := json.Unmarshal([]byte(nextOut), &next); err != nil {
++		t.Fatalf("parse --next: %v\n%s", err, nextOut)
++	}
++	if err := json.Unmarshal([]byte(bootOut), &boot); err != nil {
++		t.Fatalf("parse --boot: %v\n%s", err, bootOut)
++	}
++	if len(next.Dispatchable) != len(want) {
++		t.Fatalf("--next rows=%+v, want %+v", next.Dispatchable, want)
++	}
++	for i := range want {
++		if next.Dispatchable[i] != want[i] {
++			t.Fatalf("--next row[%d]=%+v, want %+v", i, next.Dispatchable[i], want[i])
++		}
++	}
++	nextJSON, err := json.Marshal(next.Dispatchable)
++	if err != nil {
++		t.Fatal(err)
++	}
++	bootJSON, err := json.Marshal(boot.Dispatchable)
++	if err != nil {
++		t.Fatal(err)
++	}
++	if string(bootJSON) != string(nextJSON) {
++		t.Fatalf("boot dispatchable=%s, --next dispatchable=%s", bootJSON, nextJSON)
++	}
++}
+diff --git a/internal/status/external_proof_test.go b/internal/status/external_proof_test.go
+index a14bf9af..72c2eec4 100644
+--- a/internal/status/external_proof_test.go
++++ b/internal/status/external_proof_test.go
+@@ -509,6 +509,7 @@ func stageExternalProofFixture(t *testing.T, optIn string) string {
+ 		t.Fatal(err)
+ 	}
+ 
++	seedLegacyCompletedStages(t, dst)
+ 	gitInit(t, dst)
+ 	return dst
+ }
+diff --git a/internal/status/format.go b/internal/status/format.go
+index f697db23..f150ce47 100644
+--- a/internal/status/format.go
++++ b/internal/status/format.go
+@@ -219,12 +219,16 @@ func dispatchAnalysis(entities []*entity, stages []Stage) ([]dispatchable, map[*
+ 			reasons[e] = "worktree-set"
+ 			continue
+ 		}
+-		if idx+1 >= len(stageNames) {
+-			reasons[e] = ""
+-			continue
++		nextName := status
++		nextStage := stg
++		if !enteredStageAwaitingCompletion(e, stg) {
++			if idx+1 >= len(stageNames) {
++				reasons[e] = ""
++				continue
++			}
++			nextName = stageNames[idx+1]
++			nextStage = stageByName[nextName]
+ 		}
+-		nextName := stageNames[idx+1]
+-		nextStage := stageByName[nextName]
+ 		if nextCounts[nextName] >= nextStage.concurrency {
+ 			reasons[e] = "concurrency-full"
+ 			continue
+diff --git a/internal/status/golden_read_test.go b/internal/status/golden_read_test.go
+index 7a6175cb..9ed4707e 100644
+--- a/internal/status/golden_read_test.go
++++ b/internal/status/golden_read_test.go
+@@ -2,10 +2,7 @@
+ // ABOUTME: subcommands matches goldens captured from the oracle, after normalization.
+ package status
+ 
+-import (
+-	"path/filepath"
+-	"testing"
+-)
++import "testing"
+ 
+ // readCases are the five FO-load-bearing read subcommands compared byte-for-byte
+ // (post-normalization) against goldens captured from the oracle at retirement.
+@@ -22,10 +19,7 @@ var readCases = []struct {
+ }
+ 
+ func TestGoldenRead(t *testing.T) {
+-	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+-	if err != nil {
+-		t.Fatal(err)
+-	}
++	root := stageFixture(t, "seq-workflow")
+ 	env := pinnedEnv(t)
+ 
+ 	for _, tc := range readCases {
+diff --git a/internal/status/handlers.go b/internal/status/handlers.go
+index 6724c841..b0d355cb 100644
+--- a/internal/status/handlers.go
++++ b/internal/status/handlers.go
+@@ -105,6 +105,30 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
+ 		}
+ 	}
+ 
++	// First-entry guard: an entered non-initial working stage cannot be changed
++	// away until the shared scheduler predicate sees a committed, structurally
++	// complete current-stage report. This is intentionally before every --force
++	// bypass guard below. Any away status token in a repeated/chained update
++	// refuses the whole command byte-clean; a same-stage dispatch mutation and
++	// unrelated non-status updates remain allowed.
++	if !set.enteredStageCompletionProof && strings.TrimSpace(currentFields["worktree"]) == "" {
++		currentStatus := strings.TrimSpace(currentFields["status"])
++		for _, stage := range stages {
++			if stage.Name != currentStatus || !enteredStageAwaitingCompletion(&entity{path: entityPath}, stage) {
++				continue
++			}
++			for _, u := range set.updates {
++				if u.field == "status" && u.hasValue && u.value != currentStatus {
++					return errExit(stderr, fmt.Sprintf(
++						"entity %s cannot change status away from entered stage %q until a durable, complete "+
++							"## Stage Report: %s is committed.",
++						slug, currentStatus, currentStatus))
++				}
++			}
++			break
++		}
++	}
++
+ 	isTerminalUpdate := func() bool {
+ 		for _, u := range set.updates {
+ 			if u.field == "status" && u.hasValue && terminalNames[u.value] {
+diff --git a/internal/status/json_read_test.go b/internal/status/json_read_test.go
+index 9372dcd4..7e7de682 100644
+--- a/internal/status/json_read_test.go
++++ b/internal/status/json_read_test.go
+@@ -28,10 +28,7 @@ var jsonReadCases = []struct {
+ // asserts it carries no aligned-column padding run and no ellipsis glyph — the
+ // properties that survive a token proxy intact.
+ func TestJSONReadGolden(t *testing.T) {
+-	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+-	if err != nil {
+-		t.Fatal(err)
+-	}
++	root := stageFixture(t, "seq-workflow")
+ 	env := pinnedEnv(t)
+ 
+ 	for _, tc := range jsonReadCases {
+diff --git a/internal/status/live_guard_test.go b/internal/status/live_guard_test.go
+index 909b51f5..8ed4f5a5 100644
+--- a/internal/status/live_guard_test.go
++++ b/internal/status/live_guard_test.go
+@@ -49,6 +49,7 @@ func stageLiveGuardFixture(t *testing.T, optIn, acBody string) (string, string)
+ 	if err := os.WriteFile(entityPath, []byte(entity), 0o644); err != nil {
+ 		t.Fatal(err)
+ 	}
++	seedLegacyCompletedStages(t, root)
+ 	gitInit(t, root)
+ 	return root, entityPath
+ }
+diff --git a/internal/status/merge.go b/internal/status/merge.go
+index ab8124ca..900e02c5 100644
+--- a/internal/status/merge.go
++++ b/internal/status/merge.go
+@@ -115,6 +115,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
+ 	modBlock := strings.TrimSpace(fields["mod-block"])
+ 	pr := strings.TrimSpace(fields["pr"])
+ 	worktree := strings.TrimSpace(fields["worktree"])
++	enteredStageCompletionProof := verdict == "rejected" || hasMergeCeremonyCompletionProof(entityPath, strings.TrimSpace(fields["status"]))
+ 	mergeHooks := scanMods(roots.definitionDir)["merge"]
+ 	hookRegistered := len(mergeHooks) > 0
+ 
+@@ -125,7 +126,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
+ 	case verdict == "rejected":
+ 		// A rejected entity never merged, so the pr-requirement is vacuous: finalize
+ 		// straight through, clearing an in-flight mod-block standalone first (AC-6).
+-		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
++		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, enteredStageCompletionProof, quiet, asJSON, stdout, stderr)
+ 
+ 	case prIndicatesMerged(pr):
+ 		// FINALIZE from a detected-MERGED state. The `pr` field carries a merge
+@@ -135,7 +136,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
+ 		// (empty mod-block) state — the stranded case a re-validation bounce leaves
+ 		// behind (AC-2). The merge-hook guard is satisfied because the sentinel is a
+ 		// non-empty pr that honestly records the landed merge.
+-		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
++		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, enteredStageCompletionProof, quiet, asJSON, stdout, stderr)
+ 
+ 	case modBlockNamesMissingMergeMod(modBlock, mergeHooks):
+ 		// A mod-block naming a merge mod that no longer exists under _mods/, with no
+@@ -163,7 +164,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
+ 		// opens the captain-gated PR). Ceremony integrity holds downstream: a merge: pr
+ 		// entity can only FINALIZE once a merge sentinel records the landed PR, so an
+ 		// arm-then-immediate-finalize is impossible without the hook running.
+-		return arm(roots, slug, mergeHooks[0], quiet, asJSON, stdout, stderr)
++		return arm(roots, slug, mergeHooks[0], enteredStageCompletionProof, quiet, asJSON, stdout, stderr)
+ 
+ 	default:
+ 		// Phase C finalize. Under merge: local a cleared/clearable mod-block stands as
+@@ -171,7 +172,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
+ 		// the terminalize --set is unguarded and succeeds. A merge: pr with a hook
+ 		// registered never reaches here with an empty mod-block — auto-arm above claims
+ 		// that state — so the merge-hook guard cannot strand a finalize.
+-		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
++		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, enteredStageCompletionProof, quiet, asJSON, stdout, stderr)
+ 	}
+ }
+ 
+@@ -350,9 +351,9 @@ func refuseMissingMergeMod(definitionDir, slug, modBlock string, stderr io.Write
+ 
+ // arm performs Phase A: set mod-block=merge:{hook} in its own --set and signal the
+ // FO to invoke the hook. The underlying runSet is the proven mutation path.
+-func arm(roots roots, slug, hook string, quiet, asJSON bool, stdout, stderr io.Writer) int {
++func arm(roots roots, slug, hook string, enteredStageCompletionProof, quiet, asJSON bool, stdout, stderr io.Writer) int {
+ 	modValue := "merge:" + hook
+-	if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: modValue, hasValue: true}}, stderr); rc != 0 {
++	if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: modValue, hasValue: true}}, enteredStageCompletionProof, stderr); rc != 0 {
+ 		return rc
+ 	}
+ 	return signalArmed(roots.definitionDir, slug, hook, quiet, asJSON, stdout)
+@@ -371,7 +372,7 @@ func arm(roots roots, slug, hook string, quiet, asJSON bool, stdout, stderr io.W
+ // find it on a re-run. So finalize snapshots the entity's pre-finalize bytes and live
+ // location before mutating, and on commit failure reverses the move and restores the
+ // original content, returning the entity to its exact pre-finalize state.
+-func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookRegistered bool, quiet, asJSON bool, stdout, stderr io.Writer) int {
++func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookRegistered, enteredStageCompletionProof, quiet, asJSON bool, stdout, stderr io.Writer) int {
+ 	// Snapshot the pre-finalize state up front — before any mutation — so a failed
+ 	// archive commit can be rolled back to exactly the state the FO would re-run
+ 	// against. The live path and form resolve here while the file still sits at its
+@@ -381,7 +382,7 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
+ 		return errExit(stderr, fmt.Sprintf("merge guard: failed to snapshot %s before finalize: %v", slug, snapErr))
+ 	}
+ 	if modBlock != "" {
+-		if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: "", hasValue: true}}, stderr); rc != 0 {
++		if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: "", hasValue: true}}, enteredStageCompletionProof, stderr); rc != 0 {
+ 			return rc
+ 		}
+ 	}
+@@ -394,7 +395,7 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
+ 		{field: "verdict", value: verdict, hasValue: true},
+ 		{field: "completed", hasValue: false},
+ 	}
+-	if rc := emitSet(roots, slug, terminalize, stderr); rc != 0 {
++	if rc := emitSet(roots, slug, terminalize, enteredStageCompletionProof, stderr); rc != 0 {
+ 		return rc
+ 	}
+ 	if rc := runArchive(roots.definitionDir, roots.entityDir, roots.entityDirSpelling, slug, false, true, false, io.Discard, stderr); rc != 0 {
+@@ -634,8 +635,8 @@ func relToGitRoot(gitRoot, path string) string {
+ // emitSet runs one proven --set mutation through runSet, discarding its success
+ // narration (the verb emits its own phase signal) while propagating a guard
+ // refusal's stderr verbatim. It never passes --force.
+-func emitSet(roots roots, slug string, updates []fieldUpdate, stderr io.Writer) int {
+-	set := &setUpdate{slug: slug, updates: updates}
++func emitSet(roots roots, slug string, updates []fieldUpdate, enteredStageCompletionProof bool, stderr io.Writer) int {
++	set := &setUpdate{slug: slug, updates: updates, enteredStageCompletionProof: enteredStageCompletionProof}
+ 	return runSet(roots, set, nil, nil,
+ 		false, false, false, false, false, false, true, false,
+ 		io.Discard, stderr)
+diff --git a/internal/status/merge_guard_test.go b/internal/status/merge_guard_test.go
+index 147aed30..05042c86 100644
+--- a/internal/status/merge_guard_test.go
++++ b/internal/status/merge_guard_test.go
+@@ -54,6 +54,9 @@ func TestMergeGuardInlineJSONReportsOneDurabilityBoundResult(t *testing.T) {
+ func driveMergeGuard(t *testing.T, fixture string, args ...string) (root, stdout, stderr string, code int) {
+ 	t.Helper()
+ 	root = stageFixture(t, fixture)
++	if i := indexOf(args, "--verdict"); i >= 0 && i+1 < len(args) && args[i+1] == "rejected" {
++		root = stageFixtureWithoutEnteredReports(t, fixture)
++	}
+ 	var out, errBuf bytes.Buffer
+ 	full := append([]string{"--workflow-dir", root}, args...)
+ 	code = MergeGuard(full, root, &out, &errBuf)
+diff --git a/internal/status/mutation_test.go b/internal/status/mutation_test.go
+index 83de8f79..434d5580 100644
+--- a/internal/status/mutation_test.go
++++ b/internal/status/mutation_test.go
+@@ -3,6 +3,7 @@
+ package status
+ 
+ import (
++	"io"
+ 	"os"
+ 	"os/exec"
+ 	"path/filepath"
+@@ -21,10 +22,60 @@ func stageFixture(t *testing.T, fixture string) string {
+ 	}
+ 	dst := t.TempDir()
+ 	cpTree(t, src, dst)
++	seedLegacyCompletedStages(t, dst)
+ 	gitInit(t, dst)
+ 	return dst
+ }
+ 
++func stageFixtureWithoutEnteredReports(t *testing.T, fixture string) string {
++	t.Helper()
++	src, err := filepath.Abs(filepath.Join("testdata", fixture))
++	if err != nil {
++		t.Fatal(err)
++	}
++	dst := t.TempDir()
++	cpTree(t, src, dst)
++	gitInit(t, dst)
++	return dst
++}
++
++// seedLegacyCompletedStages upgrades older unrelated fixtures that place an
++// entity directly in a non-initial working stage but model that stage as already
++// complete. Their tests target mutation/archive guards, not first-entry
++// scheduling, so make that prerequisite explicit before the fixture commit.
++func seedLegacyCompletedStages(t *testing.T, definitionDir string) {
++	t.Helper()
++	r, err := resolveRoots(definitionDir, "")
++	if err != nil {
++		t.Fatal(err)
++	}
++	stageByName := map[string]Stage{}
++	for _, stage := range parseStagesBlock(filepath.Join(r.definitionDir, "README.md")) {
++		stageByName[stage.Name] = stage
++	}
++	for _, pair := range discoverEntityFiles(r.entityDir, io.Discard) {
++		path := pair[1]
++		data, err := os.ReadFile(path)
++		if err != nil {
++			t.Fatal(err)
++		}
++		stage := stageByName[parseFrontmatterContent(data)["status"]]
++		if stage.Name == "" || stage.initial || stage.gate || stage.terminal {
++			continue
++		}
++		if _, _, ok := selectStageReport(splitLines(string(data)), stage.Name); ok {
++			continue
++		}
++		report := "\n## Stage Report: " + stage.Name + "\n\n" +
++			"- DONE: Complete the legacy fixture's current stage.\n" +
++			"  The fixture commit is the durable setup evidence.\n\n" +
++			"### Summary\n\nThe current stage is complete for this unrelated guard fixture.\n"
++		if err := os.WriteFile(path, append(data, []byte(report)...), 0o644); err != nil {
++			t.Fatal(err)
++		}
++	}
++}
++
+ func cpTree(t *testing.T, src, dst string) {
+ 	t.Helper()
+ 	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+diff --git a/internal/status/native_mutation_test.go b/internal/status/native_mutation_test.go
+index 435a547f..cd66d1df 100644
+--- a/internal/status/native_mutation_test.go
++++ b/internal/status/native_mutation_test.go
+@@ -75,6 +75,9 @@ func TestNativeMutationParity(t *testing.T) {
+ 		t.Run(tc.name, func(t *testing.T) {
+ 			env := pinnedEnv(t)
+ 			nativeRoot := stageFixture(t, tc.fixture)
++			if tc.name == "archive-folder" {
++				nativeRoot = stageFixtureWithoutEnteredReports(t, tc.fixture)
++			}
+ 
+ 			nArgs := append([]string{"--workflow-dir", nativeRoot}, tc.mutateArgs(nativeRoot)...)
+ 			nOut, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
+@@ -219,6 +222,7 @@ func stageFixtureWith(t *testing.T, fixture string, extra map[string]string) str
+ 			t.Fatal(err)
+ 		}
+ 	}
++	seedLegacyCompletedStages(t, dst)
+ 	gitInit(t, dst)
+ 	return dst
+ }
+diff --git a/internal/status/native_read_test.go b/internal/status/native_read_test.go
+index d974ed87..aa00275b 100644
+--- a/internal/status/native_read_test.go
++++ b/internal/status/native_read_test.go
+@@ -31,10 +31,7 @@ var nativeReadCases = []struct {
+ }
+ 
+ func TestNativeReadMatchesOracle(t *testing.T) {
+-	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+-	if err != nil {
+-		t.Fatal(err)
+-	}
++	root := stageFixture(t, "seq-workflow")
+ 	env := pinnedEnv(t)
+ 
+ 	for _, tc := range nativeReadCases {
+diff --git a/internal/status/native_state_dir_test.go b/internal/status/native_state_dir_test.go
+index 162e7988..800d61cc 100644
+--- a/internal/status/native_state_dir_test.go
++++ b/internal/status/native_state_dir_test.go
+@@ -311,9 +311,11 @@ func TestSplitRootDefinitionDirModArmsGuard(t *testing.T) {
+ 	env := pinnedEnv(t)
+ 
+ 	t.Run("terminal --set refused", func(t *testing.T) {
+-		def, _ := buildSplitRoot(t, splitRootReadme, map[string]string{
++		def, state := buildSplitRoot(t, splitRootReadme, map[string]string{
+ 			"add-login.md": "---\nstatus: implementation\n---\n",
+ 		})
++		seedLegacyCompletedStages(t, def)
++		gitInit(t, state)
+ 		writeMergeMod(t, def)
+ 
+ 		out, stderr, code := runNative(t, def, env, "--workflow-dir", def, "--set", "add-login", "status=review", "verdict=passed")
+@@ -355,6 +357,8 @@ func TestSplitRootStateDirModDoesNotRegister(t *testing.T) {
+ 	def, state := buildSplitRoot(t, splitRootReadme, map[string]string{
+ 		"add-login.md": "---\nstatus: implementation\n---\n",
+ 	})
++	seedLegacyCompletedStages(t, def)
++	gitInit(t, state)
+ 	writeMergeMod(t, state)
+ 
+ 	// --boot lists no MODS: the state-checkout mod is not scanned.
+@@ -391,6 +395,8 @@ func TestSplitRootMigrationNoGap(t *testing.T) {
+ 	def, state := buildSplitRoot(t, splitRootReadme, map[string]string{
+ 		"add-login.md": "---\nstatus: implementation\n---\n",
+ 	})
++	seedLegacyCompletedStages(t, def)
++	gitInit(t, state)
+ 	// Migrated state: the def-dir copy is the live one; the stale state-checkout
+ 	// copy is left in place during the transition (the FO removes it later).
+ 	writeMergeMod(t, def)
+diff --git a/internal/status/parse.go b/internal/status/parse.go
+index d59f1071..fb2c7fb6 100644
+--- a/internal/status/parse.go
++++ b/internal/status/parse.go
+@@ -251,8 +251,9 @@ func applyFilters(entities []*entity, filters []whereFilter) []*entity {
+ 
+ // setUpdate is a parsed --set target.
+ type setUpdate struct {
+-	slug    string
+-	updates []fieldUpdate
++	slug                        string
++	updates                     []fieldUpdate
++	enteredStageCompletionProof bool
+ }
+ 
+ // parseSetArgs parses --set <slug> field=value... Matches parse_set_args. A
+diff --git a/internal/status/verdict_guard_test.go b/internal/status/verdict_guard_test.go
+index c0655247..543abe1c 100644
+--- a/internal/status/verdict_guard_test.go
++++ b/internal/status/verdict_guard_test.go
+@@ -125,9 +125,11 @@ func TestVerdictGateFinalizeForceBypasses(t *testing.T) {
+ // must red, proving the gate reads the declared terminal set.
+ func TestVerdictGateNonDoneTerminalStage(t *testing.T) {
+ 	env := pinnedEnv(t)
+-	def, _ := buildSplitRoot(t, splitRootReadme, map[string]string{
++	def, state := buildSplitRoot(t, splitRootReadme, map[string]string{
+ 		"add-login.md": "---\nstatus: implementation\n---\n",
+ 	})
++	seedLegacyCompletedStages(t, def)
++	gitInit(t, state)
+ 
+ 	out, errOut, code := runNative(t, def, env, "--workflow-dir", def, "--set", "add-login", "status=review", "completed", "worktree=")
+ 	if code != 1 {
+diff --git a/internal/status/zz_independent_parity_test.go b/internal/status/zz_independent_parity_test.go
+index 1ad111f9..a46ba8ea 100644
+--- a/internal/status/zz_independent_parity_test.go
++++ b/internal/status/zz_independent_parity_test.go
+@@ -146,6 +146,8 @@ func indSlugWorkflow(t *testing.T) string {
+ // sequential workflow (folder entity, empty score, unknown status, archived).
+ func TestIndReadFlagsSeq(t *testing.T) {
+ 	root := indSeqWorkflow(t)
++	seedLegacyCompletedStages(t, root)
++	gitInit(t, root)
+ 	env := indEnv(t)
+ 	cases := []struct {
+ 		name string
+diff --git a/skills/first-officer/references/first-officer-shared-core.md b/skills/first-officer/references/first-officer-shared-core.md
+index c7fcc96d..f7c84b60 100644
+--- a/skills/first-officer/references/first-officer-shared-core.md
++++ b/skills/first-officer/references/first-officer-shared-core.md
+@@ -61,11 +61,11 @@ Stay at the project root; never `cd` into a worktree. Use `git -C {path}` for op
+ 
+ ## Completion and Gates
+ 
+-When a worker completes:
++Live needs `«completion-signal»` plus committed Stage Report. Cold may omit the signal only after checklist/scope reconstruction; never manufacture proof.
+ 
+-1. Read the entity file's last `## Stage Report` section, section-scoped per `## Probe and Ideation Discipline` — never the whole body.
+-2. Review it against the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
+-3. If items are missing, send the worker back once to repair the report.
++1. Select the latest exact-stage section.
++2. Require evidenced DONE/SKIPPED items, none FAILED, substantive Summary; emit `{N} done, {N} skipped, {N} failed`.
++3. Invalid/incomplete proof vetoes: repair live or dispatch current cold once. Valid cold proof advances once.
+ 4. Check whether the completed stage is gated.
+ 
+ **AC coverage cross-check.** At every gate, `«gate.ac-cross-check»(slug, stage)` — independent of checklist accounting (checklist items are dispatch signals, AC items are entity properties).
+diff --git a/skills/first-officer/references/fo-dispatch-core.md b/skills/first-officer/references/fo-dispatch-core.md
+index 07ac491e..9b137374 100644
+--- a/skills/first-officer/references/fo-dispatch-core.md
++++ b/skills/first-officer/references/fo-dispatch-core.md
+@@ -8,6 +8,8 @@ The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly,
+ 
+ For each entity reported by `status --next`:
+ 
++Interpret the scheduler row before mutation. `current == next` dispatches that entered stage itself with idempotent `status={current} started`; neither FO nor helper manufactures its report/signal. On cold boot, a non-initial `current != next` row may reflect structural committed-report recovery: reconstruct `«dispatch.checklist»` for `current`, verify every obligation/evidence/summary and the report-bearing commit's ensign write scope per `## Completion and Gates`, then dispatch `next` without duplicating `current`. On failure, veto the successor and dispatch/repair `current` once. Initial-stage successor rows retain legacy meaning.
++
+ 1. Read the entity file and the target stage definition.
+ 2. Invoke `«dispatch.checklist»(entity, stage)` and retain its numbered output.
+ 3. Check for obvious conflicts if multiple worktree stages would touch overlapping files.
+@@ -16,11 +18,11 @@ For each entity reported by `status --next`:
+    ```
+    ${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage} worktree=.worktrees/{worker_key}-{slug} started
+    ```
+-   Omit `worktree=...` for non-worktree stages. Bare `started` auto-fills a UTC ISO 8601 timestamp (skipped if already set).
++   Here `{next_stage}` is the row's selected target, including `current` for a `current == next` row. Omit `worktree=...` for non-worktree stages. Bare `started` auto-fills a UTC ISO 8601 timestamp (skipped if already set).
+ 6. Commit the state transition on main: `dispatch: {slug} entering {next_stage}`.
+ 7. Create the worktree on first dispatch to a worktree stage.
+ 8. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`).
+-9. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case.
++9. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Live completion is recognized only via `«completion-signal»` plus the committed entity-file stage report; the cold-recovery rule above never fabricates the missing runtime signal.
+ 
+ A feedback-stage worker checks and reports on what was produced; it does not silently take over the prior stage.
+ 

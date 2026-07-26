@@ -61,6 +61,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+review-round:
+    id: round:gqsw81ghf48hr2n3jg6k7nx8:implementation:1
+    stage: implementation
+    cycle: 1
+    briefing:
+        id: briefing:gqsw81ghf48hr2n3jg6k7nx8:implementation:round-1
+        digest: sha256:2008c595794b500ed2275828817fccfd6a0fc4a4a47649d586d971f273560e4f
+        digest-domain: canonical-bytes
+        room-ref: ./review/implementation/round-1
 ---
 
 A gate application can atomically move a ticket into a non-gated working stage, but the First Officer must still dispatch that entered stage before advancing again. In Codex run `30197794474`, `status --boot --identify --json` exposed the fixture as `current=implementation,next=validation`; the FO followed that projection, ran `status ... status=validation started`, and built validation without an implementation worker. The final entity carried the first REJECTED validation, one rework implementation report, and the second PASSED validation, but no original implementation report. The strict two-cycle assertion correctly failed with “left 1 implementation reports, want at least 2.”
@@ -242,3 +251,20 @@ Cycle 3 corrects only the proof matrix. All accepted cycle-2 completion, recover
 ### Summary
 
 Cycle 4 is an evidence-only addendum mapping each acceptance criterion to its decisive oracle. It changes no design, checklist, product file, or frontmatter and preserves the accepted first-entry-only scope.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — Roborev panel job 2948; surface 22/715 vs estimate 8/572 (125%); AC unchanged
+
+## Stage Report: implementation
+
+- DONE: Preserve the strict two-cycle rejection oracle and make the original entered implementation dispatch/report appear before first validation.
+  Commits `6558ad8c`, `d6f2578b`, and `bd2e467b` leave the strict rejection assertion unchanged; the final-SHA isolated Codex `rejection-flow` passed in 379 seconds with the original implementation report, first REJECTED validation, rework implementation report, and second PASSED validation durably observed.
+- DONE: Self-project an entered, incomplete working stage and reject every away-status mutation byte-clean until durable completion proof; preserve same-stage dispatch and cold recovery.
+  `internal/status/entered_stage.go` supplies the shared exact-stage report and path-clean commit predicate used by boot/next projection and the transition guard; focused real-CLI tables prove malformed, failed, wrong-stage, later-masked, dirty, force, chained, backward, terminal, same-stage, worktree, and committed-recovery cases, and the final recorded-gate Codex journey passed in 194 seconds.
+- DONE: Stay within the accepted first-entry/status-owned boundary, run focused local live proof before CI, and finish with classified Roborev review.
+  The final diff is 22 files and 715 touched lines with no scheduler state, ledger, lease, epoch, schema/frontmatter, host branch, or persisted completion signal; `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` pass, no CI was triggered, and advisory implementation round 1 records Roborev job 2948 plus all supported-workflow, harm, boundary, and trigger classifications after fixing the material worktree-overlay and rejected-merge compatibility findings from the earlier panels.
+
+### Summary
+
+Implementation now keeps a gate-entered working stage as its own dispatch target until a durable exact-stage report is structurally complete and committed, and it refuses every direct away-status mutation byte-clean during that first-entry window. The shared First Officer contract distinguishes live host-signal verification from cold committed-report recovery, existing worktree and rejected-merge compatibility paths are preserved, full and race suites pass, and both required final-SHA Codex lifecycle journeys are green.
