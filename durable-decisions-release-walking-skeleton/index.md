@@ -71,8 +71,8 @@ evidence and honest agent-friction evidence.
 
 This is a one-time release-candidate acceptance journey, not a standing harness, a
 second implementation, or a place to repair findings inline. It starts only after the
-six prerequisite sprint members `gqs`, `mn`, `0m6`, `rq`, `s4`, and `v21` are
-terminal and landed. The x9 `git-root-uri-joined-as-relative-path` reproduction is
+seven prerequisite sprint members `gqs`, `sk`, `mn`, `0m6`, `rq`, `s4`, and `v21`
+are terminal and landed. The x9 `git-root-uri-joined-as-relative-path` reproduction is
 already rq's exact owned evidence; it is not another implementation member.
 
 ## Problem and end value
@@ -110,12 +110,12 @@ walking skeleton must not call it supported until `mn`
 contract: a Shaping FO commits the recorded decision and stops; a fresh Commander
 consumes, commits, and dispatches.
 
-This Cycle 3 correction governs where it conflicts with either retained prior
-ideation report. Cycle 2 still supplies the seven-member package, authority split,
-disposable-mutant, exclusive-state, handback, and evidence-ownership design, but Cycle
-3 replaces its withdrawal grammar and moves every candidate identity, owner-suite,
-full/race/format check before ph consumption. Both prior reports remain historical
-evidence of the rejected designs.
+This Cycle 4 correction governs only sprint cardinality, the added sk prerequisite,
+and Commander-package sequencing. Cycle 3 continues to govern withdrawal grammar and
+moves every candidate identity, owner-suite, and full/race/format check before ph
+consumption. Cycle 2 continues to supply the authority split, disposable-mutant,
+exclusive-state, handback, and evidence-ownership design. All prior reports remain
+historical evidence of the superseded designs.
 
 ## Exact release-candidate boundary and hard stops
 
@@ -131,15 +131,15 @@ At that main commit, the roadmap index blob is
 state query. The Commander-package blob
 `b851f7600439286aa246198da74dcb8b17f98f74` still describes the retired five-member
 drive. The authoritative state at
-`006b6512e8d3c185949bd3666e2ecfe7add4e435` instead returns the seven current members
-`gqs`, `ph`, `rq`, `mn`, `0m6`, `s4`, and `v21`. The old package blob is a stale
-baseline, not an acceptable run pin.
+`39fc17098dee1c34f481ec60f655921b98d27f50` instead returns the eight current members
+`gqs`, `ph`, `sk`, `rq`, `mn`, `0m6`, `s4`, and `v21`. The old package blob is a
+stale baseline, not an acceptable run pin.
 
 Immediately before the walk, record these full 40-hex values in the run table:
 
 | Pin | Required identity |
 |---|---|
-| `spacedock_product_rc` | Captain-selected clean Spacedock commit containing gqs, s4, rq's Spacedock half, v21, 0m6 withdrawal, and mn's narrow role-boundary contract; this is the immutable preflight target |
+| `spacedock_product_rc` | Captain-selected clean Spacedock commit containing gqs, sk, s4, rq's Spacedock half, v21, 0m6 withdrawal, and mn's narrow role-boundary contract; this is the immutable preflight target |
 | `spacedock_rc` | Package-only descendant created after worker dispatch: parent is exactly `spacedock_product_rc`, and its only changed path is `docs/roadmap/durable-decisions/dispatch-sprint-execution.md` |
 | `spacedock_state_start` | Clean, pushed `spacedock-state/dev` commit before ph is consumed |
 | `subspace_rc` | Pinned clean Subspace commit containing rq's provider half and its real moved-root E2E |
@@ -147,7 +147,7 @@ Immediately before the walk, record these full 40-hex values in the run table:
 | `role_contract_owner` | `mn` id/slug, terminal state commit, and merged product commit |
 | `subspace_r_skill` | Git blob id from `subspace_rc`, loaded by the host that handles `/subspace:r` |
 | `spacedock_bin` / `subspace_bin` | SHA-256 of binaries built from those exact clean commits |
-| `commander_package` | Git blob id of the reconciled seven-member `docs/roadmap/durable-decisions/dispatch-sprint-execution.md` at `spacedock_rc` |
+| `commander_package` | Git blob id of the reconciled eight-member `docs/roadmap/durable-decisions/dispatch-sprint-execution.md` at `spacedock_rc` |
 | `acceptance_state` | Captain-named state branch/checkout plus exact starting commit and the two exclusively owned real task slugs |
 
 Build the Spacedock binary from a detached checkout at `spacedock_product_rc`, pass its
@@ -161,9 +161,10 @@ rebuilding only when Git proves its product and skill trees are byte-identical t
 
 Stop before a Captain sees a review when any condition below is false:
 
-1. All six prerequisite sprint members `gqs`, `mn`, `0m6`, `rq`, `s4`, and `v21`
-   are terminal `PASSED`; every named product merge is an ancestor of
-   `spacedock_product_rc`; rq records `subspace_rc`; and no prerequisite remains only
+1. All seven prerequisite sprint members `gqs`, `sk`, `mn`, `0m6`, `rq`, `s4`, and
+   `v21` are terminal `PASSED`; every named product merge is an ancestor of
+   `spacedock_product_rc`; rq records `subspace_rc`; sk's merged proof owns
+   completed-gated-report cold-restart readiness; and no prerequisite remains only
    approved, in validation, or present in an unmerged worktree.
 2. `mn`'s product commit is merged, and its proof shows Shaping
    record/commit/stop followed by cold Commander consume/commit/dispatch.
@@ -171,11 +172,11 @@ Stop before a Captain sees a review when any condition below is false:
    insufficient; until this prerequisite lands, the role-separated journey is not a
    supported release claim.
 3. The Commander package is reconciled to the roadmap's authoritative current
-   seven-member query and its exact blob is pinned. At ideation correction time the
-   live query is exactly `gqs`, `ph`, `rq`, `mn`, `0m6`, `s4`, and `v21`, while the
-   package still says five and enumerates the retired `3k`, `vn`, `h1`, `02av`, and
-   `xb` cohort. A stale member count, landing order, responsibility table, or close-out
-   condition halts.
+   eight-member query and its exact blob is pinned. At ideation correction time the
+   live query is exactly `gqs`, `ph`, `sk`, `rq`, `mn`, `0m6`, `s4`, and `v21`,
+   while the package still says five and enumerates the retired `3k`, `vn`, `h1`,
+   `02av`, and `xb` cohort. A stale member count, landing order, responsibility table,
+   or close-out condition halts.
 4. Read-only candidate identity, all prerequisite owner suites, and both repositories'
    required full/race/format checks have run and been retained on the exact
    `spacedock_product_rc` and `subspace_rc` pins before ph consumption or any live
@@ -223,11 +224,11 @@ Any product defect ends the walking skeleton at the last durable boundary and ro
 to its owner. This task records it and changes no product code, tests, or skills. Its
 sole repo-authored implementation change is the Commander-package reconciliation.
 
-### Seven-member Commander-package reconciliation
+### Eight-member Commander-package reconciliation
 
 The roadmap remains strategy and its query remains membership authority; the package
 must nevertheless stop making false cardinality and retired-cohort claims. Its
-release-candidate revision must say that the query returns seven and order the current
+release-candidate revision must say that the query returns eight and order the current
 work as:
 
 1. s4 and v21 land their independent Spacedock prerequisites;
@@ -235,8 +236,10 @@ work as:
 3. rq lands after s4 with its pinned Subspace counterpart and x9 folded into its
    evidence;
 4. mn lands the narrow Shaping-records/stops,
-   Commander-consumes/dispatches contract; and
-5. ph is the final assembled acceptance member, dispatched only after all preceding
+   Commander-consumes/dispatches contract;
+5. sk lands completed-gated-report cold-restart readiness after the gate and
+   role-authority surfaces it projects are final; and
+6. ph is the final assembled acceptance member, dispatched only after all preceding
    conditions are terminal.
 
 The reconciliation removes no history, revives no retired member, and does not make
@@ -416,7 +419,7 @@ columns:
 | UTC timestamp | Actor intent | Exact command or skill entry | Pre-state | Exit/output | Post-state | Retained artifact/digest | Elapsed | Friction |
 |---|---|---|---|---|---|---|---|---|
 
-In timestamp order it contains rows for the seven-member query; prerequisite terminal
+In timestamp order it contains rows for the eight-member query; prerequisite terminal
 states and role-contract proof; `spacedock_product_rc`/Subspace/skill/binary identity;
 owner suites and repository checks; retained preflight handoff; ph consume/commit;
 acceptance-worker dispatch/assignment; worker digest verification; the package-only
@@ -480,6 +483,9 @@ retain the exact landed owner suites at `spacedock_product_rc` and `subspace_rc`
   repeat withdrawal are byte-clean.
 - the existing consume tests must prove repeat/stale consume cannot transition or
   authorize again; gqs tests must prove consumed entry dispatches before transition.
+- sk's focused cold-restart suite must prove a completed gated report projects
+  actionable readiness after boot/engage rather than disappearing into generic
+  in-progress validation.
 
 If a prerequisite lands without a runnable owner test for its assigned mutant, stop
 and route that evidence gap to the owner.
@@ -525,8 +531,9 @@ Owner routing is singular:
 - truthful withdrawal/current-attempt boot projection → withdrawal;
 - Shaping-versus-Commander role misuse, including a Shaping FO consuming a recorded
   Subspace approval → mn's narrow role-boundary First Officer contract;
+- completed-gated-report cold-restart readiness and boot/engage routing → sk;
 - consumed-stage projection or failure to dispatch before transition → gqs;
-- stale seven-member count, landing order, or responsibility/close-out text → ph's
+- stale eight-member count, landing order, or responsibility/close-out text → ph's
   one-file Commander-package reconciliation;
 - `state commit` path scope/sibling leakage →
   `state-commit-folder-entity-scope` (`vn`); and
@@ -542,7 +549,7 @@ wrong verb” is routed to mn.
 | Mechanism | Serves | Simpler alternative considered | Why insufficient |
 |---|---|---|---|
 | Full commit, skill-blob, and binary pins | AC-1, AC-2, AC-3 | Record version strings | Equal strings do not prove the launcher, skills, and binaries came from the tested candidate bytes |
-| Reconciled seven-member Commander-package blob pin | AC-1, AC-5 | Trust the live query alone | The Commander package currently contradicts the query and would drive a retired cohort/order |
+| Reconciled eight-member Commander-package blob pin | AC-1, AC-5 | Trust the live query alone | The Commander package currently contradicts the query and would drive a retired cohort/order |
 | Pre-dispatched evidence worker using normal assignment | AC-2, AC-5 | Reconstruct evidence after the journey | Retrospective prose cannot bind exact session/command bytes or prove who held mutation authority |
 | Exact retained logs plus SHA-256, no collector | AC-2, AC-5 | Add an event logger | A logger is a new harness and changes the runtime being accepted |
 | Captain-named exclusively owned real tasks | AC-1, AC-3, AC-4 | Create synthetic acceptance tasks | Synthetic work can hide discovery, authority, concurrency, and handback friction present on real workflow state |
@@ -553,14 +560,14 @@ wrong verb” is routed to mn.
 
 This remains an artifact-only acceptance task, with one explicit expansion from the
 rejected design: ph owns the one-file Commander-package correction needed to make the
-seven-member release walk truthful.
+eight-member release walk truthful.
 
 - **Product code, tests, skills, user-facing docs, and site changed by ph:** 0 files,
   0 LOC. The mn role contract is an independently owned landed prerequisite.
 - **Roadmap package changed by ph:** exactly
   `docs/roadmap/durable-decisions/dispatch-sprint-execution.md`; expected at most 100
   touched lines and 40 net added lines to replace retired membership, landing order,
-  responsibility, and close-out prose with the seven-member composition. The roadmap
+  responsibility, and close-out prose with the eight-member composition. The roadmap
   index and every other roadmap/package file remain byte-identical.
 - **Human-authored retained surface:** this
   `durable-decisions-release-walking-skeleton/index.md` plus one
@@ -602,18 +609,19 @@ Dispatching the evidence worker after the first journey mutation, mutating outsi
 exclusive scope, or lacking the entered-stage successor worker fails even if all
 commands/tests are green.
 
-**AC-2 (READINESS)** — The walked candidate is exactly the reconciled seven-member
+**AC-2 (READINESS)** — The walked candidate is exactly the reconciled eight-member
 release composition, with every owner prerequisite and repository gate complete before
 ph consumption or any live mutation.
 
-Verified by equality between the seven-item status query and pinned Commander-package
-meaning; terminal `PASSED` plus merge ancestry for gqs, mn, 0m6, rq, s4, and v21;
-mn's pinned role-contract proof; `spacedock_product_rc`/skill/binary digests;
-owner-suite and full/race/format logs whose retained timestamps precede ph consume;
-worker verification of those exact files; and the package-only descendant proof for
-`spacedock_rc`. A stale five-member package, nonterminal prerequisite, unmerged owner
-commit, version-only identity, missing/mismatched preflight artifact, check timestamp
-at or after ph consumption, or non-package change in `spacedock_rc` fails.
+Verified by equality between the eight-item status query and pinned Commander-package
+meaning; terminal `PASSED` plus merge ancestry for gqs, sk, mn, 0m6, rq, s4, and v21;
+mn's pinned role-contract proof; sk's completed-gated-report cold-restart readiness
+proof; `spacedock_product_rc`/skill/binary digests; owner-suite and full/race/format
+logs whose retained timestamps precede ph consume; worker verification of those exact
+files; and the package-only descendant proof for `spacedock_rc`. A stale five-member
+package, nonterminal prerequisite, unmerged owner commit, version-only identity,
+missing/mismatched preflight artifact, check timestamp at or after ph consumption, or
+non-package change in `spacedock_rc` fails.
 
 **AC-3 (CORRECTNESS)** — Retained state proves exact identity, truthful retirement,
 record-versus-apply separation, and one-use authorization.
@@ -648,25 +656,27 @@ command-count-only conclusion fails.
 ## Test plan and proof order
 
 1. **Read-only identity before consumption (low, CLI/read-only):** while ph remains at
-   ideation, verify the seven-member query, six terminal prerequisites, mn proof,
-   exact `spacedock_product_rc`/Subspace commits, binaries/skill blobs, merge ancestry,
+   ideation, verify the eight-member query, seven terminal prerequisites, mn role
+   proof, sk completed-gated-report cold-restart proof, exact
+   `spacedock_product_rc`/Subspace commits, binaries/skill blobs, merge ancestry,
    `state ready`, exclusive task ownership, and fresh gate plus `gate withdraw` help.
-   Record exact commands, outputs, UTC, paths, and digests outside both Git roots; stop
-   on any mismatch without consuming ph.
+   Record exact commands, outputs, UTC, paths, and digests outside both Git roots;
+   stop on any mismatch without consuming ph.
 2. **Owner suites and repository gates before consumption (medium):** run exact gqs,
-   s4, rq, 0m6 withdrawal, consume, v21, and mn role-contract owner suites on the
-   pinned commits in detached clean candidate checkouts. On `spacedock_product_rc`, run
-   `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; run rq's
-   declared Subspace repository gates on `subspace_rc`. Formatting must leave both
-   candidate trees unchanged. Retain the exact logs and digest inventory, and finish
-   this step before ph consumption or any live mutation.
+   s4, rq, 0m6 withdrawal, consume, v21, mn role-contract, and sk cold-restart owner
+   suites on the pinned commits in detached clean candidate checkouts. On
+   `spacedock_product_rc`, run `gofmt -w ./cmd ./internal`, `go test ./...`, and
+   `go test ./... -race`; run rq's declared Subspace repository gates on
+   `subspace_rc`. Formatting must leave both candidate trees unchanged. Retain the
+   exact logs and digest inventory, and finish this step before ph consumption or any
+   live mutation.
 3. **Consume and dispatch after green (low, live workflow):** compare the retained
    preflight completion timestamp with the unchanged `spacedock_state_start`; only
    then cold-consume ph into implementation, commit it, and let gqs dispatch the
    acceptance worker with the exact preflight paths/digests and declared scope.
 4. **Verify evidence and reconcile the package (low, artifact edit):** before any
    target prepare, the worker verifies and imports every retained preflight byte,
-   rejects any mismatch, commits the one-file seven-member Commander-package
+   rejects any mismatch, commits the one-file eight-member Commander-package
    correction, and proves `spacedock_rc` is a package-only child of
    `spacedock_product_rc`. It remains gate-authority-free.
 5. **Positive chat boundary (medium, live workflow):** on the exclusive chat target,
@@ -771,3 +781,20 @@ Cycle 3 binds the design to 0m6's shipped `gate withdraw` command and makes the
 preflight genuinely prior to workflow mutation. The acceptance worker is dispatched
 only after green retained proof, then verifies those exact bytes before package
 reconciliation or the first target review.
+
+## Stage Report: ideation (cycle 4)
+
+- DONE: Add sk as the eighth durable-decisions member and seventh terminal prerequisite before ph application.
+  AC-2 evidence: the authoritative eight-item query and exact state baseline are pinned; sk must be terminal PASSED, merged into `spacedock_product_rc`, and carry completed-gated-report cold-restart readiness proof before ph consumption.
+- DONE: Correct the future Commander-package count, member list, and landing order.
+  AC-2/AC-5 evidence: the one-file package correction now names eight members, sequences sk after the gate/role surfaces it projects and before final ph acceptance, and fails on stale count, order, responsibility, or close-out prose.
+- DONE: Preserve cycle-3 proof order and the established authority, mutant, and handback boundaries.
+  AC-1/AC-2/AC-3/AC-4/AC-5 evidence: candidate identity and all suites/checks remain before ph consumption; worker evidence verification, mn authority separation, disposable exact-byte mutants, and exclusive-state handback are unchanged.
+- SKIPPED: Execute the release-candidate journey during ideation.
+  The seven prerequisite members, including sk, are not terminal PASSED and merged on exact green candidate pins, so ph application remains blocked.
+
+### Summary
+
+Cycle 4 expands only the authoritative composition and Commander-package sequence
+from seven to eight members. sk owns completed-gated-report cold-restart readiness and
+must land before ph; every cycle-3 execution and evidence ruling remains intact.
