@@ -13,7 +13,7 @@ id: ph0zv6azcrhcxmg57wwnxah7
 gates:
     version: 1
     current:
-        gate: gate:ph0zv6azcrhcxmg57wwnxah7:backlog
+        gate: gate:ph0zv6azcrhcxmg57wwnxah7:ideation
     records:
         - id: gate:ph0zv6azcrhcxmg57wwnxah7:backlog
           stage: backlog
@@ -37,6 +37,29 @@ gates:
                 action: advance
                 target-stage: ideation
                 state: consumed
+                blockers: []
+        - id: gate:ph0zv6azcrhcxmg57wwnxah7:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:ph0zv6azcrhcxmg57wwnxah7-ideation-1
+              briefing:
+                id: briefing:ph0zv6azcrhcxmg57wwnxah7:ideation:attempt-1:revision-1
+                digest: sha256:8619d60bf5569c75c57ef8da9c2972e4ff4a043b475862be7797911777d514db
+                digest-domain: canonical-bytes
+                request-digest: sha256:40f0d4285d2eb22a47ea070f2bb79fd41cc560b22bf77f917015ec3695e71680
+                room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ph0zv6azcrhcxmg57wwnxah7:ideation:1
+                briefing: briefing:ph0zv6azcrhcxmg57wwnxah7:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T12:12:40.623232Z"
+                decision: approve
+                reason: Corrected ideation satisfies AC-1 through AC-5 and staff asks. Record approval now; do not apply until gqs, mn, rq, 0m6, s4, and v21 are terminal PASSED and exact candidate preflight is green.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
                 blockers: []
 ---
 
