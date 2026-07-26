@@ -2779,3 +2779,54 @@ The missing live checklist evidence remains FAILED because the copied Claude
 OAuth credential is revoked; this is a pre-product authentication failure, not
 a code result. No product edit, offline rerun, successor review, push, CI
 request, or gate/PR mutation occurred during this evidence repair.
+
+## Stage Report: implementation (cycle 20 evidence repair 2)
+
+- DONE: Run focused offline evidence and repository verification.
+  At `8c9aa160`, focused gate/contract/skill tests, `gofmt -w ./cmd ./internal`,
+  `go test ./...`, `go test ./... -race`, and `git diff --check` passed; they
+  fail on authority drift, symlink escape, unresolved Git pins, or false consume.
+- DONE: Run the exact local Codex candidate scenarios.
+  The pinned exact candidate passed `TestLiveCodexSharedScenarios/rejection-flow`
+  and `TestLiveCodexSharedScenarios/keep-moving-posture`; the latter took
+  378.122s and requires real consume before successor dispatch.
+- DONE: Run the exact Claude default recorded-gate stop and gate-guardrail.
+  With a fresh `0.26.0+dev` binary at SHA-256 `9d35de68…63cd`, current checkout
+  skills, Sonnet, and isolated homes, `TestLiveDefaultHeadlessStopsAtGate`
+  passed in 645.638s and `TestLiveClaudeSharedScenarios/gate-guardrail` passed
+  in 171.121s. The earlier 401 was stale-credential infrastructure and is
+  superseded by these authenticated behavioral passes.
+- FAILED: Run the exact Pi recorded-gate scenario.
+  `TestLivePiRecordedGateLifecycle` never reached First Officer work. The first
+  launch failed because local `pi-subagents 0.28.0` targets the Earendil fork;
+  the same case retried with installed Mario-compatible `0.24.0`, then failed
+  in 2.911s because copied `openai-codex` auth returned 401
+  `refresh_token_reused`. No API-key fallback exists; this is infrastructure,
+  not a product verdict.
+
+### Finding classifications
+
+- Job 2738 prepare: released successor preparation could publish on corrupt
+  retained authority; AC-5 trigger reproduced tree mutation; material, fixed.
+- Job 2738 request-backed record: released `--briefing` could freeze unresolved
+  Git identity and strand later reads; AC-2/AC-5 trigger reproduced; material,
+  fixed before mutation.
+- Job 2738 consume oracle: released acceptance evidence could false-green after
+  failed consume plus shell success; evidence-integrity controls reproduced;
+  material, fixed with exact entity-scoped `consumed=true`.
+- Job 2745 provider evidence: released eligibility/consume could contradict the
+  retained provider decision; AC-5 mutation reproduced; material, fixed by
+  exact Result-to-attempt Resolution equality.
+- Job 2745 room replay: released exact replay accepted external request
+  authority through a symlink; AC-5 trigger reproduced; material, fixed with
+  regular-file checks before binding.
+- Job 2748 legacy profile: final v1 cannot produce locator-less or summary-less
+  rooms, though old pilots become unreadable; unreleased-v1/no-prototype-
+  compatibility boundary; correct-but-disproportionate, declined. Promote only
+  if final v1 can create that shape or released v1 promises to consume it.
+
+### Summary
+
+Claude now supplies the missing exact behavioral evidence; the prior Claude 401
+is superseded. Pi remains FAILED solely at local auth infrastructure, while
+code, harness, review evidence, and all remote workflow state remain unchanged.
