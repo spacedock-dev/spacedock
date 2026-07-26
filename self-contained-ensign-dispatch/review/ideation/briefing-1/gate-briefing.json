@@ -1,0 +1,52 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kd7877nnbd19d528xnpwwaj4:ideation:attempt-1:revision-1",
+  "question": "Approve the self-contained artifact, pointer-only transport design and exact launcher pinning for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:kd7877nnbd19d528xnpwwaj4:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/3f3815cc2d2c85568dbe24c30b33d50bc14e6718/self-contained-ensign-dispatch/index.md",
+      "rev": "sha256:ab03f0fa22a49836c254fd80d457f0729ea1da39c79edc63ee91675be5b11872",
+      "mediaType": "text/markdown",
+      "summary": "The design preserves the tiny spawn/reuse pointer, snapshots the builder-selected stage and context into the dispatch file, and pins the builder executable for legitimate ensign helpers including status reads and advisory Roborev round recording. Two-binary fresh/advance spikes reproduced silent drift; three independent staff-review rounds now approve the falsifiable A/B/C boundary, maximum legal names, existing observers, 26 goldens, and all-host live coverage."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:25e3a3dd7b8a19cdec870d1e5ed331b819dddf52a840ab1a51de116fcd8f245f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/cli/frontdoor.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:fcac6f55fe46737e383c0316630123e456bac24db9ccb10088d54670f1b13b60"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/journeymetrics/readadoption.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:52d72363753baca7bad6bfbb27a2c18b5a6ab67b8609fb63be07ac867efa158a"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:ideation:attempt-1:revision-1:item-5",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/ensigncycle/shared_round_recording_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:860ddaa13af739b013ef687fb81eca571961eaf18f972bc95d842f37a6d1c340"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:ideation:attempt-1:revision-1:item-6",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:46d44abcbdc596a0aa2c22cb94465cf4e2321a529c52679f14e7efcb071a5f62"
+    }
+  ]
+}

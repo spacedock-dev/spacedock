@@ -8,7 +8,7 @@ id: kd7877nnbd19d528xnpwwaj4
 gates:
     version: 1
     current:
-        gate: gate:kd7877nnbd19d528xnpwwaj4:backlog
+        gate: gate:kd7877nnbd19d528xnpwwaj4:ideation
     records:
         - id: gate:kd7877nnbd19d528xnpwwaj4:backlog
           stage: backlog
@@ -33,6 +33,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:kd7877nnbd19d528xnpwwaj4:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:kd7877nnbd19d528xnpwwaj4-ideation-1
+              briefing:
+                id: briefing:kd7877nnbd19d528xnpwwaj4:ideation:attempt-1:revision-1
+                digest: sha256:d372d2b50317aea3e30be46834f4b71d0cc7a8c4198734fbcf4221937b436dbc
+                digest-domain: canonical-bytes
+                request-digest: sha256:5f3eb4398449071d7fb058d25ff09536fd2ebb32d13d6a97ce76719d6ccf57f4
+                room-ref: ./review/ideation/briefing-1
 started: 2026-07-26T15:08:14Z
 ---
 
