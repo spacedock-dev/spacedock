@@ -47,6 +47,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:203a90685eef4879a5e1c192fe2b104df1a95b4d7277b2a57ab5661395f5a1b4
                 room-ref: ./source-build-compatibility-identity/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:v2183mw7c09a10pw185p33cw:ideation:1
+                briefing: briefing:v2183mw7c09a10pw185p33cw:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T00:32:23.815206Z"
+                decision: approve
+                reason: The three-build spike proves the one-marker boundary, all five ACs are independently falsifiable, and the design preserves automatic pre0 plus strict minor coupling within the 10-file/260-line cap.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Prevent an ordinary source build from impersonating the automatic next-minor `pre0` release merely because that tag is the nearest Git ancestor.
