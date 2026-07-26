@@ -12,7 +12,7 @@ issue:
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:79:backlog
+        gate: gate:docs-dev:79:ideation
     records:
         - id: gate:docs-dev:79:backlog
           stage: backlog
@@ -36,6 +36,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:79:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:79-ideation-1
+              briefing:
+                id: briefing:docs-dev:79:ideation:attempt-1:revision-1
+                digest: sha256:515c40e2b85428c80f6eb2dd713d58d0fc570725378a90833b79fdb684c5dac5
+                digest-domain: canonical-bytes
+                room-ref: ./entity-session-claim-lease/review/ideation/briefing-1
 ---
 
 Give each entity a durable claim naming the session allowed to mutate it, so two driving First Officers sharing one state checkout cannot select, dispatch, or mutate the same entity.
