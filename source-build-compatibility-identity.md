@@ -286,3 +286,36 @@ Estimated total is nine files and 190–220 changed lines. This is one file and 
 ### Summary
 
 Source builds now ignore provenance-only Version stamps and use embedded checkout manifest identity plus `+dev`, while both release channels explicitly opt into exact release identity. Real binaries, parsed release wiring, dry-runs, full/race suites, and three detached mutants prove the boundary; the sole failed ceremony is advisory-round recording, structurally unavailable for this flat entity and explicitly left unmigrated for independent validation.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 through AC-3 with real source, misleading-Version, and explicitly marked-release binaries: assert exact version line, doctor exit, and compatibility outcome independently of the implementation report.
+  Eight independent builds made plain/tag/pre0/SHA/dirty/wrong-marker/dev-sentinel shapes emit exact `spacedock 0.26.0+dev (contract 3)` with doctor exit 0; only marked `0.27.0-pre0` emitted exactly and exited 1 against manifest 0.26.
+- DONE: Verify AC-1 (VALUE) — A source build remains compatible with its adjacent checkout even when its Git-derived version candidate is a future-minor automatic `pre0`.
+  Real `Version=v0.27.0-pre0-17-gabcdef0` without the marker emitted manifest-derived `0.26.0+dev`, doctor exit 0, and the exact compatible message.
+- DONE: Verify AC-2 — Only an explicitly marked release pipeline artifact claims its exact release version.
+  Independent YAML parsing found both exact stamps once in stable and edge; GoReleaser 2.16 snapshots both emitted exact `0.27.0-snapshot-2992f430`, while wrong-case or missing markers remained source identity.
+- DONE: Verify AC-3 — Source-build compatibility is invariant under tag, revision, distance, and dirty provenance.
+  Clean tag, future-minor describe, bare SHA, and dirty describe candidates produced byte-identical version lines, doctor exits, and compatibility messages against the independent manifest baseline.
+- DONE: Verify AC-4 — Published source-build guidance has one canonical unstamped command and explains the identity boundary accurately.
+  Human review found one plain build command and no provenance stamp; executing exact `go build -o spacedock ./cmd/spacedock` emitted `0.26.0+dev` and doctor exit 0.
+- DONE: Verify AC-5 — Automatic `pre0` release behavior and the strict First Officer minor gate remain unchanged.
+  `TestCompare`, `TestAutoPre0MinorEqualsRequiredMinor`, edge decision/wiring/always-cut guards, and marked Y+1 doctor refusal passed; the exact diff touches no contract, pre0, edge-decision, or First Officer file.
+- DONE: Verify AC-2, AC-4, and AC-5 from independent sources: parse both release configurations, run stable/edge guard and snapshot proofs, inspect the published source-build guidance, and confirm automatic pre0 plus strict-minor behavior did not change.
+  Independent Ruby parsing, `goreleaser check`, both single-target snapshots, the executed published command, and focused policy tests all passed with exact outcomes above.
+- DONE: Audit the exact 070fb828..HEAD surface against the approved 10-file/260-line boundary, run focused/full/race/format/diff checks and the required detached adversarial proof; classify the flat-task round-recorder failure separately and reject v218 only if it invalidates a value AC or non-negotiable boundary.
+  `070fb828..2992f430` is nine files/259 lines with no prohibited drift; focused, full, race, gofmt, and range diff checks passed, and the code worktree remained clean.
+- DONE: Perform the required detached adversarial proof.
+  Three separate throwaway checkouts red exactly when Version-only trust broke AC-1, edge marker removal broke AC-2, or marked-release bypass broke the exact line and strict doctor verdict; those temporary artifacts were removed.
+- DONE: Classify the flat-task round-recorder failure separately.
+  Observed trigger is `--round` against flat `<slug>.md` without `<slug>/index.md`; the byte-clean refusal affects no AC or compatibility boundary, so it is separate workflow-mechanism friction, not a v218 material or deferred product finding.
+- SKIPPED: Run all-host live CI.
+  Claude/Codex/Pi lanes remain required at PR time; no PR-time lanes were run or claimed by this local validation.
+- DONE: Issue a validation recommendation.
+  PASSED: AC-1 through AC-5 have independent valid evidence, no material finding remains, and there are no v218 deferred risks; all-host live CI remains a later PR gate.
+- DONE: Append a complete validation Stage Report with every checklist item marked DONE, SKIPPED, or FAILED; commit and push split-root state, then stop at the validation gate.
+  This report is appended without frontmatter edits and is path-scoped for the required state commit and push.
+
+### Summary
+
+Independent binaries, parsed release wiring, canonical GoReleaser validation, snapshots, policy guards, full/race suites, and detached mutants establish every acceptance criterion. Recommendation is PASSED with no v218 finding; the flat-form round refusal is separate workflow friction, and all-host live CI remains required at PR time.
