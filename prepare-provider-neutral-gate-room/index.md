@@ -2647,3 +2647,23 @@ dispatch, gate mutation, or merge.
   data-integrity findings at their shared mutation boundaries.
 - Cumulative branch surface is 40 files, `+4309/-323`, or 4,632 changed lines,
   down from the pre-Cycle-20 43 files and 4,802 changed lines.
+
+## Cycle 20 Final Bounded Correction Surface
+
+Roborev job 2745 reviewed exact code tip `05ebb7ff` and found two further
+AC-5 data-integrity gaps. This is the last authorized Cycle 20 correction:
+
+- `internal/gates/io.go`: add about eight lines requiring the retained provider
+  Result Resolution to equal the durable attempt Resolution exactly.
+- `internal/gates/prepare.go`: add about 20 lines requiring both retained room
+  entries to be non-symlink regular files on exact replay and again after room
+  publication, before binding.
+- `internal/gates/prepare_test.go`: add about 90 lines for a provider-resolution
+  mutation that both eligibility and consumption must reject, plus a byte-clean
+  exact-room symlink replay regression.
+
+Estimated surface is three files and approximately `+118/-2`. No adjacent
+cleanup, compatibility path, provider harness, or authority routing is in
+scope. Reproduce both failures first, then run focused, full, race, and one
+successor cumulative Roborev. A genuine new Medium-or-higher successor finding
+requires design-reset escalation without another edit.
