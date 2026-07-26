@@ -5,6 +5,21 @@ sprint: durable-decisions
 source: "Real source-build sprint dogfood, 2026-07-26"
 score: "1.0"
 id: kd7877nnbd19d528xnpwwaj4
+gates:
+    version: 1
+    current:
+        gate: gate:kd7877nnbd19d528xnpwwaj4:backlog
+    records:
+        - id: gate:kd7877nnbd19d528xnpwwaj4:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:kd7877nnbd19d528xnpwwaj4-backlog-1
+              briefing:
+                id: briefing:kd7877nnbd19d528xnpwwaj4:backlog:attempt-1:revision-1
+                digest: sha256:c22348f0cd78c4310e640953f1574d3c66a63fd1c5cad6669c5960234e767c6e
+                digest-domain: canonical-bytes
+                request-digest: sha256:cd3dab4ce2732d142d02b952b8f087a60c62ea13935e3ff24a000fc659b288eb
+                room-ref: ./review/backlog/briefing-1
 ---
 
 ## Outcome

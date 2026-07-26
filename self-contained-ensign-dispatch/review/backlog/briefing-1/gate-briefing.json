@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kd7877nnbd19d528xnpwwaj4:backlog:attempt-1:revision-1",
+  "question": "Should this observed cross-process launcher drift enter ideation as a durable-decisions pre-release blocker?",
+  "artifacts": [
+    {
+      "id": "artifact:kd7877nnbd19d528xnpwwaj4:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/03b003ed99ebb529b0d431c33687f56896436ff3/self-contained-ensign-dispatch/index.md",
+      "rev": "sha256:95de32d293d6b3aad303ed1a68e71c49205da12b873dd1d10e459492ed3575d5",
+      "mediaType": "text/markdown",
+      "summary": "Make dispatch build carry the exact stage subsection it already resolved, eliminate the mandatory ensign-side show-stage-def call, and inventory or mechanically pin any remaining worker helper without adding environment transport."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:25e3a3dd7b8a19cdec870d1e5ed331b819dddf52a840ab1a51de116fcd8f245f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/dispatch/launcher_command.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:3488c1ba70af176132d0389cd726fd5cf81fad0d687fdb590c7b386d5663e338"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:backlog:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/skills/ensign/references/ensign-shared-core.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9ed8ec4f51ffd9566f0d91cfbd8a40f30f28f32284a6a5761d39e7c5addf4d3d"
+    }
+  ]
+}
