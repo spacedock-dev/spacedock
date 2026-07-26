@@ -2342,3 +2342,32 @@ authentication failed before scenario execution.
 Commit `070fb828` aligns two runtime-live test oracles with the recorded gate lifecycle.
 The correction changes test recognition and controls only; product, skill, prompt, gate,
 and rejection-flow semantics remain unchanged.
+
+## Cycle 17 Independent Validation
+
+- **Recommendation: PASSED.**
+- Archived run `30182888034`, job `89742470187`, is durable evidence of the two
+  stale-oracle failures at `8aaf96af`. Its retained gate-guardrail commands completed
+  `gate prepare recorded-gate-task` and the later scoped `state commit`, with no
+  decision, consume, or dispatch. The corrected hold oracle requires that successful
+  prepare, the later successful commit and generated `state-head`, and rejects every
+  old, absent, failed, other-entity, duplicate, or forbidden control.
+- The archived keep-moving command completed with exit 0 and output
+  `eligible=true consumed=true` for `approved-gate`; its three later implementation
+  dispatches also completed. Replaying the exact archived JSONL and final message
+  against `070fb828` passed.
+- Focused Claude/Codex controls confirm that only a matching successful consume counts
+  as the new advancement signal; absent, other-entity, failed, prose, and unrelated
+  nested command strings do not. Existing legacy status-set fixtures remain green,
+  and consume without an independently observed approved-stage dispatch still fails.
+- `8aaf96af..070fb828` is exactly `+182/-14` in
+  `livescenario_adapter_live_test.go` and `shared_keep_moving_test.go`.
+  `git diff --check` passed; product, contract, skill, prompt, and rejection-flow code
+  are untouched.
+- Focused default/live controls, detached archived replay/adversarial controls,
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed on
+  exact head `070fb82834dc26c9fc23d07404b57d1d0ffbec79`.
+- Fresh exact-head run `30183914074` had offline job `89745149123` and Pi-live job
+  `89745206787` green when inspected at `2026-07-26T02:16Z`. Codex-live job
+  `89745206805` and Claude-live jobs `89745206783` / `89745206777` were still in
+  progress and are not claimed here.
