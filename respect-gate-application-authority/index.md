@@ -1,6 +1,6 @@
 ---
 title: Apply a recorded gate only within the First Officer's assigned authority
-status: backlog
+status: ideation
 source: "Durable-decisions real-sprint correction, 2026-07-26: gate record correctly preserved ideation, but a Shaping FO invoked Commander-owned gate consume because the shipped lifecycle treated approval as authority to apply."
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
