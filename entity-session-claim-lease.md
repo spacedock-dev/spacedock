@@ -45,6 +45,19 @@ gates:
                 digest: sha256:8bfc4bd1c2346c7d683bb031e197a1bce23b66dcf8e64676e90f0c134744f20d
                 digest-domain: canonical-bytes
                 room-ref: ./entity-session-claim-lease/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:79:ideation:1
+                briefing: briefing:docs-dev:79:ideation:attempt-1:revision-3
+                by: agent:first-officer
+                at: "2026-07-26T10:16:48.992572Z"
+                decision: approve
+                reason: 'Captain directive in the active conversation: ''use the gate mechanism and subspace to record gate and resolution... do not immediately dispatch after approval'', then ''use what''s feasible now to proceed'' after the Review v1 float failed on the git-root artifact resolution (recorded as x9). Evidence judgment: the design is the sprint''s minimum walking skeleton — acquire, disclose, refuse at one resolveMutationEntity seam through which merge guard and the archive path inherit the refusal at zero added code. Its DoD (AC-4) is a live two-session engineered collision with no fixture standing in for the claim mechanism, falsified by removing the guard so the run completes. All four ACs carry falsifiers. Seven edges are deferred to ppf, each recorded with the condition the skeleton''s journey holds fixed, and none of those triggering conditions can arise inside that journey. Surface 14 files / ~525 lines was reported honestly against a smaller target rather than forced to it, and its tolerance requires a return to ideation before any deferred ppf mechanism is re-added. The two-writer spike is retained as the recorded evidence the deferrals are informed.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Give each entity a durable claim naming the session allowed to mutate it, so two driving First Officers sharing one state checkout cannot select, dispatch, or mutate the same entity.
