@@ -10,6 +10,21 @@ worktree:
 issue:
 sprint: durable-decisions
 id: 0m6vtrw4qh9w4x6bn06x5hen
+gates:
+    version: 1
+    current:
+        gate: gate:0m6vtrw4qh9w4x6bn06x5hen:backlog
+    records:
+        - id: gate:0m6vtrw4qh9w4x6bn06x5hen:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:0m6vtrw4qh9w4x6bn06x5hen-backlog-1
+              briefing:
+                id: briefing:0m6vtrw4qh9w4x6bn06x5hen:backlog:attempt-1:revision-1
+                digest: sha256:9bfedeb38906e04bae528cedfdb96f101efaa1d63c819b44922a8ee6e5db60f6
+                digest-domain: canonical-bytes
+                request-digest: sha256:0526bd61039ea579f7595d23e5ccfd8bd3d3f18ee7ce5b64b211456df37f8524
+                room-ref: ./review/backlog/briefing-1
 ---
 
 A prepared request-backed gate attempt is correctly frozen, but a legitimate re-scope currently has no truthful operation that retires the open attempt. The operator must either record a `hold` or other Resolution against a Briefing it already knows is stale, or hand-edit/revert gate state. Both paths corrupt the meaning of the durable record.

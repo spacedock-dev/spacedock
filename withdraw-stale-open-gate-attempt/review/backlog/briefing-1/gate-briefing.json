@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0m6vtrw4qh9w4x6bn06x5hen:backlog:attempt-1:revision-1",
+  "question": "Should this sprint add a truthful withdrawal path for a frozen open gate attempt before any decision exists?",
+  "artifacts": [
+    {
+      "id": "artifact:0m6vtrw4qh9w4x6bn06x5hen:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0376b6466066cc16a07db5dd881dc547f3082259/withdraw-stale-open-gate-attempt/index.md",
+      "rev": "sha256:3c6a46325af5b590763da9fd32a98659171879b8daaa70d84e6adcb26bfe15e8",
+      "mediaType": "text/markdown",
+      "summary": "Add the smallest recorder-owned way to retire a stale open attempt without fabricating a captain decision, deleting its frozen room, or creating an application."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:0m6vtrw4qh9w4x6bn06x5hen:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/docs/roadmap/durable-decisions/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:dda54eb7066795805c2ecfce7c6ca98c772fef6c671c39596d0877740ddf6060"
+    }
+  ]
+}
