@@ -23,6 +23,19 @@ gates:
                 digest: sha256:8dfcf2bcdfa6a4b7a67fc88a49f93068a86894ddf69766649827bc9521303c54
                 digest-domain: canonical-bytes
                 room-ref: ./entity-session-claim-lease/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:79:backlog:1
+                briefing: briefing:docs-dev:79:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T01:15:33.325474Z"
+                decision: approve
+                reason: 'Captain directive in the active conversation: ''dispatch fable for 79 ideation''. Direction accepted on evidence: the README:47 advisory ownership rule exists and was breached within minutes by a cold-booted peer first officer that mutated an actively-driven entity''s state, and no shipped check can currently fail on an ownership violation. Entity-session keying, policy-layered workstream selection, two-point enforcement, non-stealing expiry and git fast-forward acquisition are recorded in the task body as captain rulings.'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Give each entity a durable claim naming the session allowed to mutate it, so two driving First Officers sharing one state checkout cannot select, dispatch, or mutate the same entity.
