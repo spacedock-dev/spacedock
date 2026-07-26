@@ -1,6 +1,6 @@
 ---
 title: Walk the assembled durable-decision journey before the pre-release
-status: backlog
+status: ideation
 source: "Captain request on 2026-07-26 to exercise the sprint Definition of Done end to end and surface cross-member seams before release."
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
