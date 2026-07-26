@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:skwchfe30ac6ntr63j1g0txj:backlog:attempt-1:revision-1",
+  "question": "Should the demonstrated cold-restart gate-readiness gap enter ideation as the remaining narrow gate-agent ergonomics slice?",
+  "artifacts": [
+    {
+      "id": "artifact:skwchfe30ac6ntr63j1g0txj:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f146710953a50bec17190350831d7d39877006b2/gate-agent-ergonomics.md",
+      "rev": "sha256:b2ea05f1d3307ae82e5aac3f3b6bf39316109ac71828323325c558d424c23527",
+      "mediaType": "text/markdown",
+      "summary": "A completed gated-stage report with an absent or mismatched current-stage gate must become first-class ready-gate state so cold boot discovers preparation and Captain review instead of projecting the same generic validating state as unfinished work."
+    }
+  ]
+}

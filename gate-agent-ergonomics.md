@@ -6,6 +6,34 @@ score: 1.0
 id: skwchfe30ac6ntr63j1g0txj
 sprint: durable-decisions
 started: 2026-07-26T12:36:08Z
+gates:
+    version: 1
+    current:
+        gate: gate:skwchfe30ac6ntr63j1g0txj:backlog
+    records:
+        - id: gate:skwchfe30ac6ntr63j1g0txj:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:skwchfe30ac6ntr63j1g0txj-backlog-1
+              briefing:
+                id: briefing:skwchfe30ac6ntr63j1g0txj:backlog:attempt-1:revision-1
+                digest: sha256:49d1b8e3720bc54f0f9ef8db12d8ad33f7a277bdf156a9957b4a33d3a4134ddb
+                digest-domain: canonical-bytes
+                request-digest: sha256:688d21e89d03f92cf3db7cdcbe1c4d46b4866c540fe022d41439b27afc348392
+                room-ref: ./gate-agent-ergonomics/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:skwchfe30ac6ntr63j1g0txj:backlog:1
+                briefing: briefing:skwchfe30ac6ntr63j1g0txj:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T12:36:24.13334Z"
+                decision: approve
+                reason: Roborev 2826 established a supported cold-restart stall after stage completion. Promote only the readiness projection and engage routing slice; reconcile prior scaffold/command work against landed s4 and add no second scheduler.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 The recorded gate model is trustworthy but still makes the First Officer construct and
