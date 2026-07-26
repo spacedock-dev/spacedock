@@ -2995,3 +2995,69 @@ prepared-room regression across record, validation, eligibility, the
 Commander-owned consume application, and corrupt-authority refusals. Existing
 product code passed; no product/skill edit, push, CI, gate/PR mutation, review,
 merge, or withdrawal change ran.
+
+## Stage Report: implementation (cycle 20 zsh observer correction and current-gate diagnosis)
+
+- DONE: Prove the keep-moving observer defect before changing it.
+  `TestKeepMovingGateConsumeAdvancement` first failed on the exact successful
+  `/bin/zsh -lc 'spacedock gate consume approved-gate ...'` transcript while
+  the existing direct command passed and the absent/other/failed/suppressed
+  controls remained red.
+- DONE: Correct only the observer's supported wrapper allowlist.
+  Commit `66a937de` adds `zsh` and `/bin/zsh` beside the existing bash/sh
+  launchers in `kmConsumesGate` and adds the exact zsh-wrapped success case.
+  Durable consume, successor-dispatch, and archive/effect assertions are
+  unchanged.
+- DONE: Verify the focused observer surface.
+  The single regression and the focused keep-moving/Codex dispatch-evidence
+  suite pass; `gofmt` and `git diff --check` pass. Roborev job 2801 found no
+  issues.
+- SKIPPED: Re-run a live model, push, trigger CI, or alter the gate skill.
+  This correction is local and the Sonnet finding below is diagnosis-only.
+
+### Focused evidence
+
+- Red first:
+  `go test ./internal/ensigncycle -run '^TestKeepMovingGateConsumeAdvancement$' -v -count=1`
+  rejected the zsh-wrapped success as a missing approved advance.
+- Green:
+  the same command passed after the two-token allowlist correction.
+- Green:
+  `go test ./internal/ensigncycle -run '^(TestKeepMoving|TestGradeKeepMoving|TestAssertClaudeKeepMoving|TestAssertCodexKeepMoving|TestCodexKeepMoving|TestCodexDispatchEvidence)' -count=1`
+  passed in 0.74s.
+
+### Sonnet current-gate diagnosis
+
+- Supported workflow: the default headless, no-conn, single-entity host journey
+  starts at implementation, dispatches/completes it, advances to gated
+  validation, prepares/binds/presents that current boundary, and stops open.
+- Harm: Sonnet left `status: validation` but retained only
+  `gates.current: gate:recorded-gate-task:implementation`, then labeled the
+  implementation Briefing as the validation review. The Captain would be asked
+  to decide against the wrong immutable authority, so this is material release
+  harm rather than harmless historical retention.
+- AC/boundary: this violates AC-4's no-override host journey requirement to
+  observe prepare before bind commit and chat presentation, plus the existing
+  current-gate/latest binding assertion. The live prompt could not lawfully
+  select older implementation history: it asked for the task's recorder-ready
+  room and current human decision boundary, and the entity's current gated
+  status was validation.
+- Trigger: an entity advances into a gated stage while an older open
+  `gates.current` record remains. The lifecycle says `awaiting-captain` is an
+  open current-stage Briefing and that an omitted selected attempt must be
+  prepared, but its resume/idempotence wording never explicitly rejects a
+  prior-stage `gates.current` selection before validation/presentation.
+- Minimal proposed correction, not applied: add one current-status guard to
+  `fo-gate-lifecycle` requiring the selected record's stage to equal the
+  entity's current gated `status`; otherwise run `gate prepare` for that status
+  and present only its emitted binding. Pin that sentence in the existing
+  `fo_function_reference_invariant_test` contract table. The existing
+  default-headless live test already supplies the behavioral regression, so no
+  observer weakening or second live fixture is warranted.
+
+### Summary
+
+The exact zsh wrapper false negative is fixed and independently reviewed. The
+fresh Sonnet result is a distinct, in-scope FO contract violation at AC-4's
+current-gate binding boundary; its smallest skill/test correction is identified
+but deliberately left unedited for first-officer direction.
