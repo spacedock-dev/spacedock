@@ -20,6 +20,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:cd3dab4ce2732d142d02b952b8f087a60c62ea13935e3ff24a000fc659b288eb
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kd7877nnbd19d528xnpwwaj4:backlog:1
+                briefing: briefing:kd7877nnbd19d528xnpwwaj4:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T15:01:27.186672Z"
+                decision: approve
+                reason: Real sprint dogfood proves fresh ensigns can resolve 0.26.0+dev while the FO uses 0.27.0-pre1; dispatch build already owns the exact stage subsection, so ideation should remove the redundant worker fetch and bound any remaining helper use.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 ## Outcome
