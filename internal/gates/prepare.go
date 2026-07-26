@@ -241,6 +241,12 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, err
 	}
+	if err := validatePreparedRoomEntries(room); err != nil {
+		if created {
+			rollbackPreparedRoom(room, createdParents)
+		}
+		return PrepareResult{}, err
+	}
 
 	if previous == nil {
 		record.Attempts = append(record.Attempts, Attempt{ID: attemptID, Briefing: binding})
@@ -368,6 +374,9 @@ func preparedReplay(entityPath string, previous *Attempt, briefingID, question, 
 	room, err := filepath.Abs(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(previous.Briefing.RoomRef)))
 	if err != nil {
 		return PrepareResult{}, false, fmt.Errorf("resolve prepared room: %w", err)
+	}
+	if err := validatePreparedRoomEntries(room); err != nil {
+		return PrepareResult{}, false, err
 	}
 	return PrepareResult{
 		Room:     room,
@@ -497,6 +506,27 @@ func validatePreparedRoomAncestry(entityPath, room string) error {
 		}
 		if !info.IsDir() {
 			return fmt.Errorf("prepared room parent %s is not a directory", current)
+		}
+	}
+	return nil
+}
+
+func validatePreparedRoomEntries(room string) error {
+	entries, err := os.ReadDir(room)
+	if err != nil {
+		return err
+	}
+	expected := map[string]bool{preparedBriefingLocator: true, "request.json": true}
+	if len(entries) != len(expected) {
+		return fmt.Errorf("prepared room must contain exactly two regular files")
+	}
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		if !expected[entry.Name()] || !info.Mode().IsRegular() {
+			return fmt.Errorf("prepared room entry %s is not an expected regular file", entry.Name())
 		}
 	}
 	return nil

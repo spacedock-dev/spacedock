@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -128,6 +129,9 @@ func validateRetainedAuthorityExcept(entityPath, workflowDir string, doc *Docume
 			result, err := decodeProviderResult(resultBytes)
 			if err != nil {
 				return err
+			}
+			if attempt.Resolution == nil || !reflect.DeepEqual(result.Resolution, *attempt.Resolution) {
+				return fmt.Errorf("attempt %s retained provider Resolution does not match its durable Resolution", attempt.ID)
 			}
 			inventory, err := decodePresentedInventory(inventoryBytes)
 			if err != nil {

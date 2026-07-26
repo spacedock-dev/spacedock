@@ -288,6 +288,151 @@ func TestPrepareSuccessorRejectsCorruptedRetainedAuthorityWithoutChangingTree(t 
 	}
 }
 
+func TestRetainedProviderResolutionMismatchRejectsEligibilityAndConsumeWithoutChangingBytes(t *testing.T) {
+	workflow, _, entity, artifact, _ := prepareFixture(t, "flat")
+	prepared, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Should this gate advance?",
+		Artifact:    artifact,
+		Summary:     "Exact summary.",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	briefingBytes, err := os.ReadFile(filepath.Join(prepared.Room, preparedBriefingLocator))
+	if err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := parseBriefingManifest(briefingBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	items, err := canonicalPresentationItems(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerDir := filepath.Join(prepared.Room, "provider")
+	if err := os.Mkdir(providerDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	inventoryBytes, err := indentedJSON(presentedInventory{Items: items})
+	if err != nil {
+		t.Fatal(err)
+	}
+	resultBytes, err := indentedJSON(providerResult{
+		Type:     "review-v1-result",
+		Briefing: prepared.Briefing,
+		Artifact: items[0].artifactRef,
+		Resolution: Resolution{
+			Type:     "Resolution",
+			ID:       "resolution:provider-revise",
+			Briefing: prepared.Briefing,
+			By:       "person:captain",
+			At:       "2026-07-26T00:00:00Z",
+			Decision: "revise",
+			Reason:   "Changes required.",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(providerDir, "presented-inventory.json"), inventoryBytes, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(providerDir, "result.json"), resultBytes, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := RecordSemantic(entity, RecordInput{RoomPath: prepared.Room, WorkflowDir: workflow}); err != nil {
+		t.Fatal(err)
+	}
+	doc, oldNode, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt := &doc.Records[0].Attempts[0]
+	attempt.Resolution.Decision = "approve"
+	attempt.Resolution.Reason = ""
+	blockers := []Blocker{}
+	attempt.Application = &Application{
+		Action:      "advance",
+		TargetStage: "done",
+		State:       "pending",
+		Blockers:    &blockers,
+	}
+	if err := writeDocument(entity, oldNode, doc); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, eligibilityErr := EligibilityFileAt(entity, workflow)
+	_, consumeErr := ConsumeAt(entity, workflow)
+	if eligibilityErr == nil || consumeErr == nil {
+		t.Fatalf("provider Resolution mismatch: eligibility error=%v consume error=%v", eligibilityErr, consumeErr)
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatal("provider Resolution mismatch changed entity bytes")
+	}
+}
+
+func TestPrepareReplayRejectsSymlinkedAuthorityEntriesWithoutChangingBytes(t *testing.T) {
+	for _, name := range []string{preparedBriefingLocator, "request.json"} {
+		t.Run(name, func(t *testing.T) {
+			workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+			input := PrepareInput{
+				WorkflowDir: workflow,
+				Question:    "Should this gate advance?",
+				Artifact:    artifact,
+				Summary:     "Exact summary.",
+			}
+			prepared, err := Prepare(entity, input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			roomEntry := filepath.Join(prepared.Room, name)
+			body, err := os.ReadFile(roomEntry)
+			if err != nil {
+				t.Fatal(err)
+			}
+			external := filepath.Join(t.TempDir(), name)
+			if err := os.WriteFile(external, body, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Remove(roomEntry); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(external, roomEntry); err != nil {
+				t.Fatal(err)
+			}
+			beforeState := treeDigest(t, state)
+			beforeExternal := append([]byte(nil), body...)
+
+			if _, err := Prepare(entity, input); err == nil {
+				t.Fatalf("symlinked %s replay error=%v", name, err)
+			}
+			if after := treeDigest(t, state); after != beforeState {
+				t.Fatalf("symlinked %s replay changed the state tree", name)
+			}
+			afterExternal, err := os.ReadFile(external)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(afterExternal, beforeExternal) {
+				t.Fatalf("symlinked %s replay changed external bytes", name)
+			}
+			if info, err := os.Lstat(roomEntry); err != nil || info.Mode()&os.ModeSymlink == 0 {
+				t.Fatalf("symlinked %s replay changed the room entry: info=%v err=%v", name, info, err)
+			}
+		})
+	}
+}
+
 func TestRecordBriefingRejectsUnavailablePreparedGitSourceWithoutChangingTree(t *testing.T) {
 	workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
 	originalEntity, err := os.ReadFile(entity)
