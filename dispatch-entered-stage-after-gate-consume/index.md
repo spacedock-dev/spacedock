@@ -25,6 +25,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:2e8c911fa6c4c2dbea158e9a20cee9bfa16054eada3d2b9774b92e76bba2d053
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:gqsw81ghf48hr2n3jg6k7nx8:backlog:1
+                briefing: briefing:gqsw81ghf48hr2n3jg6k7nx8:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T10:56:42.99005Z"
+                decision: approve
+                reason: The supported live journey lost its first implementation round because stage entry was credited without a worker/report; this must be shaped before the sprint's assembled walkthrough.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 A gate application can atomically move a ticket into a non-gated working stage, but the First Officer must still dispatch that entered stage before advancing again. In the observed Codex journey, the ticket began at `implementation`; the FO skipped its first worker, moved directly to `validation`, and later produced only the rework implementation report. The final functionality looked repaired, but the durable history lost the original implementation round.
