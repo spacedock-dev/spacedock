@@ -43,6 +43,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:5f3eb4398449071d7fb058d25ff09536fd2ebb32d13d6a97ce76719d6ccf57f4
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kd7877nnbd19d528xnpwwaj4:ideation:1
+                briefing: briefing:kd7877nnbd19d528xnpwwaj4:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T16:02:05.670336Z"
+                decision: approve
+                reason: 'Delegated sprint conn: exact two-binary spike and final independent staff re-review approve the self-contained artifact, pointer-only transport design; implementation must preserve legitimate ensign round recording through the builder-pinned launcher.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 started: 2026-07-26T15:08:14Z
 ---
 
