@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mnea9vq3pv1rz1x1hdjbvdg9:backlog:attempt-1:revision-1",
+  "question": "Should this role-boundary correction enter ideation in the durable-decisions sprint?",
+  "artifacts": [
+    {
+      "id": "artifact:mnea9vq3pv1rz1x1hdjbvdg9:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2cb9d2871fb3ae4eae6c65ab1e54c4484ee6a0b9/respect-gate-application-authority/index.md",
+      "rev": "sha256:56e19c66817c78133b0d6d76054885284682347fd817d751fddc9e4bf9315b0a",
+      "mediaType": "text/markdown",
+      "summary": "The shipped lifecycle must keep gate recording separate from application authority: a record-only First Officer stops after preserving approval, while an explicitly authorized Commander consumes and dispatches."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:mnea9vq3pv1rz1x1hdjbvdg9:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/skills/fo-gate-lifecycle/SKILL.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5b831468a4bb5551634c72a86c058ba00b8e35d28b656214c172ad59a9bbfee5"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:mnea9vq3pv1rz1x1hdjbvdg9:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:46d44abcbdc596a0aa2c22cb94465cf4e2321a529c52679f14e7efcb071a5f62"
+    }
+  ]
+}

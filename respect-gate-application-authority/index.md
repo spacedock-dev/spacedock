@@ -10,6 +10,34 @@ worktree:
 issue:
 sprint: durable-decisions
 id: mnea9vq3pv1rz1x1hdjbvdg9
+gates:
+    version: 1
+    current:
+        gate: gate:mnea9vq3pv1rz1x1hdjbvdg9:backlog
+    records:
+        - id: gate:mnea9vq3pv1rz1x1hdjbvdg9:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:mnea9vq3pv1rz1x1hdjbvdg9-backlog-1
+              briefing:
+                id: briefing:mnea9vq3pv1rz1x1hdjbvdg9:backlog:attempt-1:revision-1
+                digest: sha256:064cebf9ee6699261c5213d4b8b9ff42350c64e13060bcd07876a995c7a8e8e7
+                digest-domain: canonical-bytes
+                request-digest: sha256:4fb4b00f0b0d4dd7dfe9be7b26b4dd904d00a9ed3f7361c2e73dd24871a1fcef
+                room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mnea9vq3pv1rz1x1hdjbvdg9:backlog:1
+                briefing: briefing:mnea9vq3pv1rz1x1hdjbvdg9:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T11:42:35.622923Z"
+                decision: approve
+                reason: 'The sprint''s real role error proves a narrow general contract gap: recording approval must not imply transition authority, while an explicit conn still permits consume and dispatch. Shape the contract and existing live proof without changing gate mechanics.'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Recording a binding approval and applying it are separate operations. The shipped First Officer lifecycle must preserve that separation at the role boundary: presenting or recording an approval never enlarges the current session's assigned transition scope. A Shaping First Officer explicitly assigned to hold members at a gate records the exact Resolution and stops with approved-awaiting-advance; a Commander with the conn consumes the same frozen attempt, advances, and dispatches the entered stage.
