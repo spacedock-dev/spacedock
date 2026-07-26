@@ -2176,3 +2176,36 @@ The rebased feature tip is `e3837583`.
 
 This integration did not change gate status, Resolution, application, mod-block, or
 entity frontmatter.
+
+## Feedback Cycle 15
+
+PR #570 failed the `offline` check in `Runtime Live E2E` run `30181857707`, job
+`89739683059`. `TestRecordedGateLifecycleRealCLIReplay` reached its first real
+`spacedock state commit` without repo-local `user.name` or `user.email`; the GitHub
+runner had no usable global identity, so Git rejected the commit.
+
+The correction is test-fixture-only. It adds deterministic local identity before the
+state fixture's initial commit and makes the replay use an isolated global config with
+`user.useConfigOnly=true` and no global identity.
+
+## CI Correction Report
+
+- DONE: Reproduce the clean-identity boundary before changing the fixture.
+  An isolated unusable global identity reproduced `Author identity unknown` at the
+  same first state commit; removing the new local config restores that failure.
+- DONE: Keep the correction inside the named replay test and fixture helper.
+  Commit `a78ce122` changes only
+  `internal/ensigncycle/recorded_gate_lifecycle_test.go` at `+10/-1`; product, CLI,
+  skills, docs, prompts, observers, and interfaces remain unchanged.
+- DONE: Prove the replay without global identity and run all required checks.
+  The exact focused test, `gofmt -w ./cmd ./internal`, `go test ./...`,
+  `go test ./... -race`, and `git diff --check` pass.
+- SKIPPED: Run a new Roborev.
+  The correction stays inside the named test and its fixture helper, so Cycle 15's
+  test-fixture-only review carve-out applies.
+
+### Summary
+
+Commit `a78ce122` makes the real-CLI replay independent of runner Git identity. The
+feature branch is pushed; status, Resolution, application, PR #570, and mod-block are
+unchanged.
