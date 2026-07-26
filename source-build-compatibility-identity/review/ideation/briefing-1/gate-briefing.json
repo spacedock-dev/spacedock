@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:v2183mw7c09a10pw185p33cw:ideation:attempt-1:revision-1",
+  "question": "Should Spacedock implement the approved source-versus-release compatibility identity boundary using one explicit release marker?",
+  "artifacts": [
+    {
+      "id": "artifact:v2183mw7c09a10pw185p33cw:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4276286bad18935b427b9c1c8301751b025993d5/source-build-compatibility-identity.md",
+      "rev": "sha256:561e5b09847087e6ae9724f4a6c88fd6286e2e493e50adb3dc9cf36037ccda9b",
+      "mediaType": "text/markdown",
+      "summary": "Ideation proves the false next-minor source identity and chooses one single-purpose releaseBuild marker: unmarked source builds always report the embedded checkout manifest plus +dev, marked GoReleaser artifacts report their exact tag version, and Git provenance never changes First Officer compatibility. The design preserves automatic pre0 tags and strict minor coupling, caps the implementation at 10 files and 260 changed lines, and requires real three-build, release-wiring, detached-adversarial, full/race, and all-host live evidence."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:v2183mw7c09a10pw185p33cw:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/4ff98d8cd97ebcf17b6a583070ce69234e24fc87/internal/cli/dev_version.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:6090c535f67ff69f920924cb8f3611f9d287b67fcec94b616611ee4f065d52bb"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:v2183mw7c09a10pw185p33cw:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/4ff98d8cd97ebcf17b6a583070ce69234e24fc87/.goreleaser.yaml",
+      "mediaType": "application/yaml",
+      "rev": "sha256:93c77330e1dc90e1b01d9b2a1351f359657a0de753b5602cfac7ba998e6d59af"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:v2183mw7c09a10pw185p33cw:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/4ff98d8cd97ebcf17b6a583070ce69234e24fc87/docs/releasing.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8efa3dda0fcc18a36f0e27798c9e43e4c9296129871952c3a4afc471cc70e17e"
+    }
+  ]
+}

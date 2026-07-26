@@ -13,7 +13,7 @@ id: v2183mw7c09a10pw185p33cw
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:v218:backlog
+        gate: gate:v2183mw7c09a10pw185p33cw:ideation
     records:
         - id: gate:docs-dev:v218:backlog
           stage: backlog
@@ -37,6 +37,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:v2183mw7c09a10pw185p33cw:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:v2183mw7c09a10pw185p33cw-ideation-1
+              briefing:
+                id: briefing:v2183mw7c09a10pw185p33cw:ideation:attempt-1:revision-1
+                digest: sha256:dacc92b408f96fb9a93300315c485c979f680243f35a76702d26045670d1ea37
+                digest-domain: canonical-bytes
+                request-digest: sha256:203a90685eef4879a5e1c192fe2b104df1a95b4d7277b2a57ab5661395f5a1b4
+                room-ref: ./source-build-compatibility-identity/review/ideation/briefing-1
 ---
 
 Prevent an ordinary source build from impersonating the automatic next-minor `pre0` release merely because that tag is the nearest Git ancestor.
