@@ -1,7 +1,7 @@
 ---
 id: 79507fecszjsvsbgdmf36ee4
 title: "Entity-session claim/lease — only the owning session may mutate a claimed entity"
-status: backlog
+status: ideation
 source: "Subspace FO two-lane request 2026-07-25, plus a live breach the same day: a cold-booted second FO committed sprint member 6y's in-flight state, having received no peer-ownership signal at boot"
 started:
 completed:
@@ -34,7 +34,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
