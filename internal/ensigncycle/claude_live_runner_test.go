@@ -184,21 +184,7 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
-	shellEnvDir := t.TempDir()
-	bashEnv := filepath.Join(shellEnvDir, "recorded-gate-env.sh")
-	writeFile(t, bashEnv, "export SPACEDOCK_BIN="+filepath.Join(shimDir, "spacedock")+"\n")
-	writeFile(t, filepath.Join(shellEnvDir, ".zshenv"), readFile(t, bashEnv))
-	runner = runner.withStubPATH(shimDir)
-	switch copied := runner.(type) {
-	case claudeLiveRunner:
-		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
-		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
-		runner = copied
-	case ptyLiveDriver:
-		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
-		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
-		runner = copied
-	}
+	runner = withRecordedGateShellShim(t, runner, shimDir)
 	result := runner.run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
 	writeFile(t, filepath.Join(result.artifactDir, "command.log"), readFile(t, commandLog))
 	commandLog = filepath.Join(result.artifactDir, "command.log")
@@ -253,28 +239,46 @@ func (r claudeLiveRunner) model() string { return r.modelName }
 func (r claudeLiveRunner) home() string  { return r.homeDir }
 
 // withStubPATH returns a runner copy whose launched FO subprocess resolves a stub
-// binary in dir first and binds the launcher invariant to that stub. It never mutates
-// the receiver's env, so parallel scenarios sharing the runner stay race-free.
+// binary in dir first (the shallow-boot scenario's stub `gh` reporting MERGED). It
+// never mutates the receiver's env, so parallel scenarios sharing the runner stay
+// race-free.
 func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 	r.env = withPATHPrefix(r.env, dir)
-	r.env = withRecordedGateEnv(r.env, "SPACEDOCK_BIN", filepath.Join(dir, "spacedock"))
 	return r
 }
 
-func TestClaudeLiveRunnerWithStubPATHBindsStubLauncher(t *testing.T) {
-	inheritedBinary := filepath.Join(t.TempDir(), "spacedock")
-	shimDir := t.TempDir()
-	runner := claudeLiveRunner{env: []string{
-		"PATH=/usr/bin",
-		"SPACEDOCK_BIN=" + inheritedBinary,
-	}}
-
-	got := runner.withStubPATH(shimDir).(claudeLiveRunner)
-	if binary, ok := envValue(got.env, "SPACEDOCK_BIN"); !ok || binary != filepath.Join(shimDir, "spacedock") {
-		t.Fatalf("SPACEDOCK_BIN = %q (present=%v), want the stub launcher", binary, ok)
+func withRecordedGateShellShim(t *testing.T, runner liveDriver, shimDir string) liveDriver {
+	t.Helper()
+	shellEnvDir := t.TempDir()
+	bashEnv := filepath.Join(shellEnvDir, "recorded-gate-env.sh")
+	writeFile(t, bashEnv, "export SPACEDOCK_BIN="+filepath.Join(shimDir, "spacedock")+"\n")
+	writeFile(t, filepath.Join(shellEnvDir, ".zshenv"), readFile(t, bashEnv))
+	runner = runner.withStubPATH(shimDir)
+	switch copied := runner.(type) {
+	case claudeLiveRunner:
+		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
+		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
+		return copied
+	case ptyLiveDriver:
+		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
+		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
+		return copied
+	default:
+		t.Fatalf("recorded gate shell shim does not support %T", runner)
+		return nil
 	}
-	if binary, _ := envValue(runner.env, "SPACEDOCK_BIN"); binary != inheritedBinary {
-		t.Fatalf("source runner SPACEDOCK_BIN = %q, want inherited value %q preserved", binary, inheritedBinary)
+}
+
+func TestRecordedGateShellShimBindsInsideToolShell(t *testing.T) {
+	shimDir := t.TempDir()
+	runner := withRecordedGateShellShim(t, claudeLiveRunner{env: withRecordedGateEnv(os.Environ(), "SPACEDOCK_BIN", "/launcher/spacedock")}, shimDir).(claudeLiveRunner)
+	want := filepath.Join(shimDir, "spacedock")
+	for _, shell := range []string{"/bin/bash", "/bin/zsh"} {
+		command := exec.Command(shell, "-c", `printf %s "$SPACEDOCK_BIN"`)
+		command.Env = runner.env
+		if got, err := command.Output(); err != nil || string(got) != want {
+			t.Fatalf("%s SPACEDOCK_BIN = %q, %v; want %q", shell, got, err, want)
+		}
 	}
 }
 
@@ -295,7 +299,7 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
-	runner = runner.withStubPATH(shimDir)
+	runner = withRecordedGateShellShim(t, runner, shimDir)
 
 	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
 	if _, err := os.Stat(filepath.Join(fixture.stateRoot, "_archive", "recorded-gate-task", "index.md")); !os.IsNotExist(err) {
