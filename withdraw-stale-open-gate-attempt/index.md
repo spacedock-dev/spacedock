@@ -496,3 +496,24 @@ prepare, provider record, and consume lifecycle.
 Cycle 3 removes model-read command content and ordering from contractlint's authority.
 Real-binary split-root tests own the durable command sequence, and the existing live FO
 lane owns model behavior; contractlint remains structural only.
+
+## Stage Report: ideation (cycle 4 — AC evidence addendum)
+
+- DONE: Remove every committed contractlint assertion of withdraw/commit/prepare command content or ordering in model-read prose.
+  Cycle 3 keeps the implementation surface deletion-only for those assertions and assigns behavior/order exclusively to fresh-binary and live-FO proof.
+- DONE: Keep contractlint within its structural proof boundary.
+  Cycle 3 retains only structural closure, skill/capability/reference wiring, frontmatter validity, absence/dedup invariants, and byte caps.
+- DONE: Preserve the accepted withdrawal, preparation, retained-authority, and behavioral proof design.
+  Cycles 2–3 leave the exact command, three-state model, O(history) validator, frozen history, provider rules, and supported lifecycle unchanged.
+- DONE: Cite concrete ideation evidence for zero-false-Resolution replacement.
+  AC-1 — The throwaway real-CLI spike observed withdrawn N with no Resolution/application and provider Result ownership only on N+1; the s4 `prepareTarget`/replay/post-publish audit rebases that observation into the exact prepare N → withdraw → cold boot → prepare N+1 → `record --room` → consume proof, which fails on any decision placed on N.
+- DONE: Cite concrete ideation evidence for canonical withdrawal integrity.
+  AC-2 — The spike kept N's retained Briefing/request bytes identical, while the s4 audit anchors implicit FO withdrawal to `lockEntity`/`writeDocument`, full retained-authority validation, and `ValidateTransition`; the refusal matrix compares the whole entity/room tree and residual lock path so any refused write or later mutation of N fails.
+- DONE: Cite concrete ideation evidence for cold recovery and retained authority.
+  AC-3 — The spike observed fresh boot projection `withdrawn-awaiting-prepare`, and the s4 audit found `SummaryFileAt`, `Prepare`, `EligibilityFileAt`, and `ConsumeAt` all enter `validateRetainedAuthority`; the real-binary oracle requires withdrawn validate success, byte-clean ineligible eligibility/consume before N+1 closes, then consumption of N+1 while historical N remains revalidated.
+
+### Summary
+
+This addendum changes no design or product surface. It preserves the prior checklist
+accounting and gives the ideation gate concrete, falsifiable citations for AC-1,
+AC-2, and AC-3.
