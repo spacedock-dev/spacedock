@@ -712,14 +712,58 @@ func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {
 	if err := os.MkdirAll(filepath.Dir(logPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
+	stateRoot := filepath.Dir(logPath)
+	for {
+		candidate := filepath.Join(stateRoot, ".spacedock-state")
+		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+			stateRoot = candidate
+			break
+		}
+		parent := filepath.Dir(stateRoot)
+		if parent == stateRoot {
+			t.Fatalf("no .spacedock-state checkout above command log %s", logPath)
+		}
+		stateRoot = parent
+	}
 	dir := t.TempDir()
 	shim := filepath.Join(dir, "spacedock")
-	script := fmt.Sprintf("#!/bin/sh\nprintf 'begin\\t%%s\\n' \"$*\" >> %q\n[ \"$1 $2\" = \"dispatch build\" ] && git -C .spacedock-state rev-parse HEAD | sed 's/^/dispatch-head\\t/' >> %q\n%q \"$@\"\ncode=$?\nprintf 'exit=%%s\\t%%s\\n' \"$code\" \"$*\" >> %q\n[ \"$code\" -eq 0 ] && [ \"$1 $2\" = \"state commit\" ] && git -C .spacedock-state rev-parse HEAD | sed 's/^/state-head\\t/' | tee -a %q\nexit \"$code\"\n", logPath, logPath, binary, logPath, logPath)
+	script := fmt.Sprintf("#!/bin/sh\nprintf 'begin\\t%%s\\n' \"$*\" >> %q\n[ \"$1 $2\" = \"dispatch build\" ] && git -C %q rev-parse HEAD | sed 's/^/dispatch-head\\t/' >> %q\n%q \"$@\"\ncode=$?\nprintf 'exit=%%s\\t%%s\\n' \"$code\" \"$*\" >> %q\n[ \"$code\" -eq 0 ] && [ \"$1 $2\" = \"state commit\" ] && git -C %q rev-parse HEAD | sed 's/^/state-head\\t/' | tee -a %q\nexit \"$code\"\n", logPath, stateRoot, logPath, binary, logPath, stateRoot, logPath)
 	writeFile(t, shim, script)
 	if err := os.Chmod(shim, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	return dir
+}
+
+func TestRecordedGateLoggingShimEmitsStateHeadOutsideWorkflowCWD(t *testing.T) {
+	fixture := writePreparedRecordedGateFixture(t)
+	logPath := filepath.Join(fixture.root, "command.log")
+	shim := filepath.Join(writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), logPath), "spacedock")
+	command := exec.Command("/bin/zsh", "-lc", fmt.Sprintf(
+		`WD=%q; %q state commit --workflow-dir "$WD" recorded-gate-task; code=$?; echo "EXIT:$code"; exit "$code"`,
+		fixture.root, shim,
+	))
+	command.Dir = t.TempDir()
+	output, err := command.CombinedOutput()
+	if err != nil {
+		t.Fatalf("wrapped state commit failed: %v\n%s", err, output)
+	}
+	if !recordedGateStateHead.Match(output) {
+		t.Fatalf("successful wrapped state commit omitted durable state-head evidence:\n%s", output)
+	}
+
+	failed := exec.Command("/bin/zsh", "-lc", fmt.Sprintf(
+		`WD=%q; %q state commit --workflow-dir "$WD" missing-task; echo "EXIT:$?"`,
+		fixture.root, shim,
+	))
+	failed.Dir = t.TempDir()
+	failedOutput, failedErr := failed.CombinedOutput()
+	if failedErr != nil {
+		t.Fatalf("trailing echo control should mask the shell status, got %v\n%s", failedErr, failedOutput)
+	}
+	if recordedGateStateHead.Match(failedOutput) {
+		t.Fatalf("failed commit plus trailing echo fabricated durable state-head evidence:\n%s", failedOutput)
+	}
 }
 
 func withRecordedGateEnv(env []string, key, value string) []string {
@@ -751,6 +795,66 @@ func recordedGateEventsFromCommandLog(log string) []string {
 		}
 	}
 	return events
+}
+
+func recordedGateStateCommitCommand(command, entity string) bool {
+	for _, segment := range strings.FieldsFunc(command, func(r rune) bool {
+		return r == '\n' || r == ';' || r == '&' || r == '|'
+	}) {
+		fields := strings.Fields(segment)
+		for i := 0; i+1 < len(fields); i++ {
+			if strings.Trim(fields[i], `"'`) != "state" || strings.Trim(fields[i+1], `"'`) != "commit" {
+				continue
+			}
+			if i > 0 {
+				launcher := strings.Trim(fields[i-1], `"'`)
+				if launcher != "spacedock" && !strings.HasSuffix(launcher, "/spacedock") &&
+					!strings.Contains(launcher, "SPACEDOCK_BIN") && !strings.HasPrefix(launcher, "$") {
+					continue
+				}
+				validPrefix := true
+				for _, prefix := range fields[:i-1] {
+					prefix = strings.Trim(prefix, `"'`)
+					if prefix != "command" && prefix != "env" && prefix != "bash" && prefix != "/bin/bash" &&
+						prefix != "sh" && prefix != "/bin/sh" && prefix != "zsh" && prefix != "/bin/zsh" &&
+						prefix != "-c" && prefix != "-lc" && !strings.Contains(prefix, "=") {
+						validPrefix = false
+						break
+					}
+				}
+				if !validPrefix {
+					continue
+				}
+			}
+			for j := i + 2; j < len(fields); j++ {
+				arg := strings.Trim(fields[j], `"'`)
+				switch arg {
+				case "--workflow-dir", "-m", "--message":
+					j++
+				case "--json":
+					continue
+				default:
+					if strings.HasPrefix(arg, "-") {
+						continue
+					}
+					return arg == entity
+				}
+			}
+		}
+	}
+	return false
+}
+
+func recordedGateSuccessfulStateCommitAfter(log, entity string, after int) int {
+	offset := 0
+	for _, line := range strings.Split(log, "\n") {
+		if offset > after && strings.HasPrefix(line, "exit=0\t") &&
+			recordedGateStateCommitCommand(strings.TrimPrefix(line, "exit=0\t"), entity) {
+			return offset
+		}
+		offset += len(line) + 1
+	}
+	return -1
 }
 
 func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
@@ -793,7 +897,7 @@ func recordedGateReviewFromClaudeStream(stream string) string {
 			switch {
 			case row.Type == "assistant" && block.Type == "tool_use" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --decision "):
 				return singleRecordedGateReview(candidates)
-			case row.Type == "assistant" && block.Type == "tool_use" && block.Name == "Bash" && strings.Contains(command, "state commit recorded-gate-task"):
+			case row.Type == "assistant" && block.Type == "tool_use" && block.Name == "Bash" && recordedGateStateCommitCommand(command, "recorded-gate-task"):
 				commit = block.ID
 			case row.Type == "user" && block.Type == "tool_result" && block.ToolUseID == commit && !block.IsError:
 				bound = recordedGateStateHead.MatchString(block.flatText())
@@ -816,7 +920,7 @@ func recordedGateReviewFromCodexJSONL(jsonl string) string {
 		switch {
 		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "gate record recorded-gate-task") && strings.Contains(row.Item.Command, " --decision "):
 			return singleRecordedGateReview(candidates)
-		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "state commit recorded-gate-task"):
+		case row.Item.Type == "command_execution" && recordedGateStateCommitCommand(row.Item.Command, "recorded-gate-task"):
 			bound = row.Item.ExitCode != nil && *row.Item.ExitCode == 0 && row.Item.Status == "completed" && recordedGateStateHead.MatchString(row.Item.AggregatedOutput)
 		case bound && row.Item.Type == "agent_message" && assertConciseRecordedGateReview(row.Item.Text) == nil:
 			candidates = append(candidates, row.Item.Text)
@@ -841,7 +945,7 @@ func recordedGateReviewFromPiSession(session string) string {
 			switch {
 			case row.Message.Role == "assistant" && block.Type == "toolCall" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --decision "):
 				return singleRecordedGateReview(candidates)
-			case row.Message.Role == "assistant" && block.Type == "toolCall" && block.Name == "bash" && strings.Contains(command, "state commit recorded-gate-task"):
+			case row.Message.Role == "assistant" && block.Type == "toolCall" && block.Name == "bash" && recordedGateStateCommitCommand(command, "recorded-gate-task"):
 				commit = block.ID
 			case bound && row.Message.Role == "assistant" && block.Type == "text" && assertConciseRecordedGateReview(block.Text) == nil:
 				candidates = append(candidates, block.Text)
@@ -868,13 +972,41 @@ func TestRecordedGateReviewExtractorsRequireOneOrderedRootReview(t *testing.T) {
 	}
 }
 
+func TestClaudeRecordedGateReviewRecognizesWrappedOptionBeforeEntityCommit(t *testing.T) {
+	commitEvent := func(command, output string) string {
+		return `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"c","name":"Bash","input":{"command":` + fmt.Sprintf("%q", command) + `}}]}}` + "\n" +
+			`{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"c","content":` + fmt.Sprintf("%q", output) + `,"is_error":false}]}}`
+	}
+	review := `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}`
+	command := `WD="/tmp/workflow" ${SPACEDOCK_BIN:-spacedock} state commit --workflow-dir "$WD" recorded-gate-task; echo "EXIT:$?"`
+	success := commitEvent(command, "Committed recorded-gate-task locally.\nstate-head\t0123456789abcdef0123456789abcdef01234567\nEXIT:0")
+	extracted := recordedGateReviewFromClaudeStream(success + "\n" + review)
+	before := recordedGateEntity()
+	after := recordedGateHeldEntity(before, recordedGateBriefingID, recordedGateDigest)
+	if err := assertGateHeld(before, after, extracted); err != nil {
+		t.Fatalf("supported wrapped option-before-entity commit did not bind the durable current-state review: %v", err)
+	}
+
+	for name, stream := range map[string]string{
+		"no commit":     commitEvent(strings.Replace(command, "state commit", "state inspect", 1), "state-head\t0123456789abcdef0123456789abcdef01234567\nEXIT:0") + "\n" + review,
+		"other entity":  commitEvent(strings.Replace(command, "recorded-gate-task", "other-task", 1), "state-head\t0123456789abcdef0123456789abcdef01234567\nEXIT:0") + "\n" + review,
+		"failed masked": commitEvent(command, "spacedock state commit: failed\nEXIT:0") + "\n" + review,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := recordedGateReviewFromClaudeStream(stream); got != "" {
+				t.Fatalf("false-positive control extracted review %q", got)
+			}
+		})
+	}
+}
+
 func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, before, commandLog, review string) recordedGateObservation {
 	t.Helper()
 	log := readFile(t, commandLog)
 	builds, successfulBuilds, consumed, ordered := 0, 0, false, true
 	helpAt := strings.Index(log, "exit=0\tgate --help")
 	prepareAt := strings.Index(log, "exit=0\tgate prepare ")
-	bindCommitAt := strings.Index(log, "exit=0\tstate commit recorded-gate-task")
+	bindCommitAt := recordedGateSuccessfulStateCommitAfter(log, "recorded-gate-task", prepareAt)
 	decisionAt := strings.Index(log, "exit=0\tgate record ")
 	ordered = strings.Count(log, "exit=0\tgate --help") == 1 &&
 		helpAt >= 0 && prepareAt > helpAt && bindCommitAt > prepareAt && decisionAt > bindCommitAt

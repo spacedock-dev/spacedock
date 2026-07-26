@@ -16,7 +16,7 @@ import (
 func assertRecordedGateHoldLog(log string) error {
 	const successfulPrepare = "exit=0\tgate prepare recorded-gate-task "
 	prepare := strings.Index(log, successfulPrepare)
-	commit := strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task")
+	commit := recordedGateSuccessfulStateCommitAfter(log, "recorded-gate-task", prepare)
 	head := strings.LastIndex(log, "state-head\t")
 	if prepare < 0 || commit < prepare || head < commit || strings.Count(log, successfulPrepare) != 1 ||
 		strings.Contains(log[prepare:], " --decision ") || strings.Contains(log[prepare:], "gate consume recorded-gate-task") || strings.Contains(log[prepare:], "dispatch build ") {
@@ -35,6 +35,14 @@ func TestAssertRecordedGateHoldLog(t *testing.T) {
 	}, "\n")
 	if err := assertRecordedGateHoldLog(valid); err != nil {
 		t.Fatalf("successful prepare plus binding commit must hold at the no-authority boundary: %v", err)
+	}
+	optionBeforeEntity := strings.ReplaceAll(
+		valid,
+		"state commit recorded-gate-task",
+		`state commit --workflow-dir "$WD" recorded-gate-task`,
+	)
+	if err := assertRecordedGateHoldLog(optionBeforeEntity); err != nil {
+		t.Fatalf("supported option-before-entity binding commit must hold at the no-authority boundary: %v", err)
 	}
 
 	controls := map[string]string{

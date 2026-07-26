@@ -327,6 +327,9 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 		"`--question`, `--artifact`, `--summary`, `--reference`, `--workflow-dir`",
 		"gate prepare ENTITY", "emitted clean absolute room", "flat Markdown-plus-companion room unit",
 		`Skill(skill="spacedock:present-gate")`, "an override replaces only chat display",
+		"selected or retained gate record", "`stage` equal to that status",
+		"prior-stage `gates.current` is history, not reusable authority",
+		"run `gate prepare` for the current status and present only its emitted binding",
 	} {
 		if !strings.Contains(lifecycle, want) {
 			t.Errorf("gate lifecycle missing provider-neutral preparation contract %q", want)
