@@ -90,7 +90,6 @@ func TestEnteredStageProjectionRequiresCommittedCompleteReport(t *testing.T) {
 			})
 		})
 	}
-
 	t.Run("uncommitted complete report", func(t *testing.T) {
 		def, _, entity := buildEnteredStageFixture(t, enteredStageEntity)
 		writeFile(t, entity, enteredStageEntity+completeImplementationReport)
@@ -99,7 +98,6 @@ func TestEnteredStageProjectionRequiresCommittedCompleteReport(t *testing.T) {
 			Current: "implementation", Next: "implementation", Worktree: "yes",
 		})
 	})
-
 	t.Run("dirty committed report", func(t *testing.T) {
 		def, _, entity := buildEnteredStageFixture(t, enteredStageEntity+completeImplementationReport)
 		f, err := os.OpenFile(entity, os.O_APPEND|os.O_WRONLY, 0o644)
@@ -118,7 +116,6 @@ func TestEnteredStageProjectionRequiresCommittedCompleteReport(t *testing.T) {
 			Current: "implementation", Next: "implementation", Worktree: "yes",
 		})
 	})
-
 	t.Run("committed complete report ignores sibling dirt", func(t *testing.T) {
 		def, state, _ := buildEnteredStageFixture(t, enteredStageEntity+completeImplementationReport)
 		writeFile(t, filepath.Join(state, "unrelated-dirty-sibling.md"), "concurrent sibling dirt\n")

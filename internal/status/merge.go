@@ -115,7 +115,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	modBlock := strings.TrimSpace(fields["mod-block"])
 	pr := strings.TrimSpace(fields["pr"])
 	worktree := strings.TrimSpace(fields["worktree"])
-	enteredStageCompletionProof := hasMergeCeremonyCompletionProof(entityPath, strings.TrimSpace(fields["status"]))
+	enteredStageCompletionProof := verdict == "rejected" || hasMergeCeremonyCompletionProof(entityPath, strings.TrimSpace(fields["status"]))
 	mergeHooks := scanMods(roots.definitionDir)["merge"]
 	hookRegistered := len(mergeHooks) > 0
 
