@@ -1,7 +1,7 @@
 ---
 id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
-status: done
+status: implementation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
 completed:
@@ -131,7 +131,7 @@ review-round:
         digest: sha256:d25e3d5cf7887d1d30a12572b9f44de34c385ab7bb7b37657828ed7382c79d5d
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-13
-mod-block: merge:pr-merge
+mod-block:
 pr: "#570"
 ---
 
@@ -1630,6 +1630,39 @@ including its two leading/trailing spaces and non-ASCII code points.
   journey. Correct only the AC-4 observer's exit-record boundary and make its unit
   baseline use the real logging shape; change no product, prompt, provider, or harness
   architecture.
+
+- Cycle 20: REJECTED — Commander cumulative-scope and recurrence audit; surface 43
+  files and 4,802 changed LOC vs estimate 26 files and 1,904 changed LOC (252%); AC
+  unchanged.
+
+  Two independent stop signals were missed: the implementation magnitude reached
+  2.5 times the declared surface, and execution continued through eight numbered
+  implementation/validation correction rounds plus six full Runtime Live E2E
+  triggers. The consumed validation gate is also stale at `5484cee6`; current tip
+  `73810d1e` has no valid acceptance gate.
+
+  Freeze pushes, CI, merge, and gate reuse. Reconcile the complete Roborev history:
+  retain the fixed dynamic-Briefing-digest and committed-binding findings; do not add
+  legacy compatibility; remove or replace the unresolved room-handoff oracle rather
+  than carrying a known false proof; treat the prepared-parent symlink escape as a
+  material containment defect; and retain the approved fail-closed local-object
+  policy without inventing object-retention machinery.
+
+  Cut the selected-provider fake/success harness when the governing s4 boundary can
+  be proven through its existing provider-neutral contract and no-override lifecycle;
+  s4 owns no provider fake or provider-success lane. Delete the candidate-cleanup
+  false-green called out by Roborev. Reconcile the generic keep-moving `gate consume`
+  oracle separately: retain it in this branch only if exact local replay proves it is
+  required by s4's changed observable trajectory, otherwise remove it and report the
+  proper owning follow-up. Do not build a replacement harness.
+
+  Before any push, reproduce locally at the exact candidate tip with the current
+  checkout binary and skills under isolated HOME plus retained OAuth: focused
+  offline gate/Git/state/contract tests, Codex rejection and keep-moving cases,
+  Claude recorded-gate stop/guardrail cases, and the Pi recorded-gate case. Then run
+  full and race suites and obtain a fresh cumulative Roborev review. CI is permitted
+  only after all applicable local lanes pass and every material review finding is
+  resolved or explicitly returned to the Commander.
 
 ## Stage Report: ideation
 
