@@ -110,13 +110,9 @@ func readGoreleaserConfig(t *testing.T) string {
 	return string(data)
 }
 
-const (
-	releaseVersionStamp = "-X github.com/spacedock-dev/spacedock/internal/cli.Version={{ .Version }}"
-	releaseMarkerStamp  = "-X github.com/spacedock-dev/spacedock/internal/cli.releaseBuild=true"
-)
+const releaseVersionStamp = "-X github.com/spacedock-dev/spacedock/internal/cli.Version={{ .Version }}"
+const releaseMarkerStamp = "-X github.com/spacedock-dev/spacedock/internal/cli.releaseBuild=true"
 
-// validReleaseIdentityStamps parses builds by ID; comments or a stamp on the
-// other channel cannot satisfy the exact two-input guard.
 func validReleaseIdentityStamps(config string) bool {
 	var doc struct {
 		Builds []struct {
@@ -150,9 +146,6 @@ func TestGoreleaserBuildsStampReleaseIdentity(t *testing.T) {
 	}
 }
 
-// TestReleaseIdentityGuardRejectsChannelMarkerRemoval supplies two independent
-// parsed-config mutants: deleting the marker from only stable or only edge must
-// trip the exact build-ID guard.
 func TestReleaseIdentityGuardRejectsChannelMarkerRemoval(t *testing.T) {
 	config := readGoreleaserConfig(t)
 	needle := "      - " + releaseMarkerStamp + "\n"

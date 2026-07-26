@@ -3,9 +3,9 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,9 +50,8 @@ func TestDisplayVersionFallsBackToEmbedOnlyWhenUnstamped(t *testing.T) {
 	})
 }
 
-// TestUnmarkedProvenanceDoesNotChangeCompatibilityIdentity is AC-3's unit
-// matrix. Tag, describe, revision, and dirty candidates all emit the same bytes
-// and receive the same doctor verdict because none carries the exact marker.
+// TestUnmarkedProvenanceDoesNotChangeCompatibilityIdentity proves AC-3 across
+// tag, describe, revision, and dirty candidates.
 func TestUnmarkedProvenanceDoesNotChangeCompatibilityIdentity(t *testing.T) {
 	wantVersion := checkoutManifestVersion(t) + "+dev"
 	manifest := filepath.Join(repoRootForDevBuild(t), ".claude-plugin", "plugin.json")
@@ -67,8 +66,14 @@ func TestUnmarkedProvenanceDoesNotChangeCompatibilityIdentity(t *testing.T) {
 			if got := displayVersion(); got != wantVersion {
 				t.Errorf("displayVersion() = %q, want invariant %q", got, wantVersion)
 			}
-			if code := contract.RunDoctor(manifest, "claude", displayVersion(), false, io.Discard, io.Discard); code != 0 {
+			var doctor bytes.Buffer
+			if code := contract.RunDoctor(manifest, "claude", displayVersion(), false, &doctor, &doctor); code != 0 {
 				t.Errorf("doctor exit = %d, want 0", code)
+			}
+			wantDoctor := fmt.Sprintf("OK: spacedock binary %s and plugin %s are compatible.\n",
+				wantVersion, checkoutManifestVersion(t))
+			if got := doctor.String(); got != wantDoctor {
+				t.Errorf("doctor output = %q, want %q", got, wantDoctor)
 			}
 		})
 	}
@@ -81,11 +86,8 @@ func withBuildIdentity(t *testing.T, version, marker string) {
 	t.Cleanup(func() { Version, releaseBuild = origVersion, origMarker })
 }
 
-// TestSourceBuildCompatibilityIdentity is the AC-1/AC-2 real-binary proof. It
-// builds the same checkout three ways and observes both line 1 and doctor: a
-// copied future-minor git-describe stamp is inert without the release marker,
-// while the exact marked release identity remains load-bearing and incompatible
-// with this checkout's prior-minor manifest.
+// TestSourceBuildCompatibilityIdentity is the AC-1/AC-2 real-binary proof:
+// copied provenance is inert; an exact marked release remains load-bearing.
 func TestSourceBuildCompatibilityIdentity(t *testing.T) {
 	goBin, err := exec.LookPath("go")
 	if err != nil {
@@ -150,6 +152,15 @@ func TestSourceBuildCompatibilityIdentity(t *testing.T) {
 			}
 			if got := doctor.ProcessState.ExitCode(); got != tt.wantDoctorExit {
 				t.Errorf("doctor exit = %d, want %d\n%s", got, tt.wantDoctorExit, doctorOut)
+			}
+			wantDoctor := fmt.Sprintf("OK: spacedock binary %s and plugin %s are compatible.",
+				tt.wantVersion, manifestVersion)
+			if tt.wantDoctorExit != 0 {
+				wantDoctor = fmt.Sprintf("Spacedock version mismatch: binary %s, plugin %s.",
+					tt.wantVersion, manifestVersion)
+			}
+			if got := string(doctorOut); !strings.HasPrefix(got, wantDoctor) {
+				t.Errorf("doctor output = %q, want prefix %q", got, wantDoctor)
 			}
 		})
 	}
