@@ -41,8 +41,8 @@ gates:
           attempts:
             - id: gate-attempt:79-ideation-1
               briefing:
-                id: briefing:docs-dev:79:ideation:attempt-1:revision-2
-                digest: sha256:2c2d82e5a257abd17e5af9178284547db66cce58a162d9e32ce0f2300554206a
+                id: briefing:docs-dev:79:ideation:attempt-1:revision-3
+                digest: sha256:8bfc4bd1c2346c7d683bb031e197a1bce23b66dcf8e64676e90f0c134744f20d
                 digest-domain: canonical-bytes
                 room-ref: ./entity-session-claim-lease/review/ideation/briefing-1
 ---
