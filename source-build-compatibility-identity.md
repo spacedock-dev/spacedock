@@ -24,6 +24,19 @@ gates:
                 digest: sha256:3bca6f4b585c9cba9d631473d31ed38033ffd4c4dc3718f0c7c9518f2c567a74
                 digest-domain: canonical-bytes
                 room-ref: ./source-build-compatibility-identity/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:v218:backlog:1
+                briefing: briefing:docs-dev:v218:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T00:17:16.215865Z"
+                decision: approve
+                reason: Captain approved filing and proceeding; evidence shows plain source builds already use the checkout manifest while the git-describe stamp alone creates the false next-minor drift.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Prevent an ordinary source build from impersonating the automatic next-minor `pre0` release merely because that tag is the nearest Git ancestor.
