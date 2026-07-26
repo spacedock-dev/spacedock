@@ -1664,6 +1664,29 @@ including its two leading/trailing spaces and non-ASCII code points.
   only after all applicable local lanes pass and every material review finding is
   resolved or explicitly returned to the Commander.
 
+- Cycle 21: REJECTED — fresh validation cycle 25 and PR Runtime Live E2E;
+  surface 42 files and 5,225 changed LOC vs estimate 26 files and 1,904 changed
+  LOC (274%); AC unchanged.
+
+  Under the delegated sprint conn, the design-reset decision permits one bounded
+  correction by the existing s4 implementor and zero additional workers. Do not add
+  a protocol, lifecycle state, scheduler, adapter, runner, fake provider, generic
+  workflow machinery, or new CI trigger. First reproduce the exact Sonnet
+  no-authority breach, Sonnet round-recorder misattribution, and Opus missing
+  `gate record --round validation/1` locally at `b32d64b5` with the checkout binary
+  and skills under isolated HOME plus retained credentials.
+
+  Correct the Sonnet no-authority path only at the existing fail-closed skill/fixture
+  boundary: a nonzero prepare never licenses deletion or replacement of binary-owned
+  entity/room authority. Correct the stale Sonnet oracle only by attributing each
+  lifecycle event to its actual phase; do not weaken the assertion. For the Opus
+  command/evidence mismatch, patch s4 only if the exact local trace proves an s4
+  change owns it; otherwise return the evidence and true owner to the Commander.
+  Run focused local live cases, full/default/race/format/diff checks, and a fresh
+  cumulative Roborev review before any push. CI is permitted only after the relevant
+  local live paths are green. Any semantic expansion or second failed correction
+  returns to the Commander without another automatic round.
+
 ## Stage Report: ideation
 
 - DONE: Reproduce xb's arbitrary-Briefing-basename failure with the smallest valid prepared room, then identify the minimum post-em Spacedock seam that makes it pass.
