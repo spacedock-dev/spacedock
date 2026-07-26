@@ -2291,3 +2291,54 @@ authentication failed before scenario execution.
   `present-gate`, emitted the semantic review, and called `gate record` in that order.
   Later test-source reads occurred only after dispatch recovery and cannot supply the
   already-observed review.
+
+## Stage Report: implementation (cycle 17)
+
+- DONE: Declare the intended surface before editing.
+  The declaration named
+  `internal/ensigncycle/livescenario_adapter_live_test.go` and
+  `internal/ensigncycle/shared_keep_moving_test.go` at about `+105/-12`. The final
+  `+182/-14` diff stays within those two test files; paired host-result fixtures and
+  explicit negative controls account for the larger line count.
+- DONE: Diagnose both failures from exact-head Codex evidence.
+  Run `30182888034`, job `89742470187`, used head `8aaf96af`. Its gate-guardrail
+  trace completed `gate prepare recorded-gate-task`, committed the binding, presented
+  the review, and issued no decision, consume, or dispatch. Its keep-moving trace
+  recorded and consumed `approved-gate`, built all three implementation dispatches,
+  waited, read their durable reports, and finished them.
+- DONE: Grade the prepared no-authority hold.
+  `assertRecordedGateHoldLog` now requires one successful `gate prepare`, a later
+  successful entity-scoped `state commit`, and its `state-head`. It still rejects
+  decision, consume, and dispatch events after preparation.
+- DONE: Add gate-hold controls.
+  The focused table rejects absent, failed, duplicate, other-entity, and legacy
+  preparation; absent or failed commit; absent state head; and every forbidden
+  decision, consume, or dispatch.
+- DONE: Grade semantic approval consumption on both hosts.
+  Claude credits `gate consume approved-gate` only after its matching non-error tool
+  result. Codex requires a completed command with exit 0. Both retain legacy
+  `status --set approved-gate status=implementation` recognition.
+- DONE: Preserve the separate dispatch requirement.
+  Both host tables reject absent, other-entity, and failed consume events. Successful
+  consume without an approved-stage dispatch fails specifically on dispatch.
+- DONE: Replay the retained Codex artifact.
+  A temporary package-local replay fed the archived keep-moving JSONL and final
+  message into `assertCodexKeepMoving`; the exact run passed. The committed fixture
+  also pins its combined `record; commit; consume; commit` command shape.
+- SKIPPED: Change or reinterpret rejection-flow.
+  The same job's one-report failure came from the first validation overwriting the
+  seeded original report. Cycle 17 changes no rejection-flow file, oracle, prompt, or
+  semantic; that separate model run requires a rerun.
+- DONE: Run focused and repository verification.
+  The two new regressions first failed on the stale oracles, then passed.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and
+  `git diff --check` passed on the final tree.
+- DONE: Push the bounded correction.
+  Local, remote, and PR #570 head match `070fb828`; only the two declared test files
+  changed.
+
+### Summary
+
+Commit `070fb828` aligns two runtime-live test oracles with the recorded gate lifecycle.
+The correction changes test recognition and controls only; product, skill, prompt, gate,
+and rejection-flow semantics remain unchanged.
