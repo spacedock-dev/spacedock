@@ -204,3 +204,18 @@ Cycle 2 incorporates the binding staff ruling without adding product implementat
 ### Summary
 
 Cycle 3 corrects only the proof matrix. All accepted cycle-2 completion, recovery, guard, and first-entry-deferral semantics remain unchanged, and the full README path-to-lane gate—not a Codex-only focused run—now controls implementation completion.
+
+## Stage Report: ideation (cycle 4)
+
+- DONE: AC-1 — preserve the strict two-cycle report order and rejection oracle.
+  The existing unchanged `assertRejectionFlow`/`TestRejectionFlowNegativeSingleCycle` oracle must observe original implementation, first REJECTED validation, rework implementation, and second PASSED validation in that order; omitting the rework report reproduces run `30197794474` and fails.
+- DONE: AC-2 — self-project the entered current stage, guard every away mutation byte-clean, and require the live completion signal.
+  Before durable completion proof, boot and `status --next` expose `current=<target>,next=<target>`; successor, backward, terminal, chained, and `--force` away mutations leave bytes unchanged, while live advancement additionally requires the worker spawn, host completion signal, and FO-verified committed report.
+- DONE: AC-3 — recover cold from a committed semantically complete report and prove both boot sides.
+  Before that report, cold boot keeps the target self-projected; after a path-clean committed report satisfies the reconstructed checklist and summary, cold boot exposes the ordinary successor without a duplicate target spawn, while heading-only, partial, failed, wrong-stage, stale, dirty, or checklist-incomplete reports remain vetoed.
+- DONE: AC-4 — add no scheduler state and require every applicable registered host lane.
+  The design adds no scheduler, ledger, lease, epoch, schema/frontmatter, host branch, or persisted completion signal; because both FO reference edits are shared, completion requires offline plus both Claude model legs, Codex, and Pi under the existing registered runners and documented Pi gap.
+
+### Summary
+
+Cycle 4 is an evidence-only addendum mapping each acceptance criterion to its decisive oracle. It changes no design, checklist, product file, or frontmatter and preserves the accepted first-entry-only scope.
