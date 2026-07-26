@@ -90,7 +90,7 @@ func runCodexRecordedGateLifecycleScenario(t *testing.T, runner codexLiveRunner,
 	fixture := writePreparedRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
-	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog, fixture.stateRoot)
 	result, err := runner.withStubPATH(shimDir).run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
@@ -201,7 +201,7 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 	fixture := writeGateWorkflow(t, workflowRoot)
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
-	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog, fixture.stateRoot)
 
 	result, err := runner.withStubPATH(shimDir).run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
 	if err != nil {

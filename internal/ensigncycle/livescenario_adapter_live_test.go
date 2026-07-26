@@ -98,7 +98,7 @@ func TestLivePrimitiveRunsAgainstClaudeAdapter(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 	dir := t.TempDir()
 	commandLog := filepath.Join(dir, "evidence", "command.log")
-	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog, filepath.Join(dir, ".spacedock-state"))
 	runner = withRecordedGateShellShim(t, runner, shimDir).(claudeLiveRunner)
 	adapter := claudeRunnerAdapter{t: t, runner: runner}
 

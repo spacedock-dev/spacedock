@@ -182,7 +182,7 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 	fixture := writePreparedRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
-	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog, fixture.stateRoot)
 	runner = withRecordedGateShellShim(t, runner, shimDir)
 	result := runner.run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
 	writeFile(t, filepath.Join(result.artifactDir, "command.log"), readFile(t, commandLog))
@@ -292,7 +292,7 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	}
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
-	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
+	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog, fixture.stateRoot)
 	runner = withRecordedGateShellShim(t, runner, shimDir)
 
 	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))

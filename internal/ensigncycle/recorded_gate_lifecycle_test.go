@@ -200,7 +200,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 
 	fixture := writePreparedRecordedGateFixture(t)
 	commandLog := filepath.Join(fixture.root, "command.log")
-	binary := filepath.Join(writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog), "spacedock")
+	binary := filepath.Join(writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog, fixture.stateRoot), "spacedock")
 	before := readFile(t, fixture.entity)
 	var commands []recordedGateCommand
 	run := func(event string, args ...string) recordedGateCommand {
@@ -707,23 +707,13 @@ func recordedGatePrompt(workflowRoot string) string {
 	return fmt.Sprintf("Use $spacedock:first-officer for this whole run.\n\nWorkflow directory: %s\nEngage only `recorded-gate-task` under this delegated conn: %s\nDo not pass `--host` to `dispatch build`.\nUse the already-committed `.spacedock-state/recorded-gate-task/selected/gate-review.md` Artifact and both already-committed References, `.spacedock-state/recorded-gate-task/selected/entity-snapshot.md` and `recorder-contract.md`; do not replace or regenerate them. Prepare the recorder-ready validation room, approve it, and continue until the handoff worker records %s in durable state, then stop.", workflowRoot, recordedGateDirective, recordedGateDispatchMarker)
 }
 
-func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {
+func writeRecordedGateLoggingShim(t *testing.T, binary, logPath, stateRoot string) string {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(logPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	stateRoot := filepath.Dir(logPath)
-	for {
-		candidate := filepath.Join(stateRoot, ".spacedock-state")
-		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-			stateRoot = candidate
-			break
-		}
-		parent := filepath.Dir(stateRoot)
-		if parent == stateRoot {
-			t.Fatalf("no .spacedock-state checkout above command log %s", logPath)
-		}
-		stateRoot = parent
+	if !filepath.IsAbs(stateRoot) {
+		t.Fatalf("recorded gate logging shim state root must be absolute: %s", stateRoot)
 	}
 	dir := t.TempDir()
 	shim := filepath.Join(dir, "spacedock")
@@ -736,9 +726,11 @@ func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {
 }
 
 func TestRecordedGateLoggingShimEmitsStateHeadOutsideWorkflowCWD(t *testing.T) {
-	fixture := writePreparedRecordedGateFixture(t)
-	logPath := filepath.Join(fixture.root, "command.log")
-	shim := filepath.Join(writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), logPath), "spacedock")
+	root := t.TempDir()
+	stateRoot := filepath.Join(root, ".spacedock-state")
+	logPath := filepath.Join(root, "command.log")
+	shim := filepath.Join(writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), logPath, stateRoot), "spacedock")
+	fixture := writePreparedRecordedGateFixtureAt(t, root)
 	command := exec.Command("/bin/zsh", "-lc", fmt.Sprintf(
 		`WD=%q; %q state commit --workflow-dir "$WD" recorded-gate-task; code=$?; echo "EXIT:$code"; exit "$code"`,
 		fixture.root, shim,

@@ -30,7 +30,7 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
-	shimDir := writeRecordedGateLoggingShim(t, binary, commandLog)
+	shimDir := writeRecordedGateLoggingShim(t, binary, commandLog, fixture.stateRoot)
 	env := piLiveEnv(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot)
 	env = withPATHPrefix(env, shimDir)
 	env = withRecordedGateEnv(env, "SPACEDOCK_BIN", filepath.Join(shimDir, "spacedock"))
