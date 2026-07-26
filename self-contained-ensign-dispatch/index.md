@@ -140,12 +140,30 @@ not rewrite arbitrary stage prose.
    `gate record --round` does the same. Fresh and reused workers obtain the binding
    from the current dispatch file, so an advance built by a newer A supersedes the
    previous assignment's launcher path.
+7. Extend the two existing transcript consumers in place. In
+   `internal/journeymetrics/readadoption.go`, make the existing status-read command
+   recognizer accept an absolute pinned executable token, including shell-quoted paths
+   with spaces and names such as `/tmp/spacedock-s4-*`, while preserving its
+   non-invocation controls. In
+   `internal/ensigncycle/shared_round_recording_test.go`, thread the live fixture's
+   already-known A path into the existing Claude/Codex transcript extractors and count
+   the round invocation only when the observed executable is exactly A. Keep the
+   durable round oracle's existing advisory Resolution, unchanged status, and absent
+   gate/application assertions. This extends current observers; it adds no event,
+   artifact field, observer, or launcher protocol.
 
 The exact command identity is a resolved path, not a content digest, copied binary, or
 lease. If that file disappears, a worker helper fails loudly and reports the path;
 there is no fallback to B. Replacing bytes in place at the same path belongs to the
 separate v21 source-build identity task. Break-glass manual dispatch has no successful
 builder identity to pin and remains outside this change.
+
+**Deferred risk:** a pinned path can later disappear or be replaced in place. Current
+supported release and source-build launch paths are durable executable files for the
+assignment lifetime, and the observed `/tmp/spacedock-s4-*` builder remains present
+for its run. Do not add copying, hashing, shortening, a lease, or recovery here.
+Promote this risk only if an ephemeral/mutable launcher path becomes supported or is
+observed changing during a dispatched assignment.
 
 ## Acceptance criteria
 
@@ -161,12 +179,16 @@ fetch command makes it fail.
 
 **AC-2** Fresh and reuse-advance dispatch files are self-contained for all context the
 builder already owns: stage subsection, inherited/replaced/cleared declared sections,
-and conditional standing-teammate routing. Their outer spawn/reuse prompts remain
-file pointers no longer than the existing 300-byte ceiling.
+and conditional standing-teammate routing. Their outer spawn/reuse prompts retain the
+existing O(`dispatch_file_path`) file-pointer shape. The supported dev-workflow fresh
+and advance fixtures each remain at or below 300 bytes; this is a fixture measurement,
+not a universal name/path invariant.
 
 Verified by fresh/advance golden and behavior fixtures with independent sentinels in
 each selected section and standing mod. Reordering/dropping a section, broadening the
-standing condition, or inlining the body into `prompt` makes them fail.
+standing condition, or inlining the body into `prompt` makes them fail. The existing
+legal long-name fixtures must continue to build without shortening or a new
+length-rejection branch.
 
 **AC-3** Every successful generated assignment carries A's shell-safe resolved
 absolute executable path, and a retained ensign helper (`status --read` and the dev
@@ -178,7 +200,20 @@ space, executing the two representative helper probes under the B environment, a
 asserting A-only output/on-disk state plus a zero-entry B log. Replacing the literal
 path with `${SPACEDOCK_BIN:-spacedock}` or bare `spacedock` makes it fail.
 
-**AC-4** Workflow-control authority remains unchanged: workers can read entities,
+**AC-4** Existing journey-metrics and correction-round observers recognize arbitrary
+artifact-pinned launcher paths without relaxing identity or invocation evidence:
+`status --read` counts for unquoted `/tmp/spacedock-s4-*` and shell-quoted
+space-bearing A paths, while a recorded round counts only when the transcript's
+launcher equals the known fixture A.
+
+Verified by positive/negative table cases in
+`internal/journeymetrics/readadoption_test.go` and
+`internal/ensigncycle/shared_round_recording_test.go`, plus the current durable round
+oracle. A quoted A mis-tokenization, a B invocation, a no-invocation transcript, a
+non-advisory Resolution, or any status/gate/application mutation makes the evidence
+fail.
+
+**AC-5** Workflow-control authority remains unchanged: workers can read entities,
 append reports, commit their assigned paths, and publish advisory rounds; only the
 First Officer applies gates, transitions status, runs state scheduling, or merges.
 Product-under-test runs use an explicit worktree binary and cannot silently become the
@@ -186,8 +221,10 @@ workflow launcher.
 
 Verified by the existing gate-round, dispatch, and host live scenarios plus a
 two-path test that gives the worktree product binary a third identity C and observes A
-for workflow helpers and C only for the explicit product test. Any inferred
-ensign-side gate application or use of C for `status --read` fails the scenario.
+for workflow helpers and C only for the explicit product test. The round oracle
+continues to prove advisory-only output with no status/application side effects. Any
+inferred ensign-side gate application or use of C for `status --read` fails the
+scenario.
 
 ## Test plan
 
@@ -200,8 +237,26 @@ runtime wrapper. Estimated focused cost: under 10 seconds and moderate fixture w
 Update stage-discipline, advance-content, standing, hazard/quoting, host, and output
 shape tests. Preserve direct `dispatch show-stage-def` and `show-standing` tests because
 the commands remain useful inspection surfaces; only build-time bootstrap use changes.
-Regenerate the affected build goldens and assert `fetch_commands: []` with no fetch
-heading in the file.
+Regenerate **exactly the 26 affected `build-*` goldens** and assert
+`fetch_commands: []` with no fetch heading in the file. Preserve every meaningful
+single/split-root, flat/folder, worktree/non-worktree, team/bare, host, model,
+scope/feedback, quoting, and advance cross-product row; do not reduce the golden count
+to avoid fixture churn.
+
+Add positive and negative cases to the existing journey-metrics matcher for an
+unquoted `/tmp/spacedock-s4-*`, a shell-quoted A path containing spaces, an absolute
+non-invocation/other subcommand, and quoted text passed to another command. Exercise
+both Claude and Codex transcript shapes so a correct direct command counts once and a
+lookalike does not.
+
+Change the existing shared round invocation extractors to take known fixture A and
+compare the transcript's parsed executable to it. Positive cases cover direct,
+multiline, and shell-quoted space-bearing A; negative cases run the otherwise-identical
+round command through B and omit invocation entirely. Reuse
+`assertRejectionRecordedRound` to prove the retained room is canonical, Resolutions
+remain advisory, lifecycle sentinels survive, status stays unchanged, and no
+gate/application state appears. Do not add a second transcript observer or event
+format.
 
 Run `go test ./internal/dispatch ./internal/cli`, `go test ./skills/integration`,
 `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`. Because the
@@ -212,7 +267,9 @@ not merely grep instruction prose.
 Before merge, run the dev workflow's detached adversarial audit in a throwaway
 checkout. Perturbations reintroduce a worker fetch, swap the pinned literal for the
 environment fallback, drop the standing render, and route a workflow helper through
-the explicit product-test C; each corresponding test must turn red.
+the explicit product-test C. Further perturbations restore whitespace-only tokenization
+or let the round observer accept B in place of known A. Each corresponding test must
+turn red.
 
 ## User-visible documentation diff
 
@@ -254,19 +311,40 @@ launcher.” In `docs/dev/README.md`, replace the feedback-round
 `${SPACEDOCK_BIN:-spacedock} gate record` prefix with “the dispatch-pinned absolute
 workflow launcher” and retain the existing round arguments and no-application rule.
 
+In both `docs/runtime-support.md` and
+`docs/site/contributing/adding-a-runtime.md`, replace the current propagation
+paragraph:
+
+> `spacedock claude` and `spacedock codex` attach `SPACEDOCK_BIN` to the process they
+> exec. ... If a wrapper or runtime strips `SPACEDOCK_BIN`, the skill contract's
+> `${SPACEDOCK_BIN:-spacedock}` convention degrades to PATH.
+
+with:
+
+> The First Officer continues to invoke Spacedock workflow control through
+> `${SPACEDOCK_BIN:-spacedock}`; the front door propagates that value through supported
+> wrappers. A successful `dispatch build` separately writes its own resolved absolute
+> launcher into the dispatch artifact, and a dispatched ensign uses that literal path
+> for ensign-owned helpers. Host adapters do not transport an environment value into
+> workers, and an explicit worktree binary remains only the product under test.
+
 ## Expected surface
 
-Expected hand-authored surface is about **18 files / 450-650 changed LOC**:
+Expected hand-authored surface is about **27 files / 650-900 changed LOC**:
 `internal/cli/cli.go`; `internal/dispatch/{dispatch.go,build.go}`; deletion of
-`launcher_command.go`; 8-10 focused dispatch/CLI test files (including rewriting the
-old launcher-drift tests); and the five instruction/doc files named above. Expect
-**17 build golden files / 250-450 generated changed lines** to replace fetch blocks
-with resolved context and the normalized launcher.
+`launcher_command.go`; 10-12 focused dispatch/CLI test and harness files; the two
+journey-metrics files; the shared round oracle plus 2-3 existing Claude/Codex live
+runner plumbing files that already know fixture A; and the seven instruction/doc files
+named above. Expect **exactly 26 affected build golden files / 450-750 generated
+changed lines** to replace fetch blocks with resolved context and the normalized
+launcher.
 
-Tolerance is ±5 non-golden files, ±200 hand-authored changed LOC, and ±5 golden
-fixtures. Any new command, package, JSON field/schema version, caller flag,
-environment propagation, binary copy/digest/lease, plugin-private wrapper, or outer
-prompt above 300 bytes requires a design reset rather than consuming tolerance.
+Tolerance is ±5 non-golden files and +250/−150 hand-authored changed LOC. The affected
+golden count is fixed at 26, not a tolerance band. Any new command, package, observer,
+event/output field or schema version, caller flag, environment propagation,
+binary copy/digest/lease, plugin-private wrapper, universal pointer-length guard,
+shortening/rejection mechanism, or loss of a meaningful cross-product fixture requires
+a design reset rather than consuming tolerance.
 
 ## Boundary
 
@@ -286,3 +364,20 @@ walking skeleton and pre-release wait for this launcher-consistent artifact.
 ### Summary
 
 Ideation reproduced the launcher-drift failure for both dispatch lifecycles and traced why fetch-on-demand outlived its original full-prompt cost model. The approved direction keeps file-pointer economics, snapshots builder-selected context, and binds legitimate worker helpers to the builder's resolved absolute executable without adding transport or launcher machinery.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: MATERIAL — add the existing read-adoption and shared round-recording consumers, with positive and negative tests, to the launcher-pinning design.
+  AC-4 and the test plan now cover `/tmp/spacedock-s4-*`, quoted space-bearing A, lookalikes, B, and no-invocation controls without a new observer.
+- DONE: NEEDS DECISION — keep pointer size O(path) and limit the ≤300-byte claim to supported dev-workflow fresh and advance fixtures.
+  AC-2 now preserves legal long names and explicitly forbids a universal ceiling, shortening, or rejection mechanism.
+- DONE: Rebaseline all affected build goldens to exactly 26 without cutting meaningful cross-product coverage.
+  The test plan names the retained dimensions and the expected surface makes 26 a fixed count rather than a tolerance band.
+- DONE: Add runtime-support documentation separating First Officer and dispatched-ensign launcher rules.
+  Concrete diffs for both runtime-support guides keep FO `${SPACEDOCK_BIN:-spacedock}` while ensigns use the artifact-pinned literal.
+- DONE: Keep path-not-content launcher identity as a deferred risk with an explicit promotion trigger.
+  The design defers copying/hashing/leases unless ephemeral or mutable paths become supported or are observed changing in-flight.
+
+### Summary
+
+Cycle 2 closes the two observer blind spots and binds the round proof to known fixture A while preserving advisory-only durable-state checks. It also narrows the pointer measurement, restores the full 26-golden baseline, adds both runtime docs, and recalculates the surface without broadening the launcher mechanism.
