@@ -66,8 +66,10 @@ The claim is stored as two flat scalar frontmatter fields on the claimed entity 
 
 ```yaml
 claim-session: claude:1db707f2-…        # <host>:<value> — host-prefixed session identity
-claim-at: 2026-07-26T04:12:00Z          # acquisition/renewal time, ISO 8601 UTC
+claim-expiry: 2026-07-27T04:12:00Z      # owner-renewed lease expiry, ISO 8601 UTC
 ```
+
+Captain annotation (2026-07-26) on this record, both folded in below: the storage shape is agreed with no stage granularity — the claim is per entity, never per (entity, stage) — and the timestamp is an expiry the owner is responsible for renewing, not an acquisition time a reader ages against a threshold.
 
 Alternatives considered, and why each is insufficient:
 
@@ -86,8 +88,8 @@ One helper serializes the current session identity from the host env the binary 
 Acquisition lives under `state`, beside `init|commit|ready`, because it is a state-checkout commit-and-publish verb, not a field edit. Protocol:
 
 1. Resolve the entity in active scope (archived refuses, as mutation resolution already does). Refuse if claim fields are duplicated (fail closed on split-brain; see spike).
-2. `statesync.Pull` to current, then read the claim. Claimed by another session → refuse, naming owner, age, stale marker, and the takeover invocation. Never auto-steal, stale or not. Claimed by self → renew `claim-at`.
-3. Write `claim-session`/`claim-at` at the canonical frontmatter position (fixed placement is load-bearing — see spike), path-scoped commit recording the commit SHA.
+2. `statesync.Pull` to current, then read the claim. Claimed by another session → refuse, naming owner, expiry state, and the takeover invocation — a non-owner's re-run is exactly this refusal, expired or not: an expired claim is still a claim, and never auto-steals. Claimed by self → renew: set `claim-expiry` to now plus the lease duration (an owner may renew past its own lapsed expiry — identity authorizes, not lease liveness).
+3. Write `claim-session`/`claim-expiry` (acquisition sets the same now-plus-lease expiry) at the canonical frontmatter position (fixed placement is load-bearing — see spike), path-scoped commit recording the commit SHA.
 4. `statesync.Publish`. `pushed`/`no-op` → acquired. A halted outcome (the publisher already detects the conflicted rebase, captures evidence, and aborts) means a peer claimed concurrently: verify HEAD is exactly the recorded claim commit, drop it (`reset --hard HEAD~1`; fail closed if HEAD moved), `Pull`, re-read, and exit non-zero with `claim lost: <slug> owned by <winner>`.
 
 `--release` clears the fields (owner only). `--take --from <current-owner>` is the captain-authorized takeover: `--from` must equal the recorded owner exactly — a command-level compare-and-swap proving the captain saw the claim being overridden — then writes the new claim through the same commit-and-publish path. Transfer-to-nobody is `--take --from <owner> --release`.
@@ -98,9 +100,9 @@ Sprint/workstream claiming stays a policy loop over this per-entity verb, captai
 
 ### Enforcement point 1: boot surfaces peer claims
 
-`status --boot` (and its `--json` form) gains a CLAIMS section listing every active entity claimed by a session other than the booting one: slug, owner identity, age, and a STALE marker past the threshold; plus a count of claims held by the booting session itself. `none` when quiet. This is precisely the disclosure whose absence let the breach FO act blind: the fixture reproducing that boot now shows the live peer. Alternative considered: leave the FO to grep frontmatter — insufficient, because the breach demonstrates a cold boot does not go looking; disclosure must ride the boot record the FO already reads.
+`status --boot` (and its `--json` form) gains a CLAIMS section listing every active entity claimed by a session other than the booting one: slug, owner identity, and expiry state — `expires in <duration>` for a live claim, `EXPIRED <duration> ago` past it; plus a count of claims held by the booting session itself. `none` when quiet. This is precisely the disclosure whose absence let the breach FO act blind: the fixture reproducing that boot now shows the live peer. Alternative considered: leave the FO to grep frontmatter — insufficient, because the breach demonstrates a cold boot does not go looking; disclosure must ride the boot record the FO already reads.
 
-Staleness is display-only: a fixed 24h default threshold, computed from `claim-at` at read time. No TTL field, no background renewal, no config knob until a real drive shows the constant wrong. Renewal is the owner re-running `state claim` (or any explicit re-claim during handoff); an auto-renew on every owner mutation was considered and dropped — it adds a write to every mutation to serve a display hint.
+The lease inverts responsibility relative to an acquisition-time-plus-threshold read: the owner must renew `claim-expiry` (re-run `state claim`) before it lapses, so it carries a liveness obligation the old shape did not — and that obligation is the main thing the expiry buys. A session that dies without releasing simply stops renewing: its claim crosses `claim-expiry`, boot and refusals render EXPIRED, and the captain authorizes takeover from there. An alive owner on a legitimately long drive renews and never false-trips the marker, where an acquisition-age heuristic would have. Readers compare now against the stored expiry — display and message rendering only, never permission: expiry MARKS, it does not free. The lease duration is a fixed 24h constant on acquire and renew; no TTL flag, no background renewal process, no config knob until a real drive shows the constant wrong. Auto-renew on every owner mutation was considered and dropped — it adds a write to every mutation to serve what renewal-by-verb already covers.
 
 ### Enforcement point 2: the state-mutation seam refuses a non-owner
 
@@ -110,7 +112,7 @@ One guard function (claim parse + identity compare + owner-naming refusal) is ca
 - `state commit <slug>` target resolution (internal/cli/state_sync.go) — the breach's actual vector: a non-owner committing and publishing a peer's in-flight entity state.
 - The `gate record`/`gate consume` doors in internal/cli/cli.go (both mutate the entity; `gate validate`/`eligibility` are reads and stay unguarded).
 
-The refusal names the current owner, claim age, staleness, and the exact takeover invocation. The owning session and unclaimed entities pass unchanged — the guard cannot over-fire on today's flows. Known residual, accepted: raw `git` in the state checkout bypasses any binary guard (ensign stage-report commits use it by design, under the dispatching FO's authority). The claim defends rule-following sessions against accidental collision; the contract already routes FO state writes through the binary.
+The refusal names the current owner, the expiry state, and the exact takeover invocation. The owning session and unclaimed entities pass unchanged — the guard cannot over-fire on today's flows. Known residual, accepted: raw `git` in the state checkout bypasses any binary guard (ensign stage-report commits use it by design, under the dispatching FO's authority). The claim defends rule-following sessions against accidental collision; the contract already routes FO state writes through the binary.
 
 ## Spike: two-writer claim CAS over real Git (2026-07-26)
 
@@ -128,6 +130,7 @@ Spike artifacts were throwaway; the scenario-1 and scenario-2 shapes seed the im
 - Captain-authorized active-scope semantics within a single session — that is `sy`.
 - A merge claim serializing writes to product `main`. Different lifetime and blast radius; keep it separate and note `mzk` as adjacent.
 - Intra-session worker coordination, which `SendMessage` and the roster already cover.
+- Stage-level claim granularity. Captain ruling on this design record (2026-07-26): the claim is per entity, never per (entity, stage). Do not reintroduce a per-stage claim as an "obvious extension" — a stage handoff within one session needs no claim, and a cross-session handoff is a release/acquire (or captain-authorized takeover) of the whole entity.
 - Filtering `--next`/dispatchable output by peer claims, auto-claim at dispatch, or any third enforcement point — deferred until boot disclosure plus mutation refusal prove insufficient, per the two-point ruling.
 - Guarding raw-git writes to the state checkout; the binary can only guard its own doors.
 
@@ -135,7 +138,7 @@ Spike artifacts were throwaway; the scenario-1 and scenario-2 shapes seed the im
 
 Baseline: 14 files, about 950 changed lines (+870/−80), dominated by real-Git fixtures.
 
-- `internal/status/claim.go` (new, ~140 LOC): claim field parse with duplicate fail-closed, session identity serialization, guard evaluation, staleness, refusal rendering.
+- `internal/status/claim.go` (new, ~140 LOC): claim field parse with duplicate fail-closed, session identity serialization, guard evaluation, expiry rendering, refusal rendering.
 - `internal/status/native_runner.go` (~10): guard call in `resolveMutationEntity`.
 - `internal/status/handlers.go` (~10): `--set` refusal of reserved `claim-*` fields.
 - `internal/status/boot.go` (~35): CLAIMS section in prose and JSON boot.
@@ -143,7 +146,7 @@ Baseline: 14 files, about 950 changed lines (+870/−80), dominated by real-Git 
 - `internal/cli/state_sync.go` (~15): guard at `state commit` target resolution.
 - `internal/cli/cli.go` (~15): verb wiring; guard at `gate record`/`consume`.
 - `internal/cli/help.go` (~10): `state init|commit|ready|claim`.
-- `docs/schema/entity.mdschema.yml` (~15): `claim-session`/`claim-at` optional canonical fields.
+- `docs/schema/entity.mdschema.yml` (~15): `claim-session`/`claim-expiry` optional canonical fields.
 - `internal/cli/state_claim_test.go` (new, ~300) and `internal/status/claim_guard_test.go` (new, ~160), plus ~30 lines added to existing boot JSON tests.
 - Docs (~45 total): `docs/site/reference/command-reference.md`, `docs/dev/README.md` ownership bullet, FO contract text in `skills/first-officer/references/` (claim-before-drive policy, captain-authorized takeover).
 
@@ -154,20 +157,20 @@ Tolerance: 850–1,150 changed lines across at most 16 files; up to 18 files / 1
 **AC-1 (VALUE) — A non-owning session's mutation of a claimed entity fails, and neither the entity nor origin moves.**
 Verified by: a two-clone real-Git fixture where session A claims an entity and a distinct injected session identity attempts each mutation door — `status --set status=…`, `state commit <slug>`, `merge guard <slug> --verdict passed`, `gate consume` — asserting non-zero exit, byte-identical entity file, and unmoved origin ref per door; the `state commit` leg reproduces the 2026-07-25 breach shape. Baseline that can move the wrong way: the same legs against the pre-change binary count 4 successful non-owner mutations — the deliverable drives that count to 0, and the fixture also proves the guard does not over-fire (the owner's identical mutation and any session's mutation of an unclaimed entity still exit 0). Falsified by: deleting the guard call at any single door flips that door's leg back to success.
 
-**AC-2 — The refusal names the current owner and the supported takeover path.**
-Verified by: the AC-1 legs additionally assert stderr carries the owner's host-prefixed session identity, the claim age (with STALE past threshold), and the exact `state claim <slug> --take --from <owner>` invocation. Falsified by: dropping the owner or the takeover hint from the message.
+**AC-2 — The refusal names the current owner, the claim's expiry state, and the supported takeover path.**
+Verified by: the AC-1 legs additionally assert stderr carries the owner's host-prefixed session identity, the expiry state rendered exactly as `expires in <duration>` for a live claim or `EXPIRED <duration> ago` for a lapsed one, and the exact `state claim <slug> --take --from <owner>` invocation. Falsified by: dropping the owner, the expiry rendering, or the takeover hint from the message.
 
 **AC-3 — Concurrent acquisition of one unclaimed entity by two sessions yields exactly one durable owner.**
 Verified by: a real two-clone race fixture in the spike's scenario-1 shape driving the shipped `state claim` verb — the winner exits 0; the loser exits non-zero naming the winner; the loser's checkout ends clean with its local claim commit gone; origin history contains exactly one claim commit and the entity exactly one `claim-session` line. Falsified by: skipping the lost-race rollback (loser keeps a stray claim commit) or the conflict handling (split-brain reaches origin).
 
 **AC-4 — A cold boot in a checkout with peer-claimed entities surfaces each peer claim.**
-Verified by: a fixture reproducing the breach's boot blindness — entity claimed by session A, boot run under session B — asserting the CLAIMS section (prose and `--json`) names the slug, A's identity, age, and stale marker; a boot with no peer claims shows none. Falsified by: removing the claims scan from `gatherBoot`.
+Verified by: a fixture reproducing the breach's boot blindness — entity claimed by session A, boot run under session B — asserting the CLAIMS section (prose and `--json`) names the slug, A's identity, and the expiry state, covering both a live and an expired peer claim; a boot with no peer claims shows none. Falsified by: removing the claims scan from `gatherBoot`.
 
-**AC-5 — A stale claim is marked stale wherever it surfaces and is never auto-stolen.**
-Verified by: a fixture with `claim-at` older than the threshold asserting boot and the refusal message both carry STALE while the non-owner's mutation still exits non-zero and plain `state claim` (without `--take`) is still refused. Falsified by: letting staleness downgrade the refusal or permit takeover-free acquisition.
+**AC-5 — An expired claim is marked EXPIRED wherever it surfaces and is never auto-stolen.**
+Verified by: a fixture with `claim-expiry` in the past asserting boot and the refusal message render EXPIRED while the non-owner's mutation still exits non-zero and plain `state claim` (without `--take`) is still refused — this leg exists to fail if anyone implements "expired means free". A companion leg proves the owner's own renewal past its lapsed expiry succeeds (identity authorizes, not lease liveness). Falsified by: expiry downgrading the refusal to a warning, permitting takeover-free acquisition of an expired claim, or refusing the owner's late renewal.
 
 **AC-6 — Ownership transfer is explicit, per entity, and compare-and-swapped on the named owner.**
-Verified by: fixture legs where `--take --from <wrong-or-stale-value>` exits non-zero and changes nothing; `--take --from <current-owner>` succeeds; afterwards the previous owner's mutation is refused (transfer is real, not cosmetic); owner `--release` clears the claim and a non-owner `--release` is refused. Falsified by: ignoring a `--from` mismatch.
+Verified by: fixture legs where `--take --from <wrong-or-outdated-value>` exits non-zero and changes nothing; `--take --from <current-owner>` succeeds; afterwards the previous owner's mutation is refused (transfer is real, not cosmetic); owner `--release` clears the claim and a non-owner `--release` is refused. Falsified by: ignoring a `--from` mismatch.
 
 **AC-7 — Claim fields are binary-managed: direct `--set` writes are refused and duplicated claim fields fail closed.**
 Verified by: `status --set claim-session=x` exits non-zero leaving the file byte-identical; an entity seeded with the spike's split-brain double `claim-session` makes the guard and `state claim` refuse rather than silently pick a line. Serves AC-1/AC-3 integrity — without it the CAS and guard can be bypassed or silently mis-read. Falsified by: allowing the `--set` or resolving duplicates last-key-wins.
@@ -177,17 +180,17 @@ Verified by: `status --set claim-session=x` exits non-zero leaving the file byte
 - Reuse the existing two-clone real-Git harness from `internal/cli` (`twoHostStateWorkflow` and friends, proven by `rd`); no second Git harness. Session identities are injected per leg via the host env markers (`t.Setenv` of `CLAUDE_CODE_SESSION_ID` / `CODEX_THREAD_ID` / `PI_CODING_AGENT_DIR`), which is also the cross-host coverage.
 - One table-driven door test for AC-1/AC-2: four doors × {owner, non-owner, no-identity, unclaimed}, asserting exit code, entity bytes, origin ref, and refusal text fields.
 - The AC-3 race leg interleaves deterministically in the spike's shape (B commits locally, A publishes, B publishes and loses) — no scheduler-dependent concurrency needed for the core claim; one additional `-race`-run smoke exercises two goroutines racing the verb for good measure.
-- Boot claims: fixture with peer, own, stale, and absent claims; decode `--json` with `json.Decoder` and assert the prose section, extending the existing boot JSON tests.
+- Boot claims: fixture with peer, own, expired, and absent claims; decode `--json` with `json.Decoder` and assert the prose section, extending the existing boot JSON tests.
 - AC-7 legs seed the duplicate-field file verbatim from spike scenario 2.
 - Cost: moderate — all fixture/CLI level, no live workflow run needed to prove the behavior. `gofmt -w ./cmd ./internal`, focused packages, then `go test ./...` and `go test ./... -race`.
 - This diff touches the status mutation and guard paths (a named high-stakes surface): run the detached adversarial audit on a throwaway checkout; the canonical adversarial edit removes the guard call at one door and must turn that door's AC-1 leg red. FO contract text under `skills/**/references/**` changes, so the required host live lanes per the diff-to-lane policy run green before merge.
 
 ## Documentation diff
 
-- `docs/dev/README.md` Sprints bullet (line 47), before: "Until an entity carries a machine-readable owner, ownership is coordinated out-of-band (the captain / a handoff); the durable per-entity owner signal is the graduation trigger tracked by `79` — `xp` covers only the FO/Commander message channel, not mutation authority." After: "An actively driven entity carries a machine-readable owner: `spacedock state claim <slug>` records the driving session in `claim-session`/`claim-at`; boot surfaces peer claims, and the binary refuses a non-owner's mutation, naming the owner. Takeover is captain-authorized and per entity (`state claim <slug> --take --from <owner>`); a stale claim is marked, never auto-stolen. `xp` covers only the FO/Commander message channel."
-- `docs/site/reference/command-reference.md`: new `state claim` entry documenting acquire/renew (owner re-run), `--release`, `--take --from <owner>`, the lost-race non-zero exit naming the winner, and the reserved `claim-*` field refusal under `status --set`.
+- `docs/dev/README.md` Sprints bullet (line 47), before: "Until an entity carries a machine-readable owner, ownership is coordinated out-of-band (the captain / a handoff); the durable per-entity owner signal is the graduation trigger tracked by `79` — `xp` covers only the FO/Commander message channel, not mutation authority." After: "An actively driven entity carries a machine-readable owner: `spacedock state claim <slug>` records the driving session in `claim-session`/`claim-expiry`, a lease the owner renews before it lapses; boot surfaces peer claims, and the binary refuses a non-owner's mutation, naming the owner. Takeover is captain-authorized and per entity (`state claim <slug> --take --from <owner>`); an expired claim is marked EXPIRED, never auto-stolen. `xp` covers only the FO/Commander message channel."
+- `docs/site/reference/command-reference.md`: new `state claim` entry documenting acquire and renew (owner re-run; both set `claim-expiry` to now plus the 24h lease), `--release`, `--take --from <owner>`, the lost-race non-zero exit naming the winner, the EXPIRED marker's mark-not-free semantics, and the reserved `claim-*` field refusal under `status --set`.
 - `internal/cli/help.go` state line, before: `state init` — after: `state init|commit|ready|claim`, one-line claim description.
-- FO contract (`skills/first-officer/references/fo-write-core.md` or shared core, exact placement at implementation): claim an entity before driving it across sessions; on a refusal naming a peer owner, stop and surface to the captain rather than retrying; takeover and batch sprint-claiming require explicit captain authorization.
+- FO contract (`skills/first-officer/references/fo-write-core.md` or shared core, exact placement at implementation): claim an entity before driving it across sessions and renew the claim before its expiry lapses on a long drive; on a refusal naming a peer owner, stop and surface to the captain rather than retrying — an EXPIRED marker is grounds to ask the captain for takeover, never to take; takeover and batch sprint-claiming require explicit captain authorization.
 
 ## Stage Report: ideation
 
@@ -201,3 +204,16 @@ Verified by: `status --set claim-session=x` exits non-zero leaving the file byte
 ### Summary
 
 Designed the entity-session claim as two flat frontmatter fields acquired through a new `state claim` verb that rides `statesync.Publish` as a git-level compare-and-swap, guarded at the existing mutation doors (`resolveMutationEntity`, `state commit`, `gate record/consume`) and surfaced at boot. The spike proved the two-writer race resolves to exactly one owner with a clean loser rollback, and caught that git automerges divergently-placed claim writes into split-brain — now a design requirement (canonical placement, duplicate fail-closed) and an AC-7 fixture. All captain rulings are honored: entity-session keying, policy-layered batch claiming, two enforcement points, stale-marking without auto-steal, no second writer.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Value AC measures an ownership violation actually being refused — a non-owning session's mutation of a claimed entity fails, against a baseline that can move the wrong way.
+  AC-1 unchanged by the captain's annotations: 4 successful non-owner mutations on the pre-change binary drop to 0, with per-door falsifiers and over-fire legs.
+- DONE: Riskiest unverified mechanism exercised first: git fast-forward compare-and-swap as claim acquisition under a real two-writer race. Record the spike result in the task body.
+  Spike section kept verbatim as the record of what ran; its split-brain hazard and both design consequences are unaffected by the expiry change.
+- DONE: Declared expected surface and tolerance, plus the storage decision (entity frontmatter versus a separate object) justified by naming the simplest alternative considered and why it is insufficient — the claim must not become a second writer.
+  Storage confirmed by captain annotation; surface counts and tolerance unchanged (`claim-at` → `claim-expiry` is a rename within the same files).
+
+### Summary
+
+Folded in the two captain annotations from the floated design record (sha256:33d9f6f4…): the claim is explicitly per entity, never per (entity, stage) — now a recorded Out-of-scope boundary — and `claim-at` became `claim-expiry`, an owner-renewed 24h lease. Responsibility inverts: readers compare now against the stored expiry instead of aging an acquisition time, a dead session's claim self-declares EXPIRED, and an alive long-driving owner renews instead of false-tripping a staleness heuristic. Expiry marks and never frees: AC-5 was restated to fail if anyone implements "expired means free", AC-2/AC-4 pin the exact `expires in <d>` / `EXPIRED <d> ago` rendering, and renew semantics (owner re-run sets now+lease; non-owner re-run is the refusal; late owner renewal allowed) are explicit in the verb protocol.
