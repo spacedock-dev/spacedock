@@ -6,7 +6,7 @@ started: 2026-07-26T10:57:18Z
 completed:
 verdict:
 score: 1.0
-worktree:
+worktree: .worktrees/spacedock-ensign-dispatch-entered-stage-after-gate-consume
 issue:
 sprint: durable-decisions
 id: gqsw81ghf48hr2n3jg6k7nx8
