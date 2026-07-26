@@ -2957,3 +2957,41 @@ The current/latest and line-prefix fixes were confirmed against fresh live
 output; the bold-specific edge was not freshly emitted. One new observer miss
 and two real FO behavior failures remain explicit and unweakened. The entity
 body addendum is the only repository change from this verification pass.
+
+## Stage Report: implementation (cycle 20 prepared-basename regression)
+
+- DONE: Add the missing exact black-box basename regression.
+  Commit `e328ecc6` adds
+  `TestGatePreparedBriefingLocatorLifecycleAndRefusals` at
+  `internal/cli/gate_test.go:1141-1300`; this is the only code-tree change
+  (`+161/-0`, test-only).
+- DONE: Prove the positive prepared-room lifecycle without a legacy alias.
+  The test runs `gate prepare`, asserts no `briefing.json`, explicitly records
+  `gate-briefing.json`, records approval, validates closed state, observes
+  `condition=approved-pending eligible=true`, then consumes to `status: done`
+  with `state: consumed` and `target-stage=done`.
+- DONE: Prove missing/tampered authority fails loudly and byte-clean.
+  Isolated missing Briefing, tampered Briefing bytes, and tampered request
+  locator controls run both eligibility and consume. Each exits nonzero with
+  its locator/read or frozen-digest diagnostic, never emits
+  `condition=ineligible`, leaves entity/application bytes unchanged, and leaves
+  no lock residue.
+- SKIPPED: Change product code or absorb withdrawal semantics.
+  The regression passed against the existing request-locator implementation;
+  withdrawal remains owned by `0m6`.
+
+### Focused results
+
+- `go test ./internal/cli -run '^TestGatePreparedBriefingLocatorLifecycleAndRefusals$' -v -count=1` — PASS, real 1.96s.
+- `go test ./internal/cli -count=1` — PASS, real 53.06s.
+- `go test ./internal/ensigncycle -run '^TestRecordedGateLifecycleRealCLIReplay$' -v -count=1` — PASS, real 3.79s.
+- `go test ./internal/gates -run '^(TestPreparedAuthorityIsRecomputedDuringReadOnlyValidation|TestRetainedProviderResolutionMismatchRejectsEligibilityAndConsumeWithoutChangingBytes)$' -v -count=1` — PASS, real 1.37s.
+- `gofmt -w internal/cli/gate_test.go` and `git diff --check` — PASS.
+
+### Summary
+
+The real-sprint `gate-briefing.json` basename defect now has one exact
+prepared-room regression across record, validation, eligibility, the
+Commander-owned consume application, and corrupt-authority refusals. Existing
+product code passed; no product/skill edit, push, CI, gate/PR mutation, review,
+merge, or withdrawal change ran.
