@@ -10,6 +10,21 @@ worktree:
 issue:
 sprint: durable-decisions
 id: ph0zv6azcrhcxmg57wwnxah7
+gates:
+    version: 1
+    current:
+        gate: gate:ph0zv6azcrhcxmg57wwnxah7:backlog
+    records:
+        - id: gate:ph0zv6azcrhcxmg57wwnxah7:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:ph0zv6azcrhcxmg57wwnxah7-backlog-1
+              briefing:
+                id: briefing:ph0zv6azcrhcxmg57wwnxah7:backlog:attempt-1:revision-1
+                digest: sha256:0782c65c06c7ee9378226b3a7ef88d92939a54c05d916fe3690cc7d99804278f
+                digest-domain: canonical-bytes
+                request-digest: sha256:77aabae5f9e5af378e377bc1eaefccde931c8932e5e6023a661f5eae4a22e438
+                room-ref: ./review/backlog/briefing-1
 ---
 
 The sprint has strong component proofs but repeatedly discovered integration seams only when a First Officer tried to operate the assembled lifecycle. Before the pre-release, drive one real walking skeleton through the actual command and skill surfaces and preserve correctness plus agent-friction evidence.

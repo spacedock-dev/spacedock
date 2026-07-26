@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ph0zv6azcrhcxmg57wwnxah7:backlog:attempt-1:revision-1",
+  "question": "Should the durable-decisions sprint require one real release-candidate walking skeleton across role-separated chat and Subspace gate journeys before the pre-release?",
+  "artifacts": [
+    {
+      "id": "artifact:ph0zv6azcrhcxmg57wwnxah7:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/dba0d9dd530d4c80bd9933e4c8ff0dd66720aa13/durable-decisions-release-walking-skeleton/index.md",
+      "rev": "sha256:4fb42485a31ad95505c58cb44c5c611f7c5029bf94bd5dde3829f4ac980751ac",
+      "mediaType": "text/markdown",
+      "summary": "Validate the assembled sprint through real Captain intent, Shaping FO record-only handoff, truthful re-scope withdrawal, cold Commander consume and dispatch, Git-root Subspace presentation, durability, and failure recovery."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ph0zv6azcrhcxmg57wwnxah7:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/docs/roadmap/durable-decisions/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:dda54eb7066795805c2ecfce7c6ca98c772fef6c671c39596d0877740ddf6060"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ph0zv6azcrhcxmg57wwnxah7:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/docs/roadmap/durable-decisions/dispatch-sprint-execution.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:96b95a6354b7c179240d4334d855e0f09011c67a7616adf859d8da4a4fe8bcee"
+    }
+  ]
+}
