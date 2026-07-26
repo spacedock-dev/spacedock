@@ -131,6 +131,7 @@ review-round:
         digest: sha256:d25e3d5cf7887d1d30a12572b9f44de34c385ab7bb7b37657828ed7382c79d5d
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-13
+mod-block: merge:pr-merge
 ---
 
 ## Cycle 11 governing design
