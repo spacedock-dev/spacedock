@@ -3214,3 +3214,50 @@ approved or otherwise mutated.
 Request-backed manifest failures reach actionable retained-authority errors before
 the legacy reviewed-input-unknown collapse can emit `condition=ineligible`. The exact
 real-sprint positive and negative paths need no code change at `b32d64b5`.
+
+## Stage Report: validation (cycle 25)
+
+- FAILED: Reproduce AC-1 through AC-5 from the governing design against the exact branch tip, including the arbitrary gate-briefing.json prepare/record/validate/eligibility/consume journey and the Captain's latest tamper/delete diagnostics.
+  The deterministic journey and focused AC suite pass at `b32d64b56f7feba2ccc5fd1fc0092400b6871d13`,
+  but the fresh Sonnet default-headless run exposes a material AC-4 authority-boundary failure.
+- DONE: Perform the semantic adversarial pass over the complete branch diff and classify every finding by supported workflow, observable harm, affected value AC or non-negotiable boundary, and trigger evidence; distinguish material findings from deferred risk and polish.
+  Reviewed all 42 changed files; four isolated mutations falsified the literal archive, arbitrary locator, logical revision, and retained-authority protections as intended.
+- FAILED: Verify the required repository checks, exact-tip Roborev evidence, and existing PR CI results without retriggering CI; report every lane that actually ran green and keep unapproved Codex explicitly non-green.
+  `gofmt`, `git diff --check`, strict docs, focused tests, `go test ./...`, and
+  `go test ./... -race` pass sequentially; Roborev job 2836 passes the exact SHA with no issues.
+  Green PR lanes: offline, docs build, Ubuntu install, macOS install, and Pi live; Sonnet
+  and Opus live failed, Codex live is WAITING/non-green, and journey-delta-comment is SKIPPED.
+
+### AC evidence
+
+- AC-1: exact `gate-briefing.json` lifecycle passed; deleted/tampered locators retained actionable diagnostics.
+- AC-2: moved/local/literal Git-source and flat archive/state tests passed; path mutations were rejected.
+- AC-3: candidate/replay/recomputation/duplicate-member cases passed; removing retained validation failed the refusal test.
+- AC-4: local one-room lifecycle, occupancy, provenance, and state-head tests passed,
+  but the supported Sonnet no-conn journey deleted frozen authority and prepared a second binding.
+- AC-5: recorded lifecycle, provenance, eligibility, consume, and refusal tests passed.
+
+### Material findings
+
+- Outcome defect — in an ordinary Sonnet default-headless gate after an uncommitted-source
+  prepare refusal, the FO deleted the frozen room/entity binding and successfully prepared a
+  different digest. This crosses AC-4 and the immutable-authority/data-integrity boundary;
+  the exact launcher log records two successful prepares around the deletion.
+- Evidence defect — Sonnet rejection-flow's final-state oracle attributes a legitimate later
+  gate prepare to the earlier round recorder. The required live lane is red and AC-4 host proof
+  is incomplete; direct round-recorder tests show the failure triggers only after later prepare.
+- Command/evidence mismatch — Opus's supported rejection flow narrates that
+  `gate record --round validation/1` ran, but the resolved-launcher observer records no invocation.
+  The rejection record is therefore not durable evidence, violating the command/evidence boundary.
+
+### Deferred risk and polish
+
+- Deferred risk — a crafted companion symlink could escape the intended room; promote if a supported layout can create it without forging binary-owned authority.
+- Deferred policy risk — locally pruned Git objects fail closed; promote if ordinary merge/prune strands a valid workflow.
+- Polish — Sonnet's broad-search diagnostic misattributes a dispatched child's search to FO boot;
+  `parent_tool_use_id` proves it is not an additional root-boot product failure.
+
+### Summary
+
+REJECTED: exact-tip product tests and Roborev are green, but AC-4 is not reproduced across the
+supported live journey, two required Claude lanes are red, and Codex remains explicitly non-green.
