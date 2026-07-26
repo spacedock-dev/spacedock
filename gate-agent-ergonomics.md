@@ -9,7 +9,7 @@ started: 2026-07-26T12:36:08Z
 gates:
     version: 1
     current:
-        gate: gate:skwchfe30ac6ntr63j1g0txj:backlog
+        gate: gate:skwchfe30ac6ntr63j1g0txj:ideation
     records:
         - id: gate:skwchfe30ac6ntr63j1g0txj:backlog
           stage: backlog
@@ -34,6 +34,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:skwchfe30ac6ntr63j1g0txj:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:skwchfe30ac6ntr63j1g0txj-ideation-1
+              briefing:
+                id: briefing:skwchfe30ac6ntr63j1g0txj:ideation:attempt-1:revision-1
+                digest: sha256:587fa107d3df8935fd4bfc212273e3fce57cb45e0f2834c5b5d786363fa7b4c2
+                digest-domain: canonical-bytes
+                request-digest: sha256:65a2e61692f30c33753f208d78a71547ac0ba3e93666b302d589b18d31b328fb
+                room-ref: ./gate-agent-ergonomics/review/ideation/briefing-1
 ---
 
 ## Problem

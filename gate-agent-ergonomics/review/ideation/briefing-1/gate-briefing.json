@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:skwchfe30ac6ntr63j1g0txj:ideation:attempt-1:revision-1",
+  "question": "Should gate-agent-ergonomics enter implementation with s4, gqs, and 0m6 landing as prerequisites?",
+  "artifacts": [
+    {
+      "id": "artifact:skwchfe30ac6ntr63j1g0txj:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/41de7725726ecbf00cf66a5e56e1f7d47e8b35e1/gate-agent-ergonomics.md",
+      "rev": "sha256:ef5b53b7f8b2035a1aba3bdbbcefdcab6e85a9a6d5a2b8d804fb289d4f3834ba",
+      "mediaType": "text/markdown",
+      "summary": "Add one cold-restart readiness projection that routes complete current-stage reports through s4 gate prepare, preserves gqs and 0m6 lifecycle ownership, prioritizes ready gates on both scheduler reads, and introduces no new scheduler or state machinery."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:skwchfe30ac6ntr63j1g0txj:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/41de7725726ecbf00cf66a5e56e1f7d47e8b35e1/prepare-provider-neutral-gate-room/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:be622c259b38a38f581baa444f709159e81d91cc4965484893db367f537cccd3"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:skwchfe30ac6ntr63j1g0txj:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://state/41de7725726ecbf00cf66a5e56e1f7d47e8b35e1/dispatch-entered-stage-after-gate-consume/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:7749e36406b8a0b66e24f17bd77757b2473166b3b296474db558fe130dbe8d66"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:skwchfe30ac6ntr63j1g0txj:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://state/41de7725726ecbf00cf66a5e56e1f7d47e8b35e1/withdraw-stale-open-gate-attempt/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:24213f76bb343a5beb37cfe8b74468710800e58d749d6dc7badc78627cc7c47f"
+    }
+  ]
+}
