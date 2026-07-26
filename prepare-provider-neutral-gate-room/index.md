@@ -2414,3 +2414,57 @@ and rejection-flow semantics remain unchanged.
 Cycle 18 binds Claude's recorded-gate launcher invariant at the stub seam and adds a
 focused inherited-environment control. No product, skill, prompt, gate, presenter,
 review-recognition, or oracle behavior changed.
+
+## Cycle 19 Feedback
+
+- **REJECTED:** Fresh Sonnet job `89750786866` in run `30186004236` disproved
+  Cycle 18 at exact head `3bdc0b2b0dafc7670cd3107b4f0bda2888579e66`.
+  `internal/cli/frontdoor.go:launchEnv` removes inherited `SPACEDOCK_BIN` and
+  replaces it with `os.Executable()`. The `withStubPATH` override and its focused
+  test therefore observed the wrong process boundary.
+- Opus job `89750786873` failed the same gate-hold scenarios. It also showed a
+  separate rejection-flow deviation; this correction does not absorb that
+  unrelated model behavior.
+- Revert the ineffective `withStubPATH` binding. Reuse the recorded lifecycle's
+  established `BASH_ENV` and `ZDOTDIR` injection, which rebinds `SPACEDOCK_BIN`
+  inside the actual Bash or Zsh tool shell after the front door pins the launcher.
+  Preserve the logging shim, `state-head`, review facts, and gate oracles.
+
+## Stage Report: implementation (cycle 19)
+
+- DONE: Confirm the exact front-door invariant.
+  The retained Sonnet artifact pairs successful `gate prepare` and scoped
+  `state commit` results with a valid gate review, but the shim log lacks those
+  commands. `launchEnv` strips the inherited override before Claude starts.
+- DONE: Reset the unbounded transcript-parser design.
+  No transcript projector, wrapper, controller, parser dialect, or weakened
+  durability rule remains in the final tree.
+- DONE: Reuse the established tool-shell boundary.
+  `withRecordedGateShellShim` extracts the exact `BASH_ENV` and `ZDOTDIR` setup
+  already used by the passing recorded lifecycle scenario. The gate guardrail and
+  Claude livescenario adapter now use that helper. The existing lifecycle,
+  logging shim, `state-head`, and no-decision/no-consume/no-dispatch oracles remain
+  unchanged.
+- DONE: Replace the false seam proof with a boundary proof.
+  `TestRecordedGateShellShimBindsInsideToolShell` starts both `/bin/bash` and
+  `/bin/zsh` with a launcher-pinned `SPACEDOCK_BIN` and proves that each tool shell
+  resolves the shim instead.
+- DONE: Keep the correction bounded.
+  Commit `73810d1e` changes only
+  `internal/ensigncycle/claude_live_runner_test.go` and
+  `internal/ensigncycle/livescenario_adapter_live_test.go` at `+37/-33`
+  (four net lines). Product, skill, prompt, review recognition, gate semantics,
+  and rejection-flow code are untouched.
+- SKIPPED: Rerun live models.
+  Independent validation owns the fresh exact-head Sonnet and Opus runs.
+- DONE: Verify and push the final tree.
+  The focused live-tagged shell-boundary and hold-oracle tests,
+  `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and
+  `git diff --check` passed. Local and remote branch heads match
+  `73810d1ec4a24638e864c86498d7c0bceb4b7462`.
+
+### Summary
+
+Cycle 19 moves the Claude gate shim to the proven tool-shell boundary and removes
+Cycle 18's ineffective front-door override. The existing durable-state and gate
+semantics remain intact for independent validation.
