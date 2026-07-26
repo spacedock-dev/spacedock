@@ -1,0 +1,42 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:79:backlog:attempt-1:revision-1",
+  "question": "Should Spacedock give each entity a durable claim naming the one session allowed to mutate it, and dispatch ideation to design that mechanism?",
+  "summary": "Approve dispatching ideation on an entity-to-session claim/lease. The claim is keyed to the entity and session rather than the sprint, because sprint membership is a generated query whose set changes while the sprint is most active; workstream selection becomes policy layered over that primitive. Enforcement starts at two points only, a boot-visible signal and a refusal at the state-mutation seam. Expiry marks a claim stale and never auto-steals, with captain-authorized takeover per entity. Acquisition should ride the existing state publisher's git fast-forward compare-and-swap rather than introduce a second writer. Live falsifying evidence: the advisory rule in the workflow README already exists and a cold-booted second First Officer breached it within minutes, committing an actively-driven peer's in-flight entity state with no peer-ownership signal available at boot.",
+  "artifacts": [
+    {
+      "id": "artifact:entity-session-claim-lease-task",
+      "uri": "git-root://state/75a1c10ac83d58dbb78bd9d5f78086071bbf7676/entity-session-claim-lease.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4f95ef0f11c963e58a0c3b900ac4747a8da0d7493db893d64262fa86f1d9381e"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:backlog-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Dispatch ideation",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the claim boundary before ideation",
+          "to": "stage:backlog"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:backlog"
+        }
+      ]
+    }
+  ]
+}
