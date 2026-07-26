@@ -2577,3 +2577,73 @@ Estimated correction: seven files, approximately `+75/-530`. Run focused
 offline evidence first, then the exact local Codex, Claude, and Pi candidate
 matrix using a worktree-built `SPACEDOCK_BIN`. Stop before any push, CI
 dispatch, gate mutation, or merge.
+
+## Cycle 20 Release-Scope Triage (Roborev 2738)
+
+### Prepare retained authority
+
+- Released supported path: `spacedock gate prepare` is the public publication
+  path used by the bundled skills, including successor preparation after a
+  closed attempt.
+- Observable harm: corrupt retained request or evidence authority could still
+  publish a successor room and bind the entity, leaving durable state that
+  later validation could not honor.
+- Boundary: AC-5 requires exact retained request, Briefing, provider,
+  inventory, and Git authority. Missing or corrupt retained authority must
+  refuse before mutation; this is a data-integrity boundary.
+- Trigger evidence: a successor regression changed the retained actor after a
+  closed attempt. The old `Prepare` returned nil and changed the tree.
+- Bounded disposition: run the existing retained-authority validator before
+  target derivation for every prepare. This preserves the API and supported
+  lifecycle and is less invasive than deleting prepare, declining the released
+  successor path, or routing integrity checks to a later command.
+
+### Request-backed `gate record --briefing`
+
+- Released supported path: the semantic `--briefing` flag remains in public
+  help and preflight, and request-backed binding has CLI lifecycle coverage.
+- Observable harm: an unavailable or mismatched Git inventory item could be
+  frozen into the entity binding. Later validation or decision would fail
+  after rebinding had become unavailable.
+- Boundary: AC-2 requires exact committed Git identities, while AC-5 requires
+  refusal when Git authority is unavailable. Freezing unresolved source
+  authority would violate both and corrupt durable binding data.
+- Trigger evidence: a regression generated an unbound room, removed its
+  selected Git blob, then called the old request-backed record path. It returned
+  nil and changed the entity.
+- Bounded disposition: reuse the full-inventory and all-or-none Git resolver
+  immediately before request-backed freeze. This preserves requestless and
+  prepared-room flows and is less invasive than deleting the advertised flag,
+  declining request-backed binding, or routing failure to post-freeze checks.
+
+### Keep-moving consume oracle
+
+- Released supported path: the shared Claude and Codex live scenario is
+  release-gating evidence. Exact candidate replay proved that the candidate
+  advances through `gate consume`, which the pre-Cycle-17 oracle could not
+  grade.
+- Observable harm: a failed consume followed by any successful shell command
+  could falsely credit approved advancement and produce a green release signal.
+- Boundary: acceptance-evidence integrity is non-negotiable. The keep-moving
+  approval must cause actual advancement; the oracle cannot claim it without
+  an exact entity-scoped `consumed=true` result.
+- Trigger evidence: Claude and Codex controls using both `; true` and `|| true`
+  all returned nil under the old expanded oracle.
+- Bounded disposition: inspect the existing `tool_result` or
+  `aggregated_output` and require exact entity-scoped consume success. This
+  retains proven candidate support and negative controls and is less invasive
+  than deleting required evidence, weakening it, or routing truth to a later
+  manual transcript review.
+
+### Surface reconciliation
+
+- Intended Cycle 20 surface: seven files, approximately `+75/-530`.
+- Scope-reset commit `b822b4bd`: six files, `+84/-390`; the shared keep-moving
+  expansion remained only after exact replay proved the declared exception.
+- Roborev correction commit `05ebb7ff`: five files, `+181/-41`.
+- Final Cycle 20 surface: nine files, `+265/-431`.
+- New paths beyond the declaration are `internal/gates/io.go` and
+  `internal/gates/operation.go`, both touched only to enforce the two
+  data-integrity findings at their shared mutation boundaries.
+- Cumulative branch surface is 40 files, `+4309/-323`, or 4,632 changed lines,
+  down from the pre-Cycle-20 43 files and 4,802 changed lines.
