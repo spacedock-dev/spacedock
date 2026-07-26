@@ -2830,3 +2830,54 @@ request, or gate/PR mutation occurred during this evidence repair.
 Claude now supplies the missing exact behavioral evidence; the prior Claude 401
 is superseded. Pi remains FAILED solely at local auth infrastructure, while
 code, harness, review evidence, and all remote workflow state remain unchanged.
+
+## Stage Report: implementation (cycle 20 focused live correction)
+
+- DONE: Diagnose and classify the archived Codex, Sonnet, and Opus failures.
+  Exact run 30197794474 separates three observer false negatives from two real
+  FO-owned violations before any edit.
+- DONE: Correct only the material in-scope live observers.
+  Commit `1507d4f0` accepts `rg -n` prefixes, selects the current gate's latest
+  attempt, and recognizes Markdown-emphasized actionable decision verbs.
+- SKIPPED: Change skipped-stage dispatch or broad boot-search behavior.
+  Both are real FO-owned violations outside s4; their strict detectors remain.
+- DONE: Reconcile Roborev 2738/2745/2748 and the correction surface.
+  Focused observer/provenance tests and `git diff --check` pass; five test/harness
+  files changed `+68/-7`, locally committed without push.
+
+### Finding dispositions
+
+- Codex keep-moving: released multi-agent ready-stage dispatch; false-red release
+  harm; non-negotiable dispatch evidence; `14:## Stage Report:` followed real
+  build/wait/read/terminalization. Material observer defect, fixed now.
+- Codex rejection-flow: released implementation → validation feedback; lost
+  original-round provenance; non-negotiable worker-report/feedback boundary;
+  zero seeded reports preceded a direct validation dispatch. Material FO defect,
+  deferred to FO/feedback owners; promote when initial dispatch and both reports
+  are pinned.
+- Sonnet binding: released no-conn bind/commit/present with retained history;
+  stale-identity false red; AC-4 host journey; older `41a990…c1f2` preceded current
+  `8f26ab…aab3`. Material observer defect, fixed by current/latest selection.
+- Opus decision: released semantic Markdown presentation; blocked human boundary;
+  AC-4 presentation; `**approve** consumes …; **reject** bounces …`. Material
+  observer defect, fixed while vague-decision controls remain red.
+- Sonnet boot: released headless boot; extra traversal scope/cost/exposure;
+  non-negotiable no-broad-search boundary; `find <project-root> -type f | …`.
+  Material FO behavior, deferred to its runtime/skill owner; promote with the
+  archived command and retain the detector as its regression.
+
+### Review and surface reconciliation
+
+Job 2738's three material findings remain fixed by `05ebb7ff`; job 2745's two
+remain fixed by `8c9aa160`. Job 2748 stays declined until final v1 can produce
+the legacy shape or released v1 promises to consume it.
+
+Against merge base `50f8d1fb`, cumulative branch surface is 42 files at
+`+4554/-328`, or 4,882 changed lines: 2.564× the 1,904-line advisory estimate,
+2,978 lines (156.4%) over it. Counts remain planning evidence, not a verdict.
+
+### Summary
+
+Three archived live failures were observer false negatives and are corrected
+with focused controls. Two FO-owned violations remain explicit and unweakened;
+no product/skill edit, push, CI, gate/PR mutation, review launch, or merge ran.
