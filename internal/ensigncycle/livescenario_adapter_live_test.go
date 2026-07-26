@@ -15,6 +15,13 @@ import (
 
 func assertRecordedGateHoldLog(log string) error {
 	const successfulPrepare = "exit=0\tgate prepare recorded-gate-task "
+	for _, line := range strings.Split(log, "\n") {
+		if strings.HasPrefix(line, "exit=") &&
+			!strings.HasPrefix(line, "exit=0\t") &&
+			strings.Contains(line, "\tgate prepare recorded-gate-task ") {
+			return errGraded("gate hold retried after a failed prepare")
+		}
+	}
 	prepare := strings.Index(log, successfulPrepare)
 	commit := recordedGateSuccessfulStateCommitAfter(log, "recorded-gate-task", prepare)
 	head := strings.LastIndex(log, "state-head\t")
@@ -44,19 +51,26 @@ func TestAssertRecordedGateHoldLog(t *testing.T) {
 	if err := assertRecordedGateHoldLog(optionBeforeEntity); err != nil {
 		t.Fatalf("supported option-before-entity binding commit must hold at the no-authority boundary: %v", err)
 	}
+	failedThenReplacement := strings.Replace(
+		valid,
+		"exit=0\tgate prepare recorded-gate-task",
+		"exit=1\tgate prepare recorded-gate-task",
+		1,
+	) + "\n" + valid
 
 	controls := map[string]string{
-		"absent prepare":       strings.Replace(valid, "gate prepare", "gate inspect", 2),
-		"failed prepare":       strings.Replace(valid, "exit=0\tgate prepare", "exit=1\tgate prepare", 1),
-		"other entity":         strings.ReplaceAll(valid, "recorded-gate-task", "other-task"),
-		"absent commit":        strings.Replace(valid, "exit=0\tstate commit recorded-gate-task", "exit=0\tstate inspect recorded-gate-task", 1),
-		"failed commit":        strings.Replace(valid, "exit=0\tstate commit recorded-gate-task", "exit=1\tstate commit recorded-gate-task", 1),
-		"absent state head":    strings.Replace(valid, "state-head\t", "missing-head\t", 1),
-		"duplicate prepare":    valid + "\nexit=0\tgate prepare recorded-gate-task --question Again?",
-		"legacy briefing bind": strings.Replace(valid, "gate prepare recorded-gate-task --question Approve? --artifact gate-review.md", "gate record recorded-gate-task --briefing gate-review.md", 2),
-		"decision":             valid + "\nexit=0\tgate record recorded-gate-task --decision approve",
-		"consume":              valid + "\nexit=0\tgate consume recorded-gate-task",
-		"dispatch":             valid + "\nexit=0\tdispatch build --entity-path recorded-gate-task/index.md",
+		"absent prepare":          strings.Replace(valid, "gate prepare", "gate inspect", 2),
+		"failed prepare":          strings.Replace(valid, "exit=0\tgate prepare", "exit=1\tgate prepare", 1),
+		"failed then replacement": failedThenReplacement,
+		"other entity":            strings.ReplaceAll(valid, "recorded-gate-task", "other-task"),
+		"absent commit":           strings.Replace(valid, "exit=0\tstate commit recorded-gate-task", "exit=0\tstate inspect recorded-gate-task", 1),
+		"failed commit":           strings.Replace(valid, "exit=0\tstate commit recorded-gate-task", "exit=1\tstate commit recorded-gate-task", 1),
+		"absent state head":       strings.Replace(valid, "state-head\t", "missing-head\t", 1),
+		"duplicate prepare":       valid + "\nexit=0\tgate prepare recorded-gate-task --question Again?",
+		"legacy briefing bind":    strings.Replace(valid, "gate prepare recorded-gate-task --question Approve? --artifact gate-review.md", "gate record recorded-gate-task --briefing gate-review.md", 2),
+		"decision":                valid + "\nexit=0\tgate record recorded-gate-task --decision approve",
+		"consume":                 valid + "\nexit=0\tgate consume recorded-gate-task",
+		"dispatch":                valid + "\nexit=0\tdispatch build --entity-path recorded-gate-task/index.md",
 	}
 	for name, log := range controls {
 		t.Run(name, func(t *testing.T) {

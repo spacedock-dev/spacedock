@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -14,19 +15,16 @@ import (
 )
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+record(?:\s|$)`)
+var shellVariableReference = regexp.MustCompile(`^\$(?:[A-Za-z_][A-Za-z0-9_]*|\{[A-Za-z_][A-Za-z0-9_]*\})$`)
 
 func commandRecordsRejectionRound(command string) bool {
 	command = strings.ReplaceAll(command, "\\\n", " ")
-	for _, required := range []*regexp.Regexp{
-		regexp.MustCompile(`(?:^|\s)['"]?rejection-task['"]?(?:\s|$)`),
-		regexp.MustCompile(`--round(?:=|\s+)['"]?validation/1['"]?(?:\s|$)`),
-		regexp.MustCompile(`--briefing(?:=|\s+)['"]?rejection-task/inputs/briefing\.json['"]?(?:\s|$)`),
-		regexp.MustCompile(`--log(?:=|\s+)['"]?rejection-task/inputs/briefing\.review\.jsonl['"]?(?:\s|$)`),
-		regexp.MustCompile(`--feedback-cycle(?:=|\s+)['"]?rejection-task/inputs/feedback-cycle\.txt['"]?(?:\s|$)`),
-	} {
-		if !required.MatchString(command) {
-			return false
-		}
+	if !regexp.MustCompile(`(?:^|\s)['"]?rejection-task['"]?(?:\s|$)`).MatchString(command) ||
+		commandFlagValue(command, "--round") != "validation/1" ||
+		!commandFlagPathEndsAt(command, "--briefing", "rejection-task/inputs/briefing.json") ||
+		!commandFlagPathEndsAt(command, "--log", "rejection-task/inputs/briefing.review.jsonl") ||
+		!commandFlagPathEndsAt(command, "--feedback-cycle", "rejection-task/inputs/feedback-cycle.txt") {
+		return false
 	}
 	if directRoundLauncher.MatchString(command) {
 		return true
@@ -54,6 +52,28 @@ func commandRecordsRejectionRound(command string) bool {
 		}
 	}
 	return false
+}
+
+func commandFlagValue(command, flag string) string {
+	fields := strings.Fields(command)
+	for i, field := range fields {
+		if field == flag && i+1 < len(fields) {
+			return strings.Trim(fields[i+1], `'"`)
+		}
+		if strings.HasPrefix(field, flag+"=") {
+			return strings.Trim(strings.TrimPrefix(field, flag+"="), `'"`)
+		}
+	}
+	return ""
+}
+
+func commandFlagPathEndsAt(command, flag, suffix string) bool {
+	value := commandFlagValue(command, flag)
+	if value == suffix || strings.HasSuffix(value, "/"+suffix) {
+		return true
+	}
+	prefix, terminal, ok := strings.Cut(value, "/")
+	return ok && shellVariableReference.MatchString(prefix) && terminal == filepath.Base(suffix)
 }
 
 func claudeRecordedRejectionRound(stream string) bool {
@@ -93,6 +113,28 @@ func codexRecordedRejectionRound(jsonl string) bool {
 	return false
 }
 
+func rejectionRoundPhaseEntity(workflowRoot, entityPath string) ([]byte, error) {
+	rel, err := filepath.Rel(workflowRoot, entityPath)
+	if err != nil {
+		return nil, err
+	}
+	rel = filepath.ToSlash(rel)
+	if rel == ".." || strings.HasPrefix(rel, "../") {
+		return nil, fmt.Errorf("entity %s is outside workflow root %s", entityPath, workflowRoot)
+	}
+	log, err := exec.Command("git", "-C", workflowRoot, "log", "--reverse", "--format=%H", "--", rel).Output()
+	if err != nil {
+		return nil, fmt.Errorf("read round-record history: %w", err)
+	}
+	for _, commit := range strings.Fields(string(log)) {
+		entity, showErr := exec.Command("git", "-C", workflowRoot, "show", commit+":"+rel).Output()
+		if showErr == nil && bytes.Contains(entity, []byte(rejectionFeedbackCycle)) {
+			return entity, nil
+		}
+	}
+	return os.ReadFile(entityPath)
+}
+
 func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, invoked bool) error {
 	if !invoked {
 		return fmt.Errorf("resolved launcher never invoked `gate record --round validation/1`")
@@ -113,7 +155,11 @@ func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, i
 	if !regexp.MustCompile(`(?m)^status: ` + regexp.QuoteMeta(wantStatus) + `$`).Match(entity) {
 		return fmt.Errorf("entity status changed or did not reach %s", wantStatus)
 	}
-	if regexp.MustCompile(`(?m)^gates:`).Match(entity) || regexp.MustCompile(`(?m)^\s+application:`).Match(entity) {
+	roundPhaseEntity, err := rejectionRoundPhaseEntity(workflowRoot, entityPath)
+	if err != nil {
+		return err
+	}
+	if regexp.MustCompile(`(?m)^gates:`).Match(roundPhaseEntity) || regexp.MustCompile(`(?m)^\s+application:`).Match(roundPhaseEntity) {
 		return fmt.Errorf("round recording introduced gate/application lifecycle state")
 	}
 	if got := bytes.Count(entity, []byte(rejectionFeedbackCycle)); got != 1 {
@@ -202,6 +248,17 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	if err := assertRejectionRecordedRound(root, entityPath, "implementation", false); err == nil {
 		t.Fatal("inverted no-invocation control passed despite no observed launcher call")
 	}
+
+	gitCommitPathScoped(t, root, "rejection-task", "record rejection round")
+	roundEntity := readFile(t, entityPath)
+	writeFile(t, entityPath, roundEntity+"\ngates:\n  application: later-valid-gate-state\n")
+	attributed, err := rejectionRoundPhaseEntity(root, entityPath)
+	if err != nil {
+		t.Fatalf("attribute round-record phase: %v", err)
+	}
+	if !bytes.Equal(attributed, []byte(roundEntity)) {
+		t.Fatal("round-phase attribution included lifecycle state introduced after the round commit")
+	}
 }
 
 func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
@@ -220,6 +277,33 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
   --feedback-cycle "rejection-task/inputs/feedback-cycle.txt"`
 	if !commandRecordsRejectionRound(absoluteMultiline) {
 		t.Fatal("command recognizer missed absolute resolved launcher with multiline/quoted flags")
+	}
+	opusCaptured := `B=${SPACEDOCK_BIN:-spacedock}; WD=/tmp/rejection
+$B gate record rejection-task --round validation/1 \
+  --briefing $WD/rejection-task/inputs/briefing.json \
+  --log $WD/rejection-task/inputs/briefing.review.jsonl \
+  --feedback-cycle $WD/rejection-task/inputs/feedback-cycle.txt \
+  --workflow-dir $WD`
+	opusInput, err := json.Marshal(map[string]string{"command": opusCaptured})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !claudeRecordedRejectionRound(claudeToolUse("Bash", string(opusInput))) {
+		t.Fatal("Claude extractor missed Opus variable-root round invocation")
+	}
+	opusInputCaptured := `WD=/tmp/rejection
+IN="$WD/rejection-task/inputs"
+${SPACEDOCK_BIN:-spacedock} gate record rejection-task \
+  --round validation/1 \
+  --briefing "$IN/briefing.json" \
+  --log "$IN/briefing.review.jsonl" \
+  --feedback-cycle "$IN/feedback-cycle.txt"`
+	opusInputCapturedJSON, err := json.Marshal(map[string]string{"command": opusInputCaptured})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !claudeRecordedRejectionRound(claudeToolUse("Bash", string(opusInputCapturedJSON))) {
+		t.Fatal("Claude extractor missed Opus variable-input-directory round invocation")
 	}
 	noInvocation := codexCommand("spacedock status rejection-task --workflow-dir .")
 	if codexRecordedRejectionRound(noInvocation) {

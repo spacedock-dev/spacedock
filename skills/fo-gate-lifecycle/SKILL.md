@@ -8,17 +8,19 @@ user-invocable: false
 
 ## «gate.lifecycle»(slug, stage): bind, decide, apply one recorded authorization
 
-Load before any engaged gate action. It grants no writes; read `fo-write-core.md` before FO mutation.
+Load before engaged gate action. It grants no writes; read `fo-write-core.md` before FO mutation.
 
-**Boot projection.** Use unresolved actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`, read its entity; never infer readiness from stage alone. `awaiting-captain` means an open current-stage Briefing; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. For gated current `status`, any selected or retained gate record used to resume/present must have `stage` equal to that status. A prior-stage `gates.current` is history, not reusable authority. If no selected attempt (omitted `validating`) or it mismatches, run `gate prepare` for the current status and present only its emitted binding.
+**Boot projection.** Use actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`; read its entity, never infer readiness from stage. `awaiting-captain` means an open current-stage Briefing; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. For gated current `status`, any selected or retained gate record used to resume/present must have `stage` equal to that status. A prior-stage `gates.current` is history, not reusable authority. If no selected attempt (omitted `validating`) or it mismatches, run `gate prepare` for the current status and present only its emitted binding.
 
-**Capability preflight.** Resolve `${SPACEDOCK_BIN:-spacedock}` and per lifecycle run exactly one fresh `gate --help`. Require `prepare`, `record`, `validate`, `eligibility`, `consume`; prepare flags `--question`, `--artifact`, `--summary`, `--reference`, `--workflow-dir`; and record flags `--briefing`, `--room`, `--decision`, `--actor`, `--reason`; reject retired `--directive` exposure. On absence or exposure, halt before mutation: commit no selected source, prepare no room, change no state; prescribe refresh or a fresh build via `SPACEDOCK_BIN`. Never hand-edit `gates:`.
+**Capability preflight.** Resolve `${SPACEDOCK_BIN:-spacedock}`; per lifecycle run exactly one fresh `gate --help`. Require `prepare`, `record`, `validate`, `eligibility`, `consume`; prepare flags `--question`, `--artifact`, `--summary`, `--reference`, `--workflow-dir`; and record flags `--briefing`, `--room`, `--decision`, `--actor`, `--reason`; reject retired `--directive` exposure. On absence or exposure, halt before mutation: commit no selection, prepare no room, change no state; prescribe refresh or a fresh build via `SPACEDOCK_BIN`. Never hand-edit `gates:`.
 
-**Prepare and bind.** Select one Markdown gate-review Artifact and References, author its exact concise summary, then after preflight commit new selections in their main/state histories. Supply only judgment and paths; never author JSON, ids, digests, Git-root locators, or room coordinates. Relative paths use launch cwd.
+**Prepare and bind.** Select a Markdown gate-review Artifact and References, author its concise summary, then commit selections after preflight. Supply judgment and paths; never author JSON, ids, digests, Git-root locators, or room coordinates. Paths use launch cwd.
 
 ```text
 ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
 ```
+
+Nonzero prepare halts; never delete/revert/replace binary-owned entity or room authority.
 
 Require the emitted `room`, `briefing`, `digest`, and `state=open` lines. The emitted clean absolute room is sole authority; never reconstruct it. Preparation binds two recorder-ready files without source copies. `«state.commit»(slug)` commits the folder entity or flat Markdown-plus-companion room unit. Before presentation, load `Skill(skill="spacedock:present-gate")`; an override replaces only chat display. Invoke `«gate.ac-cross-check»`, judge evidence, then `«gate.assemble-verdict»`. Chat presentation completes only after one root review names entity/stage, exact bound Briefing id/digest, recommendation, and decision ask. It follows the bind commit, must precede decision record; delegated conn does not waive it.
 
