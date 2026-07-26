@@ -3176,3 +3176,9 @@ Offline run 30202757729 failed before assertions because Ubuntu lacks
 `/bin/zsh`; the regression itself requires only a portable shell. The fix
 removes that host-only dependency without weakening durable-state evidence or
 the intentional zsh transcript-parser coverage.
+
+### CI retry addendum
+
+Runtime Live E2E run 30203203948 completed its Ubuntu `offline` job successfully,
+including the full offline test suite. Live lanes remained waiting and were not
+approved or otherwise mutated.
