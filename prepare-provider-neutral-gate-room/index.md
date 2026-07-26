@@ -2209,3 +2209,23 @@ state fixture's initial commit and makes the replay use an isolated global confi
 Commit `a78ce122` makes the real-CLI replay independent of runner Git identity. The
 feature branch is pushed; status, Resolution, application, PR #570, and mod-block are
 unchanged.
+
+## Post-gate CI Correction Validation (cycle 15)
+
+- **Recommendation: PASSED.**
+- `e3837583..a78ce122` changes only
+  `internal/ensigncycle/recorded_gate_lifecycle_test.go` (`+10/-1`): the named replay
+  and its prepared-state fixture helper; no product, CLI, skill, prompt, interface, or
+  gate behavior changed.
+- The exact focused replay passed while `GIT_CONFIG_GLOBAL` named a
+  `user.useConfigOnly=true` file and `GIT_CONFIG_NOSYSTEM=1`, proving global/system
+  identity was unusable and the state repository's local identity was sufficient.
+- A detached audit removed only the two local `user.name`/`user.email` writes. The
+  first real `spacedock state commit` then failed with exit 1, `Author identity
+  unknown`, and disabled auto-detection, reproducing PR run `30181857707` job
+  `89739683059`.
+- PR #570 was inspected at exact head `a78ce122`: `offline`, docs `build`, and both
+  install checks passed. The four runtime live checks were still in progress and are
+  not claimed as completed evidence for this fixture-only correction.
+- Code worktree, task frontmatter, status, Resolution/application, `pr`, and mod-block
+  were not mutated.
