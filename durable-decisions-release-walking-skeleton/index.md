@@ -2,7 +2,7 @@
 title: Walk the assembled durable-decision journey before the pre-release
 status: ideation
 source: "Captain request on 2026-07-26 to exercise the sprint Definition of Done end to end and surface cross-member seams before release."
-started:
+started: 2026-07-26T10:51:13Z
 completed:
 verdict:
 score: 1.0
