@@ -1511,3 +1511,330 @@ lands.
 Cycle 5 removes numeric authority without weakening scope visibility. The named
 cross-repository tables remain useful forecasts, while declaration, reconciliation,
 and semantic materiality—not file or LOC totals—govern implementation review.
+
+## Feedback Cycle 6
+
+The post-cycle-5 integration read against corrected s4 found two Material proof
+defects. First, cycle 4's manifest used one `digest` member while describing it at
+different points as a raw-file SHA-256 and as the canonical Briefing digest. Corrected
+s4 binds the Briefing with SHA-256 over RFC 8785/JCS bytes; formatting makes that value
+deliberately different from the raw file SHA-256. rq must preserve both domains
+without overloading one field.
+
+Second, the named proof stopped at a structural First Officer contract lint and a
+provider-entry E2E. It did not name the existing live First Officer composition that
+observes one `/subspace:r gate <room>` invocation and the subsequent
+`gate record ... --room <room>` continuation. Structural lint remains useful, but it
+cannot prove that a live First Officer follows the route. The correction must reuse
+the existing release-candidate walking lane and add no second agent harness.
+
+Cycle 5's count ruling remains fully in force. The same review also preserves the
+room-only public entry, two-file prepared room, arbitrary request-located canonical
+Briefing, provider-owned evidence subtree, local-only Git resolution, exact summary,
+separate validator ownership, and the bans on copied prepared-room payloads,
+`association.json`, and compatibility arguments.
+
+## Ideation correction: distinct JCS and raw Briefing identity (cycle 6)
+
+This section supersedes cycle 4's resolved-manifest `briefing` object, every statement
+that calls its digest a hash of unchanged/raw Briefing file bytes, the cycle 4 surface
+tables, and the affected AC/test wording. All other cycle 4 behavior and all cycle 5
+planning/reconciliation rules remain authoritative.
+
+The post-s4 baseline inspected for this correction is Spacedock main
+`50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0`, corrected s4 candidate
+`e328ecc6c118d1380ca36eadf82aad558b72e7af`, and Subspace
+`5466d601b7281a8d91715a1d03e190e7b5049c56`. rq implementation still starts only
+after corrected s4 lands. The separate prepared-Briefing basename regression remains
+s4-owned; rq consumes the landed room resolver and never repairs it with a
+`briefing.json` fallback.
+
+### Closed manifest with separate digest domains
+
+The resolved-source manifest retains version 1 because no earlier manifest has shipped,
+but its closed Briefing member is now:
+
+```json
+{
+  "type": "spacedock-resolved-sources",
+  "version": "1",
+  "briefing": {
+    "id": "briefing:task:validation:attempt-1:revision-1",
+    "jcsDigest": "sha256:<64 lowercase hexadecimal characters>",
+    "rawSha256": "sha256:<64 lowercase hexadecimal characters>"
+  },
+  "items": []
+}
+```
+
+`jcsDigest` is copied only after Spacedock recomputes SHA-256 over the RFC 8785/JCS
+serialization of the exact Briefing located by the frozen s4 request and requires it
+to equal the request, attempt, and entity binding. It is the existing canonical
+Briefing authority; it remains full length and is never replaced by the file hash.
+
+`rawSha256` is independently computed over the exact located file bytes used for this
+materialization. It is a provider-handoff pin: Subspace must receive and parse the same
+file bytes Spacedock inspected. It is not a second recorder authority and is never
+compared with, substituted for, or silently promoted to `jcsDigest`.
+
+The ambiguous manifest member `briefing.digest` is forbidden, not retained as an
+alias. `digestDomain`, prefixes, truncated values, uppercase hexadecimal, missing
+members, duplicate members at any depth, and unknown members also fail closed. There
+is no compatibility parser because this manifest is still unshipped.
+
+Before manifest publication, Spacedock:
+
+1. resolves the room through landed s4 and validates its request, current attempt,
+   actor/approver, root map, and exact clean relative Briefing locator;
+2. reads that located regular non-symlink Briefing without appending or requiring a
+   basename, rejects duplicate JSON members, derives its id, and recomputes its full
+   JCS digest;
+3. requires the id and JCS digest to equal every frozen s4 binding, then computes the
+   separate raw file SHA-256;
+4. resolves and raw-verifies every Git-root source before provider allocation; and
+5. publishes both distinct Briefing pins and the closed item catalog with the manifest
+   last.
+
+Before model installation, selector construction, summary rendering, or display,
+Subspace reopens the original located Briefing, rejects duplicate members, derives its
+id, computes RFC 8785/JCS SHA-256 and raw file SHA-256 independently, and requires all
+three values to equal the manifest. It then validates the exact source catalog and
+payload pins. A successful parse never rewrites or copies the Briefing.
+
+The resolved validator keeps its raw-file revision check but names that value
+`BRIEFING_RAW_SHA256` in its interface documentation and tests. Its raw comparison
+must not stand in for the loader's JCS check. Exact resolved child argv, canonical
+inventory, Result/capture equality, log/Resolution authority, and cleanup ordering
+remain independently validated as in cycle 3.
+
+### Exact indented s4 control
+
+The focused positive control is the exact s4-prepared
+`durable-decisions-release-walking-skeleton/review/backlog/briefing-1/gate-briefing.json`
+from state commit `684d6603c985030c3c6031f4b1a1462c0f1cbfa1`, blob
+`de790a44aa5b47ecdd606fc711a0ad8f9f20a2d7`. It is a 31-line, 1,675-byte indented
+JSON file with these deliberately unequal identities:
+
+```text
+rawSha256=sha256:c3b6d4d5ac8c766dcc56e08b57a41e207147d1319c61f066160e4e7d4bacfb1b
+jcsDigest=sha256:0782c65c06c7ee9378226b3a7ef88d92939a54c05d916fe3690cc7d99804278f
+```
+
+The second value is the existing full canonical digest stored by s4 in both
+`request.json` and the attempt binding. It is the SHA-256 of the 1,493-byte RFC
+8785/JCS serialization, not the SHA-256 of the 1,675 raw file bytes.
+
+The positive focused path stages the exact file with its matching s4 request, invokes
+room-only materialization, requires a manifest containing the exact id,
+`jcsDigest=...278f`, and `rawSha256=...fb1b`, and then loads it through Subspace before
+display. The test fails if an implementation compares the two digests for equality,
+puts the raw value into `jcsDigest`, puts the JCS value into `rawSha256`, truncates
+either value, accepts the ambiguous old `digest` spelling, or omits either
+recomputation.
+
+Additional controls make the domain distinction observable:
+
+- reindent an otherwise semantically identical copy: JCS remains `...278f` while the
+  raw pin changes; a manifest regenerated from that exact copy succeeds, while the old
+  raw pin fails;
+- mutate one semantic JSON string without changing the request: JCS changes and
+  Spacedock refuses before allocation;
+- mutate only manifest `jcsDigest` or only `rawSha256`: Subspace refuses before model
+  installation and the catchable owner removes `resolved-sources`; and
+- place an equivalently bound canonical Briefing at another clean request locator,
+  including a nested non-`briefing.json` filename: room-only materialization and
+  validation succeed without basename reconstruction.
+
+The fixture remains exactly the s4 two-file prepared room. It adds no source payload,
+provider output, `association.json`, rewritten Briefing, or third authoritative
+prepare-time file.
+
+### Behavioral proof and the live First Officer lane
+
+Proof is deliberately layered rather than assigned to contract lint:
+
+1. `internal/contractlint/fo_function_reference_invariant_test.go` remains a
+   structural check that `present-gate` names the one room-only invocation and
+   recorder continuation in order. It does not claim the First Officer performed
+   them and gains no behavioral transcript parser.
+2. Focused Spacedock and Subspace tests prove room authority, both digest domains,
+   arbitrary locator resolution, manifest closure, source bytes, exact validator
+   mode, and cleanup using falsifiable byte/state controls.
+3. `scripts/tests/subspace-r-git-root-provider-e2e.sh` proves the real fixed entry,
+   materializer, provider supervisor/TUI, moved Git roots, canonical inventory, and
+   `gate record --room` composition with production binaries. It is not replaced by
+   direct primitive calls.
+4. The already-defined Track B in
+   `durable-decisions-release-walking-skeleton/index.md` is the live First Officer
+   lane. With corrected s4 and rq pinned, a cold Shaping FO invokes exactly
+   `/subspace:r gate <emitted-room>`, accepts only the retained package at the
+   room-derived provider path, continues with the existing
+   `gate record {rescope-target} --room <emitted-room>`, commits the closure, and
+   stops without consuming it. Its nine-column retained run table records the exact
+   skill entry, recorder command, pre/post state, and evidence digests.
+
+The walking lane is the agent-behavior proof; the cross-repository E2E is the product
+composition proof; contract lint is only a structural guard. rq adds no fake provider,
+test-only Subspace skill, transcript oracle, standing controller, or new live harness.
+The walking lane already declares its own dependency stop conditions and runs only
+against exact landed candidates. Until corrected s4 lands, a successful end-to-end
+composition remains explicitly deferred rather than simulated.
+
+### Post-s4 expected surface and reconciliation
+
+Corrected s4 already owns the arbitrary Briefing locator, room/request resolver,
+canonical digest, `gitsource.Resolve`, two-file preparation, First Officer handoff
+prose, and structural contract lint. rq consumes those landed surfaces unchanged.
+
+The current Spacedock implementation forecast after s4 is:
+
+| Spacedock file | Expected delta | Purpose |
+|---|---:|---|
+| `internal/cli/cli.go` | `+45/-4` | Route the integration-private room-only materializer and stable success/failure output. |
+| `internal/cli/gate_test.go` | `+150/-0` | Reject extra coordinates and prove pre-side-effect room-only CLI behavior. |
+| `internal/gates/materialize.go` (new) | `+275/-0` | Reuse s4 authority/JCS/Git readers, compute the separate raw pin, and publish the closed manifest last. |
+| `internal/gates/materialize_test.go` (new) | `+460/-0` | Exact indented control, folder/flat/arbitrary locator, digest-domain mutants, catalog, containment, and atomicity. |
+| `internal/gates/testdata/materialize-s4-room/gate-briefing.json` (new) | `+31/-0` | Exact indented s4 positive-control Briefing. |
+| `internal/gates/testdata/materialize-s4-room/request.json` (new) | `+13/-0` | Matching frozen request/JCS binding for the two-file control. |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | `+65/-4` | Normative room-only materialization, distinct digest domains, and provider evidence lifecycle. |
+| `docs/site/concepts/gates-and-decisions.md` | `+18/-2` | Explain Git-root presentation without exposing integration-private argv. |
+
+Spacedock planning estimate: **8 named files, +1,057/-10 = 1,067 changed LOC**.
+`internal/gitsource/source.go`, `skills/fo-gate-lifecycle/SKILL.md`,
+`skills/present-gate/SKILL.md`, and
+`internal/contractlint/fo_function_reference_invariant_test.go` are explicit
+zero-delta reused s4 surfaces unless implementation finds a semantic defect. The
+contract-lint file remains structural; no live behavior is moved into it.
+
+The current Subspace forecast is:
+
+| Subspace file | Expected delta | Purpose |
+|---|---:|---|
+| `plugins/subspace/skills/r/SKILL.md` | `+42/-24` | Define exactly `/subspace:r gate ROOM`, room ownership, permission text, and retention. |
+| `plugins/subspace/skills/r/scripts/invocation-common` | `+175/-55` | Consume room-only materialization output, keep raw/JCS identities distinct, launch, and clean up. |
+| `plugins/subspace/skills/r/scripts/validate-one-file-result` | `+88/-18` | Exact resolved profile, explicitly raw Briefing pin, and eleven-element child argv. |
+| `scripts/tests/subspace-r-contract-test.sh` | `+60/-8` | Pin sole public grammar, validator modes, capabilities, and fixed-entry ownership. |
+| `scripts/tests/subspace-r-provider-retained-delivery-test.sh` | `+270/-30` | Digest-domain/argv mutations, retention, signals, validation, and cleanup matrix. |
+| `scripts/tests/subspace-r-git-root-provider-e2e.sh` (new) | `+420/-0` | Real moved-root folder/flat fixed-entry presentation and recorder continuation. |
+| `go.mod` | `+1/-0` | Add the same maintained RFC 8785/JCS implementation used by Spacedock. |
+| `go.sum` | `+2/-0` | Pin that canonicalization dependency. |
+| `internal/reviewv1/model.go` | `+18/-4` | Verified in-memory Reference bytes and exact summary data. |
+| `internal/reviewv1/loader.go` | `+38/-6` | Share duplicate-safe canonical Briefing parsing and id validation. |
+| `internal/reviewv1/resolved_sources.go` (new) | `+275/-0` | Closed manifest, separate JCS/raw recomputation, coverage, and containment. |
+| `internal/reviewv1/resolved_sources_test.go` (new) | `+430/-0` | Exact s4 positive control, domain mutants, catalog adversaries, and cleanup. |
+| `internal/reviewv1/testdata/s4-prepared-gate-briefing.json` (new) | `+31/-0` | Exact indented `...fb1b` raw versus `...278f` JCS control. |
+| `internal/reviewv1/testdata/git-root-negative.json` (new) | `+25/-0` | Committed unresolved Artifact/Reference boundary. |
+| `internal/reviewv1/log.go` | `+25/-12` | Selector text uses verified in-memory Reference bytes. |
+| `cmd/subspace-tui/main.go` | `+52/-10` | Private manifest flag and literal resolved-source capability. |
+| `cmd/subspace-tui/profile_dispatch_test.go` | `+100/-0` | Capability, arbitrary Briefing filename, and exact private TUI argv. |
+| `cmd/subspace-tui/provider_supervisor.go` | `+82/-16` | Validate cleanup child, forward signals, wait, delete, then publish exit. |
+| `cmd/subspace-tui/provider_supervisor_test.go` | `+145/-0` | Failure, signal, invalid root, exact exit, and cleanup-order proof. |
+| `cmd/subspace-tui/v1_tui.go` | `+45/-8` | Verify both Briefing digests and delete payloads before display. |
+| `cmd/subspace-tui/v1_sources.go` | `+62/-10` | Reference rendering and reversible control-safe Artifact summary. |
+| `cmd/subspace-tui/v1_sources_test.go` | `+115/-0` | Complete catalog and no synthesized/normalized summary. |
+| `cmd/subspace-tui/v1_review_chrome_labels_test.go` | `+105/-0` | Exact Unicode/spacing sentinel, safe controls, width, and title isolation. |
+| `cmd/subspace-tui/SPEC.md` | `+65/-8` | Private manifest schema, digest domains, validator, and cleanup lifecycle. |
+| `docs/review-and-gate.md` | `+42/-4` | Room-only profile, canonical summary, evidence, and recorder rendezvous. |
+
+Subspace planning estimate: **25 named files, +2,713/-213 = 2,926 changed LOC**.
+RFC 8785 is an interoperability and authority boundary; `encoding/json` re-encoding or
+sorted-key `jq` is not substituted for the standard. Reusing the maintained dependency
+is smaller and safer than a second provider-local canonicalizer.
+
+These are cycle-5 reconciliation aids only. Before edits, each implementation worker
+declares its actual intended paths and responsibilities against the landed s4 and
+Subspace tips. Before review, it reconciles path-scoped `diff --stat`/`--numstat`.
+Counts, percentages, helper splits, fixture splits, and dependency-file variance
+cannot authorize, reject, pause, or reset implementation. Only cycle 5's semantic
+triggers do.
+
+### Revised acceptance criteria and proof order
+
+**AC-1 (VALUE) — the room-only provider path presents and records both old Git-root
+sources after independent root movement.** Starting from landed corrected s4, the
+production fixed entry receives only `/subspace:r gate ROOM`, derives every private
+coordinate, displays the old Artifact and Reference plus exact summary, retains the
+canonical inventory, and continues through `gate record --room`. Folder and flat
+entities both succeed. *Falsifier:* any caller coordinate, manual materializer/TUI
+composition, current-worktree fallback, provider-output copy, or missing recorder
+continuation makes the cross-repository E2E fail. The existing walking-skeleton Track
+B separately observes one real First Officer issue exactly that skill entry and then
+the recorder command.
+
+**AC-2 — the prepared room and canonical Briefing remain singular authority.** Before
+provider work the room contains exactly the request and its arbitrarily located
+canonical Briefing, with no selected-source copy. Later retained files are confined to
+provider-owned evidence, while catchable owners remove `resolved-sources`.
+*Falsifier:* require `briefing.json`, append a basename, add a third authoritative
+prepare-time file, rewrite/copy the Briefing, or retain a payload after a catchable
+boundary; the room/locator/lifecycle matrix fails.
+
+**AC-3 — canonical and raw Briefing identities are explicit, independent, and checked
+before display.** The manifest carries canonical id, full RFC 8785/JCS `jcsDigest`,
+and full raw-file `rawSha256`. Spacedock and Subspace recompute each in its own domain;
+the exact indented s4 control succeeds with `...278f != ...fb1b`. *Falsifier:* swap
+the values, require equality, accept the old `digest` field, mutate either pin, alter
+semantic JSON, or reuse a stale raw pin after reindentation; each focused case fails
+at its declared pre-display boundary.
+
+**AC-4 — source, provider, and recorder evidence preserve canonical association
+without an association file.** Every Artifact and recursively reached Reference maps
+once by `type/id/uri/mediaType/rev`; no temporary path, summary, raw/JCS helper field,
+or local repository path enters Result or presented inventory. Result/inventory raw
+pins and the exact validator mode remain provider evidence. *Falsifier:* mutate,
+duplicate, omit, reorder, or expose any tuple/path/digest field; manifest, inventory,
+validator, or recorder comparison fails before a binding Resolution.
+
+**AC-5 — failure and proof ownership stay on current supported surfaces.** Missing or
+pruned local objects, wrong room/current attempt, digest mismatch, capability failure,
+loader failure, signal, and child failure retain only phase-appropriate evidence and
+never fetch. Contract lint checks structure; focused tests and the fixed-entry E2E
+check product behavior; the existing walking lane checks live First Officer behavior.
+*Falsifier:* a structural grep is offered as runtime proof, a new fake-provider agent
+harness is added, chat fallback occurs after selected launch, or a catchable path
+leaves the payload child.
+
+Proof order is:
+
+1. land corrected s4 and pin its final tip; verify the arbitrary-locator resolver,
+   two-file prepare state, JCS binding, summary, and local Git resolver;
+2. preserve the unresolved beta.4 Git-root fixture as the provider boundary red;
+3. make the exact indented s4 control red for the old ambiguous digest contract, then
+   green only with distinct `jcsDigest` and `rawSha256`;
+4. run focused Spacedock room/authority/materialization and Subspace
+   parser/loader/summary/supervisor/validator matrices;
+5. run the real moved-root cross-repository fixed-entry E2E through recording;
+6. run the existing live First Officer walking lane when its pinned dependency
+   conditions are satisfied, retaining its one skill entry and recorder continuation
+   in the release-candidate table; and
+7. run both repositories' full tests, race tests, shell/docs checks, formatting, and
+   diff checks.
+
+No success composition is claimed against current main before corrected s4 lands. No
+product implementation, provider invocation, gate/status mutation, s4 edit, or
+walking-skeleton run occurs during this ideation correction.
+
+## Stage Report: ideation (cycle 6)
+
+- DONE: Correct the Briefing digest contract so the resolved-source manifest explicitly carries and recomputes the existing full-length RFC 8785/JCS canonical Briefing digest; never use one field for raw and canonical identity.
+  The closed manifest now has separate `jcsDigest` authority and `rawSha256` handoff pins; both sides recompute both before display, and ambiguous `digest` is rejected.
+- DONE: Add an exact indented s4-prepared gate-briefing.json control whose raw SHA-256 differs from its JCS digest, and make the intended positive path falsifiable.
+  State commit `684d6603`/blob `de790a44` supplies the 1,675-byte control: raw `c3b6…fb1b`, JCS `0782…278f`; swaps, equality, reindent, semantic drift, and old-field mutants are named.
+- DONE: Add the applicable existing live First Officer lane proving one room-only /subspace:r gate <room> invocation and recorder continuation; keep contractlint structural and add no harness.
+  The existing release-candidate walking-skeleton Track B owns the live FO issue plus `gate record --room`; contract lint remains structural, and the production fixed-entry E2E owns product composition.
+- DONE: Preserve cycle 5: numeric counts remain non-authoritative planning/reconciliation evidence, with semantic reset triggers only.
+  Both post-s4 forecasts are explicitly advisory, require pre-edit declaration and post-edit reconciliation, and cannot pass, fail, pause, authorize, or reopen work by count.
+- DONE: Reconcile the post-s4 named surface and planning estimates, append a complete ideation Stage Report, and commit the state path only.
+  The forecast is 8 Spacedock files/1,067 changed LOC and 25 Subspace files/2,926 changed LOC, with s4-owned resolver/Git/FO/contractlint files identified as zero-delta reuse.
+- DONE: Run the repository-required deterministic gates against the unchanged product baseline.
+  `gofmt -w ./cmd ./internal` left no tracked product diff; `go test ./...` and `go test ./... -race` both passed, so this prose-only correction inherits a green current-main baseline.
+- SKIPPED: Implement product code, run a provider or live First Officer, mutate gate/status frontmatter, touch s4, or add an agent harness.
+  Cycle 6 changes only this ideation entity; successful composition remains deferred until the corrected s4 dependency lands.
+
+### Summary
+
+Cycle 6 removes the last Briefing identity ambiguity by carrying the frozen RFC
+8785/JCS digest separately from an exact raw-file handoff pin and proving the
+distinction with a real indented s4 artifact. It also assigns agent behavior to the
+existing live walking lane, leaves contract lint structural, and rebaselines the
+post-s4 implementation surface without restoring numeric authority.
