@@ -44,6 +44,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:65a2e61692f30c33753f208d78a71547ac0ba3e93666b302d589b18d31b328fb
                 room-ref: ./gate-agent-ergonomics/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:skwchfe30ac6ntr63j1g0txj:ideation:1
+                briefing: briefing:skwchfe30ac6ntr63j1g0txj:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T13:26:20.52081Z"
+                decision: approve
+                reason: Independent staff re-review found all four prior material findings closed; the design delivers one readiness projection with no new scheduler or state machinery. Approval is recorded now; application waits for s4, gqs, and 0m6 to land.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 ## Problem
