@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ph0zv6azcrhcxmg57wwnxah7:ideation:attempt-2:revision-1",
+  "question": "Is the corrected eight-member durable-decisions release journey ready to remain approved, with application held until all seven prerequisites are terminal and green?",
+  "artifacts": [
+    {
+      "id": "artifact:ph0zv6azcrhcxmg57wwnxah7:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/6bb17a012b5740ba9c052a41dad3dcba9a55d73e/durable-decisions-release-walking-skeleton/index.md",
+      "rev": "sha256:d20bacc0232315c94ec252eaba8d1ce1bb0a507fc746d733f63a990906b3f5e6",
+      "mediaType": "text/markdown",
+      "summary": "The one-time release acceptance run now pins eight members including cold-restart gate readiness, preflights exact candidates before mutation, separates record from application authority, exercises chat and Subspace, confines mutants to disposable copies, and hands back exclusively owned state."
+    }
+  ]
+}

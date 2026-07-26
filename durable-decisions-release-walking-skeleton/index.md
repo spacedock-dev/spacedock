@@ -59,6 +59,26 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
+                state: superseded
+                blockers: []
+            - id: gate-attempt:ph0zv6azcrhcxmg57wwnxah7-ideation-2
+              briefing:
+                id: briefing:ph0zv6azcrhcxmg57wwnxah7:ideation:attempt-2:revision-1
+                digest: sha256:a6ca1cbf7a1f140c6502651d120aedf593f285ee3f6e5959d503d025d484526a
+                digest-domain: canonical-bytes
+                request-digest: sha256:99b1efb3e948fc85581c419b0a481d24e31063882c4477b803af191339d0c9f0
+                room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ph0zv6azcrhcxmg57wwnxah7:ideation:2
+                briefing: briefing:ph0zv6azcrhcxmg57wwnxah7:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T12:45:19.823401Z"
+                decision: approve
+                reason: Cycle 4 adds sk as the eighth sprint member and terminal prerequisite while preserving all prior proof and authority decisions. This attempt supersedes the seven-member approval; hold application until gqs, sk, mn, 0m6, rq, s4, and v21 are terminal PASSED and merged.
+              application:
+                action: advance
+                target-stage: implementation
                 state: pending
                 blockers: []
 ---
