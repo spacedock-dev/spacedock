@@ -3125,3 +3125,7 @@ The current-stage binding defect and both observer false negatives are corrected
 without weakening durable effects or expanding product authority. The known
 broad-search diagnostic remains strict and f4-owned; no push, CI, gate/PR
 mutation, merge, or readiness-projection edit ran.
+
+### Review addendum
+
+Roborev job 2828 reviewed follow-up commit `7295c155` and found no issues.
