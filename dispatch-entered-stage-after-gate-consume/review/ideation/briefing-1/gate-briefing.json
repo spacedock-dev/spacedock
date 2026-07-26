@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:gqsw81ghf48hr2n3jg6k7nx8:ideation:attempt-1:revision-1",
+  "question": "Is the corrected entered-stage dispatch recovery design ready for implementation after s4 lands?",
+  "artifacts": [
+    {
+      "id": "artifact:gqsw81ghf48hr2n3jg6k7nx8:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/3afeff09c250fc3e22566d9ffd1d9eed1ec431b8/dispatch-entered-stage-after-gate-consume/index.md",
+      "rev": "sha256:9ce88476a84f816db30edd976f77fd9c8312b614530034d054522a27bf445061",
+      "mediaType": "text/markdown",
+      "summary": "Make the existing status scheduler self-project an entered working stage until a semantically complete committed report exists, guard every status escape byte-clean, and preserve live versus cold-recovery completion authority across all registered hosts."
+    }
+  ]
+}

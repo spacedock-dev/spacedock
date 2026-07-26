@@ -13,7 +13,7 @@ id: gqsw81ghf48hr2n3jg6k7nx8
 gates:
     version: 1
     current:
-        gate: gate:gqsw81ghf48hr2n3jg6k7nx8:backlog
+        gate: gate:gqsw81ghf48hr2n3jg6k7nx8:ideation
     records:
         - id: gate:gqsw81ghf48hr2n3jg6k7nx8:backlog
           stage: backlog
@@ -37,6 +37,29 @@ gates:
                 action: advance
                 target-stage: ideation
                 state: consumed
+                blockers: []
+        - id: gate:gqsw81ghf48hr2n3jg6k7nx8:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:gqsw81ghf48hr2n3jg6k7nx8-ideation-1
+              briefing:
+                id: briefing:gqsw81ghf48hr2n3jg6k7nx8:ideation:attempt-1:revision-1
+                digest: sha256:2ce71b3cd6b65d989346a0ab81180b6e43bd5a42c3a82ffdda5ba880187e8a00
+                digest-domain: canonical-bytes
+                request-digest: sha256:303aa4c963d300d0a06d86d1d5fad040cffd12b29c8661a8c8b3ffc3f4cfffae
+                room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:gqsw81ghf48hr2n3jg6k7nx8:ideation:1
+                briefing: briefing:gqsw81ghf48hr2n3jg6k7nx8:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T12:17:23.586877Z"
+                decision: approve
+                reason: AC-1 through AC-4 are evidenced and staff corrections are closed. Record approval now; apply after s4 lands to avoid overlapping shared lifecycle proof surfaces.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
                 blockers: []
 ---
 
