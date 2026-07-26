@@ -111,7 +111,7 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 	// bypass guard below. Any away status token in a repeated/chained update
 	// refuses the whole command byte-clean; a same-stage dispatch mutation and
 	// unrelated non-status updates remain allowed.
-	if !set.enteredStageCompletionProof {
+	if !set.enteredStageCompletionProof && strings.TrimSpace(currentFields["worktree"]) == "" {
 		currentStatus := strings.TrimSpace(currentFields["status"])
 		for _, stage := range stages {
 			if stage.Name != currentStatus || !enteredStageAwaitingCompletion(&entity{path: entityPath}, stage) {

@@ -11,8 +11,7 @@ import (
 
 // enteredStageAwaitingCompletion reports whether a current working stage must
 // be dispatched before ordinary successor projection resumes. Initial stages
-// keep legacy successor projection; gates, terminals, and worktree suppression
-// are handled by the caller before this predicate is considered.
+// and gate, terminal, and worktree suppression are handled by the caller.
 func enteredStageAwaitingCompletion(e *entity, stage Stage) bool {
 	if stage.initial || stage.gate || stage.terminal {
 		return false
@@ -45,8 +44,7 @@ func hasCompleteStageReport(data []byte, stage string) bool {
 		return false
 	}
 	for _, item := range items {
-		if item.status == "FAILED" || (item.status != "DONE" && item.status != "SKIPPED") ||
-			strings.TrimSpace(item.text) == "" || !checklistItemHasEvidence(lines, item) {
+		if (item.status != "DONE" && item.status != "SKIPPED") || strings.TrimSpace(item.text) == "" || !checklistItemHasEvidence(lines, item) {
 			return false
 		}
 	}

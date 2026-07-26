@@ -215,6 +215,12 @@ func TestEnteredStageMutationControls(t *testing.T) {
 			t.Fatal("completed transition did not update status")
 		}
 	})
+	t.Run("worktree-set stage stays outside first-entry guard", func(t *testing.T) {
+		def := stageFixtureWithoutEnteredReports(t, "suppress-workflow")
+		if _, stderr, code := runNative(t, def, pinnedEnv(t), "--workflow-dir", def, "--set", "building", "status=review"); code != 0 {
+			t.Fatalf("worktree transition exit=%d stderr=%q", code, stderr)
+		}
+	})
 }
 
 func TestEnteredStageLegacySuppressionControls(t *testing.T) {
