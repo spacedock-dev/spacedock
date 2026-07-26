@@ -3284,3 +3284,18 @@ real-sprint positive and negative paths need no code change at `b32d64b5`.
 
 REJECTED: exact-tip product tests and Roborev are green, but AC-4 is not reproduced across the
 supported live journey, two required Claude lanes are red, and Codex remains explicitly non-green.
+
+## Stage Report: implementation (cycle 26)
+
+- DONE: Reproduce the exact Sonnet no-authority breach locally at b32d64b5 and correct only the existing fail-closed skill/fixture boundary so a nonzero prepare never licenses deletion or replacement of binary-owned entity or room authority.
+  The retained exact-tip Sonnet job `89796731238` records failed prepare, frozen-authority deletion, and replacement; `7fd42abf` adds the fail-closed skill/observer boundary, and modified-tree Sonnet default-headless passed in `405.98s`.
+- DONE: Correct the Sonnet rejection-flow oracle's phase misattribution without weakening it; reproduce the Opus missing gate record --round command locally and patch s4 only if the exact trace proves an s4-owned cause, otherwise stop with the true owner and evidence.
+  Sonnet rejection-flow passed in `610.75s`; Opus first exposed the s4 observer miss in `768.51s` despite an exact resolved-launcher `exit=0`, then the terminal-filename observer correction passed the exact Opus rejection-flow in `688.31s`.
+- DONE: Before any push or CI, pass the focused local Sonnet/Opus journeys under isolated HOME with retained credentials, then full/default/race/format/diff checks and a fresh cumulative Roborev review; report intended and actual change surface semantically.
+  No code push or CI preceded proof: focused units passed; `gofmt -w ./cmd ./internal` was clean; `go test ./...` and `go test ./... -race` passed; merge-base `git diff --check` passed; final code commit is `7fd42abf`, exactly 3 files at `+126/-26`; cumulative Roborev `2845` returned the two classified findings below.
+
+### Summary
+
+The intended and actual cycle-26 surface is only the fail-closed lifecycle instruction plus the no-authority and round-record observer corrections; no product behavior changed, and neither Roborev finding changes `7fd42abf`.
+Roborev finding 1, legacy request-backed v1 compatibility, is DECLINED because the Captain already ruled out compatibility for unreleased prototypes: current request-backed rooms require locator plus summary, no fallback is added, and promotion occurs only if an old-schema artifact enters a released or supported producer.
+Roborev finding 2, cold gate discoverability, is MATERIAL but transferred to approved sprint member `sk/gate-agent-ergonomics`; s4 makes no patch because the promotion owner is already active.
