@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:v2183mw7c09a10pw185p33cw:validation:attempt-1:revision-1",
+  "question": "Should the independently validated source-build compatibility identity change proceed to its PR and terminal merge gate?",
+  "artifacts": [
+    {
+      "id": "artifact:v2183mw7c09a10pw185p33cw:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/835621610835acf99a292083b9428acc3c0c43a8/source-build-compatibility-identity.md",
+      "rev": "sha256:0087cac69193377d381e53f967939aae77fc58623068c154f40e6c9ae9522dc4",
+      "mediaType": "text/markdown",
+      "summary": "Unstamped source builds derive compatibility identity from the adjacent checkout manifest regardless of Git provenance; only release-pipeline artifacts carrying the explicit paired marker claim their stamped release version."
+    }
+  ]
+}

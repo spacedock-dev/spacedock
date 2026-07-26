@@ -13,7 +13,7 @@ id: v2183mw7c09a10pw185p33cw
 gates:
     version: 1
     current:
-        gate: gate:v2183mw7c09a10pw185p33cw:ideation
+        gate: gate:v2183mw7c09a10pw185p33cw:validation
     records:
         - id: gate:docs-dev:v218:backlog
           stage: backlog
@@ -59,6 +59,29 @@ gates:
                 action: advance
                 target-stage: implementation
                 state: consumed
+                blockers: []
+        - id: gate:v2183mw7c09a10pw185p33cw:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:v2183mw7c09a10pw185p33cw-validation-1
+              briefing:
+                id: briefing:v2183mw7c09a10pw185p33cw:validation:attempt-1:revision-1
+                digest: sha256:4dc6274fd812784c34b3a64d0e7d8354033282340c26fcfe1047f8e7e7f9c5c5
+                digest-domain: canonical-bytes
+                request-digest: sha256:8c59377a84496abb8b4b995418156a5718862d99a6bdef5ae044cb5bd864314c
+                room-ref: ./source-build-compatibility-identity/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:v2183mw7c09a10pw185p33cw:validation:1
+                briefing: briefing:v2183mw7c09a10pw185p33cw:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T12:42:59.974807Z"
+                decision: approve
+                reason: Validation proves AC-1 through AC-5 with full/race suites, exact doctor verdicts, release wiring, snapshots, and detached mutants; Roborev 2827 has no issues. Apply now, with all-host CI retained as the PR-time merge gate.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
                 blockers: []
 ---
 
