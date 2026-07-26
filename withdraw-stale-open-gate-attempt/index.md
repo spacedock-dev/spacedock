@@ -25,6 +25,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:0526bd61039ea579f7595d23e5ccfd8bd3d3f18ee7ce5b64b211456df37f8524
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0m6vtrw4qh9w4x6bn06x5hen:backlog:1
+                briefing: briefing:0m6vtrw4qh9w4x6bn06x5hen:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T10:48:05.853485Z"
+                decision: approve
+                reason: The observed supported re-scope cannot be represented truthfully today; ideation is authorized to define the minimum withdrawal semantics without weakening frozen room integrity.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 A prepared request-backed gate attempt is correctly frozen, but a legitimate re-scope currently has no truthful operation that retires the open attempt. The operator must either record a `hold` or other Resolution against a Briefing it already knows is stale, or hand-edit/revert gate state. Both paths corrupt the meaning of the durable record.
