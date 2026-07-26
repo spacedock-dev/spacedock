@@ -2229,3 +2229,44 @@ unchanged.
   not claimed as completed evidence for this fixture-only correction.
 - Code worktree, task frontmatter, status, Resolution/application, `pr`, and mod-block
   were not mutated.
+
+## Stage Report: implementation (cycle 16)
+
+- DONE: Declare the intended file and LOC surface before editing.
+  The declaration named
+  `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go` at `+1/-0`; the
+  committed diff matches it exactly.
+- DONE: Confirm the missing skill from retained Pi artifacts and sessions.
+  `gh run download 30182197083 -n runtime-live-e2e-pi-live` recovered job
+  `89740673312`: its root session loaded `fo-gate-lifecycle`, committed the binding,
+  and called `gate record --decision` without a root review or `present-gate` load.
+  The prior run `30169681271` read `recorded_gate_lifecycle_test.go` before emitting
+  its review, confirming that success was test-derived rather than skill-driven.
+- DONE: Expose the required presenter without changing the review oracle or product.
+  Commit `8aaf96af` adds only
+  `--skill <repo>/skills/present-gate` to the isolated Pi scenario; gate semantics,
+  product code, prompts, review text, and observers are unchanged.
+- DONE: Run focused offline and meta proof.
+  `go test -tags live ./internal/ensigncycle -run
+  '^(TestPiSharedScenarioCoverage|TestSharedRuntimeScenarioDefinitions|TestPiLiveEnvDropsForeignRuntimeMarkers)$'
+  -count=1` and `go test ./internal/contractlint ./skills/integration -count=1`
+  passed.
+- SKIPPED: Claim a successful exact local Pi live replay.
+  `go test -tags live ./internal/ensigncycle -run
+  '^TestLivePiRecordedGateLifecycle$' -v -count=1` first found an incompatible local
+  extension; the compatible `PI_SUBAGENTS_PACKAGE_ROOT` retry reached auth but failed
+  with `refresh_token_reused`, and no `OPENAI_API_KEY` is present. Neither attempt
+  executed the gate lifecycle, so CI remains the live proof.
+- DONE: Run formatting, full, race, and diff checks.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and
+  `git diff --check` passed.
+- DONE: Push the bounded correction to PR #570.
+  Local, remote, and PR head match `8aaf96af`; the final code diff is one insertion
+  in the declared live harness file.
+
+### Summary
+
+Cycle 16 supplies Pi with the presenter that `fo-gate-lifecycle` requires, without
+weakening the semantic review oracle or changing product behavior. Static, focused,
+full, and race proof is green; exact live confirmation awaits CI because local Pi
+authentication failed before scenario execution.
