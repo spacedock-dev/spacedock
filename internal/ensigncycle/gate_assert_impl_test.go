@@ -39,8 +39,7 @@ func assertGateHeld(before, after, review string) error {
 			authority = after[:len("---\n")+end]
 		}
 	}
-	briefingID := firstRecordedGateMatch(authority, `(?m)^\s+id: (briefing:[^\s]+)$`)
-	digest := firstRecordedGateMatch(authority, `(?m)^\s+digest: (sha256:[0-9a-f]{64})$`)
+	briefingID, digest := currentRecordedGateBinding(authority)
 	if briefingID == "" || digest == "" {
 		return fmt.Errorf("open bound entity has no durable Briefing identity and digest")
 	}
@@ -66,6 +65,30 @@ func assertGateHeld(before, after, review string) error {
 		return fmt.Errorf("gate review does not name the exact durable Briefing identity and digest once")
 	}
 	return nil
+}
+
+func currentRecordedGateBinding(authority string) (string, string) {
+	currentGate := firstRecordedGateMatch(authority, `(?m)^\s+gate: (gate:[^\s]+)$`)
+	if currentGate == "" {
+		return "", ""
+	}
+	recordStart := regexp.MustCompile(`(?m)^([ \t]+)- id: ` + regexp.QuoteMeta(currentGate) + `$`).FindStringSubmatchIndex(authority)
+	if recordStart == nil {
+		return "", ""
+	}
+	recordIndent := authority[recordStart[2]:recordStart[3]]
+	record := authority[recordStart[0]:]
+	if firstLineEnd := strings.IndexByte(record, '\n'); firstLineEnd >= 0 {
+		if next := regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(recordIndent) + `- id: gate:[^\s]+$`).FindStringIndex(record[firstLineEnd+1:]); next != nil {
+			record = record[:firstLineEnd+1+next[0]]
+		}
+	}
+	briefingIDs := regexp.MustCompile(`(?m)^\s+id: (briefing:[^\s]+)$`).FindAllStringSubmatch(record, -1)
+	digests := regexp.MustCompile(`(?m)^\s+digest: (sha256:[0-9a-f]{64})$`).FindAllStringSubmatch(record, -1)
+	if len(briefingIDs) == 0 || len(digests) == 0 {
+		return "", ""
+	}
+	return briefingIDs[len(briefingIDs)-1][1], digests[len(digests)-1][1]
 }
 
 type recordedGateCodexEvent struct {

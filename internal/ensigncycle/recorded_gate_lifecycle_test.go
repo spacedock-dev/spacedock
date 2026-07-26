@@ -168,7 +168,7 @@ func assertConciseRecordedGateReview(review string) error {
 		return fmt.Errorf("gate review leads with raw state instead of the decision")
 	}
 	for _, line := range strings.Split(lower, "\n") {
-		if regexp.MustCompile(`(?i)^\s*\**(?:decision(?:\s+ask)?\s*[:—-]|choose\b|please decide\b)[^\n]*\b(?:approve|reject|revise|hold)\b\s+(?:to|with|for)\s+(?:\S+\s+){0,8}(?:advance|bounce|close|consume|dispatch|enter|finding|handoff|implementation|merge|prerequisite|return|route|send|stage|worktree)\b`).MatchString(line) {
+		if regexp.MustCompile(`(?i)^\s*\**(?:decision(?:\s+ask)?\s*[:—-]|choose\b|please decide\b)[^\n]*\b(?:approve|reject|revise|hold)\b[*_]*\s+(?:(?:to|with|for)\s+(?:\S+\s+){0,8}(?:advance|bounce|close|consume|dispatch|enter|finding|handoff|implementation|merge|prerequisite|return|route|send|stage|worktree)|(?:advances?|bounces?|closes?|consumes?|dispatches?|enters?|merges?|returns?|routes?|sends?))\b`).MatchString(line) {
 			return nil
 		}
 	}

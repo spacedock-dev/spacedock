@@ -277,6 +277,26 @@ func TestCodexDispatchEvidenceCreditsNamedBatchedDurableReads(t *testing.T) {
 	}
 }
 
+func TestCodexDispatchEvidenceCreditsRGLineNumberedDurableReads(t *testing.T) {
+	entities := []string{kmReadyOne, kmReadyTwo}
+	stream := strings.Join([]string{
+		codexDispatchBuildEvidence(kmReadyOne, kmNextStage),
+		codexDispatchBuildEvidence(kmReadyTwo, kmNextStage),
+		codexWaitCompleted(),
+		codexCompletedCommandOutput(
+			`for f in ready-one.md ready-two.md; do rg -n '^## Stage Report' "$f"; done`,
+			"14:## Stage Report: implementation\n14:## Stage Report: implementation\n",
+		),
+	}, "\n")
+
+	evidence := codexDispatchCompletionEvidenceFromJSONL(stream, entities)
+	for _, entity := range entities {
+		if !evidence.stageReport[entity] {
+			t.Errorf("rg -n durable read did not credit %q: %+v", entity, evidence)
+		}
+	}
+}
+
 func TestCodexDispatchEvidenceDoesNotMultiplyAnonymousBatchedReport(t *testing.T) {
 	entities := []string{kmReadyOne, kmReadyTwo}
 	stream := strings.Join([]string{

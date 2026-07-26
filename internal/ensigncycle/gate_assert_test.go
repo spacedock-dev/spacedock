@@ -44,9 +44,10 @@ func TestAssertGateHeld(t *testing.T) {
 	requireRecordedGate(t, assertGateHeld(before, after, recordedGateReview()) == nil, "held gate failed")
 	decision := "Decision ask: approve, revise with a concrete finding, or hold for a named prerequisite?"
 	for name, line := range map[string]string{
-		"baseline":        decision,
-		"retained-claude": "Decision: approve to consume this authorization and advance recorded-gate-task from validation into the handoff stage for dispatch.",
-		"semantic-label":  "Choose approve to enter handoff, revise with findings, or hold for a prerequisite.",
+		"baseline":              decision,
+		"markdown-action-verbs": "Decision: **approve** consumes the validation authorization and advances toward handoff; **reject** bounces it back to implementation with concrete asks.",
+		"retained-claude":       "Decision: approve to consume this authorization and advance recorded-gate-task from validation into the handoff stage for dispatch.",
+		"semantic-label":        "Choose approve to enter handoff, revise with findings, or hold for a prerequisite.",
 	} {
 		review := strings.Replace(recordedGateReview(), decision, line, 1)
 		requireRecordedGate(t, assertConciseRecordedGateReview(review) == nil, "%s decision prompt failed", name)
@@ -117,5 +118,22 @@ func TestAssertGateHeldUsesDynamicPreparedBinding(t *testing.T) {
 				t.Fatal("identity mutant graded PASS")
 			}
 		})
+	}
+}
+
+func TestAssertGateHeldUsesCurrentRetainedGateBinding(t *testing.T) {
+	before := recordedGateEntity()
+	after := recordedGateHeldEntity(before, recordedGateBriefingID, recordedGateDigest)
+	retained := "    - id: gate:recorded-gate-task:implementation\n" +
+		"      stage: implementation\n" +
+		"      attempts:\n" +
+		"        - id: gate-attempt:recorded-gate-task-implementation-1\n" +
+		"          briefing:\n" +
+		"            id: briefing:recorded-gate-task:implementation:attempt-1:revision-1\n" +
+		"            digest: sha256:" + strings.Repeat("1", 64) + "\n"
+	after = strings.Replace(after, "  records:\n", "  records:\n"+retained, 1)
+
+	if err := assertGateHeld(before, after, recordedGateReview()); err != nil {
+		t.Fatalf("current validation binding was shadowed by an older retained gate: %v", err)
 	}
 }
