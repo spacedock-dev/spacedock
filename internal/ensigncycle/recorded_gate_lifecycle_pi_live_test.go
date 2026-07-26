@@ -46,6 +46,7 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 		"--skill", filepath.Join(piSubagentsRoot, "skills", "pi-subagents"),
 		"--skill", filepath.Join(repo, "skills", "first-officer"),
 		"--skill", filepath.Join(repo, "skills", "fo-gate-lifecycle"),
+		"--skill", filepath.Join(repo, "skills", "present-gate"),
 		"--skill", filepath.Join(repo, "skills", "ensign"),
 		recordedGatePrompt(fixture.root)+"\n\nPi harness requirement: stamp the successor dispatch with explicit model `"+envOr("SPACEDOCK_PI_LIVE_CHILD_MODEL", "openrouter/openai/gpt-4.1-mini")+"`.",
 	)
