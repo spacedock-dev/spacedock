@@ -2097,3 +2097,30 @@ coverage, and usage notes repeat earlier deferred risks or polish.
 Commit `5484cee6` closes the last rejected AC-4 evidence defect: one real-shim-shaped
 help preflight passes, every extra terminal attempt fails, and Agent/chat controls
 remain closed without product, prompt, skill, or live-harness changes.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Reproduce the cycle-4 selected-gate observer correction at code tip 5484cee6523fe7c284d629ffc5d78641db3efa72 and verify one real-shim-shaped help attempt counts once.
+  The committed unit and detached exact-row control accept one `begin` plus `exit=0`; removing the terminal-row filter reproduces `fresh gate help attempts = 2, want 1`.
+- DONE: Verify all terminal exit statuses count as help attempts, only exit=0 counts as success, and missing, failed-only, failed-before-success, and duplicate-success traces reject.
+  A detached matrix covered exit 0, 1, 2, 126, 127, and 255 plus missing/begin-only/repeated traces; counting only exit 0 accepts failed-before-success, while accepting nonzero success admits failed-only.
+- DONE: Confirm the previously closed Agent/chat adjacent-event mutants remain closed and that cycle 4 changed only the intended observer/unit proof boundary.
+  Eight detached insertions before prepare, between prepare/bind, between bind/override, and after override reject with the exact Agent/chat errors; `2d7ee074..5484cee6` is only the two observer/unit files at `+15/-7`.
+- DONE: Re-run the smallest focused tests plus go test ./..., go test ./... -race, gofmt -w ./cmd ./internal, and git diff --check; classify the expired-Claude live replay honestly rather than treating it as product execution.
+  Focused CLI/gates/gitsource/ensigncycle and skill/contract suites, full/race, gofmt, and both correction/baseline diff checks pass; the retained Claude stream is OAuth failure only (`num_turns=1`, zero tokens/API time), so it supplies no live product-pass evidence.
+- DONE: Audit the implementation worker's Roborev disposition against release scope and report every acceptance criterion with reproducible evidence and falsifiers.
+  AC-1: folder/flat prepare and literal archive suites pass; removing `:(literal)` reintroduces sibling capture and missing source deletion.
+  AC-2: moved/detached Git-source and equal-byte path-identity suites pass; deleting repository-path equality makes the same-byte control accept the wrong object.
+  AC-3: arbitrary locator, exact summary, compatibility, and recursive-duplicate suites pass; trimming the summary or accepting a duplicate changes bytes or permits forbidden mutation.
+  AC-4: fresh-help, no-override contract, exact room-only handoff, Agent/chat, and terminal-row matrices pass deterministically; each of the three detached counter mutants fails at its named boundary.
+  AC-5: four-pin record/validate and refusal matrices pass; skipping a pin recomputation or persisting `association.json` makes the mutation/tree controls fail.
+  Roborev's Medium room-extraction/other-Skill note is a pre-existing `701aba71` evidence boundary, not cycle-4 behavior: promote if a supported run emits a different room or another provider Skill. Crafted companion symlinks and locally pruned objects remain deferred until supported operator flows reach them; cleanup naming/diagnostics remain polish.
+- DONE: Append the exact validation checklist and a PASSED or REJECTED recommendation to the durable task report, commit and push state, then stop without implementing fixes.
+  All five ACs have reproducible proof, the detached audit is clean, no material finding remains, and the recommendation is PASSED.
+
+### Summary
+
+Cycle-4 validation independently closes the terminal help-row evidence defect without
+expanding product or harness scope. The recommendation is PASSED; the failed Claude
+authentication is external infrastructure, and deferred/pre-existing notes remain
+separate from the clean governing acceptance criteria.
