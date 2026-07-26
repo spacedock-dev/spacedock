@@ -2122,3 +2122,74 @@ ownership boundary. rq must prove its own real First Officer handoff before pass
 `invocation-common` allocates provider state before manifest-last materialization; and
 contract lint returns to structural checks while behavioral sequencing stays with
 exercised production and live paths.
+
+## Stage Report: ideation (final AC evidence addendum)
+
+- DONE: AC-1 has a concrete production-boundary proof and an independent value
+  falsifier.
+  Verified by: Spacedock candidate `66a937defa34725e2259e4d7f835870f6d680d1f`
+  already supplies `TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities`
+  and `TestInspectAndResolveUseExactLocalGitObjectsAcrossMovedRoots`; the named
+  implementation proof is `scripts/tests/subspace-r-git-root-provider-e2e.sh`, which
+  must fail if either old sentinel is absent, the exact summary is not displayed, the
+  inventory is not 2/2, or `gate record --room` does not close the same binding.
+- DONE: AC-2 preserves Subspace allocation ownership, manifest-last publication, and
+  the retained-package/no-retained-payload boundary.
+  Verified by: Subspace tip `5466d601b7281a8d91715a1d03e190e7b5049c56`,
+  blob `a3a49d2c9b1a63afe9f126f9090525ebe8fa505a`, shows
+  `invocation_prepare_provider` allocating a private package under `umask 077` and
+  `invocation_main` retaining that package after trusted delivery. The corrected
+  implementation keeps that owner but fixes the allocation at mode-0700
+  `ROOM/provider`; `internal/gates/materialize_test.go` must prove complete mode-0600
+  payloads before manifest-last publication, while
+  `scripts/tests/subspace-r-provider-retained-delivery-test.sh` must prove catchable
+  paths retain provider evidence and remove `resolved-sources`.
+- DONE: AC-3 binds the complete Briefing independently in JCS and raw-byte domains,
+  with a real unequal positive control.
+  Verified by: state commit `684d6603c985030c3c6031f4b1a1462c0f1cbfa1`
+  contains blob `de790a44aa5b47ecdd606fc711a0ad8f9f20a2d7` (1,675
+  raw bytes); its `rawSha256` is
+  `sha256:c3b6d4d5ac8c766dcc56e08b57a41e207147d1319c61f066160e4e7d4bacfb1b`
+  and its RFC 8785/JCS `jcsDigest` is
+  `sha256:0782c65c06c7ee9378226b3a7ef88d92939a54c05d916fe3690cc7d99804278f`.
+  `internal/gates/materialize_test.go` and
+  `internal/reviewv1/resolved_sources_test.go` must accept that unequal pair and reject
+  equality, swaps, the ambiguous `digest` member, and mutation of either full pin
+  before model installation or display.
+- DONE: AC-4 preserves the exact local Git-object materialization and refusal surface.
+  Verified by: candidate `66a937defa34725e2259e4d7f835870f6d680d1f` blobs
+  `674058e94ae7dc47c90d6b24aeb7f451e1c14965` (`source.go`) and
+  `f94c5dbde4a00b4f2bb8a31cb49852806ecff97b` (`source_test.go`) resolve only
+  `rev-parse --verify <full-commit>^{commit}` plus
+  `cat-file blob <commit>:<path>`, then verify raw SHA-256.
+  `TestInspectAndResolveUseExactLocalGitObjectsAcrossMovedRoots` proves moved-root
+  reads, and `TestResolveRejectsNoncanonicalOrUnverifiableGitRootCoordinates` proves
+  malformed coordinates, raw mismatch, and missing local objects refuse; the planned
+  materializer composes this surface without fetch, clone, pull, worktree fallback, or
+  source mutation.
+- DONE: AC-5 separates the room-only entry, product sequence, live First Officer
+  sequence, and structural lint proof owners.
+  Verified by: present-gate blob
+  `454c0522b6b0b0542725ec0d19104e68dcb26a00` contains exactly
+  `/subspace:r gate <gate-room>` and subsequent
+  `gate record <entity> --room <gate-room>`. The fixed-entry E2E owns observable
+  allocation/materialization/manifest/TUI/validator/cleanup/record order; rq's
+  pre-terminal live drive must cite one native installed-skill event followed by the
+  recorder event before rq can pass. Current contractlint blob
+  `38c85f51f8b4051efaba0957094957f307a25048` exposes the ordered `sequence(1, 7)`
+  check that this implementation must remove; its replacement may assert only required
+  room/record closure and forbidden-coordinate/fallback absence, never semantic order.
+- DONE: The final ideation report now gives every scanned AC an external repository
+  anchor and a named implementation-time falsifier.
+  Verified by: an AC provenance scan can resolve AC-1 through AC-5 to the five entries
+  above without treating planned implementation success as already executed evidence.
+- SKIPPED: Change the design, checklist, product, gate/status/frontmatter, s4/ph, or
+  run the provider/live lane.
+  This addendum repairs report provenance only; all behavioral proofs remain assigned
+  to their declared implementation or pre-terminal validation owner.
+
+### Summary
+
+Every AC now has reproducible ideation evidence outside the claim itself and a
+concrete test or live-event condition that can fail later. The addendum preserves the
+cycle 7 architecture and makes no implementation or workflow-state claim.
