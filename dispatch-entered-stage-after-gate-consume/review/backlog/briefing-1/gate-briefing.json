@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:gqsw81ghf48hr2n3jg6k7nx8:backlog:attempt-1:revision-1",
+  "question": "Should this sprint require the First Officer to dispatch an entered working stage before any later stage transition can be credited?",
+  "artifacts": [
+    {
+      "id": "artifact:gqsw81ghf48hr2n3jg6k7nx8:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0d340196429fdea6670a3f210a3cb703eb949034/dispatch-entered-stage-after-gate-consume/index.md",
+      "rev": "sha256:8cd8398a64b3635e12d7f1110e494cead4af2e3bc9fcf25c2bb895299e3e2506",
+      "mediaType": "text/markdown",
+      "summary": "Make consume-to-working-stage handoff observable and recoverable so a worker spawn plus durable report precedes the next transition, preserving every implementation and validation round."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:gqsw81ghf48hr2n3jg6k7nx8:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/0d340196429fdea6670a3f210a3cb703eb949034/prepare-provider-neutral-gate-room/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6948d8499877642145c7d8340e1643c1280177806eb072f73fb84cb76a438c98"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:gqsw81ghf48hr2n3jg6k7nx8:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/docs/roadmap/durable-decisions/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:dda54eb7066795805c2ecfce7c6ca98c772fef6c671c39596d0877740ddf6060"
+    }
+  ]
+}
