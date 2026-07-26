@@ -38,11 +38,13 @@ started: 2026-07-26T15:08:14Z
 
 ## Outcome
 
-A successful `dispatch build` writes a self-contained assignment containing the exact
-stage/context snapshot and standing-teammate context selected by that invocation. The
-same file pins the builder executable's resolved absolute path for legitimate
-ensign-owned workflow helpers. The spawn/reuse message remains only the existing tiny
-dispatch-file pointer.
+**Self-contained artifact; pointer-only transport.** A successful `dispatch build`
+writes a dispatch file containing the exact stage/context snapshot, checklist,
+standing-teammate context, scope/feedback instructions, and launcher binding selected
+by that invocation. Here and throughout this design, “self-contained” describes that
+file, never the outer transport. Fresh `output.prompt` and the reuse-advance `prompt`
+remain locator-only messages and MUST NEVER carry stage, declared-context, checklist,
+standing, scope, or feedback bytes.
 
 ## Problem statement
 
@@ -115,32 +117,39 @@ not rewrite arbitrary stage prose.
 
 ## Proposed approach
 
-1. At CLI entry, reuse the launcher's existing `os.Executable` → absolute path →
+1. Make **Self-contained artifact; pointer-only transport** the rendering invariant
+   shared by fresh and `--advance` across Claude, Codex, and Pi. The dispatch file owns
+   all assignment bytes; fresh `output.prompt` and reuse-advance `prompt` own only the
+   file locator and fixed read instruction. Add a source comment beside the two prompt
+   renderers in `internal/dispatch/build.go` stating that assignment-bearing stage,
+   declared-context, checklist, standing, scope, and feedback bytes must never be
+   interpolated into either prompt.
+2. At CLI entry, reuse the launcher's existing `os.Executable` → absolute path →
    `EvalSymlinks` resolution and executable-file check. Pass that internally to
    `dispatch build`; do not accept a caller launcher flag. A successful artifact build
    fails closed if the running executable cannot be resolved.
-2. Add a short `### Workflow launcher` block near the top of every fresh and
+3. Add a short `### Workflow launcher` block near the top of every fresh and
    `--advance` dispatch file. It contains the shell-quoted absolute A path and directs
    each ensign workflow-helper call to begin with that literal path. It explicitly
    forbids substituting inherited `SPACEDOCK_BIN` or PATH and separates a worktree
    product-test binary.
-3. Append the already-computed `resolveStageContext(readmeData, stage)` result at the
+4. Append the already-computed `resolveStageContext(readmeData, stage)` result at the
    former fetch position. This snapshots the stage subsection and ordered inherited,
    replaced, or cleared declared context sections from one validated README buffer.
-4. Render `EnumerateDeclaredStandingTeammates` through the existing standing renderer
+5. Render `EnumerateDeclaredStandingTeammates` through the existing standing renderer
    during build and append non-empty output directly. Preserve today's condition:
    legacy team dispatch with declared standing teammates gets the section; bare,
    merged/no-team, and empty-standing cases do not.
-5. Emit no `### Fetch commands` block. Keep the existing schema-v2
+6. Emit no `### Fetch commands` block. Keep the existing schema-v2
    `fetch_commands` member as an empty array: it truthfully reports that the assignment
    has no bootstrap fetch and avoids inventing a replacement protocol or output field.
    Remove the ensign fetch-bootstrap and environment-fallback launcher prose.
-6. Update ensign instructions so `status --read`, including the report-append offset
+7. Update ensign instructions so `status --read`, including the report-append offset
    read, uses the pinned path. Update dev feedback-round wording so
    `gate record --round` does the same. Fresh and reused workers obtain the binding
    from the current dispatch file, so an advance built by a newer A supersedes the
    previous assignment's launcher path.
-7. Extend the two existing transcript consumers in place. In
+8. Extend the two existing transcript consumers in place. In
    `internal/journeymetrics/readadoption.go`, make the existing status-read command
    recognizer accept an absolute pinned executable token, including shell-quoted paths
    with spaces and names such as `/tmp/spacedock-s4-*`, while preserving its
@@ -167,7 +176,25 @@ observed changing during a dispatched assignment.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE)** In the same two-binary fresh-plus-advance fixture, the number of
+**AC-1 — Self-contained artifact; pointer-only transport.** For fresh and
+reuse-advance builds on every supported host, assignment-bearing bytes exist only in
+the dispatch file. Fresh `output.prompt` and reuse-advance `prompt` are locator
+transport only and contain no stage, declared-context, checklist, standing, scope, or
+feedback bytes.
+
+Verified by paired relational fixtures for Claude, Codex, and Pi. Holding the output
+path and other inputs fixed, independently grow the selected stage, declared context,
+and checklist by N bytes with distinct sentinels. In each pair the dispatch file
+contains the new sentinel and grows with it, while the corresponding outer prompt is
+byte-identical to baseline and contains none of the sentinels. Separate sentinels
+prove standing, scope, and feedback stay file-only. Moving any assignment byte into a
+prompt, or leaving any selected byte out of the file, makes the fixture fail. Both
+prompts retain the existing O(`dispatch_file_path`) shape; the supported dev-workflow
+fresh and advance fixtures each remain at or below 300 bytes as a measurement, not a
+universal name/path invariant. Existing legal long-name fixtures continue to build
+without shortening or a new length-rejection branch.
+
+**AC-2 (VALUE)** In the same two-binary fresh-plus-advance fixture, the number of
 worker-time stage/standing resolutions through B is **0 of 2**, down from the observed
 baseline **2 of 2**, while both files contain A's exact resolved stage subsection and
 ordered declared sections.
@@ -176,19 +203,6 @@ Verified by a command-level fixture that builds through A, makes both
 `SPACEDOCK_BIN` and PATH resolve an instrumented B, reads each generated assignment,
 and asserts B's invocation log stays empty. Removing the inline package or restoring a
 fetch command makes it fail.
-
-**AC-2** Fresh and reuse-advance dispatch files are self-contained for all context the
-builder already owns: stage subsection, inherited/replaced/cleared declared sections,
-and conditional standing-teammate routing. Their outer spawn/reuse prompts retain the
-existing O(`dispatch_file_path`) file-pointer shape. The supported dev-workflow fresh
-and advance fixtures each remain at or below 300 bytes; this is a fixture measurement,
-not a universal name/path invariant.
-
-Verified by fresh/advance golden and behavior fixtures with independent sentinels in
-each selected section and standing mod. Reordering/dropping a section, broadening the
-standing condition, or inlining the body into `prompt` makes them fail. The existing
-legal long-name fixtures must continue to build without shortening or a new
-length-rejection branch.
 
 **AC-3** Every successful generated assignment carries A's shell-safe resolved
 absolute executable path, and a retained ensign helper (`status --read` and the dev
@@ -233,6 +247,15 @@ through A and an instrumented executable B, with fresh and `--advance` subtests,
 declared-context sentinels, a standing-mod case, and launcher paths containing spaces.
 Reuse the existing dispatch golden harness rather than adding a launcher protocol or
 runtime wrapper. Estimated focused cost: under 10 seconds and moderate fixture work.
+
+Add the AC-1 paired relational behavior test for fresh and advance on Claude, Codex,
+and Pi. For each host, hold the dispatch locator fixed while independently adding N
+bytes and a unique sentinel to stage, declared context, and checklist inputs. Assert
+the dispatch file contains and grows with each addition, while `output.prompt` or the
+reuse-advance `prompt` stays byte-identical and excludes every sentinel. Give
+standing, scope, and feedback independent sentinels and assert they are file-only.
+This test, rather than the ≤300-byte dev-fixture measurement, protects the transport
+boundary.
 
 Update stage-discipline, advance-content, standing, hazard/quoting, host, and output
 shape tests. Preserve direct `dispatch show-stage-def` and `show-standing` tests because
@@ -285,7 +308,9 @@ with:
 > then writes the stage definition followed by those sections into the dispatch file
 > in declaration order. Later README edits affect later dispatches, not an assignment
 > already built. The file also pins the builder's resolved absolute launcher for
-> worker-owned workflow helpers.
+> worker-owned workflow helpers. “Self-contained” refers to this artifact; the outer
+> fresh or reuse-advance prompt is only a locator and never transports assignment
+> content.
 
 In `docs/site/reference/command-reference.md`, replace the dispatch row's description:
 
@@ -310,6 +335,18 @@ commands” to “file pointers carrying resolved stage/context and the pinned w
 launcher.” In `docs/dev/README.md`, replace the feedback-round
 `${SPACEDOCK_BIN:-spacedock} gate record` prefix with “the dispatch-pinned absolute
 workflow launcher” and retain the existing round arguments and no-application rule.
+
+In `skills/first-officer/references/fo-dispatch-core.md`, replace the loose
+“~175-char file-pointer” description with:
+
+> **Self-contained artifact; pointer-only transport.** Forward fresh `output.prompt`
+> and reuse-advance `prompt` unchanged as locator-only messages. They MUST NEVER carry
+> stage, declared-context, checklist, standing, scope, or feedback bytes; those belong
+> in the dispatch file the ensign reads first.
+
+Mirror this invariant in a short source comment beside the fresh and advance prompt
+renderers in `internal/dispatch/build.go`; do not create an ADR, specification, output
+field, or command.
 
 In both `docs/runtime-support.md` and
 `docs/site/contributing/adding-a-runtime.md`, replace the current propagation
@@ -348,8 +385,12 @@ a design reset rather than consuming tolerance.
 
 ## Boundary
 
-Do not fold this into s4 gate-room behavior, v21 source-build content identity, a new
-launcher lifecycle, or an ensign-without-Spacedock design. The durable-decisions
+**Self-contained artifact; pointer-only transport** is the boundary: assignment bytes
+live in the dispatch file, and fresh/reuse outer prompts remain locators regardless of
+assignment size. The ≤300-byte check is only a supported dev-fixture measurement, not
+the invariant. Do not fold this into s4 gate-room behavior, v21 source-build content
+identity, a new launcher lifecycle, an ensign-without-Spacedock design, a new
+ADR/specification/command, or prompt shortening/rejection. The durable-decisions
 walking skeleton and pre-release wait for this launcher-consistent artifact.
 
 ## Stage Report: ideation
@@ -370,7 +411,7 @@ Ideation reproduced the launcher-drift failure for both dispatch lifecycles and 
 - DONE: MATERIAL — add the existing read-adoption and shared round-recording consumers, with positive and negative tests, to the launcher-pinning design.
   AC-4 and the test plan now cover `/tmp/spacedock-s4-*`, quoted space-bearing A, lookalikes, B, and no-invocation controls without a new observer.
 - DONE: NEEDS DECISION — keep pointer size O(path) and limit the ≤300-byte claim to supported dev-workflow fresh and advance fixtures.
-  AC-2 now preserves legal long names and explicitly forbids a universal ceiling, shortening, or rejection mechanism.
+  AC-1 now makes **Self-contained artifact; pointer-only transport** the governing invariant, proves it relationally across hosts, preserves legal long names, and explicitly forbids a universal ceiling, shortening, or rejection mechanism.
 - DONE: Rebaseline all affected build goldens to exactly 26 without cutting meaningful cross-product coverage.
   The test plan names the retained dimensions and the expected surface makes 26 a fixed count rather than a tolerance band.
 - DONE: Add runtime-support documentation separating First Officer and dispatched-ensign launcher rules.
@@ -380,4 +421,4 @@ Ideation reproduced the launcher-drift failure for both dispatch lifecycles and 
 
 ### Summary
 
-Cycle 2 closes the two observer blind spots and binds the round proof to known fixture A while preserving advisory-only durable-state checks. It also narrows the pointer measurement, restores the full 26-golden baseline, adds both runtime docs, and recalculates the surface without broadening the launcher mechanism.
+Cycle 2 closes the two observer blind spots and binds the round proof to known fixture A while preserving advisory-only durable-state checks. It makes self-contained-file versus pointer-only-transport the main anti-regression invariant, narrows the pointer measurement, restores the full 26-golden baseline, adds both runtime docs, and recalculates the surface without broadening the launcher mechanism.
