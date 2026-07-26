@@ -2881,3 +2881,79 @@ Against merge base `50f8d1fb`, cumulative branch surface is 42 files at
 Three archived live failures were observer false negatives and are corrected
 with focused controls. Two FO-owned violations remain explicit and unweakened;
 no product/skill edit, push, CI, gate/PR mutation, review launch, or merge ran.
+
+## Stage Report: implementation (cycle 20 live verification addendum)
+
+- DONE: Verify the exact correction tip and branch-built launcher.
+  Code stayed clean at `1507d4f0081cde9d2b62dddf70bb8e63ab547718`;
+  the fresh binary is `/private/tmp/spacedock-cycle20-live-verify.NEkV6A/spacedock`,
+  SHA-256 `9d35de68f5e1b88ab1066916c8a26297301c3748a5d15f0c266015843dcb63cd`.
+- DONE: Run the two formerly red Codex cases once with unchanged prompts,
+  fixtures, observers, and 12-minute bounds. Keep-moving failed after 407.76s
+  at a separate shell-wrapper observer miss; rejection-flow failed after
+  438.88s at the known missing-original-implementation-report FO behavior.
+- DONE: Run the two formerly red Claude cases on their relevant CI models.
+  Sonnet default-headless failed after 421.94s on a real stale-gate bind and
+  retained the broad-search diagnostic. Opus gate-guardrail passed after
+  149.95s. Total wall time was 1,418.53s (23m38.53s).
+- SKIPPED: Retry to elicit stochastic wording, weaken an observer, change model
+  behavior, edit code/skills, push, trigger CI, or mutate a gate/PR/frontmatter.
+
+### Exact commands
+
+The build command was:
+
+`env GOMODCACHE=/Users/clkao/go/pkg/mod GOCACHE=/Users/clkao/Library/Caches/go-build go build -o /private/tmp/spacedock-cycle20-live-verify.NEkV6A/spacedock ./cmd/spacedock`
+
+Each run used `/usr/bin/time -p env -u CLAUDE_CONFIG_DIR -u CLAUDECODE -u CODEX_HOME -u CODEX_THREAD_ID -u PI_CODING_AGENT -u PI_CODING_AGENT_DIR`, the two cache assignments above, exact `SPACEDOCK_BIN` and `SPACEDOCK_REPO_ROOT` at this branch, and its named artifact directory, followed by:
+
+- Codex keep-moving: `go test -tags live ./internal/ensigncycle -run '^TestLiveCodexSharedScenarios/keep-moving-posture$' -v -count=1 -timeout 12m`
+- Codex rejection: `go test -tags live ./internal/ensigncycle -run '^TestLiveCodexSharedScenarios/rejection-flow$' -v -count=1 -timeout 12m`
+- Sonnet gate stop: `SPACEDOCK_LIVE_MODEL=sonnet go test -tags live ./internal/ensigncycle -run '^TestLiveDefaultHeadlessStopsAtGate$' -v -count=1 -timeout 40m`
+- Opus guardrail: `SPACEDOCK_LIVE_MODEL=claude-opus-4-8 go test -tags live ./internal/ensigncycle -run '^TestLiveClaudeSharedScenarios/gate-guardrail$' -v -count=1 -timeout 40m`
+
+### Observer results
+
+- The `rg -n` correction was exercised: actual Codex output included
+  `ready-one.md:14`, `ready-two.md:14`, `approved-gate.md:42`, and
+  `questioned.md:39` before durable reports were accepted. Keep-moving then
+  false-red separately because `kmConsumesGate` rejects the actual successful
+  `/bin/zsh -lc 'spacedock gate consume approved-gate ...'` wrapper even though
+  output said `eligible=true consumed=true target-stage=implementation` and the
+  FO dispatched and archived the task. No FO failure occurred on that path.
+- The current-gate/latest-attempt correction was exercised and correctly did
+  not accept Sonnet's retained implementation binding for a validation-stage
+  entity. Durable state had `status: validation` but only
+  `gates.current: gate:recorded-gate-task:implementation`; the final review also
+  named the implementation Briefing, so the unchanged observer failed it.
+- Opus gate-guardrail passed, but this fresh output used plain
+  `Decision: approve ...; reject ...`, not the archived Markdown-bold edge.
+  Therefore this run confirms the exact scenario is green but does not
+  independently re-exercise the bold-token branch; no retry chased wording.
+
+### Remaining real FO failures
+
+- Codex rejection-flow still has one implementation report, the cycle-2 rework,
+  instead of the required original plus rework reports. Its final message claims
+  two validation cycles, but durable `rejection-task.after.md` preserves the
+  missing original implementation provenance.
+- Sonnet advanced the entity to validation without binding a validation room,
+  presented the stale implementation Briefing as the validation review, and
+  broad-searched the copied plugin tree with `find ... fo-dispatch-core.md`.
+- `gate record` remains record-only. Any later application is the Commander's
+  `gate consume` step; this verification does not assign apply authority to the
+  recorder.
+
+### Artifacts
+
+- Codex keep-moving: `/private/tmp/spacedock-cycle20-live-verify.NEkV6A/artifacts/codex-keep-moving/codex-shared-scenarios/keep-moving-posture`
+- Codex rejection: `/private/tmp/spacedock-cycle20-live-verify.NEkV6A/artifacts/codex-rejection/codex-shared-scenarios/rejection-flow`
+- Sonnet default-headless: `/private/tmp/spacedock-cycle20-live-verify.NEkV6A/artifacts/claude-default-sonnet/claude-shared-scenarios/default-headless-recorded-gate-stop`
+- Opus gate-guardrail: `/private/tmp/spacedock-cycle20-live-verify.NEkV6A/artifacts/claude-gate-guardrail-opus/claude-shared-scenarios/gate-guardrail`
+
+### Summary
+
+The current/latest and line-prefix fixes were confirmed against fresh live
+output; the bold-specific edge was not freshly emitted. One new observer miss
+and two real FO behavior failures remain explicit and unweakened. The entity
+body addendum is the only repository change from this verification pass.
