@@ -2371,3 +2371,46 @@ and rejection-flow semantics remain unchanged.
   `89745206787` green when inspected at `2026-07-26T02:16Z`. Codex-live job
   `89745206805` and Claude-live jobs `89745206783` / `89745206777` were still in
   progress and are not claimed here.
+
+## Cycle 18 Feedback
+
+- **REJECTED:** Exact-head run `30183914074` exposed one Claude-live harness seam.
+  Jobs `89747365152` (Sonnet) and `89747365151` (Opus) produced semantically valid
+  reviews, but `claudeLiveRunner.withStubPATH` only prefixed `PATH`. The inherited
+  `SPACEDOCK_BIN` therefore bypassed the recorded-gate shim, which emitted no
+  `state-head`; the recorder correctly rejected the incomplete durable bind.
+- Correct only the Claude stub seam: bind `SPACEDOCK_BIN` to
+  `<shimDir>/spacedock`, add a focused inherited-environment control, and leave gate
+  semantics, presentation prose, review recognition, and all oracles unchanged.
+
+## Stage Report: implementation (cycle 18)
+
+- DONE: Reproduce and isolate the exact failure.
+  The retained Claude reviews contain the required title, stage, chosen direction,
+  recommendation, Briefing identity and digest, and decision. The missing
+  `state-head` came from bypassing the logging shim, not from review semantics.
+- DONE: Add a falsifiable regression before the correction.
+  `TestClaudeLiveRunnerWithStubPATHBindsStubLauncher` first failed because an
+  inherited `SPACEDOCK_BIN` survived `withStubPATH`. It also proves the returned
+  runner is a copy and does not mutate the source environment.
+- DONE: Make the smallest bounded correction.
+  Commit `3bdc0b2b` makes the Claude seam replace `SPACEDOCK_BIN` with
+  `<shimDir>/spacedock`, matching the existing Codex seam. The final surface is one
+  test-only file, `internal/ensigncycle/claude_live_runner_test.go`, at `+20/-3`.
+- SKIPPED: Change gate semantics, presentation prose, review regexes, or oracles.
+  None was necessary or authorized; those surfaces are untouched.
+- SKIPPED: Rerun live models.
+  The focused control directly falsifies the harness binding defect; independent
+  validation owns the fresh exact-head live run.
+- DONE: Verify the final tree.
+  The focused live-tagged regression, `gofmt -w ./cmd ./internal`,
+  `go test ./...`, `go test ./... -race`, and `git diff --check` all passed.
+- DONE: Push the correction.
+  Local branch, remote branch, and PR #570 head all match
+  `3bdc0b2b0dafc7670cd3107b4f0bda2888579e66`.
+
+### Summary
+
+Cycle 18 binds Claude's recorded-gate launcher invariant at the stub seam and adds a
+focused inherited-environment control. No product, skill, prompt, gate, presenter,
+review-recognition, or oracle behavior changed.
