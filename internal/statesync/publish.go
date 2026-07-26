@@ -131,8 +131,14 @@ func Pull(checkout, branch string) Outcome {
 
 func runGit(checkout string, args ...string) (bool, string) {
 	cmd := exec.Command("git", append([]string{"-C", checkout}, args...)...)
-	out, err := cmd.CombinedOutput()
-	return err == nil, string(out)
+	out, err := cmd.Output()
+	if err == nil {
+		return true, string(out)
+	}
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		return false, string(out) + string(exitErr.Stderr)
+	}
+	return false, err.Error()
 }
 
 func validBranch(branch string) (bool, string) {

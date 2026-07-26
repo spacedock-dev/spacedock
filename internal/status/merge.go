@@ -574,9 +574,6 @@ func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
 			snap.companionTracked,
 			snap.companionPresent,
 		)
-		for i := range pathspecs {
-			pathspecs[i] = literalGitPathspec(pathspecs[i])
-		}
 		args := append([]string{"reset", "-q", "--"}, pathspecs...)
 		if _, err := runGitCmd(gitRoot, args...); err != nil {
 			errs = append(errs, fmt.Errorf("unstage archive rename: %w", err))
@@ -616,11 +613,8 @@ func commitArchiveMove(entityDir, slug string, snapshot archiveSnapshot, stderr 
 		!isFolder && snapshot.companionPresent,
 	)
 	// Stage the vacated source (deletion) and the new dest. git records this as a
-	// rename in the commit. Literal pathspecs preserve valid entity names that look
-	// like Git magic; --all is never used.
-	for i := range pathspecs {
-		pathspecs[i] = literalGitPathspec(pathspecs[i])
-	}
+	// rename in the commit. `archiveMovePathspecs` returns literal pathspecs so
+	// valid entity names that look like Git magic stay exact; --all is never used.
 	addArgs := append([]string{"add", "--"}, pathspecs...)
 	if _, err := runGitCmd(gitRoot, addArgs...); err != nil {
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to stage archive move for %s: %v", slug, err))
@@ -630,10 +624,6 @@ func commitArchiveMove(entityDir, slug string, snapshot archiveSnapshot, stderr 
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to commit archive move for %s: %v", slug, err))
 	}
 	return 0
-}
-
-func literalGitPathspec(path string) string {
-	return ":(literal)" + path
 }
 
 // archiveMovePathspecs returns the source and dest pathspecs (relative to gitRoot)
