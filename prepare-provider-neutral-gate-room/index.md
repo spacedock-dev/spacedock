@@ -3149,3 +3149,30 @@ Roborev job 2828 reviewed follow-up commit `7295c155` and found no issues.
 
 Exact tip `7295c155` is clean and passes formatting, full tests, race tests, and
 the merge-base whitespace check. No implementation file changed.
+
+## Stage Report: implementation (cycle 23 CI shell portability correction)
+
+- DONE: Remove the undeclared zsh dependency from the failing offline test.
+  Commit `b32d64b5` resolves `sh` from `PATH` and uses only its POSIX `-c`
+  surface for the state-head/outside-CWD success and masked-failure controls.
+- DONE: Preserve the separate Codex zsh-prefix parser regression.
+  `TestKeepMovingGateConsumeAdvancement` remains unchanged and the full
+  ensigncycle suite exercises its `/bin/zsh -lc` transcript fixture.
+- DONE: Exercise focused and complete local verification.
+  The exact test passed in 3.16s, `go test ./internal/ensigncycle -count=1` in
+  26.16s, `go test ./...` in 94.24s, and `go test ./... -race` in 88.16s.
+- DONE: Verify formatting and the complete branch diff.
+  `gofmt -w ./cmd ./internal` completed in 0.07s; merge-base
+  `git diff --check` passed in 0.04s with a clean worktree.
+- DONE: Obtain independent review.
+  Roborev job 2836 reviewed `b32d64b5` and found no issues.
+- DONE: Push the single CI retry.
+  Push `7295c155..b32d64b5` started Runtime Live E2E run 30203203948 plus the
+  expected docs and install-e2e workflows from the same branch update.
+
+### Summary
+
+Offline run 30202757729 failed before assertions because Ubuntu lacks
+`/bin/zsh`; the regression itself requires only a portable shell. The fix
+removes that host-only dependency without weakening durable-state evidence or
+the intentional zsh transcript-parser coverage.
