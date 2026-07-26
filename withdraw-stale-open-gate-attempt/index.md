@@ -40,35 +40,86 @@ gates:
                 blockers: []
 ---
 
-A prepared request-backed gate attempt is correctly frozen, but a legitimate re-scope currently has no truthful operation that retires the open attempt. The operator must either record `hold` or another Resolution against a Briefing it already knows is stale, or hand-edit gate state. The first path fabricates a decision; the second bypasses the only canonical writer.
+A provider-neutral prepared attempt can be frozen open after its reviewed candidate
+becomes stale. Today there is no truthful supported exit: recording `hold` fabricates a
+Captain decision, while editing `gates:` bypasses the canonical writer. This design adds
+one FO lifecycle operation that retires the stale attempt without a Resolution, keeps
+its retained authority immutable, and lets the existing `gate prepare` path create the
+ordinary successor.
+
+This cycle-2 design is rebased on s4's implementation tip `e328ecc6`
+(`prepare-provider-neutral-gate-room`, PR #570). It supersedes the cycle-1 command,
+room-basename, replacement, and proof choices preserved in the first Stage Report
+below. Implementation must recheck the s4 tip after it lands; semantic drift in
+preparation, retained authority, or provider recording requires design re-entry.
 
 ## Problem and boundary
 
-Add one narrow recorder action for a selected, current-stage, request-backed open attempt. The action records who withdrew it, when, and why; it records no Resolution, provider evidence, application, status change, or dispatch. The retained Briefing and request stay digest-bound in their original folder. A later ordinary `--briefing` bind appends attempt N+1 instead of rebinding attempt N.
+The operation applies only to the selected current-stage attempt when that attempt is
+open, request-backed, prepared by `gate prepare`, and has no provider output. It adds
+one attempt-local withdrawal marker. It writes no Resolution, provider evidence,
+application, workflow status, replacement room, or dispatch.
 
-This task does not add compatibility or migration, generic event/history machinery, a cancel/supersede vocabulary, a new writer, automatic room construction, withdrawal of closed attempts, or withdrawal by Captains/ensigns. Closed attempts and chat-only open attempts keep their existing behavior.
+This task adds no compatibility or migration, generic event/history model,
+cancel/supersede vocabulary, lineage pointers, alternate writer, Captain/ensign
+withdrawal, closed-attempt withdrawal, chat-only withdrawal, or automatic replacement.
+The legacy Briefing recorder may remain for its existing request-less behavior, but it
+is neither the stale-room recovery path nor a supported positive-path proof.
 
-## Exercised spike
+## Spike evidence and corrected proof boundary
 
-On 2026-07-26 a throwaway implementation exercised `TestSpikeWithdrawPreparedRoomColdBootAndReplace` through the real CLI on a folder-form split-root fixture. Attempt 1 bound canonical `briefing.json` plus request-digested `request.json`; `gate record --withdraw` produced `state=withdrawn`; a fresh `status --boot --identify --json` produced `readiness=withdrawn-awaiting-prepare`; binding room 2 appended attempt 2; and `gate record --room` recorded its actual Captain approval. The first attempt retained no Resolution or application, the second alone carried the approval, and attempt-1 Briefing/request bytes were identical before and after. The focused Go test passed in 0.10s; the throwaway code was removed.
+The cycle-1 throwaway spike established only that an attempt-local third state can
+round-trip, survive a cold boot, preserve attempt-N bytes, and allow a later attempt to
+own the real decision. Its `gate record --withdraw`, `briefing.json`, and subsequent
+`record --briefing` calls predated the binding s4 surface and are not acceptance
+evidence for this design.
 
-The spike settled the riskiest mechanisms: an explicit third attempt state round-trips through canonical YAML, the existing ordered-attempt rule supplies successor identity without a lineage field, and the existing boot scheduling index can carry the one recovery action.
-
-## Proposed approach
-
-### Command and truthful authority
-
-Extend the existing semantic recorder grammar:
+The supported behavior proof is now exactly:
 
 ```text
-spacedock gate record ENTITY --withdraw --actor agent:first-officer --reason TEXT [--workflow-dir DIR]
+gate prepare N
+state commit
+gate withdraw N
+state commit
+cold boot
+gate prepare N+1
+state commit
+provider close N+1 with gate record --room
+state commit
+gate consume N+1
+state commit
 ```
 
-`--withdraw` is exactly one semantic source alongside `--briefing`, `--room`, and `--decision`; combining them refuses. `agent:first-officer` is the only accepted actor because withdrawal is an FO lifecycle mutation, not a Captain verdict. The reason is required after whitespace trimming. The binary supplies the RFC3339Nano UTC timestamp and derives the selected gate and attempt; callers supply no timestamp, id, target, or operation envelope.
+The implementation test must drive that sequence through a freshly built real binary
+on a folder-form split-root fixture. It must not substitute direct YAML mutation,
+`record --briefing`, or chat `--decision` for any step.
 
-The implementation stays inside `RecordSemantic`, `lockEntity`, subtree compare-and-swap validation, `atomicWrite`, and later `state commit`. No second command writer or direct frontmatter path is introduced.
+## Governing design
 
-### Minimum durable shape
+### Public command and implicit authority
+
+The public grammar is exactly:
+
+```text
+spacedock gate withdraw ENTITY --reason TEXT [--workflow-dir DIR]
+```
+
+`withdraw` is a sibling of `prepare`, `record`, `validate`, `eligibility`, and
+`consume`, not a semantic source of `gate record`. It accepts only one nonblank UTF-8
+reason and the ordinary workflow directory. There is no `--actor`, timestamp, attempt,
+gate, successor, or room flag. Passing `--actor` or any record/prepare flag is a usage
+error before mutation.
+
+The binary always records `by: agent:first-officer`; that fixed attribution is the
+command's authority contract, not caller-supplied provenance. It supplies the
+RFC3339Nano UTC timestamp and derives the current gate and attempt under the existing
+entity lock. Successful stdout is stable:
+
+```text
+withdrawn gate=<gate> attempt=<attempt> state=withdrawn briefing=<briefing>
+```
+
+### Minimum durable shape and explicit attempt states
 
 Attempt N gains only this optional mapping:
 
@@ -79,101 +130,294 @@ withdrawal:
   reason: Sprint re-scope replaced the reviewed candidate.
 ```
 
-The field name supplies the event type and the owning attempt supplies identity, so `type`, `id`, `state`, successor, and lineage fields would be redundant. Attempt states are mutually exclusive:
+The field name and owning attempt supply type and identity, so no event id, state,
+successor, or lineage field is added. `Withdrawal` validation requires the exact fixed
+actor, a parseable timestamp, and a nonblank reason. A withdrawn attempt must also
+retain a nonempty valid `request-digest`.
 
-- open: no `withdrawal` and no `resolution`;
-- withdrawn: `withdrawal` present, no `resolution`, `provider-evidence`, or `application`;
-- closed: `resolution` present, no `withdrawal`, with the existing application rules.
+Every attempt is classified before lifecycle logic runs:
 
-Validation accepts no other shape. Existing canonical-v1 records need no rewrite; unknown fields still fail closed.
+- open: both `withdrawal` and `resolution` are absent;
+- withdrawn: `withdrawal` is present and `resolution`, `provider-evidence`, and
+  `application` are absent;
+- closed: `resolution` is present and `withdrawal` is absent, with all existing
+  provider-evidence and application rules unchanged.
 
-### Withdrawal, replacement, and frozen history
+No other combination validates. `Resolution == nil` alone never means open.
+Withdrawn and closed are the two terminal/retired attempt states; “terminal” here is
+attempt-local and does not change the entity's workflow stage.
 
-Under the existing entity lock, withdrawal succeeds only when all of these are true:
+### One writer, retained authority, and byte-clean refusal
 
-1. the workflow status resolves to the selected current logical gate;
-2. its last ordered attempt is open and has no prior withdrawal;
-3. the attempt has a nonempty `request-digest`;
-4. retained `briefing.json` still matches its canonical digest/id;
-5. retained `request.json` still matches its digest and exact gate, attempt, Briefing, actor, approver, and Captain authority;
-6. actor is exactly `agent:first-officer` and reason is nonblank.
+`gates.Withdraw` uses the same `lockEntity`, decoded old-node compare-and-swap,
+`Validate`, `ValidateTransition`, `writeDocument`, and later path-scoped
+`state commit` sequence as the other gate mutations. A new CLI subcommand does not
+create a second state writer.
 
-Only after every check does one atomic entity replacement add `withdrawal`. The command never writes room files. Every nonzero result—including wrong actor, blank reason, stale selection, chat-only/open/closed state, changed Briefing/request bytes, lock contention, and repeat withdrawal—leaves entity and room bytes unchanged and leaves no lock residue.
+While holding that lock, it first calls s4's existing `validateRetainedAuthority` on
+the complete document, then resolves the selected current-stage attempt. That
+validator deliberately walks every request-backed historical attempt, reopens its
+canonical `gate-briefing.json` and `request.json`, resolves retained Git-root source
+objects, and—where provider evidence exists—revalidates the exact provider Result,
+presented inventory, and durable Resolution equality. Withdrawal does not skip the
+candidate attempt or weaken the provider-evidence branch.
 
-`ValidateTransition` freezes withdrawn attempts exactly as it freezes closed attempts. `gate validate` rechecks the retained Briefing/request digests for every withdrawn attempt, including historical attempt N after N+1 exists. `record --briefing` treats a withdrawn last attempt as retired: it derives and validates the ordinary successor attempt id, appends N+1, and never changes N. The existing state-commit folder scope commits `index.md` and both room trees while excluding dirty sibling entities.
+The full validator is O(history), including Git-source reopening. That cost is accepted
+for correctness because no measured fixture or live trace currently breaches a
+declared latency bound. Caching, indexing, incremental validation, and pruning are
+deferred until a separate task supplies both a reproducible real-binary latency
+measurement and an explicit maximum for a stated attempt count.
 
-### Status, boot, and First Officer recovery
+After full retained-authority validation, withdrawal requires all of these:
 
-`gate validate` and `gate-state` report `withdrawn` for a selected withdrawn attempt while `gate-resolution`, `gate-decision`, and application fields remain empty. `gate-readiness` reports `withdrawn-awaiting-prepare`; identify boot includes that actionable row in `ready_gates`.
+1. entity status names a gate stage and resolves the same record as
+   `gates.current.gate`;
+2. the target is that record's last ordered attempt and its explicit state is open;
+3. its `request-digest` is present and valid;
+4. the retained prepared room still contains exactly s4's
+   `gate-briefing.json` and `request.json`, with no provider output;
+5. the trimmed reason is nonblank.
 
-The FO handles that row in one way: read the entity, build a replacement room for derived attempt N+1, bind it with the existing `gate record --briefing`, commit, and present it. After binding, the normal projection is `state=open` / `awaiting-captain`. A restart therefore never confuses a withdrawal with validation still in progress, a Captain decision, or the replacement attempt.
+The exact two-entry room check prevents withdrawing an already-returned provider
+decision merely because it has not yet been recorded. Such a room must follow the
+existing provider recording path.
 
-### Mechanism choices
+Only after every check succeeds does one atomic entity replacement add `withdrawal`.
+The command never writes the room. Blank reason, unknown flags, wrong selection or
+stage, chat-only/open-without-request, closed, already withdrawn, corrupt retained
+authority, provider output, lock contention, validation failure, and CAS failure all
+return nonzero with identical entity and room bytes and no residual lock file.
+
+### Frozen history and unchanged provider-evidence rules
+
+`ValidateTransition` freezes both retired states. A previously withdrawn attempt
+cannot be edited, deleted, closed later, rebound, given provider evidence/application,
+or changed when N+1 is appended. Its retained Briefing/request and Git-source
+authority remain subject to every later `gate validate`, `gate prepare`,
+`gate record`, `gate eligibility`, and `gate consume` read that already invokes the
+full retained-authority validator.
+
+The existing closed prepared-attempt rules do not change: if durable
+`provider-evidence` exists, its Result and presented-inventory digests must verify and
+the retained Result Resolution must exactly equal the durable Resolution. Withdrawal
+creates no provider evidence and introduces no validation branch that permits provider
+evidence without a Resolution.
+
+### s4 preparation and mutation audit
+
+The implementation must replace resolution-null shorthand with explicit state
+predicates at every s4 preparation seam:
+
+- `prepareTarget`: an open prepared attempt replays N; a withdrawn or closed attempt
+  derives N+1.
+- Pre-publish frozen-binding check: only an explicit open request-backed attempt may
+  replay, and a changed binding still refuses.
+- `preparedEntityReplaySource` and `preparedReplay`: only an explicit open prepared
+  attempt is replayable; withdrawn N is never a replay source.
+- Post-publication entity mutation: only open N can take an idempotent same binding;
+  withdrawn or closed N appends the derived successor. A withdrawn attempt has no
+  pending application to supersede.
+- `publishPreparedRoom` retains its existing clean publish/rollback behavior and exact
+  two-file room. A failure after publishing N+1 remains byte-clean under s4's current
+  rollback/CAS contract and can never rewrite N's room.
+
+The focused preparation tests must exercise both target selection and the
+post-publication mutation branch. Merely unit-testing `prepareTarget` is insufficient.
+
+### Recorder, application, summary, and readiness audit
+
+All gate mutation guards classify the attempt explicitly:
+
+- room-backed and chat recording accept only open attempts and refuse withdrawn ones
+  before adding provider evidence, Resolution, or application;
+- the retained legacy Briefing bind, if still present, may mutate only an explicit
+  open attempt and must append after either retired state;
+- application eligibility and consumption require the explicit closed state, so a
+  withdrawn attempt remains read-only and ineligible;
+- transition validation freezes withdrawn and closed attempts, while retaining the
+  one existing pending-to-superseded application exception only for closed attempts.
+
+`CurrentSummary` and `gate validate` report `state=withdrawn` with empty resolution,
+decision, and application fields. `CurrentStageReadiness` reports
+`withdrawn-awaiting-prepare`. `computeReadyGates` includes that state in the
+identify-boot `ready_gates` array, yielding exactly one row for the entity:
+
+```json
+{"id":"<id>","slug":"<slug>","current":"<stage>","readiness":"withdrawn-awaiting-prepare"}
+```
+
+No dispatch becomes eligible and workflow status is unchanged. After `gate prepare`
+appends N+1, summary/readiness return to `open` / `awaiting-captain` for N+1.
+
+### First Officer cold-boot recovery
+
+The FO capability preflight requires the `withdraw` subcommand and `--reason` flag.
+When an ordinary presentation becomes stale before any provider decision, the FO runs
+`gate withdraw`, commits the selected entity, and stops unless it already has the
+inputs needed for a new preparation. On a fresh boot,
+`withdrawn-awaiting-prepare` has exactly one recovery action: run `gate prepare` for
+the derived successor, commit its entity plus new two-file room, present that emitted
+room, and stop at the Captain boundary. It never records, consumes, presents, or
+dispatches the withdrawn attempt, and never uses `record --briefing` for recovery.
+
+## Mechanism choices
 
 | Mechanism | Value AC | Simplest alternative | Why insufficient |
 | --- | --- | --- | --- |
-| Attempt-local `withdrawal` mapping | AC-1, AC-2 | Record `hold` | `hold` asserts a Captain decision and creates an application. |
-| `gate record --withdraw` semantic source | AC-1, AC-2 | Add a `gate withdraw` writer or hand edit | Both split canonical write ownership; hand edit also bypasses lock/CAS. |
-| Separate withdraw, then existing `--briefing` prepare | AC-1, AC-3 | Require replacement Briefing in the withdrawal command | A legitimate re-scope may pause before the replacement exists; atomic coupling makes cold-boot recovery impossible. |
-| Ordered successor after a withdrawn attempt | AC-1, AC-2 | Add successor/lineage pointers | Existing ordered attempts and derived ids already identify N+1. |
-| `withdrawn-awaiting-prepare` ready row | AC-3 | Reuse `validating` or omit the row | Both make restart ambiguous and can strand the retired attempt. |
-| Digest revalidation plus frozen-transition guard | AC-2 | Trust Git history alone | The recorder must refuse against current corrupt bytes before a later commit can preserve them. |
+| Attempt-local `withdrawal` | AC-1, AC-2 | Record `hold` | `hold` asserts a Captain decision and creates an application. |
+| Separate `gate withdraw` using the shared writer | AC-1, AC-2 | Add `--withdraw` to `gate record` | The binding public surface is a distinct FO lifecycle action; provenance is implicit, not a record source. |
+| Existing `gate prepare` after withdrawal | AC-1, AC-3 | Rebind with `record --briefing` | s4 owns provider-neutral creation, target derivation, publication rollback, and retained Git-source authority. |
+| Explicit open/withdrawn/closed classifier | AC-1, AC-2 | Test only `Resolution == nil` | Both open and withdrawn lack a Resolution but only open may replay or mutate. |
+| Full retained-authority validation | AC-2 | Validate only N | Corrupt historical evidence or provider association must fail before any new mutation. |
+| `withdrawn-awaiting-prepare` ready row | AC-3 | Omit the retired state | Cold boot would strand N or mistake it for a Captain-ready room. |
 
 ## Acceptance criteria
 
-**AC-1 (VALUE)** One stale prepared attempt can be retired and replaced with exactly zero false Resolutions: the resulting logical gate has attempt N with one withdrawal and no Resolution/application, plus attempt N+1 carrying only its actual recorded decision.
+**AC-1 (VALUE)** A stale prepared attempt is retired and replaced with exactly zero
+false Resolutions: attempt N has one FO-attributed withdrawal and no Resolution,
+provider evidence, or application; attempt N+1 alone carries its actual room-backed
+Captain Resolution and consumed application.
 
-Test: a fresh-binary folder-form CLI fixture binds room N, withdraws, prepares N+1, records N+1's room-backed Result, and asserts the two exact attempt shapes. The test fails if withdrawal maps to `hold`, rewrites N, reuses N's id, or places the actual decision on N.
+Test: the fresh-binary split-root fixture runs the exact supported sequence above.
+It fails if withdrawal routes through `record`, writes caller-selected attribution,
+uses chat decision recording, reuses N, changes workflow status, or places the
+provider Resolution on N.
 
-**AC-2 (INTEGRITY)** A withdrawn attempt remains immutable, digest-verifiable historical evidence, and every refused withdrawal changes zero entity or room bytes.
+**AC-2 (INTEGRITY)** Withdrawn N is immutable, retains verifiable s4 authority, and
+every refusal is byte-clean without weakening provider-evidence validation.
 
-Test: the lifecycle fixture compares attempt-N YAML and whole-room bytes after withdrawal, replacement, validation, and decision; `gate validate` re-verifies historical Briefing/request digests. A table mutates actor, blank reason, current selection, Briefing bytes, request bytes, closed/chat-only state, and repeat-withdraw inputs, then asserts nonzero exit, identical pre/post tree digest, and no lock file. A direct transition test mutates/deletes a withdrawn attempt and must fail.
+Test: before/after tree digests cover `index.md`, room N, room N+1, dirty sibling
+state, and lock paths across blank reason, extra/`--actor` flags, stale selection,
+chat-only attempt, closed attempt, repeat withdrawal, corrupt Briefing/request/Git
+source, provider output, and lock contention. Historical validation after N+1 close
+and consume must still detect mutations to N and must still detect Result,
+presented-inventory, or Resolution mismatch on any closed provider attempt.
 
-**AC-3 (RECOVERY)** A cold boot after withdrawal exposes exactly one `ready_gates` row with `withdrawn-awaiting-prepare`; after N+1 binds, that same entity projects the N+1 attempt as `awaiting-captain`, with no dispatch or workflow-status change in either state.
+**AC-3 (RECOVERY)** Cold boot after withdrawal emits exactly one
+`withdrawn-awaiting-prepare` ready row; preparation appends N+1 and returns the entity
+to `awaiting-captain` without dispatch or status change.
 
-Test: the real split-root lifecycle restarts through `status --boot --identify --json` on both sides of replacement and asserts exact rows, attempt ids, status bytes, and empty dispatchable output. It fails if withdrawal is omitted, projected as `validating`/decision-ready, or if the old attempt remains current.
+Test: the real-binary lifecycle asserts exact boot JSON before and after replacement.
+The registered live FO gate-stop lane starts from a durably withdrawn prepared attempt
+and proves that the shipped FO uses `gate prepare`, commits N+1, presents the emitted
+room, and stops open without `record --briefing`, decision, consume, or dispatch.
 
 ## Behavior-first test plan
 
-1. Add focused model/transition tables in `internal/gates/gates_test.go` for the three exclusive states, minimum withdrawal validation, frozen history, readiness, and “withdrawn means append successor.” Estimated <2s; adversarial edit: change the open test back to `Resolution == nil`, which must make the successor assertion fail.
-2. Extend `internal/ensigncycle/recorded_gate_lifecycle_test.go` with the fresh-binary folder-form path from AC-1 through AC-3, the byte-clean refusal matrix, cold boot, room-backed replacement decision, and real `state commit` Git assertions. Estimated 5–15s; fixture includes dirty sibling state and asserts commits contain `index.md` plus both rooms but exclude the sibling.
-3. Extend the FO skill contract test before changing command text. It must require `--withdraw`, `withdrawn-awaiting-prepare`, FO-only actor/reason, commit-after-withdraw, and re-prepare rather than decision/consume. Estimated <1s; deleting any one lifecycle instruction must fail the test.
-4. Run `go test ./internal/gates ./internal/ensigncycle ./internal/contractlint`, then the repository-required `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. No live host test is needed: the claim is binary state behavior, boot projection, Git durability, and shipped FO instruction text, all covered by fresh-binary/real-Git fixtures.
+1. Add model and transition tests first in `internal/gates/gates_test.go`: the three
+   exclusive states, fixed withdrawal attribution/time/reason, request-backed
+   requirement, frozen retired history, summary, and readiness. Mutating the classifier
+   back to `Resolution == nil` must make withdrawn replay/readiness tests fail.
+2. Add s4 regression tests first in `internal/gates/prepare_test.go`: prepare N,
+   install a valid withdrawal through the production writer seam, prepare N+1, and
+   verify target derivation, replay exclusion, post-publish append, exact old-room
+   bytes, rollback, and retained-authority refusal. A mutant that takes the old
+   `previous.Resolution == nil` branch must fail.
+3. Add CLI tests first in `internal/cli/gate_test.go` for the exact sibling-command
+   grammar, implicit actor, stable stdout, and usage/semantic refusal split. Add status
+   projection tests in `internal/status/gates_coexist_test.go` and
+   `internal/status/boot_identify_test.go`.
+4. Extend `internal/ensigncycle/recorded_gate_lifecycle_test.go` with the exact
+   prepare-N → withdraw → cold-boot → prepare-N+1 → provider-room-close → consume
+   sequence using a freshly built binary, real split-root commits, dirty sibling, and
+   whole-tree byte oracles. This is the behavioral acceptance proof.
+5. Extend the already registered `TestLiveDefaultHeadlessStopsAtGate` lane in
+   `internal/ensigncycle/live_gate_stop_test.go` and its existing Claude runner
+   orchestration with a withdrawn-start variant. The live oracle requires exactly one
+   successful N+1 prepare and commit, the emitted-room presentation, and no legacy
+   Briefing bind/close/consume/dispatch.
+6. Extend `internal/contractlint/fo_function_reference_invariant_test.go` before skill
+   text changes. This test is structural only: it checks preflight tokens and
+   withdraw/commit/prepare ordering, but it is not evidence that the binary or a live
+   FO performs the lifecycle.
+7. Run focused packages and the registered applicable live lane when credentials are
+   available, then `gofmt -w ./cmd ./internal`, `go test ./...`, and
+   `go test ./... -race`.
 
-## Expected surface
+## Expected implementation surface
 
-Baseline: 14 existing files, approximately +579/-55 LOC (net +524). Tolerance is ±20% per test/doc file and ±10 LOC per production file; any new file, dependency, production package, or unlisted file requires design re-entry.
+Estimate baseline: s4 tip `e328ecc6`. The expected delta is 21 existing files,
+approximately +1,000/-105 LOC. These are planning estimates, not line-count claims:
+test/doc files may vary ±25% and production files ±15 lines as s4 lands. A new
+production package, dependency, persistence shape, writer, or proof substitution
+requires design re-entry; ordinary estimate variance is reported in the next Stage
+Report.
 
-| File | Expected LOC | Purpose |
+| File | Estimated changed LOC | Purpose |
 | --- | ---: | --- |
-| `internal/gates/model.go` | +38/-6 | Withdrawal model, exclusive-state validation, summary/readiness state |
-| `internal/gates/operation.go` | +68/-10 | Semantic source, authority/refusals, withdraw write, successor and freeze rules |
-| `internal/gates/io.go` | +16/-0 | Historical withdrawn-room digest verification |
-| `internal/cli/cli.go` | +28/-8 | `--withdraw` grammar, help, source validation, stable output |
-| `internal/status/format.go` | +1/-1 | Include the recovery readiness in `ready_gates` |
-| `internal/gates/gates_test.go` | +105/-0 | State, transition, refusal, and successor unit tests |
-| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +190/-0 | Fresh-binary, cold-boot, real-Git, byte-clean lifecycle test |
-| `internal/contractlint/fo_function_reference_invariant_test.go` | +15/-3 | FO lifecycle text smoke test added before skill text changes |
-| `skills/fo-gate-lifecycle/SKILL.md` | +18/-6 | Preflight, withdraw/commit/re-prepare, and resume behavior |
-| `docs/specs/gate-resolution-frontmatter-contract.md` | +42/-10 | Canonical schema and lifecycle contract |
-| `docs/site/concepts/gates-and-decisions.md` | +20/-4 | Operator-facing stale-open recovery explanation |
-| `docs/site/reference/frontmatter-contract.md` | +7/-3 | Compact field/invariant reference |
-| `docs/site/reference/command-reference.md` | +10/-3 | Public grammar and readiness capability |
-| `docs/schema/entity.mdschema.yml` | +6/-4 | Machine-readable writer and state invariants |
+| `internal/gates/model.go` | +52/-18 | Withdrawal type, explicit classifier, validation, summary/readiness |
+| `internal/gates/operation.go` | +86/-20 | Shared-lock withdrawal and explicit recorder/transition guards |
+| `internal/gates/prepare.go` | +31/-13 | Target, replay, pre-publish, and post-publish explicit-state branches |
+| `internal/gates/application.go` | +6/-4 | Explicit closed-state eligibility/consume guard |
+| `internal/cli/cli.go` | +43/-12 | Exact sibling grammar, help, parsing, stable output |
+| `internal/status/format.go` | +2/-1 | Schedule withdrawn recovery in `ready_gates` |
+| `internal/gates/gates_test.go` | +130/-0 | Three-state validation, freeze, summary/readiness |
+| `internal/gates/prepare_test.go` | +170/-0 | Successor publication, replay exclusion, rollback, retained authority |
+| `internal/cli/gate_test.go` | +82/-0 | Grammar, stdout, implicit actor, byte-clean refusals |
+| `internal/status/gates_coexist_test.go` | +24/-0 | Withdrawn field projection |
+| `internal/status/boot_identify_test.go` | +32/-0 | Exact cold-boot ready row |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +220/-8 | Fresh-binary supported sequence and Git/byte oracles |
+| `internal/ensigncycle/live_gate_stop_test.go` | +42/-2 | Registered withdrawn-start live variant |
+| `internal/ensigncycle/claude_live_runner_test.go` | +56/-6 | Existing lane fixture/oracle orchestration |
+| `internal/contractlint/fo_function_reference_invariant_test.go` | +20/-4 | Structural skill-order smoke only |
+| `skills/fo-gate-lifecycle/SKILL.md` | +22/-8 | Preflight, withdrawal, commit, cold-boot prepare |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | +48/-18 | Canonical third state, authority, retained validation |
+| `docs/site/concepts/gates-and-decisions.md` | +20/-5 | Operator-facing truthful recovery |
+| `docs/site/reference/frontmatter-contract.md` | +14/-6 | Compact state and frozen-history invariants |
+| `docs/site/reference/command-reference.md` | +14/-5 | Exact command and output |
+| `docs/schema/entity.mdschema.yml` | +10/-5 | Machine-readable shape and state invariants |
+
+No `internal/gates/io.go` change is expected: withdrawal reuses s4's existing
+`validateRetainedAuthority` rather than adding or weakening an authority reader.
 
 ## Proposed documentation and skill wording
 
-`skills/fo-gate-lifecycle/SKILL.md` preflight changes from requiring the existing flags to: “Require `record`, `validate`, `eligibility`, `consume`, `--briefing`, `--room`, `--decision`, `--withdraw`, `--actor`, `--reason`.” Add: “For `withdrawn-awaiting-prepare`, commit the withdrawal if needed, derive and retain attempt N+1, bind it with `--briefing`, commit, and present; never record or consume the withdrawn attempt.”
+`skills/fo-gate-lifecycle/SKILL.md`:
 
-`docs/specs/gate-resolution-frontmatter-contract.md` changes “Resolution absence means open; Resolution presence means closed” to: “Neither withdrawal nor Resolution means open; withdrawal alone means withdrawn; Resolution alone means closed. Withdrawn and closed attempts are frozen.” Add the exact YAML mapping and command grammar above, FO-only authority, request-backed/current-attempt checks, byte-clean refusals, and successor-append rule.
+> Require `prepare`, `withdraw`, `record`, `validate`, `eligibility`, and `consume`
+> plus `--reason` in the single lifecycle capability preflight. When the current
+> prepared room is stale and has no provider output, run
+> `spacedock gate withdraw ENTITY --reason TEXT`, commit the entity, and do not
+> present or close that attempt. On `withdrawn-awaiting-prepare`, run `gate prepare`
+> for the successor, commit its emitted room and binding, present that room, and stop
+> open. Never recover with `record --briefing`.
 
-`docs/site/concepts/gates-and-decisions.md` adds: “If a prepared room becomes stale before any decision, the first officer records a reasoned withdrawal. This is not approve, revise, or hold: it writes no Resolution or application, preserves the old room, and boot asks the first officer to prepare attempt N+1.”
+`docs/specs/gate-resolution-frontmatter-contract.md`:
 
-`docs/site/reference/frontmatter-contract.md` changes “Resolution absence means open and presence means closed” to: “An attempt is open when both `withdrawal` and `resolution` are absent, withdrawn when only `withdrawal` is present, and closed when only `resolution` is present. Withdrawn and closed attempts are frozen; withdrawal has FO attribution, time, and a required reason.”
+> An attempt is open only when both `withdrawal` and `resolution` are absent,
+> withdrawn when only `withdrawal` is present, and closed when only `resolution` is
+> present. Withdrawn and closed attempts are retired and frozen. Withdrawal is
+> available only through `spacedock gate withdraw ENTITY --reason TEXT`; the writer
+> records `by: agent:first-officer`, UTC time, and the required reason after validating
+> the complete retained attempt history. It writes no Resolution, provider evidence,
+> application, room, or workflow status.
 
-`docs/site/reference/command-reference.md` adds this table row: “`spacedock gate record <entity> --withdraw --actor agent:first-officer --reason TEXT` — Retire the selected request-backed open attempt without a Resolution or application; the next Briefing bind appends a successor.” Its capability-preflight sentence also names `--withdraw`.
+`docs/site/concepts/gates-and-decisions.md`:
 
-`docs/schema/entity.mdschema.yml` changes the gate invariant to: “neither withdrawal nor Resolution means open; withdrawal alone means withdrawn; Resolution alone means closed; withdrawn and closed attempts are frozen,” and keeps the writer exactly `spacedock gate record`.
+> If a prepared room becomes stale before any provider decision, the first officer
+> records a reasoned withdrawal. Withdrawal is not approve, revise, or hold: it
+> preserves the old room without a Resolution or application. Cold boot then asks the
+> first officer to prepare attempt N+1.
+
+`docs/site/reference/frontmatter-contract.md`:
+
+> Open means neither withdrawal nor Resolution; withdrawn means withdrawal alone;
+> closed means Resolution alone. Withdrawn and closed attempts are frozen. A
+> withdrawal is FO-attributed, timestamped, reasoned, request-backed, Resolution-free,
+> provider-evidence-free, and application-free.
+
+`docs/site/reference/command-reference.md`:
+
+> `spacedock gate withdraw ENTITY --reason TEXT [--workflow-dir DIR]` — Retire the
+> selected current-stage prepared attempt without a Resolution or application. The
+> command records implicit `agent:first-officer` attribution; the next `gate prepare`
+> appends a successor.
+
+`docs/schema/entity.mdschema.yml`:
+
+> neither withdrawal nor Resolution means open; withdrawal alone means withdrawn;
+> Resolution alone means closed; withdrawn and closed attempts are frozen; withdrawal
+> is request-backed and has fixed FO attribution, time, and nonblank reason.
 
 ## Stage Report: ideation
 
@@ -187,3 +431,32 @@ Baseline: 14 existing files, approximately +579/-55 LOC (net +524). Tolerance is
 ### Summary
 
 Ideation defines a minimal attempt-local withdrawal recorded by the existing gate recorder, followed by the existing Briefing bind to append N+1. The exercised spike proved the state shape, cold-boot recovery, frozen room bytes, and truthful placement of the later Captain decision without adding compatibility or generic history machinery.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Rebase the command, authority, and lifecycle on the current s4 preparation surface.
+  The governing design now specifies `spacedock gate withdraw ENTITY --reason TEXT`,
+  implicit durable `by: agent:first-officer`, the shared lock/CAS writer, and the exact
+  prepare-N through provider-close/consume real-binary proof. The obsolete cycle-1
+  `record --withdraw`, `briefing.json`, and recovery `record --briefing` paths are
+  explicitly non-contractual.
+- DONE: Audit every resolution-null branch that could mistake a withdrawn attempt for an open one.
+  The design names `prepareTarget`, replay selection, pre-publish and post-publish
+  mutation, room/chat/legacy record guards, application consumption, readiness,
+  summary, validation, and transition freezing. Withdrawn is a Resolution-free
+  terminal attempt state; existing provider-evidence rules remain unchanged.
+- DONE: Define retained-authority cost, refusal integrity, behavioral proof, and the corrected implementation surface.
+  Withdrawal reuses s4's complete O(history) validator before mutation, defers
+  optimization until measured latency exceeds a declared bound, specifies byte-clean
+  refusal and frozen-room oracles, separates structural contractlint from real-binary
+  and registered live-FO evidence, and estimates 21 existing files at approximately
+  +1,000/-105 LOC with no new package, dependency, writer, compatibility, or generic
+  history machinery.
+
+### Summary
+
+Cycle 2 replaces the obsolete recorder-source design with a narrow FO-owned
+`gate withdraw` command and rebases successor recovery on `gate prepare`. The
+withdrawn attempt remains Resolution-free, provider-evidence-free, application-free,
+fully retained-authority-validated, and frozen while N+1 follows the ordinary s4
+prepare, provider record, and consume lifecycle.
