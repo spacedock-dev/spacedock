@@ -193,6 +193,11 @@ type recordedGateCommand struct {
 }
 
 func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
+	noGlobalIdentity := filepath.Join(t.TempDir(), "no-global-identity.gitconfig")
+	writeFile(t, noGlobalIdentity, "[user]\n\tuseConfigOnly = true\n")
+	t.Setenv("GIT_CONFIG_GLOBAL", noGlobalIdentity)
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+
 	fixture := writePreparedRecordedGateFixture(t)
 	commandLog := filepath.Join(fixture.root, "command.log")
 	binary := filepath.Join(writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog), "spacedock")
@@ -1091,7 +1096,11 @@ func writePreparedRecordedGateFixtureAt(t *testing.T, root string) recordedGateF
 	writeFile(t, gateReview, recordedGateSourceReview())
 	entityReference := filepath.Join(filepath.Dir(entity), "selected", "entity-snapshot.md")
 	writeFile(t, entityReference, "# Entity snapshot\n\nThe validation Stage Report is complete and ready for a decision.\n")
-	gitInit(t, stateRoot)
+	git(t, stateRoot, "init", "-q")
+	git(t, stateRoot, "config", "user.name", "Spacedock Test")
+	git(t, stateRoot, "config", "user.email", "spacedock@example.invalid")
+	git(t, stateRoot, "add", "-A")
+	git(t, stateRoot, "commit", "-q", "-m", "init")
 	git(t, stateRoot, "branch", "-M", "spacedock-state/"+filepath.Base(root))
 	writeFile(t, filepath.Join(stateRoot, "dirty-sibling.md"), "unrelated concurrent dirt\n")
 	return recordedGateFixture{
