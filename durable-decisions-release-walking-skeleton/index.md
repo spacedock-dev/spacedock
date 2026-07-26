@@ -25,6 +25,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:77aabae5f9e5af378e377bc1eaefccde931c8932e5e6023a661f5eae4a22e438
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ph0zv6azcrhcxmg57wwnxah7:backlog:1
+                briefing: briefing:ph0zv6azcrhcxmg57wwnxah7:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T10:49:10.054082Z"
+                decision: approve
+                reason: The sprint's end value is an operable durable-decision journey; repeated late integration seams make one real release-candidate walking skeleton necessary before the pre-release.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 The sprint has strong component proofs but repeatedly discovered integration seams only when a First Officer tried to operate the assembled lifecycle. Before the pre-release, drive one real walking skeleton through the actual command and skill surfaces and preserve correctness plus agent-friction evidence.
