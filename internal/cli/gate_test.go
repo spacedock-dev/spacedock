@@ -1138,6 +1138,167 @@ func TestGateRequestLocatorCarriesArbitraryBriefingNameThroughRecordValidateAndE
 	}
 }
 
+func TestGatePreparedBriefingLocatorLifecycleAndRefusals(t *testing.T) {
+	type fixture struct {
+		workflow, entity, room, briefing string
+	}
+	invoke := func(t *testing.T, workflow string, args ...string) (int, string, string) {
+		t.Helper()
+		var out, errOut bytes.Buffer
+		code := run(context.Background(), args, nil, filepath.Dir(workflow), nil, &out, &errOut, &status.NativeRunner{}, nil)
+		return code, out.String(), errOut.String()
+	}
+	prepareClosed := func(t *testing.T) fixture {
+		t.Helper()
+		workflow, state, artifact := gatePrepareCLIFixture(t)
+		entity := filepath.Join(state, "task.md")
+		room := filepath.Join(state, "task", "review", "validation", "briefing-1")
+		briefing := filepath.Join(room, "gate-briefing.json")
+		if code, out, errOut := invoke(t, workflow,
+			"gate", "prepare", "task",
+			"--question", "Advance?",
+			"--artifact", artifact,
+			"--summary", "Exact prepared basename lifecycle.",
+			"--workflow-dir", workflow,
+		); code != 0 {
+			t.Fatalf("prepare exit=%d stdout=%q stderr=%q", code, out, errOut)
+		}
+		if _, err := os.Stat(filepath.Join(room, "briefing.json")); !os.IsNotExist(err) {
+			t.Fatalf("prepare unexpectedly published legacy briefing.json: %v", err)
+		}
+		if code, out, errOut := invoke(t, workflow,
+			"gate", "record", "task", "--briefing", briefing, "--workflow-dir", workflow,
+		); code != 0 {
+			t.Fatalf("explicit prepared Briefing record exit=%d stdout=%q stderr=%q", code, out, errOut)
+		}
+		if code, out, errOut := invoke(t, workflow,
+			"gate", "record", "task", "--decision", "approve", "--actor", "person:captain", "--workflow-dir", workflow,
+		); code != 0 {
+			t.Fatalf("close prepared gate exit=%d stdout=%q stderr=%q", code, out, errOut)
+		}
+		return fixture{workflow: workflow, entity: entity, room: room, briefing: briefing}
+	}
+
+	t.Run("prepared gate-briefing reaches consume", func(t *testing.T) {
+		fixture := prepareClosed(t)
+		if code, out, errOut := invoke(t, fixture.workflow,
+			"gate", "validate", "task", "--workflow-dir", fixture.workflow,
+		); code != 0 || !strings.Contains(out, "state=closed") {
+			t.Fatalf("validate prepared gate exit=%d stdout=%q stderr=%q", code, out, errOut)
+		}
+		if code, out, errOut := invoke(t, fixture.workflow,
+			"gate", "eligibility", "task", "--workflow-dir", fixture.workflow,
+		); code != 0 || !strings.Contains(out, "condition=approved-pending") || !strings.Contains(out, "eligible=true") {
+			t.Fatalf("eligibility prepared gate exit=%d stdout=%q stderr=%q", code, out, errOut)
+		}
+		if code, out, errOut := invoke(t, fixture.workflow,
+			"gate", "consume", "task", "--workflow-dir", fixture.workflow,
+		); code != 0 || !strings.Contains(out, "consumed=true") || !strings.Contains(out, "target-stage=done") {
+			t.Fatalf("consume prepared gate exit=%d stdout=%q stderr=%q", code, out, errOut)
+		}
+		body, err := os.ReadFile(fixture.entity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(body), "status: done") || !strings.Contains(string(body), "state: consumed") {
+			t.Fatalf("consume did not atomically advance and spend the prepared approval:\n%s", body)
+		}
+	})
+
+	for _, tc := range []struct {
+		name   string
+		mutate func(*testing.T, fixture)
+		wants  []string
+	}{
+		{
+			name: "missing Briefing",
+			mutate: func(t *testing.T, fixture fixture) {
+				t.Helper()
+				if err := os.Remove(fixture.briefing); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wants: []string{"resolve canonical Briefing locator", "no such file"},
+		},
+		{
+			name: "tampered Briefing",
+			mutate: func(t *testing.T, fixture fixture) {
+				t.Helper()
+				body, err := os.ReadFile(fixture.briefing)
+				if err != nil {
+					t.Fatal(err)
+				}
+				changed := bytes.Replace(body,
+					[]byte("Exact prepared basename lifecycle."),
+					[]byte("Tampered prepared basename lifecycle."), 1)
+				if bytes.Equal(changed, body) {
+					t.Fatal("prepared Briefing summary fixture was not found")
+				}
+				if err := os.WriteFile(fixture.briefing, changed, 0o644); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wants: []string{"bound canonical Briefing bytes", "frozen digest"},
+		},
+		{
+			name: "tampered request locator",
+			mutate: func(t *testing.T, fixture fixture) {
+				t.Helper()
+				requestPath := filepath.Join(fixture.room, "request.json")
+				body, err := os.ReadFile(requestPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				changed := bytes.Replace(body,
+					[]byte(`"locator": "gate-briefing.json"`),
+					[]byte(`"locator": "missing-gate-briefing.json"`), 1)
+				if bytes.Equal(changed, body) {
+					t.Fatal("prepared request locator fixture was not found")
+				}
+				if err := os.WriteFile(requestPath, changed, 0o644); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wants: []string{"retained request.json", "frozen digest"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fixture := prepareClosed(t)
+			before, err := os.ReadFile(fixture.entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tc.mutate(t, fixture)
+			for _, command := range []string{"eligibility", "consume"} {
+				code, out, errOut := invoke(t, fixture.workflow,
+					"gate", command, "task", "--workflow-dir", fixture.workflow)
+				output := out + errOut
+				if code == 0 {
+					t.Fatalf("%s accepted %s: stdout=%q stderr=%q", command, tc.name, out, errOut)
+				}
+				for _, want := range tc.wants {
+					if !strings.Contains(output, want) {
+						t.Errorf("%s %s output missing actionable %q: %s", command, tc.name, want, output)
+					}
+				}
+				if strings.Contains(output, "condition=ineligible") {
+					t.Errorf("%s %s silently collapsed to condition=ineligible: %s", command, tc.name, output)
+				}
+				after, err := os.ReadFile(fixture.entity)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !bytes.Equal(after, before) {
+					t.Fatalf("%s %s changed entity/application bytes", command, tc.name)
+				}
+				if _, err := os.Stat(fixture.entity + ".gates.lock"); !os.IsNotExist(err) {
+					t.Fatalf("%s %s left lock residue: %v", command, tc.name, err)
+				}
+			}
+		})
+	}
+}
+
 func unboundGateRoomFixture(t *testing.T) (root, entity, room string) {
 	t.Helper()
 	root = t.TempDir()
