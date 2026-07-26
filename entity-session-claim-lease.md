@@ -92,6 +92,8 @@ The claim does not become a second writer: acquisition writes the entity file th
 
 One helper serializes the current session identity from the host env the binary already reads (`dispatch reconcile` matches `leadSessionId` against `$CLAUDE_CODE_SESSION_ID`; Codex exposes `CODEX_THREAD_ID`; Pi `PI_CODING_AGENT_DIR`): `claude:<id>` / `codex:<id>` / `pi:<dir>`. Owner match is exact string equality. A process with none of the three markers has no identity: it can mutate unclaimed entities exactly as today, but a claimed entity refuses it like any non-owner (the refusal names the takeover path, which is the captain's authorized override). The host prefix keeps refusal messages actionable and disambiguates value shapes across hosts. A bare unprefixed value was considered and is insufficient: a Pi directory and a Claude UUID are indistinguishable in refusals and logs.
 
+Host detection reuses the ONE existing ambiguity policy rather than inventing a second: `internal/dispatch/build.go:254-281` already resolves the runtime host from the marker table (`CODEX_THREAD_ID`→codex, `CLAUDECODE`→claude, `PI_CODING_AGENT`/`PI_CODING_AGENT_DIR`→pi) and REFUSES when markers for different hosts are simultaneously set — "ambiguous runtime host sources: multiple runtime markers are set (…); pass --host claude, codex, or pi" — while same-host markers (the two Pi ones) agree without conflict. This is not hypothetical: a recorded live failure had a nested Claude inherit `CODEX_THREAD_ID` from a Codex captain host and mis-detect its runtime until an explicit `--host` recovered it; a guessed winner there would have the guard silently comparing mis-attributed identities. Identity resolution shares that resolver (exported or extracted, not copied), `state claim` gains the same `--host` tie-break flag `dispatch build` has, and a mutation-door guard that hits marker ambiguity fails closed with the same message shape instead of guessing.
+
 ### Acquisition: `spacedock state claim <slug>` (CAS on the state branch)
 
 Acquisition lives under `state`, beside `init|commit|ready`, because it is a state-checkout commit-and-publish verb, not a field edit. Protocol:
@@ -145,7 +147,7 @@ Spike artifacts were throwaway; the scenario-1 and scenario-2 shapes seed the im
 
 ## Expected surface
 
-Baseline: 14 files, about 950 changed lines (+870/−80), dominated by real-Git fixtures.
+Baseline: 17 files, about 1,200 changed lines (+1,100/−100), dominated by real-Git fixtures and the shared live scenario.
 
 - `internal/status/claim.go` (new, ~140 LOC): claim field parse with duplicate fail-closed, session identity serialization, guard evaluation, expiry rendering, refusal rendering.
 - `internal/status/native_runner.go` (~10): guard call in `resolveMutationEntity`.
@@ -156,10 +158,12 @@ Baseline: 14 files, about 950 changed lines (+870/−80), dominated by real-Git 
 - `internal/cli/cli.go` (~15): verb wiring; guard at `gate record`/`consume`.
 - `internal/cli/help.go` (~10): `state init|commit|ready|claim`.
 - `docs/schema/entity.mdschema.yml` (~15): `claim-session`/`claim-expiry` optional canonical fields.
-- `internal/cli/state_claim_test.go` (new, ~300) and `internal/status/claim_guard_test.go` (new, ~160), plus ~30 lines added to existing boot JSON tests.
+- `internal/dispatch/build.go` (~10): export (or extract) the host-marker resolver so identity resolution shares the one ambiguity policy.
+- `internal/cli/state_claim_test.go` (new, ~300), `internal/status/claim_guard_test.go` (new, ~160, including the AC-9 identity/ambiguity legs), plus ~30 lines added to existing boot JSON tests.
+- `internal/ensigncycle` shared-scenario surface (~200 across the documented five files: table entry, fixture + prompt, durable-state assertion, offline negative case, Claude and Codex runner entries plus the Pi coverage entry) for the AC-8 `claim-collision` live scenario.
 - Docs (~45 total): `docs/site/reference/command-reference.md`, `docs/dev/README.md` ownership bullet, FO contract text in `skills/first-officer/references/` (claim-before-drive policy, captain-authorized takeover).
 
-Tolerance: 850–1,150 changed lines across at most 16 files; up to 18 files / 1,500 lines for review-driven fixture or structural growth. Exceeding that, adding any second publisher or background renewal process, a top-level verb beyond `state claim`, or a non-standard-library dependency requires a return to ideation.
+Tolerance: 1,050–1,450 changed lines across at most 20 files; up to 22 files / 1,800 lines for review-driven fixture or structural growth. Exceeding that, adding any second publisher, background renewal process, session orchestrator, or second live harness, a top-level verb beyond `state claim`, or a non-standard-library dependency requires a return to ideation.
 
 ## Acceptance criteria
 
@@ -184,6 +188,12 @@ Verified by: fixture legs where `--take --from <wrong-or-outdated-value>` exits 
 **AC-7 — Claim fields are binary-managed: direct `--set` writes are refused and duplicated claim fields fail closed.**
 Verified by: `status --set claim-session=x` exits non-zero leaving the file byte-identical; an entity seeded with the spike's split-brain double `claim-session` makes the guard and `state claim` refuse rather than silently pick a line. Serves AC-1/AC-3 integrity — without it the CAS and guard can be bypassed or silently mis-read. Falsified by: allowing the `--set` or resolving duplicates last-key-wins.
 
+**AC-8 (LIVE) — An engineered cross-session collision between two real host sessions is refused on the live front door, with durable evidence.**
+Verified by: one shared runtime scenario (`claim-collision`) in the existing `internal/ensigncycle` live machinery — no second harness, no session orchestrator. The scenario's runner makes two sequential real launches against one fixture workflow: launch 1 (session A) claims and drives an entity, its real host-read session identity landing durably in `claim-session`; launch 2 (session B) cold-boots, must surface A's claim in its boot output, then DELIBERATELY attempts a mutation of A's entity and is refused. The collision is engineered, not incidental — two sessions coexisting without touching each other's entities proves nothing. Evidence is durable, not observed: the preserved stream/final-message artifacts carry the refusal naming A's identity, and the post-run entity frontmatter is byte-identical to A's last write. Baseline that can move the wrong way: the same scenario against the pre-change binary SUCCEEDS in mutating A's entity — literally the recorded 2026-07-25 breach — and the offline negative case in `shared_scenarios_negative_test.go` builds that breached end-state and proves the assertion goes red on it. Falsified by: removing the guard call at the mutation door session B uses, which flips launch 2 back to a successful mutation. Per the shared-scenario parity guard, the scenario ships with Claude and Codex runner entries plus a Pi coverage entry — which also exercises real distinct identities per host, not just `t.Setenv` models.
+
+**AC-9 — Session identity resolves correctly and unambiguously on every supported host, and refuses to guess under conflicting markers.**
+Verified by: unit legs asserting `claude:<id>`/`codex:<id>`/`pi:<dir>` resolution under each host's real marker set; a leg with markers for two different hosts set simultaneously (the recorded nested-Claude-under-Codex failure shape, `CODEX_THREAD_ID` + `CLAUDECODE`) asserting identity resolution refuses with the `internal/dispatch/build.go:254-281` message shape rather than picking a winner — and that a mutation-door guard hitting that ambiguity fails closed; a leg with both Pi markers set asserting same-host markers resolve without conflict, mirroring the existing table exactly. Falsified by: making ambiguous resolution pick a winner, or letting the identity helper's policy drift from the dispatch resolver it must share.
+
 ## Test plan
 
 - Reuse the existing two-clone real-Git harness from `internal/cli` (`twoHostStateWorkflow` and friends, proven by `rd`); no second Git harness. Session identities are injected per leg via the host env markers (`t.Setenv` of `CLAUDE_CODE_SESSION_ID` / `CODEX_THREAD_ID` / `PI_CODING_AGENT_DIR`), which is also the cross-host coverage.
@@ -191,13 +201,16 @@ Verified by: `status --set claim-session=x` exits non-zero leaving the file byte
 - The AC-3 race leg interleaves deterministically in the spike's shape (B commits locally, A publishes, B publishes and loses) — no scheduler-dependent concurrency needed for the core claim; one additional `-race`-run smoke exercises two goroutines racing the verb for good measure.
 - Boot claims: fixture with peer, own, expired, and absent claims; decode `--json` with `json.Decoder` and assert the prose section, extending the existing boot JSON tests.
 - AC-7 legs seed the duplicate-field file verbatim from spike scenario 2.
-- Cost: moderate — all fixture/CLI level, no live workflow run needed to prove the behavior. `gofmt -w ./cmd ./internal`, focused packages, then `go test ./...` and `go test ./... -race`.
-- This diff touches the status mutation and guard paths (a named high-stakes surface): run the detached adversarial audit on a throwaway checkout; the canonical adversarial edit removes the guard call at one door and must turn that door's AC-1 leg red. FO contract text under `skills/**/references/**` changes, so the required host live lanes per the diff-to-lane policy run green before merge.
+- AC-9 identity legs are pure unit tests over the shared resolver: per-host marker sets, the cross-host ambiguity refusal (asserting the exact dispatch-build message shape), and the two-Pi-markers agreement case.
+- One live lane IS required — fixtures prove the guard logic, not that two real host sessions produce distinct identities and collide as modeled, and the 2026-07-25 breach lived exactly in that gap (nothing was reading session identity at all, which no `t.Setenv` fixture would have caught). AC-8's `claim-collision` shared scenario reuses the existing `internal/ensigncycle` machinery per its documented add-a-scenario steps: one host-neutral table entry, fixture + prompt, a durable-state assertion with an offline negative case, and runner entries for both hosts plus the Pi coverage entry. Two sequential launches per run; no new harness, orchestrator, or lifecycle layer.
+- Cost: fixture/CLI legs are moderate; the live scenario adds one shared-lane entry (~two real launches per host lane run) on top of the lanes this diff already requires.
+- `gofmt -w ./cmd ./internal`, focused packages, then `go test ./...` and `go test ./... -race`.
+- This diff touches the status mutation and guard paths (a named high-stakes surface): run the detached adversarial audit on a throwaway checkout; the canonical adversarial edit removes the guard call at one door and must turn that door's AC-1 leg red. FO contract text under `skills/**/references/**` changes and a shared runtime scenario is added, so the required host live lanes per the diff-to-lane policy run green before merge — `claim-collision` included.
 
 ## Documentation diff
 
 - `docs/dev/README.md` Sprints bullet (line 47), before: "Until an entity carries a machine-readable owner, ownership is coordinated out-of-band (the captain / a handoff); the durable per-entity owner signal is the graduation trigger tracked by `79` — `xp` covers only the FO/Commander message channel, not mutation authority." After: "An actively driven entity carries a machine-readable owner: `spacedock state claim <slug>` records the driving session in `claim-session`/`claim-expiry`, a lease the owner renews before it lapses; boot surfaces peer claims, and the binary refuses a non-owner's mutation, naming the owner. Takeover is captain-authorized and per entity (`state claim <slug> --take --from <owner>`); an expired claim is marked EXPIRED, never auto-stolen. `xp` covers only the FO/Commander message channel."
-- `docs/site/reference/command-reference.md`: new `state claim` entry documenting acquire and renew (owner re-run; both set `claim-expiry` to now plus the 24h lease), `--release`, `--take --from <owner>`, the lost-race non-zero exit naming the winner, the EXPIRED marker's mark-not-free semantics, and the reserved `claim-*` field refusal under `status --set`.
+- `docs/site/reference/command-reference.md`: new `state claim` entry documenting acquire and renew (owner re-run; both set `claim-expiry` to now plus the 24h lease), `--release`, `--take --from <owner>`, the `--host` tie-break under ambiguous runtime markers (same policy and message as `dispatch build`), the lost-race non-zero exit naming the winner, the EXPIRED marker's mark-not-free semantics, and the reserved `claim-*` field refusal under `status --set`.
 - `internal/cli/help.go` state line, before: `state init` — after: `state init|commit|ready|claim`, one-line claim description.
 - FO contract (`skills/first-officer/references/fo-write-core.md` or shared core, exact placement at implementation): claim an entity before driving it across sessions and renew the claim before its expiry lapses on a long drive; on a refusal naming a peer owner, stop and surface to the captain rather than retrying — an EXPIRED marker is grounds to ask the captain for takeover, never to take; takeover and batch sprint-claiming require explicit captain authorization.
 
@@ -226,3 +239,16 @@ Designed the entity-session claim as two flat frontmatter fields acquired throug
 ### Summary
 
 Folded in the two captain annotations from the floated design record (sha256:33d9f6f4…): the claim is explicitly per entity, never per (entity, stage) — now a recorded Out-of-scope boundary — and `claim-at` became `claim-expiry`, an owner-renewed 24h lease. Responsibility inverts: readers compare now against the stored expiry instead of aging an acquisition time, a dead session's claim self-declares EXPIRED, and an alive long-driving owner renews instead of false-tripping a staleness heuristic. Expiry marks and never frees: AC-5 was restated to fail if anyone implements "expired means free", AC-2/AC-4 pin the exact `expires in <d>` / `EXPIRED <d> ago` rendering, and renew semantics (owner re-run sets now+lease; non-owner re-run is the refusal; late owner renewal allowed) are explicit in the verb protocol.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Value AC measures an ownership violation actually being refused — a non-owning session's mutation of a claimed entity fails, against a baseline that can move the wrong way.
+  Unchanged, and now doubled at the live layer: AC-8's engineered collision succeeds on the pre-change binary (the recorded breach) and is refused post-change, with an offline negative case proving the assertion can go red.
+- DONE: Riskiest unverified mechanism exercised first: git fast-forward compare-and-swap as claim acquisition under a real two-writer race. Record the spike result in the task body.
+  Spike section verbatim from cycle 1; neither added AC touches the CAS mechanism.
+- DONE: Declared expected surface and tolerance, plus the storage decision (entity frontmatter versus a separate object) justified by naming the simplest alternative considered and why it is insufficient — the claim must not become a second writer.
+  Surface rebased for the two ACs: 17 files / ~1,200 lines, tolerance 1,050–1,450 (cap 22 files / 1,800); storage decision unchanged.
+
+### Summary
+
+Added the two captain-approved ACs. AC-8 (LIVE) engineers a real cross-session collision through the existing `internal/ensigncycle` shared-scenario machinery — two sequential real launches: session A claims and drives, session B cold-boots, sees the claim, deliberately attempts the mutation, and is refused with durable artifact evidence; the pre-change binary running the same scenario reproduces the breach, and the honest "no live run needed" test-plan line is gone. AC-9 pins identity resolution per host and reuses the one existing ambiguity policy from `internal/dispatch/build.go:254-281` (shared resolver, `--host` tie-break on `state claim`, guard fails closed on cross-host markers) rather than inventing a divergent one — the recorded nested-Claude-under-Codex mis-detection is the test shape. No new harness, orchestrator, or enforcement point; settled rulings untouched.
