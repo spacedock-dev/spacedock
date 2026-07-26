@@ -6,7 +6,7 @@ started: 2026-07-26T00:17:26Z
 completed:
 verdict:
 score: 1.0
-worktree:
+worktree: .worktrees/spacedock-ensign-source-build-compatibility-identity
 issue:
 sprint: durable-decisions
 id: v2183mw7c09a10pw185p33cw
