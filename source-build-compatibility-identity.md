@@ -235,3 +235,54 @@ The matching comments in `internal/cli/cli.go`, `.goreleaser.yaml`, and `.github
 ### Summary
 
 Ideation reproduces the false next-minor identity and chooses a single-purpose release marker that makes copied Git provenance inert while preserving exact release identity. The detached spike proves the boundary and strict-gate control; the design now has falsifiable ACs, bounded surface, release wiring, docs, adversarial audit, and diff-derived live-lane requirements, with no implementation performed.
+
+## Implementation Intended Surface Declaration
+
+Before implementation edits, the intended deliverable surface is exactly these nine files:
+
+- `internal/cli/cli.go` — add the single linker-writable `releaseBuild` marker and correct the version comment (estimated 8–12 changed lines; mechanism serves AC-1, AC-2, AC-3, and AC-5).
+- `internal/cli/dev_version.go` — trust `Version` only when `releaseBuild == "true"` and `Version != "dev"` (estimated 4–8 changed lines; mechanism serves AC-1, AC-2, AC-3, and AC-5).
+- `internal/cli/dev_version_test.go` — add the unit provenance matrix and real source/misleading-stamp/marked-release binary-plus-doctor proof before production edits (estimated 75–95 changed lines; proof serves AC-1, AC-2, AC-3, and AC-5).
+- `internal/cli/frontdoor_test.go` — make the existing version helper explicitly stamp marked releases (estimated 4–8 changed lines; preserves the release-shaped AC-5 fixtures).
+- `.goreleaser.yaml` — stamp `releaseBuild=true` in both stable and edge builds and correct the surrounding comment (estimated 6–10 changed lines; mechanism serves AC-2 and AC-5).
+- `internal/release/goreleaser_guard_test.go` — parse the release configuration by build ID/ldflag target and prove stable-only and edge-only marker-removal twins fail (estimated 45–60 changed lines; proof serves AC-2).
+- `.github/workflows/release.yml` — correct the checkout/tag-resolution comment without changing workflow behavior (estimated 2–4 changed lines; documentation supports AC-4 and AC-5).
+- `docs/releasing.md` — document the two-stamp release contract and separate provenance from compatibility identity (estimated 10–15 changed lines; documentation serves AC-4 and supports AC-2).
+- `docs/site/contributing/build-from-source.md` — make plain unstamped `go build` canonical and explain manifest-plus-dev identity (estimated 8–12 changed lines; documentation serves AC-4 and supports AC-1).
+
+Estimated total is nine files and 190–220 changed lines. This is one file and 40–70 lines below the approved 10-file/260-line cap; there is no difference in file identity from the approved nine-file baseline and no requested tolerance expansion. Implementation will not touch `internal/contract`, First Officer prose, automatic pre0 or edge-advance logic, add a metadata/profile abstraction, or add compatibility for unmarked prototypes; any such need triggers a design reset before edits.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — Roborev `branch_final` panel job 2653; surface 9 files/255 LOC vs estimate 9 files/220 LOC (116%); AC unchanged
+
+## Stage Report: implementation
+
+- DONE: Before editing, append an Implementation Intended Surface Declaration naming exact files, estimated changed LOC, each mechanism's value AC, and any difference from the approved 10-file/260-line cap; stop for re-gate on prohibited or over-tolerance drift.
+  The declaration names the approved nine files, maps every mechanism/proof to AC-1 through AC-5, and declares 190–220 estimated lines under the 10/260 cap.
+- DONE: Add the focused RED proof first: a real source binary carrying a misleading future-minor Version ldflag but no release marker must still emit the embedded manifest plus +dev and pass doctor; include the exact marked-release control.
+  Before production edits, `TestSourceBuildCompatibilityIdentity/misleading` red with future-minor line 1 and doctor exit 1; final three-build proof requires source `0.26.0+dev`/doctor OK and marked `0.27.0-pre0`/mismatch.
+- DONE: Implement the single-purpose releaseBuild trust boundary in internal/cli without a generalized build profile, provenance subsystem, compatibility carve-out, internal/contract change, or First Officer prose change.
+  Commits `a9180d43` and `2992f430` add only unexported `releaseBuild = "false"` plus the exact `releaseBuild == "true" && Version != "dev"` trust check.
+- DONE: Stamp the exact release marker in both GoReleaser build entries and add an independent parsed configuration guard whose stable-only and edge-only marker-removal twins fail.
+  Stable and edge carry the exact linker marker; parsed build-ID guard tests green, and both channel-specific removal mutants red.
+- DONE: Apply the approved source-build, release-guide, CLI, GoReleaser, and release-workflow documentation/comment changes without changing automatic pre0 or edge-advance behavior.
+  The documented plain `go build -o spacedock ./cmd/spacedock` emitted `0.26.0+dev` and doctor OK; no pre0/edge implementation file changed.
+- DONE: Run focused CLI/contract/release tests, both stable and edge GoReleaser snapshot single-target dry-runs, gofmt -w ./cmd ./internal, go test ./..., go test ./... -race, and git diff --check; record exact outcomes and any infrastructure failure honestly.
+  Focused packages, final full suite, and final race suite passed; both GoReleaser 2.16 dry-runs emitted exact `0.27.0-snapshot-070fb828`; gofmt and diff check were clean, including existing strict-minor/auto-pre0/edge-advance tests.
+- DONE: Run the three-edit detached adversarial audit from the approved design and show each claim-breaking edit makes the intended proof fail.
+  Three throwaway worktrees proved Version-only trust reds source line/doctor, edge-only marker removal reds the parsed guard, and bypassing marked-release identity reds exact release line/doctor; worktrees were removed.
+- DONE: Measure the final file/LOC surface against the approved baseline, inspect for unrelated drift, and stop for design reset rather than rationalizing any prohibited or over-tolerance expansion.
+  `070fb828..2992f430` is exactly the approved nine files, 208 additions/51 deletions = 259 changed lines; no unrelated file, `internal/contract`, FO prose, pre0/edge logic, profile abstraction, or prototype compatibility drift exists.
+- DONE: Request one final Roborev over the completed implementation, triage every finding by released workflow/value AC and materiality, and fix only material findings.
+  Roborev `branch_final` job 2653: one material AC-1/AC-5 doctor-verdict proof gap fixed in `2992f430`; snapshot risk deferred until a supported adjacent-plugin workflow exists; four polish observations declined without AC change.
+- FAILED: Record any advisory round through gate record --round.
+  `${SPACEDOCK_BIN} gate record source-build-compatibility-identity --workflow-dir docs/dev --round implementation/1 --briefing …/briefing.json --log …/briefing.review.jsonl --feedback-cycle …/feedback-cycle.txt` exited 1: `Error: gate record --round requires folder-form entity <slug>/index.md because review artifacts accumulate beside the entity`; the First Officer directed no flat-task migration.
+- SKIPPED: Run all-host live CI.
+  Claude/Codex/Pi live lanes are required at PR time; this stage opened no PR and claims no local live-host evidence.
+- DONE: Append a complete implementation Stage Report with every checklist item DONE, SKIPPED, or FAILED, commit and push code plus state, and stop for fresh independent validation without opening a PR.
+  Code commits are pushed on `spacedock-ensign/source-build-compatibility-identity`; this report is path-scoped for the split-root state commit/push, and no PR was opened.
+
+### Summary
+
+Source builds now ignore provenance-only Version stamps and use embedded checkout manifest identity plus `+dev`, while both release channels explicitly opt into exact release identity. Real binaries, parsed release wiring, dry-runs, full/race suites, and three detached mutants prove the boundary; the sole failed ceremony is advisory-round recording, structurally unavailable for this flat entity and explicitly left unmigrated for independent validation.
