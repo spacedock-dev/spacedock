@@ -1,6 +1,6 @@
 ---
 title: Make ensign dispatch self-contained across launcher drift
-status: backlog
+status: ideation
 sprint: durable-decisions
 source: "Real source-build sprint dogfood, 2026-07-26"
 score: "1.0"
@@ -31,7 +31,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
