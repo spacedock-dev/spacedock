@@ -2548,3 +2548,32 @@ gate is stale at `5484cee6`. A cut audit and fresh-tip gate are required before 
 **Cycle 19 correction recommendation: PASSED.** Fresh Sonnet and Opus artifacts
 retain the durable bind and gate review at the actual tool-shell boundary. No
 material finding remains against this correction; overall s4 remains held.
+
+## Cycle 20 Intended Correction Surface
+
+Baseline is code head `73810d1e`; this is a commander scope reset, not another
+live-transcript symptom correction. Retain the material dynamic Briefing
+identity/digest and committed binding durability fixes. Add no compatibility
+path, Git-object retention, provider lane, transcript parser, or replacement
+harness.
+
+- `internal/gates/prepare.go`: add about 25 lines to reject symlinked room
+  ancestry inside the trusted entity home before publication or rollback can
+  touch an external target.
+- `internal/gates/prepare_test.go`: add about 35 lines for a byte-clean flat
+  companion symlink regression and remove about 20 lines for the false-green
+  candidate-validator test; retain the real published-room rollback regression.
+- Delete the three `selected_gate_override_*` files, about 357 lines. The
+  s4-owned boundary remains covered by the provider-neutral contract lint and
+  real prepare/bind lifecycle; runtime provider invocation belongs to rqh.
+- `internal/ensigncycle/claude_live_runner_test.go`: remove about seven lines of
+  now-unused extra-plugin plumbing.
+- `internal/ensigncycle/shared_keep_moving_test.go`: restore the pre-Cycle-17
+  shared oracle, about `+11/-142`; retain the expansion only if exact candidate
+  replay proves this branch changes an observable trajectory the old oracle
+  cannot grade.
+
+Estimated correction: seven files, approximately `+75/-530`. Run focused
+offline evidence first, then the exact local Codex, Claude, and Pi candidate
+matrix using a worktree-built `SPACEDOCK_BIN`. Stop before any push, CI
+dispatch, gate mutation, or merge.
