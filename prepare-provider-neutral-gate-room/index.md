@@ -132,6 +132,7 @@ review-round:
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-13
 mod-block: merge:pr-merge
+pr: "#570"
 ---
 
 ## Cycle 11 governing design
