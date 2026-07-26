@@ -2468,3 +2468,50 @@ review-recognition, or oracle behavior changed.
 Cycle 19 moves the Claude gate shim to the proven tool-shell boundary and removes
 Cycle 18's ineffective front-door override. The existing durable-state and gate
 semantics remain intact for independent validation.
+
+## Stage Report: validation (cycle 19)
+
+- DONE: Verify the Cycle 19 correction at the real front-door and tool-shell boundary.
+  `3bdc0b2b..73810d1e` is exactly the claimed two live-test files at `+37/-33`;
+  product, skill, prompt, presenter, review recognition, gate semantics, and
+  rejection-flow code are unchanged. The front-door control proves the launcher
+  repin; the Bash/Zsh control proves `BASH_ENV`/`ZDOTDIR` replace it in the tool shell.
+- DONE: Perform the semantic adversarial pass and reproduce the affected AC evidence.
+  A detached exact-head matrix passed for headless and pty runners, duplicate env
+  replacement, source immutability, and `-c`/`-lc` Bash/Zsh entry forms. Hold-oracle
+  mutants still reject absent, failed, duplicate, out-of-order, other-entity,
+  decision, consume, and dispatch events. AC-1–AC-3 and AC-5 product evidence is
+  unchanged; AC-4's affected Claude evidence is reproduced by the fresh streams.
+- DONE: Obtain fresh exact-head Sonnet and Opus proof and run repository verification.
+  Run `30188891098` targets `73810d1e`; both artifacts embed clean merge `4c9b96ed`,
+  whose second parent is that exact head. Sonnet job `89758369113` passed the default
+  headless gate-stop; Opus job `89758369111` passed the shared gate-guardrail.
+  Detached replay found each successful bind's `state-head`, exactly one qualifying
+  root review, and no successful decision, consume, or post-prepare dispatch.
+  `gofmt`, full default/race suites, focused boundary/oracle tests, and diff checks pass.
+
+### Separate live-model deviations
+
+The aggregate Claude jobs remain red outside this correction: Sonnet's parallel
+gate-guardrail emitted two qualifying root reviews, Opus's default lane omitted a
+qualifying structured review, and both rejection-flow lanes retained the isolated
+round-recording deviation. The oracles correctly rejected them; each model's
+reciprocal passing gate-hold lane proves the Cycle 19 shell-binding mechanism.
+
+### Deferred risk
+
+A space-containing `TMPDIR` breaks the unquoted test-only export. The trigger is
+outside the current Linux CI layout, whose artifacts prove the supported path.
+Promote it if a promised runner uses such a root or normal CI observes the failure.
+
+### Commander hold
+
+This result is not overall s4 acceptance or a merge recommendation. Cumulative
+scope is 43 files / 4,802 LOC versus 26 / 1,904, and the only consumed validation
+gate is stale at `5484cee6`. A cut audit and fresh-tip gate are required before merge.
+
+### Summary
+
+**Cycle 19 correction recommendation: PASSED.** Fresh Sonnet and Opus artifacts
+retain the durable bind and gate review at the actual tool-shell boundary. No
+material finding remains against this correction; overall s4 remains held.
