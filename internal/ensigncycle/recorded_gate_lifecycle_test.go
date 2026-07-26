@@ -726,12 +726,16 @@ func writeRecordedGateLoggingShim(t *testing.T, binary, logPath, stateRoot strin
 }
 
 func TestRecordedGateLoggingShimEmitsStateHeadOutsideWorkflowCWD(t *testing.T) {
+	shell, err := exec.LookPath("sh")
+	if err != nil {
+		t.Fatalf("resolve portable shell: %v", err)
+	}
 	root := t.TempDir()
 	stateRoot := filepath.Join(root, ".spacedock-state")
 	logPath := filepath.Join(root, "command.log")
 	shim := filepath.Join(writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), logPath, stateRoot), "spacedock")
 	fixture := writePreparedRecordedGateFixtureAt(t, root)
-	command := exec.Command("/bin/zsh", "-lc", fmt.Sprintf(
+	command := exec.Command(shell, "-c", fmt.Sprintf(
 		`WD=%q; %q state commit --workflow-dir "$WD" recorded-gate-task; code=$?; echo "EXIT:$code"; exit "$code"`,
 		fixture.root, shim,
 	))
@@ -744,7 +748,7 @@ func TestRecordedGateLoggingShimEmitsStateHeadOutsideWorkflowCWD(t *testing.T) {
 		t.Fatalf("successful wrapped state commit omitted durable state-head evidence:\n%s", output)
 	}
 
-	failed := exec.Command("/bin/zsh", "-lc", fmt.Sprintf(
+	failed := exec.Command(shell, "-c", fmt.Sprintf(
 		`WD=%q; %q state commit --workflow-dir "$WD" missing-task; echo "EXIT:$?"`,
 		fixture.root, shim,
 	))
