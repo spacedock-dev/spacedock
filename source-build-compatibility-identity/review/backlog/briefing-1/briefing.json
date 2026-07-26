@@ -1,0 +1,42 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:v218:backlog:attempt-1:revision-1",
+  "question": "Should Spacedock keep automatic post-release pre0 tags while making source builds derive compatibility identity only from their embedded checkout manifest?",
+  "summary": "Approve the narrow source-versus-release identity boundary: ordinary source builds report the embedded checkout manifest plus +dev, only explicitly marked release builds trust a release-version linker stamp, and Git tags or revisions remain provenance rather than First Officer compatibility input.",
+  "artifacts": [
+    {
+      "id": "artifact:source-build-compatibility-task",
+      "uri": "git-root://state/78ddaca12e58443a8ed1c6cbbcb42c323e18fee1/source-build-compatibility-identity.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e01b856415606c6b28b6490567fa21bb399d4f69205c2ef8c7b6530de8e94346"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:backlog-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Dispatch ideation",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the source-build boundary",
+          "to": "stage:backlog"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:backlog"
+        }
+      ]
+    }
+  ]
+}

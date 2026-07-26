@@ -10,6 +10,20 @@ worktree:
 issue:
 sprint: durable-decisions
 id: v2183mw7c09a10pw185p33cw
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:v218:backlog
+    records:
+        - id: gate:docs-dev:v218:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:v218-backlog-1
+              briefing:
+                id: briefing:docs-dev:v218:backlog:attempt-1:revision-1
+                digest: sha256:3bca6f4b585c9cba9d631473d31ed38033ffd4c4dc3718f0c7c9518f2c567a74
+                digest-domain: canonical-bytes
+                room-ref: ./source-build-compatibility-identity/review/backlog/briefing-1
 ---
 
 Prevent an ordinary source build from impersonating the automatic next-minor `pre0` release merely because that tag is the nearest Git ancestor.
