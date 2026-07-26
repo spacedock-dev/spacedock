@@ -87,11 +87,12 @@ walking skeleton must not call it supported until `mn`
 contract: a Shaping FO commits the recorded decision and stops; a fresh Commander
 consumes, commits, and dispatches.
 
-This Cycle 2 correction governs where it conflicts with the retained first ideation
-report: it replaces the four-prerequisite readiness claim, post-journey evidence
-worker, authoritative-state mutants, five-member package assumption, expected surface,
-acceptance criteria, and proof order. The first report remains historical evidence of
-the rejected design.
+This Cycle 3 correction governs where it conflicts with either retained prior
+ideation report. Cycle 2 still supplies the seven-member package, authority split,
+disposable-mutant, exclusive-state, handback, and evidence-ownership design, but Cycle
+3 replaces its withdrawal grammar and moves every candidate identity, owner-suite,
+full/race/format check before ph consumption. Both prior reports remain historical
+evidence of the rejected designs.
 
 ## Exact release-candidate boundary and hard stops
 
@@ -115,29 +116,32 @@ Immediately before the walk, record these full 40-hex values in the run table:
 
 | Pin | Required identity |
 |---|---|
-| `spacedock_rc` | Captain-selected clean Spacedock commit containing gqs, s4, rq's Spacedock half, v21, 0m6 withdrawal, and mn's narrow role-boundary contract |
-| `spacedock_state_start` | Clean, pushed `spacedock-state/dev` commit before the first journey mutation |
+| `spacedock_product_rc` | Captain-selected clean Spacedock commit containing gqs, s4, rq's Spacedock half, v21, 0m6 withdrawal, and mn's narrow role-boundary contract; this is the immutable preflight target |
+| `spacedock_rc` | Package-only descendant created after worker dispatch: parent is exactly `spacedock_product_rc`, and its only changed path is `docs/roadmap/durable-decisions/dispatch-sprint-execution.md` |
+| `spacedock_state_start` | Clean, pushed `spacedock-state/dev` commit before ph is consumed |
 | `subspace_rc` | Pinned clean Subspace commit containing rq's provider half and its real moved-root E2E |
-| `fo_gate_skill` / `present_gate_skill` / `role_contract` | Git blob ids from `spacedock_rc`, loaded by the actual launcher rather than an ambient plugin |
+| `fo_gate_skill` / `present_gate_skill` / `role_contract` | Git blob ids from `spacedock_product_rc`, loaded by the actual launcher rather than an ambient plugin |
 | `role_contract_owner` | `mn` id/slug, terminal state commit, and merged product commit |
 | `subspace_r_skill` | Git blob id from `subspace_rc`, loaded by the host that handles `/subspace:r` |
 | `spacedock_bin` / `subspace_bin` | SHA-256 of binaries built from those exact clean commits |
 | `commander_package` | Git blob id of the reconciled seven-member `docs/roadmap/durable-decisions/dispatch-sprint-execution.md` at `spacedock_rc` |
 | `acceptance_state` | Captain-named state branch/checkout plus exact starting commit and the two exclusively owned real task slugs |
 
-Build the Spacedock binary from a detached checkout at `spacedock_rc`, pass its
+Build the Spacedock binary from a detached checkout at `spacedock_product_rc`, pass its
 absolute path as `SPACEDOCK_BIN`, and launch fresh Shaping and Commander sessions
 through that same binary with the adjacent checkout's plugin. Build/select the
 Subspace binary and skill from `subspace_rc`. An installed binary, skill, or TUI with
 only a matching version string is not an acceptable substitute for the recorded Git
-and file identities.
+and file identities. The later `spacedock_rc` package commit is acceptable without
+rebuilding only when Git proves its product and skill trees are byte-identical to
+`spacedock_product_rc`.
 
 Stop before a Captain sees a review when any condition below is false:
 
 1. All six prerequisite sprint members `gqs`, `mn`, `0m6`, `rq`, `s4`, and `v21`
-   are terminal `PASSED`; every named product merge is an ancestor of `spacedock_rc`;
-   rq records `subspace_rc`; and no prerequisite remains only approved, in validation,
-   or present in an unmerged worktree.
+   are terminal `PASSED`; every named product merge is an ancestor of
+   `spacedock_product_rc`; rq records `subspace_rc`; and no prerequisite remains only
+   approved, in validation, or present in an unmerged worktree.
 2. `mn`'s product commit is merged, and its proof shows Shaping
    record/commit/stop followed by cold Commander consume/commit/dispatch.
    Current `fo-gate-lifecycle` behavior that consumes immediately after approval is
@@ -149,17 +153,21 @@ Stop before a Captain sees a review when any condition below is false:
    package still says five and enumerates the retired `3k`, `vn`, `h1`, `02av`, and
    `xb` cohort. A stale member count, landing order, responsibility table, or close-out
    condition halts.
-4. Candidate identity, all prerequisite owner suites, and both repositories' required
-   full/race/format checks have run first on the exact pins and are green. These checks
-   precede every live gate mutation.
+4. Read-only candidate identity, all prerequisite owner suites, and both repositories'
+   required full/race/format checks have run and been retained on the exact
+   `spacedock_product_rc` and `subspace_rc` pins before ph consumption or any live
+   workflow mutation. Their command/session logs, exit status, UTC completion time,
+   paths, and SHA-256 digests live in a Captain-named handoff directory outside both
+   Git roots. The acceptance state still equals `spacedock_state_start`; a check at or
+   after the ph consume timestamp is invalid.
 5. One fresh `${SPACEDOCK_BIN} gate --help` exposes `prepare`, `record`, `validate`,
-   `eligibility`, `consume`, `--question`, `--artifact`, `--summary`, `--reference`,
-   `--room`, `--decision`, `--actor`, `--reason`, and `--withdraw`. The withdrawal
-   grammar is exactly:
+   `eligibility`, `consume`, and `withdraw`, with the existing prepare/record flags.
+   One fresh `${SPACEDOCK_BIN} gate withdraw --help` exposes the terminal 0m6 surface.
+   The withdrawal grammar is exactly:
 
    ```text
-   ${SPACEDOCK_BIN} gate record ENTITY --withdraw \
-     --actor agent:first-officer --reason TEXT --workflow-dir docs/dev
+   ${SPACEDOCK_BIN:-spacedock} gate withdraw ENTITY \
+     --reason TEXT --workflow-dir docs/dev
    ```
 
 6. `spacedock state ready` succeeds from the Captain-named clean acceptance checkout,
@@ -177,14 +185,16 @@ Stop before a Captain sees a review when any condition below is false:
 9. Both selected Git-root commits and paths exist in the local main/state object
    stores. Missing objects are a closed failure, not permission to fetch, deepen,
    reconstruct a path, or use working-tree bytes.
-10. The acceptance worker has been dispatched through the ordinary entered-stage
-    worker path. Its initial assignment names the six terminal prerequisites, exact
-    starting commits, one-file package scope, evidence directory, and final Stage
-    Report checklist. After it commits the package correction and the proof-first
-    checks pass, an ordinary follow-up binds the exact candidate pins, exclusive task
-    scope, command/session log paths, and SHA-256 digests. It is addressable before
-    the first `gate prepare` and has no authority to call `gate record`, `gate
-    consume`, or edit gate frontmatter.
+10. Only after condition 4 is green does a cold Commander consume and commit ph, after
+    which gqs dispatches the acceptance worker through the ordinary entered-stage
+    path. Its assignment names both candidate pins, the retained preflight paths and
+    digests, one-file package scope, exclusive target scope, evidence directory, and
+    final Stage Report checklist. Before the first target `gate prepare`, the worker
+    must verify every retained preflight file and digest, reject missing or changed
+    bytes, copy the exact files into immutable task evidence, reconcile the package,
+    and prove the resulting `spacedock_rc` changes no other path or product/skill
+    tree. It has no authority to call `gate record`, `gate consume`, or edit gate
+    frontmatter.
 
 Any product defect ends the walking skeleton at the last durable boundary and routes
 to its owner. This task records it and changes no product code, tests, or skills. Its
@@ -210,20 +220,27 @@ The reconciliation removes no history, revives no retired member, and does not m
 the package another tracker. During implementation, the ph acceptance worker first
 applies this correction to exactly
 `docs/roadmap/durable-decisions/dispatch-sprint-execution.md`, commits it, and pins its
-resulting blob before any journey mutation.
+resulting blob before any target journey mutation. Its parent is the already-preflighted
+`spacedock_product_rc`; the worker proves the diff is this one path and that all
+preflighted product/skill trees are unchanged.
 
 ## Minimum role-separated journey
 
-After the six prerequisite members pass, a cold Commander consumes ph's approved
-ideation gate, commits entry into implementation, and—under gqs—immediately dispatches
-the ph acceptance worker. This setup transition is not counted as journey proof. The
-worker applies the one-file Commander-package reconciliation, commits it, pins the
-resulting candidate, and runs the owner/repository checks before any live gate
-mutation. Its normal follow-up assignment then binds the exact candidate pins,
-Captain-named exclusive state/tasks, intended positive steps, command/session log
-paths and digests, evidence directory, and final Stage Report checklist. Beyond that
-one package artifact it retains evidence only; FO/Captain actors retain all authority
-to prepare, record, consume, commit lifecycle state, and dispatch target work.
+While ph still remains at ideation, the First Officer completes and retains the
+read-only candidate identity, owner suites, and full/race/format preflight. Only after
+every retained result is green does a cold Commander consume ph's approved ideation
+gate, commit entry into implementation, and—under gqs—immediately dispatch the ph
+acceptance worker. This setup transition is not counted as target-journey proof.
+
+The worker's normal assignment binds the exact preflight pins and retained
+command/session paths plus digests, Captain-named exclusive state/tasks, intended
+positive steps, one-file Commander-package scope, evidence directory, and final Stage
+Report checklist. It first verifies and imports the retained preflight bytes, then
+applies the package-only descendant commit and proves tree identity. It does not rerun
+preflight after the live ph transition and call that equivalent. Beyond that one
+package artifact it retains evidence only; FO/Captain actors retain all authority to
+prepare, record, consume, commit lifecycle state, and dispatch target work. No target
+`gate prepare` occurs until this verification finishes.
 
 The actual acceptance checkout is clean and at a different absolute main/state
 location from the authoring checkout. No other session mutates the named chat or
@@ -280,9 +297,18 @@ or assemble them, and the worker does not execute their authoritative mutations.
 
 ### Track B — truthful re-scope and the real Subspace entry
 
-1. On the separate real task, retain the old room tree digest, record the truthful
-   withdrawal with the exact `--withdraw` entry above, and run `spacedock state commit
-   {rescope-target}`. The authoritative state receives no repeated-withdrawal probe.
+1. On the separate real task, retain the old room tree digest and use terminal 0m6
+   grammar exactly:
+
+   ```text
+   ${SPACEDOCK_BIN:-spacedock} gate withdraw {rescope-target} \
+     --reason "{truthful scope-change reason}" --workflow-dir docs/dev
+   ${SPACEDOCK_BIN:-spacedock} state commit {rescope-target} \
+     --workflow-dir docs/dev
+   ```
+
+   Withdrawal is a distinct command and derives actor identity from the active role.
+   The authoritative state receives no repeated-withdrawal probe.
 2. End that Shaping session. From a newly cold-booted Shaping session in the relocated
    clean checkout, `status --boot --identify --json` must surface
    `withdrawn-awaiting-prepare`.
@@ -367,19 +393,24 @@ columns:
 | UTC timestamp | Actor intent | Exact command or skill entry | Pre-state | Exit/output | Post-state | Retained artifact/digest | Elapsed | Friction |
 |---|---|---|---|---|---|---|---|---|
 
-It contains rows for the seven-member query and reconciled Commander-package blob;
-candidate/skill/binary pins; prerequisite terminal states; role-contract proof; owner
-suites and repository checks; acceptance-worker dispatch/assignment; both cold boots;
-chat prepare/commit/present/record/commit; withdrawal/commit; replacement prepare/
-commit; `/subspace:r`; room record/commit; Commander consume/commit/entered-stage
-dispatch; disposable negative probes; clean-checkout reboot; and handback.
+In timestamp order it contains rows for the seven-member query; prerequisite terminal
+states and role-contract proof; `spacedock_product_rc`/Subspace/skill/binary identity;
+owner suites and repository checks; retained preflight handoff; ph consume/commit;
+acceptance-worker dispatch/assignment; worker digest verification; the package-only
+`spacedock_rc`; both cold boots; chat prepare/commit/present/record/commit;
+withdrawal/commit; replacement prepare/commit; `/subspace:r`; room record/commit;
+Commander consume/commit/entered-stage dispatch; disposable negative probes;
+clean-checkout reboot; and handback.
 
-Each FO/Commander sends the worker its exact command log and host session log path plus
-SHA-256 through ordinary worker messaging. The worker verifies the supplied digest,
-retains the exact bytes under this task's evidence directory, and records their new
-Git blob id and SHA-256. Missing bytes or a digest mismatch is an evidence defect and
-a stop. There is no watcher, collector, event schema, wrapper, daemon, or polling
-protocol; normal assignment/follow-up delivery is the handoff.
+Before the worker exists, the preflight FO writes exact command/session logs to the
+Captain-named handoff directory, computes SHA-256, and retains the directory without
+changing main or workflow state. The ordinary worker assignment carries those exact
+paths and digests. The worker verifies them before the first target prepare, retains
+the exact bytes under this task's evidence directory, and records their new Git blob
+id and SHA-256. Each later FO/Commander uses the same ordinary follow-up path. Missing
+bytes, a digest mismatch, or a preflight timestamp at or after ph consumption is an
+evidence defect and a stop. There is no watcher, collector, event schema, wrapper,
+daemon, or polling protocol.
 
 The report then records these independent outcome comparisons:
 
@@ -410,8 +441,8 @@ claim. The number of commands or green tests alone is not.
 
 ## Focused failure mutants
 
-First, after the worker establishes exact candidate identity and before live state
-mutation, run the exact landed owner suites at `spacedock_rc` and `subspace_rc`:
+First, while ph remains at ideation and before any live workflow mutation, run and
+retain the exact landed owner suites at `spacedock_product_rc` and `subspace_rc`:
 
 - s4's focused prepared-authority tests must cover tampered request/Briefing/source
   digest and unavailable Git object before mutation. The expected landed anchors are
@@ -550,14 +581,16 @@ commands/tests are green.
 
 **AC-2 (READINESS)** — The walked candidate is exactly the reconciled seven-member
 release composition, with every owner prerequisite and repository gate complete before
-live mutation.
+ph consumption or any live mutation.
 
 Verified by equality between the seven-item status query and pinned Commander-package
 meaning; terminal `PASSED` plus merge ancestry for gqs, mn, 0m6, rq, s4, and v21;
-mn's pinned role-contract proof; candidate/skill/binary digests; owner-suite logs; and
-full/race/format results. A stale five-member package, nonterminal prerequisite,
-unmerged owner commit, version-only identity, or check timestamp after the first
-journey mutation fails.
+mn's pinned role-contract proof; `spacedock_product_rc`/skill/binary digests;
+owner-suite and full/race/format logs whose retained timestamps precede ph consume;
+worker verification of those exact files; and the package-only descendant proof for
+`spacedock_rc`. A stale five-member package, nonterminal prerequisite, unmerged owner
+commit, version-only identity, missing/mismatched preflight artifact, check timestamp
+at or after ph consumption, or non-package change in `spacedock_rc` fails.
 
 **AC-3 (CORRECTNESS)** — Retained state proves exact identity, truthful retirement,
 record-versus-apply separation, and one-use authorization.
@@ -591,38 +624,43 @@ command-count-only conclusion fails.
 
 ## Test plan and proof order
 
-1. **Dispatch and candidate identity (low, package edit plus CLI/read-only):** verify
-   the six terminal prerequisite states and mn proof, consume ph into implementation,
-   commit, and let gqs dispatch the acceptance worker. The worker reconciles and
-   commits the one-file seven-member Commander package, then pins its blob with the
-   exact query, commits/binaries/skill blobs, merge ancestry, `state ready`, exclusive
-   task ownership, and one fresh gate help. Stop on any mismatch.
-2. **Owner suites and repository gates first (medium):** run exact gqs, s4, rq,
-   withdrawal, consume, v21, and mn role-contract owner suites on the pinned commits. On
-   `spacedock_rc`, run
+1. **Read-only identity before consumption (low, CLI/read-only):** while ph remains at
+   ideation, verify the seven-member query, six terminal prerequisites, mn proof,
+   exact `spacedock_product_rc`/Subspace commits, binaries/skill blobs, merge ancestry,
+   `state ready`, exclusive task ownership, and fresh gate plus `gate withdraw` help.
+   Record exact commands, outputs, UTC, paths, and digests outside both Git roots; stop
+   on any mismatch without consuming ph.
+2. **Owner suites and repository gates before consumption (medium):** run exact gqs,
+   s4, rq, 0m6 withdrawal, consume, v21, and mn role-contract owner suites on the
+   pinned commits in detached clean candidate checkouts. On `spacedock_product_rc`, run
    `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; run rq's
    declared Subspace repository gates on `subspace_rc`. Formatting must leave both
-   candidate trees unchanged. Finish this step before any live mutation.
-3. **Bind immutable evidence (low, ordinary follow-up):** give the already-dispatched
-   worker exact candidate pins, exclusive scope, log paths, and digests through its
-   normal assignment channel. Verify it is addressable, owns no gate authority, and
-   will author only evidence plus the final Stage Report from this point before the
-   first positive `gate prepare`.
-4. **Positive chat boundary (medium, live workflow):** on the exclusive chat target,
+   candidate trees unchanged. Retain the exact logs and digest inventory, and finish
+   this step before ph consumption or any live mutation.
+3. **Consume and dispatch after green (low, live workflow):** compare the retained
+   preflight completion timestamp with the unchanged `spacedock_state_start`; only
+   then cold-consume ph into implementation, commit it, and let gqs dispatch the
+   acceptance worker with the exact preflight paths/digests and declared scope.
+4. **Verify evidence and reconcile the package (low, artifact edit):** before any
+   target prepare, the worker verifies and imports every retained preflight byte,
+   rejects any mismatch, commits the one-file seven-member Commander-package
+   correction, and proves `spacedock_rc` is a package-only child of
+   `spacedock_product_rc`. It remains gate-authority-free.
+5. **Positive chat boundary (medium, live workflow):** on the exclusive chat target,
    prepare/commit, present in default chat, record/commit Captain approval, pass exact
    logs/digests to the worker, and stop the Shaping FO.
-5. **Positive re-scope/Subspace boundary (high, live TUI):** on the exclusive re-scope
+6. **Positive re-scope/Subspace boundary (high, live TUI):** on the exclusive re-scope
    target, withdraw/commit, cold-boot, prepare/commit N+1 from relocated clean roots,
    invoke the actual room-only skill, record/commit its Result, pass exact logs/digests,
    and stop the Shaping FO.
-6. **Positive Commander boundary (medium, separate live workflow):** cold-boot,
+7. **Positive Commander boundary (medium, separate live workflow):** cold-boot,
    consume/commit the chat target, dispatch its entered stage under gqs, and pass exact
    boot/command/session/dispatch logs and digests to the worker.
-7. **Disposable exact-byte mutants (medium):** from each corresponding positive state
+8. **Disposable exact-byte mutants (medium):** from each corresponding positive state
    commit, run the digest/object, repeated-withdrawal, stale-room, provider-failure,
    repeated-consume, and dirty-sibling probes only in unpushed disposable clones/
    branches. Retain logs/digests, then remove them.
-8. **Durability, report, and handback (medium, Git/CLI):** compare boundary trees,
+9. **Durability, report, and handback (medium, Git/CLI):** compare boundary trees,
    clone final state cleanly, rerun boot and `gate validate`, inspect inventories,
    compute forbidden-recovery outcomes, have the same worker append the final Stage
    Report, commit evidence, and complete explicit ownership handback.
@@ -630,9 +668,10 @@ command-count-only conclusion fails.
 The composition-level runtime handoff is deliberately the deliverable being tested,
 so there is no smaller throwaway composition spike and no second journey. Its
 component mechanisms already carry owner tests and s4/rq moved-root spikes; x9 is
-folded into rq. Candidate identity, owner suites, and repository gates run first; the
-live default-chat boundary is the first falsifiable journey exercise only after the
-evidence worker is bound.
+folded into rq. Candidate identity, owner suites, and repository gates run and are
+retained before ph consumption; the live default-chat boundary is the first
+falsifiable target-journey exercise only after the dispatched worker verifies that
+preflight evidence and binds the package-only descendant.
 
 ## Out of scope
 
@@ -689,3 +728,23 @@ positive run now starts only after the seven-member candidate, including mn's ro
 contract, is proven, runs under exclusive state ownership with a pre-dispatched
 evidence worker, and confines every negative mutation to disposable copies before
 explicit handback.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Use terminal 0m6 withdrawal grammar exactly.
+  AC-3/AC-5 evidence: hard stops and Track B now require `gate withdraw ENTITY --reason TEXT --workflow-dir docs/dev`; the obsolete record flag form and caller-supplied withdrawal actor are absent.
+- DONE: Complete and retain candidate identity, owner suites, and full/race/format preflight before consuming ph.
+  AC-2 evidence: the preflight targets exact product/Subspace pins while ph remains at ideation, retains timestamped logs and SHA-256 outside both roots, and fails if any check is not green before the unchanged starting state is consumed.
+- DONE: Dispatch the acceptance worker only after green preflight and make it verify retained artifacts before target preparation.
+  AC-1/AC-2/AC-5 evidence: the cold Commander consumes/commits ph only after preflight, gqs dispatches the worker, and missing, changed, or late preflight bytes stop before the first target `gate prepare`.
+- DONE: Preserve the seven-member composition, role-authority split, disposable exact-byte mutants, and exclusive-state handback.
+  AC-1/AC-4/AC-5 evidence: Cycle 3 changes only withdrawal and proof order; mn remains terminal, negative probes stay off-authority, and the worker still owns immutable evidence/final reporting without gate authority.
+- SKIPPED: Execute the release-candidate journey during ideation.
+  The six prerequisite members and exact candidate pins are not terminal and green, so ph consumption or target mutation would violate AC-2.
+
+### Summary
+
+Cycle 3 binds the design to 0m6's shipped `gate withdraw` command and makes the
+preflight genuinely prior to workflow mutation. The acceptance worker is dispatched
+only after green retained proof, then verifies those exact bytes before package
+reconciliation or the first target review.
