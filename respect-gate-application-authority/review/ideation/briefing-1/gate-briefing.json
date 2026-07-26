@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mnea9vq3pv1rz1x1hdjbvdg9:ideation:attempt-1:revision-1",
+  "question": "Is the general gate-application authority contract ready for implementation after gqs lands?",
+  "artifacts": [
+    {
+      "id": "artifact:mnea9vq3pv1rz1x1hdjbvdg9:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/29b9aceb32d50584932529b5a2c391680bd37a1b/respect-gate-application-authority/index.md",
+      "rev": "sha256:eb0c6f089091b6b044a1ac63718ecda8484200f9d2e1519aa866983a2af6e108",
+      "mediaType": "text/markdown",
+      "summary": "Make approval recording preserve explicit scope reservations while existing unqualified broad conn retains application authority; prove record-and-handoff and authorized consume/dispatch in two cold sessions without new authority state or gate mechanics."
+    }
+  ]
+}

@@ -13,7 +13,7 @@ id: mnea9vq3pv1rz1x1hdjbvdg9
 gates:
     version: 1
     current:
-        gate: gate:mnea9vq3pv1rz1x1hdjbvdg9:backlog
+        gate: gate:mnea9vq3pv1rz1x1hdjbvdg9:ideation
     records:
         - id: gate:mnea9vq3pv1rz1x1hdjbvdg9:backlog
           stage: backlog
@@ -37,6 +37,29 @@ gates:
                 action: advance
                 target-stage: ideation
                 state: consumed
+                blockers: []
+        - id: gate:mnea9vq3pv1rz1x1hdjbvdg9:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:mnea9vq3pv1rz1x1hdjbvdg9-ideation-1
+              briefing:
+                id: briefing:mnea9vq3pv1rz1x1hdjbvdg9:ideation:attempt-1:revision-1
+                digest: sha256:374fc38f469e16f29364e38d8349926fa1ea80f626accf8b1f9fa364c350809b
+                digest-domain: canonical-bytes
+                request-digest: sha256:3ec2dbae290741be802855503aec98a083f2364fdb8e42f0344bab8f77a4cc64
+                room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mnea9vq3pv1rz1x1hdjbvdg9:ideation:1
+                briefing: briefing:mnea9vq3pv1rz1x1hdjbvdg9:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T12:23:04.626415Z"
+                decision: approve
+                reason: AC-1 through AC-4 are evidenced and staff corrections are closed. Record approval now; apply only after gqs is terminal PASSED so the broad-conn positive phase exercises the shipped entered-stage scheduler.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
                 blockers: []
 ---
 
