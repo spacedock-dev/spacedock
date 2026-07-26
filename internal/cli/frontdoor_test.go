@@ -125,15 +125,13 @@ func withExecutablePath(t *testing.T, path string, err error) {
 	t.Cleanup(func() { executablePath = orig })
 }
 
-// withVersion stamps the package Version (the binary display semver the gate
-// feeds to the upgrade-hint compare), restoring it after the test. The package
-// default is the `dev` sentinel, which suppresses the hint, so a test that
-// exercises the behind-plugin hint must stamp a real semver.
+// withVersion stamps package Version plus releaseBuild=true, restoring both
+// after the test. The package defaults model an unmarked source build.
 func withVersion(t *testing.T, v string) {
 	t.Helper()
-	orig := Version
-	Version = v
-	t.Cleanup(func() { Version = orig })
+	origVersion, origMarker := Version, releaseBuild
+	Version, releaseBuild = v, "true"
+	t.Cleanup(func() { Version, releaseBuild = origVersion, origMarker })
 }
 
 func executableFixture(t *testing.T) string {

@@ -18,7 +18,11 @@ effect immediately. For a normal install, see [Install Spacedock](../get-started
     ./spacedock --version
     ```
 
-    Prints `spacedock <version>` for your local build.
+    Keep this build unstamped: do not add a Git tag, revision, or `git describe`
+    ldflag. A source build reports the embedded checkout manifest version plus
+    `+dev` (for example, `spacedock 0.26.0+dev`), so it stays compatible with the
+    adjacent skills even when a future-minor release tag is the nearest Git
+    ancestor.
 
 3. **Launch with the adjacent local plugin.**
 

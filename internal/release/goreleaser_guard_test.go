@@ -3,6 +3,7 @@ package release
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -107,6 +108,69 @@ func readGoreleaserConfig(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return string(data)
+}
+
+const (
+	releaseVersionStamp = "-X github.com/spacedock-dev/spacedock/internal/cli.Version={{ .Version }}"
+	releaseMarkerStamp  = "-X github.com/spacedock-dev/spacedock/internal/cli.releaseBuild=true"
+)
+
+// validReleaseIdentityStamps parses builds by ID; comments or a stamp on the
+// other channel cannot satisfy the exact two-input guard.
+func validReleaseIdentityStamps(config string) bool {
+	var doc struct {
+		Builds []struct {
+			ID      string   `yaml:"id"`
+			Ldflags []string `yaml:"ldflags"`
+		} `yaml:"builds"`
+	}
+	if err := yaml.Unmarshal([]byte(config), &doc); err != nil {
+		return false
+	}
+
+	for _, id := range []string{"spacedock-stable", "spacedock-edge"} {
+		valid := false
+		for _, build := range doc.Builds {
+			if build.ID == id &&
+				slices.Contains(build.Ldflags, releaseVersionStamp) &&
+				slices.Contains(build.Ldflags, releaseMarkerStamp) {
+				valid = true
+			}
+		}
+		if !valid {
+			return false
+		}
+	}
+	return true
+}
+
+func TestGoreleaserBuildsStampReleaseIdentity(t *testing.T) {
+	if !validReleaseIdentityStamps(readGoreleaserConfig(t)) {
+		t.Fatal(".goreleaser.yaml must stamp Version and releaseBuild=true on stable and edge")
+	}
+}
+
+// TestReleaseIdentityGuardRejectsChannelMarkerRemoval supplies two independent
+// parsed-config mutants: deleting the marker from only stable or only edge must
+// trip the exact build-ID guard.
+func TestReleaseIdentityGuardRejectsChannelMarkerRemoval(t *testing.T) {
+	config := readGoreleaserConfig(t)
+	needle := "      - " + releaseMarkerStamp + "\n"
+	for i, id := range []string{"spacedock-stable", "spacedock-edge"} {
+		t.Run(id, func(t *testing.T) {
+			at := strings.Index(config, needle)
+			if i == 1 {
+				at = strings.LastIndex(config, needle)
+			}
+			if at < 0 || strings.Count(config, needle) != 2 {
+				t.Fatal("fixture must carry one marker per channel")
+			}
+			adversarial := config[:at] + config[at+len(needle):]
+			if validReleaseIdentityStamps(adversarial) {
+				t.Fatalf("removing %s marker did not trip guard", id)
+			}
+		})
+	}
 }
 
 // goosOf returns the distinct goos tokens .goreleaser.yaml builds — the

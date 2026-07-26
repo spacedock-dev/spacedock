@@ -32,9 +32,9 @@ builds:
     # The version stamp the formula's `test do` asserts. Target is the
     # internal/cli.Version var (NOT main.Version — package main has no Version
     # symbol, so -X main.Version is a silent no-op). Version must be a var, not a
-    # const, for the linker to write it. {{.Version}} is goreleaser's
-    # git-describe-derived version (the tag on a release, a snapshot string on
-    # --snapshot).
+    # const, for the linker to write it. {{.Version}} is GoReleaser's resolved
+    # version (the tag on a release, a snapshot string on --snapshot).
+    # releaseBuild=true is the explicit trust marker paired with that value.
     # devBranch selects which marketplace ENTRY the released binary installs (the
     # channel is the entry name, not an @ref into the plugin repo). The STABLE
     # channel stamps `main`, which the binary maps to the `spacedock` entry
@@ -46,6 +46,7 @@ builds:
     ldflags:
       - -s -w
       - -X github.com/spacedock-dev/spacedock/internal/cli.Version={{ .Version }}
+      - -X github.com/spacedock-dev/spacedock/internal/cli.releaseBuild=true
       - -X github.com/spacedock-dev/spacedock/internal/cli.devBranch=main
   - id: spacedock-edge
     main: ./cmd/spacedock
@@ -60,6 +61,7 @@ builds:
     ldflags:
       - -s -w
       - -X github.com/spacedock-dev/spacedock/internal/cli.Version={{ .Version }}
+      - -X github.com/spacedock-dev/spacedock/internal/cli.releaseBuild=true
       - -X github.com/spacedock-dev/spacedock/internal/cli.devBranch=next
 
 archives:

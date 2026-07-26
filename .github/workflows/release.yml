@@ -172,8 +172,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
-          # Full history + tags so `git describe --tags` resolves the version
-          # goreleaser stamps into internal/cli.Version. fetch-tags: true is
+          # Full history + tags so GoReleaser resolves the pushed tag version
+          # stamped beside releaseBuild=true. fetch-tags: true is
           # required so annotated-tag bodies (the release notes consumed by the
           # next step's `git tag -l --format='%(contents:body)'`) reach the
           # runner — actions/checkout@v5's default is false, which leaves the

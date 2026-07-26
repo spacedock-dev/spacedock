@@ -9,16 +9,16 @@ import (
 )
 
 // displayVersion returns the binary's effective display version, fed to every
-// compatibility gate and version-bearing message. A linker-stamped release
-// build returns Version unchanged. An unstamped `go build`/`go install` dev
-// build (Version == "dev") instead reports the embedded checkout manifest's
-// version with a `+dev` build tag appended (D3): the dev binary always claims
+// compatibility gate and version-bearing message. Only an explicitly marked
+// release build returns its stamped Version unchanged. Every unmarked
+// `go build`/`go install` instead reports the embedded checkout manifest's
+// version with a `+dev` build tag appended (D3): the source binary always claims
 // its checkout's minor, so a stale checkout is rejected by newer skills and a
 // fresh one passes — no `dev` always-pass carve-out anywhere in the gate. A
 // `go install …@vX.Y.Z` proxy build (module proxy, no ldflags) self-reports
 // `X.Y.Z+dev`, since the tagged manifest equals the tag.
 func displayVersion() string {
-	if Version != "dev" {
+	if releaseBuild == "true" && Version != "dev" {
 		return Version
 	}
 	v, ok := embeddedManifestVersion()

@@ -22,15 +22,15 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
-// Version is the single source of truth for the binary version. It is stamped by
-// the release pipeline via -ldflags "-X
-// github.com/spacedock-dev/spacedock/internal/cli.Version=$(git describe --tags --always)".
+// Version is the release version candidate. The release pipeline stamps it
+// beside releaseBuild=true; displayVersion trusts it only with that marker.
 // It is a var (not a const) because the linker can only write package-level vars;
 // a const is silently ignored by -X. The default is the `dev` sentinel so an
 // unstamped `go build`/`go install` binary reads honestly as a dev build rather
-// than impersonating a stale release; the git-describe tag overwrites it on a
-// stamped release build.
+// than treating Git provenance as compatibility identity.
 var Version = "dev"
+
+var releaseBuild = "false"
 
 // tagline is the one-line product description rendered as the first help line.
 const tagline = "spacedock — agentic workflow launcher"

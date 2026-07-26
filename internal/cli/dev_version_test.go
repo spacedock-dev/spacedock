@@ -4,11 +4,15 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
 // TestEmbeddedManifestVersionReadsCheckoutVersion locks the embed fallback unit:
@@ -27,9 +31,8 @@ func TestEmbeddedManifestVersionReadsCheckoutVersion(t *testing.T) {
 }
 
 // TestDisplayVersionFallsBackToEmbedOnlyWhenUnstamped locks displayVersion()'s
-// two branches: a stamped Version passes through unchanged (the embed is never
-// consulted); the unstamped `dev` sentinel resolves to the embedded checkout
-// version with a `+dev` build tag appended (D3).
+// two branches: a marked release Version passes through unchanged; the
+// unstamped `dev` sentinel resolves to the embedded checkout version plus +dev.
 func TestDisplayVersionFallsBackToEmbedOnlyWhenUnstamped(t *testing.T) {
 	t.Run("stamped version passes through", func(t *testing.T) {
 		withVersion(t, "0.19.4")
@@ -39,7 +42,7 @@ func TestDisplayVersionFallsBackToEmbedOnlyWhenUnstamped(t *testing.T) {
 	})
 
 	t.Run("unstamped dev resolves to checkout version + dev", func(t *testing.T) {
-		withVersion(t, "dev")
+		withBuildIdentity(t, "dev", "false")
 		want := checkoutManifestVersion(t) + "+dev"
 		if got := displayVersion(); got != want {
 			t.Fatalf("displayVersion() = %q, want %q", got, want)
@@ -47,36 +50,108 @@ func TestDisplayVersionFallsBackToEmbedOnlyWhenUnstamped(t *testing.T) {
 	})
 }
 
-// TestUnstampedSourceBuildReportsCheckoutVersionPlusDev is the AC-5 behavior
-// fixture: it `go build`s the REAL cmd/spacedock binary (no ldflags — the
-// unstamped shape) and runs its `--version`, observing that line 1 reports
-// `spacedock <checkout-version>+dev (contract 3)` rather than the bare `dev`
-// sentinel. This is the actual command a source-build operator runs, not the
-// package-internal displayVersion() call. Skipped when `go` is unavailable.
-func TestUnstampedSourceBuildReportsCheckoutVersionPlusDev(t *testing.T) {
+// TestUnmarkedProvenanceDoesNotChangeCompatibilityIdentity is AC-3's unit
+// matrix. Tag, describe, revision, and dirty candidates all emit the same bytes
+// and receive the same doctor verdict because none carries the exact marker.
+func TestUnmarkedProvenanceDoesNotChangeCompatibilityIdentity(t *testing.T) {
+	wantVersion := checkoutManifestVersion(t) + "+dev"
+	manifest := filepath.Join(repoRootForDevBuild(t), ".claude-plugin", "plugin.json")
+	for _, version := range []string{
+		"0.27.0",
+		"v0.27.0-pre0-17-gabcdef0",
+		"abcdef012345",
+		"0.27.0-5-gabcdef0-dirty",
+	} {
+		t.Run(version, func(t *testing.T) {
+			withBuildIdentity(t, version, "false")
+			if got := displayVersion(); got != wantVersion {
+				t.Errorf("displayVersion() = %q, want invariant %q", got, wantVersion)
+			}
+			if code := contract.RunDoctor(manifest, "claude", displayVersion(), false, io.Discard, io.Discard); code != 0 {
+				t.Errorf("doctor exit = %d, want 0", code)
+			}
+		})
+	}
+}
+
+func withBuildIdentity(t *testing.T, version, marker string) {
+	t.Helper()
+	origVersion, origMarker := Version, releaseBuild
+	Version, releaseBuild = version, marker
+	t.Cleanup(func() { Version, releaseBuild = origVersion, origMarker })
+}
+
+// TestSourceBuildCompatibilityIdentity is the AC-1/AC-2 real-binary proof. It
+// builds the same checkout three ways and observes both line 1 and doctor: a
+// copied future-minor git-describe stamp is inert without the release marker,
+// while the exact marked release identity remains load-bearing and incompatible
+// with this checkout's prior-minor manifest.
+func TestSourceBuildCompatibilityIdentity(t *testing.T) {
 	goBin, err := exec.LookPath("go")
 	if err != nil {
 		t.Skip("go not on PATH; dev-build behavior fixture requires the toolchain")
 	}
 
 	repo := repoRootForDevBuild(t)
-	bin := filepath.Join(t.TempDir(), "spacedock-dev-build")
-	build := exec.Command(goBin, "build", "-o", bin, "./cmd/spacedock")
-	build.Dir = repo
-	if out, err := build.CombinedOutput(); err != nil {
-		t.Fatalf("go build ./cmd/spacedock: %v\n%s", err, out)
+	manifestVersion := checkoutManifestVersion(t)
+	major, minor, ok := contract.ParseMajorMinor(manifestVersion)
+	if !ok {
+		t.Fatalf("checkout manifest version %q has no parseable major.minor", manifestVersion)
 	}
+	sourceVersion := manifestVersion + "+dev"
+	misleadingVersion := fmt.Sprintf("v%d.%d.0-pre0-17-gabcdef0", major, minor+1)
+	releaseVersion := fmt.Sprintf("%d.%d.0-pre0", major, minor+1)
 
-	out, err := exec.Command(bin, "--version").Output()
-	if err != nil {
-		t.Fatalf("%s --version: %v", bin, err)
-	}
+	for _, tt := range []struct {
+		name           string
+		ldflags        string
+		wantVersion    string
+		wantDoctorExit int
+	}{
+		{name: "plain source", wantVersion: sourceVersion},
+		{
+			name: "misleading future-minor version without release marker",
+			ldflags: "-X github.com/spacedock-dev/spacedock/internal/cli.Version=" +
+				misleadingVersion,
+			wantVersion: sourceVersion,
+		},
+		{
+			name: "exact marked future-minor release",
+			ldflags: "-X github.com/spacedock-dev/spacedock/internal/cli.Version=" +
+				releaseVersion + " -X github.com/spacedock-dev/spacedock/internal/cli.releaseBuild=true",
+			wantVersion:    releaseVersion,
+			wantDoctorExit: 1,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			bin := filepath.Join(t.TempDir(), "spacedock")
+			args := []string{"build", "-o", bin, "-ldflags", tt.ldflags, "./cmd/spacedock"}
+			build := exec.Command(goBin, args...)
+			build.Dir = repo
+			if out, err := build.CombinedOutput(); err != nil {
+				t.Fatalf("go %s: %v\n%s", strings.Join(args, " "), err, out)
+			}
 
-	wantVersion := checkoutManifestVersion(t) + "+dev"
-	firstLine := strings.SplitN(string(out), "\n", 2)[0]
-	wantLine := "spacedock " + wantVersion + " (contract 3)"
-	if firstLine != wantLine {
-		t.Fatalf("unstamped build --version line 1 = %q, want %q", firstLine, wantLine)
+			out, err := exec.Command(bin, "--version").Output()
+			if err != nil {
+				t.Fatalf("%s --version: %v", bin, err)
+			}
+			firstLine := strings.SplitN(string(out), "\n", 2)[0]
+			wantLine := "spacedock " + tt.wantVersion + " (contract 3)"
+			if firstLine != wantLine {
+				t.Errorf("--version line 1 = %q, want %q", firstLine, wantLine)
+			}
+
+			doctor := exec.Command(bin, "doctor", "--plugin-manifest",
+				filepath.Join(repo, ".claude-plugin", "plugin.json"))
+			doctorOut, doctorErr := doctor.CombinedOutput()
+			if doctorErr != nil && doctor.ProcessState == nil {
+				t.Fatalf("%s doctor: %v\n%s", bin, doctorErr, doctorOut)
+			}
+			if got := doctor.ProcessState.ExitCode(); got != tt.wantDoctorExit {
+				t.Errorf("doctor exit = %d, want %d\n%s", got, tt.wantDoctorExit, doctorOut)
+			}
+		})
 	}
 }
 

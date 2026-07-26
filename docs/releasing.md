@@ -9,8 +9,12 @@ marketplace source.
 `release.yml` runs one goreleaser job on `macos-latest` that:
 
 - cross-builds darwin and linux (arm64 + amd64) tarballs plus `checksums.txt`,
-  stamping `git describe --tags` into `internal/cli.Version`, for BOTH channels —
-  a stable build (`cli.devBranch=main`) and an edge build (`cli.devBranch=next`);
+  deriving the pushed tag version through GoReleaser and stamping both
+  `internal/cli.Version={{ .Version }}` and the explicit
+  `internal/cli.releaseBuild=true` marker for BOTH channels; only artifacts
+  carrying that marker may use the stamped release version as compatibility
+  identity. The stable build also stamps `cli.devBranch=main` and the edge build
+  stamps `cli.devBranch=next`;
 - publishes the GitHub Release with those assets;
 - bumps BOTH `spacedock-dev/homebrew-tap` casks (`spacedock` stable +
   `spacedock@next` edge) via `HOMEBREW_TAP_TOKEN`;
@@ -229,6 +233,11 @@ manifest at the module-proxy commit equals the tag) — gates correctly under
 minor-version coupling; the `+dev` suffix on an otherwise-tagged build is a
 cosmetic oddity, not a compatibility issue.
 
+Plain `go build` and `go install` use the embedded manifest version plus `+dev`.
+Tag, revision, distance, and dirty data are provenance, not compatibility
+identity, and must not be injected into source-build examples. The two release
+identity stamps belong only in `.goreleaser.yaml`.
+
 Every release tag now advances `next` and bumps its calendar key automatically
 (see "Advancing the Edge Line" above); `next-publish` stays for an out-of-band
 re-pull between releases (e.g. a `next`-only fix that isn't worth a full cut).
@@ -239,7 +248,8 @@ a dev-only path.
 ## Notes
 
 - Do not stamp the version via a pull request; the release branch and annotated
-  tag are the release mechanism.
+  tag are the release mechanism. GoReleaser is the only supported owner of the
+  paired `Version` and `releaseBuild=true` linker stamps.
 - macOS binaries are adhoc-signed, not yet notarized; the Homebrew cask's
   postflight strips the `com.apple.quarantine` xattr as the interim Gatekeeper
   fix until Developer-ID notarization lands.
