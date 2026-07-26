@@ -73,23 +73,26 @@ accidental authority escalation.
 Normative rule:
 
 > Presenting or recording an approval does not expand the active assignment's
-> transition scope. Without explicit assignment or conn to apply the transition, the
-> First Officer commits the Resolution and stops with
-> `approved-awaiting-advance`; it does not consume, mutate status, or dispatch a
-> successor. When the active assignment or explicit conn authorizes application, the
-> First Officer consumes and commits the one-use application, then enters ordinary
-> successor routing.
+> transition scope. Resolve application authority from the active conversation:
+> an express reservation or narrowing controls; otherwise an explicit application
+> assignment or an unqualified broad grant—including exact
+> `you have the conn`—includes consume and successor routing. Without application
+> authority, the First Officer commits the Resolution and stops with
+> `approved-awaiting-advance`; with it, the First Officer consumes and commits the
+> one-use application, then enters ordinary successor routing.
 
 This rule is independent of host, provider, workflow stage, or organizational role.
 The Shaping/Commander incident and ideation/implementation transition are examples,
-not words the normative contract depends on. A normal single First Officer told to
-drive with the conn still owns record, consume, commit, and successor dispatch.
+not words the normative contract depends on. A normal single First Officer holding
+the unqualified broad grant `you have the conn` still owns record, consume, commit,
+and successor dispatch unless the active prompt expressly reserves application.
 
 Decision authority and transition authority remain distinguishable. A limited conn
 may authorize the First Officer to render and record a binding decision while the
-same assignment explicitly reserves application for another session. Conversely, a
-later First Officer may be assigned to apply an already-recorded approval without
-reconstructing or replacing the decision.
+same prompt explicitly reserves application for another session. The reservation is
+what narrows the otherwise broad conn; recording alone neither grants nor revokes
+application authority. Conversely, a later First Officer may be assigned to apply an
+already-recorded approval without reconstructing or replacing the decision.
 
 ## Proposed wording
 
@@ -110,9 +113,11 @@ Before:
 After:
 
 > **Route fail-closed.** Presenting or recording approval never expands the active
-> assignment's transition scope. Without explicit assignment or conn to apply it,
-> stop after the close commit as `approved-awaiting-advance`; do not consume, mutate
-> status, or dispatch the successor. With application authority, run:
+> assignment's transition scope. An express reservation controls; otherwise an
+> explicit application assignment or unqualified broad grant such as exact
+> `you have the conn` authorizes application. Without that authority, stop after the
+> close commit as `approved-awaiting-advance`; do not consume, mutate status, or
+> dispatch the successor. When authorized, run:
 >
 > `gate consume ...`
 >
@@ -134,10 +139,11 @@ Before:
 After:
 
 > It commits the bound package before presentation and every successful close before
-> routing. Presenting or recording approval adds no transition scope: without
-> assignment or conn to apply it, stop pending; when authorized, commit consume before
-> nonterminal dispatch or terminal merge. Revise invokes `«feedback.route»`;
-> hold/ineligibility stops.
+> routing. Presenting or recording approval adds no transition scope. An express
+> reservation narrows application; otherwise an application assignment or unqualified
+> broad conn authorizes it. Stop pending without authority; when authorized, commit
+> consume before nonterminal dispatch or terminal merge. Revise invokes
+> `«feedback.route»`; hold/ineligibility stops.
 
 Implementation should tighten adjacent sentences rather than raise the existing
 6,600-byte gate-lifecycle or 26,754-byte shared-core caps.
@@ -148,18 +154,19 @@ consume. Apply this concrete documentation diff to
 
 ```diff
 -After an authorized decision, it records and commits the Resolution before every route. Approval then uses `gate consume`, which rechecks eligibility and atomically writes the successor stage and consumed mark; the consumed descendant commit lands before ordinary successor dispatch.
-+After an authorized decision, it records and commits the Resolution before every route. Presenting or recording approval adds no transition scope: without assigned application authority, it remains `approved-awaiting-advance`. When the active assignment or explicit conn authorizes application, `gate consume` rechecks eligibility and atomically writes the successor stage and consumed mark; the consumed descendant commit lands before ordinary successor dispatch.
++After an authorized decision, it records and commits the Resolution before every route. Presenting or recording approval adds no transition scope. An express reservation narrows application; otherwise an explicit application assignment or unqualified broad grant such as `you have the conn` authorizes it. Without application authority, approval remains `approved-awaiting-advance`; when authorized, `gate consume` rechecks eligibility and atomically writes the successor stage and consumed mark, and the consumed descendant commit lands before ordinary successor dispatch.
 ```
 
 No CLI wording, schema, or command behavior changes.
 
 ## Proof design
 
-Contractlint remains structural. Extend the existing
-`TestFOGateLifecycleOwnsEveryEngagedEntry` assertions to require the shared-core and
-gate-lifecycle authority rule, pending stop, and authorized consume route. This test
-fails if either shared instruction loses the guard, but it is not claimed as model
-behavior proof.
+Contractlint remains structural and gains no semantic phrase or order assertion for
+this change. Existing reference closure, skill frontmatter, structural
+absence/deduplication, and component byte caps continue to run. They prove only that
+the shared references remain loadable and bounded. The two cold live sessions own all
+claims about how the model resolves authority, stops pending, consumes, and
+dispatches.
 
 Use the existing shared `recorded-gate-lifecycle` live scenario and its current
 Claude, Codex, and Pi runners. Do not add a scenario, harness, event format, or
@@ -168,11 +175,11 @@ provider. Split its existing journey into two cold launches over the same fixtur
 Negative record-and-handoff control, exact prompt:
 
 > Use `$spacedock:first-officer` for this whole run. Workflow directory:
-> `{workflow-root}`. Engage only `recorded-gate-task`. You have a limited conn to
-> judge and record this retained gate for the next First Officer, not to apply its
-> transition. Approve the retained validation package, commit the decision, report
-> the approval awaiting advance, and stop. Do not consume the gate, change status,
-> or dispatch the successor.
+> `{workflow-root}`. Engage only `recorded-gate-task`. You have the conn to judge and
+> record this retained gate for the next First Officer, but application is expressly
+> reserved for that next First Officer. Approve the retained validation package,
+> commit the decision, report the approval awaiting advance, and stop without
+> consuming, changing status, or dispatching the successor.
 
 Its checkpoint requires exactly one Briefing record and one decision record, a
 committed `advance/pending` application, unchanged `status: validation`,
@@ -183,50 +190,57 @@ the checkpoint must fail.
 Positive application control, exact prompt:
 
 > Use `$spacedock:first-officer` for this whole run. Workflow directory:
-> `{workflow-root}`. You are the application First Officer for
-> `recorded-gate-task`, and you have the conn to apply its already-recorded approval
-> and drive the entered stage. Discover the pending approval from boot, consume and
-> commit the transition once, dispatch the successor, and continue until the handoff
-> worker records `RECORDED-GATE-SUCCESSOR-DISPATCHED` in durable state, then stop.
-> Do not reconstruct or replace the decision. Do not pass `--host` to
-> `dispatch build`.
+> `{workflow-root}`. Engage only `recorded-gate-task`; you have the conn.
+
+The positive phase is gated on sibling `gqs`
+`dispatch-entered-stage-after-gate-consume`: its entity must be terminal `PASSED`,
+its product commit must be merged into the exact candidate, and its focused owner
+suite must pass before this cold launch. Immediately after consume, the landed gqs
+projection—not prompt coaching or harness mutation—must expose the entered working
+stage as both `current` and `next`; the ordinary First Officer loop then dispatches
+it. The prompt must not name consume, commit, successor dispatch, target stage,
+marker, status mutation, or command spelling. The harness must not inject a report,
+rewrite status, or special-case the fixture to manufacture dispatchability.
 
 The existing final oracle continues to require the ordered
 Briefing-record → decision-record → consume trace, exactly one successful successor
 dispatch, one durable successor effect, `state: consumed`, and consumed-commit
 ancestry before dispatch. Add the phase-specific negative checks: the second launch
 must not bind or record a replacement decision, and omission of consume or dispatch
-must fail. Phase-specific artifact names/session directories keep the two launches
-cold while reusing each current runner.
+must fail. It also records the post-consume `current=<entered>,next=<entered>` gqs row
+before the successful dispatch; a successor-skipping `status --set`, coached prompt,
+or injected completion cannot qualify. Phase-specific artifact names/session
+directories keep the two launches cold while reusing each current runner.
 
-No spike needed: `TestRecordedGateLifecycleAC7ResumeMatrix` already proves with the
+No new spike is needed: `TestRecordedGateLifecycleAC7ResumeMatrix` already proves with the
 real binary that a committed pending approval survives a fresh process and consumes
-once, while the shared runners already perform cold host launches over a supplied
-workflow root. The unproven model choice is the value under test, so the two-prompt
-live journey is implementation's first behavioral proof rather than a throwaway
-mechanism spike.
+once, while gqs owns and has already spiked the entered-stage scheduler boundary.
+This task waits for terminal, merged gqs rather than copying or bypassing it. The
+unproven model choice is the value under test, so the two-prompt live journey is
+implementation's first behavioral proof rather than a throwaway mechanism spike.
 
 ## Expected surface and estimates
 
-These estimates are planning aids, not implementation authority. Tolerance is
-±80 net lines and no more than two additional existing proof files if runner
-factoring requires them; exceeding that or changing product mechanics returns to
-design.
+These file and line counts are advisory planning aids, not implementation authority
+or automatic gate-reset thresholds. Ordinary refactoring among existing contract,
+documentation, and recorded-gate proof files does not require reconfirmation.
 
 | File | Estimated change | Purpose |
 |---|---:|---|
 | `skills/fo-gate-lifecycle/SKILL.md` | `+8/-8` | Guard approval application by active assignment scope while preserving consume semantics and byte cap. |
 | `skills/first-officer/references/first-officer-shared-core.md` | `+4/-4` | Carry the same rule at the completion/gate routing seam within its byte cap. |
 | `docs/site/concepts/gates-and-decisions.md` | `+2/-1` | Document pending approval versus application authority. |
-| `internal/contractlint/fo_function_reference_invariant_test.go` | `+18/-2` | Structural closure and byte-cap proof; write this focused test before contract text. |
 | `internal/ensigncycle/shared_scenarios_test.go` | `+2/-2` | Restate the existing scenario's two-session, role-separated intent. |
-| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+95/-25` | Exact prompts, pending checkpoint, combined oracle, and falsifying mutants. |
+| `internal/ensigncycle/recorded_gate_lifecycle_test.go` | `+105/-25` | Exact prompts, pending/gqs checkpoints, combined oracle, and falsifying mutants. |
 | `internal/ensigncycle/claude_live_runner_test.go` | `+18/-6` | Run the existing scenario's record and apply phases cold. |
 | `internal/ensigncycle/codex_live_runner_test.go` | `+18/-6` | Same two phases through the existing Codex adapter. |
 | `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go` | `+24/-8` | Same two phases with separate existing Pi session directories. |
 
-Expected total: about `+189/-62` lines across nine existing files, with zero product
-Go changes.
+Expected total: about `+181/-60` lines across eight existing files, with zero product
+Go changes. `gqs` is a terminal prerequisite, not a file this implementation edits.
+Semantic reconfirmation is required only if implementation introduces new authority
+state, command or schema mechanics, a new harness, a role registry, or a duplicated
+scheduler. Those are design changes regardless of line count.
 
 ## Acceptance criteria
 
@@ -244,38 +258,50 @@ discovers that recorded approval, verifies eligibility, consumes it once, commit
 transition, and dispatches the entered working stage without reconstructing or
 replacing the decision.
 
-Verified by the positive live prompt and the existing final oracle. A second decision
-record, absent/duplicate consume, uncommitted consumed state, or zero/multiple
-successor effects fails.
+Verified only after gqs is terminal `PASSED`, merged into the candidate, and green on
+its focused owner suite, using the exact entity-only positive prompt containing
+unqualified `you have the conn`. The post-consume gqs row, positive live trace, and
+existing final oracle must show entered-stage dispatch. A second decision record,
+absent/duplicate consume, coached command/status workaround, uncommitted consumed
+state, or zero/multiple successor effects fails.
 
 **AC-3 (GENERALITY)** The normative contract is phrased only in terms of active
 assignment, conn, transition scope, application, and routing. The existing broad-conn
 positive control still records, consumes, and drives without an artificial stop.
 
-Verified by contractlint's structural requirements and forbidden fixture-role/stage
-terms in the normative replacement, paired with the positive live outcome. A static
-wording pass without the broad-conn successor effect does not satisfy this criterion.
+Verified by the two cold live controls: an express application reservation narrows
+the first conn, while exact unqualified `you have the conn` authorizes the second
+session. Contractlint contributes no semantic phrase/order evidence. A static wording
+pass without both durable live outcomes does not satisfy this criterion.
 
 **AC-4 (PROOF)** Existing deterministic proof establishes structural closure and
 phase-oracle discrimination only. The existing shared live journey proves both exact
 natural-language assignments: record-and-handoff stops pending, then authorized
 application consumes and dispatches. No new harness or compatibility layer exists.
 
-Verified by focused contractlint/ensigncycle tests, the live Claude/Codex/Pi scenario,
-and a diff showing no new scenario ID, runner abstraction, schema, or command.
+Verified by existing structural contractlint checks, focused deterministic
+ensigncycle phase-oracle tests, the live Claude/Codex/Pi scenario, and a diff showing
+no new scenario ID, runner abstraction, schema, command, authority state, or
+scheduler.
 
 ## Test plan
 
-1. Before editing skill text, extend the focused contractlint test and confirm it
-   fails for the missing authority guard. Add deterministic pending-checkpoint
-   mutants and confirm consume/status/dispatch violations qualify as failures.
+1. Before editing skill text, add deterministic recorded-gate phase-oracle mutants
+   and confirm reservation violations, replacement decisions, coached/status
+   workarounds, missing gqs projection, and absent/duplicate dispatch qualify as
+   failures. Add no semantic contractlint assertion.
 2. Apply the byte-conscious shared wording and documentation diff. Run
    `go test ./internal/contractlint ./internal/ensigncycle` to prove structural
-   closure, existing command replay, resume, and mutant discrimination.
-3. Run the existing `recorded-gate-lifecycle` live scenario through its current
-   Claude, Codex, and Pi lanes. The two exact prompts and resulting durable state—not
-   substring presence or a green command count—are the behavioral evidence.
-4. Run `gofmt -w ./cmd ./internal`, `go test ./...`, and
+   closure/byte caps, existing command replay, resume, and phase-oracle
+   discrimination.
+3. Stop until gqs is terminal `PASSED`, its product commit is merged into the exact
+   candidate, and its focused owner suite is green. Do not weaken the prompt, inject
+   a status/report, or special-case the fixture to proceed earlier.
+4. Run the existing `recorded-gate-lifecycle` live scenario through its current
+   Claude, Codex, and Pi lanes. The two exact prompts, landed gqs projection, and
+   resulting durable state—not substring presence or a green command count—are the
+   behavioral evidence.
+5. Run `gofmt -w ./cmd ./internal`, `go test ./...`, and
    `go test ./... -race`. Formatting must leave the intended diff unchanged.
 
 ## Scope
@@ -286,7 +312,9 @@ Also out of scope: a transition-authority field, role registry, dispatch receipt
 new CLI flag, host-specific wording, compatibility path, standing harness, or changes
 to presenter/recorder authority. The active assignment and explicit conn remain
 model-read contract inputs; this task only prevents a recorded approval from silently
-enlarging them.
+enlarging them. New authority state, command/schema mechanics, a harness, role
+registry, or duplicated scheduler requires semantic reconfirmation; advisory file or
+line-count drift alone does not.
 
 ## Stage Report: ideation
 
@@ -308,3 +336,23 @@ and consumes, but it consumes every approval without checking the active assignm
 transition scope. The proposed byte-conscious shared rule, concept-doc correction,
 structural checks, and two-session reuse of the existing live scenario prove
 record-and-handoff versus authorized application without changing any gate mechanics.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: State precedence—an existing unqualified broad grant such as exact `you have the conn` includes application authority unless the prompt expressly narrows/reserves it; use that exact broad grant in the cold positive phase, scoped only by entity.
+  The normative rule now gives express reservation precedence; the negative prompt reserves application, while the positive prompt is only workflow, entity, and exact `you have the conn`.
+- DONE: Remove semantic presence/order assertions from contractlint; keep only reference closure/frontmatter/structural absence-dedup/byte caps, and let two cold live sessions own behavior.
+  Contractlint gains no semantic assertion or intended file edit; recorded-gate phase oracles and the current live runners own every authority and routing claim.
+- DONE: Make terminal gqs prerequisite for the positive consume→dispatch phase; prohibit prompt/status workaround.
+  The positive phase waits for terminal `PASSED`, merged, owner-suite-green gqs and requires its post-consume current=current projection with no coached command, injected report/status, or fixture branch.
+- DONE: Make counts advisory; semantic reset only for new authority state, command/schema mechanics, harness, role registry, or duplicated scheduler.
+  Eight-file +181/-60 estimates remain planning context only; the five listed mechanism changes—not count drift—require reconfirmation.
+- DONE: Append corrected ideation report and commit path-scoped.
+  Cycle 2 is appended without replacing the prior report; path-scoped commit and push follow structural verification.
+
+### Summary
+
+Cycle 2 makes authority precedence explicit and moves all semantic proof out of
+contractlint into the two cold live sessions. The uncoached broad-conn positive phase
+cannot run until landed gqs supplies entered-stage dispatch, and implementation size
+is advisory unless it crosses one of the named mechanism boundaries.
