@@ -112,6 +112,9 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if doc == nil {
 		doc = &Document{Version: 1}
 	}
+	if err := validateRetainedAuthority(entityPath, input.WorkflowDir, doc); err != nil {
+		return PrepareResult{}, err
+	}
 	entityID, err := entityIdentity(entityPath, input.WorkflowDir)
 	if err != nil {
 		return PrepareResult{}, err
@@ -155,7 +158,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 		}
 		sources = append(sources, source)
 	}
-	if replay, matched, err := preparedReplay(entityPath, input.WorkflowDir, doc, previous, briefingID, input.Question, input.Summary, sources); err != nil {
+	if replay, matched, err := preparedReplay(entityPath, previous, briefingID, input.Question, input.Summary, sources); err != nil {
 		return PrepareResult{}, err
 	} else if matched {
 		return replay, nil
@@ -324,12 +327,9 @@ func entityWithoutGates(data []byte) ([]byte, error) {
 	return append(append([]byte(nil), data[:startByte]...), data[endByte:]...), nil
 }
 
-func preparedReplay(entityPath, workflowDir string, doc *Document, previous *Attempt, briefingID, question, summary string, sources []gitsource.Source) (PrepareResult, bool, error) {
+func preparedReplay(entityPath string, previous *Attempt, briefingID, question, summary string, sources []gitsource.Source) (PrepareResult, bool, error) {
 	if previous == nil || previous.Resolution != nil || previous.Briefing.RequestDigest == "" {
 		return PrepareResult{}, false, nil
-	}
-	if err := validateRetainedAuthority(entityPath, workflowDir, doc); err != nil {
-		return PrepareResult{}, false, err
 	}
 	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
 	if err != nil {

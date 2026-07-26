@@ -143,6 +143,43 @@ func kmConsumesGate(command, entity string) bool {
 	return false
 }
 
+func kmConsumeSucceeded(output, entity string) bool {
+	gatePrefix := "gate=gate:" + entity + ":"
+	for _, line := range strings.Split(output, "\n") {
+		sawGate, sawConsumed := false, false
+		for _, field := range strings.Fields(line) {
+			if strings.HasPrefix(field, gatePrefix) {
+				sawGate = true
+			}
+			if field == "consumed=true" {
+				sawConsumed = true
+			}
+		}
+		if sawGate && sawConsumed {
+			return true
+		}
+	}
+	return false
+}
+
+func kmClaudeToolResultText(raw json.RawMessage) string {
+	var text string
+	if json.Unmarshal(raw, &text) == nil {
+		return text
+	}
+	var blocks []struct {
+		Text string `json:"text"`
+	}
+	if json.Unmarshal(raw, &blocks) != nil {
+		return ""
+	}
+	var texts []string
+	for _, block := range blocks {
+		texts = append(texts, block.Text)
+	}
+	return strings.Join(texts, "\n")
+}
+
 // keepMovingTrace is the host-neutral view of the FO's motion the grader consumes. Each host
 // extractor fills it from its own transcript dialect plus the shared final message.
 type keepMovingTrace struct {
@@ -205,11 +242,12 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 			Type    string `json:"type"`
 			Message *struct {
 				Content []struct {
-					Type      string `json:"type"`
-					ID        string `json:"id"`
-					Name      string `json:"name"`
-					ToolUseID string `json:"tool_use_id"`
-					IsError   bool   `json:"is_error"`
+					Type      string          `json:"type"`
+					ID        string          `json:"id"`
+					Name      string          `json:"name"`
+					ToolUseID string          `json:"tool_use_id"`
+					IsError   bool            `json:"is_error"`
+					Content   json.RawMessage `json:"content"`
 					Input     struct {
 						Command     string `json:"command"`
 						FilePath    string `json:"file_path"`
@@ -223,7 +261,8 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 			continue
 		}
 		for _, block := range entry.Message.Content {
-			if entry.Type == "user" && block.Type == "tool_result" && pendingConsumes[block.ToolUseID] && !block.IsError {
+			if entry.Type == "user" && block.Type == "tool_result" && pendingConsumes[block.ToolUseID] &&
+				!block.IsError && kmConsumeSucceeded(kmClaudeToolResultText(block.Content), kmApprovedGate) {
 				tr.approvedAdvanced = true
 			}
 			if block.Type != "tool_use" {
@@ -290,13 +329,15 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
 				Type     string `json:"type"`
 				Command  string `json:"command"`
 				Status   string `json:"status"`
+				Output   string `json:"aggregated_output"`
 				ExitCode *int   `json:"exit_code"`
 			} `json:"item"`
 		}
 		if err := json.Unmarshal([]byte(line), &cmd); err == nil && cmd.Item.Type == "command_execution" {
 			c := cmd.Item.Command
 			if cmd.Type == "item.completed" && cmd.Item.Status == "completed" && cmd.Item.ExitCode != nil &&
-				*cmd.Item.ExitCode == 0 && kmConsumesGate(c, kmApprovedGate) {
+				*cmd.Item.ExitCode == 0 && kmConsumesGate(c, kmApprovedGate) &&
+				kmConsumeSucceeded(cmd.Item.Output, kmApprovedGate) {
 				tr.approvedAdvanced = true
 			}
 			if kmAdvancesToStatus(c, kmApprovedGate, kmNextStage) {
@@ -376,17 +417,25 @@ func assertCodexKeepMoving(jsonl, finalMessage string, independent []string) err
 }
 
 func kmClaudeCompletedBash(id, command string, failed bool) string {
+	return kmClaudeCompletedBashOutput(id, command, "command finished", failed)
+}
+
+func kmClaudeCompletedBashOutput(id, command, output string, failed bool) string {
 	return fmt.Sprintf(
 		"{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"id\":%q,\"name\":\"Bash\",\"input\":{\"command\":%q}}]}}\n"+
-			"{\"type\":\"user\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":%q,\"content\":\"command finished\",\"is_error\":%t}]}}",
-		id, command, id, failed,
+			"{\"type\":\"user\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":%q,\"content\":%q,\"is_error\":%t}]}}",
+		id, command, id, output, failed,
 	)
 }
 
 func kmCodexCompletedCommand(command string, exitCode int) string {
+	return kmCodexCompletedCommandOutput(command, "command finished", exitCode)
+}
+
+func kmCodexCompletedCommandOutput(command, output string, exitCode int) string {
 	return fmt.Sprintf(
-		`{"type":"item.completed","item":{"type":"command_execution","command":%q,"status":"completed","exit_code":%d}}`,
-		command, exitCode,
+		`{"type":"item.completed","item":{"type":"command_execution","command":%q,"aggregated_output":%q,"status":"completed","exit_code":%d}}`,
+		command, output, exitCode,
 	)
 }
 
@@ -405,13 +454,15 @@ func TestKeepMovingGateConsumeAdvancement(t *testing.T) {
 		codexFileChange(kmQuestioned + ".md"),
 	}, "\n")
 
-	claudeConsume := kmClaudeCompletedBash("consume-approved", "spacedock gate consume "+kmApprovedGate+" --workflow-dir .", false)
+	consumeOutput := "gate=gate:" + kmApprovedGate + ":review application=advance/consumed condition=approved-pending eligible=true consumed=true target-stage=" + kmNextStage
+	claudeConsume := kmClaudeCompletedBashOutput("consume-approved", "spacedock gate consume "+kmApprovedGate+" --workflow-dir .", consumeOutput, false)
 	if err := assertClaudeKeepMoving(claudeConsume+"\n"+claudeRemainder, kmCorrectFinal(), independent); err != nil {
 		t.Fatalf("successful Claude gate consume must count as the approved transition: %v", err)
 	}
-	codexConsume := kmCodexCompletedCommand(
+	codexConsume := kmCodexCompletedCommandOutput(
 		"spacedock gate record "+kmApprovedGate+" --decision approve; spacedock state commit "+kmApprovedGate+
 			"; spacedock gate consume "+kmApprovedGate+" --workflow-dir .; spacedock state commit "+kmApprovedGate,
+		consumeOutput,
 		0,
 	)
 	if err := assertCodexKeepMoving(codexConsume+"\n"+codexRemainder, kmCorrectFinal(), independent); err != nil {
@@ -419,9 +470,11 @@ func TestKeepMovingGateConsumeAdvancement(t *testing.T) {
 	}
 
 	claudeControls := map[string]string{
-		"absent":       claudeRemainder,
-		"other entity": kmClaudeCompletedBash("consume-other", "spacedock gate consume other-task --workflow-dir .", false) + "\n" + claudeRemainder,
-		"failed":       kmClaudeCompletedBash("consume-failed", "spacedock gate consume "+kmApprovedGate+" --workflow-dir .", true) + "\n" + claudeRemainder,
+		"absent":                  claudeRemainder,
+		"other entity":            kmClaudeCompletedBash("consume-other", "spacedock gate consume other-task --workflow-dir .", false) + "\n" + claudeRemainder,
+		"failed":                  kmClaudeCompletedBash("consume-failed", "spacedock gate consume "+kmApprovedGate+" --workflow-dir .", true) + "\n" + claudeRemainder,
+		"failed then success":     kmClaudeCompletedBash("consume-false-green", "spacedock gate consume "+kmApprovedGate+" --workflow-dir .; true", false) + "\n" + claudeRemainder,
+		"failure suppressed true": kmClaudeCompletedBash("consume-suppressed", "spacedock gate consume "+kmApprovedGate+" --workflow-dir . || true", false) + "\n" + claudeRemainder,
 	}
 	for name, stream := range claudeControls {
 		t.Run("claude/"+name, func(t *testing.T) {
@@ -431,9 +484,11 @@ func TestKeepMovingGateConsumeAdvancement(t *testing.T) {
 		})
 	}
 	codexControls := map[string]string{
-		"absent":       codexRemainder,
-		"other entity": kmCodexCompletedCommand("spacedock gate consume other-task --workflow-dir .", 0) + "\n" + codexRemainder,
-		"failed":       kmCodexCompletedCommand("spacedock gate consume "+kmApprovedGate+" --workflow-dir .", 1) + "\n" + codexRemainder,
+		"absent":                  codexRemainder,
+		"other entity":            kmCodexCompletedCommand("spacedock gate consume other-task --workflow-dir .", 0) + "\n" + codexRemainder,
+		"failed":                  kmCodexCompletedCommand("spacedock gate consume "+kmApprovedGate+" --workflow-dir .", 1) + "\n" + codexRemainder,
+		"failed then success":     kmCodexCompletedCommand("spacedock gate consume "+kmApprovedGate+" --workflow-dir .; true", 0) + "\n" + codexRemainder,
+		"failure suppressed true": kmCodexCompletedCommand("spacedock gate consume "+kmApprovedGate+" --workflow-dir . || true", 0) + "\n" + codexRemainder,
 	}
 	for name, stream := range codexControls {
 		t.Run("codex/"+name, func(t *testing.T) {

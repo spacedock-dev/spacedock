@@ -197,7 +197,10 @@ func RecordBriefing(entityPath, briefingPath string) error {
 }
 
 func recordBriefingLocked(entityPath, briefingPath, workflowDir string) error {
-	binding, err := bindingFromManifest(entityPath, briefingPath)
+	if workflowDir == "" {
+		workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
+	}
+	binding, err := bindingFromManifest(entityPath, briefingPath, workflowDir)
 	if err != nil {
 		return err
 	}
@@ -218,9 +221,6 @@ func recordBriefingLocked(entityPath, briefingPath, workflowDir string) error {
 		return lookupErr
 	}
 	if hadDocument {
-		if workflowDir == "" {
-			workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
-		}
 		skipGate, skipAttempt := "", ""
 		if record != nil && len(record.Attempts) != 0 {
 			current := &record.Attempts[len(record.Attempts)-1]
@@ -801,7 +801,7 @@ func successorAttemptID(previous string) (string, error) {
 	return previous[:cut+1] + strconv.Itoa(sequence+1), nil
 }
 
-func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
+func bindingFromManifest(entityPath, briefingPath, workflowDir string) (Briefing, error) {
 	briefingPath, err := filepath.Abs(briefingPath)
 	if err != nil {
 		return Briefing{}, fmt.Errorf("resolve Briefing path: %w", err)
@@ -828,7 +828,12 @@ func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
 	retained := briefingPath
 	if request != nil {
 		retained = room
-		if _, err := canonicalPresentationItems(manifest); err != nil {
+		items, err := canonicalPresentationItems(manifest)
+		if err != nil {
+			return Briefing{}, err
+		}
+		roots := gitsource.Roots{Main: workflowDir, State: filepath.Dir(entityPath)}
+		if err := validatePresentationGitSources(roots, items); err != nil {
 			return Briefing{}, err
 		}
 		if err := validatePreparedSummary(manifest); err != nil {
