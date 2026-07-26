@@ -2,7 +2,7 @@
 title: Withdraw a stale open gate attempt without fabricating a decision
 status: ideation
 source: "Observed by the Subspace Shaping FO on 2026-07-26 after a legitimate sprint re-scope left a frozen request-backed attempt open with no truthful exit."
-started:
+started: 2026-07-26T10:50:55Z
 completed:
 verdict:
 score: 1.0
