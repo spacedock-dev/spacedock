@@ -253,12 +253,29 @@ func (r claudeLiveRunner) model() string { return r.modelName }
 func (r claudeLiveRunner) home() string  { return r.homeDir }
 
 // withStubPATH returns a runner copy whose launched FO subprocess resolves a stub
-// binary in dir first (the shallow-boot scenario's stub `gh` reporting MERGED). It
-// never mutates the receiver's env, so parallel scenarios sharing the runner stay
-// race-free.
+// binary in dir first and binds the launcher invariant to that stub. It never mutates
+// the receiver's env, so parallel scenarios sharing the runner stay race-free.
 func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 	r.env = withPATHPrefix(r.env, dir)
+	r.env = withRecordedGateEnv(r.env, "SPACEDOCK_BIN", filepath.Join(dir, "spacedock"))
 	return r
+}
+
+func TestClaudeLiveRunnerWithStubPATHBindsStubLauncher(t *testing.T) {
+	inheritedBinary := filepath.Join(t.TempDir(), "spacedock")
+	shimDir := t.TempDir()
+	runner := claudeLiveRunner{env: []string{
+		"PATH=/usr/bin",
+		"SPACEDOCK_BIN=" + inheritedBinary,
+	}}
+
+	got := runner.withStubPATH(shimDir).(claudeLiveRunner)
+	if binary, ok := envValue(got.env, "SPACEDOCK_BIN"); !ok || binary != filepath.Join(shimDir, "spacedock") {
+		t.Fatalf("SPACEDOCK_BIN = %q (present=%v), want the stub launcher", binary, ok)
+	}
+	if binary, _ := envValue(runner.env, "SPACEDOCK_BIN"); binary != inheritedBinary {
+		t.Fatalf("source runner SPACEDOCK_BIN = %q, want inherited value %q preserved", binary, inheritedBinary)
+	}
 }
 
 func (r claudeLiveRunner) withExtraPluginDir(dir string) claudeLiveRunner {
