@@ -13,7 +13,7 @@ id: rqh46ey33aqq4rt72b4w1m2q
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:rqh4:backlog
+        gate: gate:rqh46ey33aqq4rt72b4w1m2q:ideation
     records:
         - id: gate:docs-dev:rqh4:backlog
           stage: backlog
@@ -37,6 +37,29 @@ gates:
                 action: advance
                 target-stage: ideation
                 state: consumed
+                blockers: []
+        - id: gate:rqh46ey33aqq4rt72b4w1m2q:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:rqh46ey33aqq4rt72b4w1m2q-ideation-1
+              briefing:
+                id: briefing:rqh46ey33aqq4rt72b4w1m2q:ideation:attempt-1:revision-1
+                digest: sha256:615ddbffcf9c2b02784dd50258b9793fdc75edb4de29c9cc719bab28d560455a
+                digest-domain: canonical-bytes
+                request-digest: sha256:072b1ae8eca461e3c9b1badcc5ce60c1b02fa51450b16a3dea206af894d442ec
+                room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:rqh46ey33aqq4rt72b4w1m2q:ideation:1
+                briefing: briefing:rqh46ey33aqq4rt72b4w1m2q:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-26T12:30:28.727811Z"
+                decision: approve
+                reason: The corrected design closes digest-domain, lifecycle-order, proof-policy, and circular-live-proof gaps. Record approval now; apply after s4 lands so both repositories implement against the final prepared-room contract.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
                 blockers: []
 ---
 

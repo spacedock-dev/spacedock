@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rqh46ey33aqq4rt72b4w1m2q:ideation:attempt-1:revision-1",
+  "question": "Is the corrected Git-root materialization design ready for cross-repository implementation after s4 lands?",
+  "artifacts": [
+    {
+      "id": "artifact:rqh46ey33aqq4rt72b4w1m2q:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5dd7e14df2cfba2061b6eab18b29db76ff0b9bfa/git-root-review-v1-materialization/index.md",
+      "rev": "sha256:dde0aae0dd729b96239172db37b61894178b8016cb108cdc2cd2fbc9dab39184",
+      "mediaType": "text/markdown",
+      "summary": "Materialize s4 Git-root Artifact and Reference bytes into a provider-owned retained package, bind both canonical JCS and raw Briefing identity explicitly, preserve room-only Subspace invocation, and require rq's own pre-terminal live FO proof."
+    }
+  ]
+}
