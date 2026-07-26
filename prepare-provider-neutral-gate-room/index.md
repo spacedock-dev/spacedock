@@ -3061,3 +3061,67 @@ The exact zsh wrapper false negative is fixed and independently reviewed. The
 fresh Sonnet result is a distinct, in-scope FO contract violation at AC-4's
 current-gate binding boundary; its smallest skill/test correction is identified
 but deliberately left unedited for first-officer direction.
+
+## Stage Report: implementation (cycle 21 current-gate binding correction)
+
+- DONE: Bind resume and presentation to the current gated status.
+  Commit `829308d8` forbids prior-stage `gates.current` reuse and requires
+  `gate prepare` plus the emitted current-status binding on absence/mismatch.
+- DONE: Preserve the lifecycle component budget without deleting behavior.
+  Equivalent duplicated framing was compressed; every prior contract pin and
+  the new guard pass at 6,594 bytes versus 6,595 before.
+- DONE: Correct exact supported bind-commit observation.
+  State-commit recognition is semantic across launcher/flag ordering, requires
+  exact-entity `state-head` evidence, and rejects absent/other/echo-masked
+  failures; the shim resolves the fixture's absolute state checkout.
+- DONE: Repair the pre-setup primitive harness regression from review.
+  Commit `7295c155` passes the expected absolute state root at all seven existing
+  fixture call sites, including before `Scenario.Setup` creates the checkout.
+- SKIPPED: Expand boot readiness projection.
+  Roborev's restart-discovery finding is real but belongs to
+  gate-agent-ergonomics, not s4's current-binding/host-proof boundary.
+
+### Boot projection before and after
+
+Before:
+
+> **Boot projection.** Use unresolved actionable `ready_gates` rows from `status --boot --identify --json`: `awaiting-captain` is an open current-stage Briefing; `approved-awaiting-merge` and `approved-awaiting-advance` are unblocked pending approvals. No selected attempt is omitted `validating` and must be prepared before presentation. Engage row `slug` and read the entity; never infer readiness from stage alone.
+
+After:
+
+> **Boot projection.** Use unresolved actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`, read its entity; never infer readiness from stage alone. `awaiting-captain` means an open current-stage Briefing; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. For gated current `status`, any selected or retained gate record used to resume/present must have `stage` equal to that status. A prior-stage `gates.current` is history, not reusable authority. If no selected attempt (omitted `validating`) or it mismatches, run `gate prepare` for the current status and present only its emitted binding.
+
+### Focused and live evidence
+
+- The structural test first failed on all four missing current-status clauses,
+  then full `internal/contractlint` passed.
+- Wrapped option-before-entity, no-commit, other-entity, echo-masked failure,
+  cwd-independent head, hold-log, and real CLI replay controls pass.
+- Full `go test ./internal/ensigncycle -count=1` passes; removing semantic
+  commit recognition or absolute state-root injection makes its focused
+  regression fail.
+- The first exact Sonnet rerun bound validation but false-red on bind-commit
+  observation after 642.41s. After the observer fix, the same scenario passed
+  in 358.12s with the current validation Briefing committed/presented and open.
+
+### Roborev 2826 dispositions
+
+- Shim setup order — workflow: live primitive creates its shim before setup;
+  harm: immediate pre-agent fatal loses required behavioral evidence; boundary:
+  s4 host-proof harness; trigger: absent checkout at shim creation. Owner: s4.
+  Fixed in `7295c155`; promote again only if an explicit future state-root form
+  cannot be supplied before setup.
+- Validating restart discovery — workflow: unscoped restart with current gated
+  status and absent/mismatched selection; harm: the entity is omitted from both
+  dispatchable and `ready_gates`; boundary: boot readiness projection, not
+  current-binding authority; trigger: readiness `validating` is fail-closed out
+  of `ready_gates`. Owner: gate-agent-ergonomics readiness projection. Promote
+  there with a restart fixture proving discovery, current-stage prepare/bind,
+  and presentation without adding a caller-authored authority field.
+
+### Summary
+
+The current-stage binding defect and both observer false negatives are corrected
+without weakening durable effects or expanding product authority. The known
+broad-search diagnostic remains strict and f4-owned; no push, CI, gate/PR
+mutation, merge, or readiness-projection edit ran.
