@@ -129,7 +129,8 @@ func kmConsumesGate(command, entity string) bool {
 			for _, prefix := range fields[:i-1] {
 				prefix = strings.Trim(prefix, `"'`)
 				if prefix != "command" && prefix != "env" && prefix != "bash" && prefix != "/bin/bash" &&
-					prefix != "sh" && prefix != "/bin/sh" && prefix != "-c" && prefix != "-lc" &&
+					prefix != "sh" && prefix != "/bin/sh" && prefix != "zsh" && prefix != "/bin/zsh" &&
+					prefix != "-c" && prefix != "-lc" &&
 					!strings.Contains(prefix, "=") {
 					validPrefix = false
 					break
@@ -467,6 +468,14 @@ func TestKeepMovingGateConsumeAdvancement(t *testing.T) {
 	)
 	if err := assertCodexKeepMoving(codexConsume+"\n"+codexRemainder, kmCorrectFinal(), independent); err != nil {
 		t.Fatalf("successful Codex gate consume must count as the approved transition: %v", err)
+	}
+	zshWrappedCodexConsume := kmCodexCompletedCommandOutput(
+		"/bin/zsh -lc 'spacedock gate consume "+kmApprovedGate+" --workflow-dir .'",
+		consumeOutput,
+		0,
+	)
+	if err := assertCodexKeepMoving(zshWrappedCodexConsume+"\n"+codexRemainder, kmCorrectFinal(), independent); err != nil {
+		t.Fatalf("successful zsh-wrapped Codex gate consume must count as the approved transition: %v", err)
 	}
 
 	claudeControls := map[string]string{
