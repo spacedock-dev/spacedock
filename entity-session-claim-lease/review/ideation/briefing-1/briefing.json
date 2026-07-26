@@ -1,15 +1,15 @@
 {
   "type": "Briefing",
   "version": "1",
-  "id": "briefing:docs-dev:79:ideation:attempt-1:revision-2",
-  "question": "Is the entity-session claim design ready to enter implementation — two flat frontmatter fields acquired through a new `state claim` verb riding statesync as a git-level compare-and-swap, guarded at two mutation doors, with an owner-renewed expiry lease, proven by a live cross-host collision?",
-  "summary": "Approve entering implementation. The claim is two flat frontmatter fields (`claim-session`, `claim-expiry`) on the claimed entity, acquired by a new `state claim` verb that rides the existing statesync publisher as a git-level compare-and-swap rather than adding a second writer. Enforcement is the ruled two points: boot surfaces peer claims, and the state-mutation seam refuses a non-owner. The riskiest mechanism was exercised before the design was written: a real two-clone race proved the acquire/lose/recover loop resolves to exactly one owner, and falsified the assumption that git guarantees a conflict — divergently placed claim writes automerge into a pushed split-brain double claim, so canonical fixed placement and duplicate-fail-closed reads are load-bearing requirements with an AC-7 fixture. Nine acceptance criteria, each with an explicit falsifier. AC-1 measures the end value against a baseline that can move the wrong way (4 successful non-owner mutations on the pre-change binary, driven to 0, with over-fire legs proving the guard does not misfire). AC-8 raises that proof to the live layer where the motivating breach actually occurred: one `claim-collision` shared scenario in the existing ensigncycle machinery makes two sequential real launches, session B cold-boots, surfaces A's claim, deliberately attempts a mutation and is refused with durable artifact evidence — with the pre-change binary succeeding as the baseline and an offline negative case proving the assertion can go red. AC-9 closes the identity trust dependency: per-host resolution plus refusal to guess under conflicting markers, sharing the exact dispatch resolver rather than a second copy that could drift. Captain review folded three changes across the design: the claim is per entity and never per (entity, stage); `claim-at` became `claim-expiry`, an owner-renewed lease whose expiry marks and never frees; and the live and cross-host proofs belong to this task rather than a separate member. Declared surface 17 files / ~1,200 lines, tolerance 1,050-1,450, cap 22 files / 1,800 lines.",
+  "id": "briefing:docs-dev:79:ideation:attempt-1:revision-3",
+  "question": "Is the minimum walking skeleton for multi-FO coordination ready to enter implementation — acquire, disclose, and refuse at one guarded seam, with a live two-session collision as its definition of done?",
+  "summary": "Approve entering implementation. This is the sprint's walking skeleton, deliberately cut from a complete component design to the thinnest mechanism that makes the multi-FO journey observable. It keeps three things: acquire (`state claim <slug>` writes `claim-session` only), disclose (boot lists a peer's slug and owner identity), and refuse (a non-owner's mutation is refused, naming the owner). Its definition of done is AC-4, a live engineered collision between two real host sessions with no fixture standing in for the claim mechanism, falsified by removing the guard so the run completes. The guard lands at a single `resolveMutationEntity` call site, which `status --set` exercises and through which `merge guard` and the archive path inherit the refusal at zero added code — one seam rather than several doors. Seven edges are deferred to `claim-mechanism-hardening` (`ppf`), each recorded with the condition the skeleton's journey holds fixed and when it unfixes: concurrent acquisition and lost-race rollback, duplicate-claim fail-closed, the expiry lease, takeover and release, multi-host identity, the genuinely separate mutation doors, and the exact refusal grammar. `claim-expiry` is dropped from the skeleton entirely. The two-writer spike is retained verbatim as the recorded evidence that these deferrals are informed rather than ignorant: it proved the race resolves to exactly one owner through ordinary git compare-and-swap, and falsified the assumption that git guarantees a textual conflict, since divergently placed claim writes automerge into a pushed split-brain. Declared surface 14 files / ~525 changed lines, reported honestly against a 5-6-file target rather than forced to it: ~180 LOC of mechanism, ~200 for the live scenario's irreducible footprint under the shared-scenario parity guard, ~25 docs. Tolerance 450-650 lines across at most 15 files, and re-adding any deferred `ppf` mechanism requires a return to ideation. The documentation diff promises only what ships.",
   "artifacts": [
     {
-      "id": "artifact:entity-session-claim-lease-design",
-      "uri": "git-root://state/eea096ce3bc3a160dd60336bc7a0881e49d39a90/entity-session-claim-lease.md",
+      "id": "artifact:entity-session-claim-lease-skeleton",
+      "uri": "git-root://state/7db811a7d5a45c03237ebf766166e60f943777d6/entity-session-claim-lease.md",
       "mediaType": "text/markdown",
-      "rev": "sha256:d514aedb94f6655d709cce50415d293d1ce5fad51deed0724de99531a19b913d"
+      "rev": "sha256:dc06db1c639c39ac69decaf1067428fd256c18393e2737411acc126d22def813"
     }
   ],
   "context": [
@@ -27,7 +27,7 @@
         {
           "id": "route:revise",
           "decision": "revise",
-          "label": "Revise the design before implementation",
+          "label": "Revise the skeleton before implementation",
           "to": "stage:ideation"
         },
         {
