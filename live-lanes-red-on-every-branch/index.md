@@ -12,7 +12,7 @@ issue:
 gates:
     version: 1
     current:
-        gate: gate:se0v37bt7mhsrmhta1nyns0r:backlog
+        gate: gate:se0v37bt7mhsrmhta1nyns0r:ideation
     records:
         - id: gate:se0v37bt7mhsrmhta1nyns0r:backlog
           stage: backlog
@@ -36,6 +36,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:se0v37bt7mhsrmhta1nyns0r:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:se0v37bt7mhsrmhta1nyns0r-ideation-1
+              briefing:
+                id: briefing:se0v37bt7mhsrmhta1nyns0r:ideation:attempt-1:revision-1
+                digest: sha256:05243ce76ee0e635de8309e9582fb548dc47aba260cc8c8a960fa6bc9ce967a2
+                digest-domain: canonical-bytes
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Restore a trustworthy live signal without deleting the behavior the signal was
