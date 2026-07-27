@@ -152,10 +152,188 @@ The FO shared core's gate (`skills/first-officer/references/first-officer-shared
 - Building a new runtime-detection mechanism; the existing detector is the one to reuse.
 - Sandbox enforcement behaviour — this is about reporting only.
 
+## Spike record (2026-07-27)
+
+Two mechanisms the design rests on were unverified, so both were exercised before the design was written.
+
+**1. The live inversion, reproduced in this ideation session.** `APP_SANDBOX_CONTAINER_ID=agent-safehouse`, `CLAUDECODE=1`, `.safehouse` present in the workdir, `command -v safehouse` empty. `go run ./cmd/spacedock --version` in that process emits:
+
+```
+spacedock 0.26.0+dev (contract 3)
+Sandbox: unavailable (safehouse not on PATH)
+claude: spacedock 0.27.0-pre1
+codex: spacedock 0.26.0
+pi: spacedock ready
+```
+
+and `status --boot` emits `SANDBOX: unavailable (safehouse not on PATH)`. Both wrong, from inside the sandbox. This is the baseline AC-1 measures against.
+
+**2. The detector extraction and the new renderers, exercised as a throwaway program.** A standalone Go program implementing the proposed `Detect` (env-only, never errors), the proposed sandbox registry, and the proposed render functions was run against the live env and against five pinned marker sets. It produced the captain-approved shape byte-for-byte in every case, exit 0 throughout:
+
+- live env → `Runtime: claude (CLAUDECODE)` / `Sandbox: inside (agent-safehouse)` / `contract 3`
+- no markers → the single line `spacedock 0.26.0+dev`, nothing else
+- `CODEX_THREAD_ID` + `CLAUDECODE` → `Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE) — pass --host`, still exit 0
+- `PI_CODING_AGENT` + `PI_CODING_AGENT_DIR` → `Runtime: pi (PI_CODING_AGENT, PI_CODING_AGENT_DIR)` — two markers for the SAME host is not ambiguity, which the naive "more than one marker set" rule would have got wrong
+- the three outside-sandbox variants each rendered as approved
+
+The riskiest path — an ambiguity rule that stays exit 0 while still distinguishing real ambiguity from the two-pi-markers case — is therefore proven, not assumed. The throwaway's marker table and its five cases seed the implementation's first test.
+
+**3. The `installHint` question the body left open, answered: it is real, and it is a launch bug, not a reporting bug.** `Available()`'s hint is discarded by `printVersion` (confirmed — it does not fire there), but it IS emitted at three launch sites: `frontdoor.go:418`, `frontdoor.go:631`, `pi.go:301`. Each is gated on `wrap && !Available`. Inside this sandbox, `.safehouse` is present so `wrap` is true and `safehouse` is off PATH, so a nested `spacedock claude` prints "install safehouse (brew install …)" and exits 1 — advising installation of the thing the session is already running in, and refusing the launch. This is the launch decision, which the body puts out of scope ("sandbox enforcement behaviour — this is about reporting only"), so this task does not change it. Recorded as a follow-up: **the launch wrap gate should consult the same `Inside()` registry this task builds, and either skip the wrap or refuse with an accurate nested-sandbox message.** Filing it as its own task is the recommendation; the registry this task ships is the prerequisite it was blocked on.
+
+## Proposed approach
+
+**A new `internal/runtimehost` package owns the env-only detection.** It exports `Detect(getenv func(string) string) (host string, markers []string, ambiguous bool)` over the marker table lifted verbatim from `internal/dispatch/build.go:250-281` (`CODEX_THREAD_ID`, `CLAUDECODE`, `PI_CODING_AGENT`, `PI_CODING_AGENT_DIR`). It never returns an error: the two callers need opposite dispositions of the same facts — dispatch must refuse on ambiguity, `--version` must report it — so the shared unit is the detection, and the policy stays with each caller.
+
+`resolveBuildHost` is rewritten to call `Detect` and keep its own error strings verbatim (`ambiguous runtime host sources: … (%s); pass --host …` from the returned marker list, and the missing-host message unchanged). This is the body's "reuse the existing detector" made literal: one marker table, two policies.
+
+*Simplest alternative considered:* copy the four-line marker table into `printVersion` and leave `build.go` alone. Rejected because a duplicated table is exactly how the two surfaces drift — a future host added to one and not the other reports a runtime the dispatcher cannot resolve, silently. The extraction is ~50 lines and removes the drift class outright. It serves AC-2.
+
+**The sandbox registry lives beside the launch seam, in `internal/safehouse/state.go`.** `Inside(getenv) (name string, ok bool)` scans a table of `{env, wantValue, displayName}` entries, today the single `{APP_SANDBOX_CONTAINER_ID, agent-safehouse, agent-safehouse}`. It matches on the VALUE, not mere presence, because `APP_SANDBOX_CONTAINER_ID` is a generic macOS app-sandbox variable that other containers also set; matching presence would claim safehouse for any of them. A second sandbox implementation adds one table row.
+
+`State(selected, available bool)` is replaced by `SessionState(insideName string, inside, selected, available bool)` rendering the four approved strings, with the `inside` arm dominating. The old three strings are deleted; nothing keeps them, since the whole defect is that they answer a launch question in a session-reporting slot.
+
+*Simplest alternative considered:* a bare `Inside() bool` plus a hardcoded `"agent-safehouse"` in the render string. Rejected on the body's own constraint — the display name must come from the same row as the signal, or the second sandbox reports itself as safehouse. One struct field is cheaper than that bug. It serves AC-1.
+
+**REACH: all three surfaces, deliberately.** `SessionState` replaces `State` at all three call sites — `printVersion` (`cli.go:755`), `launchBanner` (`frontdoor.go:179`), and `status --boot` (`boot.go:256`). Fixing only `--version` would leave every boot record the First Officer writes carrying `"sandbox":"unavailable (safehouse not on PATH)"` from inside the sandbox, which is the sharpest cost named in the problem statement: durable, machine-read evidence that is wrong. `boot.go` already has an env seam (`e.get`) and `newRootCommand` already threads `env []string`, so no new plumbing is needed at any of the three.
+
+The `Runtime:` line is `--version`-only. The banner already names the host it is launching, and `--boot` is not the version surface; adding it to either would be a line nothing asked for.
+
+**`printVersion` is rewritten around the organising rule.** Signature becomes `printVersion(w io.Writer, dir string, getenv func(string) string, lookPath func(string) (string, error))` — the `runtimeProbe` parameter is gone. It prints `spacedock <version>` unconditionally; then, only when `Detect` reports a host or ambiguity, the `Runtime:` line, the `Sandbox:` line, and a bare `contract 3`. Outside every runtime it prints one line and stops.
+
+**The per-host block is deleted, and with it `internal/cli/host_runtime.go` entirely** (207 lines: `runtimeStatus`, `runtimeProbe`, `runtimeLine`, `enabledMarker`, `claudeMarker`, `codexEntryDisabled`, `execRuntimeProbe`). Verified: nothing outside that file and its two test files uses any of it. `pluginListEntry` and `codexEntryInstalled` live in `host_exec.go` and are used elsewhere — they stay.
+
+*Honest cost, recorded rather than glossed:* the body says "that is an install fact; `doctor` owns it." `doctor` is single-host — it resolves ONE host's manifest and returns a verdict (`internal/contract/doctor.go:57-90`); it does not enumerate claude/codex/pi. So the multi-host inventory disappears with no replacement. The recommendation is to accept that: the organising rule is "inside a session, report the session", and in a session only your own host's plugin can matter — which is exactly what `doctor` already reports. If the captain wants the inventory back, `spacedock doctor --all-hosts` is the place for it, as a separate task; it is not `--version`'s job and it is not in this task's approved shape.
+
+**`(contract 3)` moves.** `frozenContractToken` changes from `"(contract 3)"` to `"contract 3"` (the parens were line-1 punctuation) and prints on its own line below the sandbox line, inside a session only. The value stays 3. Its doc comment gains the retirement condition the body asks for, replacing "Frozen … Do not edit." with the removable-once condition: no plugin or binary predating #468 still in circulation — a query against the Homebrew formula and the marketplace, not a guess.
+
+**`requires-contract` is deleted from `.claude-plugin/plugin.json:19` and `.codex-plugin/plugin.json`.** `TestVendoredManifestTombstoneFrozen` (`prose_manifest_minor_sync_test.go:98-108`) asserts the field's presence and value, so it is deleted with the field, along with the `frozenTombstone` constant and the `RequiresContract` struct field. `TestProseMinorMatchesVendoredManifestMinor` reads only `version` and is untouched. `release.yml`'s `manifest-tag-gate` (line 166) binds tag→`version`→prose and never reads `requires-contract`. The `requires-contract` strings in `internal/release/release_test.go` and the `internal/cli/*_test.go` fixtures are synthetic HOST manifests exercising round-trip preservation and old-shape install paths — they are not the vendored manifests and stay as they are.
+
 ## Acceptance criteria
 
-Ideation fills these in. The end state is that `--version` names the runtime the session is actually in and reports this session's sandbox state, with line 1 unchanged, and does not fail when runtime markers are ambiguous.
+**AC-1 (value). A process running inside the safehouse sandbox is reported as inside, on all three surfaces.** In an environment with `APP_SANDBOX_CONTAINER_ID=agent-safehouse`, a `.safehouse` profile present, and `safehouse` absent from PATH — the exact configuration this ideation session ran in — `--version`, the launch banner, and `status --boot --json` each report `inside (agent-safehouse)`. The baseline moves the wrong way and is independently observable: today all three report `unavailable (safehouse not on PATH)` under identical inputs, and `status --boot --json` writes that string into `sandbox`, so a durable boot record is the artifact that changes. *Tested by:* three table tests — `internal/cli/version_session_test.go`, `internal/cli/launch_banner_sandbox_test.go`, `internal/status/boot_sandbox_test.go` — each driving its surface over the four `(inside, selected, available)` combinations that produce the four approved strings, with the inside-and-unavailable row named as the regression case. Each asserts the rendered string against a test-supplied literal, not against the production constant. All three fail today.
+
+**AC-2 (value). `--version` names the runtime the session is in, and no other.** Under a single host marker the output carries exactly one `Runtime:` line naming that host and the marker that proved it, and carries zero lines about any other runtime. The measurable baseline: today's output contains three host lines regardless of markers, and `--version` execs three host CLIs to produce them — measured at 0.86s wallclock against 0.31s for `status --help` in the same process and directory, so ~64% of the first command every First Officer session runs is spent reporting runtimes the session is not in. After the change no host CLI is executed. *Tested by:* a PATH-shim test that puts executable `claude`/`codex`/`pi` shims on PATH which append to a witness file, runs `--version` through `cli.Run`, and asserts the witness file was never created — plus an assertion that the output contains no line beginning `claude:`, `codex:`, or `pi:`. Both fail today (the witness gets three entries). The wallclock figure is reported as evidence in the implementation's stage report, not asserted, so no timing flake enters CI.
+
+**AC-3. Ambiguous runtime markers are reported, not guessed at, and never fail.** With `CODEX_THREAD_ID` and `CLAUDECODE` both set — the recorded nested-Claude-under-Codex marker leak, not a hypothetical — `--version` exits 0 and emits `Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE) — pass --host`. Two markers belonging to the SAME host (`PI_CODING_AGENT` + `PI_CODING_AGENT_DIR`) are not ambiguous and report `Runtime: pi (PI_CODING_AGENT, PI_CODING_AGENT_DIR)`. *Tested by:* `internal/runtimehost/runtimehost_test.go` over the marker-set matrix asserting `(host, markers, ambiguous)`, and a `--version` case asserting both the exact line and exit code 0. The falsifying change: an ambiguity rule of "more than one marker set" turns the two-pi-markers row red; a rule that returns an error turns the exit-code assertion red.
+
+**AC-4. Line 1 stays exactly `spacedock <version>` and the version gate still passes.** Line 1 carries the version token first and nothing after it. `contract 3` appears below the sandbox line inside a session, and does not appear at all outside every runtime. *Tested by:* an updated `TestVersionFirstLineUnchanged` asserting line 1 matches `^spacedock \S+$` and equals `"spacedock " + displayVersion()`; `internal/cli/dev_version_test.go:77`'s expectation updated to the same shape; and a case asserting `contract 3` is present in the in-session render and absent from the outside-every-runtime render. The falsifying change: leaving the token on line 1 turns the regex red.
+
+**AC-5. Deleting `requires-contract` leaves the live minor-version binding intact.** Neither vendored manifest contains a `requires-contract` key; both retain their `version` field unchanged at `0.26.0`. `go test ./internal/contractlint/` is green including `TestProseMinorMatchesVendoredManifestMinor`, and `go run ./cmd/spacedock-release manifest-tag-gate v0.26.0 .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md` exits 0. *Tested by:* running both directly — the sync test in the normal suite, and the manifest-tag-gate invoked exactly as `release.yml:166` invokes it, with its exit code recorded. Nothing under `skills/` is edited; a `git diff --stat -- skills/` showing no entries is the check.
+
+**AC-6. Documentation matches the shipped output.** `docs/site/reference/command-reference.md`'s `--version` section shows the in-session and outside-a-session shapes and describes the four sandbox strings, with no surviving mention of the per-runtime block or of a contract level on line 1. *Tested by:* the doc diff below applied verbatim, and a manual read-back of the rendered section against real `--version` output captured in both a session and a bare shell.
+
+## Expected surface
+
+Roughly 20 files, about +540 / −600 lines, for a NET NEGATIVE total of about −60. The deletion of `host_runtime.go` (207) and its two test files is what makes the total negative despite three new files.
+
+| Path | Change |
+| --- | --- |
+| `internal/runtimehost/runtimehost.go` | new, ~50 |
+| `internal/runtimehost/runtimehost_test.go` | new, ~90 |
+| `internal/dispatch/build.go` | ~+15 / −25 |
+| `internal/safehouse/state.go` | ~+50 / −20 |
+| `internal/safehouse/state_test.go` | ~+70 / −30 |
+| `internal/cli/cli.go` | ~+25 / −12 |
+| `internal/cli/host_runtime.go` | DELETED, −207 |
+| `internal/cli/version_runtime_test.go` | DELETED, −143 |
+| `internal/cli/version_claude_enabled_test.go` | DELETED, ~−50 |
+| `internal/cli/version_session_test.go` | new, ~140 |
+| `internal/cli/frontdoor.go` | ~+6 / −3 |
+| `internal/cli/launch_banner_sandbox_test.go` | ~+25 / −12 |
+| `internal/cli/launch_banner_wording_test.go` | ~+3 / −2 |
+| `internal/cli/dev_version_test.go` | ~+4 / −3 |
+| `internal/status/boot.go` | ~+5 / −2 |
+| `internal/status/boot_sandbox_test.go` | ~+35 / −15 |
+| `internal/contractlint/prose_manifest_minor_sync_test.go` | ~−25 |
+| `.claude-plugin/plugin.json` | −1 |
+| `.codex-plugin/plugin.json` | −1 |
+| `docs/site/reference/command-reference.md` | ~+18 / −10 |
+
+**Tolerance: ±6 files and ±250 lines.** The soft spot is the blast radius of replacing `State` — a grep for the three old strings found five source/test files plus the doc, and the recorded live-session `.jsonl` fixtures under `internal/ensigncycle/testdata/` which contain the strings as captured transcript content and are inputs, not oracles. If any of those turns out to be asserted against, the file count rises. Exceeding the tolerance means the surface was mis-scoped; report it rather than absorbing it.
 
 ## Test plan
 
-Ideation fills this in. Golden-output fixtures per runtime marker set, including the ambiguous case, are the likely substrate; existing version golden tests are the starting point.
+All tests are in-process Go tests over injected seams. No live host CLI is executed in the test path, and no test reads the running machine's real environment.
+
+| Test | What it proves | Cost |
+| --- | --- | --- |
+| `internal/runtimehost/runtimehost_test.go` | `Detect` over the marker-set matrix: none, each host alone, two markers same host (not ambiguous), two markers different hosts (ambiguous), all four set. Asserts `(host, markers, ambiguous)`. | low, ~90 lines, pure function |
+| `internal/dispatch` existing build tests | `resolveBuildHost`'s error strings and refusal policy are unchanged after the extraction. Existing tests are the oracle; if none covers the ambiguity message, add one. | low, mostly re-running what exists |
+| `internal/safehouse/state_test.go` | `Inside` matches on value not presence (a row asserting `APP_SANDBOX_CONTAINER_ID=something-else` is NOT inside), and `SessionState` renders the four approved strings including inside-dominates-over-unavailable. | low, ~70 lines |
+| `internal/cli/version_session_test.go` | The full `--version` render per marker set through a fake getenv and pinned lookPath: outside (one line, no contract token), in-session, ambiguous (exit 0), and the three outside-sandbox variants. Line 1 shape and the `contract 3` placement. | medium, ~140 lines, golden strings |
+| `internal/cli/version_session_test.go` PATH-shim case | No host CLI is executed by `--version` (AC-2). Shims on a temp PATH append to a witness file; the assertion is that the file does not exist. | medium — needs a temp dir, executable shims, and PATH control; the one test with real filesystem setup |
+| `internal/cli/launch_banner_sandbox_test.go` | The banner's sandbox line, four combinations. Existing test, expectations replaced. | low |
+| `internal/status/boot_sandbox_test.go` | `status --boot` and `--boot --json`'s `sandbox` value, four combinations. Existing test, expectations replaced. | low |
+| `internal/contractlint/` suite | The minor-version binding survives the `requires-contract` deletion. | free — existing suite |
+| `manifest-tag-gate` invocation | The release gate reads only `version` and still exits 0. Run once by hand, exit code recorded in the stage report. | low, one command |
+
+No live workflow test is needed: nothing here is runtime handoff behavior. No new golden FIXTURE FILES are needed either — the strings are short enough that in-test literals are clearer than a testdata round-trip, and an in-test literal is an independent expected value in a way a regenerated golden file is not.
+
+## Documentation diff
+
+`docs/site/reference/command-reference.md`. Line 3, the intro sentence:
+
+```diff
+-The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version and contract level). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
++The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
+```
+
+Lines 5-17, the `--version` section, replaced in full:
+
+```markdown
+## --version
+
+`spacedock --version` reports the binary version, and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints one line:
+
+    spacedock 0.26.0
+
+Inside a session it also names the runtime it detected, the marker that proved it, and whether this process is running inside a sandbox:
+
+    spacedock 0.26.0
+    Runtime: claude (CLAUDECODE)
+    Sandbox: inside (agent-safehouse)
+    contract 3
+
+When markers for more than one runtime are set — a nested session can leak them — it reports the ambiguity rather than guessing, and still exits 0:
+
+    Runtime: ambiguous (CLAUDECODE, CODEX_THREAD_ID) — pass --host
+
+`Runtime: none detected` is a normal state: it means a human at a terminal, outside every runtime.
+
+The `Sandbox:` line reports this process, not what is installed. Inside a sandbox it names it. Outside one it says so, and adds whether a launch from this directory would be wrapped:
+
+    Sandbox: inside (agent-safehouse)
+    Sandbox: not wrapped — a launch from here would wrap (safehouse, .safehouse profile)
+    Sandbox: not wrapped — a launch from here cannot wrap (safehouse not on PATH; .safehouse profile present)
+    Sandbox: not wrapped — no .safehouse profile
+
+The same `Sandbox:` line appears on the pre-launch banner and in `spacedock status --boot`, and means the same thing in all three.
+
+The trailing `contract 3` is a frozen compatibility sentinel read only by skill versions predating the current version gate. It prints inside a session only. For what is installed for each host — plugin versions and enablement — use `spacedock doctor`.
+```
+
+The first line stays `spacedock <version>` because the First Officer and ensign skills parse it; that invariant is unchanged and is why the contract token moved off it.
+
+## Follow-ups this task deliberately does not do
+
+1. **The nested-launch `installHint` bug.** Confirmed live, described in the spike record above. Requires changing the launch wrap gate, which the body puts out of scope. Blocked on the `Inside()` registry this task ships; file it once this lands.
+2. **`spacedock doctor --all-hosts`**, if the captain wants the multi-host plugin inventory that the per-host block currently provides. Not `--version`'s job under the approved organising rule.
+
+## Stage Report: ideation
+
+- DONE: Value AC measures the inversion actually being fixed: a session running inside the sandbox reports itself as inside, against a baseline that can move the wrong way — today that exact session reports "unavailable". Assert the reported posture against the real session state, never that a string changed.
+  AC-1 asserts `inside (agent-safehouse)` on all three surfaces against the live baseline reproduced this session — `--version` and `status --boot` both printed `unavailable (safehouse not on PATH)` while `APP_SANDBOX_CONTAINER_ID=agent-safehouse` was set.
+- DONE: The ambiguous-marker branch stays exit 0 and reports rather than guesses. This is the one branch that can break every boot, and its shape is the recorded nested-Claude-under-Codex marker leak, not a hypothetical.
+  AC-3, proven by a throwaway program run over five marker sets: the ambiguous pair rendered `Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE) — pass --host` at exit 0, and it also caught that two pi markers are NOT ambiguity.
+- DONE: Deleting `requires-contract` leaves the live minor-version binding untouched — `internal/contractlint/prose_manifest_minor_sync_test.go` and `release.yml`'s `manifest-tag-gate` still green, and `plugin.json`'s `version` field unchanged.
+  Exercised, not reasoned: the key was deleted from both manifests, `TestProseMinorMatchesVendoredManifestMinor` PASSed and `manifest-tag-gate v0.26.0 …` exited 0, only `TestVendoredManifestTombstoneFrozen` went red (the test that ships with the field); manifests restored, `git diff --stat` clean.
+- DONE: REACH decision recorded (dispatch instruction, not a checklist item)
+  All three surfaces — `--version`, launch banner, `status --boot` — get the session-aware sandbox render, so the FO's durable boot record stops carrying the false posture; the `Runtime:` line stays `--version`-only.
+- DONE: The `Available()` installHint question the dispatch flagged as worth checking
+  Confirmed real and confirmed NOT a reporting bug: the hint fires at `frontdoor.go:418`, `frontdoor.go:631`, `pi.go:301`, all gated on `wrap && !Available`, so a nested launch inside the sandbox advises installing safehouse and exits 1. Left out as sandbox enforcement (explicitly out of scope) and recorded as follow-up 1.
+
+### Summary
+
+The entity body now carries a proposed approach, six acceptance criteria, an expected surface with tolerance, a test plan, and the full documentation diff for `docs/site/reference/command-reference.md`. Three mechanisms were exercised rather than assumed: the live inversion was reproduced in this session, a throwaway Go program produced the captain-approved output shape byte-for-byte across five marker sets (catching that two same-host markers are not ambiguity), and the `requires-contract` deletion was actually performed against both gates and reverted.
+
+Two things are recorded as costs rather than glossed. Dropping the per-host block deletes `internal/cli/host_runtime.go` entirely and takes the multi-host plugin inventory with it — `doctor` is single-host and does not replace it, so `doctor --all-hosts` is offered as a separate task if the captain wants it back. And the `installHint` nested-launch bug is real but is a launch-gate change, so it is filed as a follow-up blocked on the `Inside()` registry this task ships. Expected surface is net negative (~−60 lines across ~20 files), and AC-2 carries a measured baseline: `--version` costs 0.86s against 0.31s for a non-probing command, ~64% of it spent reporting runtimes the session is not in.
