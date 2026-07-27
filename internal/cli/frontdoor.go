@@ -166,17 +166,25 @@ func noPluginRemedy(host string) string {
 
 // launchBanner writes a short pre-launch orientation banner to w before the host
 // is handed control: the spacedock version, the workflow detected from dir, the
-// sandbox posture, and a one-line orientation pointer. The Sandbox: line renders
-// the shared three-way state from `selected` (whether this launch would be wrapped
-// — a .safehouse profile or a --safehouse* flag) and whether the safehouse binary
-// resolves via lookPath (injected so tests pin it). Callers suppress the banner on
-// a resume (the operator is continuing a session, not starting one).
-func launchBanner(host, dir string, selected bool, lookPath func(string) (string, error), w io.Writer) {
+// sandbox posture, and a one-line orientation pointer. Callers suppress the
+// banner on a resume (the operator is continuing a session, not starting one).
+//
+// The Sandbox: line answers the LAUNCH question — will the launch this banner
+// precedes be wrapped? — which is why the banner alone keeps safehouse.LaunchState
+// while `--version` and `status --boot` take SessionState: those report a session
+// that is already running, and a .safehouse profile says nothing about one.
+// `selected` is whether this launch would be wrapped (a .safehouse profile or a
+// --safehouse* flag), `available` is whether the safehouse binary resolves via
+// lookPath, and `getenv` resolves whether this process is ALREADY inside a
+// sandbox — the arm that stops the banner reporting `unavailable` from a launch
+// made inside one. Both seams are injected so tests pin them.
+func launchBanner(host, dir string, selected bool, getenv func(string) string, lookPath func(string) (string, error), w io.Writer) {
 	label, value := detectedWorkflow(dir)
 	available, _ := safehouse.Available(lookPath)
+	insideName, inside := safehouse.Inside(getenv)
 	fmt.Fprintf(w, "spacedock %s · launching %s as your first officer\n", displayVersion(), host)
 	fmt.Fprintf(w, "%s: %s\n", label, value)
-	fmt.Fprintf(w, "Sandbox: %s\n", safehouse.State(selected, available))
+	fmt.Fprintf(w, "Sandbox: %s\n", safehouse.LaunchState(insideName, inside, selected, available))
 	fmt.Fprintf(w, "%s is your first officer — ask it for the queue and next steps.\n", host)
 }
 
@@ -392,7 +400,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := containsResume(fd.passthrough)
 	if !resume {
-		launchBanner("claude", dir, wrap, lookPath, stderr)
+		launchBanner("claude", dir, wrap, os.Getenv, lookPath, stderr)
 	}
 	inner := []string{"claude"}
 	if wrap {
@@ -606,7 +614,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	}
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	if !resume {
-		launchBanner("codex", dir, wrap, lookPath, stderr)
+		launchBanner("codex", dir, wrap, os.Getenv, lookPath, stderr)
 	}
 	inner := []string{"codex"}
 	if wrap {

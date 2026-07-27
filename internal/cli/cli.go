@@ -17,6 +17,7 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
 	"github.com/spacedock-dev/spacedock/internal/gates"
+	"github.com/spacedock-dev/spacedock/internal/runtimehost"
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
@@ -30,6 +31,15 @@ import (
 // than impersonating a stale release; the git-describe tag overwrites it on a
 // stamped release build.
 var Version = "dev"
+
+// envGetenv adapts the injected `KEY=VALUE` environment slice — the seam the CLI
+// already threads everywhere instead of reading the process environment — into
+// the getenv function the detection helpers take, so a test can pin the whole
+// environment without touching the running machine's.
+func envGetenv(env []string) func(string) string {
+	vars := envMap(env)
+	return func(key string) string { return vars[key] }
+}
 
 // tagline is the one-line product description rendered as the first help line.
 const tagline = "spacedock — agentic workflow launcher"
@@ -107,7 +117,7 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		CompletionOptions:  cobra.CompletionOptions{DisableDefaultCmd: true},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if versionFlag {
-				printVersion(stdout, dir, execRuntimeProbe{}, exec.LookPath)
+				printVersion(stdout, envGetenv(env), exec.LookPath)
 				return nil
 			}
 			// No subcommand and no recognized flag: an unknown command token
@@ -729,33 +739,75 @@ func cwd() string {
 }
 
 // frozenContractToken is D4's second cross-era sentinel: an integer-era FO
-// reading `--version` line 1 parses `contract <N>` and checks it against its own
+// reading `--version` parses `contract <N>` and checks it against its own
 // contract range (`>=2,<3`). This binary carries no contract-integer mechanism at
-// all — no constant, no compare math — but line 1 still emits this LITERAL string
-// so that old prose sees 3, which is at/above its upper bound, and aborts with
+// all — no constant, no compare math — but it still emits this LITERAL string so
+// that old prose sees 3, which is at/above its upper bound, and aborts with
 // "update the plugin": the correct remedy, since the skills genuinely are too old
-// for a binary this new. The value must stay 3 — bumping it would false-green old
-// skills against every future binary. Frozen; pinned by the internal/contractlint
-// sync test. Do not edit.
-const frozenContractToken = "(contract 3)"
+// for a binary this new. Note the gate is prose executed by a model, so an ABSENT
+// token is not a reliable abort — a model may reason "no token, nothing to check,
+// proceed" where a deterministic parser would error. Emitting the literal keeps
+// the abort correct in the old prose's own terms.
+//
+// The value must stay 3 — bumping it would false-green old skills against every
+// future binary. It is pinned by the internal/contractlint sync test.
+//
+// RETIREMENT CONDITION: removable once no plugin or binary predating #468 can
+// still be running. Both reader populations are ours — old spacedock skills and
+// old spacedock binaries, things we ship and tag — so this is a query against the
+// Homebrew formula and the marketplace, not a guess.
+const frozenContractToken = "contract 3"
 
-// printVersion emits the version line with the frozen cross-era contract token,
-// then the sandbox posture and a per-runtime plugin-version block. The FIRST line
-// is unchanged in shape — `spacedock <ver> (contract 3)` — and load-bearing: the
-// FO/ensign skills read the version token from it (the gate is minor-version
-// coupling now; the frozen `(contract 3)` token exists solely for D4's
-// integer-era migration path), so everything new is appended BELOW line 1
-// (cobra's auto version-flag, a bare version string, is deliberately NOT used).
-// The Sandbox line renders the shared three-way state for dir; the per-runtime
-// block reports each host's installed spacedock plugin version (and a
-// best-effort enabled marker) from the injected probe.
-func printVersion(w io.Writer, dir string, probe runtimeProbe, lookPath func(string) (string, error)) {
-	fmt.Fprintf(w, "spacedock %s %s\n", displayVersion(), frozenContractToken)
-	available, _ := safehouse.Available(lookPath)
-	fmt.Fprintf(w, "Sandbox: %s\n", safehouse.State(safehouse.Present(dir), available))
-	for _, host := range []string{"claude", "codex", "pi"} {
-		fmt.Fprintln(w, runtimeLine(host, probe.ProbeRuntime(host)))
+// printVersion reports the binary version and, when this process is running
+// inside an agent session, that session. The organising rule is: inside a
+// session, report the session; outside one, report the version. Anything about
+// what is INSTALLED belongs to `doctor`, which is already the version gate's own
+// named remedy surface — so the per-host plugin block this used to print is gone,
+// and with it the three host CLIs it shelled to produce it.
+//
+// Line 1 is `spacedock <version>` and nothing else. It is load-bearing: the
+// FO/ensign version gate parses that token and aborts on any other shape (cobra's
+// auto version-flag is deliberately NOT used). The frozen contract token moved
+// BELOW it — the integer-era prose says "run --version and parse contract <N>"
+// and never pins it to line 1 — and prints inside a session only, since every
+// integer-era reader is itself a session.
+//
+// Ambiguous markers are REPORTED, never guessed at, and never fail: refusing here
+// would break the version gate and therefore every boot, including the nested-
+// runtime marker leak that occurs in practice.
+func printVersion(w io.Writer, getenv func(string) string, lookPath func(string) (string, error)) {
+	fmt.Fprintf(w, "spacedock %s\n", displayVersion())
+
+	host, markers, identity, ambiguous := runtimehost.Detect(getenv)
+	if !ambiguous && host == "" {
+		// Outside every runtime — a human at a terminal. One line, nothing else.
+		return
 	}
+
+	if ambiguous {
+		fmt.Fprintf(w, "Runtime: ambiguous (%s) — pass --host\n", strings.Join(markers, ", "))
+	} else {
+		fmt.Fprintf(w, "Runtime: %s\n", runtimeLine(host, markers, identity))
+	}
+
+	insideName, inside := safehouse.Inside(getenv)
+	available, _ := safehouse.Available(lookPath)
+	fmt.Fprintf(w, "Sandbox: %s\n", safehouse.SessionState(insideName, inside, available))
+	fmt.Fprintln(w, frozenContractToken)
+}
+
+// runtimeLine renders the resolved-host Runtime value: the host, the markers that
+// proved it, and this session's own identifier where the host exposes one. A host
+// with no identity variable (pi) and a host whose identity variable is unset take
+// the SAME path — the segment is omitted — so no empty or dangling parenthetical
+// is reachable, and the day pi gains a session variable the change is one table
+// cell in internal/runtimehost.
+func runtimeLine(host string, markers []string, identity string) string {
+	detail := strings.Join(markers, ", ")
+	if short := runtimehost.ShortID(identity); short != "" {
+		detail += ", session " + short
+	}
+	return host + " (" + detail + ")"
 }
 
 // runCompletion emits a static shell-completion script for bash or zsh to

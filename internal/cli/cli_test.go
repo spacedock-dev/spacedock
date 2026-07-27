@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -40,11 +41,17 @@ func TestVersion(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("Run returned %d, want 0", code)
 	}
-	// The FIRST line is the load-bearing, FO-parsed version+contract line; the
-	// sandbox + per-runtime block follows it (asserted in version_runtime_test.go).
-	want := "spacedock " + displayVersion() + " " + frozenContractToken
-	if got := strings.SplitN(stdout.String(), "\n", 2)[0]; got != want {
+	// AC-4: the FIRST line is the load-bearing, FO-parsed version line and carries
+	// the version token and NOTHING after it — the frozen contract token moved
+	// below (asserted in version_session_test.go, which also asserts the session
+	// lines). Leaving the token on line 1 turns the regex red.
+	want := "spacedock " + displayVersion()
+	got := strings.SplitN(stdout.String(), "\n", 2)[0]
+	if got != want {
 		t.Fatalf("version first line = %q, want %q", got, want)
+	}
+	if !regexp.MustCompile(`^spacedock \S+$`).MatchString(got) {
+		t.Fatalf("version first line = %q, want to match ^spacedock \\S+$ (the shape the FO version gate parses)", got)
 	}
 	if stderr.Len() != 0 {
 		t.Fatalf("stderr = %q, want empty", stderr.String())

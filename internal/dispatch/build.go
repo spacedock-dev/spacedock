@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
+	"github.com/spacedock-dev/spacedock/internal/runtimehost"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
@@ -246,30 +247,14 @@ func resolveBuildHost(flagHost, jsonHost string, getenv func(string) string) (st
 		return jsonHost, nil
 	}
 
-	runtimeMarkers := []struct {
-		host   string
-		marker string
-		set    bool
-	}{
-		{host: "codex", marker: "CODEX_THREAD_ID", set: getenv("CODEX_THREAD_ID") != ""},
-		{host: "claude", marker: "CLAUDECODE", set: getenv("CLAUDECODE") != ""},
-		{host: "pi", marker: "PI_CODING_AGENT", set: getenv("PI_CODING_AGENT") != ""},
-		{host: "pi", marker: "PI_CODING_AGENT_DIR", set: getenv("PI_CODING_AGENT_DIR") != ""},
-	}
-	var host string
-	var setMarkers []string
-	for _, runtimeMarker := range runtimeMarkers {
-		if !runtimeMarker.set {
-			continue
-		}
-		setMarkers = append(setMarkers, runtimeMarker.marker)
-		if host == "" {
-			host = runtimeMarker.host
-			continue
-		}
-		if host != runtimeMarker.host {
-			return "", fmt.Errorf("ambiguous runtime host sources: multiple runtime markers are set (%s); pass --host claude, codex, or pi", strings.Join(setMarkers, ", "))
-		}
+	// The marker table lives in internal/runtimehost, shared with --version's
+	// Runtime line. Detect never errors because the two callers need opposite
+	// dispositions of the same facts: a build must REFUSE against an ambiguous
+	// host, while --version must REPORT the ambiguity and exit 0. So the
+	// detection is shared and the policy stays here.
+	host, markers, _, ambiguous := runtimehost.Detect(getenv)
+	if ambiguous {
+		return "", fmt.Errorf("ambiguous runtime host sources: multiple runtime markers are set (%s); pass --host claude, codex, or pi", strings.Join(markers, ", "))
 	}
 	if host != "" {
 		return host, nil

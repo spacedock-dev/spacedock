@@ -74,7 +74,7 @@ func TestUnstampedSourceBuildReportsCheckoutVersionPlusDev(t *testing.T) {
 
 	wantVersion := checkoutManifestVersion(t) + "+dev"
 	firstLine := strings.SplitN(string(out), "\n", 2)[0]
-	wantLine := "spacedock " + wantVersion + " (contract 3)"
+	wantLine := "spacedock " + wantVersion
 	if firstLine != wantLine {
 		t.Fatalf("unstamped build --version line 1 = %q, want %q", firstLine, wantLine)
 	}
