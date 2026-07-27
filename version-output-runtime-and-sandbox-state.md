@@ -98,6 +98,8 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+mod-block: merge:pr-merge
+pr: "#571"
 ---
 
 Make the first command every First Officer session runs describe the session it is actually in: the detected runtime, and whether this session is sandboxed.
