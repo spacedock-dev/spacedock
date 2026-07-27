@@ -1,13 +1,13 @@
 ---
 id: cnh3nk0yfhy5er186dm1g2h0
 title: "`--version` prints every host's runtime line and reports safehouse availability instead of the session's actual runtime and sandbox state"
-status: ideation
+status: implementation
 source: "Captain observation 2026-07-27 on bootstrap output; confirmed in printVersion (internal/cli/cli.go:752-759). The binary already carries the runtime detector it does not use."
 started: 2026-07-27T08:05:18Z
 completed:
 verdict:
 score: 0.4
-worktree:
+worktree: .worktrees/spacedock-ensign-version-output-runtime-and-sandbox-state
 issue:
 gates:
     version: 1
@@ -74,7 +74,7 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
