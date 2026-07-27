@@ -85,6 +85,19 @@ gates:
                 digest: sha256:b6b5b1817572959dc856399c844fa7e06a5a091ce2c1eabd8a09c4f5db129c66
                 digest-domain: canonical-bytes
                 room-ref: ./version-output-runtime-and-sandbox-state/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:cn:validation:1
+                briefing: briefing:docs-dev:cn:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-27T10:11:00.605171Z"
+                decision: approve
+                reason: 'Captain resolved the validation float in the review TUI (resolution:captain-1785147028930460000) with approve and no annotations, against briefing attempt-1 revision-1 whose artifact is the frozen room copy at sha256:c3a9be19. Validation recommended PASSED with no material finding: both implementation falsifications were reproduced independently on a throwaway clone rather than accepted, the detached adversarial audit came back clean, and all six acceptance criteria carry reproduced evidence. The end value is measured live — status --boot --json moves from ''unavailable (safehouse not on PATH)'' to ''inside (agent-safehouse)'' in a sandboxed session, so the First Officer''s durable boot record stops carrying a false posture. Both deliberate deviations were judged to move toward the approved design, and the surface overrun is classified deferred: an estimate miss on comment and test density, with production Go net -8 across only approved mechanisms. Three deferred risks recorded with explicit promotion conditions, none blocking.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 Make the first command every First Officer session runs describe the session it is actually in: the detected runtime, and whether this session is sandboxed.
