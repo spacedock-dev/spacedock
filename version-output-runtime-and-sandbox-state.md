@@ -48,11 +48,72 @@ This compounds: `--version` is the first command every FO session runs, at the v
 
 Worth checking during ideation, not asserted here: `Available()` returns an `installHint` advising `brew install eugene1g/safehouse/agent-safehouse`. `printVersion` discards it, so it does not fire there — but if any surface does emit it, inside a sandbox it advises installing the thing the session is already running in.
 
+## Proposed output shape (captain-approved, 2026-07-27)
+
+The organising rule: **inside a session, report the session; outside one, report the version.** Anything about what is *installed* belongs to `doctor`, which is already the gate's own named remedy surface.
+
+Outside any runtime — one line:
+
+```
+spacedock 0.26.0+dev
+```
+
+Inside a session:
+
+```
+spacedock 0.26.0+dev
+Runtime: claude (CLAUDECODE)
+Sandbox: inside (agent-safehouse)
+contract 3
+```
+
+Ambiguous markers — reports the ambiguity, does not guess, stays exit 0:
+
+```
+spacedock 0.26.0+dev
+Runtime: ambiguous (CLAUDECODE, CODEX_THREAD_ID) — pass --host
+Sandbox: inside (agent-safehouse)
+contract 3
+```
+
+Outside variants of the sandbox line, which must carry current state and launch capability without conflating them again:
+
+```
+Sandbox: not wrapped — a launch from here would wrap (safehouse, .safehouse profile)
+Sandbox: not wrapped — a launch from here cannot wrap (safehouse not on PATH; .safehouse profile present)
+Sandbox: not wrapped — no .safehouse profile
+```
+
+The second is the only place the `brew install` hint belongs, and it can now never fire at a session already running inside the sandbox.
+
+The per-host installed-plugin lines are dropped entirely. The version gate runs in one direction — the skills parse the binary's line 1 — so the binary echoing the skills' version back has no programmatic consumer. That is an install fact; `doctor` owns it.
+
+## The two contract tombstones
+
+`(contract 3)` and `requires-contract: ">=3,<4"` are mirrored D4 sentinels. Neither is read by any current reader: the binary carries no contract-integer mechanism, and both hosts ignore unknown manifest fields. Each exists only so the OLD side of a version mismatch fails correctly. The captain's decision splits them, and the split is technical rather than aesthetic:
+
+**Keep `(contract 3)`, moved off line 1.** It guards old skills against a new binary. New skills cannot protect old skills — the old prose is the only thing checking, and it checks for a contract integer. Nothing else reaches that reader. Note the gate is prose executed by a model, so an absent token is not a reliable abort: a deterministic parser errors on a missing field, but a model may reason "no token, nothing to check, proceed" — a silent false-green. Emitting the literal `3` keeps the abort correct in the old prose's own terms. It moves below line 1 (the old prose says "run `--version` and parse `contract <N>`" and never pins it to line 1) and prints only inside a session, since every integer-era reader is itself a session.
+
+**Remove `requires-contract` from both manifests.** It guards a new plugin against an old binary — a direction the skills already cover, because a new plugin's own shared core carries the minor gate and an old binary meets the FO's abort at boot regardless. It is belt-and-braces for a case the prose already catches, so removing it loses no coverage.
+
+It is also ours: introduced by `080ec3ef`, undocumented in `docs/`, and confirmed outside Claude Code's schema by the guide check recorded in the 0199 debrief. An invented key sitting in a file two host runtimes parse carries a small collision risk if either host ever adds that name with different semantics. Namespacing (`x-spacedock-requires-contract`) would close that, but would also break the pre-#468 binaries the field exists for — and that tension is itself an argument for retiring rather than renaming.
+
+**Write a retirement condition into the surviving constant.** `frozenContractToken` currently reads "Frozen; pinned by the internal/contractlint sync test. Do not edit." with no exit, which is how a migration aid becomes permanent furniture. Both reader populations are ours — old spacedock skills and old spacedock binaries, things we ship and tag — so "removable once no plugin or binary predating #468 can still be running" is a query against brew and the marketplace, not a guess.
+
+## No skill change is required
+
+The FO shared core's gate (`skills/first-officer/references/first-officer-shared-core.md:9`) is a **binary version gate** parsing `spacedock <version>` against minor `0.26`. It does not check a contract integer; #468 replaced that with minor-version coupling. Nothing in `skills/` needs editing for this task.
+
+## What must not be disturbed
+
+`plugin.json`'s `version` field is the live compatibility declaration that replaced the contract integer. It is bound in two directions — `internal/contractlint/prose_manifest_minor_sync_test.go` pins it against the FO prose's stamped minor, and `release.yml`'s `manifest-tag-gate` binds tag to both manifests to prose on every release. The two manifests differ only by Codex's `"hooks": "./hooks.json"`, which is correct. Removing `requires-contract` must leave all of that untouched.
+
 ## Constraints the fix must respect
 
-- **Line 1 is a parsed contract.** The FO version gate parses line 1 as `spacedock <version>` and aborts on anything else. Any change must leave line 1 byte-compatible; only the lines below it may move.
+- **Line 1 stays parseable.** The FO version gate parses line 1 as `spacedock <version>` and aborts on anything else. Dropping the trailing `(contract 3)` from line 1 is the point of this change; the version token itself must remain first and unchanged in shape.
 - **`--version` must not fail on ambiguous runtime markers.** The dispatch detector refuses when two markers are set, which is correct there. Refusing here would break the version gate and therefore every boot — including the nested-runtime case that already occurs in practice. Ambiguity needs a reported state, not an error.
-- Cross-host probing must remain reachable somehow; some diagnostics legitimately want all three. Whether that becomes a flag or moves to `doctor` is a design question, not a foregone conclusion.
+- **`Runtime: none detected` is a normal state**, not a fault — a human at a terminal is outside every runtime.
+- The "inside" signal is sandbox-specific: `APP_SANDBOX_CONTAINER_ID=agent-safehouse` is what is observably set. A second sandbox implementation needs its own signal, exactly like the per-host runtime markers, so this is a small registry rather than a boolean and should be built as one.
 
 ## Also worth checking
 
