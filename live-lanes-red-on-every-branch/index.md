@@ -41,10 +41,10 @@ gates:
           attempts:
             - id: gate-attempt:se0v37bt7mhsrmhta1nyns0r-ideation-1
               briefing:
-                id: briefing:se0v37bt7mhsrmhta1nyns0r:ideation:attempt-1:revision-1
-                digest: sha256:05243ce76ee0e635de8309e9582fb548dc47aba260cc8c8a960fa6bc9ce967a2
+                id: briefing:se0v37bt7mhsrmhta1nyns0r:ideation:attempt-1:revision-2
+                digest: sha256:7b0cf07c49f5286b085dbbd884f45aafb247dddd7a2075d7344010a640b7aad2
                 digest-domain: canonical-bytes
-                room-ref: ./review/ideation/briefing-1
+                room-ref: ./review/ideation/briefing-2
 ---
 
 Restore a trustworthy live signal without deleting the behavior the signal was

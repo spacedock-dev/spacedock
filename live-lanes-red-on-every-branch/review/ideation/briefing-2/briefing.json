@@ -1,0 +1,99 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:se0v37bt7mhsrmhta1nyns0r:ideation:attempt-1:revision-2",
+  "question": "Should implementation begin on the bounded recovery that restores a trustworthy Claude, Codex, and Pi live signal before one CI confirmation?",
+  "summary": "Approve implementation. Independent staff review confirms that all nine current failures are classified from retained evidence: five impossible-state gate failures and Codex keep-moving are stale oracles; Claude Opus recorded lifecycle is a cwd-sensitive harness extraction defect; Codex rejection flow is a lifecycle-invalid fixture; and Pi recorded lifecycle is a real conduct defect because its review never reaches the root assistant channel. The repair preserves every approved journey and changes 12 existing files, estimated at +167/-49 handwritten lines with no generated or golden churn. It must stop for re-approval above 14 files or 292 changed lines. The Pi correction changes only semantic channel and ordering, never prescribed wording, commands, recommendations, or decisions. Focused host tests run first; then the complete local Sonnet, Opus, Codex, and Pi suites must all pass from the same tip before a single full CI run. No scenario withdrawal, prompt coaching, quarantine, compatibility layer, new standing harness, or CI-led iteration is allowed. Staff review completed three correction cycles and recommends approval with no material, deferred, or polish findings. A final deterministic gate check corrected the criteria to canonical AC-1 through AC-5 identifiers and explicitly re-anchors the four mechanism criteria to the 4/4 same-tip value criterion.",
+  "artifacts": [
+    {
+      "id": "artifact:se0v37bt7mhsrmhta1nyns0r:ideation:attempt-1:revision-2:design",
+      "uri": "git-root://state/9b9f78a8efc700234eb8449c7bc096f9492a8adb/live-lanes-red-on-every-branch/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:882463c20b3001c8c96b91645991e45187954d0ddb68f3897ed89f41195b51b4",
+      "summary": "Canonical design, nine-failure classification, acceptance criteria AC-1 through AC-5, exact 12-file surface, local proof commands, and ideation reports through cycle 4."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:se0:6y-history",
+      "uri": "git-root://state/9b9f78a8efc700234eb8449c7bc096f9492a8adb/_archive/first-officer-gate-command-lifecycle/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:80ed1c9a0a0630f8a91a4568288040ab6fa076f493bf3d6cc4064929762d7daa"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:gate-oracle",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/ensigncycle/gate_assert_impl_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:c4efe2fcc78a303f668b76a029c2e80ea52b67ccff5fe892660f6fbf6c4d95e0"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:recorded-gate-oracle",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/ensigncycle/recorded_gate_lifecycle_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:0a0721ba78b5068313dd20eb6f45e90acadfbef1a30450df9c8ec637218cc70f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:rejection-oracle",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/ensigncycle/shared_assertions_impl_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:7f2f7bfdfc0708786984b9824a11eea2813277c3ddd67c43f3eccfd240874a96"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:keep-moving-oracle",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/ensigncycle/shared_keep_moving_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:460ad17b43245e3df24775d051b65ae96fd05192a4cb53c1fcd7666ed7ad78f4"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:keep-moving-negative",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/ensigncycle/shared_keep_moving_negative_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:19f6572acd9509f37c52f2ddee49dbb995996ae85c4b101a79edb9fe8b60d25f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:pi-runtime-contract",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/skills/first-officer/references/pi-first-officer-runtime.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:fa13f18a7f05f91fe04f0fd99b0aa7651ea8b8466158c0be33e5e0e18b9b26f1"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:runtime-live-doc",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:2a21b279fdf2ac4172ecf36b09ca101873aab1faa977e96460e9875e157c3da0"
+    },
+    {
+      "type": "Routing",
+      "id": "routing:se0:ideation",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin bounded implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Correct the recovery design",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Keep the release blocker at ideation",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
