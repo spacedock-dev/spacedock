@@ -7,7 +7,7 @@ started: 2026-07-27T17:05:38Z
 completed:
 verdict:
 score: 0.85
-worktree:
+worktree: .worktrees/spacedock-ensign-live-lanes-red-on-every-branch
 issue:
 gates:
     version: 1
