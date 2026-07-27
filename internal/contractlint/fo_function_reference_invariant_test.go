@@ -172,6 +172,22 @@ func TestFOFunctionReferenceCheckpointMetrics(t *testing.T) {
 		addresses, foHostLoadBytes(t, "claude"), foHostLoadBytes(t, "codex"), foHostLoadBytes(t, "pi"))
 }
 
+func TestPiRecordedGatePresentationUsesRootAssistantText(t *testing.T) {
+	adapter := readRepoFile(t, filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"))
+	for _, want := range []string{
+		"Recorded-gate presentation is the explicit exception", "root-session assistant text block",
+		"after the selected Briefing commit", "before the decision mutation",
+		"shell output, tool results, child output, and later summaries do not qualify", "durable command, state, git, and successor-effect evidence",
+	} {
+		if !strings.Contains(adapter, want) {
+			t.Errorf("Pi recorded-gate adapter missing %q", want)
+		}
+	}
+	if strings.Contains(adapter, "durable proof for Pi support is not transcript phrasing") {
+		t.Error("Pi adapter still claims transcript events never matter")
+	}
+}
+
 func TestFirstOfficerReferenceTopology(t *testing.T) {
 	root := skillsRoot(t)
 	entry := readRepoFile(t, filepath.Join("skills", "first-officer", "SKILL.md"))

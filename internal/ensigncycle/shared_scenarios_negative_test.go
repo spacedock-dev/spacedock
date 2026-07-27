@@ -26,11 +26,16 @@ type recordedGatePiEvent struct {
 
 func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
 	before := recordedGateEntity()
-	held := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
+	held := recordedGateHeldEntity()
 	review := recordedGateReview()
 	requireRecordedGate(t, assertGateHeld(before, held, review) == nil, "held-gate baseline failed")
 
-	for name, after := range map[string]string{"unbound": before, "advanced": strings.Replace(held, "status: validation", "status: done", 1), "self-approved": strings.Replace(held, "verdict:\n", "verdict: passed\n", 1)} {
+	for name, after := range map[string]string{
+		"unbound":        before,
+		"advanced":       strings.Replace(held, "status: validation", "status: done", 1),
+		"self-approved":  strings.Replace(held, "verdict:\n", "verdict: passed\n", 1),
+		"wrong-briefing": strings.Replace(held, recordedGateBriefingID, "briefing:docs-dev:wrong", 1),
+	} {
 		requireRecordedGate(t, assertGateHeld(before, after, review) != nil, "%s gate qualified", name)
 	}
 }
@@ -39,14 +44,14 @@ func TestRejectionFlowNegativeSingleCycle(t *testing.T) {
 	rejectedObserved := "validation was REJECTED; routing the finding back to implementation"
 
 	// Un-driven fixture: the rejection scenario now starts BEFORE the first
-	// validation, at status: implementation with NO stage reports and NO seeded
+	// implementation, at status: backlog with NO stage reports and NO seeded
 	// rejection. The seeded fixture must NOT pre-satisfy assertRejectionFlow — a live
 	// pass requires the real producer to drive BOTH cycles (omit the fix, get
 	// rejected, rework, re-validate). If this seeded state passed, a live run that did
 	// nothing would falsely pass.
 	seeded := rejectionEntity()
-	if !strings.Contains(seeded, "status: implementation") {
-		t.Fatal("rejection fixture must now start at status: implementation, before the first validation")
+	if !strings.Contains(seeded, "status: backlog") {
+		t.Fatal("rejection fixture must start at backlog so normal routing advances into the first implementation")
 	}
 	if got := len(implementationReport.FindAllString(seeded, -1)); got != 0 {
 		t.Fatalf("rejection fixture must start with no implementation reports (live producer writes them), got %d", got)

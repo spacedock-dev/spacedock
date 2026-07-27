@@ -117,7 +117,7 @@ func rejectionEntity() string {
 	return "---\n" +
 		"id: rejection-task\n" +
 		"title: Rejection Task\n" +
-		"status: implementation\n" +
+		"status: backlog\n" +
 		"completed:\n" +
 		"verdict:\n" +
 		"worktree:\n" +
@@ -126,7 +126,7 @@ func rejectionEntity() string {
 		"application-state: preserve-me\n" +
 		"---\n" +
 		"# Rejection Task\n\n" +
-		"This task starts at implementation, before any validation has run. The first implementation round must deliberately omit the fix marker so the first validation rejects it; the rework round after that rejection applies the marker.\n"
+		"This task starts at backlog, before the first implementation. Normal routing must dispatch that first implementation, which deliberately omits the fix marker so validation rejects it; the rework round after that rejection applies the marker.\n"
 }
 
 func rejectionPrompt(workflowRoot string) string {

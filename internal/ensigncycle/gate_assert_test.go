@@ -20,6 +20,24 @@ func requireRecordedGate(t *testing.T, ok bool, format string, args ...any) {
 	}
 }
 
+func recordedGateHeldEntity() string {
+	gates := "gates:\n" +
+		"  version: 1\n" +
+		"  current:\n" +
+		"    gate: gate:docs-dev:3k:validation\n" +
+		"  records:\n" +
+		"    - id: gate:docs-dev:3k:validation\n" +
+		"      stage: validation\n" +
+		"      attempts:\n" +
+		"        - id: gate-attempt:3k-validation-1\n" +
+		"          briefing:\n" +
+		"            id: " + recordedGateBriefingID + "\n" +
+		"            digest: " + recordedGateDigest + "\n" +
+		"            digest-domain: raw-file-pin\n" +
+		"            room-ref: rooms/validation/attempt-1/revision-1\n"
+	return strings.Replace(recordedGateEntity(), "---\n# Recorded Gate Task", gates+"---\n# Recorded Gate Task", 1)
+}
+
 func TestAssertGateHeld(t *testing.T) {
 	entity := "---\n" +
 		"id: gate-check\n" +
@@ -36,7 +54,7 @@ func TestAssertGateHeld(t *testing.T) {
 	final := "Gate review: Gate Check - review\nRecommend approve.\nDecision: approve to enter done."
 
 	before := recordedGateEntity()
-	after := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
+	after := recordedGateHeldEntity()
 	requireRecordedGate(t, assertGateHeld(before, after, recordedGateReview()) == nil, "held gate failed")
 	decision := "Decision ask: approve, revise with a concrete finding, or hold for a named prerequisite?"
 	for name, line := range map[string]string{
@@ -56,7 +74,15 @@ func TestAssertGateHeld(t *testing.T) {
 		review := strings.Replace(recordedGateReview(), decision, line, 1)
 		requireRecordedGate(t, assertConciseRecordedGateReview(review) != nil, "%s decision control qualified", name)
 	}
-	for name, tc := range map[string]struct{ after, review string }{"unbound": {before, recordedGateReview()}, "advanced": {strings.Replace(after, "status: validation", "status: handoff", 1), recordedGateReview()}, "resolution": {after + "\ntype: Resolution\n", recordedGateReview()}, "verdict": {strings.Replace(after, "verdict:\n", "verdict: passed\n", 1), recordedGateReview()}, "review": {after, "Gate review: legacy\nDecision: approve?"}, "legacy": {entity, final}} {
+	resolved := strings.Replace(after, "          briefing:\n", "          resolution:\n            type: Resolution\n            id: resolution:docs-dev:3k:validation:1\n            briefing: "+recordedGateBriefingID+"\n            by: captain\n            at: 2026-07-28T00:00:00Z\n            decision: approve\n          briefing:\n", 1)
+	applied := strings.Replace(resolved, "          briefing:\n", "          application:\n            action: advance\n            target-stage: handoff\n            state: pending\n          briefing:\n", 1)
+	for name, tc := range map[string]struct{ after, review string }{
+		"unbound": {before, recordedGateReview()}, "advanced": {strings.Replace(after, "status: validation", "status: handoff", 1), recordedGateReview()},
+		"malformed-state": {strings.Replace(after, "          briefing:\n", "          state: open\n          briefing:\n", 1), recordedGateReview()}, "wrong-gate": {strings.ReplaceAll(after, "gate:docs-dev:3k:validation", "gate:docs-dev:wrong"), recordedGateReview()},
+		"wrong-briefing": {strings.Replace(after, recordedGateBriefingID, "briefing:docs-dev:wrong", 1), recordedGateReview()}, "resolved": {resolved, recordedGateReview()},
+		"applied": {applied, recordedGateReview()}, "verdict": {strings.Replace(after, "verdict:\n", "verdict: passed\n", 1), recordedGateReview()},
+		"review": {after, "Gate review: legacy\nDecision: approve?"}, "legacy": {entity, final},
+	} {
 		requireRecordedGate(t, assertGateHeld(before, tc.after, tc.review) != nil, "%s control qualified", name)
 	}
 }

@@ -69,10 +69,27 @@ Each Codex shared scenario launches one `codex exec`. A fixed 15-minute wall-clo
 go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
 ```
 
-Run the Pi front-door smoke locally (`npm install -g pi-coding-agent`, `pi install npm:pi-subagents`, and either `pi login` or `OPENAI_API_KEY`). The smoke loads the current checkout's Spacedock first-officer and ensign skills plus the local pi-subagents extension/skill explicitly; it verifies durable state in the split-root state checkout rather than transcript wording alone.
+Run the Pi live proofs locally with the same package versions pinned in CI:
 
 ```bash
-go test -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
+npm install -g @earendil-works/pi-coding-agent@0.80.10
+npm install --prefix "$HOME/.pi/agent/npm" pi-subagents@0.35.1 pi-intercom@0.6.0
+export PI_SUBAGENTS_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-subagents"
+export PI_INTERCOM_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-intercom"
+```
+
+Authenticate with `pi login` or `OPENAI_API_KEY`. Configure the child model with the exact provider-qualified spelling for that authentication path:
+
+```bash
+export SPACEDOCK_PI_LIVE_CHILD_MODEL=openrouter/openai/gpt-5.4 # OpenRouter login
+# or
+export SPACEDOCK_PI_LIVE_CHILD_MODEL=openai/gpt-5.4 # direct OpenAI provider
+```
+
+`TestLivePiFrontDoorSmoke` loads the current checkout's Spacedock first-officer and ensign skills plus the local pi-subagents extension/skill and verifies durable split-root worker state. `TestLivePiRecordedGateLifecycle` loads the same current-checkout skills through the Pi front door, drives the shared recorded-gate fixture, and requires the root-session assistant review after the committed Briefing and before the decision in addition to durable command, state, git, and successor evidence.
+
+```bash
+go test -tags live -count=1 -timeout 15m -run '^(TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle)$' ./internal/ensigncycle -v
 ```
 
 The parity and definition guards run with no model spend — useful before paying for a live run:
@@ -89,7 +106,7 @@ Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go te
 
 - `claude-live` (matrix: `sonnet` on `CI-E2E`, `claude-opus-4-8` on `CI-E2E-OPUS`): secret `ANTHROPIC_API_KEY`. Runs `TestLiveEnsignCycle` (the full-cycle smoke), `TestLiveClaudeSharedScenarios` (the shared suite over the headless `-p` transport), and the pty/tmux team-mode harness (`TestLivePtyStandingResidencyInjectsCommOfficer` + `TestLivePtyEnsignCycleTeamTeardown`) — which drives a real interactive session where team mode is exposed (tmux is installed for this). Artifacts under `live-artifacts/claude/<model>/` plus the session jsonl under `$CLAUDE_CONFIG_DIR`.
 - `codex-live` (environment `CI-E2E-CODEX`): secret `OPENAI_API_KEY`, `SPACEDOCK_CODEX_LIVE_REQUIRED=1` so a missing key fails clearly after approval. Runs `TestLiveCodexSharedScenarios`. Artifacts under `live-artifacts/codex/`.
-- `pi-live` (environment `CI-E2E-PI`): secret `OPENAI_API_KEY`, `SPACEDOCK_PI_LIVE_REQUIRED=1` so missing Pi/OpenAI prerequisites fail clearly after approval. Installs `pi-coding-agent`, `pi-subagents`, and `pi-intercom`, runs the Pi shared coverage guard plus `TestLivePiFrontDoorSmoke`, and uploads artifacts under `live-artifacts/pi/`.
+- `pi-live` (environment `CI-E2E-PI`): secret `OPENAI_API_KEY`, `SPACEDOCK_PI_LIVE_REQUIRED=1` so missing Pi/OpenAI prerequisites fail clearly after approval. Installs `pi-coding-agent`, `pi-subagents`, and `pi-intercom`, runs the Pi shared coverage guard, `TestLivePiFrontDoorSmoke`, and `TestLivePiRecordedGateLifecycle`, and uploads artifacts under `live-artifacts/pi/`; the recorded-gate test additionally grades the ordered root assistant review event.
 
 All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
 

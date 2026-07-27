@@ -593,6 +593,7 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       SPACEDOCK_PI_LIVE_REQUIRED: "1"
+      SPACEDOCK_PI_LIVE_CHILD_MODEL: openai/gpt-5.4
       SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/pi
       SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi
       PI_OFFLINE: "1"
@@ -788,7 +789,7 @@ jobs:
       - name: Run live Pi front-door smoke
         run: |
           set -o pipefail
-          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -run 'TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle' ./internal/ensigncycle
+          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 15m -run 'TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle' ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()

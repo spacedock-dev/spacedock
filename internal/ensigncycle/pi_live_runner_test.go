@@ -75,7 +75,7 @@ func runPiLiveCommand(t *testing.T, artifactDir, workflowRoot string, env []stri
 	t.Helper()
 	stdoutPath := filepath.Join(artifactDir, "pi-stdout.txt")
 	stderrPath := filepath.Join(artifactDir, "pi-stderr.txt")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 	cmd.Dir = workflowRoot

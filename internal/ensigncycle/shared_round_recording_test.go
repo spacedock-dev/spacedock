@@ -187,7 +187,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	}
 	after := readFile(t, entityPath)
 	for _, line := range []string{
-		"status: implementation",
+		"status: backlog",
 		"workflow-state: preserve-me",
 		"gate-state: preserve-me",
 		"application-state: preserve-me",
@@ -196,7 +196,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 			t.Fatalf("round recorder did not preserve exact lifecycle line %q", line)
 		}
 	}
-	if err := assertRejectionRecordedRound(root, entityPath, "implementation", true); err != nil {
+	if err := assertRejectionRecordedRound(root, entityPath, "backlog", true); err != nil {
 		t.Fatalf("recorded-round durable oracle: %v", err)
 	}
 	if err := assertRejectionRecordedRound(root, entityPath, "implementation", false); err == nil {

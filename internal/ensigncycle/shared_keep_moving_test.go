@@ -252,11 +252,11 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
 			// codex 0.142.5 dispatches via the standing loop (no spawn_agent): the dispatched
 			// worker advances the entity to `done`, so a `status --set <e> status=done` is the
 			// per-entity dispatch evidence.
-			if kmAdvancesToStatus(c, kmApprovedGate, "done") || kmMergeGuardTerminalizes(c, kmApprovedGate) {
+			if kmAdvancesToStatus(c, kmApprovedGate, "done") {
 				tr.approvedDispatched = true
 			}
 			for _, e := range independent {
-				if kmAdvancesToStatus(c, e, "done") || kmMergeGuardTerminalizes(c, e) {
+				if kmAdvancesToStatus(c, e, "done") {
 					tr.independentDispatched[e] = true
 				}
 			}
