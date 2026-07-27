@@ -1,7 +1,7 @@
 ---
 id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
-status: validation
+status: implementation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
 completed:
@@ -1686,6 +1686,32 @@ including its two leading/trailing spaces and non-ASCII code points.
   cumulative Roborev review before any push. CI is permitted only after the relevant
   local live paths are green. Any semantic expansion or second failed correction
   returns to the Commander without another automatic round.
+
+- Cycle 22: REJECTED — validation cycle 28 plus Captain agent-experience reset;
+  surface 43 files and 5,366 changed LOC vs estimate 26 files and 1,904 changed
+  LOC (282%); AC unchanged at the value boundary.
+
+  Make s4 the acceptance owner for the assembled current-v1 gate journey:
+  `gate prepare` → `/subspace:r gate <room>` → `gate record --room` → `gate
+  consume`. Spacedock still owns preparation, recording, and application; rq/Subspace
+  still owns room presentation and source materialization. Optimize for the First
+  Officer operating that journey, not compatibility with any prototype API or storage
+  shape.
+
+  Preserve the full canonical Briefing digest in request, manifest, and recorder
+  verification, but remove the requirement that captain-facing prose reproduce the
+  full digest exactly; a compact snapshot identity is legible and the tool remains the
+  full-digest authority. Remove the fresh `gate --help` flag-scraping preflight; the
+  version-gated bundle and the real `gate prepare` call are the cheaper falsifiable
+  capability check. Delete prototype compatibility branches and fixtures unless the
+  behavior is an intentional current-v1 capability.
+
+  Before another CI trigger, prove one coherent local binary-and-skill bundle through
+  the complete chat path and the room-only Subspace path. The FO must author judgment
+  and select files, but must not author JSON, ids, digests, room coordinates, provider
+  output paths, or reconstructed authority. Any missing `/subspace:r gate <room>`
+  entry is a release dependency failure, not a reason to restore the verbose provider
+  argument vector or add a compatibility wrapper.
 
 ## Stage Report: ideation
 
