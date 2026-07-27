@@ -1,0 +1,42 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:cn:ideation:attempt-2:revision-1",
+  "question": "With both revisions folded in — a session identifier on the Runtime line, and the outside sandbox strings reduced to session-state reporting — is the design ready to enter implementation?",
+  "summary": "Approve entering implementation. Both captain annotations are folded, and each turned up something the previous revision had wrong.\n\nSession identifier: `Runtime: claude (CLAUDECODE, session afd74765)`. Checking rather than assuming caught that `CLAUDECODE` is the literal `1` — a boolean detection flag, not an identity. Claude's session identity lives in a separate variable, `CLAUDE_CODE_SESSION_ID`, already read by this repo at `internal/claudeteam/reconcile.go:50`. Detection marker and identity marker are two different columns, so `Detect` gains an identity field per host rather than reusing the marker value. Had this been assumed, the line would have rendered `session 1`.\n\nOutside sandbox strings: three become two — `not sandboxed (safehouse available)` and `not sandboxed (safehouse not installed)`. The captain's point was that `not wrapped` is constant outside a session and so carries no information while reading as though it does. The deeper fault it exposed: all three old strings answered *would a launch from here be wrapped*, a launch question, in a line whose entire purpose after this task is to report the running session — the same category error as the original defect, surviving into its fix. The `.safehouse` profile is dropped from this line because a session already running is not about to launch itself. The launch question moves to the surface that actually asks it, and the `brew install` hint moves with it, so it can never fire at a session already inside the sandbox.\n\nUnchanged and not reopened: the six acceptance criteria, two of them value-measuring; the three-surface reach so `status --boot` stops recording a false posture; the deletion of the per-host block and `host_runtime.go`; the `requires-contract` deletion, exercised against both binding gates and reverted clean; the `contract 3` tombstone kept below line 1 and in-session only; and the spike record. Expected surface remains net negative.\n\nDecision asked: approve to enter implementation, revise again, or hold for a named prerequisite.",
+  "artifacts": [
+    {
+      "id": "artifact:version-output-design",
+      "uri": "design.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:74628c92e0b2d951f6d255f5bb1867015375518d94cbe9619e01cd1559b362bc"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Enter implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design again",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:ideation"
+        }
+      ]
+    }
+  ]
+}
