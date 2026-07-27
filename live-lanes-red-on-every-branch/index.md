@@ -21,7 +21,33 @@ The consequence is not that one PR is blocked. It is that **no merge since 2026-
 
 The sharpest cost: the `durable-decisions` sprint's deliverable *is* recorded gate conduct, and the lanes that grade gate conduct have been dark for the entire period it was being built.
 
-## The signature says nondeterminism, not regression
+## The cause: PR #565 merged live scenarios that had never been green
+
+Established 2026-07-27 by tracing the failing tests' provenance, after the captain observed that four lanes failing simultaneously is far likelier to share one cause than to be four independent flakes. It is not a pre-existing flake and not a gradual drift.
+
+All three failing test files belong to `first-officer-gate-command-lifecycle` (6y, PR #565):
+
+- `internal/ensigncycle/recorded_gate_lifecycle_test.go` — added by `c9633279`, 2026-07-23, titled **"WIP counterexample: FO recorded gate lifecycle"**.
+- `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go` — added by the same commit.
+- `internal/ensigncycle/live_gate_stop_test.go` — pre-existing, but last substantially rewritten by `9577380d`, 2026-07-25, "feat: complete first-officer gate lifecycle".
+
+The timeline is exact:
+
+| when | what | live lanes |
+| --- | --- | --- |
+| 2026-07-23 | `c9633279` adds the recorded-gate live scenarios on 6y's branch | — |
+| 2026-07-24 13:29 | last green run `30097092217`, on #564's branch, which does not carry them | GREEN |
+| 2026-07-24 17:15 | first red run, on 6y's branch, where they now execute | RED |
+| 2026-07-25 22:22 | 6y merges as `deac7f8a` with `pi-live` at FAILURE and three lanes never run | RED |
+| since | every branch rebasing onto main inherits them | RED |
+
+#564 is exonerated: `git diff 642ca090..cc51e518` is empty, so the merge commit's tree is identical to the tree that ran green.
+
+**These scenarios have never passed.** They entered as a WIP counterexample — a test written to demonstrate a failure — and no run of them has been green on any branch. So the correct question is not "what regressed" but "what were they written to expect, and was that expectation ever met."
+
+That reframes the fix. Repairing FO conduct to satisfy them assumes the scenarios encode correct expectations; they may instead encode a contract behaviour that was never implemented, or a grader written against an intended design rather than a shipped one. Ideation must establish which before changing either side.
+
+## The rotation, correctly interpreted
 
 The failing sub-assertion **rotates between runs** on the same code. Observed variants across runs and baselines:
 
@@ -32,7 +58,7 @@ The failing sub-assertion **rotates between runs** on the same code. Observed va
 - `codex_live_runner_test.go:41: rejection trajectory left 1 implementation reports, want at least 2`
 - `codex_live_runner_test.go:41: the FO advanced the approved entity but did not dispatch its next stage`
 
-A deterministic regression hits the same assertion every run. Rotation across the same test functions is the signature of nondeterministic live-conduct grading. Note also that `claude_live_failure_diagnostic_impl_test.go` is diagnostic-only — its own ABOUTME says it "reports it only after another failure" and is "silent on success" — so its wrong-root and broad-search lines annotate whichever primary failure occurred and must not be chased as failures themselves.
+A deterministic regression hits the same assertion every run. Rotation across the same test functions is what a set of never-passing new scenarios looks like: several independent expectations are unmet, and which one trips first varies with live-session timing. It is not evidence of a pre-existing flake. Note also that `claude_live_failure_diagnostic_impl_test.go` is diagnostic-only — its own ABOUTME says it "reports it only after another failure" and is "silent on success" — so its wrong-root and broad-search lines annotate whichever primary failure occurred and must not be chased as failures themselves.
 
 ## Recurring core, from a local reproduction
 
@@ -60,7 +86,7 @@ Applied to #571 that produced: same lanes, same test functions, byte-identical l
 
 ## Acceptance criteria
 
-Ideation fills these in. The end state is a green live signal whose greenness is trustworthy, with at least one criterion measuring against something that can move the wrong way — a count of consecutive green runs across branches, not the presence of a fix. Ideation must also decide whether the graders or FO conduct drifted, since repairing the wrong side would produce a green lane that grades nothing.
+Ideation fills these in. The end state is a green live signal whose greenness is trustworthy, with at least one criterion measuring against something that can move the wrong way — a count of consecutive green runs across branches, not the presence of a fix. Because these scenarios have never passed, ideation must first establish what each was written to expect and whether that expectation was ever met, then decide per assertion whether the grader or the First Officer conduct is wrong. Repairing the wrong side yields a green lane that grades nothing, and assuming the scenarios are correct because they are committed is the specific error to avoid.
 
 ## Test plan
 
