@@ -3391,3 +3391,31 @@ REJECTED: the cycle-27 observer-log correction works and both raw command trajec
 hold the no-authority boundary, but the required Opus live proof fails AC-4 by abbreviating
 the authoritative digest. This is a presentation-mechanism defect, not a prepare retry or
 committed-source regression.
+
+## Stage Report: implementation (first disposable chat E2E)
+
+- DONE: Exercise the current Spacedock-owned chat gate lifecycle end to end.
+  `gate prepare` emitted the room, Briefing identity, digest, and `state=open`; the room
+  contained exactly `request.json` and `gate-briefing.json`, including Git-root pins.
+- DONE: Record and consume one explicit-workflow chat approval.
+  Explicit-workflow boot succeeded, chat recording closed one approve Resolution,
+  and consume advanced `review` to `done`.
+- DONE: Verify one-use consume behavior.
+  Repeat consume exited 1 and left the entity bytes unchanged.
+- DONE: Record observed journey friction without changing product behavior.
+  Root boot required explicit `--workflow-dir` for the non-discovered fixture; inline
+  workflow state commits were no-ops, so the binding, Resolution, and consumed state
+  each required a manual path-scoped Git commit.
+- FAILED: Exercise the required room-only Subspace presentation seam.
+  Installed Subspace `0.10.0-beta.6` lacks `/subspace:r gate <room>`.
+- SKIPPED: Correct candidate help and prototype compatibility surfaces.
+  Top-level versus per-subcommand help is inconsistent; `adoption-note`,
+  `raw-file-pin`, and non-round `gate record --briefing` remain deferred cleanup
+  candidates with no removal authorized until journey evidence justifies it.
+
+### Summary
+
+The first disposable chat E2E proves prepare, explicit-workflow boot, semantic
+approval, consume, and byte-clean repeat-consume behavior. The missing room-only
+Subspace entry point and the observed boot, commit, and help friction remain explicit;
+this note authorizes no product cleanup.
