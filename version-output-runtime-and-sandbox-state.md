@@ -41,8 +41,8 @@ gates:
           attempts:
             - id: gate-attempt:cn-ideation-1
               briefing:
-                id: briefing:docs-dev:cn:ideation:attempt-1:revision-1
-                digest: sha256:606b7182bd94a95ca085488cef51f2206a7f76e2e725a9ac94ca45ff2e9f2246
+                id: briefing:docs-dev:cn:ideation:attempt-1:revision-2
+                digest: sha256:784787fef86b6b4caf18557c61dddc839dfe37209bab72d0d725cdd90763e9ac
                 digest-domain: canonical-bytes
                 room-ref: ./version-output-runtime-and-sandbox-state/review/ideation/briefing-1
 ---
