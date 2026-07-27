@@ -34,9 +34,25 @@ Note the collapsed `git-root:/` in the attempted path — the scheme survives in
 - The failure is per-artifact and occurs during resolution, before any presentation. The reviewer sees nothing; the entry exits 2 and retains a recoverable provider package.
 - Nothing was recorded and no entity state was written, so the failure is safe — but it is safe by fail-closed resolution, not by design intent.
 
-## Why the obvious workaround is a real decision, not a fix
+## A working fix, demonstrated end to end (2026-07-27)
 
-Swapping the artifact URI to a filesystem path makes the float work immediately, and trades away exactly what the recorder depends on: `git-root://state/<sha>/<path>` pins an immutable commit, so a Briefing stays byte-verifiable after the entity moves or archives. A working-tree path is neither immutable nor valid from another checkout. Choosing between materialising git-root sources for the provider, teaching the provider the scheme, or changing what the recorder pins is `rq`'s decision — this entity only supplies the mechanism it should be designed against.
+Materialisation resolves this without giving up provenance, and it has now been run twice through a real review rather than proposed. It is what `rq`'s title already says — *materialize* git-root sources for provider presentation — so this section supplies the recipe, not a competing direction.
+
+The recipe, and it is three steps:
+
+1. Freeze a copy of the git-root source into the gate room beside `briefing.json` (`review/<stage>/briefing-<n>/design.md`).
+2. Point the artifact `uri` at that copy as a **plain relative filename** — `design.md`, not a `git-root://` URI. The provider joins relative paths onto the briefing's own directory, which is exactly what broke the original attempt and exactly what makes this work.
+3. Keep `rev` as the `sha256` of the frozen copy. The Briefing stays digest-pinned.
+
+Verified twice on `subspace-tui 0.10.0-beta.6` via the `review-zellij` entry, same terminal, same entry, only the artifact changed: the git-root form exits 2 at resolution before presentation, the materialised form renders and returns a validated Result. Both round trips produced captain-rendered resolutions against `gate:docs-dev:cn:ideation` — a `revise` carrying two annotations, then an `approve` — recorded through `gate record --decision --actor person:captain`.
+
+**Provenance is preserved, not traded away.** The earlier framing in this entity treated a filesystem path as the only alternative and called it a real loss: a working-tree path is neither immutable nor valid from another checkout. A frozen room copy is neither of those things. It is committed with the entity's own state commit, digest-pinned in the Briefing, and travels with the room through archive — the same durability the `git-root://` pin was reaching for, reached by copy rather than by reference. The cost is duplicated bytes in the room, which is the retention `9t` (minimum recoverable gate-room retention) exists to bound.
+
+**What this does NOT fix, and must not be mistaken for fixed.** The provider still writes its Result into its own allocated scratch package, not into the gate room, so `gate record --room` never sees it. Recording still goes through the chat decision form. That is a separate gap (`krd`), untouched by materialisation.
+
+## The remaining decision, which is still `rq`'s
+
+Materialisation is proven to work; whether it is the *right* answer is not this entity's call. The alternatives remain teaching the provider the `git-root://` scheme, or changing what the recorder pins. Materialisation trades room bytes and a copy step for zero provider change; a scheme resolver trades provider work for no duplication. This entity supplies the mechanism, the failure diagnosis, and a demonstrated working recipe — `rq` chooses.
 
 ## Out of scope
 
