@@ -1,0 +1,42 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:cn:validation:attempt-1:revision-1",
+  "question": "Validation recommends PASSED with three deferred risks and no material finding. Approve to terminal, send it back to implementation, or hold?",
+  "summary": "Recommend approve. Validation reproduced the implementation's claims rather than accepting them, on a throwaway clone and never the implementation worktree.\n\nThe end value is measured, not asserted. The adversarial revert to availability-only semantics turns the inside-and-safehouse-absent row red across all three surface tests plus both renderer tables. A real pre-change binary wrote four PATH-shim witness entries where the post-change binary created no file at all. And the durable-evidence flip was re-observed live from this sandboxed session: `status --boot --json` moves from `\"sandbox\":\"unavailable (safehouse not on PATH)\"` to `\"inside (agent-safehouse)\"` — the First Officer's own boot record ceasing to carry a false posture, which is the reason this task exists.\n\nAll six acceptance criteria carry reproduced evidence and every non-negotiable boundary holds under live exercise: line 1 is exactly `spacedock <version>` in all five marker cases; ambiguity reports at exit 0 while two same-host Pi markers still resolve Pi; `contract 3` keeps its value and prints below the sandbox line in-session only; both manifests retain `version: 0.26.0` with `requires-contract` gone and both binding gates green; `git diff --stat -- skills/` reports no entries. The detached adversarial audit ran on a fresh clone and came back clean.\n\nTwo judgement calls the gate should see. Both deliberate deviations from the body were accepted as moving TOWARD the approved design — notably the documentation correction, because the body's own diff contradicted AC-3's pinned marker order and would have shipped docs failing AC-6's read-back. And the surface overrun is classified DEFERRED, an estimate miss rather than material scope creep: production Go is net -8 across only approved mechanisms, with the overrun in comment and test density. Validation corrected the implementation's framing here — it is not entirely test volume; production also ran roughly 75 lines over its own estimate.\n\nThree deferred risks are recorded with explicit promotion conditions, none blocking: `contract 3` is absent outside a detected session, so a host added without a marker row would let an integer-era skill silently false-green; the Claude and Codex launch banners read `os.Getenv` instead of the threaded env seam, identical in production today but unpinnable through `cli.Run`; and `ShortID` truncates bytes rather than runes, which matters only if a host exposes a non-ASCII session id. One polish item: the implementation report names the falsifying row incorrectly — the claim is true, the row name is not.\n\nApproving sends this to terminal and the merge ceremony. Sending it back routes to implementation with your findings.",
+  "artifacts": [
+    {
+      "id": "artifact:version-output-validated",
+      "uri": "design.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c3a9be197f7898488e1e53bd0fc4743952dd4781d142cfcf4af7e62b1e875894"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:validation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Accept PASSED — advance to done and merge",
+          "to": "stage:done"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Send back to implementation with findings",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}
