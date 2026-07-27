@@ -43,9 +43,19 @@ The timeline is exact:
 
 #564 is exonerated: `git diff 642ca090..cc51e518` is empty, so the merge commit's tree is identical to the tree that ran green.
 
-**These scenarios have never passed.** They entered as a WIP counterexample — a test written to demonstrate a failure — and no run of them has been green on any branch. So the correct question is not "what regressed" but "what were they written to expect, and was that expectation ever met."
+## Two different failures, needing opposite treatments
 
-That reframes the fix. Repairing FO conduct to satisfy them assumes the scenarios encode correct expectations; they may instead encode a contract behaviour that was never implemented, or a grader written against an intended design rather than a shipped one. Ideation must establish which before changing either side.
+An earlier version of this entity said "these scenarios have never passed". That is true of one half and false of the other, and the distinction decides the fix. The scenario table at the last green commit settles it:
+
+`git show 642ca090:internal/ensigncycle/shared_scenarios_meta_test.go` lists **nine** scenarios and does **not** contain `recorded-gate-lifecycle`. Today's table lists ten, with it inserted. So the green run of 2026-07-24T13:29 exercised the other nine and passed them all.
+
+**Half one — a never-green newcomer.** `recorded-gate-lifecycle` and its Pi variant are net-new in 6y; the table itself records "net-new; no Python ancestor". No run of them has been green on any branch. For these the question is not "what regressed" but "what were they written to expect, and was that expectation ever met". Repairing FO conduct until they pass assumes they encode correct expectations; they entered as a WIP counterexample and may instead encode an intended design rather than a shipped one. These need a decision — turn them green, or withdraw them until the behaviour they grade is agreed — not a fix by default.
+
+**Half two — a genuine regression, and the more serious half.** `rejection-flow` and the gate-stop assertions were in the nine that passed on 2026-07-24T13:29, and fail now. 6y changed First Officer contract prose in the same PR: `first-officer-shared-core.md`, `claude-first-officer-runtime.md`, `present-gate/SKILL.md`, and a new `fo-gate-lifecycle` skill. Contract prose is exactly what live scenarios grade, so a conduct regression is the expected consequence rather than a surprise. These must be fixed forward and must NOT be quarantined — quarantining them would delete the evidence of a real regression in shipped First Officer behaviour.
+
+The practical first step is therefore to split the failing assertions against the `642ca090` baseline: anything that passed there and fails now is a regression 6y caused; anything absent there is a newcomer awaiting a decision. That split is cheap, and doing it before touching either side prevents the two most likely mistakes — quarantining a regression, and fixing conduct toward an unagreed spec.
+
+Note that the parity guard in `shared_scenarios_meta_test.go` asserts the exact scenario list with `reflect.DeepEqual`, so a scenario cannot be silently dropped. Any withdrawal is deliberate and visible by construction, which is the correct design and should be preserved.
 
 ## The rotation, correctly interpreted
 
