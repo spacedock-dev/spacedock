@@ -674,6 +674,41 @@ func withRecordedGateEnv(env []string, key, value string) []string {
 	return append(out, prefix+value)
 }
 
+func TestSpacedockShimShellEnvOverridesLauncherPin(t *testing.T) {
+	dir, env := t.TempDir(), []string{"SPACEDOCK_BIN=/stale/spacedock"}
+	env = withSpacedockShimShellEnv(t, env, dir)
+	env = withRecordedGateEnv(env, "SPACEDOCK_BIN", "/real/spacedock")
+	for _, shell := range []string{"/bin/bash", "zsh"} {
+		t.Run(filepath.Base(shell), func(t *testing.T) {
+			if shell == "zsh" {
+				var err error
+				if shell, err = exec.LookPath("zsh"); err != nil {
+					t.Skip("zsh unavailable")
+				}
+			}
+			cmd := exec.Command(shell, "-c", `printf %s "$SPACEDOCK_BIN"`)
+			cmd.Env = env
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("%s startup: %v\n%s", shell, err, output)
+			}
+			if value, want := string(output), filepath.Join(dir, "spacedock"); value != want {
+				t.Fatalf("%s observed SPACEDOCK_BIN=%q, want shim %q", shell, value, want)
+			}
+		})
+	}
+}
+
+func withSpacedockShimShellEnv(t *testing.T, env []string, shimDir string) []string {
+	t.Helper()
+	shellEnvDir := t.TempDir()
+	bashEnv := filepath.Join(shellEnvDir, "recorded-gate-env.sh")
+	writeFile(t, bashEnv, "export SPACEDOCK_BIN="+filepath.Join(shimDir, "spacedock")+"\n")
+	writeFile(t, filepath.Join(shellEnvDir, ".zshenv"), readFile(t, bashEnv))
+	env = withRecordedGateEnv(env, "BASH_ENV", bashEnv)
+	return withRecordedGateEnv(env, "ZDOTDIR", shellEnvDir)
+}
+
 func recordedGateEventsFromCommandLog(log string) []string {
 	var events []string
 	started := false

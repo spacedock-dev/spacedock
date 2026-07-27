@@ -273,6 +273,10 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
 	runner = runner.withStubPATH(shimDir)
+	if copied, ok := runner.(claudeLiveRunner); ok {
+		copied.env = withSpacedockShimShellEnv(t, copied.env, shimDir)
+		runner = copied
+	}
 
 	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
 	if _, err := os.Stat(filepath.Join(fixture.stateRoot, "_archive", "recorded-gate-task", "index.md")); !os.IsNotExist(err) {
