@@ -194,6 +194,15 @@ accepted. The retained batched trace qualifies through the existing
 `dispatchEvidence.stageReport` assignments after build, wait, and named report;
 merge output is terminal corroboration, never standalone dispatch proof.
 
+In `internal/ensigncycle/shared_keep_moving_negative_test.go`, convert the
+existing `mergeGuardSurface` at lines 252–260 and its preceding positive
+comment into the promised host-neutral unphased negative: keep its literal
+merge commands and otherwise pass-shaped final message, but require
+`assertCodexKeepMoving` to fail without dispatch build, wait, and durable
+reports. The adjacent `doneSurface` positive remains unchanged, so the
+standing-worker `status=done` dialect is still protected while raw merge
+syntax loses positive credit.
+
 In `internal/ensigncycle/codex_dispatch_evidence_test.go`, allow an exact
 successful `finalized: <entity> -> done` line from a batched merge-guard command
 to attach to that entity only after its state machine has observed successful
@@ -213,21 +222,21 @@ an entity, that entity's failure is conduct.
 
 ## Implementation surface and boundary
 
-Exactly these eleven existing files are planned:
+Exactly these twelve existing files are planned:
 
 | failure | files | hand-written estimate |
 | --- | --- | ---: |
 | gate oracle | `internal/ensigncycle/gate_assert_impl_test.go`, `internal/ensigncycle/gate_assert_test.go`, `internal/ensigncycle/shared_scenarios_negative_test.go` | +46/-18 |
 | Opus harness | `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +22/-4 |
 | rejection fixture | `internal/ensigncycle/shared_fixtures_test.go`, shared negative file above | +9/-2 |
-| keep-moving oracle | `internal/ensigncycle/shared_keep_moving_test.go`, `internal/ensigncycle/codex_dispatch_evidence_test.go`, `internal/ensigncycle/codex_dispatch_evidence_regression_test.go` | +66/-14 |
+| keep-moving oracle | `internal/ensigncycle/shared_keep_moving_test.go`, `internal/ensigncycle/shared_keep_moving_negative_test.go`, `internal/ensigncycle/codex_dispatch_evidence_test.go`, `internal/ensigncycle/codex_dispatch_evidence_regression_test.go` | +73/-21 |
 | Pi conduct | `skills/first-officer/references/pi-first-officer-runtime.md`, `internal/contractlint/fo_function_reference_invariant_test.go` | +14/-1 |
 | operator docs | `docs/runtime-live-ci.md` | +3/-3 |
 
-Expected hand-written total is +160/-42, 202 changed lines across 11 existing
+Expected hand-written total is +167/-49, 216 changed lines across 12 existing
 files. Generated/golden impact is exactly 0 files and 0 lines; live artifacts
-remain uncommitted. Implementation must stop for re-approval above 13 files or
-273 changed hand-written lines (two files or 35 percent above the estimate),
+remain uncommitted. Implementation must stop for re-approval above 14 files or
+292 changed hand-written lines (two files or 35 percent above the estimate),
 or if any production Go package becomes necessary.
 
 No scenario is withdrawn, quarantined, skipped, or weakened. There is no
@@ -388,3 +397,13 @@ nine failure classifications unchanged. The trustworthy-green boundary still
 forbids scenario withdrawal, prompt coaching, quarantine, compatibility
 layers, a new harness, CI-led iteration, product edits during ideation, and any
 live-host or CI run before implementation earns complete local proof.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Add `internal/ensigncycle/shared_keep_moving_negative_test.go`, whose existing `mergeGuardSurface` positive at lines 252-260 must be deleted or converted to the promised host-neutral unphased negative so raw literal `merge guard <entity>` cannot remain positive proof and the suite still passes; recalculate exact expected hand-written LOC and the +2-file/35% stop from a 12-file baseline.
+  The existing surface becomes a seven-line assertion inversion while `doneSurface` stays positive; the exact plan is 12 files at +167/-49 LOC, with re-approval above 14 files or 292 changed lines.
+
+### Summary
+
+Cycle 3 closes the remaining test-surface omission and leaves every cycle-2
+ruling and boundary unchanged. No product, live-host, or CI work was performed.
