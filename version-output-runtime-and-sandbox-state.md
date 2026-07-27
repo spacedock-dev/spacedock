@@ -45,6 +45,18 @@ gates:
                 digest: sha256:784787fef86b6b4caf18557c61dddc839dfe37209bab72d0d725cdd90763e9ac
                 digest-domain: canonical-bytes
                 room-ref: ./version-output-runtime-and-sandbox-state/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:cn:ideation:1
+                briefing: briefing:docs-dev:cn:ideation:attempt-1:revision-2
+                by: person:captain
+                at: "2026-07-27T08:53:23.476676Z"
+                decision: revise
+                reason: 'Captain resolved the float in the review TUI (resolution:captain-1785142370707298000) with two annotations, direction accepted. 1: the Runtime line should also carry the session identifier, not only the host and the marker that proved it. 2: the outside-a-session sandbox strings are wrong in shape — outside a session it is never wrapped, so ''not wrapped'' is a constant carrying no information; report availability instead. Design direction and the rest of the six acceptance criteria stand.'
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 ---
 
 Make the first command every First Officer session runs describe the session it is actually in: the detected runtime, and whether this session is sandboxed.
