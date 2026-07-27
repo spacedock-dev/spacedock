@@ -63,6 +63,19 @@ gates:
                 digest: sha256:8d8348fe9e1f1083c56532dd3d4d96286bd649d6c36c02205a48297276b02650
                 digest-domain: canonical-bytes
                 room-ref: ./version-output-runtime-and-sandbox-state/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:cn:ideation:2
+                briefing: briefing:docs-dev:cn:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-07-27T09:06:27.862968Z"
+                decision: approve
+                reason: 'Captain resolved the float in the review TUI (resolution:captain-1785143163921397000) with approve and no annotations, against briefing attempt-2 revision-1 whose artifact is the frozen room copy at sha256:74628c92. Both prior annotations are folded: the Runtime line carries a session identifier resolved from a per-host identity field rather than the detection marker (checking caught that CLAUDECODE is the literal 1, so the assumed form would have rendered ''session 1''), and the outside sandbox strings reduce to two session-state renders after the launch question moved to the surface that asks it. Six acceptance criteria stand, two value-measuring, each with a falsifier; three mechanisms were exercised rather than assumed, including performing the requires-contract deletion against both binding gates and reverting clean; expected surface is net negative at roughly -60 lines.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Make the first command every First Officer session runs describe the session it is actually in: the detected runtime, and whether this session is sandboxed.
