@@ -18,7 +18,6 @@ gates:
                 id: briefing:kd7877nnbd19d528xnpwwaj4:backlog:attempt-1:revision-1
                 digest: sha256:c22348f0cd78c4310e640953f1574d3c66a63fd1c5cad6669c5960234e767c6e
                 digest-domain: canonical-bytes
-                request-digest: sha256:cd3dab4ce2732d142d02b952b8f087a60c62ea13935e3ff24a000fc659b288eb
                 room-ref: ./review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -41,7 +40,6 @@ gates:
                 id: briefing:kd7877nnbd19d528xnpwwaj4:ideation:attempt-1:revision-1
                 digest: sha256:d372d2b50317aea3e30be46834f4b71d0cc7a8c4198734fbcf4221937b436dbc
                 digest-domain: canonical-bytes
-                request-digest: sha256:5f3eb4398449071d7fb058d25ff09536fd2ebb32d13d6a97ce76719d6ccf57f4
                 room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
