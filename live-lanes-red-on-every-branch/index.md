@@ -45,6 +45,19 @@ gates:
                 digest: sha256:7b0cf07c49f5286b085dbbd884f45aafb247dddd7a2075d7344010a640b7aad2
                 digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:se0v37bt7mhsrmhta1nyns0r:ideation:1
+                briefing: briefing:se0v37bt7mhsrmhta1nyns0r:ideation:attempt-1:revision-2
+                by: agent:first-officer
+                at: "2026-07-27T17:44:37.747284Z"
+                decision: approve
+                reason: 'Sprint conn exercised after independent staff approval: nine failures are evidence-classified, the 12-file recovery preserves every journey, all five ACs have falsifiable same-tip local proof, and no material finding remains.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Restore a trustworthy live signal without deleting the behavior the signal was
