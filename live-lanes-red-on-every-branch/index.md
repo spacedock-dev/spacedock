@@ -38,93 +38,267 @@ gates:
                 blockers: []
 ---
 
-Restore a trustworthy live signal. The lanes that grade First Officer conduct end-to-end have been red continuously for three days across unrelated branches, so every merge in that window shipped without the verification those lanes exist to provide.
+Restore a trustworthy live signal without deleting the behavior the signal was
+created to protect. The latest retained run, `30257280066`, supplies enough
+transcript, command-log, entity, and git evidence to rule every current red as
+conduct, oracle, or harness before implementation starts.
 
-## The observation
+## Binding authority and corrected baseline
 
-Last green `Runtime Live E2E` run: **30097092217, 2026-07-24T13:29**. Every run since has failed — 13 of the last 14, the fourteenth having no conclusion — across at least five unrelated branches: `prepare-provider-neutral-gate-room`, `codex-wait-agent-steering-semantics`, `sync-merge-guard-archive-state`, `recorded-gate-lifecycle-*`, and `version-output-runtime-and-sandbox-state`. Offline, build and both install jobs are green throughout, so this is specific to the live lanes.
+The archived 6y record, `first-officer-gate-command-lifecycle`, is the authority
+for the recorded-gate journey. Its approved contract requires one semantic
+root-assistant gate review after the selected Briefing commit and before the
+decision, an open bound stop when no authority exists, one consumed decision,
+one successor dispatch, and one later durable effect on every supported host.
+The recorded-gate scenario is therefore an approved cross-host obligation, not
+a candidate for withdrawal. Cycle 37's Pi review-text deferral conflicts with
+that contract and is superseded here.
 
-The consequence is not that one PR is blocked. It is that **no merge since 2026-07-24 has a live signal at all**. PR #565 merged with `pi-live` at FAILURE, and the merge commit `deac7f8a` carried a single check-run. A pre-cut review of that commit already recorded "the audited commit has no live-lane evidence" as a release prerequisite; this entity is the cause behind that symptom.
+Run `30097092217` remains the last wholly green Runtime Live E2E run, but it is
+not proof that today's gate-guardrail oracle was green: `live_gate_stop_test.go`
+was substantially rewritten by `9577380d` and strengthened by `75b4aaca` after
+that run. It also predates the recorded-gate scenario. Baseline status can
+attribute provenance; only the current grader history and retained artifacts
+can classify the current failures.
 
-The sharpest cost: the `durable-decisions` sprint's deliverable *is* recorded gate conduct, and the lanes that grade gate conduct have been dark for the entire period it was being built.
+Run `30257280066` is the comparison point:
 
-## The cause: PR #565 merged live scenarios that had never been green
-
-Established 2026-07-27 by tracing the failing tests' provenance, after the captain observed that four lanes failing simultaneously is far likelier to share one cause than to be four independent flakes. It is not a pre-existing flake and not a gradual drift.
-
-All three failing test files belong to `first-officer-gate-command-lifecycle` (6y, PR #565):
-
-- `internal/ensigncycle/recorded_gate_lifecycle_test.go` — added by `c9633279`, 2026-07-23, titled **"WIP counterexample: FO recorded gate lifecycle"**.
-- `internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go` — added by the same commit.
-- `internal/ensigncycle/live_gate_stop_test.go` — pre-existing, but last substantially rewritten by `9577380d`, 2026-07-25, "feat: complete first-officer gate lifecycle".
-
-The timeline is exact:
-
-| when | what | live lanes |
+| lane | failing journey | ruling |
 | --- | --- | --- |
-| 2026-07-23 | `c9633279` adds the recorded-gate live scenarios on 6y's branch | — |
-| 2026-07-24 13:29 | last green run `30097092217`, on #564's branch, which does not carry them | GREEN |
-| 2026-07-24 17:15 | first red run, on 6y's branch, where they now execute | RED |
-| 2026-07-25 22:22 | 6y merges as `deac7f8a` with `pi-live` at FAILURE and three lanes never run | RED |
-| since | every branch rebasing onto main inherits them | RED |
+| Claude Sonnet | default gate-stop | oracle |
+| Claude Sonnet | gate-guardrail | oracle |
+| Claude Opus | default gate-stop | oracle |
+| Claude Opus | gate-guardrail | oracle |
+| Claude Opus | recorded-gate-lifecycle | harness |
+| Codex | gate-guardrail | oracle |
+| Codex | rejection-flow | harness fixture |
+| Codex | keep-moving-posture | oracle |
+| Pi | recorded-gate-lifecycle | conduct |
 
-#564 is exonerated: `git diff 642ca090..cc51e518` is empty, so the merge commit's tree is identical to the tree that ran green.
+## Failure rulings and bounded repairs
 
-## Two different failures, needing opposite treatments
+### Gate guardrail: oracle
 
-An earlier version of this entity said "these scenarios have never passed". That is true of one half and false of the other, and the distinction decides the fix. The scenario table at the last green commit settles it:
+Evidence: the Claude default and shared journeys and the Codex shared journey
+committed the expected Briefing id and digest and left the selected attempt
+unresolved. Their shared grader nevertheless requires the literal YAML
+fragment `state: open`. Production `gates.Attempt` has no `state` field;
+`gates.Read` represents open as `Resolution == nil && Application == nil`, and
+`internal/gates/gates_test.go` rejects `attempt.state` as an unknown field. The
+deterministic fixture passed only because it injected state that the real CLI
+cannot serialize.
 
-`git show 642ca090:internal/ensigncycle/shared_scenarios_meta_test.go` lists **nine** scenarios and does **not** contain `recorded-gate-lifecycle`. Today's table lists ten, with it inserted. So the green run of 2026-07-24T13:29 exercised the other nine and passed them all.
+Repair `assertGateHeld` in
+`internal/ensigncycle/gate_assert_impl_test.go` to decode frontmatter with
+YAML `KnownFields` into the production `gates.Document`, call
+`gates.Validate`, and assert the selected attempt, expected Briefing, nil
+resolution, and nil application. Replace the impossible positive fixture and
+retain malformed/wrong-Briefing/resolved/applied counterexamples in
+`internal/ensigncycle/gate_assert_test.go` and
+`internal/ensigncycle/shared_scenarios_negative_test.go`.
 
-**Half one — a never-green newcomer.** `recorded-gate-lifecycle` and its Pi variant are net-new in 6y; the table itself records "net-new; no Python ancestor". No run of them has been green on any branch. For these the question is not "what regressed" but "what were they written to expect, and was that expectation ever met". Repairing FO conduct until they pass assumes they encode correct expectations; they entered as a WIP counterexample and may instead encode an intended design rather than a shipped one. These need a decision — turn them green, or withdraw them until the behaviour they grade is agreed — not a fix by default.
+Falsification: a production parse failure, a missing/wrong Briefing, or any
+resolution/application must remain red. If a host's retained post-state fails
+those structural checks, reclassify that host as conduct; do not broaden the
+oracle.
 
-**Half two — a genuine regression, and the more serious half.** `rejection-flow` and the gate-stop assertions were in the nine that passed on 2026-07-24T13:29, and fail now. 6y changed First Officer contract prose in the same PR: `first-officer-shared-core.md`, `claude-first-officer-runtime.md`, `present-gate/SKILL.md`, and a new `fo-gate-lifecycle` skill. Contract prose is exactly what live scenarios grade, so a conduct regression is the expected consequence rather than a surprise. These must be fixed forward and must NOT be quarantined — quarantining them would delete the evidence of a real regression in shipped First Officer behaviour.
+### Claude Opus recorded gate: harness
 
-The practical first step is therefore to split the failing assertions against the `642ca090` baseline: anything that passed there and fails now is a regression 6y caused; anything absent there is a newcomer awaiting a decision. That split is cheap, and doing it before touching either side prevents the two most likely mistakes — quarantining a regression, and fixing conduct toward an unagreed spec.
+Evidence: the root stream contains a truthful review after bind with entity,
+stage, exact Briefing id/digest, recommendation, and decision ask, and the
+close/consume/successor lifecycle completed. Opus had changed into a nested
+entity directory. The logging shim then ran `git -C .spacedock-state` relative
+to that mutable cwd, emitted `fatal: cannot change to '.spacedock-state'`, and
+omitted the `state-head` marker which authorizes the review extractor to start.
+The extractor discarded a valid review and reported that its facts were
+missing.
 
-Note that the parity guard in `shared_scenarios_meta_test.go` asserts the exact scenario list with `reflect.DeepEqual`, so a scenario cannot be silently dropped. Any withdrawal is deliberate and visible by construction, which is the correct design and should be preserved.
+Repair only `writeRecordedGateLoggingShim` and its controls in
+`internal/ensigncycle/recorded_gate_lifecycle_test.go`: derive the fixture's
+absolute state root from the already-absolute command-log path when writing the
+shim, embed that root, and compute `state-head` there. Retain the root-message,
+successful-commit, and event-order filters.
 
-## The rotation, correctly interpreted
+Falsification: add a nested-cwd successful-commit case that must extract the
+review, plus uncommitted, child/tool-only, and review-before-bind controls that
+must remain red. If an absolute-root trace still contains no qualifying root
+review, reclassify it as conduct.
 
-The failing sub-assertion **rotates between runs** on the same code. Observed variants across runs and baselines:
+### Pi recorded gate: conduct
 
-- `live_gate_stop_test.go:28: open bound entity count for "state: open" is not 1`
-- `live_gate_stop_test.go:28: gated entity is not held at its open validation boundary`
-- `live_gate_stop_test.go:28: gate hold retried after a failed prepare`
-- `claude_live_runner_test.go:130: recorded gate lifecycle graded FAIL: gate review omits its decision facts`
-- `codex_live_runner_test.go:41: rejection trajectory left 1 implementation reports, want at least 2`
-- `codex_live_runner_test.go:41: the FO advanced the approved entity but did not dispatch its next stage`
+Evidence: Pi bound and committed the Briefing and completed the durable
+close/consume/successor lifecycle. Its review appeared only inside a shell
+`cat` tool call/tool-result; the root session has no assistant text block before
+the decision. `present-gate` expressly says child/tool output does not count,
+and archived AC3 applies that root-review obligation to Pi.
 
-A deterministic regression hits the same assertion every run. Rotation across the same test functions is what a set of never-passing new scenarios looks like: several independent expectations are unmet, and which one trips first varies with live-session timing. It is not evidence of a pre-existing flake. Note also that `claude_live_failure_diagnostic_impl_test.go` is diagnostic-only — its own ABOUTME says it "reports it only after another failure" and is "silent on success" — so its wrong-root and broad-search lines annotate whichever primary failure occurred and must not be chased as failures themselves.
+Repair the contradictory final paragraph of
+`skills/first-officer/references/pi-first-officer-runtime.md`: ordinary worker
+proof remains durable-state based, while gate presentation is explicitly a
+root-session assistant text event before the decision mutation. Shell output,
+tool results, child output, and later summaries do not qualify. Pin that
+adapter rule in
+`internal/contractlint/fo_function_reference_invariant_test.go`.
 
-## Recurring core, from a local reproduction
+This remains tool-agnostic: it names the semantic output channel and ordering
+boundary only. It does not prescribe a shell command, exact wording,
+recommendation, decision, or answer; the existing host-neutral gate template
+still owns the facts. The Pi extractor is not weakened.
 
-The failures cluster on First Officer gate-binding conduct rather than on any product output. In a local run the live FO bound `gate:recorded-gate-task:implementation` where the grader expected the `3k-validation-1` attempt; rejection trajectories stop at one implementation report where the grader wants two (original plus cycle-2 rework). Whether the graders drifted from current FO contract behaviour, or FO conduct regressed, or both, is the question ideation must answer — and the two are distinguishable, because the contract and the graders are separately versioned.
+Falsification: the current tool-result-only retained session must stay red,
+while a root assistant text event with the required facts after bind and before
+decision passes. Missing facts, wrong order, child text, and tool-result text
+remain red.
 
-## It reproduces locally, which makes this cheap to work
+### Codex rejection flow: harness fixture
 
-`TestLiveDefaultHeadlessStopsAtGate` fails locally against real sessions on both `52e0c6a6` and its merge-base `50f8d1fb` with a byte-identical assertion (`gated entity is not held at its open validation boundary`), at roughly 200 seconds per run. No CI minutes are needed to iterate.
+Evidence: the fixture says it starts “before first implementation” but seeds
+`status: implementation`. Normal FO routing treats status as the completed
+stage and `status --next` correctly returns validation, so Codex began with the
+reviewer. It subsequently performed the rejection, implementation correction,
+and reviewer rerun correctly, leaving one real implementation report because
+the fixture had skipped the first implementation by construction.
 
-## The attribution technique worth keeping
+Seed `status: backlog` in
+`internal/ensigncycle/shared_fixtures_test.go`, so normal routing dispatches the
+first implementation. Extend the existing fixture-negative control in
+`internal/ensigncycle/shared_scenarios_negative_test.go` to require
+`backlog -> implementation` and zero pre-seeded implementation reports. Keep
+the oracle's two implementation reports, two validations, rejection record,
+correction, and rerun unchanged.
 
-The method that settled PR #571's attribution should be the standard response to a red live lane, because it distinguishes "my change broke it" from "it was already broken" without guessing:
+Falsification: after the seed repair, one report or one validation is a conduct
+failure. A prompt change that talks the FO around invalid seed state does not
+satisfy this repair.
 
-1. Compare against the merge-base's own CI run, plus a second unrelated-branch run.
-2. Run the failing test locally on both the branch commit and the merge-base, and compare the exact assertion text.
-3. Grep the graders for every string the change touched, to test an output-shape hypothesis rather than assume one.
+### Codex keep-moving: oracle
 
-Applied to #571 that produced: same lanes, same test functions, byte-identical local assertion on both commits, and zero grader references to any changed string. Not attributable.
+Evidence: the trace advances the approved entity, builds three dispatches,
+waits, reads three durable implementation reports, and records exact successful
+outputs `finalized: <entity> -> done` for all three entities. The extractor
+requires the literal entity name in the merge-guard command, so it misses the
+valid `for slug ...; merge guard "$slug"` loop despite exact terminal outputs.
 
-## Out of scope
+In `internal/ensigncycle/codex_dispatch_evidence_test.go`, accept an exact
+successful finalization line from a merge-guard command only after that entity
+has crossed the existing dispatch-build and wait phases; then credit its
+durable report/finalization. Add the batched-loop regression and missing-build,
+missing-wait, failed-command, missing-entity, and planted-output controls in
+`internal/ensigncycle/codex_dispatch_evidence_regression_test.go`.
 
-- Fixing any individual PR. #571 was exonerated by this work and needs no change.
-- Widening a feature branch to repair shared CI. The diagnosing worker correctly declined to.
-- The nine-runtime-token and live-CI-diagnostics entities, which are adjacent but narrower.
+Falsification: a finalization-looking string without the entity's prior
+successful build and wait, or from a failed/non-merge command, remains red. If
+the phase-bounded extractor still finds no report for an entity, that entity's
+failure is conduct.
+
+## Implementation surface and boundary
+
+Exactly these ten existing files are planned:
+
+| failure | files | hand-written estimate |
+| --- | --- | ---: |
+| gate oracle | `internal/ensigncycle/gate_assert_impl_test.go`, `internal/ensigncycle/gate_assert_test.go`, `internal/ensigncycle/shared_scenarios_negative_test.go` | +46/-18 |
+| Opus harness | `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +22/-4 |
+| rejection fixture | `internal/ensigncycle/shared_fixtures_test.go`, shared negative file above | +9/-2 |
+| keep-moving oracle | `internal/ensigncycle/codex_dispatch_evidence_test.go`, `internal/ensigncycle/codex_dispatch_evidence_regression_test.go` | +38/-5 |
+| Pi conduct | `skills/first-officer/references/pi-first-officer-runtime.md`, `internal/contractlint/fo_function_reference_invariant_test.go` | +12/-2 |
+| operator docs | `docs/runtime-live-ci.md` | +4/-0 |
+
+Expected hand-written total is +131/-31, 162 changed lines. Generated/golden
+impact is exactly 0 files and 0 lines; live artifacts remain uncommitted.
+Implementation must stop for re-approval above 12 files or 219 changed
+hand-written lines (two files or 35 percent above the estimate), or if any
+production Go package becomes necessary.
+
+No scenario is withdrawn, quarantined, skipped, or weakened. There is no
+compatibility layer, new standing harness, prompt coaching, fixture prompt
+change, or CI trigger. Existing live runners, transcript formats, command log,
+production gate model/validator, and negative-test files are sufficient.
+
+The documentation delta in `docs/runtime-live-ci.md` is one explicit exception
+to “durable state rather than transcript wording”: ordinary Pi front-door
+worker proof remains durable, while recorded-gate proof additionally requires
+the root assistant presentation event. Public site behavior does not change;
+the adapter is being brought into conformance with the already-published gate
+contract.
 
 ## Acceptance criteria
 
-Ideation fills these in. The end state is a green live signal whose greenness is trustworthy, with at least one criterion measuring against something that can move the wrong way — a count of consecutive green runs across branches, not the presence of a fix. Because these scenarios have never passed, ideation must first establish what each was written to expect and whether that expectation was ever met, then decide per assertion whether the grader or the First Officer conduct is wrong. Repairing the wrong side yields a green lane that grades nothing, and assuming the scenarios are correct because they are committed is the specific error to avoid.
+1. At one clean exact tip, eleven focused executions pass: default gate-stop,
+   shared gate, and recorded gate on Sonnet and Opus; gate, recorded gate,
+   rejection, and keep-moving on Codex; recorded gate on Pi. These cover all
+   nine current reds plus the already-green Sonnet/Codex recorded-gate controls.
+   A skip is not a pass.
+2. Every new deterministic positive has a named counterexample: structural
+   closed/wrong gate, nested-cwd uncommitted review, tool-result-only Pi review,
+   pre-completed rejection seed, and unphased/planted keep-moving output all
+   remain red. This prevents a green signal obtained by oracle weakening.
+3. The full registered shared scenario suites pass locally on Sonnet, Opus, and
+   Codex, and Pi front-door plus recorded-gate tests pass locally, with model,
+   exact git tip, command log/session JSONL, entity post-state, and Go JSON
+   retained under distinct local artifact roots.
+4. Recorded-gate still proves one qualifying root review, one consumed
+   decision, one successor dispatch, and one later durable effect on every
+   supported host. Rejection still proves two implementation reports and two
+   validations. Keep-moving still proves advance, dispatch, wait/report, and
+   terminalization for every ready entity.
+5. The measurable release result moves from 0/4 green lane jobs in retained run
+   `30257280066` to 4/4 green jobs in exactly one manually dispatched Runtime
+   Live E2E run at the same locally proven tip. Prerelease remains blocked until
+   that same-tip run is 4/4; CI is confirmation only, never the iteration loop.
 
 ## Test plan
 
-Ideation fills this in. The local reproduction above is the substrate; CI is confirmation, not discovery.
+First run the deterministic counterexample layer:
+
+```bash
+gofmt -w ./cmd ./internal
+git diff --check
+go test ./internal/gates ./internal/contractlint ./internal/ensigncycle -count=1
+go test ./...
+go test ./... -race
+```
+
+Then run the exact focused live commands, retaining each command's `-json`
+output and artifacts. Local auth must be present, and any skip fails AC1:
+
+```bash
+mkdir -p live-artifacts/local-proof
+git rev-parse HEAD > live-artifacts/local-proof/git-tip.txt
+set -o pipefail
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/sonnet-focused" SPACEDOCK_LIVE_MODEL=sonnet go test -json -tags live -count=1 -timeout 40m -run 'TestLiveClaudeSharedScenarios/(gate-guardrail|recorded-gate-lifecycle)$' ./internal/ensigncycle | tee live-artifacts/local-proof/sonnet-focused.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/sonnet-default-gate" SPACEDOCK_LIVE_MODEL=sonnet go test -json -tags live -count=1 -timeout 40m -run '^TestLiveDefaultHeadlessStopsAtGate$' ./internal/ensigncycle | tee live-artifacts/local-proof/sonnet-default-gate.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/opus-focused" SPACEDOCK_LIVE_MODEL=claude-opus-4-8 go test -json -tags live -count=1 -timeout 40m -run 'TestLiveClaudeSharedScenarios/(gate-guardrail|recorded-gate-lifecycle)$' ./internal/ensigncycle | tee live-artifacts/local-proof/opus-focused.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/opus-default-gate" SPACEDOCK_LIVE_MODEL=claude-opus-4-8 go test -json -tags live -count=1 -timeout 40m -run '^TestLiveDefaultHeadlessStopsAtGate$' ./internal/ensigncycle | tee live-artifacts/local-proof/opus-default-gate.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/codex-focused" SPACEDOCK_CODEX_LIVE_REQUIRED=1 go test -json -tags live -count=1 -timeout 40m -run 'TestLiveCodexSharedScenarios/(gate-guardrail|recorded-gate-lifecycle|rejection-flow|keep-moving-posture)$' ./internal/ensigncycle | tee live-artifacts/local-proof/codex-focused.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/pi-focused" SPACEDOCK_PI_LIVE_REQUIRED=1 go test -json -tags live -count=1 -timeout 40m -run '^TestLivePiRecordedGateLifecycle$' ./internal/ensigncycle | tee live-artifacts/local-proof/pi-focused.jsonl
+```
+
+After those pass, run the complete affected local live proof:
+
+```bash
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/sonnet-complete" SPACEDOCK_LIVE_MODEL=sonnet go test -json -tags live -count=1 -timeout 40m -run '^(TestLiveDefaultHeadlessStopsAtGate|TestLiveClaudeSharedScenarios)$' ./internal/ensigncycle | tee live-artifacts/local-proof/sonnet-complete.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/opus-complete" SPACEDOCK_LIVE_MODEL=claude-opus-4-8 go test -json -tags live -count=1 -timeout 40m -run '^(TestLiveDefaultHeadlessStopsAtGate|TestLiveClaudeSharedScenarios)$' ./internal/ensigncycle | tee live-artifacts/local-proof/opus-complete.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/codex-complete" SPACEDOCK_CODEX_LIVE_REQUIRED=1 go test -json -tags live -count=1 -timeout 40m -run '^TestLiveCodexSharedScenarios$' ./internal/ensigncycle | tee live-artifacts/local-proof/codex-complete.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/pi-complete" SPACEDOCK_PI_LIVE_REQUIRED=1 go test -json -tags live -count=1 -timeout 40m -run '^(TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle)$' ./internal/ensigncycle | tee live-artifacts/local-proof/pi-complete.jsonl
+```
+
+There is no separate spike: retained sessions already prove production gate
+serialization, nested-cwd Opus review capability, Pi root assistant text
+capability, normal `status --next`, and Codex batched finalization. Only after
+all deterministic, focused, and complete local commands pass at the same tip
+may one Runtime Live E2E workflow be dispatched for 4/4 confirmation.
+
+## Stage Report: ideation
+
+- DONE: Correct the filed newcomer/regression classification using the archived 6y authority, current grader history, and retained current-run artifacts; rule each failure as conduct, oracle, or harness.
+- DONE: Define measurable entity-level acceptance criteria and a bounded repair design that keeps the approved gate/rejection/keep-moving journeys, blocks the prerelease, and requires focused plus complete local Claude/Codex/Pi proof before one CI confirmation.
+- DONE: Declare the exact expected file/LOC surface, documentation delta, and test plan; preserve the no-compatibility, no prompt-coaching, no quarantine, no new-harness, and no CI-led-iteration boundary.
+
+### Summary
+
+Ideation resolves the red lanes into two oracle repairs, two harness
+repairs, and one Pi conduct repair while preserving every approved journey.
+Implementation is bounded to existing surfaces and must earn complete local
+Claude, Codex, and Pi proof before the single same-tip CI confirmation that
+unblocks prerelease.
