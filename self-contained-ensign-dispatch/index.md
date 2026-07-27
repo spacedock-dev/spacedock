@@ -490,3 +490,53 @@ Cycle 2 closes the two observer blind spots and binds the round proof to known f
 ### Summary
 
 This third review correction closes proof and wording gaps under the captain's pointer-only ruling. It preserves the semantic direction and mechanism, changes no prompt/bootstrap contract, and adds no new mechanism, so no design reset is required.
+
+## Stage Report: implementation
+
+- DONE: Deliver self-contained fresh and advance dispatch files while keeping every outer prompt pointer-only across Claude, Codex, and Pi, including the max-legal filename fixtures.
+  Commit `706b5cb8` snapshots the resolved stage/context and conditional standing
+  package into successful build artifacts, removes fetch commands, preserves fixed
+  routing metadata, and keeps exact 251-character fresh/advance stems distinct.
+- FAILED: Pin the builder's resolved executable as workflow launcher A so worker-time stage/context resolution through ambient B is 0 of 2 and retained helper probes reach A.
+  The command-level fresh/advance fixture proves B receives 0 of 2 stage/context
+  reads and synthetic status/round probes reach A, but the real correction-round
+  publisher is the First Officer and invokes a variable launcher rather than the
+  dispatch-pinned literal. The required live identity proof therefore fails.
+- FAILED: Preserve worker/FO authority and existing observer behavior; run the focused two-binary, dispatch, round-recording, Go, race, formatting, and diff checks required by the entity.
+  Offline focused, integration, full, race, formatting, and diff checks pass, but
+  the strict known-A round observer false-reds the legitimate FO-owned publisher.
+  The all-live-lanes criterion is also externally blocked by `se0`.
+
+### Evidence and review
+
+- Offline green: focused dispatch/CLI, skills integration, full, race, formatting, and diff checks.
+- Final surface: 32 hand-authored files / 967 changed LOC against the reset cap 32 / 991; exactly 26 goldens / 401 generated changed LOC.
+- Roborev job 3153 returned CHANGES_REQUESTED. Its High is reclassified MATERIAL:
+  the allowed FO launcher variable cannot prove transcript equality to literal A.
+- The three Medium findings were fixed before the stop: same-segment/successful
+  round correlation, canonicalized live A, and fail-closed no-artifact evidence.
+- Reproduction command: `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/kd-codex-rejection.vI3Y1j go test -tags live -count=1 -timeout 40m -run 'TestLiveCodexSharedScenarios/rejection-flow' ./internal/ensigncycle`.
+- Preserved trace: `/tmp/kd-codex-rejection.vI3Y1j/codex-shared-scenarios/rejection-flow/codex-exec.jsonl`;
+  item 41 records successful `gate record --round validation/1` through
+  `launcher="${SPACEDOCK_BIN:-spacedock}"; "$launcher" ...`.
+- The rerun also reproduced `se0`'s Codex rejection-flow failure before the strict
+  oracle: one implementation report remained where the trajectory requires two.
+- Current `se0` blockers are Claude Sonnet default-gate-stop/gate-guardrail; Claude Opus default-gate-stop/gate-guardrail/recorded-lifecycle-review;
+  Codex gate-guardrail/rejection-flow/keep-moving; and Pi recorded-lifecycle-review.
+- Current-main dogfood artifact `/tmp/spacedock-dispatch/spacedock-ensign-live-lanes-red-on-every-branch-ideation.md` retains the pre-change fetch fallback.
+  This branch changes successful builds; break-glass/manual dispatch without builder identity remains outside scope.
+
+### Required design reset
+
+- Alternative A: move advisory `gate record --round` publication to the in-stage
+  ensign so it can execute the artifact-pinned literal A.
+- Alternative B: keep the First Officer as publisher and revise AC-4 plus the
+  observer to prove the FO variable's controlled resolution instead of demanding
+  literal A in transcript text.
+- No alternative was selected or implemented. Validation, merge, and the
+  all-live-lanes criterion remain blocked pending a captain-approved design and
+  `se0` restoration.
+
+### Summary
+
+The core self-contained dispatch implementation and offline proof landed in `706b5cb8`, but live dogfood falsified the approved round-identity assumption. Implementation stops FAILED rather than weakening the oracle or expanding authority without a new design ruling.
