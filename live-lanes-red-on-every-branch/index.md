@@ -309,27 +309,30 @@ being brought into conformance with the already-published gate contract.
 
 ## Acceptance criteria
 
-1. At one clean exact tip, eleven focused executions pass: default gate-stop,
+AC-1 through AC-4 each serve AC-5. Each mechanism criterion re-anchors to the
+same-tip value result in AC-5 and is not sufficient when AC-5 is unmet.
+
+- **AC-1** At one clean exact tip, eleven focused executions pass: default gate-stop,
    shared gate, and recorded gate on Sonnet and Opus; gate, recorded gate,
    rejection, and keep-moving on Codex; recorded gate on Pi. These cover all
    nine current reds plus the already-green Sonnet/Codex recorded-gate controls.
    A skip is not a pass.
-2. Every new deterministic positive has a named counterexample: structural
+- **AC-2** Every new deterministic positive has a named counterexample: structural
    closed/wrong gate, nested-cwd uncommitted review, tool-result-only Pi review,
    pre-completed rejection seed, and unphased/planted keep-moving output all
    remain red. This prevents a green signal obtained by oracle weakening.
-3. The full registered shared scenario suites pass locally on Sonnet, Opus, and
+- **AC-3** The full registered shared scenario suites pass locally on Sonnet, Opus, and
    Codex, and Pi front-door plus recorded-gate tests pass locally, with model,
    exact git tip, command log/session JSONL, entity post-state, and Go JSON
    retained under distinct local artifact roots.
-4. Recorded-gate still proves one qualifying root review, one consumed
+- **AC-4** Recorded-gate still proves one qualifying root review, one consumed
    decision, one successor dispatch, and one later durable effect on every
    supported host. Rejection still proves two implementation reports and two
    validations. Keep-moving still proves advance and dispatch for every ready
    entity; Codex's transcript-only path requires successful build, completed
    wait, and durable report, and any claimed finalization must be exact,
    successful, and attached to that phase-bound entity.
-5. The measurable release result moves from 0/4 green lane jobs in retained run
+- **AC-5 (VALUE)** The measurable release result moves from 0/4 green lane jobs in retained run
    `30257280066` to 4/4 green jobs in exactly one manually dispatched Runtime
    Live E2E run at the same locally proven tip. Prerelease remains blocked until
    that same-tip run is 4/4; CI is confirmation only, never the iteration loop.
@@ -416,3 +419,15 @@ live-host or CI run before implementation earns complete local proof.
 
 Cycle 3 closes the remaining test-surface omission and leaves every cycle-2
 ruling and boundary unchanged. No product, live-host, or CI work was performed.
+
+## Stage Report: ideation (cycle 4)
+
+- DONE: Label all five acceptance criteria as `**AC-1**` through `**AC-5 (VALUE)**` and explicitly state that AC-1 through AC-4 serve AC-5 so mechanism/value re-anchoring is machine-visible and reviewable without changing semantics.
+  Read-only `status --read … --stage ideation --ac-scan --json` enumerates exactly AC-1, AC-2, AC-3, AC-4, and AC-5 with evidence; deleting any bold heading drops that ID, while the serve relation re-anchors all four mechanisms to the same-tip 4/4 value.
+
+### Summary
+
+Cycle 4 makes the five approved criteria visible to the deterministic gate
+scanner and states their existing mechanism-to-value relationship explicitly.
+No classification, implementation surface, LOC budget, command, boundary,
+product, live-host, or CI behavior changed.
