@@ -23,6 +23,19 @@ gates:
                 digest: sha256:7adb8b917e29b7e52dacb9e330ae55d3f76edd72a05619f9d72821e0a1c5a6aa
                 digest-domain: canonical-bytes
                 room-ref: ./version-output-runtime-and-sandbox-state/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:docs-dev:cn:backlog:1
+                briefing: briefing:docs-dev:cn:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-27T08:04:47.847614Z"
+                decision: approve
+                reason: 'Captain directive in the active conversation: ''dispatch cn''. Direction accepted on evidence: the sandbox posture was reproduced inverting live (APP_SANDBOX_CONTAINER_ID=agent-safehouse set, .safehouse profile present, safehouse absent from PATH, so State(true,false) renders ''unavailable'' with state.go documenting that precedence as dominating), the same strings feed the launcher banner and status --boot so First Officer boot evidence carries the false posture, and the runtime detector the fix needs already exists at internal/dispatch/build.go:254-281 and is simply not called. The output shape, the tombstone split, and the requires-contract deletion are captain-approved and recorded in the entity body.'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Make the first command every First Officer session runs describe the session it is actually in: the detected runtime, and whether this session is sandboxed.
