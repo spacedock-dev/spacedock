@@ -1,0 +1,42 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:cn:backlog:attempt-1:revision-1",
+  "question": "Should `--version` report the session it is actually in — detected runtime and real sandbox state — and drop the install-facing output, and should the `requires-contract` manifest key be deleted?",
+  "summary": "Approve dispatching ideation. `--version` currently prints every host's runtime line unconditionally and renders a sandbox posture that inverts under the condition it most needs to report: a session running inside safehouse has no `safehouse` binary on PATH precisely because the wrap already happened, so `State(selected=true, available=false)` renders `unavailable`, and `state.go` documents that precedence as dominating. Reproduced live with `APP_SANDBOX_CONTAINER_ID=agent-safehouse` set, a `.safehouse` profile present, and the binary absent from PATH. The same strings are shared by the launcher banner and `status --boot`, so a First Officer's durable boot evidence carries the false posture too. The approved shape is: outside a session, one line; inside, add detected runtime, true sandbox state, and the `contract 3` tombstone moved off line 1; per-host installed-plugin lines dropped, since the version gate runs one direction only and the binary echoing the skills' version back has no programmatic consumer. `requires-contract` is deleted from both manifests — it guards a direction the skills' own minor gate already covers, and it is an invented key no host reads. `(contract 3)` is kept, moved below line 1, because nothing else can reach an old-skills reader and a prose gate executed by a model may silently proceed on an absent field rather than aborting. No skill change is required; the contract-integer gate was already replaced by minor-version coupling.",
+  "artifacts": [
+    {
+      "id": "artifact:version-output-task",
+      "uri": "git-root://state/febfe0b2825d35d220746be6f40399cda2cf5cb2/version-output-runtime-and-sandbox-state.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:61fd444b04d63c78fd4007bfd187324cab3f85095acad3b0d2b0e9c1d116ae99"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:backlog-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Dispatch ideation",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the proposed output shape first",
+          "to": "stage:backlog"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold for a named prerequisite",
+          "to": "gate:backlog"
+        }
+      ]
+    }
+  ]
+}
