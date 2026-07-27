@@ -12,7 +12,7 @@ issue:
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:cn:backlog
+        gate: gate:docs-dev:cn:ideation
     records:
         - id: gate:docs-dev:cn:backlog
           stage: backlog
@@ -36,6 +36,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:cn:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:cn-ideation-1
+              briefing:
+                id: briefing:docs-dev:cn:ideation:attempt-1:revision-1
+                digest: sha256:606b7182bd94a95ca085488cef51f2206a7f76e2e725a9ac94ca45ff2e9f2246
+                digest-domain: canonical-bytes
+                room-ref: ./version-output-runtime-and-sandbox-state/review/ideation/briefing-1
 ---
 
 Make the first command every First Officer session runs describe the session it is actually in: the detected runtime, and whether this session is sandboxed.
