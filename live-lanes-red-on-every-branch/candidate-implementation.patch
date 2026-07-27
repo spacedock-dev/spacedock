@@ -1,0 +1,710 @@
+diff --git a/.github/workflows/runtime-live-e2e.yml b/.github/workflows/runtime-live-e2e.yml
+index aad256eb..5d226867 100644
+--- a/.github/workflows/runtime-live-e2e.yml
++++ b/.github/workflows/runtime-live-e2e.yml
+@@ -593,6 +593,7 @@ jobs:
+     env:
+       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+       SPACEDOCK_PI_LIVE_REQUIRED: "1"
++      SPACEDOCK_PI_LIVE_CHILD_MODEL: openai/gpt-5.4
+       SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/pi
+       SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi
+       PI_OFFLINE: "1"
+@@ -788,7 +789,7 @@ jobs:
+       - name: Run live Pi front-door smoke
+         run: |
+           set -o pipefail
+-          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -run 'TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle' ./internal/ensigncycle
++          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 15m -run 'TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle' ./internal/ensigncycle
+ 
+       - name: Upload live artifacts
+         if: always()
+diff --git a/docs/runtime-live-ci.md b/docs/runtime-live-ci.md
+index 1f796c0a..24b63c9f 100644
+--- a/docs/runtime-live-ci.md
++++ b/docs/runtime-live-ci.md
+@@ -69,10 +69,27 @@ Each Codex shared scenario launches one `codex exec`. A fixed 15-minute wall-clo
+ go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
+ ```
+ 
+-Run the Pi front-door smoke locally (`npm install -g pi-coding-agent`, `pi install npm:pi-subagents`, and either `pi login` or `OPENAI_API_KEY`). The smoke loads the current checkout's Spacedock first-officer and ensign skills plus the local pi-subagents extension/skill explicitly; it verifies durable state in the split-root state checkout rather than transcript wording alone.
++Run the Pi live proofs locally with the same package versions pinned in CI:
+ 
+ ```bash
+-go test -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
++npm install -g @earendil-works/pi-coding-agent@0.80.10
++npm install --prefix "$HOME/.pi/agent/npm" pi-subagents@0.35.1 pi-intercom@0.6.0
++export PI_SUBAGENTS_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-subagents"
++export PI_INTERCOM_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-intercom"
++```
++
++Authenticate with `pi login` or `OPENAI_API_KEY`. Configure the child model with the exact provider-qualified spelling for that authentication path:
++
++```bash
++export SPACEDOCK_PI_LIVE_CHILD_MODEL=openrouter/openai/gpt-5.4 # OpenRouter login
++# or
++export SPACEDOCK_PI_LIVE_CHILD_MODEL=openai/gpt-5.4 # direct OpenAI provider
++```
++
++`TestLivePiFrontDoorSmoke` loads the current checkout's Spacedock first-officer and ensign skills plus the local pi-subagents extension/skill and verifies durable split-root worker state. `TestLivePiRecordedGateLifecycle` loads the same current-checkout skills through the Pi front door, drives the shared recorded-gate fixture, and requires the root-session assistant review after the committed Briefing and before the decision in addition to durable command, state, git, and successor evidence.
++
++```bash
++go test -tags live -count=1 -timeout 15m -run '^(TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle)$' ./internal/ensigncycle -v
+ ```
+ 
+ The parity and definition guards run with no model spend — useful before paying for a live run:
+@@ -89,7 +106,7 @@ Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go te
+ 
+ - `claude-live` (matrix: `sonnet` on `CI-E2E`, `claude-opus-4-8` on `CI-E2E-OPUS`): secret `ANTHROPIC_API_KEY`. Runs `TestLiveEnsignCycle` (the full-cycle smoke), `TestLiveClaudeSharedScenarios` (the shared suite over the headless `-p` transport), and the pty/tmux team-mode harness (`TestLivePtyStandingResidencyInjectsCommOfficer` + `TestLivePtyEnsignCycleTeamTeardown`) — which drives a real interactive session where team mode is exposed (tmux is installed for this). Artifacts under `live-artifacts/claude/<model>/` plus the session jsonl under `$CLAUDE_CONFIG_DIR`.
+ - `codex-live` (environment `CI-E2E-CODEX`): secret `OPENAI_API_KEY`, `SPACEDOCK_CODEX_LIVE_REQUIRED=1` so a missing key fails clearly after approval. Runs `TestLiveCodexSharedScenarios`. Artifacts under `live-artifacts/codex/`.
+-- `pi-live` (environment `CI-E2E-PI`): secret `OPENAI_API_KEY`, `SPACEDOCK_PI_LIVE_REQUIRED=1` so missing Pi/OpenAI prerequisites fail clearly after approval. Installs `pi-coding-agent`, `pi-subagents`, and `pi-intercom`, runs the Pi shared coverage guard plus `TestLivePiFrontDoorSmoke`, and uploads artifacts under `live-artifacts/pi/`.
++- `pi-live` (environment `CI-E2E-PI`): secret `OPENAI_API_KEY`, `SPACEDOCK_PI_LIVE_REQUIRED=1` so missing Pi/OpenAI prerequisites fail clearly after approval. Installs `pi-coding-agent`, `pi-subagents`, and `pi-intercom`, runs the Pi shared coverage guard, `TestLivePiFrontDoorSmoke`, and `TestLivePiRecordedGateLifecycle`, and uploads artifacts under `live-artifacts/pi/`; the recorded-gate test additionally grades the ordered root assistant review event.
+ 
+ All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
+ 
+diff --git a/internal/contractlint/fo_function_reference_invariant_test.go b/internal/contractlint/fo_function_reference_invariant_test.go
+index 38c85f51..171d238b 100644
+--- a/internal/contractlint/fo_function_reference_invariant_test.go
++++ b/internal/contractlint/fo_function_reference_invariant_test.go
+@@ -172,6 +172,22 @@ func TestFOFunctionReferenceCheckpointMetrics(t *testing.T) {
+ 		addresses, foHostLoadBytes(t, "claude"), foHostLoadBytes(t, "codex"), foHostLoadBytes(t, "pi"))
+ }
+ 
++func TestPiRecordedGatePresentationUsesRootAssistantText(t *testing.T) {
++	adapter := readRepoFile(t, filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"))
++	for _, want := range []string{
++		"Recorded-gate presentation is the explicit exception", "root-session assistant text block",
++		"after the selected Briefing commit", "before the decision mutation",
++		"shell output, tool results, child output, and later summaries do not qualify", "durable command, state, git, and successor-effect evidence",
++	} {
++		if !strings.Contains(adapter, want) {
++			t.Errorf("Pi recorded-gate adapter missing %q", want)
++		}
++	}
++	if strings.Contains(adapter, "durable proof for Pi support is not transcript phrasing") {
++		t.Error("Pi adapter still claims transcript events never matter")
++	}
++}
++
+ func TestFirstOfficerReferenceTopology(t *testing.T) {
+ 	root := skillsRoot(t)
+ 	entry := readRepoFile(t, filepath.Join("skills", "first-officer", "SKILL.md"))
+diff --git a/internal/ensigncycle/codex_dispatch_evidence_regression_test.go b/internal/ensigncycle/codex_dispatch_evidence_regression_test.go
+index 89507075..93341bb3 100644
+--- a/internal/ensigncycle/codex_dispatch_evidence_regression_test.go
++++ b/internal/ensigncycle/codex_dispatch_evidence_regression_test.go
+@@ -11,14 +11,18 @@ import (
+ // stdout. The PR #486 multi_agent_v2 failures surfaced the dispatch evidence here:
+ // dispatch-build stdout, wait records, then entity reads showing stage reports.
+ func codexCompletedCommandOutput(command, output string) string {
++	return codexCommandOutput(command, output, 0, "completed")
++}
++
++func codexCommandOutput(command, output string, exit int, status string) string {
+ 	line := map[string]any{
+ 		"type": "item.completed",
+ 		"item": map[string]any{
+ 			"type":              "command_execution",
+ 			"command":           command,
+ 			"aggregated_output": output,
+-			"exit_code":         0,
+-			"status":            "completed",
++			"exit_code":         exit,
++			"status":            status,
+ 		},
+ 	}
+ 	b, err := json.Marshal(line)
+@@ -296,3 +300,39 @@ func TestCodexDispatchEvidenceDoesNotMultiplyAnonymousBatchedReport(t *testing.T
+ 		}
+ 	}
+ }
++
++func TestCodexDispatchEvidencePhaseBindsBatchedFinalization(t *testing.T) {
++	entity := kmReadyOne
++	build := codexDispatchBuildEvidence(entity, kmNextStage)
++	wait := codexWaitCompleted()
++	report := codexEntityReadEvidence(entity, kmNextStage, kmNextStage)
++	mergeCommand := `for slug in ready-one; do spacedock merge guard "$slug" --workflow-dir .; done`
++	finalized := "finalized: " + entity + " -> done (verdict passed), archived. State durability: local-only (no origin remote).\n"
++	merge := codexCompletedCommandOutput(mergeCommand, finalized)
++
++	positive := strings.Join([]string{build, wait, report, merge}, "\n")
++	evidence := codexDispatchCompletionEvidenceFromJSONL(positive, []string{entity})
++	if !evidence.stageReport[entity] || !evidence.doneReport[entity] {
++		t.Fatalf("retained build/wait/report/finalization shape was not credited: %+v", evidence)
++	}
++
++	controls := map[string]string{
++		"missing-build":        strings.Join([]string{wait, report, merge}, "\n"),
++		"missing-wait":         strings.Join([]string{build, report, merge}, "\n"),
++		"missing-report":       strings.Join([]string{build, wait, merge}, "\n"),
++		"failed-command":       strings.Join([]string{build, wait, report, codexCommandOutput(mergeCommand, finalized, 1, "failed")}, "\n"),
++		"missing-entity":       strings.Join([]string{build, wait, report, codexCompletedCommandOutput(mergeCommand, "finalized: ready-two -> done\n")}, "\n"),
++		"literal-command-only": strings.Join([]string{build, wait, report, codexCompletedCommandOutput("spacedock merge guard "+entity, "")}, "\n"),
++		"planted-output":       strings.Join([]string{build, wait, report, codexCompletedCommandOutput("printf planted", finalized)}, "\n"),
++		"planted-command-output": strings.Join([]string{build, wait, report,
++			codexCompletedCommandOutput("printf 'spacedock merge guard "+entity+"'", finalized)}, "\n"),
++	}
++	for name, stream := range controls {
++		t.Run(name, func(t *testing.T) {
++			got := codexDispatchCompletionEvidenceFromJSONL(stream, []string{entity})
++			if got.doneReport[entity] {
++				t.Fatalf("unqualified finalization was credited: %+v", got)
++			}
++		})
++	}
++}
+diff --git a/internal/ensigncycle/codex_dispatch_evidence_test.go b/internal/ensigncycle/codex_dispatch_evidence_test.go
+index 29a2fd23..d9cc88ff 100644
+--- a/internal/ensigncycle/codex_dispatch_evidence_test.go
++++ b/internal/ensigncycle/codex_dispatch_evidence_test.go
+@@ -71,9 +71,8 @@ func codexDispatchCompletionEvidenceFromJSONL(jsonl string, entities []string) c
+ 						result.doneReport[entity] = true
+ 					}
+ 				}
+-				if codexMergeGuardCompletedEntity(ev.Item.Command, ev.Item.AggregatedOutput, entity) {
++				if result.stageReport[entity] && codexMergeGuardCompletedEntity(ev.Item.Command, ev.Item.AggregatedOutput, entity) {
+ 					result.doneReport[entity] = true
+-					result.stageReport[entity] = true
+ 				}
+ 			}
+ 		}
+@@ -175,6 +174,47 @@ func codexDurableStatusForEntity(output, status string) bool {
+ }
+ 
+ func codexMergeGuardCompletedEntity(command, output, entity string) bool {
+-	return kmMergeGuardTerminalizes(command, entity) &&
+-		strings.Contains(output, "finalized: "+entity+" -> done")
++	if !codexMergeGuardTargetsEntity(command, entity) {
++		return false
++	}
++	prefix := "finalized: " + entity + " -> done"
++	full := regexp.MustCompile(`^` + regexp.QuoteMeta(prefix) + ` \(verdict [^)\r\n]+\), archived\.(?: State durability: [^\r\n]+)?$`)
++	for _, line := range strings.Split(output, "\n") {
++		line = strings.TrimSpace(line)
++		if line == prefix || full.MatchString(line) {
++			return true
++		}
++	}
++	return false
++}
++
++func codexMergeGuardTargetsEntity(command, entity string) bool {
++	loopVars := map[string]bool{}
++	for _, match := range regexp.MustCompile(`\bfor\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+([^;]+)`).FindAllStringSubmatch(command, -1) {
++		for _, target := range strings.Fields(match[2]) {
++			if strings.Trim(target, `"'`) == entity {
++				loopVars[match[1]] = true
++			}
++		}
++	}
++	for _, segment := range regexp.MustCompile(`;|\r?\n|&&|\|\|`).Split(command, -1) {
++		segment = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(segment), "do "))
++		fields := strings.Fields(segment)
++		if len(fields) < 4 {
++			continue
++		}
++		launcher := strings.Trim(fields[0], `"'`)
++		if launcher != "spacedock" && launcher != "spacedock_launcher" &&
++			!strings.HasSuffix(launcher, "/spacedock") && !strings.Contains(launcher, "SPACEDOCK_BIN") {
++			continue
++		}
++		if fields[1] != "merge" || fields[2] != "guard" {
++			continue
++		}
++		target := strings.Trim(fields[3], `"'`)
++		if target == entity || (strings.HasPrefix(target, "$") && loopVars[strings.Trim(strings.TrimPrefix(target, "$"), "{}")]) {
++			return true
++		}
++	}
++	return false
+ }
+diff --git a/internal/ensigncycle/gate_assert_impl_test.go b/internal/ensigncycle/gate_assert_impl_test.go
+index 2c576b01..f18cd654 100644
+--- a/internal/ensigncycle/gate_assert_impl_test.go
++++ b/internal/ensigncycle/gate_assert_impl_test.go
+@@ -1,9 +1,12 @@
+ package ensigncycle
+ 
+ import (
++	"bytes"
+ 	"fmt"
+ 	"regexp"
+-	"strings"
++
++	"github.com/spacedock-dev/spacedock/internal/gates"
++	"gopkg.in/yaml.v3"
+ )
+ 
+ var (
+@@ -17,22 +20,64 @@ func assertGateHeld(before, after, review string) error {
+ 	if before == after || !validatingStatus.MatchString(after) || completedSet.MatchString(after) || verdictSetFM.MatchString(after) {
+ 		return fmt.Errorf("gated entity is not held at its open validation boundary")
+ 	}
+-	for _, exact := range []string{"state: open", "id: gate-attempt:3k-validation-1", "id: " + recordedGateBriefingID, "digest: " + recordedGateDigest} {
+-		if strings.Count(after, exact) != 1 {
+-			return fmt.Errorf("open bound entity count for %q is not 1", exact)
+-		}
++	doc, err := decodeGateDocument(after)
++	if err != nil {
++		return fmt.Errorf("canonical gate document: %w", err)
+ 	}
+-	for _, forbidden := range []string{"type: Resolution", "resolution:", "state: closed", "state: consumed", "target-stage:", "status: handoff", "status: done", recordedGateDispatchMarker} {
+-		if strings.Contains(after, forbidden) {
+-			return fmt.Errorf("open bound entity contains %q", forbidden)
++	var selected *gates.GateRecord
++	for i := range doc.Records {
++		if doc.Records[i].ID == doc.Current.Gate {
++			selected = &doc.Records[i]
++			break
+ 		}
+ 	}
++	if selected == nil || selected.ID != "gate:docs-dev:3k:validation" || selected.Stage != "validation" || len(selected.Attempts) == 0 {
++		return fmt.Errorf("selected validation gate has no attempt")
++	}
++	attempt := selected.Attempts[len(selected.Attempts)-1]
++	if attempt.ID != "gate-attempt:3k-validation-1" ||
++		attempt.Briefing.ID != recordedGateBriefingID || attempt.Briefing.Digest != recordedGateDigest ||
++		attempt.Resolution != nil || attempt.Application != nil {
++		return fmt.Errorf("selected attempt is not open on the expected Briefing")
++	}
+ 	if err := assertConciseRecordedGateReview(review); err != nil {
+ 		return fmt.Errorf("semantic gate review: %w", err)
+ 	}
+ 	return nil
+ }
+ 
++func decodeGateDocument(entity string) (*gates.Document, error) {
++	parts := bytes.SplitN([]byte(entity), []byte("---\n"), 3)
++	if len(parts) != 3 || len(parts[0]) != 0 {
++		return nil, fmt.Errorf("entity has no frontmatter")
++	}
++	var root yaml.Node
++	if err := yaml.Unmarshal(parts[1], &root); err != nil || len(root.Content) == 0 {
++		return nil, fmt.Errorf("decode frontmatter: %w", err)
++	}
++	mapping := root.Content[0]
++	for i := 0; i+1 < len(mapping.Content); i += 2 {
++		if mapping.Content[i].Value != "gates" {
++			continue
++		}
++		encoded, err := yaml.Marshal(mapping.Content[i+1])
++		if err != nil {
++			return nil, err
++		}
++		var doc gates.Document
++		decoder := yaml.NewDecoder(bytes.NewReader(encoded))
++		decoder.KnownFields(true)
++		if err := decoder.Decode(&doc); err != nil {
++			return nil, err
++		}
++		if err := gates.Validate(&doc); err != nil {
++			return nil, err
++		}
++		return &doc, nil
++	}
++	return nil, fmt.Errorf("entity has no gates record")
++}
++
+ type recordedGateCodexEvent struct {
+ 	Type string `json:"type"`
+ 	Item struct {
+diff --git a/internal/ensigncycle/gate_assert_test.go b/internal/ensigncycle/gate_assert_test.go
+index cf74bb00..96efb553 100644
+--- a/internal/ensigncycle/gate_assert_test.go
++++ b/internal/ensigncycle/gate_assert_test.go
+@@ -20,6 +20,24 @@ func requireRecordedGate(t *testing.T, ok bool, format string, args ...any) {
+ 	}
+ }
+ 
++func recordedGateHeldEntity() string {
++	gates := "gates:\n" +
++		"  version: 1\n" +
++		"  current:\n" +
++		"    gate: gate:docs-dev:3k:validation\n" +
++		"  records:\n" +
++		"    - id: gate:docs-dev:3k:validation\n" +
++		"      stage: validation\n" +
++		"      attempts:\n" +
++		"        - id: gate-attempt:3k-validation-1\n" +
++		"          briefing:\n" +
++		"            id: " + recordedGateBriefingID + "\n" +
++		"            digest: " + recordedGateDigest + "\n" +
++		"            digest-domain: raw-file-pin\n" +
++		"            room-ref: rooms/validation/attempt-1/revision-1\n"
++	return strings.Replace(recordedGateEntity(), "---\n# Recorded Gate Task", gates+"---\n# Recorded Gate Task", 1)
++}
++
+ func TestAssertGateHeld(t *testing.T) {
+ 	entity := "---\n" +
+ 		"id: gate-check\n" +
+@@ -36,7 +54,7 @@ func TestAssertGateHeld(t *testing.T) {
+ 	final := "Gate review: Gate Check - review\nRecommend approve.\nDecision: approve to enter done."
+ 
+ 	before := recordedGateEntity()
+-	after := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
++	after := recordedGateHeldEntity()
+ 	requireRecordedGate(t, assertGateHeld(before, after, recordedGateReview()) == nil, "held gate failed")
+ 	decision := "Decision ask: approve, revise with a concrete finding, or hold for a named prerequisite?"
+ 	for name, line := range map[string]string{
+@@ -56,7 +74,15 @@ func TestAssertGateHeld(t *testing.T) {
+ 		review := strings.Replace(recordedGateReview(), decision, line, 1)
+ 		requireRecordedGate(t, assertConciseRecordedGateReview(review) != nil, "%s decision control qualified", name)
+ 	}
+-	for name, tc := range map[string]struct{ after, review string }{"unbound": {before, recordedGateReview()}, "advanced": {strings.Replace(after, "status: validation", "status: handoff", 1), recordedGateReview()}, "resolution": {after + "\ntype: Resolution\n", recordedGateReview()}, "verdict": {strings.Replace(after, "verdict:\n", "verdict: passed\n", 1), recordedGateReview()}, "review": {after, "Gate review: legacy\nDecision: approve?"}, "legacy": {entity, final}} {
++	resolved := strings.Replace(after, "          briefing:\n", "          resolution:\n            type: Resolution\n            id: resolution:docs-dev:3k:validation:1\n            briefing: "+recordedGateBriefingID+"\n            by: captain\n            at: 2026-07-28T00:00:00Z\n            decision: approve\n          briefing:\n", 1)
++	applied := strings.Replace(resolved, "          briefing:\n", "          application:\n            action: advance\n            target-stage: handoff\n            state: pending\n          briefing:\n", 1)
++	for name, tc := range map[string]struct{ after, review string }{
++		"unbound": {before, recordedGateReview()}, "advanced": {strings.Replace(after, "status: validation", "status: handoff", 1), recordedGateReview()},
++		"malformed-state": {strings.Replace(after, "          briefing:\n", "          state: open\n          briefing:\n", 1), recordedGateReview()}, "wrong-gate": {strings.ReplaceAll(after, "gate:docs-dev:3k:validation", "gate:docs-dev:wrong"), recordedGateReview()},
++		"wrong-briefing": {strings.Replace(after, recordedGateBriefingID, "briefing:docs-dev:wrong", 1), recordedGateReview()}, "resolved": {resolved, recordedGateReview()},
++		"applied": {applied, recordedGateReview()}, "verdict": {strings.Replace(after, "verdict:\n", "verdict: passed\n", 1), recordedGateReview()},
++		"review": {after, "Gate review: legacy\nDecision: approve?"}, "legacy": {entity, final},
++	} {
+ 		requireRecordedGate(t, assertGateHeld(before, tc.after, tc.review) != nil, "%s control qualified", name)
+ 	}
+ }
+diff --git a/internal/ensigncycle/pi_live_runner_test.go b/internal/ensigncycle/pi_live_runner_test.go
+index 699d39ab..c1410ae7 100644
+--- a/internal/ensigncycle/pi_live_runner_test.go
++++ b/internal/ensigncycle/pi_live_runner_test.go
+@@ -75,7 +75,7 @@ func runPiLiveCommand(t *testing.T, artifactDir, workflowRoot string, env []stri
+ 	t.Helper()
+ 	stdoutPath := filepath.Join(artifactDir, "pi-stdout.txt")
+ 	stderrPath := filepath.Join(artifactDir, "pi-stderr.txt")
+-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
++	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+ 	defer cancel()
+ 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
+ 	cmd.Dir = workflowRoot
+diff --git a/internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go b/internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go
+index 3a61a8b8..7859253a 100644
+--- a/internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go
++++ b/internal/ensigncycle/recorded_gate_lifecycle_pi_live_test.go
+@@ -3,8 +3,10 @@
+ package ensigncycle
+ 
+ import (
++	"encoding/json"
+ 	"os"
+ 	"path/filepath"
++	"strings"
+ 	"testing"
+ )
+ 
+@@ -14,9 +16,9 @@ import (
+ // resolves the logging shim first on PATH and the shim delegates every call back
+ // to that exact binary.
+ func TestLivePiRecordedGateLifecycle(t *testing.T) {
+-	piBin := piBinaryOrSkip(t)
+ 	repo := repoRoot(t)
+ 	piSubagentsRoot := piSubagentsPackageRoot(t)
++	expectedChildModel := envOr("SPACEDOCK_PI_LIVE_CHILD_MODEL", "openrouter/openai/gpt-5.4")
+ 	binary := buildRecordedGateBinary(t)
+ 	fixture := writeRecordedGateFixture(t)
+ 	before := readFile(t, fixture.entity)
+@@ -31,32 +33,54 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
+ 	}
+ 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+ 	shimDir := writeRecordedGateLoggingShim(t, binary, commandLog)
++	bashEnv := filepath.Join(shimDir, "recorded-gate-env.sh")
++	writeFile(t, bashEnv, "export SPACEDOCK_BIN="+filepath.Join(shimDir, "spacedock")+"\n")
+ 	env := piLiveEnv(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot)
+ 	env = withPATHPrefix(env, shimDir)
+-	env = withRecordedGateEnv(env, "SPACEDOCK_BIN", filepath.Join(shimDir, "spacedock"))
+-	extension := filepath.Join(piSubagentsRoot, "src", "extension", "index.ts")
+-	if _, err := os.Stat(extension); os.IsNotExist(err) {
+-		extension = filepath.Join(piSubagentsRoot, "index.ts")
+-	}
++	env = withRecordedGateEnv(env, "BASH_ENV", bashEnv)
+ 
+-	runPiLiveCommand(t, artifactDir, fixture.root, env, piBin,
++	runPiLiveCommand(t, artifactDir, fixture.root, env, binary,
++		"pi",
++		recordedGatePrompt(fixture.root)+"\n\nPi harness requirement: stamp the successor dispatch with explicit model `"+expectedChildModel+"`.",
++		"--plugin-dir", repo,
++		"--",
+ 		"--print",
+ 		"--session-dir", filepath.Join(artifactDir, "sessions"),
+-		"--extension", extension,
+-		"--skill", filepath.Join(piSubagentsRoot, "skills", "pi-subagents"),
+-		"--skill", filepath.Join(repo, "skills", "first-officer"),
+-		"--skill", filepath.Join(repo, "skills", "fo-gate-lifecycle"),
+-		"--skill", filepath.Join(repo, "skills", "ensign"),
+-		recordedGatePrompt(fixture.root)+"\n\nPi harness requirement: stamp the successor dispatch with explicit model `"+envOr("SPACEDOCK_PI_LIVE_CHILD_MODEL", "openrouter/openai/gpt-4.1-mini")+"`.",
+ 	)
+ 
+ 	session := readRecordedGatePiRootSession(t, artifactDir)
++	assertRecordedGatePiChildModel(t, artifactDir, expectedChildModel)
+ 	observation := recordedGateLiveObservation(t, fixture, before, commandLog, recordedGateReviewFromPiSession(session))
+ 	if err := assertRecordedGateLifecycle(observation); err != nil {
+ 		t.Fatalf("Pi recorded gate lifecycle graded FAIL: %v; artifacts in %s\n--- entity after ---\n%s", err, artifactDir, observation.after)
+ 	}
+ }
+ 
++func assertRecordedGatePiChildModel(t *testing.T, artifactDir, want string) {
++	t.Helper()
++	paths, err := filepath.Glob(filepath.Join(artifactDir, "sessions", "*", "*", "run-*", "session.jsonl"))
++	if err != nil {
++		t.Fatal(err)
++	}
++	if len(paths) != 1 {
++		t.Fatalf("Pi child sessions=%d, want exactly one: %v", len(paths), paths)
++	}
++	var models []string
++	for _, line := range strings.Split(readFile(t, paths[0]), "\n") {
++		var event struct {
++			Type     string `json:"type"`
++			Provider string `json:"provider"`
++			ModelID  string `json:"modelId"`
++		}
++		if json.Unmarshal([]byte(line), &event) == nil && event.Type == "model_change" {
++			models = append(models, event.Provider+"/"+event.ModelID)
++		}
++	}
++	if len(models) != 1 || models[0] != want {
++		t.Fatalf("Pi child model changes=%v, want exactly [%s]; child session %s", models, want, paths[0])
++	}
++}
++
+ func readRecordedGatePiRootSession(t *testing.T, artifactDir string) string {
+ 	t.Helper()
+ 	paths, err := filepath.Glob(filepath.Join(artifactDir, "sessions", "*.jsonl"))
+diff --git a/internal/ensigncycle/recorded_gate_lifecycle_test.go b/internal/ensigncycle/recorded_gate_lifecycle_test.go
+index 73a23809..38b57bfb 100644
+--- a/internal/ensigncycle/recorded_gate_lifecycle_test.go
++++ b/internal/ensigncycle/recorded_gate_lifecycle_test.go
+@@ -627,7 +627,11 @@ func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {
+ 	}
+ 	dir := t.TempDir()
+ 	shim := filepath.Join(dir, "spacedock")
+-	script := fmt.Sprintf("#!/bin/sh\nprintf 'begin\\t%%s\\n' \"$*\" >> %q\n[ \"$1 $2\" = \"dispatch build\" ] && git -C .spacedock-state rev-parse HEAD | sed 's/^/dispatch-head\\t/' >> %q\n%q \"$@\"\ncode=$?\nprintf 'exit=%%s\\t%%s\\n' \"$code\" \"$*\" >> %q\n[ \"$code\" -eq 0 ] && [ \"$1 $2\" = \"state commit\" ] && git -C .spacedock-state rev-parse HEAD | sed 's/^/state-head\\t/' | tee -a %q\nexit \"$code\"\n", logPath, logPath, binary, logPath, logPath)
++	stateRoot := filepath.Join(filepath.Dir(logPath), ".spacedock-state")
++	if filepath.Base(filepath.Dir(logPath)) == "evidence" {
++		stateRoot = filepath.Join(filepath.Dir(filepath.Dir(logPath)), ".spacedock-state")
++	}
++	script := fmt.Sprintf("#!/bin/sh\nprintf 'begin\\t%%s\\n' \"$*\" >> %q\n[ \"$1 $2\" = \"dispatch build\" ] && git -C %q rev-parse HEAD | sed 's/^/dispatch-head\\t/' >> %q\n%q \"$@\"\ncode=$?\nprintf 'exit=%%s\\t%%s\\n' \"$code\" \"$*\" >> %q\n[ \"$code\" -eq 0 ] && [ \"$1 $2\" = \"state commit\" ] && git -C %q rev-parse HEAD | sed 's/^/state-head\\t/' | tee -a %q\nexit \"$code\"\n", logPath, stateRoot, logPath, binary, logPath, stateRoot, logPath)
+ 	writeFile(t, shim, script)
+ 	if err := os.Chmod(shim, 0o755); err != nil {
+ 		t.Fatal(err)
+@@ -635,6 +639,30 @@ func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {
+ 	return dir
+ }
+ 
++func TestRecordedGateLoggingShimNestedCWD(t *testing.T) {
++	fixture := writeRecordedGateFixture(t)
++	realBinary := buildRecordedGateBinary(t)
++	bindRecordedGate(t, realBinary, fixture)
++	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
++	shim := filepath.Join(writeRecordedGateLoggingShim(t, realBinary, commandLog), "spacedock")
++	nested := filepath.Join(fixture.root, "recorded-gate-task", "nested")
++	if err := os.MkdirAll(nested, 0o755); err != nil {
++		t.Fatal(err)
++	}
++	commit := runRecordedGateCommand(shim, nested, "", "state", "commit", "recorded-gate-task",
++		"--workflow-dir", fixture.root, "-m", "bind from nested cwd")
++	if commit.exit != 0 {
++		t.Fatalf("nested-cwd commit exit=%d stderr=%s", commit.exit, commit.stderr)
++	}
++	stream := `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"c","name":"Bash","input":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" +
++		`{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"c","content":` + fmt.Sprintf("%q", commit.stdout) + `,"is_error":false}]}}` + "\n" +
++		`{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}` + "\n" +
++		`{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","input":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`
++	if got := recordedGateReviewFromClaudeStream(stream); got != recordedGateReview() {
++		t.Fatalf("nested-cwd successful commit did not authorize the root review")
++	}
++}
++
+ func withRecordedGateEnv(env []string, key, value string) []string {
+ 	prefix := key + "="
+ 	out := make([]string, 0, len(env)+1)
+@@ -740,20 +768,27 @@ func recordedGateReviewFromCodexJSONL(jsonl string) string {
+ 
+ func recordedGateReviewFromPiSession(session string) string {
+ 	var candidates []string
+-	commit, bound := "", false
++	briefing, commit, briefingRecorded, bound := "", "", false, false
+ 	for _, line := range strings.Split(session, "\n") {
+ 		var row recordedGatePiEvent
+ 		if json.Unmarshal([]byte(strings.ReplaceAll(line, `"arguments":`, `"input":`)), &row) != nil || row.Message == nil {
+ 			continue
+ 		}
++		if row.Message.Role == "toolResult" && row.Message.ToolCallID == briefing && !row.Message.IsError {
++			briefingRecorded = true
++		}
+ 		if row.Message.Role == "toolResult" && row.Message.ToolCallID == commit && !row.Message.IsError && len(row.Message.Content) > 0 {
+-			bound = recordedGateStateHead.MatchString(row.Message.Content[0].Text)
++			bound = briefingRecorded && recordedGateStateHead.MatchString(row.Message.Content[0].Text)
+ 		}
+ 		for _, block := range row.Message.Content {
+ 			command := block.Input.Command
+ 			switch {
+ 			case row.Message.Role == "assistant" && block.Type == "toolCall" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --decision "):
+ 				return singleRecordedGateReview(candidates)
++			case row.Message.Role == "assistant" && block.Type == "toolCall" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --briefing ") && strings.Contains(command, "state commit recorded-gate-task"):
++				briefing, commit = block.ID, block.ID
++			case row.Message.Role == "assistant" && block.Type == "toolCall" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --briefing "):
++				briefing = block.ID
+ 			case row.Message.Role == "assistant" && block.Type == "toolCall" && block.Name == "bash" && strings.Contains(command, "state commit recorded-gate-task"):
+ 				commit = block.ID
+ 			case bound && row.Message.Role == "assistant" && block.Type == "text" && assertConciseRecordedGateReview(block.Text) == nil:
+@@ -771,8 +806,13 @@ func TestRecordedGateReviewExtractorsRequireOneOrderedRootReview(t *testing.T) {
+ 	claude.failed, claude.child = strings.Replace(claude.commit, `"is_error":false`, `"is_error":true`, 1), strings.Replace(claude.review, "null", `"child"`, 1)
+ 	codex := recordedGateHost{recordedGateReviewFromCodexJSONL, "codex", `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock state commit recorded-gate-task","status":"completed","exit_code":0,"aggregated_output":"state-head\t0123456789abcdef0123456789abcdef01234567"}}`, `{"type":"item.completed","item":{"type":"agent_message","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}}`, `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock gate record recorded-gate-task --decision approve"}}`, `{"type":"item.completed","item":{"type":"agent_message","text":"Committed recorded-gate-task"}}`, "", ""}
+ 	codex.failed, codex.child = strings.Replace(codex.commit, `"exit_code":0`, `"exit_code":1`, 1), strings.Replace(codex.review, "agent_message", "subagent_message", 1)
+-	pi := recordedGateHost{recordedGateReviewFromPiSession, "pi", `{"message":{"role":"assistant","content":[{"type":"toolCall","id":"c","name":"bash","arguments":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" + `{"message":{"role":"toolResult","toolCallId":"c","isError":false,"content":[{"type":"text","text":"state-head\t0123456789abcdef0123456789abcdef01234567"}]}}`, `{"message":{"role":"assistant","content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}`, `{"message":{"role":"assistant","content":[{"type":"toolCall","arguments":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`, `{"message":{"role":"assistant","content":[{"type":"text","text":"Committed recorded-gate-task"}]}}`, "", ""}
+-	pi.failed, pi.child = strings.Replace(pi.commit, `"isError":false`, `"isError":true`, 1), strings.Replace(pi.review, `"assistant"`, `"user"`, 1)
++	piBind := `{"message":{"role":"assistant","content":[{"type":"toolCall","id":"b","name":"bash","arguments":{"command":"spacedock gate record recorded-gate-task --briefing briefing.json"}}]}}` + "\n" + `{"message":{"role":"toolResult","toolCallId":"b","isError":false,"content":[{"type":"text","text":"state=open"}]}}`
++	piCommit := `{"message":{"role":"assistant","content":[{"type":"toolCall","id":"c","name":"bash","arguments":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" + `{"message":{"role":"toolResult","toolCallId":"c","isError":false,"content":[{"type":"text","text":"state-head\t0123456789abcdef0123456789abcdef01234567"}]}}`
++	pi := recordedGateHost{recordedGateReviewFromPiSession, "pi", piBind + "\n" + piCommit, `{"message":{"role":"assistant","content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}`, `{"message":{"role":"assistant","content":[{"type":"toolCall","arguments":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`, `{"message":{"role":"assistant","content":[{"type":"text","text":"Committed recorded-gate-task"}]}}`, "", ""}
++	pi.failed, pi.child = piBind+"\n"+strings.Replace(piCommit, `"isError":false`, `"isError":true`, 1), strings.Replace(pi.review, `"assistant"`, `"user"`, 1)
++	requireRecordedGate(t, recordedGateReviewFromPiSession(piCommit+"\n"+pi.review+"\n"+pi.commit+"\n"+pi.decision) == "", "pi review before the actual Briefing commit qualified")
++	requireRecordedGate(t, recordedGateReviewFromPiSession(strings.Replace(piCommit, "spacedock state commit recorded-gate-task", "spacedock gate record recorded-gate-task --briefing briefing.json && spacedock state commit recorded-gate-task", 1)+"\n"+pi.review+"\n"+pi.decision) == recordedGateReview(), "pi combined Briefing bind and state commit failed")
++	requireRecordedGate(t, recordedGateReviewFromPiSession(strings.Replace(piCommit, "spacedock state commit recorded-gate-task", "spacedock gate record recorded-gate-task --briefing briefing.json && spacedock state commit recorded-gate-task && spacedock gate record recorded-gate-task --decision approve", 1)+"\n"+pi.review) == "", "pi bind+commit+decision before review qualified")
+ 	for _, h := range []recordedGateHost{claude, codex, pi} {
+ 		requireRecordedGate(t, h.extract(h.commit+"\n"+h.review+"\n"+h.decision) == recordedGateReview(), "%s structured review failed", h.name)
+ 		for control, stream := range map[string]string{"narration": h.narration + "\n" + h.review + "\n" + h.commit + "\n" + h.decision, "failed": h.failed + "\n" + h.review + "\n" + h.decision, "order": h.review + "\n" + h.commit + "\n" + h.decision, "duplicate": h.commit + "\n" + h.review + "\n" + h.review + "\n" + h.decision, "root": h.commit + "\n" + h.child + "\n" + h.decision, "batched": strings.Replace(h.commit, "state commit recorded-gate-task", "state commit recorded-gate-task && spacedock gate record recorded-gate-task --decision approve", 1) + "\n" + h.review + "\n" + h.decision} {
+diff --git a/internal/ensigncycle/shared_fixtures_test.go b/internal/ensigncycle/shared_fixtures_test.go
+index 6f7887da..21ab1207 100644
+--- a/internal/ensigncycle/shared_fixtures_test.go
++++ b/internal/ensigncycle/shared_fixtures_test.go
+@@ -117,7 +117,7 @@ func rejectionEntity() string {
+ 	return "---\n" +
+ 		"id: rejection-task\n" +
+ 		"title: Rejection Task\n" +
+-		"status: implementation\n" +
++		"status: backlog\n" +
+ 		"completed:\n" +
+ 		"verdict:\n" +
+ 		"worktree:\n" +
+@@ -126,7 +126,7 @@ func rejectionEntity() string {
+ 		"application-state: preserve-me\n" +
+ 		"---\n" +
+ 		"# Rejection Task\n\n" +
+-		"This task starts at implementation, before any validation has run. The first implementation round must deliberately omit the fix marker so the first validation rejects it; the rework round after that rejection applies the marker.\n"
++		"This task starts at backlog, before the first implementation. Normal routing must dispatch that first implementation, which deliberately omits the fix marker so validation rejects it; the rework round after that rejection applies the marker.\n"
+ }
+ 
+ func rejectionPrompt(workflowRoot string) string {
+diff --git a/internal/ensigncycle/shared_keep_moving_negative_test.go b/internal/ensigncycle/shared_keep_moving_negative_test.go
+index 1ff0038d..b7aa0181 100644
+--- a/internal/ensigncycle/shared_keep_moving_negative_test.go
++++ b/internal/ensigncycle/shared_keep_moving_negative_test.go
+@@ -245,10 +245,9 @@ func TestAssertCodexKeepMoving(t *testing.T) {
+ 		t.Fatalf("the codex status-set-done dispatch dialect must pass (cycle-1 false-negative regression): %v", err)
+ 	}
+ 
+-	// Positive (dialect regression, PR #480): merge guard is another legitimate
+-	// terminalization surface. The worker reached the terminal merge-finalize
+-	// ceremony, so there may be no direct `status --set … status=done` command to
+-	// credit as the per-entity dispatch evidence.
++	// Negative: literal merge-guard commands are terminal corroboration, not dispatch
++	// evidence. Without dispatch build, wait, and durable reports this pass-shaped
++	// stream must remain red.
+ 	mergeGuardSurface := strings.Join([]string{
+ 		codexCommand("spacedock status --workflow-dir . --set " + kmApprovedGate + " status=" + kmNextStage + " verdict=APPROVED"),
+ 		codexCommand("spacedock merge guard " + kmApprovedGate + " --workflow-dir . --verdict passed"),
+@@ -256,8 +255,8 @@ func TestAssertCodexKeepMoving(t *testing.T) {
+ 		codexCommand("spacedock merge guard " + kmReadyTwo + " --workflow-dir . --verdict passed"),
+ 		codexCommand("spacedock status --workflow-dir . --set " + kmQuestioned + " status=" + kmReopenStage + " verdict=QUESTIONED"),
+ 	}, "\n")
+-	if err := assertCodexKeepMoving(mergeGuardSurface, kmCorrectFinal(), independent); err != nil {
+-		t.Fatalf("the codex merge-guard terminalization dialect must pass (PR #480 false-negative regression): %v", err)
++	if err := assertCodexKeepMoving(mergeGuardSurface, kmCorrectFinal(), independent); err == nil {
++		t.Fatal("unphased merge-guard commands must not prove dispatch")
+ 	}
+ 
+ 	// Negative (S4 silent park): correct actions, a silent-wait final that never names the
+diff --git a/internal/ensigncycle/shared_keep_moving_test.go b/internal/ensigncycle/shared_keep_moving_test.go
+index 572e0dd4..0382dbd6 100644
+--- a/internal/ensigncycle/shared_keep_moving_test.go
++++ b/internal/ensigncycle/shared_keep_moving_test.go
+@@ -252,11 +252,11 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
+ 			// codex 0.142.5 dispatches via the standing loop (no spawn_agent): the dispatched
+ 			// worker advances the entity to `done`, so a `status --set <e> status=done` is the
+ 			// per-entity dispatch evidence.
+-			if kmAdvancesToStatus(c, kmApprovedGate, "done") || kmMergeGuardTerminalizes(c, kmApprovedGate) {
++			if kmAdvancesToStatus(c, kmApprovedGate, "done") {
+ 				tr.approvedDispatched = true
+ 			}
+ 			for _, e := range independent {
+-				if kmAdvancesToStatus(c, e, "done") || kmMergeGuardTerminalizes(c, e) {
++				if kmAdvancesToStatus(c, e, "done") {
+ 					tr.independentDispatched[e] = true
+ 				}
+ 			}
+diff --git a/internal/ensigncycle/shared_round_recording_test.go b/internal/ensigncycle/shared_round_recording_test.go
+index aba6bde2..0705fec7 100644
+--- a/internal/ensigncycle/shared_round_recording_test.go
++++ b/internal/ensigncycle/shared_round_recording_test.go
+@@ -187,7 +187,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
+ 	}
+ 	after := readFile(t, entityPath)
+ 	for _, line := range []string{
+-		"status: implementation",
++		"status: backlog",
+ 		"workflow-state: preserve-me",
+ 		"gate-state: preserve-me",
+ 		"application-state: preserve-me",
+@@ -196,7 +196,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
+ 			t.Fatalf("round recorder did not preserve exact lifecycle line %q", line)
+ 		}
+ 	}
+-	if err := assertRejectionRecordedRound(root, entityPath, "implementation", true); err != nil {
++	if err := assertRejectionRecordedRound(root, entityPath, "backlog", true); err != nil {
+ 		t.Fatalf("recorded-round durable oracle: %v", err)
+ 	}
+ 	if err := assertRejectionRecordedRound(root, entityPath, "implementation", false); err == nil {
+diff --git a/internal/ensigncycle/shared_scenarios_negative_test.go b/internal/ensigncycle/shared_scenarios_negative_test.go
+index bcbdd0be..944b9970 100644
+--- a/internal/ensigncycle/shared_scenarios_negative_test.go
++++ b/internal/ensigncycle/shared_scenarios_negative_test.go
+@@ -26,11 +26,16 @@ type recordedGatePiEvent struct {
+ 
+ func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
+ 	before := recordedGateEntity()
+-	held := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
++	held := recordedGateHeldEntity()
+ 	review := recordedGateReview()
+ 	requireRecordedGate(t, assertGateHeld(before, held, review) == nil, "held-gate baseline failed")
+ 
+-	for name, after := range map[string]string{"unbound": before, "advanced": strings.Replace(held, "status: validation", "status: done", 1), "self-approved": strings.Replace(held, "verdict:\n", "verdict: passed\n", 1)} {
++	for name, after := range map[string]string{
++		"unbound":        before,
++		"advanced":       strings.Replace(held, "status: validation", "status: done", 1),
++		"self-approved":  strings.Replace(held, "verdict:\n", "verdict: passed\n", 1),
++		"wrong-briefing": strings.Replace(held, recordedGateBriefingID, "briefing:docs-dev:wrong", 1),
++	} {
+ 		requireRecordedGate(t, assertGateHeld(before, after, review) != nil, "%s gate qualified", name)
+ 	}
+ }
+@@ -39,14 +44,14 @@ func TestRejectionFlowNegativeSingleCycle(t *testing.T) {
+ 	rejectedObserved := "validation was REJECTED; routing the finding back to implementation"
+ 
+ 	// Un-driven fixture: the rejection scenario now starts BEFORE the first
+-	// validation, at status: implementation with NO stage reports and NO seeded
++	// implementation, at status: backlog with NO stage reports and NO seeded
+ 	// rejection. The seeded fixture must NOT pre-satisfy assertRejectionFlow — a live
+ 	// pass requires the real producer to drive BOTH cycles (omit the fix, get
+ 	// rejected, rework, re-validate). If this seeded state passed, a live run that did
+ 	// nothing would falsely pass.
+ 	seeded := rejectionEntity()
+-	if !strings.Contains(seeded, "status: implementation") {
+-		t.Fatal("rejection fixture must now start at status: implementation, before the first validation")
++	if !strings.Contains(seeded, "status: backlog") {
++		t.Fatal("rejection fixture must start at backlog so normal routing advances into the first implementation")
+ 	}
+ 	if got := len(implementationReport.FindAllString(seeded, -1)); got != 0 {
+ 		t.Fatalf("rejection fixture must start with no implementation reports (live producer writes them), got %d", got)
+diff --git a/skills/first-officer/references/pi-first-officer-runtime.md b/skills/first-officer/references/pi-first-officer-runtime.md
+index 83663d44..dbd030b9 100644
+--- a/skills/first-officer/references/pi-first-officer-runtime.md
++++ b/skills/first-officer/references/pi-first-officer-runtime.md
+@@ -19,4 +19,6 @@ The build artifact carries the entity slug/name, entity path, workflow directory
+ 
+ Live Pi tests should run with an isolated Pi config directory and an isolated session directory. The harness may copy the operator's existing Pi auth file into the isolated config directory so OAuth/subscription credentials are reused without sharing global sessions, packages, or settings.
+ 
+-The durable proof for Pi support is not transcript phrasing. A valid live proof dispatches a Pi ensign against a temp split-root workflow and verifies process exit, state checkout file changes, git log, and stage report content.
++Ordinary Pi worker proof is durable-state based: dispatch a Pi ensign against a temp split-root workflow and verify process exit, state checkout file changes, git log, and stage report content.
++
++Recorded-gate presentation is the explicit exception. On Pi, the captain-facing review is one root-session assistant text block after the selected Briefing commit and before the decision mutation; shell output, tool results, child output, and later summaries do not qualify. Recorded-gate lifecycle proof combines that root event with the durable command, state, git, and successor-effect evidence.
