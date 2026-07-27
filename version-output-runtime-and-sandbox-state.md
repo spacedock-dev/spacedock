@@ -12,7 +12,7 @@ issue:
 gates:
     version: 1
     current:
-        gate: gate:docs-dev:cn:ideation
+        gate: gate:docs-dev:cn:validation
     records:
         - id: gate:docs-dev:cn:backlog
           stage: backlog
@@ -76,6 +76,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:docs-dev:cn:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:cn-validation-1
+              briefing:
+                id: briefing:docs-dev:cn:validation:attempt-1:revision-1
+                digest: sha256:b6b5b1817572959dc856399c844fa7e06a5a091ce2c1eabd8a09c4f5db129c66
+                digest-domain: canonical-bytes
+                room-ref: ./version-output-runtime-and-sandbox-state/review/validation/briefing-1
 ---
 
 Make the first command every First Officer session runs describe the session it is actually in: the detected runtime, and whether this session is sandboxed.
