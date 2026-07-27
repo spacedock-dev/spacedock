@@ -1,7 +1,7 @@
 ---
 id: se0v37bt7mhsrmhta1nyns0r
 title: "Runtime Live E2E has failed on every branch for three days, so no merge since 2026-07-24 carries a live signal"
-status: ideation
+status: implementation
 source: "Found attributing PR #571's four red live lanes, 2026-07-27. The change was exonerated by baseline comparison and local reproduction; the lanes were already red on every branch."
 started: 2026-07-27T17:05:38Z
 completed:
@@ -56,7 +56,7 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
