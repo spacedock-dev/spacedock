@@ -176,51 +176,118 @@ satisfy this repair.
 Evidence: the trace advances the approved entity, builds three dispatches,
 waits, reads three durable implementation reports, and records exact successful
 outputs `finalized: <entity> -> done` for all three entities. The extractor
-requires the literal entity name in the merge-guard command, so it misses the
-valid `for slug ...; merge guard "$slug"` loop despite exact terminal outputs.
+can reconstruct the required build, wait, and durable-report phases, while its
+merge helper requires the literal entity name in the command and misses the
+valid `for slug ...; merge guard "$slug"` confirmation. Staff review also found
+the converse false positive: `codexKeepMovingTrace` directly treats a literal
+`merge guard <entity>` command as dispatch even when no build, wait, or durable
+report exists. Both sides must be repaired together so the oracle is neither
+blind to the retained trace nor green on a planted command.
 
-In `internal/ensigncycle/codex_dispatch_evidence_test.go`, accept an exact
-successful finalization line from a merge-guard command only after that entity
-has crossed the existing dispatch-build and wait phases; then credit its
-durable report/finalization. Add the batched-loop regression and missing-build,
-missing-wait, failed-command, missing-entity, and planted-output controls in
+In `internal/ensigncycle/shared_keep_moving_test.go`, remove
+`kmMergeGuardTerminalizes` as direct positive dispatch evidence for the
+approved and independent entities. Keep it as a negative forward-drive signal
+for the questioned entity: attempting to merge that entity before its
+correction folds must still fail. Existing explicit `spawn_agent`,
+standing-worker `status=done`, and phase-bound dispatch evidence remain
+accepted. The retained batched trace qualifies through the existing
+`dispatchEvidence.stageReport` assignments after build, wait, and named report;
+merge output is terminal corroboration, never standalone dispatch proof.
+
+In `internal/ensigncycle/codex_dispatch_evidence_test.go`, allow an exact
+successful `finalized: <entity> -> done` line from a batched merge-guard command
+to attach to that entity only after its state machine has observed successful
+dispatch build, completed wait, and a durable stage report. Add a
+retained-shape positive and missing-build, missing-wait, missing-report,
+failed-command, missing-entity, literal-command-only, and planted-output
+controls in
 `internal/ensigncycle/codex_dispatch_evidence_regression_test.go`.
 
-Falsification: a finalization-looking string without the entity's prior
-successful build and wait, or from a failed/non-merge command, remains red. If
-the phase-bounded extractor still finds no report for an entity, that entity's
-failure is conduct.
+Falsification: an otherwise pass-shaped keep-moving transcript containing
+literal `merge guard approved-gate`, `merge guard ready-one`, and `merge guard
+ready-two` but no dispatch build, wait, or durable reports must fail the
+host-neutral assertion. Removing any one phase from the retained-shape positive
+must also fail; a finalization-looking string from a failed/non-merge command
+remains red. If the fully phase-bound retained trace still finds no report for
+an entity, that entity's failure is conduct.
 
 ## Implementation surface and boundary
 
-Exactly these ten existing files are planned:
+Exactly these eleven existing files are planned:
 
 | failure | files | hand-written estimate |
 | --- | --- | ---: |
 | gate oracle | `internal/ensigncycle/gate_assert_impl_test.go`, `internal/ensigncycle/gate_assert_test.go`, `internal/ensigncycle/shared_scenarios_negative_test.go` | +46/-18 |
 | Opus harness | `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +22/-4 |
 | rejection fixture | `internal/ensigncycle/shared_fixtures_test.go`, shared negative file above | +9/-2 |
-| keep-moving oracle | `internal/ensigncycle/codex_dispatch_evidence_test.go`, `internal/ensigncycle/codex_dispatch_evidence_regression_test.go` | +38/-5 |
-| Pi conduct | `skills/first-officer/references/pi-first-officer-runtime.md`, `internal/contractlint/fo_function_reference_invariant_test.go` | +12/-2 |
-| operator docs | `docs/runtime-live-ci.md` | +4/-0 |
+| keep-moving oracle | `internal/ensigncycle/shared_keep_moving_test.go`, `internal/ensigncycle/codex_dispatch_evidence_test.go`, `internal/ensigncycle/codex_dispatch_evidence_regression_test.go` | +66/-14 |
+| Pi conduct | `skills/first-officer/references/pi-first-officer-runtime.md`, `internal/contractlint/fo_function_reference_invariant_test.go` | +14/-1 |
+| operator docs | `docs/runtime-live-ci.md` | +3/-3 |
 
-Expected hand-written total is +131/-31, 162 changed lines. Generated/golden
-impact is exactly 0 files and 0 lines; live artifacts remain uncommitted.
-Implementation must stop for re-approval above 12 files or 219 changed
-hand-written lines (two files or 35 percent above the estimate), or if any
-production Go package becomes necessary.
+Expected hand-written total is +160/-42, 202 changed lines across 11 existing
+files. Generated/golden impact is exactly 0 files and 0 lines; live artifacts
+remain uncommitted. Implementation must stop for re-approval above 13 files or
+273 changed hand-written lines (two files or 35 percent above the estimate),
+or if any production Go package becomes necessary.
 
 No scenario is withdrawn, quarantined, skipped, or weakened. There is no
 compatibility layer, new standing harness, prompt coaching, fixture prompt
 change, or CI trigger. Existing live runners, transcript formats, command log,
 production gate model/validator, and negative-test files are sufficient.
 
-The documentation delta in `docs/runtime-live-ci.md` is one explicit exception
-to “durable state rather than transcript wording”: ordinary Pi front-door
-worker proof remains durable, while recorded-gate proof additionally requires
-the root assistant presentation event. Public site behavior does not change;
-the adapter is being brought into conformance with the already-published gate
-contract.
+### Exact Pi behavior and operator documentation delta
+
+In `skills/first-officer/references/pi-first-officer-runtime.md`, replace this
+exact current paragraph:
+
+```text
+The durable proof for Pi support is not transcript phrasing. A valid live proof dispatches a Pi ensign against a temp split-root workflow and verifies process exit, state checkout file changes, git log, and stage report content.
+```
+
+with:
+
+```text
+Ordinary Pi worker proof is durable-state based: dispatch a Pi ensign against a temp split-root workflow and verify process exit, state checkout file changes, git log, and stage report content.
+
+Recorded-gate presentation is the explicit exception. On Pi, the captain-facing review is one root-session assistant text block after the selected Briefing commit and before the decision mutation; shell output, tool results, child output, and later summaries do not qualify. Recorded-gate lifecycle proof combines that root event with the durable command, state, git, and successor-effect evidence.
+```
+
+This is tool-agnostic host behavior: it binds channel and order only, without
+prescribing a command, exact wording, recommendation, decision, or answer.
+`internal/contractlint/fo_function_reference_invariant_test.go` pins those
+semantic invariants and fails if the Pi adapter again says transcript events
+never matter or permits child/tool output.
+
+In `docs/runtime-live-ci.md`, replace the current local Pi paragraph and command:
+
+```text
+Run the Pi front-door smoke locally (`npm install -g pi-coding-agent`, `pi install npm:pi-subagents`, and either `pi login` or `OPENAI_API_KEY`). The smoke loads the current checkout's Spacedock first-officer and ensign skills plus the local pi-subagents extension/skill explicitly; it verifies durable state in the split-root state checkout rather than transcript wording alone.
+
+go test -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
+```
+
+with:
+
+```text
+Run the Pi live proofs locally (`npm install -g pi-coding-agent`, `pi install npm:pi-subagents`, and either `pi login` or `OPENAI_API_KEY`). `TestLivePiFrontDoorSmoke` loads the current checkout's Spacedock first-officer and ensign skills plus the local pi-subagents extension/skill and verifies durable split-root worker state. `TestLivePiRecordedGateLifecycle` loads the same current-checkout skills through the Pi front door, drives the shared recorded-gate fixture, and requires the root-session assistant review after the committed Briefing and before the decision in addition to durable command, state, git, and successor evidence.
+
+go test -tags live -count=1 -run '^(TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle)$' ./internal/ensigncycle -v
+```
+
+Also replace the current `pi-live` GitHub-setup sentence:
+
+```text
+Installs `pi-coding-agent`, `pi-subagents`, and `pi-intercom`, runs the Pi shared coverage guard plus `TestLivePiFrontDoorSmoke`, and uploads artifacts under `live-artifacts/pi/`.
+```
+
+with:
+
+```text
+Installs `pi-coding-agent`, `pi-subagents`, and `pi-intercom`, runs the Pi shared coverage guard, `TestLivePiFrontDoorSmoke`, and `TestLivePiRecordedGateLifecycle`, and uploads artifacts under `live-artifacts/pi/`; the recorded-gate test additionally grades the ordered root assistant review event.
+```
+
+Public site behavior does not change; the host adapter and operator guide are
+being brought into conformance with the already-published gate contract.
 
 ## Acceptance criteria
 
@@ -240,8 +307,10 @@ contract.
 4. Recorded-gate still proves one qualifying root review, one consumed
    decision, one successor dispatch, and one later durable effect on every
    supported host. Rejection still proves two implementation reports and two
-   validations. Keep-moving still proves advance, dispatch, wait/report, and
-   terminalization for every ready entity.
+   validations. Keep-moving still proves advance and dispatch for every ready
+   entity; Codex's transcript-only path requires successful build, completed
+   wait, and durable report, and any claimed finalization must be exact,
+   successful, and attached to that phase-bound entity.
 5. The measurable release result moves from 0/4 green lane jobs in retained run
    `30257280066` to 4/4 green jobs in exactly one manually dispatched Runtime
    Live E2E run at the same locally proven tip. Prerelease remains blocked until
@@ -277,10 +346,10 @@ SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/pi-focused" SPACEDO
 After those pass, run the complete affected local live proof:
 
 ```bash
-SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/sonnet-complete" SPACEDOCK_LIVE_MODEL=sonnet go test -json -tags live -count=1 -timeout 40m -run '^(TestLiveDefaultHeadlessStopsAtGate|TestLiveClaudeSharedScenarios)$' ./internal/ensigncycle | tee live-artifacts/local-proof/sonnet-complete.jsonl
-SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/opus-complete" SPACEDOCK_LIVE_MODEL=claude-opus-4-8 go test -json -tags live -count=1 -timeout 40m -run '^(TestLiveDefaultHeadlessStopsAtGate|TestLiveClaudeSharedScenarios)$' ./internal/ensigncycle | tee live-artifacts/local-proof/opus-complete.jsonl
-SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/codex-complete" SPACEDOCK_CODEX_LIVE_REQUIRED=1 go test -json -tags live -count=1 -timeout 40m -run '^TestLiveCodexSharedScenarios$' ./internal/ensigncycle | tee live-artifacts/local-proof/codex-complete.jsonl
-SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/pi-complete" SPACEDOCK_PI_LIVE_REQUIRED=1 go test -json -tags live -count=1 -timeout 40m -run '^(TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle)$' ./internal/ensigncycle | tee live-artifacts/local-proof/pi-complete.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/sonnet-complete" SPACEDOCK_LIVE_MODEL=sonnet go test -json -tags live -count=1 -timeout 40m -run '^(TestLiveDefaultHeadlessStopsAtGate|TestLiveClaudeSharedScenarios)$' ./internal/ensigncycle > live-artifacts/local-proof/sonnet-complete.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/opus-complete" SPACEDOCK_LIVE_MODEL=claude-opus-4-8 go test -json -tags live -count=1 -timeout 40m -run '^(TestLiveDefaultHeadlessStopsAtGate|TestLiveClaudeSharedScenarios)$' ./internal/ensigncycle > live-artifacts/local-proof/opus-complete.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/codex-complete" SPACEDOCK_CODEX_LIVE_REQUIRED=1 go test -json -tags live -count=1 -timeout 40m -run '^TestLiveCodexSharedScenarios$' ./internal/ensigncycle > live-artifacts/local-proof/codex-complete.jsonl
+SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/pi-complete" SPACEDOCK_PI_LIVE_REQUIRED=1 go test -json -tags live -count=1 -timeout 40m -run '^(TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle)$' ./internal/ensigncycle > live-artifacts/local-proof/pi-complete.jsonl
 ```
 
 There is no separate spike: retained sessions already prove production gate
@@ -302,3 +371,20 @@ repairs, and one Pi conduct repair while preserving every approved journey.
 Implementation is bounded to existing surfaces and must earn complete local
 Claude, Codex, and Pi proof before the single same-tip CI confirmation that
 unblocks prerelease.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: The keep-moving design must include `internal/ensigncycle/shared_keep_moving_test.go` and a falsifiable planted/unphased negative control because lines 255-260 currently credit literal `merge guard <entity>` without dispatch-build/wait/durable-report proof; update exact surface/LOC and stop boundary without weakening the journey.
+  The revised 3-file repair removes raw merge commands as positive dispatch evidence, retains them as a corrected-entity violation, and budgets 11 files at +160/-42 LOC with a 13-file/273-line stop.
+- DONE: Make every complete-local command independently failure-preserving (`set -o pipefail` in the same block, or remove the pipeline).
+  All four complete-local commands now redirect JSON directly instead of piping through `tee`, so each preserves the `go test` exit independently.
+- DONE: Provide exact before/after text for the Pi/host behavior and operator documentation, including `docs/runtime-live-ci.md`'s currently missing `TestLivePiRecordedGateLifecycle` description; revise the doc estimate credibly.
+  Exact adapter, local-run, and GitHub-lane replacements are specified above; the operator-doc budget is now +3/-3 and generated/golden impact remains zero.
+
+### Summary
+
+Cycle 2 closes all three staff-review findings, with checklist 3/3 DONE and all
+nine failure classifications unchanged. The trustworthy-green boundary still
+forbids scenario withdrawal, prompt coaching, quarantine, compatibility
+layers, a new harness, CI-led iteration, product edits during ideation, and any
+live-host or CI run before implementation earns complete local proof.
