@@ -268,3 +268,30 @@ Cycle 4 is an evidence-only addendum mapping each acceptance criterion to its de
 ### Summary
 
 Implementation now keeps a gate-entered working stage as its own dispatch target until a durable exact-stage report is structurally complete and committed, and it refuses every direct away-status mutation byte-clean during that first-entry window. The shared First Officer contract distinguishes live host-signal verification from cold committed-report recovery, existing worktree and rejected-merge compatibility paths are preserved, full and race suites pass, and both required final-SHA Codex lifecycle journeys are green.
+
+## Stage Report: validation
+
+- DONE: Reproduce the final-SHA Codex rejection-flow and recorded-gate journeys and verify entered implementation is durably dispatched before validation.
+  At source tip `bd2e467b`, isolated-OAuth Codex runs passed in 346s and 215s; the clean rejection entity records original implementation, first REJECTED validation, rework implementation, and second PASSED validation in order, while recorded-gate durably commits and completes handoff after consume.
+- DONE: Adversarially verify self-projection, byte-clean away-status guards, cold committed-report recovery, and unchanged supported compatibility paths against AC-1 through AC-4.
+  Focused real-CLI tests and an external final-SHA binary matrix passed malformed/failed/wrong-stage/later-masked/dirty/force/chained/backward/terminal/same-stage/rejected-merge/committed-recovery controls, but reproduced the material worktree and passed-merge defects below.
+- DONE: Run applicable focused/full/race/format checks, audit Roborev dispositions with the release-scope template, and recommend PASSED or REJECTED without pushing or triggering CI.
+  `gofmt -w ./cmd ./internal`, focused status/ensigncycle/merge tests, `go test ./...`, `go test ./... -race`, and `git diff --check` pass; no product write, push, PR, CI run, or schema/state expansion occurred.
+
+### Material Findings
+
+- Outcome defect — normal gate-entered worktree dispatch is supported, and `worktree` is set by the shipped FO recipe; afterward any away-status update bypasses the guard, so unfinished work can reach validation without a report. This violates AC-2's every-away-mutation boundary; the final-SHA external CLI changed `build -> review` with exit 0 and changed bytes.
+- Outcome defect — documented direct `merge guard --verdict passed` use can clear an existing merge `mod-block` before the incomplete-report terminal transition fails, leaving a failed command's state partially mutated. This violates the non-negotiable merge state-integrity/byte-clean refusal boundary adjacent to AC-2; the final-SHA external CLI exited 1 after changing `mod-block: merge:local-merge` to empty.
+- Evidence defect — AC-3 promises that a cold, structurally complete report missing a reconstructed checklist obligation is vetoed by the FO, but the recovery matrix proves only scheduler structure/durability and both live journeys carry completion signals. No command or durable cold-FO journey proves semantic veto/no-duplicate behavior for that supported crash trigger.
+
+### Deferred Risks and Roborev Recheck
+
+- Job 2948 non-versioned state is deferred: Git-less/untracked/unborn state cannot recover, but AC-3 promises committed path-clean evidence; promote when public workflow support includes non-versioned state.
+- Job 2948 same-stage re-entry is deferred by AC-4; promote when a gate targets a visited stage or feedback recovery uses `status --next`.
+- Job 2948 Git-process scaling is deferred: five reads over the supported 131-entity workflow measured 0.14-0.17s; promote if that workload exceeds a 1s read budget or a registered latency regression appears.
+- Job 2948 merge-frontmatter strictness is deferred; promote when a sanctioned FO trace carries an uncommitted non-`pr`/`mod-block` delta and completion is refused. Gate/terminal exclusion coverage and the hardcoded CLI fixture are polish with no observed supported harm.
+- Earlier worktree-overlay deadlock and rejected-merge finalization findings are exercised: rejected merge is fixed, while the overlay deadlock's skip-based correction leaves the broader material worktree bypass above.
+
+### Summary
+
+Recommendation: REJECTED. AC-1's strict ordered journey and AC-4's no-new-state/scope boundary are proven, and the structural half of AC-3 passes, but two supported mutation paths violate AC-2/state integrity and the semantic cold-recovery half of AC-3 lacks behavioral evidence. Correct the worktree-aware proof path and merge preflight atomically, then add a cold checklist-omission journey before revalidation.
