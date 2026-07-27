@@ -23,6 +23,19 @@ gates:
                 digest: sha256:a19bdffd9042fe57c50bc9d86b6f84cbea1c947d4b3929bd171cb44e3c99d875
                 digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:se0v37bt7mhsrmhta1nyns0r:backlog:1
+                briefing: briefing:se0v37bt7mhsrmhta1nyns0r:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-27T17:03:46.899149Z"
+                decision: approve
+                reason: Captain approved the release-blocking ideation plan after reviewing the bound failure classification and local-proof boundary.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Restore a trustworthy live signal. The lanes that grade First Officer conduct end-to-end have been red continuously for three days across unrelated branches, so every merge in that window shipped without the verification those lanes exist to provide.
