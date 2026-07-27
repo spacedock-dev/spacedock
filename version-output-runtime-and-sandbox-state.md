@@ -56,7 +56,13 @@ gates:
               application:
                 action: feedback
                 target-stage: ideation
-                state: pending
+                state: superseded
+            - id: gate-attempt:cn-ideation-2
+              briefing:
+                id: briefing:docs-dev:cn:ideation:attempt-2:revision-1
+                digest: sha256:8d8348fe9e1f1083c56532dd3d4d96286bd649d6c36c02205a48297276b02650
+                digest-domain: canonical-bytes
+                room-ref: ./version-output-runtime-and-sandbox-state/review/ideation/briefing-2
 ---
 
 Make the first command every First Officer session runs describe the session it is actually in: the detected runtime, and whether this session is sandboxed.
