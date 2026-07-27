@@ -3314,3 +3314,54 @@ Roborev finding 2, cold gate discoverability, is MATERIAL but transferred to app
 The cycle-27 correction is local code commit `5081d120`, exactly 1 fixture file at `+18/-1` (cumulative branch: 43 files at `+5009/-357`); product code, skill text, the no-retry boundary, and committed-source validation are unchanged.
 Roborev's cold-gate discoverability finding is MATERIAL but already transferred to active approved owner `sk/gate-agent-ergonomics`, so s4 adds no duplicate patch.
 Roborev's shell finding is DECLINED as non-material because the cited test is live-tagged rather than default/race and passed on the supported Ubuntu live host; promote if a supported `-tags live` host lacks either explicitly exercised tool shell.
+
+## Stage Report: validation (cycle 28)
+
+- FAILED: Reproduce the cycle-27 Sonnet and Opus default-headless gate-stop proof and verify exactly one successful prepare with no rejected-prepare retry.
+  At exact code commit `5081d120`, Sonnet passed in 233.32s; Opus reached the same clean hold but failed in 437.71s because its captain-facing review rendered `sha256:f48e4b1f…` instead of the exact durable digest.
+- DONE: Verify the correction only isolates the observer log from the workflow fixture, preserves committed-source rejection and the no-retry boundary, and satisfies every s4 acceptance criterion it affects.
+  The commit changes only `claude_live_runner_test.go` at `+18/-1`; both observer logs were sibling `/004/command.log` files outside workflow `/003`, neither prepare selected `command.log`, and focused committed-source/no-retry controls passed.
+- DONE: Run applicable focused/full/race/format checks, classify findings using the release-scope template, and recommend PASSED or REJECTED without pushing or triggering CI.
+  Focused tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, `git diff --check`, and CI-matched `mkdocs build --strict` passed; recommendation is REJECTED and no code push or CI run occurred.
+
+### Live command evidence
+
+- Sonnet: successful prepare 1, failed prepare 0, prepare exits 1; after prepare,
+  decision 0, consume 0, successor dispatch 0.
+- Opus: successful prepare 1, failed prepare 0, prepare exits 1; after prepare,
+  decision 0, consume 0, successor dispatch 0.
+- Both trajectories retained the observer log for the existing assertion while keeping
+  it outside the fixture; the prepare argv selected only committed fixture sources.
+- The Opus stream contains the full digest
+  `sha256:f48e4b1fa4b61df1d8a01a4f5da64e1bf6876850d2aac54fdf496240bdf0e03f`
+  before the root review abbreviates it, so the exact-value oracle is not false-green.
+
+### Acceptance and finding classification
+
+- AC-1/2/3/5 remain unchanged by `5081d120`; the two-file prepare, exact local-object,
+  arbitrary-locator/summary, and recomputed-authority suites passed under full/race.
+- AC-4 command authority passed in both live traces, but its supported Opus presentation
+  proof failed: the captain did not receive the exact bound digest.
+- MATERIAL outcome defect — supported workflow: default headless Opus with no conn;
+  observable harm: the captain cannot identify the exact frozen Briefing from the review;
+  boundary: AC-4's exact prepared-room authority and the gate-presentation contract;
+  trigger evidence: this isolated-home exact-tip run and retained final message.
+- Focused correction: render or validate the full bound Briefing identity and digest
+  deterministically before the captain-facing message, then rerun this exact Opus proof;
+  do not alter prepare, committed-source refusal, retry, decision, or consume behavior.
+
+### Roborev 2937 dispositions
+
+- Cold-gate discovery remains MATERIAL under the four-field template, but its approved
+  `gate-agent-ergonomics.md` owner is active at ideation with s4 as a declared prerequisite;
+  s4 must not duplicate that readiness/scheduler surface.
+- The shell finding remains a deferred risk: it triggers only if a supported live-tag host
+  lacks an explicitly exercised shell; the test is absent from default/race and current
+  supported live hosts provide both. Promote when such a host is added or observed.
+
+### Summary
+
+REJECTED: the cycle-27 observer-log correction works and both raw command trajectories
+hold the no-authority boundary, but the required Opus live proof fails AC-4 by abbreviating
+the authoritative digest. This is a presentation-mechanism defect, not a prepare retry or
+committed-source regression.
