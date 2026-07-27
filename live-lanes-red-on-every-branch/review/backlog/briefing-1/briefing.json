@@ -1,0 +1,78 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:se0v37bt7mhsrmhta1nyns0r:backlog:attempt-1:revision-1",
+  "question": "Should this live-lane outage enter ideation as a durable-decisions release blocker, with local host proof required before one CI confirmation?",
+  "summary": "Approve ideation and keep the prerelease blocked. PR #565 introduced the outage, but the filed diagnosis needs two corrections: recorded-gate-lifecycle became an approved cross-host acceptance obligation and must not be withdrawn, while gate-guardrail was substantially rewritten by #565 so the last green run does not prove the strengthened oracle ever passed. Ideation must classify each current failure from durable artifacts: gate binding/cardinality, root review presentation versus extraction, rejection rework, and post-approval dispatch. Preserve the existing value obligations, fix conduct or the oracle according to the governing contract, and prohibit compatibility work, prompt coaching, scenario quarantine, new harnesses, or CI-led iteration. Focused tests must pass under local isolated Claude, Codex, and Pi authentication; then the complete local live suites and Roborev must pass before one pushed CI run.",
+  "artifacts": [
+    {
+      "id": "artifact:se0v37bt7mhsrmhta1nyns0r:backlog:attempt-1:revision-1:entity",
+      "uri": "git-root://state/079d395166f3256c17aa3768f1509601c0162e84/live-lanes-red-on-every-branch/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0bf07861167f8253aa3ee9287acc26d4828f640fb42707eebdb0f679d72aacae",
+      "summary": "Filed outage diagnosis and reproduction evidence; ideation must correct its newcomer/regression classification before implementation."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:se0:6y-history",
+      "uri": "git-root://state/079d395166f3256c17aa3768f1509601c0162e84/_archive/first-officer-gate-command-lifecycle/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:80ed1c9a0a0630f8a91a4568288040ab6fa076f493bf3d6cc4064929762d7daa"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:gate-hold-oracle",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/ensigncycle/gate_assert_impl_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:c4efe2fcc78a303f668b76a029c2e80ea52b67ccff5fe892660f6fbf6c4d95e0"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:recorded-gate-oracle",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/ensigncycle/recorded_gate_lifecycle_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:0a0721ba78b5068313dd20eb6f45e90acadfbef1a30450df9c8ec637218cc70f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:rejection-oracle",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/ensigncycle/shared_assertions_impl_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:7f2f7bfdfc0708786984b9824a11eea2813277c3ddd67c43f3eccfd240874a96"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:keep-moving-oracle",
+      "uri": "git-root://main/50f8d1fb7b0cbc40747622d9f9d95467a0bec6c0/internal/ensigncycle/shared_keep_moving_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:460ad17b43245e3df24775d051b65ae96fd05192a4cb53c1fcd7666ed7ad78f4"
+    },
+    {
+      "type": "Routing",
+      "id": "routing:se0:backlog",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Dispatch ideation",
+          "to": "stage:ideation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Correct the recovery boundary before ideation",
+          "to": "stage:backlog"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold the release blocker",
+          "to": "gate:backlog"
+        }
+      ]
+    }
+  ]
+}

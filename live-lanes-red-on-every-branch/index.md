@@ -9,6 +9,20 @@ verdict:
 score: 0.85
 worktree:
 issue:
+gates:
+    version: 1
+    current:
+        gate: gate:se0v37bt7mhsrmhta1nyns0r:backlog
+    records:
+        - id: gate:se0v37bt7mhsrmhta1nyns0r:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:se0v37bt7mhsrmhta1nyns0r-backlog-1
+              briefing:
+                id: briefing:se0v37bt7mhsrmhta1nyns0r:backlog:attempt-1:revision-1
+                digest: sha256:a19bdffd9042fe57c50bc9d86b6f84cbea1c947d4b3929bd171cb44e3c99d875
+                digest-domain: canonical-bytes
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Restore a trustworthy live signal. The lanes that grade First Officer conduct end-to-end have been red continuously for three days across unrelated branches, so every merge in that window shipped without the verification those lanes exist to provide.
