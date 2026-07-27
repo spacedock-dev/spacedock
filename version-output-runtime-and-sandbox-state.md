@@ -9,6 +9,20 @@ verdict:
 score: 0.4
 worktree:
 issue:
+gates:
+    version: 1
+    current:
+        gate: gate:docs-dev:cn:backlog
+    records:
+        - id: gate:docs-dev:cn:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:cn-backlog-1
+              briefing:
+                id: briefing:docs-dev:cn:backlog:attempt-1:revision-1
+                digest: sha256:7adb8b917e29b7e52dacb9e330ae55d3f76edd72a05619f9d72821e0a1c5a6aa
+                digest-domain: canonical-bytes
+                room-ref: ./version-output-runtime-and-sandbox-state/review/backlog/briefing-1
 ---
 
 Make the first command every First Officer session runs describe the session it is actually in: the detected runtime, and whether this session is sandboxed.
