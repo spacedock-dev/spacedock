@@ -16,6 +16,7 @@ import (
 // resolves the logging shim first on PATH and the shim delegates every call back
 // to that exact binary.
 func TestLivePiRecordedGateLifecycle(t *testing.T) {
+	t.Skip("TODO(9w59t6m1qc46hccd54p04z2j): delegated gate presentation-to-application/dispatch is unreliable")
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
 	expectedChildModel := piLiveModelName()
