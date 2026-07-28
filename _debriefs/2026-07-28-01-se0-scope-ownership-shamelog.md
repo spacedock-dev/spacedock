@@ -278,3 +278,21 @@ Adopt both layers:
 
 Do not add a CI-specific rule. This incident concerns ownership of discovered
 work, regardless of where the evidence came from.
+
+## Captain ruling
+
+The captain rejected the proposed independent ownership axis, matrix, and new
+behavioral fixture as unnecessary machinery. Reuse the existing **Needs
+decision** class:
+
+> Material means the finding cannot be silently ignored; it does not mean this
+> task owns the fix. A Material finding the task did not cause and whose remedy
+> lies outside its approved scope is Needs decision — preserve the evidence,
+> name the blocked claim, and stop.
+
+At ideation, pair the files-and-insertions estimate with the observable
+semantics the task may change: command grammar, stored formats, authority, and
+runtime behavior. Files and lines measure cost; they do not license undeclared
+semantic changes.
+
+These two rules supersede the broader mechanism proposed above.
