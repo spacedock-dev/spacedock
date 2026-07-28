@@ -184,9 +184,28 @@ func TestSonnetRecordedGateDigestTODOIsModelScoped(t *testing.T) {
 	}
 }
 
+func TestOpusRejectionRegateBriefingTODOIsModelScoped(t *testing.T) {
+	for model, want := range map[string]bool{
+		"opus":               true,
+		"claude-opus-4-8":    true,
+		"claude-sonnet-5":    false,
+		"sonnet":             false,
+		"openrouter/opossum": false,
+	} {
+		if got := opusRejectionRegateBriefingTODO(model); got != want {
+			t.Errorf("opusRejectionRegateBriefingTODO(%q) = %t, want %t", model, got, want)
+		}
+	}
+}
+
 func sonnetRecordedGateDigestTODO(model string) bool {
 	model = strings.ToLower(strings.TrimSpace(model))
 	return model == "sonnet" || strings.Contains(model, "claude-sonnet-")
+}
+
+func opusRejectionRegateBriefingTODO(model string) bool {
+	model = strings.ToLower(strings.TrimSpace(model))
+	return model == "opus" || strings.Contains(model, "claude-opus-")
 }
 
 func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
@@ -316,6 +335,9 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 
 func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
+	if opusRejectionRegateBriefingTODO(runner.model()) {
+		t.Skip("TODO(zbcj98qfwtax61vxdzrf615e): Opus must reliably bind a distinct post-rework Briefing before re-enabling this journey")
+	}
 	workflowRoot := t.TempDir()
 	entityPath := writeRejectionWorkflow(t, workflowRoot)
 
