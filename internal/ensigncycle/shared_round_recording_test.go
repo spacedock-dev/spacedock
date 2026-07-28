@@ -16,6 +16,8 @@ import (
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+record(?:\s|$)`)
 var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 triage=all-fixed entries=4$`)
 
+const rejectionRound2BriefingID = "briefing:rejection-task:validation:round-2"
+
 func rejectionRoundArtifactArg(flag, filename string) *regexp.Regexp {
 	return regexp.MustCompile(`--` + regexp.QuoteMeta(flag) + `(?:=|\s+)['"]?(?:[^ \t\r\n'";&|]*/)?rejection-task/inputs/` +
 		regexp.QuoteMeta(filename) + `['"]?(?:\s|[;&|]|$)`)
@@ -115,6 +117,38 @@ func codexRecordedRejectionRound(jsonl string) bool {
 	return false
 }
 
+func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
+	doc, _, err := gates.Read(entityPath)
+	if err != nil && strings.Contains(err.Error(), "entity has no gates record") {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("malformed final validation gate: %w", err)
+	}
+	if wantStatus != "validation" {
+		return fmt.Errorf("round-only state contains an ordinary gate record; `gate record --round` must retain only advisory review-round state")
+	}
+	if len(doc.Records) != 1 || doc.Current.Gate != "gate:rejection-task:validation" {
+		return fmt.Errorf("final gate selection does not identify exactly one rejection-task validation gate")
+	}
+	record := doc.Records[0]
+	if record.ID != doc.Current.Gate || record.Stage != "validation" || len(record.Attempts) != 1 {
+		return fmt.Errorf("selected validation gate does not contain exactly one attempt")
+	}
+	attempt := record.Attempts[0]
+	if attempt.Briefing.ID == rejectionBriefingID {
+		return fmt.Errorf("validation/1 advisory round was retained as a gate attempt")
+	}
+	if attempt.ID != "gate-attempt:rejection-task-validation-1" ||
+		attempt.Briefing.ID != rejectionRound2BriefingID {
+		return fmt.Errorf("selected validation gate is not bound to the expected round-2 Briefing")
+	}
+	if attempt.Resolution != nil || attempt.Application != nil {
+		return fmt.Errorf("final round-2 validation gate is not open")
+	}
+	return nil
+}
+
 func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, invoked bool) error {
 	if !invoked {
 		return fmt.Errorf("resolved launcher never invoked `gate record --round validation/1`")
@@ -135,8 +169,8 @@ func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, i
 	if !regexp.MustCompile(`(?m)^status: ` + regexp.QuoteMeta(wantStatus) + `$`).Match(entity) {
 		return fmt.Errorf("entity status changed or did not reach %s", wantStatus)
 	}
-	if regexp.MustCompile(`(?m)^gates:`).Match(entity) || regexp.MustCompile(`(?m)^\s+application:`).Match(entity) {
-		return fmt.Errorf("round recording introduced gate/application lifecycle state")
+	if err := assertRejectionRoundGateBoundary(entityPath, wantStatus); err != nil {
+		return err
 	}
 	if got := bytes.Count(entity, []byte(rejectionFeedbackCycle)); got != 1 {
 		return fmt.Errorf("Cycle 1 projection count = %d, want exactly 1", got)
@@ -224,6 +258,47 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	if err := assertRejectionRecordedRound(root, entityPath, "implementation", false); err == nil {
 		t.Fatal("inverted no-invocation control passed despite no observed launcher call")
 	}
+
+	writeFile(t, entityPath, strings.Replace(readFile(t, entityPath), "status: backlog", "status: validation", 1))
+	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
+		t.Fatalf("recorded-round oracle rejected valid final validation state without a gate: %v", err)
+	}
+	round2BriefingPath := filepath.Join(root, "rejection-task", "inputs", "gate-validation", "briefing.json")
+	writeFile(t, round2BriefingPath, fmt.Sprintf(
+		`{"type":"Briefing","version":"1","id":"%s","question":"Does the second validation confirm the fix marker is present and PASS?","artifacts":[{"id":"artifact:rejection-candidate","uri":"../../candidate.txt","mediaType":"text/plain","rev":"%s"}]}`+"\n",
+		rejectionRound2BriefingID, gates.RawDigest([]byte(rejectionCandidate)),
+	))
+	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
+		BriefingPath: round2BriefingPath,
+		WorkflowDir:  root,
+	}); err != nil {
+		t.Fatalf("bind later round-2 validation gate: %v", err)
+	}
+	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
+		t.Fatalf("recorded-round oracle rejected later open round-2 validation gate: %v", err)
+	}
+	openGateEntity := readFile(t, entityPath)
+	assertGateError := func(want string) {
+		t.Helper()
+		if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil ||
+			!strings.Contains(err.Error(), want) {
+			t.Fatalf("gate control diagnostic = %v, want %q", err, want)
+		}
+	}
+	writeFile(t, entityPath, strings.Replace(openGateEntity, "              briefing:\n", "              state: open\n              briefing:\n", 1))
+	assertGateError("malformed final validation gate")
+	writeFile(t, entityPath, strings.Replace(openGateEntity, rejectionRound2BriefingID, rejectionBriefingID, 1))
+	assertGateError("validation/1 advisory round was retained as a gate attempt")
+	writeFile(t, entityPath, openGateEntity)
+	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
+		Decision:    "hold",
+		Actor:       "person:captain",
+		Reason:      "exercise the closed-gate counterexample",
+		WorkflowDir: root,
+	}); err != nil {
+		t.Fatalf("close later validation gate for counterexample: %v", err)
+	}
+	assertGateError("final round-2 validation gate is not open")
 }
 
 func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
