@@ -345,32 +345,38 @@ being brought into conformance with the already-published gate contract.
 AC-1 through AC-4 each serve AC-5. Each mechanism criterion re-anchors to the
 same-tip value result in AC-5 and is not sufficient when AC-5 is unmet.
 
-- **AC-1** At one clean exact tip, eight focused executions pass: shared gate on
+- **AC-1** At one clean exact tip, seven focused executions pass: shared gate on
    Sonnet; shared gate and recorded gate on Opus; gate, recorded gate,
-   rejection, and keep-moving on Codex; recorded gate on Pi. The ninth focused
-   selection, Sonnet `recorded-gate-lifecycle`, reports only
+   rejection, and keep-moving on Codex. Sonnet `recorded-gate-lifecycle`
+   reports only
    [w5bfnrvpcphw857nzz93340c](../reliable-exact-digest-in-gate-review.md) and is
-   excluded from the passing count. The Sonnet and Opus executions of
+   excluded from the passing count; Pi `TestLivePiRecordedGateLifecycle` reports
+   only [9w59t6m1qc46hccd54p04z2j](../pi-delegated-gate-continuation-reliability.md)
+   and is likewise excluded because its delegated presentation-to-application/
+   dispatch capability remains unreliable. The Sonnet and Opus executions of
    `TestLiveDefaultHeadlessStopsAtGate` are likewise excluded under
    [q3vpb8hes1b3k3f1jps1kvpk](../gate-record-stage-coherence-guard.md) until
    cross-stage gate recording is rejected before re-enabling. Any other skip
    fails AC-1. These named skips may leave a CI job green but do not prove
-   either quarantined capability.
+   any quarantined capability.
 - **AC-2** Every new deterministic positive has a named counterexample: structural
    closed/wrong gate, nested-cwd uncommitted review, tool-result-only Pi review,
    pre-completed rejection seed, and unphased/planted keep-moving output all
    remain red. This prevents a green signal obtained by oracle weakening.
 - **AC-3** The full registered non-TODO shared scenario suites pass locally on
-   Sonnet, Opus, and Codex, and Pi front-door plus recorded-gate tests pass
-   locally. Complete Sonnet may report only its `recorded-gate-lifecycle` w5
-   skip; complete Sonnet and Opus may report only their top-level q3 gate-stop
-   skips. Model, exact git tip, command log/session JSONL, entity post-state,
-   and Go JSON are retained under distinct local artifact roots.
+   Sonnet, Opus, and Codex, and Pi front-door passes locally. Pi recorded gate
+   reports only its 9w skip. Complete Sonnet may report only its
+   `recorded-gate-lifecycle` w5 skip; complete Sonnet and Opus may report only
+   their top-level q3 gate-stop skips; complete Pi may report only 9w. Model,
+   exact git tip, command log/session JSONL, entity post-state, and Go JSON are
+   retained under distinct local artifact roots.
 - **AC-4** The exact ID+digest recorded-gate oracle remains unchanged. Same-tip
    live evidence proves one qualifying root review, one consumed decision, one
-   successor dispatch, and one later durable effect on Opus, Codex, and Pi;
-   Sonnet exact-digest presentation remains explicitly unproven while w5 is
-   open, and its skip cannot count as evidence. Rejection still proves two
+   successor dispatch, and one later durable effect on Opus and Codex. Sonnet
+   exact-digest presentation remains explicitly unproven while w5 is open, and
+   Pi delegated presentation-to-application/dispatch remains explicitly
+   unproven while 9w is open; neither skip can count as evidence. Rejection
+   still proves two
    implementation reports and two validations. Keep-moving still proves
    advance and dispatch for every ready entity; Codex's transcript-only path
    requires successful build, completed wait, and durable report, and any
@@ -380,8 +386,8 @@ same-tip value result in AC-5 and is not sufficient when AC-5 is unmet.
    `30257280066` to 4/4 green jobs in exactly one manually dispatched Runtime
    Live E2E run at the same locally proven tip. Prerelease remains blocked until
    that same-tip run is 4/4; CI is confirmation only, never the iteration loop.
-   While the linked TODOs remain, 4/4 may include the named q3 and w5 skips and
-   is not evidence that either quarantined capability works.
+   While the linked TODOs remain, 4/4 may include the named q3, w5, zbc, and 9w
+   skips and is not evidence that any quarantined capability works.
 
 ## Test plan
 
@@ -397,9 +403,10 @@ go test ./... -race
 
 Then run the exact focused live commands, retaining each command's `-json`
 output and artifacts. Local auth must be present. Any skip other than the
-Sonnet and Opus executions of `TestLiveDefaultHeadlessStopsAtGate` and the
-Sonnet `recorded-gate-lifecycle` selection fails AC-1. Those three skip events
-must report their linked TODOs and are excluded from the passing count:
+Sonnet and Opus executions of `TestLiveDefaultHeadlessStopsAtGate`, the Sonnet
+`recorded-gate-lifecycle` selection, and Pi `TestLivePiRecordedGateLifecycle`
+fails AC-1. Those four skip events must report their linked TODOs and are
+excluded from the passing count:
 
 ```bash
 mkdir -p live-artifacts/local-proof
@@ -413,9 +420,9 @@ SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/codex-focused" SPAC
 SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/pi-focused" SPACEDOCK_PI_LIVE_REQUIRED=1 go test -json -tags live -count=1 -timeout 40m -run '^TestLivePiRecordedGateLifecycle$' ./internal/ensigncycle | tee live-artifacts/local-proof/pi-focused.jsonl
 ```
 
-After the eight required focused executions pass, the Sonnet recorded-gate
-selection reports only w5, and the two named gate-stop invocations report only
-q3, run the complete affected local live proof:
+After the seven required focused executions pass, the Sonnet recorded-gate
+selection reports only w5, Pi recorded gate reports only 9w, and the two named
+gate-stop invocations report only q3, run the complete affected local live proof:
 
 ```bash
 SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/sonnet-complete" SPACEDOCK_LIVE_MODEL=sonnet go test -json -tags live -count=1 -timeout 40m -run '^(TestLiveDefaultHeadlessStopsAtGate|TestLiveClaudeSharedScenarios)$' ./internal/ensigncycle > live-artifacts/local-proof/sonnet-complete.jsonl
@@ -427,13 +434,14 @@ SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/live-artifacts/local-proof/pi-complete" SPACED
 Complete Opus must pass every shared scenario and may skip only the named
 top-level q3 test. Complete Sonnet must pass every non-TODO shared scenario and
 may skip only its shared recorded-gate w5 selection plus the named top-level q3
-test. Their green exits do not prove either quarantined capability while the
-linked TODOs remain.
+test. Complete Pi must pass its front-door smoke and may skip only its
+recorded-gate 9w selection. Their green exits do not prove any quarantined
+capability while the linked TODOs remain.
 
 There is no separate spike: retained sessions already prove production gate
 serialization, nested-cwd Opus review capability, Pi root assistant text
 capability, normal `status --next`, and Codex batched finalization. Only after
-all deterministic tests, eight required focused passes, the three exact named
+all deterministic tests, seven required focused passes, the four exact named
 TODO skips, and complete non-TODO local scenarios pass at the same tip may one
 Runtime Live E2E workflow be dispatched for 4/4 confirmation.
 
@@ -498,3 +506,34 @@ product, live-host, or CI behavior changed.
 - Cycle 4: REJECTED — Roborev panel job 3197; surface 14 files/293 LOC vs estimate 12 files/216 LOC (136%); AC unchanged
 - Cycle 5: REJECTED — Roborev panel job 3218; surface 16 files/369 LOC vs estimate 12 files/216 LOC (171%); AC unchanged
 - Cycle 6: REJECTED — Roborev panel job 35 and captain-approved design reset; surface 18 files/811 LOC vs estimate 12 files/216 LOC (375%); AC unchanged
+- Cycle 7: REJECTED — Roborev panel job 85 and captain-approved narrow reset; surface 18 files/799 LOC vs estimate 12 files/216 LOC (370%); AC amended: 9w is named non-proof
+
+## Stage Report: implementation
+
+- DONE: Restore structural gate, recorded-gate, rejection, and keep-moving
+  grading without weakening their deterministic counterexamples.
+- DONE: Retain exact-tip live evidence for every non-TODO focused journey and
+  quarantine Pi delegated gate continuation under
+  [9w59t6m1qc46hccd54p04z2j](../pi-delegated-gate-continuation-reliability.md)
+  after two classified exact-tip failures.
+  `final-ce4ac943-pi-recorded-gate-pinned` reached durable dispatch but presented
+  the wrong Briefing digest in 203.39s;
+  `final-ce4ac943-pi-recorded-gate-pinned-retry` presented the exact ID/digest
+  but stopped before application/dispatch in 93.94s. Prior passing classification
+  history remains retained in `se0-b25-focused/pi-recorded-gate-final-tree-retry`
+  (201.02s) and `cycle2c-pi-recorded` (352.52s). The 9w skip permits the lane to
+  run but does not prove the quarantined capability.
+- DONE: Keep `TestLivePiFrontDoorSmoke` active, preserve the production
+  gate/oracle surfaces, mark the registered/selected recorded-gate runner as an
+  explicit non-proof gap, and stay at 19 changed code files within the
+  captain-approved 811-line ceiling.
+  Final code candidate `55b3b13316571f1a84215f489c205e66327faeca` is
+  19 files/803 changed lines; all deterministic, full, race, and vet checks
+  pass, and Roborev `branch_final` re-panel job 90 reports no issues.
+
+### Summary
+
+The implementation restores trustworthy non-TODO live grading at the exact
+candidate tip. Pi front-door support remains active; only delegated
+presentation-to-application/dispatch is quarantined under 9w, with both red
+exact-tip traces and the prior green history retained for the follow-up.
