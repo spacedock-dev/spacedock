@@ -288,27 +288,27 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 		t.Fatalf("recorded-round oracle rejected later open round-2 validation gate: %v", err)
 	}
 	openGateEntity := readFile(t, entityPath)
-	assertGateError := func(want string) {
-		t.Helper()
+	for _, control := range []struct{ entity, want string }{
+		{strings.Replace(openGateEntity, "              briefing:\n", "              state: open\n              briefing:\n", 1), "malformed final validation gate"},
+		{strings.Replace(openGateEntity, rejectionRound2BriefingID, rejectionBriefingID, 1), "validation/1 advisory round was retained as a gate attempt"},
+		{strings.ReplaceAll(openGateEntity, "gate:rejection-task:validation", "gate:rejection-task:wrong"), "final gate selection does not identify"},
+	} {
+		writeFile(t, entityPath, control.entity)
 		if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil ||
-			!strings.Contains(err.Error(), want) {
-			t.Fatalf("gate control diagnostic = %v, want %q", err, want)
+			!strings.Contains(err.Error(), control.want) {
+			t.Fatalf("gate control diagnostic = %v, want %q", err, control.want)
 		}
 	}
-	writeFile(t, entityPath, strings.Replace(openGateEntity, "              briefing:\n", "              state: open\n              briefing:\n", 1))
-	assertGateError("malformed final validation gate")
-	writeFile(t, entityPath, strings.Replace(openGateEntity, rejectionRound2BriefingID, rejectionBriefingID, 1))
-	assertGateError("validation/1 advisory round was retained as a gate attempt")
 	writeFile(t, entityPath, openGateEntity)
 	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
-		Decision:    "hold",
-		Actor:       "person:captain",
-		Reason:      "exercise the closed-gate counterexample",
-		WorkflowDir: root,
+		Decision: "hold", Actor: "person:captain", Reason: "exercise closed-gate counterexample", WorkflowDir: root,
 	}); err != nil {
 		t.Fatalf("close later validation gate for counterexample: %v", err)
 	}
-	assertGateError("final round-2 validation gate is not open")
+	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil ||
+		!strings.Contains(err.Error(), "final round-2 validation gate is not open") {
+		t.Fatalf("closed gate control diagnostic = %v", err)
+	}
 }
 
 func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {

@@ -392,19 +392,8 @@ func TestClaudeKeepMovingGateConsumeCorrelation(t *testing.T) {
 }
 
 func TestCodexKeepMovingGateConsumeCorrelation(t *testing.T) {
-	// PR #572 run 30325567515: Codex recorded and consumed the captain's approval
-	// in one successful command execution. The durable consume result advanced the
-	// entity even though the transcript contains no separate status --set.
-	command := `/bin/bash -lc 'launcher="${SPACEDOCK_BIN:-spacedock}"; "$launcher" gate record approved-gate --decision approve --actor person:captain --reason "Captain accepts the reviewed direction and authorizes implementation." --workflow-dir /tmp/TestLiveCodexSharedScenarioskeep-moving-posture3894793558/001; "$launcher" state commit approved-gate; git add -- approved-gate.md; git commit -m "gate: approve approved-gate review"; "$launcher" gate consume approved-gate --workflow-dir /tmp/TestLiveCodexSharedScenarioskeep-moving-posture3894793558/001; "$launcher" state commit approved-gate; git add -- approved-gate.md; git commit -m "advance: approved-gate entering implementation"'`
-	result := `recorded gate=gate:approved-gate:review attempt=gate-attempt:approved-gate-review-1 state=closed briefing=briefing:approved-gate-review-1 resolution=resolution:spacedock:approved-gate:review:1 decision=approve
-Inline workflow — entities live beside the README; nothing to commit to a state checkout.
-[main c2e41c0] gate: approve approved-gate review
- 1 file changed, 13 insertions(+)
-gate=gate:approved-gate:review attempt=gate-attempt:approved-gate-review-1 application=advance/consumed condition=approved-pending eligible=true consumed=true target-stage=implementation
-Inline workflow — entities live beside the README; nothing to commit to a state checkout.
-[main eff9773] advance: approved-gate entering implementation
- 1 file changed, 2 insertions(+), 2 deletions(-)
-`
+	command := `${SPACEDOCK_BIN:-spacedock} gate consume approved-gate --workflow-dir "$WD"`
+	result := "gate=gate:approved-gate:review application=advance/consumed consumed=true target-stage=implementation"
 	for _, tt := range []struct {
 		name, command, result, status string
 		exit, want                    int

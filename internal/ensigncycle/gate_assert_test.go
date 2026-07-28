@@ -87,54 +87,30 @@ func TestAssertGateHeld(t *testing.T) {
 	}
 }
 
-func TestAssertConciseRecordedGateReviewArchivedOpus(t *testing.T) {
-	// PR #572 run 30325567515: the Opus root gate review is reproduced
-	// verbatim so the offline matcher covers the exact live decision grammar.
-	const review = "Bound Briefing digest read from entity state: `sha256:0a54f1baec...`. Now I'll present the gate review. This is the human decision boundary — I present and stop here without deciding or dispatching the successor.\n\n" +
-		"---\n\n" +
-		"**Gate review: Recorded Gate Task — validation**\n" +
-		"Chosen direction: Validation replayed the retained evidence against the real command fixture and found the binary-owned gate-resolution recorder sound; it recommends proceeding.\n" +
-		"Recommend **approve**.\n" +
-		"Reviewed snapshot: `briefing:docs-dev:3k:validation:attempt-1:revision-1` — digest `sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac`\n\n" +
-		"Checklist (from `## Stage Report: validation` in `.spacedock-state/recorded-gate-task/index.md` lines 15–22):\n" +
-		"- DONE: Replayed retained evidence — real command fixture green\n\n" +
-		"Reviewer findings:\n" +
-		"- Material: The auto AC-scan flags **AC-1** (\"Successor dispatch requires consumed approval\") as citation-count 0 because the report never writes the literal token \"AC-1\". I read the evidence differently: the DONE item is a falsifiable replay — the real gate-resolution command fixture ran green — which is exactly the guardrail AC-1 names. Evidence present; label absent. Your call on whether that satisfies AC-1.\n\n" +
-		"Assessment: 1 done, 0 skipped, 0 failed.\n\n" +
-		"Decision: **approve** consumes the authorization and advances to `handoff` (successor dispatch is blocked until that consume, per AC-1); **reject** bounces to `implementation` with the concrete ask to tag the replay evidence explicitly to AC-1; **hold** keeps it at validation for a named prerequisite.\n\n" +
-		"---\n\n" +
-		"The gate is bound, committed, and open. I have not consumed approval, so the successor (`handoff`) stays undispatched — the recorded decision is yours. The validation worker remains alive pending your call."
-	const decision = "Decision: **approve** consumes the authorization and advances to `handoff` (successor dispatch is blocked until that consume, per AC-1); **reject** bounces to `implementation` with the concrete ask to tag the replay evidence explicitly to AC-1; **hold** keeps it at validation for a named prerequisite."
+func compactRetainedGateReview(decision string) string {
+	return "**Gate review: Recorded Gate Task — validation**\n" +
+		"Chosen direction: Validation replayed the retained command fixture.\n" +
+		"Recommend approve.\n" +
+		"Reviewed snapshot: `" + recordedGateBriefingID + "` at `" + recordedGateDigest + "`\n" +
+		"Checklist from `## Stage Report: validation`: DONE.\n" +
+		"Assessment: 1 done, 0 skipped, 0 failed.\n" + decision
+}
 
+func TestAssertConciseRecordedGateReviewArchivedOpus(t *testing.T) {
+	const decision = "Decision: **approve** consumes the authorization and advances to `handoff`; **reject** bounces to `implementation`; **hold** keeps validation open for a prerequisite."
+	review := compactRetainedGateReview(decision)
 	if err := assertConciseRecordedGateReview(review); err != nil {
 		t.Fatalf("archived Opus gate review failed: %v", err)
 	}
-
-	nonActionable := strings.Replace(review, decision,
-		"Decision: **approve** is recommended; **reject** is available; **hold** is available.", 1)
+	nonActionable := strings.Replace(review, decision, "Decision: **approve** is recommended; **reject** and **hold** are available.", 1)
 	if err := assertConciseRecordedGateReview(nonActionable); err == nil {
 		t.Fatal("non-actionable gate review qualified")
 	}
 }
 
 func TestAssertConciseRecordedGateReviewRetainedCodex(t *testing.T) {
-	// Local proof at b25e386a: Codex emitted this exact root review after the
-	// retained Briefing commit and before the decision mutation.
-	const review = "Gate review: Recorded Gate Task — validation  \n" +
-		"Chosen direction: approve the green retained command replay and enforce one-use consumption before handoff dispatch.  \n" +
-		"Recommend approve.  \n" +
-		"Reviewed snapshot: `briefing:docs-dev:3k:validation:attempt-1:revision-1` at `sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac`\n\n" +
-		"Checklist (from `## Stage Report` in `.spacedock-state/recorded-gate-task/index.md` lines 31–36):\n\n" +
-		"- DONE: Replay retained evidence\n\n" +
-		"Assessment: 1 done, 0 skipped, 0 failed.\n\n" +
-		"Material evidence:\n\n" +
-		"- The retained package reports the real command fixture green.\n" +
-		"- AC-1 remains pending by design until the approval is consumed and the handoff worker is dispatched.\n\n" +
-		"Polish:\n\n" +
-		"- CLI path normalization is explicitly deferred and does not block this gate.\n\n" +
-		"Decision: approve under the delegated conn to consume this authorization exactly once and dispatch `recorded-gate-task` into handoff."
 	const decision = "Decision: approve under the delegated conn to consume this authorization exactly once and dispatch `recorded-gate-task` into handoff."
-
+	review := compactRetainedGateReview(decision)
 	if err := assertConciseRecordedGateReview(review); err != nil {
 		t.Fatalf("retained Codex gate review failed: %v", err)
 	}

@@ -170,66 +170,32 @@ func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRunti
 	}
 }
 
-func TestSonnetRecordedGateDigestTODOIsModelScoped(t *testing.T) {
-	for model, want := range map[string]bool{
-		"sonnet":              true,
-		"claude-sonnet-5":     true,
-		"claude-opus-4-8":     false,
-		"opus":                false,
-		"openrouter/sonnetik": false,
+func TestClaudeTODOModelScope(t *testing.T) {
+	for _, tc := range []struct {
+		model, family string
+		want          bool
+	}{
+		{"sonnet", "sonnet", true},
+		{"claude-sonnet-5", "sonnet", true},
+		{"claude-opus-4-8", "sonnet", false},
+		{"opus", "opus", true},
+		{"claude-opus-4-8", "opus", true},
+		{"openrouter/opossum", "opus", false},
 	} {
-		if got := sonnetRecordedGateDigestTODO(model); got != want {
-			t.Errorf("sonnetRecordedGateDigestTODO(%q) = %t, want %t", model, got, want)
+		if got := claudeModelFamily(tc.model, tc.family); got != tc.want {
+			t.Errorf("claudeModelFamily(%q, %q) = %t, want %t", tc.model, tc.family, got, tc.want)
 		}
 	}
 }
 
-func TestOpusRejectionRegateBriefingTODOIsModelScoped(t *testing.T) {
-	for model, want := range map[string]bool{
-		"opus":               true,
-		"claude-opus-4-8":    true,
-		"claude-sonnet-5":    false,
-		"sonnet":             false,
-		"openrouter/opossum": false,
-	} {
-		if got := opusRejectionRegateBriefingTODO(model); got != want {
-			t.Errorf("opusRejectionRegateBriefingTODO(%q) = %t, want %t", model, got, want)
-		}
-	}
-}
-
-func TestOpusGateGuardrailDigestTODOIsModelScoped(t *testing.T) {
-	for model, want := range map[string]bool{
-		"opus":               true,
-		"claude-opus-4-8":    true,
-		"claude-sonnet-5":    false,
-		"sonnet":             false,
-		"openrouter/opossum": false,
-	} {
-		if got := opusGateGuardrailDigestTODO(model); got != want {
-			t.Errorf("opusGateGuardrailDigestTODO(%q) = %t, want %t", model, got, want)
-		}
-	}
-}
-
-func sonnetRecordedGateDigestTODO(model string) bool {
+func claudeModelFamily(model, family string) bool {
 	model = strings.ToLower(strings.TrimSpace(model))
-	return model == "sonnet" || strings.Contains(model, "claude-sonnet-")
-}
-
-func opusRejectionRegateBriefingTODO(model string) bool {
-	model = strings.ToLower(strings.TrimSpace(model))
-	return model == "opus" || strings.Contains(model, "claude-opus-")
-}
-
-func opusGateGuardrailDigestTODO(model string) bool {
-	model = strings.ToLower(strings.TrimSpace(model))
-	return model == "opus" || strings.Contains(model, "claude-opus-")
+	return model == family || strings.Contains(model, "claude-"+family+"-")
 }
 
 func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
-	if sonnetRecordedGateDigestTODO(runner.model()) {
+	if claudeModelFamily(runner.model(), "sonnet") {
 		t.Skip("TODO(w5bfnrvpcphw857nzz93340c): Sonnet must reliably render the exact selected Briefing digest before re-enabling this journey")
 	}
 	if copied, ok := runner.(claudeLiveRunner); ok {
@@ -322,7 +288,7 @@ func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 
 func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
-	if opusGateGuardrailDigestTODO(runner.model()) {
+	if claudeModelFamily(runner.model(), "opus") {
 		t.Skip("TODO(w5bfnrvpcphw857nzz93340c): Opus must reliably render the exact selected Briefing digest before re-enabling this journey")
 	}
 	workflowRoot := t.TempDir()
@@ -357,7 +323,7 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 
 func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
-	if opusRejectionRegateBriefingTODO(runner.model()) {
+	if claudeModelFamily(runner.model(), "opus") {
 		t.Skip("TODO(zbcj98qfwtax61vxdzrf615e): Opus must reliably bind a distinct post-rework Briefing before re-enabling this journey")
 	}
 	workflowRoot := t.TempDir()
