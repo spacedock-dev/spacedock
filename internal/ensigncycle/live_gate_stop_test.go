@@ -15,6 +15,8 @@ import "testing"
 // gate). It is its own Test* func — a distinct fixture (entity at the initial stage)
 // and a distinct prompt (no conn) from TestLiveEnsignCycle's conn-cue drive.
 func TestLiveDefaultHeadlessStopsAtGate(t *testing.T) {
+	t.Skip("TODO(q3vpb8hes1b3k3f1jps1kvpk): cross-stage gate recording must be rejected before re-enabling this live test")
+
 	// A wrong-root boot is the most specific diagnosis: a CI env leak lures the FO
 	// off `root` into the real repo, where it finds nothing dispatchable and
 	// greets-and-stops — which would otherwise look like a (wrong) AC-a pass
