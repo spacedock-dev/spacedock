@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"testing"
 )
 
 // The keep-moving-posture scenario grades the FO's MOTION TRACE — its tool calls plus its
@@ -94,6 +95,16 @@ func kmAdvancesToStatus(command, entity, status string) bool {
 	return false
 }
 
+var kmGateConsume = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+consume\s+['"]?approved-gate['"]?(?:\s|$)`)
+var kmConsumedTrue = regexp.MustCompile(`(?:^|\s)consumed=true(?:\s|$)`)
+var kmImplementationTarget = regexp.MustCompile(`(?:^|\s)target-stage=implementation(?:\s|$)`)
+
+func kmSuccessfulGateConsumeResult(content json.RawMessage, isError *bool) bool {
+	var text string
+	return isError != nil && !*isError && json.Unmarshal(content, &text) == nil &&
+		kmConsumedTrue.MatchString(text) && kmImplementationTarget.MatchString(text)
+}
+
 // kmAdvancesForward reports whether a command drives the named entity FORWARD through its
 // pipeline — to the next working stage (implementation) or to terminal (done, which also
 // covers a merge). A route BACK to an earlier stage (ideation) to re-open the design is a
@@ -159,11 +170,12 @@ func gradeKeepMoving(tr keepMovingTrace, independent []string) error {
 }
 
 // claudeKeepMovingTrace extracts the motion trace from a Claude stream-json transcript
-// (actions) plus the final message. Claude advances/re-opens via a `status --set` Bash
-// command, dispatches (including a routed re-shape) via the Agent/Task tools, and re-shapes
-// in-house via the Edit/Write tools.
+// (actions) plus the final message. Claude advances via a successful recorded `gate consume`
+// or `status --set`, re-opens via `status --set`, dispatches (including a routed re-shape)
+// via the Agent/Task tools, and re-shapes in-house via the Edit/Write tools.
 func claudeKeepMovingTrace(stream, finalMessage string, independent []string) keepMovingTrace {
 	tr := newKeepMovingTrace()
+	gateConsumeInvocations := map[string]bool{}
 	for _, line := range strings.Split(stream, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -172,14 +184,18 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 		var entry struct {
 			Message *struct {
 				Content []struct {
-					Type  string `json:"type"`
-					Name  string `json:"name"`
-					Input struct {
+					Type      string `json:"type"`
+					Name      string `json:"name"`
+					ID        string `json:"id"`
+					ToolUseID string `json:"tool_use_id"`
+					Input     struct {
 						Command     string `json:"command"`
 						FilePath    string `json:"file_path"`
 						Prompt      string `json:"prompt"`
 						Description string `json:"description"`
 					} `json:"input"`
+					Content json.RawMessage `json:"content"`
+					IsError *bool           `json:"is_error"`
 				} `json:"content"`
 			} `json:"message"`
 		}
@@ -187,6 +203,10 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 			continue
 		}
 		for _, block := range entry.Message.Content {
+			if block.Type == "tool_result" && gateConsumeInvocations[block.ToolUseID] &&
+				kmSuccessfulGateConsumeResult(block.Content, block.IsError) {
+				tr.approvedAdvanced = true
+			}
 			if block.Type != "tool_use" {
 				continue
 			}
@@ -195,6 +215,9 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 				c := block.Input.Command
 				if kmAdvancesToStatus(c, kmApprovedGate, kmNextStage) {
 					tr.approvedAdvanced = true
+				}
+				if block.ID != "" && kmGateConsume.MatchString(c) {
+					gateConsumeInvocations[block.ID] = true
 				}
 				if kmAdvancesForward(c, kmQuestioned) {
 					tr.correctedDriven = true
@@ -320,4 +343,29 @@ func assertClaudeKeepMoving(stream, finalMessage string, independent []string) e
 // host-neutral patterns the Claude assertion feeds.
 func assertCodexKeepMoving(jsonl, finalMessage string, independent []string) error {
 	return gradeKeepMoving(codexKeepMovingTrace(jsonl, finalMessage, independent), independent)
+}
+
+func TestClaudeKeepMovingGateConsumeCorrelation(t *testing.T) {
+	command := `${SPACEDOCK_BIN:-spacedock} gate consume approved-gate --workflow-dir "$WD"`
+	result := "gate=gate:approved-gate:review application=advance/consumed consumed=true target-stage=implementation"
+	for _, tt := range []struct {
+		name, command, result, resultID string
+		isError, want                   bool
+	}{
+		{"success", command, result, "consume", false, true},
+		{"wrong_entity", strings.Replace(command, "approved-gate", "ready-one", 1), result, "consume", false, false},
+		{"failed", command, result, "consume", true, false},
+		{"missing_result", command, result, "", false, false},
+		{"uncorrelated_result", command, result, "other", false, false},
+		{"not_consumed", command, strings.Replace(result, "consumed=true", "consumed=false", 1), "consume", false, false},
+		{"wrong_target", command, strings.Replace(result, "target-stage=implementation", "target-stage=validation", 1), "consume", false, false},
+	} {
+		stream := bashToolLine("consume", tt.command)
+		if tt.resultID != "" {
+			stream += "\n" + toolResultLine(tt.resultID, tt.isError, tt.result)
+		}
+		if got := claudeKeepMovingTrace(stream, "", nil).approvedAdvanced; got != tt.want {
+			t.Errorf("%s: approvedAdvanced = %t, want %t", tt.name, got, tt.want)
+		}
+	}
 }

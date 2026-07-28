@@ -14,15 +14,21 @@ import (
 )
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+record(?:\s|$)`)
+var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 triage=all-fixed entries=4$`)
+
+func rejectionRoundArtifactArg(flag, filename string) *regexp.Regexp {
+	return regexp.MustCompile(`--` + regexp.QuoteMeta(flag) + `(?:=|\s+)['"]?(?:[^ \t\r\n'";&|]*/)?rejection-task/inputs/` +
+		regexp.QuoteMeta(filename) + `['"]?(?:\s|[;&|]|$)`)
+}
 
 func commandRecordsRejectionRound(command string) bool {
 	command = strings.ReplaceAll(command, "\\\n", " ")
 	for _, required := range []*regexp.Regexp{
 		regexp.MustCompile(`(?:^|\s)['"]?rejection-task['"]?(?:\s|$)`),
 		regexp.MustCompile(`--round(?:=|\s+)['"]?validation/1['"]?(?:\s|$)`),
-		regexp.MustCompile(`--briefing(?:=|\s+)['"]?rejection-task/inputs/briefing\.json['"]?(?:\s|$)`),
-		regexp.MustCompile(`--log(?:=|\s+)['"]?rejection-task/inputs/briefing\.review\.jsonl['"]?(?:\s|$)`),
-		regexp.MustCompile(`--feedback-cycle(?:=|\s+)['"]?rejection-task/inputs/feedback-cycle\.txt['"]?(?:\s|$)`),
+		rejectionRoundArtifactArg("briefing", "briefing.json"),
+		rejectionRoundArtifactArg("log", "briefing.review.jsonl"),
+		rejectionRoundArtifactArg("feedback-cycle", "feedback-cycle.txt"),
 	} {
 		if !required.MatchString(command) {
 			return false
@@ -56,16 +62,27 @@ func commandRecordsRejectionRound(command string) bool {
 	return false
 }
 
+func successfulRejectionRoundResult(content json.RawMessage, isError *bool) bool {
+	var text string
+	return isError != nil && !*isError && json.Unmarshal(content, &text) == nil &&
+		rejectionRoundSuccess.MatchString(text)
+}
+
 func claudeRecordedRejectionRound(stream string) bool {
+	invocations := map[string]bool{}
 	for _, line := range strings.Split(stream, "\n") {
 		var entry struct {
 			Message *struct {
 				Content []struct {
-					Type  string `json:"type"`
-					Name  string `json:"name"`
-					Input struct {
+					Type      string `json:"type"`
+					Name      string `json:"name"`
+					ID        string `json:"id"`
+					ToolUseID string `json:"tool_use_id"`
+					Input     struct {
 						Command string `json:"command"`
 					} `json:"input"`
+					Content json.RawMessage `json:"content"`
+					IsError *bool           `json:"is_error"`
 				} `json:"content"`
 			} `json:"message"`
 		}
@@ -73,7 +90,12 @@ func claudeRecordedRejectionRound(stream string) bool {
 			continue
 		}
 		for _, block := range entry.Message.Content {
-			if block.Type == "tool_use" && block.Name == "Bash" && commandRecordsRejectionRound(block.Input.Command) {
+			if block.Type == "tool_use" && block.Name == "Bash" && block.ID != "" &&
+				commandRecordsRejectionRound(block.Input.Command) {
+				invocations[block.ID] = true
+			}
+			if block.Type == "tool_result" && invocations[block.ToolUseID] &&
+				successfulRejectionRoundResult(block.Content, block.IsError) {
 				return true
 			}
 		}
@@ -205,9 +227,33 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 }
 
 func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
-	command := `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl --feedback-cycle rejection-task/inputs/feedback-cycle.txt`
-	if !claudeRecordedRejectionRound(claudeToolUse("Bash", `{"command":"`+command+`"}`)) {
-		t.Fatal("Claude extractor missed resolved launcher round invocation")
+	command := `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir "$WD" --round validation/1 --briefing "$WD/rejection-task/inputs/briefing.json" --log "$WD/rejection-task/inputs/briefing.review.jsonl" --feedback-cycle "$WD/rejection-task/inputs/feedback-cycle.txt"`
+	result := "round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 triage=all-fixed entries=4"
+	claudeStream := strings.Join([]string{
+		bashToolLine("toolu_round", command),
+		toolResultLine("toolu_round", false, result),
+	}, "\n")
+	if !claudeRecordedRejectionRound(claudeStream) {
+		t.Fatal("Claude extractor missed correlated round invocation with prefixed artifact paths")
+	}
+	for name, invalid := range map[string]string{
+		"wrong_suffix": strings.Replace(command, "briefing.json\"", "briefing.json.bak\"", 1),
+		"wrong_file":   strings.Replace(command, "briefing.review.jsonl", "other.review.jsonl", 1),
+		"wrong_entity": strings.Replace(command, "gate record rejection-task", "gate record other-task", 1),
+		"wrong_round":  strings.Replace(command, "validation/1", "validation/2", 1),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if commandRecordsRejectionRound(invalid) {
+				t.Fatal("command recognizer accepted invalid rejection-round arguments")
+			}
+		})
+	}
+	if claudeRecordedRejectionRound(bashToolLine("toolu_round", command)) ||
+		claudeRecordedRejectionRound(strings.Join([]string{
+			bashToolLine("toolu_round", command),
+			toolResultLine("toolu_round", true, result),
+		}, "\n")) {
+		t.Fatal("Claude extractor accepted a missing or failed correlated result")
 	}
 	captured := "B=${SPACEDOCK_BIN:-spacedock}\\n$B gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl --feedback-cycle rejection-task/inputs/feedback-cycle.txt"
 	if !codexRecordedRejectionRound(codexCommand(captured)) {
