@@ -537,3 +537,60 @@ The implementation restores trustworthy non-TODO live grading at the exact
 candidate tip. Pi front-door support remains active; only delegated
 presentation-to-application/dispatch is quarantined under 9w, with both red
 exact-tip traces and the prior green history retained for the follow-up.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce the final deterministic, race, vet, formatting,
+  and diff checks at candidate 55b3b133.
+  At exact `55b3b13316571f1a84215f489c205e66327faeca`, focused gates/contractlint/ensigncycle,
+  `go test ./...`, `go test ./... -race`, `go vet ./...`, exact `gofmt -w ./cmd ./internal`,
+  and `git diff --check` all passed without changing tracked bytes.
+- FAILED: Cross-check AC-1 through AC-5 against retained exact-tip evidence, with
+  q3/w5/zbc/9w skips treated as explicit non-evidence and no other skip accepted.
+  Exact-tip PR run `30378538074` exposed three non-TODO material evidence defects;
+  q3/w5/zbc/9w remain explicit non-evidence and are not used to excuse them.
+- FAILED: Verify PR #572's required path-derived CI lanes genuinely run green, the
+  19-file/803-line boundary holds, and no task-owned Material finding remains.
+  The boundary is exactly 19 existing files/803 lines (713 additions, 90 deletions),
+  but jobs Sonnet `90340453203` and Codex `90340453205` failed; only Opus
+  `90340453222` and Pi `90340453132` passed, and three Material findings remain.
+- FAILED: AC-1 — all required non-TODO focused executions pass at one exact tip.
+  Sonnet `rejection-flow` and Codex `recorded-gate-lifecycle`/`keep-moving-posture`
+  failed outside the four named quarantine skips.
+- DONE: AC-2 — every deterministic positive retains a named red counterexample.
+  Focused replay passed structural wrong/closed gate, nested-cwd/unordered review,
+  pre-completed rejection, and missing/planted Codex phase controls.
+- FAILED: AC-3 — the complete affected exact-tip live suites are green.
+  Sonnet and Codex shared suites failed; Opus shared/team and Pi front-door passed.
+- FAILED: AC-4 — the exact lifecycle and phase-bound live evidence is validly graded.
+  The run produced correct-looking durable evidence, but three grader boundaries
+  rejected it, so the required behaviors lack valid exact-tip evidence.
+- FAILED: AC-5 (VALUE) — move retained `30257280066` from 0/4 to 4/4 green lanes.
+  Run `30378538074` reached only 2/4 green at the exact PR head.
+- FAILED: Material evidence defect — Sonnet rejection round cardinality.
+  The final message reports two implementations and two validations, but
+  `assertRejectionFlow` substitutes rejection-only `### Feedback Cycles` count for
+  validation count and false-reds the valid second PASSED validation.
+- FAILED: Material evidence defect — Codex recorded-review extraction.
+  A failed pre-bind decision invocation is followed by a valid post-bind exact
+  ID/digest review and consumed lifecycle, but the extractor returns at the earlier
+  invocation because the enclosing shell later exits zero.
+- FAILED: Material evidence defect — Codex keep-moving durable-report extraction.
+  The exact trace has successful build, completed wait, three durable numbered
+  `rg -n` reports, and exact successful finalizations; the parser accepts only an
+  unnumbered heading. This satisfies the prior merge-guard finding's recorded
+  promotion trigger and makes it Material now.
+- SKIPPED: q3, w5, zbc, and 9w quarantined capabilities.
+  Their exact TODO skips remain accepted non-proof only; none counts toward an AC.
+- SKIPPED: Combined Pi 15-minute timeout risk.
+  Still deferred: Pi front-door passed in 132.37s and no supported timeout occurred.
+- DONE: Validation recommendation: REJECTED.
+  Roborev jobs 35 and 85 were dispositioned and re-panel 90 was clean, but the
+  later exact-tip CI artifacts supply new trigger evidence for the three findings.
+
+### Summary
+
+Candidate-local deterministic proof and the 19-file/803-line boundary are clean,
+but the release value remains unmet at 2/4 live jobs. Validation rejects on three
+task-owned Material evidence defects surfaced by the single exact-tip PR run; no
+product or test file was modified during validation.
