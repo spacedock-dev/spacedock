@@ -13,7 +13,7 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
-var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+record(?:\s|$)`)
+var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
 var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 triage=all-fixed entries=4$`)
 
 const rejectionRound2BriefingID = "briefing:rejection-task:validation:round-2"
@@ -107,9 +107,19 @@ func claudeRecordedRejectionRound(stream string) bool {
 
 func codexRecordedRejectionRound(jsonl string) bool {
 	for _, line := range strings.Split(jsonl, "\n") {
-		var entry codexCommandItem
+		var entry struct {
+			Type string `json:"type"`
+			Item struct {
+				Type     string `json:"type"`
+				Command  string `json:"command"`
+				ExitCode *int   `json:"exit_code"`
+			} `json:"item"`
+		}
 		if json.Unmarshal([]byte(line), &entry) == nil &&
+			entry.Type == "item.completed" &&
 			entry.Item.Type == "command_execution" &&
+			entry.Item.ExitCode != nil &&
+			*entry.Item.ExitCode == 0 &&
 			commandRecordsRejectionRound(entry.Item.Command) {
 			return true
 		}
@@ -330,9 +340,16 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 		}, "\n")) {
 		t.Fatal("Claude extractor accepted a missing or failed correlated result")
 	}
-	captured := "B=${SPACEDOCK_BIN:-spacedock}\\n$B gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl --feedback-cycle rejection-task/inputs/feedback-cycle.txt"
-	if !codexRecordedRejectionRound(codexCommand(captured)) {
+	captured := "B=${SPACEDOCK_BIN:-spacedock}\n$B gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl --feedback-cycle rejection-task/inputs/feedback-cycle.txt"
+	if !codexRecordedRejectionRound(codexCommandOutput(captured, result, 0, "completed")) {
 		t.Fatal("Codex extractor missed captured resolved launcher round invocation")
+	}
+	retainedCodexWrapped := `/bin/zsh -lc "rg -n '"'^shared-rejection-fix: applied$|''^## Stage Report: implementation|''^- DONE:'"' rejection-task/index.md; tail -n 4 rejection-task/inputs/briefing.review.jsonl; "'${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl --feedback-cycle rejection-task/inputs/feedback-cycle.txt --workflow-dir .; ${SPACEDOCK_BIN:-spacedock} state commit rejection-task'`
+	if !codexRecordedRejectionRound(codexCommandOutput(retainedCodexWrapped, result, 0, "completed")) {
+		t.Fatal("Codex extractor missed retained nested-shell resolved launcher round invocation")
+	}
+	if codexRecordedRejectionRound(codexCommandOutput(retainedCodexWrapped, result, 1, "failed")) {
+		t.Fatal("Codex extractor accepted failed retained round invocation")
 	}
 	absoluteMultiline := `/tmp/candidate/spacedock gate record \
   "rejection-task" --workflow-dir . --round="validation/1" \
@@ -342,7 +359,7 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 	if !commandRecordsRejectionRound(absoluteMultiline) {
 		t.Fatal("command recognizer missed absolute resolved launcher with multiline/quoted flags")
 	}
-	noInvocation := codexCommand("spacedock status rejection-task --workflow-dir .")
+	noInvocation := codexCommandOutput("spacedock status rejection-task --workflow-dir .", "", 0, "completed")
 	if codexRecordedRejectionRound(noInvocation) {
 		t.Fatal("no-invocation transcript falsely satisfied the round invocation extractor")
 	}

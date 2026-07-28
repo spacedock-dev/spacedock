@@ -18,7 +18,7 @@ import (
 func TestLivePiRecordedGateLifecycle(t *testing.T) {
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
-	expectedChildModel := envOr("SPACEDOCK_PI_LIVE_CHILD_MODEL", "openrouter/openai/gpt-5.4")
+	expectedChildModel := piLiveModelName()
 	binary := buildRecordedGateBinary(t)
 	fixture := writeRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
@@ -45,6 +45,7 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 		"--plugin-dir", repo,
 		"--",
 		"--print",
+		"--model", expectedChildModel,
 		"--session-dir", filepath.Join(artifactDir, "sessions"),
 	)
 

@@ -107,6 +107,32 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 	return nil
 }
 
+var recordedGateDecisionLineRe = regexp.MustCompile(`(?i)^\s*\**(?:decision(?:\s+ask)?\s*[:—-]|choose\b|please decide\b)`)
+var recordedGateDecisionOptionRe = regexp.MustCompile(`(?i)\b(?:approve|reject|revise|hold)\b`)
+var recordedGateDownstreamActionRe = regexp.MustCompile(`(?i)\b(?:advanc\w*|bounc\w*|clos\w*|consum\w*|dispatch\w*|enter\w*|findings?|handoff|implementation|merg\w*|prerequisites?|return\w*|rout\w*|send\w*|stages?|worktrees?)\b`)
+var recordedGateNegationTailRe = regexp.MustCompile(`(?i)(?:\bno|\bnot|\bnever|\bwithout|\bdo\s+not|\bdoes\s+not|\bdon't|\bdoesn't)\s+(?:\S+\s+){0,2}$`)
+
+func actionableRecordedGateDecisionLine(line string) bool {
+	prefix := recordedGateDecisionLineRe.FindStringIndex(line)
+	if prefix == nil {
+		return false
+	}
+	body := line[prefix[1]:]
+	options := recordedGateDecisionOptionRe.FindAllStringIndex(body, -1)
+	actions := recordedGateDownstreamActionRe.FindAllStringIndex(body, -1)
+	for _, option := range options {
+		if recordedGateNegationTailRe.MatchString(body[:option[0]]) {
+			continue
+		}
+		for _, action := range actions {
+			if action[0] > option[1] && !recordedGateNegationTailRe.MatchString(body[:action[0]]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func assertConciseRecordedGateReview(review string) error {
 	trimmed := strings.TrimSpace(review)
 	lower := strings.ToLower(trimmed)
@@ -118,7 +144,7 @@ func assertConciseRecordedGateReview(review string) error {
 		return fmt.Errorf("gate review leads with raw state instead of the decision")
 	}
 	for _, line := range strings.Split(lower, "\n") {
-		if regexp.MustCompile(`(?i)^\s*\**(?:decision(?:\s+ask)?\s*[:—-]|choose\b|please decide\b)[^\n]*(?:\b(?:approve|reject|revise|hold)\b\s+(?:to|with|for)\s+(?:\S+\s+){0,8}(?:advance|bounce|close|consume|dispatch|enter|finding|handoff|implementation|merge|prerequisite|return|route|send|stage|worktree)\b|\bapprove\b\**\s+consumes?\s+(?:the|this)\s+authorization\s+and\s+advances?\s+to\s+\S+)`).MatchString(line) {
+		if actionableRecordedGateDecisionLine(line) {
 			return nil
 		}
 	}

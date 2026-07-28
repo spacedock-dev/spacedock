@@ -116,3 +116,38 @@ func TestAssertConciseRecordedGateReviewArchivedOpus(t *testing.T) {
 		t.Fatal("non-actionable gate review qualified")
 	}
 }
+
+func TestAssertConciseRecordedGateReviewRetainedCodex(t *testing.T) {
+	// Local proof at b25e386a: Codex emitted this exact root review after the
+	// retained Briefing commit and before the decision mutation.
+	const review = "Gate review: Recorded Gate Task — validation  \n" +
+		"Chosen direction: approve the green retained command replay and enforce one-use consumption before handoff dispatch.  \n" +
+		"Recommend approve.  \n" +
+		"Reviewed snapshot: `briefing:docs-dev:3k:validation:attempt-1:revision-1` at `sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac`\n\n" +
+		"Checklist (from `## Stage Report` in `.spacedock-state/recorded-gate-task/index.md` lines 31–36):\n\n" +
+		"- DONE: Replay retained evidence\n\n" +
+		"Assessment: 1 done, 0 skipped, 0 failed.\n\n" +
+		"Material evidence:\n\n" +
+		"- The retained package reports the real command fixture green.\n" +
+		"- AC-1 remains pending by design until the approval is consumed and the handoff worker is dispatched.\n\n" +
+		"Polish:\n\n" +
+		"- CLI path normalization is explicitly deferred and does not block this gate.\n\n" +
+		"Decision: approve under the delegated conn to consume this authorization exactly once and dispatch `recorded-gate-task` into handoff."
+	const decision = "Decision: approve under the delegated conn to consume this authorization exactly once and dispatch `recorded-gate-task` into handoff."
+
+	if err := assertConciseRecordedGateReview(review); err != nil {
+		t.Fatalf("retained Codex gate review failed: %v", err)
+	}
+
+	for name, line := range map[string]string{
+		"listed":         "Decision: approve, reject, or hold.",
+		"recommended":    "Decision: approve is recommended; reject and hold are available.",
+		"negated":        "Decision: do not approve and do not consume or dispatch.",
+		"negated_action": "Decision: approve, but do not dispatch.",
+	} {
+		control := strings.Replace(review, decision, line, 1)
+		if err := assertConciseRecordedGateReview(control); err == nil {
+			t.Errorf("%s non-actionable gate review qualified", name)
+		}
+	}
+}
