@@ -108,29 +108,15 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 }
 
 var recordedGateDecisionLineRe = regexp.MustCompile(`(?i)^\s*\**(?:decision(?:\s+ask)?\s*[:—-]|choose\b|please decide\b)`)
-var recordedGateDecisionOptionRe = regexp.MustCompile(`(?i)\b(?:approve|reject|revise|hold)\b`)
-var recordedGateDownstreamActionRe = regexp.MustCompile(`(?i)\b(?:advanc\w*|bounc\w*|clos\w*|consum\w*|dispatch\w*|enter\w*|findings?|handoff|implementation|merg\w*|prerequisites?|return\w*|rout\w*|send\w*|stages?|worktrees?)\b`)
-var recordedGateNegationTailRe = regexp.MustCompile(`(?i)(?:\bno|\bnot|\bnever|\bwithout|\bdo\s+not|\bdoes\s+not|\bdon't|\bdoesn't)\s+(?:\S+\s+){0,2}$`)
+var recordedGateActionableOptionRe = regexp.MustCompile(`(?i)\b(?:approve|reject|revise|hold)\b(?:(?:\s+\S+){0,8}\s+(?:to|with|for)\s+(?:\S+\s+){0,4}|\s+)(?:advanc\w*|bounc\w*|clos\w*|consum\w*|dispatch\w*|enter\w*|findings?|handoff|implementation|keep\w*|merg\w*|prerequisites?|return\w*|rout\w*|send\w*|stages?|worktrees?)\b`)
 
 func actionableRecordedGateDecisionLine(line string) bool {
 	prefix := recordedGateDecisionLineRe.FindStringIndex(line)
 	if prefix == nil {
 		return false
 	}
-	body := line[prefix[1]:]
-	options := recordedGateDecisionOptionRe.FindAllStringIndex(body, -1)
-	actions := recordedGateDownstreamActionRe.FindAllStringIndex(body, -1)
-	for _, option := range options {
-		if recordedGateNegationTailRe.MatchString(body[:option[0]]) {
-			continue
-		}
-		for _, action := range actions {
-			if action[0] > option[1] && !recordedGateNegationTailRe.MatchString(body[:action[0]]) {
-				return true
-			}
-		}
-	}
-	return false
+	body := strings.NewReplacer("*", "", "`", "").Replace(line[prefix[1]:])
+	return recordedGateActionableOptionRe.MatchString(body)
 }
 
 func assertConciseRecordedGateReview(review string) error {

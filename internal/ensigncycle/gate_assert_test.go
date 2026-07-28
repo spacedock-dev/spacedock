@@ -117,6 +117,7 @@ func TestAssertConciseRecordedGateReviewRetainedCodex(t *testing.T) {
 
 	for name, line := range map[string]string{
 		"listed":         "Decision: approve, reject, or hold.",
+		"unrelated":      "Decision: approve, reject, or hold before dispatch.",
 		"recommended":    "Decision: approve is recommended; reject and hold are available.",
 		"negated":        "Decision: do not approve and do not consume or dispatch.",
 		"negated_action": "Decision: approve, but do not dispatch.",
