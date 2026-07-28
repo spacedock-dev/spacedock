@@ -662,13 +662,14 @@ func keepMovingReadme() string {
 		"      initial: true\n" +
 		"    - name: review\n" +
 		"      gate: true\n" +
+		"      feedback-to: ideation\n" +
 		"    - name: implementation\n" +
 		"    - name: done\n" +
 		"      terminal: true\n" +
 		"---\n" +
 		"# Keep-Moving-Posture Fixture\n\n" +
 		"Four independent entities exercising the 0223 false-stop decision points in one drive. `" + kmApprovedGate + "` sits at its `review` gate the captain has JUST APPROVED — advancing it to `implementation` and dispatching that stage is the reversible next action the approval triggers. `" + kmReadyOne + "` and `" + kmReadyTwo + "` are independent and ready at `implementation`. `" + kmQuestioned + "` sits at `review` with its mechanism QUESTIONED by the captain — its dispatch pauses until a re-shape folds the correction, while the other three keep moving.\n\n" +
-		"### ideation\n\nInitial state.\n\n### review\n\nHuman approval gate.\n\n### implementation\n\nThe dispatched worker does the implementation stage.\n\n### done\n\nTerminal state.\n"
+		"### ideation\n\nInitial state.\n\n### review\n\nHuman approval gate.\n\n### implementation\n\nThe dispatched worker does the implementation stage.\n\n- **Outputs:** An implementation stage report.\n\n### done\n\nTerminal state.\n"
 }
 
 func keepMovingApprovedEntity() string {

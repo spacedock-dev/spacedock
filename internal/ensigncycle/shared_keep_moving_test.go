@@ -95,7 +95,7 @@ func kmAdvancesToStatus(command, entity, status string) bool {
 	return false
 }
 
-var kmGateConsume = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+consume\s+['"]?approved-gate['"]?(?:\s|$)`)
+var kmGateConsume = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN|launcher)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+consume\s+['"]?approved-gate['"]?(?:\s|$)`)
 var kmConsumedTrue = regexp.MustCompile(`(?:^|\s)consumed=true(?:\s|$)`)
 var kmImplementationTarget = regexp.MustCompile(`(?:^|\s)target-stage=implementation(?:\s|$)`)
 
@@ -103,6 +103,27 @@ func kmSuccessfulGateConsumeResult(content json.RawMessage, isError *bool) bool 
 	var text string
 	return isError != nil && !*isError && json.Unmarshal(content, &text) == nil &&
 		kmConsumedTrue.MatchString(text) && kmImplementationTarget.MatchString(text)
+}
+
+type codexKeepMovingCommandItem struct {
+	Type string `json:"type"`
+	Item struct {
+		Type             string `json:"type"`
+		Command          string `json:"command"`
+		AggregatedOutput string `json:"aggregated_output"`
+		ExitCode         *int   `json:"exit_code"`
+		Status           string `json:"status"`
+	} `json:"item"`
+}
+
+func kmSuccessfulCodexGateConsume(cmd codexKeepMovingCommandItem) bool {
+	return cmd.Type == "item.completed" &&
+		cmd.Item.Type == "command_execution" &&
+		cmd.Item.Status == "completed" &&
+		cmd.Item.ExitCode != nil && *cmd.Item.ExitCode == 0 &&
+		kmGateConsume.MatchString(cmd.Item.Command) &&
+		kmConsumedTrue.MatchString(cmd.Item.AggregatedOutput) &&
+		kmImplementationTarget.MatchString(cmd.Item.AggregatedOutput)
 }
 
 // kmAdvancesForward reports whether a command drives the named entity FORWARD through its
@@ -266,10 +287,10 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
 		if line == "" {
 			continue
 		}
-		var cmd codexCommandItem
+		var cmd codexKeepMovingCommandItem
 		if err := json.Unmarshal([]byte(line), &cmd); err == nil && cmd.Item.Type == "command_execution" {
 			c := cmd.Item.Command
-			if kmAdvancesToStatus(c, kmApprovedGate, kmNextStage) {
+			if kmAdvancesToStatus(c, kmApprovedGate, kmNextStage) || kmSuccessfulCodexGateConsume(cmd) {
 				tr.approvedAdvanced = true
 			}
 			// codex 0.142.5 dispatches via the standing loop (no spawn_agent): the dispatched
@@ -366,6 +387,38 @@ func TestClaudeKeepMovingGateConsumeCorrelation(t *testing.T) {
 		}
 		if got := claudeKeepMovingTrace(stream, "", nil).approvedAdvanced; got != tt.want {
 			t.Errorf("%s: approvedAdvanced = %t, want %t", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestCodexKeepMovingGateConsumeCorrelation(t *testing.T) {
+	// PR #572 run 30325567515: Codex recorded and consumed the captain's approval
+	// in one successful command execution. The durable consume result advanced the
+	// entity even though the transcript contains no separate status --set.
+	command := `/bin/bash -lc 'launcher="${SPACEDOCK_BIN:-spacedock}"; "$launcher" gate record approved-gate --decision approve --actor person:captain --reason "Captain accepts the reviewed direction and authorizes implementation." --workflow-dir /tmp/TestLiveCodexSharedScenarioskeep-moving-posture3894793558/001; "$launcher" state commit approved-gate; git add -- approved-gate.md; git commit -m "gate: approve approved-gate review"; "$launcher" gate consume approved-gate --workflow-dir /tmp/TestLiveCodexSharedScenarioskeep-moving-posture3894793558/001; "$launcher" state commit approved-gate; git add -- approved-gate.md; git commit -m "advance: approved-gate entering implementation"'`
+	result := `recorded gate=gate:approved-gate:review attempt=gate-attempt:approved-gate-review-1 state=closed briefing=briefing:approved-gate-review-1 resolution=resolution:spacedock:approved-gate:review:1 decision=approve
+Inline workflow — entities live beside the README; nothing to commit to a state checkout.
+[main c2e41c0] gate: approve approved-gate review
+ 1 file changed, 13 insertions(+)
+gate=gate:approved-gate:review attempt=gate-attempt:approved-gate-review-1 application=advance/consumed condition=approved-pending eligible=true consumed=true target-stage=implementation
+Inline workflow — entities live beside the README; nothing to commit to a state checkout.
+[main eff9773] advance: approved-gate entering implementation
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+`
+	for _, tt := range []struct {
+		name, command, result, status string
+		exit, want                    int
+	}{
+		{"archived_success", command, result, "completed", 0, 1},
+		{"failed", command, result, "failed", 1, 0},
+		{"wrong_entity", strings.Replace(command, "gate consume approved-gate", "gate consume ready-one", 1), result, "completed", 0, 0},
+		{"invocation_only", command, "", "completed", 0, 0},
+		{"not_consumed", command, strings.Replace(result, "consumed=true", "consumed=false", 1), "completed", 0, 0},
+		{"wrong_target", command, strings.Replace(result, "target-stage=implementation", "target-stage=validation", 1), "completed", 0, 0},
+	} {
+		got := codexKeepMovingTrace(codexCommandOutput(tt.command, tt.result, tt.exit, tt.status), "", nil).approvedAdvanced
+		if got != (tt.want == 1) {
+			t.Errorf("%s: approvedAdvanced = %t, want %t", tt.name, got, tt.want == 1)
 		}
 	}
 }
