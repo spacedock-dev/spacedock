@@ -3625,3 +3625,30 @@ Cycle 36 is the required pre-edit classification checkpoint. The deletion bounda
 ### Summary
 
 Cycle 37 completes the captain-ordered prose-oracle purge exactly within the pre-recorded cycle-36 boundary. The remaining contractlint surface derives expected values from independent structure or executable sources, and the code worktree is clean at `070f36ae`.
+
+## Stage Report: validation (cycle 38)
+
+- DONE: Independently audit the prose-oracle deletion boundary: same-source wording/order tests are gone while runtime behavior and independently sourced structural invariants remain.
+  At exact tip `070f36ae`, the 21-file deletion diff matches the cycle-36 ledger; a detached prose reword/order mutant stayed green, while a dangling reference and an out-of-quarantine prose reader each made `internal/contractlint` fail.
+- DONE: Validate the provider-neutral generic contract and scan-friendly prepare/record/consume lifecycle against the Captain’s correction without adding Subspace wiring, readiness, withdrawal, registry, probe, fallback, schema, or compatibility behavior.
+  The `ee2cab74..070f36ae` delta ends the generic contract at one opaque committed-room handoff, preserves the existing recorder, and changes no production Go; the old provider-specific AC-4 wording is superseded rather than encoded in a new prose oracle.
+- DONE: Run exact-tip focused, full, race, formatting, diff, strict-docs, detached high-stakes audit, and existing real-binary gate lifecycle evidence before recommending PASSED or REJECTED.
+  Focused contractlint and `TestRecordedGateLifecycleRealCLIReplay`, uncached full and race suites, exact repository formatting, both diff checks, pinned strict MkDocs, and the detached three-mutant audit all passed at `070f36ae`.
+
+### Acceptance evidence
+
+- AC-1: `TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities`, flat commit/archive tests, and the full suite preserve the exact two-file room and flat companion unit; an extra room entry or swept sibling fails those assertions.
+- AC-2: moved-root and detached `internal/gitsource` fixtures reopen exact Git objects and reject mutable, foreign, malformed, or mismatched sources; changing a locator identity component fails resolution.
+- AC-3: CLI summary/cardinality, arbitrary-locator, duplicate-member, record, validate, and eligibility cases passed; basename restoration, normalization, or last-member-wins acceptance fails the focused matrices.
+- AC-4: the Captain’s provider-neutral correction is reflected in the skill/docs delta, while `TestRecordedGateLifecycleRealCLIReplay` exercises prepare, bind commit, presentation observation, record, consume, and one successor without a provider execution lane.
+- AC-5: prepared-room recording and authority-rebinding refusal tests recompute retained room pins and fail without mutation on substituted request, Briefing, Result, or inventory authority.
+
+### Finding classification
+
+Material outcome defects: none. Material evidence defects: none. Deferred risks: none introduced by this correction. Polish findings: the governing AC-4 paragraph retains superseded provider-specific history, but the later Captain correction and dispatch checklist are explicit and the implementation does not enforce that obsolete target.
+
+Recommendation: **PASSED**.
+
+### Summary
+
+Cycle 38 validates the Captain’s provider-neutral correction and the complete prose-oracle deletion boundary at exact tip `070f36ae`. Runtime behavior, independent structural checks, repository gates, strict docs, and detached adversarial controls are green with no material finding.
