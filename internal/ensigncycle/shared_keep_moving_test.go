@@ -95,7 +95,7 @@ func kmAdvancesToStatus(command, entity, status string) bool {
 	return false
 }
 
-var kmGateConsume = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|[A-Za-z_][A-Za-z0-9_]*)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+consume\s+['"]?approved-gate['"]?(?:\s|$)`)
+var kmGateConsume = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN|launcher|SD)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+consume\s+['"]?approved-gate['"]?(?:\s|$)`)
 var kmEligibleTrue = regexp.MustCompile(`(?:^|\s)eligible=true(?:\s|$)`)
 var kmConsumedTrue = regexp.MustCompile(`(?:^|\s)consumed=true(?:\s|$)`)
 var kmImplementationTarget = regexp.MustCompile(`(?:^|\s)target-stage=implementation(?:\s|$)`)
@@ -409,6 +409,7 @@ func TestCodexKeepMovingGateConsumeCorrelation(t *testing.T) {
 		{"wrong_entity", strings.Replace(command, "gate consume approved-gate", "gate consume ready-one", 1), result, "completed", 0, 0},
 		{"invocation_only", command, "", "completed", 0, 0},
 		{"output_only", "sed -n '1,80p' fo-gate-lifecycle.md", result, "completed", 0, 0},
+		{"arbitrary_variable", strings.Replace(command, `"$SD"`, `"$NOT_SPACEDOCK"`, 1), result, "completed", 0, 0},
 		{"not_eligible", command, strings.Replace(result, "eligible=true", "eligible=false", 1), "completed", 0, 0},
 		{"not_consumed", command, strings.Replace(result, "consumed=true", "consumed=false", 1), "completed", 0, 0},
 		{"wrong_target", command, strings.Replace(result, "target-stage=implementation", "target-stage=validation", 1), "completed", 0, 0},
