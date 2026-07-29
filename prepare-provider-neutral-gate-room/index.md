@@ -3663,3 +3663,16 @@ Recommendation: **PASSED**.
 ### Summary
 
 Cycle 38 validates the Captain’s provider-neutral correction and the complete prose-oracle deletion boundary at exact tip `070f36ae`. Runtime behavior, independent structural checks, repository gates, strict docs, and detached adversarial controls are green with no material finding.
+
+## Stage Report: implementation (cycle 25 offline Git identity correction)
+
+- DONE: Reproduce the offline CI failure with an isolated home, disabled system/global Git configuration, and automatic identity inference disabled.
+  The exact committing `internal/ensigncycle` cases — `TestRecordedGateLifecycleRealCLIReplay`, `TestRecordedGateLifecycleTerminalConsumeHasNoDispatchableSuccessor`, `TestRecordedGateLifecycleAC5RefusalMatrix`, and `TestRecordedGateLifecycleAC7ResumeMatrix` — failed at their first product-owned `spacedock state commit` with `Author identity unknown`.
+- DONE: Correct the single fixture-owned root cause without changing product behavior, assertions, outcomes, workflow YAML, or CI.
+  `gitInit` supplied identity only through per-command `-c` options for setup commits, so later real Git subprocesses had no persistent author. Commit `6742e166` adds deterministic repository-local `user.name=Spacedock Test` and `user.email=spacedock@example.invalid` to both temporary repositories created by the shared prepared recorded-gate fixture: exactly 1 test file at `+4/-0`.
+- DONE: Verify the correction under the same strict isolation.
+  The exact four-test command passed in `16.687s`; `go test ./...` then passed under the identical blank-home, no-system/global-config, `user.useConfigOnly=true` environment. `gofmt` and `git diff --check` also passed.
+
+### Summary
+
+The offline red was one undeclared fixture dependency on ambient Git author identity. The repository-local setup correction makes both committing temporary repositories deterministic and leaves the gate lifecycle and product surface unchanged.
