@@ -3722,3 +3722,38 @@ Recommendation: **PASSED at corrected exact tip `6742e166`**.
 ### Summary
 
 Cycle 39 independently reproduces the ambient-identity-only red and verifies the four-line repository-local fixture correction under stricter isolation than the failed CI job. The complete provider-neutral and prose-oracle validation remains applicable, with no material finding or scope expansion; only PR synchronization and CI rerun remain before merge.
+
+## Stage Report: implementation (cycle 40 live grader correction)
+
+- DONE: Make the gate-guardrail grader validate the attempt identity and digest actually emitted by gate prepare.
+  `recordedGateHeldExpectation` reads the generated room's sole `request.json` and derives the gate, attempt, Briefing ID, and digest independently from the prepared fixture. The hold-log oracle now recognizes the successful prepare-first boundary rather than the retired `gate record --briefing` command.
+- DONE: Make the recorded-gate lifecycle observer recognize the one durable successor effect only when it descends from consume and dispatch.
+  Retained run `30477707135` artifacts showed prepare, record, consume, hostless dispatch, and the successor marker. The false predicate was an optional successful `gate --help` requirement; removing it preserves the required consume-to-dispatch and dispatch-to-effect Git ancestry checks.
+- DONE: Pass the two focused live journeys locally before requesting another PR CI run.
+  Both journeys passed against the exact clean candidate at `913cf667e67fa47dedd2b41c8512351a9059b6b1`; no CI run was started, approved, or requested.
+
+### Regression evidence
+
+- `TestAssertGateHeldAcceptsPreparedFixtureBinding` exercises a real prepared room and rejects mutated attempt identity or digest.
+- `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle` accepts one successful prepare plus commit/head and rejects the retired bind, missing commit, duplicate prepare, decision, consume, or successor dispatch.
+- `TestRecordedGateLifecycleRealCLIReplay` remains green without optional `gate --help` log lines while the zero-build, failed-build, pre-consume-build, and missing-ancestry controls remain red.
+
+### Exact candidate and live runs
+
+- Candidate checkout and embedded VCS revision were both `913cf667e67fa47dedd2b41c8512351a9059b6b1`; `go version -m` reported `vcs.modified=false`.
+- `SPACEDOCK_BIN=/tmp/s4-cycle26-final.hICQx3/spacedock SPACEDOCK_REPO_ROOT=$PWD SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/s4-cycle26-final.hICQx3/artifacts go test -tags live -count=1 -timeout 20m -run '^TestLiveCodexSharedScenarios/(gate-guardrail|recorded-gate-lifecycle)$' ./internal/ensigncycle -v`
+  `gate-guardrail` passed in `113.20s`; the lifecycle sample completed its durable chain but an unrelated prose parser rejected that sample's decision wording.
+- `SPACEDOCK_BIN=/tmp/s4-cycle26-final.hICQx3/spacedock SPACEDOCK_REPO_ROOT=$PWD SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/s4-cycle26-final.hICQx3/artifacts-lifecycle-retry-2 go test -tags live -count=1 -timeout 15m -run '^TestLiveCodexSharedScenarios/recorded-gate-lifecycle$' ./internal/ensigncycle -v`
+  `recorded-gate-lifecycle` passed in `175.12s` from a fresh isolated Codex home.
+
+### Repository verification and scope
+
+- `go test ./...` passed.
+- `go test ./... -race` passed.
+- `gofmt -w ./cmd ./internal` and `git diff --check` passed with a clean code worktree.
+- Commits `959fce3e` and `913cf667` change exactly 8 `internal/ensigncycle` test files at `+148/-18`.
+- Product Go, skills, contracts, documentation, workflow YAML, CI, and keep-moving coverage are unchanged.
+
+### Summary
+
+Cycle 40 corrects both s4-owned live-grader defects using prepared fixture identity and durable Git ancestry rather than agent narration. The two assigned live journeys pass with the exact final candidate, all repository gates are green, and PR CI remains untouched for the first officer to request.
