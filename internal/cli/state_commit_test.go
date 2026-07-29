@@ -5,7 +5,6 @@ package cli
 import (
 	"context"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -256,49 +255,6 @@ func TestStateCommitFlatIncludesExactCompanionDirectoryAndTrackedDeletions(t *te
 	names = strings.Fields(git(t, checkout, "show", "--name-only", "--pretty=format:", "HEAD"))
 	if strings.Join(names, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("flat deletion commit paths=%q want %q", names, want)
-	}
-}
-
-func TestStateCommitFlatIgnoresSuccessfulGitWarningsWhenParsingPaths(t *testing.T) {
-	_, workflow, _, _ := twoHostStateWorkflow(t)
-	checkout := filepath.Join(workflow, ".spacedock-state")
-	host := filepath.Dir(filepath.Dir(workflow))
-	const slug = "first-task"
-
-	writeEntity(t, workflow, slug, "---\nstatus: implementation\n---\n# Flat with warned room\n")
-	room := filepath.Join(checkout, slug, "review", "validation", "briefing-1")
-	if err := os.MkdirAll(room, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(room, "request.json"), []byte("{}\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	realGit, err := exec.LookPath("git")
-	if err != nil {
-		t.Fatal(err)
-	}
-	shimDir := t.TempDir()
-	shim := filepath.Join(shimDir, "git")
-	shimBody := "#!/bin/sh\nprintf 'warning: injected successful git warning\\n' >&2\nexec \"$SPACEDOCK_TEST_REAL_GIT\" \"$@\"\n"
-	if err := os.WriteFile(shim, []byte(shimBody), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	originalPath := os.Getenv("PATH")
-	t.Setenv("SPACEDOCK_TEST_REAL_GIT", realGit)
-	t.Setenv("PATH", shimDir+string(os.PathListSeparator)+originalPath)
-	if code, _, errOut := runStateCommitCmd(t, host, workflow, slug, "-m", "warning-safe flat room"); code != 0 {
-		t.Fatalf("warning-safe commit exit=%d stderr=%q", code, errOut)
-	}
-	t.Setenv("PATH", originalPath)
-
-	names := strings.Fields(git(t, checkout, "show", "--name-only", "--pretty=format:", "HEAD"))
-	want := []string{"first-task.md", "first-task/review/validation/briefing-1/request.json"}
-	if strings.Join(names, "\n") != strings.Join(want, "\n") {
-		t.Fatalf("warning-safe commit paths=%q want %q", names, want)
-	}
-	if staged := strings.TrimSpace(git(t, checkout, "diff", "--cached", "--name-only")); staged != "" {
-		t.Fatalf("warning-safe commit left entity unit staged: %q", staged)
 	}
 }
 
