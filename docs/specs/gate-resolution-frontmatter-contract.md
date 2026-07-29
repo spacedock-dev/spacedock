@@ -12,16 +12,15 @@ portable Resolution. The application layer owns what an approval does through th
 writes.
 
 Presentation remains an overridable channel of the present-gate skill, not a recorder
-verb. Chat and provider channels both hand semantic decision input to the recorder.
-Provider transport, retention, and UI stay outside this binary.
+verb. Chat decisions use `gate record --decision`. A selected override receives only
+the opaque, committed prepared room; a room-backed outcome uses `gate record --room`.
 
 ## End-to-end gate lifecycle
 
-Chat and provider presentation are alternative channels. Both begin with the same
+Chat and an override are alternative presentation channels. Both begin with the same
 prepared, durably committed gate room and converge on the same recorder-owned closed
-attempt. The First Officer chooses review content and presentation channel; Spacedock
-derives and verifies authority; the Captain decides; the provider, when selected,
-retains presentation evidence.
+attempt. The First Officer chooses review content; Spacedock prepares and records
+authority. The generic contract treats an override as an opaque room handoff.
 
 ```mermaid
 flowchart TD
@@ -40,43 +39,27 @@ flowchart TD
         CHAT_REVIEW --> CHAT_DECISION --> CHAT_RECORD
     end
 
-    subgraph PROVIDER["Selected provider override"]
-        PROVIDER_LOAD["Provider receives only the room<br/>and validates frozen authority"]
-        PROVIDER_REVIEW["Provider presents the review"]
-        PROVIDER_DECISION["Captain decides"]
-        PROVIDER_EVIDENCE["Provider retains<br/>minimal binding result.json,<br/>inventory, log, and diagnostics"]
-        PROVIDER_RECORD["spacedock gate record --room<br/>recomputes and verifies every pin"]
-        PROVIDER_LOAD --> PROVIDER_REVIEW --> PROVIDER_DECISION
-        PROVIDER_DECISION --> PROVIDER_EVIDENCE --> PROVIDER_RECORD
+    subgraph OVERRIDE["Selected presentation override"]
+        HANDOFF["Override receives only<br/>the opaque committed room"]
+        ROOM_RECORD["spacedock gate record --room<br/>verifies room-backed authority"]
+        HANDOFF --> ROOM_RECORD
     end
 
     CHANNEL --> CHAT_REVIEW
-    CHANNEL --> PROVIDER_LOAD
+    CHANNEL --> HANDOFF
 
     CHAT_RECORD --> CLOSED["Recorder closes the gate attempt"]
-    PROVIDER_RECORD --> CLOSED
+    ROOM_RECORD --> CLOSED
     CLOSED --> COMMIT_CLOSE["spacedock state commit<br/>publishes the Resolution"]
     COMMIT_CLOSE --> CONSUME["spacedock gate consume"]
     CONSUME --> COMMIT_CONSUME["spacedock state commit<br/>publishes application"]
     COMMIT_CONSUME --> NEXT["Successor stage"]
-
-    PARTIAL["Post-launch failure<br/>without a recorder-recordable Result"]
-    WITHDRAW["Withdrawal follow-up<br/>retains every provider byte"]
-    PROVIDER_REVIEW -. "failure" .-> PARTIAL
-    PARTIAL -. "outside this implemented contract" .-> WITHDRAW
 ```
 
-The provider branch accepts one canonical binding-mode Review v1 Result shape:
-top-level `type`, `briefing`, `artifact`, `annotations`, and `resolution`. Authority
-appears once, in `resolution.by`. A provider-specific wrapper or translation layer
-would create a second authority-bearing representation and is outside v1. The concrete
-v1 override is `/subspace:r gate <room>`; Subspace owns its transports and retained
-package, while Spacedock remains provider-neutral.
-
-The dashed failure branch is not an implemented recorder path. Until the separately
-owned withdrawal design lands, a post-launch room without a recorder-recordable Result
-remains frozen and requires operator intervention; a recorder-recordable Result must
-remain recordable and cannot be withdrawn.
+The generic lifecycle ends at that opaque handoff. It defines no override execution,
+transport, presentation, or evidence-production mechanics. If the room later becomes
+recorder-ready, `gate record --room` validates its canonical v1 Result and complete
+inventory under the recorder contract below.
 
 ## Canonical v1 schema
 
@@ -190,8 +173,8 @@ is a no-op; divergent open occupancy fails closed. After a closed attempt, prepa
 supersedes any pending application and appends a successor while earlier Briefings and
 Resolutions remain frozen.
 
-`spacedock gate record` also accepts either the prepared room's retained provider
-Result or a semantic chat decision. Either closing source closes only the last open
+`spacedock gate record` also accepts either the prepared room's room-backed Result or
+a semantic chat decision. Either closing source closes only the last open
 attempt for the current stage and derives its `advance/pending`, `feedback/pending`,
 or `none/not-applicable` application.
 
@@ -199,14 +182,14 @@ Cross-logical-gate re-entry is ordinary: workflow stage selects the target recor
 when `gates.current.gate` names a different closed gate. The successful write selects the
 target record but does not modify either record's earlier closures.
 
-## Provider Result association
+## Room-backed Result association
 
-The provider form consumes one prepared gate room. Its frozen `request.json` binds the
+The room-backed form consumes one prepared gate room. Its frozen `request.json` binds the
 logical gate, attempt, canonical Briefing id and digest, and captain actor/approver authority.
 Delegated chat decisions record `agent:first-officer` with a nonblank evidence reason and no directive or `adoption-note`;
 the attempt's `request-digest` rejects post-binding request changes.
-The fixed provider outputs are `provider/result.json` and
-`provider/presented-inventory.json`; callers supply neither path nor provider argv.
+The fixed recorder inputs are `provider/result.json` and
+`provider/presented-inventory.json`; callers supply neither path nor invocation detail.
 
 The recorder validates `request.json`, resolves its exact frozen Briefing locator,
 recomputes its JCS digest, and
@@ -222,7 +205,7 @@ request authority. Advisory output remains retained evidence; no adoption note c
 promote it into a binding Resolution. Artifact payloads may remain external URI and
 SHA references.
 
-On provider close, the recorder stores only the raw-byte digests of
+On room-backed close, the recorder stores only the raw-byte digests of
 `provider/result.json` and `provider/presented-inventory.json` as `provider-evidence`.
 They are part of the frozen attempt. `gate validate` recomputes both from the fixed room
 files and fails if either is missing or changed. Chat-closed and open attempts carry no
@@ -233,7 +216,7 @@ recursive token-stream duplicate-member check before typed decoding or
 canonicalization. Conflicting members at any object depth fail closed; Go's
 last-member-wins JSON behavior is never authority. Binding, room recording,
 validation, eligibility, and consumption all resolve and recheck the same frozen
-request/Briefing/source authority. Provider evidence is valid only on a prepared,
+request/Briefing/source authority. Room-backed evidence is valid only on a prepared,
 request-digest-bound attempt.
 
 ## Round records and triage dispositions (advisory; owner: 02av)
@@ -339,13 +322,10 @@ decision; it does not authenticate chat or apply the result.
 
 - Prototype-format compatibility, `raw-file-pin`, migration, and arbitrary
   unknown-field preservation inside `gates`.
-- Provider launch, polling, result retention, presentation UI, and Subspace-specific
-  behavior.
+- Presentation-channel execution, transport, UI, and evidence production beyond the
+  opaque prepared-room handoff.
 - Remote Git-object acquisition, retention refs, copied selected-source payloads, or
   generic URI/root registries.
-- Provider capability probing or fallback selection by the First Officer. A selected
-  presentation override receives only the committed `room=` value through
-  `/subspace:r gate <room>`; the provider entry owns all later mechanics.
 - Blocker-satisfaction evaluation, execution-hold authoring, dispatch identities, or effect receipts.
 - A second schema version or provider operation envelope.
 

@@ -332,11 +332,21 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 		}
 	}
 	for _, want := range []string{
-		"Wait for `gate prepare` to succeed", "/subspace:r gate <room>",
-		"Reconstruct no authority", "Perform no provider probe or fallback selection",
+		"Wait for `gate prepare` to succeed", "opaque handoff",
+		"exactly that room through its declared interface",
+		"Reconstruct no authority", "Record only prepared-room authority",
+		"generic Spacedock contract ends at the opaque handoff",
 	} {
 		if !strings.Contains(presenter, want) {
 			t.Errorf("present-gate missing room-only override contract %q", want)
+		}
+	}
+	for _, forbidden := range []string{
+		"/subspace:r", "Subspace", "provider discovery", "materialization",
+		"launch failure", "fallback selection",
+	} {
+		if strings.Contains(presenter, forbidden) {
+			t.Errorf("present-gate leaks presentation implementation detail %q", forbidden)
 		}
 	}
 	for _, want := range []string{
@@ -367,6 +377,42 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 	for _, token := range []string{"`approve`", "`redo with feedback`", "`reject` with `feedback-to`", "`reject` without `feedback-to`", "`hold` maps", "`not yet`", "accepts-direction", "rejects-direction", "pause reason", "concrete asks", "`«feedback.route»`", "commit and stop at the gate"} {
 		if gradeMapping(strings.Replace(lifecycle, token, "swapped", 1)) {
 			t.Fatalf("Captain mapping mutation survived for %q", token)
+		}
+	}
+}
+
+func TestGatePresentationContractsUseOpaqueRoomHandoff(t *testing.T) {
+	contracts := map[string]string{
+		"presenter": readRepoFile(t, filepath.FromSlash("skills/present-gate/SKILL.md")),
+		"spec":      readRepoFile(t, filepath.FromSlash("docs/specs/gate-resolution-frontmatter-contract.md")),
+		"guide":     readRepoFile(t, filepath.FromSlash("docs/site/concepts/gates-and-decisions.md")),
+	}
+	for name, body := range contracts {
+		if !strings.Contains(body, "opaque") || !strings.Contains(body, "room") {
+			t.Errorf("%s contract no longer states the opaque room handoff", name)
+		}
+		for _, forbidden := range []string{
+			"/subspace:r", "Subspace", "provider discovery", "materialization",
+			"launch failure", "fallback selection",
+		} {
+			if strings.Contains(body, forbidden) {
+				t.Errorf("%s contract leaks presentation implementation detail %q", name, forbidden)
+			}
+		}
+	}
+
+	spec := contracts["spec"]
+	for _, forbidden := range []string{"subgraph PROVIDER", "Post-launch failure", "Withdrawal follow-up"} {
+		if strings.Contains(spec, forbidden) {
+			t.Errorf("gate lifecycle diagram adds an unowned branch %q", forbidden)
+		}
+	}
+	for _, want := range []string{
+		"subgraph OVERRIDE", "spacedock gate prepare", "spacedock gate record --room",
+		"spacedock gate consume",
+	} {
+		if !strings.Contains(spec, want) {
+			t.Errorf("gate lifecycle diagram lost existing responsibility %q", want)
 		}
 	}
 }
@@ -476,7 +522,7 @@ func TestFOLocalOrderedProceduresPreserved(t *testing.T) {
 		{"skills/first-officer/references/fo-dispatch-core.md", "## Dispatch", sequence(1, 9), []string{"entity file", "«dispatch.checklist»", "conflicts", "dispatch_agent_id", "status --workflow-dir", "Commit", "worktree", "«dispatch.build»", "«completion-signal»"}},
 		{"skills/first-officer/references/fo-dispatch-core.md", "## Reuse and Fresh Dispatch", sequence(0, 4), []string{"«context-budget»", "«addressable-worker»", "fresh: true", "worktree", "«reuse.model-match»"}},
 		{"skills/first-officer/references/fo-dispatch-core.md", "## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration", []string{"0.5", "1", "2", "3"}, []string{"«addressable-worker»", "mod-block", "status --next", "«hooks.run»", "«roster-reconcile»"}},
-		{"skills/present-gate/SKILL.md", "## Presentation channels", sequence(1, 4), []string{"Pass only the emitted room after its bind commit", "/subspace:r gate <room>", "Reconstruct no authority", "Perform no provider probe or fallback selection", "gate record <entity> --room <room>", "do not fall back to chat after the selected handoff"}},
+		{"skills/present-gate/SKILL.md", "## Presentation channels", sequence(1, 3), []string{"Pass only the emitted room after its bind commit", "opaque handoff", "Reconstruct no authority", "Record only prepared-room authority", "gate record <entity> --room <room>"}},
 		{"skills/present-gate/SKILL.md", "### Captain-facing assembly rules", sequence(1, 11), []string{"Lede first", "Chosen direction", "Stage Report", "Reviewer findings", "Recommendation", "Bounce-back", "format-pedantry", "worktree", "Target length", "declared label", "verification state"}},
 		{"skills/feedback-rejection-flow/SKILL.md", "## Feedback Rejection Flow", sequence(1, 7), []string{"feedback-to", "Feedback Cycles", "cycle 3", "«context-budget»", "«addressable-worker»", "reviewer", "gate flow"}},
 	}

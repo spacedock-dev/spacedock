@@ -17,12 +17,13 @@ The presenter emits once; the lifecycle, prompt, and host adapter do not duplica
 
 A workflow or session may declare one presentation override. Apply this contract:
 
-1. **Pass only the emitted room after its bind commit.** Wait for `gate prepare` to succeed and `«state.commit»` to durably bind its exact emitted `room=` value. Then invoke a selected Subspace override exactly once as `/subspace:r gate <room>`.
-2. **Reconstruct no authority.** Do not pass or reconstruct entity, workflow directory, Briefing path/id/digest, actor, approver, destination, provider package, manifest, executable, capability, Result path, inventory path, or terminal mechanics. Do not read `request.json` to build another caller surface.
-3. **Perform no provider probe or fallback selection.** Do not probe availability, version, or capability and do not choose chat because a selected override fails. The room-only Subspace fixed entry owns provider discovery, capability refusal, materialization, launch failure, terminal-safe display, retention, and cleanup.
-4. **Record only direct binding authority.** After the provider returns retained binding evidence, run `${SPACEDOCK_BIN:-spacedock} gate record <entity> --room <room>`. The recorder re-reads the frozen request and arbitrary canonical Briefing locator, recomputes request/Briefing/Result/inventory pins, derives the complete association in memory, and writes no `association.json`. A missing, advisory, or invalid Result leaves the gate open; do not fall back to chat after the selected handoff or write entity frontmatter directly.
+1. **Pass only the emitted room after its bind commit.** Wait for `gate prepare` to succeed and `«state.commit»` to durably bind its exact emitted `room=` value. Give the selected override exactly that room through its declared interface as an opaque handoff.
+2. **Reconstruct no authority.** Do not pass or reconstruct entity, workflow directory, Briefing path/id/digest, actor, approver, destination, or any implementation coordinate beyond the room. Do not read `request.json` to build another caller surface.
+3. **Record only prepared-room authority.** When the selected channel returns a recorder-ready room, run `${SPACEDOCK_BIN:-spacedock} gate record <entity> --room <room>`. The recorder re-reads the frozen request and arbitrary canonical Briefing locator, recomputes request/Briefing/Result/inventory pins, derives the complete association in memory, and writes no `association.json`. A missing, advisory, or invalid Result leaves the gate open; never write entity frontmatter directly.
 
-The provider owns its transport and retention tests. Spacedock's binary owns provider-neutral room verification and recording; it contains no Subspace launch code.
+The generic Spacedock contract ends at the opaque handoff: it names no override
+executable, transport, presentation implementation, or evidence-production mechanics.
+Spacedock's binary owns provider-neutral room verification and recording.
 
 ## Gate Presentation
 

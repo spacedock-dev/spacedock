@@ -40,13 +40,13 @@ Markdown review, exact concise summary, and References. Spacedock authors and bi
 two-file recorder-ready room; the first officer commits that entity-owned room. The
 selected source payloads remain singular local Git objects rather than room copies.
 
-A workflow or session may select a review provider. Only after the prepare and bind
-commit, the presentation channel passes exactly `/subspace:r gate <room>` using the
-emitted room. It does not probe, choose a fallback, or reconstruct entity, workflow,
-Briefing, actor, approver, provider, or output coordinates. The provider entry owns
-capability handling, materialization, launch, and retained evidence from that room-only
-authority. The recorder later recomputes request, Briefing, Result, inventory, and Git
-pins, derives the complete association in memory, and writes no `association.json`.
+A workflow or session may select a presentation override. Only after the prepare and
+bind commit, the selected channel receives exactly the emitted room through its
+declared interface as an opaque handoff. The generic Spacedock contract neither
+defines channel execution nor reconstructs authority outside that room. When the room
+is recorder-ready, the first officer passes that same room to `gate record --room`;
+the recorder recomputes request, Briefing, Result, inventory, and Git pins, derives the
+complete association in memory, and writes no `association.json`.
 
 ## The three calls
 
