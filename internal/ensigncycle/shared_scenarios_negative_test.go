@@ -28,7 +28,8 @@ func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
 	before := recordedGateEntity()
 	held := recordedGateHeldEntity()
 	review := recordedGateReview()
-	requireRecordedGate(t, assertGateHeld(before, held, review) == nil, "held-gate baseline failed")
+	expected := staticGateHeldExpectation()
+	requireRecordedGate(t, assertGateHeld(before, held, review, expected) == nil, "held-gate baseline failed")
 
 	for name, after := range map[string]string{
 		"unbound":        before,
@@ -36,7 +37,7 @@ func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
 		"self-approved":  strings.Replace(held, "verdict:\n", "verdict: passed\n", 1),
 		"wrong-briefing": strings.Replace(held, recordedGateBriefingID, "briefing:docs-dev:wrong", 1),
 	} {
-		requireRecordedGate(t, assertGateHeld(before, after, review) != nil, "%s gate qualified", name)
+		requireRecordedGate(t, assertGateHeld(before, after, review, expected) != nil, "%s gate qualified", name)
 	}
 }
 

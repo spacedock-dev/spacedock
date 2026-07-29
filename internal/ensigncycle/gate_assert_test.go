@@ -20,6 +20,13 @@ func requireRecordedGate(t *testing.T, ok bool, format string, args ...any) {
 	}
 }
 
+func staticGateHeldExpectation() gateHeldExpectation {
+	return gateHeldExpectation{
+		gateID: "gate:docs-dev:3k:validation", attemptID: "gate-attempt:3k-validation-1",
+		briefingID: recordedGateBriefingID, digest: recordedGateDigest,
+	}
+}
+
 func recordedGateHeldEntity() string {
 	gates := "gates:\n" +
 		"  version: 1\n" +
@@ -55,7 +62,8 @@ func TestAssertGateHeld(t *testing.T) {
 
 	before := recordedGateEntity()
 	after := recordedGateHeldEntity()
-	requireRecordedGate(t, assertGateHeld(before, after, recordedGateReview()) == nil, "held gate failed")
+	expected := staticGateHeldExpectation()
+	requireRecordedGate(t, assertGateHeld(before, after, recordedGateReview(), expected) == nil, "held gate failed")
 	decision := "Decision ask: approve, revise with a concrete finding, or hold for a named prerequisite?"
 	for name, line := range map[string]string{
 		"baseline":        decision,
@@ -83,7 +91,47 @@ func TestAssertGateHeld(t *testing.T) {
 		"applied": {applied, recordedGateReview()}, "verdict": {strings.Replace(after, "verdict:\n", "verdict: passed\n", 1), recordedGateReview()},
 		"review": {after, "Gate review: legacy\nDecision: approve?"}, "legacy": {entity, final},
 	} {
-		requireRecordedGate(t, assertGateHeld(before, tc.after, tc.review) != nil, "%s control qualified", name)
+		requireRecordedGate(t, assertGateHeld(before, tc.after, tc.review, expected) != nil, "%s control qualified", name)
+	}
+}
+
+func TestAssertGateHeldAcceptsPreparedFixtureBinding(t *testing.T) {
+	fixture := writePreparedRecordedGateFixture(t)
+	before := readFile(t, fixture.entity)
+	args := []string{
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the recorded validation gate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Exact recorded gate validation summary.",
+	}
+	for _, reference := range fixture.references {
+		args = append(args, "--reference", reference)
+	}
+	args = append(args, "--workflow-dir", fixture.root)
+	prepared := runRecordedGateCommand(buildRecordedGateBinary(t), fixture.root, "prepare", args...)
+	if prepared.exit != 0 {
+		t.Fatalf("prepare exit=%d\nstdout=%s\nstderr=%s", prepared.exit, prepared.stdout, prepared.stderr)
+	}
+
+	briefingID := outputValue(prepared.stdout, "briefing")
+	digest := outputValue(prepared.stdout, "digest")
+	expected, err := recordedGateHeldExpectation(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	after := readFile(t, fixture.entity)
+	if err := assertGateHeld(before, after, recordedGateReviewWith(briefingID, digest), expected); err != nil {
+		t.Fatalf("prepared fixture binding rejected: %v", err)
+	}
+	for name, mutant := range map[string]string{
+		"attempt": strings.Replace(after, expected.attemptID, "gate-attempt:wrong", 1),
+		"digest":  strings.Replace(after, expected.digest, "sha256:"+strings.Repeat("f", 64), 1),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := assertGateHeld(before, mutant, recordedGateReviewWith(briefingID, digest), expected); err == nil {
+				t.Fatal("prepared binding mutant graded PASS")
+			}
+		})
 	}
 }
 

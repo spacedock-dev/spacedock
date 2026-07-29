@@ -294,6 +294,10 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 		t.Fatal(err)
 	}
 	validLog := readFile(t, commandLog)
+	withoutHelp := strings.ReplaceAll(strings.ReplaceAll(validLog, "begin\tgate --help\n", ""), "exit=0\tgate --help\n", "")
+	writeFile(t, commandLog, withoutHelp)
+	requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog, review)) == nil, "optional gate help changed lifecycle ordering")
+	writeFile(t, commandLog, validLog)
 	for name, log := range map[string]string{"zero-build": strings.Replace(validLog, "begin\tdispatch build ", "begin\tignored build ", 1), "failed-build": strings.Replace(validLog, "exit=0\tdispatch build ", "exit=1\tdispatch build ", 1), "build-before-consume": strings.Replace(validLog, "exit=0\tgate consume ", "exit=0\tignored consume ", 1) + "\nexit=0\tgate consume late", "missing-ancestry": strings.Replace(validLog, "dispatch-head\t", "missing-head\t", 1)} {
 		writeFile(t, commandLog, log)
 		requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog, review)) != nil, "%s control qualified", name)
@@ -884,12 +888,10 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	t.Helper()
 	log := readFile(t, commandLog)
 	builds, successfulBuilds, consumed, ordered := 0, 0, false, true
-	helpAt := strings.Index(log, "exit=0\tgate --help")
 	prepareAt := strings.Index(log, "exit=0\tgate prepare ")
 	bindCommitAt := strings.Index(log, "exit=0\tstate commit recorded-gate-task")
 	decisionAt := strings.Index(log, "exit=0\tgate record ")
-	ordered = strings.Count(log, "exit=0\tgate --help") == 1 &&
-		helpAt >= 0 && prepareAt > helpAt && bindCommitAt > prepareAt && decisionAt > bindCommitAt
+	ordered = prepareAt >= 0 && bindCommitAt > prepareAt && decisionAt > bindCommitAt
 	dispatchHead, buildCommand := "", ""
 	for _, line := range strings.Split(log, "\n") {
 		if strings.HasPrefix(line, "exit=0\tgate consume ") {

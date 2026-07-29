@@ -56,15 +56,21 @@ func TestLivePrimitiveRunsAgainstClaudeAdapter(t *testing.T) {
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
 	runner = runner.withStubPATH(shimDir).(claudeLiveRunner)
 	adapter := claudeRunnerAdapter{t: t, runner: runner}
+	var fixture recordedGateFixture
 
 	sc := livescenario.Scenario{
 		Name:    "gate-held-via-primitive",
 		Runbook: gatePrompt(dir),
 		Setup: func(dir string) (string, error) {
-			return writePreparedRecordedGateFixtureAt(t, dir).entity, nil
+			fixture = writePreparedRecordedGateFixtureAt(t, dir)
+			return fixture.entity, nil
 		},
 		Assert: func(before, after livescenario.EntityState, observed string) error {
-			if err := assertGateHeld(before.Body, after.Body, recordedGateReviewFromClaudeStream(observed)); err != nil {
+			expected, err := recordedGateHeldExpectation(fixture)
+			if err != nil {
+				return errGraded(err.Error())
+			}
+			if err := assertGateHeld(before.Body, after.Body, recordedGateReviewFromClaudeStream(observed), expected); err != nil {
 				return errGraded(err.Error())
 			}
 			if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {

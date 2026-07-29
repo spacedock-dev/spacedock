@@ -328,7 +328,11 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 		t.Fatalf("recorded-gate-task was archived while waiting at the gate; stat err=%v", err)
 	}
 	after := readFile(t, fixture.entity)
-	if err := assertGateHeld(before, after, recordedGateReviewFromClaudeStream(result.stream)); err != nil {
+	expected, err := recordedGateHeldExpectation(fixture)
+	if err != nil {
+		t.Fatalf("read prepared gate expectation: %v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if err := assertGateHeld(before, after, recordedGateReviewFromClaudeStream(result.stream), expected); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {
