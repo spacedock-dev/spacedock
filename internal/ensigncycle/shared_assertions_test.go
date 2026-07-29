@@ -7,11 +7,11 @@ import (
 
 func TestAssertRejectionFlow(t *testing.T) {
 	// The full two-cycle end-state: fix marker applied, two implementation reports
-	// (original + cycle-2 rework), and two recorded `### Feedback Cycles` entries.
+	// (original + cycle-2 rework), and two durable validation reports.
 	entity := "---\nstatus: validation\n---\n" +
 		rejectionFixMarker + "\n\n" +
-		"## Stage Report: implementation\n\n- DONE: Initial implementation\n\n" +
-		"## Stage Report: implementation\n\n- DONE: Applied rejection fix\n\n" +
+		"## Stage Report: implementation\n\n- DONE: Initial implementation\n\n## Stage Report: validation\n\n- REJECTED: Missing marker\n\n" +
+		"## Stage Report: implementation\n\n- DONE: Applied rejection fix\n\n## Stage Report: validation\n\n- PASSED: Marker present\n\n" +
 		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n- Cycle 2: PASSED\n"
 	observed := "validation was REJECTED; routed follow-up to implementation"
 
@@ -22,18 +22,18 @@ func TestAssertRejectionFlow(t *testing.T) {
 		t.Fatal("expected missing fix marker to fail")
 	}
 	// A single-cycle end-state: fix applied, two implementation reports, but only one
-	// recorded cycle — the FO never drove the second validation round.
+	// validation report — the FO never drove the second validation round.
 	singleCycle := "---\nstatus: implementation\n---\n" + rejectionFixMarker + "\n\n" +
-		"## Stage Report: implementation\n\n- DONE: Initial\n\n" +
+		"## Stage Report: implementation\n\n- DONE: Initial\n\n## Stage Report: validation\n\n- REJECTED: Missing marker\n\n" +
 		"## Stage Report: implementation\n\n- DONE: Fix\n\n" +
 		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n"
 	if err := assertRejectionFlow(singleCycle, observed); err == nil {
-		t.Fatal("expected a single-cycle end-state (one recorded cycle) to fail")
+		t.Fatal("expected a single-cycle end-state (one validation report) to fail")
 	}
 	// Two cycles recorded but only one implementation report — the rework never left
 	// a second report.
 	oneReport := "---\nstatus: validation\n---\n" + rejectionFixMarker + "\n\n" +
-		"## Stage Report: implementation\n\n- DONE: Only one report\n\n" +
+		"## Stage Report: implementation\n\n- DONE: Only one report\n\n## Stage Report: validation\n\n- REJECTED: Missing marker\n\n## Stage Report: validation\n\n- PASSED: Marker present\n\n" +
 		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n- Cycle 2: PASSED\n"
 	if err := assertRejectionFlow(oneReport, observed); err == nil {
 		t.Fatal("expected a single implementation report to fail")

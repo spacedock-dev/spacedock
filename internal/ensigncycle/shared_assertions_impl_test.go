@@ -46,6 +46,7 @@ var feedbackCycleEntry = regexp.MustCompile(`(?im)^- Cycle \d+:`)
 // start, so counting matches counts the implementation rounds that left a durable
 // report rather than any prose that merely names the stage.
 var implementationReport = regexp.MustCompile(`(?m)^## Stage Report: implementation`)
+var validationReport = regexp.MustCompile(`(?m)^## Stage Report: validation`)
 
 // feedbackCyclesSection returns the body of the entity's `### Feedback Cycles`
 // section — from its heading to the next heading (any `##`/`###`/etc.) or EOF.
@@ -75,7 +76,7 @@ var nextHeading = regexp.MustCompile(`(?m)^#{1,6} `)
 // REJECTED validation routes back to implementation, the rework applies the exact
 // fix marker and leaves a second implementation report, and a second validation
 // round re-checks it. The durable 2-cycle end-state is two implementation reports,
-// the fix marker, and two recorded `### Feedback Cycles` entries; the observed
+// the fix marker, and two durable validation reports; the observed
 // output surfaces both the rejection and the implementation follow-up. The
 // reviewer-reuse signal (Claude SendMessage / Codex send_input) is host-specific
 // and graded by the host runner, not this shared assertion.
@@ -86,8 +87,8 @@ func assertRejectionFlow(entity, observed string) error {
 	if reports := len(implementationReport.FindAllString(entity, -1)); reports < 2 {
 		return fmt.Errorf("rejection trajectory left %d implementation reports, want at least 2 (original + cycle-2 rework)", reports)
 	}
-	if cycles := len(feedbackCycleEntry.FindAllString(entity, -1)); cycles < 2 {
-		return fmt.Errorf("rejection trajectory recorded %d `### Feedback Cycles` entries, want at least 2 — a single-cycle end-state did not drive the second validation round", cycles)
+	if reports := len(validationReport.FindAllString(entity, -1)); reports < 2 {
+		return fmt.Errorf("rejection trajectory left %d validation reports, want at least 2 (rejection + re-validation)", reports)
 	}
 	lowerObserved := strings.ToLower(observed)
 	if !strings.Contains(lowerObserved, "reject") {

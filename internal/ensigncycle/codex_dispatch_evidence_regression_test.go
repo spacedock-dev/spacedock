@@ -11,14 +11,18 @@ import (
 // stdout. The PR #486 multi_agent_v2 failures surfaced the dispatch evidence here:
 // dispatch-build stdout, wait records, then entity reads showing stage reports.
 func codexCompletedCommandOutput(command, output string) string {
+	return codexCommandOutput(command, output, 0, "completed")
+}
+
+func codexCommandOutput(command, output string, exit int, status string) string {
 	line := map[string]any{
 		"type": "item.completed",
 		"item": map[string]any{
 			"type":              "command_execution",
 			"command":           command,
 			"aggregated_output": output,
-			"exit_code":         0,
-			"status":            "completed",
+			"exit_code":         exit,
+			"status":            status,
 		},
 	}
 	b, err := json.Marshal(line)
@@ -130,6 +134,10 @@ func TestCodexDurableStageReportCountIgnoresProseMentions(t *testing.T) {
 	reported := codexDurableStageReportTargets(command, output, []string{"alpha", "beta"})
 	if reported["alpha"] || reported["beta"] {
 		t.Fatalf("one anchored report heading must not prove two named entities: %#v", reported)
+	}
+	reported = codexDurableStageReportTargets("rg -n '^## Stage Report:' alpha.md beta.md", "1:## Stage Report: done\n9:## Stage Report: done\n", []string{"alpha", "beta"})
+	if !reported["alpha"] || !reported["beta"] {
+		t.Fatalf("numbered rg headings did not prove both named entities: %#v", reported)
 	}
 }
 
@@ -294,5 +302,41 @@ func TestCodexDispatchEvidenceDoesNotMultiplyAnonymousBatchedReport(t *testing.T
 		if evidence.stageReport[entity] || evidence.doneReport[entity] {
 			t.Errorf("one anonymous report was cross-attributed to %q: %+v", entity, evidence)
 		}
+	}
+}
+
+func TestCodexDispatchEvidencePhaseBindsBatchedFinalization(t *testing.T) {
+	entity := kmReadyOne
+	build := codexDispatchBuildEvidence(entity, kmNextStage)
+	wait := codexWaitCompleted()
+	report := codexCompletedCommandOutput("rg -n '^## Stage Report:' "+entity+".md", "40:## Stage Report: "+kmNextStage+"\n")
+	mergeCommand := `for slug in ready-one; do spacedock merge guard "$slug" --workflow-dir .; done`
+	finalized := "finalized: " + entity + " -> done (verdict passed), archived. State durability: local-only (no origin remote).\n"
+	merge := codexCompletedCommandOutput(mergeCommand, finalized)
+
+	positive := strings.Join([]string{build, wait, report, merge}, "\n")
+	evidence := codexDispatchCompletionEvidenceFromJSONL(positive, []string{entity})
+	if !evidence.stageReport[entity] || !evidence.doneReport[entity] {
+		t.Fatalf("retained build/wait/report/finalization shape was not credited: %+v", evidence)
+	}
+
+	controls := map[string]string{
+		"missing-build":        strings.Join([]string{wait, report, merge}, "\n"),
+		"missing-wait":         strings.Join([]string{build, report, merge}, "\n"),
+		"missing-report":       strings.Join([]string{build, wait, merge}, "\n"),
+		"failed-command":       strings.Join([]string{build, wait, report, codexCommandOutput(mergeCommand, finalized, 1, "failed")}, "\n"),
+		"missing-entity":       strings.Join([]string{build, wait, report, codexCompletedCommandOutput(mergeCommand, "finalized: ready-two -> done\n")}, "\n"),
+		"literal-command-only": strings.Join([]string{build, wait, report, codexCompletedCommandOutput("spacedock merge guard "+entity, "")}, "\n"),
+		"planted-output":       strings.Join([]string{build, wait, report, codexCompletedCommandOutput("printf planted", finalized)}, "\n"),
+		"planted-command-output": strings.Join([]string{build, wait, report,
+			codexCompletedCommandOutput("printf 'spacedock merge guard "+entity+"'", finalized)}, "\n"),
+	}
+	for name, stream := range controls {
+		t.Run(name, func(t *testing.T) {
+			got := codexDispatchCompletionEvidenceFromJSONL(stream, []string{entity})
+			if got.doneReport[entity] {
+				t.Fatalf("unqualified finalization was credited: %+v", got)
+			}
+		})
 	}
 }

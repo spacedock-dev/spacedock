@@ -26,11 +26,16 @@ type recordedGatePiEvent struct {
 
 func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
 	before := recordedGateEntity()
-	held := before + "\ngates:\n  records:\n    - id: gate:docs-dev:3k:validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          state: open\n          briefing:\n            id: " + recordedGateBriefingID + "\n            digest: " + recordedGateDigest + "\n"
+	held := recordedGateHeldEntity()
 	review := recordedGateReview()
 	requireRecordedGate(t, assertGateHeld(before, held, review) == nil, "held-gate baseline failed")
 
-	for name, after := range map[string]string{"unbound": before, "advanced": strings.Replace(held, "status: validation", "status: done", 1), "self-approved": strings.Replace(held, "verdict:\n", "verdict: passed\n", 1)} {
+	for name, after := range map[string]string{
+		"unbound":        before,
+		"advanced":       strings.Replace(held, "status: validation", "status: done", 1),
+		"self-approved":  strings.Replace(held, "verdict:\n", "verdict: passed\n", 1),
+		"wrong-briefing": strings.Replace(held, recordedGateBriefingID, "briefing:docs-dev:wrong", 1),
+	} {
 		requireRecordedGate(t, assertGateHeld(before, after, review) != nil, "%s gate qualified", name)
 	}
 }
@@ -39,14 +44,14 @@ func TestRejectionFlowNegativeSingleCycle(t *testing.T) {
 	rejectedObserved := "validation was REJECTED; routing the finding back to implementation"
 
 	// Un-driven fixture: the rejection scenario now starts BEFORE the first
-	// validation, at status: implementation with NO stage reports and NO seeded
+	// implementation, at status: backlog with NO stage reports and NO seeded
 	// rejection. The seeded fixture must NOT pre-satisfy assertRejectionFlow — a live
 	// pass requires the real producer to drive BOTH cycles (omit the fix, get
 	// rejected, rework, re-validate). If this seeded state passed, a live run that did
 	// nothing would falsely pass.
 	seeded := rejectionEntity()
-	if !strings.Contains(seeded, "status: implementation") {
-		t.Fatal("rejection fixture must now start at status: implementation, before the first validation")
+	if !strings.Contains(seeded, "status: backlog") {
+		t.Fatal("rejection fixture must start at backlog so normal routing advances into the first implementation")
 	}
 	if got := len(implementationReport.FindAllString(seeded, -1)); got != 0 {
 		t.Fatalf("rejection fixture must start with no implementation reports (live producer writes them), got %d", got)
@@ -73,7 +78,7 @@ func TestRejectionFlowNegativeSingleCycle(t *testing.T) {
 	// single-route-back simplification the Python test never had.
 	singleCycle := "---\nstatus: implementation\n---\n# Rejection Task\n\n" +
 		rejectionFixMarker + "\n\n" +
-		"## Stage Report: implementation\n\n- DONE: initial (no marker)\n\n" +
+		"## Stage Report: implementation\n\n- DONE: initial (no marker)\n\n## Stage Report: validation\n\n- REJECTED: Missing marker\n\n" +
 		"## Stage Report: implementation\n\n- DONE: applied fix\n\n" +
 		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n"
 	if len(implementationReport.FindAllString(singleCycle, -1)) < 2 {
@@ -83,7 +88,7 @@ func TestRejectionFlowNegativeSingleCycle(t *testing.T) {
 		t.Fatal("single-cycle body must carry exactly one recorded cycle (only Cycle 1)")
 	}
 	if err := assertRejectionFlow(singleCycle, rejectedObserved); err == nil {
-		t.Fatal("expected a single-cycle end-state (fix applied, second implementation report, but only one recorded cycle) to fail assertRejectionFlow on the second-cycle check")
+		t.Fatal("expected a single-cycle end-state (fix applied, second implementation report, but only one validation report) to fail assertRejectionFlow on the re-validation check")
 	}
 
 	// No-reuse run shape — the producer-signal half of the shipped flaw. A run whose

@@ -245,10 +245,9 @@ func TestAssertCodexKeepMoving(t *testing.T) {
 		t.Fatalf("the codex status-set-done dispatch dialect must pass (cycle-1 false-negative regression): %v", err)
 	}
 
-	// Positive (dialect regression, PR #480): merge guard is another legitimate
-	// terminalization surface. The worker reached the terminal merge-finalize
-	// ceremony, so there may be no direct `status --set … status=done` command to
-	// credit as the per-entity dispatch evidence.
+	// Negative: literal merge-guard commands are terminal corroboration, not dispatch
+	// evidence. Without dispatch build, wait, and durable reports this pass-shaped
+	// stream must remain red.
 	mergeGuardSurface := strings.Join([]string{
 		codexCommand("spacedock status --workflow-dir . --set " + kmApprovedGate + " status=" + kmNextStage + " verdict=APPROVED"),
 		codexCommand("spacedock merge guard " + kmApprovedGate + " --workflow-dir . --verdict passed"),
@@ -256,8 +255,8 @@ func TestAssertCodexKeepMoving(t *testing.T) {
 		codexCommand("spacedock merge guard " + kmReadyTwo + " --workflow-dir . --verdict passed"),
 		codexCommand("spacedock status --workflow-dir . --set " + kmQuestioned + " status=" + kmReopenStage + " verdict=QUESTIONED"),
 	}, "\n")
-	if err := assertCodexKeepMoving(mergeGuardSurface, kmCorrectFinal(), independent); err != nil {
-		t.Fatalf("the codex merge-guard terminalization dialect must pass (PR #480 false-negative regression): %v", err)
+	if err := assertCodexKeepMoving(mergeGuardSurface, kmCorrectFinal(), independent); err == nil {
+		t.Fatal("unphased merge-guard commands must not prove dispatch")
 	}
 
 	// Negative (S4 silent park): correct actions, a silent-wait final that never names the

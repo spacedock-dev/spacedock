@@ -19,4 +19,6 @@ The build artifact carries the entity slug/name, entity path, workflow directory
 
 Live Pi tests should run with an isolated Pi config directory and an isolated session directory. The harness may copy the operator's existing Pi auth file into the isolated config directory so OAuth/subscription credentials are reused without sharing global sessions, packages, or settings.
 
-The durable proof for Pi support is not transcript phrasing. A valid live proof dispatches a Pi ensign against a temp split-root workflow and verifies process exit, state checkout file changes, git log, and stage report content.
+Ordinary Pi worker proof is durable-state based: dispatch a Pi ensign against a temp split-root workflow and verify process exit, state checkout file changes, git log, and stage report content.
+
+Recorded-gate presentation is the explicit exception. On Pi, the captain-facing review is one root-session assistant text block after the selected Briefing commit and before the decision mutation; shell output, tool results, child output, and later summaries do not qualify. Recorded-gate lifecycle proof combines that root event with the durable command, state, git, and successor-effect evidence.

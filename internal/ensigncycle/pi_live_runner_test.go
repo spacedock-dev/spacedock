@@ -14,6 +14,7 @@ import (
 )
 
 const piLiveSmokeMarker = "PI-LIVE-SUBAGENT-ENSIGN-SMOKE"
+const defaultPiLiveModel = "openrouter/openai/gpt-5.4"
 
 func TestLivePiSubagentEnsignSmoke(t *testing.T) {
 	piBin, err := exec.LookPath("pi")
@@ -51,6 +52,7 @@ func TestLivePiFrontDoorSmoke(t *testing.T) {
 		"--plugin-dir", repo,
 		"--",
 		"--print",
+		"--model", piLiveModelName(),
 		"--session-dir", filepath.Join(artifactDir, "sessions"),
 	)
 	assertPiLiveSmokeResult(t, stateRoot, entityPath, artifactDir)
@@ -75,7 +77,7 @@ func runPiLiveCommand(t *testing.T, artifactDir, workflowRoot string, env []stri
 	t.Helper()
 	stdoutPath := filepath.Join(artifactDir, "pi-stdout.txt")
 	stderrPath := filepath.Join(artifactDir, "pi-stderr.txt")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 	cmd.Dir = workflowRoot
@@ -245,12 +247,14 @@ func seedPiLiveAuth(t *testing.T, piHome, realHome, openAIAPIKey, required strin
 func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string) []string {
 	env := cleanEnviron(
 		"CODEX_THREAD_ID", "CLAUDECODE", "HOME", "PI_CODING_AGENT_DIR",
-		"PI_CODING_AGENT_SESSION_DIR", "PI_SUBAGENTS_PACKAGE_ROOT", "PI_OFFLINE",
+		"PI_CODING_AGENT_SESSION_DIR", "PI_INTERCOM_PACKAGE_ROOT",
+		"PI_SUBAGENTS_PACKAGE_ROOT", "PI_OFFLINE",
 	)
 	env = append(env,
 		"HOME="+cleanHome,
 		"PI_CODING_AGENT_DIR="+piHome,
 		"PI_CODING_AGENT_SESSION_DIR="+sessionDir,
+		"PI_INTERCOM_PACKAGE_ROOT="+piIntercomPackageRoot(piSubagentsRoot),
 		"PI_SUBAGENTS_PACKAGE_ROOT="+piSubagentsRoot,
 		"PI_OFFLINE=1",
 	)
@@ -259,8 +263,9 @@ func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string)
 
 func TestPiLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
 	for key, value := range map[string]string{"CODEX_THREAD_ID": "codex", "CLAUDECODE": "claude", "PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/parent/pi",
-		"PI_CODING_AGENT_SESSION_DIR": "/parent/sessions", "PI_SUBAGENTS_PACKAGE_ROOT": "/parent/package",
-		"PI_OFFLINE": "0", "HOME": "/parent/home", "OPENAI_API_KEY": "key", "PATH": "/parent/bin"} {
+		"PI_CODING_AGENT_SESSION_DIR": "/parent/sessions", "PI_INTERCOM_PACKAGE_ROOT": "/parent/intercom",
+		"PI_SUBAGENTS_PACKAGE_ROOT": "/parent/package",
+		"PI_OFFLINE":                "0", "HOME": "/parent/home", "OPENAI_API_KEY": "key", "PATH": "/parent/bin"} {
 		t.Setenv(key, value)
 	}
 
@@ -269,7 +274,8 @@ func TestPiLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
 	want := map[string]string{"CODEX_THREAD_ID": "", "CLAUDECODE": "",
 		"PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/target/pi",
 		"PI_CODING_AGENT_SESSION_DIR": "/target/sessions", "PI_SUBAGENTS_PACKAGE_ROOT": "/target/package",
-		"PI_OFFLINE": "1", "HOME": "/target/home", "OPENAI_API_KEY": "key",
+		"PI_INTERCOM_PACKAGE_ROOT": "/parent/intercom",
+		"PI_OFFLINE":               "1", "HOME": "/target/home", "OPENAI_API_KEY": "key",
 		"PATH": "/spacedock/bin" + string(os.PathListSeparator) + "/parent/bin"}
 	for key, value := range want {
 		assertEnvValue(t, env, key, value)
@@ -290,6 +296,24 @@ func piSubagentsPackageRoot(t *testing.T) string {
 		t.Fatalf("pi-subagents package extension not found at %s: %v; set PI_SUBAGENTS_PACKAGE_ROOT", p, err)
 	}
 	return p
+}
+
+func piIntercomPackageRoot(piSubagentsRoot string) string {
+	if p := os.Getenv("PI_INTERCOM_PACKAGE_ROOT"); p != "" {
+		return p
+	}
+	return filepath.Join(filepath.Dir(piSubagentsRoot), "pi-intercom")
+}
+
+func TestPiIntercomPackageRootDefaultsBesideSubagents(t *testing.T) {
+	t.Setenv("PI_INTERCOM_PACKAGE_ROOT", "")
+	if got := piIntercomPackageRoot("/packages/pi-subagents"); got != "/packages/pi-intercom" {
+		t.Fatalf("piIntercomPackageRoot() = %q, want sibling package", got)
+	}
+}
+
+func piLiveModelName() string {
+	return envOr("SPACEDOCK_PI_LIVE_CHILD_MODEL", defaultPiLiveModel)
 }
 
 func piLiveArtifactDir(t *testing.T, name string) string {

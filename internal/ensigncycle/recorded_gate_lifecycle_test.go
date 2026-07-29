@@ -107,6 +107,20 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 	return nil
 }
 
+var recordedGateDecisionLineRe = regexp.MustCompile(`(?i)^\s*\**(?:decision(?:\s+ask)?\s*[:—-]|choose\b|please decide\b)`)
+var recordedGateActionableOptionRe = regexp.MustCompile(`(?i)\b(?:approve|reject|revise|hold)\b(?:(?:\s+\S+){0,8}\s+(?:to|with|for)\s+(?:\S+\s+){0,4}|\s+)(?:advanc\w*|bounc\w*|clos\w*|consum\w*|dispatch\w*|enter\w*|findings?|handoff|implementation|keep\w*|merg\w*|prerequisites?|return\w*|rout\w*|send\w*|stages?|worktrees?)\b`)
+
+func actionableRecordedGateDecisionLine(line string) bool {
+	prefix := recordedGateDecisionLineRe.FindStringIndex(line)
+	if prefix == nil {
+		return false
+	}
+	body := strings.NewReplacer("*", "", "`", "").Replace(line[prefix[1]:])
+	coordinatedApprove := "approve to record the gate decision and consume the one-use authorization"
+	return recordedGateActionableOptionRe.MatchString(body) ||
+		strings.HasPrefix(strings.ToLower(strings.TrimSpace(body)), coordinatedApprove)
+}
+
 func assertConciseRecordedGateReview(review string) error {
 	trimmed := strings.TrimSpace(review)
 	lower := strings.ToLower(trimmed)
@@ -118,7 +132,7 @@ func assertConciseRecordedGateReview(review string) error {
 		return fmt.Errorf("gate review leads with raw state instead of the decision")
 	}
 	for _, line := range strings.Split(lower, "\n") {
-		if regexp.MustCompile(`(?i)^\s*\**(?:decision(?:\s+ask)?\s*[:—-]|choose\b|please decide\b)[^\n]*\b(?:approve|reject|revise|hold)\b\s+(?:to|with|for)\s+(?:\S+\s+){0,8}(?:advance|bounce|close|consume|dispatch|enter|finding|handoff|implementation|merge|prerequisite|return|route|send|stage|worktree)\b`).MatchString(line) {
+		if actionableRecordedGateDecisionLine(line) {
 			return nil
 		}
 	}
@@ -627,12 +641,40 @@ func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {
 	}
 	dir := t.TempDir()
 	shim := filepath.Join(dir, "spacedock")
-	script := fmt.Sprintf("#!/bin/sh\nprintf 'begin\\t%%s\\n' \"$*\" >> %q\n[ \"$1 $2\" = \"dispatch build\" ] && git -C .spacedock-state rev-parse HEAD | sed 's/^/dispatch-head\\t/' >> %q\n%q \"$@\"\ncode=$?\nprintf 'exit=%%s\\t%%s\\n' \"$code\" \"$*\" >> %q\n[ \"$code\" -eq 0 ] && [ \"$1 $2\" = \"state commit\" ] && git -C .spacedock-state rev-parse HEAD | sed 's/^/state-head\\t/' | tee -a %q\nexit \"$code\"\n", logPath, logPath, binary, logPath, logPath)
+	stateRoot := filepath.Join(filepath.Dir(logPath), ".spacedock-state")
+	if filepath.Base(filepath.Dir(logPath)) == "evidence" {
+		stateRoot = filepath.Join(filepath.Dir(filepath.Dir(logPath)), ".spacedock-state")
+	}
+	script := fmt.Sprintf("#!/bin/sh\nprintf 'begin\\t%%s\\n' \"$*\" >> %q\n[ \"$1 $2\" = \"dispatch build\" ] && git -C %q rev-parse HEAD | sed 's/^/dispatch-head\\t/' >> %q\n%q \"$@\"\ncode=$?\nprintf 'exit=%%s\\t%%s\\n' \"$code\" \"$*\" >> %q\n[ \"$code\" -eq 0 ] && [ \"$1 $2\" = \"state commit\" ] && git -C %q rev-parse HEAD | sed 's/^/state-head\\t/' | tee -a %q\nexit \"$code\"\n", logPath, stateRoot, logPath, binary, logPath, stateRoot, logPath)
 	writeFile(t, shim, script)
 	if err := os.Chmod(shim, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	return dir
+}
+
+func TestRecordedGateLoggingShimNestedCWD(t *testing.T) {
+	fixture := writeRecordedGateFixture(t)
+	realBinary := buildRecordedGateBinary(t)
+	bindRecordedGate(t, realBinary, fixture)
+	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+	shim := filepath.Join(writeRecordedGateLoggingShim(t, realBinary, commandLog), "spacedock")
+	nested := filepath.Join(fixture.root, "recorded-gate-task", "nested")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	commit := runRecordedGateCommand(shim, nested, "", "state", "commit", "recorded-gate-task",
+		"--workflow-dir", fixture.root, "-m", "bind from nested cwd")
+	if commit.exit != 0 {
+		t.Fatalf("nested-cwd commit exit=%d stderr=%s", commit.exit, commit.stderr)
+	}
+	stream := `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"c","name":"Bash","input":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" +
+		`{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"c","content":` + fmt.Sprintf("%q", commit.stdout) + `,"is_error":false}]}}` + "\n" +
+		`{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}` + "\n" +
+		`{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","input":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`
+	if got := recordedGateReviewFromClaudeStream(stream); got != recordedGateReview() {
+		t.Fatalf("nested-cwd successful commit did not authorize the root review")
+	}
 }
 
 func withRecordedGateEnv(env []string, key, value string) []string {
@@ -644,6 +686,41 @@ func withRecordedGateEnv(env []string, key, value string) []string {
 		}
 	}
 	return append(out, prefix+value)
+}
+
+func TestSpacedockShimShellEnvOverridesLauncherPin(t *testing.T) {
+	dir, env := t.TempDir(), []string{"SPACEDOCK_BIN=/stale/spacedock"}
+	env = withSpacedockShimShellEnv(t, env, dir)
+	env = withRecordedGateEnv(env, "SPACEDOCK_BIN", "/real/spacedock")
+	for _, shell := range []string{"/bin/bash", "zsh"} {
+		t.Run(filepath.Base(shell), func(t *testing.T) {
+			if shell == "zsh" {
+				var err error
+				if shell, err = exec.LookPath("zsh"); err != nil {
+					t.Skip("zsh unavailable")
+				}
+			}
+			cmd := exec.Command(shell, "-c", `printf %s "$SPACEDOCK_BIN"`)
+			cmd.Env = env
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("%s startup: %v\n%s", shell, err, output)
+			}
+			if value, want := string(output), filepath.Join(dir, "spacedock"); value != want {
+				t.Fatalf("%s observed SPACEDOCK_BIN=%q, want shim %q", shell, value, want)
+			}
+		})
+	}
+}
+
+func withSpacedockShimShellEnv(t *testing.T, env []string, shimDir string) []string {
+	t.Helper()
+	shellEnvDir := t.TempDir()
+	bashEnv := filepath.Join(shellEnvDir, "recorded-gate-env.sh")
+	writeFile(t, bashEnv, "export SPACEDOCK_BIN="+filepath.Join(shimDir, "spacedock")+"\n")
+	writeFile(t, filepath.Join(shellEnvDir, ".zshenv"), readFile(t, bashEnv))
+	env = withRecordedGateEnv(env, "BASH_ENV", bashEnv)
+	return withRecordedGateEnv(env, "ZDOTDIR", shellEnvDir)
 }
 
 func recordedGateEventsFromCommandLog(log string) []string {
@@ -728,7 +805,16 @@ func recordedGateReviewFromCodexJSONL(jsonl string) string {
 		}
 		switch {
 		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "gate record recorded-gate-task") && strings.Contains(row.Item.Command, " --decision "):
-			return singleRecordedGateReview(candidates)
+			if review := singleRecordedGateReview(candidates); review != "" {
+				return review
+			}
+			failedPreBind := row.Item.Status == "completed" && row.Item.ExitCode != nil && *row.Item.ExitCode == 0 &&
+				strings.HasPrefix(row.Item.AggregatedOutput, "Error: entity has no gates record\n") && recordedGateStateHead.MatchString(row.Item.AggregatedOutput)
+			if failedPreBind {
+				bound, candidates = false, nil
+				continue
+			}
+			return ""
 		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "state commit recorded-gate-task"):
 			bound = row.Item.ExitCode != nil && *row.Item.ExitCode == 0 && row.Item.Status == "completed" && recordedGateStateHead.MatchString(row.Item.AggregatedOutput)
 		case bound && row.Item.Type == "agent_message" && assertConciseRecordedGateReview(row.Item.Text) == nil:
@@ -740,20 +826,27 @@ func recordedGateReviewFromCodexJSONL(jsonl string) string {
 
 func recordedGateReviewFromPiSession(session string) string {
 	var candidates []string
-	commit, bound := "", false
+	briefing, commit, briefingRecorded, bound := "", "", false, false
 	for _, line := range strings.Split(session, "\n") {
 		var row recordedGatePiEvent
 		if json.Unmarshal([]byte(strings.ReplaceAll(line, `"arguments":`, `"input":`)), &row) != nil || row.Message == nil {
 			continue
 		}
+		if row.Message.Role == "toolResult" && row.Message.ToolCallID == briefing && !row.Message.IsError {
+			briefingRecorded = true
+		}
 		if row.Message.Role == "toolResult" && row.Message.ToolCallID == commit && !row.Message.IsError && len(row.Message.Content) > 0 {
-			bound = recordedGateStateHead.MatchString(row.Message.Content[0].Text)
+			bound = briefingRecorded && recordedGateStateHead.MatchString(row.Message.Content[0].Text)
 		}
 		for _, block := range row.Message.Content {
 			command := block.Input.Command
 			switch {
 			case row.Message.Role == "assistant" && block.Type == "toolCall" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --decision "):
 				return singleRecordedGateReview(candidates)
+			case row.Message.Role == "assistant" && block.Type == "toolCall" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --briefing ") && strings.Contains(command, "state commit recorded-gate-task"):
+				briefing, commit = block.ID, block.ID
+			case row.Message.Role == "assistant" && block.Type == "toolCall" && strings.Contains(command, "gate record recorded-gate-task") && strings.Contains(command, " --briefing "):
+				briefing = block.ID
 			case row.Message.Role == "assistant" && block.Type == "toolCall" && block.Name == "bash" && strings.Contains(command, "state commit recorded-gate-task"):
 				commit = block.ID
 			case bound && row.Message.Role == "assistant" && block.Type == "text" && assertConciseRecordedGateReview(block.Text) == nil:
@@ -769,10 +862,19 @@ func TestRecordedGateReviewExtractorsRequireOneOrderedRootReview(t *testing.T) {
 		`{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"c","name":"Bash","input":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" + `{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"c","content":"state-head\t0123456789abcdef0123456789abcdef01234567","is_error":false}]}}`,
 		`{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}`, `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","input":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`, `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":"Committed recorded-gate-task"}]}}`, "", ""}
 	claude.failed, claude.child = strings.Replace(claude.commit, `"is_error":false`, `"is_error":true`, 1), strings.Replace(claude.review, "null", `"child"`, 1)
+	retainedOpusReview := retainedOpusRecordedGateReview()
+	retainedOpusEvent := `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":` + fmt.Sprintf("%q", retainedOpusReview) + `}]}}`
+	requireRecordedGate(t, claude.extract(claude.commit+"\n"+retainedOpusEvent+"\n"+claude.decision) == retainedOpusReview, "run 30412397240 Opus root review was not selected in its committed pre-decision interval")
 	codex := recordedGateHost{recordedGateReviewFromCodexJSONL, "codex", `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock state commit recorded-gate-task","status":"completed","exit_code":0,"aggregated_output":"state-head\t0123456789abcdef0123456789abcdef01234567"}}`, `{"type":"item.completed","item":{"type":"agent_message","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}}`, `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock gate record recorded-gate-task --decision approve"}}`, `{"type":"item.completed","item":{"type":"agent_message","text":"Committed recorded-gate-task"}}`, "", ""}
 	codex.failed, codex.child = strings.Replace(codex.commit, `"exit_code":0`, `"exit_code":1`, 1), strings.Replace(codex.review, "agent_message", "subagent_message", 1)
-	pi := recordedGateHost{recordedGateReviewFromPiSession, "pi", `{"message":{"role":"assistant","content":[{"type":"toolCall","id":"c","name":"bash","arguments":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" + `{"message":{"role":"toolResult","toolCallId":"c","isError":false,"content":[{"type":"text","text":"state-head\t0123456789abcdef0123456789abcdef01234567"}]}}`, `{"message":{"role":"assistant","content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}`, `{"message":{"role":"assistant","content":[{"type":"toolCall","arguments":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`, `{"message":{"role":"assistant","content":[{"type":"text","text":"Committed recorded-gate-task"}]}}`, "", ""}
-	pi.failed, pi.child = strings.Replace(pi.commit, `"isError":false`, `"isError":true`, 1), strings.Replace(pi.review, `"assistant"`, `"user"`, 1)
+	requireRecordedGate(t, codex.extract(strings.Replace(codex.decision, `"command":"`, `"status":"completed","exit_code":0,"aggregated_output":"Error: entity has no gates record\nstate-head\t0123456789abcdef0123456789abcdef01234567","command":"`, 1)+"\n"+codex.commit+"\n"+codex.review+"\n"+codex.decision) == recordedGateReview(), "codex valid post-bind review did not survive failed pre-bind decision")
+	piBind := `{"message":{"role":"assistant","content":[{"type":"toolCall","id":"b","name":"bash","arguments":{"command":"spacedock gate record recorded-gate-task --briefing briefing.json"}}]}}` + "\n" + `{"message":{"role":"toolResult","toolCallId":"b","isError":false,"content":[{"type":"text","text":"state=open"}]}}`
+	piCommit := `{"message":{"role":"assistant","content":[{"type":"toolCall","id":"c","name":"bash","arguments":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" + `{"message":{"role":"toolResult","toolCallId":"c","isError":false,"content":[{"type":"text","text":"state-head\t0123456789abcdef0123456789abcdef01234567"}]}}`
+	pi := recordedGateHost{recordedGateReviewFromPiSession, "pi", piBind + "\n" + piCommit, `{"message":{"role":"assistant","content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}`, `{"message":{"role":"assistant","content":[{"type":"toolCall","arguments":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`, `{"message":{"role":"assistant","content":[{"type":"text","text":"Committed recorded-gate-task"}]}}`, "", ""}
+	pi.failed, pi.child = piBind+"\n"+strings.Replace(piCommit, `"isError":false`, `"isError":true`, 1), strings.Replace(pi.review, `"assistant"`, `"user"`, 1)
+	requireRecordedGate(t, recordedGateReviewFromPiSession(piCommit+"\n"+pi.review+"\n"+pi.commit+"\n"+pi.decision) == "", "pi review before the actual Briefing commit qualified")
+	requireRecordedGate(t, recordedGateReviewFromPiSession(strings.Replace(piCommit, "spacedock state commit recorded-gate-task", "spacedock gate record recorded-gate-task --briefing briefing.json && spacedock state commit recorded-gate-task", 1)+"\n"+pi.review+"\n"+pi.decision) == recordedGateReview(), "pi combined Briefing bind and state commit failed")
+	requireRecordedGate(t, recordedGateReviewFromPiSession(strings.Replace(piCommit, "spacedock state commit recorded-gate-task", "spacedock gate record recorded-gate-task --briefing briefing.json && spacedock state commit recorded-gate-task && spacedock gate record recorded-gate-task --decision approve", 1)+"\n"+pi.review) == "", "pi bind+commit+decision before review qualified")
 	for _, h := range []recordedGateHost{claude, codex, pi} {
 		requireRecordedGate(t, h.extract(h.commit+"\n"+h.review+"\n"+h.decision) == recordedGateReview(), "%s structured review failed", h.name)
 		for control, stream := range map[string]string{"narration": h.narration + "\n" + h.review + "\n" + h.commit + "\n" + h.decision, "failed": h.failed + "\n" + h.review + "\n" + h.decision, "order": h.review + "\n" + h.commit + "\n" + h.decision, "duplicate": h.commit + "\n" + h.review + "\n" + h.review + "\n" + h.decision, "root": h.commit + "\n" + h.child + "\n" + h.decision, "batched": strings.Replace(h.commit, "state commit recorded-gate-task", "state commit recorded-gate-task && spacedock gate record recorded-gate-task --decision approve", 1) + "\n" + h.review + "\n" + h.decision} {

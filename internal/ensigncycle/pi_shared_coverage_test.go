@@ -16,8 +16,8 @@ func piSharedScenarioCoverageMap() map[string]piSharedScenarioCoverage {
 			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer gate runner.",
 		},
 		"recorded-gate-lifecycle": {
-			mode:   "live",
-			reason: "TestLivePiRecordedGateLifecycle runs the shared fixture and durable command/state/dispatch oracle through the Pi front door.",
+			mode:   "gap",
+			reason: "TODO(9w59t6m1qc46hccd54p04z2j): the runner remains registered and selected but is quarantined because delegated gate presentation-to-application/dispatch is unreliable; it provides no live capability evidence.",
 		},
 		"rejection-flow": {
 			mode:   "gap",

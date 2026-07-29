@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"testing"
 )
 
 // The keep-moving-posture scenario grades the FO's MOTION TRACE — its tool calls plus its
@@ -94,6 +95,39 @@ func kmAdvancesToStatus(command, entity, status string) bool {
 	return false
 }
 
+var kmGateConsume = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN|launcher|SD)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+consume\s+['"]?approved-gate['"]?(?:\s|$)`)
+var kmEligibleTrue = regexp.MustCompile(`(?:^|\s)eligible=true(?:\s|$)`)
+var kmConsumedTrue = regexp.MustCompile(`(?:^|\s)consumed=true(?:\s|$)`)
+var kmImplementationTarget = regexp.MustCompile(`(?:^|\s)target-stage=implementation(?:\s|$)`)
+
+func kmSuccessfulGateConsumeResult(content json.RawMessage, isError *bool) bool {
+	var text string
+	return isError != nil && !*isError && json.Unmarshal(content, &text) == nil &&
+		kmConsumedTrue.MatchString(text) && kmImplementationTarget.MatchString(text)
+}
+
+type codexKeepMovingCommandItem struct {
+	Type string `json:"type"`
+	Item struct {
+		Type             string `json:"type"`
+		Command          string `json:"command"`
+		AggregatedOutput string `json:"aggregated_output"`
+		ExitCode         *int   `json:"exit_code"`
+		Status           string `json:"status"`
+	} `json:"item"`
+}
+
+func kmSuccessfulCodexGateConsume(cmd codexKeepMovingCommandItem) bool {
+	return cmd.Type == "item.completed" &&
+		cmd.Item.Type == "command_execution" &&
+		cmd.Item.Status == "completed" &&
+		cmd.Item.ExitCode != nil && *cmd.Item.ExitCode == 0 &&
+		kmGateConsume.MatchString(cmd.Item.Command) &&
+		kmEligibleTrue.MatchString(cmd.Item.AggregatedOutput) &&
+		kmConsumedTrue.MatchString(cmd.Item.AggregatedOutput) &&
+		kmImplementationTarget.MatchString(cmd.Item.AggregatedOutput)
+}
+
 // kmAdvancesForward reports whether a command drives the named entity FORWARD through its
 // pipeline — to the next working stage (implementation) or to terminal (done, which also
 // covers a merge). A route BACK to an earlier stage (ideation) to re-open the design is a
@@ -159,11 +193,12 @@ func gradeKeepMoving(tr keepMovingTrace, independent []string) error {
 }
 
 // claudeKeepMovingTrace extracts the motion trace from a Claude stream-json transcript
-// (actions) plus the final message. Claude advances/re-opens via a `status --set` Bash
-// command, dispatches (including a routed re-shape) via the Agent/Task tools, and re-shapes
-// in-house via the Edit/Write tools.
+// (actions) plus the final message. Claude advances via a successful recorded `gate consume`
+// or `status --set`, re-opens via `status --set`, dispatches (including a routed re-shape)
+// via the Agent/Task tools, and re-shapes in-house via the Edit/Write tools.
 func claudeKeepMovingTrace(stream, finalMessage string, independent []string) keepMovingTrace {
 	tr := newKeepMovingTrace()
+	gateConsumeInvocations := map[string]bool{}
 	for _, line := range strings.Split(stream, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -172,14 +207,18 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 		var entry struct {
 			Message *struct {
 				Content []struct {
-					Type  string `json:"type"`
-					Name  string `json:"name"`
-					Input struct {
+					Type      string `json:"type"`
+					Name      string `json:"name"`
+					ID        string `json:"id"`
+					ToolUseID string `json:"tool_use_id"`
+					Input     struct {
 						Command     string `json:"command"`
 						FilePath    string `json:"file_path"`
 						Prompt      string `json:"prompt"`
 						Description string `json:"description"`
 					} `json:"input"`
+					Content json.RawMessage `json:"content"`
+					IsError *bool           `json:"is_error"`
 				} `json:"content"`
 			} `json:"message"`
 		}
@@ -187,6 +226,10 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 			continue
 		}
 		for _, block := range entry.Message.Content {
+			if block.Type == "tool_result" && gateConsumeInvocations[block.ToolUseID] &&
+				kmSuccessfulGateConsumeResult(block.Content, block.IsError) {
+				tr.approvedAdvanced = true
+			}
 			if block.Type != "tool_use" {
 				continue
 			}
@@ -195,6 +238,9 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 				c := block.Input.Command
 				if kmAdvancesToStatus(c, kmApprovedGate, kmNextStage) {
 					tr.approvedAdvanced = true
+				}
+				if block.ID != "" && kmGateConsume.MatchString(c) {
+					gateConsumeInvocations[block.ID] = true
 				}
 				if kmAdvancesForward(c, kmQuestioned) {
 					tr.correctedDriven = true
@@ -243,20 +289,20 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
 		if line == "" {
 			continue
 		}
-		var cmd codexCommandItem
+		var cmd codexKeepMovingCommandItem
 		if err := json.Unmarshal([]byte(line), &cmd); err == nil && cmd.Item.Type == "command_execution" {
 			c := cmd.Item.Command
-			if kmAdvancesToStatus(c, kmApprovedGate, kmNextStage) {
+			if kmAdvancesToStatus(c, kmApprovedGate, kmNextStage) || kmSuccessfulCodexGateConsume(cmd) {
 				tr.approvedAdvanced = true
 			}
 			// codex 0.142.5 dispatches via the standing loop (no spawn_agent): the dispatched
 			// worker advances the entity to `done`, so a `status --set <e> status=done` is the
 			// per-entity dispatch evidence.
-			if kmAdvancesToStatus(c, kmApprovedGate, "done") || kmMergeGuardTerminalizes(c, kmApprovedGate) {
+			if kmAdvancesToStatus(c, kmApprovedGate, "done") {
 				tr.approvedDispatched = true
 			}
 			for _, e := range independent {
-				if kmAdvancesToStatus(c, e, "done") || kmMergeGuardTerminalizes(c, e) {
+				if kmAdvancesToStatus(c, e, "done") {
 					tr.independentDispatched[e] = true
 				}
 			}
@@ -320,4 +366,68 @@ func assertClaudeKeepMoving(stream, finalMessage string, independent []string) e
 // host-neutral patterns the Claude assertion feeds.
 func assertCodexKeepMoving(jsonl, finalMessage string, independent []string) error {
 	return gradeKeepMoving(codexKeepMovingTrace(jsonl, finalMessage, independent), independent)
+}
+
+func TestClaudeKeepMovingGateConsumeCorrelation(t *testing.T) {
+	command := `${SPACEDOCK_BIN:-spacedock} gate consume approved-gate --workflow-dir "$WD"`
+	result := "gate=gate:approved-gate:review application=advance/consumed consumed=true target-stage=implementation"
+	for _, tt := range []struct {
+		name, command, result, resultID string
+		isError, want                   bool
+	}{
+		{"success", command, result, "consume", false, true},
+		{"wrong_entity", strings.Replace(command, "approved-gate", "ready-one", 1), result, "consume", false, false},
+		{"failed", command, result, "consume", true, false},
+		{"missing_result", command, result, "", false, false},
+		{"uncorrelated_result", command, result, "other", false, false},
+		{"not_consumed", command, strings.Replace(result, "consumed=true", "consumed=false", 1), "consume", false, false},
+		{"wrong_target", command, strings.Replace(result, "target-stage=implementation", "target-stage=validation", 1), "consume", false, false},
+	} {
+		stream := bashToolLine("consume", tt.command)
+		if tt.resultID != "" {
+			stream += "\n" + toolResultLine(tt.resultID, tt.isError, tt.result)
+		}
+		if got := claudeKeepMovingTrace(stream, "", nil).approvedAdvanced; got != tt.want {
+			t.Errorf("%s: approvedAdvanced = %t, want %t", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestCodexKeepMovingGateConsumeCorrelation(t *testing.T) {
+	// Runtime Live E2E run 30421227237 assigned the resolved launcher to SD,
+	// then consumed the approval through "$SD". Preserve that exact command
+	// dialect: the successful structured result is the advancement evidence.
+	command := `/bin/bash -lc 'if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN}" ]; then SD="${SPACEDOCK_BIN}"; else SD=spacedock; fi
+"$SD" gate consume approved-gate --workflow-dir /tmp/TestLiveCodexSharedScenarioskeep-moving-posture3759480657/001'`
+	result := "gate=gate:approved-gate:review application=advance/consumed condition=approved-pending eligible=true consumed=true target-stage=implementation"
+	for _, tt := range []struct {
+		name, command, result, status string
+		exit, want                    int
+	}{
+		{"retained_success", command, result, "completed", 0, 1},
+		{"failed", command, result, "failed", 1, 0},
+		{"wrong_entity", strings.Replace(command, "gate consume approved-gate", "gate consume ready-one", 1), result, "completed", 0, 0},
+		{"invocation_only", command, "", "completed", 0, 0},
+		{"output_only", "sed -n '1,80p' fo-gate-lifecycle.md", result, "completed", 0, 0},
+		{"arbitrary_variable", strings.Replace(command, `"$SD"`, `"$NOT_SPACEDOCK"`, 1), result, "completed", 0, 0},
+		{"not_eligible", command, strings.Replace(result, "eligible=true", "eligible=false", 1), "completed", 0, 0},
+		{"not_consumed", command, strings.Replace(result, "consumed=true", "consumed=false", 1), "completed", 0, 0},
+		{"wrong_target", command, strings.Replace(result, "target-stage=implementation", "target-stage=validation", 1), "completed", 0, 0},
+	} {
+		got := codexKeepMovingTrace(codexCommandOutput(tt.command, tt.result, tt.exit, tt.status), "", nil).approvedAdvanced
+		if got != (tt.want == 1) {
+			t.Errorf("%s: approvedAdvanced = %t, want %t", tt.name, got, tt.want == 1)
+		}
+	}
+
+	advanceWithoutDispatch := strings.Join([]string{
+		codexCommandOutput(command, result, 0, "completed"),
+		codexSpawn("Dispatch implementation for " + kmReadyOne + "."),
+		codexSpawn("Dispatch implementation for " + kmReadyTwo + "."),
+		codexFileChange(kmQuestioned + ".md"),
+	}, "\n")
+	err := assertCodexKeepMoving(advanceWithoutDispatch, kmCorrectFinal(), kmIndependent())
+	if err == nil || !strings.Contains(err.Error(), "dispatch") {
+		t.Fatalf("successful consume without approved-gate dispatch must fail on dispatch, got: %v", err)
+	}
 }

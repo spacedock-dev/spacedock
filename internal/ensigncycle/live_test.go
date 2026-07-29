@@ -122,8 +122,8 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// silently relaxed. expectCondition drains the stream each poll (liveness; the
 	// budget resets on activity) while checking the filesystem, bounded by the same
 	// roomy silence budget — a live terminalize turn can be quiet between stream
-	// lines. On the deferred poller.kill() path the subprocess is reaped; the
-	// end-state on disk is final.
+	// lines. After the barrier lands, the clean-exit drain below keeps the fixture
+	// alive until the subprocess finishes its terminal ceremony.
 	terminalized := func() bool {
 		body, _, found := locateEntity(root, "make-it-work")
 		return found &&
@@ -132,6 +132,17 @@ func TestLiveEnsignCycle(t *testing.T) {
 	}
 	if err := watcher.expectCondition(terminalized, quietBudgetDispatchClose, "entity terminalized"); err != nil {
 		t.Fatalf("live cycle failed waiting for the entity to terminalize+commit (status: done + path-scoped commit): %v", err)
+	}
+
+	// The durable entity barrier can land before the headless FO finishes its
+	// terminal ceremony. Drain the existing launcher to a clean exit before this
+	// test returns: t.TempDir cleanup must not race a still-running Claude
+	// descendant that can continue writing under root after the launcher is killed.
+	if _, err := watcher.drainToExit(quietBudgetDispatchClose, "live cycle completion"); err != nil {
+		t.Fatalf("live cycle reached its durable terminal state but the FO did not exit cleanly: %v", err)
+	}
+	if code, exited := watcher.proc.poll(); !exited || code != 0 {
+		t.Fatalf("live cycle FO exit = (code=%d, exited=%t), want (0, true)", code, exited)
 	}
 
 	// Locate the entity at the REAL completed-cycle end-state. A full FO-to-done

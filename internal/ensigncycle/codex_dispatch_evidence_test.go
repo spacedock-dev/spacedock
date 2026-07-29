@@ -71,9 +71,8 @@ func codexDispatchCompletionEvidenceFromJSONL(jsonl string, entities []string) c
 						result.doneReport[entity] = true
 					}
 				}
-				if codexMergeGuardCompletedEntity(ev.Item.Command, ev.Item.AggregatedOutput, entity) {
+				if result.stageReport[entity] && codexMergeGuardCompletedEntity(ev.Item.Command, ev.Item.AggregatedOutput, entity) {
 					result.doneReport[entity] = true
-					result.stageReport[entity] = true
 				}
 			}
 		}
@@ -148,11 +147,10 @@ func codexWaitTool(tool string) bool {
 
 func codexDurableStageReportTargets(command, output string, entities []string) map[string]bool {
 	reported := map[string]bool{}
-	reportCount := len(regexp.MustCompile(`(?m)^##[ \t]+Stage Report:`).FindAllStringIndex(output, -1))
+	reportCount := len(regexp.MustCompile(`(?m)^(?:[0-9]+:)?##[ \t]+Stage Report:`).FindAllStringIndex(output, -1))
 	if reportCount == 0 {
 		return reported
 	}
-
 	var named []string
 	for _, entity := range entities {
 		if strings.Contains(command, entity+".md") || strings.Contains(command, "status --read "+entity) {
@@ -175,6 +173,47 @@ func codexDurableStatusForEntity(output, status string) bool {
 }
 
 func codexMergeGuardCompletedEntity(command, output, entity string) bool {
-	return kmMergeGuardTerminalizes(command, entity) &&
-		strings.Contains(output, "finalized: "+entity+" -> done")
+	if !codexMergeGuardTargetsEntity(command, entity) {
+		return false
+	}
+	prefix := "finalized: " + entity + " -> done"
+	full := regexp.MustCompile(`^` + regexp.QuoteMeta(prefix) + ` \(verdict [^)\r\n]+\), archived\.(?: State durability: [^\r\n]+)?$`)
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if line == prefix || full.MatchString(line) {
+			return true
+		}
+	}
+	return false
+}
+
+func codexMergeGuardTargetsEntity(command, entity string) bool {
+	loopVars := map[string]bool{}
+	for _, match := range regexp.MustCompile(`\bfor\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+([^;]+)`).FindAllStringSubmatch(command, -1) {
+		for _, target := range strings.Fields(match[2]) {
+			if strings.Trim(target, `"'`) == entity {
+				loopVars[match[1]] = true
+			}
+		}
+	}
+	for _, segment := range regexp.MustCompile(`;|\r?\n|&&|\|\|`).Split(command, -1) {
+		segment = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(segment), "do "))
+		fields := strings.Fields(segment)
+		if len(fields) < 4 {
+			continue
+		}
+		launcher := strings.Trim(fields[0], `"'`)
+		if launcher != "spacedock" && launcher != "spacedock_launcher" &&
+			!strings.HasSuffix(launcher, "/spacedock") && !strings.Contains(launcher, "SPACEDOCK_BIN") {
+			continue
+		}
+		if fields[1] != "merge" || fields[2] != "guard" {
+			continue
+		}
+		target := strings.Trim(fields[3], `"'`)
+		if target == entity || (strings.HasPrefix(target, "$") && loopVars[strings.Trim(strings.TrimPrefix(target, "$"), "{}")]) {
+			return true
+		}
+	}
+	return false
 }
