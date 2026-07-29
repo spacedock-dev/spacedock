@@ -974,6 +974,8 @@ func writePreparedRecordedGateFixtureAt(t *testing.T, root string) recordedGateF
 	mainReference := filepath.Join(root, "recorder-contract.md")
 	writeFile(t, mainReference, "# Recorder contract\n\nPrepare one provider-neutral room from exact local Git objects.\n")
 	gitInit(t, root)
+	git(t, root, "config", "user.name", "Spacedock Test")
+	git(t, root, "config", "user.email", "spacedock@example.invalid")
 
 	entity := filepath.Join(stateRoot, "recorded-gate-task", "index.md")
 	writeFile(t, entity, recordedGateEntity())
@@ -982,6 +984,8 @@ func writePreparedRecordedGateFixtureAt(t *testing.T, root string) recordedGateF
 	entityReference := filepath.Join(filepath.Dir(entity), "selected", "entity-snapshot.md")
 	writeFile(t, entityReference, "# Entity snapshot\n\nThe validation Stage Report is complete and ready for a decision.\n")
 	gitInit(t, stateRoot)
+	git(t, stateRoot, "config", "user.name", "Spacedock Test")
+	git(t, stateRoot, "config", "user.email", "spacedock@example.invalid")
 	git(t, stateRoot, "branch", "-M", "spacedock-state/"+filepath.Base(root))
 	writeFile(t, filepath.Join(stateRoot, "dirty-sibling.md"), "unrelated concurrent dirt\n")
 	return recordedGateFixture{
