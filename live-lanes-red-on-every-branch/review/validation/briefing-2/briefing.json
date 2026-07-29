@@ -1,0 +1,23 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:se0v37bt7mhsrmhta1nyns0r:validation:attempt-2:revision-1",
+  "question": "Should exact candidate 25cb48d7 be accepted and merged after restoring a trustworthy 4/4 Runtime Live E2E signal?",
+  "summary": "Approve. Candidate 25cb48d7 restores the release signal this task set out to recover. Independent validation cycle 6 passed with 6 DONE, 1 SKIPPED, and 0 FAILED: the retained 172,012-byte Codex run replay is green; arbitrary launcher, wrong entity, failed, invocation-only, output-only, ineligible, unconsumed, wrong-target, no-advance, and no-dispatch counterexamples remain red; and full, race, vet, format, and diff checks passed. A fresh exact-tip local Opus recorded-gate lifecycle then passed in 425.95 seconds with exactly one gate capability probe and a clean exit inside the 60-second quiet budget. Runtime Live E2E run 30424365199 attempt 2 is now green in all four protected live jobs at the exact candidate: Sonnet, Opus, Codex, and Pi; offline, docs, and install checks are also green. The prior Opus failure was reproduced as a one-run conduct miss—two gate capability probes—and did not recur in either isolated local proof or the CI retry. No product, gate, runtime, prompt, skill, workflow, TODO, quarantine, or other-host semantic change was added in the final correction. Material findings: none remain. Deferred capability gaps remain explicitly quarantined under q3, w5, zbc, and 9w and are not claimed as passing. Recommendation: accept the exact candidate, consume the validation approval to done, and merge PR #572.",
+  "artifacts": [
+    {
+      "id": "artifact:se0v37bt7mhsrmhta1nyns0r:validation:attempt-2:entity",
+      "uri": "git-root://state/51a2274e0a04daeae634cb55f0f5e5d9b1f3a6ce/live-lanes-red-on-every-branch/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d29f8a6efa1ddc72c65a8fa498e624775d451ba4328c876afabb2227691fc543",
+      "summary": "Canonical task record containing the approved boundary, AC-1 through AC-5, ten feedback cycles, and independent validation cycle 6."
+    },
+    {
+      "id": "artifact:se0v37bt7mhsrmhta1nyns0r:validation:attempt-2:codex-oracle",
+      "uri": "git-root://main/25cb48d76a9200048e07c3f0467724c7128b74c4/internal/ensigncycle/shared_keep_moving_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:b4c7207abd0564faa69cf045efbe0abc6ee29c36e812a63d6434853ea855f655",
+      "summary": "Final bounded correction: accept only the observed literal SD launcher while preserving the arbitrary-variable planted-output counterexample."
+    }
+  ]
+}
