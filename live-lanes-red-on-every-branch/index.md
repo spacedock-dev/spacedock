@@ -718,3 +718,33 @@ run, with all four named quarantines still non-evidence.
 The newly observed Sonnet failure is quarantined under its existing zbc owner
 without weakening the oracle or broadening any other scenario. The lane remains
 explicit non-evidence until zbc supplies distinct post-rework Briefing binding.
+
+## Stage Report: implementation (Opus coordinated gate decision repair)
+
+- DONE: Replay the exact Opus root review from run `30412397240`, job
+  `90451410538`.
+  The retained review now fails before the repair and qualifies after it; changing
+  the coordinated `record ... and consume` decision clause makes the replay red.
+- DONE: Select that review only in its durable ordered interval.
+  The existing Claude extractor replay binds a successful `state-head`, presents
+  the exact root text, then invokes `gate record --decision`; moving, nesting,
+  duplicating, or omitting the review remains covered by existing red controls.
+- DONE: Keep negated and unrelated decision prose non-actionable.
+  A directly paired `record ... and do not consume` control stays red, alongside
+  the existing unrelated downstream-noun and negated-action controls.
+- DONE: Limit the repair to the exact supported coordinated clause.
+  Commit `f75f482e` changes two existing `internal/ensigncycle` test files by
+  35 additions and one deletion; generic grammar, product packages, prompts,
+  fixtures, gate semantics, TODOs, and the Sonnet zbc commit are unchanged.
+- DONE: Run the required local verification gate.
+  Focused tests first reproduced both failures, then passed; gofmt, diff check,
+  `go test ./...`, `go test ./... -race`, and `go vet ./...` all passed.
+- SKIPPED: Push, trigger CI, run Roborev, or merge.
+  Those actions remain outside this task-owned exact-CI repair.
+
+### Summary
+
+The Opus lane had completed the durable gate lifecycle, but the extractor
+discarded its truthful pre-decision review because one exact coordinated clause
+fell outside the bounded predicate. The retained replay now qualifies without
+broadening generic decision grammar and is ready for independent validation.
