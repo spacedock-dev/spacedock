@@ -3578,3 +3578,35 @@ Cycle 34 corrects the cycle-33 test-policy violation and restores the no-cross-c
 ### Summary
 
 Cycle 35 removes only the two requested presenter-prose enforcement sites and leaves all unrelated contractlint coverage intact. The test-only correction is committed at `478217bc` with no semantic or documentation change.
+
+## Stage Report: implementation (cycle 36 contractlint cleanup audit)
+
+- DONE: Audit every committed `internal/contractlint` test before broad editing and distinguish same-source prose oracles from independent structural invariants.
+  All 28 test files and 82 top-level tests were inspected; no ambiguous classification remains, so cleanup may proceed without touching product, skill, contract, fixture, CI, or another package.
+
+### Classified deletion set
+
+- `capability_binding_test.go`: delete `TestCapabilityBinding`, `TestDispatchCoreDefinesRuntimeBoundCapabilities`, and `TestDispatchCoreRuntimeBoundArrowGuardDiscriminates`.
+- `deferred_tier_absence_test.go`: delete both tests; `ensign_core_stage_absence_test.go`: delete all three tests.
+- `fn_consolidation_structure_test.go`: delete both tests and relocate only helpers still needed by preserved topology/byte checks.
+- `fo_self_evidence_runtime_neutral_test.go`: delete all three tests; `host_neutral_core_test.go`: delete both tests.
+- `launcher_invariant_test.go`: delete all five tests; `pi_runtime_negative_contrast_test.go`: delete both tests.
+- `layering_restore_test.go`: delete all six tests and their scanner controls.
+- `prose_function_backstop_test.go`: delete both tests; `reuse_advance_pointer_test.go`: delete all three tests.
+- `template_defer_test.go`: delete both tests.
+- `boot_resident_closure_test.go`: delete `TestHostNeutralCoresResolveAndCarryCeremony`, `TestDeferredSkillCoresResolveAndCarryCeremony`, both deferred-skill prose-pointer tests, and `TestNoSurvivingContractFileNamesDeadDeferredReferencePath`; preserve only extracted-reference-to-filesystem closure tests.
+- `codex_multi_agent_v2_contract_test.go`: delete the feedback-flow host-word absence test and its discriminator; preserve the Go-emitter spawn-signature binding.
+- `fo_function_reference_invariant_test.go`: delete the mutable-address test/control, load-union/metrics tests, deferred-dispatch/gate/engage prose checks, required-call-site and normalization suites, and ordered-procedure suite; preserve component byte caps and filesystem/reference topology.
+- `legacy_teamcreate_layering_test.go`: delete both normal-path prose tests and remove the prose-token clause from the retirement test; preserve only retired-path filesystem topology.
+- `runtime_binding_block_test.go`: delete capability-set agreement, tool-token containment, and its discriminator; remove the deleted capability control from the surviving independent Go-source binding discriminator.
+- `startup_collapse_test.go`: delete numbered Startup prose ordering/counting and retain only the independent shared-core byte cap.
+- `structural_checks_test.go`: delete retired-path, hook/PR-marker, hidden-machine-word, portability-word, and Claude-team-word absence tests and controls; preserve frontmatter, discovery, file topology, and reference closure.
+- `first_officer_eager_references_test.go`: remove the write-core heading-word clause while preserving readable canonical-file and absent-wrapper topology.
+
+### Preserved independent invariants
+
+Frontmatter/discovery, filesystem and reference closure, generated or vendored manifest agreement, workflow YAML structure, AST instruction-read boundaries, Go-source-to-structured-token bindings, the FO write classifier's independent path cases, and component byte caps remain. No replacement lint, guard, fixture, or test is authorized.
+
+### Summary
+
+Cycle 36 is the required pre-edit classification checkpoint. The deletion boundary is complete and mechanically distinguishable: same-source prose wording/order disappears; independently sourced structure and exercised behavior remain.
