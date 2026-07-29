@@ -15,6 +15,69 @@ Presentation remains an overridable channel of the present-gate skill, not a rec
 verb. Chat and provider channels both hand semantic decision input to the recorder.
 Provider transport, retention, and UI stay outside this binary.
 
+## End-to-end gate lifecycle
+
+Chat and provider presentation are alternative channels. Both begin with the same
+prepared, durably committed gate room and converge on the same recorder-owned closed
+attempt. The First Officer chooses review content and presentation channel; Spacedock
+derives and verifies authority; the Captain decides; the provider, when selected,
+retains presentation evidence.
+
+```mermaid
+flowchart TD
+    FO["First Officer<br/>selects Artifact and References<br/>authors question and summary"]
+    PREP["spacedock gate prepare<br/>derives IDs, digests, Git locators,<br/>authority, room, and binding"]
+    ROOM[("Frozen gate room<br/>request.json and canonical Briefing")]
+    COMMIT_PREP["spacedock state commit<br/>publishes the prepared binding"]
+    CHANNEL{"Presentation channel"}
+
+    FO --> PREP --> ROOM --> COMMIT_PREP --> CHANNEL
+
+    subgraph CHAT["Default chat"]
+        CHAT_REVIEW["First Officer presents<br/>the canonical Briefing"]
+        CHAT_DECISION["Captain decides"]
+        CHAT_RECORD["spacedock gate record --decision<br/>--actor person:captain"]
+        CHAT_REVIEW --> CHAT_DECISION --> CHAT_RECORD
+    end
+
+    subgraph PROVIDER["Selected provider override"]
+        PROVIDER_LOAD["Provider receives only the room<br/>and validates frozen authority"]
+        PROVIDER_REVIEW["Provider presents the review"]
+        PROVIDER_DECISION["Captain decides"]
+        PROVIDER_EVIDENCE["Provider retains<br/>minimal binding result.json,<br/>inventory, log, and diagnostics"]
+        PROVIDER_RECORD["spacedock gate record --room<br/>recomputes and verifies every pin"]
+        PROVIDER_LOAD --> PROVIDER_REVIEW --> PROVIDER_DECISION
+        PROVIDER_DECISION --> PROVIDER_EVIDENCE --> PROVIDER_RECORD
+    end
+
+    CHANNEL --> CHAT_REVIEW
+    CHANNEL --> PROVIDER_LOAD
+
+    CHAT_RECORD --> CLOSED["Recorder closes the gate attempt"]
+    PROVIDER_RECORD --> CLOSED
+    CLOSED --> COMMIT_CLOSE["spacedock state commit<br/>publishes the Resolution"]
+    COMMIT_CLOSE --> CONSUME["spacedock gate consume"]
+    CONSUME --> COMMIT_CONSUME["spacedock state commit<br/>publishes application"]
+    COMMIT_CONSUME --> NEXT["Successor stage"]
+
+    PARTIAL["Post-launch failure<br/>without a recorder-recordable Result"]
+    WITHDRAW["Withdrawal follow-up<br/>retains every provider byte"]
+    PROVIDER_REVIEW -. "failure" .-> PARTIAL
+    PARTIAL -. "outside this implemented contract" .-> WITHDRAW
+```
+
+The provider branch accepts one canonical binding-mode Review v1 Result shape:
+top-level `type`, `briefing`, `artifact`, `annotations`, and `resolution`. Authority
+appears once, in `resolution.by`. A provider-specific wrapper or translation layer
+would create a second authority-bearing representation and is outside v1. The concrete
+v1 override is `/subspace:r gate <room>`; Subspace owns its transports and retained
+package, while Spacedock remains provider-neutral.
+
+The dashed failure branch is not an implemented recorder path. Until the separately
+owned withdrawal design lands, a post-launch room without a recorder-recordable Result
+remains frozen and requires operator intervention; a recorder-recordable Result must
+remain recordable and cannot be withdrawn.
+
 ## Canonical v1 schema
 
 The binary accepts and emits one canonical `gates:` shape:
