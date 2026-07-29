@@ -95,7 +95,8 @@ func kmAdvancesToStatus(command, entity, status string) bool {
 	return false
 }
 
-var kmGateConsume = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN|launcher)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+consume\s+['"]?approved-gate['"]?(?:\s|$)`)
+var kmGateConsume = regexp.MustCompile(`(?:^|[\s;&|])['"]?(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|[A-Za-z_][A-Za-z0-9_]*)|/[^ \t\r\n'";&|]+/spacedock)['"]?\s+gate\s+consume\s+['"]?approved-gate['"]?(?:\s|$)`)
+var kmEligibleTrue = regexp.MustCompile(`(?:^|\s)eligible=true(?:\s|$)`)
 var kmConsumedTrue = regexp.MustCompile(`(?:^|\s)consumed=true(?:\s|$)`)
 var kmImplementationTarget = regexp.MustCompile(`(?:^|\s)target-stage=implementation(?:\s|$)`)
 
@@ -122,6 +123,7 @@ func kmSuccessfulCodexGateConsume(cmd codexKeepMovingCommandItem) bool {
 		cmd.Item.Status == "completed" &&
 		cmd.Item.ExitCode != nil && *cmd.Item.ExitCode == 0 &&
 		kmGateConsume.MatchString(cmd.Item.Command) &&
+		kmEligibleTrue.MatchString(cmd.Item.AggregatedOutput) &&
 		kmConsumedTrue.MatchString(cmd.Item.AggregatedOutput) &&
 		kmImplementationTarget.MatchString(cmd.Item.AggregatedOutput)
 }
@@ -392,16 +394,22 @@ func TestClaudeKeepMovingGateConsumeCorrelation(t *testing.T) {
 }
 
 func TestCodexKeepMovingGateConsumeCorrelation(t *testing.T) {
-	command := `${SPACEDOCK_BIN:-spacedock} gate consume approved-gate --workflow-dir "$WD"`
-	result := "gate=gate:approved-gate:review application=advance/consumed consumed=true target-stage=implementation"
+	// Runtime Live E2E run 30421227237 assigned the resolved launcher to SD,
+	// then consumed the approval through "$SD". Preserve that exact command
+	// dialect: the successful structured result is the advancement evidence.
+	command := `/bin/bash -lc 'if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN}" ]; then SD="${SPACEDOCK_BIN}"; else SD=spacedock; fi
+"$SD" gate consume approved-gate --workflow-dir /tmp/TestLiveCodexSharedScenarioskeep-moving-posture3759480657/001'`
+	result := "gate=gate:approved-gate:review application=advance/consumed condition=approved-pending eligible=true consumed=true target-stage=implementation"
 	for _, tt := range []struct {
 		name, command, result, status string
 		exit, want                    int
 	}{
-		{"archived_success", command, result, "completed", 0, 1},
+		{"retained_success", command, result, "completed", 0, 1},
 		{"failed", command, result, "failed", 1, 0},
 		{"wrong_entity", strings.Replace(command, "gate consume approved-gate", "gate consume ready-one", 1), result, "completed", 0, 0},
 		{"invocation_only", command, "", "completed", 0, 0},
+		{"output_only", "sed -n '1,80p' fo-gate-lifecycle.md", result, "completed", 0, 0},
+		{"not_eligible", command, strings.Replace(result, "eligible=true", "eligible=false", 1), "completed", 0, 0},
 		{"not_consumed", command, strings.Replace(result, "consumed=true", "consumed=false", 1), "completed", 0, 0},
 		{"wrong_target", command, strings.Replace(result, "target-stage=implementation", "target-stage=validation", 1), "completed", 0, 0},
 	} {
@@ -409,5 +417,16 @@ func TestCodexKeepMovingGateConsumeCorrelation(t *testing.T) {
 		if got != (tt.want == 1) {
 			t.Errorf("%s: approvedAdvanced = %t, want %t", tt.name, got, tt.want == 1)
 		}
+	}
+
+	advanceWithoutDispatch := strings.Join([]string{
+		codexCommandOutput(command, result, 0, "completed"),
+		codexSpawn("Dispatch implementation for " + kmReadyOne + "."),
+		codexSpawn("Dispatch implementation for " + kmReadyTwo + "."),
+		codexFileChange(kmQuestioned + ".md"),
+	}, "\n")
+	err := assertCodexKeepMoving(advanceWithoutDispatch, kmCorrectFinal(), kmIndependent())
+	if err == nil || !strings.Contains(err.Error(), "dispatch") {
+		t.Fatalf("successful consume without approved-gate dispatch must fail on dispatch, got: %v", err)
 	}
 }
