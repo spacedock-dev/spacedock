@@ -3751,7 +3751,7 @@ Cycle 39 independently reproduces the ambient-identity-only red and verifies the
 - `go test ./...` passed.
 - `go test ./... -race` passed.
 - `gofmt -w ./cmd ./internal` and `git diff --check` passed with a clean code worktree.
-- Commits `959fce3e` and `913cf667` change exactly 8 `internal/ensigncycle` test files at `+148/-18`.
+- Commits `959fce3e` and `913cf667` change exactly 7 `internal/ensigncycle` test files at `+148/-18`.
 - Product Go, skills, contracts, documentation, workflow YAML, CI, and keep-moving coverage are unchanged.
 
 ### Summary
