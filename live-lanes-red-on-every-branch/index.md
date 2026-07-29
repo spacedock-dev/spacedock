@@ -961,3 +961,49 @@ race, formatting, diff, and vet checks establish the bounded correction.
 The Codex journey was correct and the oracle was stale to a valid shell-variable
 launcher dialect. Exact retained and fresh real-live proof now pass at
 `43e1d462`, with strict success correlation and dispatch negatives preserved.
+
+## Stage Report: validation (cycle 5)
+
+- FAILED: Verify exact candidate `43e1d462` recognizes the observed successful
+  Codex gate-consume path without changing keep-moving requirements or product
+  semantics.
+  The retained `"$SD"` path is recognized, but the new
+  `[A-Za-z_][A-Za-z0-9_]*` launcher arm also credits arbitrary shell variables,
+  violating the exact-launcher and no-oracle-weakening boundary.
+- DONE: Reproduce the exact retained run-`30421227237` replay and all
+  successful-consume correlation counterexamples, including advance without
+  dispatch.
+  The 172,012-byte retained JSONL replay passed; wrong entity, failed,
+  invocation-only, output-only, ineligible, unconsumed, wrong target, no
+  advance, and advance-without-dispatch controls all remained red.
+- DONE: Verify deterministic, full, race, vet, format, round-record, and
+  retained real-live evidence.
+  Focused deterministic checks, `go test ./...`, `go test ./... -race`,
+  `go vet ./...`, gofmt, and diff checks passed; advisory `validation/9`
+  retained four entries and no application while status remained validation.
+- DONE: Inspect the retained exact-tip real Codex keep-moving pass without
+  repeating the owned expensive live run.
+  The artifact records source head `43e1d462`, exit code zero, no timeout, and
+  368.34 seconds of process runtime; the prior 368.42-second test result
+  supplies the required same-tip live evidence.
+- FAILED: Preserve successful approved-gate-consume identity while rejecting
+  planted non-Spacedock advancement.
+  A completed exit-zero `"$NOT_SPACEDOCK" gate consume approved-gate` command
+  with planted `eligible=true consumed=true target-stage=implementation`
+  incorrectly proves advancement, a Material evidence defect affecting AC-2
+  and AC-5's trustworthy release signal.
+- DONE: Recommend PASSED or REJECTED without modifying the candidate.
+  REJECTED: narrow the newly added launcher arm to literal `SD` and add one
+  arbitrary-variable counterexample; no deferred-risk or polish finding was
+  added, and code stayed exactly at `43e1d462`.
+- SKIPPED: Run Roborev, push or modify code, trigger CI, merge, file tasks, or
+  widen scope.
+  These actions remained outside validation; only this required durable report
+  was added to shared state.
+
+### Summary
+
+REJECTED. The observed successful `"$SD"` consume and all dispatched controls
+replay correctly, but candidate `43e1d462` weakens the oracle by accepting any
+shell-variable launcher. The correction is limited to literal `SD` recognition
+plus an arbitrary-variable negative.
