@@ -1,7 +1,7 @@
 ---
 id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
-status: validation
+status: implementation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
 completed:
@@ -1778,6 +1778,21 @@ including its two leading/trailing spaces and non-ASCII code points.
   scenario, so it is not a license for adjacent fixes. Run the two focused live
   journeys locally before updating PR #573; do not trigger another full CI run
   until they pass.
+
+- Cycle 27: REVISE — PR #573 live CI run `30483698803`; surface 62 files and
+  9,055 changed LOC vs estimate 26 files and 1,904 changed LOC (476%); AC
+  unchanged.
+
+  Sonnet and Opus pass the prepared gate journey. Codex also prepares and holds
+  the correct gate, but the grader rejects its otherwise legible review because
+  the compact digest lacks the literal prose prefix `sha256:`. Delete the
+  automated gate-review wording oracle and its same-source tests; do not add
+  accepted spellings, another parser, or replacement prose lint. Preserve the
+  mechanical evidence: prepared request authority, current open attempt,
+  bind/decision/consume ordering, one successful dispatch, one durable effect,
+  and Git ancestry. The run's separate `keep-moving-posture` miss remains outside
+  s4 and must not change in this correction. Re-run the focused gate journeys
+  locally before updating the PR.
 
 ## Stage Report: ideation
 
