@@ -3757,3 +3757,30 @@ Cycle 39 independently reproduces the ambient-identity-only red and verifies the
 ### Summary
 
 Cycle 40 corrects both s4-owned live-grader defects using prepared fixture identity and durable Git ancestry rather than agent narration. The two assigned live journeys pass with the exact final candidate, all repository gates are green, and PR CI remains untouched for the first officer to request.
+
+## Stage Report: validation (cycle 41)
+
+- DONE: Independently reproduce gate-guardrail and recorded-gate-lifecycle against the exact candidate, including their negative controls.
+  A clean binary embedded `913cf667e67fa47dedd2b41c8512351a9059b6b1` with `vcs.modified=false`; the real Codex `gate-guardrail` and `recorded-gate-lifecycle` journeys passed in 90.82s and 183.64s, while the live-tag prepared-binding, retired-bind, missing-commit, duplicate-prepare, decision/consume/dispatch, broken-transition, zero/failed/pre-consume-build, missing-ancestry, and cardinality controls remained red.
+- DONE: Confirm the fixes read prepared authority and durable Git ancestry without trusting agent narration or weakening unrelated live scenarios.
+  The hold expectation comes from the prepared room's sole `request.json` and is compared to the parsed open attempt; lifecycle success still requires one consume-ordered successful build, one durable effect, and `git show` plus `merge-base --is-ancestor` across close, consume, dispatch-head, and effect commits. Only the optional successful help-log predicate was removed; the state, review, ordering, cardinality, and ancestry oracles remain exercised.
+- DONE: Run the required full, race, formatting, diff, and focused live checks; classify any finding against s4 scope before recommending PASSED or REJECTED.
+  Uncached full and race suites, live-tag focused controls, both real Codex journeys, `gofmt -w ./cmd ./internal`, worktree and candidate `git diff --check`, clean-diff verification, and strict MkDocs all passed at the exact seven-file `+148/-18` candidate.
+
+### Acceptance evidence
+
+- AC-1: the full suite reran the folder/flat two-file preparation, replay, path-scoped commit, archive, rollback, and sibling-dirt checks; an extra payload, swept sibling, or orphaned flat companion fails those exact-tree assertions.
+- AC-2: the full `internal/gitsource` suite reran moved-root, detached, malformed-coordinate, literal-pathspec, missing-object, and byte-pin controls; mutable worktree or acquisition fallback cannot satisfy the local-object resolver.
+- AC-3: the CLI/gates suite reran exact summary/cardinality, arbitrary locator through record/validate/eligibility, request-less compatibility, and recursive duplicate-member refusals; normalization, basename fallback, or last-member-wins acceptance fails.
+- AC-4: the two exact-tip live journeys observed prepare before the binding commit, one bound semantic review, no no-conn decision, and one consumed successor dispatch; the candidate changes no product, skill, contract, provider, or channel implementation.
+- AC-5: prepared-authority validation, room recording, four-pin drift/refusal, and no-association cases passed in the full gates/CLI suites; mutating retained request, Briefing, Result, inventory, source, or summary authority remains fail-closed.
+
+### Finding classification
+
+Material outcome defects: none. Material evidence defects: none. Deferred risks: none introduced by the s4 grader correction. Polish findings: none.
+
+Recommendation: **PASSED at exact candidate `913cf667e67fa47dedd2b41c8512351a9059b6b1`**.
+
+### Summary
+
+Cycle 41 independently reproduces the two corrected live graders and their negative controls against an exact clean candidate binary. Prepared request authority, durable Git ancestry, repository-wide gates, strict docs, and the unchanged adjacent oracles are green with no material or deferred finding.
