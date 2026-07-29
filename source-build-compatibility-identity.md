@@ -84,6 +84,7 @@ gates:
                 state: consumed
                 blockers: []
 mod-block: merge:pr-merge
+pr: "#571"
 ---
 
 Prevent an ordinary source build from impersonating the automatic next-minor `pre0` release merely because that tag is the nearest Git ancestor.
