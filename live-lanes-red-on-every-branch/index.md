@@ -107,7 +107,7 @@ review-round:
         digest: sha256:afaba296eb8a38492c19ad1f10c4a54ca94808d10e47e837d198d5e755867bc0
         digest-domain: canonical-bytes
         room-ref: ./review/validation/round-10
-pr: "#572"
+pr: pr-merge:572
 ---
 
 Restore a trustworthy live signal without deleting the behavior the signal was
