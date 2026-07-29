@@ -3434,3 +3434,20 @@ this note authorizes no product cleanup.
 ### Summary
 
 Cycle 29 turns the recovered dirty simplification into a coherent prepare-first lifecycle and proves the complete First Officer chat journey before cleanup. Product implementation is ready for independent validation at `004368de`; the room-only Subspace handoff remains an honestly classified external provider dependency, not an s4 substitute surface.
+
+## Stage Report: implementation (cycle 30 reconstruction onto current main)
+
+- DONE: Preserve the recoverable pre-reconstruction tip and rebuild the approved pre-runaway implementation onto current `origin/main`.
+  Recovery ref `recovery/prepare-provider-neutral-gate-room-004368de` still names `004368de`; the 12 pre-runaway commits were rebased onto `4738d583`, with generic live-lane conflicts resolved in favor of main/#572. Local reconstruction commit is `dbaebc79`; nothing was pushed and no CI was triggered.
+- DONE: Retain only the bounded post-cutoff provider-neutral fixes and the thin prepare → present → record → consume journey.
+  The reconstruction retains same-bytes/different-path Git identity refusal, flat-companion symlink containment, successor retained-authority validation, exact retained provider Resolution equality, exactly two regular prepare-room entries, arbitrary-locator consume coverage, actual emitted Briefing/digest presentation, and the failed-prepare no-repair boundary. It removes non-round `gate record --briefing`, `raw-file-pin`, `adoption-note`, help scraping, full-digest prose, and prototype compatibility.
+- DONE: Verify the retained behavior with focused real-binary and package tests.
+  Focused `gitsource`, `gates`, CLI, contract-lint, and `TestRecordedGateLifecycleRealCLIReplay` tests passed. The real-binary lifecycle commits the prepared binding before presenting the dynamically emitted Briefing snapshot, then records, commits, consumes, commits, and authorizes one successor dispatch.
+- FAILED: Pass the required full/default and race suites without crossing explicitly excluded ownership boundaries.
+  Both `go test ./...` and `go test ./... -race` fail because main/#572's generic recorded-gate and shared-round harness still binds non-round `--briefing`, which the approved v1 simplification intentionally rejects. `TestStateCommitFlatIgnoresSuccessfulGitWarningsWhenParsingPaths` also fails because main-owned `internal/statesync/publish.go` parses successful Git stderr; that file was explicitly excluded from this reconstruction. No compatibility or statesync patch was made.
+- SKIPPED: Run the strict MkDocs build in this checkout.
+  `mkdocs` is not installed (`python3 -m mkdocs` reports no module); contract-lint passed and `git diff --check origin/main...HEAD` is clean.
+
+### Summary
+
+NEEDS DECISION: the bounded gate implementation is locally committed and its focused thin journey is green, but current main's generic compatibility harness and state-sync publisher conflict with the captain-approved exclusions. The branch is 38 files at `+4040/-948` versus current `origin/main` (net `+3092`, reduced from the rebased pre-reconstruction net `+3256`); do not push until the captain chooses whether those main-owned tests are retired/rebased or the excluded surfaces are reassigned.
