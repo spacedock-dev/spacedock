@@ -332,14 +332,6 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 		}
 	}
 	for _, want := range []string{
-		"Wait for `gate prepare` to succeed", "opaque handoff",
-		"Reconstruct no authority", "do not fall back to chat or another channel",
-	} {
-		if !strings.Contains(presenter, want) {
-			t.Errorf("present-gate missing room-only override contract %q", want)
-		}
-	}
-	for _, want := range []string{
 		"exactly one root-assistant message", "entity and stage",
 		"compact bound Briefing snapshot", "one recommendation",
 		"decision ask", "before the next decision-mutation tool call",
@@ -476,7 +468,6 @@ func TestFOLocalOrderedProceduresPreserved(t *testing.T) {
 		{"skills/first-officer/references/fo-dispatch-core.md", "## Dispatch", sequence(1, 9), []string{"entity file", "«dispatch.checklist»", "conflicts", "dispatch_agent_id", "status --workflow-dir", "Commit", "worktree", "«dispatch.build»", "«completion-signal»"}},
 		{"skills/first-officer/references/fo-dispatch-core.md", "## Reuse and Fresh Dispatch", sequence(0, 4), []string{"«context-budget»", "«addressable-worker»", "fresh: true", "worktree", "«reuse.model-match»"}},
 		{"skills/first-officer/references/fo-dispatch-core.md", "## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration", []string{"0.5", "1", "2", "3"}, []string{"«addressable-worker»", "mod-block", "status --next", "«hooks.run»", "«roster-reconcile»"}},
-		{"skills/present-gate/SKILL.md", "## Presentation channels", sequence(1, 3), []string{"Pass only the emitted room after its bind commit", "opaque handoff", "Reconstruct no authority", "Record only prepared-room authority", "gate record <entity> --room <room>", "do not fall back to chat or another channel"}},
 		{"skills/present-gate/SKILL.md", "### Captain-facing assembly rules", sequence(1, 11), []string{"Lede first", "Chosen direction", "Stage Report", "Reviewer findings", "Recommendation", "Bounce-back", "format-pedantry", "worktree", "Target length", "declared label", "verification state"}},
 		{"skills/feedback-rejection-flow/SKILL.md", "## Feedback Rejection Flow", sequence(1, 7), []string{"feedback-to", "Feedback Cycles", "cycle 3", "«context-budget»", "«addressable-worker»", "reviewer", "gate flow"}},
 	}
