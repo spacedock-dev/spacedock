@@ -12,7 +12,7 @@ issue:
 gates:
     version: 1
     current:
-        gate: gate:se0v37bt7mhsrmhta1nyns0r:ideation
+        gate: gate:se0v37bt7mhsrmhta1nyns0r:validation
     records:
         - id: gate:se0v37bt7mhsrmhta1nyns0r:backlog
           stage: backlog
@@ -58,6 +58,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:se0v37bt7mhsrmhta1nyns0r:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:se0v37bt7mhsrmhta1nyns0r-validation-1
+              briefing:
+                id: briefing:se0v37bt7mhsrmhta1nyns0r:validation:attempt-1:revision-1
+                digest: sha256:9f5025e5b0119f3895e26f7cb072e9eeac8772b99e85413c1668561aa09494d8
+                digest-domain: canonical-bytes
+                room-ref: ./review/validation/briefing-1
 review-round:
     id: round:se0v37bt7mhsrmhta1nyns0r:validation:8
     stage: validation

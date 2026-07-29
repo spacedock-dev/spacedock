@@ -1,0 +1,63 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:se0v37bt7mhsrmhta1nyns0r:validation:attempt-1:revision-1",
+  "question": "Should validation return to implementation for one bounded Codex keep-moving oracle correction?",
+  "summary": "Revise. Runtime Live E2E run 30421227237 at exact tip 90243bf7 proved Sonnet, Opus, and Pi green and proved the former Sonnet TempDir cleanup failure fixed. Codex alone failed keep-moving-posture even though its retained transcript shows gate consume succeeded with eligible=true, consumed=true, and target-stage=implementation; the implementation was dispatched and completed; merge guard finalized approved-gate as done; and the durable archive lists it as done. The current Codex extractor recognizes advancement only through legacy status --set status=implementation, so it rejects the contract-correct gate consume path. This is a material evidence defect within se0's oracle scope: the supported journey succeeded, observable harm is a false-red release signal, AC-5 remains blocked at 3/4, and the exact trigger is successful gate consume without a legacy status command. Return only this extractor mismatch to implementation. Require successful consume evidence, preserve failed-consume and no-advance counterexamples, make no product or gate-semantic change, run focused deterministic controls plus the standard full/race/vet/format checks, then revalidate before one further normal PR CI run.",
+  "artifacts": [
+    {
+      "id": "artifact:se0v37bt7mhsrmhta1nyns0r:validation:attempt-1:entity",
+      "uri": "git-root://state/9b36d979799ed3297c9be226c385ebc5cd96b9d8/live-lanes-red-on-every-branch/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:7395e3aec84ce98ed2645cebdf9dbbaf58708403d4d4926c8513727a6ad254b5",
+      "summary": "Canonical task, AC-1 through AC-5, implementation proof, and validation cycle 4 report."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:se0:keep-moving-oracle",
+      "uri": "git-root://main/90243bf7b11dcbe6d06f1a3b32dde8f90e8e1d0f/internal/ensigncycle/shared_keep_moving_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:370586b45bf549b0fd8dc0d6efa04c0ed0f5ceec062f57ad709eeb717a7bf071"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:sonnet-clean-exit-fix",
+      "uri": "git-root://main/90243bf7b11dcbe6d06f1a3b32dde8f90e8e1d0f/internal/ensigncycle/live_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:ddc0708bcbd88dad711143fa621dc7b3f51b946fd8802caae836c851d2896f39"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:se0:runtime-live-run",
+      "uri": "https://github.com/spacedock-dev/spacedock/actions/runs/30421227237",
+      "mediaType": "text/html"
+    },
+    {
+      "type": "Routing",
+      "id": "routing:se0:validation",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Accept validation and enter terminal merge",
+          "to": "stage:done"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Correct the Codex keep-moving oracle",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Hold at validation",
+          "to": "gate:validation"
+        }
+      ]
+    }
+  ]
+}
