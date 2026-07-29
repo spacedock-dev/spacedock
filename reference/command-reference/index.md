@@ -2,26 +2,55 @@
 title: "Command reference"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-07-29 08:04:34"
+last_updated: "2026-07-29 08:57:00"
 ---
 
 # Command reference
 
-The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version and contract level). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
+The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
 
 ## --version
 
-`spacedock --version` prints the version and contract level, the sandbox posture, then a per-runtime line reporting the installed spacedock plugin version:
+`spacedock --version` reports the binary version, and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints one line:
 
 ```
-spacedock 0.20.1 (contract 1)
-Sandbox: available, not enabled (no .safehouse profile)
-claude: spacedock 0.20.1
-codex: spacedock 0.20.0 (disabled)
-pi: spacedock ready
+spacedock 0.26.0
 ```
 
-The `Sandbox:` line is one of `enabled (safehouse)`, `available, not enabled (no .safehouse profile)`, or `unavailable (safehouse not on PATH)`. Each runtime line reads the plugin installed for that host: `spacedock <version>` when a plugin is installed (with `(disabled)` appended only when the host reports it disabled), `spacedock ready` for pi (which launches from skills, not a versioned plugin), `spacedock not installed` when the host is present but carries no plugin, and `not installed` when the host binary itself is absent.
+Inside a session it also names the runtime it detected, the marker that proved it, which session this is, and whether this process is running inside a sandbox:
+
+```
+spacedock 0.26.0
+Runtime: claude (CLAUDECODE, session afd74765)
+Sandbox: inside (agent-safehouse)
+contract 3
+```
+
+The session identifier is the first eight characters of the host's own session id — the same prefix Claude Code uses to name `~/.claude/teams/session-afd74765` — so you can tell two concurrent sessions apart and match one against its state on disk. Hosts that do not expose a session id, such as pi, omit it:
+
+```
+Runtime: pi (PI_CODING_AGENT, PI_CODING_AGENT_DIR)
+```
+
+When markers for more than one runtime are set — a nested session can leak them — it reports the ambiguity rather than guessing, and still exits 0:
+
+```
+Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE) — pass --host
+```
+
+Being outside every runtime is a normal state, not a fault — it means a human at a terminal. There is no `Runtime:` line at all in that case, because there is no session to report: the output is the single version line shown above.
+
+The `Sandbox:` line answers one question — is this process sandboxed? Inside a sandbox it names it; otherwise it reports whether safehouse is available to sandbox future launches:
+
+```
+Sandbox: inside (agent-safehouse)
+Sandbox: not sandboxed (safehouse available)
+Sandbox: not sandboxed (safehouse not installed)
+```
+
+`spacedock status --boot` reports the same three. The pre-launch banner answers the neighbouring but different question — whether the launch it is about to perform will be wrapped — so its `Sandbox:` line reads in terms of that launch.
+
+The trailing `contract 3` is a frozen compatibility sentinel read only by skill versions predating the current version gate. It prints inside a session only. For what is installed for each host — plugin versions and enablement — use `spacedock doctor`.
 
 ## Launch
 
