@@ -3466,3 +3466,34 @@ NEEDS DECISION: the bounded gate implementation is locally committed and its foc
 ### Summary
 
 The First Officer's final cleanup resolves cycle 30's reported blockers without compatibility machinery or excluded product changes. Final local code tip is `ee2cab74`; the complete branch is 40 files at `+4017/-1076` versus current `origin/main` (net `+2941`, down 151 lines from cycle 30).
+
+## Stage Report: validation (cycle 32)
+
+- DONE: Reproduce all five current acceptance criteria, including both entity forms, exact movable Git-object sources, arbitrary Briefing locators, provider-neutral room authority, and four-pin recording.
+  Focused AC tests and the real-binary lifecycle passed at `ee2cab74`; the evidence below names the observable boundary and its falsifier.
+- DONE: AC-1 — folder and flat preparation publish and bind one exact two-file room, while flat commit/archive retains the companion unit and excludes sibling dirt.
+  `TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities`, flat state-commit/archive/rollback tests, and a planted third-file mutant fail on any extra metadata, copied source, orphaned companion, or swept sibling.
+- DONE: AC-2 — each selected source reopens from its movable logical root, full Git object/path, and raw SHA without a ref, fetch, or worktree fallback.
+  `internal/gitsource` moved-root, detached, dirty/untracked/symlink/foreign, bad-coordinate, missing-object, and same-bytes/different-path cases pass; deleting path identity made the control fail.
+- DONE: AC-3 — the request's clean locator, exact Unicode/space-sensitive primary summary, and duplicate-free authority survive record, validate, eligibility, and consume.
+  The arbitrary `canonical/decision-material.data` lifecycle, summary-cardinality/UTF-8 matrix, recursive duplicate/depth checks, and request-less/advisory controls pass; restoring a `briefing.json` assumption made the locator test fail.
+- DONE: AC-4 — the supported v1 journey treats the emitted prepared room as provider-neutral authority and adds no provider lifecycle or simulation.
+  `TestRecordedGateLifecycleRealCLIReplay` observes prepare, scoped bind commit, dynamic Briefing/digest presentation, decision, close commit, consume, and successor authorization; added production code contains no Subspace launch path.
+- DONE: AC-5 — recording recomputes and retains request, Briefing, Result, and inventory pins without `association.json`, permitting provider evidence only after preparation.
+  Room-record/refusal matrices and retained-authority validation pass; removing the retained Result-digest comparison made tampered evidence validate and the focused regression fail.
+- DONE: Adversarially verify that the retained post-cutoff fixes protect the supported v1 journey without restoring retired compatibility, provider simulation, or a second lifecycle implementation.
+  A detached throwaway audit planted four independent AC-1/2/3/5 violations and every control failed; non-round `gate record --briefing` remains rejected, advisory rounds remain intact, and no provider lane was added.
+- DONE: Run the required focused, full, race, formatting, diff, and applicable live evidence; classify every finding by defect kind and release scope before recommending PASSED or REJECTED.
+  Focused AC suites, `go test -count=1 ./...`, `go test -count=1 -race ./...`, `gofmt -w ./cmd ./internal`, both diff checks, strict MkDocs, and the isolated real-binary replay all passed.
+
+### Finding classification
+
+Material outcome defects: none. Material evidence defects: none. Polish findings: none.
+
+Deferred risk: source and authority readers allocate whole files. The exact trigger is unusually large selected sources or authority JSON, outside the current small local review-artifact journey; current supported fixtures satisfy all ACs. Promote if large binary references become promised/common or representative memory/latency probes regress.
+
+Recommendation: **PASSED**.
+
+### Summary
+
+Cycle 32 independently reproduces AC-1 through AC-5 at `ee2cab74` and proves four planted authority failures are caught by non-tautological regressions. Full, race, formatting, diff, docs, and applicable real-binary journey evidence are green, with no material finding and one bounded size-risk revisit condition.
