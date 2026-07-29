@@ -54,7 +54,6 @@ gates:
                 at: "2026-07-24T15:41:06.723937Z"
                 decision: approve
                 reason: The corrected design removes manual room metadata and basename fiction, preserves provider neutrality, reuses existing proof surfaces, and passed independent staff review; implementation remains pending until 6y lands on xb-rebased main.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
               application:
                 action: advance
                 target-stage: implementation
@@ -74,7 +73,6 @@ gates:
                 at: "2026-07-25T05:51:29.330095Z"
                 decision: approve
                 reason: Frozen room-owned sources remove checkout-topology coupling, the independent reopen spike falsifies the old locator, and staff review found no material issue; implementation remains dependency-held behind 6y.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 action: advance
                 target-stage: implementation
