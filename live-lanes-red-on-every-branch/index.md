@@ -628,3 +628,69 @@ product or test file was modified during validation.
 The candidate is reconstructed to the three observed run-30378538074 oracle
 repairs only and is ready for independent validation. No CI, push, merge, or
 additional advisory panel was triggered after the bounded cut.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Validate exact candidate `c34941ec6d80dd2b97321815ef5b2ca740db6210`.
+  Its sole parent is `55b3b13316571f1a84215f489c205e66327faeca`;
+  the bounded diff is six existing `internal/ensigncycle` test/grader files,
+  30 additions and 16 deletions. The code worktree has no tracked changes after
+  validation; only the pre-existing untracked `live-artifacts/` tree remains.
+- DONE: Replay the retained Sonnet run-30378538074 rejection evidence without
+  substituting Feedback Cycles for validation rounds.
+  The retained stream's durable heading read lists implementation at lines 26
+  and 49 and validation at lines 34 and 61, while listing one Feedback Cycles
+  section at line 57. The repaired assertion counts the two anchored
+  implementation headings and two anchored validation headings. Its
+  one-validation and one-implementation controls remain red.
+- DONE: Replay the retained Codex failed-pre-bind gate sequence with an exact
+  recovery boundary.
+  Artifact item 11 is a completed zero-exit decision batch whose output begins
+  `Error: entity has no gates record` and includes `state-head`; item 13 then
+  binds and commits the exact Briefing, item 14 presents one qualifying root
+  review with exact id/digest, and item 15 records and consumes the decision.
+  Recovery accepts only that exact failed-pre-bind shape. Failed commit,
+  review-before-bind, decision-before-review, nested/child review, and
+  duplicate review controls remain red; broader error prose cannot satisfy the
+  exact prefix-plus-state-head predicate.
+- DONE: Replay the retained Codex keep-moving phases and numbered durable reads.
+  Successful dispatch builds at items 27–30 precede completed wait item 32;
+  item 33 reports `40:`, `13:`, and `13:` numbered anchored Stage Report
+  headings for the three implementation entities; successful item 36
+  finalizes those same entities after an intentionally failed item 35.
+  The focused phase-bound test accepts this build→wait→reports→finalization
+  shape. Report-before-build/wait, failed-build, planted command/output,
+  anonymous or wrong/missing entity, failed command, and missing finalization
+  controls remain red.
+- DONE: Confirm Roborev jobs 106–127 and their advisory state rounds are absent
+  from the candidate.
+  The exact six-file diff contains neither Roborev text nor those job ids, the
+  commit reflog has no intervening round commits, the durable entity remains
+  bound to `validation:8`, and the state checkout was clean before this report.
+  No Roborev command was run.
+- DONE: Run the required local gate at the exact candidate.
+  Focused retained-shape replay/regressions, `gofmt -w ./cmd ./internal`,
+  `git diff --check`, `go test ./...`, `go test ./... -race`, and
+  `go vet ./...` all completed successfully. Gofmt changed no tracked bytes.
+- DONE: Cross-check AC-1 through AC-5 without promoting quarantines.
+  AC-2 is satisfied locally by the named red counterexamples. The repaired
+  graders validly recognize the retained AC-4 behaviors and are ready for a
+  same-tip live confirmation. AC-1, AC-3, the same-tip live portion of AC-4,
+  and AC-5 remain pending because no Runtime Live E2E run exists at this
+  candidate and retained run `30378538074` remains 2/4. The q3, w5, zbc, and
+  9w skips remain explicit non-evidence and satisfy none of those pending
+  criteria.
+- SKIPPED: Trigger or inspect a new PR CI run, push code, run Roborev, or merge.
+  Those actions are outside this bounded independent-validation assignment.
+- DONE: Validation recommendation: PASSED for pre-CI readiness.
+  No material defect remains in the three bounded replay repairs. The candidate
+  is ready for one normal PR Runtime Live E2E confirmation; this verdict does
+  not claim the release value or full live-host proof until that run is 4/4.
+
+### Summary
+
+The bounded cycle-8 reconstruction passes independent local validation at
+`c34941ec6d80dd2b97321815ef5b2ca740db6210`. Retained Sonnet and Codex evidence
+now grades on the exact durable and ordered facts while paired false-positive
+controls stay red. Release value remains pending one normal same-tip 4/4 PR CI
+run, with all four named quarantines still non-evidence.
