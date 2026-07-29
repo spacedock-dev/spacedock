@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-07-29 08:57:00",
+        "dateModified": "2026-07-29 20:42:08",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1381,7 +1381,7 @@ plugins must be installed persistently with <code>codex plugin add</code>.</p>
 </tbody>
 </table>
 <p>Both take <code>--host claude|codex|pi</code> (default <code>claude</code>). When <code>doctor</code> reports the plugin is out of date, refresh it with <code>spacedock install</code>. When the plugin is still contract-compatible but a newer one is available, <code>doctor</code> and the front-door launch print an opt-in upgrade hint (<code>run spacedock install --host &lt;host&gt; to refresh</code>); the hint never blocks the launch. See <a href="../../get-started/install/">Install Spacedock</a> for the full setup path.</p>
-<p>For source-checkout or retained development launchers, version compatibility is not a command-capability check. Immediately before every gate lifecycle, freshly resolve the launcher and run <code>spacedock gate --help</code> exactly once; do not cache the result. It must list <code>record</code>, <code>validate</code>, <code>eligibility</code>, <code>consume</code>, and the semantic record flags. If it fails, refresh the installed launcher or build the current checkout and select that executable with <code>SPACEDOCK_BIN</code>; do not hand-edit gate frontmatter as a fallback. Relative Briefing, Result, and association inputs resolve from the launch working directory.</p>
+<p>The launcher and plugin are a version-gated bundle. During a gate lifecycle, the real <code>gate prepare</code> invocation is the capability check: a nonzero result halts before presentation or later state effects. Refresh the installed bundle or build the current checkout and select that executable with <code>SPACEDOCK_BIN</code>; do not scrape help output or hand-edit gate frontmatter as a fallback. Relative selected-source and room inputs resolve from the launch working directory.</p>
 <h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
 <p>The first officer runs these against workflow state as it moves entities; you operate through it, not by hand. They are documented here for completeness and for the rare direct use (scripting, debugging, restoring a state checkout on a fresh clone).</p>
 <table>
@@ -1397,12 +1397,12 @@ plugins must be installed persistently with <code>codex plugin add</code>.</p>
 <td>Read or mutate the state: the entity table (omits the SOURCE column by default; <code>--fields source</code> or <code>--all-fields</code> restores it), <code>--next</code>, <code>--where</code>, <code>--set</code>, <code>--validate</code>, <code>--boot</code> (with <code>--identify</code>, the first officer's Startup identify — discovers the managed workflow(s), folds in the stage taxonomy and canonical ready-gate scheduling rows, and reports the boot sections; each row carries only <code>id</code>, <code>slug</code>, <code>current</code>, and <code>readiness</code>, while entity read and gate commands provide the complete decision record at engage; a gate stage alone is not ready; PR_STATE is a local <code>pr:</code> view, live PR state is checked at engage; local reads only, no mutation), <code>--read &lt;ref-or-path&gt;</code> (a file's structured frontmatter — including the nested <code>stages:</code> taxonomy, and projectable with <code>--fields</code> — plus a heading offset/lines map, for section-scoped reads; with <code>--checklist</code> / <code>--ac-scan</code> it extracts a stage report's checklist items with line ranges and per-AC evidence citations for the first officer's gate prep; <code>--stage</code> defaults to the entity's current <code>status</code> when omitted (so a bare <code>--read &lt;entity&gt; --checklist</code> reads the current stage's report), and <code>--stage X</code> reads a non-current stage)</td>
 </tr>
 <tr>
-<td><code>spacedock gate record &lt;entity&gt; --briefing PATH/briefing.json</code></td>
-<td>Bind a complete retained package manifest whose basename is exactly <code>briefing.json</code>. Other basenames fail before mutation. The recorder derives the current-stage logical gate and whether this opens, rebinds, or supersedes an attempt.</td>
+<td><code>spacedock gate prepare &lt;entity&gt; --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...]</code></td>
+<td>Derive and bind a recorder-ready room for folder or flat form. Immediately after preparation the room contains exactly <code>gate-briefing.json</code> and <code>request.json</code>, with no copied sources or association. Selected files are exact local <code>git-root://&lt;main\|state&gt;/&lt;full-commit&gt;/&lt;path&gt;</code> objects with raw SHA-256 revisions; there is no fetch, ref requirement, or worktree fallback. Success prints <code>room</code>, <code>briefing</code>, <code>digest</code>, and <code>state</code>.</td>
 </tr>
 <tr>
 <td><code>spacedock gate record &lt;entity&gt; --room PATH</code></td>
-<td>Verify a prepared gate room and record its direct binding Result. The recorder checks the frozen request digest, derives fixed provider paths and the complete Artifact/Reference association, and leaves advisory output as retained evidence.</td>
+<td>Verify a prepared gate room and record its direct binding Result. The recorder checks the frozen request digest, derives the fixed room evidence paths and complete Artifact/Reference association, and leaves advisory output as retained evidence.</td>
 </tr>
 <tr>
 <td><code>spacedock gate record &lt;entity&gt; --decision approve\|revise\|hold --actor ID [--reason TEXT]</code></td>
@@ -1449,7 +1449,8 @@ plugins must be installed persistently with <code>codex plugin add</code>.</p>
 <h3 id="state-commit"><code>state commit</code><a class="headerlink" href="#state-commit" title="Permanent link">&para;</a></h3>
 <p><code>spacedock state commit &lt;slug&gt;</code> commits and synchronizes one active or clean
 archived entity from a split-root state checkout. The operand is one canonical top-level entity slug,
-not a nested path. A flat entity commits exactly <code>&lt;slug&gt;.md</code>; a folder-form entity
+not a nested path. A flat entity commits exactly <code>&lt;slug&gt;.md</code> plus its <code>&lt;slug&gt;/</code>
+companion directory when present or tracked; a folder-form entity
 commits every changed, new, or deleted non-ignored path below <code>&lt;slug&gt;/</code>, including
 reports and artifacts. Dirty sibling entities and unrelated top-level state paths
 remain untouched. Archived scope is publish-only: dirt or identity/shape collisions refuse before movement; clean unpublished history is pushed, and fully published state is a no-op.
@@ -1476,7 +1477,7 @@ to active entities and has no effect for an archived slug.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 29, 2026 08:57:00 UTC">2026-07-29 08:57:00</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 29, 2026 20:42:08 UTC">2026-07-29 20:42:08</span>
   </span>
 
     

@@ -71,7 +71,7 @@
         "headline": "Frontmatter contract",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/frontmatter-contract/",
-        "dateModified": "2026-07-29 08:57:00",
+        "dateModified": "2026-07-29 20:42:08",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1258,7 +1258,7 @@
 <p>The workflow <code>README.md</code> frontmatter declares the entity type, the id style, and the stages with their per-stage defaults and gates. The contract is <a href="https://github.com/spacedock-dev/spacedock/blob/main/docs/schema/workflow-readme.mdschema.yml"><code>workflow-readme.mdschema.yml</code></a>, which also specifies the required per-stage body subsections.</p>
 <h2 id="entity">Entity<a class="headerlink" href="#entity" title="Permanent link">&para;</a></h2>
 <p>Each entity's frontmatter carries its id, current stage, outcome, and worktree state. The contract is <a href="https://github.com/spacedock-dev/spacedock/blob/main/docs/schema/entity.mdschema.yml"><code>entity.mdschema.yml</code></a>, which defines the fields, the custom-field policy, the recognized body headings, and the invariants.</p>
-<p>A gate decision is recorded in the entity's versioned <code>gates</code> collection before any stage transition or worker dispatch. The <code>spacedock gate record</code> verb is the sole writer for the canonical-v1 gate/attempt/Briefing/Resolution collection; callers provide a complete retained package manifest named <code>briefing.json</code>, a fully associated exact Result, or a chat decision, while the binary derives lifecycle and ids. Unknown or prototype fields inside binary-owned <code>gates</code> fail closed. The known <code>application</code> subtree carries the typed one-use lifecycle on the same writer surface. Canonical gates writes preserve top-level frontmatter outside <code>gates</code> and the entity body byte-for-byte. Each attempt stores one Briefing reference and digest: replaceable while Resolution is absent and frozen when present. <code>spacedock status --fields gate-state,gate-decision,gate-resolution</code> surfaces the current recorded result without changing the default status table.</p>
+<p>A gate decision is recorded in the entity's versioned <code>gates</code> collection before any stage transition or worker dispatch. <code>spacedock gate prepare</code> derives a provider-neutral room, canonical Briefing, request authority, and open binding from committed selected files; <code>spacedock gate record</code> closes canonical-v1 gate/attempt/Briefing/Resolution state from a chat decision or the prepared room's room-backed Result. No Briefing basename is canonical: prepared rooms freeze a clean relative locator, id, digest, request digest, and exact primary Artifact summary. Advisory-round Briefings remain summary-free. Unknown or prototype fields inside binary-owned <code>gates</code> fail closed. The known <code>application</code> subtree carries the typed one-use lifecycle on the same writer surface. Canonical gates writes preserve top-level frontmatter outside <code>gates</code> and the entity body byte-for-byte. Each attempt stores one Briefing reference and digest, frozen when closed. <code>spacedock status --fields gate-state,gate-decision,gate-resolution</code> surfaces the current recorded result without changing the default status table.</p>
 <p><code>review-round</code> is the current pointer to one immutable advisory Review &amp; Gate room. It repeats only the round, stage, cycle, and canonical Briefing binding; Resolutions remain in <code>briefing.review.jsonl</code>. Round recording shares the gate recorder's lock, full-entity compare-and-swap validation, and atomic entity replacement, but carries no gate selection, application, or status effect.</p>
 <p>A recorded approval carries a one-use application. Status surfaces it as <code>approved-pending</code> until it is consumed, <code>consumed</code> once the approval has advanced exactly once through the ordinary transition path, <code>superseded</code> if the reviewed input changed before it was consumed, and <code>not-applicable</code> for a reviewer hold. A present dependency blocker or an active execution hold keeps the application ineligible; the application is never consumed twice.</p>
 
@@ -1281,7 +1281,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 29, 2026 08:57:00 UTC">2026-07-29 08:57:00</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 29, 2026 20:42:08 UTC">2026-07-29 20:42:08</span>
   </span>
 
     

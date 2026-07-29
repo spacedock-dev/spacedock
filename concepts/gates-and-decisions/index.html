@@ -71,7 +71,7 @@
         "headline": "Gates \u0026 decisions",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/concepts/gates-and-decisions/",
-        "dateModified": "2026-07-29 08:57:00",
+        "dateModified": "2026-07-29 20:42:08",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1334,7 +1334,7 @@ merge PR on CI green. use your judgement.</code></pre>
 <p>A chat gate review has one concise evidence spine. The first officer emits it before recording either your decision or a decision made under delegated conn:</p>
 <pre class="highlight"><code class="language-text">Capability/change: replace sleep-based waits with event polling.
 Test and evidence: login is stable across 50 runs; AC-2 retry has no covering test.
-Reviewed snapshot: Briefing `...` at digest `sha256:...`.
+Reviewed snapshot: Briefing `...` at compact digest `sha256:1a2b3c4d…`.
 Findings: material: AC-2 cites a test file that does not exist.
 Recommendation: revise to add the retry scenario.
 Decision ask: approve to close, revise to bounce back, or hold at review.</code></pre>
@@ -1345,9 +1345,18 @@ first officer as the decision renderer and its evidence reason; it does not quot
 authenticate the grant's wording or scope. Keep any required chat provenance in the
 host's own audit system.</p>
 <h2 id="how-the-review-reaches-you">How the review reaches you<a class="headerlink" href="#how-the-review-reaches-you" title="Permanent link">&para;</a></h2>
-<p>Gate reviews appear in chat by default. A workflow or session can opt into a review provider that presents the same canonical Briefing as a blocking review and returns an exact retained Result.
-The scaffold prepares one gate room that binds the request authority, gate attempt, canonical Briefing, and fixed provider outputs. Binding the attempt freezes both the Briefing digest and the request digest. The first officer passes only that room to the provider. The provider must show the Briefing's question, every Artifact, and every recursively reached Reference at its recorded revision. The recorder derives the complete presentation association from the room; the first officer does not assemble it.</p>
-<p>The provider owns its presentation transport and retained files. The <code>spacedock</code> binary verifies a direct binding Result through its nested <code>Resolution.by</code>; advisory output remains evidence and cannot close the gate through an adoption note. If the provider is missing or has the wrong version, the first officer names the remedy and returns to chat without launching it or creating retention files. After launch, a failure never falls back to chat.</p>
+<p>Gate reviews appear in chat by default. Before presenting one, the first officer commits
+newly authored selected sources and calls <code>gate prepare</code> with its question, primary
+Markdown review, exact concise summary, and References. Spacedock authors and binds a
+two-file recorder-ready room; the first officer commits that entity-owned room. The
+selected source payloads remain singular local Git objects rather than room copies.</p>
+<p>A workflow or session may select a presentation override. Only after the prepare and
+bind commit, the selected channel receives exactly the emitted room through its
+declared interface as an opaque handoff. The generic Spacedock contract neither
+defines channel execution nor reconstructs authority outside that room. When the room
+is recorder-ready, the first officer passes that same room to <code>gate record --room</code>;
+the recorder recomputes request, Briefing, Result, inventory, and Git pins, derives the
+complete association in memory, and writes no <code>association.json</code>.</p>
 <h2 id="the-three-calls">The three calls<a class="headerlink" href="#the-three-calls" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Approve.</strong> The decision is recorded first. A separate application step may then advance eligible work exactly once.</li>
@@ -1363,7 +1372,16 @@ letting startup distinguish work still validating, an open attempt awaiting the
 Captain, an approval awaiting nonterminal advance, and an approval awaiting
 merge. Approval to a terminal target is consumed before the existing merge and
 terminalization path begins.</p>
-<p>Before the first officer shows a gate, it captures the exact bound Briefing identity and digest from committed entity state. A run without decision authority stops with that attempt open: it writes no Resolution, consumes nothing, advances nothing, and dispatches nothing. After an authorized decision, it records and commits the Resolution before every route. Approval then uses <code>gate consume</code>, which rechecks eligibility and atomically writes the successor stage and consumed mark; the consumed descendant commit lands before ordinary successor dispatch. Revise routes feedback after its close commit, and hold stays at the gate. <code>gate validate</code> and <code>gate eligibility</code> remain optional diagnostics, not positive-path lifecycle steps.</p>
+<p>Before the first officer shows a gate, it captures the exact bound Briefing identity,
+digest, and emitted room in committed machine state, then presents a compact snapshot
+identity in prose. A run without decision authority
+stops with that attempt open: it writes no Resolution, consumes nothing, advances
+nothing, and dispatches nothing. After an authorized decision, it records and commits
+the Resolution before every route. Approval then uses <code>gate consume</code>, which rechecks
+the retained request, Briefing, Git sources, and eligibility before atomically writing
+the successor stage and consumed mark. Revise routes feedback after its close commit,
+and hold stays at the gate. <code>gate validate</code> and <code>gate eligibility</code> remain optional
+diagnostics, not positive-path lifecycle steps.</p>
 <p>The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.</p>
 <h2 id="rejections">Rejections<a class="headerlink" href="#rejections" title="Permanent link">&para;</a></h2>
 <p>Rejections bounce automatically: the findings route back, the work is redone, and the reviewer re-runs; no stop at your desk. The gate reaches you only when the work passes review, or after <strong>three failed rounds</strong>, when the call returns to you instead of bouncing again. Every round is on the record in the item's file.</p>
@@ -1396,7 +1414,7 @@ terminalization path begins.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 29, 2026 08:57:00 UTC">2026-07-29 08:57:00</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 29, 2026 20:42:08 UTC">2026-07-29 20:42:08</span>
   </span>
 
     
