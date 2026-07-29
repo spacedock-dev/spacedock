@@ -3539,3 +3539,18 @@ Cycle 32 independently reproduces AC-1 through AC-5 at `ee2cab74` and proves fou
 ### Summary
 
 The generic Spacedock contract now ends at the opaque committed-room handoff and leaves presentation-channel implementation outside its authority. Existing recorder schema and behavior remain intact, no readiness, withdrawal, registry, probe, fallback, schema, or compatibility mechanism was added, and neither code nor CI was pushed or triggered.
+
+## Stage Report: implementation (cycle 34 contract correction)
+
+- DONE: Remove the newly added committed prose-string enforcement and do not replace it with another lint or test.
+  Commit `f5d531a9` deletes `TestGatePresentationContractsUseOpaqueRoomHandoff` and its expanded negative assertions; the pre-existing expectations retain their original assertion count with only provider-neutral phrase substitutions.
+- DONE: Restore the provider-neutral lifecycle safety rule after an override receives the room.
+  The presentation contract now leaves the same attempt open on a failed handoff or missing, advisory, or invalid Result and forbids fallback to chat or another channel without naming implementation internals.
+- DONE: Add one scan-friendly command-responsibility block to the generic First Officer gate lifecycle without adding behavior.
+  A three-row table states that prepare opens/freezes/binds, record closes but never advances, and consume applies one eligible approval and advances; no projected state or new mechanism was added.
+- DONE: Run only the checks required by the corrected contract surface and report its exact delta.
+  `go test ./internal/contractlint ./skills/integration`, `gofmt -w ./cmd ./internal`, `git diff --check`, and strict MkDocs passed; exact correction delta is 3 files at `+9/-49`, so the already-green full/race suites were not repeated.
+
+### Summary
+
+Cycle 34 corrects the cycle-33 test-policy violation and restores the no-cross-channel fallback boundary while making existing command ownership easier to scan. The correction is committed at `f5d531a9`; it adds no readiness, withdrawal, registry, probing, compatibility, schema, or provider-execution mechanism.
