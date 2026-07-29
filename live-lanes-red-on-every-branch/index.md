@@ -80,14 +80,14 @@ gates:
                 target-stage: implementation
                 state: pending
 review-round:
-    id: round:se0v37bt7mhsrmhta1nyns0r:validation:8
+    id: round:se0v37bt7mhsrmhta1nyns0r:validation:9
     stage: validation
-    cycle: 8
+    cycle: 9
     briefing:
-        id: briefing:se0v37bt7mhsrmhta1nyns0r:validation:round-8
-        digest: sha256:25020abb7c59295cc831b0a55feeefe1e9ec78b41cdac793ba7515f9540dc7f2
+        id: briefing:se0v37bt7mhsrmhta1nyns0r:validation:round-9
+        digest: sha256:2e11084ff7e564c795b42f3df7c04cf92877ce83860c95ba7c067a7711b7004e
         digest-domain: canonical-bytes
-        room-ref: ./review/validation/round-8
+        room-ref: ./review/validation/round-9
 pr: "#572"
 ---
 
@@ -925,3 +925,39 @@ PASSED. Exact candidate `90243bf7` waits for the resident launcher and Claude to
 exit cleanly before fixture cleanup, while preserving the supported journey and
 all product semantics; retained real Sonnet evidence and fresh deterministic,
 race, formatting, diff, and vet checks establish the bounded correction.
+
+## Stage Report: implementation (Codex gate-consume oracle)
+
+- DONE: Reproduce run `30421227237`'s Codex false red from the retained
+  successful gate-consume transcript and classify it against the supported
+  journey.
+  The released Codex workflow completed; harm was a false-red release signal;
+  AC-1/AC-5 were blocked; trigger was exit-zero `"$SD" gate consume
+  approved-gate` with `eligible=true consumed=true target-stage=implementation`.
+- DONE: Recognize only a successful approved-gate consume as advancement while
+  preserving failed-consume, no-advance, and no-dispatch counterexamples.
+  Commit `43e1d462` requires completed status, exit zero, the approved entity,
+  eligible/consumed true, and the implementation target; wrong entity, failed,
+  invocation/output-only, ineligible, unconsumed, wrong-target, and
+  advance-without-dispatch controls stay red.
+- DONE: Prove the bounded extractor correction deterministically and with the
+  focused real local Codex keep-moving journey before independent validation.
+  The complete retained 172 KB JSONL replay, focused controls, full tests, race,
+  vet, gofmt, and diff check passed; exact-tip local live Codex passed in 368.42s
+  (377.99s total) with source head `43e1d462`.
+- DONE: Record the Material finding triage as advisory `validation/9`.
+  The round recorder retained four entries with `triage=all-fixed`; both
+  Resolutions are advisory and lifecycle status remains implementation.
+- DONE: Preserve the evidence-layer-only boundary.
+  One existing keep-moving oracle/test file changed by 23 additions and four
+  deletions; product, gate, runtime, prompt, skill, contract, TODO, quarantine,
+  and other-host semantics are unchanged.
+- SKIPPED: Run Roborev, push code, trigger CI, merge, file tasks, or absorb
+  unrelated findings.
+  These actions remain explicitly outside this bounded correction.
+
+### Summary
+
+The Codex journey was correct and the oracle was stale to a valid shell-variable
+launcher dialect. Exact retained and fresh real-live proof now pass at
+`43e1d462`, with strict success correlation and dispatch negatives preserved.

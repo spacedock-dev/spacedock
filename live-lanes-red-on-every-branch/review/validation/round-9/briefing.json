@@ -1,0 +1,35 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:se0v37bt7mhsrmhta1nyns0r:validation:round-9",
+  "question": "How should the task-owned Codex keep-moving false red from exact-tip Runtime Live E2E run 30421227237 be dispositioned?",
+  "artifacts": [
+    {
+      "id": "artifact:run-30421227237-codex-keep-moving",
+      "uri": "https://github.com/spacedock-dev/spacedock/actions/runs/30421227237",
+      "mediaType": "text/html",
+      "rev": "sha256:f98de21bd4172100133230457b65441594441b963e7aa12df2001fd2ed33d5f5",
+      "summary": "Codex job 90478362696 completed the approved-gate journey but the keep-moving extractor reported no advance."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:exact-baseline",
+      "label": "Run 30421227237 tested exact source head 90243bf7b11dcbe6d06f1a3b32dde8f90e8e1d0f."
+    },
+    {
+      "type": "Reference",
+      "id": "reference:bounded-correction",
+      "uri": "git-root://main/43e1d462c548ff78df389ef64395254e2aaf0f5c/internal/ensigncycle/shared_keep_moving_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:3fb2fbc4b59bd5b3fd3f6f25f46460cbd7dd60e3d58d246a961c299803fda587",
+      "label": "One-file evidence-layer correction recognizes only completed successful approved-gate consumption and retains dispatch requirements."
+    },
+    {
+      "type": "Reference",
+      "id": "reference:proof",
+      "label": "The complete retained transcript replays green; focused negatives, full tests, race, vet, and the real local Codex keep-moving journey all pass."
+    }
+  ]
+}
