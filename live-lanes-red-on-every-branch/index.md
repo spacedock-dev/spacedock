@@ -858,3 +858,48 @@ local isolated credential expired before either focused journey could start.
 Fresh isolated OAuth allowed the previously blocked real Sonnet proof to run.
 The supported journey terminalized, archived, and exited cleanly, confirming the
 harness correction is ready for independent validation.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Verify exact candidate `90243bf7` fixes the Sonnet TempDir cleanup race
+  without changing journey or product semantics.
+  The sole-parent diff over pushed tip `f75f482e` is one existing harness file,
+  `internal/ensigncycle/live_test.go`, at +13/-2; prompts, journey assertions,
+  product packages, launcher behavior, and TODO boundaries are unchanged.
+- DONE: Verify the retained real Sonnet `TestLiveEnsignCycle` pass proves clean
+  launcher and Claude exit at the exact candidate.
+  The committed implementation record identifies tip `90243bf7`, model
+  `claude-sonnet-5`, session `75ba325e-40fb-4623-bb3a-66c206a6b3ba`, archived
+  `make-it-work.md`, exit code zero, and the 156.99s passing result.
+- DONE: Inspect the exact process-exit assertion adversarially.
+  After the durable terminal barrier, the existing watcher drains until process
+  exit or kills on three minutes of silence; the new poll then requires exactly
+  `(exited=true, code=0)` before post-state reads and TempDir cleanup.
+- DONE: Run focused deterministic tests plus gofmt/diff check, `go test ./...`,
+  `go test ./... -race`, and `go vet ./...`.
+  Tagged exit/drain progress, clean-exit, stall-kill, and transcript-retention
+  controls passed; the focused gates/contractlint/ensigncycle layer, full suite,
+  race suite, and vet passed; formatting and diff checks changed no tracked bytes.
+- DONE: Classify the supported journey and affected proof boundary.
+  The supported lifecycle terminalizes and archives correctly; the observed harm
+  was a false-red Sonnet lane after success, affecting AC-3/AC-5 process-exit and
+  clean-fixture evidence when the durable barrier preceded Claude's terminal
+  ceremony. This is a material evidence defect with the exact observed CI trigger,
+  not an outcome defect.
+- SKIPPED: Repeat the owned expensive real Sonnet live run.
+  The retained exact-tip pass establishes model, journey terminal state, archive,
+  clean process exit, and absence of the prior TempDir failure, so another
+  token-spending run would add no missing proof.
+- DONE: Recommend PASSED without modifying the candidate.
+  No material, deferred-risk, or polish finding remains in this bounded cleanup;
+  code stayed exactly at `90243bf7` and only the required validation report changed.
+- SKIPPED: Run Roborev, push or modify code, trigger CI, merge, file tasks, or
+  widen scope.
+  These actions remain explicitly outside this validation assignment.
+
+### Summary
+
+PASSED. Exact candidate `90243bf7` waits for the resident launcher and Claude to
+exit cleanly before fixture cleanup, while preserving the supported journey and
+all product semantics; retained real Sonnet evidence and fresh deterministic,
+race, formatting, diff, and vet checks establish the bounded correction.
