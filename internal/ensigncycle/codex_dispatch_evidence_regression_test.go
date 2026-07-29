@@ -135,6 +135,10 @@ func TestCodexDurableStageReportCountIgnoresProseMentions(t *testing.T) {
 	if reported["alpha"] || reported["beta"] {
 		t.Fatalf("one anchored report heading must not prove two named entities: %#v", reported)
 	}
+	reported = codexDurableStageReportTargets("rg -n '^## Stage Report:' alpha.md beta.md", "1:## Stage Report: done\n9:## Stage Report: done\n", []string{"alpha", "beta"})
+	if !reported["alpha"] || !reported["beta"] {
+		t.Fatalf("numbered rg headings did not prove both named entities: %#v", reported)
+	}
 }
 
 func TestCodexSmallestSufficientCreditsDispatchBuildWaitAndDurableRead(t *testing.T) {
@@ -305,7 +309,7 @@ func TestCodexDispatchEvidencePhaseBindsBatchedFinalization(t *testing.T) {
 	entity := kmReadyOne
 	build := codexDispatchBuildEvidence(entity, kmNextStage)
 	wait := codexWaitCompleted()
-	report := codexEntityReadEvidence(entity, kmNextStage, kmNextStage)
+	report := codexCompletedCommandOutput("rg -n '^## Stage Report:' "+entity+".md", "40:## Stage Report: "+kmNextStage+"\n")
 	mergeCommand := `for slug in ready-one; do spacedock merge guard "$slug" --workflow-dir .; done`
 	finalized := "finalized: " + entity + " -> done (verdict passed), archived. State durability: local-only (no origin remote).\n"
 	merge := codexCompletedCommandOutput(mergeCommand, finalized)

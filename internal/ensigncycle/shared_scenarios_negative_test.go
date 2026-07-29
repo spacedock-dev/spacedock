@@ -78,7 +78,7 @@ func TestRejectionFlowNegativeSingleCycle(t *testing.T) {
 	// single-route-back simplification the Python test never had.
 	singleCycle := "---\nstatus: implementation\n---\n# Rejection Task\n\n" +
 		rejectionFixMarker + "\n\n" +
-		"## Stage Report: implementation\n\n- DONE: initial (no marker)\n\n" +
+		"## Stage Report: implementation\n\n- DONE: initial (no marker)\n\n## Stage Report: validation\n\n- REJECTED: Missing marker\n\n" +
 		"## Stage Report: implementation\n\n- DONE: applied fix\n\n" +
 		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n"
 	if len(implementationReport.FindAllString(singleCycle, -1)) < 2 {
@@ -88,7 +88,7 @@ func TestRejectionFlowNegativeSingleCycle(t *testing.T) {
 		t.Fatal("single-cycle body must carry exactly one recorded cycle (only Cycle 1)")
 	}
 	if err := assertRejectionFlow(singleCycle, rejectedObserved); err == nil {
-		t.Fatal("expected a single-cycle end-state (fix applied, second implementation report, but only one recorded cycle) to fail assertRejectionFlow on the second-cycle check")
+		t.Fatal("expected a single-cycle end-state (fix applied, second implementation report, but only one validation report) to fail assertRejectionFlow on the re-validation check")
 	}
 
 	// No-reuse run shape — the producer-signal half of the shipped flaw. A run whose

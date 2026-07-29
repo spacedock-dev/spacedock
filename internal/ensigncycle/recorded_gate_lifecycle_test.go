@@ -803,7 +803,16 @@ func recordedGateReviewFromCodexJSONL(jsonl string) string {
 		}
 		switch {
 		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "gate record recorded-gate-task") && strings.Contains(row.Item.Command, " --decision "):
-			return singleRecordedGateReview(candidates)
+			if review := singleRecordedGateReview(candidates); review != "" {
+				return review
+			}
+			failedPreBind := row.Item.Status == "completed" && row.Item.ExitCode != nil && *row.Item.ExitCode == 0 &&
+				strings.HasPrefix(row.Item.AggregatedOutput, "Error: entity has no gates record\n") && recordedGateStateHead.MatchString(row.Item.AggregatedOutput)
+			if failedPreBind {
+				bound, candidates = false, nil
+				continue
+			}
+			return ""
 		case row.Item.Type == "command_execution" && strings.Contains(row.Item.Command, "state commit recorded-gate-task"):
 			bound = row.Item.ExitCode != nil && *row.Item.ExitCode == 0 && row.Item.Status == "completed" && recordedGateStateHead.MatchString(row.Item.AggregatedOutput)
 		case bound && row.Item.Type == "agent_message" && assertConciseRecordedGateReview(row.Item.Text) == nil:
@@ -853,6 +862,7 @@ func TestRecordedGateReviewExtractorsRequireOneOrderedRootReview(t *testing.T) {
 	claude.failed, claude.child = strings.Replace(claude.commit, `"is_error":false`, `"is_error":true`, 1), strings.Replace(claude.review, "null", `"child"`, 1)
 	codex := recordedGateHost{recordedGateReviewFromCodexJSONL, "codex", `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock state commit recorded-gate-task","status":"completed","exit_code":0,"aggregated_output":"state-head\t0123456789abcdef0123456789abcdef01234567"}}`, `{"type":"item.completed","item":{"type":"agent_message","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}}`, `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock gate record recorded-gate-task --decision approve"}}`, `{"type":"item.completed","item":{"type":"agent_message","text":"Committed recorded-gate-task"}}`, "", ""}
 	codex.failed, codex.child = strings.Replace(codex.commit, `"exit_code":0`, `"exit_code":1`, 1), strings.Replace(codex.review, "agent_message", "subagent_message", 1)
+	requireRecordedGate(t, codex.extract(strings.Replace(codex.decision, `"command":"`, `"status":"completed","exit_code":0,"aggregated_output":"Error: entity has no gates record\nstate-head\t0123456789abcdef0123456789abcdef01234567","command":"`, 1)+"\n"+codex.commit+"\n"+codex.review+"\n"+codex.decision) == recordedGateReview(), "codex valid post-bind review did not survive failed pre-bind decision")
 	piBind := `{"message":{"role":"assistant","content":[{"type":"toolCall","id":"b","name":"bash","arguments":{"command":"spacedock gate record recorded-gate-task --briefing briefing.json"}}]}}` + "\n" + `{"message":{"role":"toolResult","toolCallId":"b","isError":false,"content":[{"type":"text","text":"state=open"}]}}`
 	piCommit := `{"message":{"role":"assistant","content":[{"type":"toolCall","id":"c","name":"bash","arguments":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" + `{"message":{"role":"toolResult","toolCallId":"c","isError":false,"content":[{"type":"text","text":"state-head\t0123456789abcdef0123456789abcdef01234567"}]}}`
 	pi := recordedGateHost{recordedGateReviewFromPiSession, "pi", piBind + "\n" + piCommit, `{"message":{"role":"assistant","content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}`, `{"message":{"role":"assistant","content":[{"type":"toolCall","arguments":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`, `{"message":{"role":"assistant","content":[{"type":"text","text":"Committed recorded-gate-task"}]}}`, "", ""}
