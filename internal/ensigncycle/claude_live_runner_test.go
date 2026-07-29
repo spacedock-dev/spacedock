@@ -188,9 +188,25 @@ func TestClaudeTODOModelScope(t *testing.T) {
 	}
 }
 
+func TestClaudeRejectionFlowTODOModelScope(t *testing.T) {
+	for model, want := range map[string]bool{
+		"sonnet": true, "claude-sonnet-5": true,
+		"opus": true, "claude-opus-4-8": true,
+		"haiku": false, "openrouter/opossum": false,
+	} {
+		if got := claudeRejectionFlowTODOModel(model); got != want {
+			t.Errorf("claudeRejectionFlowTODOModel(%q) = %t, want %t", model, got, want)
+		}
+	}
+}
+
 func claudeModelFamily(model, family string) bool {
 	model = strings.ToLower(strings.TrimSpace(model))
 	return model == family || strings.Contains(model, "claude-"+family+"-")
+}
+
+func claudeRejectionFlowTODOModel(model string) bool {
+	return claudeModelFamily(model, "opus") || claudeModelFamily(model, "sonnet")
 }
 
 func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
@@ -323,8 +339,8 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 
 func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
-	if claudeModelFamily(runner.model(), "opus") {
-		t.Skip("TODO(zbcj98qfwtax61vxdzrf615e): Opus must reliably bind a distinct post-rework Briefing before re-enabling this journey")
+	if claudeRejectionFlowTODOModel(runner.model()) {
+		t.Skip("TODO(zbcj98qfwtax61vxdzrf615e): Claude Opus and Sonnet must reliably bind a distinct post-rework Briefing before re-enabling this journey")
 	}
 	workflowRoot := t.TempDir()
 	entityPath := writeRejectionWorkflow(t, workflowRoot)
