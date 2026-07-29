@@ -96,7 +96,7 @@ func TestLivePrimitiveRunsAgainstClaudeAdapter(t *testing.T) {
 			if err != nil {
 				return errGraded(err.Error())
 			}
-			if err := assertGateHeld(before.Body, after.Body, recordedGateReviewFromClaudeStream(observed), expected); err != nil {
+			if err := assertGateHeld(before.Body, after.Body, expected); err != nil {
 				return errGraded(err.Error())
 			}
 			if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {

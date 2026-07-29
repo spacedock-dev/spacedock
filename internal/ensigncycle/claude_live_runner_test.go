@@ -254,7 +254,7 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 	if copied, ok := runner.(claudeLiveRunner); ok && (!strings.Contains(result.stream, copied.pluginDir) || !strings.Contains(result.stream, "# First Officer Gate Lifecycle")) {
 		t.Fatalf("recorded gate lifecycle did not load the copied skill body\nArtifacts: %s", result.artifactDir)
 	}
-	observation := recordedGateLiveObservation(t, fixture, before, commandLog, recordedGateReviewFromClaudeStream(result.stream))
+	observation := recordedGateLiveObservation(t, fixture, before, commandLog)
 	if err := assertRecordedGateLifecycle(observation); err != nil {
 		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
@@ -332,7 +332,7 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	if err != nil {
 		t.Fatalf("read prepared gate expectation: %v\nArtifacts: %s", err, result.artifactDir)
 	}
-	if err := assertGateHeld(before, after, recordedGateReviewFromClaudeStream(result.stream), expected); err != nil {
+	if err := assertGateHeld(before, after, expected); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {

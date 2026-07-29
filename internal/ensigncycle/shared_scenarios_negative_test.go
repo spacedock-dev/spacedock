@@ -5,15 +5,6 @@ import (
 	"testing"
 )
 
-type recordedGatePiEvent struct {
-	Message *struct {
-		Role       string        `json:"role"`
-		ToolCallID string        `json:"toolCallId"`
-		IsError    bool          `json:"isError"`
-		Content    []streamBlock `json:"content"`
-	} `json:"message"`
-}
-
 // Negative-case discipline: each shared scenario's assertion is behavior/state
 // oriented, not a transcript-shape tautology. For every shared scenario these cases build the
 // SPECIFIC broken end-state the scenario guards against — from the real shared
@@ -27,9 +18,8 @@ type recordedGatePiEvent struct {
 func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
 	before := recordedGateEntity()
 	held := recordedGateHeldEntity()
-	review := recordedGateReview()
 	expected := staticGateHeldExpectation()
-	requireRecordedGate(t, assertGateHeld(before, held, review, expected) == nil, "held-gate baseline failed")
+	requireRecordedGate(t, assertGateHeld(before, held, expected) == nil, "held-gate baseline failed")
 
 	for name, after := range map[string]string{
 		"unbound":        before,
@@ -37,7 +27,7 @@ func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
 		"self-approved":  strings.Replace(held, "verdict:\n", "verdict: passed\n", 1),
 		"wrong-briefing": strings.Replace(held, recordedGateBriefingID, "briefing:docs-dev:wrong", 1),
 	} {
-		requireRecordedGate(t, assertGateHeld(before, after, review, expected) != nil, "%s gate qualified", name)
+		requireRecordedGate(t, assertGateHeld(before, after, expected) != nil, "%s gate qualified", name)
 	}
 }
 

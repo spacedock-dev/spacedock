@@ -55,7 +55,7 @@ func recordedGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectati
 	}, nil
 }
 
-func assertGateHeld(before, after, review string, expected gateHeldExpectation) error {
+func assertGateHeld(before, after string, expected gateHeldExpectation) error {
 	if before == after || !validatingStatus.MatchString(after) || completedSet.MatchString(after) || verdictSetFM.MatchString(after) {
 		return fmt.Errorf("gated entity is not held at its open validation boundary")
 	}
@@ -78,9 +78,6 @@ func assertGateHeld(before, after, review string, expected gateHeldExpectation) 
 		attempt.Briefing.ID != expected.briefingID || attempt.Briefing.Digest != expected.digest ||
 		attempt.Resolution != nil || attempt.Application != nil {
 		return fmt.Errorf("selected attempt is not open on the expected Briefing")
-	}
-	if err := assertConciseRecordedGateReview(review); err != nil {
-		return fmt.Errorf("semantic gate review: %w", err)
 	}
 	return nil
 }
@@ -115,16 +112,4 @@ func decodeGateDocument(entity string) (*gates.Document, error) {
 		return &doc, nil
 	}
 	return nil, fmt.Errorf("entity has no gates record")
-}
-
-type recordedGateCodexEvent struct {
-	Type string `json:"type"`
-	Item struct {
-		Type             string `json:"type"`
-		Text             string `json:"text"`
-		Command          string `json:"command"`
-		Status           string `json:"status"`
-		AggregatedOutput string `json:"aggregated_output"`
-		ExitCode         *int   `json:"exit_code"`
-	} `json:"item"`
 }

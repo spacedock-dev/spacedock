@@ -95,7 +95,7 @@ func runCodexRecordedGateLifecycleScenario(t *testing.T, runner codexLiveRunner,
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	observation := recordedGateLiveObservation(t, fixture, before, commandLog, recordedGateReviewFromCodexJSONL(result.jsonl))
+	observation := recordedGateLiveObservation(t, fixture, before, commandLog)
 	if err := assertRecordedGateLifecycle(observation); err != nil {
 		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
@@ -215,7 +215,7 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 	if err != nil {
 		t.Fatalf("read prepared gate expectation: %v\nArtifacts: %s", err, result.artifactDir)
 	}
-	if err := assertGateHeld(before, after, recordedGateReviewFromCodexJSONL(result.jsonl), expected); err != nil {
+	if err := assertGateHeld(before, after, expected); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {

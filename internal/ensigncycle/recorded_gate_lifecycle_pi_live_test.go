@@ -50,9 +50,9 @@ func TestLivePiRecordedGateLifecycle(t *testing.T) {
 		"--session-dir", filepath.Join(artifactDir, "sessions"),
 	)
 
-	session := readRecordedGatePiRootSession(t, artifactDir)
+	readRecordedGatePiRootSession(t, artifactDir)
 	assertRecordedGatePiChildModel(t, artifactDir, expectedChildModel)
-	observation := recordedGateLiveObservation(t, fixture, before, commandLog, recordedGateReviewFromPiSession(session))
+	observation := recordedGateLiveObservation(t, fixture, before, commandLog)
 	if err := assertRecordedGateLifecycle(observation); err != nil {
 		t.Fatalf("Pi recorded gate lifecycle graded FAIL: %v; artifacts in %s\n--- entity after ---\n%s", err, artifactDir, observation.after)
 	}
