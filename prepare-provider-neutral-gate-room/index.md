@@ -138,6 +138,13 @@ gates:
               application:
                 action: none
                 state: not-applicable
+            - id: gate-attempt:s4ykctf21g60dvfgdd6cy9ny-validation-3
+              briefing:
+                id: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-3:revision-1
+                digest: sha256:964d4b12d4fde4b93f278926f319ee69afe2ad101f868b9d05bc3f8c6634f18f
+                digest-domain: canonical-bytes
+                request-digest: sha256:b9b4edefbff51ebf018a66402892076865321b9306726b092a162ff2f4b62db3
+                room-ref: ./review/validation/briefing-3
 review-round:
     id: round:s4ykctf21g60dvfgdd6cy9ny:implementation:13
     stage: implementation

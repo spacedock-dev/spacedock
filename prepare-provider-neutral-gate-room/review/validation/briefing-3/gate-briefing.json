@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-3:revision-1",
+  "question": "Approve s4 at acae980fc145e624d9e04e7ec9f7fdb599585f6e for merge?",
+  "artifacts": [
+    {
+      "id": "artifact:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/647418501e78524f9a6be90f142e2bbdd9a2d933/prepare-provider-neutral-gate-room/gate-review-validation-cycle43.md",
+      "rev": "sha256:aef14bb0e885deb86abf724c7a7823f1134a78c3de983f040689ad8975eb8737",
+      "mediaType": "text/markdown",
+      "summary": "Prepare a provider-neutral gate room from pinned Git sources, present it by room path, record the retained decision evidence, and consume approval exactly once."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://state/647418501e78524f9a6be90f142e2bbdd9a2d933/prepare-provider-neutral-gate-room/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5385180292b805e05606fc5b4c849a80a57773bddd65681eaabee106616c9f18"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-3:revision-1:item-3",
+      "uri": "git-root://main/4738d58381320ebcda82c196b5c7ecd7be9b2410/docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:001d7174b9a01201c284e717127ef26d61c0a3c087200eb92e5dee28fc19fa04"
+    }
+  ]
+}
