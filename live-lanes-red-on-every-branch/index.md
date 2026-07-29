@@ -798,3 +798,38 @@ Both completed-run dispositions are bounded and falsifiable at the exact
 candidate tip. The Sonnet conduct failure is quarantined as non-evidence under
 its existing owner, and the Opus false-negative is repaired without broadening
 generic grammar or lifecycle semantics.
+
+## Stage Report: implementation (Sonnet live-cycle cleanup)
+
+- DONE: Diagnose the sole Sonnet failure in Runtime Live E2E run `30419214076`
+  from retained evidence before changing code.
+  Job `90472359633` passed the journey assertions at `03:21:46Z`; its descendant
+  transcript continued until `03:23:05Z` and observed cleanup deleting `.git`
+  and README before recreating `make-it-work.md`.
+- DONE: Classify the cleanup failure as harness-owned or product-lifecycle-owned
+  using the four-field journey test.
+  The supported journey reached durable terminal state; observable harm was a
+  false-red proof/temp writer; the affected boundary is process-exit/clean-state
+  evidence; the trigger was launcher-only `SIGKILL` after the durable barrier.
+- FAILED: If harness-owned, implement and locally prove only the smallest
+  deterministic cleanup correction; if product-owned, preserve evidence and
+  stop for a separate decision.
+  Commit `90243bf7` drains the existing watcher to zero exit before TempDir
+  cleanup, but both focused Sonnet attempts stopped pre-journey on the expired
+  local OAuth benchmark token (`401`), so real-live proof remains pending.
+- DONE: Preserve the existing se0 CI-greening boundary.
+  One existing harness file changed by 13 additions and two deletions; scenario
+  assertions, prompts, product packages, launcher semantics, and TODOs are
+  unchanged.
+- DONE: Run the deterministic verification gate.
+  Tagged drain/exit tests, gofmt, diff check, `go test ./...`,
+  `go test ./... -race`, and `go vet ./...` all passed.
+- SKIPPED: Run Roborev, push code, trigger CI, merge, or create a task.
+  Those actions remain outside this bounded implementation cycle.
+
+### Summary
+
+The sole red is a harness cleanup race, not a released lifecycle defect. The
+smallest correction now keeps the fixture alive until the resident launcher and
+Claude exit cleanly; independent live validation is still required because the
+local isolated credential expired before either focused journey could start.
