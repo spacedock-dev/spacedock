@@ -108,7 +108,6 @@ type Resolution struct {
 	Decision string   `yaml:"decision" json:"decision"`
 	Reason   string   `yaml:"reason,omitempty" json:"reason,omitempty"`
 	Includes []string `yaml:"includes,omitempty" json:"includes,omitempty"`
-	Adoption string   `yaml:"adoption-note,omitempty" json:"adoption-note,omitempty"`
 }
 
 type Summary struct {
@@ -251,7 +250,7 @@ func Validate(doc *Document) error {
 				return fmt.Errorf("attempt %s has invalid or duplicate briefing binding", a.ID)
 			}
 			briefingIDs[a.Briefing.ID] = true
-			if a.Briefing.DigestDomain != "canonical-bytes" && a.Briefing.DigestDomain != "raw-file-pin" {
+			if a.Briefing.DigestDomain != "canonical-bytes" {
 				return fmt.Errorf("attempt %s has unknown digest-domain %q", a.ID, a.Briefing.DigestDomain)
 			}
 			if a.Briefing.RequestDigest != "" && !digestRE.MatchString(a.Briefing.RequestDigest) {
@@ -266,12 +265,12 @@ func Validate(doc *Document) error {
 				}
 				continue
 			}
-			if a.Briefing.RequestDigest != "" {
-				if a.ProviderEvidence == nil || !digestRE.MatchString(a.ProviderEvidence.ResultDigest) || !digestRE.MatchString(a.ProviderEvidence.PresentedInventoryDigest) {
+			if a.ProviderEvidence != nil {
+				if a.Briefing.RequestDigest == "" ||
+					!digestRE.MatchString(a.ProviderEvidence.ResultDigest) ||
+					!digestRE.MatchString(a.ProviderEvidence.PresentedInventoryDigest) {
 					return fmt.Errorf("provider-closed attempt %s has invalid provider evidence", a.ID)
 				}
-			} else if a.ProviderEvidence != nil {
-				return fmt.Errorf("chat-closed attempt %s cannot carry provider evidence", a.ID)
 			}
 			if err := validateResolution(a.Resolution, a.Briefing.ID); err != nil {
 				return fmt.Errorf("attempt %s: %w", a.ID, err)

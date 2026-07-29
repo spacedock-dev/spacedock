@@ -355,6 +355,20 @@ func runGit(dir string, gitArgs ...string) (bool, string) {
 	return err == nil, string(out)
 }
 
+// runGitOutput keeps successful stderr diagnostics out of machine-readable
+// stdout. On failure it returns stderr so callers retain the useful Git error.
+func runGitOutput(dir string, gitArgs ...string) (bool, string) {
+	cmd := exec.Command("git", append([]string{"-C", dir}, gitArgs...)...)
+	out, err := cmd.Output()
+	if err == nil {
+		return true, string(out)
+	}
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		return false, string(exitErr.Stderr)
+	}
+	return false, err.Error()
+}
+
 // fileExists reports whether path is an existing regular file.
 func fileExists(path string) bool {
 	info, err := os.Stat(path)

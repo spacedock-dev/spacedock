@@ -45,7 +45,7 @@ func readVendoredManifest(t *testing.T, pluginDir string) vendoredManifest {
 // contract carrying D5's single release-stamped "required binary minor" literal.
 func foSharedCoreProse(t *testing.T) []byte {
 	t.Helper()
-	path := filepath.Join(foReferenceDir(t), "first-officer-shared-core.md")
+	path := filepath.Join(repoRoot(t), "skills", "first-officer", "references", "first-officer-shared-core.md")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read %s: %v", path, err)

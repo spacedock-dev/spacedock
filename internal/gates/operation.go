@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	jsoncanonicalizer "github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer"
+	"github.com/spacedock-dev/spacedock/internal/gitsource"
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,13 +34,19 @@ type artifactRef struct {
 	Rev string `json:"rev"`
 }
 
+type briefingArtifact struct {
+	artifactRef
+	MediaType string  `json:"mediaType,omitempty"`
+	Summary   *string `json:"summary,omitempty"`
+}
+
 type briefingManifest struct {
-	Type      string            `json:"type"`
-	Version   string            `json:"version"`
-	ID        string            `json:"id"`
-	Question  string            `json:"question"`
-	Artifacts []artifactRef     `json:"artifacts"`
-	Context   []json.RawMessage `json:"context"`
+	Type      string             `json:"type"`
+	Version   string             `json:"version"`
+	ID        string             `json:"id"`
+	Question  string             `json:"question"`
+	Artifacts []briefingArtifact `json:"artifacts"`
+	Context   []json.RawMessage  `json:"context"`
 }
 
 type providerResult struct {
@@ -55,8 +63,9 @@ type gateRoomRequest struct {
 	Gate     string `json:"gate"`
 	Attempt  string `json:"attempt"`
 	Briefing struct {
-		ID     string `json:"id"`
-		Digest string `json:"digest"`
+		Locator string `json:"locator"`
+		ID      string `json:"id"`
+		Digest  string `json:"digest"`
 	} `json:"briefing"`
 	Actor    string `json:"actor"`
 	Approver string `json:"approver"`
@@ -69,6 +78,30 @@ type presentedInventory struct {
 type presentedItem struct {
 	Type string `json:"type"`
 	artifactRef
+}
+
+func decodeGateRoomRequest(data []byte) (*gateRoomRequest, error) {
+	var request gateRoomRequest
+	if err := decodeAuthorityJSON(data, "parse gate room request", &request); err != nil {
+		return nil, err
+	}
+	return &request, nil
+}
+
+func decodeProviderResult(data []byte) (*providerResult, error) {
+	var result providerResult
+	if err := decodeAuthorityJSON(data, "parse Result", &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func decodePresentedInventory(data []byte) (*presentedInventory, error) {
+	var inventory presentedInventory
+	if err := decodeAuthorityJSON(data, "parse presented inventory", &inventory); err != nil {
+		return nil, err
+	}
+	return &inventory, nil
 }
 
 type resultAssociation struct {
@@ -94,140 +127,70 @@ type resultAssociation struct {
 // held. Lifecycle operation, current-stage target, CAS, and ids are derived by
 // the recorder rather than supplied in a transaction envelope.
 func RecordSemantic(entityPath string, input RecordInput) error {
+	_, err := RecordSemanticSummary(entityPath, input)
+	return err
+}
+
+// RecordSemanticSummary performs one semantic record and returns the exact
+// post-write summary while the entity lock is still held.
+func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error) {
 	if input.Round != "" {
 		if input.BriefingPath == "" || input.LogPath == "" {
-			return fmt.Errorf("gate record --round requires --briefing and --log")
+			return Summary{}, fmt.Errorf("gate record --round requires --briefing and --log")
 		}
 		if input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "" {
-			return fmt.Errorf("gate record --round is incompatible with gate-closing flags")
+			return Summary{}, fmt.Errorf("gate record --round is incompatible with gate-closing flags")
 		}
 		if filepath.Base(input.BriefingPath) != "briefing.json" || filepath.Base(input.LogPath) != "briefing.review.jsonl" {
-			return fmt.Errorf("--round inputs must name briefing.json and briefing.review.jsonl")
+			return Summary{}, fmt.Errorf("--round inputs must name briefing.json and briefing.review.jsonl")
 		}
 		if filepath.Base(entityPath) != "index.md" {
-			return fmt.Errorf("gate record --round requires folder-form entity <slug>/index.md because review artifacts accumulate beside the entity")
+			return Summary{}, fmt.Errorf("gate record --round requires folder-form entity <slug>/index.md because review artifacts accumulate beside the entity")
 		}
 		unlock, err := lockEntity(entityPath)
 		if err != nil {
-			return err
+			return Summary{}, err
 		}
 		defer unlock()
-		return recordRoundLockedWith(entityPath, input, nil, atomicWrite)
+		return Summary{}, recordRoundLockedWith(entityPath, input, nil, atomicWrite)
 	}
 	if input.LogPath != "" || input.FeedbackCyclePath != "" {
-		return fmt.Errorf("--log and --feedback-cycle require --round")
+		return Summary{}, fmt.Errorf("--log and --feedback-cycle require --round")
+	}
+	if input.BriefingPath != "" {
+		return Summary{}, fmt.Errorf("gate record --briefing requires --round")
 	}
 	sources := 0
-	for _, source := range []string{input.BriefingPath, input.RoomPath, input.Decision} {
+	for _, source := range []string{input.RoomPath, input.Decision} {
 		if source != "" {
 			sources++
 		}
 	}
 	if sources != 1 {
-		return fmt.Errorf("gate record requires exactly one of --briefing, --room, or --decision")
+		return Summary{}, fmt.Errorf("gate record requires exactly one of --room or --decision")
 	}
-	if input.BriefingPath != "" && (input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "") || input.RoomPath != "" && (input.Actor != "" || input.Decision != "" || input.Reason != "") {
-		return fmt.Errorf("gate record flags do not match the selected semantic source")
-	}
-	if input.BriefingPath != "" && filepath.Base(input.BriefingPath) != "briefing.json" {
-		return fmt.Errorf("--briefing must name a canonical package manifest named briefing.json")
+	if input.RoomPath != "" && (input.Actor != "" || input.Decision != "" || input.Reason != "") {
+		return Summary{}, fmt.Errorf("gate record flags do not match the selected semantic source")
 	}
 	unlock, err := lockEntity(entityPath)
 	if err != nil {
-		return err
+		return Summary{}, err
 	}
 	defer unlock()
-	if input.BriefingPath != "" {
-		return recordBriefingLocked(entityPath, input.BriefingPath)
-	}
+	var recordErr error
 	if input.RoomPath != "" {
-		return recordRoomLocked(entityPath, input)
+		recordErr = recordRoomLocked(entityPath, input)
+	} else {
+		recordErr = recordChatLocked(entityPath, input)
 	}
-	return recordChatLocked(entityPath, input)
-}
-
-func RecordBriefing(entityPath, briefingPath string) error {
-	return RecordSemantic(entityPath, RecordInput{BriefingPath: briefingPath})
-}
-
-func recordBriefingLocked(entityPath, briefingPath string) error {
-	binding, err := bindingFromManifest(entityPath, briefingPath)
+	if recordErr != nil {
+		return Summary{}, recordErr
+	}
+	doc, _, err := Read(entityPath)
 	if err != nil {
-		return err
+		return Summary{}, err
 	}
-	stage, err := entityStatus(entityPath)
-	if err != nil {
-		return err
-	}
-	doc, oldNode, readErr := Read(entityPath)
-	if readErr != nil && !strings.Contains(readErr.Error(), "no gates record") {
-		return readErr
-	}
-	if doc == nil {
-		doc = &Document{Version: 1}
-	}
-	record, lookupErr := recordForStage(doc, stage)
-	if lookupErr != nil && !strings.Contains(lookupErr.Error(), "no logical gate") {
-		return lookupErr
-	}
-	if record == nil {
-		gateID, attemptID, err := initialIDs(binding.ID, entityPath, stage)
-		if err != nil {
-			return err
-		}
-		if err := validateGateRoomRequest(briefingPath, binding, gateID, attemptID); err != nil {
-			return err
-		}
-		record = &GateRecord{ID: gateID, Stage: stage, Attempts: []Attempt{{ID: attemptID, Briefing: binding}}}
-		doc.Records = append(doc.Records, *record)
-		doc.Current = Selection{Gate: gateID}
-		return writeDocument(entityPath, oldNode, doc)
-	}
-	previous := &record.Attempts[len(record.Attempts)-1]
-	if previous.Resolution == nil {
-		if err := validateGateRoomRequest(briefingPath, binding, record.ID, previous.ID); err != nil {
-			return err
-		}
-		if (previous.Briefing.RequestDigest != "" || binding.RequestDigest != "") && !sameBinding(previous.Briefing, binding) {
-			return fmt.Errorf("open gate room binding is frozen and cannot be rebound")
-		}
-		selectionChanged := doc.Current.Gate != record.ID
-		doc.Current.Gate = record.ID
-		if sameBinding(previous.Briefing, binding) {
-			if !selectionChanged {
-				return nil
-			}
-		} else {
-			previous.Briefing = binding
-		}
-		if err := Validate(doc); err != nil {
-			return err
-		}
-		if err := ValidateTransition(oldNode, doc); err != nil {
-			return err
-		}
-		return writeDocument(entityPath, oldNode, doc)
-	}
-	nextID, err := successorAttemptID(previous.ID)
-	if err != nil {
-		return err
-	}
-	if err := validateGateRoomRequest(briefingPath, binding, record.ID, nextID); err != nil {
-		return err
-	}
-	if previous.Application != nil && previous.Application.State == "pending" {
-		previous.Application.State = "superseded"
-	}
-	next := Attempt{ID: nextID, Briefing: binding}
-	record.Attempts = append(record.Attempts, next)
-	doc.Current.Gate = record.ID
-	if err := Validate(doc); err != nil {
-		return err
-	}
-	if err := ValidateTransition(oldNode, doc); err != nil {
-		return err
-	}
-	return writeDocument(entityPath, oldNode, doc)
+	return CurrentSummary(doc), nil
 }
 
 func recordRoomLocked(entityPath string, input RecordInput) error {
@@ -235,11 +198,21 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	if err != nil {
 		return err
 	}
+	workflowDir := input.WorkflowDir
+	if workflowDir == "" {
+		workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
+	}
+	if err := validateRetainedAuthorityExcept(entityPath, workflowDir, doc, record.ID, attempt.ID); err != nil {
+		return err
+	}
 	if attempt.Resolution != nil {
 		return fmt.Errorf("attempt %s is frozen closed", attempt.ID)
 	}
 	if !digestRE.MatchString(attempt.Briefing.Digest) {
 		return fmt.Errorf("open attempt %s has no verifiable digest", attempt.ID)
+	}
+	if attempt.Briefing.RequestDigest == "" {
+		return fmt.Errorf("current attempt has no frozen request digest for room-backed recording")
 	}
 	roomPath, err := filepath.Abs(input.RoomPath)
 	if err != nil {
@@ -260,12 +233,12 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	if err != nil {
 		return fmt.Errorf("canonicalize gate room request: %w", err)
 	}
-	if attempt.Briefing.RequestDigest == "" || requestDigest != attempt.Briefing.RequestDigest {
+	if requestDigest != attempt.Briefing.RequestDigest {
 		return fmt.Errorf("gate room request does not match the frozen request digest")
 	}
-	var request gateRoomRequest
-	if err := json.Unmarshal(requestBytes, &request); err != nil {
-		return fmt.Errorf("parse gate room request: %w", err)
+	request, err := decodeGateRoomRequest(requestBytes)
+	if err != nil {
+		return err
 	}
 	if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
 		request.Gate != record.ID || request.Attempt != attempt.ID ||
@@ -278,13 +251,13 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	if err != nil {
 		return fmt.Errorf("read provider Result: %w", err)
 	}
-	var result providerResult
-	if err := json.Unmarshal(resultBytes, &result); err != nil {
-		return fmt.Errorf("parse Result: %w", err)
+	result, err := decodeProviderResult(resultBytes)
+	if err != nil {
+		return err
 	}
 	var envelope map[string]json.RawMessage
-	if err := json.Unmarshal(resultBytes, &envelope); err != nil {
-		return fmt.Errorf("parse Result envelope: %w", err)
+	if err := decodeAuthorityJSON(resultBytes, "parse Result envelope", &envelope); err != nil {
+		return err
 	}
 	for _, field := range []string{"status", "binding", "actor", "approver", "resolutionId"} {
 		if _, present := envelope[field]; present {
@@ -317,19 +290,32 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	if err != nil {
 		return err
 	}
+	roots := gitsource.Roots{Main: workflowDir, State: filepath.Dir(entityPath)}
+	gitItems := 0
+	for _, item := range canonicalItems {
+		if strings.HasPrefix(item.URI, "git-root://") {
+			gitItems++
+			if _, err := gitsource.Resolve(roots, item.URI, item.Rev); err != nil {
+				return fmt.Errorf("resolve selected source: %w", err)
+			}
+		}
+	}
+	if gitItems != 0 && gitItems != len(canonicalItems) {
+		return fmt.Errorf("canonical Briefing mixes Git-root and non-Git selected source identities")
+	}
 	presentedBytes, err := os.ReadFile(filepath.Join(roomPath, "provider", "presented-inventory.json"))
 	if err != nil {
 		return fmt.Errorf("read presented inventory: %w", err)
 	}
-	var presented presentedInventory
-	if err := json.Unmarshal(presentedBytes, &presented); err != nil {
-		return fmt.Errorf("parse presented inventory: %w", err)
-	}
-	association, err := deriveAssociation(resultBytes, &result, &presented, request.Approver, attempt.Briefing, canonicalItems)
+	presented, err := decodePresentedInventory(presentedBytes)
 	if err != nil {
 		return err
 	}
-	if err := verifyAssociation(resultBytes, &result, association, request.Approver, attempt.Briefing, canonicalItems); err != nil {
+	association, err := deriveAssociation(resultBytes, result, presented, request.Approver, attempt.Briefing, canonicalItems)
+	if err != nil {
+		return err
+	}
+	if err := verifyAssociation(resultBytes, result, association, request.Approver, attempt.Briefing, canonicalItems); err != nil {
 		return err
 	}
 	resolution := result.Resolution
@@ -362,6 +348,13 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 	}
 	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath)
 	if err != nil {
+		return err
+	}
+	workflowDir := input.WorkflowDir
+	if workflowDir == "" {
+		workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
+	}
+	if err := validateRetainedAuthority(entityPath, workflowDir, doc); err != nil {
 		return err
 	}
 	if attempt.Resolution != nil {
@@ -620,9 +613,6 @@ func deriveAssociation(resultBytes []byte, result *providerResult, presented *pr
 }
 
 func verifyProviderResolution(result *providerResult) error {
-	if result.Resolution.Adoption != "" {
-		return fmt.Errorf("binding Result cannot carry adoption provenance")
-	}
 	if result.Resolution.Briefing != result.Briefing {
 		return fmt.Errorf("provider Resolution does not bind its provider Briefing")
 	}
@@ -639,37 +629,6 @@ func verifyProviderResolution(result *providerResult) error {
 		}
 	}
 	return validateResolution(&result.Resolution, result.Briefing)
-}
-
-func initialIDs(briefingID, entityPath, stage string) (string, string, error) {
-	if strings.HasPrefix(briefingID, "briefing:") {
-		body := strings.TrimPrefix(briefingID, "briefing:")
-		if marker := strings.Index(body, ":attempt-"); marker > 0 {
-			base := body[:marker]
-			parts := strings.Split(base, ":")
-			attemptNumber := strings.SplitN(body[marker+len(":attempt-"):], ":", 2)[0]
-			if len(parts) >= 2 && parts[len(parts)-1] == stage {
-				if _, err := strconv.Atoi(attemptNumber); err == nil {
-					entity := parts[len(parts)-2]
-					return "gate:" + base, "gate-attempt:" + entity + "-" + stage + "-1", nil
-				}
-			}
-		}
-	}
-	entity := strings.TrimSuffix(filepath.Base(entityPath), filepath.Ext(entityPath))
-	if entity == "index" {
-		entity = filepath.Base(filepath.Dir(entityPath))
-	}
-	entity = strings.Trim(strings.Map(func(r rune) rune {
-		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' {
-			return r
-		}
-		return '-'
-	}, entity), "-")
-	if entity == "" || stage == "" {
-		return "", "", fmt.Errorf("cannot derive gate identity from entity and Briefing")
-	}
-	return "gate:" + entity + ":" + stage, "gate-attempt:" + entity + "-" + stage + "-1", nil
 }
 
 func chatResolutionID(gateID, attemptID string) string {
@@ -709,52 +668,16 @@ func successorAttemptID(previous string) (string, error) {
 	return previous[:cut+1] + strconv.Itoa(sequence+1), nil
 }
 
-func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
-	data, err := os.ReadFile(briefingPath)
-	if err != nil {
-		return Briefing{}, err
-	}
-	manifest, err := parseBriefingManifest(data)
-	if err != nil {
-		return Briefing{}, err
-	}
-	digest, err := CanonicalDigest(data)
-	if err != nil {
-		return Briefing{}, fmt.Errorf("canonicalize briefing: %w", err)
-	}
-	roomRef, err := filepath.Rel(filepath.Dir(entityPath), filepath.Dir(briefingPath))
-	if err != nil {
-		return Briefing{}, fmt.Errorf("resolve briefing room: %w", err)
-	}
-	roomRef = filepath.ToSlash(roomRef)
-	if roomRef == "." {
-		roomRef = "./"
-	} else if !strings.HasPrefix(roomRef, ".") {
-		roomRef = "./" + roomRef
-	}
-	binding := Briefing{ID: manifest.ID, Digest: digest, DigestDomain: "canonical-bytes", RoomRef: roomRef}
-	requestBytes, err := os.ReadFile(filepath.Join(filepath.Dir(briefingPath), "request.json"))
-	if err == nil {
-		if _, err := canonicalPresentationItems(manifest); err != nil {
-			return Briefing{}, err
-		}
-		binding.RequestDigest, err = CanonicalDigest(requestBytes)
-		if err != nil {
-			return Briefing{}, fmt.Errorf("canonicalize gate room request: %w", err)
-		}
-	} else if !os.IsNotExist(err) {
-		return Briefing{}, fmt.Errorf("read gate room request: %w", err)
-	}
-	return binding, nil
-}
-
 func validateGateRoomRequest(briefingPath string, binding Briefing, gateID, attemptID string) error {
 	if binding.RequestDigest == "" {
 		return nil
 	}
-	requestBytes, err := os.ReadFile(filepath.Join(filepath.Dir(briefingPath), "request.json"))
+	_, requestBytes, request, err := requestForBriefing(briefingPath)
 	if err != nil {
-		return fmt.Errorf("read gate room request: %w", err)
+		return err
+	}
+	if request == nil {
+		return fmt.Errorf("request-backed Briefing has no request.json")
 	}
 	requestDigest, err := CanonicalDigest(requestBytes)
 	if err != nil {
@@ -762,10 +685,6 @@ func validateGateRoomRequest(briefingPath string, binding Briefing, gateID, atte
 	}
 	if requestDigest != binding.RequestDigest {
 		return fmt.Errorf("gate room request does not match the bound request digest")
-	}
-	var request gateRoomRequest
-	if err := json.Unmarshal(requestBytes, &request); err != nil {
-		return fmt.Errorf("parse gate room request: %w", err)
 	}
 	if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
 		request.Gate != gateID || request.Attempt != attemptID ||
@@ -780,17 +699,9 @@ func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManife
 	if binding.DigestDomain != "canonical-bytes" {
 		return nil, fmt.Errorf("Result association requires a canonical-bytes Briefing binding")
 	}
-	path := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef), "briefing.json")
-	data, err := os.ReadFile(path)
+	data, _, err := boundBriefingBytes(entityPath, binding)
 	if err != nil {
-		return nil, fmt.Errorf("read bound canonical Briefing: %w", err)
-	}
-	digest, err := CanonicalDigest(data)
-	if err != nil {
-		return nil, fmt.Errorf("canonicalize bound Briefing: %w", err)
-	}
-	if digest != binding.Digest {
-		return nil, fmt.Errorf("bound canonical Briefing bytes do not match the frozen digest")
+		return nil, err
 	}
 	manifest, err := parseBriefingManifest(data)
 	if err != nil {
@@ -799,13 +710,164 @@ func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManife
 	if manifest.ID != binding.ID {
 		return nil, fmt.Errorf("bound canonical Briefing identity does not match the current binding")
 	}
+	if binding.RequestDigest != "" {
+		if err := validatePreparedSummary(manifest); err != nil {
+			return nil, err
+		}
+	}
 	return manifest, nil
+}
+
+func boundBriefingBytes(entityPath string, binding Briefing) ([]byte, string, error) {
+	retained := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
+	briefingPath := retained
+	if binding.RequestDigest != "" {
+		requestBytes, err := os.ReadFile(filepath.Join(retained, "request.json"))
+		if err != nil {
+			return nil, "", fmt.Errorf("read bound gate room request: %w", err)
+		}
+		requestDigest, err := CanonicalDigest(requestBytes)
+		if err != nil {
+			return nil, "", fmt.Errorf("canonicalize bound gate room request: %w", err)
+		}
+		if requestDigest != binding.RequestDigest {
+			return nil, "", fmt.Errorf("bound gate room request does not match the frozen request digest")
+		}
+		request, err := decodeGateRoomRequest(requestBytes)
+		if err != nil {
+			return nil, "", err
+		}
+		briefingPath, err = resolveBriefingLocator(retained, request.Briefing.Locator)
+		if err != nil {
+			return nil, "", err
+		}
+		if request.Briefing.ID != binding.ID || request.Briefing.Digest != binding.Digest {
+			return nil, "", fmt.Errorf("bound gate room request does not match the frozen Briefing identity and digest")
+		}
+	}
+	data, err := os.ReadFile(briefingPath)
+	if err != nil {
+		return nil, "", fmt.Errorf("read bound canonical Briefing: %w", err)
+	}
+	digest, err := CanonicalDigest(data)
+	if err != nil {
+		return nil, "", fmt.Errorf("canonicalize bound Briefing: %w", err)
+	}
+	if digest != binding.Digest {
+		return nil, "", fmt.Errorf("bound canonical Briefing bytes do not match the frozen digest")
+	}
+	return data, briefingPath, nil
+}
+
+func requestForBriefing(briefingPath string) (string, []byte, *gateRoomRequest, error) {
+	briefingPath, err := filepath.Abs(briefingPath)
+	if err != nil {
+		return "", nil, nil, err
+	}
+	if resolved, resolveErr := filepath.EvalSymlinks(briefingPath); resolveErr == nil {
+		briefingPath = resolved
+	}
+	for room := filepath.Dir(briefingPath); ; room = filepath.Dir(room) {
+		requestPath := filepath.Join(room, "request.json")
+		requestBytes, readErr := os.ReadFile(requestPath)
+		if readErr == nil {
+			locators := requestLocatorCandidates(requestBytes)
+			for _, locator := range locators {
+				located, locateErr := resolveBriefingLocator(room, locator)
+				if locateErr == nil && filepath.Clean(located) == filepath.Clean(briefingPath) {
+					request, err := decodeGateRoomRequest(requestBytes)
+					if err != nil {
+						return "", nil, nil, err
+					}
+					return room, requestBytes, request, nil
+				}
+			}
+		}
+		if readErr != nil && !os.IsNotExist(readErr) {
+			return "", nil, nil, fmt.Errorf("read gate room request: %w", readErr)
+		}
+		parent := filepath.Dir(room)
+		if parent == room {
+			return "", nil, nil, nil
+		}
+	}
+}
+
+func requestLocatorCandidates(data []byte) []string {
+	var locators []string
+	for _, briefing := range duplicatePreservingObjectValues(data, "briefing") {
+		for _, raw := range duplicatePreservingObjectValues(briefing, "locator") {
+			var locator string
+			if json.Unmarshal(raw, &locator) == nil {
+				locators = append(locators, locator)
+			}
+		}
+	}
+	return locators
+}
+
+// duplicatePreservingObjectValues is only a membership probe. Matching request
+// bytes still pass through decodeGateRoomRequest's strict duplicate rejection.
+func duplicatePreservingObjectValues(data []byte, want string) []json.RawMessage {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	token, err := decoder.Token()
+	if err != nil || token != json.Delim('{') {
+		return nil
+	}
+	var values []json.RawMessage
+	for decoder.More() {
+		keyToken, err := decoder.Token()
+		if err != nil {
+			return values
+		}
+		key, ok := keyToken.(string)
+		if !ok {
+			return values
+		}
+		var raw json.RawMessage
+		if err := decoder.Decode(&raw); err != nil {
+			return values
+		}
+		if key == want {
+			values = append(values, raw)
+		}
+	}
+	return values
+}
+
+func resolveBriefingLocator(room, locator string) (string, error) {
+	if locator == "" || strings.Contains(locator, "\\") || strings.HasPrefix(locator, "/") ||
+		path.Clean(locator) != locator || locator == "." || locator == ".." || strings.HasPrefix(locator, "../") {
+		return "", fmt.Errorf("gate room request has an invalid canonical Briefing locator")
+	}
+	roomAbs, err := filepath.Abs(room)
+	if err != nil {
+		return "", err
+	}
+	candidate := filepath.Join(roomAbs, filepath.FromSlash(locator))
+	realRoom, err := filepath.EvalSymlinks(roomAbs)
+	if err != nil {
+		return "", fmt.Errorf("resolve gate room: %w", err)
+	}
+	realCandidate, err := filepath.EvalSymlinks(candidate)
+	if err != nil {
+		return "", fmt.Errorf("resolve canonical Briefing locator: %w", err)
+	}
+	rel, err := filepath.Rel(realRoom, realCandidate)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("canonical Briefing locator escapes the gate room")
+	}
+	info, err := os.Stat(realCandidate)
+	if err != nil || !info.Mode().IsRegular() {
+		return "", fmt.Errorf("canonical Briefing locator does not name a regular file")
+	}
+	return realCandidate, nil
 }
 
 func parseBriefingManifest(data []byte) (*briefingManifest, error) {
 	var manifest briefingManifest
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		return nil, fmt.Errorf("parse Briefing: %w", err)
+	if err := decodeAuthorityJSON(data, "parse Briefing", &manifest); err != nil {
+		return nil, err
 	}
 	if manifest.Type != "Briefing" || manifest.Version != "1" || manifest.ID == "" || strings.TrimSpace(manifest.Question) == "" || len(manifest.Artifacts) == 0 {
 		return nil, fmt.Errorf("--briefing must name a complete Briefing v1")
@@ -828,7 +890,7 @@ func canonicalPresentationItems(manifest *briefingManifest) ([]presentedItem, er
 	inventory := make([]presentedItem, 0, len(manifest.Artifacts)+len(references))
 	seen := make(map[string]bool, len(inventory)+len(references))
 	for _, artifact := range manifest.Artifacts {
-		inventory = append(inventory, presentedItem{Type: "Artifact", artifactRef: artifact})
+		inventory = append(inventory, presentedItem{Type: "Artifact", artifactRef: artifact.artifactRef})
 		seen[artifact.ID] = true
 	}
 	for _, reference := range references {
@@ -849,6 +911,7 @@ func referenceInventory(nodes []json.RawMessage) ([]artifactRef, error) {
 			ID       string            `json:"id"`
 			URI      string            `json:"uri"`
 			Rev      string            `json:"rev"`
+			Summary  json.RawMessage   `json:"summary"`
 			Children []json.RawMessage `json:"children"`
 		}
 		if err := json.Unmarshal(raw, &node); err != nil {
@@ -857,6 +920,9 @@ func referenceInventory(nodes []json.RawMessage) ([]artifactRef, error) {
 		if node.Type == "Reference" {
 			if node.ID == "" || node.URI == "" || !digestRE.MatchString(node.Rev) {
 				return nil, fmt.Errorf("canonical Briefing has an incomplete or duplicate Reference binding")
+			}
+			if node.Summary != nil {
+				return nil, fmt.Errorf("canonical Briefing References must not carry summaries")
 			}
 			references = append(references, artifactRef{ID: node.ID, URI: node.URI, Rev: node.Rev})
 		}
@@ -917,6 +983,9 @@ func RawDigest(data []byte) string {
 }
 
 func CanonicalDigest(data []byte) (string, error) {
+	if err := rejectDuplicateMembers(data); err != nil {
+		return "", err
+	}
 	canonical, err := jsoncanonicalizer.Transform(data)
 	if err != nil {
 		return "", err

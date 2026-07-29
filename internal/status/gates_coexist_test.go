@@ -30,7 +30,7 @@ func TestStatusTextAndJSONProjectApprovedPendingApplication(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(room, "briefing.json"), briefing, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	body := "---\nid: task\nstatus: ideation\ntitle: Task\ngates:\n  version: 1\n  current: {gate: 'gate:task:ideation'}\n  records:\n    - id: gate:task:ideation\n      stage: ideation\n      attempts:\n        - id: attempt:task-1\n          briefing: {id: 'briefing:task:1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1}\n          resolution: {type: Resolution, id: 'resolution:task-1', briefing: 'briefing:task:1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: approve}\n          application: {action: advance, target-stage: implementation, state: pending, blockers: []}\n---\n# Task\n"
+	body := "---\nid: task\nstatus: ideation\ntitle: Task\ngates:\n  version: 1\n  current: {gate: 'gate:task:ideation'}\n  records:\n    - id: gate:task:ideation\n      stage: ideation\n      attempts:\n        - id: attempt:task-1\n          briefing: {id: 'briefing:task:1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1/briefing.json}\n          resolution: {type: Resolution, id: 'resolution:task-1', briefing: 'briefing:task:1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: approve}\n          application: {action: advance, target-stage: implementation, state: pending, blockers: []}\n---\n# Task\n"
 	if err := os.WriteFile(filepath.Join(root, "task.md"), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}

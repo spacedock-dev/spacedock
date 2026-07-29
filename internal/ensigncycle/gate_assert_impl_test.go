@@ -2,7 +2,10 @@ package ensigncycle
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
@@ -16,7 +19,43 @@ var (
 	verdictSetFM     = regexp.MustCompile(`(?im)^verdict:[^\S\n]*\S.*$`)
 )
 
-func assertGateHeld(before, after, review string) error {
+type gateHeldExpectation struct {
+	gateID, attemptID, briefingID, digest string
+}
+
+func recordedGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectation, error) {
+	requests, err := filepath.Glob(filepath.Join(filepath.Dir(fixture.entity), "review", "validation", "briefing-*", "request.json"))
+	if err != nil {
+		return gateHeldExpectation{}, err
+	}
+	if len(requests) != 1 {
+		return gateHeldExpectation{}, fmt.Errorf("prepared fixture request count = %d, want 1", len(requests))
+	}
+	body, err := os.ReadFile(requests[0])
+	if err != nil {
+		return gateHeldExpectation{}, err
+	}
+	var request struct {
+		Gate     string `json:"gate"`
+		Attempt  string `json:"attempt"`
+		Briefing struct {
+			ID     string `json:"id"`
+			Digest string `json:"digest"`
+		} `json:"briefing"`
+	}
+	if err := json.Unmarshal(body, &request); err != nil {
+		return gateHeldExpectation{}, fmt.Errorf("decode prepared request: %w", err)
+	}
+	if request.Gate == "" || request.Attempt == "" || request.Briefing.ID == "" || request.Briefing.Digest == "" {
+		return gateHeldExpectation{}, fmt.Errorf("prepared request is incomplete")
+	}
+	return gateHeldExpectation{
+		gateID: request.Gate, attemptID: request.Attempt,
+		briefingID: request.Briefing.ID, digest: request.Briefing.Digest,
+	}, nil
+}
+
+func assertGateHeld(before, after string, expected gateHeldExpectation) error {
 	if before == after || !validatingStatus.MatchString(after) || completedSet.MatchString(after) || verdictSetFM.MatchString(after) {
 		return fmt.Errorf("gated entity is not held at its open validation boundary")
 	}
@@ -31,17 +70,14 @@ func assertGateHeld(before, after, review string) error {
 			break
 		}
 	}
-	if selected == nil || selected.ID != "gate:docs-dev:3k:validation" || selected.Stage != "validation" || len(selected.Attempts) == 0 {
+	if selected == nil || selected.ID != expected.gateID || selected.Stage != "validation" || len(selected.Attempts) == 0 {
 		return fmt.Errorf("selected validation gate has no attempt")
 	}
 	attempt := selected.Attempts[len(selected.Attempts)-1]
-	if attempt.ID != "gate-attempt:3k-validation-1" ||
-		attempt.Briefing.ID != recordedGateBriefingID || attempt.Briefing.Digest != recordedGateDigest ||
+	if attempt.ID != expected.attemptID ||
+		attempt.Briefing.ID != expected.briefingID || attempt.Briefing.Digest != expected.digest ||
 		attempt.Resolution != nil || attempt.Application != nil {
 		return fmt.Errorf("selected attempt is not open on the expected Briefing")
-	}
-	if err := assertConciseRecordedGateReview(review); err != nil {
-		return fmt.Errorf("semantic gate review: %w", err)
 	}
 	return nil
 }
@@ -76,16 +112,4 @@ func decodeGateDocument(entity string) (*gates.Document, error) {
 		return &doc, nil
 	}
 	return nil, fmt.Errorf("entity has no gates record")
-}
-
-type recordedGateCodexEvent struct {
-	Type string `json:"type"`
-	Item struct {
-		Type             string `json:"type"`
-		Text             string `json:"text"`
-		Command          string `json:"command"`
-		Status           string `json:"status"`
-		AggregatedOutput string `json:"aggregated_output"`
-		ExitCode         *int   `json:"exit_code"`
-	} `json:"item"`
 }

@@ -16,7 +16,7 @@ import (
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
 var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 triage=all-fixed entries=4$`)
 
-const rejectionRound2BriefingID = "briefing:rejection-task:validation:round-2"
+const rejectionPreparedBriefingID = "briefing:rejection-task:validation:attempt-1:revision-1"
 
 func rejectionRoundArtifactArg(flag, filename string) *regexp.Regexp {
 	return regexp.MustCompile(`--` + regexp.QuoteMeta(flag) + `(?:=|\s+)['"]?(?:[^ \t\r\n'";&|]*/)?rejection-task/inputs/` +
@@ -150,8 +150,8 @@ func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
 		return fmt.Errorf("validation/1 advisory round was retained as a gate attempt")
 	}
 	if attempt.ID != "gate-attempt:rejection-task-validation-1" ||
-		attempt.Briefing.ID != rejectionRound2BriefingID {
-		return fmt.Errorf("selected validation gate is not bound to the expected round-2 Briefing")
+		attempt.Briefing.ID != rejectionPreparedBriefingID {
+		return fmt.Errorf("selected validation gate is not bound to the expected prepared Briefing")
 	}
 	if attempt.Resolution != nil || attempt.Application != nil {
 		return fmt.Errorf("final round-2 validation gate is not open")
@@ -273,16 +273,25 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
 		t.Fatalf("recorded-round oracle rejected valid final validation state without a gate: %v", err)
 	}
-	round2BriefingPath := filepath.Join(root, "rejection-task", "inputs", "gate-validation", "briefing.json")
-	writeFile(t, round2BriefingPath, fmt.Sprintf(
-		`{"type":"Briefing","version":"1","id":"%s","question":"Does the second validation confirm the fix marker is present and PASS?","artifacts":[{"id":"artifact:rejection-candidate","uri":"../../candidate.txt","mediaType":"text/plain","rev":"%s"}]}`+"\n",
-		rejectionRound2BriefingID, gates.RawDigest([]byte(rejectionCandidate)),
-	))
-	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
-		BriefingPath: round2BriefingPath,
-		WorkflowDir:  root,
-	}); err != nil {
-		t.Fatalf("bind later round-2 validation gate: %v", err)
+	gateReviewPath := filepath.Join(root, "rejection-task", "inputs", "gate-validation", "gate-review.md")
+	writeFile(t, gateReviewPath, "# Rejection Task — validation review\n\nThe corrected candidate is ready for its prepared decision gate.\n")
+	gateReviewRel, err := filepath.Rel(root, gateReviewPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	git(t, root, "add", "--", gateReviewRel)
+	git(t, root, "commit", "-q", "-m", "add prepared validation review", "--", gateReviewRel)
+	prepared, err := gates.Prepare(entityPath, gates.PrepareInput{
+		WorkflowDir: root,
+		Question:    "Does the second validation confirm the fix marker is present and PASS?",
+		Artifact:    gateReviewPath,
+		Summary:     "The corrected rejection-flow candidate is ready for a decision.",
+	})
+	if err != nil {
+		t.Fatalf("prepare later validation gate: %v", err)
+	}
+	if prepared.Briefing != rejectionPreparedBriefingID || prepared.State != "open" {
+		t.Fatalf("prepared later validation gate=%#v", prepared)
 	}
 	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
 		t.Fatalf("recorded-round oracle rejected later open round-2 validation gate: %v", err)
@@ -290,7 +299,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	openGateEntity := readFile(t, entityPath)
 	for _, control := range []struct{ entity, want string }{
 		{strings.Replace(openGateEntity, "              briefing:\n", "              state: open\n              briefing:\n", 1), "malformed final validation gate"},
-		{strings.Replace(openGateEntity, rejectionRound2BriefingID, rejectionBriefingID, 1), "validation/1 advisory round was retained as a gate attempt"},
+		{strings.Replace(openGateEntity, rejectionPreparedBriefingID, rejectionBriefingID, 1), "validation/1 advisory round was retained as a gate attempt"},
 		{strings.ReplaceAll(openGateEntity, "gate:rejection-task:validation", "gate:rejection-task:wrong"), "final gate selection does not identify"},
 	} {
 		writeFile(t, entityPath, control.entity)

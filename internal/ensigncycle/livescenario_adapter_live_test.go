@@ -14,12 +14,38 @@ import (
 )
 
 func assertRecordedGateHoldLog(log string) error {
-	bind, commit, head := strings.Index(log, "exit=0\tgate record recorded-gate-task --briefing "), strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task"), strings.LastIndex(log, "state-head\t")
-	if bind < 0 || commit < bind || head < commit || strings.Count(log, "exit=0\tgate record recorded-gate-task --briefing ") != 1 ||
-		strings.Contains(log[bind:], " --decision ") || strings.Contains(log[bind:], "gate consume recorded-gate-task") || strings.Contains(log[bind:], "dispatch build ") {
+	const prepareToken = "exit=0\tgate prepare recorded-gate-task "
+	prepare, commit, head := strings.Index(log, prepareToken), strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task"), strings.LastIndex(log, "state-head\t")
+	if prepare < 0 || commit < prepare || head < commit || strings.Count(log, prepareToken) != 1 ||
+		strings.Contains(log[prepare:], " --decision ") || strings.Contains(log[prepare:], "gate consume recorded-gate-task") || strings.Contains(log[prepare:], "dispatch build ") {
 		return errGraded("gate hold crossed its committed no-authority boundary")
 	}
 	return nil
+}
+
+func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
+	const prepared = "exit=1\tgate prepare recorded-gate-task validation\n" +
+		"exit=0\tgate prepare recorded-gate-task validation\n" +
+		"exit=0\tstate commit recorded-gate-task\n" +
+		"state-head\tabc123\n"
+	if err := assertRecordedGateHoldLog(prepared); err != nil {
+		t.Fatalf("prepare-first hold log rejected: %v", err)
+	}
+
+	for name, mutation := range map[string]string{
+		"retired bind":      strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation", "exit=0\tgate record recorded-gate-task --briefing briefing.md", 1),
+		"missing commit":    strings.Replace(prepared, "exit=0\tstate commit recorded-gate-task\n", "", 1),
+		"decision":          prepared + "exit=0\tgate record recorded-gate-task --decision approve\n",
+		"consume":           prepared + "exit=0\tgate consume recorded-gate-task\n",
+		"successor build":   prepared + "exit=0\tdispatch build successor\n",
+		"duplicate prepare": prepared + "exit=0\tgate prepare recorded-gate-task validation\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := assertRecordedGateHoldLog(mutation); err == nil {
+				t.Fatal("mutated hold log unexpectedly accepted")
+			}
+		})
+	}
 }
 
 // claudeRunnerAdapter wraps the existing package-private claudeLiveRunner (the
@@ -56,15 +82,21 @@ func TestLivePrimitiveRunsAgainstClaudeAdapter(t *testing.T) {
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
 	runner = runner.withStubPATH(shimDir).(claudeLiveRunner)
 	adapter := claudeRunnerAdapter{t: t, runner: runner}
+	var fixture recordedGateFixture
 
 	sc := livescenario.Scenario{
 		Name:    "gate-held-via-primitive",
 		Runbook: gatePrompt(dir),
 		Setup: func(dir string) (string, error) {
-			return writeRecordedGateFixtureAt(t, dir).entity, nil
+			fixture = writePreparedRecordedGateFixtureAt(t, dir)
+			return fixture.entity, nil
 		},
 		Assert: func(before, after livescenario.EntityState, observed string) error {
-			if err := assertGateHeld(before.Body, after.Body, recordedGateReviewFromClaudeStream(observed)); err != nil {
+			expected, err := recordedGateHeldExpectation(fixture)
+			if err != nil {
+				return errGraded(err.Error())
+			}
+			if err := assertGateHeld(before.Body, after.Body, expected); err != nil {
 				return errGraded(err.Error())
 			}
 			if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {

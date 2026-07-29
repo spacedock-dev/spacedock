@@ -18,7 +18,7 @@ A chat gate review has one concise evidence spine. The first officer emits it be
 ```text
 Capability/change: replace sleep-based waits with event polling.
 Test and evidence: login is stable across 50 runs; AC-2 retry has no covering test.
-Reviewed snapshot: Briefing `...` at digest `sha256:...`.
+Reviewed snapshot: Briefing `...` at compact digest `sha256:1a2b3c4d…`.
 Findings: material: AC-2 cites a test file that does not exist.
 Recommendation: revise to add the retry scenario.
 Decision ask: approve to close, revise to bounce back, or hold at review.
@@ -34,10 +34,19 @@ host's own audit system.
 
 ## How the review reaches you
 
-Gate reviews appear in chat by default. A workflow or session can opt into a review provider that presents the same canonical Briefing as a blocking review and returns an exact retained Result.
-The scaffold prepares one gate room that binds the request authority, gate attempt, canonical Briefing, and fixed provider outputs. Binding the attempt freezes both the Briefing digest and the request digest. The first officer passes only that room to the provider. The provider must show the Briefing's question, every Artifact, and every recursively reached Reference at its recorded revision. The recorder derives the complete presentation association from the room; the first officer does not assemble it.
+Gate reviews appear in chat by default. Before presenting one, the first officer commits
+newly authored selected sources and calls `gate prepare` with its question, primary
+Markdown review, exact concise summary, and References. Spacedock authors and binds a
+two-file recorder-ready room; the first officer commits that entity-owned room. The
+selected source payloads remain singular local Git objects rather than room copies.
 
-The provider owns its presentation transport and retained files. The `spacedock` binary verifies a direct binding Result through its nested `Resolution.by`; advisory output remains evidence and cannot close the gate through an adoption note. If the provider is missing or has the wrong version, the first officer names the remedy and returns to chat without launching it or creating retention files. After launch, a failure never falls back to chat.
+A workflow or session may select a presentation override. Only after the prepare and
+bind commit, the selected channel receives exactly the emitted room through its
+declared interface as an opaque handoff. The generic Spacedock contract neither
+defines channel execution nor reconstructs authority outside that room. When the room
+is recorder-ready, the first officer passes that same room to `gate record --room`;
+the recorder recomputes request, Briefing, Result, inventory, and Git pins, derives the
+complete association in memory, and writes no `association.json`.
 
 ## The three calls
 
@@ -56,7 +65,16 @@ Captain, an approval awaiting nonterminal advance, and an approval awaiting
 merge. Approval to a terminal target is consumed before the existing merge and
 terminalization path begins.
 
-Before the first officer shows a gate, it captures the exact bound Briefing identity and digest from committed entity state. A run without decision authority stops with that attempt open: it writes no Resolution, consumes nothing, advances nothing, and dispatches nothing. After an authorized decision, it records and commits the Resolution before every route. Approval then uses `gate consume`, which rechecks eligibility and atomically writes the successor stage and consumed mark; the consumed descendant commit lands before ordinary successor dispatch. Revise routes feedback after its close commit, and hold stays at the gate. `gate validate` and `gate eligibility` remain optional diagnostics, not positive-path lifecycle steps.
+Before the first officer shows a gate, it captures the exact bound Briefing identity,
+digest, and emitted room in committed machine state, then presents a compact snapshot
+identity in prose. A run without decision authority
+stops with that attempt open: it writes no Resolution, consumes nothing, advances
+nothing, and dispatches nothing. After an authorized decision, it records and commits
+the Resolution before every route. Approval then uses `gate consume`, which rechecks
+the retained request, Briefing, Git sources, and eligibility before atomically writing
+the successor stage and consumed mark. Revise routes feedback after its close commit,
+and hold stays at the gate. `gate validate` and `gate eligibility` remain optional
+diagnostics, not positive-path lifecycle steps.
 
 The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.
 

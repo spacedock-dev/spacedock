@@ -12,8 +12,54 @@ portable Resolution. The application layer owns what an approval does through th
 writes.
 
 Presentation remains an overridable channel of the present-gate skill, not a recorder
-verb. Chat and provider channels both hand semantic decision input to the recorder.
-Provider transport, retention, and UI stay outside this binary.
+verb. Chat decisions use `gate record --decision`. A selected override receives only
+the opaque, committed prepared room; a room-backed outcome uses `gate record --room`.
+
+## End-to-end gate lifecycle
+
+Chat and an override are alternative presentation channels. Both begin with the same
+prepared, durably committed gate room and converge on the same recorder-owned closed
+attempt. The First Officer chooses review content; Spacedock prepares and records
+authority. The generic contract treats an override as an opaque room handoff.
+
+```mermaid
+flowchart TD
+    FO["First Officer<br/>selects Artifact and References<br/>authors question and summary"]
+    PREP["spacedock gate prepare<br/>derives IDs, digests, Git locators,<br/>authority, room, and binding"]
+    ROOM[("Frozen gate room<br/>request.json and canonical Briefing")]
+    COMMIT_PREP["spacedock state commit<br/>publishes the prepared binding"]
+    CHANNEL{"Presentation channel"}
+
+    FO --> PREP --> ROOM --> COMMIT_PREP --> CHANNEL
+
+    subgraph CHAT["Default chat"]
+        CHAT_REVIEW["First Officer presents<br/>the canonical Briefing"]
+        CHAT_DECISION["Captain decides"]
+        CHAT_RECORD["spacedock gate record --decision<br/>--actor person:captain"]
+        CHAT_REVIEW --> CHAT_DECISION --> CHAT_RECORD
+    end
+
+    subgraph OVERRIDE["Selected presentation override"]
+        HANDOFF["Override receives only<br/>the opaque committed room"]
+        ROOM_RECORD["spacedock gate record --room<br/>verifies room-backed authority"]
+        HANDOFF --> ROOM_RECORD
+    end
+
+    CHANNEL --> CHAT_REVIEW
+    CHANNEL --> HANDOFF
+
+    CHAT_RECORD --> CLOSED["Recorder closes the gate attempt"]
+    ROOM_RECORD --> CLOSED
+    CLOSED --> COMMIT_CLOSE["spacedock state commit<br/>publishes the Resolution"]
+    COMMIT_CLOSE --> CONSUME["spacedock gate consume"]
+    CONSUME --> COMMIT_CONSUME["spacedock state commit<br/>publishes application"]
+    COMMIT_CONSUME --> NEXT["Successor stage"]
+```
+
+The generic lifecycle ends at that opaque handoff. It defines no override execution,
+transport, presentation, or evidence-production mechanics. If the room later becomes
+recorder-ready, `gate record --room` validates its canonical v1 Result and complete
+inventory under the recorder contract below.
 
 ## Canonical v1 schema
 
@@ -64,47 +110,89 @@ In particular, the pilot-only `gates.current.attempt`, `current-attempt`, `seque
 migration or compatibility rewrite. The `application` field is the typed one-use
 lifecycle boundary owned by the application layer on the same canonical-v1 writer surface.
 
-Every Briefing binding includes an id, SHA-256 digest, explicit digest domain, and room
-reference. The approved domains are:
+Every Briefing binding includes an id, SHA-256 digest, the `canonical-bytes` digest
+domain, and an exact file or room reference. `canonical-bytes` is SHA-256 over RFC
+8785/JCS canonical Briefing JSON bytes. A request-backed room additionally freezes its
+request digest; that request names the canonical Briefing with a clean room-relative
+locator, id, and digest. No reader infers a canonical basename.
 
-- `canonical-bytes`: SHA-256 over RFC 8785/JCS canonical Briefing JSON bytes. New
-  recorder binds always use this domain.
-- `raw-file-pin`: an explicitly labelled raw-byte pin that may remain in a canonical v1
-  record. It is never silently reinterpreted as a canonical digest.
+A prepared provider-neutral room binds `request-digest`, the JCS digest of its
+`request.json`. Request-less and chat-only attempts may omit it. Changing the request,
+located Briefing, or a selected Git object after the attempt binds therefore fails
+before Result validation or entity mutation.
 
-A prepared provider room also binds `request-digest`, the JCS digest of its
-`request.json`. Chat-only attempts may omit it. Changing request authority after the
-attempt binds therefore fails before Result validation or entity mutation.
+## Provider-neutral preparation
+
+`gate prepare` is the single mechanical operation that turns First Officer judgment and
+committed file selections into an open recorder-ready attempt:
+
+```text
+spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md --summary TEXT \
+  [--reference FILE ...] [--workflow-dir DIR]
+```
+
+The caller supplies exactly one question, Markdown primary Artifact, and nonblank
+valid-UTF-8 primary summary; References may repeat in caller order. Spacedock preserves
+the summary string exactly, assigns deterministic ordinal item identities, and derives
+the gate, attempt, Briefing, Captain authority, digests, and room. It writes only
+`gate-briefing.json` and `request.json` at preparation time. It copies no selected
+source, writes no association, and creates no provider subtree.
+
+Folder and flat entities share the same companion-room layout:
+
+```text
+<state-root>/<slug>/review/<stage>/briefing-<attempt>/
+```
+
+For folder form, the entity is `<slug>/index.md`; for flat form it is `<slug>.md` and
+`<slug>/` is its artifact companion. State commit and archive operations treat the flat
+Markdown plus companion directory as one literal path-scoped unit, including tracked
+deletions and rollback, without sweeping siblings.
+
+Each selected source is a readable, committed, non-symlink regular file owned by the
+workflow's `main` or distinct `state` Git history. Its closed identity is
+`git-root://<main|state>/<full-commit>/<canonically-escaped-repository-path>` and its
+`rev` is the full raw-byte SHA-256. Preparation compares the selected worktree bytes
+with `<commit>:<path>`; later operations reopen only that local Git object. They never
+fetch, deepen, hydrate, retain a ref, search another checkout, or fall back to current
+worktree bytes. A clean detached or linked worktree is valid when it shares the
+expected Git history and the object is local.
+
+The primary Artifact alone carries the exact caller-supplied `summary`. References
+carry none. Advisory-round Briefings remain summary-free. Exact prepare replay is a
+no-op, divergent occupancy fails closed, and
+handled validation, publish, or bind failure removes the new candidate and any
+newly-created empty parents. Success prints exactly `room`, `briefing`, `digest`, and
+`state=open` lines; the emitted absolute room is the only later handoff coordinate.
 
 ## Recorder lifecycle
 
-`spacedock gate record` derives lifecycle under the entity lock:
+`spacedock gate prepare` is the First Officer's normal lifecycle entry. With no record
+for the current stage it opens the first attempt. Exact replay of the current open room
+is a no-op; divergent open occupancy fails closed. After a closed attempt, preparation
+supersedes any pending application and appends a successor while earlier Briefings and
+Resolutions remain frozen.
 
-1. `--briefing` requires the retained package manifest basename `briefing.json`, then
-   derives the logical gate from the entity's current workflow stage. Any other basename
-   is rejected before locking or mutation.
-2. With no record for that stage, it opens the first attempt.
-3. With an open last attempt, an identical binding is a no-op and a changed binding
-   replaces that attempt's Briefing.
-4. With a closed last attempt, it supersedes any pending application and appends a
-   successor. Existing Briefings and Resolutions remain frozen.
-5. A Result or chat decision closes only the last open attempt for the current stage and
-   derives its `advance/pending`, `feedback/pending`, or `none/not-applicable` application.
+`spacedock gate record` also accepts either the prepared room's room-backed Result or
+a semantic chat decision. Either closing source closes only the last open
+attempt for the current stage and derives its `advance/pending`, `feedback/pending`,
+or `none/not-applicable` application.
 
 Cross-logical-gate re-entry is ordinary: workflow stage selects the target record even
 when `gates.current.gate` names a different closed gate. The successful write selects the
 target record but does not modify either record's earlier closures.
 
-## Provider Result association
+## Room-backed Result association
 
-The provider form consumes one prepared gate room. Its frozen `request.json` binds the
+The room-backed form consumes one prepared gate room. Its frozen `request.json` binds the
 logical gate, attempt, canonical Briefing id and digest, and captain actor/approver authority.
 Delegated chat decisions record `agent:first-officer` with a nonblank evidence reason and no directive or `adoption-note`;
 the attempt's `request-digest` rejects post-binding request changes.
-The fixed provider outputs are `provider/result.json` and
-`provider/presented-inventory.json`; callers supply neither path nor provider argv.
+The fixed recorder inputs are `provider/result.json` and
+`provider/presented-inventory.json`; callers supply neither path nor invocation detail.
 
-The recorder resolves the room's exact `briefing.json`, recomputes its JCS digest, and
+The recorder validates `request.json`, resolves its exact frozen Briefing locator,
+recomputes its JCS digest, and
 derives the canonical inventory from every Artifact and recursively reached Reference.
 It derives a private `spacedock-result-association` v1 by matching each presented id and
 revision to that inventory and binding the raw Result digest. The mapping must cover the
@@ -117,11 +205,19 @@ request authority. Advisory output remains retained evidence; no adoption note c
 promote it into a binding Resolution. Artifact payloads may remain external URI and
 SHA references.
 
-On provider close, the recorder stores only the raw-byte digests of
+On room-backed close, the recorder stores only the raw-byte digests of
 `provider/result.json` and `provider/presented-inventory.json` as `provider-evidence`.
 They are part of the frozen attempt. `gate validate` recomputes both from the fixed room
 files and fails if either is missing or changed. Chat-closed and open attempts carry no
 provider evidence; the derived association remains ephemeral.
+
+Request, located Briefing, Result, and presented inventory all pass through one
+recursive token-stream duplicate-member check before typed decoding or
+canonicalization. Conflicting members at any object depth fail closed; Go's
+last-member-wins JSON behavior is never authority. Binding, room recording,
+validation, eligibility, and consumption all resolve and recheck the same frozen
+request/Briefing/source authority. Room-backed evidence is valid only on a prepared,
+request-digest-bound attempt.
 
 ## Round records and triage dispositions (advisory; owner: 02av)
 
@@ -205,7 +301,7 @@ data.
 ## Command surface
 
 ```text
-spacedock gate record ENTITY --briefing PATH/briefing.json [--workflow-dir DIR]
+spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]
 spacedock gate record ENTITY --room PATH [--workflow-dir DIR]
 spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]
 spacedock gate validate ENTITY [--workflow-dir DIR]
@@ -218,17 +314,18 @@ and compare-and-swap state; callers cannot submit an operation envelope or candi
 identities. `gate validate` is read-only and reports the selected record's last attempt.
 
 New delegated chat resolutions use `by: agent:first-officer`, require a nonblank
-evidence reason, and omit `adoption-note`. Readers continue to accept historical
-`adoption-note` values, but the chat recorder neither emits nor treats them as
-authority. The recorder constructs the portable Resolution under the asserted identity
-that rendered the decision; it does not authenticate chat or apply the result.
+evidence reason, and reject `adoption-note` as an unknown prototype field. The recorder
+constructs the portable Resolution under the asserted identity that rendered the
+decision; it does not authenticate chat or apply the result.
 
 ## Explicitly outside v1
 
-- Prototype-format compatibility, migration, and arbitrary unknown-field preservation
-  inside `gates`.
-- Provider launch, polling, result retention, presentation UI, and Subspace-specific
-  behavior.
+- Prototype-format compatibility, `raw-file-pin`, migration, and arbitrary
+  unknown-field preservation inside `gates`.
+- Presentation-channel execution, transport, UI, and evidence production beyond the
+  opaque prepared-room handoff.
+- Remote Git-object acquisition, retention refs, copied selected-source payloads, or
+  generic URI/root registries.
 - Blocker-satisfaction evaluation, execution-hold authoring, dispatch identities, or effect receipts.
 - A second schema version or provider operation envelope.
 

@@ -149,6 +149,29 @@ func TestNativeUnknownFieldPreservation(t *testing.T) {
 	}
 }
 
+func TestArchiveFlatMovesCompanionRoomAsOneUnit(t *testing.T) {
+	root := stageFixtureWith(t, "seq-workflow", map[string]string{
+		"001-design-seam/review/ideation/briefing-1/request.json":       "{}\n",
+		"001-design-seam/review/ideation/briefing-1/gate-briefing.json": "{}\n",
+	})
+	_, errOut, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--archive", "001-design-seam")
+	if code != 0 {
+		t.Fatalf("archive flat companion exit=%d stderr=%q", code, errOut)
+	}
+	for _, path := range []string{
+		filepath.Join(root, "_archive", "001-design-seam.md"),
+		filepath.Join(root, "_archive", "001-design-seam", "review", "ideation", "briefing-1", "request.json"),
+		filepath.Join(root, "_archive", "001-design-seam", "review", "ideation", "briefing-1", "gate-briefing.json"),
+	} {
+		if !fileExists(path) {
+			t.Fatalf("flat archive unit missing %s", path)
+		}
+	}
+	if fileExists(filepath.Join(root, "001-design-seam.md")) || fileExists(filepath.Join(root, "001-design-seam")) {
+		t.Fatal("flat archive left part of the live entity unit behind")
+	}
+}
+
 // TestNativeFolderEntityReportAppendPreservesTracker (AC-3) verifies the
 // folder-form combination: a folder entity (index.md + reports/ subdir) carrying
 // issue/source, after a stage-report body append, is discovered as exactly ONE
