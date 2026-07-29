@@ -1,7 +1,7 @@
 ---
 id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
-status: validation
+status: implementation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
 completed:
@@ -1761,6 +1761,23 @@ including its two leading/trailing spaces and non-ASCII code points.
   isolated HOME with system/global Git config disabled, run the affected package and
   full offline suite locally, and push only after both pass. Do not change gate
   behavior, assertions, expected outcomes, CI configuration, or unrelated tests.
+
+- Cycle 26: REVISE — PR #573 live CI run `30477707135`; surface 60 files and
+  8,897 changed LOC vs estimate 26 files and 1,904 changed LOC (467%); AC
+  unchanged.
+
+  Fix only the two s4-owned grader defects exposed by the prepared-room journey.
+  `gate-guardrail` still hardcodes the retired `gate:docs-dev:3k:*` identity and a
+  static Briefing digest, so it rejects the valid attempt that `gate prepare`
+  created for `recorded-gate-task`. Both Codex and Opus complete
+  prepare → record → consume → successor dispatch and durably commit
+  `RECORDED-GATE-SUCCESSOR-DISPATCHED`, but the rewritten ancestry observer
+  returns a false negative; reproduce that observer from the retained run
+  artifacts and correct its independent durable-state read. Preserve the Codex
+  `keep-moving-posture` failure as outside s4: this branch did not change that
+  scenario, so it is not a license for adjacent fixes. Run the two focused live
+  journeys locally before updating PR #573; do not trigger another full CI run
+  until they pass.
 
 ## Stage Report: ideation
 
