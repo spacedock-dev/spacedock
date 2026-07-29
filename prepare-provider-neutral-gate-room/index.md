@@ -145,6 +145,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:b9b4edefbff51ebf018a66402892076865321b9306726b092a162ff2f4b62db3
                 room-ref: ./review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:s4ykctf21g60dvfgdd6cy9ny:validation:3
+                briefing: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-07-29T20:40:54.209012Z"
+                decision: approve
+                reason: 'Validation PASSED at acae980f: AC-1 through AC-5, full/race/docs, focused gate journeys, and all s4-relevant CI lanes are green; Sonnet keep-moving red is outside the unchanged s4 scope and retained separately.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 review-round:
     id: round:s4ykctf21g60dvfgdd6cy9ny:implementation:13
     stage: implementation
