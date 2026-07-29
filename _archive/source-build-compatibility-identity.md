@@ -3,8 +3,8 @@ title: Source builds use checkout compatibility identity, not Git-tag provenance
 status: done
 source: Captain ruling after repeated post-release auto-pre0 source-build drift, 2026-07-26
 started: 2026-07-26T00:17:26Z
-completed:
-verdict:
+completed: 2026-07-29T08:57:27Z
+verdict: passed
 score: 1.0
 worktree: .worktrees/spacedock-ensign-source-build-compatibility-identity
 issue:
@@ -83,8 +83,9 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:571
+archived: 2026-07-29T08:57:27Z
 ---
 
 Prevent an ordinary source build from impersonating the automatic next-minor `pre0` release merely because that tag is the nearest Git ancestor.
