@@ -59,14 +59,14 @@ gates:
                 state: consumed
                 blockers: []
 review-round:
-    id: round:se0v37bt7mhsrmhta1nyns0r:implementation:6
-    stage: implementation
-    cycle: 6
+    id: round:se0v37bt7mhsrmhta1nyns0r:validation:8
+    stage: validation
+    cycle: 8
     briefing:
-        id: briefing:se0v37bt7mhsrmhta1nyns0r:implementation:round-6
-        digest: sha256:19cac35442cf6d7536f81f51c36767445d3f8dd2f4764d3827b50b27655083ce
+        id: briefing:se0v37bt7mhsrmhta1nyns0r:validation:round-8
+        digest: sha256:25020abb7c59295cc831b0a55feeefe1e9ec78b41cdac793ba7515f9540dc7f2
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-6
+        room-ref: ./review/validation/round-8
 pr: "#572"
 ---
 
@@ -595,3 +595,36 @@ Candidate-local deterministic proof and the 19-file/803-line boundary are clean,
 but the release value remains unmet at 2/4 live jobs. Validation rejects on three
 task-owned Material evidence defects surfaced by the single exact-tip PR run; no
 product or test file was modified during validation.
+
+## Stage Report: implementation (cycle 8 recovery)
+
+- DONE: Repair Sonnet validation-report cardinality from exact run 30378538074.
+  `assertRejectionFlow` now requires two anchored durable validation reports
+  instead of two rejection-only Feedback Cycle entries. The retained Sonnet
+  stream reconstructs its two implementation and two validation reports and
+  passes; the one-validation controls remain red.
+- DONE: Repair Codex recovery after the exact failed pre-bind decision batch.
+  The extractor skips the completed zero-exit item whose output begins with the
+  exact no-gate error and contains a state head, then accepts the later committed
+  briefing, exact root review, and final decision. Existing failed-commit,
+  ordering, duplicate-review, nested-root, and decision-before-review controls
+  remain red.
+- DONE: Repair Codex numbered `rg -n` durable Stage Report recognition.
+  Anchored headings may carry a numeric line prefix. The retained keep-moving
+  trace proves all three entity reports after build and wait; planted,
+  unphased, wrong-entity, and missing-finalization controls remain red.
+- DONE: Remove Roborev-only hardening and advisory state from rounds 9–16.
+  The implementation is six files and 46 changed lines over branch tip
+  `55b3b133`; validation round 8 is preserved as the current all-fixed advisory
+  record. No Pi, workflow, documentation, keep-moving product, or live-host
+  behavior changes remain in this recovery patch.
+- DONE: Complete the required local gate on the bounded candidate.
+  Exact retained Sonnet and Codex artifact replay, paired focused regressions,
+  `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`,
+  `go test ./... -race`, and `go vet ./...` all pass.
+
+### Summary
+
+The candidate is reconstructed to the three observed run-30378538074 oracle
+repairs only and is ready for independent validation. No CI, push, merge, or
+additional advisory panel was triggered after the bounded cut.

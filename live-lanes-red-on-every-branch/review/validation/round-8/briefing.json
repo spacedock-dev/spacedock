@@ -1,0 +1,32 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:se0v37bt7mhsrmhta1nyns0r:validation:round-8",
+  "question": "How should the three task-owned oracle defects exposed by exact-tip Runtime Live E2E run 30378538074 be dispositioned?",
+  "artifacts": [
+    {
+      "id": "artifact:run-30378538074-codex",
+      "uri": "https://github.com/spacedock-dev/spacedock/actions/runs/30378538074/artifacts/8696502307",
+      "mediaType": "application/jsonl",
+      "rev": "sha256:3122941cbc5996e459278ccb68e3e360ef1f0ab985e1ede9b8540540f7b8bf7c"
+    },
+    {
+      "id": "artifact:run-30378538074-sonnet",
+      "uri": "https://github.com/spacedock-dev/spacedock/actions/runs/30378538074/artifacts/8696501567",
+      "mediaType": "application/jsonl",
+      "rev": "sha256:c908359e156d88b93744dc50c8ba7d2bd110efae624c66a612da914aecc08d6f"
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:exact-tip",
+      "label": "Run 30378538074 tested source head 55b3b13316571f1a84215f489c205e66327faeca."
+    },
+    {
+      "type": "Reference",
+      "id": "reference:design-reset",
+      "label": "Sprint conn approved at most 20 files and 811 changed lines, with no new product files or product/command/storage/authority semantics."
+    }
+  ]
+}
