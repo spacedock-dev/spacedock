@@ -3610,3 +3610,18 @@ Frontmatter/discovery, filesystem and reference closure, generated or vendored m
 ### Summary
 
 Cycle 36 is the required pre-edit classification checkpoint. The deletion boundary is complete and mechanically distinguishable: same-source prose wording/order disappears; independently sourced structure and exercised behavior remain.
+
+## Stage Report: implementation (cycle 37 contractlint cleanup result)
+
+- DONE: Delete every classified test whose oracle is presence, absence, or ordering of words inside model-read skills or contracts.
+  Commit `070f36ae` deletes 12 whole prose-oracle files and the classified tests/scanners from 9 mixed files; no replacement lint, guard, fixture, or test was added.
+- DONE: Preserve runtime-behavior coverage and structural checks backed by independent sources.
+  Remaining reads cover frontmatter/discovery, filesystem and reference resolution, machine-readable write classification, manifest/Go-source bindings, workflow YAML, AST read boundaries, and byte caps; removing their independent source value makes the focused package fail.
+- DONE: Keep the correction inside `internal/contractlint`.
+  The commit changes exactly 21 files, all under `internal/contractlint`; product code, skills, contracts, fixtures, CI, and every other package are byte-unchanged.
+- DONE: Run the required verification and report exact removal.
+  `go test ./internal/contractlint`, `gofmt -w ./internal`, and `git diff --check` pass at `070f36ae`; exact delta is `+76/-3755` across 21 files, net `-3679`, with 12 files deleted. The full suite was not run because the package-local dependency fix and focused rerun resolved cleanly.
+
+### Summary
+
+Cycle 37 completes the captain-ordered prose-oracle purge exactly within the pre-recorded cycle-36 boundary. The remaining contractlint surface derives expected values from independent structure or executable sources, and the code worktree is clean at `070f36ae`.
