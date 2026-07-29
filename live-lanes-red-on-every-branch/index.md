@@ -85,6 +85,19 @@ gates:
                 digest: sha256:d1bda481ebfe324306db85476d7b001ecd2cc432348e032905457819480272a1
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:se0v37bt7mhsrmhta1nyns0r:validation:2
+                briefing: briefing:se0v37bt7mhsrmhta1nyns0r:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-29T08:01:49.240468Z"
+                decision: approve
+                reason: Exact candidate 25cb48d7 passed independent validation, a fresh local Opus recorded-gate journey, and Runtime Live E2E run 30424365199 attempt 2 at 4/4 protected live jobs; adversarial oracle controls remain red and no Material finding remains.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 review-round:
     id: round:se0v37bt7mhsrmhta1nyns0r:validation:10
     stage: validation
