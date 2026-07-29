@@ -127,6 +127,17 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:9feeea66d117405f5799bbcf9dfff16724725ca4794bf90f1ac1a14a44329892
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:s4ykctf21g60dvfgdd6cy9ny:validation:2
+                briefing: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-29T20:39:50.115501Z"
+                decision: hold
+                reason: Superseded by validated candidate acae980fc145e624d9e04e7ec9f7fdb599585f6e after cleanup and CI; prepare a fresh Briefing.
+              application:
+                action: none
+                state: not-applicable
 review-round:
     id: round:s4ykctf21g60dvfgdd6cy9ny:implementation:13
     stage: implementation
