@@ -276,8 +276,8 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 	}
 	lifecycle, presenter := readRepoFile(t, filepath.Join("skills", "fo-gate-lifecycle", "SKILL.md")), readRepoFile(t, filepath.Join("skills", "present-gate", "SKILL.md"))
 	for _, want := range []string{
-		"absence or exposure", "halt before mutation", "refresh or a fresh build", "reject retired `--directive` exposure",
-		"presentation completes only after", "exact bound Briefing id/digest",
+		"nonzero prepare halts", "never hand-edit `gates:`",
+		"presentation completes only after", "compact bound Briefing snapshot",
 		"precede decision record", "delegated conn does not waive",
 		"explicit Captain grant in the active conversation",
 		"including one issued later in that conversation",
@@ -293,8 +293,6 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 		}
 	}
 	lifecycleOrder := []string{
-		"**Capability preflight.**",
-		"exactly one fresh `gate --help`",
 		"**Prepare and bind.**",
 		"gate prepare ENTITY",
 		"Require the emitted `room`, `briefing`, `digest`, and `state=open` lines",
@@ -315,7 +313,7 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 		return true
 	}
 	if !orderedLifecycle(lifecycle) {
-		t.Fatal("gate lifecycle does not preserve preflight -> prepare/bind -> close -> consume order")
+		t.Fatal("gate lifecycle does not preserve prepare/bind -> close -> consume order")
 	}
 	for _, anchor := range lifecycleOrder {
 		if orderedLifecycle(strings.ReplaceAll(lifecycle, anchor, "removed")) {
@@ -323,9 +321,11 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 		}
 	}
 	for _, want := range []string{
-		"exactly one fresh `gate --help`", "`prepare`, `record`, `validate`, `eligibility`, `consume`",
-		"`--question`, `--artifact`, `--summary`, `--reference`, `--workflow-dir`",
-		"gate prepare ENTITY", "emitted clean absolute room", "flat Markdown-plus-companion room unit",
+		"real capability check", "gate prepare ENTITY", "emitted clean absolute room", "flat Markdown-plus-companion room unit",
+		`Skill(skill="spacedock:present-gate")`, "an override replaces only chat display",
+		"selected or retained gate record", "`stage` equal to that status",
+		"prior-stage `gates.current` is history, not reusable authority",
+		"run `gate prepare` for the current status and present only its emitted binding",
 	} {
 		if !strings.Contains(lifecycle, want) {
 			t.Errorf("gate lifecycle missing provider-neutral preparation contract %q", want)
@@ -341,7 +341,7 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 	}
 	for _, want := range []string{
 		"exactly one root-assistant message", "entity and stage",
-		"exact bound Briefing id and digest", "one recommendation",
+		"compact bound Briefing snapshot", "one recommendation",
 		"decision ask", "before the next decision-mutation tool call",
 	} {
 		if !strings.Contains(presenter, want) {
@@ -350,6 +350,11 @@ func TestFOGateLifecycleOwnsEveryEngagedEntry(t *testing.T) {
 	}
 	if strings.Contains(lifecycle, "Gate review:") || strings.Contains(lifecycle, "Decision:") {
 		t.Error("lifecycle duplicates presenter markers instead of waiting for semantic presentation")
+	}
+	for _, forbidden := range []string{"gate --help", "exact bound Briefing id/digest", "exact bound Briefing id and digest"} {
+		if strings.Contains(lifecycle, forbidden) || strings.Contains(presenter, forbidden) {
+			t.Errorf("gate skills retain obsolete presentation/preflight obligation %q", forbidden)
+		}
 	}
 	mapping := "Map Captain calls before recording: `approve` maps to `approve` with an accepts-direction evidence reason; `redo with feedback` maps to `revise` with an accepts-direction reason; `reject` with `feedback-to` maps to `revise` with a rejects-direction reason; `reject` without `feedback-to` maps to `hold` with a pause reason; `hold` maps to `hold` with a pause reason; `not yet` maps to `hold` with a pause reason naming what remains. Routed redo/reject reasons include concrete asks and invoke `«feedback.route»` after the close commit; hold decisions commit and stop at the gate."
 	gradeMapping := func(body string) bool {

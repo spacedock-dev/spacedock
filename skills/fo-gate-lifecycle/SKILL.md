@@ -1,37 +1,37 @@
 ---
 name: fo-gate-lifecycle
-description: Load at any engaged gate entry before action.
+description: Handle an engaged gate entry.
 user-invocable: false
 ---
 
 # First Officer Gate Lifecycle
 
-## «gate.lifecycle»(slug, stage): bind, decide, and apply one recorded gate authorization
+## «gate.lifecycle»(slug, stage): bind, decide, apply one recorded authorization
 
-Load this skill in one host event before gate probe, mutation, presentation, route, replay, or dispatch. It grants no write authority; read `fo-write-core.md` before FO mutation.
+Load before engaged gate action. It grants no writes; read `fo-write-core.md` before FO mutation.
 
-**Boot projection.** Use unresolved actionable `ready_gates` rows from `status --boot --identify --json`: `awaiting-captain` is an open current-stage Briefing; `approved-awaiting-merge` and `approved-awaiting-advance` are unblocked pending approvals. No selected attempt is omitted `validating` and must be prepared before presentation. Engage row `slug` and read the entity; never infer readiness from stage alone.
+**Boot projection.** Use actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`; read its entity, never infer readiness from stage. `awaiting-captain` means an open current-stage Briefing; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. For gated current `status`, any selected or retained gate record used to resume/present must have `stage` equal to that status. A prior-stage `gates.current` is history, not reusable authority. If no selected attempt (omitted `validating`) or it mismatches, run `gate prepare` for the current status and present only its emitted binding.
 
-**Capability preflight.** Per lifecycle, resolve `${SPACEDOCK_BIN:-spacedock}` and run exactly one fresh `gate --help`. Require `prepare`, `record`, `validate`, `eligibility`, `consume`, the prepare flags `--question`, `--artifact`, `--summary`, `--reference`, `--workflow-dir`, and the semantic record flags `--briefing`, `--room`, `--decision`, `--actor`, `--reason`; reject retired `--directive` exposure. On absence or exposure, halt before mutation: do not commit selected sources, prepare a room, or change state; prescribe refresh or a fresh build via `SPACEDOCK_BIN`. Never hand-edit `gates:`.
-
-**Prepare and bind.** Select one Markdown gate-review Artifact and References, author its exact concise summary, and commit newly authored selections in their owning main/state histories after preflight. Supply judgment and paths only; never author JSON, ids, digests, Git-root locators, or room coordinates. Relative paths resolve from launch cwd.
+**Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select a Markdown gate-review Artifact and References, author its concise summary, then commit the selections. Supply judgment and paths; never author JSON, ids, digests, Git-root locators, or room coordinates. Paths use launch cwd.
 
 ```text
 ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
 ```
 
-Require the emitted `room`, `briefing`, `digest`, and `state=open` lines. The emitted clean absolute room is the only room authority; never reconstruct it. Preparation binds a two-file recorder-ready room with no copied sources. `«state.commit»(slug)` commits the folder entity or flat Markdown-plus-companion room unit before presentation. Invoke `«gate.ac-cross-check»`, judge evidence, then `«gate.assemble-verdict»`. On chat, presentation completes only after one root review names entity/stage, exact bound Briefing id/digest, recommendation, and decision ask. It follows the bind commit and must precede decision record; delegated conn does not waive it.
+The real capability check is the `gate prepare` invocation. Nonzero prepare halts; surface its exact error and refresh or rebuild the selected version-gated bundle when the command is unavailable. Never hand-edit `gates:` or delete/revert/replace binary-owned entity or room authority.
+
+Require the emitted `room`, `briefing`, `digest`, and `state=open` lines. The emitted clean absolute room is sole authority; never reconstruct it. Preparation binds two recorder-ready files without source copies. `«state.commit»(slug)` commits the folder entity or flat Markdown-plus-companion room unit. Before presentation, load `Skill(skill="spacedock:present-gate")`; an override replaces only chat display. Invoke `«gate.ac-cross-check»`, judge evidence, then `«gate.assemble-verdict»`. Chat presentation completes only after one root review names entity/stage, a compact bound Briefing snapshot, recommendation, and decision ask. It follows the bind commit, must precede decision record; delegated conn does not waive it.
 
 **Record and durably close.** Use exactly one semantic source:
 
 ```text
-# Captain personally rendered the chat decision
+# Captain's chat decision
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor person:captain [--reason REASON] --workflow-dir WORKFLOW_DIR
 
-# FO rendered it under an explicit Captain conn
+# FO decision under explicit Captain conn
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor agent:first-officer --reason EVIDENCE_JUDGMENT --workflow-dir WORKFLOW_DIR
 
-# Exact retained provider Result from its prepared room
+# Exact retained provider Result
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --room ROOM --workflow-dir WORKFLOW_DIR
 ```
 
@@ -55,4 +55,4 @@ Consume itself rechecks currency, successor, blockers, and one-use state under l
 - `stale`: consume exits nonzero, leaves status unchanged, changes only pending → superseded; commit it, bind a replacement Briefing, re-present.
 - already `consumed`: the authorization is spent. A nonterminal current status resumes ordinary dispatch/recovery; a terminal current status resumes the existing merge ceremony. Do not re-record, consume, or dispatch a terminal successor. A diagnostic repeat consume must be nonzero and byte-clean.
 
-**Resume.** Use boot/entity state and prior result; `gate validate`/`gate eligibility` are optional diagnostics, never mandatory positive-path calls. Same-Briefing bind is idempotent; a changed open request-less Briefing updates and re-presents, while an open request-backed prepared binding is frozen — surface any rebind refusal and stop. Before routing any closed state, ensure its exact Resolution commit exists. Pending approval resumes consume; revise/hold routes/stops; consumed resumes dispatch only when nonterminal and otherwise merge; stale consume materializes supersession then replacement. Surface nonzero command, exit, remedy; never repair frontmatter.
+**Resume.** Use boot/entity state and prior result; `gate validate`/`gate eligibility` are optional diagnostics, never positive-path requirements. Exact prepare replay is idempotent; a divergent open room is frozen—surface the refusal and stop. Require the exact Resolution commit before routing closed state. Pending approval → consume; revise/hold → route/stop; consumed → dispatch only if nonterminal, else merge; stale → supersede then replace. Surface nonzero command, exit, remedy; never repair frontmatter.

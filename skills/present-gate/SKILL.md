@@ -10,7 +10,7 @@ This skill carries the first-officer's captain-facing gate-presentation renderin
 
 ## Presentation channels
 
-Chat is the default channel. After the prepared room and binding commit, render the gate template as exactly one root-assistant message before the next decision-mutation tool call. The message must name the entity and stage, exact bound Briefing id and digest, one recommendation, and the decision ask; exact headings are not required. Prior narration, child/tool output, or a later summary does not complete presentation. Delegated authority does not waive presentation. Only then hand the captain's semantic decision to `${SPACEDOCK_BIN:-spacedock} gate record ... --decision`. An override changes only where the captain sees the review; gate policy and recorder ownership stay unchanged.
+Chat is the default channel. After the prepared room and binding commit, render the gate template as exactly one root-assistant message before the next decision-mutation tool call. The message must name the entity and stage, a compact bound Briefing snapshot, one recommendation, and the decision ask; exact headings are not required. A short digest prefix may identify the snapshot in prose; `request.json`, the canonical Briefing, and recorder validation retain the exact full digest authority. Prior narration, child/tool output, or a later summary does not complete presentation. Delegated authority does not waive presentation. Only then hand the captain's semantic decision to `${SPACEDOCK_BIN:-spacedock} gate record ... --decision`. An override changes only where the captain sees the review; gate policy and recorder ownership stay unchanged.
 
 A qualifying chat review is semantic: wording may vary while those five facts remain explicit.
 The presenter emits once; the lifecycle, prompt, and host adapter do not duplicate its review.
@@ -32,7 +32,7 @@ Present gate reviews in this format:
 Gate review: {entity title} — {stage}
 Chosen direction: {one-line summary of the ensign's chosen approach, or `n/a` for stages without a chosen-direction concept (e.g., simple work stages, merge)}
 Recommend {approve | reject: {one-line reason}}.
-Reviewed snapshot: {bound Briefing identity and digest}
+Reviewed snapshot: {bound Briefing identity and compact digest prefix}
 
 Checklist (from ## Stage Report in {entity_file_path} lines {start}-{end}):
 - DONE: {≤10-word gist of item}

@@ -157,16 +157,19 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 	if input.LogPath != "" || input.FeedbackCyclePath != "" {
 		return Summary{}, fmt.Errorf("--log and --feedback-cycle require --round")
 	}
+	if input.BriefingPath != "" {
+		return Summary{}, fmt.Errorf("gate record --briefing requires --round")
+	}
 	sources := 0
-	for _, source := range []string{input.BriefingPath, input.RoomPath, input.Decision} {
+	for _, source := range []string{input.RoomPath, input.Decision} {
 		if source != "" {
 			sources++
 		}
 	}
 	if sources != 1 {
-		return Summary{}, fmt.Errorf("gate record requires exactly one of --briefing, --room, or --decision")
+		return Summary{}, fmt.Errorf("gate record requires exactly one of --room or --decision")
 	}
-	if input.BriefingPath != "" && (input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "") || input.RoomPath != "" && (input.Actor != "" || input.Decision != "" || input.Reason != "") {
+	if input.RoomPath != "" && (input.Actor != "" || input.Decision != "" || input.Reason != "") {
 		return Summary{}, fmt.Errorf("gate record flags do not match the selected semantic source")
 	}
 	unlock, err := lockEntity(entityPath)
@@ -175,9 +178,7 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 	}
 	defer unlock()
 	var recordErr error
-	if input.BriefingPath != "" {
-		recordErr = recordBriefingLocked(entityPath, input.BriefingPath, input.WorkflowDir)
-	} else if input.RoomPath != "" {
+	if input.RoomPath != "" {
 		recordErr = recordRoomLocked(entityPath, input)
 	} else {
 		recordErr = recordChatLocked(entityPath, input)
@@ -190,106 +191,6 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 		return Summary{}, err
 	}
 	return CurrentSummary(doc), nil
-}
-
-func RecordBriefing(entityPath, briefingPath string) error {
-	return RecordSemantic(entityPath, RecordInput{BriefingPath: briefingPath})
-}
-
-func recordBriefingLocked(entityPath, briefingPath, workflowDir string) error {
-	binding, err := bindingFromManifest(entityPath, briefingPath)
-	if err != nil {
-		return err
-	}
-	stage, err := entityStatus(entityPath)
-	if err != nil {
-		return err
-	}
-	doc, oldNode, readErr := Read(entityPath)
-	if readErr != nil && !strings.Contains(readErr.Error(), "no gates record") {
-		return readErr
-	}
-	hadDocument := doc != nil
-	if doc == nil {
-		doc = &Document{Version: 1}
-	}
-	record, lookupErr := recordForStage(doc, stage)
-	if lookupErr != nil && !strings.Contains(lookupErr.Error(), "no logical gate") {
-		return lookupErr
-	}
-	if hadDocument {
-		if workflowDir == "" {
-			workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
-		}
-		skipGate, skipAttempt := "", ""
-		if record != nil && len(record.Attempts) != 0 {
-			current := &record.Attempts[len(record.Attempts)-1]
-			if current.Resolution == nil {
-				skipGate, skipAttempt = record.ID, current.ID
-			}
-		}
-		if err := validateRetainedAuthorityExcept(entityPath, workflowDir, doc, skipGate, skipAttempt); err != nil {
-			return err
-		}
-	}
-	if record == nil {
-		gateID, attemptID, err := initialIDs(binding.ID, entityPath, stage)
-		if err != nil {
-			return err
-		}
-		if err := validateGateRoomRequest(briefingPath, binding, gateID, attemptID); err != nil {
-			return err
-		}
-		record = &GateRecord{ID: gateID, Stage: stage, Attempts: []Attempt{{ID: attemptID, Briefing: binding}}}
-		doc.Records = append(doc.Records, *record)
-		doc.Current = Selection{Gate: gateID}
-		return writeDocument(entityPath, oldNode, doc)
-	}
-	previous := &record.Attempts[len(record.Attempts)-1]
-	if previous.Resolution == nil {
-		if err := validateGateRoomRequest(briefingPath, binding, record.ID, previous.ID); err != nil {
-			return err
-		}
-		if (previous.Briefing.RequestDigest != "" || binding.RequestDigest != "") && !sameBinding(previous.Briefing, binding) {
-			return fmt.Errorf("open gate room binding is frozen and cannot be rebound")
-		}
-		selectionChanged := doc.Current.Gate != record.ID
-		doc.Current.Gate = record.ID
-		if sameBinding(previous.Briefing, binding) {
-			if !selectionChanged {
-				return nil
-			}
-		} else {
-			previous.Briefing = binding
-		}
-		if err := Validate(doc); err != nil {
-			return err
-		}
-		if err := ValidateTransition(oldNode, doc); err != nil {
-			return err
-		}
-		return writeDocument(entityPath, oldNode, doc)
-	}
-	nextID, err := successorAttemptID(previous.ID)
-	if err != nil {
-		return err
-	}
-	if err := validateGateRoomRequest(briefingPath, binding, record.ID, nextID); err != nil {
-		return err
-	}
-	if previous.Application != nil && previous.Application.State == "pending" {
-		previous.Application.State = "superseded"
-	}
-	next := Attempt{ID: nextID, Briefing: binding}
-	record.Attempts = append(record.Attempts, next)
-	doc.Current.Gate = record.ID
-	if err := Validate(doc); err != nil {
-		return err
-	}
-	if err := ValidateTransition(oldNode, doc); err != nil {
-		return err
-	}
-	return writeDocument(entityPath, oldNode, doc)
 }
 
 func recordRoomLocked(entityPath string, input RecordInput) error {
@@ -712,9 +613,6 @@ func deriveAssociation(resultBytes []byte, result *providerResult, presented *pr
 }
 
 func verifyProviderResolution(result *providerResult) error {
-	if result.Resolution.Adoption != "" {
-		return fmt.Errorf("binding Result cannot carry adoption provenance")
-	}
 	if result.Resolution.Briefing != result.Briefing {
 		return fmt.Errorf("provider Resolution does not bind its provider Briefing")
 	}
@@ -731,37 +629,6 @@ func verifyProviderResolution(result *providerResult) error {
 		}
 	}
 	return validateResolution(&result.Resolution, result.Briefing)
-}
-
-func initialIDs(briefingID, entityPath, stage string) (string, string, error) {
-	if strings.HasPrefix(briefingID, "briefing:") {
-		body := strings.TrimPrefix(briefingID, "briefing:")
-		if marker := strings.Index(body, ":attempt-"); marker > 0 {
-			base := body[:marker]
-			parts := strings.Split(base, ":")
-			attemptNumber := strings.SplitN(body[marker+len(":attempt-"):], ":", 2)[0]
-			if len(parts) >= 2 && parts[len(parts)-1] == stage {
-				if _, err := strconv.Atoi(attemptNumber); err == nil {
-					entity := parts[len(parts)-2]
-					return "gate:" + base, "gate-attempt:" + entity + "-" + stage + "-1", nil
-				}
-			}
-		}
-	}
-	entity := strings.TrimSuffix(filepath.Base(entityPath), filepath.Ext(entityPath))
-	if entity == "index" {
-		entity = filepath.Base(filepath.Dir(entityPath))
-	}
-	entity = strings.Trim(strings.Map(func(r rune) rune {
-		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' {
-			return r
-		}
-		return '-'
-	}, entity), "-")
-	if entity == "" || stage == "" {
-		return "", "", fmt.Errorf("cannot derive gate identity from entity and Briefing")
-	}
-	return "gate:" + entity + ":" + stage, "gate-attempt:" + entity + "-" + stage + "-1", nil
 }
 
 func chatResolutionID(gateID, attemptID string) string {
@@ -799,64 +666,6 @@ func successorAttemptID(previous string) (string, error) {
 		return "", fmt.Errorf("cannot derive successor id from %s", previous)
 	}
 	return previous[:cut+1] + strconv.Itoa(sequence+1), nil
-}
-
-func bindingFromManifest(entityPath, briefingPath string) (Briefing, error) {
-	briefingPath, err := filepath.Abs(briefingPath)
-	if err != nil {
-		return Briefing{}, fmt.Errorf("resolve Briefing path: %w", err)
-	}
-	if resolved, resolveErr := filepath.EvalSymlinks(briefingPath); resolveErr == nil {
-		briefingPath = resolved
-	}
-	data, err := os.ReadFile(briefingPath)
-	if err != nil {
-		return Briefing{}, err
-	}
-	manifest, err := parseBriefingManifest(data)
-	if err != nil {
-		return Briefing{}, err
-	}
-	digest, err := CanonicalDigest(data)
-	if err != nil {
-		return Briefing{}, fmt.Errorf("canonicalize briefing: %w", err)
-	}
-	room, requestBytes, request, err := requestForBriefing(briefingPath)
-	if err != nil {
-		return Briefing{}, err
-	}
-	retained := briefingPath
-	if request != nil {
-		retained = room
-		if _, err := canonicalPresentationItems(manifest); err != nil {
-			return Briefing{}, err
-		}
-		if err := validatePreparedSummary(manifest); err != nil {
-			return Briefing{}, err
-		}
-	}
-	entityDir := filepath.Dir(entityPath)
-	if resolved, resolveErr := filepath.EvalSymlinks(entityDir); resolveErr == nil {
-		entityDir = resolved
-	}
-	roomRef, err := filepath.Rel(entityDir, retained)
-	if err != nil {
-		return Briefing{}, fmt.Errorf("resolve briefing reference: %w", err)
-	}
-	roomRef = filepath.ToSlash(roomRef)
-	if roomRef == "." {
-		roomRef = "./"
-	} else if !strings.HasPrefix(roomRef, ".") {
-		roomRef = "./" + roomRef
-	}
-	binding := Briefing{ID: manifest.ID, Digest: digest, DigestDomain: "canonical-bytes", RoomRef: roomRef}
-	if request != nil {
-		binding.RequestDigest, err = CanonicalDigest(requestBytes)
-		if err != nil {
-			return Briefing{}, fmt.Errorf("canonicalize gate room request: %w", err)
-		}
-	}
-	return binding, nil
 }
 
 func validateGateRoomRequest(briefingPath string, binding Briefing, gateID, attemptID string) error {
@@ -935,11 +744,6 @@ func boundBriefingBytes(entityPath string, binding Briefing) ([]byte, string, er
 		if request.Briefing.ID != binding.ID || request.Briefing.Digest != binding.Digest {
 			return nil, "", fmt.Errorf("bound gate room request does not match the frozen Briefing identity and digest")
 		}
-	} else if info, statErr := os.Stat(briefingPath); statErr == nil && info.IsDir() {
-		// Existing canonical-v1 request-less bindings retained their room rather
-		// than their exact file. New binds store the exact supplied Briefing path,
-		// but readers preserve those already-durable records.
-		briefingPath = filepath.Join(briefingPath, "briefing.json")
 	}
 	data, err := os.ReadFile(briefingPath)
 	if err != nil {

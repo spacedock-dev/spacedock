@@ -134,6 +134,9 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 	if err := assertConciseRecordedGateReview(o.gateReview); err != nil {
 		return err
 	}
+	if !reviewNamesBoundSnapshot(o.gateReview, briefingID, digest) {
+		return fmt.Errorf("gate review does not name the bound Briefing and its matching compact snapshot once")
+	}
 	return nil
 }
 
@@ -167,6 +170,40 @@ func assertConciseRecordedGateReview(review string) error {
 		}
 	}
 	return fmt.Errorf("gate review has no actionable decision ask")
+}
+
+func reviewTokenCount(review, token string) int {
+	count := 0
+	for _, field := range strings.Fields(review) {
+		if strings.Trim(field, "`'\"()[]{}.,;") == token {
+			count++
+		}
+	}
+	return count
+}
+
+func compactRecordedGateDigest(digest string) string {
+	const prefixLength = len("sha256:") + 8
+	if len(digest) <= prefixLength {
+		return digest
+	}
+	return digest[:prefixLength] + "…"
+}
+
+func reviewNamesBoundSnapshot(review, briefingID, digest string) bool {
+	if reviewTokenCount(review, briefingID) != 1 {
+		return false
+	}
+	matches := 0
+	for _, field := range strings.Fields(review) {
+		token := strings.Trim(field, "`'\"()[]{}.,;")
+		token = strings.TrimSuffix(token, "…")
+		if token == digest ||
+			len(token) >= len("sha256:")+8 && len(token) < len(digest) && strings.HasPrefix(digest, token) {
+			matches++
+		}
+	}
+	return matches == 1
 }
 
 type recordedGateFixture struct {
@@ -213,7 +250,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	}
 	prepareArgs = append(prepareArgs, "--workflow-dir", fixture.root)
 	prepared := run("prepare", prepareArgs...)
-	assertCommandOutput(t, prepared.stdout, "state=open", "briefing="+recordedGateBriefingID)
+	assertCommandOutput(t, prepared.stdout, "state=open")
 	preparedBriefing := outputValue(prepared.stdout, "briefing")
 	preparedDigest := outputValue(prepared.stdout, "digest")
 	preparedRoom := outputValue(prepared.stdout, "room")
@@ -221,6 +258,11 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 		t.Fatalf("prepare output is incomplete: %q", prepared.stdout)
 	}
 	commitRecordedGateState(t, binary, fixture, "bind prepared recorder-ready room")
+	review := recordedGateReviewWith(preparedBriefing, preparedDigest)
+	if err := assertConciseRecordedGateReview(review); err != nil ||
+		!reviewNamesBoundSnapshot(review, preparedBriefing, preparedDigest) {
+		t.Fatalf("prepared chat presentation is not bound to machine authority: review=%q err=%v", review, err)
+	}
 
 	close := run("decision-record", "gate", "record", "recorded-gate-task",
 		"--decision", "approve", "--actor", "agent:first-officer",
@@ -233,7 +275,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
 	commitRecordedGateState(t, binary, fixture, "consume gate authorization")
 	durable, _, durableErr := gates.Read(fixture.entity)
-	requireRecordedGate(t, durableErr == nil && durable.Records[0].Attempts[0].Resolution.By == "agent:first-officer" && durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason && durable.Records[0].Attempts[0].Resolution.Adoption == "", "approve durable snapshot unreadable")
+	requireRecordedGate(t, durableErr == nil && durable.Records[0].Attempts[0].Resolution.By == "agent:first-officer" && durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason, "approve durable snapshot unreadable")
 
 	events := successfulRecordedGateEvents(commands)
 	dispatches := 0
@@ -245,7 +287,6 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	} else {
 		t.Fatalf("dispatch oracle refused complete lifecycle: %v", err)
 	}
-	review := recordedGateReviewWith(preparedBriefing, preparedDigest)
 	zero := recordedGateLiveObservation(t, fixture, before, commandLog, review)
 	requireRecordedGate(t, zero.dispatch.builds == 1 && zero.dispatch.durableEffects == 0 && assertRecordedGateLifecycle(zero) != nil, "zero-effect executed build qualified")
 	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The one-use application was already consumed before dispatch.\n")
@@ -426,7 +467,7 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			closeCommit := commitRecordedGateState(t, binary, fixture, "durably record "+decision)
 			closed, _, err := gates.Read(fixture.entity)
 			attempt := closed.Records[0].Attempts[0]
-			requireRecordedGate(t, err == nil && readFile(t, fixture.entity) == recordedGateEntityAt(t, fixture, closeCommit) && attempt.Resolution.Decision == decision && attempt.Resolution.Reason == reasons[i] && attempt.Resolution.Adoption == "" && attempt.Application.Action == map[string]string{"revise": "feedback", "hold": "none"}[decision], "%s close/route snapshot mismatch", calls[i])
+			requireRecordedGate(t, err == nil && readFile(t, fixture.entity) == recordedGateEntityAt(t, fixture, closeCommit) && attempt.Resolution.Decision == decision && attempt.Resolution.Reason == reasons[i] && attempt.Application.Action == map[string]string{"revise": "feedback", "hold": "none"}[decision], "%s close/route snapshot mismatch", calls[i])
 			before := treeDigest(t, fixture.stateRoot)
 			result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 			assertRecordedGateByteCleanFailure(t, fixture, result, "condition")
@@ -1115,7 +1156,7 @@ func recordedGateReviewWith(briefingID, digest string) string {
 	return "# Recorded Gate Task — validation review\n\n" +
 		"Capability/change: the FO now calls the landed recorder and one-use application commands.\n\n" +
 		"Test and evidence: fresh-binary command replay, byte comparisons, and skipped-step mutants pass.\n\n" +
-		"Reviewed snapshot: `" + briefingID + "` at `" + digest + "`.\n\n" +
+		"Reviewed snapshot: `" + briefingID + "` at `" + compactRecordedGateDigest(digest) + "`.\n\n" +
 		"Findings: no material findings; CLI path normalization remains a named deferred product issue.\n\n" +
 		"Recommendation: approve and consume the authorization once.\n\n" +
 		"Decision ask: approve, revise with a concrete finding, or hold for a named prerequisite?\n\n" +

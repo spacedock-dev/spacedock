@@ -64,15 +64,11 @@ In particular, the pilot-only `gates.current.attempt`, `current-attempt`, `seque
 migration or compatibility rewrite. The `application` field is the typed one-use
 lifecycle boundary owned by the application layer on the same canonical-v1 writer surface.
 
-Every Briefing binding includes an id, SHA-256 digest, explicit digest domain, and exact
-file or room reference. A request-backed room additionally freezes its request digest;
-that request names the canonical Briefing with a clean room-relative locator, id, and
-digest. No reader infers a canonical basename. The approved digest domains are:
-
-- `canonical-bytes`: SHA-256 over RFC 8785/JCS canonical Briefing JSON bytes. New
-  recorder binds always use this domain.
-- `raw-file-pin`: an explicitly labelled raw-byte pin that may remain in a canonical v1
-  record. It is never silently reinterpreted as a canonical digest.
+Every Briefing binding includes an id, SHA-256 digest, the `canonical-bytes` digest
+domain, and an exact file or room reference. `canonical-bytes` is SHA-256 over RFC
+8785/JCS canonical Briefing JSON bytes. A request-backed room additionally freezes its
+request digest; that request names the canonical Briefing with a clean room-relative
+locator, id, and digest. No reader infers a canonical basename.
 
 A prepared provider-neutral room binds `request-digest`, the JCS digest of its
 `request.json`. Request-less and chat-only attempts may omit it. Changing the request,
@@ -117,26 +113,24 @@ worktree bytes. A clean detached or linked worktree is valid when it shares the
 expected Git history and the object is local.
 
 The primary Artifact alone carries the exact caller-supplied `summary`. References
-carry none. This stricter profile applies only to request-backed prepared rooms;
-request-less bindings and advisory-round Briefings retain their existing summary-free
-behavior. Exact prepare replay is a no-op, divergent occupancy fails closed, and
+carry none. Advisory-round Briefings remain summary-free. Exact prepare replay is a
+no-op, divergent occupancy fails closed, and
 handled validation, publish, or bind failure removes the new candidate and any
 newly-created empty parents. Success prints exactly `room`, `briefing`, `digest`, and
 `state=open` lines; the emitted absolute room is the only later handoff coordinate.
 
 ## Recorder lifecycle
 
-`spacedock gate record` derives lifecycle under the entity lock:
+`spacedock gate prepare` is the First Officer's normal lifecycle entry. With no record
+for the current stage it opens the first attempt. Exact replay of the current open room
+is a no-op; divergent open occupancy fails closed. After a closed attempt, preparation
+supersedes any pending application and appends a successor while earlier Briefings and
+Resolutions remain frozen.
 
-1. `--briefing` binds the exact supplied canonical Briefing file, regardless of
-   basename, then derives the logical gate from the entity's current workflow stage.
-2. With no record for that stage, it opens the first attempt.
-3. With an open last attempt, an identical binding is a no-op and a changed binding
-   replaces that attempt's Briefing.
-4. With a closed last attempt, it supersedes any pending application and appends a
-   successor. Existing Briefings and Resolutions remain frozen.
-5. A Result or chat decision closes only the last open attempt for the current stage and
-   derives its `advance/pending`, `feedback/pending`, or `none/not-applicable` application.
+`spacedock gate record` also accepts either the prepared room's retained provider
+Result or a semantic chat decision. Either closing source closes only the last open
+attempt for the current stage and derives its `advance/pending`, `feedback/pending`,
+or `none/not-applicable` application.
 
 Cross-logical-gate re-entry is ordinary: workflow stage selects the target record even
 when `gates.current.gate` names a different closed gate. The successful write selects the
@@ -262,7 +256,6 @@ data.
 
 ```text
 spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]
-spacedock gate record ENTITY --briefing PATH [--workflow-dir DIR]
 spacedock gate record ENTITY --room PATH [--workflow-dir DIR]
 spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]
 spacedock gate validate ENTITY [--workflow-dir DIR]
@@ -275,15 +268,14 @@ and compare-and-swap state; callers cannot submit an operation envelope or candi
 identities. `gate validate` is read-only and reports the selected record's last attempt.
 
 New delegated chat resolutions use `by: agent:first-officer`, require a nonblank
-evidence reason, and omit `adoption-note`. Readers continue to accept historical
-`adoption-note` values, but the chat recorder neither emits nor treats them as
-authority. The recorder constructs the portable Resolution under the asserted identity
-that rendered the decision; it does not authenticate chat or apply the result.
+evidence reason, and reject `adoption-note` as an unknown prototype field. The recorder
+constructs the portable Resolution under the asserted identity that rendered the
+decision; it does not authenticate chat or apply the result.
 
 ## Explicitly outside v1
 
-- Prototype-format compatibility, migration, and arbitrary unknown-field preservation
-  inside `gates`.
+- Prototype-format compatibility, `raw-file-pin`, migration, and arbitrary
+  unknown-field preservation inside `gates`.
 - Provider launch, polling, result retention, presentation UI, and Subspace-specific
   behavior.
 - Remote Git-object acquisition, retention refs, copied selected-source payloads, or

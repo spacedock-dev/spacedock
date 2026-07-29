@@ -177,7 +177,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate record <entity> --briefing PATH [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]")
+				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]")
 				return nil
 			}
 			if len(args) < 2 || (args[0] != "prepare" && args[0] != "record" && args[0] != "validate" && args[0] != "eligibility" && args[0] != "consume") {
@@ -340,25 +340,29 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				summary, err := gates.ValidateRoundFile(path, input.Round)
 				return printRound(summary, err, stdout, stderr)
 			}
+			if input.BriefingPath != "" {
+				fmt.Fprintln(stderr, "Error: gate record --briefing requires --round")
+				return exitCodeError{2}
+			}
 			sources := 0
-			for _, source := range []string{input.BriefingPath, input.RoomPath, input.Decision} {
+			for _, source := range []string{input.RoomPath, input.Decision} {
 				if source != "" {
 					sources++
 				}
 			}
 			if sources != 1 {
-				fmt.Fprintln(stderr, "Error: gate record requires exactly one of --briefing, --room, or --decision")
+				fmt.Fprintln(stderr, "Error: gate record requires exactly one of --room or --decision")
 				return exitCodeError{2}
 			}
 			if input.Decision != "" && input.Actor == "" {
 				fmt.Fprintln(stderr, "Error: --decision requires --actor ID")
 				return exitCodeError{2}
 			}
-			if input.BriefingPath != "" && (input.RoomPath != "" || input.Actor != "" || input.Reason != "") || input.RoomPath != "" && (input.Actor != "" || input.Reason != "") {
+			if input.RoomPath != "" && (input.Actor != "" || input.Reason != "") {
 				fmt.Fprintln(stderr, "Error: gate record flags do not match the selected semantic source")
 				return exitCodeError{2}
 			}
-			for _, retainedPath := range []*string{&input.BriefingPath, &input.RoomPath} {
+			for _, retainedPath := range []*string{&input.RoomPath} {
 				if *retainedPath != "" && !filepath.IsAbs(*retainedPath) {
 					*retainedPath = filepath.Join(dir, *retainedPath)
 				}

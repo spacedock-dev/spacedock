@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -105,17 +106,8 @@ func validateRetainedAuthorityExcept(entityPath, workflowDir string, doc *Docume
 			if err != nil {
 				return err
 			}
-			gitItems := 0
-			for _, item := range items {
-				if strings.HasPrefix(item.URI, "git-root://") {
-					gitItems++
-					if _, err := gitsource.Resolve(roots, item.URI, item.Rev); err != nil {
-						return fmt.Errorf("attempt %s selected source: %w", attempt.ID, err)
-					}
-				}
-			}
-			if gitItems != 0 && gitItems != len(items) {
-				return fmt.Errorf("attempt %s mixes Git-root and non-Git selected source identities", attempt.ID)
+			if err := validatePresentationGitSources(roots, items); err != nil {
+				return fmt.Errorf("attempt %s %w", attempt.ID, err)
 			}
 			if attempt.ProviderEvidence == nil {
 				continue
@@ -138,6 +130,9 @@ func validateRetainedAuthorityExcept(entityPath, workflowDir string, doc *Docume
 			if err != nil {
 				return err
 			}
+			if attempt.Resolution == nil || !reflect.DeepEqual(result.Resolution, *attempt.Resolution) {
+				return fmt.Errorf("attempt %s retained provider Resolution does not match its durable Resolution", attempt.ID)
+			}
 			inventory, err := decodePresentedInventory(inventoryBytes)
 			if err != nil {
 				return err
@@ -150,6 +145,22 @@ func validateRetainedAuthorityExcept(entityPath, workflowDir string, doc *Docume
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+func validatePresentationGitSources(roots gitsource.Roots, items []presentedItem) error {
+	gitItems := 0
+	for _, item := range items {
+		if strings.HasPrefix(item.URI, "git-root://") {
+			gitItems++
+			if _, err := gitsource.Resolve(roots, item.URI, item.Rev); err != nil {
+				return fmt.Errorf("selected source: %w", err)
+			}
+		}
+	}
+	if gitItems != 0 && gitItems != len(items) {
+		return fmt.Errorf("mixes Git-root and non-Git selected source identities")
 	}
 	return nil
 }

@@ -225,9 +225,6 @@ func inspectReviewedInput(entityPath string, binding Briefing) reviewedInputChec
 	case "canonical-bytes":
 		var data []byte
 		if binding.RequestDigest == "" {
-			if info, statErr := os.Stat(path); statErr == nil && info.IsDir() {
-				path = filepath.Join(path, "briefing.json")
-			}
 			data, err = os.ReadFile(path)
 		} else {
 			data, _, err = boundBriefingBytes(entityPath, binding)
@@ -236,17 +233,6 @@ func inspectReviewedInput(entityPath string, binding Briefing) reviewedInputChec
 			return reviewedInputUnknown
 		}
 		digest, err = CanonicalDigest(data)
-	case "raw-file-pin":
-		if info, statErr := os.Stat(path); statErr == nil && info.IsDir() {
-			// Historical raw-file bindings used the room directory. Canonical
-			// bindings retain the exact locator and never enter this branch.
-			path = filepath.Join(path, "briefing.json")
-		}
-		data, readErr := os.ReadFile(path)
-		if readErr != nil {
-			return reviewedInputUnknown
-		}
-		digest = RawDigest(data)
 	default:
 		return reviewedInputUnknown
 	}

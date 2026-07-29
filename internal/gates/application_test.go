@@ -133,7 +133,7 @@ func TestConsumeAdvancesAndSpendsAuthorizationOnce(t *testing.T) {
 	}
 }
 
-func TestConsumeStaleSupersedesWithoutEffectAndSuccessorLeavesOnePending(t *testing.T) {
+func TestConsumeStaleSupersedesWithoutEffect(t *testing.T) {
 	root, entity := applicationWorkflow(t)
 	if err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: root}); err != nil {
 		t.Fatal(err)
@@ -158,33 +158,6 @@ func TestConsumeStaleSupersedesWithoutEffectAndSuccessorLeavesOnePending(t *test
 	}
 	if got := doc.Records[0].Attempts[0].Application.State; got != "superseded" {
 		t.Fatalf("stale application state = %q, want superseded", got)
-	}
-
-	nextBriefing := filepath.Join(filepath.Dir(entity), "review", "ideation", "briefing-2", "briefing.json")
-	if err := os.MkdirAll(filepath.Dir(nextBriefing), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(nextBriefing, []byte(completeBriefing("briefing:task:ideation:2", "replacement")), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := RecordBriefing(entity, nextBriefing); err != nil {
-		t.Fatal(err)
-	}
-	if err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: root}); err != nil {
-		t.Fatal(err)
-	}
-	doc, _, err = Read(entity)
-	if err != nil {
-		t.Fatal(err)
-	}
-	pending := 0
-	for _, attempt := range doc.Records[0].Attempts {
-		if attempt.Application != nil && attempt.Application.State == "pending" {
-			pending++
-		}
-	}
-	if pending != 1 {
-		t.Fatalf("pending applications across attempts = %d, want 1", pending)
 	}
 }
 
@@ -347,13 +320,25 @@ func applicationWorkflow(t *testing.T) (string, string) {
 	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(briefing, []byte(completeBriefing("briefing:task:ideation:1", "review")), 0o644); err != nil {
+	briefingBytes := []byte(completeBriefing("briefing:task:ideation:1", "review"))
+	if err := os.WriteFile(briefing, briefingBytes, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(entity, []byte("---\nstatus: ideation\ntitle: Preserve formatting\n---\n# Task\nBody.\n"), 0o644); err != nil {
+	digest, err := CanonicalDigest(briefingBytes)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := RecordBriefing(entity, briefing); err != nil {
+	entityBytes := "---\nstatus: ideation\ntitle: Preserve formatting\ngates:\n" +
+		"  version: 1\n" +
+		"  current: {gate: 'gate:task:ideation'}\n" +
+		"  records:\n" +
+		"    - id: gate:task:ideation\n" +
+		"      stage: ideation\n" +
+		"      attempts:\n" +
+		"        - id: gate-attempt:task-ideation-1\n" +
+		"          briefing: {id: 'briefing:task:ideation:1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1/briefing.json}\n" +
+		"---\n# Task\nBody.\n"
+	if err := os.WriteFile(entity, []byte(entityBytes), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	return root, entity

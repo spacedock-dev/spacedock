@@ -108,7 +108,6 @@ type Resolution struct {
 	Decision string   `yaml:"decision" json:"decision"`
 	Reason   string   `yaml:"reason,omitempty" json:"reason,omitempty"`
 	Includes []string `yaml:"includes,omitempty" json:"includes,omitempty"`
-	Adoption string   `yaml:"adoption-note,omitempty" json:"adoption-note,omitempty"`
 }
 
 type Summary struct {
@@ -251,7 +250,7 @@ func Validate(doc *Document) error {
 				return fmt.Errorf("attempt %s has invalid or duplicate briefing binding", a.ID)
 			}
 			briefingIDs[a.Briefing.ID] = true
-			if a.Briefing.DigestDomain != "canonical-bytes" && a.Briefing.DigestDomain != "raw-file-pin" {
+			if a.Briefing.DigestDomain != "canonical-bytes" {
 				return fmt.Errorf("attempt %s has unknown digest-domain %q", a.ID, a.Briefing.DigestDomain)
 			}
 			if a.Briefing.RequestDigest != "" && !digestRE.MatchString(a.Briefing.RequestDigest) {
