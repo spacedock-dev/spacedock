@@ -3799,3 +3799,37 @@ Recommendation: **PASSED at exact candidate `913cf667e67fa47dedd2b41c8512351a905
 ### Summary
 
 Cycle 41 independently reproduces the two corrected live graders and their negative controls against an exact clean candidate binary. Prepared request authority, durable Git ancestry, repository-wide gates, strict docs, and the unchanged adjacent oracles are green with no material or deferred finding.
+
+## Stage Report: implementation (cycle 42 prose-oracle removal)
+
+- DONE: Delete the automated gate-review wording oracle and its same-source tests without adding accepted spellings, another parser, or replacement prose lint.
+  Commit `acae980f` removes `assertConciseRecordedGateReview`, its action regexes, digest/text token matcher, Claude/Codex/Pi transcript extractors, retained-review fixtures, and their same-source tests; no replacement wording rule exists.
+- DONE: Preserve the mechanical gate evidence for prepared request authority, the current attempt, bind/decision/consume ordering, durable effect, and Git ancestry.
+  `recordedGateHeldExpectation` still reads the sole prepared `request.json`; lifecycle grading still requires the exact gate/attempt/Briefing/digest, open or consumed authority as appropriate, command ordering, one successful build/effect, and close→consume→dispatch→effect ancestry.
+- DONE: Run the focused Codex gate-guardrail and recorded-gate lifecycle locally against the exact candidate; make no keep-moving, product-contract, skill, or CI changes.
+  Both focused Codex journeys passed against clean candidate `acae980fc145e624d9e04e7ec9f7fdb599585f6e`; the commit changes only `internal/ensigncycle` test files and starts no CI.
+
+### Mechanical regression evidence
+
+- `TestAssertGateHeldAcceptsPreparedFixtureBinding` passes a real prepared room and fails when the current attempt identity or prepared digest is mutated.
+- `TestGateGuardrailNegativeBrokenStateTransition` fails unbound, advanced, self-approved, and wrong-Briefing durable states without reading agent narration.
+- `TestRecordedGateLifecycleRealCLIReplay` exercises prepare→bind commit→record→close commit→consume→consume commit→dispatch→effect and fails zero/failed/pre-consume/duplicate builds, zero/duplicate effects, or missing ancestry.
+- `TestRecordedGateLifecycleProvenanceMutants` fails actor substitution, blank reason, forged adoption, missing handoff report, or missing DONE evidence.
+- `go test ./internal/ensigncycle -count=1` passed, and the live-tag package compiled with no selected tests.
+
+### Exact candidate and live runs
+
+- Detached checkout and embedded binary revision both equal `acae980fc145e624d9e04e7ec9f7fdb599585f6e`; `go version -m` reports `vcs.modified=false`.
+- `SPACEDOCK_BIN=/tmp/s4-prose-oracle-final.X2VZ9I/spacedock SPACEDOCK_REPO_ROOT=$PWD SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/s4-prose-oracle-final.X2VZ9I/artifacts go test -tags live -count=1 -timeout 20m -run '^TestLiveCodexSharedScenarios/(gate-guardrail|recorded-gate-lifecycle)$' ./internal/ensigncycle -v`
+  `gate-guardrail` passed in `114.83s`; `recorded-gate-lifecycle` passed in `197.29s`.
+
+### Repository verification and scope
+
+- `go test ./...` passed.
+- `go test ./... -race` passed.
+- `gofmt -w ./cmd ./internal`, `git diff --check`, and the clean worktree check passed.
+- Exact delta: 9 `internal/ensigncycle` test files at `+36/-415`; product Go, skills, contracts, documentation, workflow YAML, CI, and keep-moving coverage are unchanged.
+
+### Summary
+
+Cycle 42 removes the prose-oracle family instead of expanding its accepted vocabulary. The two live journeys now grade only independent prepared and durable lifecycle evidence, and both pass with the exact final candidate.
