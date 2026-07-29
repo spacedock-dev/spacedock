@@ -748,3 +748,53 @@ The Opus lane had completed the durable gate lifecycle, but the extractor
 discarded its truthful pre-decision review because one exact coordinated clause
 fell outside the bounded predicate. The retained replay now qualifies without
 broadening generic decision grammar and is ready for independent validation.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Validate exact candidate `f75f482e04a0a79268d6f6bb29a4c4247b3f0622`.
+  The two post-run commits change only three existing `internal/ensigncycle`
+  test/grader files: 53 additions and 3 deletions over `c34941ec`.
+- DONE: Confirm the Sonnet run-30412397240 disposition is conduct, not an oracle
+  false positive. The retained result records REJECTED validation/1, rework, and
+  PASSED validation/2, then fails because the stale validation/1 Briefing became
+  the final gate attempt; the semantic oracle correctly stayed red.
+- DONE: Confirm `5a2c06e` extends only the existing Claude zbc quarantine.
+  The live-tagged scope test proves Sonnet and Opus family aliases skip while
+  Haiku and unrelated model names remain active. Other Claude scenarios,
+  deterministic assertions, and the pre-existing Codex zbc quarantine are
+  unchanged; every zbc skip remains explicit non-evidence.
+- DONE: Confirm the existing zbc owner carries the new trigger.
+  `bind-post-rework-briefing-at-rejection-regate.md` pre-existed this cycle and
+  now names run `30412397240`, Sonnet's stale round-1 binding, and both affected
+  Claude families without weakening its distinct-post-rework-Briefing ACs.
+- DONE: Confirm the retained Opus review and lifecycle facts.
+  The root message at `2026-07-29T01:02:15.257Z` names the task/stage, exact
+  Briefing id and digest, approve recommendation, and coordinated decision ask;
+  later commands successfully record, commit, consume, dispatch, and retain the
+  successor effect.
+- DONE: Confirm `f75f482e` recognizes only the supported coordinated clause.
+  The generic actionable-option regex is unchanged; one exact normalized prefix
+  admits the coordinated record-and-consume clause. Exact ordered replay passes,
+  while negated, unrelated, vague, failed, misordered, nested, duplicate, and
+  batched controls remain red.
+- DONE: Run the exact-tip local verification gate.
+  Focused scope/replay tests, gofmt, diff check, full tests, race, and vet all
+  completed green; gofmt changed no tracked bytes.
+- DONE: Confirm the full PR quarantine and state boundary.
+  q3, w5, zbc, and 9w remain explicit non-evidence; no Roborev 106–127
+  hardening returned. State changes touch only the existing zbc owner and this
+  existing task body, with no new task and no review-round/frontmatter change;
+  the durable pointer remains `validation:8`.
+- SKIPPED: Modify or push code, run Roborev, trigger CI, or merge.
+  These remain outside this independent validation assignment.
+- DONE: Validation recommendation: PASSED for pre-CI readiness.
+  The candidate is ready for exactly one updated normal PR Runtime Live E2E
+  run. Run `30412397240` was at `c34941ec`, so no full live/value claim is made
+  for `f75f482e` until that updated run confirms it.
+
+### Summary
+
+Both completed-run dispositions are bounded and falsifiable at the exact
+candidate tip. The Sonnet conduct failure is quarantined as non-evidence under
+its existing owner, and the Opus false-negative is repaired without broadening
+generic grammar or lifecycle semantics.
