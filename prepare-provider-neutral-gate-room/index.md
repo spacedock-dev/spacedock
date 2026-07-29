@@ -1,7 +1,7 @@
 ---
 id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
-status: validation
+status: implementation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
 completed:
@@ -1717,6 +1717,28 @@ including its two leading/trailing spaces and non-ASCII code points.
   output paths, or reconstructed authority. Any missing `/subspace:r gate <room>`
   entry is a release dependency failure, not a reason to restore the verbose provider
   argument vector or add a compatibility wrapper.
+
+- Cycle 23: REVISE — Captain contract-portability cleanup after q0 design review;
+  surface 40 files and 4,080 changed LOC vs estimate 26 files and 1,904 changed
+  LOC (214%); AC unchanged at the provider-neutral value boundary.
+
+  Remove the concrete `/subspace:r gate <room>` invocation and Subspace-specific
+  lifecycle obligations from Spacedock's generic `present-gate`,
+  `fo-gate-lifecycle`, and gate specification. The generic contract receives an
+  explicitly selected presenter and passes only the prepared room; the selected
+  presenter's own skill owns its invocation, transport, retention, and diagnostics.
+  Keep the current chat default and room-only handoff. Do not add a provider registry,
+  capability probe, fallback selector, adapter, schema, command, readiness state,
+  withdrawal behavior, or compatibility path.
+
+  Make the existing FO lifecycle easier to scan by stating the current command
+  responsibilities and transitions compactly, without implementing `sk`'s future
+  readiness projection. `prepare` freezes an attempt, `record` closes without
+  advancing, and `consume` applies an approval. Preserve all existing recorder and
+  room behavior. Re-run the focused contract/skill tests, strict docs, full and race
+  suites, formatting, diff checks, and the existing local real-binary lifecycle before
+  CI. A material finding outside this exact contract cleanup returns to the Commander;
+  it does not expand s4.
 
 ## Stage Report: ideation
 
