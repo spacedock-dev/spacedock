@@ -120,6 +120,13 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+            - id: gate-attempt:s4ykctf21g60dvfgdd6cy9ny-validation-2
+              briefing:
+                id: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-2:revision-1
+                digest: sha256:7dbd6ff18dff892f6990f1d2c91e18b8045d8daf4df5037b89fe50b24b379d08
+                digest-domain: canonical-bytes
+                request-digest: sha256:9feeea66d117405f5799bbcf9dfff16724725ca4794bf90f1ac1a14a44329892
+                room-ref: ./review/validation/briefing-2
 review-round:
     id: round:s4ykctf21g60dvfgdd6cy9ny:implementation:13
     stage: implementation
