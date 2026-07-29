@@ -4,8 +4,8 @@ title: "Runtime Live E2E has failed on every branch for three days, so no merge 
 status: done
 source: "Found attributing PR #571's four red live lanes, 2026-07-27. The change was exonerated by baseline comparison and local reproduction; the lanes were already red on every branch."
 started: 2026-07-27T17:05:38Z
-completed:
-verdict:
+completed: 2026-07-29T08:05:18Z
+verdict: passed
 score: 0.85
 worktree: .worktrees/spacedock-ensign-live-lanes-red-on-every-branch
 issue:
@@ -108,6 +108,7 @@ review-round:
         digest-domain: canonical-bytes
         room-ref: ./review/validation/round-10
 pr: pr-merge:572
+archived: 2026-07-29T08:05:18Z
 ---
 
 Restore a trustworthy live signal without deleting the behavior the signal was
