@@ -10,6 +10,12 @@ user-invocable: false
 
 Load before engaged gate action. It grants no writes; read `fo-write-core.md` before FO mutation.
 
+| Command | Responsibility |
+|---------|----------------|
+| `gate prepare` | Opens one attempt, freezes selected authority in its room, and binds its Briefing. |
+| `gate record` | Closes that attempt from one semantic source; never advances status. |
+| `gate consume` | Applies one eligible approval and advances to its successor. |
+
 **Boot projection.** Use actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`; read its entity, never infer readiness from stage. `awaiting-captain` means an open current-stage Briefing; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. For gated current `status`, any selected or retained gate record used to resume/present must have `stage` equal to that status. A prior-stage `gates.current` is history, not reusable authority. If no selected attempt (omitted `validating`) or it mismatches, run `gate prepare` for the current status and present only its emitted binding.
 
 **Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select a Markdown gate-review Artifact and References, author its concise summary, then commit the selections. Supply judgment and paths; never author JSON, ids, digests, Git-root locators, or room coordinates. Paths use launch cwd.
