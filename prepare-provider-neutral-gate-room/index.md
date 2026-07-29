@@ -1,7 +1,7 @@
 ---
 id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
-status: validation
+status: implementation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
 completed:
@@ -1739,6 +1739,17 @@ including its two leading/trailing spaces and non-ASCII code points.
   suites, formatting, diff checks, and the existing local real-binary lifecycle before
   CI. A material finding outside this exact contract cleanup returns to the Commander;
   it does not expand s4.
+
+- Cycle 24: REVISE — Captain-ordered retirement of same-source prose-grep
+  oracles discovered during cycle-23 cleanup; AC unchanged.
+
+  Delete committed `internal/contractlint` tests whose pass/fail oracle is the
+  presence, absence, or ordering of words inside model-read skills or contracts.
+  Add no replacement lint or enforcement. Preserve runtime-behavior tests and
+  structural checks whose expected value comes from an independent source, including
+  file topology, reference resolution, schemas, and byte caps. This is deletion-only
+  test cleanup: no product, skill, contract, fixture, or CI behavior change belongs to
+  this correction.
 
 ## Stage Report: ideation
 
