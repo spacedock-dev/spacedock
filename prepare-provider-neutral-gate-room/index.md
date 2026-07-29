@@ -3419,3 +3419,18 @@ The first disposable chat E2E proves prepare, explicit-workflow boot, semantic
 approval, consume, and byte-clean repeat-consume behavior. The missing room-only
 Subspace entry point and the observed boot, commit, and help friction remain explicit;
 this note authorizes no product cleanup.
+
+## Stage Report: implementation (cycle 29)
+
+- DONE: Adopt and audit the existing 20-file uncommitted simplification, preserving only changes that serve the approved s4 agent journey and no compatibility layer.
+  Commit `004368de` removes non-round caller-authored Briefing binding, `raw-file-pin`, `adoption-note`, help scraping, and exact-digest prose while retaining canonical machine authority; final surface is 21 files at +308/-1036 because the shared status fixture now names its exact file instead of the deleted directory fallback.
+- DONE: Demonstrate the current chat gate journey end to end with the worktree binary: prepare, inspect the legible Briefing, record, validate/eligibility, consume, and prove repeat-consume refusal.
+  Disposable split-root replay emitted Briefing `briefing:journey:review:attempt-1:revision-1`, digest `sha256:a0066dc0307ebd57afaa05f4ef60e5fd148f81d743f0b5b1eedc5790377c3335`, and a two-file room; approve recorded, validate closed, eligibility was `advance/pending eligible=true`, consume moved `review` to `done`, and repeat consume exited 1 with entity SHA unchanged at `37931f0a427b8f01036f588a0c283062706e671a26a7ccced018b9eba8162dd9`.
+- DONE: Exercise the room-only Subspace presentation seam if the shipped provider now supports it; otherwise retain exact evidence, classify the dependency honestly, and do not invent replacement machinery.
+  External dependency remains unavailable: `/opt/homebrew/bin/subspace-tui --version` is `0.10.0-beta.7`, while shipped `subspace:r` accepts only `<file.md> [zellij]` and requires `0.10.0-beta.1`; no `gate <room>` entry or replacement machinery was added.
+- DONE: Run the required repository verification against the final committed surface.
+  `go test ./...` covers prepare-only fixture migration and fails if non-round `--briefing`, divergent open replacement, tampered-authority mutation, or repeat consume returns; `go test ./... -race`, `gofmt -w ./cmd ./internal`, `git diff --check`, and pinned `uv run --with-requirements docs/requirements.txt mkdocs build --strict` passed.
+
+### Summary
+
+Cycle 29 turns the recovered dirty simplification into a coherent prepare-first lifecycle and proves the complete First Officer chat journey before cleanup. Product implementation is ready for independent validation at `004368de`; the room-only Subspace handoff remains an honestly classified external provider dependency, not an s4 substitute surface.
