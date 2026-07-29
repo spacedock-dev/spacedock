@@ -248,12 +248,22 @@ func gatherBoot(probe claudeteam.TeamStateProbe, entities []*entity, stages []St
 		d.entityDirPresent = true
 	}
 
-	// SANDBOX: the .safehouse profile lives at the repo root (the launch convention),
-	// and the safehouse binary is resolved against the request PATH via the existing
-	// executable scan — no exec, no live host CLI. boot is a read, so nothing here
-	// selects the sandbox beyond a present profile.
+	// SANDBOX: boot reports THIS session's posture, so it renders SessionState —
+	// is this process sandboxed? — not whether a launch from here would wrap. That
+	// distinction is why the .safehouse profile is no longer read here: a profile
+	// is a launch fact, and boot is not a launch. The sandbox is detected from the
+	// request env via the shared registry, and the safehouse binary is resolved
+	// against the request PATH via the existing executable scan — no exec, no live
+	// host CLI.
+	//
+	// This field lands in the First Officer's durable boot record, which is why it
+	// mattered most that it inverted: inside the sandbox, safehouse is off PATH
+	// precisely BECAUSE the wrap already happened, so the old availability-only
+	// render wrote "unavailable (safehouse not on PATH)" into machine-read evidence
+	// captured from inside a sandbox.
 	available := lookupExecutable("safehouse", e.get("PATH")) != ""
-	d.sandbox = safehouse.State(safehouse.Present(gitRoot), available)
+	insideName, inside := safehouse.Inside(e.get)
+	d.sandbox = safehouse.SessionState(insideName, inside, available)
 	return d, nil
 }
 

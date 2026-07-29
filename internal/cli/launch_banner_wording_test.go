@@ -19,7 +19,7 @@ import (
 // states are proven independently by TestLaunchBannerSandboxLine.
 func renderBanner(host, dir string) string {
 	var buf bytes.Buffer
-	launchBanner(host, dir, false, lookMissing, &buf)
+	launchBanner(host, dir, false, bannerEnv(nil), lookMissing, &buf)
 	return buf.String()
 }
 
@@ -128,7 +128,7 @@ func TestLaunchBannerSingleWorkflowGolden(t *testing.T) {
 
 	want := "spacedock " + displayVersion() + " · launching claude as your first officer\n" +
 		"Workflow: " + filepath.Join("docs", "dev") + "\n" +
-		"Sandbox: unavailable (safehouse not on PATH)\n" +
+		"Sandbox: not wrapping this launch (no .safehouse profile)\n" +
 		"claude is your first officer — ask it for the queue and next steps.\n"
 	if got := renderBanner("claude", repo); got != want {
 		t.Fatalf("single-workflow banner golden mismatch:\n got=%q\nwant=%q", got, want)

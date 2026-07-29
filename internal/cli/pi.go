@@ -227,7 +227,7 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 	}
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 
-	launchBanner("pi", dir, wrap, ops.LookPath, stderr)
+	launchBanner("pi", dir, wrap, envGetenv(env), ops.LookPath, stderr)
 
 	// The Spacedock first-officer/ensign skills are no longer passed as --skill
 	// flags: the installed package's .pi/extensions/spacedock.ts extension

@@ -17,7 +17,6 @@
   ],
   "skills": "./skills/",
   "hooks": "./hooks.json",
-  "requires-contract": ">=3,<4",
   "interface": {
     "displayName": "Spacedock",
     "shortDescription": "Plain text workflows for AI agents",

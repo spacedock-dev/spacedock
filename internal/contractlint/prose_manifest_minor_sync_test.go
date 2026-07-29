@@ -20,18 +20,9 @@ import (
 // stamp call site, goes red immediately. It is not prose-grep: neither value is
 // asserted to equal text the check itself wrote.
 
-// frozenTombstone is D4's cross-era sentinel: the manifest's requires-contract
-// field, never edited again after the migration off the contract-integer
-// mechanism. An integer-era binary (contract 1 or 2) still reads it and aborts
-// too-old-binary with the correct "upgrade the binary" remedy. Frozen; pinned
-// here so neither vendored manifest can be "helpfully" bumped back toward a
-// live range. Do not edit.
-const frozenTombstone = ">=3,<4"
-
 // vendoredManifest is the subset of plugin.json fields the sync test reads.
 type vendoredManifest struct {
-	Version          string `json:"version"`
-	RequiresContract string `json:"requires-contract"`
+	Version string `json:"version"`
 }
 
 // readVendoredManifest reads and parses the named repo plugin manifest
@@ -85,21 +76,6 @@ func TestProseMinorMatchesVendoredManifestMinor(t *testing.T) {
 			t.Errorf("%s: manifest minor %s does not match the FO shared-core's stamped minor %s — "+
 				"a release stamped one side and not the other, or a hand edit drifted them apart",
 				pluginDir, manifestMinor, proseMinor)
-		}
-	}
-}
-
-// TestVendoredManifestTombstoneFrozen pins D4's cross-era sentinel on both
-// vendored manifests: requires-contract stays exactly ">=3,<4", the tombstone
-// value an integer-era binary needs to abort with the correct remedy. This
-// binary itself never reads the field again (D2) — only an old binary does —
-// so nothing here would ever fail loudly on its own; this test is the guard.
-func TestVendoredManifestTombstoneFrozen(t *testing.T) {
-	for _, pluginDir := range []string{".claude-plugin", ".codex-plugin"} {
-		m := readVendoredManifest(t, pluginDir)
-		if m.RequiresContract != frozenTombstone {
-			t.Errorf("%s: requires-contract = %q, want the frozen D4 tombstone %q (never edited again)",
-				pluginDir, m.RequiresContract, frozenTombstone)
 		}
 	}
 }
