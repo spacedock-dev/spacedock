@@ -67,6 +67,18 @@ gates:
                 digest: sha256:9f5025e5b0119f3895e26f7cb072e9eeac8772b99e85413c1668561aa09494d8
                 digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:se0v37bt7mhsrmhta1nyns0r:validation:1
+                briefing: briefing:se0v37bt7mhsrmhta1nyns0r:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-29T04:32:30.299796Z"
+                decision: revise
+                reason: 'Run 30421227237 is 3/4: Sonnet, Opus, and Pi passed; Codex durably consumed the approved gate, dispatched implementation, and archived done, but the keep-moving extractor recognizes only legacy status --set advancement. Revise only that successful-consume oracle and preserve failed-consume/no-advance controls.'
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 review-round:
     id: round:se0v37bt7mhsrmhta1nyns0r:validation:8
     stage: validation
