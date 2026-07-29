@@ -3676,3 +3676,32 @@ Cycle 38 validates the Captain’s provider-neutral correction and the complete 
 ### Summary
 
 The offline red was one undeclared fixture dependency on ambient Git author identity. The repository-local setup correction makes both committing temporary repositories deterministic and leaves the gate lifecycle and product surface unchanged.
+
+## Stage Report: validation (cycle 39)
+
+- DONE: Independently confirm PR #573’s offline red is one fixture dependency on ambient Git author identity and that the four-line local-config correction changes no product behavior or assertion.
+  GitHub run `30476347217` and a detached `070f36ae` reproduction fail only committing `internal/ensigncycle` cases with `Author identity unknown`; `070f36ae..6742e166` is one test file at `+4/-0`, limited to local `user.name`/`user.email` configuration.
+- DONE: Reproduce the committing recorded-gate tests under blank HOME with system/global Git configuration disabled and verify the full offline suite evidence at the corrected exact tip.
+  At `6742e166`, the four named committing cases, uncached `go test ./...`, and uncached `go test ./... -race` pass with blank `HOME`, system/global config disabled, `user.useConfigOnly=true`, and `GOPROXY=off`; removing the correction makes all four named cases fail at commit.
+- DONE: Confirm the prior provider-neutral contract and prose-oracle deletion validation remains applicable, classify findings, and recommend PASSED or REJECTED without expanding scope.
+  The correction changes no production, contract, skill, documentation, assertion, or oracle surface; cycle-38 evidence remains applicable, while full/race suites, strict MkDocs, formatting, and diff checks pass again at `6742e166`.
+
+### Evidence
+
+- PR #573 remote head `070f36ae` has one failed check, `offline`; docs and install checks pass, and the live log attributes every failure to the shared fixture’s missing persistent Git identity.
+- The pre-correction isolated four-test run reports four top-level failures and nine identity diagnostics; no assertion reaches a contradictory product outcome.
+- The corrected isolated four-test run exercises prepare, state commits, record, consume, refusal, terminal, and resume paths; deleting the local identity setup makes their commit boundary fail.
+- `go test ./...` and `go test ./... -race` exercise the preserved provider-neutral lifecycle, contractlint structural invariants, and all other packages at the corrected exact tip.
+- `gofmt -w ./cmd ./internal`, `git diff --check`, a clean tracked-worktree comparison, and strict MkDocs all pass.
+
+### Finding classification
+
+Material outcome defects: none. Material evidence defects: none. Deferred risks: none. Polish findings: none.
+
+Operational release precondition: PR #573 still points at red tip `070f36ae`; push `6742e166` to its head branch and require the offline check to rerun green before merge.
+
+Recommendation: **PASSED at corrected exact tip `6742e166`**.
+
+### Summary
+
+Cycle 39 independently reproduces the ambient-identity-only red and verifies the four-line repository-local fixture correction under stricter isolation than the failed CI job. The complete provider-neutral and prose-oracle validation remains applicable, with no material finding or scope expansion; only PR synchronization and CI rerun remain before merge.
