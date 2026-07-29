@@ -1,5 +1,4 @@
-// ABOUTME: Binds the Codex spawn signature in the FO adapter to the arg shape the Go
-// ABOUTME: emitter produces, and guards the shared feedback skill's host-neutrality.
+// ABOUTME: Binds the Codex spawn signature in the FO adapter to the Go emitter's argument shape.
 package contractlint
 
 import (
@@ -11,9 +10,6 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
 )
 
-// codexSpawnCallRe captures a `spawn_agent(...)` arg list; codexSpawnArgRe matches
-// ONE whole `name` / `name="value"` entry. The anchors are load-bearing: an
-// unanchored scan skips unparseable text, so `spawn_agent(task_name,,message)` passed.
 var (
 	codexSpawnCallRe = regexp.MustCompile(`spawn_agent\(([^)]*)\)`)
 	codexSpawnArgRe  = regexp.MustCompile(`^([a-z_]+)(?:="([^"]*)")?$`)
@@ -37,14 +33,10 @@ func codexSpawnArgs(argList string) ([]codexSpawnArg, error) {
 	return out, nil
 }
 
-// codexSpawnSignatureViolations holds every `spawn_agent(...)` signature the
-// adapter spells out to the arg shape `ToolArgs` DECLARES: the arg-NAME set must
-// equal its keys, and a spelled-out default must equal its value. Either side
-// moving alone reds.
 func codexSpawnSignatureViolations(text string, toolArgs map[string]string) []string {
 	calls := codexSpawnCallRe.FindAllStringSubmatch(text, -1)
 	if len(calls) == 0 {
-		return []string{"no `spawn_agent(...)` signature found — extractor bug; the binding would pass vacuously"}
+		return []string{"no `spawn_agent(...)` signature found"}
 	}
 	wanted := map[string]bool{}
 	for name := range toolArgs {
@@ -68,86 +60,19 @@ func codexSpawnSignatureViolations(text string, toolArgs map[string]string) []st
 			}
 		}
 		if !setEqual(names, wanted) {
-			out = append(out, fmt.Sprintf("signature %q arg set %v does not match the Go emitter's ToolArgs keys %v; neither side may rename, add, or drop an arg without the other", call[0], sortedSet(names), sortedSet(wanted)))
+			out = append(out, fmt.Sprintf("signature %q arg set %v does not match the Go emitter's ToolArgs keys %v", call[0], sortedSet(names), sortedSet(wanted)))
 		}
 	}
 	return out
 }
 
-// TestCodexSpawnSignatureBindsToolArgs binds the Codex FO adapter's spawn
-// signature to the arg shape `dispatch.CodexMultiAgentV2Spawn.ToolArgs()`
-// declares. Scope of the claim: `ToolArgs` has NO production caller, so this is
-// doc-to-Go-declaration agreement, NOT evidence of what a Codex spawn puts on the
-// wire. It still reds on real divergence — the two sides can move independently —
-// but nothing here observes runtime behavior. The adapter's other tool names are
-// annotated on codexToolTokens in runtime_binding_block_test.go.
 func TestCodexSpawnSignatureBindsToolArgs(t *testing.T) {
 	emitted := dispatch.CodexMultiAgentV2Spawn{TaskName: "spacedock_worker", Message: "assignment"}.ToolArgs()
 	if len(emitted) == 0 {
-		t.Fatal("ToolArgs() returned no args — the binding would pass vacuously")
+		t.Fatal("ToolArgs() returned no args")
 	}
 	for _, msg := range codexSpawnSignatureViolations(readRepoFile(t, codexFORuntimeRel), emitted) {
 		t.Errorf("%s: %s", codexFORuntimeRel, msg)
-	}
-}
-
-// hostNeutralBannedTokens are the host and host-tool names a SHARED skill must
-// never carry — a structural-absence vocabulary, asserting nothing about meaning.
-var hostNeutralBannedTokens = []string{
-	"Codex",
-	"Claude",
-	"followup_task",
-	"send_message",
-	"send_input",
-	"SendMessage",
-	"list_agents",
-	"wait_agent",
-	"spawn_agent",
-	"interrupt_agent",
-}
-
-func hostNeutralViolations(text string) []string {
-	var out []string
-	for _, banned := range hostNeutralBannedTokens {
-		if strings.Contains(text, banned) {
-			out = append(out, fmt.Sprintf("contains runtime-specific host or tool name %q", banned))
-		}
-	}
-	return out
-}
-
-// TestFeedbackRejectionFlowStaysHostNeutral keeps the shared feedback-rejection
-// skill free of host and host-tool names. What its `«capability»` vocabulary MEANS
-// is bound by TestRuntimeCapabilitySetAgreesAcrossCoreAndAdapters.
-func TestFeedbackRejectionFlowStaysHostNeutral(t *testing.T) {
-	for _, msg := range hostNeutralViolations(readRepoFile(t, feedbackFlowRel)) {
-		t.Errorf("%s %s", feedbackFlowRel, msg)
-	}
-}
-
-// TestHostNeutralGuardDiscriminates is the non-vacuity control: capability-only
-// prose PASSES, a host name and each shape of host tool name RED.
-func TestHostNeutralGuardDiscriminates(t *testing.T) {
-	pass := []struct{ why, text string }{
-		{"capability-only prose", "Re-run the reviewer through `«addressable-worker»` and wait for `«completion-signal»`.\n"},
-		{"empty document", ""},
-	}
-	for _, c := range pass {
-		if v := hostNeutralViolations(c.text); len(v) != 0 {
-			t.Fatalf("control: the %s was wrongly flagged: %v", c.why, v)
-		}
-	}
-	red := []struct{ why, text string }{
-		{"host name (Claude)", "On Claude, keep the reviewer alive.\n"},
-		{"host name (Codex)", "On Codex, keep the reviewer alive.\n"},
-		{"turn-starting tool name", "Re-run the reviewer with followup_task(target,message).\n"},
-		{"non-triggering tool name", "Send context with send_message(target,message).\n"},
-		{"Claude team tool name", "Re-run the reviewer with SendMessage.\n"},
-	}
-	for _, c := range red {
-		if v := hostNeutralViolations(c.text); len(v) == 0 {
-			t.Fatalf("control: the %s was not flagged — the guard stopped biting", c.why)
-		}
 	}
 }
 

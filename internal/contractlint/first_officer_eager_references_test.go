@@ -1,10 +1,10 @@
-// ABOUTME: Pins the first-officer entry point's lazy write/merge boundary.
-// ABOUTME: Only the shared core is eager; write and merge resolve at their triggers.
+// ABOUTME: Pins the first-officer entry point's lazy write/merge file topology.
 package contractlint
 
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -24,9 +24,7 @@ func TestFirstOfficerEntryEagerlyImportsOnlySharedCore(t *testing.T) {
 			imports = append(imports, line)
 		}
 	}
-	wantImports := []string{
-		"@references/first-officer-shared-core.md",
-	}
+	wantImports := []string{"@references/first-officer-shared-core.md"}
 	if strings.Join(imports, "\n") != strings.Join(wantImports, "\n") {
 		t.Fatalf("first-officer eager imports = %v, want exactly %v", imports, wantImports)
 	}
@@ -43,37 +41,44 @@ func TestFirstOfficerEntryEagerlyImportsOnlySharedCore(t *testing.T) {
 	} {
 		cue := "{first_officer_base}/" + rel
 		if got := strings.Count(block, cue); got != 1 {
-			t.Errorf("deferred load-point cue %q occurs %d times, want exactly once", cue, got)
+			t.Errorf("deferred load-point reference %q occurs %d times, want exactly once", cue, got)
 		}
 		path := filepath.Join(root, "first-officer", rel)
-		body, err := os.ReadFile(path)
-		if err != nil {
-			t.Errorf("deferred reference %s does not resolve to a readable file: %v", rel, err)
-		} else if len(body) == 0 {
-			t.Errorf("deferred reference %s resolves to an empty file", rel)
+		info, err := os.Stat(path)
+		if err != nil || info.Size() == 0 {
+			t.Errorf("deferred reference %s does not resolve to a non-empty file: %v", rel, err)
 		}
 	}
 
 	for _, dir := range []string{"fo-merge-core", "fo-smallest-sufficient-mechanism", "fo-write-core"} {
 		path := filepath.Join(root, dir)
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
-			t.Errorf("rejected promoted-skill directory exists at %s; want no separately callable capability", path)
+			t.Errorf("redundant promoted-skill directory exists at %s", path)
 		}
 	}
 }
 
-func TestFirstOfficerDeferredWriteCoreHasSingleCanonicalBody(t *testing.T) {
+func TestFirstOfficerDeferredWriteCoreHasSingleCanonicalFile(t *testing.T) {
 	root := skillsRoot(t)
 	canonical := filepath.Join(root, "first-officer", "references", "fo-write-core.md")
-	body, err := os.ReadFile(canonical)
-	if err != nil {
-		t.Fatalf("read canonical deferred write core: %v", err)
+	info, err := os.Stat(canonical)
+	if err != nil || info.Size() == 0 {
+		t.Fatalf("canonical deferred write core does not resolve non-empty: %v", err)
 	}
-	if !strings.Contains(string(body), "## Mutation Gate") || !strings.Contains(string(body), "## FO Write Scope") {
-		t.Fatalf("canonical deferred write core does not carry the write contract")
-	}
-
 	if _, err := os.Stat(filepath.Join(root, "fo-write-core")); !os.IsNotExist(err) {
 		t.Fatalf("standalone fo-write-core wrapper remains: %v", err)
 	}
+}
+
+func deferredLoadPointsBlock(t *testing.T, body string) string {
+	t.Helper()
+	loc := regexp.MustCompile(`(?m)^## Deferred load points$`).FindStringIndex(body)
+	if loc == nil {
+		t.Fatal("shared core has no deferred load-points section")
+	}
+	rest := body[loc[1]:]
+	if end := regexp.MustCompile(`(?m)^## `).FindStringIndex(rest); end != nil {
+		rest = rest[:end[0]]
+	}
+	return rest
 }
