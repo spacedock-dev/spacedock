@@ -96,6 +96,24 @@ func compactRetainedGateReview(decision string) string {
 		"Assessment: 1 done, 0 skipped, 0 failed.\n" + decision
 }
 
+func retainedOpusRecordedGateReview() string {
+	return "Bound Briefing digest confirmed from entity state: `sha256:0a54f...42ac`. Eligibility is `false` only because no decision is recorded yet (expected for an open gate). AC-1 cross-check: its evidence is the validation report (retained fixture replayed green) plus the enforcement path itself — successor dispatch is physically gated behind `consume`, which I will honor. Presenting the gate review.\n\n" +
+		"---\n\n" +
+		"**Gate review: Recorded Gate Task — validation**\n" +
+		"Chosen direction: validation PASS — the retained validation package was replayed and the real command fixture is green.\n" +
+		"Recommend **approve**.\n" +
+		"Reviewed snapshot: `briefing:docs-dev:3k:validation:attempt-1:revision-1` @ `sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac`\n\n" +
+		"Checklist (from `## Stage Report: validation` in `.spacedock-state/recorded-gate-task/index.md` lines 15-22):\n" +
+		"- DONE: replayed retained evidence; command fixture green\n\n" +
+		"Reviewer findings\n" +
+		"- Polish: CLI path normalization remains a named, deferred product issue (non-blocking).\n\n" +
+		"Assessment: 1 done, 0 skipped, 0 failed.\n" +
+		"AC coverage: **AC-1** (successor dispatch requires consumed approval) — satisfied by mechanism: the handoff/successor dispatch runs only after this approval is recorded and consumed, which this lifecycle enforces.\n\n" +
+		"Decision: approve to record the gate decision and consume the one-use authorization, advancing the entity to `handoff` and dispatching the handoff worker. Under your delegated conn I will record this as `agent:first-officer`.\n\n" +
+		"---\n\n" +
+		"Acting on the delegated conn to record the approval:"
+}
+
 func TestAssertConciseRecordedGateReviewArchivedOpus(t *testing.T) {
 	const decision = "Decision: **approve** consumes the authorization and advances to `handoff`; **reject** bounces to `implementation`; **hold** keeps validation open for a prerequisite."
 	review := compactRetainedGateReview(decision)
@@ -105,6 +123,17 @@ func TestAssertConciseRecordedGateReviewArchivedOpus(t *testing.T) {
 	nonActionable := strings.Replace(review, decision, "Decision: **approve** is recommended; **reject** and **hold** are available.", 1)
 	if err := assertConciseRecordedGateReview(nonActionable); err == nil {
 		t.Fatal("non-actionable gate review qualified")
+	}
+
+	retained := retainedOpusRecordedGateReview()
+	if err := assertConciseRecordedGateReview(retained); err != nil {
+		t.Fatalf("run 30412397240 Opus gate review failed: %v", err)
+	}
+	negated := strings.Replace(retained,
+		"Decision: approve to record the gate decision and consume the one-use authorization",
+		"Decision: approve to record the gate decision and do not consume the one-use authorization", 1)
+	if err := assertConciseRecordedGateReview(negated); err == nil {
+		t.Fatal("negated coordinated Opus decision qualified")
 	}
 }
 

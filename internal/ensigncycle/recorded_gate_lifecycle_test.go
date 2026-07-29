@@ -116,7 +116,9 @@ func actionableRecordedGateDecisionLine(line string) bool {
 		return false
 	}
 	body := strings.NewReplacer("*", "", "`", "").Replace(line[prefix[1]:])
-	return recordedGateActionableOptionRe.MatchString(body)
+	coordinatedApprove := "approve to record the gate decision and consume the one-use authorization"
+	return recordedGateActionableOptionRe.MatchString(body) ||
+		strings.HasPrefix(strings.ToLower(strings.TrimSpace(body)), coordinatedApprove)
 }
 
 func assertConciseRecordedGateReview(review string) error {
@@ -860,6 +862,9 @@ func TestRecordedGateReviewExtractorsRequireOneOrderedRootReview(t *testing.T) {
 		`{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"c","name":"Bash","input":{"command":"spacedock state commit recorded-gate-task"}}]}}` + "\n" + `{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"c","content":"state-head\t0123456789abcdef0123456789abcdef01234567","is_error":false}]}}`,
 		`{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}]}}`, `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","input":{"command":"spacedock gate record recorded-gate-task --decision approve"}}]}}`, `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":"Committed recorded-gate-task"}]}}`, "", ""}
 	claude.failed, claude.child = strings.Replace(claude.commit, `"is_error":false`, `"is_error":true`, 1), strings.Replace(claude.review, "null", `"child"`, 1)
+	retainedOpusReview := retainedOpusRecordedGateReview()
+	retainedOpusEvent := `{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":` + fmt.Sprintf("%q", retainedOpusReview) + `}]}}`
+	requireRecordedGate(t, claude.extract(claude.commit+"\n"+retainedOpusEvent+"\n"+claude.decision) == retainedOpusReview, "run 30412397240 Opus root review was not selected in its committed pre-decision interval")
 	codex := recordedGateHost{recordedGateReviewFromCodexJSONL, "codex", `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock state commit recorded-gate-task","status":"completed","exit_code":0,"aggregated_output":"state-head\t0123456789abcdef0123456789abcdef01234567"}}`, `{"type":"item.completed","item":{"type":"agent_message","text":` + fmt.Sprintf("%q", recordedGateReview()) + `}}`, `{"type":"item.completed","item":{"type":"command_execution","command":"spacedock gate record recorded-gate-task --decision approve"}}`, `{"type":"item.completed","item":{"type":"agent_message","text":"Committed recorded-gate-task"}}`, "", ""}
 	codex.failed, codex.child = strings.Replace(codex.commit, `"exit_code":0`, `"exit_code":1`, 1), strings.Replace(codex.review, "agent_message", "subagent_message", 1)
 	requireRecordedGate(t, codex.extract(strings.Replace(codex.decision, `"command":"`, `"status":"completed","exit_code":0,"aggregated_output":"Error: entity has no gates record\nstate-head\t0123456789abcdef0123456789abcdef01234567","command":"`, 1)+"\n"+codex.commit+"\n"+codex.review+"\n"+codex.decision) == recordedGateReview(), "codex valid post-bind review did not survive failed pre-bind decision")
