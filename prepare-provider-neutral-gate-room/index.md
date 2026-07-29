@@ -3833,3 +3833,36 @@ Cycle 41 independently reproduces the two corrected live graders and their negat
 ### Summary
 
 Cycle 42 removes the prose-oracle family instead of expanding its accepted vocabulary. The two live journeys now grade only independent prepared and durable lifecycle evidence, and both pass with the exact final candidate.
+
+## Stage Report: validation (cycle 43)
+
+- DONE: Independently verify that no automated gate-review prose-content oracle or same-source wording test remains and no replacement parser or lint was added.
+  At exact candidate `acae980f`, the removed extractor/parser/matcher symbols have no repository references; the `+36/-415` additions only rewire grading to prepared and durable state, with no review-text reader, parser, regex, or lint.
+- DONE: Verify prepared authority and mechanical lifecycle evidence still fail on mutated identity, ordering, cardinality, effect, or Git ancestry.
+  Focused offline controls reject mutated gate/attempt/Briefing/digest identity, out-of-order or missing events, zero/failed/duplicate builds, zero/duplicate effects, missing ancestry, substituted actor, blank reason, and forged or missing successor evidence.
+- DONE: Run the focused real Codex gate-guardrail and recorded-gate lifecycle plus required full, race, format, diff, and strict-doc checks at the exact clean candidate.
+  A clean nested clone and binary both identified `acae980fc145e624d9e04e7ec9f7fdb599585f6e` with `vcs.modified=false`; both live journeys, full/race suites, `gofmt`, diff/clean checks, and pinned strict MkDocs passed.
+
+### Acceptance evidence
+
+- AC-1: the full suite reran folder/flat two-file preparation, replay, path-scoped commit, archive, rollback, and sibling-dirt checks; extra room payload, swept sibling, or orphaned flat companion fails the exact-tree assertions.
+- AC-2: the full `internal/gitsource` suite reran moved-root, detached, malformed-coordinate, missing-object, and byte-pin controls; mutable worktree bytes or acquisition fallback cannot satisfy the local-object resolver.
+- AC-3: CLI/gates cases reran exact summary/cardinality, arbitrary locator through record/validate/eligibility, request-less controls, and recursive duplicate refusal; normalization, basename fallback, or last-member-wins acceptance fails.
+- AC-4: exact-tip Codex `gate-guardrail` and `recorded-gate-lifecycle` passed in `123.14s` and `196.96s`; grading observes prepared request authority and durable lifecycle state without reading gate-review prose or adding a provider lane.
+- AC-5: prepared-authority, room-recording, four-pin drift/refusal, and no-association cases passed in the full gates/CLI suites; retained authority mutations remain fail-closed without entity mutation.
+
+### Adversarial evidence
+
+- `TestAssertGateHeld`, `TestAssertGateHeldAcceptsPreparedFixtureBinding`, and `TestGateGuardrailNegativeBrokenStateTransition` fail when current gate state or prepared identity diverges.
+- `TestRecordedGateLifecycleRealCLIReplay` proves exact event order, one successful dispatch, one durable effect, and close→consume→dispatch→effect ancestry; each adjacent mutant is red.
+- `TestRecordedGateLifecycleProvenanceMutants` rejects actor substitution, blank reason, forged adoption, and missing or failed successor evidence without consulting model narration.
+
+### Finding classification
+
+Material outcome defects: none. Material evidence defects: none. Deferred risks: none introduced by this deletion-only correction. Polish findings: none.
+
+Recommendation: **PASSED at exact candidate `acae980fc145e624d9e04e7ec9f7fdb599585f6e`**.
+
+### Summary
+
+Cycle 43 independently validates deletion of the recorded-gate prose oracle rather than accepted-wording expansion. Prepared authority, lifecycle mechanics, exact-tip live Codex journeys, repository gates, and strict documentation all pass with no material or deferred finding; the separate keep-moving-posture scenario remains unchanged and outside s4.
