@@ -833,3 +833,28 @@ The sole red is a harness cleanup race, not a released lifecycle defect. The
 smallest correction now keeps the fixture alive until the resident launcher and
 Claude exit cleanly; independent live validation is still required because the
 local isolated credential expired before either focused journey could start.
+
+## Stage Report: implementation (Sonnet live-cycle cleanup proof)
+
+- DONE: Prove commit `90243bf7` with the focused real Sonnet live cycle after
+  refreshing the isolated OAuth snapshot.
+  The repository-documented Keychain refresh stayed silent; the exact live test
+  passed on `claude-sonnet-5` in 156.99s at tip `90243bf7`.
+- DONE: Preserve the exact focused journey evidence.
+  Session `75ba325e-40fb-4623-bb3a-66c206a6b3ba` archived `make-it-work.md`,
+  then the new drain observed FO exit code zero; either a surviving process or
+  nonzero exit would have failed before TempDir cleanup.
+- DONE: Report readiness for independent validation.
+  `TestLiveEnsignCycle` passed without the prior `TempDir RemoveAll` failure, so
+  the clean-exit correction now has real Sonnet evidence.
+- DONE: Keep this continuation proof-only.
+  Code remained exactly at `90243bf7`; the live result did not falsify the fix,
+  so no implementation, scenario, product, or launcher semantics changed.
+- SKIPPED: Run Roborev, push code, trigger CI, merge, file tasks, or widen scope.
+  These actions remain explicitly outside this continuation.
+
+### Summary
+
+Fresh isolated OAuth allowed the previously blocked real Sonnet proof to run.
+The supported journey terminalized, archived, and exited cleanly, confirming the
+harness correction is ready for independent validation.
