@@ -3554,3 +3554,16 @@ The generic Spacedock contract now ends at the opaque committed-room handoff and
 ### Summary
 
 Cycle 34 corrects the cycle-33 test-policy violation and restores the no-cross-channel fallback boundary while making existing command ownership easier to scan. The correction is committed at `f5d531a9`; it adds no readiness, withdrawal, registry, probing, compatibility, schema, or provider-execution mechanism.
+
+## Stage Report: implementation (cycle 35 presenter assertion removal)
+
+- DONE: Remove the affected presenter prose assertions instead of updating them.
+  Commit `478217bc` deletes the room-only string-presence loop from `TestFOGateLifecycleOwnsEveryEngagedEntry` and the Presentation channels row from `TestFOLocalOrderedProceduresPreserved`; unrelated assertions are unchanged.
+- DONE: Keep contract semantics under direct review and the existing real lifecycle rather than committed prose grep.
+  No replacement lint or assertion was added; provider-neutral handoff and no-fallback skill prose remain unchanged from `f5d531a9`.
+- DONE: Run the bounded verification and report the exact correction delta.
+  `go test ./internal/contractlint`, `gofmt -w ./cmd ./internal`, and `git diff --check` passed; the exact delta is 1 file at `+0/-9`, and strict MkDocs was not rerun because no documentation surface changed.
+
+### Summary
+
+Cycle 35 removes only the two requested presenter-prose enforcement sites and leaves all unrelated contractlint coverage intact. The test-only correction is committed at `478217bc` with no semantic or documentation change.
