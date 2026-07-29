@@ -3451,3 +3451,18 @@ Cycle 29 turns the recovered dirty simplification into a coherent prepare-first 
 ### Summary
 
 NEEDS DECISION: the bounded gate implementation is locally committed and its focused thin journey is green, but current main's generic compatibility harness and state-sync publisher conflict with the captain-approved exclusions. The branch is 38 files at `+4040/-948` versus current `origin/main` (net `+3092`, reduced from the rebased pre-reconstruction net `+3256`); do not push until the captain chooses whether those main-owned tests are retired/rebased or the excluded surfaces are reassigned.
+
+## Stage Report: implementation (cycle 31 final prepare-first fixture cleanup)
+
+- DONE: Apply the First Officer's ownership classification without reopening excluded compatibility or state-sync product code.
+  Removed only the abandoned `TestStateCommitFlatIgnoresSuccessfulGitWarningsWhenParsingPaths` residue from s4 commit `011bc916`; `internal/statesync/publish.go` is unchanged. The cleanup commit is `ee2cab74`, 4 test files at `+37/-188`.
+- DONE: Align existing recorded-gate fixtures with the supported prepare-first authority path while preserving one positive lifecycle oracle.
+  The existing helper now prepares from committed Artifact/References; interface-only relative-path, arbitrary-basename, divergent-rebind, and mutable-stale replacement cases were deleted. The thin real-binary prepare → bind commit → dynamic presentation → decision → close commit → consume → consume commit → successor-dispatch journey remains the single positive oracle.
+- DONE: Keep advisory round recording intact and adapt only its later ordinary gate setup.
+  `gate record --round validation/1 --briefing ... --log ...` remains unchanged and covered; the same test creates its later validation gate with `gates.Prepare` and verifies the advisory round never becomes ordinary gate authority.
+- DONE: Pass focused, default, race, formatting, and diff verification without push or CI.
+  `go test ./internal/cli ./internal/ensigncycle`, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and `git diff --check origin/main...HEAD` passed. No code or state commit was pushed and no CI was triggered.
+
+### Summary
+
+The First Officer's final cleanup resolves cycle 30's reported blockers without compatibility machinery or excluded product changes. Final local code tip is `ee2cab74`; the complete branch is 40 files at `+4017/-1076` versus current `origin/main` (net `+2941`, down 151 lines from cycle 30).
