@@ -4,8 +4,8 @@ title: Prepare provider-neutral gate rooms and align canonical Briefing recordin
 status: done
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
-completed:
-verdict:
+completed: 2026-07-29T20:42:57Z
+verdict: passed
 score: "1.0"
 worktree: .worktrees/spacedock-ensign-prepare-provider-neutral-gate-room
 issue:
@@ -169,6 +169,7 @@ review-round:
         room-ref: ./review/implementation/round-13
 mod-block:
 pr: pr-merge:573
+archived: 2026-07-29T20:42:57Z
 ---
 
 ## Cycle 11 governing design
