@@ -694,3 +694,27 @@ The bounded cycle-8 reconstruction passes independent local validation at
 now grades on the exact durable and ordered facts while paired false-positive
 controls stay red. Release value remains pending one normal same-tip 4/4 PR CI
 run, with all four named quarantines still non-evidence.
+
+## Stage Report: implementation (zbc quarantine extension)
+
+- DONE: Extend only the existing zbc rejection-flow model quarantine to Sonnet.
+  PR run `30412397240` completed two Sonnet validations but rebound
+  `briefing:rejection-task:validation:round-1` as the final gate; the existing
+  `assertReviewRoundRecorded` oracle correctly rejected that advisory round as
+  a gate attempt.
+- DONE: Keep the quarantine explicit non-evidence under the existing owner.
+  `TODO(zbcj98qfwtax61vxdzrf615e)` now covers Claude Opus and Sonnet only;
+  Codex, Pi, other Claude scenarios, deterministic round/gate coverage, and
+  product semantics remain unchanged.
+- DONE: Add focused model-scope coverage before implementation.
+  The live-tagged predicate test fails without the zbc helper and proves Sonnet
+  and Opus aliases skip while Haiku and unrelated names remain active.
+- DONE: Run the required local verification gate.
+  Focused live-tagged predicate tests, full tests, race, vet, gofmt, and diff
+  checks are recorded with the separate code and state commits.
+
+### Summary
+
+The newly observed Sonnet failure is quarantined under its existing zbc owner
+without weakening the oracle or broadening any other scenario. The lane remains
+explicit non-evidence until zbc supplies distinct post-rework Briefing binding.
