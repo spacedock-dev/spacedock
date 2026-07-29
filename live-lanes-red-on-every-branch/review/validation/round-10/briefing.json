@@ -1,0 +1,30 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:se0v37bt7mhsrmhta1nyns0r:validation:round-10",
+  "question": "How should the arbitrary-variable false positive found by independent validation cycle 5 be dispositioned?",
+  "artifacts": [
+    {
+      "id": "artifact:rejected-candidate-43e1d462",
+      "uri": "git-root://main/43e1d462c548ff78df389ef64395254e2aaf0f5c/internal/ensigncycle/shared_keep_moving_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:3fb2fbc4b59bd5b3fd3f6f25f46460cbd7dd60e3d58d246a961c299803fda587",
+      "summary": "Rejected matcher accepts every shell identifier as a possible Spacedock launcher."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:bounded-correction",
+      "uri": "git-root://main/25cb48d76a9200048e07c3f0467724c7128b74c4/internal/ensigncycle/shared_keep_moving_test.go",
+      "mediaType": "text/x-go",
+      "rev": "sha256:b4c7207abd0564faa69cf045efbe0abc6ee29c36e812a63d6434853ea855f655",
+      "label": "Literal SD is retained alongside the pre-existing accepted launchers; arbitrary shell identifiers are rejected."
+    },
+    {
+      "type": "Reference",
+      "id": "reference:proof",
+      "label": "The planted NOT_SPACEDOCK control first reproduced the false positive, then passed red alongside the retained SD positive and every existing negative; full tests, race, vet, gofmt, and diff checks pass."
+    }
+  ]
+}

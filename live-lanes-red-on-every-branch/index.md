@@ -80,14 +80,14 @@ gates:
                 target-stage: implementation
                 state: pending
 review-round:
-    id: round:se0v37bt7mhsrmhta1nyns0r:validation:9
+    id: round:se0v37bt7mhsrmhta1nyns0r:validation:10
     stage: validation
-    cycle: 9
+    cycle: 10
     briefing:
-        id: briefing:se0v37bt7mhsrmhta1nyns0r:validation:round-9
-        digest: sha256:2e11084ff7e564c795b42f3df7c04cf92877ce83860c95ba7c067a7711b7004e
+        id: briefing:se0v37bt7mhsrmhta1nyns0r:validation:round-10
+        digest: sha256:afaba296eb8a38492c19ad1f10c4a54ca94808d10e47e837d198d5e755867bc0
         digest-domain: canonical-bytes
-        room-ref: ./review/validation/round-9
+        room-ref: ./review/validation/round-10
 pr: "#572"
 ---
 
@@ -1008,3 +1008,37 @@ REJECTED. The observed successful `"$SD"` consume and all dispatched controls
 replay correctly, but candidate `43e1d462` weakens the oracle by accepting any
 shell-variable launcher. The correction is limited to literal `SD` recognition
 plus an arbitrary-variable negative.
+
+## Stage Report: implementation (Codex launcher-variable narrowing)
+
+- DONE: Narrow Codex gate-consume launcher recognition from arbitrary shell
+  variables to the observed literal `SD` variable only.
+  Commit `25cb48d7` replaces the generic identifier arm with literal `SD` while
+  preserving bare/absolute `spacedock`, `SPACEDOCK_BIN`, and `launcher`.
+- DONE: Add an arbitrary-variable planted-output counterexample while
+  preserving the retained `"$SD"` success and all existing negatives.
+  The new `"$NOT_SPACEDOCK"` specimen first reproduced the false positive, then
+  stayed red; retained `"$SD"`, wrong entity, failed, invocation/output-only,
+  ineligible, unconsumed, wrong-target, no-advance, and no-dispatch controls pass.
+- DONE: Re-run only the focused deterministic correction checks, then the
+  standard full/race/vet/format gate, and record advisory `validation/10`
+  triage.
+  Focused keep-moving tests, gofmt, diff check, `go test ./...`,
+  `go test ./... -race`, and `go vet ./...` passed; the round recorder retained
+  four entries with `triage=all-fixed` and advisory Resolutions.
+- SKIPPED: Repeat the expensive real live run.
+  The correction only narrows recognition; retained exact `"$SD"` is the
+  falsifiable positive, as required by the dispatch.
+- DONE: Preserve the exact evidence-layer boundary.
+  One existing file changed by two additions and one deletion; no product,
+  gate, runtime, prompt, skill, workflow, grade, TODO, quarantine, or other-host
+  semantics changed.
+- SKIPPED: Run Roborev, push code, trigger CI, merge, file tasks, or inspect
+  unrelated findings.
+  These actions remain explicitly outside this validation correction.
+
+### Summary
+
+The over-broad shell-variable matcher is now restricted to the one observed
+`SD` dialect. Strict planted-output rejection and all established positive and
+negative controls are ready for independent validation at `25cb48d7`.
