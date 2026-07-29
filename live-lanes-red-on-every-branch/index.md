@@ -1042,3 +1042,45 @@ plus an arbitrary-variable negative.
 The over-broad shell-variable matcher is now restricted to the one observed
 `SD` dialect. Strict planted-output rejection and all established positive and
 negative controls are ready for independent validation at `25cb48d7`.
+
+## Stage Report: validation (cycle 6)
+
+- DONE: Re-review exact candidate `25cb48d7` against the cycle-5
+  arbitrary-variable finding and the original successful `"$SD"` consume
+  requirement.
+  The +2/-1 diff over rejected `43e1d462` adds only literal `SD` recognition
+  and one `"$NOT_SPACEDOCK"` negative in the existing keep-moving oracle file.
+- DONE: Reproduce the retained CI replay and the arbitrary-variable,
+  failed-consume, no-advance, and no-dispatch controls at the exact candidate.
+  The 172,012-byte run-`30421227237` trace replays green; arbitrary variable,
+  wrong entity, failed, invocation/output-only, ineligible, unconsumed, wrong
+  target, no advance, and advance-without-dispatch controls remain red.
+- DONE: Confirm completed, exit-zero, eligible, consumed, and implementation
+  target correlation without weakening dispatch requirements.
+  Only one completed command with exit code zero, an accepted Spacedock
+  launcher, `eligible=true`, `consumed=true`, and
+  `target-stage=implementation` proves advancement; durable dispatch evidence
+  remains independently required.
+- DONE: Verify the bounded diff and standard deterministic gate.
+  Focused keep-moving controls, gofmt, diff check, `go test ./...`,
+  `go test ./... -race`, and `go vet ./...` passed with code still exactly at
+  `25cb48d7`.
+- DONE: Confirm no product, gate, runtime, prompt, skill, workflow, grade,
+  TODO, quarantine, or other-host semantic change.
+  The correction touches only `internal/ensigncycle/shared_keep_moving_test.go`
+  and narrows the Codex evidence extractor to the observed launcher identity.
+- DONE: Validate advisory `validation/10` and recommend PASSED or REJECTED
+  without modifying the candidate.
+  The round retains four entries and two advisory revise Resolutions with no
+  application; status remains validation. PASSED with no Material, deferred,
+  or polish finding.
+- SKIPPED: Repeat the expensive live run, run Roborev, push code, trigger CI,
+  merge, file tasks, or widen scope.
+  Exact retained `"$SD"` is the falsifiable positive, and the narrowing cannot
+  introduce a live false positive; these other actions remained out of scope.
+
+### Summary
+
+PASSED. Candidate `25cb48d7` closes the cycle-5 Material evidence defect by
+accepting only literal `SD` in the added launcher arm while preserving the
+retained successful consume and every advancement and dispatch counterexample.
