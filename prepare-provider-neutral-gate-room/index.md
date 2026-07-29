@@ -1,7 +1,7 @@
 ---
 id: s4ykctf21g60dvfgdd6cy9ny
 title: Prepare provider-neutral gate rooms and align canonical Briefing recording
-status: validation
+status: implementation
 source: "Durable-decisions cross-repo dogfood ruling after xb and Subspace em review, 2026-07-24"
 started: 2026-07-24T14:54:10Z
 completed:
@@ -1750,6 +1750,17 @@ including its two leading/trailing spaces and non-ASCII code points.
   file topology, reference resolution, schemas, and byte caps. This is deletion-only
   test cleanup: no product, skill, contract, fixture, or CI behavior change belongs to
   this correction.
+
+- Cycle 25: REVISE — PR #573 offline CI; material evidence defect in the
+  recorded-gate fixture, AC unchanged.
+
+  All eight failing cases share one trigger: their temporary Git repositories lack
+  local `user.name` and `user.email`, while the developer machine's global identity
+  masked that missing fixture setup. Correct only the shared real-lifecycle fixture so
+  it configures deterministic repository-local author identity. Reproduce under an
+  isolated HOME with system/global Git config disabled, run the affected package and
+  full offline suite locally, and push only after both pass. Do not change gate
+  behavior, assertions, expected outcomes, CI configuration, or unrelated tests.
 
 ## Stage Report: ideation
 
