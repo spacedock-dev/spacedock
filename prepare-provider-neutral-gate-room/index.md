@@ -3524,3 +3524,18 @@ Recommendation: **PASSED**.
 ### Summary
 
 Cycle 32 independently reproduces AC-1 through AC-5 at `ee2cab74` and proves four planted authority failures are caught by non-tautological regressions. Full, race, formatting, diff, docs, and applicable real-binary journey evidence are green, with no material finding and one bounded size-risk revisit condition.
+
+## Stage Report: implementation (cycle 33 provider-neutral presentation contract)
+
+- DONE: Remove the concrete Subspace invocation and provider execution mechanics from generic gate contracts while preserving the committed prepared-room handoff.
+  Commit `cb267d09` replaces `/subspace:r gate <room>`, discovery, materialization, launch, retention, fallback, and UI detail with one opaque handoff through the selected channel's declared interface.
+- DONE: Make the existing prepare, record, and consume responsibilities legible without adding another lifecycle mechanism.
+  The end-to-end contract now shows the shared `gate prepare` and bind commit, alternative chat or opaque override presentation, recorder-owned `gate record`, close commit, `gate consume`, consume commit, and successor; the speculative failure and withdrawal branch is removed.
+- DONE: Add focused contract checks that preserve provider neutrality and the existing lifecycle ownership.
+  `TestFOGateLifecycleOwnsEveryEngagedEntry`, `TestGatePresentationContractsUseOpaqueRoomHandoff`, and `TestFOLocalOrderedProceduresPreserved` pass and reject concrete Subspace/provider implementation detail, an unowned provider subgraph, or failure/withdrawal branches.
+- DONE: Run focused, strict-documentation, full, race, formatting, diff, and real-binary verification at the committed candidate.
+  `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, `git diff --check`, and `uv run --with-requirements docs/requirements.txt mkdocs build --strict` passed; `TestRecordedGateLifecycleRealCLIReplay` and the focused contract checks passed again at exact tip `cb267d09`.
+
+### Summary
+
+The generic Spacedock contract now ends at the opaque committed-room handoff and leaves presentation-channel implementation outside its authority. Existing recorder schema and behavior remain intact, no readiness, withdrawal, registry, probe, fallback, schema, or compatibility mechanism was added, and neither code nor CI was pushed or triggered.
