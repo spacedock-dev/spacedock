@@ -232,24 +232,29 @@ unchanged. The test fails if the guard uses `gates.current` as authority, reject
 canonical current-stage successors, touches rounds, or introduces another
 command/field.
 
-**AC-4 - Both Claude matrix legs actively prove default-headless stop-open behavior.**
+**AC-4 - The q3vp-linked Sonnet default-headless stop-open proof is active, with model-neutral deterministic guards.**
 
-Verified by: the linked TODO is removed only after AC-1 through AC-3 are green; focused
-Sonnet and Opus `TestLiveDefaultHeadlessStopsAtGate` runs use the exact candidate tip,
-then the affected Claude live lane passes. No expected final-state assertion changes.
-The check fails if the skip remains, either model is omitted, or the journey closes,
-consumes, advances, or dispatches past the open gate.
+Verified by: the linked q3vp TODO is removed only after AC-1 through AC-3 are green;
+package and CLI guards exercise chat and room paths without model dependence; and a
+focused Sonnet `TestLiveDefaultHeadlessStopsAtGate` run is directly executable at the
+exact candidate tip with no expected final-state assertion changes. The check fails
+if the q3vp skip remains or the journey closes, consumes, advances, or dispatches past
+the open gate. Opus execution remains blocked by the pre-existing w5 TODO and is
+reported explicitly rather than claimed; its remedy is not owned by q3vp.
 
 ## Expected surface and observable semantics
 
-Baseline estimate: 6 files, about 145 insertions and 8 deletions. Tolerance is at most
-2 additional files or 60 additional inserted lines; exceeding either requires design
-re-entry. Expected files:
+Revised implementation surface under the First Officer's AC-4 decision: 7 files,
+about 203 insertions and 14 deletions, within the original allowance of at most 2
+additional files and 60 additional inserted lines. Files:
 
 - `internal/gates/operation.go` — parser, workflow flags, and shared close guard,
   approximately +40/-5.
-- `internal/gates/gates_test.go` — package refusal/re-gate table, approximately +55.
+- `internal/gates/application_test.go` — package refusal/re-gate table and canonical
+  application fixture updates, approximately +88/-3.
 - `internal/cli/gate_test.go` — exact output and byte/lock controls, approximately +35.
+- `internal/status/boot_identify_test.go` — canonicalize one ordinary-close fixture,
+  approximately +2/-2.
 - `docs/specs/gate-resolution-frontmatter-contract.md` — normative close precondition,
   approximately +8/-1.
 - `docs/site/reference/command-reference.md` — user-facing recovery sentence,
@@ -298,10 +303,11 @@ parallel gate harness.
    and non-actionable stage. Cost: one consolidated command table.
 3. Regression suites: run focused `./internal/gates` and `./internal/cli`, then
    `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
-4. Live restoration: remove the TODO and run focused Sonnet and Opus
-   `TestLiveDefaultHeadlessStopsAtGate`, then the affected Claude live CI lane at the
-   exact candidate SHA. This is required because the changed test file is live-loaded,
-   but it is not evidence in place of the deterministic product guard.
+4. Live restoration: remove the q3vp TODO and run focused Sonnet
+   `TestLiveDefaultHeadlessStopsAtGate` at the exact candidate SHA. Report the
+   pre-existing w5 Opus skip explicitly without changing it. This is required because
+   the changed test file is live-loaded, but it is not evidence in place of the
+   deterministic product guard.
 
 No fixture or expectation may be changed merely to make `se0` green. A deterministic
 test that still permits a cross-stage or noncanonical-identity Resolution is a product
@@ -341,3 +347,22 @@ ordinary decision now requires the canonical v1 shape and a current-stage match.
 Diagnostics, ACs, tests, estimate, documentation wording, and the appended report
 move together while historical reads, advisory rounds, and legitimate canonical
 re-gates remain intact.
+
+## Stage Report: implementation
+
+- DONE: Write failing package and CLI controls first, then implement the shared locked ordinary-close guard for chat and room decisions with byte-clean refusal.
+  Commit `e1e13f98d` adds the shared `currentStageAttempt` precondition; the focused tables failed before production changes and now fail if either source bypasses exact diagnostics, byte identity, empty success output, Resolution absence, or lock cleanup.
+- DONE: Preserve canonical current-stage re-gates and advisory rounds while rejecting malformed, unqualified, cross-stage, non-gated, and terminal ordinary closes.
+  `TestRecordRequiresCanonicalBriefingAtActionableCurrentStage` covers both sources for every refusal, while `TestRecordCanonicalSuccessorAndCrossGateReentry` fails if multi-colon canonical successors or status-selected re-entry stop working or alter the formerly selected gate.
+- DONE: Stay within the six-file semantic budget, run focused/full/race checks, and request classified Roborev review without absorbing unrelated CI or review work.
+  Six semantic files plus one mechanical status fixture total 7 files and +203/-14 within tolerance; `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` pass, and Roborev panel job 388 found no issues in its passing correctness review.
+- DONE: Revise AC-4 and its test plan under the First Officer's no-scope-expansion decision.
+  The body now requires model-neutral deterministic guards, q3vp skip removal, and a directly executable Sonnet command; Opus remains explicitly routed to unchanged TODO `w5bfnrvpcphw857nzz93340c`.
+- FAILED: Execute the focused Sonnet default-headless journey at candidate commit `e1e13f98d`.
+  The command launched but Claude returned HTTP 429 before any First Officer work (“weekly limit”; reset 1pm Asia/Taipei), so no behavioral pass is claimed.
+- SKIPPED: Execute the focused Opus default-headless journey.
+  The unchanged w5 TODO skipped Opus as directed; Roborev's Claude product reviewer failed on the same external weekly limit and produced no finding to classify.
+
+### Summary
+
+Commit `e1e13f98d` makes ordinary gate closure fail closed unless locked current status is a nonterminal `gate: true` stage and the retained Briefing has a canonical matching-stage v1 identity. Deterministic, full, race, documentation, and correctness-review checks pass; the only missing proof is the externally rate-limited Sonnet live journey, with Opus explicitly outside q3vp ownership.
