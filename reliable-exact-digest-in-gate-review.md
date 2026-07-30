@@ -3,7 +3,7 @@ title: "Make exact Briefing digest presentation reliable in live gate reviews"
 status: backlog
 source: "se0 complete Sonnet live suite, 2026-07-28: the FO completed the recorded-gate lifecycle but presented only 'digest per briefing.json artifact set' instead of the bound sha256 value; the exact semantic oracle correctly rejected it."
 score: 0.85
-sprint: durable-decisions
+sprint:
 group: gate
 sprint-readiness: ready
 issue:
