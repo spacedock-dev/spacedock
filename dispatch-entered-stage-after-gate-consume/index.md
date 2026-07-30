@@ -1,6 +1,6 @@
 ---
 title: Dispatch the entered working stage after gate consumption
-status: validation
+status: done
 source: "Codex live run 30197794474 on 2026-07-26: rejection-flow began at implementation, but the FO advanced directly to validation without an implementation worker/report; the strict two-cycle provenance assertion correctly failed."
 started: 2026-07-26T10:57:18Z
 completed:
@@ -101,7 +101,7 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
 review-round:
     id: round:gqsw81ghf48hr2n3jg6k7nx8:implementation:1
