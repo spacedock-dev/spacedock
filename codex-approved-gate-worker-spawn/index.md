@@ -1,6 +1,6 @@
 ---
 title: Require Codex worker spawn after approved gate advance
-status: backlog
+status: ideation
 source: "KD validation cycle 4, Codex keep-moving-posture at b60d1c8"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
