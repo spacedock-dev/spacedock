@@ -3,7 +3,7 @@ title: "Align zero-signal dispatch checklists between the FO contract and dispat
 status: backlog
 source: "se0 local Codex keep-moving proof, 2026-07-28: a stage with no Outputs or naturally advancing AC produced the contract-valid empty checklist, while dispatch build rejected it and forced break-glass dispatch."
 score: 0.72
-sprint: durable-decisions
+sprint:
 group: dispatch
 sprint-readiness: ready
 issue:
