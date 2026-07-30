@@ -19,11 +19,15 @@ stages:
       model: opus
     - name: implementation
       worktree: true
+      context-sections:
+        - Review-finding disposition
     - name: validation
       worktree: true
       fresh: true
       feedback-to: implementation
       gate: true
+      context-sections:
+        - Review-finding disposition
     - name: done
       terminal: true
 ---

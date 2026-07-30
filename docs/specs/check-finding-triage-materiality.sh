@@ -20,7 +20,7 @@ NR == 1 {
     recorded_material = ($6 == "material")
     known_class = ($6 == "material" || $6 == "correct-but-disproportionate")
     check = (exact_columns && valid_boundary && known_class && material == recorded_material) ? "accept" : "reject"
-    expected = $NF
+    expected = $7
 
     if (expected != check) {
         printf "FAIL %s: got %s, want %s\n", $1, check, expected > "/dev/stderr"
