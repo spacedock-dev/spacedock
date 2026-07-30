@@ -232,3 +232,18 @@ Ideation now binds post-rework approval to the existing correction-cycle record,
 ### Summary
 
 Correction review produced a smaller contract: status compares only `correction-round`, while retained validation derives the round Briefing identity and digest from a normal pinned Context Reference. This removes duplicated authority and about 65 estimated insertions without weakening stale refusal, presentation evidence, or the original value invariant.
+
+## Stage Report: implementation
+
+- DONE: Write failing scalar/Reference freshness controls first, then derive correction authority in gate prepare and retained validation without duplicating Briefing metadata.
+  Commit `dfc14ca19` adds one attempt scalar plus one ordinary pinned Reference; the focused control fails if either binding is missing while frozen Briefing/request digests remain coherent.
+- DONE: Make stale post-round attempts fail byte-cleanly across validate, record, eligibility, consume, prepare replay, and status readiness while initial gates retain current behavior.
+  Gate tests exercise all five retained-authority operations and exact tree equality; status fixtures distinguish fresh/stale open attempts and preserve closed-history readiness.
+- DONE: Stay inside the approved 12-file semantic budget, preserve the existing round recorder, run focused/full/race/live evidence, and request classified Roborev review.
+  The candidate is 11 files, +395/-28; `go test ./...` and `go test ./... -race` pass, and Roborev job 394 reports no issues after the authorized closed-history fix.
+- SKIPPED: Complete cross-runtime AC-5 clean-run proof.
+  Two Codex runs completed both cycles but omitted `gate record --round validation/1` (one falsely claimed the Git-initialized fixture was not Git); Claude was rejected before FO work by weekly-limit 429. The FO classified clean live proof blocked on the unmet `kd` advisory-round publication dependency pending merge/rebase.
+
+### Summary
+
+Implementation now makes post-rework gate preparation derive the latest same-stage correction round, bind its retained Briefing through an existing canonical Reference, and fail stale open authority across every retained operation and readiness projection. Initial gates and closed history retain their behavior; the exact candidate is `dfc14ca19`, with offline/race and clean Roborev proof complete and cross-runtime live proof explicitly deferred until `kd` lands.
