@@ -152,3 +152,18 @@ Run the focused durable tests first, then `gofmt -w ./cmd ./internal`, `go test 
 ### Summary
 
 Ideation now removes the rejected transcript observer instead of extending its dialect grammar. The replacement proves each completed task from existing dispatch-entry, worker-report, terminal, archive, and Git-history facts, with a durable falsifier and strict net-negative implementation budget.
+
+## Stage Report: implementation
+
+- DONE: Replace transcript/replay observers with the bounded, net-negative per-task Git-history journey oracle.
+  Code commit `1dd01b6db` deletes the four observer files and lands 273 insertions/1,447 deletions across exactly 10 files; restoring a deleted parser consumer or exceeding the declared surface makes the budget/provenance review fail.
+- DONE: Prove three independent journeys and exact missing, stale, reordered, and cross-attributed negative controls.
+  `TestDurableTaskJourneys` reports 3/3 for ordered real-Git journeys and exactly 2/3 for each affected-slug control; restoring a missing step, accepting a pre-dispatch report, or crediting a multi-path report commit makes the named control fail.
+- FAILED: Run focused, format, full, race, then exactly one exact-head Codex live confirmation after deterministic proof is green.
+  Focused tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed, but the authorized corrected exact-head live run completed all three journeys and the oracle still reported 0/3.
+
+### Summary
+
+Candidate `1dd01b6db` is frozen with deterministic and race proof green. The corrected live preflight built `0.27.0-pre2+dev` from that exact tip and `doctor --host codex --plugin-manifest .codex-plugin/plugin.json` confirmed compatibility; Codex then reported `approved-gate`, `ready-one`, and `ready-two` dispatched, worker-reported, passed, and archived, while `questioned` was re-shaped and held at its corrected review gate.
+
+The oracle rejected every completed slug with the exact reason `missing path-scoped dispatch entry with stage and started`. Go test cleanup removed the temporary workflow before its path history could be inspected, so weakening the dispatch rule would be a guess; route back to ideation to redesign the runtime-neutral durable boundary and retain failing state, with transcript/provider parsing still forbidden.
