@@ -71,6 +71,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:9e8cde28a37107216caafc407f253db2014a9d827a871c344d75c6330b78040a
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:gqsw81ghf48hr2n3jg6k7nx8:validation:1
+                briefing: briefing:gqsw81ghf48hr2n3jg6k7nx8:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T14:12:33.606877Z"
+                decision: revise
+                reason: 'Captain narrowed pre2 to the provider-free journey: retain worktree-safe entered-stage actionability, revert merge-finalization changes, and remove the cold checklist-omission promise.'
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 review-round:
     id: round:gqsw81ghf48hr2n3jg6k7nx8:implementation:1
     stage: implementation
