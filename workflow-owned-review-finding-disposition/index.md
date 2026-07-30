@@ -1,6 +1,6 @@
 ---
 title: Make review-finding disposition workflow-owned and separate in-stage review from rejection routing
-status: validation
+status: implementation
 source: "Captain boundary audit, 2026-07-30: an end-of-implementation Roborev round never enters feedback-rejection-flow, and finding classification must happen when findings arrive rather than only after rejection."
 started: 2026-07-30T01:34:32Z
 completed:
@@ -285,3 +285,7 @@ The implementation separates observation, proposal, current-work authorization, 
 ### Summary
 
 Recommendation: **REJECTED** for two task-owned Material findings: the workflow policy is not delivered through the normal dispatched stage context, and AC-4's fixtures do not falsify removal of two promised guards. The runtime suites, opaque routing, six-authority wording, retained authorization drive, and no-drift checks otherwise pass; candidate commit `00f8c203` remains untouched.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation/Roborev job 318; surface 10 files/117 insertions vs estimate 10 files/187 insertions (63%); AC unchanged
