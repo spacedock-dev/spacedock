@@ -344,3 +344,16 @@ Cycle 2 narrows the candidate to the provider-free post-consume journey and leav
 ### Summary
 
 Recommendation: PASSED for the exact provider-free post-consume journey at `fd657883d`. No journey-relevant material, evidence, or deferred finding remains; merge-finalization and cold checklist-omission semantics were confirmed absent and were not re-expanded.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Verify exact-tip patch semantics against the previously passed candidate.
+  At rebased SHA `cb01129b` on release-stamped base `5e7f1ffa`, the entered-stage predicate, projection, guard, and focused test source are byte-identical to passed tip `fd657883d`; the release-base patch remains 13 files and 641 touched lines.
+- DONE: Inspect conflict resolutions for drift without expanding scope.
+  The gate-site and FO-dispatch resolutions preserve upstream retained-request/rejection-routing prose while adding only current=current dispatch semantics; the recorded-gate resolution preserves the upstream oracle and adds the provider-free pre/post report projection assertions, with merge and shared completion surfaces unchanged from `5e7f1ffa`.
+- DONE: Re-run exact-tip focused, full, race, and diff checks.
+  Real-CLI consume/recovery, worktree byte-clean refusal, projection/boot parity, and negative rejection tests passed; SHA-guarded `go test ./...`, `go test ./... -race`, and `git diff --check` passed at `cb01129b`; no CI was triggered.
+
+### Summary
+
+Recommendation: PASSED for exact-tip integration at `cb01129b`. No conflict-resolution drift or critical-journey material/evidence finding was observed.
