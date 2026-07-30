@@ -4,8 +4,8 @@ title: "`--version` prints every host's runtime line and reports safehouse avail
 status: done
 source: "Captain observation 2026-07-27 on bootstrap output; confirmed in printVersion (internal/cli/cli.go:752-759). The binary already carries the runtime detector it does not use."
 started: 2026-07-27T08:05:18Z
-completed:
-verdict:
+completed: 2026-07-30T14:00:12Z
+verdict: passed
 score: 0.4
 worktree: .worktrees/spacedock-ensign-version-output-runtime-and-sandbox-state
 issue:
@@ -98,8 +98,9 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:571
+archived: 2026-07-30T14:00:12Z
 ---
 
 Make the first command every First Officer session runs describe the session it is actually in: the detected runtime, and whether this session is sandboxed.
