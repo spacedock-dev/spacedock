@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:8bnkrtq4rw46xkbez5zrbmmj:backlog:attempt-1:revision-1",
+  "question": "Should 8b enter ideation to eliminate transcript-dialect keep-moving proof and replace it with behavior and durable-state evidence?",
+  "artifacts": [
+    {
+      "id": "artifact:8bnkrtq4rw46xkbez5zrbmmj:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e51cfec75b46e2d19b61bf2ba0efdba3cf762b0d/codex-keep-moving-durable-evidence-attribution-flake/index.md",
+      "rev": "sha256:cb734a747aee4d6b654804516fa38ca9ca920875ee0e9beea2e122adfbc90a3d",
+      "mediaType": "text/markdown",
+      "summary": "Repeated Codex live false-reds—including Q3 PR #579—show the existing keep-moving observer blocks unrelated changes despite successful durable completion. Captain directs dispatch of 8b and forbids transcript-grammar parsing. Ideation must design a behavior-first, per-task durable-state proof with deletion as the primary metric, not another dialect fixture or parser."
+    }
+  ]
+}

@@ -10,6 +10,21 @@ score: 0.8
 worktree:
 issue:
 milestone: 0.25.0
+gates:
+    version: 1
+    current:
+        gate: gate:8bnkrtq4rw46xkbez5zrbmmj:backlog
+    records:
+        - id: gate:8bnkrtq4rw46xkbez5zrbmmj:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:8bnkrtq4rw46xkbez5zrbmmj-backlog-1
+              briefing:
+                id: briefing:8bnkrtq4rw46xkbez5zrbmmj:backlog:attempt-1:revision-1
+                digest: sha256:f74c978f7bac349914d3380c445388cf82767c0647d3267768c425649fb719a8
+                digest-domain: canonical-bytes
+                request-digest: sha256:83ed6b8050afb6ea2e3737bf14a7c57f164095922ad8f37db84546e5cde6f84d
+                room-ref: ./review/backlog/briefing-1
 ---
 
 The Codex keep-moving grader must recognize a completed per-entity dispatch and terminalization without turning harmless transcript-shape variation into an unrelated PR blocker.
