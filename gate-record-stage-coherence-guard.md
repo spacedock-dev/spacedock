@@ -1,6 +1,6 @@
 ---
 title: "Reject gate recording when the Briefing and current workflow stage disagree"
-status: implementation
+status: validation
 source: "se0 live CI recovery, 2026-07-28: TestLiveDefaultHeadlessStopsAtGate reproduced a validation Briefing durably bound as an implementation gate; captain separated the feature defect from CI restoration."
 score: 0.85
 sprint: durable-decisions
