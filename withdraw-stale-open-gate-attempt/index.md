@@ -540,3 +540,16 @@ lane owns model behavior; contractlint remains structural only.
 This addendum changes no design or product surface. It preserves the prior checklist
 accounting and gives the ideation gate concrete, falsifiable citations for AC-1,
 AC-2, and AC-3.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved request-backed open-attempt withdrawal state and exact `gate withdraw ENTITY --reason TEXT` command through the existing locked writer, with fixed FO attribution and byte-clean refusal.
+  Commit `5a8be3220` adds the third state and shared-lock writer; model, CLI, and refusal tests fail on false attribution, conflicting state, room/provider drift, repeat/closed/request-less targets, stale selection, or changed bytes.
+- DONE: Integrate explicit open/withdrawn/closed semantics through prepare, record, transition, eligibility, summary, and ready-gate projection; prove prepare N → withdraw → cold boot → prepare N+1 → provider close → consume with immutable retained authority.
+  `TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume` drives a freshly built binary and fails if N is reused/rewritten, N owns a Resolution/application, N+1 lacks provider authority, boot readiness drifts, consumption fails, or dirty sibling state is swept.
+- FAILED: Delete the identified prose-command contractlint proof, keep the 21-file +980/-160 boundary unless a declared reset trigger occurs, and run focused/full/race plus the applicable behavior-first live lane only after cheap proofs pass.
+  Base `070f36ae0` already removed the prose oracle; the authorized candidate is 20 existing files at +824/-60 with no semantic narrowing. Focused, full, race, and live-tag compile passed, but both registered live attempts reached the real Claude adapter and failed before FO work with HTTP 429 weekly quota, resetting 1pm Asia/Taipei; the corrected withdrawn-start fixture passed local setup and reached that same infrastructure boundary.
+
+### Summary
+
+Commit `5a8be3220` implements truthful FO withdrawal, retained frozen authority, successor preparation, provider close/consume, cold-boot recovery, operator documentation, and the registered durable-state/invocation-log live variant without transcript grammar. The production delta is smaller through reuse of s4 seams; the First Officer authorized the exact 20-file +824/-60 variance because contractlint was already structurally clean and acceptance scope is unchanged.
