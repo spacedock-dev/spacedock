@@ -104,7 +104,14 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:rhx820qrkn6vxpday10nch36-validation-2
+              briefing:
+                id: briefing:rhx820qrkn6vxpday10nch36:validation:attempt-2:revision-1
+                digest: sha256:c44de3e02bf0f7d94f1cfaa7dd731df82295500394863d45b001d96bb0bf0dce
+                digest-domain: canonical-bytes
+                request-digest: sha256:310991ba23c93bb08a9b59ccb3e3a106b6f078ecc814ae508c115b6c45c4969e
+                room-ref: ./review/validation/briefing-2
 ---
 
 Make the active workflow the authority for review-finding policy. Reviewers report findings; workers retain evidence and propose materiality, ownership, and disposition; the First Officer authorizes the disposition before finding-driven product edits, commits, or reviewer reruns; validators recommend gate verdicts; and the captain decides changes to scope, accepted value, thresholds, tolerance, or acceptance criteria. Rejection routing carries an existing disposition to `feedback-to`; it neither defines nor repeats the policy.

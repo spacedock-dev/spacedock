@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rhx820qrkn6vxpday10nch36:validation:attempt-2:revision-1",
+  "question": "Approve the validated workflow-owned finding-disposition implementation for merge?",
+  "artifacts": [
+    {
+      "id": "artifact:rhx820qrkn6vxpday10nch36:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/eefe1c5fd244f15b928d120c4fab1867ec6c11c1/workflow-owned-review-finding-disposition/index.md",
+      "rev": "sha256:4881f79870aff6d49e560039d25fd557e5058176972ea3c401cb28dd89f7e118",
+      "mediaType": "text/markdown",
+      "summary": "Validation independently passes all five ACs on exact candidate a0391fdb: normal and commissioned implementation/validation dispatches each receive one complete policy section; authority ordering and ownership separation hold; opaque workflow labels are preserved; four-field guards are independently load-bearing; no recorder/schema/command drift exists. Full Go/race/focused checks pass, implementation-stage Roborev job 331 is clean, and no validation-stage Roborev was run. The separately viewable Reference contains the exact candidate git diff --stat."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:rhx820qrkn6vxpday10nch36:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/eefe1c5fd244f15b928d120c4fab1867ec6c11c1/workflow-owned-review-finding-disposition/review/validation/candidate-a0391fdb-diff-stat.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5e19e28d771d201f636d7222d5c5c054d1516913925e168beb2c5503fa42de0f"
+    }
+  ]
+}
