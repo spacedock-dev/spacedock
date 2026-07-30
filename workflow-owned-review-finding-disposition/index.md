@@ -8,7 +8,7 @@ verdict:
 score: "0.90"
 worktree: .worktrees/spacedock-ensign-workflow-owned-review-finding-disposition
 issue:
-pr:
+pr: "#575"
 sprint: durable-decisions
 id: rhx820qrkn6vxpday10nch36
 gates:
@@ -128,6 +128,7 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+mod-block: merge:pr-merge
 ---
 
 Make the active workflow the authority for review-finding policy. Reviewers report findings; workers retain evidence and propose materiality, ownership, and disposition; the First Officer authorizes the disposition before finding-driven product edits, commits, or reviewer reruns; validators recommend gate verdicts; and the captain decides changes to scope, accepted value, thresholds, tolerance, or acceptance criteria. Rejection routing carries an existing disposition to `feedback-to`; it neither defines nor repeats the policy.
