@@ -541,6 +541,19 @@ This third review correction closes proof and wording gaps under the captain's p
 
 The core self-contained dispatch implementation and offline proof landed in `706b5cb8`, but live dogfood falsified the approved round-identity assumption. Implementation stops FAILED rather than weakening the oracle or expanding authority without a new design ruling.
 
+## Stage Report: implementation (cycle 2)
+
+- DONE: Implement the captain-selected ensign-owned advisory-round publication so the pinned launcher identity remains end to end.
+  Commits `a1ba68aad` and `1d7dfc0b7` assign publication to the in-stage ensign and prove its retained Codex worker transcript invokes exact A; a FO/root or B invocation cannot satisfy the extractor.
+- DONE: Preserve the self-contained pointer-only dispatch artifact and fresh/advance max-filename guarantees without adding compatibility behavior.
+  Rebased commit `19d422af7` retains zero-fetch self-contained artifacts, exact launcher literals, pointer-only prompts, and the max-legal fresh/advance fixtures; restoring fetches, payload-bearing prompts, shortening, or collisions makes the focused dispatch tests fail.
+- DONE: Reproduce the relevant focused live identity journey, classify findings before mutation, and keep the correction within the approved kd semantics and expected surface.
+  Candidate-stamped `TestLiveCodexSharedScenarios/rejection-flow` passed in 486.765s with exact-A worker publication and durable advisory-only state; artifacts are under `/tmp/spacedock-kd-cycle2-live.poBn8k/artifacts-harness/codex-shared-scenarios/rejection-flow`.
+
+### Summary
+
+Captain-selected Alternative A is implemented: the ensign publishes completed in-stage advisory rounds through the launcher literal embedded by the builder, while the First Officer retains routing and authorization authority. Focused, full, and race suites pass; the final surface is 35 hand-authored files / 1074 changed lines plus exactly 26 build goldens / 401 generated changed lines, within the explicitly authorized correction expansion.
+
 ## Stage Report: implementation (cycle 3)
 
 - DONE: Close the post-rebase ownership-proof gaps: emitted-launcher AC-3 execution, exact ensign-A publication cardinality, any-launcher FO duplicate rejection, current Codex retained-event correlation, and the real rejected-attempt/superseded-feedback/open-regate durable shape.
@@ -554,16 +567,3 @@ The core self-contained dispatch implementation and offline proof landed in `706
 ### Summary
 
 Alternative A is merge-ready at the exact code tip: self-contained pointer transport pins the worker launcher, advisory publication is exclusively ensign-owned under the composed transcript/durable oracle, and every material review finding is fixed; the two remaining hypothetical proof refinements are explicitly declined with promotion triggers.
-
-## Stage Report: implementation (cycle 2)
-
-- DONE: Implement the captain-selected ensign-owned advisory-round publication so the pinned launcher identity remains end to end.
-  Commits `a1ba68aad` and `1d7dfc0b7` assign publication to the in-stage ensign and prove its retained Codex worker transcript invokes exact A; a FO/root or B invocation cannot satisfy the extractor.
-- DONE: Preserve the self-contained pointer-only dispatch artifact and fresh/advance max-filename guarantees without adding compatibility behavior.
-  Rebased commit `19d422af7` retains zero-fetch self-contained artifacts, exact launcher literals, pointer-only prompts, and the max-legal fresh/advance fixtures; restoring fetches, payload-bearing prompts, shortening, or collisions makes the focused dispatch tests fail.
-- DONE: Reproduce the relevant focused live identity journey, classify findings before mutation, and keep the correction within the approved kd semantics and expected surface.
-  Candidate-stamped `TestLiveCodexSharedScenarios/rejection-flow` passed in 486.765s with exact-A worker publication and durable advisory-only state; artifacts are under `/tmp/spacedock-kd-cycle2-live.poBn8k/artifacts-harness/codex-shared-scenarios/rejection-flow`.
-
-### Summary
-
-Captain-selected Alternative A is implemented: the ensign publishes completed in-stage advisory rounds through the launcher literal embedded by the builder, while the First Officer retains routing and authorization authority. Focused, full, and race suites pass; the final surface is 35 hand-authored files / 1074 changed lines plus exactly 26 build goldens / 401 generated changed lines, within the explicitly authorized correction expansion.
