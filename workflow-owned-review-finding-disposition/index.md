@@ -14,7 +14,7 @@ id: rhx820qrkn6vxpday10nch36
 gates:
     version: 1
     current:
-        gate: gate:rhx820qrkn6vxpday10nch36:ideation
+        gate: gate:rhx820qrkn6vxpday10nch36:validation
     records:
         - id: gate:rhx820qrkn6vxpday10nch36:backlog
           stage: backlog
@@ -80,6 +80,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:rhx820qrkn6vxpday10nch36:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:rhx820qrkn6vxpday10nch36-validation-1
+              briefing:
+                id: briefing:rhx820qrkn6vxpday10nch36:validation:attempt-1:revision-1
+                digest: sha256:2caefd1f2fe0c5bb68030d778b6ea3748dd1a0b4bb0637c7c1096e7824b46db9
+                digest-domain: canonical-bytes
+                request-digest: sha256:b1d5f3086e673ba9b4fa703788fde8150325094fc2a787fd385a4c33065c246d
+                room-ref: ./review/validation/briefing-1
 ---
 
 Make the active workflow the authority for review-finding policy. Reviewers report findings; workers retain evidence and propose materiality, ownership, and disposition; the First Officer authorizes the disposition before finding-driven product edits, commits, or reviewer reruns; validators recommend gate verdicts; and the captain decides changes to scope, accepted value, thresholds, tolerance, or acceptance criteria. Rejection routing carries an existing disposition to `feedback-to`; it neither defines nor repeats the policy.
