@@ -9,7 +9,7 @@ score: "0.70"
 worktree:
 issue:
 pr:
-sprint: durable-decisions
+sprint:
 id: yd1cd7jdywby0c3r46bqtm25
 ---
 
