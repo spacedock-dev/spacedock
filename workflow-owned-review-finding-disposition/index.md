@@ -289,3 +289,18 @@ Recommendation: **REJECTED** for two task-owned Material findings: the workflow 
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation/Roborev job 318; surface 10 files/117 insertions vs estimate 10 files/187 insertions (63%); AC unchanged
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Make the existing docs/dev workflow and reusable development template mechanically select/include that section through the existing dispatch context-section mechanism.
+  Commit `2ea9ac71` declares `Review-finding disposition` for implementation and validation in both files; candidate `show-stage-def` returns exactly one policy section per stage, while the real three-host helper-build/fetch tests would fail if selection or delivery disappeared.
+- DONE: Strengthen the existing shell+TSV fixture so each promised guard has an independent red control/mutation and the normal 18-row oracle remains green.
+  The normal oracle accepts/rejects all 18 rows; deleting `exact_columns` now fails only `red-extra-fifth-evidence-field`, and deleting `valid_boundary` fails only `red-uncited-boundary`.
+- DONE: Stay within the existing 11-file/225-insertion hard ceiling and approved semantic boundary, preserving dispositioned findings unchanged.
+  Final scope is 10 files/125 insertions; gofmt, focused dispatch/contract/oracle tests, `go test ./...`, and `go test ./... -race` passed, with no Deferred-risk or Polish surface changed.
+- SKIPPED: Record the advisory round through the existing `gate record --round` path.
+  No validation round Briefing or reviewer JSONL exists under this entity's retained review tree, so a conforming reviewer/worker package cannot be constructed without inventing schema; the FO accepted this exact input gap.
+
+### Summary
+
+Cycle 2 delivers the workflow-owned policy through normal implementation/validation stage fetches and makes both AC-4 guard deletions independently observable. It adds no selector, command, schema, recorder behavior, harness, or fifth evidence field.
