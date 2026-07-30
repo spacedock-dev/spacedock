@@ -3,6 +3,7 @@
 package status
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,8 +22,58 @@ func stageFixture(t *testing.T, fixture string) string {
 	}
 	dst := t.TempDir()
 	cpTree(t, src, dst)
+	seedLegacyCompletedStages(t, dst)
 	gitInit(t, dst)
 	return dst
+}
+
+func stageFixtureWithoutEnteredReports(t *testing.T, fixture string) string {
+	t.Helper()
+	src, err := filepath.Abs(filepath.Join("testdata", fixture))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dst := t.TempDir()
+	cpTree(t, src, dst)
+	gitInit(t, dst)
+	return dst
+}
+
+// seedLegacyCompletedStages upgrades older unrelated fixtures that place an
+// entity directly in a non-initial working stage but model that stage as already
+// complete. Their tests target mutation/archive guards, not first-entry
+// scheduling, so make that prerequisite explicit before the fixture commit.
+func seedLegacyCompletedStages(t *testing.T, definitionDir string) {
+	t.Helper()
+	r, err := resolveRoots(definitionDir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	stageByName := map[string]Stage{}
+	for _, stage := range parseStagesBlock(filepath.Join(r.definitionDir, "README.md")) {
+		stageByName[stage.Name] = stage
+	}
+	for _, pair := range discoverEntityFiles(r.entityDir, io.Discard) {
+		path := pair[1]
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		stage := stageByName[parseFrontmatterContent(data)["status"]]
+		if stage.Name == "" || stage.initial || stage.gate || stage.terminal {
+			continue
+		}
+		if _, _, ok := selectStageReport(splitLines(string(data)), stage.Name); ok {
+			continue
+		}
+		report := "\n## Stage Report: " + stage.Name + "\n\n" +
+			"- DONE: Complete the legacy fixture's current stage.\n" +
+			"  The fixture commit is the durable setup evidence.\n\n" +
+			"### Summary\n\nThe current stage is complete for this unrelated guard fixture.\n"
+		if err := os.WriteFile(path, append(data, []byte(report)...), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func cpTree(t *testing.T, src, dst string) {

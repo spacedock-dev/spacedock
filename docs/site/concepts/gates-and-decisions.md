@@ -72,9 +72,14 @@ stops with that attempt open: it writes no Resolution, consumes nothing, advance
 nothing, and dispatches nothing. After an authorized decision, it records and commits
 the Resolution before every route. Approval then uses `gate consume`, which rechecks
 the retained request, Briefing, Git sources, and eligibility before atomically writing
-the successor stage and consumed mark. Revise routes feedback after its close commit,
-and hold stays at the gate. `gate validate` and `gate eligibility` remain optional
-diagnostics, not positive-path lifecycle steps.
+the successor stage and consumed mark. Until that first-entered working stage has
+a durable, complete Stage Report, `status --next` and boot name it as both
+`current` and `next`. Once the same-stage dispatch sets its worktree, every
+away-status `status --set`—backward or forward, even with `--force`—is refused
+until the report is durable. The consumed descendant commit therefore lands
+before one recoverable successor dispatch. Revise routes feedback after its close
+commit, and hold stays at the gate. `gate validate` and `gate eligibility` remain
+optional diagnostics, not positive-path lifecycle steps.
 
 The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.
 

@@ -105,6 +105,31 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 		}
 	}
 
+	// Post-dispatch guard: once the normal same-stage dispatch owns a worktree,
+	// that entered working stage cannot be changed away until the shared
+	// scheduler predicate sees a committed, structurally complete current-stage
+	// report. This is intentionally before every --force bypass guard below.
+	// Any away status token in a repeated/chained update refuses the whole
+	// command byte-clean; the same-stage dispatch mutation itself and unrelated
+	// non-status updates remain allowed.
+	if strings.TrimSpace(currentFields["worktree"]) != "" {
+		currentStatus := strings.TrimSpace(currentFields["status"])
+		for _, stage := range stages {
+			if stage.Name != currentStatus || !enteredStageAwaitingCompletion(&entity{path: entityPath}, stage) {
+				continue
+			}
+			for _, u := range set.updates {
+				if u.field == "status" && u.hasValue && u.value != currentStatus {
+					return errExit(stderr, fmt.Sprintf(
+						"entity %s cannot change status away from entered stage %q until a durable, complete "+
+							"## Stage Report: %s is committed.",
+						slug, currentStatus, currentStatus))
+				}
+			}
+			break
+		}
+	}
+
 	isTerminalUpdate := func() bool {
 		for _, u := range set.updates {
 			if u.field == "status" && u.hasValue && terminalNames[u.value] {

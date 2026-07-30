@@ -75,6 +75,9 @@ func TestNativeMutationParity(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			env := pinnedEnv(t)
 			nativeRoot := stageFixture(t, tc.fixture)
+			if tc.name == "archive-folder" {
+				nativeRoot = stageFixtureWithoutEnteredReports(t, tc.fixture)
+			}
 
 			nArgs := append([]string{"--workflow-dir", nativeRoot}, tc.mutateArgs(nativeRoot)...)
 			nOut, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
@@ -242,6 +245,7 @@ func stageFixtureWith(t *testing.T, fixture string, extra map[string]string) str
 			t.Fatal(err)
 		}
 	}
+	seedLegacyCompletedStages(t, dst)
 	gitInit(t, dst)
 	return dst
 }

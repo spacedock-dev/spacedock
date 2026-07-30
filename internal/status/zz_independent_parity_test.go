@@ -146,6 +146,8 @@ func indSlugWorkflow(t *testing.T) string {
 // sequential workflow (folder entity, empty score, unknown status, archived).
 func TestIndReadFlagsSeq(t *testing.T) {
 	root := indSeqWorkflow(t)
+	seedLegacyCompletedStages(t, root)
+	gitInit(t, root)
 	env := indEnv(t)
 	cases := []struct {
 		name string

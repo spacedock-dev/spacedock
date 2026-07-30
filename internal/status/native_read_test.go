@@ -31,10 +31,7 @@ var nativeReadCases = []struct {
 }
 
 func TestNativeReadMatchesOracle(t *testing.T) {
-	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	root := stageFixture(t, "seq-workflow")
 	env := pinnedEnv(t)
 
 	for _, tc := range nativeReadCases {
