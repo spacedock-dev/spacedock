@@ -84,7 +84,7 @@ gates:
                 blockers: []
 worktree: .worktrees/spacedock-ensign-gate-record-stage-coherence-guard
 started: 2026-07-30T15:52:42Z
-pr: "#579"
+pr: pr-merge:579
 ---
 
 ## Problem
