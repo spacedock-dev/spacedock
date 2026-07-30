@@ -3,7 +3,7 @@ title: "Make Pi delegated gate approval continue reliably through successor disp
 status: backlog
 source: "se0 exact-tip Pi recorded-gate proof on 2026-07-28: one run invented the Briefing digest before reading it; the single retry presented the correct bound gate but stopped before recording or consuming the delegated approval."
 score: 0.9
-sprint: durable-decisions
+sprint:
 group: gate
 sprint-readiness: ready
 issue:
