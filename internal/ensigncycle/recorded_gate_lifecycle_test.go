@@ -249,6 +249,165 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	}
 }
 
+func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
+	fixture := writePreparedRecordedGateFixture(t)
+	binary := buildRecordedGateBinary(t)
+
+	prepare := mustRecordedGate(t, binary, fixture.root,
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the stale candidate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Stale candidate.",
+		"--reference", fixture.references[0],
+		"--reference", fixture.references[1],
+		"--workflow-dir", fixture.root)
+	firstRoom := outputValue(prepare.stdout, "room")
+	firstBriefing := readFile(t, filepath.Join(firstRoom, "gate-briefing.json"))
+	firstRequest := readFile(t, filepath.Join(firstRoom, "request.json"))
+	commitRecordedGateState(t, binary, fixture, "prepare stale attempt")
+
+	withdraw := mustRecordedGate(t, binary, fixture.root,
+		"gate", "withdraw", "recorded-gate-task",
+		"--reason", "Sprint re-scope replaced the reviewed candidate.",
+		"--workflow-dir", fixture.root)
+	assertCommandOutput(t, withdraw.stdout, "state=withdrawn", "attempt=gate-attempt:recorded-gate-task-validation-1")
+	commitRecordedGateState(t, binary, fixture, "withdraw stale attempt")
+
+	boot := mustRecordedGate(t, binary, fixture.root,
+		"status", "--workflow-dir", fixture.root, "--boot", "--identify", "--json")
+	assertCommandOutput(t, boot.stdout,
+		`"ready_gates":[{"id":"recorded-gate-task","slug":"recorded-gate-task","current":"validation","readiness":"withdrawn-awaiting-prepare"}]`)
+
+	replacement := mustRecordedGate(t, binary, fixture.root,
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the replacement candidate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Replacement candidate.",
+		"--reference", fixture.references[0],
+		"--reference", fixture.references[1],
+		"--workflow-dir", fixture.root)
+	secondRoom := outputValue(replacement.stdout, "room")
+	if secondRoom == firstRoom {
+		t.Fatal("replacement reused withdrawn room")
+	}
+	assertCommandOutput(t, replacement.stdout, "briefing=briefing:recorded-gate-task:validation:attempt-2:revision-1")
+	commitRecordedGateState(t, binary, fixture, "prepare replacement attempt")
+	assertCommandOutput(t, mustRecordedGate(t, binary, fixture.root,
+		"status", "--workflow-dir", fixture.root, "--boot", "--identify", "--json").stdout,
+		`"readiness":"awaiting-captain"`)
+
+	writeRecordedGateProviderDecision(t, secondRoom)
+	close := mustRecordedGate(t, binary, fixture.root,
+		"gate", "record", "recorded-gate-task", "--room", secondRoom, "--workflow-dir", fixture.root)
+	assertCommandOutput(t, close.stdout, "state=closed", "attempt=gate-attempt:recorded-gate-task-validation-2", "decision=approve")
+	commitRecordedGateState(t, binary, fixture, "record replacement provider decision")
+	consume := mustRecordedGate(t, binary, fixture.root,
+		"gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
+	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
+	commitRecordedGateState(t, binary, fixture, "consume replacement authorization")
+
+	doc, _, err := gates.Read(fixture.entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Records) != 1 || len(doc.Records[0].Attempts) != 2 {
+		t.Fatalf("attempt history = %#v", doc.Records)
+	}
+	stale, current := doc.Records[0].Attempts[0], doc.Records[0].Attempts[1]
+	if stale.Withdrawal == nil || stale.Withdrawal.By != "agent:first-officer" ||
+		stale.Resolution != nil || stale.ProviderEvidence != nil || stale.Application != nil {
+		t.Fatalf("withdrawn authority was not retained cleanly: %#v", stale)
+	}
+	if current.Withdrawal != nil || current.Resolution == nil || current.ProviderEvidence == nil ||
+		current.Application == nil || current.Application.State != "consumed" {
+		t.Fatalf("replacement did not exclusively own consumed authority: %#v", current)
+	}
+	if readFile(t, filepath.Join(firstRoom, "gate-briefing.json")) != firstBriefing ||
+		readFile(t, filepath.Join(firstRoom, "request.json")) != firstRequest {
+		t.Fatal("replacement lifecycle changed withdrawn room bytes")
+	}
+	if !strings.Contains(readFile(t, fixture.entity), "status: handoff") {
+		t.Fatal("replacement consumption did not advance workflow status")
+	}
+	if !strings.Contains(git(t, fixture.stateRoot, "status", "--short"), "?? dirty-sibling.md") {
+		t.Fatal("path-scoped lifecycle commits swept dirty sibling")
+	}
+
+	entityBeforeRefusal := readFile(t, fixture.entity)
+	firstRequestPath := filepath.Join(firstRoom, "request.json")
+	writeFile(t, firstRequestPath, strings.Replace(firstRequest, `"actor": "person:captain"`, `"actor": "agent:other"`, 1))
+	refused := runRecordedGateCommand(binary, fixture.root, "", "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
+	if refused.exit == 0 || !strings.Contains(refused.stderr, "frozen digest") {
+		t.Fatalf("withdrawn retained-authority drift validated: exit=%d stderr=%q", refused.exit, refused.stderr)
+	}
+	if readFile(t, fixture.entity) != entityBeforeRefusal {
+		t.Fatal("withdrawn retained-authority refusal changed entity")
+	}
+	writeFile(t, firstRequestPath, firstRequest)
+
+	resultPath := filepath.Join(secondRoom, "provider", "result.json")
+	resultBytes := readFile(t, resultPath)
+	writeFile(t, resultPath, strings.Replace(resultBytes, `"decision": "approve"`, `"decision": "hold"`, 1))
+	refused = runRecordedGateCommand(binary, fixture.root, "", "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
+	if refused.exit == 0 || !strings.Contains(refused.stderr, "provider/result.json") {
+		t.Fatalf("closed provider drift validated: exit=%d stderr=%q", refused.exit, refused.stderr)
+	}
+	if readFile(t, fixture.entity) != entityBeforeRefusal {
+		t.Fatal("closed provider refusal changed entity")
+	}
+	writeFile(t, resultPath, resultBytes)
+}
+
+func writeRecordedGateProviderDecision(t *testing.T, room string) {
+	t.Helper()
+	var briefing struct {
+		ID        string `json:"id"`
+		Artifacts []struct {
+			ID, URI, Rev string
+		} `json:"artifacts"`
+		Context []struct {
+			ID, URI, Rev string
+		} `json:"context"`
+	}
+	if err := json.Unmarshal([]byte(readFile(t, filepath.Join(room, "gate-briefing.json"))), &briefing); err != nil {
+		t.Fatal(err)
+	}
+	items := make([]map[string]string, 0, len(briefing.Artifacts)+len(briefing.Context))
+	for _, item := range briefing.Artifacts {
+		items = append(items, map[string]string{"type": "Artifact", "id": item.ID, "uri": item.URI, "rev": item.Rev})
+	}
+	for _, item := range briefing.Context {
+		items = append(items, map[string]string{"type": "Reference", "id": item.ID, "uri": item.URI, "rev": item.Rev})
+	}
+	if len(items) == 0 {
+		t.Fatal("prepared Briefing has no presented items")
+	}
+	provider := filepath.Join(room, "provider")
+	if err := os.Mkdir(provider, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	inventory, err := json.MarshalIndent(map[string]any{"items": items}, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(provider, "presented-inventory.json"), string(inventory)+"\n")
+	result, err := json.MarshalIndent(map[string]any{
+		"type":        "review-v1-result",
+		"briefing":    briefing.ID,
+		"artifact":    map[string]string{"id": items[0]["id"], "uri": items[0]["uri"], "rev": items[0]["rev"]},
+		"annotations": []any{},
+		"resolution": map[string]string{
+			"type": "Resolution", "id": "resolution:captain-replacement-2",
+			"briefing": briefing.ID, "by": "person:captain",
+			"at": "2026-07-26T12:00:00Z", "decision": "approve",
+		},
+	}, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(provider, "result.json"), string(result)+"\n")
+}
+
 func assertRecordedGateDispatchRow(t *testing.T, binary string, fixture recordedGateFixture, current, next string) {
 	t.Helper()
 	for _, args := range [][]string{

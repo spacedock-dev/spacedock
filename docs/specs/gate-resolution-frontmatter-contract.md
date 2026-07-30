@@ -98,11 +98,12 @@ gates:
             blockers: []
 ```
 
-`records` and `attempts` are ordered. The last attempt in a record is current.
-Resolution absence means open; Resolution presence means closed. `gates.current.gate`
-selects the logical gate eligible for later application. These facts remove any need for
-separate attempt pointers, sequence numbers, lineage pointers, or explicit lifecycle
-state.
+`records` and `attempts` are ordered. The last attempt in a record is current. An
+attempt is open when both `withdrawal` and `resolution` are absent, withdrawn when only
+`withdrawal` is present, and closed when only `resolution` is present. Withdrawn and
+closed attempts are frozen. `gates.current.gate` selects the logical gate eligible for
+later application. These facts remove any need for separate attempt pointers, sequence
+numbers, lineage pointers, or explicit lifecycle state.
 
 The binary-owned model is closed: unsupported fields inside `gates` fail validation.
 In particular, the pilot-only `gates.current.attempt`, `current-attempt`, `sequence`,
@@ -169,9 +170,15 @@ newly-created empty parents. Success prints exactly `room`, `briefing`, `digest`
 
 `spacedock gate prepare` is the First Officer's normal lifecycle entry. With no record
 for the current stage it opens the first attempt. Exact replay of the current open room
-is a no-op; divergent open occupancy fails closed. After a closed attempt, preparation
-supersedes any pending application and appends a successor while earlier Briefings and
-Resolutions remain frozen.
+is a no-op; divergent open occupancy fails closed. After a withdrawn or closed attempt,
+preparation appends a successor while earlier authority remains frozen; only a closed
+attempt may have a pending application to supersede.
+
+`spacedock gate withdraw ENTITY --reason TEXT` retires only the selected current-stage
+open request-backed attempt. Under the shared lock it validates all retained authority
+and requires the room to contain exactly `gate-briefing.json` and `request.json`. It
+records only `withdrawal: {by: agent:first-officer, at: <UTC>, reason: <TEXT>}`: no
+Resolution, provider evidence, application, status change, successor, or room write.
 
 `spacedock gate record` also accepts either the prepared room's room-backed Result or
 a semantic chat decision. Either closing source closes only the last open
@@ -312,13 +319,16 @@ protocol.
 The model enforces unique gate, attempt, Briefing, and Resolution ids; a resolvable
 current logical gate; non-empty attempt histories; exact Resolution-to-Briefing binding;
 and portable `approve`, `revise`, or `hold` decisions. `revise` and `hold` require a
-reason or an included same-Briefing Annotation. Open attempts cannot carry application
-data.
+reason or an included same-Briefing Annotation. Withdrawals require fixed
+`agent:first-officer` attribution, a UTC timestamp, a nonblank reason, and a valid
+request digest. Open attempts cannot carry provider evidence or application data;
+withdrawn attempts can carry neither Resolution, provider evidence, nor application.
 
 ## Command surface
 
 ```text
 spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]
+spacedock gate withdraw ENTITY --reason TEXT [--workflow-dir DIR]
 spacedock gate record ENTITY --room PATH [--workflow-dir DIR]
 spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]
 spacedock gate validate ENTITY [--workflow-dir DIR]

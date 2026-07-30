@@ -5,9 +5,70 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
+
+func TestWithdrawalDefinesThirdValidatedFrozenAttemptState(t *testing.T) {
+	withdrawn := eligibleDocument()
+	attempt := &withdrawn.Records[0].Attempts[0]
+	attempt.Briefing.RequestDigest = "sha256:" + strings.Repeat("2", 64)
+	attempt.Resolution = nil
+	attempt.Application = nil
+	attempt.Withdrawal = &Withdrawal{
+		By:     "agent:first-officer",
+		At:     time.Date(2026, 7, 26, 11, 30, 0, 123456000, time.UTC).Format(time.RFC3339Nano),
+		Reason: "Sprint re-scope replaced the reviewed candidate.",
+	}
+	if err := Validate(withdrawn); err != nil {
+		t.Fatalf("valid withdrawn attempt rejected: %v", err)
+	}
+	if got := attemptState(attempt); got != "withdrawn" {
+		t.Fatalf("attempt state = %q, want withdrawn", got)
+	}
+	summary := CurrentSummary(withdrawn)
+	if summary.State != "withdrawn" || summary.Resolution != "" || summary.Decision != "" ||
+		summary.Application != "" || summary.ApplicationState != "" {
+		t.Fatalf("withdrawn summary leaked closure state: %#v", summary)
+	}
+	stages := []ReadinessStage{{Name: "ideation", Gate: true}, {Name: "implementation"}}
+	if got := CurrentStageReadiness(withdrawn, "ideation", stages); got != "withdrawn-awaiting-prepare" {
+		t.Fatalf("withdrawn readiness = %q", got)
+	}
+
+	for name, mutate := range map[string]func(*Attempt){
+		"wrong actor":      func(a *Attempt) { a.Withdrawal.By = "person:captain" },
+		"bad time":         func(a *Attempt) { a.Withdrawal.At = "now" },
+		"blank reason":     func(a *Attempt) { a.Withdrawal.Reason = " \t" },
+		"no request":       func(a *Attempt) { a.Briefing.RequestDigest = "" },
+		"with resolution":  func(a *Attempt) { a.Resolution = eligibleDocument().Records[0].Attempts[0].Resolution },
+		"with evidence":    func(a *Attempt) { a.ProviderEvidence = &ProviderEvidence{} },
+		"with application": func(a *Attempt) { a.Application = &Application{} },
+	} {
+		t.Run(name, func(t *testing.T) {
+			doc := cloneDocument(t, withdrawn)
+			mutate(&doc.Records[0].Attempts[0])
+			if err := Validate(doc); err == nil {
+				t.Fatalf("invalid withdrawn shape %q accepted", name)
+			}
+		})
+	}
+
+	oldBytes, err := yaml.Marshal(withdrawn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var oldNode yaml.Node
+	if err := yaml.Unmarshal(oldBytes, &oldNode); err != nil {
+		t.Fatal(err)
+	}
+	next := cloneDocument(t, withdrawn)
+	next.Records[0].Attempts[0].Withdrawal.Reason = "rewritten"
+	if err := ValidateTransition(&oldNode, next); err == nil || !strings.Contains(err.Error(), "frozen withdrawn attempt") {
+		t.Fatalf("withdrawn mutation = %v, want frozen refusal", err)
+	}
+}
 
 func TestCurrentStageReadinessFailClosedTable(t *testing.T) {
 	stages := []ReadinessStage{

@@ -227,7 +227,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 		RoomRef:       roomRef,
 	}
 
-	if previous != nil && previous.Resolution == nil && previous.Briefing.RequestDigest != "" &&
+	if previous != nil && attemptState(previous) == "open" && previous.Briefing.RequestDigest != "" &&
 		!sameBinding(previous.Briefing, binding) {
 		return PrepareResult{}, fmt.Errorf("open gate room binding is frozen and cannot be rebound")
 	}
@@ -250,10 +250,10 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 
 	if previous == nil {
 		record.Attempts = append(record.Attempts, Attempt{ID: attemptID, Briefing: binding})
-	} else if previous.Resolution == nil {
+	} else if attemptState(previous) == "open" {
 		previous.Briefing = binding
 	} else {
-		if previous.Application != nil && previous.Application.State == "pending" {
+		if attemptState(previous) == "closed" && previous.Application != nil && previous.Application.State == "pending" {
 			previous.Application.State = "superseded"
 		}
 		record.Attempts = append(record.Attempts, Attempt{ID: attemptID, Briefing: binding})
@@ -283,7 +283,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 }
 
 func preparedEntityReplaySource(entityPath string, roots gitsource.Roots, previous *Attempt, ordinal int) (gitsource.Source, bool, error) {
-	if previous == nil || previous.Resolution != nil || previous.Briefing.RequestDigest == "" {
+	if previous == nil || attemptState(previous) != "open" || previous.Briefing.RequestDigest == "" {
 		return gitsource.Source{}, false, nil
 	}
 	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
@@ -334,7 +334,7 @@ func entityWithoutGates(data []byte) ([]byte, error) {
 }
 
 func preparedReplay(entityPath string, previous *Attempt, briefingID, question, summary string, sources []gitsource.Source) (PrepareResult, bool, error) {
-	if previous == nil || previous.Resolution != nil || previous.Briefing.RequestDigest == "" {
+	if previous == nil || attemptState(previous) != "open" || previous.Briefing.RequestDigest == "" {
 		return PrepareResult{}, false, nil
 	}
 	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
@@ -412,7 +412,7 @@ func prepareTarget(doc *Document, entityID, stage string) (gateID, attemptID str
 	if err != nil {
 		return "", "", 0, nil, nil, err
 	}
-	if previous.Resolution == nil {
+	if attemptState(previous) == "open" {
 		return gateID, previous.ID, attemptNumber, record, previous, nil
 	}
 	attemptNumber++

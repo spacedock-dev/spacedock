@@ -13,10 +13,11 @@ Load before engaged gate action. It grants no writes; read `fo-write-core.md` be
 | Command | Responsibility |
 |---------|----------------|
 | `gate prepare` | Opens one attempt, freezes selected authority in its room, and binds its Briefing. |
+| `gate withdraw` | Retires one stale open prepared attempt without a decision. |
 | `gate record` | Closes that attempt from one semantic source; never advances status. |
 | `gate consume` | Applies one eligible approval; terminal targets route unspent to merge guard. |
 
-**Boot projection.** Use actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`; read its entity, never infer readiness from stage. `awaiting-captain` means an open current-stage Briefing; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. For gated current `status`, any selected or retained gate record used to resume/present must have `stage` equal to that status. A prior-stage `gates.current` is history, not reusable authority. If no selected attempt (omitted `validating`) or it mismatches, run `gate prepare` for the current status and present only its emitted binding.
+**Boot projection.** Use actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`; read its entity, never infer readiness from stage. `awaiting-captain` is open; `withdrawn-awaiting-prepare` needs its successor prepared; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. Retained authority used to resume or present must match current `status`; prior-stage authority is history. If no selected attempt (omitted `validating`) or it mismatches, prepare the current stage and present only its emitted binding.
 
 **Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select a Markdown gate-review Artifact and References, author its concise summary, then commit the selections. Supply judgment and paths; never author JSON, ids, digests, Git-root locators, or room coordinates. Paths use launch cwd.
 
@@ -24,9 +25,17 @@ Load before engaged gate action. It grants no writes; read `fo-write-core.md` be
 ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
 ```
 
-The real capability check is the `gate prepare` invocation. Nonzero prepare halts; surface its exact error and refresh or rebuild the selected version-gated bundle when the command is unavailable. Never hand-edit `gates:` or delete/revert/replace binary-owned entity or room authority.
+Preflight one lifecycle surface: `prepare`, `withdraw`, `record`, `validate`, `eligibility`, `consume`, and withdrawal's `--reason`. A nonzero command halts; surface its exact error and refresh or rebuild the selected version-gated bundle when unavailable. Never hand-edit `gates:` or replace binary-owned entity or room authority.
 
-Require the emitted `room`, `briefing`, `digest`, and `state=open` lines. The emitted clean absolute room is sole authority; never reconstruct it. Preparation binds two recorder-ready files without source copies. `«state.commit»(slug)` commits the folder entity or flat Markdown-plus-companion room unit. Before presentation, load `Skill(skill="spacedock:present-gate")`; an override replaces only chat display. Invoke `«gate.ac-cross-check»`, judge evidence, then `«gate.assemble-verdict»`. Chat presentation completes only after one root review names entity/stage, a compact bound Briefing snapshot, recommendation, and decision ask. It follows the bind commit, must precede decision record; delegated conn does not waive it.
+Require emitted `room`, `briefing`, `digest`, and `state=open`; never reconstruct the absolute room. `«state.commit»(slug)` commits the entity and two-file room. Load `spacedock:present-gate`, cross-check ACs, assemble the verdict, and present entity/stage, bound Briefing, recommendation, and ask after that commit.
+
+**Withdraw stale open authority.** If a prepared room becomes stale before provider output or Captain decision, run:
+
+```text
+${SPACEDOCK_BIN:-spacedock} gate withdraw ENTITY --reason REASON --workflow-dir WORKFLOW_DIR
+```
+
+Require `state=withdrawn`, commit the entity, and stop unless replacement inputs are ready. Withdrawal never means approve, revise, or hold. On `withdrawn-awaiting-prepare`, prepare and commit N+1, present its emitted room, and stop open. Never record, consume, present, dispatch, or recover with `record --briefing` on withdrawn N.
 
 **Record and durably close.** Use exactly one semantic source:
 
@@ -62,4 +71,4 @@ Consume itself rechecks currency, successor, blockers, and one-use state under l
 - pending terminal approval: unspent — drive `«merge.guard»`.
 - already `consumed`: the authorization is spent. A nonterminal current status resumes ordinary dispatch/recovery; a terminal current status resumes the existing merge ceremony. Do not re-record, consume, or dispatch a terminal successor. A diagnostic repeat consume must be nonzero and byte-clean.
 
-**Resume.** Use boot/entity state and prior result; `gate validate`/`gate eligibility` are optional diagnostics, never positive-path requirements. Exact prepare replay is idempotent; a divergent open room is frozen—surface the refusal and stop. Require the exact Resolution commit before routing closed state. Pending approval → consume; revise/hold → route/stop; consumed → dispatch only if nonterminal, else merge; stale → supersede then replace. Surface nonzero command, exit, remedy; never repair frontmatter.
+**Resume.** Use boot/entity state and prior result; validate/eligibility are optional diagnostics. Exact open prepare replay is idempotent; divergent binding refuses. Require the Resolution commit before routing closed state. Withdrawn open attempt → prepare its successor; pending approval → consume; revise/hold → route/stop; consumed → dispatch if nonterminal, else merge. Surface nonzero command, exit, and remedy; never repair frontmatter.

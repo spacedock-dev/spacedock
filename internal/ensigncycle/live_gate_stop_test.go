@@ -25,13 +25,27 @@ func TestLiveDefaultHeadlessStopsAtGate(t *testing.T) {
 	// macOS run as a wander. The CI Linux runner has no such symlink, so this is a
 	// no-op there; resolving here keeps the detector accurate on BOTH.
 	// The shared runner performs: registerClaudeLiveFailureDiagnostic(t, detectClaudeLiveFailureDiagnostic(stream, rootResolved))
-	runClaudeGateGuardrailScenario(
-		t,
-		newClaudeLiveRunner(t),
-		sharedRuntimeScenario{
-			name:          "default-headless-recorded-gate-stop",
-			oldPythonTest: "tests/test_gate_guardrail.py",
-			intent:        "drive, bind, commit, present, and stop open without decision authority",
+	for _, scenario := range []struct {
+		name, intent string
+		run          func(*testing.T, liveDriver, sharedRuntimeScenario)
+	}{
+		{
+			name:   "default-headless-recorded-gate-stop",
+			intent: "drive, bind, commit, present, and stop open without decision authority",
+			run:    runClaudeGateGuardrailScenario,
 		},
-	)
+		{
+			name:   "default-headless-withdrawn-gate-recovery",
+			intent: "prepare and commit a successor for a withdrawn attempt, present it, and stop open",
+			run:    runClaudeWithdrawnGateRecoveryScenario,
+		},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			scenario.run(t, newClaudeLiveRunner(t), sharedRuntimeScenario{
+				name:          scenario.name,
+				oldPythonTest: "tests/test_gate_guardrail.py",
+				intent:        scenario.intent,
+			})
+		})
+	}
 }

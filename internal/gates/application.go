@@ -56,7 +56,7 @@ func EvaluateEligibility(doc *Document, status string, reviewedInputCurrent bool
 		result.Condition = "stale"
 		return result
 	}
-	if status != record.Stage || attempt.Resolution == nil ||
+	if status != record.Stage || attemptState(attempt) != "closed" ||
 		attempt.Resolution.Briefing != attempt.Briefing.ID ||
 		attempt.Resolution.Decision != "approve" || app.Action != "advance" ||
 		strings.TrimSpace(app.TargetStage) == "" || app.TargetStage == record.Stage ||

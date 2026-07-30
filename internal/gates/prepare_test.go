@@ -138,6 +138,218 @@ func TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities(t *testing
 	}
 }
 
+func TestWithdrawPreparedAttemptThenPrepareAppendsSuccessorWithoutRewritingOldRoom(t *testing.T) {
+	workflow, _, entity, artifact, reference := prepareFixture(t, "folder")
+	first, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Advance?",
+		Artifact:    artifact,
+		Summary:     "first candidate",
+		References:  []string{reference},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstBriefing := readPreparedFile(t, filepath.Join(first.Room, preparedBriefingLocator))
+	firstRequest := readPreparedFile(t, filepath.Join(first.Room, "request.json"))
+
+	summary, err := Withdraw(entity, WithdrawInput{
+		WorkflowDir: workflow,
+		Reason:      "Sprint re-scope replaced the reviewed candidate.",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.State != "withdrawn" || summary.Attempt != "gate-attempt:task-validation-1" ||
+		summary.Resolution != "" || summary.Decision != "" || summary.Application != "" {
+		t.Fatalf("withdraw summary = %#v", summary)
+	}
+
+	second, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Advance the replacement?",
+		Artifact:    artifact,
+		Summary:     "replacement candidate",
+		References:  []string{reference},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second.Room == first.Room || second.Briefing != "briefing:task:validation:attempt-2:revision-1" {
+		t.Fatalf("successor result = %#v, first=%#v", second, first)
+	}
+	if got := readPreparedFile(t, filepath.Join(first.Room, preparedBriefingLocator)); !bytes.Equal(got, firstBriefing) {
+		t.Fatal("successor prepare rewrote withdrawn Briefing bytes")
+	}
+	if got := readPreparedFile(t, filepath.Join(first.Room, "request.json")); !bytes.Equal(got, firstRequest) {
+		t.Fatal("successor prepare rewrote withdrawn request bytes")
+	}
+	doc, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Records[0].Attempts) != 2 || attemptState(&doc.Records[0].Attempts[0]) != "withdrawn" ||
+		attemptState(&doc.Records[0].Attempts[1]) != "open" {
+		t.Fatalf("replacement history = %#v", doc.Records[0].Attempts)
+	}
+}
+
+func TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean(t *testing.T) {
+	t.Run("blank reason", func(t *testing.T) {
+		workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
+		if _, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, Question: "Advance?", Artifact: artifact, Summary: "candidate"}); err != nil {
+			t.Fatal(err)
+		}
+		before := treeDigest(t, state)
+		if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: " \t"}); err == nil {
+			t.Fatal("blank reason was accepted")
+		}
+		if got := treeDigest(t, state); got != before {
+			t.Fatal("blank reason changed state tree")
+		}
+	})
+
+	t.Run("provider output", func(t *testing.T) {
+		workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
+		prepared, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, Question: "Advance?", Artifact: artifact, Summary: "candidate"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Mkdir(filepath.Join(prepared.Room, "provider"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		before := treeDigest(t, state)
+		if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err == nil ||
+			!strings.Contains(err.Error(), "exactly two regular files") {
+			t.Fatalf("provider-output withdrawal = %v", err)
+		}
+		if got := treeDigest(t, state); got != before {
+			t.Fatal("provider-output refusal changed state tree")
+		}
+	})
+
+	t.Run("corrupt retained request", func(t *testing.T) {
+		workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
+		prepared, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, Question: "Advance?", Artifact: artifact, Summary: "candidate"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		request := filepath.Join(prepared.Room, "request.json")
+		body := readPreparedFile(t, request)
+		if err := os.WriteFile(request, bytes.Replace(body, []byte(`"actor": "person:captain"`), []byte(`"actor": "agent:other"`), 1), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		before := treeDigest(t, state)
+		if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err == nil ||
+			!strings.Contains(err.Error(), "frozen digest") {
+			t.Fatalf("corrupt-authority withdrawal = %v", err)
+		}
+		if got := treeDigest(t, state); got != before {
+			t.Fatal("corrupt-authority refusal changed state tree")
+		}
+	})
+
+	t.Run("repeat and closed", func(t *testing.T) {
+		for _, terminal := range []string{"withdrawn", "closed"} {
+			t.Run(terminal, func(t *testing.T) {
+				workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
+				if _, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, Question: "Advance?", Artifact: artifact, Summary: "candidate"}); err != nil {
+					t.Fatal(err)
+				}
+				if terminal == "withdrawn" {
+					if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err != nil {
+						t.Fatal(err)
+					}
+				} else if err := RecordSemantic(entity, RecordInput{
+					Actor: "person:captain", Decision: "hold", Reason: "wait", WorkflowDir: workflow,
+				}); err != nil {
+					t.Fatal(err)
+				}
+				before := treeDigest(t, state)
+				if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err == nil ||
+					!strings.Contains(err.Error(), "frozen "+terminal) {
+					t.Fatalf("%s withdrawal = %v", terminal, err)
+				}
+				if got := treeDigest(t, state); got != before {
+					t.Fatalf("%s refusal changed state tree", terminal)
+				}
+			})
+		}
+	})
+
+	t.Run("lock contention", func(t *testing.T) {
+		workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
+		if _, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, Question: "Advance?", Artifact: artifact, Summary: "candidate"}); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(entity+".gates.lock", []byte("held"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		before := treeDigest(t, state)
+		if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err == nil ||
+			!strings.Contains(err.Error(), "concurrent gate writer") {
+			t.Fatalf("lock contention = %v", err)
+		}
+		if got := treeDigest(t, state); got != before {
+			t.Fatal("lock contention changed state tree")
+		}
+	})
+
+	t.Run("chat-only request-less attempt", func(t *testing.T) {
+		workflow, entity := recordStageFixture(t, "validation",
+			"briefing:task:validation:attempt-2:revision-1", "      gate: true\n")
+		before := treeDigest(t, workflow)
+		if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err == nil ||
+			!strings.Contains(err.Error(), "not request-backed") {
+			t.Fatalf("request-less withdrawal = %v", err)
+		}
+		if got := treeDigest(t, workflow); got != before {
+			t.Fatal("request-less refusal changed workflow tree")
+		}
+	})
+
+	t.Run("stale current selection", func(t *testing.T) {
+		workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
+		if _, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, Question: "Advance?", Artifact: artifact, Summary: "candidate"}); err != nil {
+			t.Fatal(err)
+		}
+		doc, oldNode, err := Read(entity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		doc.Records = append(doc.Records, GateRecord{
+			ID: "gate:task:other", Stage: "other", Attempts: []Attempt{{
+				ID: "gate-attempt:task-other-1",
+				Briefing: Briefing{
+					ID: "briefing:task:other:attempt-1:revision-1", Digest: "sha256:" + strings.Repeat("3", 64),
+					DigestDomain: "canonical-bytes", RoomRef: "./other",
+				},
+			}},
+		})
+		doc.Current.Gate = "gate:task:other"
+		if err := writeDocument(entity, oldNode, doc); err != nil {
+			t.Fatal(err)
+		}
+		before := treeDigest(t, state)
+		if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err == nil ||
+			!strings.Contains(err.Error(), "does not match gates.current") {
+			t.Fatalf("stale-selection withdrawal = %v", err)
+		}
+		if got := treeDigest(t, state); got != before {
+			t.Fatal("stale-selection refusal changed state tree")
+		}
+	})
+}
+
+func readPreparedFile(t *testing.T, path string) []byte {
+	t.Helper()
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return body
+}
+
 func TestPrepareUsesSlugIdentityWhenEntityHasNoStoredID(t *testing.T) {
 	for _, form := range []string{"folder", "flat"} {
 		t.Run(form, func(t *testing.T) {

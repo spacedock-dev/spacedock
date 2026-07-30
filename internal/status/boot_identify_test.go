@@ -67,6 +67,15 @@ func approvedGateEntity(slug, status, target, score string) string {
 		"---\n# " + slug + "\n"
 }
 
+func withdrawnGateEntity(slug, status, score string) string {
+	body := strings.TrimSuffix(openGateEntity(slug, status, score), "---\n# "+slug+"\n")
+	body = strings.Replace(body, "digest-domain: canonical-bytes, room-ref:",
+		"digest-domain: canonical-bytes, request-digest: 'sha256:"+strings.Repeat("2", 64)+"', room-ref:", 1)
+	return body +
+		"          withdrawal: {by: 'agent:first-officer', at: '2026-07-26T11:30:00.123456Z', reason: 'candidate is stale'}\n" +
+		"---\n# " + slug + "\n"
+}
+
 // writeRecordingGh writes a `gh` shim that appends to sentinelPath whenever it is
 // invoked, so a test can prove `gh` was NEVER run by asserting the sentinel is
 // absent afterward. It still prints a merge state, so a boot that DID shell out to
@@ -167,6 +176,7 @@ func TestBootIdentifyReadyGates(t *testing.T) {
 		"sp.md":          "---\nid: sp\nstatus: validation\nscore: 100\n---\n# Still validating\n",
 		"mf.md":          openGateEntity("mf", "validation", "90"),
 		"r4.md":          strings.Replace(openGateEntity("r4", "validation", "80"), "id: r4\n", "", 1),
+		"wd.md":          withdrawnGateEntity("wd", "validation", "75"),
 		"2n.md":          approvedGateEntity("2n", "validation", "done", "70"),
 		"qc.md":          "---\nid: qc\nstatus: validation\nscore: 60\n---\n# Still validating\n",
 		"dispatch-me.md": "---\nstatus: draft\nscore: 1000\n---\n",
@@ -191,7 +201,7 @@ func TestBootIdentifyReadyGates(t *testing.T) {
 		t.Fatalf("parse identify boot: %v\n%s", err, identifyOut)
 	}
 
-	wantReady := `[{"id":"mf","slug":"mf","current":"validation","readiness":"awaiting-captain"},{"id":"r4","slug":"r4","current":"validation","readiness":"awaiting-captain"},{"id":"2n","slug":"2n","current":"validation","readiness":"approved-awaiting-merge"}]`
+	wantReady := `[{"id":"mf","slug":"mf","current":"validation","readiness":"awaiting-captain"},{"id":"r4","slug":"r4","current":"validation","readiness":"awaiting-captain"},{"id":"wd","slug":"wd","current":"validation","readiness":"withdrawn-awaiting-prepare"},{"id":"2n","slug":"2n","current":"validation","readiness":"approved-awaiting-merge"}]`
 	if got := string(identify.ReadyGates); got != wantReady {
 		t.Fatalf("ready_gates = %s\nwant        = %s", got, wantReady)
 	}

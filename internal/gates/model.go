@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var digestRE = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
@@ -32,9 +33,16 @@ type GateRecord struct {
 type Attempt struct {
 	ID               string            `yaml:"id" json:"id"`
 	Briefing         Briefing          `yaml:"briefing" json:"briefing"`
+	Withdrawal       *Withdrawal       `yaml:"withdrawal,omitempty" json:"withdrawal,omitempty"`
 	ProviderEvidence *ProviderEvidence `yaml:"provider-evidence,omitempty" json:"provider-evidence,omitempty"`
 	Resolution       *Resolution       `yaml:"resolution,omitempty" json:"resolution,omitempty"`
 	Application      *Application      `yaml:"application,omitempty" json:"application,omitempty"`
+}
+
+type Withdrawal struct {
+	By     string `yaml:"by" json:"by"`
+	At     string `yaml:"at" json:"at"`
+	Reason string `yaml:"reason" json:"reason"`
 }
 
 type ProviderEvidence struct {
@@ -182,8 +190,14 @@ func CurrentStageReadiness(doc *Document, status string, stages []ReadinessStage
 	if attempt.Briefing.ID == "" || attempt.Briefing.Digest == "" || attempt.Briefing.RoomRef == "" {
 		return "invalid"
 	}
-	if attempt.Resolution == nil {
+	switch attemptState(attempt) {
+	case "open":
 		return "awaiting-captain"
+	case "withdrawn":
+		return "withdrawn-awaiting-prepare"
+	case "closed":
+	default:
+		return "invalid"
 	}
 	app := attempt.Application
 	if app == nil {
@@ -263,7 +277,8 @@ func Validate(doc *Document) error {
 			if a.Briefing.RequestDigest != "" && !digestRE.MatchString(a.Briefing.RequestDigest) {
 				return fmt.Errorf("attempt %s has invalid request-digest", a.ID)
 			}
-			if a.Resolution == nil {
+			switch attemptState(a) {
+			case "open":
 				if a.ProviderEvidence != nil {
 					return fmt.Errorf("open attempt %s cannot carry provider evidence", a.ID)
 				}
@@ -271,6 +286,20 @@ func Validate(doc *Document) error {
 					return fmt.Errorf("open attempt %s cannot carry application data", a.ID)
 				}
 				continue
+			case "withdrawn":
+				if a.Briefing.RequestDigest == "" {
+					return fmt.Errorf("withdrawn attempt %s must retain a request-digest", a.ID)
+				}
+				if err := validateWithdrawal(a.Withdrawal); err != nil {
+					return fmt.Errorf("attempt %s: %w", a.ID, err)
+				}
+				if a.ProviderEvidence != nil || a.Application != nil {
+					return fmt.Errorf("withdrawn attempt %s cannot carry provider evidence or application data", a.ID)
+				}
+				continue
+			case "closed":
+			default:
+				return fmt.Errorf("attempt %s has conflicting withdrawal and resolution state", a.ID)
 			}
 			if a.ProviderEvidence != nil {
 				if a.Briefing.RequestDigest == "" ||
@@ -301,6 +330,19 @@ func Validate(doc *Document) error {
 	}
 	if !selected {
 		return fmt.Errorf("gates.current pointer does not resolve to one logical gate")
+	}
+	return nil
+}
+
+func validateWithdrawal(withdrawal *Withdrawal) error {
+	if withdrawal == nil || withdrawal.By != "agent:first-officer" {
+		return fmt.Errorf("withdrawal attribution must be agent:first-officer")
+	}
+	if parsed, err := time.Parse(time.RFC3339Nano, withdrawal.At); err != nil || parsed.Location() != time.UTC {
+		return fmt.Errorf("withdrawal timestamp must be RFC3339Nano UTC")
+	}
+	if strings.TrimSpace(withdrawal.Reason) == "" {
+		return fmt.Errorf("withdrawal reason must be nonblank")
 	}
 	return nil
 }
@@ -366,8 +408,14 @@ func CurrentSummary(doc *Document) Summary {
 }
 
 func attemptState(a *Attempt) string {
-	if a.Resolution != nil {
+	switch {
+	case a.Withdrawal == nil && a.Resolution == nil:
+		return "open"
+	case a.Withdrawal != nil && a.Resolution == nil:
+		return "withdrawn"
+	case a.Withdrawal == nil && a.Resolution != nil:
 		return "closed"
+	default:
+		return "invalid"
 	}
-	return "open"
 }

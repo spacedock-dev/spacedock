@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	jsoncanonicalizer "github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer"
 	"github.com/spacedock-dev/spacedock/internal/gitsource"
@@ -27,6 +28,11 @@ type RecordInput struct {
 	LogPath, FeedbackCyclePath, Round string
 	Actor, Decision                   string
 	Reason, WorkflowDir               string
+}
+
+type WithdrawInput struct {
+	Reason      string
+	WorkflowDir string
 }
 
 type artifactRef struct {
@@ -194,6 +200,69 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 	return CurrentSummary(doc), nil
 }
 
+// Withdraw retires the selected request-backed prepared attempt without
+// inventing a Resolution or application.
+func Withdraw(entityPath string, input WithdrawInput) (Summary, error) {
+	if strings.TrimSpace(input.Reason) == "" {
+		return Summary{}, fmt.Errorf("gate withdraw requires a nonblank --reason")
+	}
+	if !utf8.ValidString(input.Reason) {
+		return Summary{}, fmt.Errorf("--reason must be valid UTF-8")
+	}
+	unlock, err := lockEntity(entityPath)
+	if err != nil {
+		return Summary{}, err
+	}
+	defer unlock()
+
+	doc, _, err := Read(entityPath)
+	if err != nil {
+		return Summary{}, err
+	}
+	workflowDir := input.WorkflowDir
+	if workflowDir == "" {
+		workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
+	}
+	if err := validateRetainedAuthority(entityPath, workflowDir, doc); err != nil {
+		return Summary{}, err
+	}
+	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath, workflowDir)
+	if err != nil {
+		return Summary{}, err
+	}
+	if doc.Current.Gate != record.ID {
+		return Summary{}, fmt.Errorf("current workflow stage does not match gates.current selection")
+	}
+	if state := attemptState(attempt); state != "open" {
+		return Summary{}, fmt.Errorf("attempt %s is frozen %s", attempt.ID, state)
+	}
+	if attempt.Briefing.RequestDigest == "" {
+		return Summary{}, fmt.Errorf("current attempt is not request-backed")
+	}
+	room, err := filepath.Abs(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef)))
+	if err != nil {
+		return Summary{}, fmt.Errorf("resolve bound gate room: %w", err)
+	}
+	if err := validatePreparedRoomEntries(room); err != nil {
+		return Summary{}, err
+	}
+	attempt.Withdrawal = &Withdrawal{
+		By:     "agent:first-officer",
+		At:     time.Now().UTC().Format(time.RFC3339Nano),
+		Reason: input.Reason,
+	}
+	if err := Validate(doc); err != nil {
+		return Summary{}, err
+	}
+	if err := ValidateTransition(oldNode, doc); err != nil {
+		return Summary{}, err
+	}
+	if err := writeDocument(entityPath, oldNode, doc); err != nil {
+		return Summary{}, err
+	}
+	return CurrentSummary(doc), nil
+}
+
 func recordRoomLocked(entityPath string, input RecordInput) error {
 	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath, input.WorkflowDir)
 	if err != nil {
@@ -206,8 +275,8 @@ func recordRoomLocked(entityPath string, input RecordInput) error {
 	if err := validateRetainedAuthorityExcept(entityPath, workflowDir, doc, record.ID, attempt.ID); err != nil {
 		return err
 	}
-	if attempt.Resolution != nil {
-		return fmt.Errorf("attempt %s is frozen closed", attempt.ID)
+	if state := attemptState(attempt); state != "open" {
+		return fmt.Errorf("attempt %s is frozen %s", attempt.ID, state)
 	}
 	if !digestRE.MatchString(attempt.Briefing.Digest) {
 		return fmt.Errorf("open attempt %s has no verifiable digest", attempt.ID)
@@ -358,8 +427,8 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 	if err := validateRetainedAuthority(entityPath, workflowDir, doc); err != nil {
 		return err
 	}
-	if attempt.Resolution != nil {
-		return fmt.Errorf("attempt %s is frozen closed", attempt.ID)
+	if state := attemptState(attempt); state != "open" {
+		return fmt.Errorf("attempt %s is frozen %s", attempt.ID, state)
 	}
 	if !digestRE.MatchString(attempt.Briefing.Digest) {
 		return fmt.Errorf("open attempt %s has no verifiable digest", attempt.ID)
@@ -997,7 +1066,8 @@ func ValidateTransition(oldNode *yaml.Node, next *Document) error {
 			return fmt.Errorf("gate %s cannot be deleted", oldRecord.ID)
 		}
 		for _, oldAttempt := range oldRecord.Attempts {
-			if attemptState(&oldAttempt) != "closed" {
+			state := attemptState(&oldAttempt)
+			if state != "closed" && state != "withdrawn" {
 				continue
 			}
 			var found *Attempt
@@ -1006,8 +1076,10 @@ func ValidateTransition(oldNode *yaml.Node, next *Document) error {
 					found = &nr.Attempts[i]
 				}
 			}
-			if found == nil || !nodesEqual(oldAttempt, *found) && !pendingApplicationSuperseded(oldAttempt, *found) {
-				return fmt.Errorf("frozen closed attempt %s cannot be deleted or mutated", oldAttempt.ID)
+			unchanged := found != nil && nodesEqual(oldAttempt, *found)
+			closedSuperseded := state == "closed" && found != nil && pendingApplicationSuperseded(oldAttempt, *found)
+			if !unchanged && !closedSuperseded {
+				return fmt.Errorf("frozen %s attempt %s cannot be deleted or mutated", state, oldAttempt.ID)
 			}
 		}
 	}
