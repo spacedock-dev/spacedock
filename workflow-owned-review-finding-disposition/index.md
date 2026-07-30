@@ -48,6 +48,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:de17345385e778d647dd1295ee0b2310571be8be85cd3091bb9784f79eaa7c6f
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:rhx820qrkn6vxpday10nch36:ideation:1
+                briefing: briefing:rhx820qrkn6vxpday10nch36:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T02:07:08.154809Z"
+                decision: approve
+                reason: 'Captain conn: staff review findings are closed; the revised 10-file design proves the riskiest operational seam, preserves authority boundaries, and makes stronger observability a design-reset trigger.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Make the active workflow the authority for review-finding policy. Reviewers report findings; workers retain evidence and propose materiality, ownership, and disposition; the First Officer authorizes the disposition before finding-driven product edits, commits, or reviewer reruns; validators recommend gate verdicts; and the captain decides changes to scope, accepted value, thresholds, tolerance, or acceptance criteria. Rejection routing carries an existing disposition to `feedback-to`; it neither defines nor repeats the policy.
