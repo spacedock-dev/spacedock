@@ -75,6 +75,11 @@ The spike file was removed. It proves the residual defect independently of the
 quarantined live journey and identifies `currentStageAttempt`, shared by room and chat
 closure, as the smallest current seam.
 
+A cycle-2 throwaway changed only the retained ID to `briefing:legacy`;
+`TestSpikeCurrentRecorderClosesUnqualifiedBriefing` also passed and wrote a hold
+Resolution. That file was removed. Unparseable identity is therefore an exercised
+authority bypass, not a hypothetical compatibility concern.
+
 `TestLiveDefaultHeadlessStopsAtGate` remains temporarily TODO under this task. It is one
 test definition executed by the Sonnet and Opus Claude CI matrix legs; no Codex, Pi,
 or shared gate/rejection/keep-moving scenario is quarantined. Removing that TODO is CI
@@ -88,11 +93,18 @@ authoritative stage from the locked entity's `status`, resolves that stage in th
 workflow definition, selects that stage's logical gate and last attempt, then checks
 the attempt's Briefing identity before reading a decision into durable state.
 
-A Briefing ID is stage-qualified only when it matches the shipped canonical shape
+A Briefing ID is valid for ordinary close only when it matches the shipped canonical
+v1 shape
 `briefing:<entity-identity>:<stage>:attempt-<positive>:revision-<positive>`.
 `<entity-identity>` may itself contain colons, so parsing anchors from the
 `:attempt-N:revision-N` suffix and takes the immediately preceding component as the
-stage. If a qualified ID's stage differs from current `status`, recording exits
+stage. An unqualified or malformed ID exits nonzero with exactly:
+
+```text
+Briefing id briefing:legacy is not a canonical stage-qualified v1 identity
+```
+
+If a canonical ID's stage differs from current `status`, recording exits
 nonzero with exactly:
 
 ```text
@@ -111,11 +123,12 @@ a Resolution or invokes `writeDocument`. Every refusal leaves the complete entit
 byte-identical and removes the lock. The CLI emits no success stdout and prefixes the
 diagnostic with its existing `Error: ` convention.
 
-IDs outside the canonical stage-qualified shape make no stage claim and retain their
-existing behavior. This is not a compatibility parser or migration path: the task
-adds no alternate format, rewrites no retained record, and accepts no prototype
-field. Existing malformed state remains readable; an ordinary close is a new
-authority mutation and must pass this guard.
+There is no compatibility parser or migration path: the task adds no alternate
+format, rewrites no retained record, and accepts no prototype field. Existing
+malformed or unqualified state remains readable, but an ordinary close is a new
+authority mutation and must prove canonical current-stage identity. Recovery uses the
+supported current-stage prepare/re-gate route rather than spending the retained
+malformed attempt.
 
 `gate record --round` remains outside this check. Its explicit `STAGE/CYCLE` denotes
 historical advisory evidence and may legitimately differ from current status.
@@ -131,16 +144,15 @@ The guard must preserve all of these:
 - After rejection, a later validation gate can close a new validation-qualified
   Briefing. Whether that Briefing is fresh relative to rework belongs to `zbc`, not
   this stage-equality check.
-- An unqualified Briefing ID on an otherwise valid current gate retains existing
-  closure behavior; this task does not turn a stage guard into a new identity schema.
 
 ## Proposed approach and mechanism choices
 
-1. Add one private parser for the canonical Briefing suffix and one
+1. Add one private validator/parser for the complete canonical Briefing shape and one
    `validateRecordStage` helper. Both room and chat paths call it through
    `currentStageAttempt` while the existing lock is held. This serves AC-1 and AC-2.
    The simpler CLI-only check is insufficient because package callers and one of the
-   two semantic sources could bypass it.
+   two semantic sources could bypass it; treating an unparsable ID as “no stage
+   claim” is also insufficient because it recreates the authority bypass.
 2. Extend the gates package's existing workflow-stage projection with `gate` and
    `terminal` booleans; do not import status internals or create a second workflow
    parser. This serves AC-2. Checking only for a matching gate record is insufficient
@@ -169,13 +181,15 @@ The guard must preserve all of these:
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) - An ordinary gate decision cannot close a cross-stage Briefing.**
+**AC-1 (VALUE) - An ordinary gate decision closes only a canonical current-stage Briefing.**
 
 Verified by: package and command fixtures begin at `implementation` with a
-validation-qualified open attempt; both chat and room record forms exit nonzero with
-the exact mismatch, no success stdout, byte-identical entity state, no Resolution,
-and no lock residue. The test fails if the comparison is deleted, moved after write,
-or applied to only one semantic source.
+validation-qualified, unqualified, and malformed open attempt in turn; both chat and
+room record forms exit nonzero with the exact mismatch or canonical-identity
+diagnostic, no success stdout, byte-identical entity state, no Resolution, and no
+lock residue. The test fails if malformed identity falls through as “no stage claim,”
+the comparison is deleted or moved after write, or only one semantic source is
+guarded.
 
 **AC-2 - Ordinary gate recording requires an actionable current workflow stage.**
 
@@ -190,7 +204,8 @@ Verified by: existing prepare/record/round positives remain green and one focuse
 re-entry fixture closes the current-status record while preserving the formerly
 selected record byte-for-byte. A schema snapshot and CLI help assertion remain
 unchanged. The test fails if the guard uses `gates.current` as authority, rejects
-unqualified IDs, touches rounds, or introduces another command/field.
+canonical current-stage successors, touches rounds, or introduces another
+command/field.
 
 **AC-4 - Both Claude matrix legs actively prove default-headless stop-open behavior.**
 
@@ -202,14 +217,14 @@ consumes, advances, or dispatches past the open gate.
 
 ## Expected surface and observable semantics
 
-Baseline estimate: 6 files, about 125 insertions and 8 deletions. Tolerance is at most
+Baseline estimate: 6 files, about 145 insertions and 8 deletions. Tolerance is at most
 2 additional files or 60 additional inserted lines; exceeding either requires design
 re-entry. Expected files:
 
 - `internal/gates/operation.go` — parser, workflow flags, and shared close guard,
-  approximately +35/-5.
-- `internal/gates/gates_test.go` — package refusal/re-gate table, approximately +45.
-- `internal/cli/gate_test.go` — exact output and byte/lock controls, approximately +30.
+  approximately +40/-5.
+- `internal/gates/gates_test.go` — package refusal/re-gate table, approximately +55.
+- `internal/cli/gate_test.go` — exact output and byte/lock controls, approximately +35.
 - `docs/specs/gate-resolution-frontmatter-contract.md` — normative close precondition,
   approximately +8/-1.
 - `docs/site/reference/command-reference.md` — user-facing recovery sentence,
@@ -217,9 +232,10 @@ re-entry. Expected files:
 - `internal/ensigncycle/live_gate_stop_test.go` — remove one TODO, -1.
 
 Command grammar and stored formats do not change. Authority becomes stricter only for
-ordinary gate closure. Runtime behavior gains the two diagnostics and byte-clean exit
-1; round recording, valid closure, preparation, provider association, application,
-and reads retain current behavior. No Subspace/provider semantics change.
+ordinary gate closure. Runtime behavior gains three byte-clean exit-1 diagnostics:
+stage mismatch, non-actionable stage, and noncanonical identity. Round recording,
+valid closure, preparation, provider association, application, and reads retain
+current behavior. No Subspace/provider semantics change.
 
 ## Documentation diff
 
@@ -228,17 +244,19 @@ Apply this normative addition after the recorder-close paragraph in
 
 ```diff
 +Before either ordinary close, the recorder resolves authoritative current status in
-+the workflow taxonomy and requires a nonterminal `gate: true` stage. A canonical
-+stage-qualified Briefing must name that same stage. Mismatch or non-actionable stage
-+fails before Resolution construction and leaves entity bytes unchanged.
++the workflow taxonomy and requires a nonterminal `gate: true` stage. The bound
++Briefing must use the canonical v1 stage-qualified identity and name that same stage.
++Malformed identity, mismatch, or non-actionable stage fails before Resolution
++construction and leaves entity bytes unchanged.
 ```
 
 Append this sentence to both `gate record` rows in
 `docs/site/reference/command-reference.md`:
 
 ```diff
-+The current workflow stage must be an actionable gate, and a stage-qualified bound
-+Briefing must name that stage; otherwise recording fails without mutation.
++The current workflow stage must be an actionable gate, and the bound Briefing must
++use the canonical v1 stage-qualified identity and name that stage; malformed or
++mismatched identity fails without mutation.
 ```
 
 ## Test plan
@@ -247,12 +265,12 @@ Add the smallest failing package and CLI cases before production changes. Reuse 
 existing semantic-decision, room, cross-gate, and byte-clean helpers; do not create a
 parallel gate harness.
 
-1. Package tests: table chat/room mismatch, non-gated, terminal, matching,
-   unqualified, successor, and cross-gate re-entry. Cost: small, deterministic fixture
-   expansion; no new golden or live harness.
+1. Package tests: table chat/room mismatch, unqualified, malformed, non-gated,
+   terminal, canonical matching, successor, and cross-gate re-entry. Cost: small,
+   deterministic fixture expansion; no new golden or live harness.
 2. CLI tests: assert exit 1, exact stderr, empty stdout, byte identity, absence of a
-   Resolution, and removed `.gates.lock` for mismatch and non-actionable stage. Cost:
-   one consolidated command table.
+   Resolution, and removed `.gates.lock` for mismatch, unqualified/malformed identity,
+   and non-actionable stage. Cost: one consolidated command table.
 3. Regression suites: run focused `./internal/gates` and `./internal/cli`, then
    `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
 4. Live restoration: remove the TODO and run focused Sonnet and Opus
@@ -261,9 +279,9 @@ parallel gate harness.
    but it is not evidence in place of the deterministic product guard.
 
 No fixture or expectation may be changed merely to make `se0` green. A deterministic
-test that still permits a cross-stage Resolution is a product failure; a deterministic
-green followed by unrelated live infrastructure red is CI restoration work and routes
-back to `se0`.
+test that still permits a cross-stage or noncanonical-identity Resolution is a product
+failure; a deterministic green followed by unrelated live infrastructure red is CI
+restoration work and routes back to `se0`.
 
 ## Stage Report: ideation
 
@@ -281,3 +299,20 @@ authority gap and defines one shared locked guard for chat and room decisions. I
 records exact diagnostics, byte-clean proof, legitimate re-gates, current dependency
 collisions, documentation wording, and a test-first path that keeps CI restoration
 separate from the product fix.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Define the smallest fail-closed stage-coherence contract at gate-record time, including the legitimate re-gate cases that must remain expressible.
+  AC-1, AC-2, and AC-3 now require canonical v1 identity plus current-stage equality on both close sources, preserve only canonical current-stage successors/re-entry and rounds, and make unqualified or malformed closure a named refusal.
+- DONE: Turn the recovered semantic work into falsifiable ACs and tests that distinguish a product defect from CI restoration or test expectation changes.
+  AC-1 adds chat/room unqualified and malformed mutants with exact diagnostics and byte/Resolution/lock controls; AC-4 still restores the unchanged live oracle only after those deterministic guards pass.
+- DONE: Declare expected files, LOC, and observable semantics, spike the riskiest mechanism first, and add no compatibility behavior for unreleased formats.
+  The corrected baseline remains 6 files but rises to +145/-8 for the negative identity cases; reads remain tolerant, new closes fail, and no migration, alternate identity, round, 0m6, zbc, se0, or provider behavior enters scope.
+
+### Summary
+
+Cycle 2 closes the unqualified-ID bypass identified in material feedback: every
+ordinary decision now requires the canonical v1 shape and a current-stage match.
+Diagnostics, ACs, tests, estimate, documentation wording, and the appended report
+move together while historical reads, advisory rounds, and legitimate canonical
+re-gates remain intact.
