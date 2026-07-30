@@ -210,11 +210,15 @@ Verified by: {test name / command output or exit code / file the change produces
   gate: true
 - name: implementation
   worktree: true
+  context-sections:
+    - Review-finding disposition
 - name: validation
   worktree: true
   fresh: true
   feedback-to: implementation
   gate: true
+  context-sections:
+    - Review-finding disposition
 - name: done
   terminal: true
 ```

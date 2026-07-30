@@ -115,6 +115,8 @@ Apply the same strategy to layers: if the cue is strong, fold the layer activati
 
 Once the template is selected, **`Read` the template file** at `references/templates/{template}.md` (resolve relative to the commission skill directory). Then **follow the template's `## Adoption` section directly** — that section tells you what stages to pre-fill, what layers to fire, what mods to offer with what framing prose, what entity-template snippet to inject, what variants to surface, and what confirmation prose to show in Phase 1.
 
+When a selected template's pre-fill declares `context-sections`, treat each selector and its matching named section as one generation unit: preserve the selector on every declaring stage and copy the complete section into the generated README. Never emit only one half. For the development template this atomically carries the implementation/validation `Review-finding disposition` selectors and the complete `## Review-finding disposition` section.
+
 The three templates available are `refinement`, `development`, and `experiment` — each at `references/templates/{name}.md`. The commission skill itself owns trait detection (this section), the Stage Naming Convention (Q2), the layer-assembly fallback (below), and the generic per-layer mod-framing reference (bottom of this file). Template-specific behavior — the development template's pr-merge stages-stay-clean framing, the experiment template's smoke/holdout teaching prose and silence-watcher offer, the refinement template's variant menu — lives in each template's Adoption section. Adding a fourth template later means dropping a new file in `references/templates/` with an Adoption section, not editing this skill.
 
 #### Generic mod offer mechanism
@@ -337,6 +339,7 @@ stages:
       {feedback-to: {target_stage} — if this stage has a rejection flow that bounces back to {target_stage}. Infer from the rejection_flow derived in Confirm Design.}
       {gate: true — if this stage is an approval gate}
       {agent: {agent-name} — only if {captain} specifies a non-default agent for this stage. Omit to use the default ensign. The value is the agent file basename without .md.}
+      {context-sections: [{section names}] — copy exactly when the selected template's pre-fill declares them; each selector requires its complete matching named section below}
     - name: {last_stage}
       terminal: true
   transitions:
@@ -432,6 +435,8 @@ Generated IDs make concurrent and offline creation safer because creators do not
 ## Scoring
 
 {ONLY include this section if {captain} explicitly requests a multi-dimension rubric. Otherwise omit entirely — the 0.0–1.0 float is self-explanatory from the schema.}
+
+{For every named section referenced by a selected template's `context-sections`, copy that complete section from the template here. For development, emit `## Review-finding disposition` with its entire body. Omit both this section and its selectors for templates that do not declare it; selector-only and section-only output are invalid.}
 
 ## Workflow-specific rules
 
