@@ -46,6 +46,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:dd7e3e5fbd9c128b8f2bad933e63be4c533dca0e88a7e30aa98cc769d18979af
                 room-ref: ./gate-record-stage-coherence-guard/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:q3vpb8hes1b3k3f1jps1kvpk:ideation:1
+                briefing: briefing:q3vpb8hes1b3k3f1jps1kvpk:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T15:51:49.129297Z"
+                decision: approve
+                reason: 'Sprint conn: corrected design closes the noncanonical and cross-stage authority bypass with falsifiable byte-clean guards, bounded six-file scope, and no compatibility path.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 ## Problem
