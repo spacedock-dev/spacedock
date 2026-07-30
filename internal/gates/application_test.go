@@ -94,6 +94,74 @@ func TestRecordClosureShapesApplication(t *testing.T) {
 	}
 }
 
+func TestRecordRequiresCanonicalBriefingAtActionableCurrentStage(t *testing.T) {
+	for _, tc := range []struct {
+		name, status, briefingID, stageFlags, want string
+	}{
+		{"cross-stage", "implementation", "briefing:task:validation:attempt-1:revision-1", "      gate: true\n", "Briefing stage validation does not match current workflow stage implementation"},
+		{"unqualified", "implementation", "briefing:legacy", "      gate: true\n", "Briefing id briefing:legacy is not a canonical stage-qualified v1 identity"},
+		{"malformed", "implementation", "briefing:task:implementation:attempt-0:revision-1", "      gate: true\n", "Briefing id briefing:task:implementation:attempt-0:revision-1 is not a canonical stage-qualified v1 identity"},
+		{"non-gated", "implementation", "briefing:task:implementation:attempt-1:revision-1", "", "current workflow stage implementation is not an actionable gate:true stage"},
+		{"terminal", "done", "briefing:task:done:attempt-1:revision-1", "      gate: true\n      terminal: true\n", "current workflow stage done is not an actionable gate:true stage"},
+	} {
+		for _, source := range []string{"chat", "room"} {
+			t.Run(tc.name+"/"+source, func(t *testing.T) {
+				root, entity := recordStageFixture(t, tc.status, tc.briefingID, tc.stageFlags)
+				before := readFile(t, entity)
+				input := RecordInput{Decision: "hold", Actor: "person:captain", Reason: "wait", WorkflowDir: root}
+				if source == "room" {
+					input = RecordInput{RoomPath: filepath.Join(root, "missing-room"), WorkflowDir: root}
+				}
+				err := RecordSemantic(entity, input)
+				if err == nil || err.Error() != tc.want {
+					t.Fatalf("record error = %v, want %q", err, tc.want)
+				}
+				if after := readFile(t, entity); after != before {
+					t.Fatal("refused record changed entity bytes")
+				}
+				if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
+					t.Fatalf("refused record left lock residue: %v", err)
+				}
+			})
+		}
+	}
+}
+
+func TestRecordCanonicalSuccessorAndCrossGateReentry(t *testing.T) {
+	root, entity := recordStageFixture(t, "ideation", "briefing:org:task:ideation:attempt-2:revision-3", "      gate: true\n")
+	validationRecord := "    - id: gate:task:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:task-validation-1\n          briefing: {id: 'briefing:task:validation:attempt-1:revision-1', digest: 'sha256:" + strings.Repeat("2", 64) + "', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1}\n          resolution: {type: Resolution, id: resolution:validation:1, briefing: 'briefing:task:validation:attempt-1:revision-1', by: person:captain, at: now, decision: revise, reason: rework}\n"
+	ideationPrior := "        - id: gate-attempt:task-ideation-1\n          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: 'sha256:" + strings.Repeat("3", 64) + "', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1}\n          resolution: {type: Resolution, id: resolution:ideation:1, briefing: 'briefing:task:ideation:attempt-1:revision-1', by: person:captain, at: now, decision: hold, reason: wait}\n"
+	body := strings.Replace(readFile(t, entity), "current: {gate: 'gate:task:ideation'}", "current: {gate: 'gate:task:validation'}", 1)
+	body = strings.Replace(body, "    - id: gate:task:ideation\n", validationRecord+"    - id: gate:task:ideation\n", 1)
+	body = strings.Replace(body, "        - id: gate-attempt:task-ideation-2\n", ideationPrior+"        - id: gate-attempt:task-ideation-2\n", 1)
+	if err := os.WriteFile(entity, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	doc, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	validationBefore := marshalAttempt(t, doc.Records[0].Attempts[0])
+
+	if err := RecordSemantic(entity, RecordInput{Decision: "hold", Actor: "person:captain", Reason: "wait", WorkflowDir: root}); err != nil {
+		t.Fatal(err)
+	}
+	doc, _, err = Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if doc.Current.Gate != "gate:task:ideation" {
+		t.Fatalf("current gate = %q, want re-entered ideation", doc.Current.Gate)
+	}
+	if got := marshalAttempt(t, doc.Records[0].Attempts[0]); got != validationBefore {
+		t.Fatal("cross-gate re-entry modified the formerly selected validation record")
+	}
+	attempt := doc.Records[1].Attempts[1]
+	if attempt.Resolution == nil || attempt.Resolution.Briefing != "briefing:org:task:ideation:attempt-2:revision-3" {
+		t.Fatalf("canonical successor closure = %#v", attempt.Resolution)
+	}
+}
+
 func TestSecondApplicationOnClosedAttemptIsRefusedUnchanged(t *testing.T) {
 	root, entity := applicationWorkflow(t)
 	input := RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: root}
@@ -311,7 +379,7 @@ func setApplicationState(state string) func(*Document) {
 func applicationWorkflow(t *testing.T) (string, string) {
 	t.Helper()
 	root := t.TempDir()
-	readme := "---\nstages:\n  states:\n    - name: ideation\n      initial: true\n      feedback-to: ideation\n    - name: implementation\n---\n# Workflow\n"
+	readme := "---\nstages:\n  states:\n    - name: ideation\n      initial: true\n      gate: true\n      feedback-to: ideation\n    - name: implementation\n---\n# Workflow\n"
 	if err := os.WriteFile(filepath.Join(root, "README.md"), []byte(readme), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +388,7 @@ func applicationWorkflow(t *testing.T) (string, string) {
 	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	briefingBytes := []byte(completeBriefing("briefing:task:ideation:1", "review"))
+	briefingBytes := []byte(completeBriefing("briefing:task:ideation:attempt-1:revision-1", "review"))
 	if err := os.WriteFile(briefing, briefingBytes, 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -336,9 +404,26 @@ func applicationWorkflow(t *testing.T) (string, string) {
 		"      stage: ideation\n" +
 		"      attempts:\n" +
 		"        - id: gate-attempt:task-ideation-1\n" +
-		"          briefing: {id: 'briefing:task:ideation:1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1/briefing.json}\n" +
+		"          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1/briefing.json}\n" +
 		"---\n# Task\nBody.\n"
 	if err := os.WriteFile(entity, []byte(entityBytes), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return root, entity
+}
+
+func recordStageFixture(t *testing.T, status, briefingID, stageFlags string) (string, string) {
+	t.Helper()
+	root := t.TempDir()
+	readme := "---\nstages:\n  states:\n    - name: " + status + "\n" + stageFlags + "    - name: next\n---\n# Workflow\n"
+	if err := os.WriteFile(filepath.Join(root, "README.md"), []byte(readme), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	entity := filepath.Join(root, "task.md")
+	digest := "sha256:" + strings.Repeat("1", 64)
+	records := "    - id: gate:task:" + status + "\n      stage: " + status + "\n      attempts:\n        - id: gate-attempt:task-" + status + "-2\n          briefing: {id: '" + briefingID + "', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/" + status + "/briefing-2}\n"
+	body := "---\nstatus: " + status + "\ngates:\n  version: 1\n  current: {gate: 'gate:task:" + status + "'}\n  records:\n" + records + "---\n# Task\n"
+	if err := os.WriteFile(entity, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	return root, entity

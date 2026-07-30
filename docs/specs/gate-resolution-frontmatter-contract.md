@@ -178,6 +178,9 @@ a semantic chat decision. Either closing source closes only the last open
 attempt for the current stage and derives its `advance/pending`, `feedback/pending`,
 or `none/not-applicable` application.
 
+Before either ordinary close, the recorder resolves authoritative current status in the
+workflow taxonomy and requires a nonterminal `gate: true` stage. The bound Briefing must use the canonical v1 stage-qualified identity and name that same stage. Malformed identity, mismatch, or non-actionable stage fails before Resolution construction and leaves entity bytes unchanged.
+
 Cross-logical-gate re-entry is ordinary: workflow stage selects the target record even
 when `gates.current.gate` names a different closed gate. The successful write selects the
 target record but does not modify either record's earlier closures.

@@ -294,7 +294,7 @@ func TestBootReadyGateTerminalApprovalDisappearsAfterConsume(t *testing.T) {
 	room := filepath.Join(state, "review", "validation", "briefing-1")
 	briefing := filepath.Join(room, "briefing.json")
 	writeFile(t, briefing,
-		`{"type":"Briefing","version":"1","id":"briefing:2n:validation:attempt-1","question":"ship?","artifacts":[{"id":"artifact:1","uri":"artifact.md","rev":"sha256:`+strings.Repeat("a", 64)+`"}]}`)
+		`{"type":"Briefing","version":"1","id":"briefing:2n:validation:attempt-1:revision-1","question":"ship?","artifacts":[{"id":"artifact:1","uri":"artifact.md","rev":"sha256:`+strings.Repeat("a", 64)+`"}]}`)
 	entity := filepath.Join(state, "2n.md")
 	briefingBytes, err := os.ReadFile(briefing)
 	if err != nil {
@@ -308,7 +308,7 @@ func TestBootReadyGateTerminalApprovalDisappearsAfterConsume(t *testing.T) {
 		"  version: 1\n  current: {gate: 'gate:2n:validation'}\n  records:\n"+
 		"    - id: gate:2n:validation\n      stage: validation\n      attempts:\n"+
 		"        - id: gate-attempt:2n-validation-1\n"+
-		"          briefing: {id: 'briefing:2n:validation:attempt-1', digest: '"+digest+"', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1/briefing.json}\n"+
+		"          briefing: {id: 'briefing:2n:validation:attempt-1:revision-1', digest: '"+digest+"', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1/briefing.json}\n"+
 		"---\n# 2n\n")
 	if _, _, err := gates.Read(entity); err != nil {
 		t.Fatal(err)
