@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:q3vpb8hes1b3k3f1jps1kvpk:validation:attempt-1:revision-1",
+  "question": "Does exact candidate 95435d7a77b63a9b21db2318ff3144d8ba209858 safely reject gate recording when Briefing stage and current workflow stage disagree, with no compatibility path?",
+  "artifacts": [
+    {
+      "id": "artifact:q3vpb8hes1b3k3f1jps1kvpk:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/686564b842e50156edea1ffcf1bcd65f266eafad/gate-record-stage-coherence-guard.md",
+      "rev": "sha256:fd031b8d4158b5479ff80603cf2eb86bb5bc638b10827c267af93326e90bbe70",
+      "mediaType": "text/markdown",
+      "summary": "Q3 adds canonical Briefing identity and current gated-stage coherence checks at gate-record time. Focused, full, race, formatting, docs, install, Claude, Opus, and Pi evidence are green. PR #579 Codex is red only on the separately tracked durable-evidence observer failure 8b; the captain explicitly directs Q3 merge first and 8b dispatch afterward."
+    }
+  ]
+}

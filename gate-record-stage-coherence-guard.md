@@ -11,7 +11,7 @@ id: q3vpb8hes1b3k3f1jps1kvpk
 gates:
     version: 1
     current:
-        gate: gate:q3vpb8hes1b3k3f1jps1kvpk:ideation
+        gate: gate:q3vpb8hes1b3k3f1jps1kvpk:validation
     records:
         - id: gate:q3vpb8hes1b3k3f1jps1kvpk:backlog
           stage: backlog
@@ -59,6 +59,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:q3vpb8hes1b3k3f1jps1kvpk:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:q3vpb8hes1b3k3f1jps1kvpk-validation-1
+              briefing:
+                id: briefing:q3vpb8hes1b3k3f1jps1kvpk:validation:attempt-1:revision-1
+                digest: sha256:b17e7401e9a2003267f1fb5c813a8ae31fec6d004df34a574a6c5b7f394c460b
+                digest-domain: canonical-bytes
+                request-digest: sha256:3852f7202e1fc742a924a1226bc791dc211e82eea109c78bc4e268510fab9a3b
+                room-ref: ./gate-record-stage-coherence-guard/review/validation/briefing-1
 worktree: .worktrees/spacedock-ensign-gate-record-stage-coherence-guard
 started: 2026-07-30T15:52:42Z
 pr: "#579"
