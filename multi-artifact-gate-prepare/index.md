@@ -3,7 +3,7 @@ title: Support multiple Artifacts in gate prepare
 tatus: backlog
 source: "q0 gate-room dogfood: captain requested a separately viewable git diff --stat Artifact, 2026-07-30."
 score: 0.7
-sprint: durable-decisions
+sprint:
 id: vpf2143105f72t5m52dqmwyk
 status: backlog
 ---
