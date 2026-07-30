@@ -331,3 +331,16 @@ Recommendation: REJECTED. AC-1's strict ordered journey and AC-4's no-new-state/
 ### Summary
 
 Cycle 2 narrows the candidate to the provider-free post-consume journey and leaves merge finalization outside this change. The reduced branch self-projects the entered stage, safely dispatches it into its worktree, and prevents premature transition until durable completion proof exists.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce post-consume self-projection, same-stage worktree dispatch, and byte-clean refusal before committed completion.
+  At final SHA `fd657883d`, the real-CLI consume replay returned `current=handoff,next=handoff`; the normal same-stage worktree mutation succeeded, all successor/backward/terminal/force/chained away mutations exited 1 with empty stdout and identical bytes, and a committed complete report unlocked the successor.
+- DONE: Verify merge production/tests are unchanged and no cold checklist-omission semantic or harness remains.
+  Path-scoped comparison with feature base `50f8d1fb7` was byte-identical for merge production/tests and `first-officer-shared-core.md`; the reduced diff contains no former checklist-reconstruction production path or cold runtime harness.
+- DONE: Run focused real-CLI, full Go, race, format, and diff checks; classify only journey-relevant findings.
+  Focused status and recorded-gate/rejection tests passed, the critical worktree journey passed 10 repeated runs, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and both diff checks passed; no CI or provider-backed run was triggered.
+
+### Summary
+
+Recommendation: PASSED for the exact provider-free post-consume journey at `fd657883d`. No journey-relevant material, evidence, or deferred finding remains; merge-finalization and cold checklist-omission semantics were confirmed absent and were not re-expanded.
