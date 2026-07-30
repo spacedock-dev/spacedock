@@ -6,7 +6,7 @@ started: 2026-07-30T01:34:32Z
 completed:
 verdict:
 score: "0.90"
-worktree:
+worktree: .worktrees/spacedock-ensign-workflow-owned-review-finding-disposition
 issue:
 pr:
 sprint: durable-decisions
