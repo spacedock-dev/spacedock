@@ -366,3 +366,27 @@ The approved reset adds only commission-time propagation of the existing selecto
 ### Summary
 
 Implementation cycle 3 closes both review findings under explicit authority, proves the commissioned workflow's positive and broken halves without a permanent harness, and ends on clean exact candidate `a0391fdbdb957d703ee4f836a5dfd5e21cc70153`. The panel was scheduled in implementation and did not create a validation verdict.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently verify all acceptance criteria and the validator stage outputs on exact candidate `a0391fdbdb957d703ee4f836a5dfd5e21cc70153`.
+  AC-1 PASS: the retained Codex drive still records unchanged pre-authorization SHA/HEAD/count then one authorized candidate-only commit and reviewer count `1`; candidate helper build/fetch delivered one byte-complete policy section to both docs/dev stages and both commissioned-development stages.
+  AC-2 PASS: each delivered policy contains all six authorities, the independent materiality/ownership fork, the exact `Needs decision` hold, and FO-authorized non-material decline.
+  AC-3 PASS: `TestFeedbackReflowRoutesFixRequest` preserved the exact `Blocking`/`Advisory` package; shared owner inspection found no development taxonomy, tolerance, or projection grammar.
+  AC-4 PASS: the normal 19-row oracle is green; deleting `exact_columns`, deleting `valid_boundary`, and converting the bare citation each produce exactly their intended single red row.
+  AC-5 PASS: advisory-round tests retain `actor:ensign`, advisory/no-status semantics, while the diff contains no gates/status/dispatch production, schema, command, or stored-format change.
+- DONE: Verify normal docs/dev and one-off commissioned development dispatch, including detached adversarial controls for the changed shipped contract/scaffolding.
+  A candidate-built launcher completed helper build plus its emitted fetch for implementation and validation in both workflows; each fetched section exactly equaled its README source and appeared once.
+  The no-selector throwaway returned policy count `0`; selector-without-section made `show-stage-def` and `dispatch build` exit `1` with `selector "Review-finding disposition" matches 0 headings`, so each atomic half is load-bearing.
+- DONE: Inspect the exact candidate surface against the reset ceiling and preserve prior dispositions.
+  The diff is exactly 11 files/135 insertions/56 deletions against the 11-file/225-insertion ceiling; post-reset edits are limited to the authorized TSV and commission skill/template surfaces, with N1-N4 and all earlier Deferred-risk/Polish dispositions unchanged.
+- DONE: Run applicable focused, full Go, race, formatting, and detached/adversarial checks required by the changed shipped contract/scaffolding.
+  `gofmt -w ./cmd ./internal` left the candidate clean; focused dispatch, opaque-routing, advisory-round, and contract/template checks passed, as did `go test ./...` and `go test ./... -race`.
+- DONE: Use retained implementation-stage Roborev evidence without invoking a validation reviewer.
+  Read-only `roborev show --job 331 --json` binds job `331` to exact tip `a0391fdb…`, verdict `P`, and `No issues found.`; no Roborev job was enqueued or rerun during validation.
+- SKIPPED: Record or fabricate a validation Briefing/JSONL package.
+  Roborev emitted no supported Spacedock Briefing plus reviewer JSONL pair; this separately routed recorder-input gap is outside the candidate and was left untouched.
+
+### Summary
+
+Recommendation: **PASSED**. All five ACs and validator outputs are independently reproduced on the exact 11-file/135-insertion candidate, the adversarial edits turn the intended checks red, and no new finding requires workflow-checkpoint consultation.
