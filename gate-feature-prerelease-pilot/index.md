@@ -5,6 +5,21 @@ score: 1.0
 sprint: durable-decisions
 source: "Captain direction on 2026-07-30 to release the current gate feature before sprint closure and use real installations to discover friction."
 id: 0hympdejewzwkhe60ygqk15a
+gates:
+    version: 1
+    current:
+        gate: gate:0hympdejewzwkhe60ygqk15a:backlog
+    records:
+        - id: gate:0hympdejewzwkhe60ygqk15a:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:0hympdejewzwkhe60ygqk15a-backlog-1
+              briefing:
+                id: briefing:0hympdejewzwkhe60ygqk15a:backlog:attempt-1:revision-1
+                digest: sha256:8e001f16c030b80444488bc79a581b04da24ec4f9b9aee31bfa734a88525caa2
+                digest-domain: canonical-bytes
+                request-digest: sha256:519a9e44c1703eb2a751839e98755b9710a25e4b43781f37827045f8547ebcff
+                room-ref: ./review/backlog/briefing-1
 ---
 
 ## End value

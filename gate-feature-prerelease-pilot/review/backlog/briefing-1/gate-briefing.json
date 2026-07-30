@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0hympdejewzwkhe60ygqk15a:backlog:attempt-1:revision-1",
+  "question": "Approve this minimal prerelease pilot for ideation and execution before durable-decisions sprint closure?",
+  "artifacts": [
+    {
+      "id": "artifact:0hympdejewzwkhe60ygqk15a:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/80318a7b752e4980abac096f4241d4071c88243b/gate-feature-prerelease-pilot/index.md",
+      "rev": "sha256:4cd6f5c58d9582a3ab93c59ab6f1d1fc25d1938cd375f336d2379efce9d94bf1",
+      "mediaType": "text/markdown",
+      "summary": "Cut v0.27.0-pre1 from the current main gate surface, verify clean installation, exercise default-chat and Subspace-backed gate journeys, and classify observed friction without pulling non-blocking follow-ups into the release."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:0hympdejewzwkhe60ygqk15a:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/4eeb94e9b1f7d2e407961e28c941e422c28749fc/docs/releasing.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8efa3dda0fcc18a36f0e27798c9e43e4c9296129871952c3a4afc471cc70e17e"
+    }
+  ]
+}
