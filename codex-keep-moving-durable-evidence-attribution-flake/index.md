@@ -1,7 +1,7 @@
 ---
 id: 8bnkrtq4rw46xkbez5zrbmmj
 title: Codex keep-moving durable-evidence attribution false-red
-status: backlog
+status: ideation
 source: "PR #513 Runtime Live E2E run 29392675038, codex-live job 87279446937"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
