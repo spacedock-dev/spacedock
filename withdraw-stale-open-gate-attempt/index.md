@@ -553,3 +553,22 @@ AC-2, and AC-3.
 ### Summary
 
 Commit `5a8be3220` implements truthful FO withdrawal, retained frozen authority, successor preparation, provider close/consume, cold-boot recovery, operator documentation, and the registered durable-state/invocation-log live variant without transcript grammar. The production delta is smaller through reuse of s4 seams; the First Officer authorized the exact 20-file +824/-60 variance because contractlint was already structurally clean and acceptance scope is unchanged.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 through AC-3 at exact candidate 5a8be3220, including open/withdrawn/closed authority and byte-clean refusal.
+  Focused gates/CLI/status/ensigncycle tests passed at `5a8be3220`; they fail if the command fabricates closure, exposes caller attribution, reuses N, mutates refusal bytes, or projects the wrong boot state.
+- DONE: Exercise prepare N, withdraw, cold boot, prepare N+1, provider close, eligibility, and consume while proving N remains immutable and undecided.
+  `TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume` passed through a freshly built binary; it fails if N changes or owns Resolution/application, N+1 lacks provider authority, boot is not singular, or consume does not advance.
+- DONE: Verify the 20-file +824/-60 surface, focused/full/race evidence, docs/skill coherence, and the registered live journey when infrastructure permits.
+  Diff audit found exactly 20 existing files at +824/-60; `go test -count=1 ./...`, `go test -count=1 -race ./...`, formatting check, and live-tag compile passed, and the withdrawn variant remains registered in `runtime-live-e2e.yml`.
+- DONE: Perform the semantic adversarial pass over explicit open/withdrawn/closed lifecycle authority.
+  A detached `5a8be3220` audit proved withdrawn N rejects room/chat record and consume byte-cleanly, remains ineligible, preserves its room through N+1 consume, and rejects later presented-inventory drift.
+- SKIPPED: Run another real Claude withdrawn-start journey.
+  At 2026-07-31 07:28 Asia/Taipei the local OAuth lane was still inside the already-observed HTTP 429 weekly-quota window before its 13:00 reset; per dispatch, no redundant live attempt was burned.
+- DONE: Recommend PASSED with deferred risks separated from material findings.
+  AC-1 through AC-3 have command/state evidence, no material finding or deferred product risk emerged, and candidate mutation or reviewer rerun was neither needed nor authorized.
+
+### Summary
+
+Validation recommends PASSED for exact candidate `5a8be3220`. Deterministic, repository-wide, race, live-registration, and detached adversarial evidence all preserve the approved behavior; only the registered real-Claude observation remains externally quota-blocked rather than product-red.
