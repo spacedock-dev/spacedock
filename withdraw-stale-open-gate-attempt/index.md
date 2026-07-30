@@ -84,6 +84,8 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+mod-block: merge:pr-merge
+pr: "#580"
 ---
 
 A provider-neutral prepared attempt can be frozen open after its reviewed candidate
