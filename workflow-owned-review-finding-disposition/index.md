@@ -258,3 +258,30 @@ Cycle 3 adds only the second-review discipline notes: explicit latency-for-integ
 ### Summary
 
 The implementation separates observation, proposal, current-work authorization, validation recommendation, captain design authority, and rejection transport without adding stored authority state or command behavior. Development keeps its calibrated taxonomy and strengthened four-field evidence, while generic layers carry workflow classifications and projections unchanged.
+
+## Stage Report: validation
+
+- DONE: Independently verify all five ACs against the exact 10-file/117-insertion candidate, including six-role authority separation, workflow-label preservation, and absence of recorder/schema/command drift.
+  AC-1 FAIL: retained commit `c63c0418` proves ordered Codex authorization, but candidate `show-stage-def` omits the referenced policy on normal implementation/validation dispatches.
+  AC-2 FAIL: the workflow text separates all six authorities and ownership outcomes, but dispatched workers receive only a pointer to the omitted section.
+  AC-3 PASS: `TestFeedbackReflowRoutesFixRequest` byte-compares the exact `Blocking`/`Advisory` package; file-scoped inspection found no development taxonomy/calibration in generic owner sites.
+  AC-4 FAIL: the current 18-row oracle passes, but in-memory deletion of either `exact_columns` or `valid_boundary` also exits 0, contradicting the promised red mutations.
+  AC-5 PASS: focused advisory-round tests preserve `actor:ensign`, advisory/no-status semantics; the exact diff changes no gates/status/dispatch production, schema, command, or stored format.
+- DONE: Re-run the full Go/race suites, four-field shell oracle and opaque-routing controls, and falsify the ordering/ownership claims with the approved retained-drive and negative cases.
+  `gofmt -w ./cmd ./internal` left the worktree clean; `go test ./...` and `go test ./... -race` passed, as did focused routing, empty-payload, four-field, and advisory-round controls.
+  The retained drive still has the recorded candidate SHA, candidate-only commit, and reviewer count `1`; guard-deletion probes independently exposed the AC-4 evidence defect.
+- DONE: Run the required classified Roborev review; triage each finding by released workflow, observable harm, authority-citing value boundary, trigger, and task ownership before recommending PASSED or REJECTED.
+  Roborev branch-final panel job `318` returned Changes requested.
+  Material outcome — missing dispatch context: normal implementation/validation ensigns lose the policy body; `value-ac[AC-1]`/`value-ac[AC-2]`; every dispatch lacking `context-sections`; task-owned frontmatter/template fix.
+  Material evidence — dead oracle guards: validators can delete exact-column or standalone-validity gates without red; `value-ac[AC-4]`; reproduced now; task-owned fixture fix.
+  Deferred risk — legacy oracle class names: exact trigger is adding policy-category rows to the materiality-only fixture; current cited/non-material controls pass; promote if the script becomes the category serializer.
+  Deferred risk — custom projection plus canonical gate recorder: no current workflow couples those surfaces and dev's declared line passes; promote if generic routing mandates `gate record --feedback-cycle`.
+  Polish — payload terminator and stale NEG-A commentary: exact current emission is asserted by the positive byte comparison; revisit if dispatch section order changes.
+  Deferred risk — file-input transport seam: production uses untrimmed `os.ReadFile` and downstream byte comparison passes; promote if file loading gains normalization.
+  Deferred risk — removed default tolerance: current dev tasks declare expected surface/tolerance; promote when a supported workflow omits one and still enters another correction round.
+  Polish — older audit-routing shorthand: the active generic route now enforces authorization; revise the shorthand when those docs next change.
+  Deferred risk — gate-lifecycle three-label briefing shorthand: presenter preserves active labels and no omission was observed; promote on a reproduced `Needs decision` loss.
+
+### Summary
+
+Recommendation: **REJECTED** for two task-owned Material findings: the workflow policy is not delivered through the normal dispatched stage context, and AC-4's fixtures do not falsify removal of two promised guards. The runtime suites, opaque routing, six-authority wording, retained authorization drive, and no-drift checks otherwise pass; candidate commit `00f8c203` remains untouched.
