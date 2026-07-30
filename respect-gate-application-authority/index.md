@@ -8,7 +8,7 @@ verdict:
 score: 1.0
 worktree:
 issue:
-sprint: durable-decisions
+sprint:
 id: mnea9vq3pv1rz1x1hdjbvdg9
 gates:
     version: 1
