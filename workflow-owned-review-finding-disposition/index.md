@@ -112,6 +112,22 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:310991ba23c93bb08a9b59ccb3e3a106b6f078ecc814ae508c115b6c45c4969e
                 room-ref: ./review/validation/briefing-2
+              provider-evidence:
+                result-digest: sha256:d7681cf27d3fa5464d4c5813c97b7187b8e7ff61ea84a9e72bccfd058ce9b32a
+                presented-inventory-digest: sha256:ee1bd188b5f3d8861edb292f9dced7629fa6eb2c2bd5623f465d272dfa6b9d19
+              resolution:
+                type: Resolution
+                id: resolution:binding-1785414965661028000
+                briefing: briefing:rhx820qrkn6vxpday10nch36:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-07-30T12:36:05.661033Z"
+                decision: approve
+                reason: alright, the viewer doesn't support decoding it thoughl. anyway let's push it and get ci rolling
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 Make the active workflow the authority for review-finding policy. Reviewers report findings; workers retain evidence and propose materiality, ownership, and disposition; the First Officer authorizes the disposition before finding-driven product edits, commits, or reviewer reruns; validators recommend gate verdicts; and the captain decides changes to scope, accepted value, thresholds, tolerance, or acceptance criteria. Rejection routing carries an existing disposition to `feedback-to`; it neither defines nor repeats the policy.
