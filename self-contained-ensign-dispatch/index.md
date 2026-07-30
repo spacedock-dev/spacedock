@@ -630,3 +630,44 @@ Validation recommends REJECTED at exact tip `9148e557255529ecdca74cb7a988b0c7b22
 ### Summary
 
 The captain-reset correction is complete at exact code tip `b60d1c8adcf67135c8197144da5f7c841413b482`: the overgrown transcript proof is deleted, the replacement executes the generated assignment's retained helpers through space-bearing A under ambient B and composes exact invocation logs with canonical advisory-only durable state, every required suite is green, and the only final reviewer concern is recorded as an authorized deferred risk rather than used to restore the forbidden mechanism.
+
+## Stage Report: validation (cycle 2)
+
+- FAILED: Reproduce AC-1 through AC-5 at exact candidate b60d1c8, including pointer-only transport, pinned A under ambient B, advisory-only authority, and product binary C separation.
+  AC-1 through AC-4 and AC-5's deterministic A/B/C plus durable-authority proof reproduce at exact `b60d1c8`; AC-5's required host-live evidence is red for the external Codex runtime finding below, while canonical Claude/Pi never reached product behavior.
+- DONE: AC-1 — self-contained artifact and pointer-only transport.
+  Paired fresh/advance Claude, Codex, and Pi fixtures retain all stage/context/checklist/standing/scope/feedback bytes only in the file; exact distinct 251-character stems and legal prompts over 300 bytes pass.
+- DONE: AC-2 (VALUE) — ambient B performs 0 of 2 worker-time resolutions.
+  `TestDispatchBuildTwoBinaryCommandFixture` keeps both A-built assignments self-contained with exact ordered context, empty fetch arrays, and an empty B invocation log.
+- DONE: AC-3 and AC-4 — shell-safe A executes the retained helpers exactly once in order.
+  The space-bearing real generated assignment invokes A for one `status --read` then one successful advisory `gate record --round`, invokes B zero times, and composes with canonical advisory-only durable state.
+- DONE: AC-5 deterministic authority and product-C separation.
+  A receives the two workflow helpers, explicit product binary C receives only its product test, status/lifecycle sentinels stay unchanged, and no ordinary gate/application state appears.
+- DONE: Verify the cycle-4 correction removed every KD transcript/provider/shell/JavaScript/correlated-output parser while staying within +152/-442 and introducing no replacement observer protocol.
+  Exact six-file diff is +152/−442; all KD round-attribution, custom/function/tool-event, shell/JS grammar, correlated-output, worker-transcript, and expanded journey-metric identifiers are absent, with no added event/schema/observer surface.
+- FAILED: Run focused, integration, full, race, required Claude/Codex/Pi live lanes, and the detached adversarial perturbations in the declared cheapest-first order.
+  Focused dispatch/CLI/behavior, skills integration, `go test ./...`, race, gofmt inspection, diff checks, parity guards, and all applicable detached perturbations pass; required live proof is red as classified below.
+
+### Review-finding disposition
+
+- **MATERIAL / outcome defect / not task-owned / Needs decision — route outside task:** current Codex FO advances an approved entity and builds its next-stage dispatch artifact without invoking `worker.spawn`, then reads a report and terminalizes it.
+  Released workflow: current `codex exec` 0.145.0 with the exact current-checkout plugin/binary; harm: implementation can be credited without the required independent worker dispatch; authority: `contract[skills/first-officer/references/first-officer-shared-core.md#engage]` requires observed worker spawn for every ready member.
+  Exact trigger/evidence: `TestLiveCodexSharedScenarios/keep-moving-posture` failed after 256.48s; item 17 in `/tmp/spacedock-validation-cycle4-b60d1c8.qPdIXO/codex/codex-shared-scenarios/keep-moving-posture/codex-exec.jsonl` advances and builds `approved-gate`, no spawn event follows, and items 26–27 read/finalize it.
+  Promotion condition: none, already Material on a supported journey. FO-authorized disposition: zero KD mutation/rework and zero reviewer rerun; route to the Codex FO/runtime owner and HOLD this validation gate pending its fix plus an exact live rerun.
+
+### Infrastructure blocks and deferred risk
+
+- Claude launched the exact current checkout but every active scenario failed before FO work with account HTTP 429 weekly-limit exhaustion; the repository-quarantined rejection-flow and recorded-gate scenarios remained skipped.
+- Canonical Pi launched the exact current checkout but failed before FO work with OpenRouter HTTP 402: 128,000 requested tokens versus 120,042 affordable; this is infrastructure, not a product failure.
+- **Deferred Pi runtime risk / evidence defect / not task-owned:** the single authorized noncanonical `openrouter/openai/gpt-5.3-chat` retry edited the split-root entity but committed the outer workflow repository, leaving the state checkout at `bfe8121 init`.
+  Promote if documented/default gpt-5.4 reproduces the missing state-checkout commit with sufficient credit/auth, or if gpt-5.3-chat enters the supported live-model matrix; disposition is no candidate mutation or rerun.
+
+### Adversarial and surface evidence
+
+- Detached throwaway mutations reintroducing a worker fetch, ambient launcher fallback, dropped standing render, workflow-helper routing through C or B, universal 300-byte rejection, and filename shortening each made its owning test red.
+- The obsolete whitespace-tokenizer/transcript-observer perturbation is inapplicable after the captain reset because that entire observation mechanism is forbidden and absent; no replacement dialect was tested or introduced.
+- Candidate stayed clean at exact `b60d1c8`; full branch surface is 32 hand-authored files / 1,144 changed lines plus exactly 26 build goldens / 401 changed lines.
+
+### Summary
+
+Validation recommends **REJECTED with gate HOLD**, solely because required live proof is red. The candidate has zero classified defects and requires zero implementation rework: deterministic AC evidence and the captain-reset proof are green, while one external Material Codex FO runtime defect must be routed and canonical Claude/Pi capacity must be restored before the exact live rerun.
