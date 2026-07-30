@@ -57,6 +57,7 @@ gates:
                 state: consumed
                 blockers: []
 started: 2026-07-30T14:04:09Z
+worktree: .worktrees/spacedock-ensign-gate-feature-prerelease-pilot
 ---
 
 ## End value
