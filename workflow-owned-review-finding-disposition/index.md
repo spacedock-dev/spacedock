@@ -90,6 +90,21 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:b1d5f3086e673ba9b4fa703788fde8150325094fc2a787fd385a4c33065c246d
                 room-ref: ./review/validation/briefing-1
+              provider-evidence:
+                result-digest: sha256:e4cc42624d3efad352d3ea30cc3c019954c085d6e381416e7eade5942ed80d95
+                presented-inventory-digest: sha256:f423cd8044dc0fc65bc4388219c18e5704485a27ec5861a617434a020fe8ee88
+              resolution:
+                type: Resolution
+                id: resolution:binding-1785414321608960000
+                briefing: briefing:rhx820qrkn6vxpday10nch36:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-30T12:25:21.608963Z"
+                decision: revise
+                reason: can you construct the briefing with anoter artifact that is the output of git diff --stat ?
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 ---
 
 Make the active workflow the authority for review-finding policy. Reviewers report findings; workers retain evidence and propose materiality, ownership, and disposition; the First Officer authorizes the disposition before finding-driven product edits, commits, or reviewer reruns; validators recommend gate verdicts; and the captain decides changes to scope, accepted value, thresholds, tolerance, or acceptance criteria. Rejection routing carries an existing disposition to `feedback-to`; it neither defines nor repeats the policy.
