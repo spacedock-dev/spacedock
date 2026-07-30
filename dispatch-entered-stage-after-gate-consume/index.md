@@ -113,7 +113,7 @@ review-round:
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-1
 mod-block: merge:pr-merge
-pr: "#578"
+pr: pr-merge:578
 ---
 
 A gate application can atomically move a ticket into a non-gated working stage, but the First Officer must still dispatch that entered stage before advancing again. In Codex run `30197794474`, `status --boot --identify --json` exposed the fixture as `current=implementation,next=validation`; the FO followed that projection, ran `status ... status=validation started`, and built validation without an implementation worker. The final entity carried the first REJECTED validation, one rework implementation report, and the second PASSED validation, but no original implementation report. The strict two-cycle assertion correctly failed with “left 1 implementation reports, want at least 2.”
