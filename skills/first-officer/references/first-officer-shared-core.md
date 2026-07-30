@@ -44,6 +44,7 @@ A greet-and-stop boot loads NONE of these — it composes its summary from `«st
 
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
 - `Skill(skill="spacedock:fo-gate-lifecycle")` — every engaged gate entry: headless with or without conn, `engage`, gated worker completion, and open/pending/revise/hold/stale/consumed resume. Complete this load before every capability probe, gate read/write/validation, presenter load, decision route, replay, or dispatch; interactive gated greet only names the gate and stops load-free.
+- Active review policy — on findings, fence-safely locate/read the workflow's declared section; apply before candidate mutation or reviewer rerun.
 - `references/fo-dispatch-core.md` — read before the first worker dispatch, before invoking `«dispatch.next-action»()`, or before mutating dispatch state. `«dispatch.build»` output is not a dispatch: forward every ready entity's artifact to `«worker.spawn»`; never author its stage report or claim completion without the worker's `«completion-signal»`.
 - `{first_officer_base}/references/fo-write-core.md` — read in its own completed host event immediately before the first FO-authored mutation, after the gate-lifecycle load when both apply. The read activates `«write.classify»`; no FO-owned file, state, process-doc, archive, or mutation command may precede it, and neither deferred read substitutes for the other.
 - `{first_officer_base}/references/fo-merge-core.md` — read in its own completed host event at the first terminal boundary, or when `«engage»` begins recovery for `mod-block=merge:*`, before a terminal status transition, merge hook/guard, archive, shutdown, or other merge-owned action.
@@ -78,7 +79,7 @@ If not gated: terminal → merge; else decide reuse-or-fresh.
 
 **Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module, already loaded by the time a completion reaches this point. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
 
-If gated and a reviewer recommends `REJECTED` at a configured feedback gate, invoke `«feedback.route»` before Captain presentation; otherwise complete `Skill(skill="spacedock:fo-gate-lifecycle")`, then `«gate.lifecycle»(slug, stage)`. It commits the bound package before presentation, every successful close before routing, and consumed approval before routing: nonterminal → ordinary dispatch, terminal → existing merge ceremony; revise invokes `«feedback.route»`, while hold/ineligibility stops.
+If a gated reviewer recommends `REJECTED` at a configured feedback gate, new/unresolved findings re-enter active workflow review policy. Hold until the worker proposal has a distinct FO-authorized disposition and concrete revise assignment. Then invoke `«feedback.route»` before Captain presentation, carrying finding/evidence/classification/disposition/assignment unchanged without classification. Other gates complete `Skill(skill="spacedock:fo-gate-lifecycle")`, then `«gate.lifecycle»(slug, stage)`. It commits package/decisions before routing: nonterminal → dispatch, terminal → merge; revise repeats eligibility; hold/ineligibility stops.
 
 ## «gate.ac-cross-check»(slug, stage): every acceptance criterion has evidence, re-anchored on the end value
 
@@ -98,8 +99,8 @@ If gated and a reviewer recommends `REJECTED` at a configured feedback gate, inv
 
 ## «feedback.route»(slug, stage): route a rejection back to its feedback-to target and re-gate
 
-- **effect:** invoke `Skill(skill="spacedock:feedback-rejection-flow")` and follow it — read the `feedback-to` target, append a conforming `### Feedback Cycles` entry and read the round state, escalate on cycle 3, consult the budget probe, route findings back to the target stage, re-run the reviewer, re-enter the gate flow.
-- **done-when:** the rejection has been routed to its `feedback-to` target stage and re-gated, escalated at cycle 3, or held on a recorded design-reset decision past tolerance.
+- **effect:** invoke `Skill(skill="spacedock:feedback-rejection-flow")`; it owns opaque transport, correction rounds, reviewer rerun, and gate re-entry.
+- **done-when:** routed and re-gated, escalated at cycle 3, or held for missing authorization/assignment.
 - **block:** the routing decision is judgment-adjacent — the skill, not a binary, owns it.
 - → **prose**; the `feedback-rejection-flow` skill is the body.
 

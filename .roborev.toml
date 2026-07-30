@@ -38,7 +38,7 @@ For each candidate finding, first record the exact trigger, observable harm, aff
 Before emitting a finding, record all four:
 - Released user and normal workflow: who encounters the behavior, and how.
 - Observable harm: what that user loses or cannot complete.
-- Affected value AC or non-negotiable boundary: the accepted outcome, or the safety, security, data-integrity, or compatibility promise at risk.
+- Affected value AC or non-negotiable boundary: cite the authority as `value-ac[AC-N]`, `captain-ruling[YYYY-MM-DD]`, or `contract[repo/relative/path#anchor]`, then state the affected outcome or protected promise. Use `none:` with a nonblank rationale when none is affected.
 - Trigger evidence: why the trigger is common, observed, supported, or explicitly promised — name the concrete path, or state that the only path is hypothetical, adversarial-only, or outside current promises.
 
 No completed triage means no release-blocking classification.
