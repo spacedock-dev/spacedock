@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zbcj98qfwtax61vxdzrf615e:backlog:attempt-1:revision-1",
+  "question": "Approve ideation to design post-rework Briefing freshness at rejection re-gate?",
+  "artifacts": [
+    {
+      "id": "artifact:zbcj98qfwtax61vxdzrf615e:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/73fc095f6d34d092e9064e3d500172322c7aa055/bind-post-rework-briefing-at-rejection-regate.md",
+      "rev": "sha256:6c8c1615f4941cffb09c99431b7818d0435dcf1011eb36e746adf28baceb532c",
+      "mediaType": "text/markdown",
+      "summary": "Design mechanical freshness so final captain approval binds the newest reworked and revalidated candidate rather than the rejected snapshot, reusing existing gate and round recording machinery."
+    }
+  ]
+}

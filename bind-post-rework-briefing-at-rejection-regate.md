@@ -8,6 +8,21 @@ group: gate
 sprint-readiness: ready
 issue:
 id: zbcj98qfwtax61vxdzrf615e
+gates:
+    version: 1
+    current:
+        gate: gate:zbcj98qfwtax61vxdzrf615e:backlog
+    records:
+        - id: gate:zbcj98qfwtax61vxdzrf615e:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:zbcj98qfwtax61vxdzrf615e-backlog-1
+              briefing:
+                id: briefing:zbcj98qfwtax61vxdzrf615e:backlog:attempt-1:revision-1
+                digest: sha256:a8668228e65695fdea30226ee877edb1031da0356a36cca5b245d644c3434802
+                digest-domain: canonical-bytes
+                request-digest: sha256:70a3922bccbd3031f2b3e4b7f5921d1b081db5861350376d92d8f6be23b6cc35
+                room-ref: ./bind-post-rework-briefing-at-rejection-regate/review/backlog/briefing-1
 ---
 
 ## Problem
