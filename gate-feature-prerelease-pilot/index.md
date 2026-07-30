@@ -1,6 +1,6 @@
 ---
 title: Cut and field-test the current gate feature as a prerelease
-status: ideation
+status: implementation
 score: 1.0
 sprint: durable-decisions
 source: "Captain direction on 2026-07-30 to release the current gate feature before sprint closure and use real installations to discover friction."
@@ -54,7 +54,7 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
                 blockers: []
 started: 2026-07-30T14:04:09Z
 ---
