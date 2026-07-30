@@ -48,6 +48,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:1e8eef615d1bd19e2011de8bac8ca2650c19caa690e13e9a85903a430c39ba30
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8bnkrtq4rw46xkbez5zrbmmj:ideation:1
+                briefing: briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T23:04:28.063854Z"
+                decision: approve
+                reason: 'Captain conn accepted the no-transcript, net-negative design: ordered per-task Git history directly tests the keep-moving journey, adversarial controls can falsify it, and the implementation boundary forbids observer dialects or product semantics.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.
