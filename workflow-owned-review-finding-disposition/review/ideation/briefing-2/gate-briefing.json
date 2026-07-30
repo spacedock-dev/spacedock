@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rhx820qrkn6vxpday10nch36:ideation:attempt-2:revision-1",
+  "question": "Approve design reset 1 to include commissioned-workflow policy propagation?",
+  "artifacts": [
+    {
+      "id": "artifact:rhx820qrkn6vxpday10nch36:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/1a5d6dd41cc090e0c21ab9b03839152ac7d3ad63/workflow-owned-review-finding-disposition/index.md",
+      "rev": "sha256:375020c1f6945fc0c7c0893d3cbfe707b4355fe6245ec5eddb78fd55507587dc",
+      "mediaType": "text/markdown",
+      "summary": "Design reset 1 closes Roborev F2: add skills/commission/SKILL.md as the eleventh and final file so normally commissioned development workflows receive both Review-finding disposition selectors and the complete named policy section. Prove the atomic propagation with one retained commission-to-dispatch exercise; add no permanent harness, schema, command, recorder behavior, or twelfth file."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:rhx820qrkn6vxpday10nch36:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/1a5d6dd41cc090e0c21ab9b03839152ac7d3ad63/workflow-owned-review-finding-disposition/artifacts/ideation-codex-fo-authorization-spike.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d5d1d7c5e6c7cea39b45266393a3faa2a27e71eade77e03ca71dfebd693f6149"
+    }
+  ]
+}
