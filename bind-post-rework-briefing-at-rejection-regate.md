@@ -46,6 +46,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:e816cf506a7ace8da21bfc41db71abd78ccc9dc4cbd3f065bb2bb804651b0c33
                 room-ref: ./bind-post-rework-briefing-at-rejection-regate/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zbcj98qfwtax61vxdzrf615e:ideation:1
+                briefing: briefing:zbcj98qfwtax61vxdzrf615e:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T15:54:19.068043Z"
+                decision: approve
+                reason: 'Sprint conn: revised design provides mechanical correction-episode freshness with one scalar plus existing pinned Reference, deriving authority without duplicated schema or new recorder.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 ## Problem
