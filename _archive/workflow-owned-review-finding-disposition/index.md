@@ -3,8 +3,8 @@ title: Make review-finding disposition workflow-owned and separate in-stage revi
 status: done
 source: "Captain boundary audit, 2026-07-30: an end-of-implementation Roborev round never enters feedback-rejection-flow, and finding classification must happen when findings arrive rather than only after rejection."
 started: 2026-07-30T01:34:32Z
-completed:
-verdict:
+completed: 2026-07-30T13:03:07Z
+verdict: passed
 score: "0.90"
 worktree: .worktrees/spacedock-ensign-workflow-owned-review-finding-disposition
 issue:
@@ -128,7 +128,8 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
-mod-block: merge:pr-merge
+mod-block:
+archived: 2026-07-30T13:03:07Z
 ---
 
 Make the active workflow the authority for review-finding policy. Reviewers report findings; workers retain evidence and propose materiality, ownership, and disposition; the First Officer authorizes the disposition before finding-driven product edits, commits, or reviewer reruns; validators recommend gate verdicts; and the captain decides changes to scope, accepted value, thresholds, tolerance, or acceptance criteria. Rejection routing carries an existing disposition to `feedback-to`; it neither defines nor repeats the policy.
