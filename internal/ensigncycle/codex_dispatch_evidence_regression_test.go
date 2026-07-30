@@ -180,35 +180,44 @@ func TestCodexKeepMovingCreditsDispatchBuildWaitAndDurableRead(t *testing.T) {
 	}
 }
 
-func TestCodexKeepMovingCreditsPostWaitWorkingStageReports(t *testing.T) {
+func TestCodexKeepMovingCreditsWorkingStageReportsBeforeLateWait(t *testing.T) {
+	entities := []string{kmApprovedGate, kmReadyOne, kmReadyTwo}
+	mergeCommand := "spacedock merge guard " + kmApprovedGate + " --verdict passed; " +
+		"spacedock merge guard " + kmReadyOne + " --verdict passed; " +
+		"spacedock merge guard " + kmReadyTwo + " --verdict passed"
+	mergeOutput := "finalized: " + kmApprovedGate + " -> done (verdict passed), archived.\n" +
+		"finalized: " + kmReadyOne + " -> done (verdict passed), archived.\n" +
+		"finalized: " + kmReadyTwo + " -> done (verdict passed), archived.\n"
 	stream := strings.Join([]string{
 		codexCommand("spacedock status --workflow-dir . --set " + kmApprovedGate + " status=" + kmNextStage + " verdict=approved"),
 		codexDispatchBuildEvidence(kmReadyOne, kmNextStage),
 		codexDispatchBuildEvidence(kmApprovedGate, kmNextStage),
 		codexDispatchBuildEvidence(kmReadyTwo, kmNextStage),
-		codexWaitCompleted(),
 		codexEntityReadEvidence(kmReadyOne, kmNextStage, kmNextStage),
 		codexEntityReadEvidence(kmApprovedGate, kmNextStage, kmNextStage),
 		codexEntityReadEvidence(kmReadyTwo, kmNextStage, kmNextStage),
+		codexCompletedCommandOutput(mergeCommand, mergeOutput),
+		codexWaitCompleted(),
 		codexCommand("spacedock status --workflow-dir . --set " + kmQuestioned + " status=" + kmReopenStage + " verdict=questioned"),
 	}, "\n")
 
+	evidence := codexDispatchCompletionEvidenceFromJSONL(stream, entities)
+	for _, entity := range entities {
+		if !evidence.stageReport[entity] || !evidence.doneReport[entity] {
+			t.Errorf("late-wait live ordering did not credit completed dispatch for %q: %+v", entity, evidence)
+		}
+	}
 	if err := assertCodexKeepMoving(stream, kmCorrectFinal(), kmIndependent()); err != nil {
-		t.Fatalf("build + wait + durable working-stage report must prove dispatch before FO terminalization: %v", err)
+		t.Fatalf("build + durable working-stage report must prove dispatch when wait arrives late: %v", err)
 	}
 }
 
-func TestCodexDispatchEvidenceRejectsOutOfOrderAndFailedBuilds(t *testing.T) {
+func TestCodexDispatchEvidenceRejectsStaleReportsAndFailedBuilds(t *testing.T) {
 	entity := kmReadyOne
 	cases := map[string]string{
 		"stale report before build": strings.Join([]string{
 			codexEntityReadEvidence(entity, kmNextStage, kmNextStage),
 			codexDispatchBuildEvidence(entity, kmNextStage),
-			codexWaitCompleted(),
-		}, "\n"),
-		"report before wait": strings.Join([]string{
-			codexDispatchBuildEvidence(entity, kmNextStage),
-			codexEntityReadEvidence(entity, kmNextStage, kmNextStage),
 			codexWaitCompleted(),
 		}, "\n"),
 		"failed build then wait and report": strings.Join([]string{
@@ -322,7 +331,6 @@ func TestCodexDispatchEvidencePhaseBindsBatchedFinalization(t *testing.T) {
 
 	controls := map[string]string{
 		"missing-build":        strings.Join([]string{wait, report, merge}, "\n"),
-		"missing-wait":         strings.Join([]string{build, report, merge}, "\n"),
 		"missing-report":       strings.Join([]string{build, wait, merge}, "\n"),
 		"failed-command":       strings.Join([]string{build, wait, report, codexCommandOutput(mergeCommand, finalized, 1, "failed")}, "\n"),
 		"missing-entity":       strings.Join([]string{build, wait, report, codexCompletedCommandOutput(mergeCommand, "finalized: ready-two -> done\n")}, "\n"),

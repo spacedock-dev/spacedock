@@ -19,16 +19,11 @@ func newCodexDispatchCompletionEvidence() codexDispatchCompletionEvidence {
 }
 
 // codexDispatchCompletionEvidenceFromJSONL credits the multi_agent_v2 shape where
-// the stream omits spawn_agent records but still shows dispatch build, a foreground
-// wait, and durable entity/report state after completion.
+// the stream omits spawn_agent records but still shows a successful dispatch build
+// followed by durable entity/report state after completion. A wait may arrive after
+// the report, so it is not part of the per-entity completion ordering.
 func codexDispatchCompletionEvidenceFromJSONL(jsonl string, entities []string) codexDispatchCompletionEvidence {
-	type dispatchPhase uint8
-	const (
-		dispatchNone dispatchPhase = iota
-		dispatchBuilt
-		dispatchWaited
-	)
-	phase := map[string]dispatchPhase{}
+	built := map[string]bool{}
 	result := newCodexDispatchCompletionEvidence()
 
 	for _, line := range strings.Split(jsonl, "\n") {
@@ -58,14 +53,14 @@ func codexDispatchCompletionEvidenceFromJSONL(jsonl string, entities []string) c
 				ev.Item.Status,
 				entities,
 			) {
-				phase[entity] = dispatchBuilt
+				built[entity] = true
 			}
 			if ev.Item.ExitCode == nil || *ev.Item.ExitCode != 0 || ev.Item.Status == "failed" {
 				continue
 			}
 			reported := codexDurableStageReportTargets(ev.Item.Command, ev.Item.AggregatedOutput, entities)
 			for _, entity := range entities {
-				if phase[entity] == dispatchWaited && reported[entity] {
+				if built[entity] && reported[entity] {
 					result.stageReport[entity] = true
 					if codexDurableStatusForEntity(ev.Item.AggregatedOutput, "done") {
 						result.doneReport[entity] = true
@@ -73,14 +68,6 @@ func codexDispatchCompletionEvidenceFromJSONL(jsonl string, entities []string) c
 				}
 				if result.stageReport[entity] && codexMergeGuardCompletedEntity(ev.Item.Command, ev.Item.AggregatedOutput, entity) {
 					result.doneReport[entity] = true
-				}
-			}
-		}
-		if ev.Item.Type == "collab_tool_call" && ev.Type == "item.completed" &&
-			codexWaitTool(ev.Item.Tool) && ev.Item.Status == "completed" {
-			for entity, current := range phase {
-				if current == dispatchBuilt {
-					phase[entity] = dispatchWaited
 				}
 			}
 		}
@@ -139,10 +126,6 @@ func codexDispatchBuildTargets(command, output string, entities []string) []stri
 		}
 	}
 	return matched
-}
-
-func codexWaitTool(tool string) bool {
-	return tool == "wait" || tool == "wait_agent" || tool == "collab:wait"
 }
 
 func codexDurableStageReportTargets(command, output string, entities []string) map[string]bool {
