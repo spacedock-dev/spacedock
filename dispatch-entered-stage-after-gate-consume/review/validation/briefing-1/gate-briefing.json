@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:gqsw81ghf48hr2n3jg6k7nx8:validation:attempt-1:revision-1",
+  "question": "Approve a scope-reduction rework that keeps only one actionable post-consume entered-stage journey?",
+  "artifacts": [
+    {
+      "id": "artifact:gqsw81ghf48hr2n3jg6k7nx8:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/9c6173184fec180249f3dc1def7cbf0481b358fe/dispatch-entered-stage-after-gate-consume/index.md",
+      "rev": "sha256:04d0fe7cf0191ccb6526564d8c5aea9f30ffca1f3600224ce4fbed889340348b",
+      "mediaType": "text/markdown",
+      "summary": "Validation rejected the 22-file branch. Preserve the exact entered-stage projection and worktree-safe dispatch boundary; revert unrelated merge-finalization changes; remove the cold checklist-omission promise; require focused CLI, full Go, and race proof before fresh validation."
+    }
+  ]
+}
