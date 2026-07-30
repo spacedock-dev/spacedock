@@ -541,6 +541,20 @@ This third review correction closes proof and wording gaps under the captain's p
 
 The core self-contained dispatch implementation and offline proof landed in `706b5cb8`, but live dogfood falsified the approved round-identity assumption. Implementation stops FAILED rather than weakening the oracle or expanding authority without a new design ruling.
 
+## Stage Report: implementation (cycle 3)
+
+- DONE: Close the post-rebase ownership-proof gaps: emitted-launcher AC-3 execution, exact ensign-A publication cardinality, any-launcher FO duplicate rejection, current Codex retained-event correlation, and the real rejected-attempt/superseded-feedback/open-regate durable shape.
+- DONE: Preserve the product boundary: no launcher, transport, contract, schema, or compatibility change followed the captain-selected Alternative A; all cycle-3 commits are test-only.
+- DONE: Validate and review the exact final code tip `9148e557255529ecdca74cb7a988b0c7b22989aa`; focused rejection replay, `go test ./...`, `go test ./... -race`, full formatting, and diff checks pass.
+- Exact c4 evidence: `/tmp/spacedock-kd-round-ownership-c4.XXNJXy/artifacts-exact/codex-shared-scenarios/rejection-flow`; the pinned ensign published, root did not, the round was durable, and the retained two-attempt gate shape superseded feedback then left attempt 2 open.
+- Roborev 392 and 408 findings were MATERIAL/task-owned and fixed; job 411 findings 1/3 were MATERIAL and fixed while inert-string finding 2 was deferred-risk/task-adjacent DECLINED; job 414 nested-terminal-status was Polish/task-adjacent DECLINED because composed durable validation protects AC-4.
+- Bootstrap exception: the pre-feature kd dispatch lacked `### Workflow launcher` and routed round arguments, so this one pre-merge cycle omitted canonical round publication rather than reconstructing authority.
+- Final surface is 35 hand-authored files / 1282 changed lines versus the reset estimate 32 / 991, expanded only by authorized proof corrections; generated surface remains exactly 26 goldens / 401 changed lines.
+
+### Summary
+
+Alternative A is merge-ready at the exact code tip: self-contained pointer transport pins the worker launcher, advisory publication is exclusively ensign-owned under the composed transcript/durable oracle, and every material review finding is fixed; the two remaining hypothetical proof refinements are explicitly declined with promotion triggers.
+
 ## Stage Report: implementation (cycle 2)
 
 - DONE: Implement the captain-selected ensign-owned advisory-round publication so the pinned launcher identity remains end to end.
