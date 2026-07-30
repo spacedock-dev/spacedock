@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rhx820qrkn6vxpday10nch36:ideation:attempt-1:revision-1",
+  "question": "Approve this jurisdiction-refactor design to enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:rhx820qrkn6vxpday10nch36:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d4d193b927d254a8c1fb23ed6a1648d879fb7acc/workflow-owned-review-finding-disposition/index.md",
+      "rev": "sha256:930d1d171a2c031f18e20ba3680566a7a5ed6c8def011c59f4c864124d36e0ee",
+      "mediaType": "text/markdown",
+      "summary": "Move review-finding classification into the active workflow and interpose First Officer authorization before finding-driven candidate edits, commits, or reruns. The revised design separates six authorities, preserves four-field evidence with mechanical field-3 citations, cuts the baseline to 10 files/187 insertions, and relies on retained one-host evidence without inventing recorder state or permanent live-scenario plumbing."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:rhx820qrkn6vxpday10nch36:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/d4d193b927d254a8c1fb23ed6a1648d879fb7acc/workflow-owned-review-finding-disposition/artifacts/ideation-codex-fo-authorization-spike.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1d6d7c9899ab407c6927c63b3c406826896a6d6ec49ea63274cf2e3cfa985f21"
+    }
+  ]
+}
