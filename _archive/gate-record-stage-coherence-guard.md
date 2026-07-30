@@ -85,6 +85,9 @@ gates:
 worktree: .worktrees/spacedock-ensign-gate-record-stage-coherence-guard
 started: 2026-07-30T15:52:42Z
 pr: pr-merge:579
+verdict: passed
+completed: 2026-07-30T22:49:11Z
+archived: 2026-07-30T22:49:11Z
 ---
 
 ## Problem
