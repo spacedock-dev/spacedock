@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-1:revision-1",
+  "question": "Hold KD validation until the external Codex worker-spawn defect is fixed and canonical host-live evidence can run?",
+  "artifacts": [
+    {
+      "id": "artifact:kd7877nnbd19d528xnpwwaj4:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e8441109c786ec999b009ab9b130314f7169d2d7/self-contained-ensign-dispatch/index.md",
+      "rev": "sha256:2fde689aa4a85c114f5528190cd506658841ce2f14f8e6a290a73d948b90a876",
+      "mediaType": "text/markdown",
+      "summary": "Candidate b60d1c8 is deterministically green and contains zero classified defects after the captain-reset cleanup. Validation reproduced AC-1 through AC-5 fixtures, exact A/B/C authority, +152/-442 removal, full/race/integration checks, and detached perturbations. Required live proof remains red: supported Codex advanced and terminalized approved-gate without worker.spawn (routed to task f02j6dbnd4jakwczahv1tg2h); canonical Claude and Pi stopped before FO work on external 429/402 limits. Hold this gate without KD rework until the external runtime defect is fixed and the exact live proof reruns."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/e8441109c786ec999b009ab9b130314f7169d2d7/codex-approved-gate-worker-spawn/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:49ac8bf5a1788d08b999e2120debe1f5e7f1bd345221dfd61e9f69f98fa6b213"
+    }
+  ]
+}

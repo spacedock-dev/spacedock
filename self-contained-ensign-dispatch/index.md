@@ -8,7 +8,7 @@ id: kd7877nnbd19d528xnpwwaj4
 gates:
     version: 1
     current:
-        gate: gate:kd7877nnbd19d528xnpwwaj4:ideation
+        gate: gate:kd7877nnbd19d528xnpwwaj4:validation
     records:
         - id: gate:kd7877nnbd19d528xnpwwaj4:backlog
           stage: backlog
@@ -54,6 +54,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:kd7877nnbd19d528xnpwwaj4:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:kd7877nnbd19d528xnpwwaj4-validation-1
+              briefing:
+                id: briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-1:revision-1
+                digest: sha256:5055734ed11f40cd4520175043faf0e9d9495e5760ed3fed2200c01598c5d9a2
+                digest-domain: canonical-bytes
+                request-digest: sha256:3e85edeaa1bcd0db1660a9039b388cc780419febb47988e50deadaa9e46272c7
+                room-ref: ./review/validation/briefing-1
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 ---
