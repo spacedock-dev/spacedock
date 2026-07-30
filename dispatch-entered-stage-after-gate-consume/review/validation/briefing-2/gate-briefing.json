@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:gqsw81ghf48hr2n3jg6k7nx8:validation:attempt-2:revision-1",
+  "question": "Approve exact-tip cb01129b for PR CI and merge?",
+  "artifacts": [
+    {
+      "id": "artifact:gqsw81ghf48hr2n3jg6k7nx8:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/f09ab98decfa8d72cdcf73e23ef5c3711582a271/dispatch-entered-stage-after-gate-consume/index.md",
+      "rev": "sha256:b28943f3abbe96da554118836cc1b8406e4781697f2ebdd239b2a539ac94717c",
+      "mediaType": "text/markdown",
+      "summary": "Exact-tip validation PASSED the narrowed provider-free post-consume journey at cb01129b: entered stage self-projects, safe same-stage worktree dispatch succeeds, premature away mutations fail byte-clean, full/race/focused tests pass, and unrelated merge/cold-checklist semantics are absent."
+    }
+  ]
+}
