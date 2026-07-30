@@ -2,7 +2,7 @@
 title: Require Codex worker spawn after approved gate advance
 status: ideation
 source: "KD validation cycle 4, Codex keep-moving-posture at b60d1c8"
-started:
+started: 2026-07-30T23:39:35Z
 completed:
 verdict:
 score: 0.95
