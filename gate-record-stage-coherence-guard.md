@@ -23,6 +23,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:67af66f54068626fea34e776301eb17b8f5e59bee743606828c6f3713ca394af
                 room-ref: ./gate-record-stage-coherence-guard/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:q3vpb8hes1b3k3f1jps1kvpk:backlog:1
+                briefing: briefing:q3vpb8hes1b3k3f1jps1kvpk:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T15:39:37.060215Z"
+                decision: approve
+                reason: 'Sprint conn: task is a bounded, reproduced gate-semantic defect whose ideation can proceed independently of other critical lanes.'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 ## Problem
