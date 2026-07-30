@@ -111,6 +111,8 @@ Pi remains in semantic scope because its runtime exposes an addressable-worker r
 
 Add a named `## Review-finding disposition` section to the active development README and the reusable development template. The shared FO contract says, generically, to locate and read the active workflow's declared review policy when findings arrive. Existing fence-safe `status --read ... --json` heading discovery is sufficient; no new selector, status field, command, or schema is needed. The implementation and validation stage definitions point workers at this workflow section and state the pre-action checkpoint, so the rule is present both for an in-stage worker and an FO acting directly.
 
+Implementation-stage Roborev job 321 exposed a second delivery boundary: `skills/commission/SKILL.md` uses the selected template's Adoption pre-fill to generate stage entries, but its README skeleton does not copy template stage `context-sections` and copies only `## Workflow-specific rules`. A normally commissioned development workflow therefore omits both the `implementation`/`validation` selectors and the complete named policy. Copying only the selectors is also invalid: `show-stage-def`/`dispatch build` fails `selector-matches-0` when `## Review-finding disposition` is absent. Commission generation must carry both halves atomically: the two selectors in generated stage frontmatter and the complete named section in the generated body.
+
 The development section owns:
 
 - the Roborev `Material / Deferred risk / Polish / Needs decision` taxonomy;
@@ -139,11 +141,13 @@ Keep `.roborev.toml`, `docs/specs/check-finding-triage-materiality.sh`, and `doc
 - `feedback-rejection-flow/SKILL.md` — before: “Past the declared tolerance — 2× unless the entity declares its own,” the Material/correct-but-disproportionate rules, and the fixed files/LOC/estimate/AC Feedback Cycles format. After: “Read the already-authorized workflow package; if missing, hold at the checkpoint; transport it unchanged; append a workflow-defined correction-round projection verbatim when one is declared; apply the existing cycle-3 escalation/reuse/budget mechanics; re-run the reviewer; re-enter the gate.” The generic skill defines no taxonomy, tolerance, estimate, AC-drift rule, or projection grammar.
 - `present-gate/SKILL.md` — before: “render ... in two tiers — `Material:` ... and `Polish:`.” After: “render findings in the active workflow's declared category order and exact labels; preserve the recorded category, omit empty categories, and use a neutral `Findings:` list when the workflow declares none. Presentation never classifies.”
 - `docs/dev/README.md` / development template — before: “triage before fixing ... Material findings are fixed ... escalate a needs-decision finding.” After: “investigate read-only, preserve the four-field evidence, and propose materiality, task ownership, and disposition; obtain FO authorization before a candidate edit, commit, or reviewer rerun. The captain alone changes scope, accepted value, thresholds, tolerance, or ACs.” Implementation, validation, detached-audit, and correction-loop clauses invoke the named section; expected-surface and AC-drift policy remain here.
+- `skills/commission/SKILL.md` — before: selected-template generation uses the Adoption pre-fill for the stage list, the generic stage skeleton emits no `context-sections`, and the body explicitly copies only the template's `## Workflow-specific rules`. After: “When the selected development template declares `context-sections`, copy `Review-finding disposition` into the generated `implementation` and `validation` stage entries and copy the complete template section from `## Review-finding disposition` through the next `##` heading into the generated README body. Treat selector plus section as one atomic generation obligation: emit neither half alone.” This reuses the existing selector and Markdown-section formats; it adds no parser, command, or schema.
 - `.roborev.toml` — before: “Affected value AC or non-negotiable boundary.” After: “Affected value AC or non-negotiable boundary using `value-ac[AC-N]`, `captain-ruling[YYYY-MM-DD]`, or `contract[path#anchor]`, followed by a nonblank claim.” It remains field 3 of 4.
 
 ### Mechanism/value check
 
 - **Named workflow policy read → AC-1/AC-2.** Simplest alternative: duplicate development classes into shared skills. Insufficient because it makes non-development workflows inherit Roborev policy and still leaves quick work outside stage-local text.
+- **Atomic commission propagation → AC-1/AC-2.** Simplest alternative: tell captains to copy the development section or selectors after commissioning. Insufficient because the normal generated README remains unsafe by default; selector-only output fails `selector-matches-0`, while section-only output never dispatches the policy. The existing generator must copy both.
 - **Runtime addressable-worker authorization → AC-1.** Simplest alternative: treat the worker's advisory Resolution as authorization. Insufficient and false: that Resolution is `actor:ensign`, advisory, and non-binding. The Codex spike proves an operational message boundary exists but not durable host-neutral retention; a durable requirement triggers design reset.
 - **Opaque rejection payload and workflow-category presentation → AC-3.** Simplest alternative: reclassify at rejection/presentation. Insufficient because it is too late, can contradict the in-stage decision, and gives generic layers development authority.
 - **Retained one-off live drive → AC-1.** Simplest alternative: permanently register a shared scenario now. Insufficient because there is no canonical retained host-neutral authorization event to grade repeatably. Retain a one-host drive for the gate; do not add standing scenario/docs/Pi surface.
@@ -154,11 +158,11 @@ Keep `.roborev.toml`, `docs/specs/check-finding-triage-materiality.sh`, and `doc
 
 **AC-1 (VALUE, one-host live; cross-host semantic scope) — On a host exposing an addressable worker, a finding can produce read-only investigation and a worker proposal while candidate bytes, Git HEAD, and reviewer count remain unchanged; edit/commit/rerun occurs only after a distinct FO authorization message.**
 
-Verified by: the pre-gate Codex spike retained at `artifacts/ideation-codex-fo-authorization-spike.md` records unchanged candidate SHA/HEAD, clean state, investigation evidence, and reviewer count `0` after proposal; then the distinct FO message, one candidate commit, changed SHA/HEAD, reviewer count `1`, and PASS. Implementation repeats this as a retained one-off drive against the changed contract. An early edit/commit/rerun or missing investigation evidence fails the measurement. Codex is the current evidence host; Pi is semantically bound through its addressable-worker route but gains no standing evidence here. Inability on either runtime to execute/observe the boundary requires design reset, not invented state or an exemption.
+Verified by: the pre-gate Codex spike retained at `artifacts/ideation-codex-fo-authorization-spike.md` records unchanged candidate SHA/HEAD, clean state, investigation evidence, and reviewer count `0` after proposal; then the distinct FO message, one candidate commit, changed SHA/HEAD, reviewer count `1`, and PASS. Implementation repeats this as a retained one-off drive against the changed contract. A second retained one-off exercise follows the normal development commission path, inspects the generated README, and runs `show-stage-def` plus `dispatch build` for both `implementation` and `validation`; each dispatched body must contain exactly one complete policy section. Removing selectors must make the policy absent, while keeping selectors and removing the section must fail `selector-matches-0`. An early edit/commit/rerun, missing investigation evidence, or normally commissioned dispatch without policy fails AC-1. Codex is the current evidence host; Pi is semantically bound through its addressable-worker route but gains no standing evidence here. Inability on either runtime to execute/observe the boundary requires design reset, not invented state or an exemption.
 
 **AC-2 (offline + human review) — Materiality, task ownership, and disposition remain separate: an owned Material finding is eligible for an FO-authorized fix; an out-of-scope Material finding holds unchanged for captain decision; a correctly non-material Deferred risk or Polish finding is eligible for an FO-authorized decline.**
 
-Verified by: the four-field TSV recomputes the unsupported/adversarial duplicate-member shape as non-material and the supported producer/value-AC control as Material; a one-off file-scoped review of the development policy checks the independent ownership fork and exact `Needs decision` hold. The review rejects always-fix, always-decline, “unsupported deferred risk is supported,” or “Material means this task owns it” wording.
+Verified by: the four-field TSV recomputes the unsupported/adversarial duplicate-member shape as non-material and the supported producer/value-AC control as Material; a one-off file-scoped review checks the independent ownership fork and exact `Needs decision` hold in the source policy. The retained commission→generated README→`show-stage-def`/`dispatch build` exercise then proves that complete policy, including the same ownership outcomes, reaches normal implementation and validation workers. The review rejects always-fix, always-decline, “unsupported deferred risk is supported,” “Material means this task owns it,” section-only, or selector-only output.
 
 **AC-3 (offline behavior + one-off inspection) — Generic rejection routing transports an already-authorized package and workflow-defined projection unchanged, while gate presentation preserves workflow labels; neither layer defines development taxonomy, tolerance, or Feedback Cycles grammar.**
 
@@ -175,7 +179,8 @@ Verified by: existing advisory-round tests continue to show `actor:ensign`, advi
 ## Test plan
 
 - **Retained one-off live drive (medium, no committed harness):** repeat the proven Codex journey against the changed installed contract and retain transcript excerpts plus candidate SHA, HEAD, investigation evidence, and reviewer count. If the distinct FO message cannot be observed, stop for design reset. Pi shares the semantic requirement through its addressable-worker act, but this task adds no Pi-specific standing evidence; an observed Pi inability also triggers reset. Do not register a shared scenario, documentation ID, or Pi gap.
-- **One-off policy inspection (low, no committed test):** inspect only the seven changed policy/instruction files for the approved ownership move and exact branch wording; retain command/output in validation evidence. No contractlint lexical test.
+- **Retained commission delivery exercise (medium, no committed harness):** use the normal commission flow to generate a development README, then run `show-stage-def` and `dispatch build` for implementation and validation and retain the generated frontmatter, section inventory, command exits, and emitted stage bodies. Exercise both negative halves: no selectors means no delivered policy; selectors without the section must exit nonzero with `selector-matches-0`. Do not add a permanent harness or twelfth file.
+- **One-off policy inspection (low, no committed test):** inspect only the eight changed policy/generation-instruction files for the approved ownership move, commission propagation, and exact branch wording; retain command/output in validation evidence. No contractlint lexical test.
 - **Offline four-field oracle (low):** extend the existing shell fixture/check for the exact inline grammar, exact seven-column rows, and missing/blank/malformed/fifth-field red cases.
 - **Offline routing (low):** extend `internal/ensigncycle/feedback_test.go` so `dispatch.Run` transports opaque non-development classifications and disposition bytes. Mutation: normalize them to development labels; assertion fails.
 - **Regression (medium):** `go test ./...`, `go test ./... -race`, format gate, and existing advisory-round tests. No new CLI E2E, recorder test, permanent live fixture, scenario registration, scenario documentation, or Pi coverage entry.
@@ -187,6 +192,7 @@ Spike result: the smallest Codex drive proved operational ordering and external 
 - `.roborev.toml`: 2 insertions.
 - `docs/dev/README.md`: 38 insertions.
 - `skills/commission/references/templates/development.md`: 38 insertions.
+- `skills/commission/SKILL.md`: 12 insertions.
 - `skills/first-officer/references/first-officer-shared-core.md`: 20 insertions.
 - `skills/first-officer/references/fo-dispatch-core.md`: 5 insertions.
 - `skills/feedback-rejection-flow/SKILL.md`: 16 insertions.
@@ -195,9 +201,9 @@ Spike result: the smallest Codex drive proved operational ordering and external 
 - `docs/specs/testdata/finding-triage-materiality.tsv`: 8 insertions.
 - `internal/ensigncycle/feedback_test.go`: 32 insertions.
 
-Baseline: exactly 10 files and 187 insertions. Tolerance is +1 file (10%) and +38 insertions (20% of 187 = 37.4, rounded up): hard ceilings are 11 files and 225 insertions. The one tolerated extra file may only extract an `internal/ensigncycle` routing fixture helper; it cannot add contractlint, permanent live-scenario, scenario-doc, or Pi-registration surface. Deletions are expected where development policy leaves generic skills and do not count toward the insertion ceiling; any semantic change outside the permitted list still requires reset.
+Reset baseline: exactly 11 files and 199 insertions. The file ceiling remains 11, so file tolerance is now zero: `skills/commission/SKILL.md` consumes the former optional ensigncycle-helper slot, and `feedback_test.go` must keep any helper inline. The insertion ceiling remains 225, leaving exactly 26 insertions of tolerance (`225 - 199 = 26`). No contractlint, permanent harness/live-scenario, scenario-doc, Pi-registration, or twelfth file is permitted. Deletions are expected where development policy leaves generic skills and do not count toward the insertion ceiling; any semantic change outside the permitted list still requires reset.
 
-Permitted semantic changes: finding-disposition authority and action ordering; workflow-category rendering at gates; workflow-opaque rejection payloads; development evidence field three gains an authority citation. Command grammar, exit codes, stored formats, advisory-round recorder semantics, gate application semantics, entity frontmatter, stage identity, and task acceptance values do not change.
+Permitted semantic changes: finding-disposition authority and action ordering; workflow-category rendering at gates; workflow-opaque rejection payloads; development evidence field three gains an authority citation; normal development commissioning copies the existing implementation/validation selectors and complete named policy into the generated README. Command grammar, exit codes, stored formats, advisory-round recorder semantics, gate application semantics, selector semantics, entity frontmatter, stage identity, and task acceptance values do not change.
 
 ## Out of scope
 
@@ -304,3 +310,16 @@ Recommendation: **REJECTED** for two task-owned Material findings: the workflow 
 ### Summary
 
 Cycle 2 delivers the workflow-owned policy through normal implementation/validation stage fetches and makes both AC-4 guard deletions independently observable. It adds no selector, command, schema, recorder behavior, harness, or fifth evidence field.
+
+## Stage Report: ideation (design reset 1)
+
+- DONE: Record F2's normal-commission delivery failure and atomic remedy.
+  Job 321 proves template-only selectors and section do not reach a generated README; the design now requires both selector entries and the complete named section.
+- DONE: Add commission generation to AC proof without a permanent harness.
+  A retained one-off commission → generated README → `show-stage-def`/`dispatch build` exercise covers both stages and both negative halves.
+- DONE: Consume the eleventh-file slot without widening semantics.
+  The reset baseline is 11 files/199 insertions with a hard ceiling of 11 files/225 insertions; `skills/commission/SKILL.md` consumes the former helper slot while all exclusions remain.
+
+### Summary
+
+The approved reset adds only commission-time propagation of the existing selectors and policy text. It preserves command, selector, schema, recorder, gate, and all other acceptance-criteria semantics.
