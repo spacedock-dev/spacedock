@@ -13,7 +13,7 @@ id: 0m6vtrw4qh9w4x6bn06x5hen
 gates:
     version: 1
     current:
-        gate: gate:0m6vtrw4qh9w4x6bn06x5hen:ideation
+        gate: gate:0m6vtrw4qh9w4x6bn06x5hen:validation
     records:
         - id: gate:0m6vtrw4qh9w4x6bn06x5hen:backlog
           stage: backlog
@@ -61,6 +61,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:0m6vtrw4qh9w4x6bn06x5hen:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:0m6vtrw4qh9w4x6bn06x5hen-validation-1
+              briefing:
+                id: briefing:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-1:revision-1
+                digest: sha256:2811a3f1ae4343575536d65c3cea66a0d644e97182cf1814476d23f9e0b9f61c
+                digest-domain: canonical-bytes
+                request-digest: sha256:c43512b5f252776d536e89b7065dbcf5784b7fc96d7e84aa5e8fff63e5cd89af
+                room-ref: ./review/validation/briefing-1
 ---
 
 A provider-neutral prepared attempt can be frozen open after its reviewed candidate

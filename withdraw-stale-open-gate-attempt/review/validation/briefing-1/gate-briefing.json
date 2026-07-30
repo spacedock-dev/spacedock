@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-1:revision-1",
+  "question": "Approve validated gate-attempt withdrawal for merge?",
+  "artifacts": [
+    {
+      "id": "artifact:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d68424cc29ac42fb42d0625c97b5853e4645b8b9/withdraw-stale-open-gate-attempt/index.md",
+      "rev": "sha256:170585a55ff067027824f9a8ffc989225537f82ad2b57f7b63ecdab47f6f42ee",
+      "mediaType": "text/markdown",
+      "summary": "Candidate 5a8be3220 adds `spacedock gate withdraw ENTITY --reason TEXT` for request-backed open prepared rooms with fixed First Officer attribution. Focused, full, race, built-binary lifecycle, and detached adversarial tests pass across open/withdrawn/closed states, immutable attempt N, cold-boot recovery, successor N+1 provider close, eligibility, and consume. Validation found no material or deferred product risk. A second real-Claude observation was skipped during the already-proven external HTTP 429 weekly-quota window; live registration and compile remain green."
+    }
+  ]
+}
