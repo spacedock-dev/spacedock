@@ -71,6 +71,8 @@ Before FO authorization, the worker may inspect files and history, run non-mutat
 
 After the worker receives the distinct FO message, only its authorized disposition is allowed. Product edits and candidate commits follow an authorized `fix`; a decline leaves the candidate unchanged but may authorize a reviewer rerun; `hold` and `route for decision` forbid candidate mutation and rerun. Any new finding, changed evidence, or side effect outside that disposition re-enters the checkpoint. If the current host/session cannot expose the authorization to the worker, hold and re-consult rather than infer it.
 
+This deliberately adds one FO round-trip to every finding before candidate mutation. Immediate fixes become slower; that latency buys authority integrity after the e6j failure class, where a finding became an unowned rewrite before disposition. Keep-moving may use the wait to advance unrelated entities or other independent work, but it cannot parallelize through, speculate past, or bypass this entity's checkpoint.
+
 ### Observable and spike result
 
 The exact existing operational observable is the ordered runtime boundary `worker completion-signal carrying proposal → FO addressable-worker authorization message → worker completion-signal after authorized work`, paired with external measurements of candidate bytes, Git HEAD, investigation evidence, and reviewer invocation count. The retained Codex spike at `artifacts/ideation-codex-fo-authorization-spike.md` observed:
@@ -78,7 +80,9 @@ The exact existing operational observable is the ordered runtime boundary `worke
 - after read-only investigation/proposal: candidate SHA and HEAD unchanged, clean worktree, reviewer count `0`;
 - after the distinct FO authorization: one candidate commit, changed candidate SHA, reviewer count `1`, and a passing result.
 
-This is a host conversation observable, not an existing retained, host-neutral workflow record. Canonical retained round evidence includes reviewer Annotations, an `actor:ensign` advisory triage Resolution, candidate Git state, and reports; none is FO authorization. The one-off artifact retains this drive for the gate, but the task does not add a canonical authorization event or claim cross-host durable proof. If durable host-neutral authorization or a repeatable permanent regression becomes required, implementation stops for a design reset with the recorder/schema owner.
+This is a host conversation observable, not an existing retained, host-neutral workflow record. Canonical retained round evidence includes reviewer Annotations, an `actor:ensign` advisory triage Resolution, candidate Git state, and reports; none is FO authorization. The one-host AC is therefore graded only by retained one-off evidence. Canonical durable host-neutral authorization depends on `workflow-neutral-advisory-round-recorder`; until that workflow supplies an observable, this task does not add a canonical event or claim standing/cross-host enforcement. Any implementation attempt to make that stronger claim stops for a design reset instead of inventing state.
+
+Pi remains in semantic scope because its runtime exposes an addressable-worker route. Its checkpoint is the same workflow-policy act: the FO receives the worker proposal and sends the distinct authorization/dispatch message before mutation or rerun. This task adds no Pi-specific standing evidence, scenario registration, or state representation. If Pi cannot execute or expose that boundary in the implementation drive, stop for a design reset; do not silently exempt Pi or treat the advisory worker Resolution as the missing signal.
 
 ### Workflow ownership and loading
 
@@ -125,9 +129,9 @@ Keep `.roborev.toml`, `docs/specs/check-finding-triage-materiality.sh`, and `doc
 
 ## Acceptance criteria
 
-**AC-1 (VALUE, one-host live) — On a host exposing an addressable worker, a finding can produce read-only investigation and a worker proposal while candidate bytes, Git HEAD, and reviewer count remain unchanged; edit/commit/rerun occurs only after a distinct FO authorization message.**
+**AC-1 (VALUE, one-host live; cross-host semantic scope) — On a host exposing an addressable worker, a finding can produce read-only investigation and a worker proposal while candidate bytes, Git HEAD, and reviewer count remain unchanged; edit/commit/rerun occurs only after a distinct FO authorization message.**
 
-Verified by: the pre-gate Codex spike retained at `artifacts/ideation-codex-fo-authorization-spike.md` records unchanged candidate SHA/HEAD, clean state, investigation evidence, and reviewer count `0` after proposal; then the distinct FO message, one candidate commit, changed SHA/HEAD, reviewer count `1`, and PASS. Implementation repeats this as a retained one-off drive against the changed contract. An early edit/commit/rerun or missing investigation evidence fails the measurement. This AC does not claim canonical or cross-host retention; inability to observe the distinct message requires a design reset, not invented state.
+Verified by: the pre-gate Codex spike retained at `artifacts/ideation-codex-fo-authorization-spike.md` records unchanged candidate SHA/HEAD, clean state, investigation evidence, and reviewer count `0` after proposal; then the distinct FO message, one candidate commit, changed SHA/HEAD, reviewer count `1`, and PASS. Implementation repeats this as a retained one-off drive against the changed contract. An early edit/commit/rerun or missing investigation evidence fails the measurement. Codex is the current evidence host; Pi is semantically bound through its addressable-worker route but gains no standing evidence here. Inability on either runtime to execute/observe the boundary requires design reset, not invented state or an exemption.
 
 **AC-2 (offline + human review) — Materiality, task ownership, and disposition remain separate: an owned Material finding is eligible for an FO-authorized fix; an out-of-scope Material finding holds unchanged for captain decision; a correctly non-material Deferred risk or Polish finding is eligible for an FO-authorized decline.**
 
@@ -147,7 +151,7 @@ Verified by: existing advisory-round tests continue to show `actor:ensign`, advi
 
 ## Test plan
 
-- **Retained one-off live drive (medium, no committed harness):** repeat the proven Codex journey against the changed installed contract and retain transcript excerpts plus candidate SHA, HEAD, investigation evidence, and reviewer count. If the distinct FO message cannot be observed, stop for design reset. Do not register a shared scenario, documentation ID, or Pi gap.
+- **Retained one-off live drive (medium, no committed harness):** repeat the proven Codex journey against the changed installed contract and retain transcript excerpts plus candidate SHA, HEAD, investigation evidence, and reviewer count. If the distinct FO message cannot be observed, stop for design reset. Pi shares the semantic requirement through its addressable-worker act, but this task adds no Pi-specific standing evidence; an observed Pi inability also triggers reset. Do not register a shared scenario, documentation ID, or Pi gap.
 - **One-off policy inspection (low, no committed test):** inspect only the seven changed policy/instruction files for the approved ownership move and exact branch wording; retain command/output in validation evidence. No contractlint lexical test.
 - **Offline four-field oracle (low):** extend the existing shell fixture/check for the exact inline grammar, exact seven-column rows, and missing/blank/malformed/fifth-field red cases.
 - **Offline routing (low):** extend `internal/ensigncycle/feedback_test.go` so `dispatch.Run` transports opaque non-development classifications and disposition bytes. Mutation: normalize them to development labels; assertion fails.
@@ -205,3 +209,16 @@ Ideation now makes the active workflow the policy owner and the First Officer th
 ### Summary
 
 Cycle 2 incorporates all five Material staff findings and the useful polish without changing product files or expanding recorder/schema/command semantics. The design now makes its proof limit explicit: operational ordering is demonstrated on Codex and retained as one-off evidence, while durable cross-host FO authorization is a future design-reset question.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: State the cadence trade and keep-moving boundary.
+  Every finding pays one FO round-trip before mutation; unrelated work may proceed, but authority integrity is never bypassed.
+- DONE: Bind standing observability to the workflow-neutral recorder dependency.
+  One-host evidence grades this task; standing/cross-host enforcement waits on `workflow-neutral-advisory-round-recorder` or triggers design reset.
+- DONE: State Pi operability without adding Pi-specific proof surface.
+  Pi shares the addressable-worker checkpoint semantics; inability to execute or observe that act triggers reset, not exemption or invented state.
+
+### Summary
+
+Cycle 3 adds only the second-review discipline notes: explicit latency-for-integrity, the recorder dependency for stronger claims, and Pi's semantic scope. The approved implementation surface and all recorder/schema/command exclusions remain unchanged.
