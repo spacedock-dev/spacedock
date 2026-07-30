@@ -245,3 +245,16 @@ Cycle 2 incorporates all five Material staff findings and the useful polish with
 ### Summary
 
 Cycle 3 adds only the second-review discipline notes: explicit latency-for-integrity, the recorder dependency for stronger claims, and Pi's semantic scope. The approved implementation surface and all recorder/schema/command exclusions remain unchanged.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved six-authority workflow policy across the seven instruction surfaces, with FO authorization before finding-driven edits/commits/reruns and category-neutral rejection/presentation plumbing.
+  Code commit `00f8c203` moves development policy into the workflow/template, makes shared routing opaque, and preserves workflow labels; the file-scoped inspection caught and, after distinct FO authorization, removed the final generic `material` label leak.
+- DONE: Strengthen the existing four-field oracle with mechanical field-3 citations and exact-column red controls, and prove opaque non-development feedback transport without new recorder/schema/command behavior.
+  `check-finding-triage-materiality.sh` accepts cited AC/ruling/contract and `none:` controls while rejecting uncited/malformed/blank/eight-column/false-decline rows; `TestFeedbackReflowRoutesFixRequest` byte-compares `Blocking`/`Advisory` payload and would fail on normalization or projection rewrite.
+- DONE: Stay within 10 files/187 insertions (hard ceilings 11/225), run the required offline checks plus retained one-host authorization drive, and stop for design reset if the FO boundary cannot be observed on Codex or Pi.
+  The code diff is exactly 10 files/117 insertions; `go test ./...`, `go test ./... -race`, gofmt, focused contract/oracle checks, and diff inspection passed, while state commit `c63c0418` retains unchanged pre-authorization SHA/HEAD/count then one authorized commit, one reviewer run, and PASS on Codex.
+
+### Summary
+
+The implementation separates observation, proposal, current-work authorization, validation recommendation, captain design authority, and rejection transport without adding stored authority state or command behavior. Development keeps its calibrated taxonomy and strengthened four-field evidence, while generic layers carry workflow classifications and projections unchanged.
