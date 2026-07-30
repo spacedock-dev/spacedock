@@ -23,6 +23,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:70a3922bccbd3031f2b3e4b7f5921d1b081db5861350376d92d8f6be23b6cc35
                 room-ref: ./bind-post-rework-briefing-at-rejection-regate/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zbcj98qfwtax61vxdzrf615e:backlog:1
+                briefing: briefing:zbcj98qfwtax61vxdzrf615e:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T15:39:42.727381Z"
+                decision: approve
+                reason: 'Sprint conn: task protects decision integrity after rework, reuses existing machinery, and can be ideated independently of other critical lanes.'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 ## Problem
