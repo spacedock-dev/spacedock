@@ -1,6 +1,6 @@
 ---
 title: Make review-finding disposition workflow-owned and separate in-stage review from rejection routing
-status: backlog
+status: ideation
 source: "Captain boundary audit, 2026-07-30: an end-of-implementation Roborev round never enters feedback-rejection-flow, and finding classification must happen when findings arrive rather than only after rejection."
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
