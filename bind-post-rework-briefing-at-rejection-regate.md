@@ -1,6 +1,6 @@
 ---
 title: "Bind the post-rework Briefing when rejection flow re-enters the gate"
-status: ideation
+status: implementation
 source: "se0 complete Opus live suite, 2026-07-28: after validation/1 rejection, successful advisory round recording, implementation rework, and cycle-2 PASS, the FO rebound the original round-1 Briefing as the ordinary final gate instead of the distinct post-rework Briefing."
 score: 0.85
 sprint: durable-decisions
@@ -57,7 +57,7 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
