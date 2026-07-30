@@ -66,3 +66,38 @@ The smallest Codex drive demonstrates the desired operational order through the 
 It does **not** reveal an existing retained, host-neutral FO-authorization observable in workflow state. The Codex authorization message exists in the host conversation/mailbox; the entity's advisory worker Resolution remains `actor:ensign`, advisory, and non-binding. This artifact can retain one drive's transcript excerpt, but it is not a canonical runtime record and must not be treated as a recorder mechanism.
 
 Therefore the task may specify operational FO authorization and retain this one-host proof, but it may not claim durable cross-host authorization or add a permanent shared live regression yet. If durable host-neutral authorization becomes an acceptance requirement—or if a recurring test needs a canonical authorization event—the design must reset and coordinate with the recorder/schema owner instead of minting state in this task.
+
+## Implementation repeat against the changed contract
+
+Date: 2026-07-30
+Host: Codex collaboration worker and addressable First Officer
+Fixture: disposable Git repository `/tmp/rh-fo-auth-implementation.HTPt01`
+Contract under test: the changed `docs/dev/README.md` `## Review-finding disposition` section
+
+The worker read the changed policy, inspected `contract.md`, `candidate.txt`, Git history/blame, and the reviewer's predicate, then proposed Material / task-owned / fix as three separate facts. Before consultation, the driver measured:
+
+| Measurement | Seed | After read-only proposal |
+|---|---:|---:|
+| candidate SHA-256 | `e372999e237ce6db7cfe16185902221c74c4f875eb2f239345d4a7712336fd6f` | unchanged |
+| Git HEAD | `63ae888bcb7d2d8faf8d1d05c4f871f8ce9be1c9` | unchanged |
+| reviewer invocation count | `0` | `0` |
+| worktree status | clean `## main` | clean `## main` |
+| investigation evidence | n/a | contract/candidate/history/blame/reviewer predicate inspected |
+
+The worker then sent the proposal through its completion-signal channel and stopped candidate work. The FO replied through the distinct addressable-worker route:
+
+> FO authorization: FIX. The approved boundary is only candidate.txt feature=off→feature=on. Edit and commit only candidate.txt, then invoke the reviewer exactly once.
+
+Only after that message, the worker changed and committed `candidate.txt`, invoked `reviewer.sh` once, and measured:
+
+| Measurement | After authorized work |
+|---|---:|
+| candidate | `feature=on` |
+| candidate SHA-256 | `b565befe7c9675876ce4e0f9c8fcdac16a90255bac1f756ae82049b32a9fa280` |
+| Git HEAD | `4d7937ebc1925cded0eaeeb5eb5ea51846116b58` |
+| committed path | `candidate.txt` only |
+| reviewer invocation count | `1` |
+| uncommitted state | `reviewer.count` only, the reviewer's observation side effect |
+| reviewer result | exit `0`, `PASSED: AC-1 satisfied` |
+
+This repeat observes the changed workflow policy through the existing Codex conversation boundary. Like the ideation spike, it is retained one-off evidence, not a canonical authorization event, recorder field, status transition, or cross-host enforcement claim.
