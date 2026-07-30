@@ -8,7 +8,7 @@ verdict:
 score: "0.90"
 worktree: .worktrees/spacedock-ensign-workflow-owned-review-finding-disposition
 issue:
-pr: "#575"
+pr: pr-merge:575
 sprint: durable-decisions
 id: rhx820qrkn6vxpday10nch36
 gates:
