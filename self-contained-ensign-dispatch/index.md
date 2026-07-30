@@ -609,3 +609,7 @@ Alternative A is merge-ready at the exact code tip: self-contained pointer trans
 ### Summary
 
 Validation recommends REJECTED at exact tip `9148e557255529ecdca74cb7a988b0c7b22989aa`. Product dispatch, launcher pinning, two-binary isolation, ensign-only publication, and durable FO authority proofs are green, but AC-4 cannot validly observe the explicitly supported combination of current Codex custom-tool events and a quoted launcher path containing spaces; the FO classified and routed this Material evidence defect without validator mutation.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — fresh validation / quoted-space Codex observer; surface 35 hand files/1282 LOC + 26 goldens/401 LOC vs estimate 27 hand files/650-900 LOC + 26 goldens/450-750 LOC (142%); AC unchanged
