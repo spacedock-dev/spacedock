@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rhx820qrkn6vxpday10nch36:backlog:attempt-1:revision-1",
+  "question": "Approve this amended scope for ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:rhx820qrkn6vxpday10nch36:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ac675e0a6f207df62883cebd62066508d2022b94/workflow-owned-review-finding-disposition/index.md",
+      "rev": "sha256:1bea03d4f67ebd4716fd70cef7005fcc80fbbd5d8badc3088e02f9a5b29d7bb5",
+      "mediaType": "text/markdown",
+      "summary": "Define workflow-owned review-finding disposition across in-stage review, validation, detached audits, consequential quick work, and rejection routing. Workers may gather evidence, but must obtain First Officer disposition before finding-driven product edits, commits, or review reruns; captain authority remains required for scope, value, threshold, or acceptance-criteria changes."
+    }
+  ]
+}

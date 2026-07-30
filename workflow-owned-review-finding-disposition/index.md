@@ -11,6 +11,21 @@ issue:
 pr:
 sprint: durable-decisions
 id: rhx820qrkn6vxpday10nch36
+gates:
+    version: 1
+    current:
+        gate: gate:rhx820qrkn6vxpday10nch36:backlog
+    records:
+        - id: gate:rhx820qrkn6vxpday10nch36:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:rhx820qrkn6vxpday10nch36-backlog-1
+              briefing:
+                id: briefing:rhx820qrkn6vxpday10nch36:backlog:attempt-1:revision-1
+                digest: sha256:f5c4251b4617310097bca5e1d14a03f5d177df80b0e452751b510e9b8eae30de
+                digest-domain: canonical-bytes
+                request-digest: sha256:50ec6a9d980e9ca88e45a5c22e5f7e394b6c0d6a5e3044a15a4dbf617515fcc7
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Make the active workflow the authority for review-finding policy. Reviewers report findings; workers retain evidence and propose materiality, ownership, and disposition; the First Officer authorizes the disposition before finding-driven product changes, commits, or review reruns; validators recommend gate verdicts; and the captain decides changes to scope, accepted value, thresholds, or acceptance criteria. Rejection routing carries an existing disposition to `feedback-to`; it neither defines nor repeats the policy.
