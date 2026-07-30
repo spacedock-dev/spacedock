@@ -15,8 +15,6 @@ The scenario surface lives in `internal/ensigncycle` and splits into four host-n
 | Assertions | `gate_assert_impl_test.go`, `shared_assertions_impl_test.go` | Yes |
 | Runner adapter | `codex_live_runner_test.go`, `claude_live_runner_test.go`, `pi_shared_coverage_test.go` | No — one per host; Pi currently records explicit live/codified/gap status for each shared scenario |
 
-The shared table (`sharedRuntimeScenario`) carries ONLY runtime-neutral facts: scenario `name` (ID), `oldPythonTest` provenance, behavior `intent`, and a live `timeout`. It encodes NO launch, auth, plugin, artifact, or transcript field — `TestSharedRuntimeScenarioDefinitions` reflects over the type and fails if any field names a single host.
-
 Each runner adapter turns a shared scenario into a real launch and returns `(before, after, observed)` for the shared assertions:
 
 | Concern | Codex runner | Claude runner |
@@ -24,7 +22,7 @@ Each runner adapter turns a shared scenario into a real launch and returns `(bef
 | Auth / HOME isolation | isolated `CODEX_HOME` + copied `auth.json` / `OPENAI_API_KEY` | clean `HOME` + OAuth benchmark-token / `ANTHROPIC_API_KEY` (`isolatedClaudeEnv`) |
 | Plugin install | local Codex marketplace symlink + `codex plugin add` | `spacedock claude --plugin-dir <checkout> --skip-compat-check` |
 | Launch | `codex exec --json --output-last-message <file>` | `spacedock claude -- -p <prompt> --output-format stream-json` |
-| `observed` extract | read the `--output-last-message` file (+ jsonl) | extract the `result`/`success` event's `result` text from the stream (`extractClaudeFinalMessage`) |
+| `observed` extract | durable workflow state; final message only where the scenario promises user-facing text | durable workflow state; final message only where the scenario promises user-facing text |
 | Artifacts | jsonl / final-message / stderr | stream jsonl / final-message |
 
 The shared scenarios reuse the old shared Claude/Codex Python journey overlap (`tests/test_gate_guardrail.py`, `tests/test_rejection_flow.py`, `tests/test_merge_hook_guardrail.py`):
@@ -35,6 +33,13 @@ The shared scenarios reuse the old shared Claude/Codex Python journey overlap (`
 - `merge-hook-guardrail`: attempts terminalization while a merge hook is registered and asserts the guard refuses bypass without `mod-block`, PR, or force.
 
 Assertions prefer durable workflow state over transcript phrasing: entity frontmatter (status / completed / verdict), archive-vs-no-archive, the exact fix marker and a second stage report, and only the durable user-facing final-message obligations (a gate review and a decision prompt). `extractClaudeFinalMessage` surfaces a stale-credential `is_error`/`401` `result` event as a LOUD launch failure, distinct from a scenario-assertion failure, so a credential problem is never misread as a runtime regression.
+
+Keep-moving completion is provider-independent. Each expected task must have its own
+ordered, path-scoped Git journey: dispatch entry with `started`, a later worker Stage
+Report, terminal fields, then its canonical archive path. Transcript JSONL, command text,
+provider events, and model narration are retained as diagnostic artifacts but do not
+credit completion. The commissioned-task fallback in `smallest-sufficient-mechanism`
+uses the same durable journey oracle.
 
 **To add a shared runtime scenario:**
 

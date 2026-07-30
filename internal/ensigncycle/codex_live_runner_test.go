@@ -327,11 +327,7 @@ func runCodexSelfEvidenceMergeTriageScenario(t *testing.T, runner codexLiveRunne
 }
 
 // runCodexSmallestSufficientMechanismScenario drives the real FO against the
-// smallest-sufficient-mechanism fixture and grades the SAME host-neutral ladder
-// assertCodexSmallestSufficientMechanism the Claude runner feeds, over the Codex
-// command/collab transcript: the deterministic edits are FO-authored (in-house
-// apply_patch) with a direct commit and NO worker/PR climb, and the commissioned ready
-// entities are engaged via the standing dispatch loop without a per-entity justification.
+// durable fixture while preserving transcript checks unrelated to completion.
 func runCodexSmallestSufficientMechanismScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
@@ -341,18 +337,15 @@ func runCodexSmallestSufficientMechanismScenario(t *testing.T, runner codexLiveR
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	if err := assertCodexSmallestSufficientMechanism(result.jsonl, ssmEditFiles(), ssmCommissioned()); err != nil {
+	trace := codexMechanismTrace(result.jsonl, ssmEditFiles(), ssmCommissioned())
+	if err := assertDurableSmallestMechanism(t, workflowRoot, trace, ssmEditFiles(), ssmCommissioned()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
-// runCodexKeepMovingScenario drives the real FO against the keep-moving-posture fixture
-// and grades the SAME host-neutral patterns assertCodexKeepMoving the Claude runner feeds,
-// over the Codex command/collab/file_change transcript plus the final message: advance +
-// dispatch the approved entity with no permission question, dispatch both independent
-// entities, re-shape the questioned entity and pause its dispatch, and no turn-end on an
-// async wait.
+// runCodexKeepMovingScenario grades each completed task from its own ordered,
+// path-scoped Git history and keeps the questioned task active after a durable re-shape.
 func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
@@ -362,7 +355,7 @@ func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario s
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	if err := assertCodexKeepMoving(result.jsonl, result.finalMessage, kmIndependent()); err != nil {
+	if err := assertDurableKeepMoving(t, workflowRoot); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)

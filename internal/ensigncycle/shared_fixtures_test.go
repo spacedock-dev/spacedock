@@ -554,10 +554,8 @@ func mergeTriagePrompt(workflowRoot string) string {
 // loop, PLUS two plain deterministic-edit notes (no entity frontmatter, so the engage
 // loop ignores them) whose content the prompt hands the FO verbatim. The run bundles a
 // discretionary ad-hoc task (apply the two known edits in-house; commit a
-// convention-direct strategy doc directly) with the commissioned engage segment, so one
-// drive exercises BOTH the gate (refuse the over-orchestration climb) and its scope
-// (stay silent through the standing engage). The writer is default-tagged so the offline
-// negative reuses it without a model.
+// convention-direct strategy doc directly) with commissioned durable journeys.
+// The writer stays default-tagged for offline controls.
 func writeSmallestMechanismWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), smallestMechanismReadme())
@@ -623,13 +621,8 @@ func smallestMechanismPrompt(workflowRoot string) string {
 	)
 }
 
-// writeKeepMovingWorkflow writes the keep-moving-posture fixture: four independent
-// entities reconstructing the 0223 false-stop decision points in one drive. approved-gate
-// sits at a review gate the captain has just approved (advance + dispatch its next stage);
-// ready-one / ready-two are independent and ready at implementation (dispatch both in
-// parallel); questioned sits at review with its mechanism questioned by the captain
-// (re-shape its body, pause only its dispatch). The writer is default-tagged so the
-// offline negative reuses it without a model.
+// writeKeepMovingWorkflow writes three independently completable tasks plus one
+// questioned task that must be durably re-shaped without terminalizing.
 func writeKeepMovingWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), keepMovingReadme())
