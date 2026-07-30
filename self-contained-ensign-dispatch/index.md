@@ -567,3 +567,45 @@ Captain-selected Alternative A is implemented: the ensign publishes completed in
 ### Summary
 
 Alternative A is merge-ready at the exact code tip: self-contained pointer transport pins the worker launcher, advisory publication is exclusively ensign-owned under the composed transcript/durable oracle, and every material review finding is fixed; the two remaining hypothetical proof refinements are explicitly declined with promotion triggers.
+
+## Stage Report: validation
+
+- FAILED: Verify AC-1 through AC-5 against exact tip 9148e557255529ecdca74cb7a988b0c7b22989aa, reproducing each cited mechanism/value proof and rejecting stale or self-referential evidence.
+  AC-1, AC-2, AC-3, and AC-5 reproduce; AC-4 fails the current-Codex, shell-quoted-space-bearing-A observation boundary below.
+- DONE: AC-1 — Self-contained artifact; pointer-only transport.
+  Fresh/advance relational tests for Claude, Codex, and Pi kept outer prompts byte-identical as stage/context/checklist/standing/scope/feedback grew; exact distinct 251-character stems and >300-byte prompts passed.
+- DONE: AC-2 (VALUE) — ambient B performs 0 of 2 worker-time stage/standing resolutions.
+  `TestDispatchBuildTwoBinaryCommandFixture` built fresh and advance through A under B-selected PATH/SPACEDOCK_BIN, found A-only stage/context in both files, zero fetches, and an empty B log.
+- DONE: AC-3 — every successful assignment pins shell-safe resolved A and fails closed without it.
+  `TestDispatchBuildPinsResolvedLauncherAndFailsClosed` executed status/round probes through space-bearing A, kept B unused and explicit product C separate, and proved unresolved A writes no artifact.
+- FAILED: AC-4 — observers recognize arbitrary artifact-pinned paths without relaxing identity or invocation evidence.
+  Existing tables pass, but adding the supported current-Codex custom-tool case `codexCustomRoundSession(quoted, result, 0)` with space-bearing A fails `TestRejectionFlowRoundInvocationExtractors`.
+- DONE: AC-5 — workflow-control authority remains unchanged.
+  Deterministic ownership/cardinality and durable-oracle tests pass; retained c4 shows one exact-A ensign publication, no root publication, advisory Resolution, superseded attempt 1, and open attempt 2.
+- DONE: Confirm pointer-only fresh/advance dispatch, builder-pinned A under ambient B, ensign-only advisory publication, and unchanged FO application authority across deterministic and retained c4 evidence; do not rerun the expensive live drive unless its report evidence is absent or invalid.
+  Retained c4 completed after the final production commit; the two later commits are test-only, its process exited 0, and transcript plus durable bytes remain valid, so no expensive rerun was made.
+- DONE: Run the semantic adversarial pass over the exact changed surface, classify every finding under Review-finding disposition without mutating the candidate, and recommend PASSED or REJECTED with deferred risks separate.
+  The exact candidate stayed clean at `9148e557`; empty/failed/wrong/B/duplicate/out-of-order/open/closed variants held, while the added current-Codex quoted-A variant exposed the Material defect below.
+- DONE: Run required focused, integration, full, race, formatting, and diff checks.
+  Focused AC tests, `go test ./...`, `go test ./... -race`, and non-mutating gofmt inspection pass; the code worktree remains clean at the exact tip.
+
+### Review-finding disposition
+
+- MATERIAL / task-owned / evidence defect / FO-authorized disposition REJECTED and route to implementation: current Codex custom-tool round evidence false-negatives shell-quoted pinned A when its path contains spaces.
+  Released/normal workflow: successful dispatch explicitly supports shell-safe space-bearing A and current Codex emits custom exec events.
+  Observable harm: a valid ensign advisory publication becomes unobservable and false-reds the required live identity proof.
+  Authority: `value-ac[AC-3]` requires every successful assignment's shell-safe resolved A to carry representative helpers end to end.
+  Trigger evidence: the disposable exact-tip probe fails with `codex custom quoted A extractor case failed`; `customInputRecordsRejectionRound` searches raw input for unquoted `knownLauncher + " gate..."`.
+
+### Deferred risks
+
+- Retain the approved path-lifecycle risk: promote only if ephemeral/mutable launcher paths become supported or are observed disappearing or changing during an assignment.
+- Retain the previously declined inert-string false-positive risk: promote if a supported Codex custom event can carry a complete inert round command plus success-shaped output without executing it.
+
+### Polish
+
+- Retain the previously declined nested-terminal-status oracle refinement; composed durable parsing protects the supported AC-4 path, and no current value loss is established.
+
+### Summary
+
+Validation recommends REJECTED at exact tip `9148e557255529ecdca74cb7a988b0c7b22989aa`. Product dispatch, launcher pinning, two-binary isolation, ensign-only publication, and durable FO authority proofs are green, but AC-4 cannot validly observe the explicitly supported combination of current Codex custom-tool events and a quoted launcher path containing spaces; the FO classified and routed this Material evidence defect without validator mutation.
