@@ -366,3 +366,29 @@ re-gates remain intact.
 ### Summary
 
 Commit `e1e13f98d` makes ordinary gate closure fail closed unless locked current status is a nonterminal `gate: true` stage and the retained Briefing has a canonical matching-stage v1 identity. Deterministic, full, race, documentation, and correctness-review checks pass; the only missing proof is the externally rate-limited Sonnet live journey, with Opus explicitly outside q3vp ownership.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce AC-1 through AC-3 on exact tip, including byte/lock cleanliness, canonical re-gates, unchanged grammar/schema, full/race suites, and a detached adversarial control.
+  Exact tip `e1e13f98d`; focused guards and positives, `go test ./...`, `go test ./... -race`, `gofmt -d ./cmd ./internal`, and `git diff --check` passed with the candidate worktree clean.
+- DONE: AC-1 — An ordinary gate decision closes only a canonical current-stage Briefing.
+  Package and CLI tables exercised chat/room mismatch, unqualified, and malformed attempts with exact diagnostics, empty stdout, byte identity, no Resolution, and no `.gates.lock`; detached equality/parser-bypass mutants made the focused tests fail and allowed chat closure.
+- DONE: AC-2 — Ordinary gate recording requires an actionable current workflow stage.
+  Both chat and room tables refused matching IDs at non-gated and terminal stages with the exact actionable-gate diagnostic and byte/lock cleanliness, while gated approve/revise/hold closures remained green.
+- DONE: AC-3 — Legitimate re-gates remain expressible without storage or grammar changes.
+  Successor and status-selected cross-gate re-entry, prepared room closure, all eight application shapes, advisory round replay, current v1 help, schema rejection controls, and boot consumption passed; the seven-file diff changes no command or model schema.
+- DONE: Audit the seven-file +203/-14 candidate against the approved semantic boundary and classify every finding before any rework; do not let Material imply unrelated ownership.
+  The diff is exactly 7 files and +203/-14, stays in the approved guard/tests/docs/live-skip surface, and produced no candidate finding requiring Review-finding disposition or materiality classification.
+- DONE: Validate revised AC-4 without weakening its oracle: q3vp skip removed, w5 Opus skip untouched, and obtain exact-tip focused Sonnet evidence or report the external blocker explicitly.
+  q3vp's skip is absent; `SPACEDOCK_LIVE_MODEL=opus` reproduced the unchanged `TODO(w5bfnrvpcphw857nzz93340c)` skip; exact-tip Sonnet was attempted and the external blocker is recorded below.
+- FAILED: AC-4 — The q3vp-linked Sonnet default-headless stop-open proof is active, with model-neutral deterministic guards.
+  Missing claim: an exact-tip focused Sonnet run proves the journey stops at the open gate without closing, consuming, advancing, or dispatching past it; Claude returned HTTP 429 before any First Officer work (weekly limit, reset 2026-07-31 13:00 Asia/Taipei).
+- SKIPPED: Execute the focused Opus default-headless journey as behavioral evidence.
+  Opus remains outside q3vp under the pre-existing w5 TODO and was not claimed as evidence.
+
+### Summary
+
+Recommendation: **BLOCKED**, not PASSED, solely because revised AC-4 lacks its required
+exact-tip Sonnet behavioral proof; the failure occurred before product launch and is
+not a candidate defect. AC-1 through AC-3 pass with falsifiable deterministic evidence,
+full/race coverage, a clean detached adversarial audit, and no material or deferred finding.
