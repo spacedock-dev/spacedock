@@ -102,19 +102,19 @@ The relevant FO lifecycle and Codex adapter prose at source commit `8c9aa160` al
 
 Ship one host-neutral first-entry invariant in the existing status scheduler:
 
-> A declared non-initial, non-gated, non-terminal current stage that has not produced a durable, conforming, semantically complete current-stage report is the dispatch target itself. No `status --set` may change its status away from that stage. Once completion is proven, ordinary successor projection resumes.
+> A declared non-initial, non-gated, non-terminal current stage that has not produced a durable, conforming current-stage report is the dispatch target itself. Once its normal same-stage dispatch owns a worktree, no `status --set` may change its status away from that stage until the report is durable. Once completion is proven, ordinary successor projection resumes.
 
-`status --next` and boot continue to use the same `dispatchAnalysis` source. In the entered/unreported case their existing five-field row becomes `current=<stage>,next=<same-stage>` and uses that stage's existing concurrency/worktree settings. The normal dispatch recipe can therefore set the same status idempotently, build that stage, and spawn it without a new field or host branch. A durable, structurally complete current-stage report changes the row back to `current=<stage>,next=<successor>`, subject to the FO's semantic completion veto below.
+`status --next` and boot continue to use the same `dispatchAnalysis` source. In the entered/unreported case their existing five-field row becomes `current=<stage>,next=<same-stage>` and uses that stage's existing concurrency/worktree settings. The normal dispatch recipe can therefore set the same status idempotently, build that stage, and spawn it without a new field or host branch. A durable, structurally complete current-stage report changes the row back to `current=<stage>,next=<successor>`; the active live worker still completes through the existing First Officer signal-and-report contract below.
 
 The one predicate has two mechanical halves:
 
 1. **Report shape and durability.** Select only the latest report whose stage token is the exact current stage. A heading alone, an empty section, a blank checklist item, an item with no evidence/rationale, a `FAILED` item, a missing/empty `### Summary`, a wrong-stage report, an older valid report masked by a later malformed current-stage section, or entity bytes not present cleanly in the local Git commit is incomplete. The parser reuses the shipped report selector and checklist ranges; it adds no Markdown implementation. Path-scoped Git cleanliness means unrelated sibling dirt does not block recovery.
-2. **Transition guard.** Every `status --set` containing a status value different from the current stage shares that readiness result and refuses before mutation. Direction is irrelevant: successor hops, backward hops, terminal jumps, repeated/chained `status=` updates, and `--force` all refuse byte-clean. A same-stage dispatch mutation such as `status=<current> started` remains allowed; unrelated non-status updates are outside this guard.
+2. **Post-dispatch transition guard.** Once the same-stage dispatch has set `worktree`, every `status --set` containing a status value different from the current stage shares that readiness result and refuses before mutation. Direction is irrelevant: successor hops, backward hops, terminal jumps, repeated/chained `status=` updates, and `--force` all refuse byte-clean. The same-stage dispatch mutation that sets the worktree remains allowed; unrelated non-status updates are outside this guard.
 
-Structural validity is necessary but not the whole completion judgment. The First Officer contract must distinguish these two cases:
+Structural validity is the scheduler's recovery boundary. The First Officer still owns the live completion judgment:
 
-- **Live completion:** the FO has an active dispatch epoch, so it MUST observe that host adapter's `«completion-signal»` and then verify a durable current-stage report against the retained dispatched checklist. Every item is accounted for with non-empty evidence or rationale, no item is `FAILED`, and the summary is substantive. A report without the runtime signal cannot complete a live worker.
-- **Cold recovery:** a crash may erase the ephemeral runtime signal and worker handle. On boot, a conforming, semantically complete current-stage report already committed under the worker's body/report write scope is sufficient recovery evidence. The FO reconstructs the stage checklist from the entity and stage definition, confirms the report-bearing commit is within the ensign's assigned body/report/artifact scope, performs the same semantic review, and advances without dispatching that already-completed stage again. If the report is absent, dirty, malformed, partial, failed, or stale, completion is vetoed and the current stage is repaired/dispatched once. Report verification may veto the scheduler's row; it never selects a different stage.
+- **Live completion:** the FO has an active dispatch epoch, so it MUST observe that host adapter's `«completion-signal»` and verify the durable current-stage report against the retained dispatched checklist. A report without the runtime signal cannot complete a live worker.
+- **Cold recovery:** after a restart, the status-owned structural and durability predicate alone controls whether ordinary successor projection resumes. This narrowed journey makes no additional semantic checklist-reconstruction promise and adds no cold runtime harness.
 
 This is deliberately first-entry-only. Current workflow topology enters an unvisited working stage after a gate; feedback recovery dispatches its target directly and does not use `status --next`. A report from a prior visit therefore cannot satisfy this invariant in the supported path. A same-stage re-entry epoch is explicitly deferred until either a gate can target a previously visited stage or feedback recovery begins using `status --next`; that future capability needs an epoch/visit identity rather than pretending the latest historical report is fresh. Initial seed stages preserve legacy successor projection, gate and terminal stages retain suppression, and a set `worktree` retains existing in-flight suppression before this rule is considered.
 
@@ -130,9 +130,9 @@ The throwaway file was removed. This falsifies “consume stdout plus current pr
 
 ### Proposed change
 
-Add one shared read-only predicate for “entered current stage awaiting first completion proof.” It reads the existing latest-stage-report/checklist primitives plus a literal path-scoped Git cleanliness check. `dispatchAnalysis` uses it to select the current stage instead of its successor; `runSet` uses the same predicate, before any force-bypass guards, to reject every away-status update. The refusal must leave the entity byte-identical and emit no success stdout.
+Add one shared read-only predicate for “entered current stage awaiting first completion proof.” It reads the existing latest-stage-report/checklist primitives plus a literal path-scoped Git cleanliness check. `dispatchAnalysis` uses it to select the current stage instead of its successor; after same-stage worktree dispatch, `runSet` uses the same predicate before any force-bypass guards to reject every away-status update. The refusal must leave the entity byte-identical and emit no success stdout.
 
-Amend `first-officer-shared-core.md` at Completion and Gates with the live-signal-versus-cold-report ruling and the semantic report checklist. Amend `fo-dispatch-core.md` so `current==next` means dispatch the entered stage, while a cold recovered `current!=next` row is advanced only after report verification; neither core may manufacture a completion signal or report. No host runtime adapter changes are required because each adapter already binds its own completion signal and all hosts share the same durable report verification. Add the behavior assertion before changing this FO command text, per the repository's skill-smoke rule.
+Amend `fo-dispatch-core.md` so `current==next` means dispatch the entered stage; neither the FO nor a helper may manufacture a completion signal or report. No host runtime adapter changes are required because each adapter already binds its own completion signal. Add the behavior assertion before changing this FO command text, per the repository's skill-smoke rule.
 
 Do not change `gate consume`, gate schema, entity frontmatter, dispatch-build packages, runtime adapters, ensign protocol, feedback routing, or the strict rejection assertion.
 
@@ -141,15 +141,15 @@ Cheaper alternatives considered:
 - More lifecycle prose or relying on `gate consume target-stage=...` cannot recover after a crash and was already present in the failing trace.
 - Treating any matching heading as completion would duplicate the original bug with an empty, partial, dirty, failed, or wrong-cycle report. Report shape and path durability must be part of the one scheduler predicate.
 - A durable dispatch ledger/lease could model every crash window, but the requested consume-before-spawn and report-present recovery needs no new state; existing worktree/roster behavior remains responsible for already-in-flight workers.
-- Persisting runtime completion signals or checklist digests would widen worker/FO write scope and create a second scheduler state. The existing host signal plus committed report and deterministic FO checklist reconstruction are sufficient for this first-entry boundary.
+- Persisting runtime completion signals or checklist digests would widen worker/FO write scope and create a second scheduler state. The existing host signal plus the committed structural report are sufficient for this narrowed first-entry boundary.
 
 ## Acceptance criteria
 
 **AC-1 (VALUE)** In a real two-cycle rejection journey, the durable ticket contains the original implementation report, first REJECTED validation, rework implementation report, and second PASSED validation in order; the existing strict rejection assertion remains unchanged and passes. **Test:** run only the real Codex `rejection-flow` scenario and inspect its archived entity/JSONL; removing current-stage projection or the mutation guard reproduces run `30197794474` and fails on one implementation report.
 
-**AC-2 (DISPATCH)** After gate consume or equivalent first entry reaches a non-initial working stage, `status --next` and boot name that same stage until completion proof is durable. Every away-status mutation—including successor, backward, terminal, repeated/chained update, and `--force` forms—is refused byte-clean, while same-stage dispatch mutation is allowed. An observed worker spawn, the host completion signal, and an FO-validated committed report precede a live transition; build output, `started`, narration, an FO-authored report, and a syntactic heading do not satisfy the oracle. **Test:** a real-CLI table snapshots bytes around each direction/force/chained mutation; the existing Claude and Codex `recorded-gate-lifecycle`/`rejection-flow` runners and Pi `TestLivePiRecordedGateLifecycle` order entered-stage dispatch/completion before the next transition.
+**AC-2 (DISPATCH)** After gate consume or equivalent first entry reaches a non-initial working stage, `status --next` and boot name that same stage until completion proof is durable. The same-stage worktree dispatch mutation is allowed; after it sets `worktree`, every away-status mutation—including successor, backward, terminal, repeated/chained update, and `--force` forms—is refused byte-clean until the report is durable. An observed worker spawn, the host completion signal, and an FO-validated committed report precede the live transition. **Test:** a real-CLI table performs the normal same-stage worktree dispatch, then snapshots bytes around each direction/force/chained mutation; the existing Claude and Codex `recorded-gate-lifecycle`/`rejection-flow` runners and Pi `TestLivePiRecordedGateLifecycle` order entered-stage dispatch/completion before the next transition.
 
-**AC-3 (RECOVERY)** A cold boot after consume but before spawn exposes exactly one row with `current=<target>,next=<target>`. A heading-only, empty, structurally partial, failed, wrong-stage, later-malformed-over-older-valid, or uncommitted report does not change that row and cannot unlock mutation. A conforming, semantically complete, path-clean committed report is sufficient cold-recovery evidence: boot exposes the ordinary successor, the FO revalidates it against the reconstructed checklist and worker write scope, and no duplicate target worker is spawned. A structurally complete report that omits a reconstructed checklist obligation remains vetoed by the FO and is never credited as recovery. **Test:** extend the recorded-gate real-CLI fixture with committed malformed-report and dirty-valid-report mutants plus a committed-complete control; each exact JSON/bytes assertion fails if report validation is weakened.
+**AC-3 (RECOVERY)** A cold boot after consume but before spawn exposes exactly one row with `current=<target>,next=<target>`. A heading-only, empty, structurally partial, failed, wrong-stage, later-malformed-over-older-valid, or uncommitted report does not change that row. A structurally complete, path-clean committed report restores ordinary successor projection. **Test:** extend the recorded-gate real-CLI fixture with committed malformed-report and dirty-valid-report mutants plus a committed-complete control; each exact JSON assertion fails if structural report validation is weakened.
 
 **AC-4 (SCOPE)** The correction composes with consume, `status --next`, boot parity, initial/gate/terminal/worktree suppression, standing dispatch, fresh/reuse, and direct feedback routing without new scheduler state, report epochs, frontmatter, or fixture/runtime branches. Same-stage re-entry remains explicitly out of scope until topology or feedback scheduling can reach it. **Test:** table controls keep initial-stage successor projection, gate/terminal suppression, worktree-set suppression, terminal consume, and report-present direct feedback behavior byte-identical; full and race suites plus the README path→lane gate require both `claude-live` model legs, `codex-live`, and `pi-live` green.
 
@@ -203,14 +203,14 @@ Exact baseline, measured as added/deleted LOC:
 |---|---:|---|
 | `internal/status/entered_stage.go` | +110/-0 | Shared first-entry readiness, report semantics, and literal path-durability predicate |
 | `internal/status/format.go` | +25/-6 | Select current vs successor inside existing `dispatchAnalysis` |
-| `internal/status/handlers.go` | +35/-0 | Refuse every away-status mutation before force-bypass guards |
-| `internal/status/entered_stage_test.go` | +250/-0 | Projection, semantics/durability matrix, all-direction guard, boot parity, and unchanged controls |
+| `internal/status/handlers.go` | +35/-0 | Refuse post-dispatch worktree away-status mutations before force-bypass guards |
+| `internal/status/entered_stage_test.go` | +250/-0 | Projection, structure/durability matrix, post-dispatch all-direction guard, boot parity, and unchanged controls |
 | `internal/ensigncycle/recorded_gate_lifecycle_test.go` | +85/-5 | Real consume/cold-boot/malformed/committed recovery and skill-trace ordering smoke |
-| `skills/first-officer/references/first-officer-shared-core.md` | +22/-4 | Bind live completion and cold-report recovery semantics |
-| `skills/first-officer/references/fo-dispatch-core.md` | +18/-5 | Interpret current=current dispatch and recovered successor without duplicate spawn |
+| `skills/first-officer/references/first-officer-shared-core.md` | +0/-0 | Preserve the existing live completion contract |
+| `skills/first-officer/references/fo-dispatch-core.md` | +18/-5 | Interpret current=current as dispatching the entered stage |
 | `docs/site/concepts/gates-and-decisions.md` | +6/-1 | Document recovery rows, durable report rule, and unbypassable guard |
 
-Expected total: **551 additions, 21 deletions (572 touched LOC)**, tolerance **±25% touched LOC (429–715)**. The two shared FO references are required; `SKILL.md`, ensign instructions, and host runtime adapters are not. Any new production package/file beyond `entered_stage.go`, schema/frontmatter field, persisted signal/checklist/epoch, fixture-only branch, runtime adapter edit, or scheduler/lease state is a design deviation requiring gate reconfirmation.
+Expected total: **551 additions, 21 deletions (572 touched LOC)**, tolerance **±25% touched LOC (429–715)**. The FO dispatch reference is required while the shared completion core remains unchanged; `SKILL.md`, ensign instructions, and host runtime adapters are not. Any new production package/file beyond `entered_stage.go`, schema/frontmatter field, persisted signal/checklist/epoch, fixture-only branch, runtime adapter edit, or scheduler/lease state is a design deviation requiring gate reconfirmation.
 
 ### Documentation diff
 
@@ -220,7 +220,7 @@ In `docs/site/concepts/gates-and-decisions.md`, replace:
 
 with:
 
-> Approval then uses `gate consume`, which rechecks eligibility and atomically writes the successor stage and consumed mark. Until that first-entered working stage has a durable, complete Stage Report, `status --next` and boot name it as both `current` and `next`, and every away-status `status --set`—backward or forward, even with `--force`—is refused. Live completion requires the runtime completion signal plus the verified report; after a cold restart, the committed report alone is sufficient only when the first officer reconstructs the checklist and verifies every item and summary. The consumed descendant commit therefore lands before exactly one recoverable successor dispatch.
+> Approval then uses `gate consume`, which rechecks eligibility and atomically writes the successor stage and consumed mark. Until that first-entered working stage has a durable, complete Stage Report, `status --next` and boot name it as both `current` and `next`. Once the same-stage dispatch sets its worktree, every away-status `status --set`—backward or forward, even with `--force`—is refused until the report is durable. The consumed descendant commit therefore lands before one recoverable successor dispatch.
 
 ## Stage Report: ideation
 
@@ -318,3 +318,16 @@ Implementation now keeps a gate-entered working stage as its own dispatch target
 ### Summary
 
 Recommendation: REJECTED. AC-1's strict ordered journey and AC-4's no-new-state/scope boundary are proven, and the structural half of AC-3 passes, but two supported mutation paths violate AC-2/state integrity and the semantic cold-recovery half of AC-3 lacks behavioral evidence. Correct the worktree-aware proof path and merge preflight atomically, then add a cold checklist-omission journey before revalidation.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Keep exactly one actionable post-consume entered-stage projection, including safe worktree dispatch.
+  Commit `fd657883d` lets the normal same-stage mutation set `worktree`, then refuses every away-status direction byte-clean until the current-stage report is committed; removing that worktree guard makes the focused real-CLI journey fail.
+- DONE: Revert unrelated merge-finalization behavior and remove the cold checklist-omission promise and proof.
+  Merge production/tests and the shared completion core are byte-identical to the feature base; the entity, FO dispatch reference, and site prose now promise only structural cold projection, with no checklist-reconstruction claim or new live harness.
+- DONE: Run focused real-CLI, full Go, race, and format checks on the reduced branch.
+  The entered-stage/merge status tests and recorded-gate/rejection-flow real-CLI tests pass; `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` all pass at `fd657883d`.
+
+### Summary
+
+Cycle 2 narrows the candidate to the provider-free post-consume journey and leaves merge finalization outside this change. The reduced branch self-projects the entered stage, safely dispatches it into its worktree, and prevents premature transition until durable completion proof exists.
