@@ -43,6 +43,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:67bd56e1ed2ba2884d9a052e507475481d92cd3f11c6bd04952fcc181add922e
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0hympdejewzwkhe60ygqk15a:ideation:1
+                briefing: briefing:0hympdejewzwkhe60ygqk15a:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T14:27:20.511401Z"
+                decision: approve
+                reason: Captain authorized v0.27.0-pre2; design proves the provider-free chat journey after gqs and keeps provider/follow-up work out of the cut.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 started: 2026-07-30T14:04:09Z
 ---
 
