@@ -40,21 +40,54 @@ gates:
                 blockers: []
 ---
 
-The Codex keep-moving grader must recognize a completed per-entity dispatch and terminalization without turning harmless transcript-shape variation into an unrelated PR blocker.
+The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.
 
 ## Problem
 
-PR #513's `codex-live` lane failed `TestLiveCodexSharedScenarios/keep-moving-posture` even though the transcript and durable state showed `approved-gate`, `ready-one`, and `ready-two` dispatched, reported, terminalized, and archived. This is a new variant of the evidence dialect tracked and closed by [`fo-function-reference-invariant`](../_archive/fo-function-reference-invariant/index.md): Codex emitted no visible `spawn_agent` event, `approved-gate` used `## Stage Report` without the canonical colon/stage suffix, and finalization ran through a shell loop whose command named a variable rather than each entity literally. The existing fallback credited the two canonical report headings but could not attribute the third report or the loop's successful per-entity merge-guard output, so it reported a missing dispatch.
+PR #513's `codex-live` lane failed `TestLiveCodexSharedScenarios/keep-moving-posture` even though `approved-gate`, `ready-one`, and `ready-two` had each completed the real workflow journey: dispatch entry, worker completion, terminalization, and archive. The observer instead tried to reconstruct that journey from Codex JSONL, report-heading cardinality, command text, and merge-loop output. Harmless changes in those representations produced a false red twice after the same exact-head behavior had passed offline, install, Claude/Opus, and Pi validation.
 
-This exact signature is not covered by the unrelated `codex-live-rejection-flow-flake` or by `retire-keep-moving-permission-narration-oracle` (#514). Re-running is reasonable, but leaving the variant untracked makes the same unrelated live-lane false-red likely to recur.
+The failure is architectural, not another dialect bug. Adding a generic-heading exception, recognizing a shell variable, normalizing `item.completed`, or replaying a smaller JSONL sample would retain a second protocol whose grammar changes independently of Spacedock behavior. The captain therefore rejected transcript grammar parsing in full.
 
 Exact evidence: [PR #513](https://github.com/spacedock-dev/spacedock/pull/513), [Runtime Live E2E run 29392675038 / codex-live job 87279446937](https://github.com/spacedock-dev/spacedock/actions/runs/29392675038/job/87279446937).
 
+## Spike result
+
+The cheapest mechanism already exists in `internal/ensigncycle/liveassert_test.go`: locate an entity in its active or archive location and interrogate its path-scoped Git history. The focused spike
+
+`go test ./internal/ensigncycle -run 'TestLocateEntity|TestSomeCommitNamesOnly|TestIntegrationTransitionCommitted|TestCompletedSetAnchor|TestLiveStageReportHeading|TestTerminalFrontmatterAnchors' -count=1 -v`
+
+passed on 2026-07-31. Its falsifying control is load-bearing: a clean `status: done` entity with a path-scoped terminal commit passes the superficial terminal checks but `TestIntegrationTransitionCommitted/skipped_advance_fails` rejects it because the required earlier transition is absent. Therefore final archived state alone is insufficient; ordered, per-path durable history is the minimum proof.
+
 ## Proposed approach
 
-Start with a minimized committed replay fixture derived from the failing Codex JSONL: successful per-entity dispatch builds, a completed collaboration wait, a post-wait batched durable read with two canonical `## Stage Report:` headings and one generic `## Stage Report` heading, then successful per-entity merge-guard results emitted from a variable-driven loop. Use the fixture to decide the smallest authoritative boundary: either make the worker/report path repair or reject noncanonical headings before the FO claims completion, or let the grader consume structured durable entity/finalization evidence that does not depend on raw Markdown heading cardinality or literal shell arguments.
+Replace the keep-moving transcript trace with one host-neutral durable-task journey oracle. For each expected completed slug, follow that entity's Git history from its archive path and require, in ancestry order:
 
-Do not merely broaden the heading regex, count incidental prose, infer success from the final summary, or add a general shell parser. Preserve the ordered successful build → subsequent completed wait → subsequent durable evidence invariant and its per-entity attribution controls.
+1. A path-scoped `dispatch: {slug} entering {stage}` commit whose entity blob has the expected stage and non-empty `started`. This is the existing dispatch-entry contract, not a new receipt.
+2. A later path-scoped worker commit whose entity blob contains that stage's durable Stage Report. `started` alone never earns dispatch credit; the later worker-owned report is what closes the dispatched-work claim under the existing FO/ensign authority split.
+3. A later terminal blob with non-empty `completed` and `verdict`, followed by the entity existing only at its canonical archive location. The archive path and Git ancestry bind all facts to the same slug; timestamps are not used for ordering.
+
+Grade the three independent tasks as a set of three separate journeys. `questioned` remains a negative guard: it must be durably re-shaped and nonterminal, and none of its commits may satisfy another slug. The live runner supplies only the workflow root and expected slugs/stages; it does not supply JSONL, final narration, commands, or provider events.
+
+Reuse the same durable completion oracle for the commissioned-task completion fallback in the smallest-sufficient-mechanism scenario, so deleting the shared Codex evidence parser does not silently leave a second consumer behind. That scenario's unrelated edit/commit scope checks stay unchanged.
+
+The rejected alternatives are: final archive state alone (falsified by the spike), `status --archived` alone (no ordered dispatch/completion proof), an instrumented wrapper log (a new observer schema), and any transcript/event/command parser (the rejected architecture).
+
+## Deletion inventory
+
+- Delete all 433 lines of `internal/ensigncycle/shared_keep_moving_test.go`: provider event decoding, command token/regex inference, narration inference, host-neutral motion trace, and transcript correlation tests.
+- Delete all 409 lines of `internal/ensigncycle/shared_keep_moving_negative_test.go`: fabricated Claude/Codex streams, replay dialects, and final-message grammar controls.
+- Delete all 202 lines of `internal/ensigncycle/codex_dispatch_evidence_test.go`: `item.completed` decoding, dispatch-build result decoding, Stage Report cardinality, status text matching, merge-output matching, and shell-loop variable parsing.
+- Delete all 350 lines of `internal/ensigncycle/codex_dispatch_evidence_regression_test.go`: JSONL constructors and observer compatibility cases. Move only the generic `codexCommandOutput` fixture constructor if its unrelated round-recording consumer still needs it.
+
+No compatibility is retained for these internal observer formats.
+
+## Expected surface and semantic boundary
+
+Expected files: delete the four files above; add `internal/ensigncycle/shared_keep_moving_durable_test.go`; adjust `shared_smallest_mechanism_test.go`, `shared_fixtures_test.go`, `codex_live_runner_test.go`, `claude_live_runner_test.go`, and `docs/runtime-live-ci.md`. A tiny shared fixture-helper move is allowed if compilation requires it.
+
+Budget: at most 10 files plus one helper-only file; at most 300 inserted lines; at least 1,100 deleted lines; cumulative diff must remain at least 700 lines net negative. Tolerance is +1 file and +80 insertions only when needed to keep an unrelated test fixture compiling; the net-negative floor is not waived.
+
+Observable semantics changed: test-oracle runtime behavior only. Keep-moving and commissioned completion are credited from existing durable state and Git ancestry rather than transcript/final-message syntax. Command grammar, CLI output, stored formats, mutation authority, runtime dispatch behavior, retry policy, and provider adapters do not change. There is no new observer schema, receipt, retry controller, transcript grammar, or runtime normalization.
 
 ## Out of scope
 
@@ -62,21 +95,37 @@ Do not merely broaden the heading regex, count incidental prose, infer success f
 - The separate Codex rejection-flow worker-reuse flake.
 - Retry policy or the task-15 wait-watchdog replacement.
 - Changes to the keep-moving behavioral contract or its requirement to commission each ready entity.
+- Runtime host adapters, dispatch tools, workflow frontmatter, and Stage Report format.
 
 ## Acceptance criteria
 
-**AC-1 - The PR #513 completed-motion dialect no longer false-reds.**
-Verified by: a committed minimized replay fixture derived from job 87279446937 fails on the pre-fix grader and passes after the repair, with `approved-gate`, `ready-one`, and `ready-two` each independently credited from durable evidence.
+**AC-1 - Every completed independent task is credited from its own durable journey.**
+Verified by: a deterministic real-Git fixture produces three ordered dispatch-entry → worker-report → terminalize → archive journeys and the oracle reports `3/3`; removing any one journey reports `2/3`. This replaces PR #513's false-red baseline, where the completed motion was credited as fewer than `3/3`.
 
-**AC-2 - Invalid or cross-attributed streams remain red.**
-Verified by: the retained stale-report-before-build, report-before-wait, failed-build, failed-target-in-a-batch, one-report-for-multiple-targets, and incidental-prose controls all remain failing cases; add a negative proving one entity's loop output cannot bless another entity.
+**AC-2 - Missing, stale, reordered, or cross-attributed durable steps remain red per task.**
+Verified by: table-driven real-Git controls independently remove the dispatch-entry commit, worker report, terminal fields, or archive; place a report before dispatch; and give one slug another slug's report/commit. Each control names and rejects only the affected slug.
 
-**AC-3 - The authority boundary is structural and per entity.**
-Verified by: focused tests demonstrate that success comes from a canonicalized report/state transition or structured per-entity command result, not final narration, raw `Stage Report` substring counts, or a general shell-command parser.
+**AC-3 - The observer surface is smaller and provider-independent.**
+Verified by: `git diff --numstat` meets the declared deletion and net-negative floors; focused tests accept identical durable journeys with empty/arbitrary transcript and final-message bytes, and no keep-moving completion code reads JSONL, shell/JavaScript text, provider event types, or model narration.
 
 **AC-4 - Repository and live confirmation gates are green.**
-Verified by: focused keep-moving replay tests, `gofmt -l` empty for changed Go files, `go test ./...`, `go test ./... -race`, and one exact-head Codex keep-moving live run.
+Verified by: focused durable-journey tests, `gofmt -l` empty for changed Go files, `go test ./...`, `go test ./... -race`, and one exact-head Codex keep-moving live run after deterministic proof is green.
 
 ## Test plan
 
-Add the minimized PR #513 replay and adversarial per-entity negatives to `internal/ensigncycle`. Run focused keep-moving tests first, then the full and race suites. Because this bug is specific to Codex's live transcript dialect, require one exact-head Codex live keep-moving confirmation after all deterministic tests pass; do not use repeated green retries as the primary proof.
+Implement one deterministic real-Git fixture that uses the existing entity layout, dispatch commit convention, Stage Report contract, terminal fields, and archive locations. The positive case costs four commits per task at most; table-driven negatives mutate one fact at a time and assert the exact slug/reason, including stale order and cross-attribution. No JSONL fixture is added.
+
+Run the focused durable tests first, then `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. After those pass, run exactly one exact-head Codex `keep-moving-posture` live scenario and retain its ordinary runtime artifacts only for diagnosis, not grading.
+
+## Stage Report: ideation
+
+- DONE: Replace the seed’s transcript-dialect replay/parser direction with a behavior-first design that observes actual dispatch, completion, terminalization, and durable per-task state; deletion must be the primary mechanism metric.
+  The design uses existing per-entity state plus path-scoped Git ancestry and deletes 1,394 parser/replay lines, with a net-negative floor of 700 lines.
+- DONE: Spike the cheapest real mechanism that can distinguish completed keep-moving behavior from false-red without parsing model prose, shell commands, JavaScript wrappers, or provider event dialects; record the falsifying result before finalizing the design.
+  Focused durable helper tests passed; the skipped-transition control falsified final-state-only grading while ordered Git history rejected it.
+- DONE: Specify value ACs, semantic boundary, exact files/LOC and tolerance, negative controls, and one live confirmation only after deterministic behavior proof; forbid new observer schema, retry controller, transcript grammar, and unrelated runtime changes.
+  ACs, a 10-file/+1 tolerance, insertion/deletion floors, per-task controls, semantic exclusions, and the single post-deterministic Codex run are recorded above.
+
+### Summary
+
+Ideation now removes the rejected transcript observer instead of extending its dialect grammar. The replacement proves each completed task from existing dispatch-entry, worker-report, terminal, archive, and Git-history facts, with a durable falsifier and strict net-negative implementation budget.
