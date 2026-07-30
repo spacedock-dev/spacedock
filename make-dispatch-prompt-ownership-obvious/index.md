@@ -1,7 +1,7 @@
 ---
 title: Make dispatch prompt ownership explicit in the First Officer contract
 status: backlog
-sprint: durable-decisions
+sprint:
 source: "Captain follow-up to self-contained-ensign-dispatch, 2026-07-27"
 started:
 completed:
