@@ -1057,7 +1057,7 @@ func TestGatePreparedBriefingLocatorLifecycleAndRefusals(t *testing.T) {
 func unboundGateRoomFixture(t *testing.T) (root, entity, room string) {
 	t.Helper()
 	root = t.TempDir()
-	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n    - name: done\n      terminal: true\n---\n# Workflow\n")
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n      gate: true\n    - name: done\n      terminal: true\n---\n# Workflow\n")
 	entity = filepath.Join(root, "task.md")
 	room = filepath.Join(root, "review", "validation", "briefing-1")
 	if err := os.MkdirAll(filepath.Join(room, "provider"), 0o755); err != nil {
@@ -1155,10 +1155,53 @@ func TestGateRecordChatDecisionAndRejectsProvenanceAndOperationInterfaces(t *tes
 	}
 }
 
+func TestGateRecordCLIRejectsIncoherentBriefingAndStageWithoutMutation(t *testing.T) {
+	for _, tc := range []struct {
+		name, currentStage, briefingID, stageFlags, want string
+	}{
+		{"cross-stage", "implementation", "briefing:task:validation:attempt-1:revision-1", "      gate: true\n", "Error: Briefing stage validation does not match current workflow stage implementation\n"},
+		{"unqualified", "implementation", "briefing:legacy", "      gate: true\n", "Error: Briefing id briefing:legacy is not a canonical stage-qualified v1 identity\n"},
+		{"malformed", "implementation", "briefing:task:implementation:attempt-0:revision-1", "      gate: true\n", "Error: Briefing id briefing:task:implementation:attempt-0:revision-1 is not a canonical stage-qualified v1 identity\n"},
+		{"non-gated", "implementation", "briefing:task:implementation:attempt-1:revision-1", "", "Error: current workflow stage implementation is not an actionable gate:true stage\n"},
+		{"terminal", "done", "briefing:task:done:attempt-1:revision-1", "      gate: true\n      terminal: true\n", "Error: current workflow stage done is not an actionable gate:true stage\n"},
+	} {
+		for _, source := range []string{"chat", "room"} {
+			t.Run(tc.name+"/"+source, func(t *testing.T) {
+				root, entity := gateRecordCoherenceCLIFixture(t, tc.currentStage, tc.briefingID, tc.stageFlags)
+				before, err := os.ReadFile(entity)
+				if err != nil {
+					t.Fatal(err)
+				}
+				args := []string{"gate", "record", "task", "--workflow-dir", root}
+				if source == "chat" {
+					args = append(args, "--decision", "hold", "--actor", "person:captain", "--reason", "wait")
+				} else {
+					args = append(args, "--room", filepath.Join(root, "missing-room"))
+				}
+				var out, errOut bytes.Buffer
+				code := run(context.Background(), args, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+				if code != 1 || out.Len() != 0 || errOut.String() != tc.want {
+					t.Fatalf("exit=%d stdout=%q stderr=%q, want exit=1 empty stdout stderr=%q", code, out.String(), errOut.String(), tc.want)
+				}
+				after, err := os.ReadFile(entity)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !bytes.Equal(after, before) || bytes.Contains(after, []byte("resolution:")) {
+					t.Fatal("refused ordinary close changed entity or added Resolution")
+				}
+				if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
+					t.Fatalf("refused ordinary close left lock residue: %v", err)
+				}
+			})
+		}
+	}
+}
+
 func semanticDecisionFixture(t *testing.T) (root, entity string) {
 	t.Helper()
 	root = t.TempDir()
-	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n    - name: done\n      terminal: true\n---\n# Workflow\n")
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n      gate: true\n    - name: done\n      terminal: true\n---\n# Workflow\n")
 	entity = filepath.Join(root, "task.md")
 	writeFile(t, entity, "---\nstatus: validation\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:docs-dev:3k:validation:attempt-1:revision-1\n            digest: sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac\n            digest-domain: canonical-bytes\n            room-ref: ./review/validation/briefing-1\ntitle: Task\n---\n# Task\n")
 	briefing := filepath.Join(root, "review", "validation", "briefing-1", "briefing.json")
@@ -1166,6 +1209,15 @@ func semanticDecisionFixture(t *testing.T) (root, entity string) {
 		t.Fatal(err)
 	}
 	copyGateTestdata(t, briefing, "exact-validation-briefing.json")
+	return root, entity
+}
+
+func gateRecordCoherenceCLIFixture(t *testing.T, currentStage, briefingID, stageFlags string) (root, entity string) {
+	t.Helper()
+	root = t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: "+currentStage+"\n"+stageFlags+"    - name: next\n---\n# Workflow\n")
+	entity = filepath.Join(root, "task.md")
+	writeFile(t, entity, "---\nstatus: "+currentStage+"\ngates:\n  version: 1\n  current:\n    gate: gate:task:"+currentStage+"\n  records:\n    - id: gate:task:"+currentStage+"\n      stage: "+currentStage+"\n      attempts:\n        - id: gate-attempt:task-"+currentStage+"-1\n          briefing:\n            id: "+briefingID+"\n            digest: sha256:"+strings.Repeat("1", 64)+"\n            digest-domain: canonical-bytes\n            room-ref: ./review/"+currentStage+"/briefing-1\ntitle: Task\n---\n# Task\n")
 	return root, entity
 }
 

@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -194,7 +195,7 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 }
 
 func recordRoomLocked(entityPath string, input RecordInput) error {
-	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath)
+	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath, input.WorkflowDir)
 	if err != nil {
 		return err
 	}
@@ -346,7 +347,7 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 	if input.Actor == "agent:first-officer" && strings.TrimSpace(input.Reason) == "" {
 		return fmt.Errorf("delegated First Officer decision requires --reason")
 	}
-	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath)
+	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath, input.WorkflowDir)
 	if err != nil {
 		return err
 	}
@@ -410,7 +411,7 @@ func sameBinding(left, right Briefing) bool {
 		left.RequestDigest == right.RequestDigest && left.RoomRef == right.RoomRef
 }
 
-func currentStageAttempt(entityPath string) (*Document, *yaml.Node, *GateRecord, *Attempt, error) {
+func currentStageAttempt(entityPath, workflowDir string) (*Document, *yaml.Node, *GateRecord, *Attempt, error) {
 	doc, oldNode, err := Read(entityPath)
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -419,12 +420,50 @@ func currentStageAttempt(entityPath string) (*Document, *yaml.Node, *GateRecord,
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
+	if workflowDir == "" {
+		workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
+	}
+	stages, err := applicationStages(filepath.Join(workflowDir, "README.md"))
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	stageIndex := applicationStageIndex(stages, stage)
+	if stageIndex < 0 {
+		return nil, nil, nil, nil, fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
+	}
+	if !stages[stageIndex].Gate || stages[stageIndex].Terminal {
+		return nil, nil, nil, nil, fmt.Errorf("current workflow stage %s is not an actionable gate:true stage", stage)
+	}
 	record, err := recordForStage(doc, stage)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
 	attempt := &record.Attempts[len(record.Attempts)-1]
+	if err := validateRecordStage(attempt.Briefing.ID, stage); err != nil {
+		return nil, nil, nil, nil, err
+	}
 	return doc, oldNode, record, attempt, nil
+}
+
+func validateRecordStage(briefingID, currentStage string) error {
+	briefingStage, ok := canonicalBriefingStage(briefingID)
+	if !ok {
+		return fmt.Errorf("Briefing id %s is not a canonical stage-qualified v1 identity", briefingID)
+	}
+	if briefingStage != currentStage {
+		return fmt.Errorf("Briefing stage %s does not match current workflow stage %s", briefingStage, currentStage)
+	}
+	return nil
+}
+
+var canonicalBriefingID = regexp.MustCompile(`^briefing:(.+):([^:]+):attempt-[1-9][0-9]*:revision-[1-9][0-9]*$`)
+
+func canonicalBriefingStage(id string) (string, bool) {
+	matches := canonicalBriefingID.FindStringSubmatch(id)
+	if matches == nil {
+		return "", false
+	}
+	return matches[2], true
 }
 
 func closeAttempt(entityPath, workflowDir string, doc *Document, oldNode *yaml.Node, record *GateRecord, attempt *Attempt, resolution *Resolution) error {
@@ -480,6 +519,8 @@ func applicationForDecision(entityPath, workflowDir, stage, decision string) (*A
 type applicationStage struct {
 	Name       string
 	FeedbackTo string
+	Gate       bool
+	Terminal   bool
 }
 
 func applicationStageIndex(stages []applicationStage, name string) int {
@@ -515,6 +556,16 @@ func applicationStages(readme string) ([]applicationStage, error) {
 		stage := applicationStage{Name: name.Value}
 		if feedback != nil {
 			stage.FeedbackTo = feedback.Value
+		}
+		if gate := mappingValue(item, "gate"); gate != nil {
+			if err := gate.Decode(&stage.Gate); err != nil {
+				return nil, fmt.Errorf("workflow stage %s has invalid gate flag: %w", stage.Name, err)
+			}
+		}
+		if terminal := mappingValue(item, "terminal"); terminal != nil {
+			if err := terminal.Decode(&stage.Terminal); err != nil {
+				return nil, fmt.Errorf("workflow stage %s has invalid terminal flag: %w", stage.Name, err)
+			}
 		}
 		result = append(result, stage)
 	}
