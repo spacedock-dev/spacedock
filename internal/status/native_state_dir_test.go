@@ -311,11 +311,9 @@ func TestSplitRootDefinitionDirModArmsGuard(t *testing.T) {
 	env := pinnedEnv(t)
 
 	t.Run("terminal --set refused", func(t *testing.T) {
-		def, state := buildSplitRoot(t, splitRootReadme, map[string]string{
+		def, _ := buildSplitRoot(t, splitRootReadme, map[string]string{
 			"add-login.md": "---\nstatus: implementation\n---\n",
 		})
-		seedLegacyCompletedStages(t, def)
-		gitInit(t, state)
 		writeMergeMod(t, def)
 
 		out, stderr, code := runNative(t, def, env, "--workflow-dir", def, "--set", "add-login", "status=review", "verdict=passed")
@@ -357,8 +355,6 @@ func TestSplitRootStateDirModDoesNotRegister(t *testing.T) {
 	def, state := buildSplitRoot(t, splitRootReadme, map[string]string{
 		"add-login.md": "---\nstatus: implementation\n---\n",
 	})
-	seedLegacyCompletedStages(t, def)
-	gitInit(t, state)
 	writeMergeMod(t, state)
 
 	// --boot lists no MODS: the state-checkout mod is not scanned.
@@ -395,8 +391,6 @@ func TestSplitRootMigrationNoGap(t *testing.T) {
 	def, state := buildSplitRoot(t, splitRootReadme, map[string]string{
 		"add-login.md": "---\nstatus: implementation\n---\n",
 	})
-	seedLegacyCompletedStages(t, def)
-	gitInit(t, state)
 	// Migrated state: the def-dir copy is the live one; the stale state-checkout
 	// copy is left in place during the transition (the FO removes it later).
 	writeMergeMod(t, def)

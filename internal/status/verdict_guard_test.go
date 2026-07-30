@@ -125,11 +125,9 @@ func TestVerdictGateFinalizeForceBypasses(t *testing.T) {
 // must red, proving the gate reads the declared terminal set.
 func TestVerdictGateNonDoneTerminalStage(t *testing.T) {
 	env := pinnedEnv(t)
-	def, state := buildSplitRoot(t, splitRootReadme, map[string]string{
+	def, _ := buildSplitRoot(t, splitRootReadme, map[string]string{
 		"add-login.md": "---\nstatus: implementation\n---\n",
 	})
-	seedLegacyCompletedStages(t, def)
-	gitInit(t, state)
 
 	out, errOut, code := runNative(t, def, env, "--workflow-dir", def, "--set", "add-login", "status=review", "completed", "worktree=")
 	if code != 1 {

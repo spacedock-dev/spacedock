@@ -115,7 +115,6 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	modBlock := strings.TrimSpace(fields["mod-block"])
 	pr := strings.TrimSpace(fields["pr"])
 	worktree := strings.TrimSpace(fields["worktree"])
-	enteredStageCompletionProof := verdict == "rejected" || hasMergeCeremonyCompletionProof(entityPath, strings.TrimSpace(fields["status"]))
 	mergeHooks := scanMods(roots.definitionDir)["merge"]
 	hookRegistered := len(mergeHooks) > 0
 
@@ -126,7 +125,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	case verdict == "rejected":
 		// A rejected entity never merged, so the pr-requirement is vacuous: finalize
 		// straight through, clearing an in-flight mod-block standalone first (AC-6).
-		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, enteredStageCompletionProof, quiet, asJSON, stdout, stderr)
+		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
 
 	case prIndicatesMerged(pr):
 		// FINALIZE from a detected-MERGED state. The `pr` field carries a merge
@@ -136,7 +135,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		// (empty mod-block) state — the stranded case a re-validation bounce leaves
 		// behind (AC-2). The merge-hook guard is satisfied because the sentinel is a
 		// non-empty pr that honestly records the landed merge.
-		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, enteredStageCompletionProof, quiet, asJSON, stdout, stderr)
+		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
 
 	case modBlockNamesMissingMergeMod(modBlock, mergeHooks):
 		// A mod-block naming a merge mod that no longer exists under _mods/, with no
@@ -164,7 +163,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		// opens the captain-gated PR). Ceremony integrity holds downstream: a merge: pr
 		// entity can only FINALIZE once a merge sentinel records the landed PR, so an
 		// arm-then-immediate-finalize is impossible without the hook running.
-		return arm(roots, slug, mergeHooks[0], enteredStageCompletionProof, quiet, asJSON, stdout, stderr)
+		return arm(roots, slug, mergeHooks[0], quiet, asJSON, stdout, stderr)
 
 	default:
 		// Phase C finalize. Under merge: local a cleared/clearable mod-block stands as
@@ -172,7 +171,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		// the terminalize --set is unguarded and succeeds. A merge: pr with a hook
 		// registered never reaches here with an empty mod-block — auto-arm above claims
 		// that state — so the merge-hook guard cannot strand a finalize.
-		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, enteredStageCompletionProof, quiet, asJSON, stdout, stderr)
+		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
 	}
 }
 
@@ -351,9 +350,9 @@ func refuseMissingMergeMod(definitionDir, slug, modBlock string, stderr io.Write
 
 // arm performs Phase A: set mod-block=merge:{hook} in its own --set and signal the
 // FO to invoke the hook. The underlying runSet is the proven mutation path.
-func arm(roots roots, slug, hook string, enteredStageCompletionProof, quiet, asJSON bool, stdout, stderr io.Writer) int {
+func arm(roots roots, slug, hook string, quiet, asJSON bool, stdout, stderr io.Writer) int {
 	modValue := "merge:" + hook
-	if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: modValue, hasValue: true}}, enteredStageCompletionProof, stderr); rc != 0 {
+	if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: modValue, hasValue: true}}, stderr); rc != 0 {
 		return rc
 	}
 	return signalArmed(roots.definitionDir, slug, hook, quiet, asJSON, stdout)
@@ -372,7 +371,7 @@ func arm(roots roots, slug, hook string, enteredStageCompletionProof, quiet, asJ
 // find it on a re-run. So finalize snapshots the entity's pre-finalize bytes and live
 // location before mutating, and on commit failure reverses the move and restores the
 // original content, returning the entity to its exact pre-finalize state.
-func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookRegistered, enteredStageCompletionProof, quiet, asJSON bool, stdout, stderr io.Writer) int {
+func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookRegistered bool, quiet, asJSON bool, stdout, stderr io.Writer) int {
 	// Snapshot the pre-finalize state up front — before any mutation — so a failed
 	// archive commit can be rolled back to exactly the state the FO would re-run
 	// against. The live path and form resolve here while the file still sits at its
@@ -382,7 +381,7 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to snapshot %s before finalize: %v", slug, snapErr))
 	}
 	if modBlock != "" {
-		if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: "", hasValue: true}}, enteredStageCompletionProof, stderr); rc != 0 {
+		if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: "", hasValue: true}}, stderr); rc != 0 {
 			return rc
 		}
 	}
@@ -395,7 +394,7 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 		{field: "verdict", value: verdict, hasValue: true},
 		{field: "completed", hasValue: false},
 	}
-	if rc := emitSet(roots, slug, terminalize, enteredStageCompletionProof, stderr); rc != 0 {
+	if rc := emitSet(roots, slug, terminalize, stderr); rc != 0 {
 		return rc
 	}
 	if rc := runArchive(roots.definitionDir, roots.entityDir, roots.entityDirSpelling, slug, false, true, false, io.Discard, stderr); rc != 0 {
@@ -703,8 +702,8 @@ func relToGitRoot(gitRoot, path string) string {
 // emitSet runs one proven --set mutation through runSet, discarding its success
 // narration (the verb emits its own phase signal) while propagating a guard
 // refusal's stderr verbatim. It never passes --force.
-func emitSet(roots roots, slug string, updates []fieldUpdate, enteredStageCompletionProof bool, stderr io.Writer) int {
-	set := &setUpdate{slug: slug, updates: updates, enteredStageCompletionProof: enteredStageCompletionProof}
+func emitSet(roots roots, slug string, updates []fieldUpdate, stderr io.Writer) int {
+	set := &setUpdate{slug: slug, updates: updates}
 	return runSet(roots, set, nil, nil,
 		false, false, false, false, false, false, true, false,
 		io.Discard, stderr)

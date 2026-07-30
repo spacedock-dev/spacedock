@@ -49,7 +49,6 @@ func stageLiveGuardFixture(t *testing.T, optIn, acBody string) (string, string) 
 	if err := os.WriteFile(entityPath, []byte(entity), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	seedLegacyCompletedStages(t, root)
 	gitInit(t, root)
 	return root, entityPath
 }

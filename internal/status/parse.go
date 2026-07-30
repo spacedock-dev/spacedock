@@ -251,9 +251,8 @@ func applyFilters(entities []*entity, filters []whereFilter) []*entity {
 
 // setUpdate is a parsed --set target.
 type setUpdate struct {
-	slug                        string
-	updates                     []fieldUpdate
-	enteredStageCompletionProof bool
+	slug    string
+	updates []fieldUpdate
 }
 
 // parseSetArgs parses --set <slug> field=value... Matches parse_set_args. A

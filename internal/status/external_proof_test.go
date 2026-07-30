@@ -509,7 +509,6 @@ func stageExternalProofFixture(t *testing.T, optIn string) string {
 		t.Fatal(err)
 	}
 
-	seedLegacyCompletedStages(t, dst)
 	gitInit(t, dst)
 	return dst
 }

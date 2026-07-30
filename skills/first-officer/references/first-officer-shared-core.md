@@ -62,11 +62,11 @@ Stay at the project root; never `cd` into a worktree. Use `git -C {path}` for op
 
 ## Completion and Gates
 
-Live needs `«completion-signal»` plus committed Stage Report. Cold may omit the signal only after checklist/scope reconstruction; never manufacture proof.
+When a worker completes:
 
-1. Select the latest exact-stage section.
-2. Require evidenced DONE/SKIPPED items, none FAILED, substantive Summary; emit `{N} done, {N} skipped, {N} failed`.
-3. Invalid/incomplete proof vetoes: repair live or dispatch current cold once. Valid cold proof advances once.
+1. Read the entity file's last `## Stage Report` section, section-scoped per `## Probe and Ideation Discipline` — never the whole body.
+2. Review it against the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
+3. If items are missing, send the worker back once to repair the report.
 4. Check whether the completed stage is gated.
 
 **AC coverage cross-check.** At every gate, `«gate.ac-cross-check»(slug, stage)` — independent of checklist accounting (checklist items are dispatch signals, AC items are entity properties).

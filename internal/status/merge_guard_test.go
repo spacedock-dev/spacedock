@@ -54,9 +54,6 @@ func TestMergeGuardInlineJSONReportsOneDurabilityBoundResult(t *testing.T) {
 func driveMergeGuard(t *testing.T, fixture string, args ...string) (root, stdout, stderr string, code int) {
 	t.Helper()
 	root = stageFixture(t, fixture)
-	if i := indexOf(args, "--verdict"); i >= 0 && i+1 < len(args) && args[i+1] == "rejected" {
-		root = stageFixtureWithoutEnteredReports(t, fixture)
-	}
 	var out, errBuf bytes.Buffer
 	full := append([]string{"--workflow-dir", root}, args...)
 	code = MergeGuard(full, root, &out, &errBuf)

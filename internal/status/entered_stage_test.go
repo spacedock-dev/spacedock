@@ -135,7 +135,7 @@ func TestEnteredStageProjectionRequiresCommittedCompleteReport(t *testing.T) {
 	})
 }
 
-func TestEnteredStageAwayStatusMutationsAreByteClean(t *testing.T) {
+func TestEnteredWorktreeStageAwayStatusMutationsAreByteClean(t *testing.T) {
 	cases := []struct {
 		name string
 		args []string
@@ -150,7 +150,8 @@ func TestEnteredStageAwayStatusMutationsAreByteClean(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			def, _, entity := buildEnteredStageFixture(t, enteredStageEntity)
+			body := strings.Replace(enteredStageEntity, "worktree:", "worktree: .worktrees/entered-task", 1)
+			def, _, entity := buildEnteredStageFixture(t, body)
 			before, err := os.ReadFile(entity)
 			if err != nil {
 				t.Fatal(err)
@@ -212,10 +213,34 @@ func TestEnteredStageMutationControls(t *testing.T) {
 			t.Fatal("completed transition did not update status")
 		}
 	})
-	t.Run("worktree-set stage stays outside first-entry guard", func(t *testing.T) {
-		def := stageFixtureWithoutEnteredReports(t, "suppress-workflow")
-		if _, stderr, code := runNative(t, def, pinnedEnv(t), "--workflow-dir", def, "--set", "building", "status=review"); code != 0 {
-			t.Fatalf("worktree transition exit=%d stderr=%q", code, stderr)
+	t.Run("normal worktree dispatch stays guarded until report is committed", func(t *testing.T) {
+		def, state, entity := buildEnteredStageFixture(t, enteredStageEntity)
+		stdout, stderr, code := runNative(t, def, pinnedEnv(t),
+			"--workflow-dir", def, "--set", "entered-task",
+			"status=implementation", "worktree=.worktrees/entered-task", "started")
+		if code != 0 || !strings.Contains(stdout, "worktree:") {
+			t.Fatalf("worktree dispatch exit=%d stdout=%q stderr=%q", code, stdout, stderr)
+		}
+		gitC(t, state, "add", "--", "entered-task.md")
+		gitC(t, state, "commit", "-q", "-m", "dispatch entered stage", "--", "entered-task.md")
+
+		before := readBytes(t, entity)
+		stdout, stderr, code = runNative(t, def, pinnedEnv(t),
+			"--workflow-dir", def, "--set", "entered-task", "status=validation")
+		if code != 1 || stdout != "" || !strings.Contains(stderr, "Stage Report") {
+			t.Fatalf("unfinished worktree transition exit=%d stdout=%q stderr=%q", code, stdout, stderr)
+		}
+		if after := readBytes(t, entity); after != before {
+			t.Fatalf("unfinished worktree transition changed entity bytes\n--- before ---\n%s\n--- after ---\n%s", before, after)
+		}
+
+		writeFile(t, entity, before+completeImplementationReport)
+		gitC(t, state, "add", "--", "entered-task.md")
+		gitC(t, state, "commit", "-q", "-m", "complete entered stage", "--", "entered-task.md")
+		stdout, stderr, code = runNative(t, def, pinnedEnv(t),
+			"--workflow-dir", def, "--set", "entered-task", "status=validation")
+		if code != 0 || !strings.Contains(stdout, "status: implementation -> validation") {
+			t.Fatalf("completed worktree transition exit=%d stdout=%q stderr=%q", code, stdout, stderr)
 		}
 	})
 }

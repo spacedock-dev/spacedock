@@ -51,40 +51,6 @@ func hasCompleteStageReport(data []byte, stage string) bool {
 	return stageReportHasSummary(lines, start, end)
 }
 
-// hasMergeCeremonyCompletionProof lets merge guard retain durable completion
-// proof across only its own mod-block/pr frontmatter bookkeeping. The report
-// and body must match HEAD byte-for-byte; any other same-path dirt refuses.
-// Direct status scheduling and status --set still require the entire path clean.
-func hasMergeCeremonyCompletionProof(path, stage string) bool {
-	gitRoot, rel, ok := entityGitPath(path)
-	if !ok {
-		return false
-	}
-	show := exec.Command("git", "show", "HEAD:"+filepath.ToSlash(rel))
-	show.Dir = gitRoot
-	headData, err := show.Output()
-	if err != nil || !hasCompleteStageReport(headData, stage) {
-		return false
-	}
-	currentData, err := os.ReadFile(path)
-	if err != nil || stripFrontmatter(headData) != stripFrontmatter(currentData) {
-		return false
-	}
-	headFields := parseFrontmatterContent(headData)
-	currentFields := parseFrontmatterContent(currentData)
-	for field, headValue := range headFields {
-		if currentFields[field] != headValue && field != "mod-block" && field != "pr" {
-			return false
-		}
-	}
-	for field, currentValue := range currentFields {
-		if headFields[field] != currentValue && field != "mod-block" && field != "pr" {
-			return false
-		}
-	}
-	return true
-}
-
 func checklistItemHasEvidence(lines []string, item checklistItem) bool {
 	for line := item.start + 1; line <= item.end; line++ {
 		if strings.TrimSpace(lines[line-1]) != "" {

@@ -8,7 +8,7 @@ The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly,
 
 For each entity reported by `status --next`:
 
-Interpret the scheduler row before mutation. `current == next` dispatches that entered stage itself with idempotent `status={current} started`; neither FO nor helper manufactures its report/signal. On cold boot, a non-initial `current != next` row may reflect structural committed-report recovery: reconstruct `«dispatch.checklist»` for `current`, verify every obligation/evidence/summary and the report-bearing commit's ensign write scope per `## Completion and Gates`, then dispatch `next` without duplicating `current`. On failure, veto the successor and dispatch/repair `current` once. Initial-stage successor rows retain legacy meaning.
+Interpret the scheduler row before mutation. `current == next` dispatches that entered stage itself with idempotent `status={current} started`; neither FO nor helper manufactures its report or completion signal. Initial-stage successor rows retain legacy meaning.
 
 1. Read the entity file and the target stage definition.
 2. Invoke `«dispatch.checklist»(entity, stage)` and retain its numbered output.
