@@ -1,6 +1,6 @@
 ---
 title: "Reject gate recording when the Briefing and current workflow stage disagree"
-status: validation
+status: done
 source: "se0 live CI recovery, 2026-07-28: TestLiveDefaultHeadlessStopsAtGate reproduced a validation Briefing durably bound as an implementation gate; captain separated the feature defect from CI restoration."
 score: 0.85
 sprint: durable-decisions
@@ -80,7 +80,7 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
 worktree: .worktrees/spacedock-ensign-gate-record-stage-coherence-guard
 started: 2026-07-30T15:52:42Z
