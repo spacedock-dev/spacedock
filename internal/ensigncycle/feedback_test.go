@@ -43,9 +43,13 @@ var (
 		`dispatching to feedback target stage 'implementation' but feedback_context is missing`)
 )
 
-// the routed rejection findings the FO carries on reflow — concrete fix work,
-// not a bare acknowledgment.
-const routedFeedback = "REJECTED: validation found the path-scoped commit swept a sibling; redo Rule 5."
+// The routed package deliberately uses a non-development workflow's categories
+// and projection grammar. Dispatch must treat every byte as opaque.
+const routedFeedback = "Finding: published advisory omits the launch window\n" +
+	"Classification: Blocking\n" +
+	"Disposition: FO-authorized revise\n" +
+	"Projection: orbit=low | label=Advisory\n" +
+	"Assignment: restore the published window without relabeling this package."
 
 // reflowFixture is a staged gate/feedback environment plus the reflow dispatch
 // body dispatch.Run built.
@@ -118,10 +122,18 @@ func TestFeedbackReflowRoutesFixRequest(t *testing.T) {
 	if !feedbackRoutingSection.MatchString(reflow.body) {
 		t.Errorf("reflow body missing anchored feedback-routing section\n%s", reflow.body)
 	}
-	// (b) the routed rejection context is carried verbatim inside it — the
-	// concrete fix work, not a bare acknowledgment.
-	if !strings.Contains(reflow.body, routedFeedback) {
-		t.Errorf("reflow body missing the routed feedback_context payload verbatim\n%s", reflow.body)
+	// (b) the routed package is byte-identical. Normalizing Blocking/Advisory to
+	// development labels or rewriting its projection makes this comparison fail.
+	_, gotPayload, ok := strings.Cut(reflow.body, "### Feedback from prior review\n\n")
+	if !ok {
+		t.Fatalf("reflow body missing feedback payload start\n%s", reflow.body)
+	}
+	gotPayload, _, ok = strings.Cut(gotPayload, "\n\n### Completion checklist")
+	if !ok {
+		t.Fatalf("reflow body missing feedback payload terminator\n%s", reflow.body)
+	}
+	if gotPayload != routedFeedback {
+		t.Errorf("routed feedback package changed\n got: %q\nwant: %q", gotPayload, routedFeedback)
 	}
 	// (c) a plain (non-reflow) dispatch to the SAME target does NOT emit the
 	// routing section — the seam is reflow-specific.

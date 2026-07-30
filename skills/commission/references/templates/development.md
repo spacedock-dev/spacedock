@@ -16,11 +16,15 @@ stages:
       gate: true
     - name: implementation
       worktree: true
+      context-sections:
+        - Review-finding disposition
     - name: validation
       worktree: true
       fresh: true
       feedback-to: implementation
       gate: true
+      context-sections:
+        - Review-finding disposition
     - name: done
       terminal: true
 ---
@@ -77,12 +81,7 @@ The captain greenlights a task for design: flesh out the problem, propose an app
 
 The design is approved and the deliverable is built in a dedicated worktree on a feature branch — minimal changes that satisfy the AC, self-contained for validation.
 
-- When consuming a review round's findings, triage before fixing:
-  - **Material** — breaks a value AC, or a declared non-negotiable boundary (safety, security, data-integrity, compatibility) reachable through the supported workflow. Fix it.
-  - **Correct-but-disproportionate** (deferred risk or polish) — substantively right, but no value AC breaks and its trigger is outside the supported/promised workflow. Record a decline; do not fix it. The decline is your licensed disposition, not a dodge: name the finding, its class, and why it is not material (no value AC at risk; trigger outside the promise; the condition that would promote it to material).
-  - **Needs decision** — a genuine product or compatibility fork. Escalate to the first officer; do not resolve it privately.
-
-  Record the disposition — which findings were fixed as material, which were declined and why — in the entity's `### Feedback Cycles` record so the gate sees it. A finding you neither fix nor record is not triaged. **Narrowing an acceptance criterion to make a finding or rejection pass is not a licensed disposition.** Declining a disproportionate finding and narrowing the claim it targets are opposite moves under the same pressure: the first leaves the product unchanged and is yours to make; the second weakens the value the entity promised and is a design-reset event requiring the captain's sign-off, recorded so it is captain-visible — never a task-internal edit.
+- When a finding arrives, follow `## Review-finding disposition`: investigate read-only, preserve its evidence, propose materiality/ownership/disposition, and obtain distinct FO authorization before any candidate edit, commit, or reviewer rerun.
 
 ### `validation`
 
@@ -93,6 +92,30 @@ A `fresh` agent independently verifies the deliverable against the ideation AC, 
 ### `done`
 
 Terminal state: the task's PR is merged (tracked via the `pr` field and the `pr-merge` mod), `completed` set, `verdict: PASSED`, entity archived. Reached via real merge, not a manual flag flip.
+
+## Review-finding disposition
+
+Every finding enters this checkpoint when it arrives during implementation, validation, a detached audit, consequential FO quick work, or a correction routed from a rejected gate.
+
+1. The reviewer owns observation, not task ownership or authorization.
+2. The worker preserves the finding, investigates without candidate mutation, records the four evidence fields, and proposes materiality, task ownership, and disposition separately. Its `actor:ensign` round Resolution is advisory.
+3. The FO sends a distinct `fix`, `decline`, `hold`, or `route for decision` authorization through the runtime's addressable-worker boundary.
+4. The validator recommends `PASSED` or `REJECTED`; a new finding re-enters step 1.
+5. Only the captain changes approved scope, accepted value, thresholds, tolerance, or acceptance criteria.
+6. After revise is selected, rejection routing transports the evidence, workflow classifications, authorized dispositions, and concrete assignment unchanged; it never re-triages.
+
+Before FO authorization, candidate bytes and Git HEAD stay unchanged, no candidate commit is made, and no reviewer rerun starts. Read-only file/history inspection, non-mutating reproductions, existing tests, and adversarial work in a throwaway checkout are allowed. After authorization, perform only that disposition; `hold` and `route for decision` forbid mutation and rerun. Changed evidence re-enters the checkpoint, and an unobservable runtime authorization means hold and re-consult.
+
+The four evidence fields are released user and normal workflow; observable harm; affected value AC or non-negotiable boundary; and trigger evidence. Field 3 uses `value-ac[AC-N]`, `captain-ruling[YYYY-MM-DD]`, or `contract[repo/relative/path#anchor]` plus a nonblank claim; `none:` plus a rationale cannot establish Material.
+
+- **Material:** all four fields establish supported-workflow harm to a value AC or protected boundary.
+- **Deferred risk:** the trigger is hypothetical, unsupported, unobserved, or outside current promises; record its promote-to-material condition.
+- **Polish:** no current user-visible loss or protected boundary is at risk.
+- **Needs decision:** the task cannot own the required scope, product, or compatibility decision.
+
+Materiality and task ownership are independent. Owned Material is eligible for an FO-authorized fix; out-of-scope Material holds unchanged as Needs decision. Deferred risk or Polish may be declined only after FO authorization.
+
+After reviewer and worker entries and FO consultation, retain the advisory round with `${SPACEDOCK_BIN:-spacedock} gate record`; it applies no gate or status change. A workflow correction round uses `- Cycle {N}: {verdict} — {reviewer/loop}; surface {files}/{LOC} vs estimate {declared} ({P}%); AC {unchanged | narrowed: <note>}`. Compare `git diff --numstat "$(git merge-base main HEAD)"..HEAD` with the ideation estimate; beyond declared tolerance or on narrowed AC, require a captain-visible design reset. Cycle 3 escalates.
 
 ## Workflow-specific rules
 
@@ -187,11 +210,15 @@ Verified by: {test name / command output or exit code / file the change produces
   gate: true
 - name: implementation
   worktree: true
+  context-sections:
+    - Review-finding disposition
 - name: validation
   worktree: true
   fresh: true
   feedback-to: implementation
   gate: true
+  context-sections:
+    - Review-finding disposition
 - name: done
   terminal: true
 ```

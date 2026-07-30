@@ -12,12 +12,18 @@ NR == 1 {
     next
 }
 {
-    material = ($2 ~ /^supported:/ && $3 ~ /^present:/ && $4 ~ /^(value-ac|boundary):/ && $5 ~ /^supported:/)
+    exact_columns = (NF == 7)
+    cited = ($4 ~ /^(value-ac\[AC-[1-9][0-9]*\]|captain-ruling\[[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\]|contract\[[^][[:space:]#]+#[^][[:space:]]+\]):[[:space:]]+[^[:space:]].*$/)
+    no_boundary = ($4 ~ /^none:[[:space:]]+[^[:space:]].*$/)
+    valid_boundary = (cited || no_boundary)
+    material = ($2 ~ /^supported:/ && $3 ~ /^present:/ && cited && $5 ~ /^supported:/)
     recorded_material = ($6 == "material")
-    check = (($6 == "material" || $6 == "correct-but-disproportionate") && material == recorded_material) ? "accept" : "reject"
+    known_class = ($6 == "material" || $6 == "correct-but-disproportionate")
+    check = (exact_columns && valid_boundary && known_class && material == recorded_material) ? "accept" : "reject"
+    expected = $7
 
-    if ($7 != check) {
-        printf "FAIL %s: got %s, want %s\n", $1, check, $7 > "/dev/stderr"
+    if (expected != check) {
+        printf "FAIL %s: got %s, want %s\n", $1, check, expected > "/dev/stderr"
         failures++
     } else {
         printf "%s %s\n", toupper(check), $1
