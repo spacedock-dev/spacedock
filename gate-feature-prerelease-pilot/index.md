@@ -8,7 +8,7 @@ id: 0hympdejewzwkhe60ygqk15a
 gates:
     version: 1
     current:
-        gate: gate:0hympdejewzwkhe60ygqk15a:backlog
+        gate: gate:0hympdejewzwkhe60ygqk15a:ideation
     records:
         - id: gate:0hympdejewzwkhe60ygqk15a:backlog
           stage: backlog
@@ -33,6 +33,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:0hympdejewzwkhe60ygqk15a:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:0hympdejewzwkhe60ygqk15a-ideation-1
+              briefing:
+                id: briefing:0hympdejewzwkhe60ygqk15a:ideation:attempt-1:revision-1
+                digest: sha256:9169db971542a870433966c1f345ebf1c543a02d5efbce7a6f59cc9b18d25ce4
+                digest-domain: canonical-bytes
+                request-digest: sha256:67bd56e1ed2ba2884d9a052e507475481d92cd3f11c6bd04952fcc181add922e
+                room-ref: ./review/ideation/briefing-1
 started: 2026-07-30T14:04:09Z
 ---
 
