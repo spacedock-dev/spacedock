@@ -11,7 +11,7 @@ id: q3vpb8hes1b3k3f1jps1kvpk
 gates:
     version: 1
     current:
-        gate: gate:q3vpb8hes1b3k3f1jps1kvpk:backlog
+        gate: gate:q3vpb8hes1b3k3f1jps1kvpk:ideation
     records:
         - id: gate:q3vpb8hes1b3k3f1jps1kvpk:backlog
           stage: backlog
@@ -36,6 +36,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:q3vpb8hes1b3k3f1jps1kvpk:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:q3vpb8hes1b3k3f1jps1kvpk-ideation-1
+              briefing:
+                id: briefing:q3vpb8hes1b3k3f1jps1kvpk:ideation:attempt-1:revision-1
+                digest: sha256:a82475a2afe17b637bac82476aa968ae78f38c8ff12b1ec3d1b441b339e9b585
+                digest-domain: canonical-bytes
+                request-digest: sha256:dd7e3e5fbd9c128b8f2bad933e63be4c533dca0e88a7e30aa98cc769d18979af
+                room-ref: ./gate-record-stage-coherence-guard/review/ideation/briefing-1
 ---
 
 ## Problem
