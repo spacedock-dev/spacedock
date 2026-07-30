@@ -6,7 +6,7 @@ started: 2026-07-26T10:50:55Z
 completed:
 verdict:
 score: 1.0
-worktree:
+worktree: .worktrees/spacedock-ensign-withdraw-stale-open-gate-attempt
 issue:
 sprint: durable-decisions
 id: 0m6vtrw4qh9w4x6bn06x5hen
