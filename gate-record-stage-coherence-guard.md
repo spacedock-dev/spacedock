@@ -8,6 +8,21 @@ group: recorder
 sprint-readiness: ready
 issue:
 id: q3vpb8hes1b3k3f1jps1kvpk
+gates:
+    version: 1
+    current:
+        gate: gate:q3vpb8hes1b3k3f1jps1kvpk:backlog
+    records:
+        - id: gate:q3vpb8hes1b3k3f1jps1kvpk:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:q3vpb8hes1b3k3f1jps1kvpk-backlog-1
+              briefing:
+                id: briefing:q3vpb8hes1b3k3f1jps1kvpk:backlog:attempt-1:revision-1
+                digest: sha256:d84af4e055a57f211a97dbaa3faa7ec5c8dbc2dbcb85b0134c3096bcbc215652
+                digest-domain: canonical-bytes
+                request-digest: sha256:67af66f54068626fea34e776301eb17b8f5e59bee743606828c6f3713ca394af
+                room-ref: ./gate-record-stage-coherence-guard/review/backlog/briefing-1
 ---
 
 ## Problem

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:q3vpb8hes1b3k3f1jps1kvpk:backlog:attempt-1:revision-1",
+  "question": "Approve ideation to design a fail-closed stage-coherence guard for gate recording?",
+  "artifacts": [
+    {
+      "id": "artifact:q3vpb8hes1b3k3f1jps1kvpk:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/73fc095f6d34d092e9064e3d500172322c7aa055/gate-record-stage-coherence-guard.md",
+      "rev": "sha256:062de713b0aa065a1dfeaf5403a90766fec3f4218dc2302da88566272bddc854",
+      "mediaType": "text/markdown",
+      "summary": "Design a fail-closed guard so gate recording rejects a Briefing whose stage disagrees with the task current stage before mutation, while preserving legitimate re-gate flows and keeping the semantic defect separate from CI restoration."
+    }
+  ]
+}
