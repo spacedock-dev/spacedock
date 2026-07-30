@@ -26,6 +26,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:50ec6a9d980e9ca88e45a5c22e5f7e394b6c0d6a5e3044a15a4dbf617515fcc7
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:rhx820qrkn6vxpday10nch36:backlog:1
+                briefing: briefing:rhx820qrkn6vxpday10nch36:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-30T01:33:24.438725Z"
+                decision: approve
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Make the active workflow the authority for review-finding policy. Reviewers report findings; workers retain evidence and propose materiality, ownership, and disposition; the First Officer authorizes the disposition before finding-driven product changes, commits, or review reruns; validators recommend gate verdicts; and the captain decides changes to scope, accepted value, thresholds, or acceptance criteria. Rejection routing carries an existing disposition to `feedback-to`; it neither defines nor repeats the policy.
