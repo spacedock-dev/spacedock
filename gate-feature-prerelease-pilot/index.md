@@ -33,6 +33,7 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+started: 2026-07-30T14:04:09Z
 ---
 
 ## End value
