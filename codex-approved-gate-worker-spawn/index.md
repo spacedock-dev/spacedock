@@ -25,6 +25,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:bd94ed0c5d9047c300db27b7014a1289f1bedd84f037fa6ecf938bd72bf53150
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f02j6dbnd4jakwczahv1tg2h:backlog:1
+                briefing: briefing:f02j6dbnd4jakwczahv1tg2h:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T23:39:29.432938Z"
+                decision: approve
+                reason: Captain conn approves immediate ideation because the exact supported Codex run already proves a Material worker-authority breach; the task owns diagnosis and the smallest runtime/contract correction, while KD remains frozen.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 A supported headless Codex keep-moving journey advanced `approved-gate`, built its implementation dispatch artifact, never invoked `spawn_agent` / `worker.spawn`, then read a report and terminalized the task. This violates the shipped dispatch boundary and silently bypasses worker execution and write-scope authority.
