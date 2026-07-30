@@ -11,7 +11,7 @@ id: zbcj98qfwtax61vxdzrf615e
 gates:
     version: 1
     current:
-        gate: gate:zbcj98qfwtax61vxdzrf615e:backlog
+        gate: gate:zbcj98qfwtax61vxdzrf615e:ideation
     records:
         - id: gate:zbcj98qfwtax61vxdzrf615e:backlog
           stage: backlog
@@ -36,6 +36,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:zbcj98qfwtax61vxdzrf615e:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:zbcj98qfwtax61vxdzrf615e-ideation-1
+              briefing:
+                id: briefing:zbcj98qfwtax61vxdzrf615e:ideation:attempt-1:revision-1
+                digest: sha256:83bca9143edd196d23ffa806c2bbf8a8439d6057e1ad80832a3f7696be5f86be
+                digest-domain: canonical-bytes
+                request-digest: sha256:e816cf506a7ace8da21bfc41db71abd78ccc9dc4cbd3f065bb2bb804651b0c33
+                room-ref: ./bind-post-rework-briefing-at-rejection-regate/review/ideation/briefing-1
 ---
 
 ## Problem

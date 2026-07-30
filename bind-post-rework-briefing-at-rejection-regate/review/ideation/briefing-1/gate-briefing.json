@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zbcj98qfwtax61vxdzrf615e:ideation:attempt-1:revision-1",
+  "question": "Approve the scalar-plus-pinned-Reference correction-episode binding design for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:zbcj98qfwtax61vxdzrf615e:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/275e4cf8512ce6bda80f47e70c32f0081064e692/bind-post-rework-briefing-at-rejection-regate.md",
+      "rev": "sha256:bd0f52b116a91c7feb9e7d2aa51e9c13f14e0ada4173af9edc2ff44dd215b164",
+      "mediaType": "text/markdown",
+      "summary": "Bind final post-rejection approval to the newest same-stage review-round using one attempt correction-round identity plus an automatically pinned ordinary Briefing Reference to the immutable round; derive and validate all other authority, suppress stale readiness, and add no recorder, command, or compatibility path."
+    }
+  ]
+}
