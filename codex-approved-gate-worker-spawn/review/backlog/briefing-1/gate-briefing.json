@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f02j6dbnd4jakwczahv1tg2h:backlog:attempt-1:revision-1",
+  "question": "Approve immediate ideation of the supported Codex worker-spawn authority defect?",
+  "artifacts": [
+    {
+      "id": "artifact:f02j6dbnd4jakwczahv1tg2h:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7dfbb4b062e5ca4b4d17496669600d6c3cecc862/codex-approved-gate-worker-spawn/index.md",
+      "rev": "sha256:49ac8bf5a1788d08b999e2120debe1f5e7f1bd345221dfd61e9f69f98fa6b213",
+      "mediaType": "text/markdown",
+      "summary": "A supported current Codex keep-moving run advanced approved-gate, built its dispatch artifact, never invoked worker.spawn, then read a report and terminalized the task. This is a Material authority/outcome defect, not owned by KD. Ideation must find the smallest runtime/contract correction that guarantees an actual addressable worker spawn before report reads or completion credit, with a missing-spawn control, without transcript/provider dialect parsing or a second observer protocol."
+    }
+  ]
+}
