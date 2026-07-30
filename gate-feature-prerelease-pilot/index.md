@@ -20,6 +20,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:519a9e44c1703eb2a751839e98755b9710a25e4b43781f37827045f8547ebcff
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0hympdejewzwkhe60ygqk15a:backlog:1
+                briefing: briefing:0hympdejewzwkhe60ygqk15a:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T14:03:29.385661Z"
+                decision: approve
+                reason: Captain directed an instrumented prerelease before sprint closure; the bounded pilot preserves release integrity while deferring non-blocking friction.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 ## End value
