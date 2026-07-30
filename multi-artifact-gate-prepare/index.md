@@ -5,6 +5,7 @@ source: "q0 gate-room dogfood: captain requested a separately viewable git diff 
 score: 0.7
 sprint: durable-decisions
 id: vpf2143105f72t5m52dqmwyk
+status: backlog
 ---
 
 ## Problem
