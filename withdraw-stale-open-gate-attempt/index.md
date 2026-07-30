@@ -71,6 +71,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:c43512b5f252776d536e89b7065dbcf5784b7fc96d7e84aa5e8fff63e5cd89af
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0m6vtrw4qh9w4x6bn06x5hen:validation:1
+                briefing: briefing:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T23:33:58.696832Z"
+                decision: approve
+                reason: 'Captain conn accepts candidate 5a8be3220: deterministic lifecycle and adversarial evidence prove truthful withdrawal, immutable attempt N, and provider-backed successor N+1; the skipped real-Claude repeat is externally quota-blocked before FO work and is not a product defect.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 A provider-neutral prepared attempt can be frozen open after its reviewed candidate
