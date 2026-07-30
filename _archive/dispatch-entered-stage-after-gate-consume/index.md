@@ -3,8 +3,8 @@ title: Dispatch the entered working stage after gate consumption
 status: done
 source: "Codex live run 30197794474 on 2026-07-26: rejection-flow began at implementation, but the FO advanced directly to validation without an implementation worker/report; the strict two-cycle provenance assertion correctly failed."
 started: 2026-07-26T10:57:18Z
-completed:
-verdict:
+completed: 2026-07-30T16:20:01Z
+verdict: passed
 score: 1.0
 worktree: .worktrees/spacedock-ensign-dispatch-entered-stage-after-gate-consume
 issue:
@@ -112,8 +112,9 @@ review-round:
         digest: sha256:2008c595794b500ed2275828817fccfd6a0fc4a4a47649d586d971f273560e4f
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-1
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:578
+archived: 2026-07-30T16:20:01Z
 ---
 
 A gate application can atomically move a ticket into a non-gated working stage, but the First Officer must still dispatch that entered stage before advancing again. In Codex run `30197794474`, `status --boot --identify --json` exposed the fixture as `current=implementation,next=validation`; the FO followed that projection, ran `status ... status=validation started`, and built validation without an implementation worker. The final entity carried the first REJECTED validation, one rework implementation report, and the second PASSED validation, but no original implementation report. The strict two-cycle assertion correctly failed with “left 1 implementation reports, want at least 2.”
