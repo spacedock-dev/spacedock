@@ -342,3 +342,27 @@ Cycle 2 delivers the workflow-owned policy through normal implementation/validat
 ### Summary
 
 The approved reset adds only commission-time propagation of the existing selectors and policy text. It preserves command, selector, schema, recorder, gate, and all other acceptance-criteria semantics.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Schedule the captain-requested end-of-implementation review against the exact cycle-2 candidate and route every observation through the workflow-owned checkpoint.
+  Roborev `branch_final` job `321` reviewed exact commit `2ea9ac712e23aff3bc9efa4ee4088a5aac216ccf` and returned `Changes requested`; this was an in-stage review, not validation, and no validation verdict was authored.
+  F1 was fixed only after distinct FO authorization; F2 remained held until binding captain reset Resolution `resolution:spacedock:rhx820qrkn6vxpday10nch36:ideation:2`; F3–F5 were declined with recorded promotion conditions.
+- DONE: Make the two AC-4 citation checks independently load-bearing without adding a fifth evidence field.
+  Commit `574cfb55` separates the uncited Material and standalone-validity rows. The 19-row oracle is green; deleting `valid_boundary` fails only `red-uncited-boundary-validity`, while accepting a bare citation fails only `red-uncited-boundary`.
+- DONE: Carry development policy through normal commissioning as an atomic selector/section unit.
+  Commit `a0391fdb` adds only `skills/commission/SKILL.md` as file 11 and updates the existing Adoption pre-fill. The retained one-off generation exercise proves implementation and validation each return one complete policy section and build a dispatch; no-selector output omits the policy, while selector-without-section fails both commands with `matches 0 headings`.
+- DONE: Run focused, full, race, surface, and exact-candidate review checks.
+  `gofmt -w ./cmd ./internal`, focused dispatch/skill-integration tests, the shell oracle, `go test ./...`, and `go test ./... -race` passed. Final scope is 11 files/135 insertions, below the 11-file/225-insertion ceiling.
+  Roborev `branch_final` job `331` reviewed exact commit `a0391fdbdb957d703ee4f836a5dfd5e21cc70153`; correctness job `329`, product job `330`, and synthesis job `331` all returned `P`, with exact synthesis output `No issues found.`
+- SKIPPED: Record either panel through `gate record --round`.
+  Roborev v0.62.0 emits per-job JSON and export JSON documents, not the canonical Briefing plus reviewer JSONL required by the supported recorder invocation. No recorder package was fabricated. Exact jobs, outputs, proof hashes, diagnostics, and N1–N4 dispositions are retained at `artifacts/implementation-cycle-3-review-evidence.md`.
+
+### Feedback Cycles
+
+- Cycle 2: Changes requested — implementation/Roborev job 321; surface 10 files/126 insertions vs estimate 10 files/187 insertions (67%); AC unchanged
+- Cycle 3: Clean — implementation/Roborev job 331; surface 11 files/135 insertions vs reset estimate 11 files/199 insertions (68%); AC unchanged
+
+### Summary
+
+Implementation cycle 3 closes both review findings under explicit authority, proves the commissioned workflow's positive and broken halves without a permanent harness, and ends on clean exact candidate `a0391fdbdb957d703ee4f836a5dfd5e21cc70153`. The panel was scheduled in implementation and did not create a validation verdict.
