@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-1:revision-1",
+  "question": "Approve the no-transcript, net-negative durable Git-history oracle for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/bd385939e83d641e93d9b31a71f16d24eff46d1a/codex-keep-moving-durable-evidence-attribution-flake/index.md",
+      "rev": "sha256:2323342783f8f8829f521ca476960cbddf355ad83002c48c0f33a58bde9479cd",
+      "mediaType": "text/markdown",
+      "summary": "Ideation replaces the false-red Codex transcript observer with per-ticket Git-history evidence. It deletes 1,394 parser/replay lines, retains no compatibility for internal observer formats, requires ordered dispatch-entry, worker-report, terminalization, and archive facts, includes missing/reordered/cross-attribution negative controls, and permits one exact-head Codex live confirmation only after deterministic focused/full/race tests pass."
+    }
+  ]
+}

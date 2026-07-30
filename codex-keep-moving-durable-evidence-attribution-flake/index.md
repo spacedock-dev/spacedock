@@ -13,7 +13,7 @@ milestone: 0.25.0
 gates:
     version: 1
     current:
-        gate: gate:8bnkrtq4rw46xkbez5zrbmmj:backlog
+        gate: gate:8bnkrtq4rw46xkbez5zrbmmj:ideation
     records:
         - id: gate:8bnkrtq4rw46xkbez5zrbmmj:backlog
           stage: backlog
@@ -38,6 +38,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:8bnkrtq4rw46xkbez5zrbmmj:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:8bnkrtq4rw46xkbez5zrbmmj-ideation-1
+              briefing:
+                id: briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-1:revision-1
+                digest: sha256:a9e29deee9056d26159a1c6772e5b213e73467dd03ce07cfe9186d9660bbdde2
+                digest-domain: canonical-bytes
+                request-digest: sha256:1e8eef615d1bd19e2011de8bac8ca2650c19caa690e13e9a85903a430c39ba30
+                room-ref: ./review/ideation/briefing-1
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.
