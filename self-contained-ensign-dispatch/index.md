@@ -175,17 +175,17 @@ not rewrite arbitrary stage prose.
    `gate record --round` does the same. Fresh and reused workers obtain the binding
    from the current dispatch file, so an advance built by a newer A supersedes the
    previous assignment's launcher path.
-8. Extend the two existing transcript consumers in place. In
-   `internal/journeymetrics/readadoption.go`, make the existing status-read command
-   recognizer accept an absolute pinned executable token, including shell-quoted paths
-   with spaces and names such as `/tmp/spacedock-s4-*`, while preserving its
-   non-invocation controls. In
-   `internal/ensigncycle/shared_round_recording_test.go`, thread the live fixture's
-   already-known A path into the existing Claude/Codex transcript extractors and count
-   the round invocation only when the observed executable is exactly A. Keep the
-   durable round oracle's existing advisory Resolution, unchanged status, and absent
-   gate/application assertions. This extends current observers; it adds no event,
-   artifact field, observer, or launcher protocol.
+8. Prove the launcher binding from behavior, not runtime transcript grammar. In
+   `internal/ensigncycle/shared_round_recording_test.go`, build a real assignment with
+   a shell-quoted, space-bearing instrumented A while inherited `SPACEDOCK_BIN` and
+   PATH select instrumented B. Execute the assignment-retained `status --read` and
+   advisory `gate record --round` operations, require exactly those two successful
+   calls in A's invocation log and none in B's, then compose that evidence with the
+   durable round oracle's canonical retained room/projection, advisory Resolution,
+   unchanged status, and absent ordinary gate/application assertions. Do not parse
+   Claude/Codex events, shell/JS wrappers, provider dialects, or correlated model
+   output for launcher or publication attribution; do not expand unrelated legacy
+   journey metrics for this proof.
 
 The exact command identity is a resolved path, not a content digest, copied binary, or
 lease. If that file disappears, a worker helper fails loudly and reports the path;
@@ -247,18 +247,17 @@ space, executing the two representative helper probes under the B environment, a
 asserting A-only output/on-disk state plus a zero-entry B log. Replacing the literal
 path with `${SPACEDOCK_BIN:-spacedock}` or bare `spacedock` makes it fail.
 
-**AC-4** Existing journey-metrics and correction-round observers recognize arbitrary
-artifact-pinned launcher paths without relaxing identity or invocation evidence:
-`status --read` counts for unquoted `/tmp/spacedock-s4-*` and shell-quoted
-space-bearing A paths, while a recorded round counts only when the transcript's
-launcher equals the known fixture A.
+**AC-4** A real generated assignment behaviorally binds both representative
+ensign-owned workflow helpers to its arbitrary artifact-pinned launcher without
+consuming model transcript grammar: a shell-quoted, space-bearing A receives exactly
+one `status --read` and exactly one successful advisory `gate record --round`, while
+ambient B receives no invocation.
 
-Verified by positive/negative table cases in
-`internal/journeymetrics/readadoption_test.go` and
-`internal/ensigncycle/shared_round_recording_test.go`, plus the current durable round
-oracle. A quoted A mis-tokenization, a B invocation, a no-invocation transcript, a
-non-advisory Resolution, or any status/gate/application mutation makes the evidence
-fail.
+Verified by the A/B argv logs in
+`internal/ensigncycle/shared_round_recording_test.go` composed with the durable round
+oracle. Missing, duplicate, reordered, or B-routed helper calls; a non-canonical
+retained room/projection; a non-advisory Resolution; changed status/lifecycle
+sentinels; or any ordinary gate/application state makes the evidence fail.
 
 **AC-5** Workflow-control authority remains unchanged: workers can read entities,
 append reports, commit their assigned paths, and publish advisory rounds; only the
@@ -309,20 +308,19 @@ single/split-root, flat/folder, worktree/non-worktree, team/bare, host, model,
 scope/feedback, quoting, and advance cross-product row; do not reduce the golden count
 to avoid fixture churn.
 
-Add positive and negative cases to the existing journey-metrics matcher for an
-unquoted `/tmp/spacedock-s4-*`, a shell-quoted A path containing spaces, an absolute
-non-invocation/other subcommand, and quoted text passed to another command. Exercise
-both Claude and Codex transcript shapes so a correct direct command counts once and a
-lookalike does not.
+Delete the KD-added journey-metrics launcher/parser expansion and every KD
+Claude/Codex round-attribution extractor, provider-event matcher, shell/JS grammar
+matcher, correlated-output matcher, and dialect fixture. Do not replace them with a
+new observer or event format.
 
-Change the existing shared round invocation extractors to take known fixture A and
-compare the transcript's parsed executable to it. Positive cases cover direct,
-multiline, and shell-quoted space-bearing A; negative cases run the otherwise-identical
-round command through B and omit invocation entirely. Reuse
-`assertRejectionRecordedRound` to prove the retained room is canonical, Resolutions
-remain advisory, lifecycle sentinels survive, status stays unchanged, and no
-gate/application state appears. Do not add a second transcript observer or event
-format.
+In the shared round test, run real `dispatch build` with a space-bearing instrumented
+A and ambient instrumented B, parse only the stable generated assignment's
+`### Workflow launcher` section, and execute its retained `status --read` and
+`gate record --round` operations. Assert A's argv log contains exactly the two
+required successful calls, including exactly one publication, and B's log is empty.
+Then reuse `assertRejectionRecordedRound` to prove the retained room and feedback
+projection are canonical, Resolutions remain advisory, lifecycle sentinels survive,
+status stays unchanged, and no ordinary gate/application state appears.
 
 Run `go test ./internal/dispatch ./internal/cli`, `go test ./skills/integration`,
 `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`. Because the
@@ -419,12 +417,12 @@ with:
 
 Expected hand-authored surface is about **27 files / 650-900 changed LOC**:
 `internal/cli/cli.go`; `internal/dispatch/{dispatch.go,build.go}`; deletion of
-`launcher_command.go`; 10-12 focused dispatch/CLI test and harness files; the two
-journey-metrics files; the shared round oracle plus 2-3 existing Claude/Codex live
-runner plumbing files that already know fixture A; and the eight instruction/doc files
-named above. Expect **exactly 26 affected build golden files / 450-750 generated
-changed lines** to replace fetch blocks with resolved context and the normalized
-launcher.
+`launcher_command.go`; 10-12 focused dispatch/CLI test and harness files; the shared
+round behavioral/durable oracle; and the eight instruction/doc files named above.
+The correction deletes the two journey-metrics files and transcript-attribution live
+runner plumbing from the KD changed surface without replacing them. Expect **exactly
+26 affected build golden files / 450-750 generated changed lines** to replace fetch
+blocks with resolved context and the normalized launcher.
 
 Tolerance is ±5 non-golden files and +250/−150 hand-authored changed LOC. The affected
 golden count is fixed at 26, not a tolerance band. Any new command, package, observer,
@@ -613,3 +611,22 @@ Validation recommends REJECTED at exact tip `9148e557255529ecdca74cb7a988b0c7b22
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — fresh validation / quoted-space Codex observer; surface 35 hand files/1282 LOC + 26 goldens/401 LOC vs estimate 27 hand files/650-900 LOC + 26 goldens/450-750 LOC (142%); AC unchanged
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Delete every KD transcript grammar parser, dialect matcher, and fixture, and revise AC-4 plus the test plan to the captain-reset behavior proof.
+  Commit `b60d1c8adcf67135c8197144da5f7c841413b482` removes the Claude/Codex round-attribution extractors, custom-tool/function-call/item-completed matchers, shell/JS command grammar, correlated-output fixtures, live worker-transcript capture, and the KD journey-metrics parser expansion. The task body now names invocation logs plus durable state as the acceptance boundary and forbids model-transcript attribution.
+- DONE: Exercise a real generated assignment through space-bearing instrumented A under ambient instrumented B, with exact invocation and durable-state assertions.
+  `TestRejectionFlowAssignmentUsesPinnedLauncherBehavior` builds through real `dispatch.RunWithLauncher`, reads only the stable generated `### Workflow launcher` section, executes the retained `status --read` and advisory `gate record --round validation/1` operations, requires A's argv log to equal those two calls in order with exactly one successful publication, and requires B's log to remain empty. `assertRejectionRecordedRound` then proves the canonical retained room and feedback projection, advisory Resolutions, unchanged status/lifecycle sentinels, and no ordinary gate/application state.
+- DONE: Keep the correction net-negative with no schema, event, transport, compatibility, package, or new-file surface; run focused, full, race, formatting, and final review.
+  The six authorized code/test files changed by +152/−442 lines versus `9148e557` (net −290; ceiling +190/−390/net ≤−200). The focused behavior/durable tests passed, adjacent ensigncycle/journeymetrics/dispatch packages passed, `go test ./...` passed, `go test ./... -race` passed, `gofmt -w ./cmd ./internal` and diff checks passed, and the live-tag package compiled with `go test -tags live ./internal/ensigncycle -run '^$'`.
+
+### Review-finding disposition
+
+- Roborev job 420 reviewed the exact ten-commit branch ending at `b60d1c8adcf67135c8197144da5f7c841413b482` with the two-reviewer `branch_final` panel. Its correctness reviewer raised one Medium evidence concern: the behavioral A/B test and durable live oracle do not infer whether the ensign or First Officer issued the successful advisory publication, and proposed restoring exact per-runtime tool-event correlation; the product reviewer raised no finding.
+- FO-authorized classification: **correct-but-disproportionate / not Material / not task-owned / DECLINED**. The proposed remedy restores the captain-forbidden Claude/Codex transcript, tool-event, provider-dialect, shell/JS wrapper, and correlated-output parsing. No supported journey failure, duplicate publication, or FO-side publication was observed. The supported outcome proof remains exactly one successful advisory publication in A's actual invocation log, no B invocation, and canonical advisory-only durable state; actor attribution beyond that boundary is not an acceptance claim.
+- Exact deferred-risk trigger: a supported journey is observed where the First Officer publishes the advisory round, or A records additional/different calls, while the ensign does not perform the retained operation. Promote when that trigger is observed and violates the ensign-owned outcome, or when a runtime-neutral non-transcript actor-identity signal becomes available. Per the authorized disposition, the candidate was not mutated and Roborev was not rerun.
+
+### Summary
+
+The captain-reset correction is complete at exact code tip `b60d1c8adcf67135c8197144da5f7c841413b482`: the overgrown transcript proof is deleted, the replacement executes the generated assignment's retained helpers through space-bearing A under ambient B and composes exact invocation logs with canonical advisory-only durable state, every required suite is green, and the only final reviewer concern is recorded as an authorized deferred risk rather than used to restore the forbidden mechanism.
