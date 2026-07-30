@@ -69,6 +69,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:3852f7202e1fc742a924a1226bc791dc211e82eea109c78bc4e268510fab9a3b
                 room-ref: ./gate-record-stage-coherence-guard/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:q3vpb8hes1b3k3f1jps1kvpk:validation:1
+                briefing: briefing:q3vpb8hes1b3k3f1jps1kvpk:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-30T22:48:05.218303Z"
+                decision: approve
+                reason: Captain explicitly directed Q3 merge first; AC-1 through AC-3 are independently green, exact-head protected Sonnet and Opus lanes satisfy the previously blocked behavioral proof, and the remaining Codex red is the separately tracked 8b observer defect.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 worktree: .worktrees/spacedock-ensign-gate-record-stage-coherence-guard
 started: 2026-07-30T15:52:42Z
 pr: "#579"
