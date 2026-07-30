@@ -90,6 +90,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:3790c53f7931f353153cdec7d9a5b8290eecc0381a2d83c4e7f30a09d3b5524c
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:gqsw81ghf48hr2n3jg6k7nx8:validation:2
+                briefing: briefing:gqsw81ghf48hr2n3jg6k7nx8:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-30T14:48:03.888476Z"
+                decision: approve
+                reason: Exact-tip cb01129b passes the narrowed provider-free post-consume journey, focused/full/race checks, and conflict-drift inspection with unrelated semantics absent.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 review-round:
     id: round:gqsw81ghf48hr2n3jg6k7nx8:implementation:1
     stage: implementation
