@@ -1,6 +1,6 @@
 ---
 title: Dispatch the entered working stage after gate consumption
-status: validation
+status: implementation
 source: "Codex live run 30197794474 on 2026-07-26: rejection-flow began at implementation, but the FO advanced directly to validation without an implementation worker/report; the strict two-cycle provenance assertion correctly failed."
 started: 2026-07-26T10:57:18Z
 completed:
@@ -277,6 +277,7 @@ Cycle 4 is an evidence-only addendum mapping each acceptance criterion to its de
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — Roborev panel job 2948; surface 22/715 vs estimate 8/572 (125%); AC unchanged
+- Cycle 2: REJECTED — validation and captain scope reset; surface 22/715 vs estimate 8/572 (125%); AC narrowed: retain worktree-safe entered-stage actionability, revert merge-finalization changes, and remove the cold checklist-omission promise
 
 ## Stage Report: implementation
 
