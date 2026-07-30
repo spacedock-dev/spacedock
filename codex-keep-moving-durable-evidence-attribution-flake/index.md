@@ -25,6 +25,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:83ed6b8050afb6ea2e3737bf14a7c57f164095922ad8f37db84546e5cde6f84d
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8bnkrtq4rw46xkbez5zrbmmj:backlog:1
+                briefing: briefing:8bnkrtq4rw46xkbez5zrbmmj:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-30T22:50:16.874174Z"
+                decision: approve
+                reason: Captain explicitly directed dispatch of 8b after Q3 merge and ruled that transcript-grammar parsing is offrail; ideation must replace the dialect proposal with behavior and durable-state proof.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 The Codex keep-moving grader must recognize a completed per-entity dispatch and terminalization without turning harmless transcript-shape variation into an unrelated PR blocker.
