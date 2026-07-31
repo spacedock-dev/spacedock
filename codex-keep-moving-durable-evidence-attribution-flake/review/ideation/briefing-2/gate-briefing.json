@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-2:revision-1",
+  "question": "Approve the retained-history, same-task archive-sidecar correction for implementation cycle 2?",
+  "artifacts": [
+    {
+      "id": "artifact:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/4308c72ee0603678afa395c11a029bfd2e0524bd/codex-keep-moving-durable-evidence-attribution-flake/index.md",
+      "rev": "sha256:5569c206f029bd8e385820fb75903324bd57e6af15adaf45f906c869e26d67ab",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 ideation retained and inspected a supported exact-tip Codex journey. Candidate 1dd01b6db correctly found all dispatch, worker-report, terminal, and archive commits but credited 2/3 because approved-gate archived two same-task gate-review sidecars. A two-scope spike keeps dispatch/report/terminal entity-file-only, permits only component-safe same-slug support paths at archive/held boundaries, reports the retained journey 3/3, and keeps missing/reordered/foreign/slugs-prefix controls red. The correction remains within 10 files, \u003c=360 insertions, \u003e=1,400 deletions, \u003e=1,000 net deletions, with no transcript/provider dialect or new observer."
+    }
+  ]
+}
