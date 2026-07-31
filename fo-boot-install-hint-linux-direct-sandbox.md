@@ -111,6 +111,13 @@ gates:
               application:
                 action: none
                 state: not-applicable
+            - id: gate-attempt:z3j0tsbr6t3mqd39rhs8bbvq-validation-2
+              briefing:
+                id: briefing:z3j0tsbr6t3mqd39rhs8bbvq:validation:attempt-2:revision-1
+                digest: sha256:a5465bde4228df460a1c1e801dfcbfc68821cf4e0dfc35a0dd48a7ed4486be05
+                digest-domain: canonical-bytes
+                request-digest: sha256:0d1e4c8ae711c96ed7b094d50c57320ca803265e2b2c607a34f277a5bddb8b4a
+                room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/validation/briefing-2
 ---
 
 The first-officer boot hits the binary version gate (Startup step 1) and, when the `spacedock` binary is absent from PATH (the install class), prints a Mac-only Homebrew install hint and stops, leaving the human to copy-paste a command and restart the session — a hint a Linux host cannot even run. This task improves that install journey along the axes the issue names: make the install hint OS-aware (include the documented Linux `curl|sh` path, not just Homebrew), offer to run the install directly and resume startup once the binary lands (turn hint-and-abort into one approved action, bounded to a single attempt), and detect sandboxed execution so a sandboxed install does not silently no-op (tell the human to run the install command themselves outside the sandbox, naming the exact command). Cycle 2 (captain binding annotations) adds a fourth piece: an OS line in `--version` output, useful both to the FO's hint logic and to issue reports. The upgrade journey (binary present but wrong minor → check latest release, offer upgrade-and-resume) is filed separately as `fo-boot-upgrade-hint-latest-release` and is out of scope here.
