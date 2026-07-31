@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z3j0tsbr6t3mqd39rhs8bbvq:validation:attempt-1:revision-1",
+  "question": "VALIDATION gate: does the implementation of the FO boot install journey (OS-aware hint, install-and-resume with sentinel one-attempt bound, session-env sandbox detection, OS line in --version) pass and proceed to done, or does an AC fail and require a correction round to implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:z3j0tsbr6t3mqd39rhs8bbvq:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d11100a9fa72e602b9ca131f162b14642e6d9c69/fo-boot-install-hint-linux-direct-sandbox.md",
+      "rev": "sha256:834b5c3d124b0d5b2347c5e1faaa6dfa70649eb494a876359a42023f113061e3",
+      "mediaType": "text/markdown",
+      "summary": "Validation green on all criteria: AC-1/AC-4 Go tests re-run with observed exit codes; AC-2/AC-3 behavior fixtures (convergence, one-attempt fallback, sandbox env-marker) pass; all three falsification attacks failed to break claims; contractlint byte caps (26746\u003c=26754), no-drift, smoke, registry green; -race clean; 6 of 10 surface files over the +/-20% LOC band recorded as design-reset-class findings (not excused); one pre-existing sandbox-EPERM failure reproduces on unmodified main. FO recommends approve for done."
+    }
+  ]
+}

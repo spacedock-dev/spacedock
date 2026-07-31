@@ -12,7 +12,7 @@ issue: spacedock-dev/spacedock#581
 gates:
     version: 1
     current:
-        gate: gate:z3j0tsbr6t3mqd39rhs8bbvq:ideation
+        gate: gate:z3j0tsbr6t3mqd39rhs8bbvq:validation
     records:
         - id: gate:z3j0tsbr6t3mqd39rhs8bbvq:backlog
           stage: backlog
@@ -87,6 +87,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:z3j0tsbr6t3mqd39rhs8bbvq:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:z3j0tsbr6t3mqd39rhs8bbvq-validation-1
+              briefing:
+                id: briefing:z3j0tsbr6t3mqd39rhs8bbvq:validation:attempt-1:revision-1
+                digest: sha256:fb03bf8649c16e730ec38b31534dcce2e21458b31b82c6b13d9ed3a599cee781
+                digest-domain: canonical-bytes
+                request-digest: sha256:6a7223ff089e31bd8e1dc58d5dde9deddd77154169b4123a52fbd7a2f9267992
+                room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/validation/briefing-1
 ---
 
 The first-officer boot hits the binary version gate (Startup step 1) and, when the `spacedock` binary is absent from PATH (the install class), prints a Mac-only Homebrew install hint and stops, leaving the human to copy-paste a command and restart the session — a hint a Linux host cannot even run. This task improves that install journey along the axes the issue names: make the install hint OS-aware (include the documented Linux `curl|sh` path, not just Homebrew), offer to run the install directly and resume startup once the binary lands (turn hint-and-abort into one approved action, bounded to a single attempt), and detect sandboxed execution so a sandboxed install does not silently no-op (tell the human to run the install command themselves outside the sandbox, naming the exact command). Cycle 2 (captain binding annotations) adds a fourth piece: an OS line in `--version` output, useful both to the FO's hint logic and to issue reports. The upgrade journey (binary present but wrong minor → check latest release, offer upgrade-and-resume) is filed separately as `fo-boot-upgrade-hint-latest-release` and is out of scope here.
