@@ -389,3 +389,11 @@ Exact-head deterministic, full, race, retained-root, and one fresh Codex live ru
 - Unrelated questioned mutation: confirmed Material and task-owned. An unrelated-note-only child passes as the correction, violating `value-ac[AC-4]`. Proposed fix: require an entity-file-only commit that adds a durable Stage Report and a history transition away from the initial questioned stage, while the final entity remains active, nonterminal, and entity-owned.
 
 The validator's retained counterexamples and Feedback Cycle 1 are unchanged. A throwaway exact-`970dec18d` spike at `/tmp/spacedock-km-validation-fixes.XPeJNw/repo` makes only `internal/ensigncycle/shared_keep_moving_durable_test.go` `+111/-21`; all 24 per-ticket controls, parallel/serialized ordering pair, questioned meaningful/unrelated pair, and both retained real roots pass. Candidate `970dec18d` remains clean pending the First Officer's distinct fix authorization.
+
+## Review-finding disposition (implementation batch live evidence)
+
+- Reviewer observation: the single exact-head `ccd7bee28` live run completed the scenario but returned `0/3`; retained clean root `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/spacedock-keep-moving-2756575595` records batch engagement `4b909b3`, three separate file-only reports, batch terminal `d8aae97`, and three individual terminal archives.
+- Worker proposal: Material and Needs decision. The released Codex keep-moving workflow completed genuinely parallel independent work, but `value-ac[AC-1]` false-reds because per-ticket scope rejects the scenario-wide batch commits.
+- First Officer classification: Material and Needs decision; hold candidate mutation and rerun pending a design ruling.
+- Design ruling: a scenario-wide dispatch or terminal commit may represent all expected tickets only when it changes the complete expected-ticket set and no foreign ticket. Dispatch may additionally carry exact newly bound gate-room subtrees for scenario tickets; each worker report remains ticket-file-only, each canonical archive remains individually terminal, and the questioned re-shape remains independently proven.
+- Resolution: add no generic lifecycle engine. The deterministic proof must accept the retained full-set batch history and reject adjacent partial-set and foreign-path batches before another live run.
