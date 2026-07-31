@@ -12,7 +12,7 @@ issue: spacedock-dev/spacedock#581
 gates:
     version: 1
     current:
-        gate: gate:z3j0tsbr6t3mqd39rhs8bbvq:backlog
+        gate: gate:z3j0tsbr6t3mqd39rhs8bbvq:ideation
     records:
         - id: gate:z3j0tsbr6t3mqd39rhs8bbvq:backlog
           stage: backlog
@@ -37,6 +37,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:z3j0tsbr6t3mqd39rhs8bbvq:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:z3j0tsbr6t3mqd39rhs8bbvq-ideation-1
+              briefing:
+                id: briefing:z3j0tsbr6t3mqd39rhs8bbvq:ideation:attempt-1:revision-1
+                digest: sha256:e1ce7f0a4d254da36db5ad188231cd0d4f0f602f2e19075bc0426c0512180744
+                digest-domain: canonical-bytes
+                request-digest: sha256:33d4ee7592c0c772b14fe8d5b516fba514d4a3023f747ca4a2ae7fcc4d3cec36
+                room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/ideation/briefing-1
 ---
 
 The first-officer boot hits the binary version gate (Startup step 1) and, on either abort class — binary absent, or binary present but wrong minor — prints a Mac-only Homebrew install hint and stops, leaving the human to copy-paste a command and restart the session. This task improves that install journey along the three axes the issue names: make the hint OS-aware (include the documented Linux `curl|sh` path, not just Homebrew), offer to run the install/upgrade directly and resume startup once the binary lands (turn hint-and-abort into one approved action), and detect sandboxed execution so a sandboxed install does not silently no-op (tell the human to run the install command themselves outside the sandbox, naming the exact command).
