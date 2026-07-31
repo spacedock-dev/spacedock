@@ -48,6 +48,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:cdcfda518e8129d2f9efe37b76f885b6735371118b21d14679a68f4b110b3b21
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f02j6dbnd4jakwczahv1tg2h:ideation:1
+                briefing: briefing:f02j6dbnd4jakwczahv1tg2h:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T00:01:28.193473Z"
+                decision: approve
+                reason: 'Captain conn approves the reproduced seven-file correction: Codex bare mode cannot supply the required task_name, so the binary must reject it before artifact creation and the adapter must use the existing named spawn shape without adding an observer dialect.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 A supported headless Codex keep-moving journey advanced `approved-gate`, built its implementation dispatch artifact, never invoked `spawn_agent` / `worker.spawn`, then read a report and terminalized the task. This violates the shipped dispatch boundary and silently bypasses worker execution and write-scope authority.
