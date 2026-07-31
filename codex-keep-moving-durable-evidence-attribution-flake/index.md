@@ -143,6 +143,8 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+mod-block: merge:pr-merge
+pr: "#585"
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.
