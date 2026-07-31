@@ -62,14 +62,14 @@ gates:
                 state: consumed
                 blockers: []
 review-round:
-    id: round:26nk8qd48zknqnn4kc123sez:implementation:8
+    id: round:26nk8qd48zknqnn4kc123sez:implementation:9
     stage: implementation
-    cycle: 8
+    cycle: 9
     briefing:
-        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-8
-        digest: sha256:46d2540a8c75e3271b17850dcbb2e8f19325471142e592cbf5e8644fb00a725e
+        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-9
+        digest: sha256:f4015eb291ca4e11cfea60a282e57c858a0b7d48dbde132e1d5cc3af8cdf6be6
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-8
+        room-ref: ./review/implementation/round-9
 ---
 
 ## Problem statement
@@ -263,6 +263,8 @@ without a resolution, application, or successor dispatch.
 - Cycle 7: REJECTED — validation/failure-path retention; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
 
 - Cycle 8: REJECTED — validation/ordered stage dispatches; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
+
+- Cycle 9: REJECTED — validation/status transition placement; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
 
 ## Stage Report: validation
 
@@ -559,3 +561,20 @@ the existing cumulative insertion ceiling.
 REJECTED. Ordered dispatches are now stage-specific, but the oracle does not
 require the state handoff between them and accepts both missing and late
 transitions. Sonnet was not spent, and candidate `e6bd2a387` is unchanged.
+
+## Stage Report: implementation (cycle 9)
+
+- DONE: Make the exact supported trace require one successful `status=validation` transition after implementation dispatch and before validation dispatch.
+  Commit `43a1b8db4` partitions the command log around the two ordered dispatches, requires one exact successful validation transition in the middle interval, and rejects every successful status set after validation dispatch or gate preparation.
+- DONE: Retain the ordered two-dispatch, queued-transition, post-prepare authority, retention, and prior mutation controls; add the preserved missing/late-transition mutants as red-first evidence.
+  The missing and late transition mutants both failed red against frozen candidate `e6bd2a387`; they now pass as rejection cases alongside a duplicate-transition mutant and every prior missing, reordered, duplicated, substituted, late-dispatch, alternate-repair, gate, status, and retention control.
+- DONE: Remain within three files and cumulative +90/-15 by replacing/cutting, run focused/full/race/format/diff checks, and record the advisory disposition; stop on overage and do not spend Sonnet in implementation.
+  The correction is one existing test file, +7/-7; cumulative scope remains exactly three files, +90/-11. Focused transition/retention and queued-fixture tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` passed, and implementation round 9 validates `all-fixed`.
+- SKIPPED: Run a live provider journey or inspect provider, transcript, parser, or shell evidence.
+  The authorized deterministic mutants reproduced the defect and prove the bounded correction without another model spend or a change outside the test oracle.
+
+### Summary
+
+Cycle 9 makes the validation handoff both mandatory and position-specific while
+preserving the ordered dispatch journey and every established authority guard.
+The correction remains test-only and at the existing cumulative insertion cap.
