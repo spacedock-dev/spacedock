@@ -279,3 +279,26 @@ Cycle 2 fixes the task-owned false green in the provider-neutral command-log
 grader without changing product semantics or expanding the authorized surface.
 The deterministic mutants now make implementation-stage dispatch and the absence
 of pre-prepare status repair load-bearing.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Re-review exact candidate ccd0f367b and prove validation dispatch plus pre-prepare status repair no longer substitutes for the required implementation dispatch.
+  The focused live-tag grader passed; its validation-swap, early-repair, and combined-substitution mutants all fail when either substitution is accepted.
+- FAILED: Verify the coherent implementation→validation→open-gate lifecycle and every prior no-authority/stage-coherence mutant still behave as declared.
+  Prior mutants and fixture coherence pass, but a detached trace with implementation dispatch, then normal `status ... --set ... status=validation started`, then validation prepare/commit/open hold is rejected by the new any-pre-prepare-status predicate.
+- DONE: Re-cross-check all acceptance criteria, the cumulative three-test-file +59/-10 surface, and focused/full/race/format/diff evidence; recommend PASSED or REJECTED with candidate bytes frozen.
+  AC-1 and AC-3 remain evidenced; cumulative diff is exactly three test files, +59/-10, focused and diff checks pass, and implementation reports full/race/format green, but AC-2 is not validly provable, so the recommendation is REJECTED at unchanged head `ccd0f367b`.
+- DONE: Classify the cycle-2 finding and retain the First Officer disposition.
+  Released workflow: supported headless implementation completion; harm: the correct lifecycle is false-red and cannot prove AC-2; `value-ac[AC-2]:` requires implementation → validation → open gate; trigger: the detached coherent trace fails solely on the successful post-dispatch status transition. Material; task-owned evidence defect; FIX authorized.
+- DONE: Bound the minimum remedy to the existing provider-neutral ordered evidence.
+  Reject a successful validation/status mutation only when it substitutes before the required implementation dispatch; permit the normal post-dispatch transition before validation prepare, with no product, transcript/provider, runtime, or compatibility expansion.
+- SKIPPED: Re-run full, race, live-model, or Roborev suites after the Material finding.
+  The review-finding checkpoint freezes candidate bytes and stops reviewer reruns; broader green evidence cannot cure the focused coherent-trace false negative.
+
+### Summary
+
+REJECTED. Cycle 2 rejects the original validation-dispatch substitution, but it
+also rejects the intended implementation-complete transition into validation.
+The correction remains narrowly task-owned: order the successful status mutation
+relative to the required implementation dispatch instead of banning every
+pre-prepare status mutation.
