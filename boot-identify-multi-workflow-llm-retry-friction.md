@@ -53,6 +53,7 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+mod-block: merge:pr-merge
 ---
 
 ## Problem
