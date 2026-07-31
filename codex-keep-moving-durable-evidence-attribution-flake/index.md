@@ -122,7 +122,14 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:8bnkrtq4rw46xkbez5zrbmmj-validation-2
+              briefing:
+                id: briefing:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-2:revision-1
+                digest: sha256:51ae13152debfb8de8449d73b5e178d3c95c42e06722c2afb262111801d9e4f3
+                digest-domain: canonical-bytes
+                request-digest: sha256:c2cb632fd93dbed9bf8ddfadda3adff07635c2d4bf208ffd182db0b8886d5d3e
+                room-ref: ./review/validation/briefing-2
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.

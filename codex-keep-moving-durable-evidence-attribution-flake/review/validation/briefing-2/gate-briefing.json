@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-2:revision-1",
+  "question": "Approve exact candidate fba615fdf for PR and required CI, so Codex commissioned-completion grading uses durable ticket journeys?",
+  "artifacts": [
+    {
+      "id": "artifact:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/c04b256cfb62fb355cf55b305fad260fb0429d47/codex-keep-moving-durable-evidence-attribution-flake/gate-review-cycle4.md",
+      "rev": "sha256:ff076690fe7b1ff0bca22ef1a79d0753c2d28cafdf5761cf6ca1b099f6a29b66",
+      "mediaType": "text/markdown",
+      "summary": "Replaces Codex keep-moving completion inference with a provider-independent Git journey oracle; all supported retained roots and adversarial controls pass, with no Material finding remaining."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/c04b256cfb62fb355cf55b305fad260fb0429d47/codex-keep-moving-durable-evidence-attribution-flake/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f5d5ffc03cd3e2f0a5ce6e1acb03e1fab0056780b3ede919a0cbee162d3e5880"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/fba615fdfbba0fba33f749d621f58e0ed86cbb4f/internal/ensigncycle/shared_keep_moving_durable_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:e69e54280b8547a2b9a4336e69fcc9ea633a512f6c3a405f7c4ce9c0a0a61f29"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-2:revision-1:item-4",
+      "uri": "git-root://main/fba615fdfbba0fba33f749d621f58e0ed86cbb4f/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:dcb55fedd10907d38e99e32cb44878f35f664ec9bcfcd520d09477e3ca0ba6ab"
+    }
+  ]
+}
