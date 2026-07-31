@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-1:revision-1",
+  "question": "Approve PASS for the cycle-2 design's implementation+validation (consume routes unspent; merge guard sole consumer with one four-field envelope; merge guard --rework; terminal --set refusal), consuming toward terminal done and the pr-merge ceremony, with the +87% surface overrun composition on the record as the tolerance decision?",
+  "artifacts": [
+    {
+      "id": "artifact:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/04f88207c8adf0b46b7bd913ef5ba0e2ae41997a/resolution-consume-terminal-before-delivery.md",
+      "rev": "sha256:9521da00aadc6243f1bbea2fdd39fa45c5e69cd2333bb407b5160fac063ca953",
+      "mediaType": "text/markdown",
+      "summary": "The captain-approved cycle-2 design is implemented (51af9bd16) and independently validated; validator recommends PASSED with zero findings. Evidence (all rerun observed, not report-trust): AC reruns exit 0 — AC-1 TestTerminalDeliveryFailureReworkRoundTrip (real CLI fail-\u003erework-\u003ere-enter-\u003etrue-done), AC-2 TestTerminalSpendOnlyInDeliveryEnvelope (5 legs: three delivery classes + --set refusal + idempotent re-consume), AC-3 TestTerminalRetryLeavesAuthorityPending, refusal matrix, envelope-atomics pair (one candidate four-field replacement; mid-envelope failure leaves original bytes). Movable baseline at main @3522ee457 reproduces the hole verbatim. Detached adversarial audit on a throwaway candidate checkout: 5 claim-breaking edits, 5 catches, zero holes (old consume branch -\u003e ACs red; split envelope -\u003e atomics red; silent fallback -\u003e no-feedback-to leg red; disabled refusal -\u003e its AC-2 leg red; nil-approval --rework -\u003e refusal matrix red). Durable live drives: consume-\u003edeliver and consume-\u003erework-\u003ere-enter-\u003edeliver land correct on-disk end states; no-pending --rework refuses byte-clean. Full go test: only the 2 pre-existing environment failures, re-proven red identically on main. Surface re-measured: +1382/−79 vs ≈+720 estimate (+87% over the ±30% cap) — semantic core certified +201 vs +205 declared; overrun fully attributed to the envelope seam relocation (+267 unbudgeted) and AC-mandated fixtures (+834 vs +300); no out-of-design machinery (zero delivering/reversed/reversal/--to/--by/journal/compat/scanMods additions; gates io/operation/prepare untouched). Bound reference: the raw validator output."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/04f88207c8adf0b46b7bd913ef5ba0e2ae41997a/resolution-consume-terminal-before-delivery/review/validation/validator-output-77d3eead.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:17f2d0b18a7a195d5c8b8b4a59b911cb909a73c9650110d650eccd5eaa05fd77"
+    }
+  ]
+}

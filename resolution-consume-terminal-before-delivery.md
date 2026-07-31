@@ -12,7 +12,7 @@ issue:
 gates:
     version: 1
     current:
-        gate: gate:1w62z8c5fq5g5cmhzf5sd79w:implementation
+        gate: gate:1w62z8c5fq5g5cmhzf5sd79w:validation
     records:
         - id: gate:1w62z8c5fq5g5cmhzf5sd79w:backlog
           stage: backlog
@@ -119,6 +119,16 @@ gates:
               application:
                 action: none
                 state: not-applicable
+        - id: gate:1w62z8c5fq5g5cmhzf5sd79w:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-validation-1
+              briefing:
+                id: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-1:revision-1
+                digest: sha256:feafd7e5108310614570a1fdfb3c5233251dea97a2bf7f0f5e0d63ef724ca5f2
+                digest-domain: canonical-bytes
+                request-digest: sha256:3bfc167f984b109c89582f30e205e4adb6dbc586474827b3be040e02a2ea6f8d
+                room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-1
 sprint: durable-decisions
 ---
 
