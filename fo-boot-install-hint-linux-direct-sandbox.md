@@ -136,3 +136,16 @@ Findings:
 5. **Retry bound**: the FO must attempt install exactly once. If `--version` still fails after install, fall back to hint-and-abort. The skill prose must state this bound explicitly to prevent a loop.
 
 **Conclusion**: the convergence mechanism works IF the FO (a) detects OS via `uname -s` to choose the install command, (b) checks sandbox state via `--version`'s `Sandbox:` line before offering to run install, (c) after `curl|sh` install, sets `SPACEDOCK_BIN` to the installed path and re-checks `--version`, (d) bounds to one retry then falls back to hint-and-abort. The brew path converges automatically; the `curl|sh` path converges via the `SPACEDOCK_BIN` override.
+
+## Stage Report: ideation
+
+- DONE: At least one AC per end-value (OS-aware hint, direct install/upgrade-and-resume, sandbox detection) MEASURES the outcome against an independent baseline that can move the wrong way — not a mechanism-shipped assertion like "the hint updates to X"
+  AC-1 measures a Linux-no-`spacedock`/no-`brew` baseline (fails if hint is Homebrew-only or omits the documented Linux path); AC-2 measures the prior hint-and-abort baseline (fails if FO reverts to print-and-exit, loops, or no-ops without re-checking `--version`); AC-3 measures a sandboxed install landing where the host can't see it (fails if FO runs install inside the sandbox or omits the exact command / "outside the sandbox" instruction). See "Acceptance criteria", commit 11ffc7d31.
+- DONE: The riskiest mechanism is spiked first and the result recorded: a self-modifying boot that runs the install/upgrade then re-invokes `--version` must converge (not loop, not no-op); "no spike needed" only if backed by named proven mechanisms
+  Spike record ("Spiked: YES") exercised boot convergence end-to-end with a locally-built binary + simulated install; convergence works iff FO sets `SPACEDOCK_BIN` to the installed path post-`curl|sh` and re-checks `--version` with a one-retry bound, while the brew path converges automatically — so it converges (not loop/no-op), not a "no spike needed" claim. See "Spike record", commit 11ffc7d31.
+- DONE: Expected surface names the files + LOC tolerance AND the observable semantics it may change (boot abort→install-resume behavior, sandbox detection, stderr content), with the three end-values each served by a named AC
+  "Expected surface" lists 5 files with per-file LOC estimates and "LOC tolerance: ±20% per file", plus four observable-semantics changes (doctor Linux output, boot abort→install-resume, sandbox detection / stderr content, binary-absent hint text); AC-1/AC-2/AC-3 each serve one end-value (OS-aware hint, install-resume, sandbox detection). See "Expected surface", commit 11ffc7d31.
+
+### Summary
+
+Ideation design is complete and committed (11ffc7d31): OS-aware hint, direct install/upgrade-and-resume with a one-attempt convergence bound, and sandbox detection, each backed by an end-value-measuring AC and a riskiest-mechanism spike. This run fixes the completion gap by appending the missing `## Stage Report: ideation` section to the entity file (the prior run placed the completion summary in the output message instead of the file) and committing it; no design section or frontmatter was modified.
