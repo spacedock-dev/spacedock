@@ -364,3 +364,23 @@ Cycle 4 aligns the test fixture with the existing initial-stage successor
 contract while preserving product scheduling unchanged. The provider-neutral
 grader now distinguishes successful status mutations line by line and enforces
 their allowed window around implementation dispatch and gate preparation.
+
+## Stage Report: validation (cycle 4)
+
+- FAILED: Reconstruct the corrected queued -> implementation -> gated-validation journey and independently verify every prior authority-crossing mutant still fails.
+  Fixture coherence and prior mutants pass, but a detached exact trace with successful queued→implementation status transition before `dispatch build --stage implementation`, then validation transition and prepare/commit/open hold is rejected as a forbidden pre-dispatch mutation.
+- SKIPPED: Run one fresh supported Sonnet live journey and preserve its durable state, gate-room, command-log, and open-unresolved gate evidence; do not substitute aggregate or cached evidence.
+  The required cheap spot-check proved the exact supported journey cannot satisfy the grader, so validation stopped before spending a live run and claims no substitute evidence.
+- DONE: Cross-check AC-1 through AC-3, the three-file +81/-10 surface, focused/full/race/format evidence, and recommend PASSED or REJECTED with the candidate frozen on any new finding.
+  AC-1 and AC-3 remain evidenced; the cumulative diff is exactly three test files +81/-10 under the +90/-15 reset, focused/diff pass, and implementation reports full/race/format green, but AC-2 fails at frozen `623d53e6f`, so the recommendation is REJECTED.
+- DONE: Classify the finding and retain the First Officer disposition.
+  Released workflow: Captain-approved queued initial-stage successor projection; harm: the correct mandatory Sonnet journey is false-red; `value-ac[AC-2]:` queued must project and dispatch implementation before gated validation; trigger: the detached exact command-log trace fails. Material; task-owned evidence defect; FIX authorized.
+- DONE: Bound the authorized correction to the exact provider-neutral ordering defect.
+  Permit the line-local successful queued→implementation transition before implementation dispatch, reject successful pre-dispatch transition/repair to validation, and retain all post-prepare mutation rejection; no transcript/provider parser, product semantics, or unrelated cleanup.
+
+### Summary
+
+REJECTED. The queued topology is mechanically correct, but the authority grader
+still forbids the normal successor transition that makes implementation
+dispatchable. The required live run was intentionally not spent after this
+focused false negative; candidate `623d53e6f` remains unchanged.
