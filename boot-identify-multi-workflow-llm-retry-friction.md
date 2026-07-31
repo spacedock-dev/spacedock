@@ -631,3 +631,27 @@ Cycle 8 rebases the accepted argv-ledger implementation onto current main, prese
 ### Summary
 
 Validation independently reproduced the rebased candidate’s product, compatibility, durable-round, execution-ledger, formatting, baseline, race, and live Pi evidence without changing candidate bytes. The current 0.27 gate/review contract survives, all acceptance criteria pass, and the authorized Roborev dispositions leave no material gate blocker.
+
+## Stage Report: implementation (cycle 9)
+
+- DONE: Both Claude live runners record the actual spacedock launcher argv for multi-workflow boot and filing, so AC-3 can distinguish one execution from narration.
+  Evidence: commit `f982e88b6` composes the existing argv-ledger environment with the tested Bash/zsh startup override in both Claude transports. The direct regression repins `SPACEDOCK_BIN` as the front door does, executes one Bash launcher command, and records exactly one `status --boot --identify --json` argv.
+
+- DONE: The repair stays at the Claude runner/ledger injection boundary: no transcript or shell-source parser, no product-semantic expansion, and no unrelated live-scenario fixes.
+  Evidence: the authorized diff is exactly two test-harness files and +24/-7. It changes the `liveDriver.withInvocationLedger` seam, its two implementations, and the filing/multi-workflow call sites; product code, parsers, scenario expectations, CI, timeouts, and unrelated failures are untouched.
+
+- DONE: Focused local Claude-harness evidence, full tests, race tests, formatting, and an updated implementation report are committed before signaling completion.
+  Evidence: the focused live-tagged ledger, shell-boundary, filing, and multi-workflow tests passed; live-tag compilation, `go test ./...`, `go test ./... -race`, recursive `gofmt`, and `git diff --check` passed. Code is committed locally at `f982e88b656a8966e8739521d7a075e4d9c90a6b`.
+
+### Summary
+
+Claude's front door intentionally repins `SPACEDOCK_BIN` to the resolved real launcher, which replaced the test ledger shim before Claude's Bash tool started. Cycle 9 reapplies only the ledger shim through the existing Bash/zsh startup boundary after that repin, preserving execution-grounded grading without parsing narration. Per First Officer instruction, the validated code commit remains unpushed pending fresh gate approval.
+
+### Material Findings
+
+- None remain in the authorized cycle-9 repair scope.
+
+### Deferred Risks
+
+- The Sonnet recorded-gate timeout, Roborev polish, and previously classified evidence-scope risks remain outside this cycle.
+- Fresh independent validation and a new validation-gate attempt remain required before PR #584 can merge.
