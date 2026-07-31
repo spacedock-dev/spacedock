@@ -84,6 +84,8 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+mod-block: merge:pr-merge
+pr: "#582"
 ---
 
 A supported headless Codex keep-moving journey advanced `approved-gate`, built its implementation dispatch artifact, never invoked `spawn_agent` / `worker.spawn`, then read a report and terminalized the task. This violates the shipped dispatch boundary and silently bypasses worker execution and write-scope authority.
