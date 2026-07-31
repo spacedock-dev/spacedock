@@ -1,6 +1,6 @@
 ---
 title: "Dev-stamp compat: in-tree builds must pass the FO version gate against in-tree skills, for dev usage and CI"
-status: backlog
+status: ideation
 source: "Captain directive 2026-08-01, in the PR #586 merge decision: file the dev-stamp problem separately from z3, 'tackling actual dev usage and ci'. Same-class bites in one day (2026-07-31): (1) FO boot self-aborted on a stale 0.26.0+dev env binary against an in-tree 0.27 plugin (captain override needed); (2) a gpt-5.6-sol staff reviewer self-blocked on the same prose mid-review; (3) codex-live keep-moving-posture + gate-guardrail on PR #586 failed twice, the live FO declaring the PR candidate's 0.27.0-pre2+dev stamp 'not a non-development 0.27 build' — while the same scenarios stayed green on main and on claude/pi lanes."
 issue: spacedock-dev/spacedock#581
 id: zexbrjhartgykvhm012f527w
@@ -30,7 +30,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
