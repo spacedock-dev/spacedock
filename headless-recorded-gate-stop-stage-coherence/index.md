@@ -578,3 +578,22 @@ transitions. Sonnet was not spent, and candidate `e6bd2a387` is unchanged.
 Cycle 9 makes the validation handoff both mandatory and position-specific while
 preserving the ordered dispatch journey and every established authority guard.
 The correction remains test-only and at the existing cumulative insertion cap.
+
+## Stage Report: validation (cycle 9)
+
+- DONE: Reconstruct the corrected queued -> implementation -> gated-validation journey and independently verify every prior authority-crossing mutant still fails.
+  Exact candidate `43a1b8db4`; the repository focused suite passed in 2.2s, and a detached 21-case event table accepted only the complete supported trace while rejecting every required-event removal/reorder/duplicate and forbidden post-prepare decision, consume, withdrawal, status, duplicate prepare, or successor insertion.
+- FAILED: Run one fresh supported Sonnet live journey and preserve its durable state, gate-room, command-log, and open-unresolved gate evidence; do not substitute aggregate or cached evidence.
+  Exactly one fresh Sonnet run reached the correct open-gate outcome in 411.13s and its direct retained-tree regrade succeeded, but cleanup copied onto the same retained Git tree and failed the test. Inspection used only `workflow/`; no transcript/provider artifact was read and no rerun occurred.
+- DONE: Cross-check AC-1 through AC-3, the three-file +81/-10 surface, focused/full/race/format evidence, and recommend PASSED or REJECTED with the candidate frozen on any new finding.
+  AC-1 and the AC-2 lifecycle are evidenced by retained state, but AC-2's supported lane false-fails during duplicate retention; AC-3 is three files at actual cumulative `+90/-11` within `+90/-15`, with focused/diff green and implementation-recorded full/race/format green. Recommendation: REJECTED at frozen `43a1b8db4`.
+- DONE: Classify the new finding and retain the First Officer disposition before mutation or rerun.
+  Released workflow: successful supported Sonnet proof retention; harm: correct open-gate evidence is followed by a cleanup false failure; `value-ac[AC-2]:` requires a green supported proof from retained durable evidence; trigger: the 411.13s run plus detached first-copy success/second-copy read-only Git-object permission failure. Material; task-owned evidence-retention defect; FIX authorized.
+- DONE: Bound and preserve the authorized single-copy outcome rule.
+  Successful assertion path retains once; failure cleanup retains once; cleanup no-ops after successful retention. Retain the full event matrix and cheapest success/failure cleanup proof; no live rerun, framework, parser, provider/transcript/shell evidence, product change, unrelated cleanup, or overage. Evidence remains at `/tmp/spacedock-sonnet-cycle9.hoJ8hq` and `/tmp/spacedock-cycle9-audit.2nKrdz/worktree`.
+
+### Summary
+
+REJECTED. The supported Sonnet journey itself is now stage-coherent and stops at
+one unresolved gate, but the harness copies its retained Git tree twice and
+fails after success. Candidate `43a1b8db4` remains unchanged.
