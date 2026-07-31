@@ -71,6 +71,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:be5b7d159d41a9cdc211381c985188e4944201e942229b408ea178f1a905e861
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:26nk8qd48zknqnn4kc123sez:validation:1
+                briefing: briefing:26nk8qd48zknqnn4kc123sez:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T14:16:21.990921Z"
+                decision: approve
+                reason: 'Validation passed against the literal ACs: the final test-only candidate proves the queued direct-gate journey, retains provider-neutral success/failure evidence, regrades the supported Sonnet run green, passes focused/full/race/format checks, and removes the invented validation-worker scope.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 review-round:
     id: round:26nk8qd48zknqnn4kc123sez:implementation:11
     stage: implementation
