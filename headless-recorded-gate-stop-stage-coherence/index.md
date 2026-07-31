@@ -1,6 +1,6 @@
 ---
 title: Make the headless recorded-gate stop fixture stage-coherent
-status: validation
+status: implementation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started: 2026-07-31T00:32:10Z
 completed:
@@ -253,6 +253,7 @@ without a resolution, application, or successor dispatch.
 - Cycle 4: REJECTED — validation/exact journey trace; surface 3 test files/+81/-10 vs reset ceiling 3 test files/+90/-15 (90% of insertion ceiling); AC unchanged. The corrected queued topology is coherent, but the grader rejects the normal successful queued→implementation status transition before implementation dispatch. FIX authorized only for that line-local false negative: allow the implementation transition, reject pre-dispatch validation repair, and preserve all post-prepare mutation rejection; no product, provider, transcript, or shell-parser expansion.
 - Cycle 5: REJECTED — validation/evidence-retention preflight; surface 3 test files/+85/-10 vs reset ceiling 3 test files/+90/-15 (94% of insertion ceiling); AC unchanged. The exact queued journey and prior mutants pass, but the mandatory live runner deletes the durable entity, state Git, gate room, and command log after a green run. FIX authorized only to retain the exercised workflow tree beneath the existing scenario artifact directory and prove those existing artifacts remain gradeable; no generic artifact framework or transcript/provider substitution.
 - Cycle 6: REJECTED — validation/failure-path retention; surface 3 test files/+90/-10 vs reset ceiling 3 test files/+90/-15 (100% of insertion ceiling); AC unchanged. One fresh Sonnet run failed after 399.79s, but the assertion fired before the success-only retention call and cleanup deleted the provider-neutral workflow evidence needed to classify it. FIX authorized only to register the existing retention action before model/assertion failure and prove the failing path preserves the same tree; remain at the insertion ceiling by refactoring/cutting or stop on exact overage. No rerun or transcript diagnosis before that proof.
+- Cycle 7: REJECTED — validation/retained exact journey; surface 3 test files/+90/-11 vs reset ceiling 3 test files/+90/-15 (100% of insertion ceiling); AC unchanged. The failure-safe artifact from one Sonnet run proves a coherent implementation dispatch → validation dispatch → one prepare/commit → open unresolved attempt, but the oracle false-rejects every second dispatch and therefore mistakes the required validation reviewer for a forbidden successor. FIX authorized only to require the two ordered pre-prepare dispatches and reject substitution, duplicate/late dispatch, or any post-prepare successor; replace/cut the incorrect count logic to remain at the insertion ceiling.
 
 - Cycle 5: REJECTED — validation/exact queued journey trace; surface 3 test files/+85/-10 vs estimate 3 test files/+90/-15 (94%); AC unchanged
 
