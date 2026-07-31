@@ -1,0 +1,6 @@
+Candidate: 1df0092ee
+Parent rejected candidate: 4aa59dafe
+Authorized correction: retain the successfully graded gate workflow beneath the existing scenario artifact directory and re-grade the retained durable evidence.
+Code surface: three existing test files, cumulative +90/-10 against main; no production, protocol, provider, transcript, or generic artifact-framework change.
+Evidence: focused retained-workflow and journey-mutant tests, queued fixture coherence, go test ./..., go test ./... -race, gofmt, and diff checks passed.
+Live and Roborev evidence: intentionally not rerun for this correction cycle.

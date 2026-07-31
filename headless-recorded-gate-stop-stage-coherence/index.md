@@ -62,14 +62,14 @@ gates:
                 state: consumed
                 blockers: []
 review-round:
-    id: round:26nk8qd48zknqnn4kc123sez:implementation:5
+    id: round:26nk8qd48zknqnn4kc123sez:implementation:6
     stage: implementation
-    cycle: 5
+    cycle: 6
     briefing:
-        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-5
-        digest: sha256:4e11ec82a53b33ff63d103035bafe12ef34c071acd4189c2ce36fa61618f67d5
+        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-6
+        digest: sha256:58901b94010092ed5d20b0b8292c6467b8a527f0e395c4ad46e3bc78d84a1a2c
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-5
+        room-ref: ./review/implementation/round-6
 ---
 
 ## Problem statement
@@ -255,6 +255,8 @@ without a resolution, application, or successor dispatch.
 
 - Cycle 5: REJECTED — validation/exact queued journey trace; surface 3 test files/+85/-10 vs estimate 3 test files/+90/-15 (94%); AC unchanged
 
+- Cycle 6: REJECTED — validation/evidence-retention preflight; surface 3 test files/+90/-10 vs estimate 3 test files/+90/-15 (100%); AC unchanged
+
 ## Stage Report: validation
 
 - DONE: Verify AC-1 against the real fixture boot and on-disk starting state.
@@ -437,3 +439,21 @@ REJECTED. The corrected command-log grader now accepts the exact queued journey
 and rejects the prior mutants, but the mandatory live lane discards AC-2's
 durable proof on success. Sonnet was intentionally not spent after that preflight
 failure, and candidate `4aa59dafe` remains unchanged.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Retain the exercised gate workflow tree beneath the existing scenario artifact directory after successful assertions, using the existing copy mechanism rather than a new artifact framework.
+  Commit 1df0092ee calls the existing `copyTree` only after the source entity and command-log assertions pass, preserving the complete exercised workflow under the scenario's `workflow/` artifact subtree.
+- DONE: Add a focused proof that the retained entity/state Git, gate room, command log, and unresolved attempt are present and still gradeable; keep the exact queued journey and all prior mutants green/red as intended.
+  `TestRetainRecordedGateWorkflowEvidence` failed red on the absent retention seam, then passed by reopening the copied state Git, resolving its gate room, re-grading its unresolved entity, and re-running its copied log oracle; the queued/coherent positives and every prior mutation control also pass.
+- DONE: Remain within three files and cumulative +90/-15, run focused/full/race/format/diff checks, and record the advisory disposition before returning to the same validator.
+  The final cumulative diff is exactly three test files, +90/-10; focused retention/journey and fixture tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` passed, and implementation round 6 validates `all-fixed` with one Material FIX and no declines.
+- SKIPPED: Spend a supported Sonnet or Roborev run during implementation.
+  The assignment requires deterministic retention proof before model spend and routes the committed candidate back to the same validator for the fresh supported journey.
+
+### Summary
+
+Cycle 6 preserves the already-graded headless gate workflow as durable scenario
+evidence and proves the copied state remains independently gradeable. It adds no
+artifact framework or product/runtime semantics and lands exactly on the
+captain-approved insertion ceiling.
