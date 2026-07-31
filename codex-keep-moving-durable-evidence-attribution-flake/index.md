@@ -304,3 +304,20 @@ Cycle 3 treats the retained break-glass Git history as authoritative without wea
 ### Cycle 4 design amendment
 
 An ordinary dispatch is attributable when it changes only the entity file, or when the same entity revision newly introduces a normalized relative `room-ref` below the exact slug and every additional changed path is newly added below that exact room subtree. The later current-stage report must still be a separate entity-file-only commit. Negative controls must reject a preexisting room binding, a room outside the exact slug, a sibling path outside the room, a modified rather than newly added room file, and a slug-prefix collision.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Implement ordinary and atomic first-worker episode recognition in the existing durable oracle only.
+  Commit `d6a7f462d` added the atomic parent/child proof and combined terminal/archive boundary; removing either worker episode makes its deterministic positive lose one independently credited task.
+- DONE: Add parent-prepopulation, report-only, started-only, stale, foreign-path, and prefix-collision controls while preserving prior archive-sidecar controls.
+  The 15-case cycle-3 table rejects only `ready-one` for each named mutation while ordinary `3/3`, atomic `3/3`, and exact-slug archive sidecars stay green.
+- DONE: Apply the authorized cycle-4 gate-room dispatch amendment without widening worker attribution.
+  Commit `970dec18d` accepts `3b699e8→14b8ddb` only when the dispatch revision newly binds added files strictly below its exact-slug `room-ref`; prebound, other-slug, sibling, modified-file, and prefix controls each remain red.
+- DONE: Stay within the authorized two-file cycle-4 reset and preserve the provider-independent semantic boundary.
+  Incremental cycle 4 is exactly two existing files at `+90/-8`; cumulative direct surface is exactly 10 files at `+463/-1,449` (net `-986`), with no fixture, parser, observer, transcript, provider-event, command, storage, authority, or runtime change.
+- DONE: Run focused/full/race/format checks and exactly one fresh exact-head live `3/3` confirmation.
+  Both retained roots grade `3/3`; 21 durable controls, smallest-mechanism consumers, live helper/parity guards, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` pass, followed by one `970dec18d` Codex keep-moving run passing in 484 seconds.
+
+### Summary
+
+The durable oracle now recognizes ordinary dispatch/report, atomic first-worker, separate terminal/archive, combined terminal archive, and the narrowly ruled same-revision gate-room dispatch shape while preserving exact worker-report attribution. Exact-head `970dec18d` is clean, provider-independent, deterministic/full/race green, and live-confirmed `3/3`.
