@@ -226,3 +226,16 @@ The oracle rejected every completed slug with the exact reason `missing path-sco
 ### Summary
 
 The retained journey replaced the destroyed run's unproven `0/3 missing dispatch` diagnosis with a concrete `2/3` archive-attribution defect. The reset preserves strict proof of actual worker execution and the net-negative parser deletion, while narrowly recognizing existing gate sidecars owned by the same entity and retaining future failing Git roots for diagnosis.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Apply component-safe same-task support-path ownership only at archive/held boundaries and retain failing live Git roots.
+  Code commit `ae6cf1ee9` makes only archive/held commits entity-owned, keeps stricter worker-step scope, and retained the failed clean repo at `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/spacedock-keep-moving-1137023568`.
+- DONE: Keep dispatch/report/terminal entity-file-only and prove missing, reordered, stale, foreign-path, and slug-prefix controls remain red.
+  Focused real-Git tests passed the sidecar-bearing 3/3 fixture while missing dispatch/report/terminal/archive, pre-dispatch report, foreign report/archive, and `ready-one-other` prefix mutations each rejected the affected task.
+- FAILED: Stay within cumulative 10-file +360/-1400/net-negative-1000 bounds; run focused/full/race then one compatible exact-head 3/3 live confirmation.
+  Surface is 10 files, +331/-1,449, net -1,118; format, focused, `go test ./...`, and `go test ./... -race` passed, but the single compatible exact-head live run returned 0/3.
+
+### Summary
+
+The retention correction exposed a second supported Git shape rather than losing it: each task went `init → entity-file-only first-worker commit adding started plus the new Stage Report → entity-owned terminal archive`, with no separate `dispatch:` commit. Captain disposition is Material, task-owned, Needs decision and selects a return to ideation: support either the ordinary separate dispatch/report episode or this atomic first-worker episode, while keeping stale, reordered, report-only, foreign-path, and transcript/provider evidence red.
