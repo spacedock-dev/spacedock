@@ -659,3 +659,22 @@ validation worker/report obligation and false-rejects the supported outcome.
 Cycle 11 restores AC-2's direct gate boundary and removes the branch's invented
 validation-worker scope. Later queued-topology and single-copy retention fixes
 remain intact, and the final test-only diff is smaller than the prior candidate.
+
+## Stage Report: validation (cycle 11)
+
+- DONE: Reconstruct AC-2's direct gated-stage journey and independently verify every retained authority and transition mutant against exact candidate aeb3009b0.
+  The focused fixture/oracle/retention suite passed in 2.7s; detached audit `/tmp/spacedock-cycle11-audit.DiXf6Z/worktree` accepted the direct trace and rejected missing, duplicate, reordered, alternate, extra-dispatch, and post-prepare authority variants while permitting a failed non-authoritative status attempt.
+- DONE: Regrade the retained cycle-10 supported Sonnet workflow with the corrected oracle, and prove the delta from its live candidate changes only that oracle—not fixture, prompt, runner, or evidence retention—before waiving a redundant live rerun.
+  The retained provider-neutral workflow regraded green: its implementation report, validation gate room, one open unresolved attempt, state history, and command log establish implementation dispatch/report -> validation transition -> one prepare/commit with no authority action.
+  `92dadede5..aeb3009b0` is only `livescenario_adapter_live_test.go` at `+8/-11`, replacing the oracle positive/mutants; no fixture, prompt, runner, or retention path changed, so no second Sonnet run was spent.
+- DONE: Cross-check AC-1 through AC-3, the three-file +88/-12 surface, focused/full/race/format evidence, and recommend PASSED or REJECTED with the candidate frozen on any new finding.
+  AC-1's queued boot projection passes; AC-2's retained supported journey and adversarial matrix pass; AC-3 is exactly three test files at `+88/-12`, with `go test ./...`, `go test ./... -race`, `gofmt -d ./cmd ./internal`, `git diff --check`, and focused live-tag proofs green.
+  Recommendation: PASSED at unchanged `aeb3009b0`; no material, deferred-risk, or polish finding remains.
+- SKIPPED: Run another supported Sonnet journey or inspect transcript/provider/shell-grammar evidence.
+  The assignment authorizes the exact retained durable workflow as AC-2 proof after the one-file oracle-only correction, and a redundant model run would add no changed-runtime evidence.
+
+### Summary
+
+PASSED. The corrected oracle now grades AC-2's supported direct gated-stage path,
+retains every transition and no-authority guard, and regrades the preserved live
+workflow successfully without a redundant provider run.
