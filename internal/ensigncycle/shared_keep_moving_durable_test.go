@@ -57,11 +57,14 @@ func durableTaskJourney(t *testing.T, root, slug, stage string, batchExpected ma
 		logPath = archive
 	}
 	history := durableEntityHistory(t, root, slug, logPath)
-	dispatch, report, terminal := -1, -1, -1
+	dispatch, report, firstTerminal, terminal := -1, -1, -1, -1
 	reportBefore, unscopedReport, archived := false, false, false
 	for i, c := range history {
 		hasReport := strings.Contains(c.blob, "\n## Stage Report: "+stage+"\n")
 		atomicWorker := durableAtomicWorkerProof(history, i, stage)
+		if firstTerminal < 0 && durableTerminalState(c.blob) {
+			firstTerminal = i
+		}
 		if durableDispatchProof(history, i, slug, stage) ||
 			durableBatchDispatchProof(t, root, c, batchExpected) {
 			dispatch = i
@@ -79,7 +82,7 @@ func durableTaskJourney(t *testing.T, root, slug, stage string, batchExpected ma
 		}
 		terminalScoped := c.entityFileScoped || (c.entityOwned && i == len(history)-1) ||
 			durableBatchTerminalProof(root, c, batchExpected)
-		if report >= 0 && i > report && terminalScoped && durableField(c.blob, "status") == "done" &&
+		if firstTerminal == i && report >= 0 && i > report && terminalScoped && durableField(c.blob, "status") == "done" &&
 			durableField(c.blob, "completed") != "" && durableField(c.blob, "verdict") != "" {
 			terminal = i
 		}
@@ -96,6 +99,8 @@ func durableTaskJourney(t *testing.T, root, slug, stage string, batchExpected ma
 		return proof, "missing worker report after dispatch; stale report precedes dispatch"
 	case report < 0:
 		return proof, "missing worker report after dispatch"
+	case firstTerminal >= 0 && firstTerminal <= report:
+		return proof, "first terminal transition must follow worker report"
 	case terminal < 0:
 		return proof, "missing later terminal fields completed and verdict"
 	case durableField(history[len(history)-1].blob, "status") != "done" ||
@@ -279,6 +284,10 @@ func durableField(content, name string) string {
 	}
 	return ""
 }
+func durableTerminalState(content string) bool {
+	return durableField(content, "status") == "done" ||
+		durableField(content, "completed") != "" || durableField(content, "verdict") != ""
+}
 func assertDurableKeepMoving(t *testing.T, root string) error {
 	completed, failures := gradeDurableTaskJourneys(t, root, kmExpected(), kmExpected())
 	if completed != 3 {
@@ -288,16 +297,19 @@ func assertDurableKeepMoving(t *testing.T, root string) error {
 		return err
 	}
 	content, where, found := locateEntity(root, kmQuestioned)
-	if !found || where != filepath.Join(root, kmQuestioned+".md") ||
-		durableField(content, "status") == "done" || durableField(content, "completed") != "" || durableField(content, "verdict") != "" {
+	if !found || where != filepath.Join(root, kmQuestioned+".md") || durableTerminalState(content) {
 		return fmt.Errorf("%s must remain active and nonterminal", kmQuestioned)
 	}
 	history := durableEntityHistory(t, root, kmQuestioned, kmQuestioned+".md")
-	transitioned, reported := false, false
+	transitioned, reported, terminal := false, false, durableTerminalState(history[0].blob)
 	for i := 1; i < len(history); i++ {
 		transitioned = transitioned || durableField(history[i].blob, "status") != durableField(history[0].blob, "status")
 		reported = reported || (history[i].entityFileScoped &&
 			strings.Count(history[i].blob, "\n## Stage Report: ") > strings.Count(history[i-1].blob, "\n## Stage Report: "))
+		terminal = terminal || durableTerminalState(history[i].blob)
+	}
+	if terminal {
+		return fmt.Errorf("%s must remain historically active and nonterminal", kmQuestioned)
 	}
 	if !transitioned || !reported || !history[len(history)-1].entityOwned {
 		return fmt.Errorf("%s has no meaningful entity-owned stage re-shape", kmQuestioned)
@@ -396,6 +408,10 @@ func TestDurableTaskJourneys(t *testing.T) {
 		{"archive reverts terminal fields", "archive-reverts-terminal", "ready-one", "terminal fields"},
 		{"missing archive", "missing-archive", "ready-one", "canonical archive"},
 		{"report before dispatch", "report-before-dispatch", "ready-one", "worker report after dispatch"},
+		{"terminal before report", "terminal-before-report", "ready-one", "worker report"},
+		{"terminal status before report", "terminal-status-before-report", "ready-one", "worker report"},
+		{"completed before report", "terminal-completed-before-report", "ready-one", "worker report"},
+		{"verdict before report", "terminal-verdict-before-report", "ready-one", "worker report"},
 		{"cross-attributed report", "cross-attributed-report", "ready-one", "path-scoped worker report"},
 		{"cross-attributed archive", "cross-attributed-archive", "ready-one", "canonical archive"},
 		{"slug-prefix archive", "slug-prefix-archive", "ready-one", "canonical archive"},
@@ -493,6 +509,21 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 			} else {
 				gitCommitPathScoped(t, root, slug+".md", "dispatch: "+slug+" entering implementation")
 			}
+		}
+		if strings.Contains(mutation, "before-report") && slug == "ready-one" {
+			path := filepath.Join(root, slug+".md")
+			content := readFile(t, path)
+			if mutation == "terminal-before-report" || mutation == "terminal-status-before-report" {
+				content = strings.Replace(content, "status: implementation", "status: done", 1)
+			}
+			if mutation == "terminal-before-report" || mutation == "terminal-completed-before-report" {
+				content = strings.Replace(content, "completed:", "completed: premature", 1)
+			}
+			if mutation == "terminal-before-report" || mutation == "terminal-verdict-before-report" {
+				content = strings.Replace(content, "verdict:", "verdict: passed", 1)
+			}
+			writeFile(t, path, content)
+			gitCommitPathScoped(t, root, slug+".md", "premature terminal: "+slug)
 		}
 		if (mutation != "missing-report" || slug != "ready-one") && !(mutation == "report-before-dispatch" && slug == "ready-one") {
 			path := filepath.Join(root, slug+".md")
@@ -645,6 +676,41 @@ func TestDurableQuestionedRejectsUnrelatedEdit(t *testing.T) {
 		!strings.Contains(err.Error(), "meaningful") {
 		t.Fatalf("unrelated questioned edit error = %v, want meaningful re-shape failure", err)
 	}
+}
+func TestDurableQuestionedRejectsTerminalHistory(t *testing.T) {
+	for _, field := range []string{"all", "status", "completed", "verdict"} {
+		t.Run(field, func(t *testing.T) {
+			root := durableAddQuestionedTerminalHistory(t, durableJourneyFixture(t, "parallel-dispatch"), field)
+			if err := assertDurableKeepMoving(t, root); err == nil || !strings.Contains(err.Error(), "nonterminal") {
+				t.Fatalf("questioned terminal history error = %v, want nonterminal failure", err)
+			}
+		})
+	}
+}
+func durableAddQuestionedTerminalHistory(t *testing.T, root, field string) string {
+	path := filepath.Join(root, kmQuestioned+".md")
+	writeFile(t, path, durableEntity(kmQuestioned, "review", "", ""))
+	gitCommitPathScoped(t, root, kmQuestioned+".md", "seed questioned")
+	content := readFile(t, path)
+	if field == "all" || field == "status" {
+		content = strings.Replace(content, "status: review", "status: done", 1)
+	}
+	if field == "all" || field == "completed" {
+		content = strings.Replace(content, "completed:", "completed: premature", 1)
+	}
+	if field == "all" || field == "verdict" {
+		content = strings.Replace(content, "verdict:", "verdict: passed", 1)
+	}
+	writeFile(t, path, content)
+	gitCommitPathScoped(t, root, kmQuestioned+".md", "premature terminal questioned")
+	content = strings.Replace(content, "status: done", "status: ideation", 1)
+	content = strings.Replace(content, "status: review", "status: ideation", 1)
+	content = strings.Replace(content, "completed: premature", "completed:", 1)
+	content = strings.Replace(content, "verdict: passed", "verdict:", 1)
+	writeFile(t, path, content)
+	durableAppendStageReport(t, root, kmQuestioned, "ideation")
+	gitCommitPathScoped(t, root, kmQuestioned+".md", "reopen questioned")
+	return root
 }
 func TestDurableKeepMovingBatchMotion(t *testing.T) {
 	tests := []struct {
