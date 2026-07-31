@@ -47,6 +47,23 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:33d4ee7592c0c772b14fe8d5b516fba514d4a3023f747ca4a2ae7fcc4d3cec36
                 room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/ideation/briefing-1
+              provider-evidence:
+                result-digest: sha256:4163c7a352ea3437e8ee9304c55abcca128a3598efef66fca9af526b349d96d2
+                presented-inventory-digest: sha256:4659586febb0b4f9d72d1c0e853ff709874c5d5c04e29d8111bbc8b6d999c8e8
+              resolution:
+                type: Resolution
+                id: resolution:binding-1785472404632857000
+                briefing: briefing:z3j0tsbr6t3mqd39rhs8bbvq:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-31T04:33:24.63286Z"
+                decision: revise
+                includes:
+                    - annotation:captain-1785472336725531000
+                    - annotation:captain-1785472400412596000
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 ---
 
 The first-officer boot hits the binary version gate (Startup step 1) and, on either abort class — binary absent, or binary present but wrong minor — prints a Mac-only Homebrew install hint and stops, leaving the human to copy-paste a command and restart the session. This task improves that install journey along the three axes the issue names: make the hint OS-aware (include the documented Linux `curl|sh` path, not just Homebrew), offer to run the install/upgrade directly and resume startup once the binary lands (turn hint-and-abort into one approved action), and detect sandboxed execution so a sandboxed install does not silently no-op (tell the human to run the install command themselves outside the sandbox, naming the exact command).
