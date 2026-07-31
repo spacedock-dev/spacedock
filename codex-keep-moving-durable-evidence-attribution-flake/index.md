@@ -422,3 +422,62 @@ The validator's retained counterexamples and Feedback Cycle 1 are unchanged. A t
 ### Summary
 
 The final oracle proves independent keep-moving work from Git-owned task episodes while covering the supported ordinary, atomic first-worker, newly bound gate-room, complete-batch, and corroborated delayed-persistence shapes. Adjacent attribution and ordering counterexamples remain red, all four real retained histories pass, and the provider observers remain deleted.
+
+## Review-finding disposition (validation cycle 2)
+
+### Active `verdict: questioned`
+
+- Reviewer observation: Roborev job 457 says the questioned ticket may normally remain active with `verdict: questioned`, while the oracle rejects every non-empty final verdict.
+- Released user and normal workflow: none; this development workflow permits only `passed` or `rejected` verdicts at final `done`, and the questioned fixture plus all four retained supported journeys keep the active ticket's verdict empty.
+- Observable harm: none established; rejecting an unsupported nonterminal verdict does not lose a promised journey.
+- Authority: `none:` AC-4 promises a corrected active/nonterminal questioned state, not `verdict: questioned`; `docs/dev/README.md` defines verdict as PASSED/REJECTED at the final stage.
+- Trigger evidence: reviewer hypothetical only; repository and `origin/main` searches find no keep-moving `verdict: questioned`, and no retained supported root emits it.
+- Worker proposal: invalid observation / Polish at most, outside the supported task surface, `DECLINE`; promote only if the schema or a retained supported journey begins emitting that value.
+- First Officer classification: `DECLINE` as an invalid observation / Polish, not a supported-workflow defect.
+
+### Terminal fields introduced before the worker report
+
+- Reviewer observation: dispatch, premature terminalization, later worker report, and archive can pass because the oracle selects any later snapshot that still carries terminal fields.
+- Released user and normal workflow: the Codex keep-moving path completes each expected ticket through a current-stage worker report before terminalization and canonical archive.
+- Observable harm: a ticket terminalized before its worker proof can be credited as a valid journey, so a broken supported run false-greens.
+- Authority: `value-ac[AC-1]` requires each completed independent task to be credited from its own valid durable journey.
+- Trigger evidence: `shared_keep_moving_durable_test.go:79-86` checks only that a post-report snapshot contains terminal fields; it does not require their first transition to follow the report.
+- Worker proposal: Material evidence defect, task-owned, `REJECTED / route to implementation`.
+- First Officer classification: `FIX`; require the recognized current-stage worker report to precede the first transition into terminal state, not merely a later terminal snapshot/archive.
+
+### Questioned ticket terminalized and then reopened
+
+- Reviewer observation: the questioned check accepts any historical transition/report plus a final active state, so `done` with terminal fields followed by reopen and report can pass.
+- Released user and normal workflow: the questioned ticket's dispatch pauses while it is durably re-shaped and held active/nonterminal as the independent tickets move.
+- Observable harm: the prohibited forward/terminal drive can occur without failing the live acceptance gate.
+- Authority: `value-ac[AC-4]` requires the corrected nonterminal questioned state and its held re-shape.
+- Trigger evidence: `shared_keep_moving_durable_test.go:282-304` checks terminal fields only in the final working state and never rejects an intervening historical terminal state.
+- Worker proposal: Material evidence defect, task-owned, `REJECTED / route to implementation`.
+- First Officer classification: `FIX`; require no intervening terminal status or fields before the final active held state.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently verify exact head 5ef96410b credits all four retained supported journeys 3/3 while the serialized, partial/foreign batch, rebind, nonterminal archive, unrelated question, and delayed-start negatives remain red.
+  `TestRetainedAtomicWorkerJourney` passed separately for roots `1137023568`, `1344046602`, `2756575595`, and final-shape `3245282000`; the focused matrix rejects each named affected shape and would fail if it earned 3/3.
+- DONE: Cross-check AC-1 through AC-4 and the cumulative 10-file +806/-1449 provider-independent surface, including the two-rank/timestamp fallback boundary and its falsifying variants.
+  Direct merge-base numstat is exactly 10 files at `+806/-1,449` (net `-643`); the corroborated frontier passes while absent, unparseable, at-terminal, after-terminal, and one-rank/no-frontier starts fail.
+- DONE: Run focused/full/race/format/diff checks plus semantic adversarial and classified Roborev review without mutating candidate bytes or running another live model journey.
+  Focused durable/consumer/live-helper/parity tests, `gofmt -l`, `git diff --check`, `go test ./...`, and `go test ./... -race` passed; Roborev branch-final job 457 produced three classified findings, and exact head stayed clean.
+- FAILED: AC-1 - Every completed independent task is credited from its own durable journey.
+  Supported ordinary, atomic, batch, delayed-persistence, and all retained 3/3 histories pass, but premature terminal fields followed by a later report/archive can be miscredited as a valid ordered journey.
+- FAILED: AC-2 - Missing, stale, reordered, or cross-attributed durable steps remain red per task.
+  Existing negatives pass, but the terminal-before-report ordering variant remains green because terminal-field introduction is not bound to the first post-report terminal transition.
+- DONE: AC-3 - The observer surface is smaller and provider-independent.
+  The exact deletion-led surface remains provider-neutral: keep-moving grading receives only the workflow root and reads Git paths, blobs, ancestry, and canonical state; restoring any deleted observer changes the measured surface.
+- FAILED: AC-4 - Repository and live confirmation gates are green.
+  Repository and retained-live gates are green, but the questioned oracle can miss a terminalize-then-reopen history, so the live gate cannot validly prove the required held nonterminal correction.
+- SKIPPED: Active `verdict: questioned` compatibility change.
+  The First Officer declined Roborev's observation: the trigger is unsupported by the schema, fixture, prior oracle, and every retained supported journey.
+- FAILED: Terminal-before-report durable ordering.
+  Material, task-owned evidence defect; First Officer disposition is `FIX`, with candidate bytes unchanged for feedback routing.
+- FAILED: Questioned done-then-reopen history.
+  Material, task-owned evidence defect; First Officer disposition is `FIX`, with no reviewer rerun.
+
+### Summary
+
+Exact `5ef96410b` is clean, all deterministic/repository/race checks pass, and all four retained supported journeys—including final root `3245282000`—regrade 3/3 without another live run. Validation nevertheless recommends **REJECTED** because two Material task-owned false greens fail to prove worker-report-before-terminal ordering and the questioned ticket's uninterrupted nonterminal hold; the third Roborev observation was authoritatively declined.
