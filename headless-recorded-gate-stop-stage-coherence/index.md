@@ -222,13 +222,13 @@ validation.
   `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle` fails on missing/late/duplicate implementation dispatch, missing commit, duplicate prepare, decision, consume, withdrawal, status repair, or successor dispatch.
 - DONE: Keep all changes test-only and prove them with focused fixture/mutant tests, full/race/format.
   The committed diff is 52 insertions/10 deletions in the three authorized test files; focused tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed.
-- FAILED: Prove one implementation dispatch, one validation prepare/commit, then stop open in one fresh supported Sonnet live journey.
-  The required launch failed before any FO work with OAuth 429 `You've hit your weekly limit · resets 1pm (Asia/Taipei)`; artifacts: `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLiveDefaultHeadlessStopsAtGate1103490344/003/default-headless-recorded-gate-stop`.
+- DONE: Prove one implementation dispatch, one validation prepare/commit, then stop open in one fresh supported Sonnet live journey.
+  PR #583 Runtime Live E2E run 30595653496, Sonnet job 91047460694 passed `TestLiveDefaultHeadlessStopsAtGate` in 303.92s against exact PR head candidate 854ffa62b; its durable entity and provider-neutral command-log graders require that ordered lifecycle and reject resolution, application, withdrawal, status repair, duplicate prepare, or successor dispatch.
 
 ### Summary
 
 The fixture-only candidate coherently starts implementation and strengthens the
-provider-neutral command-log boundary without changing product behavior. AC-2
-and implementation completion are not claimed because the mandatory supported
-Sonnet journey was blocked before first-officer work; the first officer will
-choose the proof route from this durable checkpoint.
+provider-neutral command-log boundary without changing product behavior. The
+later exact-head Sonnet CI journey proves AC-2: implementation dispatched once,
+validation prepared and committed once, and the selected attempt remained open
+without a resolution, application, or successor dispatch.
