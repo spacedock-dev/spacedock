@@ -380,3 +380,12 @@ The durable oracle now recognizes ordinary dispatch/report, atomic first-worker,
 ### Summary
 
 Exact-head deterministic, full, race, retained-root, and one fresh Codex live run are green, and the cumulative deletion-led surface is exact. Validation nevertheless recommends **REJECTED** because four reproducible Material false greens show that those gates do not prove the promised parallel motion, newly bound room attribution, terminal archive state, or questioned re-shape.
+
+## Review-finding disposition (validation cycle 1 worker triage)
+
+- Serialized independent journeys: confirmed Material and task-owned. The released keep-moving workflow promises independent ready-ticket motion; a dispatch/report/terminal/archive sequence completed for one slug before the next engagement passes `970dec18d`, violating `value-ac[AC-1]`. Proposed fix: require every expected ticket's recognized engagement commit to precede the first recognized terminal commit.
+- Replaced preexisting room binding: confirmed Material and task-owned. In the supported approved-gate dispatch, replacing parent room A with room B plus a newly added B file passes, violating `value-ac[AC-2]`. Proposed fix: the narrow room exception requires the immediate parent to have no `room-ref`, not merely a different one.
+- Nonterminal canonical archive: confirmed Material and task-owned. A prior valid terminal commit followed by a canonical archive clearing `status`, `completed`, and `verdict` passes, violating `value-ac[AC-2]`. Proposed fix: require those terminal fields in the final canonical archive blob as well as in the recognized terminal boundary.
+- Unrelated questioned mutation: confirmed Material and task-owned. An unrelated-note-only child passes as the correction, violating `value-ac[AC-4]`. Proposed fix: require an entity-file-only commit that adds a durable Stage Report and a history transition away from the initial questioned stage, while the final entity remains active, nonterminal, and entity-owned.
+
+The validator's retained counterexamples and Feedback Cycle 1 are unchanged. A throwaway exact-`970dec18d` spike at `/tmp/spacedock-km-validation-fixes.XPeJNw/repo` makes only `internal/ensigncycle/shared_keep_moving_durable_test.go` `+111/-21`; all 24 per-ticket controls, parallel/serialized ordering pair, questioned meaningful/unrelated pair, and both retained real roots pass. Candidate `970dec18d` remains clean pending the First Officer's distinct fix authorization.
