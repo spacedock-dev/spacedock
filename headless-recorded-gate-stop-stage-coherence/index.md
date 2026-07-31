@@ -2,7 +2,7 @@
 title: Make the headless recorded-gate stop fixture stage-coherent
 status: ideation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
-started:
+started: 2026-07-31T00:32:10Z
 completed:
 verdict:
 score: 0.9
