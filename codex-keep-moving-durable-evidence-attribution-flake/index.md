@@ -551,3 +551,30 @@ The Git-only oracle now binds terminal proof to the first historical terminal si
 ### Summary
 
 Exact `ef2d558b7` is clean, every focused/full/race gate passes, all eight authorized negatives are red, and every retained supported journey remains `3/3` without another live run. Validation recommends **REJECTED** because current canonical archive loss still false-greens and the candidate documentation contradicts the approved complete-first-terminal behavior; this is Feedback Cycle 3 and requires captain escalation before implementation.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Verify exact head fba615fdf differs from ef2d558b7 only by the authorized runtime-live documentation correction and matches the complete-first-terminal-signal predicate.
+  `ef2d558b7..fba615fdf` changes only `docs/runtime-live-ci.md` at `+3/-2`; every Go byte is identical, and the corrected sentence requires terminal status, `completed`, and `verdict` together in the first post-report terminal signal, either as a separate commit or final archive.
+- DONE: Confirm the missing-current-archive and split-terminal widening findings remain declined with their recorded boundaries, while AC-1 through AC-4 retain the previously reproduced code evidence.
+  The captain declined archive absence as adversarial-only unless a supported workflow produces it and declined split-field widening; all eight terminal-history negatives and all four retained supported roots were independently re-run at exact head.
+- DONE: Run diff/format and appropriate repository checks without candidate mutation, new Roborev work, or another live journey; recommend PASSED or REJECTED.
+  `git diff --check`, empty `gofmt -l`, focused durable controls, four retained-root checks, and `go test ./...` passed; exact head stayed clean, with no reviewer or live-model invocation.
+- DONE: AC-1 - Every completed independent task is credited from its own durable journey.
+  Ordinary, atomic, complete-batch, and corroborated delayed-persistence histories plus retained roots `1137023568`, `1344046602`, `2756575595`, and `3245282000` each credit `3/3`; removing a supported worker/terminal/archive step still loses only its affected ticket.
+- DONE: AC-2 - Missing, stale, reordered, or cross-attributed durable steps remain red per task.
+  The full per-ticket table and all eight complete/status/completed/verdict premature-terminal and questioned-reopen variants reject their affected journey; current-archive removal remains a declined adversarial-only trigger outside the supported workflow.
+- DONE: AC-3 - The observer surface is smaller and provider-independent.
+  Cumulative direct surface is exactly 10 files at `+875/-1,449` (net `-574`), with the Go oracle byte-identical to its provider-neutral validated predecessor and the deleted transcript/provider observers still absent.
+- DONE: AC-4 - Repository and live confirmation gates are green.
+  Focused/full repository checks pass, previously race-green Go bytes are identical, and every retained exact live history regrades green without spending another live run.
+- SKIPPED: Add a missing-current-archive guard.
+  Captain ruling declines the adversarial-only case; promote only if a supported workflow produces current archive absence.
+- SKIPPED: Broaden terminal proof to split fields.
+  No accepted or retained journey uses that shape, and the corrected documentation now matches the approved complete-first-terminal signal.
+- SKIPPED: Run Roborev or another live model journey.
+  The focused captain override forbids both; the one-file documentation delta and unchanged exercised code required no rerun.
+
+### Summary
+
+Exact `fba615fdf` is clean and changes only the authorized documentation sentence, which now matches the validated complete-first-terminal predicate without widening code. With all supported deterministic and retained-live evidence green and the two out-of-scope variants authoritatively declined, validation recommends **PASSED**.
