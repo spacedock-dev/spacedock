@@ -6,7 +6,7 @@ started: 2026-07-31T00:32:10Z
 completed:
 verdict:
 score: 0.9
-worktree:
+worktree: .worktrees/spacedock-ensign-headless-recorded-gate-stop-stage-coherence
 issue:
 milestone: 0.27.0
 id: 26nk8qd48zknqnn4kc123sez
