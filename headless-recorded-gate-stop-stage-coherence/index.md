@@ -1,6 +1,6 @@
 ---
 title: Make the headless recorded-gate stop fixture stage-coherent
-status: validation
+status: implementation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started: 2026-07-31T00:32:10Z
 completed:
@@ -236,6 +236,7 @@ without a resolution, application, or successor dispatch.
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation/PR #583 Sonnet evidence; surface 3 test files/+52/-10 vs estimate 3 test files/+60/-10 (87% of insertion ceiling); AC unchanged. The supported run reached the open validation gate without authority crossing, but it skipped implementation and the grader credited a validation dispatch plus pre-prepare status repair as the required implementation dispatch. Route only this Material task-owned false green: require a successful implementation-stage dispatch before prepare and reject validation/status-repair substitution; do not add provider/transcript grammar or change product gate semantics.
+- Cycle 2: REJECTED — validation/adversarial ordering trace; surface 3 test files/+59/-10 vs estimate 3 test files/+60/-10 (98% of insertion ceiling); AC unchanged. The Cycle-1 predicate rejects every successful pre-prepare status mutation, including the required post-implementation transition into validation, so the correct implementation→validation→open-gate lifecycle can never pass. Design reset: reaffirm AC-2 and the same three-test-file/provider-neutral boundary, reset the ceiling to +75/-12, and route only command ordering—reject status repair before implementation dispatch while permitting the normal validation transition after it.
 
 ## Stage Report: validation
 
