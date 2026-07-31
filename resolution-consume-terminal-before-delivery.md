@@ -24,6 +24,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:f808d3e34848fa57e0df5e17b9e278ccce23b1c7d8a77548f944bda23ce7a343
                 room-ref: ./resolution-consume-terminal-before-delivery/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:1w62z8c5fq5g5cmhzf5sd79w:backlog:1
+                briefing: briefing:1w62z8c5fq5g5cmhzf5sd79w:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-31T14:25:14.857596Z"
+                decision: approve
+                reason: 'Captain''s explicit order in this session (2026-07-31): dispatch ideation for 1w62 and discuss the proposed solution with him — accepts the direction that the consume-into-done semantic hole (caught at z3''s merge boundary) must be designed before further terminal-consume ceremonies ratify the pattern.'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 A gate approval on a terminal-target stage (`validation → done`) is *immediately consumable into terminal status*: the binding approval's authority is marked spent (`consumed=true`) and the entity's status flips to `done` at consume time, while delivery (PR push, CI, merge) and workflow terminal fields (`verdict`, `completed`) remain pending. Three desyncs follow:
