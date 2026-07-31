@@ -62,14 +62,14 @@ gates:
                 state: consumed
                 blockers: []
 review-round:
-    id: round:26nk8qd48zknqnn4kc123sez:implementation:9
+    id: round:26nk8qd48zknqnn4kc123sez:implementation:10
     stage: implementation
-    cycle: 9
+    cycle: 10
     briefing:
-        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-9
-        digest: sha256:f4015eb291ca4e11cfea60a282e57c858a0b7d48dbde132e1d5cc3af8cdf6be6
+        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-10
+        digest: sha256:7ece44670335a772324ed9622d7655664ae4d1679c4becd22e796e6c4bb757ec
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-9
+        room-ref: ./review/implementation/round-10
 ---
 
 ## Problem statement
@@ -266,6 +266,8 @@ without a resolution, application, or successor dispatch.
 - Cycle 8: REJECTED — validation/ordered stage dispatches; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
 
 - Cycle 9: REJECTED — validation/status transition placement; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
+
+- Cycle 10: REJECTED — validation/single-copy retention; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
 
 ## Stage Report: validation
 
@@ -598,3 +600,20 @@ The correction remains test-only and at the existing cumulative insertion cap.
 REJECTED. The supported Sonnet journey itself is now stage-coherent and stops at
 one unresolved gate, but the harness copies its retained Git tree twice and
 fails after success. Candidate `43a1b8db4` remains unchanged.
+
+## Stage Report: implementation (cycle 10)
+
+- DONE: Make existing workflow retention single-copy per outcome: success retains once, failure cleanup retains once, and cleanup does not overwrite an already retained tree.
+  Commit `92dadede5` leaves direct success retention and absent-destination failure copying unchanged, but makes registered cleanup stop when `artifactDir/workflow` is already a directory, preventing the second write over read-only Git objects.
+- DONE: Prove both success and failure cleanup paths with the existing retention/regrade test while preserving the 21-event journey matrix and all prior authority mutants.
+  The focused test now directly retains and regrades the success tree, registers a separate failure destination, runs both cleanups, and regrades the failure-retained tree. It failed red at the duplicate success cleanup under frozen `43a1b8db4`; after the guard, both outcomes and the complete journey mutation test pass.
+- DONE: Remain within three files and cumulative +90/-15 by replacing/cutting, run focused/full/race/format/diff checks, and record the advisory disposition; stop on overage and do not spend Sonnet in implementation.
+  The correction is two existing test files, +10/-10; cumulative scope remains exactly three files, +90/-11. Focused success/failure retention, 21-event journey, and queued-fixture tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` passed, and implementation round 10 validates `all-fixed`.
+- SKIPPED: Run another live provider journey or add an artifact framework, provider/transcript parser, shell grammar, or product behavior.
+  The retained failure and deterministic permission reproduction isolate the duplicate-copy lifecycle, and the authorized existing mechanism now owns exactly one copy per outcome.
+
+### Summary
+
+Cycle 10 makes retained workflow ownership idempotent at cleanup: success keeps
+its first copy, while failure still receives one cleanup copy. The full journey
+oracle remains unchanged and the correction stays at the cumulative line cap.
