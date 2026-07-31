@@ -232,3 +232,30 @@ provider-neutral command-log boundary without changing product behavior. The
 later exact-head Sonnet CI journey proves AC-2: implementation dispatched once,
 validation prepared and committed once, and the selected attempt remained open
 without a resolution, application, or successor dispatch.
+
+## Stage Report: validation
+
+- DONE: Verify AC-1 against the real fixture boot and on-disk starting state.
+  `TestImplementationStartRecordedGateFixtureIsStageCoherent` passed from an isolated Go cache; changing current/next, adding a ready or selected gate, retaining the validation report, or restoring the completed-stage snapshot makes it fail.
+- FAILED: Verify AC-2 from the supported Sonnet journey's durable and provider-neutral evidence.
+  PR #583 run 30595653496/job 91047460694 passed at 303.92s, but archived command-log lines 15-22 show `status ... --set ... status=validation started` followed by `dispatch build ... --stage validation`; the final entity has only a validation report, so implementation was never dispatched.
+- DONE: Verify the exact candidate bytes and AC-3's declared semantic surface.
+  Candidate `854ffa62b` and CI's synthetic merge commit `6cbb0981f` share tree `c1d7f9235`; diff inspection is exactly 52 insertions/10 deletions in the three authorized test files, with no production, grammar, format, authority, or runtime implementation change.
+- DONE: Reproduce the focused live-tag grader and perform the semantic adversarial pass.
+  The focused fixture/mutant tests pass, but replacing the accepted pre-prepare dispatch stage with validation still satisfies `assertRecordedGateHoldLog`, proving the grader can pass while AC-2's observable lifecycle is wrong.
+- DONE: Classify the finding by trigger, harm, value boundary, and evidence.
+  Released workflow: supported PR #583 Sonnet lane; observable harm: false green and false implementation-dispatch claim; `value-ac[AC-2]:` requires implementation → validation → one open gate; trigger evidence: archived command-log lines 15-22 plus the validation-only final entity.
+- DONE: Record First Officer disposition and the minimum owned remedy.
+  Material; outcome and evidence defect; task-owned; FIX authorized for implementation, requiring a successful `dispatch build --stage implementation` before validation and rejecting any earlier status repair/validation dispatch that substitutes for it.
+- SKIPPED: Re-run full and race suites after the material finding.
+  The review-finding checkpoint keeps candidate bytes unchanged and forbids a reviewer rerun after the finding; prior implementation evidence and the exact-tree offline CI job are green, but they cannot cure AC-2.
+- DONE: Produce a PASSED/REJECTED recommendation with deferred risks separated.
+  REJECTED on the single Material AC-2 finding; no separate deferred-risk or polish findings.
+
+### Summary
+
+REJECTED. The fixture starts coherently, but the supported Sonnet proof skipped
+implementation and dispatched validation after a status repair; the new grader
+accepted that wrong lifecycle. The candidate remains exactly `854ffa62b`, and
+the minimum correction is confined to making the ordered lifecycle proof require
+implementation dispatch before any transition that could substitute validation.
