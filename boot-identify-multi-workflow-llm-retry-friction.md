@@ -562,3 +562,48 @@ Cycle 8 rebases the accepted argv-ledger implementation onto current main, prese
 ### Deferred Risks
 
 - Replacement PR creation and entity/PR binding remain First Officer work; PR #551 is intentionally unchanged until that replacement exists.
+
+## Stage Report: validation (cycle 8)
+
+- DONE: Inspect exact head 1dde8edd0 against current main and verify the 25-path rebased candidate preserves current 0.27 gate/review behavior while adding only the approved self-describing boot and execution-grounded evidence semantics.
+  Remote main/candidate resolve to `59dc90a21`/`1dde8edd0`; the exact diff is 25 paths, +842/-641. Gate lifecycle/review routing and ready-gate tests pass; the sole FO core cap is 27,194 bytes.
+- DONE: Reproduce focused durable-round, argv-ledger, filing, shared boot, status, and contractlint checks plus full, race, format, and the existing Pi live after-only journey.
+  Focused suites, `go test ./...`, `go test ./... -race`, `gofmt -l ./cmd ./internal`, and `git diff --check` passed; two fresh required Pi live runs passed in 27.55s and 32.57s.
+- DONE: Cross-check every acceptance criterion and perform the semantic adversarial/Roborev pass with classified findings before recommending PASSED or REJECTED.
+  AC-1–4 evidence was independently reproduced; Roborev job 428 findings were reproduced, classified, sent to the FO, and dispositioned without candidate mutation or reviewer rerun.
+
+### Acceptance Criteria Cross-check
+
+- AC-1 PASSED: the native two-workflow fixture and retained Pi payload emit ordered `command`/`discovery` plus the exact typed terminal envelope and `workflow_count == len(discovery)`; deleting or corrupting any field fails the focused status test.
+- AC-2 PASSED: zero/one/many, unflagged/native boot, local PR mirror, ready-gate, no-`gh`, and no-state-mutation checks pass; the current repository root independently deep-boots its single discovered workflow.
+- AC-3 PASSED: the retained fresh Pi ledger contains only `spacedock --version` and one `status --boot --identify --json`; no named retry/helper/convergence call occurs, stderr is empty, and both workflow paths plus the exact standalone greeting are present.
+- AC-4 PASSED: contractlint/topology, docs-bearing full suite, command-reference inspection, and the fresh Pi greeting verify the user/operator discovery-only terminal branch while current 0.27 gate/review text remains intact.
+
+### Semantic Adversarial Matrix
+
+- Cardinality/terminal/type/order: zero halts, one deep-boots, and two returns the v1 terminal envelope; compatibility keys remain first, `terminal` is boolean, count is numeric/exact, and the record ends in valid atomic JSON.
+- Event/durable variants: duplicate identify, other status, `jq`, `python3`, `go run`, `state ready`, workflow-specific boot, wrong/embedded greeting, missing workflow, entity/git mutation, and convergence artifacts are all rejected by checked-in negative controls.
+- Authority/scaling: boot and filing claims consume executed NUL-delimited argv, while round value consumes canonical entity/room bytes plus `gates.ValidateRoundFile`; the envelope adds constant fields and no new I/O, loop, allocation growth, or size boundary.
+
+### Roborev Finding Dispositions
+
+- R1 — released workflow: default suite; harm: claimed compile failure; authority: `contract[AGENTS.md#Expected Commands]`; trigger: refuted by live-tagged callers and passing default/live builds.
+  Materiality: invalid observation/Polish. Ownership: none. Disposition: FO-authorized decline.
+- R2 — released workflow: multi-workflow boot; harm: hypothetical unseen helper retry; authority: `value-ac[AC-3]`; trigger: unobserved and outside the named `status`/`jq`/`python3`/`go run` evidence set.
+  Materiality: Deferred risk/evidence gap. Ownership: scenario harness/scope decision. Disposition: FO-authorized decline; promote if a supported run emits another discovery/retry helper or AC-3 broadens.
+- R3 — released workflow: multi-workflow boot; harm: hypothetical idle worker/token cost; authority: `contract[skills/first-officer/references/first-officer-shared-core.md#state.boot]`; trigger: unobserved, and this fresh trace contains only `read`/`bash`, no worker/subagent call.
+  Materiality: Deferred risk/evidence gap. Ownership: host scenario harness. Disposition: FO-authorized decline; promote on an observed supported pre-selection dispatch or value-AC expansion.
+- R4 — released workflow: rejection-round recording; harm: none established; authority: `contract[docs/dev/README.md#Review-finding disposition]`; trigger: hypothetical hand-authoring despite canonical durable bytes and validator success.
+  Materiality: Polish/mechanism preference. Ownership: outside the authorized durable-value boundary. Disposition: FO-authorized decline; do not restore host transcript grammar or add a ledger consumer.
+
+### Material Findings
+
+- None.
+
+### Recommendation
+
+**PASSED.** Exact head `1dde8edd0` satisfies AC-1–4 on current main with no material finding; R2/R3 remain separately recorded deferred risks with concrete promotion conditions.
+
+### Summary
+
+Validation independently reproduced the rebased candidate’s product, compatibility, durable-round, execution-ledger, formatting, baseline, race, and live Pi evidence without changing candidate bytes. The current 0.27 gate/review contract survives, all acceptance criteria pass, and the authorized Roborev dispositions leave no material gate blocker.
