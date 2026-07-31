@@ -186,3 +186,16 @@ The defect is a host-shape mismatch, not missing prose: Codex accepted a bare ar
 ### Summary
 
 Cycle 2 removes every standing event-parser and keep-moving observer change from f02. The task now owns only the mechanical Codex host-mode correction, its adapter/help/docs coverage, and one-off live roster-plus-durable-state validation; 8b remains the sole owner of any redesigned automated attribution oracle.
+
+## Stage Report: implementation
+
+- DONE: Reject `host=codex + bare_mode=true` before dispatch artifact creation while preserving named Codex output and Claude/Pi host shapes.
+  Commit `959d6d850` adds the pre-assembly exit-2 guard; `TestBuildCodexHostRejectsBareModeBeforeArtifactCreation` fails if bare Codex writes its deterministic artifact or named Codex loses `name`/`prompt`, while the host-parity selection fails on Claude bare/merged or Pi native-shape drift.
+- DONE: Update the Codex adapter, dispatch help, and runtime host-shape docs within the approved seven-file, 45-70 insertion design.
+  Commit `959d6d850` changes exactly 7 files at +55/-2; help pins the exception, both runtime guides require rejecting unrepresentable modes, and contractlint fails if the adapter diverges from `task_name,message,fork_turns="none"`.
+- DONE: Run focused/parity/full/race checks, then retain one positive live roster-to-durable-worker journey and one named-build/no-spawn stop control.
+  Focused dispatch/adapter/help tests, host parity, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and `git diff --check` pass; the named-build/no-spawn roster was empty before report reads, while spawned task `/root/spacedock_ensign_codex_approved_gate_worker_spawn_implementation/spacedock_ensign_approved_gate_implementation` appeared running before reads and authored clean temp commit `852a12a50fb3914ef8d253c8c5719efd65ca1f34`, report, proof, and `status=done`.
+
+### Summary
+
+Codex bare mode now fails honestly at the dispatch boundary with the approved diagnostic, while normal named Codex, Claude, and Pi semantics remain intact. The implementation stays inside the seven-file mechanical surface and proves the value through a one-off native roster observation followed by worker-authored durable state, without adding an observer or provider dialect.
