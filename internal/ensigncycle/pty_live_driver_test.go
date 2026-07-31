@@ -67,8 +67,8 @@ func (d ptyLiveDriver) withStubPATH(dir string) liveDriver {
 	return d
 }
 
-func (d ptyLiveDriver) withInvocationLedger(ledger testInvocationLedger) liveDriver {
-	d.env = ledger.instrumentEnv(d.env)
+func (d ptyLiveDriver) withInvocationLedger(t *testing.T, ledger testInvocationLedger) liveDriver {
+	d.env = withSpacedockShimShellEnv(t, ledger.instrumentEnv(d.env), ledger.shimDir)
 	return d
 }
 
