@@ -539,3 +539,22 @@ Cycle 8 makes the headless oracle stage-specific: implementation and validation
 are both required before the gate, while any dispatch after preparation remains
 an authority crossing. The correction changes no product behavior and stays at
 the existing cumulative insertion ceiling.
+
+## Stage Report: validation (cycle 8)
+
+- FAILED: Reconstruct the corrected queued -> implementation -> gated-validation journey and independently verify every prior authority-crossing mutant still fails.
+  Exact candidate `e6bd2a387`; the focused queued/ordered-dispatch/retention suite passed in 2.8s, but a detached exact-trace audit proved both missing and late implementation-to-validation status transitions are accepted while both dispatches and the open-gate tail remain intact.
+- SKIPPED: Run one fresh supported Sonnet live journey and preserve its durable state, gate-room, command-log, and open-unresolved gate evidence; do not substitute aggregate or cached evidence.
+  The required cheap preflight exposed a deterministic AC-2 false green, so validation stopped before model spend and claims no prior, aggregate, cached, transcript, provider, or shell-derived substitute.
+- DONE: Cross-check AC-1 through AC-3, the three-file +81/-10 surface, focused/full/race/format evidence, and recommend PASSED or REJECTED with the candidate frozen on any new finding.
+  AC-1 remains green and AC-3 is three files at actual cumulative `+90/-11` within the captain-reset `+90/-15`, with focused/diff green and implementation-recorded full/race/format green. AC-2's exact lifecycle can still false-green, so the recommendation is REJECTED at frozen `e6bd2a387`.
+- DONE: Classify the detached finding and retain the First Officer disposition before candidate mutation or rerun.
+  Released workflow: implementation-to-validation handoff before validation dispatch; harm: missing or late handoff is certified as coherent; `value-ac[AC-2]:` requires entering validation after implementation and before its worker dispatch; trigger: both detached mutants return nil from the oracle. Material; task-owned evidence defect; FIX authorized.
+- DONE: Bound and preserve the authorized handoff correction.
+  Require exactly one successful `status=validation` after implementation dispatch and before validation dispatch; reject missing, late, duplicate, or other repair while retaining every prior dispatch and post-prepare authority mutant. Mutants remain at `/tmp/spacedock-cycle8-audit.aV1FQF/worktree`; no live rerun, parser, product change, unrelated cleanup, or overage.
+
+### Summary
+
+REJECTED. Ordered dispatches are now stage-specific, but the oracle does not
+require the state handoff between them and accepts both missing and late
+transitions. Sonnet was not spent, and candidate `e6bd2a387` is unchanged.
