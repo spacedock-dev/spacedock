@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f02j6dbnd4jakwczahv1tg2h:ideation:attempt-1:revision-1",
+  "question": "Approve the seven-file Codex bare-mode refusal and named-spawn correction for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:f02j6dbnd4jakwczahv1tg2h:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/066ab0a9a354efb71231a3bd71f6dff6fcdf5394/codex-approved-gate-worker-spawn/index.md",
+      "rev": "sha256:702cae10c385a756f770e069eeefa79b65965bef1256da67d32831c557ce6407",
+      "mediaType": "text/markdown",
+      "summary": "Ideation reproduced the exact root cause: Codex accepted `bare_mode=true`, which intentionally omitted the task name required by its only native `spawn_agent` call. The revised seven-file design rejects that unsupported host/mode before artifact creation, binds Codex to named dispatch, preserves Claude/Pi shapes, and uses one-off live roster plus durable worker output for value proof. It adds no keep-moving observer edit, transcript/provider parser, receipt, schema, controller, retry, or KD change; automated durable attribution remains owned by 8b."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:f02j6dbnd4jakwczahv1tg2h:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/066ab0a9a354efb71231a3bd71f6dff6fcdf5394/codex-keep-moving-durable-evidence-attribution-flake/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:b1fa0bef11fce3253f8b42c9a219f4ccf006c56df2fc37eb1c0d1c910685b5c9"
+    }
+  ]
+}
