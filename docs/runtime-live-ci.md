@@ -36,16 +36,18 @@ Assertions prefer durable workflow state over transcript phrasing: entity frontm
 
 Keep-moving completion is provider-independent. Each expected task must have its own
 worker proof: either a dispatch with `started` followed by a later entity-file-only Stage
-Report, or one entity-file-only child adding `started` and the new report over a parent with
-neither. A dispatch may add only gate-room files newly bound below that revision's exact-slug
+Report, or one child adding `started` and the new report over a parent with neither. A dispatch
+or atomic worker child may add only gate-room files newly bound below that revision's exact-slug
 `room-ref`; the first terminal signal after the worker report must already include terminal
 status, `completed`, and `verdict`. That complete transition may be a separate commit or the
 final entity-owned archive.
 All expected tasks must engage before any one terminalizes, and that final archive must retain
 terminal fields. A questioned hold requires a stage transition and ticket-file-only Stage Report
 without any historical terminal status or field.
-Dispatch and terminal commits may span the complete expected-ticket set, but never a partial set
-or foreign ticket; worker reports and canonical archives remain individually attributed.
+Dispatch commits may start two or more expected tickets, but credit only those valid starts;
+omitted tickets still need their own dispatch. A split batch may carry `questioned` only through
+its nonterminal review-to-ideation start. Terminal batches require the complete expected set;
+neither batch form admits a foreign ticket, and reports and archives remain individually attributed.
 When a report persists a previously set start after another ticket terminalizes, canonical
 timestamps count only if two earlier ticket engagements corroborate a frontier no earlier than
 every expected start, and every expected start strictly predates the earliest completion.

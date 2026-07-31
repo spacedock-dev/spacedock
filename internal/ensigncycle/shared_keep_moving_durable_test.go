@@ -61,12 +61,12 @@ func durableTaskJourney(t *testing.T, root, slug, stage string, batchExpected ma
 	reportBefore, unscopedReport, archived := false, false, false
 	for i, c := range history {
 		hasReport := strings.Contains(c.blob, "\n## Stage Report: "+stage+"\n")
-		atomicWorker := durableAtomicWorkerProof(history, i, stage)
+		atomicWorker := durableAtomicWorkerProof(history, i, slug, stage)
 		if firstTerminal < 0 && durableTerminalState(c.blob) {
 			firstTerminal = i
 		}
 		if durableDispatchProof(history, i, slug, stage) ||
-			durableBatchDispatchProof(t, root, c, batchExpected) {
+			durableBatchDispatchProof(t, root, c, slug, batchExpected) {
 			dispatch = i
 		}
 		if atomicWorker {
@@ -127,7 +127,10 @@ func durableDispatchProof(history []durableCommit, i int, slug, stage string) bo
 	if i == 0 {
 		return false
 	}
-	room := durableNewRoomRef(history[i-1].blob, c.blob, slug)
+	return durableNewRoomScope(history[i-1].blob, c, slug)
+}
+func durableNewRoomScope(parent string, c durableCommit, slug string) bool {
+	room := durableNewRoomRef(parent, c.blob, slug)
 	if room == "" {
 		return false
 	}
@@ -146,7 +149,7 @@ func durableNewRoomRef(parent, child, slug string) string {
 	}
 	return room
 }
-func durableBatchDispatchProof(t *testing.T, root string, c durableCommit, expected map[string]string) bool {
+func durableBatchDispatchProof(t *testing.T, root string, c durableCommit, target string, expected map[string]string) bool {
 	if len(expected) < 2 {
 		return false
 	}
@@ -154,13 +157,18 @@ func durableBatchDispatchProof(t *testing.T, root string, c durableCommit, expec
 	for _, path := range c.files {
 		changed[path] = true
 	}
+	started := 0
 	for slug, stage := range expected {
 		path := slug + ".md"
+		if !changed[path] {
+			continue
+		}
 		parent, child := durableBlobAt(root, c.hash+"^", slug), durableBlobAt(root, c.hash, slug)
-		if !changed[path] || durableField(parent, "started") != "" ||
+		if durableField(parent, "started") != "" ||
 			durableField(child, "status") != stage || durableField(child, "started") == "" {
 			return false
 		}
+		started++
 		allowed[path] = true
 		if durableRoomRef(parent) != durableRoomRef(child) {
 			if rooms[slug] = durableNewRoomRef(parent, child, slug); rooms[slug] == "" {
@@ -168,11 +176,15 @@ func durableBatchDispatchProof(t *testing.T, root string, c durableCommit, expec
 			}
 		}
 	}
+	if started < 2 || !allowed[target+".md"] {
+		return false
+	}
 	if changed[kmQuestioned+".md"] {
 		parent := durableBlobAt(root, c.hash+"^", kmQuestioned)
 		child := durableBlobAt(root, c.hash, kmQuestioned)
 		rooms[kmQuestioned] = durableNewRoomRef(parent, child, kmQuestioned)
-		if rooms[kmQuestioned] == "" {
+		reworked := durableQuestionedBatchRework(parent, child)
+		if started < len(expected) && !reworked || rooms[kmQuestioned] == "" && !reworked {
 			return false
 		}
 		allowed[kmQuestioned+".md"] = true
@@ -190,6 +202,11 @@ func durableBatchDispatchProof(t *testing.T, root string, c durableCommit, expec
 		}
 	}
 	return true
+}
+func durableQuestionedBatchRework(parent, child string) bool {
+	return durableField(parent, "status") == "review" && durableField(parent, "started") == "" &&
+		durableField(child, "status") == "ideation" && durableField(child, "started") != "" &&
+		!durableTerminalState(child)
 }
 func durableBatchTerminalProof(root string, c durableCommit, expected map[string]string) bool {
 	if len(expected) < 2 || len(c.files) != len(expected) {
@@ -217,8 +234,8 @@ func durableRoomRef(content string) string {
 	}
 	return strings.TrimPrefix(room, "./")
 }
-func durableAtomicWorkerProof(history []durableCommit, i int, stage string) bool {
-	if i == 0 || !history[i].entityFileScoped {
+func durableAtomicWorkerProof(history []durableCommit, i int, slug, stage string) bool {
+	if i == 0 || (!history[i].entityFileScoped && !durableNewRoomScope(history[i-1].blob, history[i], slug)) {
 		return false
 	}
 	report := "\n## Stage Report: " + stage + "\n"
@@ -421,6 +438,12 @@ func TestDurableTaskJourneys(t *testing.T) {
 		{"atomic report only", "atomic-report-only", "ready-one", "dispatch entry"},
 		{"atomic foreign path", "atomic-foreign-path", "ready-one", "dispatch entry"},
 		{"atomic slug prefix", "atomic-slug-prefix", "ready-one", "dispatch entry"},
+		{"atomic worker gate room", "atomic-room", "", ""},
+		{"atomic worker preexisting room", "atomic-room-preexisting", "ready-one", "dispatch entry"},
+		{"atomic worker replaced room", "atomic-room-replaced", "ready-one", "dispatch entry"},
+		{"atomic worker modified room file", "atomic-room-modified", "ready-one", "dispatch entry"},
+		{"atomic worker path outside room", "atomic-room-outside", "ready-one", "dispatch entry"},
+		{"atomic worker slug prefix room", "atomic-room-prefix", "ready-one", "dispatch entry"},
 		{"dispatch gate room", "dispatch-room", "", ""},
 		{"dispatch preexisting room", "dispatch-room-preexisting", "ready-one", "dispatch entry"},
 		{"dispatch preexisting different room", "dispatch-room-preexisting-different", "ready-one", "dispatch entry"},
@@ -459,6 +482,17 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 	}
 	room := "ready-one/review/review/briefing-1"
 	roomFile := room + "/gate-briefing.json"
+	if mutation == "atomic-room-preexisting" {
+		path := filepath.Join(root, "ready-one.md")
+		writeFile(t, path, durableBindRoom(readFile(t, path), room))
+	}
+	if mutation == "atomic-room-replaced" {
+		path := filepath.Join(root, "ready-one.md")
+		writeFile(t, path, durableBindRoom(readFile(t, path), "ready-one/review/review/old-briefing"))
+	}
+	if mutation == "atomic-room-modified" {
+		writeFile(t, filepath.Join(root, roomFile), "old\n")
+	}
 	if mutation == "dispatch-room-preexisting" {
 		path := filepath.Join(root, "ready-one.md")
 		writeFile(t, path, durableBindRoom(readFile(t, path), room))
@@ -533,7 +567,23 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 			if !(atomic && mutation == "atomic-preexisting-report") {
 				durableAppendReport(t, root, slug)
 			}
-			if (mutation == "cross-attributed-report" || mutation == "atomic-foreign-path") && slug == "ready-one" {
+			if strings.HasPrefix(mutation, "atomic-room") && slug == "ready-one" {
+				path := filepath.Join(root, slug+".md")
+				workerRoom := room
+				if mutation == "atomic-room-prefix" {
+					workerRoom = "ready-one-other/review/review/briefing-1"
+				}
+				if mutation != "atomic-room-preexisting" {
+					writeFile(t, path, durableBindRoom(readFile(t, path), workerRoom))
+				}
+				workerRoomFile := workerRoom + "/gate-briefing.json"
+				if mutation == "atomic-room-outside" {
+					workerRoomFile = "ready-one/review/review/briefing-2/gate-briefing.json"
+				}
+				writeFile(t, filepath.Join(root, workerRoomFile), "new\n")
+				git(t, root, "add", "--", slug+".md", workerRoomFile)
+				git(t, root, "commit", "-q", "-m", "worker: "+slug, "--", slug+".md", workerRoomFile)
+			} else if (mutation == "cross-attributed-report" || mutation == "atomic-foreign-path") && slug == "ready-one" {
 				writeFile(t, filepath.Join(root, "ready-two.md"), readFile(t, filepath.Join(root, "ready-two.md"))+"\ncross-attributed\n")
 				git(t, root, "add", "--", "ready-one.md", "ready-two.md")
 				git(t, root, "commit", "-q", "-m", "worker: wrong scope", "--", "ready-one.md", "ready-two.md")
@@ -715,15 +765,28 @@ func durableAddQuestionedTerminalHistory(t *testing.T, root, field string) strin
 func TestDurableKeepMovingBatchMotion(t *testing.T) {
 	tests := []struct {
 		name, mutation, reason string
-	}{{"full set", "", ""}, {"partial set", "partial", "dispatch"}, {"foreign path", "foreign", "dispatch"}}
+	}{
+		{"full set", "", ""},
+		{"split batch with questioned rework", "split", ""},
+		{"split batch unrelated questioned", "split-questioned-unrelated", "dispatch"},
+		{"partial set", "partial", "dispatch"},
+		{"foreign path", "foreign", "dispatch"},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := assertDurableKeepMoving(t, durableBatchKeepMovingFixture(t, tt.mutation))
+			root := durableBatchKeepMovingFixture(t, tt.mutation)
+			err := assertDurableKeepMoving(t, root)
 			if tt.reason == "" && err != nil {
 				t.Fatal(err)
 			}
 			if tt.reason != "" && (err == nil || !strings.Contains(err.Error(), tt.reason)) {
 				t.Fatalf("batch motion error = %v, want reason containing %q", err, tt.reason)
+			}
+			if tt.mutation == "partial" {
+				completed, failures := gradeDurableTaskJourneys(t, root, kmExpected(), kmExpected())
+				if completed != 2 || len(failures) != 1 || !strings.Contains(failures[kmReadyTwo], "dispatch") {
+					t.Fatalf("partial batch = %d/3, failures=%v; want only omitted %s red", completed, failures, kmReadyTwo)
+				}
 			}
 		})
 	}
@@ -734,15 +797,39 @@ func durableBatchKeepMovingFixture(t *testing.T, mutation string) string {
 	for _, slug := range slugs {
 		writeFile(t, filepath.Join(root, slug+".md"), durableEntity(slug, kmNextStage, "", ""))
 	}
+	split := strings.HasPrefix(mutation, "split")
+	if split {
+		writeFile(t, filepath.Join(root, kmQuestioned+".md"), durableEntity(kmQuestioned, "review", "", ""))
+	}
 	gitInit(t, root)
+	if split {
+		path := filepath.Join(root, kmApprovedGate+".md")
+		writeFile(t, path, strings.Replace(readFile(t, path), "started: ", "started: now", 1))
+		gitCommitPathScoped(t, root, kmApprovedGate+".md", "dispatch: "+kmApprovedGate+" entering "+kmNextStage)
+	}
 	var paths []string
 	for i, slug := range slugs {
 		if mutation == "partial" && i == len(slugs)-1 {
 			continue
 		}
+		if split && slug == kmApprovedGate {
+			continue
+		}
 		path := slug + ".md"
 		writeFile(t, filepath.Join(root, path), strings.Replace(readFile(t, filepath.Join(root, path)), "started: ", "started: now", 1))
 		paths = append(paths, path)
+	}
+	if split {
+		path := filepath.Join(root, kmQuestioned+".md")
+		content := readFile(t, path)
+		if mutation == "split" {
+			content = strings.Replace(content, "status: review", "status: ideation", 1)
+			content = strings.Replace(content, "started: ", "started: now", 1)
+		} else {
+			content += "\nunrelated note\n"
+		}
+		writeFile(t, path, content)
+		paths = append(paths, kmQuestioned+".md")
 	}
 	if mutation == "foreign" {
 		writeFile(t, filepath.Join(root, "foreign.md"), "foreign\n")
@@ -753,6 +840,10 @@ func durableBatchKeepMovingFixture(t *testing.T, mutation string) string {
 	for _, slug := range slugs {
 		durableAppendReport(t, root, slug)
 		gitCommitPathScoped(t, root, slug+".md", "worker: "+slug)
+	}
+	if split {
+		durableAppendStageReport(t, root, kmQuestioned, "ideation")
+		gitCommitPathScoped(t, root, kmQuestioned+".md", "reshape questioned")
 	}
 	paths = nil
 	for _, slug := range slugs {
@@ -771,6 +862,9 @@ func durableBatchKeepMovingFixture(t *testing.T, mutation string) string {
 		git(t, root, "rm", "-q", "--", slug+".md")
 		git(t, root, "add", "--", "_archive/"+slug+".md")
 		git(t, root, "commit", "-q", "-m", "archive: "+slug)
+	}
+	if split {
+		return root
 	}
 	return durableAddQuestioned(t, root, true)
 }
