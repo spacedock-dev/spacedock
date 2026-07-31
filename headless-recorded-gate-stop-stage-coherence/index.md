@@ -1,6 +1,6 @@
 ---
 title: Make the headless recorded-gate stop fixture stage-coherent
-status: validation
+status: implementation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started: 2026-07-31T00:32:10Z
 completed:
@@ -251,6 +251,7 @@ without a resolution, application, or successor dispatch.
 - Cycle 2: REJECTED — validation/adversarial ordering trace; surface 3 test files/+59/-10 vs estimate 3 test files/+60/-10 (98% of insertion ceiling); AC unchanged. The Cycle-1 predicate rejects every successful pre-prepare status mutation, including the required post-implementation transition into validation, so the correct implementation→validation→open-gate lifecycle can never pass. Design reset: reaffirm AC-2 and the same three-test-file/provider-neutral boundary, reset the ceiling to +75/-12, and route only command ordering—reject status repair before implementation dispatch while permitting the normal validation transition after it.
 - Cycle 3: REJECTED — validation/root-cause escalation/captain; surface 3 test files/+63/-10 vs reset ceiling 3 test files/+75/-12 (84% of insertion ceiling); AC revised, not narrowed. Captain ruling: the behavior is not Sonnet-specific and is not a product scheduler defect. Initial stages intentionally project their successor, so `current=implementation,next=validation` correctly dispatched validation; 26n's fixture and AC-2 contradicted that contract while its coherence test blessed the row. Re-scope the same three-test-file task to a `queued` initial stage whose successor is implementation, then require implementation report → validation transition → one open gate. Retain a line-local successful-status-set detector for the pre-dispatch and post-prepare authority boundaries, without transcript/provider parsing. Reset the ceiling to +90/-15; no product command, storage, authority, or runtime semantic changes.
 - Cycle 4: REJECTED — validation/exact journey trace; surface 3 test files/+81/-10 vs reset ceiling 3 test files/+90/-15 (90% of insertion ceiling); AC unchanged. The corrected queued topology is coherent, but the grader rejects the normal successful queued→implementation status transition before implementation dispatch. FIX authorized only for that line-local false negative: allow the implementation transition, reject pre-dispatch validation repair, and preserve all post-prepare mutation rejection; no product, provider, transcript, or shell-parser expansion.
+- Cycle 5: REJECTED — validation/evidence-retention preflight; surface 3 test files/+85/-10 vs reset ceiling 3 test files/+90/-15 (94% of insertion ceiling); AC unchanged. The exact queued journey and prior mutants pass, but the mandatory live runner deletes the durable entity, state Git, gate room, and command log after a green run. FIX authorized only to retain the exercised workflow tree beneath the existing scenario artifact directory and prove those existing artifacts remain gradeable; no generic artifact framework or transcript/provider substitution.
 
 - Cycle 5: REJECTED — validation/exact queued journey trace; surface 3 test files/+85/-10 vs estimate 3 test files/+90/-15 (94%); AC unchanged
 
