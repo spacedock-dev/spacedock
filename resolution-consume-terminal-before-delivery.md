@@ -85,6 +85,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:c5680ad3ec4e9c02c5e96ca75e5e0cdc4358f2e2b13a43d2639fc52d318394b0
                 room-ref: ./resolution-consume-terminal-before-delivery/review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:1w62z8c5fq5g5cmhzf5sd79w:ideation:3
+                briefing: briefing:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-07-31T16:53:24.403237Z"
+                decision: approve
+                reason: 'Captain approves (chat) the cycle-2 design — his six-point minimum with his two pre-approval corrections applied (merge-mechanism-agnostic consume returning approved-awaiting-merge; merge guard --rework) — entering implementation; attempt-3 package bounds one necessity-first review (f6ccdb34, endorse-with-revisions, findings applied) and the corrected design; accepted residuals on record: prepare-while-pending shadows but fails closed at merge guard (follow-up), --force remains the uniform escape hatch (named, not ruled).'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 A gate approval on a terminal-target stage (`validation → done`) is *immediately consumable into terminal status*: the binding approval's authority is marked spent (`consumed=true`) and the entity's status flips to `done` at consume time, while delivery (PR push, CI, merge) and workflow terminal fields (`verdict`, `completed`) remain pending. Three desyncs follow:
