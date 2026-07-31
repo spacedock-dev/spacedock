@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-1:revision-1",
+  "question": "Approve the twice-revised, staff-reviewed design (delivery-bound consume + recorded merge regress verb) entering implementation; ruling includes finding 18 — is the status-set terminal guard non-bypassable even under --force (recommended, AC-2 stays absolute), or does --force keep a break-glass bypass with AC-2 narrowed to non-forced transitions?",
+  "artifacts": [
+    {
+      "id": "artifact:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f1c6eb1bc97d4c765e537bd3e0cd9d4a970e881c/resolution-consume-terminal-before-delivery.md",
+      "rev": "sha256:bb431f09ff4c9a5596aea1c416e0f6d46f2459c07cb00e97b9f4c642d98c79c7",
+      "mediaType": "text/markdown",
+      "summary": "Design: a terminal consume under a registered merge hook BINDS authority (application.state=delivering + recorded hook identity + atomic mod-block arm) instead of spending it; merge-sentinel finalize spends it atomically with terminal status + verdict + completed; delivery failure routes through merge regress (delivering-\u003ereversed, required by/at/reason, truthful optional ref, validated feedback-to routing, worktree preserved, re-entry appends successor attempt); legacy consumed-into-done entities adopted via a guarded verb; one shared OS-released flock lock + application-aware status-set terminal guard + fail-closed mod scan make done-but-undelivered unrepresentable across every terminal producer; AC-1 value-measures by driving delivery-failure-after-approval to true-done. Staff review on openai-codex/gpt-5.6-sol:xhigh over 3 rounds: reject (11 findings) -\u003e reject (6) -\u003e endorse-with-revisions (1 open: finding 18, the --force carve-out vs AC-2 absoluteness; captain rules at this gate)."
+    }
+  ]
+}
