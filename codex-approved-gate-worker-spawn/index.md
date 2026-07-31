@@ -6,7 +6,7 @@ started: 2026-07-30T23:39:35Z
 completed:
 verdict:
 score: 0.95
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-approved-gate-worker-spawn
 issue:
 milestone: 0.27.0
 id: f02j6dbnd4jakwczahv1tg2h
