@@ -617,3 +617,25 @@ fails after success. Candidate `43a1b8db4` remains unchanged.
 Cycle 10 makes retained workflow ownership idempotent at cleanup: success keeps
 its first copy, while failure still receives one cleanup copy. The full journey
 oracle remains unchanged and the correction stays at the cumulative line cap.
+
+## Stage Report: validation (cycle 10)
+
+- FAILED: Reconstruct the corrected queued -> implementation -> gated-validation journey and independently verify every prior authority-crossing mutant still fails.
+  Exact candidate `92dadede5`; the repository focused suite passed in 2.2s and a detached 21-mutant event table passed, but both enforce an invented validation dispatch/report after entering a gated validation stage and therefore reject AC-2's supported direct-gate path.
+- DONE: Run one fresh supported Sonnet live journey and preserve its durable state, gate-room, command-log, and open-unresolved gate evidence; do not substitute aggregate or cached evidence.
+  Exactly one fresh Sonnet run completed the AC-2 journey in 399.62s: queued projection, one implementation dispatch/report, entry into validation, one validation Briefing prepare/commit, and an open attempt with no Resolution or Application.
+  The harness false-rejected that journey before a validation worker/report; failure-safe cleanup retained one intact workflow at `/tmp/spacedock-sonnet-cycle10.jwTyu4/artifacts/claude-shared-scenarios/default-headless-recorded-gate-stop/workflow`.
+- DONE: Cross-check AC-1 through AC-3, the three-file +81/-10 surface, focused/full/race/format evidence, and recommend PASSED or REJECTED with the candidate frozen on any new finding.
+  AC-1 passes. The durable live evidence satisfies AC-2, but the task-owned oracle contradicts it; AC-3 remains three declared test files at actual cumulative `+90/-11`, with focused/diff green and implementation-recorded full/race/format green. Recommendation: REJECTED at frozen `92dadede5`.
+- DONE: Record the First Officer disposition against the exact acceptance authority.
+  The proposed runtime-outcome finding was DECLINED: `value-ac[AC-2]:` requires implementation dispatch/report, entry into validation, one validation Briefing prepare/commit, and an open stop; it does not require validation dispatch or a validation Stage Report.
+- DONE: Classify and bound the remaining finding before candidate mutation or rerun.
+  Released workflow: AC-2's direct gated-stage presentation; harm: the correct live journey is false-rejected and cannot prove or merge; trigger: the retained cycle-10 command log/entity/open attempt against the two-dispatch predicate. Material; task-owned evidence over-specification and scope drift; FIX authorized by cutting the validation-dispatch obligation and dependent handoff tests.
+- SKIPPED: Rerun Sonnet or inspect transcript/provider evidence.
+  Validation used only the retained provider-neutral workflow, preserved the detached audit at `/tmp/spacedock-cycle10-audit.90JZ1H/worktree`, and left candidate bytes unchanged.
+
+### Summary
+
+REJECTED. The live journey conforms to AC-2's direct gated-stage path and the
+single-copy retention fix works, but the branch's two-dispatch oracle invents a
+validation worker/report obligation and false-rejects the supported outcome.
