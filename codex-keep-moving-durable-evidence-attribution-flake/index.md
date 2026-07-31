@@ -321,3 +321,36 @@ An ordinary dispatch is attributable when it changes only the entity file, or wh
 ### Summary
 
 The durable oracle now recognizes ordinary dispatch/report, atomic first-worker, separate terminal/archive, combined terminal archive, and the narrowly ruled same-revision gate-room dispatch shape while preserving exact worker-report attribution. Exact-head `970dec18d` is clean, provider-independent, deterministic/full/race green, and live-confirmed `3/3`.
+
+## Stage Report: validation
+
+- DONE: Reproduce the 21 durable controls and exact-head Codex keep-moving 3/3 proof, including the newly bound same-slug gate-room dispatch and strict later ticket-file-only worker report.
+  Exact `970dec18d`: all 21 controls passed in 15.32s; clean retained roots `1137023568` and `1344046602` each graded `3/3`; one fresh Codex run passed `3/3` in 409.88s and removed its success root.
+- DONE: Verify every acceptance criterion and the cumulative 10-file +463/-1449 provider-independent surface against the captain-approved cycle-4 design reset.
+  Direct `origin/main..HEAD` numstat is exactly 10 files, `+463/-1,449`; `gofmt -l` was empty, `git diff --check`, focused consumers, `go test ./...`, and `go test ./... -race` passed.
+- DONE: Perform the required semantic adversarial pass and classified Roborev review; route every finding through materiality and task ownership before recommending PASSED or REJECTED.
+  Detached counterexamples and Roborev `branch_final` produced four findings; the First Officer classified every one Material, task-owned, and `REJECTED / route to implementation`, with no candidate mutation or rerun.
+- FAILED: AC-1 - Every completed independent task is credited from its own durable journey.
+  Ordinary/atomic and retained/live `3/3` pass, but the serialized positive also passes after each slug reaches archive before the next dispatch, losing the scenario's parallel-dispatch value and invalidating the AC proof.
+- FAILED: AC-2 - Missing, stale, reordered, or cross-attributed durable steps remain red per task.
+  Named controls pass, but a changed preexisting room binding and a final archive that clears terminal fields each remain green `3/3`, so adjacent missing/attribution variants are not red.
+- DONE: AC-3 - The observer surface is smaller and provider-independent.
+  The exact 10-file `+463/-1,449` surface deletes the four provider observers; keep-moving grading consumes only Git paths, blobs, ancestry, and workflow root, and arbitrary/empty provider bytes are outside its call boundary.
+- FAILED: AC-4 - Repository and live confirmation gates are green.
+  Format/full/race and fresh live `3/3` are green, but the live assertion accepts an unrelated edit as the required questioned re-shape, so the gate cannot validly establish the current intended behavior.
+- FAILED: Preexisting-room rebind false green.
+  Released workflow: captain-approved gate-room dispatch; harm: rebind is credited as a newly bound room; authority: `value-ac[AC-2]` requires preexisting attribution variants red; trigger: old room A replaced by room B plus newly added B file graded `3/3`.
+  Proposal/classification: Material; ownership: task-owned; disposition: `REJECTED / route to implementation`.
+- FAILED: Serialized independent journeys false green (Roborev).
+  Released workflow: keep-moving parallel dispatch; harm: fully serialized motion passes; authority: `value-ac[AC-1]` requires independent durable journeys; trigger: the existing positive's slug loop dispatches through archive one task at a time and passes.
+  Proposal/classification: Material; ownership: task-owned; disposition: `REJECTED / route to implementation`.
+- FAILED: Nonterminal canonical archive false green (Roborev).
+  Released workflow: durable terminal/archive proof; harm: persisted archive may be nonterminal but credited; authority: `value-ac[AC-2]` requires missing terminal evidence red; trigger: prior terminal commit followed by archive clearing status/completed/verdict graded `3/3`.
+  Proposal/classification: Material; ownership: task-owned; disposition: `REJECTED / route to implementation`.
+- FAILED: Unrelated questioned mutation proves re-shape (Roborev).
+  Released workflow: corrected entity is re-shaped and held while independent work moves; harm: silent non-correction passes; authority: `value-ac[AC-4]` requires corrected nonterminal questioned state; trigger: an unrelated-note-only child made `assertDurableKeepMoving` return success.
+  Proposal/classification: Material; ownership: task-owned; disposition: `REJECTED / route to implementation`.
+
+### Summary
+
+Exact-head deterministic, full, race, retained-root, and one fresh Codex live run are green, and the cumulative deletion-led surface is exact. Validation nevertheless recommends **REJECTED** because four reproducible Material false greens show that those gates do not prove the promised parallel motion, newly bound room attribution, terminal archive state, or questioned re-shape.
