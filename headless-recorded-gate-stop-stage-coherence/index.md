@@ -62,14 +62,14 @@ gates:
                 state: consumed
                 blockers: []
 review-round:
-    id: round:26nk8qd48zknqnn4kc123sez:implementation:10
+    id: round:26nk8qd48zknqnn4kc123sez:implementation:11
     stage: implementation
-    cycle: 10
+    cycle: 11
     briefing:
-        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-10
-        digest: sha256:7ece44670335a772324ed9622d7655664ae4d1679c4becd22e796e6c4bb757ec
+        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-11
+        digest: sha256:370073614a38a6ff5faa63d7430694103e3a658196eda8b044c4a2e378c55a52
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-10
+        room-ref: ./review/implementation/round-11
 ---
 
 ## Problem statement
@@ -269,6 +269,8 @@ without a resolution, application, or successor dispatch.
 - Cycle 9: REJECTED — validation/status transition placement; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
 
 - Cycle 10: REJECTED — validation/single-copy retention; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
+
+- Cycle 11: REJECTED — validation/direct gated-stage scope drift; surface 3 test files/+88/-12 vs estimate 3 test files/+90/-15 (100%); AC unchanged
 
 ## Stage Report: validation
 
@@ -640,3 +642,20 @@ oracle remains unchanged and the correction stays at the cumulative line cap.
 REJECTED. The live journey conforms to AC-2's direct gated-stage path and the
 single-copy retention fix works, but the branch's two-dispatch oracle invents a
 validation worker/report obligation and false-rejects the supported outcome.
+
+## Stage Report: implementation (cycle 11)
+
+- DONE: Cut the invented validation-worker/validation-report requirement and re-anchor the oracle to AC-2's direct gated-stage trace: implementation dispatch/report, validation transition, one prepare/commit, open unresolved.
+  Commit `aeb3009b0` requires exactly one implementation dispatch, one exact successful `status=validation started` transition before preparation, and the existing committed open-gate tail; it removes the validation dispatch and dependent report obligation.
+- DONE: Use the retained conforming Sonnet log as the deterministic positive; preserve queued topology, missing/late validation-transition mutants, every post-prepare authority guard, and single-copy success/failure evidence retention.
+  The cycle-10 provider-neutral log shape failed red under frozen `92dadede5` and now passes. Missing, late, duplicate, alternate, and pre-dispatch validation transitions still fail, as do missing/wrong/duplicate implementation dispatch, decision, consume, withdrawal, duplicate prepare, post-prepare status, and successor dispatch; both retained outcome copies regrade successfully.
+- DONE: Reduce rather than grow the final diff, run focused/full/race/format/diff checks, and record the advisory disposition; do not spend Sonnet or add product/contract behavior.
+  The rollback is one existing test file, +8/-11; cumulative scope is three test files, +88/-12, below the +90 ceiling. Focused direct-gate/mutant, queued-fixture, and success/failure retention tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` passed, and implementation round 11 validates `all-fixed`.
+- SKIPPED: Add the proposed validation-worker runtime obligation or rerun/inspect provider and transcript evidence.
+  The First Officer declined that finding because AC-2 stops at the validation gate; the retained provider-neutral workflow supplied the authorized deterministic trace without another model spend.
+
+### Summary
+
+Cycle 11 restores AC-2's direct gate boundary and removes the branch's invented
+validation-worker scope. Later queued-topology and single-copy retention fixes
+remain intact, and the final test-only diff is smaller than the prior candidate.
