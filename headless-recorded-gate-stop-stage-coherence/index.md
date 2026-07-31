@@ -319,3 +319,28 @@ Cycle 3 makes the command-log proof order-sensitive without weakening the
 implementation-stage requirement or the open no-authority hold. The correct
 post-implementation validation transition is accepted, while a status or
 validation substitution before implementation dispatch remains rejected.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Re-review exact candidate d5b821f56 and prove the coherent implementation-dispatch → validation-transition → prepare/commit/open-hold trace passes.
+  The focused live-tag grader passed and its positive control exercises implementation dispatch, a successful post-dispatch validation transition, then one prepare/commit/open hold.
+- FAILED: Verify early status repair, validation-dispatch substitution, their combined form, and every prior no-authority/stage-coherence mutant remain red.
+  Existing mutants remain red, but a detached exact-flag-order mutant shows successful post-prepare `status --workflow-dir … --set` is accepted; a paired coherent trace with a failed early set is also false-rejected by cross-line substring matching.
+- DONE: Cross-check all acceptance criteria, cumulative three-test-file +63/-10 surface, and focused/full/race/format/diff evidence; recommend PASSED or REJECTED with candidate frozen.
+  AC-1 and AC-3 remain evidenced, the cumulative diff is exactly three test files +63/-10 under the +75/-12 reset, and focused/diff pass with implementation-reported full/race/format green; AC-2's no-authority proof remains invalid, so the frozen candidate is REJECTED.
+- DONE: Perform a semantic adversarial matrix over status identity, order, flag placement, and exit result.
+  Coherent post-dispatch transition passes; successful early repair and validation substitution fail; failed early repair plus an unrelated successful status read false-rejects; successful post-prepare repair with the supported flag order false-passes.
+- DONE: Classify the finding and retain the First Officer's Cycle-3 disposition.
+  Released workflow: the supported PR #583 command shape and provider-neutral log; harm: false green after a post-prepare authority crossing plus false red on a harmless failed attempt; `value-ac[AC-2]:` requires implementation → validation → open hold with no post-prepare repair; trigger: two failing detached traces. Material; task-owned evidence defect; Needs decision at Cycle 3, candidate held unchanged.
+- DONE: State the narrow captain decision recommended by the First Officer.
+  Recommend FIX with one line-local successful-status-set detector reused for pre-dispatch and post-prepare windows; allow the coherent post-dispatch transition and reject successful repair outside it without transcript/provider or product expansion.
+- SKIPPED: Re-run full, race, live-model, or Roborev suites after the Material finding.
+  The review-finding checkpoint and Cycle-3 hold freeze candidate bytes pending captain ruling; broader reruns cannot cure the focused evidence defect.
+
+### Summary
+
+REJECTED and held for captain decision. Cycle 3 fixes ordering for its positive
+trace, but status mutation detection still combines different log lines and
+assumes one flag order, allowing a real post-prepare authority crossing to pass.
+The recommended correction is confined to a line-local successful-status-set
+predicate over the existing provider-neutral command log.
