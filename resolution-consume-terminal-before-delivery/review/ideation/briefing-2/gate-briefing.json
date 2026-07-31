@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-2:revision-1",
+  "question": "Approve the cycle-2 design — the captain's six-point minimum realized (consume routes, merge guard sole consumer, atomic four-field success envelope, pending-\u003esuperseded + validated feedback-to failure route, retry leaves pending) — entering implementation in worktree .worktrees/spacedock-ensign-resolution-consume-terminal-before-delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/377484b0c19b55c5c1bf52999c63664ce78aeecc/resolution-consume-terminal-before-delivery.md",
+      "rev": "sha256:7f4ae7accec655fba89c4246e81d15dc67ddfb612d51fe58106d4768d5fe1f37",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 design is the captain's six-point minimum taken as the whole design: terminal-target gate consume leaves the application pending and status unchanged and routes to the terminal merge ceremony, armed off the consumption event (identical under merge: pr, registered merge: local, and manual local merge with no registration — no carve-out class); merge guard is the sole terminal consumer, spending pending-\u003econsumed atomically with terminal status + verdict + completed in ONE four-field replacement (a necessary new composition preserving merge guard's existing status validations); merge guard --failed writes existing pending-\u003esuperseded through the validated declared feedback-to and clears delivery state (missing/undefined/terminal feedback-to refuses closed); retryable delivery trouble leaves the same approval pending. Exactly one transaction-necessity addition: non-forced terminal status --set refused while a terminal-target application is pending. No new states, journal, --to/--by, scanner/lock rewrite, or compat machinery; durable-decisions :13 and :17 named and honored. Surface: mechanism core ≈ +225 LOC, +60 CLI wiring, ≈ +740 total with fixtures and docs. Review record bound in this package: EXACTLY ONE necessity-first staff-review pass (openai-codex/gpt-5.6-sol:xhigh, run f6ccdb34; OVERALL endorse-with-revisions, no blockers, explicitly 'no blocker requires rejecting or broadening the mechanism'); all 4 material findings answered and applied in-body (### Staff Review, cycle-2 pass); raw output committed as this package's single reference. The rejected cycle-1 architecture and its two earlier review rounds remain in-body strictly as labeled history."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/377484b0c19b55c5c1bf52999c63664ce78aeecc/resolution-consume-terminal-before-delivery/review/ideation/staff-review-necessity-pass-f6ccdb34.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4f71bd7d2c57525c4dbe74ca1df359588705a214d1acb403fb8ed51e18866d64"
+    }
+  ]
+}
