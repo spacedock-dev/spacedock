@@ -1,7 +1,7 @@
 ---
 id: z3j0tsbr6t3mqd39rhs8bbvq
 title: "First-officer boot install journey: Linux-aware hint, direct install/upgrade offer, sandbox detection"
-status: ideation
+status: implementation
 source: "GitHub issue spacedock-dev/spacedock#581 (nomen429, 2026-07-30): the install journey the first-officer skill hits at the version gate in first-officer-shared-core.md Startup step 1."
 started: 2026-07-31T02:32:43Z
 completed:
@@ -85,7 +85,7 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
