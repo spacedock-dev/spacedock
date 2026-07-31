@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-3:revision-1",
+  "question": "Approve exact candidate f982e88b6 for PR #584 update and required exact-head CI, with merge still blocked until Claude Sonnet and Opus are green?",
+  "artifacts": [
+    {
+      "id": "artifact:32vshm0h2h04gs7hzcf315g0:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/d20e9b7ccfd3b367419fc9528f5a383aaa12a694/boot-identify-multi-workflow-llm-retry-friction/gate-review-cycle9.md",
+      "rev": "sha256:4014af708612ff21b4a623b407d76d1e7297545629e711d95acc633ed0bf6fc9",
+      "mediaType": "text/markdown",
+      "summary": "Repairs Claude execution-ledger capture after front-door launcher pinning; independent deterministic and adversarial validation passed, while exact-head Claude CI remains mandatory before merge."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:32vshm0h2h04gs7hzcf315g0:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://state/d20e9b7ccfd3b367419fc9528f5a383aaa12a694/boot-identify-multi-workflow-llm-retry-friction.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f775cf433e871871b8088d897882c6a6091379af11ea549888a4319973397a33"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:32vshm0h2h04gs7hzcf315g0:validation:attempt-3:revision-1:item-3",
+      "uri": "git-root://main/f982e88b656a8966e8739521d7a075e4d9c90a6b/internal/ensigncycle/claude_live_runner_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b5b981cc3a4617809986bc7343ad56a5181a8cd14d7f392f06512d7957782a1a"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:32vshm0h2h04gs7hzcf315g0:validation:attempt-3:revision-1:item-4",
+      "uri": "git-root://main/f982e88b656a8966e8739521d7a075e4d9c90a6b/internal/ensigncycle/pty_live_driver_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:02327ba91766dbf24237a057524ffe47237921b2bfe08b8ce1479e62d1eeeeb6"
+    }
+  ]
+}

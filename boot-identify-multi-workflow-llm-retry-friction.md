@@ -53,6 +53,13 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+            - id: gate-attempt:32vshm0h2h04gs7hzcf315g0-validation-3
+              briefing:
+                id: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-3:revision-1
+                digest: sha256:3ffeb276e7eefad2631295ab839d981bc7200d140db9320916f23edc671ba6c2
+                digest-domain: canonical-bytes
+                request-digest: sha256:0a42b328d0bc869ab8c30b636d7fcb6ec7dd80d2a31240e8655f749a69690e08
+                room-ref: ./boot-identify-multi-workflow-llm-retry-friction/review/validation/briefing-3
 mod-block:
 completed:
 verdict:
