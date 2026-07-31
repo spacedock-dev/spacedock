@@ -286,3 +286,21 @@ The retention correction exposed a second supported Git shape rather than losing
 ### Summary
 
 Cycle 3 treats the retained break-glass Git history as authoritative without weakening worker proof: only a file-only child that newly adds both `started` and the current-stage Stage Report can replace the ordinary dispatch-plus-report pair. Frozen candidate `ae6cf1ee9` remains untouched; fixture normalization and every transcript/provider-derived alternative remain excluded.
+
+## Review-finding disposition (implementation cycle 4)
+
+### Approved-gate dispatch room binding
+
+- Reviewer observation: the single exact-head `d6a7f462d` live run completed all three task journeys but the durable oracle reported `2/3`, rejecting only `approved-gate` as missing a path-scoped dispatch.
+- Released user and normal workflow: the prescribed Codex keep-moving path consumes a captain-approved gate, advances that entity, dispatches its worker, verifies the worker report, terminalizes it, and archives it.
+- Observable harm: the supported `approved-gate` journey false-reds even though its own dispatch, later worker report, terminal fields, and canonical archive are durable.
+- Authority: `value-ac[AC-1]` requires every completed independent task to be credited from its own durable journey.
+- Trigger evidence: retained root `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/spacedock-keep-moving-1344046602` is clean; dispatch `3b699e8` changed `approved-gate.md` plus two newly bound files below `approved-gate/review/review/briefing-1`, the new entity revision's `room-ref`; file-only commit `14b8ddb` later added the implementation Stage Report, followed by terminal `a7addc3` and entity-owned archive `bbf19b0`.
+- Worker proposal: Material and Needs decision because accepting any non-file-only worker-proof commit would exceed the cycle-3 design boundary.
+- First Officer classification: Material and Needs decision; hold candidate mutation and rerun until a design ruling.
+- Captain ruling: preserve the ordinary two-step worker proof, but permit its First Officer dispatch commit to change the ticket file plus only gate-room files newly bound by that same ticket revision, with `room-ref` pointing to their exact subtree. The later worker report remains strictly ticket-file-only.
+- Resolution: amend the implementation design narrowly; do not generalize dispatch scope to arbitrary ticket-owned paths or generated artifacts. Atomic first-worker proof, terminal/archive ownership, exact-slug boundaries, and every transcript/provider exclusion remain unchanged.
+
+### Cycle 4 design amendment
+
+An ordinary dispatch is attributable when it changes only the entity file, or when the same entity revision newly introduces a normalized relative `room-ref` below the exact slug and every additional changed path is newly added below that exact room subtree. The later current-stage report must still be a separate entity-file-only commit. Negative controls must reject a preexisting room binding, a room outside the exact slug, a sibling path outside the room, a modified rather than newly added room file, and a slug-prefix collision.
