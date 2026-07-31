@@ -1,6 +1,6 @@
 ---
 title: Require Codex worker spawn after approved gate advance
-status: validation
+status: done
 source: "KD validation cycle 4, Codex keep-moving-posture at b60d1c8"
 started: 2026-07-30T23:39:35Z
 completed:
@@ -82,7 +82,7 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
