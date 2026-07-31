@@ -499,3 +499,54 @@ Exact `5ef96410b` is clean, all deterministic/repository/race checks pass, and a
 ### Summary
 
 The Git-only oracle now binds terminal proof to the first historical terminal signal after worker proof and requires the questioned correction to remain uninterruptedly nonterminal. The two validation-cycle false greens and their partial-signal neighbors are red while every supported retained journey remains green.
+
+## Review-finding disposition (validation cycle 3)
+
+### Missing current canonical archive
+
+- Reviewer observation: the oracle marks a journey archived from the final entity-owned historical commit and can pass when the active path is absent even though current `_archive/<slug>.md` is also absent.
+- Released user and normal workflow: the Codex keep-moving live gate grades each completed expected ticket after terminalization and canonical archive.
+- Observable harm: current durable ticket state can be lost while the release assertion still reports `3/3`.
+- Authority: `value-ac[AC-1]` requires every credited ticket to end in its own terminal canonical archive.
+- Trigger evidence: a fresh clone of retained supported root `3245282000` still passed `TestRetainedAtomicWorkerJourney` after all three canonical archive Markdown files were moved out of the workflow with active Markdown absent.
+- Worker proposal: Material evidence defect, task-owned, `REJECTED / route to implementation`.
+- First Officer classification: `FIX`; require current canonical `_archive/<slug>.md` presence plus active-path absence because historical archive ancestry alone is insufficient.
+
+### Split terminal fields and documentation mismatch
+
+- Reviewer observation: the oracle rejects a first terminal field followed by remaining terminal fields in later scoped commits, while updated `docs/runtime-live-ci.md` says the remaining fields may be separate.
+- Released user and normal workflow: no retained or supported journey splits terminal fields; merge-guard and retained histories persist a complete first terminal signal, but operators read the candidate documentation as its supported-shape contract.
+- Observable harm: the proposed code widening serves no accepted journey, while the documentation promises a shape the approved oracle intentionally rejects.
+- Authority: `contract[docs/runtime-live-ci.md#runtime-live-ci]` currently says remaining terminal fields may be separate, conflicting with the approved complete-first-terminal-signal behavior.
+- Trigger evidence: exact `ef2d558b7` documentation wording conflicts with `durableTaskJourney`; all four retained supported roots use complete terminal signals.
+- Worker proposal: decline the unsupported code widening as Polish, but classify the task-owned documentation promise defect Material and narrow the sentence to the approved behavior.
+- First Officer classification: `DECLINE` Roborev's code widening; separately `FIX` the Material task-owned documentation mismatch.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Reproduce all eight premature-terminal/questioned-reopen negatives at exact ef2d558b7 and confirm every retained supported root remains 3/3.
+  Four expected-ticket first-terminal variants and four questioned-history variants reject their affected journey; roots `1137023568`, `1344046602`, `2756575595`, and `3245282000` each pass and would fail if any credited task lost valid report/terminal history.
+- DONE: Re-cross-check AC-1 through AC-4 and the cumulative 10-file +874/-1449 provider-independent surface, including the retained decline of unsupported verdict:questioned.
+  Direct merge-base numstat is exactly 10 files at `+874/-1,449` (net `-575`); the active-verdict suggestion remains unsupported by schema, fixtures, and all retained roots.
+- DONE: Run focused/full/race/format/diff and re-review the updated candidate adversarially, classifying any new finding before action and without another live model journey.
+  Focused durable/consumer/live-helper/parity checks, `gofmt -l`, `git diff --check`, `go test ./...`, and `go test ./... -race` passed; archive/reintroduction stayed red, and Roborev job 460's two observations received distinct First Officer dispositions.
+- FAILED: AC-1 - Every completed independent task is credited from its own durable journey.
+  Supported shapes and all retained roots pass, but deleting current canonical archives while leaving their Git ancestry makes the oracle report `3/3`, so the credited terminal archive is not guaranteed to exist.
+- FAILED: AC-2 - Missing, stale, reordered, or cross-attributed durable steps remain red per task.
+  The eight new history negatives pass, but the adjacent missing-canonical-plus-absent-active variant remains green rather than rejecting each affected ticket.
+- DONE: AC-3 - The observer surface is smaller and provider-independent.
+  Keep-moving grading still consumes only Git paths, blobs, ancestry, and workflow state across the exact 10-file deletion-led surface; no transcript, provider-event, command, or final-message evidence returned.
+- FAILED: AC-4 - Repository and live confirmation gates are green.
+  Repository/race and retained-live evidence are green, but the current live assertion can pass after canonical archive loss, so the gate cannot establish the required durable end state.
+- SKIPPED: Active `verdict: questioned` compatibility.
+  The prior First Officer `DECLINE` remains: no supported trigger changed.
+- SKIPPED: Split-terminal code widening.
+  The First Officer declined it as unsupported/Polish; the approved behavior requires the first terminal signal itself to be complete.
+- FAILED: Candidate terminal wording matches the approved behavior.
+  The documentation promise is Material and task-owned; First Officer disposition is `FIX` by narrowing it, with candidate bytes unchanged.
+- FAILED: Roborev product panel member.
+  The external Claude reviewer hit its quota; correctness review and synthesis completed as job 460, and no second rerun was started.
+
+### Summary
+
+Exact `ef2d558b7` is clean, every focused/full/race gate passes, all eight authorized negatives are red, and every retained supported journey remains `3/3` without another live run. Validation recommends **REJECTED** because current canonical archive loss still false-greens and the candidate documentation contradicts the approved complete-first-terminal behavior; this is Feedback Cycle 3 and requires captain escalation before implementation.
