@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z3j0tsbr6t3mqd39rhs8bbvq:backlog:attempt-1:revision-1",
+  "question": "Should this install-journey task enter ideation to flesh out design, acceptance criteria, and a test plan for an OS-aware install hint, a direct install/upgrade-and-resume offer, and sandbox detection?",
+  "artifacts": [
+    {
+      "id": "artifact:z3j0tsbr6t3mqd39rhs8bbvq:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2e69a8376ceb04111d4ff52d8f2afff87e7aec93/fo-boot-install-hint-linux-direct-sandbox.md",
+      "rev": "sha256:591f9bd7938b354088cdf586e5f33a4f02b440e1dd327c68fb02303b4fa5e60c",
+      "mediaType": "text/markdown",
+      "summary": "Seed from issue spacedock-dev/spacedock#581: the FO boot version gate prints a Mac-only Homebrew hint and aborts. Three end-values to design for in ideation: an OS-aware hint that cites the documented Linux curl|sh path, a direct install/upgrade offer that resumes startup once the binary lands, and sandbox detection that tells the human to install outside the sandbox. Ideation owns the end-value-measuring ACs, expected surface, and the riskiest-mechanism spike (a self-modifying boot re-invoking --version after install must converge, not loop)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:z3j0tsbr6t3mqd39rhs8bbvq:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/59dc90a21cabb923dae4d03f2e3682f2c487da11/docs/site/get-started/install.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f8ba7ff19d10bbaf395cc5c052cbab25d735f5cadbabf9e5208c63693e2b90aa"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:z3j0tsbr6t3mqd39rhs8bbvq:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/59dc90a21cabb923dae4d03f2e3682f2c487da11/internal/contract/contract.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:64d777a4fb1a31ca8b59d1231d304b6b137750f2600f3509b2efc2f50a7a9361"
+    }
+  ]
+}
