@@ -397,3 +397,28 @@ The validator's retained counterexamples and Feedback Cycle 1 are unchanged. A t
 - First Officer classification: Material and Needs decision; hold candidate mutation and rerun pending a design ruling.
 - Design ruling: a scenario-wide dispatch or terminal commit may represent all expected tickets only when it changes the complete expected-ticket set and no foreign ticket. Dispatch may additionally carry exact newly bound gate-room subtrees for scenario tickets; each worker report remains ticket-file-only, each canonical archive remains individually terminal, and the questioned re-shape remains independently proven.
 - Resolution: add no generic lifecycle engine. The deterministic proof must accept the retained full-set batch history and reject adjacent partial-set and foreign-path batches before another live run.
+
+## Review-finding disposition (implementation delayed-persistence live evidence)
+
+- Reviewer observation: the single exact-head `a67cb0344` live run completed all three independent tasks and the questioned correction, but returned `independent task journeys do not overlap before terminalization`; retained root `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/spacedock-keep-moving-3245282000` preserves the evidence.
+- Trigger evidence: `f573c74` and `4fa094e` independently persist `approved-gate` and `ready-one` starts plus current-stage reports before terminal archive `bf8c302`; delayed report commit `59e9f78` later persists `ready-two` with the same canonical `started: 2026-07-31T03:40:37Z`, 91 seconds before the first completion. Each ticket then has its own terminal canonical archive.
+- Worker proposal and First Officer classification: Material, task-owned, Needs decision. Git rank alone false-reds a workflow-owned start that was set with its siblings but persisted with the later report; freeze the candidate and do not rerun pending a design ruling.
+- Design ruling: canonical timestamps are admissible only after ordinary Git-rank overlap fails, only when at least two distinct expected engagements committed before the first terminal establish `frontier = max(started)`, and only when every expected start parses, is no later than that frontier, and strictly predates the earliest parsed expected completion.
+- Resolution: retain every existing per-ticket report, terminal, terminal archive, task identity, room, questioned-correction, and path rule. Missing, unparseable, at-terminal, after-terminal, and uncorroborated delayed starts remain red. Transcript, provider-event, command, and final-message evidence remain excluded, and the ruling forbids a second live run.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Close the four validation false greens without weakening durable task attribution.
+  Commit `ccd7bee28` requires all expected engagements before the first terminal, requires a newly bound gate room rather than a rebind, requires terminal fields in the final canonical archive, and requires a stage transition plus ticket-file-only Stage Report for the questioned correction. The serialized, room-A-to-room-B, nonterminal-archive, and unrelated-note counterexamples each stay red.
+- DONE: Accept only complete expected-ticket batch dispatch and terminal motion.
+  Commit `a67cb0344` credits a batch only when it covers the complete expected set with no foreign ticket; exact newly bound scenario gate-room paths are the only dispatch extras. Partial-set and foreign-path batch controls fail at dispatch, while reports remain ticket-file-only and archives remain individually terminal.
+- DONE: Accept the retained delayed-persistence shape through canonical workflow timestamps without accepting serialized work.
+  Commit `5ef96410b` adds the post-rank fallback exactly at the ruled boundary. Its deterministic positive mirrors two corroborating preterminal engagements plus one delayed report; absent, unparseable, at-terminal, after-terminal, and no-frontier variants stay red, as does the preexisting serialized control.
+- DONE: Preserve the authorized deletion-led surface and provider-independent boundary.
+  The final cumulative surface is exactly the same 10 files at `+806/-1,449` (net `-643`); the final correction itself is two existing files at `+114/-1`. No fixture, lifecycle engine, runtime, parser, observer, transcript, provider-event, command, storage, or authority surface was added.
+- DONE: Verify deterministic controls, every retained root, repository gates, and the one-shot live evidence under the no-rerun ruling.
+  The per-ticket journey table, overlap/serialized pair, meaningful-questioned negative, complete/partial/foreign batch table, six delayed-persistence cases, smallest-mechanism consumers, and live helper/parity guards pass. Retained roots `1137023568`, `1344046602`, `2756575595`, and `3245282000` each grade `3/3`; `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race` pass. The sole fresh live run was the 443-second `a67cb0344` run that exposed the final retained shape; by explicit ruling it was not rerun, and exact final head `5ef96410b` regrades that durable root green.
+
+### Summary
+
+The final oracle proves independent keep-moving work from Git-owned task episodes while covering the supported ordinary, atomic first-worker, newly bound gate-room, complete-batch, and corroborated delayed-persistence shapes. Adjacent attribution and ordering counterexamples remain red, all four real retained histories pass, and the provider observers remain deleted.
