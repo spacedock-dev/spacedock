@@ -601,3 +601,18 @@ Exact `ef2d558b7` is clean, every focused/full/race gate passes, all eight autho
 ### Summary
 
 Exact `fba615fdf` is clean and changes only the authorized documentation sentence, which now matches the validated complete-first-terminal predicate without widening code. With all supported deterministic and retained-live evidence green and the two out-of-scope variants authoritatively declined, validation recommends **PASSED**.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: The supported inline approved-gate episode passes only when one path-scoped atomic worker commit adds started, the implementation Stage Report, and only files below that same revision's newly bound exact-slug gate room.
+  Commit `7f109271c` reuses the new-room ownership predicate for atomic worker proof; removing it makes the red-first `atomic worker gate room` case fall from `3/3` to `2/3`.
+- DONE: Preexisting or replaced room bindings, modified room files, paths outside the room, and slug-prefix collisions remain red alongside every existing negative.
+  `TestDurableTaskJourneys` keeps all five adjacent atomic-room mutations red for only `ready-one`; weakening parent binding, added-file, subtree, or slug-boundary checks makes its named control false-green.
+- DONE: Credit only the expected tickets validly started by the supported split known-ticket batch, with an exact nonterminal questioned rework.
+  `TestDurableKeepMovingBatchMotion` moves the red-first split fixture from `1/3` to `3/3`, while arbitrary questioned scope and foreign paths stay red and the omitted-ticket partial remains exactly `2/3`.
+- DONE: Focused, full, race, format, and diff checks pass; report the exact incremental and cumulative file/LOC surface without another live-model or Roborev run.
+  Focused durable/smallest-mechanism tests, `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race` pass; incremental is 2 files `+111/-15`, cumulative is 10 files `+971/-1,449` (net `-478`).
+
+### Summary
+
+The provider-neutral Git oracle now accepts the two supported PR-CI shapes without admitting generic sidecar or partial-batch attribution. The correction is committed at `7f109271c`; no live-model journey, Roborev run, parser, provider observer, runtime behavior, or previously declined compatibility work was added.
