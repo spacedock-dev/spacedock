@@ -1,7 +1,7 @@
 ---
 id: 8bnkrtq4rw46xkbez5zrbmmj
 title: Codex keep-moving durable-evidence attribution false-red
-status: validation
+status: implementation
 source: "PR #513 Runtime Live E2E run 29392675038, codex-live job 87279446937"
 started: 2026-07-30T23:05:41Z
 completed:
@@ -312,6 +312,7 @@ Cycle 3 treats the retained break-glass Git history as authoritative without wea
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation/Roborev; surface 10 files/+463/-1,449 vs accepted cycle-4 reset 10 files/+463/-1,449 (100%); AC unchanged. Four Material task-owned false greens accept serialized independent work, a replaced preexisting room binding, a nonterminal canonical archive, and unrelated questioned-ticket mutation. Route the exact retained counterexamples to implementation without restoring transcript or provider observers.
+- Cycle 2: REJECTED — validation/Roborev; surface 10 files/+806/-1,449 vs captain-approved implementation cycle-4 head 10 files/+806/-1,449 (100%); AC unchanged. Two Material task-owned false greens accept terminal fields introduced before the worker report and a questioned ticket terminalized then reopened. Route only those ordering/history counterexamples to implementation; the unsupported `verdict: questioned` suggestion is declined.
 
 ## Review-finding disposition (implementation cycle 4)
 
