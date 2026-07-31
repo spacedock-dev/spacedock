@@ -25,17 +25,21 @@ func kmExpected() map[string]string {
 }
 
 type durableCommit struct {
-	message, blob    string
-	entityFileScoped bool
-	entityOwned      bool
-	files            []string
-	added            map[string]bool
+	hash, message, blob string
+	entityFileScoped    bool
+	entityOwned         bool
+	files               []string
+	added               map[string]bool
+}
+
+type durableJourneyProof struct {
+	engaged, terminal string
 }
 
 func gradeDurableTaskJourneys(t *testing.T, root string, expected map[string]string) (int, map[string]string) {
 	completed, failures := 0, map[string]string{}
 	for slug, stage := range expected {
-		if reason := durableTaskJourneyFailure(t, root, slug, stage); reason != "" {
+		if _, reason := durableTaskJourney(t, root, slug, stage); reason != "" {
 			failures[slug] = reason
 		} else {
 			completed++
@@ -43,7 +47,8 @@ func gradeDurableTaskJourneys(t *testing.T, root string, expected map[string]str
 	}
 	return completed, failures
 }
-func durableTaskJourneyFailure(t *testing.T, root, slug, stage string) string {
+func durableTaskJourney(t *testing.T, root, slug, stage string) (durableJourneyProof, string) {
+	proof := durableJourneyProof{}
 	active := slug + ".md"
 	archive := filepath.Join("_archive", slug+".md")
 	logPath := active
@@ -81,22 +86,26 @@ func durableTaskJourneyFailure(t *testing.T, root, slug, stage string) string {
 	}
 	switch {
 	case dispatch < 0:
-		return "missing path-scoped dispatch entry with stage and started"
+		return proof, "missing path-scoped dispatch entry with stage and started"
 	case report < 0 && unscopedReport:
-		return "missing path-scoped worker report after dispatch"
+		return proof, "missing path-scoped worker report after dispatch"
 	case report < 0 && reportBefore:
-		return "missing worker report after dispatch; stale report precedes dispatch"
+		return proof, "missing worker report after dispatch; stale report precedes dispatch"
 	case report < 0:
-		return "missing worker report after dispatch"
+		return proof, "missing worker report after dispatch"
 	case terminal < 0:
-		return "missing later terminal fields completed and verdict"
+		return proof, "missing later terminal fields completed and verdict"
+	case durableField(history[len(history)-1].blob, "status") != "done" ||
+		durableField(history[len(history)-1].blob, "completed") == "" ||
+		durableField(history[len(history)-1].blob, "verdict") == "":
+		return proof, "canonical archive missing terminal fields completed and verdict"
 	case !archived:
-		return "missing canonical archive after terminalization"
+		return proof, "missing canonical archive after terminalization"
 	}
 	if _, err := os.Stat(filepath.Join(root, active)); !os.IsNotExist(err) {
-		return "active entity remains beside canonical archive"
+		return proof, "active entity remains beside canonical archive"
 	}
-	return ""
+	return durableJourneyProof{history[dispatch].hash, history[terminal].hash}, ""
 }
 func durableDispatchProof(history []durableCommit, i int, slug, stage string) bool {
 	c := history[i]
@@ -108,7 +117,7 @@ func durableDispatchProof(history []durableCommit, i int, slug, stage string) bo
 		return true
 	}
 	room := durableRoomRef(c.blob)
-	if i == 0 || room == "" || room == durableRoomRef(history[i-1].blob) ||
+	if i == 0 || room == "" || durableRoomRef(history[i-1].blob) != "" ||
 		filepath.IsAbs(room) || filepath.Clean(room) != room || !strings.HasPrefix(room, slug+"/") {
 		return false
 	}
@@ -169,7 +178,7 @@ func durableEntityHistory(t *testing.T, root, slug, logPath string) []durableCom
 				entityOwned = false
 			}
 		}
-		history = append(history, durableCommit{fields[1], blob, scoped, entityOwned, files, added})
+		history = append(history, durableCommit{fields[0], fields[1], blob, scoped, entityOwned, files, added})
 	}
 	return history
 }
@@ -200,14 +209,46 @@ func assertDurableKeepMoving(t *testing.T, root string) error {
 	if completed != 3 {
 		return fmt.Errorf("durable keep-moving journeys = %d/3: %v", completed, failures)
 	}
+	if err := durableIndependentOverlap(t, root, kmExpected()); err != nil {
+		return err
+	}
 	content, where, found := locateEntity(root, kmQuestioned)
 	if !found || where != filepath.Join(root, kmQuestioned+".md") ||
 		durableField(content, "status") == "done" || durableField(content, "completed") != "" || durableField(content, "verdict") != "" {
 		return fmt.Errorf("%s must remain active and nonterminal", kmQuestioned)
 	}
 	history := durableEntityHistory(t, root, kmQuestioned, kmQuestioned+".md")
-	if len(history) < 2 || history[len(history)-1].blob == history[0].blob || !history[len(history)-1].entityOwned {
-		return fmt.Errorf("%s has no durable entity-owned re-shape", kmQuestioned)
+	transitioned, reported := false, false
+	for i := 1; i < len(history); i++ {
+		transitioned = transitioned || durableField(history[i].blob, "status") != durableField(history[0].blob, "status")
+		reported = reported || (history[i].entityFileScoped &&
+			strings.Count(history[i].blob, "\n## Stage Report: ") > strings.Count(history[i-1].blob, "\n## Stage Report: "))
+	}
+	if !transitioned || !reported || !history[len(history)-1].entityOwned {
+		return fmt.Errorf("%s has no meaningful entity-owned stage re-shape", kmQuestioned)
+	}
+	return nil
+}
+func durableIndependentOverlap(t *testing.T, root string, expected map[string]string) error {
+	rank := map[string]int{}
+	for i, hash := range strings.Fields(git(t, root, "log", "--reverse", "--format=%H")) {
+		rank[hash] = i
+	}
+	latestEngagement, firstTerminal := -1, len(rank)
+	for slug, stage := range expected {
+		proof, reason := durableTaskJourney(t, root, slug, stage)
+		if reason != "" {
+			return fmt.Errorf("%s: %s", slug, reason)
+		}
+		if rank[proof.engaged] > latestEngagement {
+			latestEngagement = rank[proof.engaged]
+		}
+		if rank[proof.terminal] < firstTerminal {
+			firstTerminal = rank[proof.terminal]
+		}
+	}
+	if latestEngagement >= firstTerminal {
+		return fmt.Errorf("independent task journeys do not overlap before terminalization")
 	}
 	return nil
 }
@@ -240,6 +281,7 @@ func TestDurableTaskJourneys(t *testing.T) {
 		{"missing dispatch", "missing-dispatch", "ready-one", "dispatch entry"},
 		{"missing report", "missing-report", "ready-one", "worker report"},
 		{"missing terminal fields", "missing-terminal", "ready-one", "terminal fields"},
+		{"archive reverts terminal fields", "archive-reverts-terminal", "ready-one", "terminal fields"},
 		{"missing archive", "missing-archive", "ready-one", "canonical archive"},
 		{"report before dispatch", "report-before-dispatch", "ready-one", "worker report after dispatch"},
 		{"cross-attributed report", "cross-attributed-report", "ready-one", "path-scoped worker report"},
@@ -253,6 +295,7 @@ func TestDurableTaskJourneys(t *testing.T) {
 		{"atomic slug prefix", "atomic-slug-prefix", "ready-one", "dispatch entry"},
 		{"dispatch gate room", "dispatch-room", "", ""},
 		{"dispatch preexisting room", "dispatch-room-preexisting", "ready-one", "dispatch entry"},
+		{"dispatch preexisting different room", "dispatch-room-preexisting-different", "ready-one", "dispatch entry"},
 		{"dispatch outside slug room", "dispatch-room-outside-slug", "ready-one", "dispatch entry"},
 		{"dispatch sibling outside room", "dispatch-room-sibling", "ready-one", "dispatch entry"},
 		{"dispatch modified room file", "dispatch-room-modified", "ready-one", "dispatch entry"},
@@ -292,10 +335,21 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 		path := filepath.Join(root, "ready-one.md")
 		writeFile(t, path, durableBindRoom(readFile(t, path), room))
 	}
+	if mutation == "dispatch-room-preexisting-different" {
+		path := filepath.Join(root, "ready-one.md")
+		writeFile(t, path, durableBindRoom(readFile(t, path), "ready-one/review/review/old-briefing"))
+	}
 	if mutation == "dispatch-room-modified" {
 		writeFile(t, filepath.Join(root, roomFile), "old\n")
 	}
 	gitInit(t, root)
+	if mutation == "parallel-dispatch" {
+		for _, slug := range []string{kmApprovedGate, kmReadyOne, kmReadyTwo} {
+			path := filepath.Join(root, slug+".md")
+			writeFile(t, path, strings.Replace(readFile(t, path), "started: ", "started: now", 1))
+			gitCommitPathScoped(t, root, slug+".md", "dispatch: "+slug+" entering "+kmNextStage)
+		}
+	}
 	for _, slug := range []string{"approved-gate", "ready-one", "ready-two"} {
 		atomic := strings.HasPrefix(mutation, "atomic-") && (mutation == "atomic-worker" || slug == "ready-one")
 		roomDispatch := strings.HasPrefix(mutation, "dispatch-room") && slug == "ready-one"
@@ -303,7 +357,7 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 			durableAppendReport(t, root, slug)
 			gitCommitPathScoped(t, root, slug+".md", "worker: stale "+slug)
 		}
-		if !atomic && (mutation != "missing-dispatch" || slug != "ready-one") {
+		if mutation != "parallel-dispatch" && !atomic && (mutation != "missing-dispatch" || slug != "ready-one") {
 			path := filepath.Join(root, slug+".md")
 			content := strings.Replace(readFile(t, path), "started: ", "started: 2026-07-31T00:00:00Z", 1)
 			if roomDispatch && mutation != "dispatch-room-preexisting" {
@@ -362,6 +416,11 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 			gitCommitPathScoped(t, root, slug+".md", "terminalize: "+slug)
 		}
 		if mutation != "missing-archive" || slug != "ready-one" {
+			if mutation == "archive-reverts-terminal" && slug == "ready-one" {
+				content = strings.Replace(content, "status: done", "status: implementation", 1)
+				content = strings.Replace(content, "completed: "+completed, "completed:", 1)
+				content = strings.Replace(content, "verdict: "+verdict, "verdict:", 1)
+			}
 			writeFile(t, filepath.Join(root, "_archive", slug+".md"), content)
 			git(t, root, "rm", "-q", "--", slug+".md")
 			git(t, root, "add", "--", "_archive/"+slug+".md")
@@ -388,6 +447,34 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 	}
 	return root
 }
+func TestDurableKeepMovingRequiresOverlappingJourneys(t *testing.T) {
+	if err := assertDurableKeepMoving(t, durableAddQuestioned(t, durableJourneyFixture(t, "parallel-dispatch"), true)); err != nil {
+		t.Fatalf("parallel journey: %v", err)
+	}
+	if err := assertDurableKeepMoving(t, durableAddQuestioned(t, durableJourneyFixture(t, ""), true)); err == nil ||
+		!strings.Contains(err.Error(), "do not overlap") {
+		t.Fatalf("serialized journey error = %v, want overlap failure", err)
+	}
+}
+func TestDurableQuestionedRejectsUnrelatedEdit(t *testing.T) {
+	if err := assertDurableKeepMoving(t, durableAddQuestioned(t, durableJourneyFixture(t, "parallel-dispatch"), false)); err == nil ||
+		!strings.Contains(err.Error(), "meaningful") {
+		t.Fatalf("unrelated questioned edit error = %v, want meaningful re-shape failure", err)
+	}
+}
+func durableAddQuestioned(t *testing.T, root string, reshape bool) string {
+	writeFile(t, filepath.Join(root, kmQuestioned+".md"), durableEntity(kmQuestioned, "review", "", ""))
+	gitCommitPathScoped(t, root, kmQuestioned+".md", "seed questioned")
+	path := filepath.Join(root, kmQuestioned+".md")
+	if reshape {
+		writeFile(t, path, strings.Replace(readFile(t, path), "status: review", "status: ideation", 1))
+		durableAppendStageReport(t, root, kmQuestioned, "ideation")
+	} else {
+		writeFile(t, path, readFile(t, path)+"\nunrelated note\n")
+	}
+	gitCommitPathScoped(t, root, kmQuestioned+".md", "reshape questioned")
+	return root
+}
 func TestRetainedAtomicWorkerJourney(t *testing.T) {
 	root := os.Getenv("SPACEDOCK_KEEP_MOVING_RETAIN_ROOT")
 	if root == "" {
@@ -405,6 +492,9 @@ func durableBindRoom(content, room string) string {
 	return strings.Replace(content, "\n---\n# ", "\nroom-ref: ./"+room+"\n---\n# ", 1)
 }
 func durableAppendReport(t *testing.T, root, slug string) {
+	durableAppendStageReport(t, root, slug, "implementation")
+}
+func durableAppendStageReport(t *testing.T, root, slug, stage string) {
 	path := filepath.Join(root, slug+".md")
-	writeFile(t, path, readFile(t, path)+"\n## Stage Report: implementation\n\n- DONE: complete\n  durable evidence\n\n### Summary\n\nDone.\n")
+	writeFile(t, path, readFile(t, path)+"\n## Stage Report: "+stage+"\n\n- DONE: complete\n  durable evidence\n\n### Summary\n\nDone.\n")
 }

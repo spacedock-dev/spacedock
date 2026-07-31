@@ -39,6 +39,8 @@ worker proof: either a dispatch with `started` followed by a later entity-file-o
 Report, or one entity-file-only child adding `started` and the new report over a parent with
 neither. A dispatch may add only gate-room files newly bound below that revision's exact-slug
 `room-ref`; terminal fields may be separate or added by the final entity-owned archive.
+All expected tasks must engage before any one terminalizes, and that final archive must retain
+terminal fields. A questioned hold requires a stage transition and ticket-file-only Stage Report.
 Same-slug sidecars are allowed only there or at a corrected-held boundary; foreign slugs reject.
 Transcript JSONL, command text, provider events, and model narration remain diagnostic only; the commissioned-task fallback uses the same durable oracle.
 
