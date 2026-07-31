@@ -111,6 +111,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:585b217773f5644bf9042deb977dc7c15a65b941250d86b2d2752d31237f970b
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8bnkrtq4rw46xkbez5zrbmmj:validation:1
+                briefing: briefing:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T01:45:21.357752Z"
+                decision: revise
+                reason: 'Rejected under sprint conn: validation reproduced four Material task-owned false greens—serialized independent work, preexisting-room rebind, nonterminal canonical archive, and unrelated questioned-ticket mutation—so AC-1, AC-2, and AC-4 are not proven.'
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.
