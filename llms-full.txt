@@ -551,20 +551,22 @@ The agents follow the commit and sync discipline that keeps concurrent writers f
 
 # Command reference
 
-The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
+The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version and the host OS/arch, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
 
 ## --version
 
-`spacedock --version` reports the binary version, and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints one line:
+`spacedock --version` reports the binary version and the host OS/arch, and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints two lines:
 
 ```
 spacedock 0.26.0
+OS: darwin/arm64
 ```
 
-Inside a session it also names the runtime it detected, the marker that proved it, which session this is, and whether this process is running inside a sandbox:
+Inside a session it also names the host OS/arch, the runtime it detected, the marker that proved it, which session this is, and whether this process is running inside a sandbox:
 
 ```
 spacedock 0.26.0
+OS: darwin/arm64
 Runtime: claude (CLAUDECODE, session afd74765)
 Sandbox: inside (agent-safehouse)
 contract 3
@@ -582,7 +584,7 @@ When markers for more than one runtime are set — a nested session can leak the
 Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE) — pass --host
 ```
 
-Being outside every runtime is a normal state, not a fault — it means a human at a terminal. There is no `Runtime:` line at all in that case, because there is no session to report: the output is the single version line shown above.
+Being outside every runtime is a normal state, not a fault — it means a human at a terminal. There is no `Runtime:` line at all in that case, because there is no session to report: the output is the two lines shown above (the version line plus the `OS:` line).
 
 The `Sandbox:` line answers one question — is this process sandboxed? Inside a sandbox it names it; otherwise it reports whether safehouse is available to sandbox future launches:
 
