@@ -6,6 +6,21 @@ id: 32vshm0h2h04gs7hzcf315g0
 source: "recorded Pi First Officer boot session at this repository root, cross-checked against PR #480"
 worktree: .worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction
 pr: "#551"
+gates:
+    version: 1
+    current:
+        gate: gate:32vshm0h2h04gs7hzcf315g0:validation
+    records:
+        - id: gate:32vshm0h2h04gs7hzcf315g0:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:32vshm0h2h04gs7hzcf315g0-validation-1
+              briefing:
+                id: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-1:revision-1
+                digest: sha256:84e0a3472ae3f057927220894ac94cfb220dd0a83f0cafc6648ac8677714f6f0
+                digest-domain: canonical-bytes
+                request-digest: sha256:e0f3aac5c1546b34119fd1e4884da69de987bec69432d183ceea4d2c921d8f91
+                room-ref: ./boot-identify-multi-workflow-llm-retry-friction/review/validation/briefing-1
 ---
 
 ## Problem

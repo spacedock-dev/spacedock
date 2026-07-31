@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-1:revision-1",
+  "question": "Should validation be revised once to rebase PR #551 and re-prove its execution-grounded filing ledger against current main?",
+  "artifacts": [
+    {
+      "id": "artifact:32vshm0h2h04gs7hzcf315g0:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d80ad0ffbca781d5a746e26a7e0ab233eb6332b8/boot-identify-multi-workflow-llm-retry-friction.md",
+      "rev": "sha256:47b4efe4eea25ccaedfd83280f1511c8f7460ef3f2ff433839a1d49c0a37945f",
+      "mediaType": "text/markdown",
+      "summary": "The candidate passed cycle-7 validation at 115f5019, but current Codex CI reproduced the exact transcript-matcher false-negative that this ticket replaces. PR #551 is stale against current main, so rebase without semantic expansion, rerun cheap proof, then perform one fresh validation and CI pass."
+    }
+  ]
+}
