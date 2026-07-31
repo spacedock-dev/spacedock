@@ -40,6 +40,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:d7525df2dc16c55bf993b138a1df3022b7d20cb5279c900c1594c77f396ac2cf
                 room-ref: ./boot-identify-multi-workflow-llm-retry-friction/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:32vshm0h2h04gs7hzcf315g0:validation:2
+                briefing: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T02:53:07.273377Z"
+                decision: approve
+                reason: 'Approved under sprint conn: fresh cycle-8 validation reproduced AC-1 through AC-4, full/race/format and two Pi live runs passed, current 0.27 gate/review semantics remain intact, and classified Roborev review found no Material blocker.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 ## Problem
