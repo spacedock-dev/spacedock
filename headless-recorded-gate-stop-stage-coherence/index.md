@@ -10,6 +10,21 @@ worktree:
 issue:
 milestone: 0.27.0
 id: 26nk8qd48zknqnn4kc123sez
+gates:
+    version: 1
+    current:
+        gate: gate:26nk8qd48zknqnn4kc123sez:backlog
+    records:
+        - id: gate:26nk8qd48zknqnn4kc123sez:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:26nk8qd48zknqnn4kc123sez-backlog-1
+              briefing:
+                id: briefing:26nk8qd48zknqnn4kc123sez:backlog:attempt-1:revision-1
+                digest: sha256:fea869611abb6a21b3bdf569d264e8c7dbc6166b5869203beec12d8aec962afb
+                digest-domain: canonical-bytes
+                request-digest: sha256:c6dd2c6b17d18deb57e14686317e8a856fb17c96ae5f6072c601fd0beba9b649
+                room-ref: ./review/backlog/briefing-1
 ---
 
 The required Sonnet live lane for PR #580 failed `TestLiveDefaultHeadlessStopsAtGate/default-headless-recorded-gate-stop`. The fixture changes `recorded-gate-task` from `status: validation` to `status: implementation` and adds an implementation stage definition, but leaves the entity body’s `## Stage Report: validation` in place. Sonnet interpreted that contradictory episode as stale authority: it withdrew the implementation attempt and manually set `status=validation`, crossing the committed no-authority boundary.
