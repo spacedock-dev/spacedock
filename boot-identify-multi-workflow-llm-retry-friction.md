@@ -1,6 +1,6 @@
 ---
 title: Self-describing boot identify schema and contract hint to eliminate LLM duplicate CLI retry loop
-status: validation
+status: implementation
 score: 0.85
 id: 32vshm0h2h04gs7hzcf315g0
 source: "recorded Pi First Officer boot session at this repository root, cross-checked against PR #480"
@@ -170,6 +170,7 @@ Ideation scoped the fix to the many-workflow `--boot --identify` terminal branch
 - Cycle 5: REJECTED — codex-live CI/captain; surface 6 files/133 changed LOC vs estimate 180 LOC (74%); AC unchanged. Design-reset decision: captain reconfirmed a narrow implementation pass that preserves the approved boot-identify design, rebases PR #551 onto current main, and repairs the observed Codex filing-detector false negative with an exact archived-command regression before fresh validation.
 - Cycle 6: REJECTED — validation/captain; surface 8 files/171 changed LOC vs estimate 180 LOC (95%); AC narrowed: replace AC-3's irreproducible historical before/after reduction with an after-only live invariant over a two-workflow fixture—exactly one boot identify, zero retry helpers before selection, the exact selection greeting, and no convergence/mutation—and require the shared scenario to run through the Pi live suite. Also repair the validator-proven heredoc-narration false positive before re-review. Design-reset decision: captain explicitly approved the live test and Pi execution path even though the added runtime coverage may exceed the original surface estimate.
 - Cycle 7: REJECTED — validation/captain; surface 19 files/710 changed LOC vs estimate 180 LOC (394%); AC unchanged from the cycle-6 after-only ruling. The live Pi outcome itself passed, but transcript substring inference counted quoted `echo` examples as execution and could double-count conditional launcher branches; the filing matcher had the same narration/execution ambiguity. Captain sent the task back. Replace shell-source inference with a test-local launcher shim that records actual argv before executing the real binary, and grade the execution ledger for both boot cardinality and atomic filing. Do not add a new controller, production dependency, or CI lane.
+- Cycle 8: REJECTED — current Codex CI/first officer under sprint conn; surface 23 files/1300 changed LOC vs estimate 180 LOC (722%); AC unchanged from the cycle-7 execution-grounded ledger ruling. Current Codex CI successfully created `wire-the-thing` through `spacedock new` but main's transcript matcher rejected the quoted command, reproducing the defect this candidate removes. Design-reset decision: retain the already-validated argv-ledger direction, perform one rebase-only implementation pass against current main, prune only conflict-obsolete code, add no semantic surface, and require fresh validation plus CI before merge.
 
 
 
