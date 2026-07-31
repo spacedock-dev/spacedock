@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-2:revision-1",
+  "question": "Approve exact head 1dde8edd0 for replacement PR and merge?",
+  "artifacts": [
+    {
+      "id": "artifact:32vshm0h2h04gs7hzcf315g0:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/11ffc7d319f35d075a28b4757dd48da1f0bd7412/boot-identify-multi-workflow-llm-retry-friction.md",
+      "rev": "sha256:fbdfb335bbfe0c31ab6f1272d0d507b2c0b0e278e329fbc2089a55dceb030840",
+      "mediaType": "text/markdown",
+      "summary": "Fresh cycle-8 validation passed AC-1 through AC-4 on rebased head 1dde8edd0: focused/full/race/format and two Pi live runs passed; current 0.27 gate/review semantics remain intact; transcript-based filing and round observers are removed; four Roborev findings were classified with no Material blocker."
+    }
+  ]
+}

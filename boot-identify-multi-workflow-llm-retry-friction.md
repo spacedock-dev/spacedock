@@ -32,7 +32,14 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:32vshm0h2h04gs7hzcf315g0-validation-2
+              briefing:
+                id: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-2:revision-1
+                digest: sha256:7212731d0a5cccd5f1b0745e52e6ec62d1394ec98ec719d623528e9cef31d543
+                digest-domain: canonical-bytes
+                request-digest: sha256:d7525df2dc16c55bf993b138a1df3022b7d20cb5279c900c1594c77f396ac2cf
+                room-ref: ./boot-identify-multi-workflow-llm-retry-friction/review/validation/briefing-2
 ---
 
 ## Problem
