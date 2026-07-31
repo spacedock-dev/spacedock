@@ -3,7 +3,7 @@ id: 1w62z8c5fq5g5cmhzf5sd79w
 title: "Resolution-consume semantic hole: gate approval spends authority into terminal status before delivery proof, leaving no send-back path when delivery later fails"
 status: ideation
 source: "FO self-incident, 2026-07-31, in session fielding the fo-boot-install-hint-linux-direct-sandbox PR-merge ceremony. Captain caught the model–reality mismatch: status=done + verdict/completed unset + mod-block=merge:pr-merge, all after the validation approval was consumed into done. Only the credential delay kept the failure mode from being ratified."
-started:
+started: 2026-07-31T14:27:47Z
 completed:
 verdict:
 score:
