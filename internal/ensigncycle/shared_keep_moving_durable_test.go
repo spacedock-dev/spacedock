@@ -53,11 +53,14 @@ func durableTaskJourneyFailure(t *testing.T, root, slug, stage string) string {
 	reportBefore, unscopedReport, archived := false, false, false
 	for i, c := range history {
 		hasReport := strings.Contains(c.blob, "\n## Stage Report: "+stage+"\n")
+		atomicWorker := durableAtomicWorkerProof(history, i, stage)
 		if c.message == "dispatch: "+slug+" entering "+stage && c.entityFileScoped &&
 			durableField(c.blob, "status") == stage && durableField(c.blob, "started") != "" {
 			dispatch = i
 		}
-		if hasReport {
+		if atomicWorker {
+			dispatch, report = i, i
+		} else if hasReport {
 			if dispatch < 0 || i <= dispatch {
 				reportBefore = true
 			} else if !c.entityFileScoped {
@@ -66,7 +69,8 @@ func durableTaskJourneyFailure(t *testing.T, root, slug, stage string) string {
 				report = i
 			}
 		}
-		if report >= 0 && i > report && c.entityFileScoped && durableField(c.blob, "status") == "done" &&
+		terminalScoped := c.entityFileScoped || (c.entityOwned && i == len(history)-1)
+		if report >= 0 && i > report && terminalScoped && durableField(c.blob, "status") == "done" &&
 			durableField(c.blob, "completed") != "" && durableField(c.blob, "verdict") != "" {
 			terminal = i
 		}
@@ -92,6 +96,16 @@ func durableTaskJourneyFailure(t *testing.T, root, slug, stage string) string {
 		return "active entity remains beside canonical archive"
 	}
 	return ""
+}
+func durableAtomicWorkerProof(history []durableCommit, i int, stage string) bool {
+	if i == 0 || !history[i].entityFileScoped {
+		return false
+	}
+	report := "\n## Stage Report: " + stage + "\n"
+	parent, child := history[i-1].blob, history[i].blob
+	return durableField(parent, "started") == "" && !strings.Contains(parent, report) &&
+		durableField(child, "status") == stage && durableField(child, "started") != "" &&
+		strings.Contains(child, report)
 }
 func durableEntityHistory(t *testing.T, root, slug, logPath string) []durableCommit {
 	out := git(t, root, "log", "--follow", "--format=%H%x09%s", "--", logPath)
@@ -190,6 +204,12 @@ func TestDurableTaskJourneys(t *testing.T) {
 		{"cross-attributed report", "cross-attributed-report", "ready-one", "path-scoped worker report"},
 		{"cross-attributed archive", "cross-attributed-archive", "ready-one", "canonical archive"},
 		{"slug-prefix archive", "slug-prefix-archive", "ready-one", "canonical archive"},
+		{"atomic first worker", "atomic-worker", "", ""},
+		{"atomic preexisting started", "atomic-preexisting-started", "ready-one", "dispatch entry"},
+		{"atomic preexisting report", "atomic-preexisting-report", "ready-one", "dispatch entry"},
+		{"atomic report only", "atomic-report-only", "ready-one", "dispatch entry"},
+		{"atomic foreign path", "atomic-foreign-path", "ready-one", "dispatch entry"},
+		{"atomic slug prefix", "atomic-slug-prefix", "ready-one", "dispatch entry"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -212,22 +232,41 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 	for _, slug := range []string{"approved-gate", "ready-one", "ready-two"} {
 		writeFile(t, filepath.Join(root, slug+".md"), durableEntity(slug, "implementation", "", ""))
 	}
+	if mutation == "atomic-preexisting-started" {
+		path := filepath.Join(root, "ready-one.md")
+		writeFile(t, path, strings.Replace(readFile(t, path), "started: ", "started: 2026-07-30T23:59:00Z", 1))
+	}
+	if mutation == "atomic-preexisting-report" {
+		durableAppendReport(t, root, "ready-one")
+	}
 	gitInit(t, root)
 	for _, slug := range []string{"approved-gate", "ready-one", "ready-two"} {
+		atomic := strings.HasPrefix(mutation, "atomic-") && (mutation == "atomic-worker" || slug == "ready-one")
 		if mutation == "report-before-dispatch" && slug == "ready-one" {
 			durableAppendReport(t, root, slug)
 			gitCommitPathScoped(t, root, slug+".md", "worker: stale "+slug)
 		}
-		if mutation != "missing-dispatch" || slug != "ready-one" {
+		if !atomic && (mutation != "missing-dispatch" || slug != "ready-one") {
 			writeFile(t, filepath.Join(root, slug+".md"), strings.Replace(readFile(t, filepath.Join(root, slug+".md")), "started: ", "started: 2026-07-31T00:00:00Z", 1))
 			gitCommitPathScoped(t, root, slug+".md", "dispatch: "+slug+" entering implementation")
 		}
 		if (mutation != "missing-report" || slug != "ready-one") && !(mutation == "report-before-dispatch" && slug == "ready-one") {
-			durableAppendReport(t, root, slug)
-			if mutation == "cross-attributed-report" && slug == "ready-one" {
+			path := filepath.Join(root, slug+".md")
+			if atomic && mutation != "atomic-report-only" {
+				writeFile(t, path, strings.Replace(readFile(t, path), "started: ", "started: 2026-07-31T00:00:00Z", 1))
+			}
+			if !(atomic && mutation == "atomic-preexisting-report") {
+				durableAppendReport(t, root, slug)
+			}
+			if (mutation == "cross-attributed-report" || mutation == "atomic-foreign-path") && slug == "ready-one" {
 				writeFile(t, filepath.Join(root, "ready-two.md"), readFile(t, filepath.Join(root, "ready-two.md"))+"\ncross-attributed\n")
 				git(t, root, "add", "--", "ready-one.md", "ready-two.md")
 				git(t, root, "commit", "-q", "-m", "worker: wrong scope", "--", "ready-one.md", "ready-two.md")
+			} else if mutation == "atomic-slug-prefix" && slug == "ready-one" {
+				foreign := "ready-one-other/review/briefing.json"
+				writeFile(t, filepath.Join(root, foreign), "{}\n")
+				git(t, root, "add", "--", "ready-one.md", foreign)
+				git(t, root, "commit", "-q", "-m", "worker: wrong prefix", "--", "ready-one.md", foreign)
 			} else {
 				gitCommitPathScoped(t, root, slug+".md", "worker: "+slug)
 			}
@@ -240,8 +279,10 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 		content = strings.Replace(content, "status: implementation", "status: done", 1)
 		content = strings.Replace(content, "completed:", "completed: "+completed, 1)
 		content = strings.Replace(content, "verdict:", "verdict: "+verdict, 1)
-		writeFile(t, filepath.Join(root, slug+".md"), content)
-		gitCommitPathScoped(t, root, slug+".md", "terminalize: "+slug)
+		if mutation != "atomic-worker" {
+			writeFile(t, filepath.Join(root, slug+".md"), content)
+			gitCommitPathScoped(t, root, slug+".md", "terminalize: "+slug)
+		}
 		if mutation != "missing-archive" || slug != "ready-one" {
 			writeFile(t, filepath.Join(root, "_archive", slug+".md"), content)
 			git(t, root, "rm", "-q", "--", slug+".md")
@@ -268,6 +309,15 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 		}
 	}
 	return root
+}
+func TestRetainedAtomicWorkerJourney(t *testing.T) {
+	root := os.Getenv("SPACEDOCK_KEEP_MOVING_RETAIN_ROOT")
+	if root == "" {
+		t.Skip("SPACEDOCK_KEEP_MOVING_RETAIN_ROOT is not set")
+	}
+	if err := assertDurableKeepMoving(t, root); err != nil {
+		t.Fatal(err)
+	}
 }
 func durableEntity(slug, stage, started, report string) string {
 	return "---\nid: " + slug + "\ntitle: " + slug + "\nstatus: " + stage +
