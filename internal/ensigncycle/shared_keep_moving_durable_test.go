@@ -25,8 +25,9 @@ func kmExpected() map[string]string {
 }
 
 type durableCommit struct {
-	message, blob string
-	scoped        bool
+	message, blob    string
+	entityFileScoped bool
+	entityOwned      bool
 }
 
 func gradeDurableTaskJourneys(t *testing.T, root string, expected map[string]string) (int, map[string]string) {
@@ -52,24 +53,24 @@ func durableTaskJourneyFailure(t *testing.T, root, slug, stage string) string {
 	reportBefore, unscopedReport, archived := false, false, false
 	for i, c := range history {
 		hasReport := strings.Contains(c.blob, "\n## Stage Report: "+stage+"\n")
-		if c.message == "dispatch: "+slug+" entering "+stage && c.scoped &&
+		if c.message == "dispatch: "+slug+" entering "+stage && c.entityFileScoped &&
 			durableField(c.blob, "status") == stage && durableField(c.blob, "started") != "" {
 			dispatch = i
 		}
 		if hasReport {
 			if dispatch < 0 || i <= dispatch {
 				reportBefore = true
-			} else if !c.scoped {
+			} else if !c.entityFileScoped {
 				unscopedReport = true
 			} else if report < 0 && !unscopedReport && !reportBefore {
 				report = i
 			}
 		}
-		if report >= 0 && i > report && c.scoped && durableField(c.blob, "status") == "done" &&
+		if report >= 0 && i > report && c.entityFileScoped && durableField(c.blob, "status") == "done" &&
 			durableField(c.blob, "completed") != "" && durableField(c.blob, "verdict") != "" {
 			terminal = i
 		}
-		if terminal >= 0 && i >= terminal && c.scoped && i == len(history)-1 {
+		if terminal >= 0 && i >= terminal && c.entityOwned && i == len(history)-1 {
 			archived = true
 		}
 	}
@@ -104,15 +105,23 @@ func durableEntityHistory(t *testing.T, root, slug, logPath string) []durableCom
 		}
 		blob := durableBlobAt(root, fields[0], slug)
 		files := strings.Fields(git(t, root, "diff-tree", "--root", "--no-commit-id", "--name-only", "-r", "-M", fields[0]))
-		scoped := len(files) > 0
+		scoped, entityOwned := len(files) > 0, len(files) > 0
 		for _, file := range files {
 			if file != slug+".md" && file != filepath.Join("_archive", slug+".md") {
 				scoped = false
 			}
+			if !durablePathOwnedBySlug(slug, file) {
+				entityOwned = false
+			}
 		}
-		history = append(history, durableCommit{fields[1], blob, scoped})
+		history = append(history, durableCommit{fields[1], blob, scoped, entityOwned})
 	}
 	return history
+}
+func durablePathOwnedBySlug(slug, path string) bool {
+	return path == slug+".md" || path == filepath.Join("_archive", slug+".md") ||
+		strings.HasPrefix(path, slug+"/") ||
+		strings.HasPrefix(path, filepath.Join("_archive", slug)+"/")
 }
 func durableBlobAt(root, hash, slug string) string {
 	for _, path := range []string{filepath.Join("_archive", slug+".md"), slug + ".md"} {
@@ -142,8 +151,8 @@ func assertDurableKeepMoving(t *testing.T, root string) error {
 		return fmt.Errorf("%s must remain active and nonterminal", kmQuestioned)
 	}
 	history := durableEntityHistory(t, root, kmQuestioned, kmQuestioned+".md")
-	if len(history) < 2 || history[len(history)-1].blob == history[0].blob || !history[len(history)-1].scoped {
-		return fmt.Errorf("%s has no durable path-scoped re-shape", kmQuestioned)
+	if len(history) < 2 || history[len(history)-1].blob == history[0].blob || !history[len(history)-1].entityOwned {
+		return fmt.Errorf("%s has no durable entity-owned re-shape", kmQuestioned)
 	}
 	return nil
 }
@@ -179,6 +188,8 @@ func TestDurableTaskJourneys(t *testing.T) {
 		{"missing archive", "missing-archive", "ready-one", "canonical archive"},
 		{"report before dispatch", "report-before-dispatch", "ready-one", "worker report after dispatch"},
 		{"cross-attributed report", "cross-attributed-report", "ready-one", "path-scoped worker report"},
+		{"cross-attributed archive", "cross-attributed-archive", "ready-one", "canonical archive"},
+		{"slug-prefix archive", "slug-prefix-archive", "ready-one", "canonical archive"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -235,7 +246,25 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 			writeFile(t, filepath.Join(root, "_archive", slug+".md"), content)
 			git(t, root, "rm", "-q", "--", slug+".md")
 			git(t, root, "add", "--", "_archive/"+slug+".md")
-			git(t, root, "commit", "-q", "-m", "archive: "+slug, "--", slug+".md", "_archive/"+slug+".md")
+			commitPaths := []string{slug + ".md", "_archive/" + slug + ".md"}
+			if slug == "approved-gate" {
+				sidecar := "_archive/approved-gate/review/briefing.json"
+				writeFile(t, filepath.Join(root, sidecar), "{}\n")
+				git(t, root, "add", "--", sidecar)
+				commitPaths = append(commitPaths, sidecar)
+			}
+			if mutation == "cross-attributed-archive" && slug == "ready-one" {
+				writeFile(t, filepath.Join(root, "ready-two.md"), readFile(t, filepath.Join(root, "ready-two.md"))+"\nforeign archive\n")
+				git(t, root, "add", "--", "ready-two.md")
+				commitPaths = append(commitPaths, "ready-two.md")
+			}
+			if mutation == "slug-prefix-archive" && slug == "ready-one" {
+				foreign := "ready-one-other/review/briefing.json"
+				writeFile(t, filepath.Join(root, foreign), "{}\n")
+				git(t, root, "add", "--", foreign)
+				commitPaths = append(commitPaths, foreign)
+			}
+			git(t, root, append([]string{"commit", "-q", "-m", "archive: " + slug, "--"}, commitPaths...)...)
 		}
 	}
 	return root

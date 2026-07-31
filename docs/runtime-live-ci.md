@@ -35,11 +35,11 @@ The shared scenarios reuse the old shared Claude/Codex Python journey overlap (`
 Assertions prefer durable workflow state over transcript phrasing: entity frontmatter (status / completed / verdict), archive-vs-no-archive, the exact fix marker and a second stage report, and only the durable user-facing final-message obligations (a gate review and a decision prompt). `extractClaudeFinalMessage` surfaces a stale-credential `is_error`/`401` `result` event as a LOUD launch failure, distinct from a scenario-assertion failure, so a credential problem is never misread as a runtime regression.
 
 Keep-moving completion is provider-independent. Each expected task must have its own
-ordered, path-scoped Git journey: dispatch entry with `started`, a later worker Stage
-Report, terminal fields, then its canonical archive path. Transcript JSONL, command text,
-provider events, and model narration are retained as diagnostic artifacts but do not
-credit completion. The commissioned-task fallback in `smallest-sufficient-mechanism`
-uses the same durable journey oracle.
+ordered Git journey: entity-file-scoped dispatch with `started`, worker Stage Report, and
+terminal fields, then an entity-owned canonical archive. Same-slug review sidecars are
+allowed only at the archive or corrected-held boundary; any foreign slug rejects.
+Transcript JSONL, command text, provider events, and model narration remain diagnostic
+only. The commissioned-task fallback uses the same durable journey oracle.
 
 **To add a shared runtime scenario:**
 
@@ -68,7 +68,7 @@ go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./in
 
 Run the Codex shared suite locally (`npm install -g @openai/codex` then `codex login`, or set `OPENAI_API_KEY`). Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test copies only `auth.json` into a temporary `CODEX_HOME` for the local subscription path; it does not copy local plugin state or the rest of the operator's Codex config. CI does not use local subscription auth.
 
-Each Codex shared scenario launches one `codex exec`. A fixed 15-minute wall-clock process limit is its only scenario-level liveness guard; JSONL activity, `wait_agent` events, and durable writes do not extend the deadline, and the runner does not retry. The runner preserves JSONL, stderr, the process result, and post-run durable entity/Git evidence, then requires exit 0 and grades the existing workflow assertions. The suite-wide `-timeout 40m` remains a loose outer backstop.
+Each Codex shared scenario launches one `codex exec`. A fixed 15-minute wall-clock process limit is its only scenario-level liveness guard; JSONL activity, `wait_agent` events, and durable writes do not extend the deadline, and the runner does not retry. The runner preserves JSONL, stderr, the process result, and post-run durable entity/Git evidence, then requires exit 0 and grades the existing workflow assertions. A failed keep-moving run prints and retains its native Git root; a passing run removes it. The suite-wide `-timeout 40m` remains a loose outer backstop.
 
 ```bash
 go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v

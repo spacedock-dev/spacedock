@@ -344,11 +344,15 @@ func runCodexSmallestSufficientMechanismScenario(t *testing.T, runner codexLiveR
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
-// runCodexKeepMovingScenario grades each completed task from its own ordered,
-// path-scoped Git history and keeps the questioned task active after a durable re-shape.
+// runCodexKeepMovingScenario grades each completed task from its own ordered
+// Git history and keeps the questioned task active after a durable re-shape.
 func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
-	workflowRoot := t.TempDir()
+	workflowRoot, err := os.MkdirTemp("", "spacedock-keep-moving-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { cleanupKeepMovingRoot(t, workflowRoot, t.Failed()) })
 	writeKeepMovingWorkflow(t, workflowRoot)
 
 	result, err := runner.run(t, scenario, workflowRoot, keepMovingPrompt(workflowRoot))
@@ -359,6 +363,29 @@ func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario s
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
+}
+
+func cleanupKeepMovingRoot(t *testing.T, root string, failed bool) {
+	t.Helper()
+	if failed {
+		t.Logf("retained failing keep-moving Git root: %s", root)
+		return
+	}
+	if err := os.RemoveAll(root); err != nil {
+		t.Errorf("remove successful keep-moving Git root: %v", err)
+	}
+}
+
+func TestCleanupKeepMovingRootRetainsOnlyFailures(t *testing.T) {
+	root := t.TempDir()
+	cleanupKeepMovingRoot(t, root, true)
+	if _, err := os.Stat(root); err != nil {
+		t.Fatalf("failed workflow was not retained: %v", err)
+	}
+	cleanupKeepMovingRoot(t, root, false)
+	if _, err := os.Stat(root); !os.IsNotExist(err) {
+		t.Fatalf("successful workflow still exists: %v", err)
+	}
 }
 
 // runCodexFilingScenario drives the real FO against an EMPTY workflow and asks it
