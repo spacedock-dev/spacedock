@@ -69,31 +69,49 @@ The keep-moving live scenario must credit each completed task from its own durab
 
 PR #513's `codex-live` lane failed `TestLiveCodexSharedScenarios/keep-moving-posture` even though `approved-gate`, `ready-one`, and `ready-two` had each completed the real workflow journey: dispatch entry, worker completion, terminalization, and archive. The observer instead tried to reconstruct that journey from Codex JSONL, report-heading cardinality, command text, and merge-loop output. Harmless changes in those representations produced a false red twice after the same exact-head behavior had passed offline, install, Claude/Opus, and Pi validation.
 
-The failure is architectural, not another dialect bug. Adding a generic-heading exception, recognizing a shell variable, normalizing `item.completed`, or replaying a smaller JSONL sample would retain a second protocol whose grammar changes independently of Spacedock behavior. The captain therefore rejected transcript grammar parsing in full.
+Candidate `1dd01b6db` replaced that observer with ordered Git history, but its first live diagnosis was destroyed by `t.TempDir` cleanup and could not justify changing the oracle. A second exact-tip run retained the completed workflow and narrowed the false red: the unmodified candidate credited `ready-one` and `ready-two` but reported `2/3` because `approved-gate`'s canonical archive commit also moved two gate-review files owned by that entity. Treating every path beyond `<slug>.md` as foreign conflates a same-entity atomic archive with cross-attribution.
+
+The architectural constraint remains: adding a generic-heading exception, recognizing a shell variable, normalizing `item.completed`, or replaying a smaller JSONL sample would retain a second protocol whose grammar changes independently of Spacedock behavior. The correction must stay inside existing Git paths, blobs, and ancestry.
 
 Exact evidence: [PR #513](https://github.com/spacedock-dev/spacedock/pull/513), [Runtime Live E2E run 29392675038 / codex-live job 87279446937](https://github.com/spacedock-dev/spacedock/actions/runs/29392675038/job/87279446937).
 
 ## Spike result
 
-The cheapest mechanism already exists in `internal/ensigncycle/liveassert_test.go`: locate an entity in its active or archive location and interrogate its path-scoped Git history. The focused spike
+An isolated harness-only copy of exact candidate `1dd01b6db` replaced only the keep-moving `t.TempDir` allocation with a caller-named retained directory. A freshly built `0.27.0-pre2+dev` binary passed `doctor --host codex --plugin-manifest .codex-plugin/plugin.json`; the supported local-auth Codex run then completed and left the real repository at `/tmp/spacedock-km-retained.SHtfgD` for inspection before cleanup.
 
-`go test ./internal/ensigncycle -run 'TestLocateEntity|TestSomeCommitNamesOnly|TestIntegrationTransitionCommitted|TestCompletedSetAnchor|TestLiveStageReportHeading|TestTerminalFrontmatterAnchors' -count=1 -v`
+The retained histories are:
 
-passed on 2026-07-31. Its falsifying control is load-bearing: a clean `status: done` entity with a path-scoped terminal commit passes the superficial terminal checks but `TestIntegrationTransitionCommitted/skipped_advance_fails` rejects it because the required earlier transition is absent. Therefore final archived state alone is insufficient; ordered, per-path durable history is the minimum proof.
+- `approved-gate`: `1149540 dispatch` → `622afb9` worker report → `bb4cf57` terminalize → `8c1a40a` archive. The archive commit renamed `_archive/approved-gate.md` plus two `_archive/approved-gate/review/...` briefing files and no foreign entity path.
+- `ready-one`: `0ec6813 dispatch` → `75f8385` worker report → `dec565a` terminalize → `50420a3` single-file archive.
+- `ready-two`: `0cf96e0 dispatch` → `aeb0f4c` worker report → `66fecd9` terminalize → `6899d54` single-file archive.
+- `questioned`: a scoped ideation report was followed by review and `f9c71be` binding the corrected review; that final commit changed `questioned.md` plus only `questioned/review/...` briefing files, and the entity remained active/nonterminal at review.
+
+All three dispatch blobs have `status: implementation` and the same non-empty `started: 2026-07-30T23:53:21Z`; all three worker commits contain the later implementation Stage Report; all three terminal blobs have `completed: 2026-07-30T23:56:20Z` and `verdict: passed`. Thus the prior destroyed run's `0/3 missing dispatch` diagnosis was not reproduced and is not a design premise.
+
+A throwaway two-scope spike kept dispatch, worker-report, and terminal commits strictly entity-file-scoped, but allowed archive/held-state commits to change only paths inside that slug's active or archived namespace. It credited the retained journey `3/3`, preserved all existing missing/reordered/stale/cross-report controls, and kept a new cross-attributed archive control red:
+
+`SPACEDOCK_KEEP_MOVING_RETAIN_ROOT=/tmp/spacedock-km-retained.SHtfgD go test ./internal/ensigncycle -run '^(TestDurableTaskJourneys|TestRetainedKeepMovingJourney)$' -count=1 -v`
+
+The spike passed in 6.776s. Final archived state alone remains insufficient; the smallest correction is a path-ownership distinction at the two commits that legitimately carry same-entity support files.
 
 ## Proposed approach
 
-Replace the keep-moving transcript trace with one host-neutral durable-task journey oracle. For each expected completed slug, follow that entity's Git history from its archive path and require, in ancestry order:
+Keep the candidate's host-neutral durable-task journey oracle. For each expected completed slug, follow that entity's Git history from its archive path and require, in ancestry order:
 
-1. A path-scoped `dispatch: {slug} entering {stage}` commit whose entity blob has the expected stage and non-empty `started`. This is the existing dispatch-entry contract, not a new receipt.
-2. A later path-scoped worker commit whose entity blob contains that stage's durable Stage Report. `started` alone never earns dispatch credit; the later worker-owned report is what closes the dispatched-work claim under the existing FO/ensign authority split.
-3. A later terminal blob with non-empty `completed` and `verdict`, followed by the entity existing only at its canonical archive location. The archive path and Git ancestry bind all facts to the same slug; timestamps are not used for ordering.
+1. An entity-file-scoped `dispatch: {slug} entering {stage}` commit whose entity blob has the expected stage and non-empty `started`.
+2. A later entity-file-scoped worker commit whose entity blob contains that stage's durable Stage Report. `started` or a generated dispatch artifact alone earns no worker-execution credit.
+3. A later entity-file-scoped terminal blob with non-empty `completed` and `verdict`.
+4. A final entity-owned archive commit: every changed destination must be exactly the active/archive entity Markdown path or lie beneath the active/archive `<slug>/` support subtree. The canonical archive Markdown must exist and the active Markdown must not.
+
+Use path-component boundaries, not string-prefix aliases: `ready` does not own `ready-two.md` or `ready-two/...`. Preserve the stricter entity-file predicate for dispatch, report, and terminalization; only archive and the final durable `questioned` hold use the entity-owned namespace predicate. Any other slug or repository path makes the commit cross-attributed.
 
 Grade the three independent tasks as a set of three separate journeys. `questioned` remains a negative guard: it must be durably re-shaped and nonterminal, and none of its commits may satisfy another slug. The live runner supplies only the workflow root and expected slugs/stages; it does not supply JSONL, final narration, commands, or provider events.
 
-Reuse the same durable completion oracle for the commissioned-task completion fallback in the smallest-sufficient-mechanism scenario, so deleting the shared Codex evidence parser does not silently leave a second consumer behind. That scenario's unrelated edit/commit scope checks stay unchanged.
+Update the deterministic real-Git positive fixture to mirror the retained archive: `approved-gate` carries same-entity gate-review sidecars, while the other two remain single-file archives. Add a foreign-path archive mutation and a slug-prefix collision control. Keep the existing missing dispatch/report/terminal/archive, stale order, and foreign worker-report mutations.
 
-The rejected alternatives are: final archive state alone (falsified by the spike), `status --archived` alone (no ordered dispatch/completion proof), an instrumented wrapper log (a new observer schema), and any transcript/event/command parser (the rejected architecture).
+Give the Codex keep-moving live fixture a failure-preserving temp root: delete it on success, but on failure retain and print the ordinary Git repository path. This is diagnosis only; the oracle still grades the in-place repository. Reuse the same durable completion oracle for the commissioned-task completion fallback in the smallest-sufficient-mechanism scenario.
+
+The rejected alternatives are: weakening dispatch-entry requirements (contradicted by retained history), allowing support subtrees at worker-report commits (unneeded), final archive state alone, `status --archived` alone, an instrumented wrapper log, and any transcript/event/command parser.
 
 ## Deletion inventory
 
@@ -108,9 +126,11 @@ No compatibility is retained for these internal observer formats.
 
 Expected files: delete the four files above; add `internal/ensigncycle/shared_keep_moving_durable_test.go`; adjust `shared_smallest_mechanism_test.go`, `shared_fixtures_test.go`, `codex_live_runner_test.go`, `claude_live_runner_test.go`, and `docs/runtime-live-ci.md`. A tiny shared fixture-helper move is allowed if compilation requires it.
 
-Budget: at most 10 files plus one helper-only file; at most 300 inserted lines; at least 1,100 deleted lines; cumulative diff must remain at least 700 lines net negative. Tolerance is +1 file and +80 insertions only when needed to keep an unrelated test fixture compiling; the net-negative floor is not waived.
+Budget: at most 10 files plus one helper-only file; at most 360 inserted lines; at least 1,400 deleted lines; cumulative diff must remain at least 1,000 lines net negative. Candidate `1dd01b6db` is already 10 files, +273/-1,447; the reset permits at most 87 further inserted lines in those files. Tolerance is +1 helper-only file and +20 insertions only if compilation requires a fixture move; the net-negative floor is not waived.
 
-Observable semantics changed: test-oracle runtime behavior only. Keep-moving and commissioned completion are credited from existing durable state and Git ancestry rather than transcript/final-message syntax. Command grammar, CLI output, stored formats, mutation authority, runtime dispatch behavior, retry policy, and provider adapters do not change. There is no new observer schema, receipt, retry controller, transcript grammar, or runtime normalization.
+Observable semantics changed: test-oracle runtime behavior only. Dispatch, worker completion, and terminalization remain entity-file-scoped; canonical archive and corrected held-state commits may also contain existing support paths owned by the same slug. Keep-moving failures retain their ordinary temp Git root for diagnosis. Command grammar, CLI output, stored formats, mutation authority, runtime dispatch behavior, retry policy, and provider adapters do not change. There is no new observer schema, receipt, retry controller, transcript grammar, or runtime normalization.
+
+Concrete documentation diff in `docs/runtime-live-ci.md`: replace “ordered, path-scoped Git journey” with “entity-file-scoped dispatch/report/terminal commits followed by an entity-owned canonical archive; same-slug review sidecars are allowed only at the archive/held boundary and any foreign slug rejects.” Add one sentence that a failed Codex keep-moving run prints and retains its workflow Git root, while a passing run removes it.
 
 ## Out of scope
 
@@ -123,22 +143,28 @@ Observable semantics changed: test-oracle runtime behavior only. Keep-moving and
 ## Acceptance criteria
 
 **AC-1 - Every completed independent task is credited from its own durable journey.**
-Verified by: a deterministic real-Git fixture produces three ordered dispatch-entry → worker-report → terminalize → archive journeys and the oracle reports `3/3`; removing any one journey reports `2/3`. This replaces PR #513's false-red baseline, where the completed motion was credited as fewer than `3/3`.
+Verified by: the deterministic real-Git fixture reproduces the retained sidecar-bearing `approved-gate` archive plus two single-file archives and reports `3/3`; removing any one journey reports `2/3`. The independent retained live baseline moves from the unmodified candidate's `2/3` to `3/3`.
 
 **AC-2 - Missing, stale, reordered, or cross-attributed durable steps remain red per task.**
-Verified by: table-driven real-Git controls independently remove the dispatch-entry commit, worker report, terminal fields, or archive; place a report before dispatch; and give one slug another slug's report/commit. Each control names and rejects only the affected slug.
+Verified by: table-driven real-Git controls independently remove dispatch, report, terminal fields, or archive; place a report before dispatch; cross-attribute a worker report or archive to another slug; and use a slug-prefix collision. Each control names and rejects only the affected slug, while a same-slug gate sidecar archive stays green.
 
 **AC-3 - The observer surface is smaller and provider-independent.**
-Verified by: `git diff --numstat` meets the declared deletion and net-negative floors; focused tests accept identical durable journeys with empty/arbitrary transcript and final-message bytes, and no keep-moving completion code reads JSONL, shell/JavaScript text, provider event types, or model narration.
+Verified by: `git diff --numstat` meets the revised deletion/net-negative floors; focused tests accept identical durable journeys with empty/arbitrary transcript and final-message bytes, and no keep-moving completion code reads JSONL, shell/JavaScript text, provider event types, model narration, or a generated dispatch artifact.
 
 **AC-4 - Repository and live confirmation gates are green.**
-Verified by: focused durable-journey tests, `gofmt -l` empty for changed Go files, `go test ./...`, `go test ./... -race`, and one exact-head Codex keep-moving live run after deterministic proof is green.
+Verified by: focused durable-journey and retain/delete helper tests, `gofmt -l` empty for changed Go files, `go test ./...`, `go test ./... -race`, then exactly one compatible exact-head Codex keep-moving run reports `3/3`. A forced harness failure retains and prints the Git root; a successful helper control removes it.
 
 ## Test plan
 
-Implement one deterministic real-Git fixture that uses the existing entity layout, dispatch commit convention, Stage Report contract, terminal fields, and archive locations. The positive case costs four commits per task at most; table-driven negatives mutate one fact at a time and assert the exact slug/reason, including stale order and cross-attribution. No JSONL fixture is added.
+Cheapest first:
 
-Run the focused durable tests first, then `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. After those pass, run exactly one exact-head Codex `keep-moving-posture` live scenario and retain its ordinary runtime artifacts only for diagnosis, not grading.
+1. Extend the deterministic real-Git fixture with the retained `approved-gate` sidecar archive. Assert `3/3`; then independently remove dispatch/report/terminal/archive, reorder the report, add a foreign report/archive path, and use `ready` versus `ready-two` to prove component-safe ownership. Estimated cost: seconds, fixture-only.
+2. Exercise the failure-retained temp-root helper with success-removes and failure-retains controls. It must preserve native Git state, not generate a receipt or observer format. Estimated cost: milliseconds.
+3. Run focused durable journey, smallest-mechanism, and Codex/Claude runner compilation tests. Feed empty/arbitrary transcript and final-message bytes to the existing provider-independence controls.
+4. Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; verify the declared numstat floors.
+5. After all deterministic proof passes, run exactly one compatible exact-head Codex `keep-moving-posture` journey. Require `3/3`, the corrected nonterminal `questioned` hold, and a clean workflow; if red, inspect the printed retained Git root before any cleanup.
+
+No model transcript, JSONL dialect, final narration, shell/JavaScript grammar, provider event, correlated output, wrapper log, observer schema, receipt, controller, retry loop, daemon, or compatibility layer participates in grading.
 
 ## Stage Report: ideation
 
@@ -167,3 +193,16 @@ Ideation now removes the rejected transcript observer instead of extending its d
 Candidate `1dd01b6db` is frozen with deterministic and race proof green. The corrected live preflight built `0.27.0-pre2+dev` from that exact tip and `doctor --host codex --plugin-manifest .codex-plugin/plugin.json` confirmed compatibility; Codex then reported `approved-gate`, `ready-one`, and `ready-two` dispatched, worker-reported, passed, and archived, while `questioned` was re-shaped and held at its corrected review gate.
 
 The oracle rejected every completed slug with the exact reason `missing path-scoped dispatch entry with stage and started`. Go test cleanup removed the temporary workflow before its path history could be inspected, so weakening the dispatch rule would be a guess; route back to ideation to redesign the runtime-neutral durable boundary and retain failing state, with transcript/provider parsing still forbidden.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Retain and inspect the exact real-Git history shape from a supported completed Codex keep-moving journey before test cleanup.
+  Exact candidate `1dd01b6db` with compatible `0.27.0-pre2+dev` retained `/tmp/spacedock-km-retained.SHtfgD`; the unmodified oracle reported `2/3`, and the recorded commit/blob sequence proves all dispatch, worker-report, terminal, and archive steps.
+- DONE: Redesign the smallest runtime-neutral durable oracle that credits the real three-task journey and keeps missing, reordered, stale, and cross-attributed controls red.
+  A harness-only two-scope spike credited the retained journey `3/3` while all original controls plus a foreign-path archive control stayed red; dispatch/report/terminal remain entity-file-scoped and only archive/held commits admit same-slug support paths.
+- DONE: Revise ACs, semantic/file/LOC boundary, deletion inventory, and cheapest-first test plan without transcript/provider dialect parsing or guessed compatibility.
+  The body records the retained hashes, revised 10-file +360/-1,400/net-negative-1,000 boundary, unchanged deletion inventory, concrete documentation wording, adversarial controls, and one post-deterministic exact-head live confirmation.
+
+### Summary
+
+The retained journey replaced the destroyed run's unproven `0/3 missing dispatch` diagnosis with a concrete `2/3` archive-attribution defect. The reset preserves strict proof of actual worker execution and the net-negative parser deletion, while narrowly recognizing existing gate sidecars owned by the same entity and retaining future failing Git roots for diagnosis.
