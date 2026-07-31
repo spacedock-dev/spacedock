@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:26nk8qd48zknqnn4kc123sez:ideation:attempt-1:revision-1",
+  "question": "Approve the fixture-only correction for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:26nk8qd48zknqnn4kc123sez:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/26d298b609998d1f4b0ea5a6246bea3b246cb457/headless-recorded-gate-stop-stage-coherence/index.md",
+      "rev": "sha256:0ffd0c5990fe916bdd4f854ecf03c700785203df2a255e02b9b577ec441a4f8e",
+      "mediaType": "text/markdown",
+      "summary": "Correct the contradictory implementation-start live fixture so the supported Sonnet journey dispatches implementation, reaches validation, prepares exactly one gate, and stops without authority; retain strict no-authority grading and make no product semantic change."
+    }
+  ]
+}

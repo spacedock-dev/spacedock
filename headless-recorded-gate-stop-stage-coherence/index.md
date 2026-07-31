@@ -13,7 +13,7 @@ id: 26nk8qd48zknqnn4kc123sez
 gates:
     version: 1
     current:
-        gate: gate:26nk8qd48zknqnn4kc123sez:backlog
+        gate: gate:26nk8qd48zknqnn4kc123sez:ideation
     records:
         - id: gate:26nk8qd48zknqnn4kc123sez:backlog
           stage: backlog
@@ -38,6 +38,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:26nk8qd48zknqnn4kc123sez:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:26nk8qd48zknqnn4kc123sez-ideation-1
+              briefing:
+                id: briefing:26nk8qd48zknqnn4kc123sez:ideation:attempt-1:revision-1
+                digest: sha256:9f7a7ba5dbde944edbd8684a2fd8e26f6305540a7161c2ea14c92258829cf3e8
+                digest-domain: canonical-bytes
+                request-digest: sha256:b7db54faa91d87e7ad21b7f5c00ad09a1b32223be38ac796f429f7c43426b544
+                room-ref: ./review/ideation/briefing-1
 ---
 
 ## Problem statement
