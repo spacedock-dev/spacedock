@@ -91,6 +91,8 @@ PR #513's `codex-live` lane failed `TestLiveCodexSharedScenarios/keep-moving-pos
 
 Candidate `1dd01b6db` replaced that observer with ordered Git history, but its first live diagnosis was destroyed by `t.TempDir` cleanup and could not justify changing the oracle. A second exact-tip run retained the completed workflow and narrowed the false red: the unmodified candidate credited `ready-one` and `ready-two` but reported `2/3` because `approved-gate`'s canonical archive commit also moved two gate-review files owned by that entity. Treating every path beyond `<slug>.md` as foreign conflates a same-entity atomic archive with cross-attribution.
 
+Candidate `ae6cf1ee9` fixed that scope distinction and retained failing roots, then exposed a second supported durable shape. Its one exact-head live run used prescribed break-glass dispatch after the dispatch helper rejected empty checklists. Each task's first entity-file-only worker commit atomically added non-empty `started` plus the new current-stage Stage Report; a later entity-owned archive added terminal fields. With no separate `dispatch:` commit, the ordinary-only oracle returned `0/3` despite concrete worker output.
+
 The architectural constraint remains: adding a generic-heading exception, recognizing a shell variable, normalizing `item.completed`, or replaying a smaller JSONL sample would retain a second protocol whose grammar changes independently of Spacedock behavior. The correction must stay inside existing Git paths, blobs, and ancestry.
 
 Exact evidence: [PR #513](https://github.com/spacedock-dev/spacedock/pull/513), [Runtime Live E2E run 29392675038 / codex-live job 87279446937](https://github.com/spacedock-dev/spacedock/actions/runs/29392675038/job/87279446937).
@@ -114,24 +116,36 @@ A throwaway two-scope spike kept dispatch, worker-report, and terminal commits s
 
 The spike passed in 6.776s. Final archived state alone remains insufficient; the smallest correction is a path-ownership distinction at the two commits that legitimately carry same-entity support files.
 
+Cycle 3 retained the clean failed repository at `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/spacedock-keep-moving-1137023568`. Its completed histories are:
+
+- `approved-gate`: `053a50e init` → `9d710f1` first worker → `363cbe0` terminal archive with same-task review sidecars.
+- `ready-one`: `053a50e init` → `0c7c6b8` first worker → `8fa4c7b` terminal archive.
+- `ready-two`: `053a50e init` → `b4d7fdf` first worker → `08924c9` terminal archive.
+
+In every first-worker commit, the immediate parent lacks both `started` and the implementation Stage Report; the entity-file-only child changes to the expected stage and adds non-empty `started` plus that new report. A throwaway exact-`ae6cf1ee9` spike accepted both this retained `3/3` history and the ordinary two-commit fixture, while rejecting preexisting started, preexisting report, report-only, pre-dispatch/stale report, foreign worker path, and slug-prefix worker path controls:
+
+`SPACEDOCK_KEEP_MOVING_RETAIN_ROOT=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/spacedock-keep-moving-1137023568 go test ./internal/ensigncycle -run '^(TestDurableTaskJourneys|TestRetainedAtomicWorkerJourney)$' -count=1 -v`
+
+The spike passed 16 deterministic subtests plus the retained live journey in 11.229s. It added 57/deleted 7 lines only in a throwaway copy of `shared_keep_moving_durable_test.go`; frozen candidate `ae6cf1ee9` remained untouched.
+
 ## Proposed approach
 
-Keep the candidate's host-neutral durable-task journey oracle. For each expected completed slug, follow that entity's Git history from its archive path and require, in ancestry order:
+Keep the candidate's host-neutral Git-history oracle, but recognize exactly two worker-proof episodes for the expected stage:
 
-1. An entity-file-scoped `dispatch: {slug} entering {stage}` commit whose entity blob has the expected stage and non-empty `started`.
-2. A later entity-file-scoped worker commit whose entity blob contains that stage's durable Stage Report. `started` or a generated dispatch artifact alone earns no worker-execution credit.
-3. A later entity-file-scoped terminal blob with non-empty `completed` and `verdict`.
-4. A final entity-owned archive commit: every changed destination must be exactly the active/archive entity Markdown path or lie beneath the active/archive `<slug>/` support subtree. The canonical archive Markdown must exist and the active Markdown must not.
+1. **Ordinary:** an entity-file-only `dispatch: {slug} entering {stage}` commit whose blob has the expected stage and non-empty `started`, followed by a later entity-file-only commit whose blob contains the current-stage Stage Report.
+2. **Atomic break-glass:** one entity-file-only first-worker child whose immediate parent has empty `started` and no current-stage Stage Report, and whose child has the expected stage and atomically adds both non-empty `started` and the new current-stage Stage Report. That commit satisfies dispatch plus worker completion because the new worker report is present; a generated artifact, started-only transition, or report-only child never earns credit.
 
-Use path-component boundaries, not string-prefix aliases: `ready` does not own `ready-two.md` or `ready-two/...`. Preserve the stricter entity-file predicate for dispatch, report, and terminalization; only archive and the final durable `questioned` hold use the entity-owned namespace predicate. Any other slug or repository path makes the commit cross-attributed.
+After either episode, require a later terminal/archive boundary. It may be a separate entity-file-only terminal commit followed by the final entity-owned archive, or the final entity-owned archive may atomically add non-empty `completed` and `verdict`. In both forms the canonical archive Markdown must exist and the active Markdown must not.
+
+Use path-component boundaries, not string-prefix aliases: `ready` does not own `ready-two.md` or `ready-two/...`. Dispatch and worker proof always remain entity-file-only. Only the final archive and final durable `questioned` hold may include paths inside that exact slug's active/archive support subtree; any other path makes the commit cross-attributed.
 
 Grade the three independent tasks as a set of three separate journeys. `questioned` remains a negative guard: it must be durably re-shaped and nonterminal, and none of its commits may satisfy another slug. The live runner supplies only the workflow root and expected slugs/stages; it does not supply JSONL, final narration, commands, or provider events.
 
-Update the deterministic real-Git positive fixture to mirror the retained archive: `approved-gate` carries same-entity gate-review sidecars, while the other two remain single-file archives. Add a foreign-path archive mutation and a slug-prefix collision control. Keep the existing missing dispatch/report/terminal/archive, stale order, and foreign worker-report mutations.
+Extend the deterministic real-Git table with an atomic three-task positive that mirrors the retained first-worker plus terminal-archive shape. Add atomic controls for preexisting started, preexisting report, report without started, a foreign entity path, and a slug-prefix support path. Keep the ordinary positive and its missing dispatch/report/terminal/archive, stale/reordered report, foreign report/archive, and slug-prefix archive mutations.
 
 Give the Codex keep-moving live fixture a failure-preserving temp root: delete it on success, but on failure retain and print the ordinary Git repository path. This is diagnosis only; the oracle still grades the in-place repository. Reuse the same durable completion oracle for the commissioned-task completion fallback in the smallest-sufficient-mechanism scenario.
 
-The rejected alternatives are: weakening dispatch-entry requirements (contradicted by retained history), allowing support subtrees at worker-report commits (unneeded), final archive state alone, `status --archived` alone, an instrumented wrapper log, and any transcript/event/command parser.
+The rejected alternatives are: changing the shared fixture to force ordinary dispatch (hides a supported break-glass shape), accepting `started` or archive state without a newly added worker report, allowing support subtrees at worker commits, final archive state alone, `status --archived` alone, an instrumented wrapper log, and any transcript/event/command parser.
 
 ## Deletion inventory
 
@@ -144,13 +158,13 @@ No compatibility is retained for these internal observer formats.
 
 ## Expected surface and semantic boundary
 
-Expected files: delete the four files above; add `internal/ensigncycle/shared_keep_moving_durable_test.go`; adjust `shared_smallest_mechanism_test.go`, `shared_fixtures_test.go`, `codex_live_runner_test.go`, `claude_live_runner_test.go`, and `docs/runtime-live-ci.md`. A tiny shared fixture-helper move is allowed if compilation requires it.
+Expected cumulative files remain the same 10-file candidate surface. Cycle-3 implementation may modify only existing `internal/ensigncycle/shared_keep_moving_durable_test.go` and `docs/runtime-live-ci.md`; the other eight candidate files, including the shared fixture and failure-retaining Codex runner, remain byte-identical to `ae6cf1ee9`.
 
-Budget: at most 10 files plus one helper-only file; at most 360 inserted lines; at least 1,400 deleted lines; cumulative diff must remain at least 1,000 lines net negative. Candidate `1dd01b6db` is already 10 files, +273/-1,447; the reset permits at most 87 further inserted lines in those files. Tolerance is +1 helper-only file and +20 insertions only if compilation requires a fixture move; the net-negative floor is not waived.
+Incremental budget from `ae6cf1ee9`: at most 65 inserted lines across those two files, no new/helper file. Cumulative hard bounds versus `origin/main`: exactly 10 files, at most 400 insertions, at least 1,449 deletions, and at least 1,049 net deletions. There is no tolerance; stop before crossing any bound.
 
-Observable semantics changed: test-oracle runtime behavior only. Dispatch, worker completion, and terminalization remain entity-file-scoped; canonical archive and corrected held-state commits may also contain existing support paths owned by the same slug. Keep-moving failures retain their ordinary temp Git root for diagnosis. Command grammar, CLI output, stored formats, mutation authority, runtime dispatch behavior, retry policy, and provider adapters do not change. There is no new observer schema, receipt, retry controller, transcript grammar, or runtime normalization.
+Observable semantics changed: test-oracle runtime behavior only. The oracle credits either a separate ordinary dispatch/report episode or an atomic first-worker episode proven by the parent/child entity blobs. Terminal fields may arrive in the final entity-owned archive. Same-task archive/held ownership and failure retention from `ae6cf1ee9` remain. Command grammar, CLI output, stored formats, mutation authority, runtime dispatch behavior, fixture behavior, retry policy, and provider adapters do not change.
 
-Concrete documentation diff in `docs/runtime-live-ci.md`: replace “ordered, path-scoped Git journey” with “entity-file-scoped dispatch/report/terminal commits followed by an entity-owned canonical archive; same-slug review sidecars are allowed only at the archive/held boundary and any foreign slug rejects.” Add one sentence that a failed Codex keep-moving run prints and retains its workflow Git root, while a passing run removes it.
+Concrete documentation diff in `docs/runtime-live-ci.md`: replace the single “entity-file-scoped dispatch with started, worker Stage Report” sequence with “worker proof is either an entity-file-only dispatch followed by a later report, or one entity-file-only child that adds started and the new report over a parent with neither.” Retain the existing same-slug archive/held and failed-root sentences.
 
 ## Out of scope
 
@@ -163,26 +177,26 @@ Concrete documentation diff in `docs/runtime-live-ci.md`: replace “ordered, pa
 ## Acceptance criteria
 
 **AC-1 - Every completed independent task is credited from its own durable journey.**
-Verified by: the deterministic real-Git fixture reproduces the retained sidecar-bearing `approved-gate` archive plus two single-file archives and reports `3/3`; removing any one journey reports `2/3`. The independent retained live baseline moves from the unmodified candidate's `2/3` to `3/3`.
+Verified by: ordinary and atomic deterministic real-Git positives each report `3/3`; removing any one worker-proof episode reports `2/3`. The retained break-glass repository moves from `ae6cf1ee9`'s independent `0/3` baseline to `3/3`.
 
 **AC-2 - Missing, stale, reordered, or cross-attributed durable steps remain red per task.**
-Verified by: table-driven real-Git controls independently remove dispatch, report, terminal fields, or archive; place a report before dispatch; cross-attribute a worker report or archive to another slug; and use a slug-prefix collision. Each control names and rejects only the affected slug, while a same-slug gate sidecar archive stays green.
+Verified by: the ordinary controls remain; atomic controls independently prepopulate started, prepopulate the current-stage report, add report without started, add started without a new report, touch another slug, and touch a prefix-collision subtree. Each rejects only the affected slug; state-only and generated-dispatch evidence have no positive path.
 
 **AC-3 - The observer surface is smaller and provider-independent.**
 Verified by: `git diff --numstat` meets the revised deletion/net-negative floors; focused tests accept identical durable journeys with empty/arbitrary transcript and final-message bytes, and no keep-moving completion code reads JSONL, shell/JavaScript text, provider event types, model narration, or a generated dispatch artifact.
 
 **AC-4 - Repository and live confirmation gates are green.**
-Verified by: focused durable-journey and retain/delete helper tests, `gofmt -l` empty for changed Go files, `go test ./...`, `go test ./... -race`, then exactly one compatible exact-head Codex keep-moving run reports `3/3`. A forced harness failure retains and prints the Git root; a successful helper control removes it.
+Verified by: focused dual-episode durable tests, retained smallest-mechanism consumers, `gofmt -l` empty for changed Go files, `go test ./...`, `go test ./... -race`, then exactly one compatible exact-head Codex keep-moving run reports `3/3`. A failure still retains/prints the Git root; success removes it.
 
 ## Test plan
 
 Cheapest first:
 
-1. Extend the deterministic real-Git fixture with the retained `approved-gate` sidecar archive. Assert `3/3`; then independently remove dispatch/report/terminal/archive, reorder the report, add a foreign report/archive path, and use `ready` versus `ready-two` to prove component-safe ownership. Estimated cost: seconds, fixture-only.
-2. Exercise the failure-retained temp-root helper with success-removes and failure-retains controls. It must preserve native Git state, not generate a receipt or observer format. Estimated cost: milliseconds.
-3. Run focused durable journey, smallest-mechanism, and Codex/Claude runner compilation tests. Feed empty/arbitrary transcript and final-message bytes to the existing provider-independence controls.
-4. Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; verify the declared numstat floors.
-5. After all deterministic proof passes, run exactly one compatible exact-head Codex `keep-moving-posture` journey. Require `3/3`, the corrected nonterminal `questioned` hold, and a clean workflow; if red, inspect the printed retained Git root before any cleanup.
+1. Extend the real-Git table with an atomic first-worker/terminal-archive positive. Before implementation, require red controls for preexisting started/report, report-only, started-only/stale-report, foreign path, and slug-prefix path; keep every ordinary negative. Estimated cost: ~12 seconds, fixture-only.
+2. Run the dual-episode oracle directly against the retained clean live repository; this is a spike/diagnostic check only, never a machine dependency in the committed suite. Require `3/3` and the corrected nonterminal `questioned` hold.
+3. Run focused durable journey, smallest-mechanism, and live-runner helper/compilation tests. Feed empty/arbitrary transcript and final-message bytes to the existing provider-independence controls.
+4. Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; verify the revised direct cumulative numstat bounds.
+5. After all deterministic proof passes, run exactly one compatible exact-head Codex `keep-moving-posture` journey. Require `3/3`, corrected nonterminal `questioned`, clean workflow, and success cleanup; if red, inspect the printed retained Git root before any further action.
 
 No model transcript, JSONL dialect, final narration, shell/JavaScript grammar, provider event, correlated output, wrapper log, observer schema, receipt, controller, retry loop, daemon, or compatibility layer participates in grading.
 
@@ -239,3 +253,16 @@ The retained journey replaced the destroyed run's unproven `0/3 missing dispatch
 ### Summary
 
 The retention correction exposed a second supported Git shape rather than losing it: each task went `init → entity-file-only first-worker commit adding started plus the new Stage Report → entity-owned terminal archive`, with no separate `dispatch:` commit. Captain disposition is Material, task-owned, Needs decision and selects a return to ideation: support either the ordinary separate dispatch/report episode or this atomic first-worker episode, while keeping stale, reordered, report-only, foreign-path, and transcript/provider evidence red.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Formalize ordinary two-commit and break-glass atomic first-worker durable episodes from the retained exact live history.
+  The design records both worker-proof forms, their parent/child blob requirements, separate or combined terminal/archive boundaries, and the exact retained histories `053a50e→9d710f1→363cbe0`, `053a50e→0c7c6b8→8fa4c7b`, and `053a50e→b4d7fdf→08924c9`.
+- DONE: Spike controls that accept both real worker proofs while rejecting preexisting, report-only, stale, reordered, foreign-path, and slug-prefix attribution.
+  A throwaway `ae6cf1ee9` spike passed 16 deterministic cases plus retained-live `3/3` in 11.229s; parent prepopulation, report without started, started without a new report, pre-dispatch report, foreign worker path, and prefix-collision path all stayed red.
+- DONE: Revise ACs, incremental/cumulative surface, and one-final-live test plan without fixture normalization or transcript/provider evidence.
+  ACs now measure ordinary and atomic `3/3`; cycle-3 is limited to two existing files/+65 with cumulative 10 files/+400/-1,449/net-negative-1,049, and the plan keeps exactly one post-deterministic live run.
+
+### Summary
+
+Cycle 3 treats the retained break-glass Git history as authoritative without weakening worker proof: only a file-only child that newly adds both `started` and the current-stage Stage Report can replace the ordinary dispatch-plus-report pair. Frozen candidate `ae6cf1ee9` remains untouched; fixture normalization and every transcript/provider-derived alternative remain excluded.
