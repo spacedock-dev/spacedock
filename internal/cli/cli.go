@@ -178,7 +178,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]")
+				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).")
 				return nil
 			}
 			if len(args) < 2 || (args[0] != "prepare" && args[0] != "record" && args[0] != "validate" && args[0] != "eligibility" && args[0] != "consume") {
@@ -326,8 +326,15 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					fmt.Fprintln(stderr, "Error:", err)
 					return exitCodeError{1}
 				}
-				fmt.Fprintf(stdout, "gate=%s attempt=%s application=%s/%s condition=%s eligible=%t consumed=%t target-stage=%s\n", result.Gate, result.Attempt, result.Action, result.ApplicationState, result.Condition, result.Eligible, result.Consumed, result.TargetStage)
-				if !result.Consumed {
+				fmt.Fprintf(stdout, "gate=%s attempt=%s application=%s/%s condition=%s eligible=%t consumed=%t target-stage=%s", result.Gate, result.Attempt, result.Action, result.ApplicationState, result.Condition, result.Eligible, result.Consumed, result.TargetStage)
+				if result.Route != "" {
+					// Terminal-target approvals are routed, not spent: consume leaves
+					// the application pending and reports the approved-awaiting-merge
+					// route (merge guard is the sole terminal consumer).
+					fmt.Fprintf(stdout, " route=%s", result.Route)
+				}
+				fmt.Fprintln(stdout)
+				if !result.Consumed && result.Route == "" {
 					return exitCodeError{1}
 				}
 				return nil
@@ -627,8 +634,8 @@ func newStateCommand(ctx context.Context, env []string, dir string, stdout, stde
 // terminalize sequence; an unknown or missing subcommand is a usage error (exit 2).
 func newMergeCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "merge guard <slug> --verdict passed|rejected",
-		Short:              "Run the terminal merge-finalize ceremony for an entity",
+		Use:                "merge guard <slug> (--verdict passed|rejected | --rework)",
+		Short:              "Run the terminal merge ceremony for an entity (finalize or rework)",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

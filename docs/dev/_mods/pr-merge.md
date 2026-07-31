@@ -1,8 +1,8 @@
 ---
 name: pr-merge
 description: Open a code-branch PR to the configured trunk at the merge boundary and track it to merge, state-root-aware
-version: 0.12.4
-reconciled-from-shipped: 0.12.3
+version: 0.12.5
+reconciled-from-shipped: 0.12.4
 fo-realm: "FO realm — the FO maintains this file directly; changes do NOT go through the dev workflow (process the FO operates, not product built under test)."
 local-customization: "Split-root variant of the shipped template: entity state lives in .spacedock-state (pr:/mod-block: via status --set, path-scoped); the hook never touches .spacedock-state from the code worktree; the PR carries only the code-branch range."
 ---
@@ -10,6 +10,8 @@ local-customization: "Split-root variant of the shipped template: entity state l
 # PR Merge
 
 Manages the PR lifecycle for workflow entities processed in worktree stages of this **split-root** workflow. The CODE for an entity lives on its worktree branch in the main repo (`origin`, base branch resolved from the workflow's `trunk:` config, default `main`); the entity STATE (frontmatter, `pr:`, `mod-block:`, stage reports) lives in the separate `.spacedock-state` checkout (`origin`, branch `spacedock-state/dev`). This hook opens a PR for the code branch at the terminal merge boundary — **before** cleanup deletes the branch — records `pr:` on the entity state, blocks until the PR merges, then lets the FO terminalize and archive.
+
+The terminal merge ceremony keys off the pending terminal-target application that `spacedock gate consume` produces (route `approved-awaiting-merge`) — not off the entity's stage: `merge guard` discovers and arms this hook at delivery time, and a failed delivery that needs rework sends the entity back through its declared `feedback-to` via `merge guard --rework`.
 
 The two origins stay clean by construction: the code PR carries only the code-branch range (the worktree clone has no `.spacedock-state` paths), and the `pr:`/`mod-block:` writes are `spacedock status --set` against the state checkout, committed path-scoped there. **This hook MUST NOT touch `.spacedock-state` from the code worktree** — all state writes go through `spacedock status --set --workflow-dir docs/dev`, which targets the resolved state checkout.
 
@@ -22,7 +24,7 @@ If `MERGED`, advance the entity to its terminal stage by delegating the finalize
 2. Finalize through the verb: `spacedock merge guard {slug} --workflow-dir docs/dev --verdict passed`. The verb clears the in-flight `mod-block` (standalone `--set`), terminalizes (`status`+`verdict=passed`+`completed` in one `--set`), archives, commits path-scoped, and publishes through shared state-sync discipline — atomically through the commit boundary. It refuses to combine the `mod-block=` clear with the terminal fields (the same two-step the FO relies on), so the ceremony integrity holds.
 The sentinel `--set` is committed path-scoped to the state checkout; the verb owns its own commits. Remove the worktree (`git worktree remove {path}`) and delete the **local** branch (`git branch -d {branch}`) — the remote branch was already cleaned by the PR merge. Report each auto-advanced entity to the captain. (The `pr` field now records the `pr-merge:{N}` sentinel post-finalize, where it was a bare `#{N}` before — the only state-recording delta; the lifecycle behavior, terminal+archived, is identical.)
 
-If `CLOSED` (closed without merge), report to the captain: "{entity title} has PR {pr number} which was closed without merging. How to proceed? Options: reopen the PR, create a new PR from the same branch, or clear `pr` and fall back to the local `--no-ff` merge." Wait for the captain's direction before taking action.
+If `CLOSED` (closed without merge), report to the captain: "{entity title} has PR {pr number} which was closed without merging. How to proceed? Options: reopen the PR, create a new PR from the same branch, fall back to the local `--no-ff` merge, or send the entity back for rework." Wait for the captain's direction before taking action. On captain direction to send back: `spacedock merge guard {slug} --rework --workflow-dir docs/dev` routes the entity through its declared `feedback-to` and clears `pr`/`mod-block` — do not edit frontmatter by hand. Retryable trouble (reopen, new PR, local merge) keeps the pending approval and the delivery retry; only `--rework` supersedes it.
 
 If `OPEN`, no action needed — the PR is still in review.
 

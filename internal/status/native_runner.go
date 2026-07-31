@@ -423,7 +423,7 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	}
 
 	if setResult != nil {
-		return runSet(roots, setResult, args, whereFilters, includeArchive, showNext, showBoot, showNextID, showValidate, hasFieldsFlag, quiet, asJSON, stdout, stderr)
+		return runSet(roots, setResult, args, whereFilters, includeArchive, showNext, showBoot, showNextID, showValidate, hasFieldsFlag, quiet, asJSON, nil, stdout, stderr)
 	}
 
 	// Read paths (table / next / boot / validate).

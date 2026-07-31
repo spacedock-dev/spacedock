@@ -286,7 +286,7 @@ func identifyReadyRows(t *testing.T, def string) string {
 	return string(rec.Ready)
 }
 
-func TestBootReadyGateTerminalApprovalDisappearsAfterConsume(t *testing.T) {
+func TestBootReadyGateTerminalApprovalPersistsAtConsumeUntilDeliveryEnvelope(t *testing.T) {
 	readme := strings.Replace(identifyReadyGatesReadme, "    - name: implementation\n", "", 1)
 	def, state := buildSplitRoot(t, readme, map[string]string{
 		"2n.md": "---\nid: 2n\nstatus: validation\n---\n# 2n\n",
@@ -326,16 +326,21 @@ func TestBootReadyGateTerminalApprovalDisappearsAfterConsume(t *testing.T) {
 	if err != nil || !eligibility.Eligible || eligibility.TargetStage != "done" {
 		t.Fatalf("terminal approval eligibility = %#v, err=%v", eligibility, err)
 	}
-	consumed, err := gates.ConsumeAt(entity, def)
-	if err != nil || !consumed.Consumed {
-		t.Fatalf("consume = %#v, err=%v", consumed, err)
+	// Consume routes a terminal-target approval WITHOUT spending it: the
+	// application stays pending (merge guard's delivery envelope is the only
+	// terminal consumer), so the ready row persists after consume — the routed
+	// entity must keep surfacing through the existing approved-awaiting-merge
+	// display until delivery proof lands.
+	result, err := gates.ConsumeAt(entity, def)
+	if err != nil || result.Consumed || result.Route != gates.RouteApprovedAwaitingMerge {
+		t.Fatalf("consume = %#v, err=%v", result, err)
 	}
-	if got := identifyReadyRows(t, def); got != "[]" {
-		t.Fatalf("consumed terminal approval remained ready: %s", got)
+	if got := identifyReadyRows(t, def); got != want {
+		t.Fatalf("routed terminal approval lost its ready row: %s, want %s", got, want)
 	}
 	doc, _, err := gates.Read(entity)
-	if err != nil || doc.Records[0].Attempts[0].Application.State != "consumed" {
-		t.Fatalf("consumed application not durable: %#v, err=%v", doc, err)
+	if err != nil || doc.Records[0].Attempts[0].Application.State != "pending" {
+		t.Fatalf("routed approval must stay pending: %#v, err=%v", doc, err)
 	}
 }
 

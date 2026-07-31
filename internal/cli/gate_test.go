@@ -883,7 +883,8 @@ func TestGateRequestLocatorCarriesArbitraryBriefingNameThroughRecordValidateAndE
 		t.Fatalf("eligibility arbitrary locator exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	if code := invoke("gate", "consume", "task", "--workflow-dir", root); code != 0 ||
-		!strings.Contains(out.String(), "consumed=true") || !strings.Contains(out.String(), "target-stage=done") {
+		!strings.Contains(out.String(), "consumed=false") || !strings.Contains(out.String(), "target-stage=done") ||
+		!strings.Contains(out.String(), "route=approved-awaiting-merge") {
 		t.Fatalf("consume arbitrary locator exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	body, err := os.ReadFile(entity)
@@ -892,9 +893,9 @@ func TestGateRequestLocatorCarriesArbitraryBriefingNameThroughRecordValidateAndE
 	}
 	if strings.Contains(string(body), "briefing.json") ||
 		!strings.Contains(string(body), "room-ref: ./review/validation/briefing-1") ||
-		!strings.Contains(string(body), "status: done") ||
-		!strings.Contains(string(body), "state: consumed") {
-		t.Fatalf("binding inferred canonical basename or lost room:\n%s", body)
+		!strings.Contains(string(body), "status: validation") ||
+		!strings.Contains(string(body), "state: pending") {
+		t.Fatalf("binding inferred canonical basename, lost room, or spent the terminal-target approval:\n%s", body)
 	}
 }
 
@@ -948,15 +949,18 @@ func TestGatePreparedBriefingLocatorLifecycleAndRefusals(t *testing.T) {
 		}
 		if code, out, errOut := invoke(t, fixture.workflow,
 			"gate", "consume", "task", "--workflow-dir", fixture.workflow,
-		); code != 0 || !strings.Contains(out, "consumed=true") || !strings.Contains(out, "target-stage=done") {
+		); code != 0 || !strings.Contains(out, "consumed=false") || !strings.Contains(out, "target-stage=done") ||
+			!strings.Contains(out, "route=approved-awaiting-merge") {
 			t.Fatalf("consume prepared gate exit=%d stdout=%q stderr=%q", code, out, errOut)
 		}
 		body, err := os.ReadFile(fixture.entity)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(string(body), "status: done") || !strings.Contains(string(body), "state: consumed") {
-			t.Fatalf("consume did not atomically advance and spend the prepared approval:\n%s", body)
+		// Terminal-target approvals route, they do not spend: merge guard's
+		// delivery envelope is the only terminal consumer.
+		if !strings.Contains(string(body), "status: validation") || !strings.Contains(string(body), "state: pending") {
+			t.Fatalf("terminal-target consume must keep status and the pending application:\n%s", body)
 		}
 	})
 

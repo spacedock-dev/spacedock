@@ -134,9 +134,19 @@ type Eligibility struct {
 	Eligible         bool
 }
 
+// RouteApprovedAwaitingMerge is the consume route for an approval whose target
+// stage is terminal: consume spends nothing and writes no status; the terminal
+// merge ceremony (merge guard) is the sole terminal consumer and spends the
+// still-pending approval with delivery proof.
+const RouteApprovedAwaitingMerge = "approved-awaiting-merge"
+
 type ConsumeResult struct {
 	Eligibility
 	Consumed bool
+	// Route is RouteApprovedAwaitingMerge when an eligible approval targets the
+	// terminal stage: the application stays pending and no status is written.
+	// A repeated consume returns the same route (idempotent re-routing).
+	Route string
 }
 
 // ReadinessStage is the minimum workflow taxonomy needed to reduce a selected

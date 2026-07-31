@@ -428,3 +428,112 @@ func recordStageFixture(t *testing.T, status, briefingID, stageFlags string) (st
 	}
 	return root, entity
 }
+
+// applicationTerminalWorkflow mirrors applicationWorkflow but targets the
+// terminal stage: ideation (gate, feedback-to: ideation) -> done (terminal).
+func applicationTerminalWorkflow(t *testing.T) (string, string) {
+	t.Helper()
+	root, entity := applicationWorkflow(t)
+	readme := "---\nstages:\n  states:\n    - name: ideation\n      initial: true\n      gate: true\n      feedback-to: ideation\n    - name: done\n      terminal: true\n---\n# Workflow\n"
+	if err := os.WriteFile(filepath.Join(root, "README.md"), []byte(readme), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return root, entity
+}
+
+// TestConsumeTerminalTargetRoutesWithoutSpending pins the sole-consumer rule:
+// a terminal-target approval stays pending at consume, status is untouched, the
+// approved-awaiting-merge route is returned, and a repeated consume re-returns
+// the same route (routing is an at-least-once effect; the authority never
+// moves). Anything else (a spent application, a done status, a missing route)
+// is the spend-at-consume hole this design removes.
+func TestConsumeTerminalTargetRoutesWithoutSpending(t *testing.T) {
+	root, entity := applicationTerminalWorkflow(t)
+	if err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: root}); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for pass := 0; pass < 3; pass++ {
+		result, err := ConsumeAt(entity, root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.Consumed || result.Route != RouteApprovedAwaitingMerge || !result.Eligible {
+			t.Fatalf("terminal consume = %#v, want unconsumed route %q", result, RouteApprovedAwaitingMerge)
+		}
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(before, after) {
+		t.Fatalf("terminal consume wrote the entity:\nbefore:\n%s\nafter:\n%s", before, after)
+	}
+	if !strings.Contains(string(after), "status: ideation") || !strings.Contains(string(after), "state: pending") {
+		t.Fatalf("terminal consume must leave status at the gated stage and the approval pending:\n%s", after)
+	}
+}
+
+// TestConsumeNonTerminalStillSpendsOnce pins the unchanged non-terminal arm:
+// existing approvals keep spending at consume (TestConsumeAdvancesAndSpendsAuthorizationOnce
+// covers the advance); this one locks in that AdvanceTargetTerminal's terminal
+// flag drives the routing split, not any stage-name heuristic.
+func TestConsumeNonTerminalStillSpendsOnce(t *testing.T) {
+	root, entity := applicationWorkflow(t)
+	if err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: root}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := ConsumeAt(entity, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Consumed || result.Route != "" {
+		t.Fatalf("non-terminal consume = %#v, want spent with no route", result)
+	}
+}
+
+// TestTerminalSpendAndReworkGuardReuse pins the envelope's exactly-once reuse:
+// the delivery envelope spends pending->consumed and the --rework route
+// supersedes pending->superseded through the SAME guarded mutation; a second
+// spend or a spend of an already-superseded application is refused unchanged.
+func TestTerminalSpendAndReworkGuardReuse(t *testing.T) {
+	root, entity := applicationWorkflow(t)
+	if err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: root}); err != nil {
+		t.Fatal(err)
+	}
+	doc, oldNode, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt := doc.Records[0].Attempts[len(doc.Records[0].Attempts)-1]
+	attempt.Application.State = "consumed"
+	if err := ValidateApplicationMutation(oldNode, doc, attempt.ID, "pending", "consumed"); err != nil {
+		t.Fatalf("envelope spend must reuse the pending->consumed guard: %v", err)
+	}
+	// A second spend is impossible: the once-consumed application is not
+	// pending, so eligibility refuses it before any writer runs.
+	consumedDoc := *doc
+	consumed := EvaluateEligibility(&consumedDoc, "implementation", true)
+	if consumed.Eligible || consumed.Condition != "consumed" {
+		t.Fatalf("re-spend eligibility = %#v, want fail-closed consumed", consumed)
+	}
+	doc2, oldNode2, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt2 := doc2.Records[0].Attempts[len(doc2.Records[0].Attempts)-1]
+	attempt2.Application.State = "superseded"
+	if err := ValidateApplicationMutation(oldNode2, doc2, attempt2.ID, "pending", "superseded"); err != nil {
+		t.Fatalf("rework route must reuse the pending->superseded guard: %v", err)
+	}
+	// A superseded application stays non-eligible (fail-closed, as today):
+	// superseded authority is never re-spent.
+	supersededDoc := *doc2
+	elig := EvaluateEligibility(&supersededDoc, "ideation", true)
+	if elig.Eligible || elig.Condition != "superseded" {
+		t.Fatalf("superseded application eligibility = %#v, want fail-closed superseded", elig)
+	}
+}

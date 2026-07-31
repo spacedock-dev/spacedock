@@ -287,8 +287,21 @@ self-approve that design reset.
 
 ## Write boundary and invariants
 
-Ordinary recorder operations rebuild only the canonical `gates:` subtree. Consumption
-co-writes `status` and `application.state: consumed` in one atomic replacement. Before replacement it
+Ordinary recorder operations rebuild only the canonical `gates:` subtree. Consumption of a
+non-terminal target co-writes `status` and `application.state: consumed` in one atomic
+replacement. Consumption of a terminal-target approval is mechanism-agnostic routing,
+not a spend: it writes nothing, leaves the application `pending` and the status at the
+gated stage, and returns the `approved-awaiting-merge` route; a repeated consume is
+idempotent re-routing. The terminal merge ceremony (`spacedock merge guard`) is the
+sole terminal consumer: with delivery proof it writes, in one replacement,
+`application.state: pending→consumed` plus the terminal status, `verdict`, and
+`completed`, retiring recorded delivery state (`mod-block`/`pr`) in the same
+replacement, and a non-forced `status --set` to a terminal stage is refused while a
+pending terminal-target application is in force. `merge guard --rework` writes
+`application.state: pending→superseded` with `status :=` the record stage's declared
+`feedback-to` and delivery state cleared — through the same guarded application
+mutation; it refuses when no pending terminal-target application exists or when the
+declared `feedback-to` is missing, undefined, or terminal. Before replacement it
 validates the rebuilt full entity and compares the locked source subtree with the one it
 read, so stale or invalid writes fail without replacing the file. All frontmatter fields
 outside `gates` and the Markdown body are preserved byte-for-byte. The per-entity lock

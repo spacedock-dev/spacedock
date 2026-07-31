@@ -14,7 +14,7 @@ Load before engaged gate action. It grants no writes; read `fo-write-core.md` be
 |---------|----------------|
 | `gate prepare` | Opens one attempt, freezes selected authority in its room, and binds its Briefing. |
 | `gate record` | Closes that attempt from one semantic source; never advances status. |
-| `gate consume` | Applies one eligible approval and advances to its successor. |
+| `gate consume` | Applies one eligible approval; terminal targets route unspent to merge guard. |
 
 **Boot projection.** Use actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`; read its entity, never infer readiness from stage. `awaiting-captain` means an open current-stage Briefing; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. For gated current `status`, any selected or retained gate record used to resume/present must have `stage` equal to that status. A prior-stage `gates.current` is history, not reusable authority. If no selected attempt (omitted `validating`) or it mismatches, run `gate prepare` for the current status and present only its emitted binding.
 
@@ -53,12 +53,13 @@ Require exit 0, the bound attempt/Briefing, `state=closed`, and the decision; re
 ${SPACEDOCK_BIN:-spacedock} gate consume ENTITY --workflow-dir WORKFLOW_DIR
 ```
 
-Consume itself rechecks currency, successor, blockers, and one-use state under lock. Require exit 0 with `approved-pending`, `eligible=true`, `consumed=true`, and the expected successor. It atomically writes successor status plus consumed state; commit that descendant through `«state.commit»(slug)`. A nonterminal target then enters ordinary reuse-or-fresh dispatch; a terminal target enters the existing merge guard/hook and has no successor dispatch. Never use `status --set` to advance a gate.
+Consume itself rechecks currency, successor, blockers, and one-use state under lock. Nonterminal: require exit 0, `consumed=true`, the expected successor; it atomically writes successor status plus consumed state — commit through `«state.commit»(slug)`, then ordinary dispatch. Terminal: require `consumed=false`, `route=approved-awaiting-merge` — consume writes nothing; drive `«merge.guard»(slug)`, no successor dispatch. Never use `status --set` to advance a gate.
 
 - `revise`: after its close commit, never consume; invoke `«feedback.route»`.
 - `hold`: after its close commit, remain at the gate and surface the reason.
 - blocked/wrong-stage/unknown/ineligible approval: its close is already durable; halt and preserve status bytes.
 - `stale`: consume exits nonzero, leaves status unchanged, changes only pending → superseded; commit it, bind a replacement Briefing, re-present.
+- pending terminal approval: unspent — drive `«merge.guard»`.
 - already `consumed`: the authorization is spent. A nonterminal current status resumes ordinary dispatch/recovery; a terminal current status resumes the existing merge ceremony. Do not re-record, consume, or dispatch a terminal successor. A diagnostic repeat consume must be nonzero and byte-clean.
 
 **Resume.** Use boot/entity state and prior result; `gate validate`/`gate eligibility` are optional diagnostics, never positive-path requirements. Exact prepare replay is idempotent; a divergent open room is frozen—surface the refusal and stop. Require the exact Resolution commit before routing closed state. Pending approval → consume; revise/hold → route/stop; consumed → dispatch only if nonterminal, else merge; stale → supersede then replace. Surface nonzero command, exit, remedy; never repair frontmatter.

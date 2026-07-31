@@ -190,13 +190,29 @@ func setMergeHelp(cmd *cobra.Command, w io.Writer) {
 
 Usage:
   spacedock merge guard <slug> --verdict passed|rejected [--workflow-dir DIR]
+  spacedock merge guard <slug> --rework [--workflow-dir DIR]
 
 Drive the terminal merge ceremony for an entity as one ordered envelope: arm the
-mod-block before the hook, detect hook completion by the state delta, clear the
-mod-block in a standalone step, then terminalize, archive with a path-scoped commit,
-and publish split-root state. The verb owns the
-sequence so the steps cannot be combined, skipped, or reordered; it does NOT
-invoke the merge hook or make the merge verdict (you pass that in with --verdict).
+mod-block before the hook, detect hook completion by the state delta, then
+terminalize, archive with a path-scoped commit, and publish split-root state.
+The verb owns the sequence so the steps cannot be combined, skipped, or reordered;
+it does NOT invoke the merge hook or make the merge verdict (you pass that in with
+--verdict).
+
+merge guard is the sole terminal consumer of a gate approval whose target is the
+terminal stage: "gate consume" leaves such an approval pending (route
+approved-awaiting-merge), and guard's successful delivery spends it — application,
+terminal status, verdict, and completed move in ONE write, with delivery state
+(mod-block/pr) retired in the same write. A non-forced terminal "status --set"
+while that approval is pending is refused in favor of this ceremony.
+
+--rework is the delivery-requires-rework outcome: when delivery fails beyond
+retry (e.g. the PR is closed unmerged), it writes the approval pending->superseded,
+routes the entity back through the record stage's declared feedback-to, and clears
+delivery state (mod-block/pr). It refuses without a pending terminal approval, or
+when no defined non-terminal feedback-to is declared. Retryable delivery trouble
+(CI red, push failure) takes neither flag: guard without delivery proof writes
+nothing and reports armed/blocked, and the approval stays pending.
 
 Re-run guard after invoking the hook: it resumes from the entity's current state
 (armed -> blocked on an open PR, or armed -> finalized once the merge has landed).
@@ -204,7 +220,10 @@ After interrupted publication, spacedock state commit <slug> resumes the archive
 Exit 3 means Git rebase conflict: the rebase was aborted; stop and surface its path/peer evidence instead of rerunning guard.
 
 Flags:
-  --verdict passed|rejected   The merge decision (required; a verdict-less finalize is refused)
+  --verdict passed|rejected   The merge decision (required unless --rework; a
+                              verdict-less finalize is refused)
+  --rework                    Delivery requires rework: supersede the pending terminal
+                              approval and route back through the declared feedback-to
   --workflow-dir DIR          Target this workflow explicitly (skips auto-discovery).
                               A relative DIR resolves against the current directory;
                               from anywhere else (e.g. an agent worktree) pass an
@@ -215,6 +234,7 @@ Flags:
 Examples:
   spacedock merge guard my-task --verdict passed
   spacedock merge guard my-task --verdict rejected --workflow-dir docs/dev
+  spacedock merge guard my-task --rework
 `)
 	})
 }

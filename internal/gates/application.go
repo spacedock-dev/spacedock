@@ -156,7 +156,7 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 	attempt := &record.Attempts[len(record.Attempts)-1]
 	if eligibility.Condition == "stale" && attempt.Application != nil && attempt.Application.State == "pending" {
 		attempt.Application.State = "superseded"
-		if err := validateApplicationMutation(oldNode, doc, attempt.ID, "pending", "superseded"); err != nil {
+		if err := ValidateApplicationMutation(oldNode, doc, attempt.ID, "pending", "superseded"); err != nil {
 			return ConsumeResult{}, err
 		}
 		if err := writeDocument(path, oldNode, doc); err != nil {
@@ -173,8 +173,22 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 		result.Condition = "ineligible"
 		return result, nil
 	}
+	// A terminal-target approval is NOT spent here: consume leaves the
+	// application pending and the status untouched, and returns the
+	// approved-awaiting-merge route. The terminal merge ceremony (merge guard)
+	// is the sole terminal consumer; the ceremony trigger hangs off this
+	// consume-produced pending approval, not off the stage. Consume carries no
+	// merge-hook knowledge: no hook discovery, no arming, no scanner lookup —
+	// merge guard discovers and arms the delivery mechanism when it acts.
+	// Re-consuming the same still-pending terminal application re-returns the
+	// same route; the routing is an at-least-once effect without authority
+	// movement.
+	if advanceTargetTerminal(workflowDir, status, eligibility.TargetStage) {
+		result.Route = RouteApprovedAwaitingMerge
+		return result, nil
+	}
 	attempt.Application.State = "consumed"
-	if err := validateApplicationMutation(oldNode, doc, attempt.ID, "pending", "consumed"); err != nil {
+	if err := ValidateApplicationMutation(oldNode, doc, attempt.ID, "pending", "consumed"); err != nil {
 		return ConsumeResult{}, err
 	}
 	if err := writeDocumentAndStatus(path, oldNode, status, doc, eligibility.TargetStage); err != nil {
@@ -207,6 +221,31 @@ func applicationTargetMatches(workflowDir, current, target string) bool {
 	}
 	i := applicationStageIndex(stages, current)
 	return i >= 0 && i+1 < len(stages) && stages[i+1].Name == target
+}
+
+// advanceTargetTerminal reports whether current's declared advance target (its
+// immediate README successor) is the terminal stage. Callers establish the
+// successor match first (applicationTargetMatches); this only reads the
+// successor's terminal flag. An unparseable workflow reports false, matching
+// applicationTargetMatches' fail-closed shape.
+func advanceTargetTerminal(workflowDir, current, target string) bool {
+	if workflowDir == "" {
+		return false
+	}
+	stages, err := applicationStages(filepath.Join(workflowDir, "README.md"))
+	if err != nil {
+		return false
+	}
+	i := applicationStageIndex(stages, current)
+	return i >= 0 && i+1 < len(stages) && stages[i+1].Name == target && stages[i+1].Terminal
+}
+
+// AdvanceTargetTerminal is the exported form of advanceTargetTerminal for the
+// terminal merge ceremony in internal/status: merge guard gates its sole-
+// terminal-consumer spend and its --rework route on the same predicate consume
+// uses to leave a terminal-target approval pending.
+func AdvanceTargetTerminal(workflowDir, current, target string) bool {
+	return advanceTargetTerminal(workflowDir, current, target)
 }
 
 type reviewedInputCheck int
@@ -242,10 +281,12 @@ func inspectReviewedInput(entityPath string, binding Briefing) reviewedInputChec
 	return reviewedInputStale
 }
 
-// validateApplicationMutation proves the selected application's state is the
+// ValidateApplicationMutation proves the selected application's state is the
 // only gates-record change. This is the narrow exception to closed-attempt
-// freezing used by consumption and staleness marking.
-func validateApplicationMutation(oldNode *yaml.Node, next *Document, attemptID, from, to string) error {
+// freezing used by consumption, staleness marking, and the terminal merge
+// ceremony's delivery envelope (pending->consumed with delivery proof) and
+// its --rework route (pending->superseded).
+func ValidateApplicationMutation(oldNode *yaml.Node, next *Document, attemptID, from, to string) error {
 	var old Document
 	if err := oldNode.Decode(&old); err != nil {
 		return err

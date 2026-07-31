@@ -1,12 +1,14 @@
 ---
 name: pr-merge
 description: Push branches and create/track GitHub PRs for workflow entities
-version: 0.12.3
+version: 0.12.4
 ---
 
 # PR Merge
 
 Manages the PR lifecycle for workflow entities processed in worktree stages. Pushes branches, creates PRs, detects merged PRs, and advances entities accordingly.
+
+The terminal merge ceremony keys off the pending terminal-target application that `spacedock gate consume` produces (route `approved-awaiting-merge`) — not off the entity's stage: `merge guard` discovers and arms this hook at delivery time, and a failed delivery that needs rework sends the entity back through its declared `feedback-to` via `merge guard --rework`.
 
 ## Hook: startup
 
@@ -14,7 +16,7 @@ Scan all entity files (in the workflow directory only, not `_archive/`) for enti
 
 If `MERGED`, first record and commit the landed merge sentinel with `spacedock status --workflow-dir {dir} --set {slug} pr=pr-merge:{N}` then `spacedock state commit {slug} --workflow-dir {dir}`; next finalize through `spacedock merge guard {slug} --workflow-dir {dir} --verdict passed`. The sentinel is the restart-safe durable signal; the guard clears any in-flight `mod-block`, terminalizes, archives, and commits the archive move atomically. Clean up any worktree/branch and report each auto-advanced entity to the captain.
 
-If `CLOSED` (closed without merge), report to the captain: "{entity title} has PR {pr number} which was closed without merging. How to proceed? Options: reopen the PR, create a new PR from the same branch, or clear `pr` and fall back to local merge." Wait for the captain's direction before taking action.
+If `CLOSED` (closed without merge), report to the captain: "{entity title} has PR {pr number} which was closed without merging. How to proceed? Options: reopen the PR, create a new PR from the same branch, fall back to local merge, or send the entity back for rework." Wait for the captain's direction before taking action. On captain direction to send back: `spacedock merge guard {slug} --rework --workflow-dir {dir}` routes the entity through its declared `feedback-to` and clears `pr`/`mod-block` — do not edit frontmatter by hand. Retryable trouble (reopen, new PR, local merge) keeps the pending approval and the delivery retry; only `--rework` supersedes it.
 
 If `OPEN`, no action needed — the PR is still in review.
 
