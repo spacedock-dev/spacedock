@@ -7,7 +7,7 @@ started: 2026-07-31T14:27:47Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-resolution-consume-terminal-before-delivery
 issue:
 gates:
     version: 1
