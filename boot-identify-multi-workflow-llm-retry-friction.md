@@ -521,3 +521,44 @@ The live Pi ledger contained only `spacedock --version` and one `spacedock statu
 ### Recommendation
 
 **PASSED.** Commit `115f5019` repairs the cycle-6 evidence defects: boot and filing grades now derive from actual recorded argv, adversarial narration cannot satisfy them, the archived real filing execution remains accepted, and the candidate Pi run delivers the required no-retry end value without durable-state change.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Inspect the stale candidate against current `origin/main` before mutation and stop on every content conflict for First Officer authorization.
+  Evidence: merge base `fcf96896`, candidate `115f5019`, and current main `59dc90a21` produced exactly three conflicts in both a disposable merge-tree and the real rebase: `docs/site/reference/command-reference.md`, `internal/contractlint/fo_function_reference_invariant_test.go`, and `skills/first-officer/references/first-officer-shared-core.md`.
+
+- DONE: Rebase the validated argv-ledger candidate onto current main without force, preserving current 0.27 gate/review semantics and pruning only obsolete conflict-side code.
+  Evidence: the command-reference resolution retained current ready-gate and record/consume contracts while adding the single/many discovery distinction; the shared core retained `«gate.lifecycle»` and review routing while adding the exact many-workflow greeting/no-retry boundary; contractlint retained the compact structural suite, changed only its component cap from `26754` to `27194`, and did not restore deleted prose-grep tests.
+
+- DONE: Resolve the post-rebase round-evidence dependency without restoring transcript grammar or adding a new parser/ledger consumer.
+  Evidence: the current-main Claude/Codex round command extractors, grammar tests, and `invoked` argument were removed. `assertRejectionRecordedRound` now grades only the canonical retained round/entity/gate bytes and `gates.ValidateRoundFile`; the deliberately declined transcript-provenance counterexample is outside the scenario's durable user-value boundary.
+
+- DONE: Remove the obsolete duplicate historical shared-core ceiling after the explicit `27194` rebaseline.
+  Evidence: `internal/contractlint/startup_collapse_test.go` was deleted; `TestFOInstructionComponentCaps` remains the single structural guard and rejects growth above the exact 27,194-byte core.
+
+- DONE: Preserve the self-describing many-workflow boot behavior, execution-grounded filing/boot evidence, shared fixture coverage, and Pi live after-only invariant with no semantic expansion.
+  Evidence: focused status, durable-round, invocation-ledger, filing, shared boot, and contractlint tests passed. The Pi live ledger observed one identify with no retry/helper/convergence execution; the exact selection greeting and all no-mutation assertions passed.
+
+- DONE: Publish the exact tested rebased head to a new remote ref without force and leave PR #551 untouched for First Officer replacement-PR binding.
+  Evidence: local and remote `spacedock-ensign/boot-identify-multi-workflow-llm-retry-friction-cycle8` resolve to `1dde8edd07cdaed2a881bca29201770f623fbff3`; the old PR branch was not updated and no PR was created by the implementation ensign.
+
+### Summary
+
+Cycle 8 rebases the accepted argv-ledger implementation onto current main, preserves all current gate/review behavior, and removes an incompatible transcript-provenance observer in favor of the already-strong durable round oracle. The final candidate is five commits over `59dc90a21`, spans 25 paths, and changes 842 insertions / 641 deletions.
+
+### Verification
+
+- Formatting: recursive `gofmt -w` over `cmd` and `internal` produced no diff; `git diff --check` passed.
+- Focused: durable round, argv ledger, filing, shared multi-workflow boot, status boot identify/ready, and FO cap/topology checks passed.
+- Baseline: `go test ./...` passed.
+- Race: `go test ./... -race` passed.
+- Pi live: `go test -tags live ./internal/ensigncycle -run '^TestLivePiMultiWorkflowBootScenario$' -count=1 -v` passed in 46.56s.
+- Remote: `git ls-remote origin refs/heads/spacedock-ensign/boot-identify-multi-workflow-llm-retry-friction-cycle8` returned `1dde8edd07cdaed2a881bca29201770f623fbff3`.
+
+### Material Findings
+
+- None.
+
+### Deferred Risks
+
+- Replacement PR creation and entity/PR binding remain First Officer work; PR #551 is intentionally unchanged until that replacement exists.
