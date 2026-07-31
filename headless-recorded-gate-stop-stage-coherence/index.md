@@ -263,3 +263,19 @@ implementation and dispatched validation after a status repair; the new grader
 accepted that wrong lifecycle. The candidate remains exactly `854ffa62b`, and
 the minimum correction is confined to making the ordered lifecycle proof require
 implementation dispatch before any transition that could substitute validation.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Add a red-first provider-neutral command-log case proving validation dispatch plus pre-prepare status repair cannot satisfy the required implementation dispatch.
+  Before the fix, focused subtest `validation_substitution` failed because the exact archived substitution was accepted; commit ccd0f367b retains that mutant as `substitution`.
+- DONE: Require exactly one successful `dispatch build --stage implementation` before the first successful validation prepare while preserving the open no-authority hold and all existing negative controls.
+  `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle` now rejects validation-stage dispatch, pre-prepare status repair, their combined substitution, and every prior mutant while accepting the coherent lifecycle.
+- DONE: Keep the correction within the three declared test files and estimate tolerance; run focused, full, race, format, and diff gates without a live or Roborev rerun.
+  Incremental surface is one test file, +8/-1; cumulative surface is three test files, +59/-10; focused, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and diff checks passed, with live and Roborev intentionally not rerun.
+
+### Summary
+
+Cycle 2 fixes the task-owned false green in the provider-neutral command-log
+grader without changing product semantics or expanding the authorized surface.
+The deterministic mutants now make implementation-stage dispatch and the absence
+of pre-prepare status repair load-bearing.
