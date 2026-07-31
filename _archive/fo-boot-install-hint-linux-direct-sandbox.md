@@ -4,8 +4,8 @@ title: "First-officer boot install journey: Linux-aware hint, direct install/upg
 status: done
 source: "GitHub issue spacedock-dev/spacedock#581 (nomen429, 2026-07-30): the install journey the first-officer skill hits at the version gate in first-officer-shared-core.md Startup step 1."
 started: 2026-07-31T02:32:43Z
-completed:
-verdict:
+completed: 2026-07-31T16:08:01Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-fo-boot-install-hint-linux-direct-sandbox
 issue: spacedock-dev/spacedock#581
@@ -133,8 +133,9 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:586
+archived: 2026-07-31T16:08:01Z
 ---
 
 The first-officer boot hits the binary version gate (Startup step 1) and, when the `spacedock` binary is absent from PATH (the install class), prints a Mac-only Homebrew install hint and stops, leaving the human to copy-paste a command and restart the session — a hint a Linux host cannot even run. This task improves that install journey along the axes the issue names: make the install hint OS-aware (include the documented Linux `curl|sh` path, not just Homebrew), offer to run the install directly and resume startup once the binary lands (turn hint-and-abort into one approved action, bounded to a single attempt), and detect sandboxed execution so a sandboxed install does not silently no-op (tell the human to run the install command themselves outside the sandbox, naming the exact command). Cycle 2 (captain binding annotations) adds a fourth piece: an OS line in `--version` output, useful both to the FO's hint logic and to issue reports. The upgrade journey (binary present but wrong minor → check latest release, offer upgrade-and-resume) is filed separately as `fo-boot-upgrade-hint-latest-release` and is out of scope here.
