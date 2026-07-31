@@ -77,7 +77,14 @@ gates:
               application:
                 action: feedback
                 target-stage: ideation
-                state: pending
+                state: superseded
+            - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-ideation-3
+              briefing:
+                id: briefing:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-3:revision-1
+                digest: sha256:a2102a754d56f29a159edb391ef5217ac30b2711984cb6d34fdf466c6fbcb9e1
+                digest-domain: canonical-bytes
+                request-digest: sha256:c5680ad3ec4e9c02c5e96ca75e5e0cdc4358f2e2b13a43d2639fc52d318394b0
+                room-ref: ./resolution-consume-terminal-before-delivery/review/ideation/briefing-3
 ---
 
 A gate approval on a terminal-target stage (`validation → done`) is *immediately consumable into terminal status*: the binding approval's authority is marked spent (`consumed=true`) and the entity's status flips to `done` at consume time, while delivery (PR push, CI, merge) and workflow terminal fields (`verdict`, `completed`) remain pending. Three desyncs follow:

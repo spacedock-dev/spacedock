@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-3:revision-1",
+  "question": "Approve the cycle-2 design WITH the captain's two pre-approval corrections applied (consume merge-mechanism-agnostic returning approved-awaiting-merge; merge guard --rework) — entering implementation in worktree .worktrees/spacedock-ensign-resolution-consume-terminal-before-delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/cf84a1ce981122deca7288fcbce51a1bb6a427c2/resolution-consume-terminal-before-delivery.md",
+      "rev": "sha256:10352232b95fa451e9930f33f75270ddaf81309af9e1de073e9efbc54a7d8584",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 design: captain's six-point minimum as the whole design, WITH his two pre-approval corrections applied in-body. Terminal-target gate consume leaves the application pending and status unchanged and returns the approved-awaiting-merge route — merge-mechanism-agnostic: no hook discovery or arming at consume, no cli-\u003egates scanMods plumbing. merge guard is the sole terminal consumer: it discovers/arms the delivery mechanism when it acts (hookless/manual-local instruction path covers no-registration, unchanged), and success spends pending-\u003econsumed atomically with terminal status + verdict + completed in one four-field replacement (new composition preserving merge guard's existing validations). Delivery failure requiring rework: merge guard --rework writes existing pending-\u003esuperseded through the validated declared feedback-to and clears delivery state; retryable trouble leaves the approval pending. One transaction-necessity addition: non-forced terminal status --set refused while a terminal-target application pends. No new states, journal, scanner/lock work, compat machinery; durable-decisions :13/:17 honored. Surface: core +205 LOC, mechanism+plumbing +265, total approx +720. Review record bound: EXACTLY ONE necessity-first pass (openai-codex/gpt-5.6-sol:xhigh, run f6ccdb34, endorse-with-revisions, no blockers) with all 4 findings answered in-body, plus the captain's two pre-approval corrections applied with rationale in the cycle-2 stage report. Cycle-1 architecture and its earlier review rounds remain in-body strictly as labeled history. Accepted residual: gate-prepare-while-pending shadows the application but fails closed at merge guard."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-3:revision-1:item-2",
+      "uri": "git-root://state/cf84a1ce981122deca7288fcbce51a1bb6a427c2/resolution-consume-terminal-before-delivery/review/ideation/staff-review-necessity-pass-f6ccdb34.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4f71bd7d2c57525c4dbe74ca1df359588705a214d1acb403fb8ed51e18866d64"
+    }
+  ]
+}
