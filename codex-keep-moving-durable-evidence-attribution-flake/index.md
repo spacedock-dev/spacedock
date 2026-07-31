@@ -81,6 +81,13 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+            - id: gate-attempt:8bnkrtq4rw46xkbez5zrbmmj-ideation-3
+              briefing:
+                id: briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-3:revision-1
+                digest: sha256:33afe927a33a75aecb584781c9baccd3a047443a10c672ae1eb9ed184f27e8dd
+                digest-domain: canonical-bytes
+                request-digest: sha256:7aeb5e296e4be785452ad21b8391f18693898fc8178c746b7966dfaf0d698af3
+                room-ref: ./review/ideation/briefing-3
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.

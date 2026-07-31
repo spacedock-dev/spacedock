@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-3:revision-1",
+  "question": "Approve the dual ordinary/break-glass durable worker-proof correction for final implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/82b802d3be52ab94fc6509b2f1c10c64376d699e/codex-keep-moving-durable-evidence-attribution-flake/index.md",
+      "rev": "sha256:264176db9e84f3ef0bf84b891f6f27618a9f2a1d6cfa194bcee2aff54cc69cf7",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-3 ideation formalizes two supported Git episodes from retained exact live history: ordinary entity-file-only dispatch then later worker report, or one entity-file-only first-worker child whose parent has neither started nor the current-stage report and whose child atomically adds both. A throwaway ae6cf1ee9 spike reports retained live 3/3 while preexisting, report-only, started-only, stale, foreign-path, and slug-prefix controls stay red. Final work is limited to two existing files, \u003c=65 incremental insertions, cumulative exactly 10 files \u003c=400 insertions and \u003e=1,449 deletions, with no fixture normalization or transcript/provider evidence."
+    }
+  ]
+}
