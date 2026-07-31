@@ -25,6 +25,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:c6dd2c6b17d18deb57e14686317e8a856fb17c96ae5f6072c601fd0beba9b649
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:26nk8qd48zknqnn4kc123sez:backlog:1
+                briefing: briefing:26nk8qd48zknqnn4kc123sez:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T00:32:05.343329Z"
+                decision: approve
+                reason: 'Captain conn approves focused ideation because the required Sonnet lane exposes a no-authority breach from contradictory fixture state; the task must distinguish fixture ownership from a real withdrawal-contract defect before any PR #580 mutation.'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 The required Sonnet live lane for PR #580 failed `TestLiveDefaultHeadlessStopsAtGate/default-headless-recorded-gate-stop`. The fixture changes `recorded-gate-task` from `status: validation` to `status: implementation` and adds an implementation stage definition, but leaves the entity body’s `## Stage Report: validation` in place. Sonnet interpreted that contradictory episode as stale authority: it withdrew the implementation attempt and manually set `status=validation`, crossing the committed no-authority boundary.
