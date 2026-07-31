@@ -457,3 +457,23 @@ Cycle 6 preserves the already-graded headless gate workflow as durable scenario
 evidence and proves the copied state remains independently gradeable. It adds no
 artifact framework or product/runtime semantics and lands exactly on the
 captain-approved insertion ceiling.
+
+## Stage Report: validation (cycle 6)
+
+- DONE: Reconstruct the corrected queued -> implementation -> gated-validation journey and independently verify every prior authority-crossing mutant still fails.
+  Exact candidate `1df0092ee`; the focused queued fixture, command-log positive/mutant matrix, and retained-workflow regrade passed in 2.6s, and each would fail on the previously identified topology, ordering, authority, or missing-evidence mutations.
+- FAILED: Run one fresh supported Sonnet live journey and preserve its durable state, gate-room, command-log, and open-unresolved gate evidence; do not substitute aggregate or cached evidence.
+  The one authorized Sonnet run failed after 399.79s with the provider-neutral grader's generic no-authority-boundary result, but the assertion fired before retention; the persistent scenario artifact contains only stream/final files and no `workflow/` subtree. Validation did not inspect the forbidden transcript and will not rerun.
+- DONE: Cross-check AC-1 through AC-3, the three-file +81/-10 surface, focused/full/race/format evidence, and recommend PASSED or REJECTED with the candidate frozen on any new finding.
+  AC-1 remains green; AC-3 is exactly three test files and actual cumulative `+90/-10` at the captain-reset `+90/-15` ceiling, with implementation-recorded full/race/format and validation-focused/diff checks green. AC-2 cannot be established because its observed failing journey discarded the required durable evidence, so the recommendation is REJECTED at frozen `1df0092ee`.
+- DONE: Classify the new finding and retain the First Officer disposition before candidate mutation or reviewer rerun.
+  Released workflow: mandatory supported Sonnet gate-stop proof; harm: a failing assertion destroys the only admissible state/log evidence and prevents diagnosis without forbidden transcript substitution; `value-ac[AC-2]:` requires durable entity, gate room, state Git history, and command log; trigger: the exact 399.79s run plus absent artifact `workflow/`. Material; task-owned evidence defect; FIX authorized.
+- DONE: Bound the authorized correction at the existing insertion ceiling.
+  Register the existing retention mechanism before the model/assertion path so the same provider-neutral workflow survives success, assertion failure, and cleanup, with the cheapest focused failure-path proof. No second Sonnet now, generic framework, provider/transcript diagnosis, product change, or silent overage beyond `+90/-15`.
+
+### Summary
+
+REJECTED. The deterministic journey, mutants, and success-path retention proof
+pass, but the single fresh Sonnet run exposed that assertion failures still
+delete AC-2's durable evidence before it can be retained. Candidate `1df0092ee`
+remains unchanged and the exact failed run is preserved without transcript use.
