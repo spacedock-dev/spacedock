@@ -118,6 +118,21 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:0d1e4c8ae711c96ed7b094d50c57320ca803265e2b2c607a34f277a5bddb8b4a
                 room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/validation/briefing-2
+              provider-evidence:
+                result-digest: sha256:46353f730b11780a0f407bec7584541613bcd8667e4c3ae8f6f61508cdc4e07c
+                presented-inventory-digest: sha256:b04bd3c0c157e5e54042a3765bdc0622603034572865496ecfc5066ea3e99d3b
+              resolution:
+                type: Resolution
+                id: resolution:binding-1785502148393774000
+                briefing: briefing:z3j0tsbr6t3mqd39rhs8bbvq:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-07-31T12:49:08.393783Z"
+                decision: approve
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 The first-officer boot hits the binary version gate (Startup step 1) and, when the `spacedock` binary is absent from PATH (the install class), prints a Mac-only Homebrew install hint and stops, leaving the human to copy-paste a command and restart the session — a hint a Linux host cannot even run. This task improves that install journey along the axes the issue names: make the install hint OS-aware (include the documented Linux `curl|sh` path, not just Homebrew), offer to run the install directly and resume startup once the binary lands (turn hint-and-abort into one approved action, bounded to a single attempt), and detect sandboxed execution so a sandboxed install does not silently no-op (tell the human to run the install command themselves outside the sandbox, naming the exact command). Cycle 2 (captain binding annotations) adds a fourth piece: an OS line in `--version` output, useful both to the FO's hint logic and to issue reports. The upgrade journey (binary present but wrong minor → check latest release, offer upgrade-and-resume) is filed separately as `fo-boot-upgrade-hint-latest-release` and is out of scope here.
