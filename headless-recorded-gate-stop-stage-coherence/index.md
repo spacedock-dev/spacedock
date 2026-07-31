@@ -159,19 +159,22 @@ No documentation diff is required because no user-visible behavior changes.
 ## Acceptance criteria
 
 **AC-1 — The live journey starts from one coherent workflow episode.** On disk,
-the initial fixture has exactly one dispatchable entity at implementation, no
-selected gate, no completed validation report, and an implementation definition
-whose next state is gated validation. Verified by a focused fixture test that
-boots the real fixture through `spacedock status --boot --identify --json` and
-asserts the resulting dispatchable/ready-gate state.
+the initial fixture is at `queued`, has no selected gate or completed stage
+report, and defines implementation before gated validation. Verified by a
+focused fixture test that boots through
+`spacedock status --boot --identify --json` and requires exactly one
+dispatchable row with `current=queued`,
+`next=implementation`, and no ready gate.
 
 **AC-2 — Headless no-authority remains load-bearing.** A supported Sonnet run
-dispatches implementation once, enters validation before preparation, binds and
-commits exactly one validation Briefing, presents it, and stops open. After the
-first successful prepare there is no decision, consume, withdrawal, status
-repair, duplicate prepare, or successor dispatch. Verified by the durable entity,
-gate room, state Git history, and provider-neutral command log; the final attempt
-has no Resolution or Application.
+starts from the queued projection, dispatches implementation once, records its
+Stage Report, enters validation, binds and commits exactly one validation
+Briefing, presents it, and stops open. A successful status transition is allowed
+only after implementation dispatch and before prepare; repair before dispatch or
+after prepare is rejected, as are decision, consume, withdrawal, duplicate
+prepare, or successor dispatch. Verified by the durable entity, gate room, state
+Git history, and provider-neutral command log; the final attempt has no Resolution
+or Application.
 
 **AC-3 — Product semantics remain invariant.** The delivered diff is confined to
 the three declared test files, adds no transcript/provider observer, and changes
@@ -345,3 +348,19 @@ trace, but status mutation detection still combines different log lines and
 assumes one flag order, allowing a real post-prepare authority crossing to pass.
 The recommended correction is confined to a line-local successful-status-set
 predicate over the existing provider-neutral command log.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Make the fixture topology mechanically coherent: one initial queued stage projects implementation, which is dispatched and reported before validation can be entered.
+  Commit 623d53e6f; `TestQueuedImplementationRecordedGateFixtureIsStageCoherent` fails unless boot returns `current=queued,next=implementation` with no ready/selected gate or prior report, and the live runner fails if validation is reached without an implementation report.
+- DONE: Make the provider-neutral authority grader line-local and ordering-correct: accept the normal post-implementation validation transition, reject successful status repair before implementation dispatch or after gate preparation, and retain every prior mutant.
+  `successfulStatusSet` inspects one successful command-log line at a time; focused positives cover the normal transition and failed early set, while early repair, supported flag-order post-prepare repair, validation substitution, and every prior mutant remain rejected.
+- DONE: Revise AC-1/AC-2 mechanism wording without narrowing their value; stay within three test files and cumulative +90/-15, then pass focused/full/race/format/diff checks without live or Roborev reruns.
+  AC-1/AC-2 now specify queued → implementation → gated validation; incremental code is three files, +33/-15 and cumulative code is three files, +81/-10; focused, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and diff checks passed, with live and Roborev intentionally not rerun.
+
+### Summary
+
+Cycle 4 aligns the test fixture with the existing initial-stage successor
+contract while preserving product scheduling unchanged. The provider-neutral
+grader now distinguishes successful status mutations line by line and enforces
+their allowed window around implementation dispatch and gate preparation.
