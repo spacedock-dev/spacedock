@@ -616,3 +616,28 @@ Exact `fba615fdf` is clean and changes only the authorized documentation sentenc
 ### Summary
 
 The provider-neutral Git oracle now accepts the two supported PR-CI shapes without admitting generic sidecar or partial-batch attribution. The correction is committed at `7f109271c`; no live-model journey, Roborev run, parser, provider observer, runtime behavior, or previously declined compatibility work was added.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Independently prove exact head 7f109271c accepts the two supported PR-CI engagement shapes and that removing either narrow predicate false-reds only its affected ticket.
+  Exact-head focused tests pass; detached predicate removals make atomic-room fail only `ready-one` at `2/3` and split known-ticket batch fail only `ready-one`/`ready-two` while independent `approved-gate` remains credited at `1/3`.
+- DONE: Verify every adjacent atomic-room, known-ticket batch, omitted-ticket, arbitrary-questioned, foreign-path, ordering, attribution, archive, and questioned-history negative remains red while retained supported roots remain green.
+  The 33-case journey table, five-case batch table, overlap/timestamp controls, and four questioned-terminal variants pass; removing a named boundary makes its affected fixture false-green, while retained roots `1137023568`, `1344046602`, `2756575595`, and `3245282000` each pass.
+- DONE: Cross-check AC-1 through AC-4 and the exact two-file +111/-15 correction within the cumulative ten-file deletion-led surface; run focused, full, race, format, and diff gates and recommend PASSED or REJECTED.
+  Direct Git evidence is exactly 2 files `+111/-15` incrementally and 10 files `+971/-1,449` cumulatively; `gofmt -l` is empty, `git diff --check`, focused tests, `go test ./...`, and `go test ./... -race` pass at clean exact head.
+- DONE: AC-1 - Every completed independent task is credited from its own durable journey.
+  Atomic-room and split known-ticket positives report `3/3`; each detached predicate removal loses only the ticket or tickets whose valid engagement depends on that predicate.
+- DONE: AC-2 - Missing, stale, reordered, or cross-attributed durable steps remain red per task.
+  Omitted-ticket partial remains exactly `2/3`; prebound/replaced/modified/outside/prefix room, arbitrary split-questioned, foreign path, terminal ordering, archive, and questioned-reopen controls all reject their affected journey.
+- DONE: AC-3 - The observer surface is smaller and provider-independent.
+  The 10-file surface deletes 1,449 lines and remains net `-478`; grading consumes durable Git paths, blobs, ancestry, and state, with deleted transcript/provider parsers still absent.
+- DONE: AC-4 - Repository and live confirmation gates are green.
+  Focused/full/race/format/diff gates pass, and all four retained supported live histories independently regrade green without a prohibited new model journey.
+- SKIPPED: Run Roborev or another live model journey.
+  The cycle-5 assignment explicitly forbids both; no new Material or Needs-decision finding required consultation or rerun.
+- DONE: Recommend PASSED.
+  Exact candidate `7f109271c` satisfies AC-1 through AC-4 with candidate bytes frozen.
+
+### Summary
+
+Validation independently reproduced both supported PR-CI engagement shapes, falsified each new predicate in detached worktrees, and kept every intended adjacent negative red. The exact candidate remains clean after focused, full, race, format, and diff gates; validation recommends **PASSED**.
