@@ -97,6 +97,20 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:6a7223ff089e31bd8e1dc58d5dde9deddd77154169b4123a52fbd7a2f9267992
                 room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/validation/briefing-1
+              provider-evidence:
+                result-digest: sha256:abeb25cc40913ee03941be5994fc189f3e7de1b10020bb32c97be718f701015d
+                presented-inventory-digest: sha256:2308fa5c412f1339162244b37c2620e24fb3d4d2bca820d7676b99dfd5ebbec7
+              resolution:
+                type: Resolution
+                id: resolution:binding-1785476969983666000
+                briefing: briefing:z3j0tsbr6t3mqd39rhs8bbvq:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-31T05:49:29.983673Z"
+                decision: hold
+                reason: this is very hard to check what evidence you have already gathered, and what requires me to test manually
+              application:
+                action: none
+                state: not-applicable
 ---
 
 The first-officer boot hits the binary version gate (Startup step 1) and, when the `spacedock` binary is absent from PATH (the install class), prints a Mac-only Homebrew install hint and stops, leaving the human to copy-paste a command and restart the session — a hint a Linux host cannot even run. This task improves that install journey along the axes the issue names: make the install hint OS-aware (include the documented Linux `curl|sh` path, not just Homebrew), offer to run the install directly and resume startup once the binary lands (turn hint-and-abort into one approved action, bounded to a single attempt), and detect sandboxed execution so a sandboxed install does not silently no-op (tell the human to run the install command themselves outside the sandbox, naming the exact command). Cycle 2 (captain binding annotations) adds a fourth piece: an OS line in `--version` output, useful both to the FO's hint logic and to issue reports. The upgrade journey (binary present but wrong minor → check latest release, offer upgrade-and-resume) is filed separately as `fo-boot-upgrade-hint-latest-release` and is out of scope here.
