@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z3j0tsbr6t3mqd39rhs8bbvq:ideation:attempt-2:revision-1",
+  "question": "Is the revised ideation design (cycle 4) for the FO boot install journey — OS-aware hint, install-and-resume with sentinel-file one-attempt bound, session-env sandbox detection, OS line in --version — ready to enter implementation, or does it need another revision round?",
+  "artifacts": [
+    {
+      "id": "artifact:z3j0tsbr6t3mqd39rhs8bbvq:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/eb41dd154ca2f32194ba3ce8711d54b939391581/fo-boot-install-hint-linux-direct-sandbox.md",
+      "rev": "sha256:525147f07a8b5931489121f4cab55d1f2b6bea0783002a7c7357eccb1592374b",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-4 design after three review rounds: install-only scope + OS-in-version line (captain's two binding annotations); sentinel-file loop bound; env-marker sandbox detection; command-reference.md doc surface; sentinel create-before-run; registry name+value drift check; invariant amendment. Two prior blockers (sandbox reachability NF1, env-marker durability NF2) verified fixed in substance by the third staff review; cycle-4 closed that review's two moderate findings. FO recommends approve."
+    }
+  ]
+}
