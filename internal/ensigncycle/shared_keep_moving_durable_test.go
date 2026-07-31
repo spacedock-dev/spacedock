@@ -28,6 +28,8 @@ type durableCommit struct {
 	message, blob    string
 	entityFileScoped bool
 	entityOwned      bool
+	files            []string
+	added            map[string]bool
 }
 
 func gradeDurableTaskJourneys(t *testing.T, root string, expected map[string]string) (int, map[string]string) {
@@ -54,8 +56,7 @@ func durableTaskJourneyFailure(t *testing.T, root, slug, stage string) string {
 	for i, c := range history {
 		hasReport := strings.Contains(c.blob, "\n## Stage Report: "+stage+"\n")
 		atomicWorker := durableAtomicWorkerProof(history, i, stage)
-		if c.message == "dispatch: "+slug+" entering "+stage && c.entityFileScoped &&
-			durableField(c.blob, "status") == stage && durableField(c.blob, "started") != "" {
+		if durableDispatchProof(history, i, slug, stage) {
 			dispatch = i
 		}
 		if atomicWorker {
@@ -97,6 +98,36 @@ func durableTaskJourneyFailure(t *testing.T, root, slug, stage string) string {
 	}
 	return ""
 }
+func durableDispatchProof(history []durableCommit, i int, slug, stage string) bool {
+	c := history[i]
+	if c.message != "dispatch: "+slug+" entering "+stage ||
+		durableField(c.blob, "status") != stage || durableField(c.blob, "started") == "" {
+		return false
+	}
+	if c.entityFileScoped {
+		return true
+	}
+	room := durableRoomRef(c.blob)
+	if i == 0 || room == "" || room == durableRoomRef(history[i-1].blob) ||
+		filepath.IsAbs(room) || filepath.Clean(room) != room || !strings.HasPrefix(room, slug+"/") {
+		return false
+	}
+	for _, path := range c.files {
+		if path != slug+".md" && (!c.added[path] || !strings.HasPrefix(path, room+"/")) {
+			return false
+		}
+	}
+	return true
+}
+func durableRoomRef(content string) string {
+	room := ""
+	for _, line := range strings.Split(content, "\n") {
+		if line = strings.TrimSpace(line); strings.HasPrefix(line, "room-ref:") {
+			room = strings.TrimSpace(strings.TrimPrefix(line, "room-ref:"))
+		}
+	}
+	return strings.TrimPrefix(room, "./")
+}
 func durableAtomicWorkerProof(history []durableCommit, i int, stage string) bool {
 	if i == 0 || !history[i].entityFileScoped {
 		return false
@@ -118,7 +149,17 @@ func durableEntityHistory(t *testing.T, root, slug, logPath string) []durableCom
 			continue
 		}
 		blob := durableBlobAt(root, fields[0], slug)
-		files := strings.Fields(git(t, root, "diff-tree", "--root", "--no-commit-id", "--name-only", "-r", "-M", fields[0]))
+		changes := strings.Split(strings.TrimSpace(git(t, root, "diff-tree", "--root", "--no-commit-id", "--name-status", "-r", "-M", fields[0])), "\n")
+		files, added := []string{}, map[string]bool{}
+		for _, change := range changes {
+			parts := strings.Split(change, "\t")
+			if len(parts) < 2 {
+				continue
+			}
+			path := parts[len(parts)-1]
+			files = append(files, path)
+			added[path] = parts[0] == "A"
+		}
 		scoped, entityOwned := len(files) > 0, len(files) > 0
 		for _, file := range files {
 			if file != slug+".md" && file != filepath.Join("_archive", slug+".md") {
@@ -128,7 +169,7 @@ func durableEntityHistory(t *testing.T, root, slug, logPath string) []durableCom
 				entityOwned = false
 			}
 		}
-		history = append(history, durableCommit{fields[1], blob, scoped, entityOwned})
+		history = append(history, durableCommit{fields[1], blob, scoped, entityOwned, files, added})
 	}
 	return history
 }
@@ -210,6 +251,12 @@ func TestDurableTaskJourneys(t *testing.T) {
 		{"atomic report only", "atomic-report-only", "ready-one", "dispatch entry"},
 		{"atomic foreign path", "atomic-foreign-path", "ready-one", "dispatch entry"},
 		{"atomic slug prefix", "atomic-slug-prefix", "ready-one", "dispatch entry"},
+		{"dispatch gate room", "dispatch-room", "", ""},
+		{"dispatch preexisting room", "dispatch-room-preexisting", "ready-one", "dispatch entry"},
+		{"dispatch outside slug room", "dispatch-room-outside-slug", "ready-one", "dispatch entry"},
+		{"dispatch sibling outside room", "dispatch-room-sibling", "ready-one", "dispatch entry"},
+		{"dispatch modified room file", "dispatch-room-modified", "ready-one", "dispatch entry"},
+		{"dispatch slug prefix room", "dispatch-room-prefix", "ready-one", "dispatch entry"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -239,16 +286,47 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 	if mutation == "atomic-preexisting-report" {
 		durableAppendReport(t, root, "ready-one")
 	}
+	room := "ready-one/review/review/briefing-1"
+	roomFile := room + "/gate-briefing.json"
+	if mutation == "dispatch-room-preexisting" {
+		path := filepath.Join(root, "ready-one.md")
+		writeFile(t, path, durableBindRoom(readFile(t, path), room))
+	}
+	if mutation == "dispatch-room-modified" {
+		writeFile(t, filepath.Join(root, roomFile), "old\n")
+	}
 	gitInit(t, root)
 	for _, slug := range []string{"approved-gate", "ready-one", "ready-two"} {
 		atomic := strings.HasPrefix(mutation, "atomic-") && (mutation == "atomic-worker" || slug == "ready-one")
+		roomDispatch := strings.HasPrefix(mutation, "dispatch-room") && slug == "ready-one"
 		if mutation == "report-before-dispatch" && slug == "ready-one" {
 			durableAppendReport(t, root, slug)
 			gitCommitPathScoped(t, root, slug+".md", "worker: stale "+slug)
 		}
 		if !atomic && (mutation != "missing-dispatch" || slug != "ready-one") {
-			writeFile(t, filepath.Join(root, slug+".md"), strings.Replace(readFile(t, filepath.Join(root, slug+".md")), "started: ", "started: 2026-07-31T00:00:00Z", 1))
-			gitCommitPathScoped(t, root, slug+".md", "dispatch: "+slug+" entering implementation")
+			path := filepath.Join(root, slug+".md")
+			content := strings.Replace(readFile(t, path), "started: ", "started: 2026-07-31T00:00:00Z", 1)
+			if roomDispatch && mutation != "dispatch-room-preexisting" {
+				if mutation == "dispatch-room-outside-slug" {
+					room = "ready-two/review/review/briefing-1"
+				} else if mutation == "dispatch-room-prefix" {
+					room = "ready-one-other/review/review/briefing-1"
+				}
+				content = durableBindRoom(content, room)
+			}
+			writeFile(t, path, content)
+			if roomDispatch {
+				if mutation == "dispatch-room-sibling" {
+					roomFile = "ready-one/review/review/briefing-2/gate-briefing.json"
+				} else {
+					roomFile = room + "/gate-briefing.json"
+				}
+				writeFile(t, filepath.Join(root, roomFile), "new\n")
+				git(t, root, "add", "--", slug+".md", roomFile)
+				git(t, root, "commit", "-q", "-m", "dispatch: "+slug+" entering implementation", "--", slug+".md", roomFile)
+			} else {
+				gitCommitPathScoped(t, root, slug+".md", "dispatch: "+slug+" entering implementation")
+			}
 		}
 		if (mutation != "missing-report" || slug != "ready-one") && !(mutation == "report-before-dispatch" && slug == "ready-one") {
 			path := filepath.Join(root, slug+".md")
@@ -322,6 +400,9 @@ func TestRetainedAtomicWorkerJourney(t *testing.T) {
 func durableEntity(slug, stage, started, report string) string {
 	return "---\nid: " + slug + "\ntitle: " + slug + "\nstatus: " + stage +
 		"\nstarted: " + started + "\ncompleted:\nverdict:\n---\n# " + slug + "\n" + report
+}
+func durableBindRoom(content, room string) string {
+	return strings.Replace(content, "\n---\n# ", "\nroom-ref: ./"+room+"\n---\n# ", 1)
 }
 func durableAppendReport(t *testing.T, root, slug string) {
 	path := filepath.Join(root, slug+".md")

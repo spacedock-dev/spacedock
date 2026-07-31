@@ -35,9 +35,10 @@ The shared scenarios reuse the old shared Claude/Codex Python journey overlap (`
 Assertions prefer durable workflow state over transcript phrasing: entity frontmatter (status / completed / verdict), archive-vs-no-archive, the exact fix marker and a second stage report, and only the durable user-facing final-message obligations (a gate review and a decision prompt). `extractClaudeFinalMessage` surfaces a stale-credential `is_error`/`401` `result` event as a LOUD launch failure, distinct from a scenario-assertion failure, so a credential problem is never misread as a runtime regression.
 
 Keep-moving completion is provider-independent. Each expected task must have its own
-worker proof: either an entity-file-only dispatch with `started` followed by a later Stage
+worker proof: either a dispatch with `started` followed by a later entity-file-only Stage
 Report, or one entity-file-only child adding `started` and the new report over a parent with
-neither. Terminal fields may be separate or added by the final entity-owned archive.
+neither. A dispatch may add only gate-room files newly bound below that revision's exact-slug
+`room-ref`; terminal fields may be separate or added by the final entity-owned archive.
 Same-slug sidecars are allowed only there or at a corrected-held boundary; foreign slugs reject.
 Transcript JSONL, command text, provider events, and model narration remain diagnostic only; the commissioned-task fallback uses the same durable oracle.
 
