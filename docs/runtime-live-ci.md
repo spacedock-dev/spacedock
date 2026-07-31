@@ -38,8 +38,9 @@ Keep-moving completion is provider-independent. Each expected task must have its
 worker proof: either a dispatch with `started` followed by a later entity-file-only Stage
 Report, or one entity-file-only child adding `started` and the new report over a parent with
 neither. A dispatch may add only gate-room files newly bound below that revision's exact-slug
-`room-ref`; the first terminal status or field must follow the worker report, and the remaining
-terminal fields may be separate or added by the final entity-owned archive.
+`room-ref`; the first terminal signal after the worker report must already include terminal
+status, `completed`, and `verdict`. That complete transition may be a separate commit or the
+final entity-owned archive.
 All expected tasks must engage before any one terminalizes, and that final archive must retain
 terminal fields. A questioned hold requires a stage transition and ticket-file-only Stage Report
 without any historical terminal status or field.
