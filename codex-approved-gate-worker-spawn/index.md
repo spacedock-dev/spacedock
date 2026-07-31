@@ -71,6 +71,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:6cb3d4d30825f763d13c21578f84d8d6281426f7c9fc1179540bbda3c173907f
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f02j6dbnd4jakwczahv1tg2h:validation:1
+                briefing: briefing:f02j6dbnd4jakwczahv1tg2h:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T00:33:44.295482Z"
+                decision: approve
+                reason: 'Captain conn accepts exact candidate 959d6d850: the mechanical Codex bare-mode refusal closes the reproduced worker-authority breach, all host/parity/full/race checks pass, and independent live roster-to-durable-state evidence proves actual named worker execution without a standing observer dialect.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 A supported headless Codex keep-moving journey advanced `approved-gate`, built its implementation dispatch artifact, never invoked `spawn_agent` / `worker.spawn`, then read a report and terminalized the task. This violates the shipped dispatch boundary and silently bypasses worker execution and write-scope authority.
