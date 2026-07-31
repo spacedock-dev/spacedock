@@ -13,7 +13,7 @@ id: 26nk8qd48zknqnn4kc123sez
 gates:
     version: 1
     current:
-        gate: gate:26nk8qd48zknqnn4kc123sez:ideation
+        gate: gate:26nk8qd48zknqnn4kc123sez:validation
     records:
         - id: gate:26nk8qd48zknqnn4kc123sez:backlog
           stage: backlog
@@ -61,6 +61,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:26nk8qd48zknqnn4kc123sez:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:26nk8qd48zknqnn4kc123sez-validation-1
+              briefing:
+                id: briefing:26nk8qd48zknqnn4kc123sez:validation:attempt-1:revision-1
+                digest: sha256:af0b932089b520d6a7f6bf9540212c4cd00e230d23d700ca818197aab897520f
+                digest-domain: canonical-bytes
+                request-digest: sha256:be5b7d159d41a9cdc211381c985188e4944201e942229b408ea178f1a905e861
+                room-ref: ./review/validation/briefing-1
 review-round:
     id: round:26nk8qd48zknqnn4kc123sez:implementation:11
     stage: implementation
