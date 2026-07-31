@@ -41,6 +41,8 @@ neither. A dispatch may add only gate-room files newly bound below that revision
 `room-ref`; terminal fields may be separate or added by the final entity-owned archive.
 All expected tasks must engage before any one terminalizes, and that final archive must retain
 terminal fields. A questioned hold requires a stage transition and ticket-file-only Stage Report.
+Dispatch and terminal commits may span the complete expected-ticket set, but never a partial set
+or foreign ticket; worker reports and canonical archives remain individually attributed.
 Same-slug sidecars are allowed only there or at a corrected-held boundary; foreign slugs reject.
 Transcript JSONL, command text, provider events, and model narration remain diagnostic only; the commissioned-task fallback uses the same durable oracle.
 

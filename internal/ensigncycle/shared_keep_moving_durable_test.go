@@ -36,10 +36,10 @@ type durableJourneyProof struct {
 	engaged, terminal string
 }
 
-func gradeDurableTaskJourneys(t *testing.T, root string, expected map[string]string) (int, map[string]string) {
+func gradeDurableTaskJourneys(t *testing.T, root string, expected, batchExpected map[string]string) (int, map[string]string) {
 	completed, failures := 0, map[string]string{}
 	for slug, stage := range expected {
-		if _, reason := durableTaskJourney(t, root, slug, stage); reason != "" {
+		if _, reason := durableTaskJourney(t, root, slug, stage, batchExpected); reason != "" {
 			failures[slug] = reason
 		} else {
 			completed++
@@ -47,7 +47,7 @@ func gradeDurableTaskJourneys(t *testing.T, root string, expected map[string]str
 	}
 	return completed, failures
 }
-func durableTaskJourney(t *testing.T, root, slug, stage string) (durableJourneyProof, string) {
+func durableTaskJourney(t *testing.T, root, slug, stage string, batchExpected map[string]string) (durableJourneyProof, string) {
 	proof := durableJourneyProof{}
 	active := slug + ".md"
 	archive := filepath.Join("_archive", slug+".md")
@@ -61,7 +61,8 @@ func durableTaskJourney(t *testing.T, root, slug, stage string) (durableJourneyP
 	for i, c := range history {
 		hasReport := strings.Contains(c.blob, "\n## Stage Report: "+stage+"\n")
 		atomicWorker := durableAtomicWorkerProof(history, i, stage)
-		if durableDispatchProof(history, i, slug, stage) {
+		if durableDispatchProof(history, i, slug, stage) ||
+			durableBatchDispatchProof(t, root, c, batchExpected) {
 			dispatch = i
 		}
 		if atomicWorker {
@@ -75,7 +76,8 @@ func durableTaskJourney(t *testing.T, root, slug, stage string) (durableJourneyP
 				report = i
 			}
 		}
-		terminalScoped := c.entityFileScoped || (c.entityOwned && i == len(history)-1)
+		terminalScoped := c.entityFileScoped || (c.entityOwned && i == len(history)-1) ||
+			durableBatchTerminalProof(root, c, batchExpected)
 		if report >= 0 && i > report && terminalScoped && durableField(c.blob, "status") == "done" &&
 			durableField(c.blob, "completed") != "" && durableField(c.blob, "verdict") != "" {
 			terminal = i
@@ -116,13 +118,85 @@ func durableDispatchProof(history []durableCommit, i int, slug, stage string) bo
 	if c.entityFileScoped {
 		return true
 	}
-	room := durableRoomRef(c.blob)
-	if i == 0 || room == "" || durableRoomRef(history[i-1].blob) != "" ||
-		filepath.IsAbs(room) || filepath.Clean(room) != room || !strings.HasPrefix(room, slug+"/") {
+	if i == 0 {
+		return false
+	}
+	room := durableNewRoomRef(history[i-1].blob, c.blob, slug)
+	if room == "" {
 		return false
 	}
 	for _, path := range c.files {
 		if path != slug+".md" && (!c.added[path] || !strings.HasPrefix(path, room+"/")) {
+			return false
+		}
+	}
+	return true
+}
+func durableNewRoomRef(parent, child, slug string) string {
+	room := durableRoomRef(child)
+	if room == "" || durableRoomRef(parent) != "" || filepath.IsAbs(room) ||
+		filepath.Clean(room) != room || !strings.HasPrefix(room, slug+"/") {
+		return ""
+	}
+	return room
+}
+func durableBatchDispatchProof(t *testing.T, root string, c durableCommit, expected map[string]string) bool {
+	if len(expected) < 2 {
+		return false
+	}
+	changed, allowed, rooms := map[string]bool{}, map[string]bool{}, map[string]string{}
+	for _, path := range c.files {
+		changed[path] = true
+	}
+	for slug, stage := range expected {
+		path := slug + ".md"
+		parent, child := durableBlobAt(root, c.hash+"^", slug), durableBlobAt(root, c.hash, slug)
+		if !changed[path] || durableField(parent, "started") != "" ||
+			durableField(child, "status") != stage || durableField(child, "started") == "" {
+			return false
+		}
+		allowed[path] = true
+		if durableRoomRef(parent) != durableRoomRef(child) {
+			if rooms[slug] = durableNewRoomRef(parent, child, slug); rooms[slug] == "" {
+				return false
+			}
+		}
+	}
+	if changed[kmQuestioned+".md"] {
+		parent := durableBlobAt(root, c.hash+"^", kmQuestioned)
+		child := durableBlobAt(root, c.hash, kmQuestioned)
+		rooms[kmQuestioned] = durableNewRoomRef(parent, child, kmQuestioned)
+		if rooms[kmQuestioned] == "" {
+			return false
+		}
+		allowed[kmQuestioned+".md"] = true
+	}
+	for _, path := range c.files {
+		if allowed[path] {
+			continue
+		}
+		owned := false
+		for _, room := range rooms {
+			owned = owned || (c.added[path] && strings.HasPrefix(path, room+"/"))
+		}
+		if !owned {
+			return false
+		}
+	}
+	return true
+}
+func durableBatchTerminalProof(root string, c durableCommit, expected map[string]string) bool {
+	if len(expected) < 2 || len(c.files) != len(expected) {
+		return false
+	}
+	changed := map[string]bool{}
+	for _, path := range c.files {
+		changed[path] = true
+	}
+	for slug := range expected {
+		blob := durableBlobAt(root, c.hash, slug)
+		if !changed[slug+".md"] || durableField(blob, "status") != "done" ||
+			durableField(blob, "completed") == "" || durableField(blob, "verdict") == "" {
 			return false
 		}
 	}
@@ -205,7 +279,7 @@ func durableField(content, name string) string {
 	return ""
 }
 func assertDurableKeepMoving(t *testing.T, root string) error {
-	completed, failures := gradeDurableTaskJourneys(t, root, kmExpected())
+	completed, failures := gradeDurableTaskJourneys(t, root, kmExpected(), kmExpected())
 	if completed != 3 {
 		return fmt.Errorf("durable keep-moving journeys = %d/3: %v", completed, failures)
 	}
@@ -236,7 +310,7 @@ func durableIndependentOverlap(t *testing.T, root string, expected map[string]st
 	}
 	latestEngagement, firstTerminal := -1, len(rank)
 	for slug, stage := range expected {
-		proof, reason := durableTaskJourney(t, root, slug, stage)
+		proof, reason := durableTaskJourney(t, root, slug, stage, expected)
 		if reason != "" {
 			return fmt.Errorf("%s: %s", slug, reason)
 		}
@@ -257,7 +331,7 @@ func assertDurableSmallestMechanism(t *testing.T, root string, tr mechanismTrace
 	for _, slug := range commissioned {
 		expected[slug] = "ready"
 	}
-	completed, failures := gradeDurableTaskJourneys(t, root, expected)
+	completed, failures := gradeDurableTaskJourneys(t, root, expected, nil)
 	if completed != len(expected) {
 		return fmt.Errorf("durable commissioned journeys = %d/%d: %v", completed, len(expected), failures)
 	}
@@ -303,7 +377,7 @@ func TestDurableTaskJourneys(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			completed, failures := gradeDurableTaskJourneys(t, durableJourneyFixture(t, tt.mutation), kmExpected())
+			completed, failures := gradeDurableTaskJourneys(t, durableJourneyFixture(t, tt.mutation), kmExpected(), nil)
 			wantFailures := 1
 			if tt.slug == "" {
 				wantFailures = 0
@@ -461,6 +535,68 @@ func TestDurableQuestionedRejectsUnrelatedEdit(t *testing.T) {
 		!strings.Contains(err.Error(), "meaningful") {
 		t.Fatalf("unrelated questioned edit error = %v, want meaningful re-shape failure", err)
 	}
+}
+func TestDurableKeepMovingBatchMotion(t *testing.T) {
+	tests := []struct {
+		name, mutation, reason string
+	}{{"full set", "", ""}, {"partial set", "partial", "dispatch"}, {"foreign path", "foreign", "dispatch"}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := assertDurableKeepMoving(t, durableBatchKeepMovingFixture(t, tt.mutation))
+			if tt.reason == "" && err != nil {
+				t.Fatal(err)
+			}
+			if tt.reason != "" && (err == nil || !strings.Contains(err.Error(), tt.reason)) {
+				t.Fatalf("batch motion error = %v, want reason containing %q", err, tt.reason)
+			}
+		})
+	}
+}
+func durableBatchKeepMovingFixture(t *testing.T, mutation string) string {
+	root := t.TempDir()
+	slugs := []string{kmApprovedGate, kmReadyOne, kmReadyTwo}
+	for _, slug := range slugs {
+		writeFile(t, filepath.Join(root, slug+".md"), durableEntity(slug, kmNextStage, "", ""))
+	}
+	gitInit(t, root)
+	var paths []string
+	for i, slug := range slugs {
+		if mutation == "partial" && i == len(slugs)-1 {
+			continue
+		}
+		path := slug + ".md"
+		writeFile(t, filepath.Join(root, path), strings.Replace(readFile(t, filepath.Join(root, path)), "started: ", "started: now", 1))
+		paths = append(paths, path)
+	}
+	if mutation == "foreign" {
+		writeFile(t, filepath.Join(root, "foreign.md"), "foreign\n")
+		paths = append(paths, "foreign.md")
+	}
+	git(t, root, append([]string{"add", "--"}, paths...)...)
+	git(t, root, append([]string{"commit", "-q", "-m", "dispatch: implementation batch", "--"}, paths...)...)
+	for _, slug := range slugs {
+		durableAppendReport(t, root, slug)
+		gitCommitPathScoped(t, root, slug+".md", "worker: "+slug)
+	}
+	paths = nil
+	for _, slug := range slugs {
+		path := filepath.Join(root, slug+".md")
+		content := strings.Replace(readFile(t, path), "status: "+kmNextStage, "status: done", 1)
+		content = strings.Replace(content, "completed:", "completed: now", 1)
+		content = strings.Replace(content, "verdict:", "verdict: passed", 1)
+		writeFile(t, path, content)
+		paths = append(paths, slug+".md")
+	}
+	git(t, root, append([]string{"add", "--"}, paths...)...)
+	git(t, root, append([]string{"commit", "-q", "-m", "terminalize: implementation batch", "--"}, paths...)...)
+	for _, slug := range slugs {
+		content := readFile(t, filepath.Join(root, slug+".md"))
+		writeFile(t, filepath.Join(root, "_archive", slug+".md"), content)
+		git(t, root, "rm", "-q", "--", slug+".md")
+		git(t, root, "add", "--", "_archive/"+slug+".md")
+		git(t, root, "commit", "-q", "-m", "archive: "+slug)
+	}
+	return durableAddQuestioned(t, root, true)
 }
 func durableAddQuestioned(t *testing.T, root string, reshape bool) string {
 	writeFile(t, filepath.Join(root, kmQuestioned+".md"), durableEntity(kmQuestioned, "review", "", ""))
