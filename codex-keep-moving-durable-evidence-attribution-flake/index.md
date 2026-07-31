@@ -88,6 +88,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:7aeb5e296e4be785452ad21b8391f18693898fc8178c746b7966dfaf0d698af3
                 room-ref: ./review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8bnkrtq4rw46xkbez5zrbmmj:ideation:3
+                briefing: briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T00:39:19.114265Z"
+                decision: approve
+                reason: Captain conn approves the dual-episode design because retained supported histories prove both ordinary and atomic first-worker forms, while parent/child blob checks and foreign/stale controls preserve actual worker proof without transcript/provider observation.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.
