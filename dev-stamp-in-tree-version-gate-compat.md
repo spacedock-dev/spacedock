@@ -19,6 +19,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:cd777a48b4365012f90310e3cda8ae4e29c3d20f2439dc16bd00db91141bd4d0
                 room-ref: ./dev-stamp-in-tree-version-gate-compat/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zexbrjhartgykvhm012f527w:backlog:1
+                briefing: briefing:zexbrjhartgykvhm012f527w:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T16:32:37.288799Z"
+                decision: approve
+                reason: Under the captain's explicit conn to proceed with the six critical lanes, the bound backlog Briefing demonstrates a repeated live-agent failure, constrains ideation to the smallest sufficient correction, and requires behavioral proof without compatibility machinery.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 The FO version gate's dev-stamp abort class does not survive contact with in-tree builds: source builds and CI candidates stamp `<latest-tag>+dev`, which IS major.minor-compatible with the in-tree skills, but the gate prose names the dev-stamp class only by its extreme (`dev` — an integer-era build carrying no major.minor at all) and never states the converse, so strict live-agent readers classify compatible dev-suffixed tokens as the abort class. Evidence is deterministic: codex's runtime red twice on identical reads where claude/pi read green; main's lanes with the old prose were green 07-13/07-19.
