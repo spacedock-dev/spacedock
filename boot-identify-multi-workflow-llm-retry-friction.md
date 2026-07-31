@@ -60,6 +60,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:0a42b328d0bc869ab8c30b636d7fcb6ec7dd80d2a31240e8655f749a69690e08
                 room-ref: ./boot-identify-multi-workflow-llm-retry-friction/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:32vshm0h2h04gs7hzcf315g0:validation:3
+                briefing: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T04:04:16.959678Z"
+                decision: approve
+                reason: 'Approved under sprint conn: exact f982e88b6 is a two-test-file +24/-7 repair at the Claude shell-startup ledger boundary; independent focused, adversarial, full, race, format, and Roborev checks passed with no Material finding, while exact-head Claude Sonnet and Opus CI remain mandatory before merge.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 mod-block:
 completed:
 verdict:
