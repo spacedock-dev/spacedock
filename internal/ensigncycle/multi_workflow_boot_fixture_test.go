@@ -18,6 +18,7 @@ type multiWorkflowBootFixture struct {
 	gitStatusBefore string
 }
 
+//spacedock:live-fixture id=boot/multiple-workflows
 func writeMultiWorkflowBootFixture(t *testing.T, root string) multiWorkflowBootFixture {
 	t.Helper()
 	fx := multiWorkflowBootFixture{root: root}

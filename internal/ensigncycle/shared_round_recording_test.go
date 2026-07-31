@@ -14,6 +14,7 @@ import (
 )
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
+var roundLauncherCapture = regexp.MustCompile(`(?:([A-Za-z_][A-Za-z0-9_]*)=\$\{SPACEDOCK_BIN:-spacedock\}|([A-Za-z_][A-Za-z0-9_]*)="\$\{SPACEDOCK_BIN:-spacedock\}"|([A-Za-z_][A-Za-z0-9_]*)='\$\{SPACEDOCK_BIN:-spacedock\}'|([A-Za-z_][A-Za-z0-9_]*)="\$\{SPACEDOCK_BIN:-\$\(command -v spacedock\)\}")(?:[;\s]|$)`)
 var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4$`)
 
 const rejectionPreparedBriefingID = "briefing:rejection-task:validation:attempt-1:revision-1"
@@ -38,7 +39,7 @@ func commandRecordsRejectionRound(command string) bool {
 	if directRoundLauncher.MatchString(command) {
 		return true
 	}
-	match := launcherCapture.FindStringSubmatch(command)
+	match := roundLauncherCapture.FindStringSubmatch(command)
 	if match == nil {
 		return false
 	}

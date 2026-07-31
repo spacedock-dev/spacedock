@@ -1,6 +1,10 @@
 package ensigncycle
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 // codexCommandItem is the shared shape used by scenario assertions that still
 // grade Codex tool selection. Filing deliberately does not use it: its producer
@@ -8,9 +12,25 @@ import "fmt"
 type codexCommandItem struct {
 	Type string `json:"type"`
 	Item struct {
-		Type    string `json:"type"`
-		Command string `json:"command"`
+		Type     string `json:"type"`
+		Command  string `json:"command"`
+		Status   string `json:"status"`
+		ExitCode *int   `json:"exit_code"`
 	} `json:"item"`
+}
+
+func successfulCodexCommands(jsonl string) []string {
+	var commands []string
+	for _, line := range strings.Split(jsonl, "\n") {
+		var event codexCommandItem
+		if json.Unmarshal([]byte(line), &event) != nil || event.Type != "item.completed" ||
+			event.Item.Type != "command_execution" || event.Item.Status != "completed" ||
+			event.Item.ExitCode == nil || *event.Item.ExitCode != 0 {
+			continue
+		}
+		commands = append(commands, event.Item.Command)
+	}
+	return commands
 }
 
 func claudeToolUse(name, inputJSON string) string {

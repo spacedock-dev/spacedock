@@ -91,7 +91,7 @@ type liveDriver interface {
 	model() string
 	home() string
 	withStubPATH(dir string) liveDriver
-	withInvocationLedger(ledger testInvocationLedger) liveDriver
+	withInvocationLedger(t *testing.T, ledger testInvocationLedger) liveDriver
 }
 
 // liveResult is the host-neutral observed state the shared assertions consume.
@@ -208,8 +208,8 @@ func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 	return r
 }
 
-func (r claudeLiveRunner) withInvocationLedger(ledger testInvocationLedger) liveDriver {
-	r.env = ledger.instrumentEnv(r.env)
+func (r claudeLiveRunner) withInvocationLedger(t *testing.T, ledger testInvocationLedger) liveDriver {
+	r.env = withSpacedockShimShellEnv(t, ledger.instrumentEnv(r.env), ledger.shimDir)
 	return r
 }
 
@@ -221,6 +221,24 @@ func durableSemantic(code string, err error) error {
 		return err
 	}
 	return &gradedErr{code: code, msg: err.Error()}
+}
+
+//spacedock:live-proof id=claude-invocation-ledger lane=claude-live
+func TestClaudeInvocationLedgerSurvivesFrontDoorLauncherPin(t *testing.T) {
+	ledger := newTestInvocationLedger(t, writeSuccessfulLedgerTarget(t))
+	driver := claudeLiveRunner{env: os.Environ()}
+	driver = driver.withInvocationLedger(t, ledger).(claudeLiveRunner)
+	driver.env = replaceEnvValue(driver.env, "SPACEDOCK_BIN", writeSuccessfulLedgerTarget(t))
+
+	cmd := exec.Command("/bin/bash", "-c", `"$SPACEDOCK_BIN" status --boot --identify --json`)
+	cmd.Env = driver.env
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("ledgered Claude shell failed after front-door launcher pin: %v\n%s", err, output)
+	}
+	got := ledger.read(t)
+	if len(got) != 1 || got[0].tool != "spacedock" || strings.Join(got[0].args, "\x00") != "status\x00--boot\x00--identify\x00--json" {
+		t.Fatalf("Claude shell bypassed invocation ledger after front-door launcher pin: %#v", got)
+	}
 }
 
 func finishLiveScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, result liveResult, semantic ...error) {
@@ -508,7 +526,7 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 	workflowRoot := t.TempDir()
 	entityPath := build(t, workflowRoot)
 	ledger := newTestInvocationLedger(t, spacedockBinary(t))
-	runner = runner.withInvocationLedger(ledger)
+	runner = runner.withInvocationLedger(t, ledger)
 	result := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot))
 	if _, err := os.Stat(entityPath); err != nil {
 		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)

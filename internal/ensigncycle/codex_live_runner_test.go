@@ -63,9 +63,28 @@ func (d codexAsLiveDriver) withStubPATH(dir string) liveDriver {
 	return d
 }
 
-func (d codexAsLiveDriver) withInvocationLedger(ledger testInvocationLedger) liveDriver {
-	d.runner.env = ledger.instrumentEnv(d.runner.env)
+func (d codexAsLiveDriver) withInvocationLedger(t *testing.T, ledger testInvocationLedger) liveDriver {
+	d.runner = d.runner.withInvocationLedger(t, ledger)
 	return d
+}
+
+func (r codexLiveRunner) withInvocationLedger(t *testing.T, ledger testInvocationLedger) codexLiveRunner {
+	t.Helper()
+	r.env = ledger.instrumentEnv(r.env)
+	// The front door re-pins SPACEDOCK_BIN before execing Codex. Reapply the
+	// test-local launcher only inside the supported host process so executed argv,
+	// not command narration, remains the filing oracle.
+	shimDir := t.TempDir()
+	shim := filepath.Join(shimDir, "codex")
+	script := "#!/bin/sh\n" +
+		"export SPACEDOCK_BIN=" + shellQuote(filepath.Join(ledger.shimDir, "spacedock")) + "\n" +
+		"exec " + shellQuote(r.codexBin) + " \"$@\"\n"
+	if err := os.WriteFile(shim, []byte(script), 0o755); err != nil {
+		t.Fatalf("write invocation-ledger Codex shim: %v", err)
+	}
+	r.env = prependEnvPath(r.env, shimDir)
+	r.codexBin = shim
+	return r
 }
 
 func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner {

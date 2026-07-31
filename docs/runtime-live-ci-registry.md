@@ -184,6 +184,14 @@ deterministic coverage to the default suite, or delete it.
   - `boot/held-gate` — a discoverable workflow with one member already held at a
     human gate and no engage workload.
 
+### `multi-workflow-boot`
+
+- **Entry point:** `TestLiveCommonMultiWorkflowBoot`
+- **Required outcome:** Startup executes identify once, reports both workflows,
+  and stops for selection without retry, convergence, or mutation.
+- **Fixtures:**
+  - `boot/multiple-workflows` — a Git root above two commissioned workflows.
+
 ### `zero-discovery`
 
 - **Entry point:** `TestLiveCommonZeroDiscovery`
@@ -261,6 +269,14 @@ deterministic coverage to the default suite, or delete it.
 
 These proofs are intentionally separate from common journeys. Each must remain
 limited to the named runtime boundary.
+
+### `claude-invocation-ledger`
+
+- **Entry point:** `TestClaudeInvocationLedgerSurvivesFrontDoorLauncherPin`
+- **Lane:** `claude-live`
+- **Required outcome:** The supported Claude shell still routes spacedock argv
+  through the test ledger after the front door repins `SPACEDOCK_BIN`.
+- **Fixture:** a test-local launcher shim; no commissioned workflow.
 
 ### `claude-merged-agent-dispatch`
 

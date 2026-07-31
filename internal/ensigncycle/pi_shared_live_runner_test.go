@@ -44,7 +44,7 @@ func (d piSharedLiveDriver) withStubPATH(dir string) liveDriver {
 	d.env = withSpacedockShimShellEnv(d.t, d.env, dir)
 	return d
 }
-func (d piSharedLiveDriver) withInvocationLedger(ledger testInvocationLedger) liveDriver {
+func (d piSharedLiveDriver) withInvocationLedger(_ *testing.T, ledger testInvocationLedger) liveDriver {
 	d.env = ledger.instrumentEnv(d.env)
 	return d
 }
