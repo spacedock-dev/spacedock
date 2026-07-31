@@ -482,3 +482,20 @@ The final oracle proves independent keep-moving work from Git-owned task episode
 ### Summary
 
 Exact `5ef96410b` is clean, all deterministic/repository/race checks pass, and all four retained supported journeys—including final root `3245282000`—regrade 3/3 without another live run. Validation nevertheless recommends **REJECTED** because two Material task-owned false greens fail to prove worker-report-before-terminal ordering and the questioned ticket's uninterrupted nonterminal hold; the third Roborev observation was authoritatively declined.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Reproduce the terminal-before-report and questioned done-then-reopen false greens read-only, then return an exact files/LOC/semantic plan before candidate mutation.
+  Detached exact-`5ef96410b` tests showed full, status-only, completed-only, and verdict-only premature terminal signals false-green in both expected-task and questioned histories; the authorized plan was exactly two existing files at `+75/-7`.
+- DONE: After First Officer authorization, require first terminal transition after the recognized worker report and forbid any questioned-ticket historical terminal state.
+  Commit `ef2d558b7` recognizes an expected ticket's terminal boundary only at its first historical terminal signal strictly after the report, and rejects any such signal anywhere in questioned history; each of the eight new controls fails without its corresponding guard.
+- DONE: Preserve every supported retained 3/3 journey and existing negative, run focused/full/race/format/diff gates without another live journey.
+  Ordinary, atomic, gate-room, complete-batch, delayed-persistence, serialized, attribution, archive, and questioned controls pass; retained roots `1137023568`, `1344046602`, `2756575595`, and `3245282000` each grade `3/3`, and `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race` pass.
+- SKIPPED: Add active `verdict: questioned` compatibility.
+  The First Officer declined the unsupported observation as invalid/Polish: the schema, fixture, oracle contract, and every retained supported journey use an empty active verdict, so no compatibility path or positive test was added.
+- DONE: Preserve the provider-independent, deletion-led surface and avoid forbidden reruns or semantic expansion.
+  Final cumulative surface is the same 10 files at `+874/-1,449` (net `-575`); no new file, lifecycle engine, parser, observer, command, storage, runtime, cleanup, Roborev rerun, or live journey was introduced.
+
+### Summary
+
+The Git-only oracle now binds terminal proof to the first historical terminal signal after worker proof and requires the questioned correction to remain uninterruptedly nonterminal. The two validation-cycle false greens and their partial-signal neighbors are red while every supported retained journey remains green.
