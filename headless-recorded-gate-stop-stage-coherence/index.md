@@ -213,3 +213,22 @@ does not show a successful withdrawal or product-driven status change. The
 correction makes the implementation-start fixture coherent, strengthens
 post-prepare authority grading, and requires a fresh Sonnet live proof before
 validation.
+
+## Stage Report: implementation
+
+- DONE: Make the default live fixture boot as one coherent implementation-start episode with no selected gate or completed validation report.
+  Commit 854ffa62b; `TestImplementationStartRecordedGateFixtureIsStageCoherent` shells real `status --boot --identify --json` and fails on a wrong stage pair, ready gate, selected gate, stale report, or completed-stage snapshot claim.
+- DONE: Preserve the strict no-authority grader in the fixture-only candidate.
+  `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle` fails on missing/late/duplicate implementation dispatch, missing commit, duplicate prepare, decision, consume, withdrawal, status repair, or successor dispatch.
+- DONE: Keep all changes test-only and prove them with focused fixture/mutant tests, full/race/format.
+  The committed diff is 52 insertions/10 deletions in the three authorized test files; focused tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed.
+- FAILED: Prove one implementation dispatch, one validation prepare/commit, then stop open in one fresh supported Sonnet live journey.
+  The required launch failed before any FO work with OAuth 429 `You've hit your weekly limit · resets 1pm (Asia/Taipei)`; artifacts: `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLiveDefaultHeadlessStopsAtGate1103490344/003/default-headless-recorded-gate-stop`.
+
+### Summary
+
+The fixture-only candidate coherently starts implementation and strengthens the
+provider-neutral command-log boundary without changing product behavior. AC-2
+and implementation completion are not claimed because the mandatory supported
+Sonnet journey was blocked before first-officer work; the first officer will
+choose the proof route from this durable checkpoint.
