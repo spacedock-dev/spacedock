@@ -1,6 +1,6 @@
 ---
 title: Make the headless recorded-gate stop fixture stage-coherent
-status: validation
+status: implementation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started: 2026-07-31T00:32:10Z
 completed:
@@ -255,6 +255,7 @@ without a resolution, application, or successor dispatch.
 - Cycle 6: REJECTED — validation/failure-path retention; surface 3 test files/+90/-10 vs reset ceiling 3 test files/+90/-15 (100% of insertion ceiling); AC unchanged. One fresh Sonnet run failed after 399.79s, but the assertion fired before the success-only retention call and cleanup deleted the provider-neutral workflow evidence needed to classify it. FIX authorized only to register the existing retention action before model/assertion failure and prove the failing path preserves the same tree; remain at the insertion ceiling by refactoring/cutting or stop on exact overage. No rerun or transcript diagnosis before that proof.
 - Cycle 7: REJECTED — validation/retained exact journey; surface 3 test files/+90/-11 vs reset ceiling 3 test files/+90/-15 (100% of insertion ceiling); AC unchanged. The failure-safe artifact from one Sonnet run proves a coherent implementation dispatch → validation dispatch → one prepare/commit → open unresolved attempt, but the oracle false-rejects every second dispatch and therefore mistakes the required validation reviewer for a forbidden successor. FIX authorized only to require the two ordered pre-prepare dispatches and reject substitution, duplicate/late dispatch, or any post-prepare successor; replace/cut the incorrect count logic to remain at the insertion ceiling.
 - Cycle 8: REJECTED — validation/detached handoff audit; surface 3 test files/+90/-11 vs reset ceiling 3 test files/+90/-15 (100% of insertion ceiling); AC unchanged. Ordered dispatch checks pass, but detached missing/late-transition mutants show the oracle never requires the successful implementation→validation status transition between the two workers. FIX authorized only to require exactly that between-dispatch transition and reject missing, late, duplicate, or other repair while retaining all prior mutants; no live spend before the focused trace is green and no insertion overage.
+- Cycle 9: REJECTED — validation/retention cleanup lifecycle; surface 3 test files/+90/-11 vs reset ceiling 3 test files/+90/-15 (100% of insertion ceiling); AC unchanged. The 21-mutant event table is clean and one Sonnet run reached the correct retained open-gate outcome, but success copied the workflow and registered cleanup copied it again over read-only Git objects, false-failing the lane. FIX authorized only for single-copy-per-outcome behavior: success retains once, failure cleanup retains once, and cleanup no-ops on an existing retained tree; no new artifact mechanism or insertion overage.
 
 - Cycle 5: REJECTED — validation/exact queued journey trace; surface 3 test files/+85/-10 vs estimate 3 test files/+90/-15 (94%); AC unchanged
 
