@@ -48,6 +48,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:b7db54faa91d87e7ad21b7f5c00ad09a1b32223be38ac796f429f7c43426b544
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:26nk8qd48zknqnn4kc123sez:ideation:1
+                briefing: briefing:26nk8qd48zknqnn4kc123sez:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T00:47:13.663192Z"
+                decision: approve
+                reason: 'Approved under sprint conn: the corrected ideation isolates a fixture-owned contradiction, preserves the no-authority boundary, limits changes to three test files, and requires one supported Sonnet live proof before validation.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 ## Problem statement
