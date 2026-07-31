@@ -143,6 +143,13 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
+            - id: gate-attempt:8bnkrtq4rw46xkbez5zrbmmj-validation-3
+              briefing:
+                id: briefing:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-3:revision-1
+                digest: sha256:c5e2e3321bf5fad14bdf1fa0445f5448f419895055877da5dddf21175c357656
+                digest-domain: canonical-bytes
+                request-digest: sha256:1cba9f135ce1d8f9cb56a9867d539bcd78464550fbac19053beb64c653a6032e
+                room-ref: ./review/validation/briefing-3
 mod-block:
 pr: "#585"
 ---

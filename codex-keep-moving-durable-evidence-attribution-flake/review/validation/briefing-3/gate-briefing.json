@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-3:revision-1",
+  "question": "Approve exact candidate 7f109271c for PR update?",
+  "artifacts": [
+    {
+      "id": "artifact:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/3183e45342bb9330064ad7517bc73890e851c899/codex-keep-moving-durable-evidence-attribution-flake/gate-review-cycle5.md",
+      "rev": "sha256:4639ac80ef2f87f9d98d3ba2aede8502eede4b199fe952297648b154f770a5a8",
+      "mediaType": "text/markdown",
+      "summary": "Provider-neutral Git attribution accepts the two supported PR-CI engagement histories while preserving adjacent negative controls; exact candidate 7f109271c is focused/full/race green."
+    }
+  ]
+}
