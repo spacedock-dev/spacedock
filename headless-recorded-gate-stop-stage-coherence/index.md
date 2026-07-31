@@ -498,3 +498,23 @@ Cycle 7 moves the existing workflow copy onto a pre-launch cleanup boundary, so
 the exact durable evidence survives both successful and failing live assertions.
 The correction remains test-only, uses no second artifact mechanism, and stays
 within the captain-approved cumulative ceiling.
+
+## Stage Report: validation (cycle 7)
+
+- DONE: Reconstruct the corrected queued -> implementation -> gated-validation journey and independently verify every prior authority-crossing mutant still fails.
+  Exact candidate `0691f25a9`; the focused queued fixture, prior command-log positive/mutant matrix, success-path regrade, and simulated failing-path cleanup/regrade passed in 4.1s and remain falsifiable by the previously retained topology, ordering, authority, and evidence-loss mutations.
+- FAILED: Run one fresh supported Sonnet live journey and preserve its durable state, gate-room, command-log, and open-unresolved gate evidence; do not substitute aggregate or cached evidence.
+  Exactly one fresh Sonnet run executed for 348.20s and failed the command-log oracle, while failure-safe cleanup preserved `workflow/`; inspection used only that subtree and found ordered state Git, both stage reports, one canonical open attempt, and the full provider-neutral log. No transcript/provider artifact was read and no rerun occurred.
+- DONE: Cross-check AC-1 through AC-3, the three-file +81/-10 surface, focused/full/race/format evidence, and recommend PASSED or REJECTED with the candidate frozen on any new finding.
+  AC-1 is green and AC-3 is three files at actual cumulative `+90/-11` within the captain-reset `+90/-15`, with focused/diff green and implementation-recorded full/race/format green. AC-2's supported journey is false-red because the oracle counts all successful dispatches as one, so the recommendation is REJECTED at frozen `0691f25a9`.
+- DONE: Classify the finding from retained provider-neutral evidence and retain the First Officer disposition before mutation or rerun.
+  Released workflow: queued implementation worker followed by gated validation worker; harm: the valid open-gate journey is rejected; `value-ac[AC-2]:` requires implementation then validation and forbids only a post-prepare successor; trigger: the retained log's ordered implementation and validation dispatches plus one prepare/commit and no later authority action. Material; task-owned evidence defect; FIX authorized.
+- DONE: Bound the authorized ordered-dispatch correction.
+  Require exactly one implementation dispatch followed by exactly one validation dispatch before prepare; reject validation before implementation, missing/duplicate/late dispatch, and every post-prepare successor or authority action. Seed the retained log shape deterministically; no transcript/provider parser, product change, generic grammar, unrelated cleanup, silent overage, or immediate live rerun.
+
+### Summary
+
+REJECTED. Failure-safe retention worked and exposed the remaining false red: the
+oracle mistakes the required validation-worker dispatch for a forbidden
+successor dispatch. The exact Sonnet evidence remains at
+`/tmp/spacedock-sonnet-cycle7.zlt1Yn`, and candidate `0691f25a9` is unchanged.
