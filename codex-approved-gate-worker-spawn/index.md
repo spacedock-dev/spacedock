@@ -199,3 +199,36 @@ Cycle 2 removes every standing event-parser and keep-moving observer change from
 ### Summary
 
 Codex bare mode now fails honestly at the dispatch boundary with the approved diagnostic, while normal named Codex, Claude, and Pi semantics remain intact. The implementation stays inside the seven-file mechanical surface and proves the value through a one-off native roster observation followed by worker-authored durable state, without adding an observer or provider dialect.
+
+## Review-finding disposition
+
+### Validation evidence defect (closed)
+
+- Reviewer observation: the first validator-positive fixture used the exact candidate for named build/spawn but inherited the older repository launcher for its terminal status write while calling that launcher exact.
+- Worker proposal: evidence defect; validation-fixture owned; Material to AC-1 proof only; rerun one fresh positive arm without candidate mutation.
+- Released user and normal workflow: exact-candidate live validation is the required supported Codex validation workflow.
+- Observable harm: commit `7441ce12` could not prove exact-candidate attribution for the terminal state write; no candidate product harm was observed.
+- Authority: `value-ac[AC-1]` requires one exact-candidate live roster-to-worker-authored-durable-state proof.
+- Trigger evidence: the worker report named `/Users/clkao/git/spacedock-research/spacedock-v1/spacedock` (`0.26.0+dev`) while the build/spawn binary was the `959d6d850` build (`0.27.0-pre2+dev`).
+- First Officer authorization: rerun only the positive arm with the absolute candidate launcher pinned and preflighted; no negative rerun, candidate mutation, observer/parser, fallback, or third attempt.
+- Resolution: task `.../spacedock_ensign_validator_positive_exact_implementation` was addressable before report read, preflighted the exact launcher, and authored clean commit `c7ab171f`; the candidate stayed unchanged.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 through AC-4 at exact candidate 959d6d850, including fail-before-artifact Codex bare mode and unchanged named/Claude/Pi shapes.
+  AC-1: exact-candidate task `/root/spacedock_ensign_codex_approved_gate_worker_spawn_validation/spacedock_ensign_validator_positive_exact_implementation` was live/addressable before report read, then authored clean commit `c7ab171f`, proof, report, and `status=done`.
+  AC-2: JSON, CLI-flag, and CODEX_THREAD_ID host-resolution arms each exited 2 with the approved diagnostic and no artifact; the named build retained name/prompt.
+  AC-3: `TestCodexSpawnSignatureBindsToolArgs` and adapter tests bind exactly `task_name,message,fork_turns=none`; changed-path/diff review found no observer, event parser, receipt, schema, controller, daemon, retry, or `internal/ensigncycle` edit.
+  AC-4: focused Claude bare, Pi wrapper, Codex host, help, dispatch parity, full, and race suites passed without supported-host shape drift.
+- DONE: Independently run the one-off named-build/no-spawn stop control and positive addressable-worker-to-durable-report journey without a standing event parser.
+  Control `spacedock-ensign-validator-no-spawn-implementation` had no matching roster worker and stopped before report inspection; the authorized positive rerun produced exact-launcher proof at commit `c7ab171f`.
+- DONE: Verify the exact seven-file +55/-2 surface, focused/parity/full/race/format checks, docs/adapter coherence, and absence of observer/schema/controller expansion.
+  Candidate `959d6d850` remained clean at 7 files and +55/-2; `go test ./...`, `go test ./... -race`, focused suites, empty `gofmt -d`, and `git diff --check` passed.
+- DONE: Perform the semantic adversarial pass and detached audit.
+  The matrix covered JSON/flag/env host inputs, bare/named Codex, Claude/Pi bare, fail cleanup, exact diagnostic, name/prompt cardinality, adapter argument identity, and no new scaling path; detached checkout `/tmp/spacedock-f02-detached-audit.gBQk0m` was clean and green at `959d6d850`.
+- DONE: Classify and close the validation evidence finding before rerun.
+  The First Officer authorized the fixture-owned AC-1 evidence correction; no candidate mutation or product finding resulted, and the exact-candidate rerun closed the proof gap.
+
+### Summary
+
+Validation recommends **PASSED**: AC-1 through AC-4 reproduce on exact candidate `959d6d850`, with the no-spawn arm stopping at the live roster boundary and the positive arm proving addressable worker authority through durable commit/state. The only finding was a validator-fixture attribution error; it was classified, authorized, and closed by one exact-launcher positive rerun without changing the candidate. No material finding or deferred risk remains.
