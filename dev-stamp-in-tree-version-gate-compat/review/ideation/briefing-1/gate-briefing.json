@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zexbrjhartgykvhm012f527w:ideation:attempt-1:revision-1",
+  "question": "Approve the one-file, two-line wording correction and its focused live Codex proof for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:zexbrjhartgykvhm012f527w:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f9c5f68d1c62401c52b4881c9d85e7a95686f46a/dev-stamp-in-tree-version-gate-compat.md",
+      "rev": "sha256:93096baeb48376fc87320ea7408408eddbad87a214e5282e9c7cdb6a7daf6840",
+      "mediaType": "text/markdown",
+      "summary": "Ideation found no product version defect: the current producer, parser, and comparator already distinguish same-minor +dev, wrong-minor +dev, and bare dev correctly. The minimum correction restores the lost qualifier in the FO startup contract only: two line replacements, net +7 bytes, with existing focused tests plus one exact-tip Codex gate-guardrail journey. No compatibility layer, new version model, committed prose oracle, standing lane, or broader machinery is allowed."
+    }
+  ]
+}

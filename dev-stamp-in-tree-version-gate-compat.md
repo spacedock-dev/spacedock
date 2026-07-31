@@ -7,7 +7,7 @@ id: zexbrjhartgykvhm012f527w
 gates:
     version: 1
     current:
-        gate: gate:zexbrjhartgykvhm012f527w:backlog
+        gate: gate:zexbrjhartgykvhm012f527w:ideation
     records:
         - id: gate:zexbrjhartgykvhm012f527w:backlog
           stage: backlog
@@ -32,6 +32,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:zexbrjhartgykvhm012f527w:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:zexbrjhartgykvhm012f527w-ideation-1
+              briefing:
+                id: briefing:zexbrjhartgykvhm012f527w:ideation:attempt-1:revision-1
+                digest: sha256:14a4ffd0a63ed60b4622b5759c0fa191bd13fa72fec3f81698bd6349204bbcc8
+                digest-domain: canonical-bytes
+                request-digest: sha256:0e78927b5089450943d1f789e4c44d2a1cec5ee38cceeb0b6a67845213600d64
+                room-ref: ./dev-stamp-in-tree-version-gate-compat/review/ideation/briefing-1
 started: 2026-07-31T16:34:00Z
 ---
 
