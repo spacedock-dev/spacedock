@@ -1,6 +1,6 @@
 ---
 title: Make the headless recorded-gate stop fixture stage-coherent
-status: validation
+status: implementation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started: 2026-07-31T00:32:10Z
 completed:
@@ -256,6 +256,7 @@ without a resolution, application, or successor dispatch.
 - Cycle 7: REJECTED — validation/retained exact journey; surface 3 test files/+90/-11 vs reset ceiling 3 test files/+90/-15 (100% of insertion ceiling); AC unchanged. The failure-safe artifact from one Sonnet run proves a coherent implementation dispatch → validation dispatch → one prepare/commit → open unresolved attempt, but the oracle false-rejects every second dispatch and therefore mistakes the required validation reviewer for a forbidden successor. FIX authorized only to require the two ordered pre-prepare dispatches and reject substitution, duplicate/late dispatch, or any post-prepare successor; replace/cut the incorrect count logic to remain at the insertion ceiling.
 - Cycle 8: REJECTED — validation/detached handoff audit; surface 3 test files/+90/-11 vs reset ceiling 3 test files/+90/-15 (100% of insertion ceiling); AC unchanged. Ordered dispatch checks pass, but detached missing/late-transition mutants show the oracle never requires the successful implementation→validation status transition between the two workers. FIX authorized only to require exactly that between-dispatch transition and reject missing, late, duplicate, or other repair while retaining all prior mutants; no live spend before the focused trace is green and no insertion overage.
 - Cycle 9: REJECTED — validation/retention cleanup lifecycle; surface 3 test files/+90/-11 vs reset ceiling 3 test files/+90/-15 (100% of insertion ceiling); AC unchanged. The 21-mutant event table is clean and one Sonnet run reached the correct retained open-gate outcome, but success copied the workflow and registered cleanup copied it again over read-only Git objects, false-failing the lane. FIX authorized only for single-copy-per-outcome behavior: success retains once, failure cleanup retains once, and cleanup no-ops on an existing retained tree; no new artifact mechanism or insertion overage.
+- Cycle 10: REJECTED — validation/AC re-anchor; surface 3 test files/+90/-11 vs reset ceiling 3 test files/+90/-15 (100% of insertion ceiling); AC unchanged. One retained Sonnet journey conforms to the actual AC-2 direct gated-stage path—implementation dispatch/report → enter validation → one prepare/commit → open unresolved—but the branch oracle invented an additional validation worker/report obligation and false-rejected it. DECLINE the runtime finding; FIX the Material task-owned scope drift by cutting the two-dispatch requirement and dependent handoff tests while retaining queued topology, the exact validation transition, authority guards, and success/failure-safe evidence retention.
 
 - Cycle 5: REJECTED — validation/exact queued journey trace; surface 3 test files/+85/-10 vs estimate 3 test files/+90/-15 (94%); AC unchanged
 
