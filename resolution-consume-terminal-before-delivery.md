@@ -12,7 +12,7 @@ issue:
 gates:
     version: 1
     current:
-        gate: gate:1w62z8c5fq5g5cmhzf5sd79w:ideation
+        gate: gate:1w62z8c5fq5g5cmhzf5sd79w:implementation
     records:
         - id: gate:1w62z8c5fq5g5cmhzf5sd79w:backlog
           stage: backlog
@@ -98,6 +98,27 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:1w62z8c5fq5g5cmhzf5sd79w:implementation
+          stage: implementation
+          attempts:
+            - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-implementation-1
+              briefing:
+                id: briefing:1w62z8c5fq5g5cmhzf5sd79w:implementation:attempt-1:revision-1
+                digest: sha256:b0f9bcd2019289c8fb76f44bbf3a40c3d2f1ec75a521f26c0845d262a4d0f72a
+                digest-domain: canonical-bytes
+                request-digest: sha256:0b0897c884c0993f75f8cdd54b8ea50467d01f02935fa92f49e53c0590a1b2df
+                room-ref: ./resolution-consume-terminal-before-delivery/review/implementation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:1w62z8c5fq5g5cmhzf5sd79w:implementation:1
+                briefing: briefing:1w62z8c5fq5g5cmhzf5sd79w:implementation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T17:51:33.525893Z"
+                decision: hold
+                reason: 'FO sequencing error: this attempt was prepared against the un-advanced entity status (implementation, an ungated stage) instead of validation; the dispatch-side advance to validation was skipped. No gate decision is taken on this attempt; the entity advances to validation and the gated validation stage presents separately. Attempt bytes preserved.'
+              application:
+                action: none
+                state: not-applicable
 sprint: durable-decisions
 ---
 
