@@ -1,6 +1,6 @@
 ---
 title: Make the headless recorded-gate stop fixture stage-coherent
-status: backlog
+status: ideation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
