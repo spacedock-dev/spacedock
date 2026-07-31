@@ -62,14 +62,14 @@ gates:
                 state: consumed
                 blockers: []
 review-round:
-    id: round:26nk8qd48zknqnn4kc123sez:implementation:7
+    id: round:26nk8qd48zknqnn4kc123sez:implementation:8
     stage: implementation
-    cycle: 7
+    cycle: 8
     briefing:
-        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-7
-        digest: sha256:8fd8c9a6bd0cb5059f232a2aa7e7b423788cfd52ec2d42c4a0ac6bf4026b2ca5
+        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-8
+        digest: sha256:46d2540a8c75e3271b17850dcbb2e8f19325471142e592cbf5e8644fb00a725e
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-7
+        room-ref: ./review/implementation/round-8
 ---
 
 ## Problem statement
@@ -260,6 +260,8 @@ without a resolution, application, or successor dispatch.
 - Cycle 6: REJECTED — validation/evidence-retention preflight; surface 3 test files/+90/-10 vs estimate 3 test files/+90/-15 (100%); AC unchanged
 
 - Cycle 7: REJECTED — validation/failure-path retention; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
+
+- Cycle 8: REJECTED — validation/ordered stage dispatches; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
 
 ## Stage Report: validation
 
@@ -519,3 +521,21 @@ REJECTED. Failure-safe retention worked and exposed the remaining false red: the
 oracle mistakes the required validation-worker dispatch for a forbidden
 successor dispatch. The exact Sonnet evidence remains at
 `/tmp/spacedock-sonnet-cycle7.zlt1Yn`, and candidate `0691f25a9` is unchanged.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Turn the exact retained Sonnet command-log shape into the deterministic positive: one implementation dispatch, then one validation dispatch, then one prepare/commit and an open unresolved attempt.
+  Commit e6bd2a387 seeds the retained queued→implementation status/dispatch→validation status/dispatch→prepare/commit order directly; it failed red under the frozen single-dispatch predicate and now passes with failure-safe retained-tree grading unchanged.
+- DONE: Replace the single-total-dispatch predicate with ordered stage-specific checks that still reject validation substitution, missing/duplicate/late dispatch, and every post-prepare successor or authority action.
+  The oracle requires exactly two successful pre-prepare dispatch lines, with implementation first and validation second; focused mutants remove either stage, reverse them, duplicate validation, substitute validation, move implementation late, or add post-prepare dispatch, status, decision, consume, withdrawal, and duplicate prepare actions, and every mutant remains rejected.
+- DONE: Remain within three files and cumulative +90/-15 by replacing/cutting, run focused/full/race/format/diff checks, and record the advisory disposition; stop on exact overage and do not spend Sonnet in implementation.
+  The incremental correction is two test files, +12/-12; cumulative is exactly three files, +90/-11. Focused ordered-dispatch/retention and fixture tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` passed, and implementation round 8 validates `all-fixed`.
+- SKIPPED: Spend another supported Sonnet or inspect transcript/provider evidence.
+  The retained provider-neutral log supplied the authorized deterministic shape, and the same validator receives the committed candidate for any fresh live proof.
+
+### Summary
+
+Cycle 8 makes the headless oracle stage-specific: implementation and validation
+are both required before the gate, while any dispatch after preparation remains
+an authority crossing. The correction changes no product behavior and stays at
+the existing cumulative insertion ceiling.
