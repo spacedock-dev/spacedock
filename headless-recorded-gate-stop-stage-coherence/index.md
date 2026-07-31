@@ -303,3 +303,19 @@ also rejects the intended implementation-complete transition into validation.
 The correction remains narrowly task-owned: order the successful status mutation
 relative to the required implementation dispatch instead of banning every
 pre-prepare status mutation.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Add a red-first coherent trace proving implementation dispatch followed by the normal validation status transition and validation prepare/commit/open hold must pass.
+  Before the fix, the focused test rejected the new implementation-dispatch → validation-transition → prepare/commit trace; commit d5b821f56 retains it as a positive control.
+- DONE: Reject validation/status repair only when it occurs before the required implementation dispatch; retain the Cycle-1 substitution and every earlier mutant as red.
+  `assertRecordedGateHoldLog` now scans successful status mutation only before the implementation dispatch; the coherent trace passes while validation swap, early repair, combined substitution, and all prior mutants remain rejected.
+- DONE: Stay within the reset three-test-file +75/-12 ceiling; run focused, full, race, format, and diff checks without live or Roborev reruns.
+  Incremental surface is one test file, +5/-1; cumulative surface is three test files, +63/-10; focused, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and diff checks passed, with live and Roborev intentionally not rerun.
+
+### Summary
+
+Cycle 3 makes the command-log proof order-sensitive without weakening the
+implementation-stage requirement or the open no-authority hold. The correct
+post-implementation validation transition is accepted, while a status or
+validation substitution before implementation dispatch remains rejected.
