@@ -1,6 +1,6 @@
 ---
 title: Make the headless recorded-gate stop fixture stage-coherent
-status: validation
+status: implementation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started: 2026-07-31T00:32:10Z
 completed:
@@ -232,6 +232,10 @@ provider-neutral command-log boundary without changing product behavior. The
 later exact-head Sonnet CI journey proves AC-2: implementation dispatched once,
 validation prepared and committed once, and the selected attempt remained open
 without a resolution, application, or successor dispatch.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation/PR #583 Sonnet evidence; surface 3 test files/+52/-10 vs estimate 3 test files/+60/-10 (87% of insertion ceiling); AC unchanged. The supported run reached the open validation gate without authority crossing, but it skipped implementation and the grader credited a validation dispatch plus pre-prepare status repair as the required implementation dispatch. Route only this Material task-owned false green: require a successful implementation-stage dispatch before prepare and reject validation/status-repair substitution; do not add provider/transcript grammar or change product gate semantics.
 
 ## Stage Report: validation
 
