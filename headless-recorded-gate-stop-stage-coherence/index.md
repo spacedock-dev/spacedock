@@ -1,6 +1,6 @@
 ---
 title: Make the headless recorded-gate stop fixture stage-coherent
-status: implementation
+status: validation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started: 2026-07-31T00:32:10Z
 completed:
