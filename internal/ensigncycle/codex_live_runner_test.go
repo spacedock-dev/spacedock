@@ -242,7 +242,7 @@ func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenari
 	if err := assertRejectionFlow(entityAfter, result.finalMessage+"\n"+result.jsonl); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation", codexRecordedRejectionRound(result.jsonl)); err != nil {
+	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation"); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	// assertRejectionFlow (above) proves the two-cycle re-review OCCURRED from the
