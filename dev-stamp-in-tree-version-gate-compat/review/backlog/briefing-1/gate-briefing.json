@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zexbrjhartgykvhm012f527w:backlog:attempt-1:revision-1",
+  "question": "Should this ticket advance to ideation to define the minimum fix that makes parseable in-tree +dev versions compatible with co-located skills and proves the live Codex journey?",
+  "artifacts": [
+    {
+      "id": "artifact:zexbrjhartgykvhm012f527w:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/29f1be0e4299765c2328c1345a6bdee05d3fff7e/dev-stamp-in-tree-version-gate-compat.md",
+      "rev": "sha256:2e5c01c2f75c583557d5a331d4b3537b20356ed667d388e7ee226e0adebae3bd",
+      "mediaType": "text/markdown",
+      "summary": "The ticket isolates a repeated agent-facing failure: source and CI builds stamped \u003cmajor.minor.patch\u003e+dev were misread as the unparseable bare-dev abort class. Ideation must prefer the smallest behaviorally proven correction, avoid compatibility machinery for unreleased v1, and prove realistic in-tree stamps through the live Codex path before broadening scope."
+    }
+  ]
+}

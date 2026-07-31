@@ -4,6 +4,21 @@ status: backlog
 source: "Captain directive 2026-08-01, in the PR #586 merge decision: file the dev-stamp problem separately from z3, 'tackling actual dev usage and ci'. Same-class bites in one day (2026-07-31): (1) FO boot self-aborted on a stale 0.26.0+dev env binary against an in-tree 0.27 plugin (captain override needed); (2) a gpt-5.6-sol staff reviewer self-blocked on the same prose mid-review; (3) codex-live keep-moving-posture + gate-guardrail on PR #586 failed twice, the live FO declaring the PR candidate's 0.27.0-pre2+dev stamp 'not a non-development 0.27 build' — while the same scenarios stayed green on main and on claude/pi lanes."
 issue: spacedock-dev/spacedock#581
 id: zexbrjhartgykvhm012f527w
+gates:
+    version: 1
+    current:
+        gate: gate:zexbrjhartgykvhm012f527w:backlog
+    records:
+        - id: gate:zexbrjhartgykvhm012f527w:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:zexbrjhartgykvhm012f527w-backlog-1
+              briefing:
+                id: briefing:zexbrjhartgykvhm012f527w:backlog:attempt-1:revision-1
+                digest: sha256:0e8e9d466ebe2768f6c01a89a402a427d03ad1ed03ef5080a4b111e2ac0ec2b7
+                digest-domain: canonical-bytes
+                request-digest: sha256:cd777a48b4365012f90310e3cda8ae4e29c3d20f2439dc16bd00db91141bd4d0
+                room-ref: ./dev-stamp-in-tree-version-gate-compat/review/backlog/briefing-1
 ---
 
 The FO version gate's dev-stamp abort class does not survive contact with in-tree builds: source builds and CI candidates stamp `<latest-tag>+dev`, which IS major.minor-compatible with the in-tree skills, but the gate prose names the dev-stamp class only by its extreme (`dev` — an integer-era build carrying no major.minor at all) and never states the converse, so strict live-agent readers classify compatible dev-suffixed tokens as the abort class. Evidence is deterministic: codex's runtime red twice on identical reads where claude/pi read green; main's lanes with the old prose were green 07-13/07-19.
