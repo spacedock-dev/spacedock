@@ -13,7 +13,7 @@ id: f02j6dbnd4jakwczahv1tg2h
 gates:
     version: 1
     current:
-        gate: gate:f02j6dbnd4jakwczahv1tg2h:ideation
+        gate: gate:f02j6dbnd4jakwczahv1tg2h:validation
     records:
         - id: gate:f02j6dbnd4jakwczahv1tg2h:backlog
           stage: backlog
@@ -61,6 +61,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:f02j6dbnd4jakwczahv1tg2h:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:f02j6dbnd4jakwczahv1tg2h-validation-1
+              briefing:
+                id: briefing:f02j6dbnd4jakwczahv1tg2h:validation:attempt-1:revision-1
+                digest: sha256:e53378cb09a8ce112fb5b72778f95d2de90b996a2ff992a68f0c00408fa7db12
+                digest-domain: canonical-bytes
+                request-digest: sha256:6cb3d4d30825f763d13c21578f84d8d6281426f7c9fc1179540bbda3c173907f
+                room-ref: ./review/validation/briefing-1
 ---
 
 A supported headless Codex keep-moving journey advanced `approved-gate`, built its implementation dispatch artifact, never invoked `spawn_agent` / `worker.spawn`, then read a report and terminalized the task. This violates the shipped dispatch boundary and silently bypasses worker execution and write-scope authority.

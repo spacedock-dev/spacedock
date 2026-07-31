@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f02j6dbnd4jakwczahv1tg2h:validation:attempt-1:revision-1",
+  "question": "Approve the validated Codex named-spawn boundary correction for merge?",
+  "artifacts": [
+    {
+      "id": "artifact:f02j6dbnd4jakwczahv1tg2h:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/521ff18bc90dc1c13d84f6af16e2928b32fbfb7b/codex-approved-gate-worker-spawn/index.md",
+      "rev": "sha256:8b7cd9495f1c210bdaf2c23881113f3cd9f7fc7aec019bf18cae26fdbc1b9e80",
+      "mediaType": "text/markdown",
+      "summary": "Candidate 959d6d850 changes seven files at +55/-2. It rejects Codex bare mode before artifact creation, preserves named Codex and Claude/Pi shapes, and adds no observer/parser/schema/controller surface. Focused/parity/full/race/format checks pass. Independent validation proved all four ACs: bare requests fail byte-clean, named builds retain name/prompt, a no-spawn control stops before reads, and an exact-launcher addressable worker authored durable commit c7ab171f and terminal state. No material or deferred risk remains."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:f02j6dbnd4jakwczahv1tg2h:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/521ff18bc90dc1c13d84f6af16e2928b32fbfb7b/codex-keep-moving-durable-evidence-attribution-flake/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:985cbd87bd143d593059db708bce5b54f929523cfd8ecebbf37c30d23cacdc89"
+    }
+  ]
+}
