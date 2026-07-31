@@ -130,6 +130,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:c2cb632fd93dbed9bf8ddfadda3adff07635c2d4bf208ffd182db0b8886d5d3e
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8bnkrtq4rw46xkbez5zrbmmj:validation:2
+                briefing: briefing:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T05:18:08.240901Z"
+                decision: approve
+                reason: 'Approved under sprint conn: exact fba615fdf replaces transcript-dialect completion inference with a provider-independent Git journey oracle; all four retained roots, adversarial controls, full/race/format gates, and AC-1 through AC-4 pass with no Material supported-workflow finding.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.
