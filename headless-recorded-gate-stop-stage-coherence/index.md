@@ -62,14 +62,14 @@ gates:
                 state: consumed
                 blockers: []
 review-round:
-    id: round:26nk8qd48zknqnn4kc123sez:implementation:6
+    id: round:26nk8qd48zknqnn4kc123sez:implementation:7
     stage: implementation
-    cycle: 6
+    cycle: 7
     briefing:
-        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-6
-        digest: sha256:58901b94010092ed5d20b0b8292c6467b8a527f0e395c4ad46e3bc78d84a1a2c
+        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-7
+        digest: sha256:8fd8c9a6bd0cb5059f232a2aa7e7b423788cfd52ec2d42c4a0ac6bf4026b2ca5
         digest-domain: canonical-bytes
-        room-ref: ./review/implementation/round-6
+        room-ref: ./review/implementation/round-7
 ---
 
 ## Problem statement
@@ -257,6 +257,8 @@ without a resolution, application, or successor dispatch.
 - Cycle 5: REJECTED — validation/exact queued journey trace; surface 3 test files/+85/-10 vs estimate 3 test files/+90/-15 (94%); AC unchanged
 
 - Cycle 6: REJECTED — validation/evidence-retention preflight; surface 3 test files/+90/-10 vs estimate 3 test files/+90/-15 (100%); AC unchanged
+
+- Cycle 7: REJECTED — validation/failure-path retention; surface 3 test files/+90/-11 vs estimate 3 test files/+90/-15 (100%); AC unchanged
 
 ## Stage Report: validation
 
@@ -478,3 +480,21 @@ REJECTED. The deterministic journey, mutants, and success-path retention proof
 pass, but the single fresh Sonnet run exposed that assertion failures still
 delete AC-2's durable evidence before it can be retained. Candidate `1df0092ee`
 remains unchanged and the exact failed run is preserved without transcript use.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Make the existing workflow-evidence retention failure-safe by registering it before the model/assertion path, so success, assertion failure, and cleanup retain the same provider-neutral tree.
+  Commit 0691f25a9 registers the existing `copyTree` cleanup immediately after creating the known scenario artifact directory and before model launch; cleanup ordering preserves `workflow/` before the earlier `t.TempDir` removal, while the existing success-path regrade remains in place.
+- DONE: Add the cheapest focused failing-path proof and preserve the existing retained-tree regrade, queued journey, and all authority-crossing mutants without introducing another artifact mechanism.
+  `TestRetainRecordedGateWorkflowEvidence` failed red on the absent registrar, then simulated a failed reporter, ran registered cleanup, and used the retained tree as the source of a fresh complete regrade; the queued/coherent positives and every prior mutation control remain green/red.
+- DONE: Stay at or below the existing three-file +90/-15 ceiling by relocating/refactoring/cutting, run focused/full/race/format/diff checks, and record the advisory disposition; stop with the exact minimum overage if clean compliance is impossible.
+  Previously added local scaffolding was compacted without dropping assertions; the cumulative diff is three files, +90/-11. Focused failure/retained-tree, journey, and fixture tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` passed, and implementation round 7 validates `all-fixed`.
+- SKIPPED: Spend a second supported Sonnet or inspect the failed run transcript.
+  The authorization requires deterministic failure-path proof before another live run and forbids transcript/provider substitution; the same validator receives the committed provider-neutral candidate.
+
+### Summary
+
+Cycle 7 moves the existing workflow copy onto a pre-launch cleanup boundary, so
+the exact durable evidence survives both successful and failing live assertions.
+The correction remains test-only, uses no second artifact mechanism, and stays
+within the captain-approved cumulative ceiling.
