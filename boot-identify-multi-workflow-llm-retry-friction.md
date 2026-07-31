@@ -655,3 +655,49 @@ Claude's front door intentionally repins `SPACEDOCK_BIN` to the resolved real la
 
 - The Sonnet recorded-gate timeout, Roborev polish, and previously classified evidence-scope risks remain outside this cycle.
 - Fresh independent validation and a new validation-gate attempt remain required before PR #584 can merge.
+
+## Stage Report: validation (cycle 9)
+
+- DONE: Independently reproduce the frontdoor-repin regression and the relevant live-tagged Claude ledger, filing, and multi-workflow tests at exact head f982e88b6.
+  `go test -tags live ./internal/ensigncycle` focused on the front-door ledger, Bash/zsh override, executed-argv filing controls, and multi-workflow oracle passed; removing the shell-startup composition leaves the direct regression ledger empty.
+- DONE: Re-anchor AC-3 and the filing value to actual executed argv while verifying the two-file patch changes no product command, parser, scenario expectation, timeout, or CI behavior.
+  The NUL-delimited shim recorded exact `spacedock` argv, narration remained ledger-empty, and the diff is exactly two `_test.go` files at +24/-7; product, parser, scenario, timeout, and workflow files are absent.
+- DONE: Run semantic adversarial and classified Roborev review before recommending PASSED or REJECTED, plus full, race, format, and diff gates without mutating candidate bytes.
+  The adjacent-variant matrix, Roborev job 454, `go test ./...`, `go test ./... -race`, `gofmt -l ./cmd ./internal`, and `git diff --check` passed; HEAD/tree stayed `f982e88b6`/`d06daeb2`.
+- FAILED: Establish supported-model Claude filing and multi-workflow confirmation locally.
+  Both model journeys terminated before First Officer work with Anthropic API 429 and zero model tokens; the FO authorized HOLD on local reruns and classified this as an external evidence gap, not a candidate outcome defect.
+
+### Acceptance Criteria Cross-check
+
+- AC-1 PASSED: focused status tests still emit the complete typed two-workflow terminal envelope with compatibility fields first and count equal to discovery length.
+- AC-2 PASSED: focused zero/one/many, native boot, side-effect, and contract checks passed; cycle 9 changes no product bytes.
+- AC-3 PASSED at the candidate mechanism boundary: after simulated front-door repinning, Bash executed exactly one ledgered `status --boot --identify --json`; duplicate status, jq, python3, go-run, deep-boot, convergence, narration, and mutation controls fail the oracle.
+- AC-3 supported-model confirmation was NOT established locally and remains a mandatory exact-head Claude filing/multi-workflow CI condition before merge.
+- AC-4 PASSED: focused contractlint and full docs-bearing tests passed, and cycle 9 does not change the already-validated user/operator contracts.
+
+### Semantic Adversarial Matrix
+
+- Transport/shell: headless Claude and PTY runners both use the same helper; Bash and zsh startup override a later process-level launcher pin with the ledger shim.
+- Identity/cardinality: the direct regression requires tool `spacedock` plus exact ordered argv and exactly one record; narration produces zero records.
+- Value/failure: real `new` and `status --new` argv pass filing, while echo-only, wrong/manual-ID, duplicate identify, retry-helper, convergence, deep-boot, greeting, workflow-name, entity, Git, and artifact variants fail.
+- Lifecycle/scale: the change adds only per-run test environment files and constant environment composition; no product I/O, loop, allocation, timeout, parser, or CI path changes.
+
+### Roborev
+
+- Job 454 returned `No issues found.` for exact commit `f982e88b6`; therefore no new finding required four-field disposition or candidate action.
+
+### Material Findings
+
+- None.
+
+### External Evidence Gap
+
+- Local supported-model Claude filing/multi-workflow runs were not green: both stopped at API 429 before any First Officer behavior. Exact-head supported Claude CI is mandatory before merge and must prove nonempty execution ledgers for both journeys; candidate-level validation does not waive that condition.
+
+### Recommendation
+
+**PASSED for candidate bytes.** Exact head `f982e88b6` repairs the Claude ledger injection boundary with the authorized two-test-file delta and no material finding; merge remains conditioned on successful exact-head supported Claude filing/multi-workflow CI.
+
+### Summary
+
+Cycle 9 independently reproduced the front-door repin boundary, re-anchored boot and filing evidence to actual argv, and passed focused, full, race, format, diff, adversarial, and Roborev gates without changing the candidate. Local model evidence remains explicitly unestablished because of external quota exhaustion, so exact-head Claude CI is a required pre-merge proof rather than an inferred pass.
