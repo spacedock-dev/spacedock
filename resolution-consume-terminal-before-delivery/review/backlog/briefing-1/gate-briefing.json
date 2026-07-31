@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1w62z8c5fq5g5cmhzf5sd79w:backlog:attempt-1:revision-1",
+  "question": "Approve this seed entering ideation to design the fix for the resolution-consume semantic hole — gate approval spent into status=done before delivery proof, leaving no send-back path when delivery later fails?",
+  "artifacts": [
+    {
+      "id": "artifact:1w62z8c5fq5g5cmhzf5sd79w:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/003e29a1a9c01dd5f93912c8b933d058bd99d36a/resolution-consume-terminal-before-delivery.md",
+      "rev": "sha256:ec51a18e6d387ea85ce7fe184c8dfa33f9f319f7d2b70271c9fdaf1804425e92",
+      "mediaType": "text/markdown",
+      "summary": "Seed filed from the captain's catch at z3's fo-boot-install-hint merge boundary: a gate approval on a terminal-target stage (validation-\u003edone) is consumed into status=done BEFORE delivery proof (push/PR/CI/merge), while verdict/completed/pr stay empty. If delivery then fails there is no in-model send-back: feedback-to is scoped pre-done, the consumed approval is irrevocable, and the pr-merge mod's failure path is report-and-wait; the pure-local-merge workflow hides it, any PR-gated workflow exposes it. Ideation designs the semantic where approval authority, stage status, and terminal fields cohere in both directions across the consume/delivery boundary."
+    }
+  ]
+}

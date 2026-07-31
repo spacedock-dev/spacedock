@@ -9,6 +9,21 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    current:
+        gate: gate:1w62z8c5fq5g5cmhzf5sd79w:backlog
+    records:
+        - id: gate:1w62z8c5fq5g5cmhzf5sd79w:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-backlog-1
+              briefing:
+                id: briefing:1w62z8c5fq5g5cmhzf5sd79w:backlog:attempt-1:revision-1
+                digest: sha256:45c7f88e4a02a5eea0d3febe7431f09b3425a4e963fe0eff7bef7d9e5398bb84
+                digest-domain: canonical-bytes
+                request-digest: sha256:f808d3e34848fa57e0df5e17b9e278ccce23b1c7d8a77548f944bda23ce7a343
+                room-ref: ./resolution-consume-terminal-before-delivery/review/backlog/briefing-1
 ---
 
 A gate approval on a terminal-target stage (`validation → done`) is *immediately consumable into terminal status*: the binding approval's authority is marked spent (`consumed=true`) and the entity's status flips to `done` at consume time, while delivery (PR push, CI, merge) and workflow terminal fields (`verdict`, `completed`) remain pending. Three desyncs follow:
