@@ -1,0 +1,6 @@
+Candidate: 4aa59dafe
+Parent rejected candidate: 623d53e6f
+Authorized correction: allow only the successful queued-to-implementation status transition before implementation dispatch.
+Code surface: internal/ensigncycle/livescenario_adapter_live_test.go, incremental +7/-3; cumulative three test files +85/-10.
+Evidence: focused live-tag grader, go test ./..., go test ./... -race, gofmt, and diff checks passed.
+Live and Roborev evidence: intentionally not rerun for this correction cycle.

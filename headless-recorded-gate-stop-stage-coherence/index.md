@@ -61,6 +61,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+review-round:
+    id: round:26nk8qd48zknqnn4kc123sez:implementation:5
+    stage: implementation
+    cycle: 5
+    briefing:
+        id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-5
+        digest: sha256:4e11ec82a53b33ff63d103035bafe12ef34c071acd4189c2ce36fa61618f67d5
+        digest-domain: canonical-bytes
+        room-ref: ./review/implementation/round-5
 ---
 
 ## Problem statement
@@ -243,6 +252,8 @@ without a resolution, application, or successor dispatch.
 - Cycle 3: REJECTED — validation/root-cause escalation/captain; surface 3 test files/+63/-10 vs reset ceiling 3 test files/+75/-12 (84% of insertion ceiling); AC revised, not narrowed. Captain ruling: the behavior is not Sonnet-specific and is not a product scheduler defect. Initial stages intentionally project their successor, so `current=implementation,next=validation` correctly dispatched validation; 26n's fixture and AC-2 contradicted that contract while its coherence test blessed the row. Re-scope the same three-test-file task to a `queued` initial stage whose successor is implementation, then require implementation report → validation transition → one open gate. Retain a line-local successful-status-set detector for the pre-dispatch and post-prepare authority boundaries, without transcript/provider parsing. Reset the ceiling to +90/-15; no product command, storage, authority, or runtime semantic changes.
 - Cycle 4: REJECTED — validation/exact journey trace; surface 3 test files/+81/-10 vs reset ceiling 3 test files/+90/-15 (90% of insertion ceiling); AC unchanged. The corrected queued topology is coherent, but the grader rejects the normal successful queued→implementation status transition before implementation dispatch. FIX authorized only for that line-local false negative: allow the implementation transition, reject pre-dispatch validation repair, and preserve all post-prepare mutation rejection; no product, provider, transcript, or shell-parser expansion.
 
+- Cycle 5: REJECTED — validation/exact queued journey trace; surface 3 test files/+85/-10 vs estimate 3 test files/+90/-15 (94%); AC unchanged
+
 ## Stage Report: validation
 
 - DONE: Verify AC-1 against the real fixture boot and on-disk starting state.
@@ -385,3 +396,21 @@ REJECTED. The queued topology is mechanically correct, but the authority grader
 still forbids the normal successor transition that makes implementation
 dispatchable. The required live run was intentionally not spent after this
 focused false negative; candidate `623d53e6f` remains unchanged.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Add the exact queued-status-transition → implementation-dispatch positive trace red-first and make it pass without weakening existing negative controls.
+  Before the correction, the focused test rejected the supported successful `status=implementation started` transition; commit 4aa59dafe retains that trace as a positive control while early validation repair, validation substitution, combined substitution, post-prepare status mutation, and every prior mutant remain rejected.
+- DONE: Restrict the line-local pre-dispatch predicate to allow only the normal successful transition to implementation.
+  `successfulStatusSet` now accepts an explicit allowed token pair only on the same successful status-set line; the implementation-start call site supplies that allowance, while all other call sites continue rejecting every successful status mutation.
+- DONE: Stay within the authorized surface and run focused, full, race, format, and diff checks without a live or Roborev rerun.
+  Incremental code is one test file, +7/-3; cumulative code is three test files, +85/-10 under the +90/-15 ceiling. The focused live-tag grader, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` passed.
+- DONE: Record the Material finding and worker FIX disposition through the binary-owned advisory-round surface.
+  Implementation round 5 validates as `all-fixed` against immutable candidate manifest `candidate-4aa59dafe.txt`; its reviewer evidence binds the released workflow, observable harm, `value-ac[AC-2]:` boundary, and exact frozen-candidate trigger, and its worker resolution records one material finding fixed with none declined.
+
+### Summary
+
+Cycle 5 fixes only the queued-to-implementation false negative in the
+provider-neutral journey trace. The supported transition now passes, every
+pre-dispatch validation repair and post-prepare mutation remains rejected, and
+the cumulative candidate stays within the authorized three-test-file ceiling.
