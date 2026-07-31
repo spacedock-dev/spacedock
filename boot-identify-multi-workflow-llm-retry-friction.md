@@ -73,7 +73,7 @@ gates:
                 target-stage: done
                 state: consumed
                 blockers: []
-mod-block:
+mod-block: merge:pr-merge
 completed:
 verdict:
 ---
