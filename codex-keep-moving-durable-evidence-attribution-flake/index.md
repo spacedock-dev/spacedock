@@ -150,6 +150,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:1cba9f135ce1d8f9cb56a9867d539bcd78464550fbac19053beb64c653a6032e
                 room-ref: ./review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8bnkrtq4rw46xkbez5zrbmmj:validation:3
+                briefing: briefing:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T07:05:55.345041Z"
+                decision: approve
+                reason: 'Approved under sprint conn: exact 7f109271c accepts only the two supported PR-CI engagement histories; 33 journey cases, five batch cases, four retained roots, full/race/format gates, and AC-1 through AC-4 pass with adjacent negatives preserved.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 mod-block:
 pr: "#585"
 ---
