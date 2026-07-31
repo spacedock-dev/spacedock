@@ -1,7 +1,7 @@
 ---
 id: 8bnkrtq4rw46xkbez5zrbmmj
 title: Codex keep-moving durable-evidence attribution false-red
-status: validation
+status: implementation
 source: "PR #513 Runtime Live E2E run 29392675038, codex-live job 87279446937"
 started: 2026-07-30T23:05:41Z
 completed:
@@ -308,6 +308,10 @@ The retention correction exposed a second supported Git shape rather than losing
 ### Summary
 
 Cycle 3 treats the retained break-glass Git history as authoritative without weakening worker proof: only a file-only child that newly adds both `started` and the current-stage Stage Report can replace the ordinary dispatch-plus-report pair. Frozen candidate `ae6cf1ee9` remains untouched; fixture normalization and every transcript/provider-derived alternative remain excluded.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation/Roborev; surface 10 files/+463/-1,449 vs accepted cycle-4 reset 10 files/+463/-1,449 (100%); AC unchanged. Four Material task-owned false greens accept serialized independent work, a replaced preexisting room binding, a nonterminal canonical archive, and unrelated questioned-ticket mutation. Route the exact retained counterexamples to implementation without restoring transcript or provider observers.
 
 ## Review-finding disposition (implementation cycle 4)
 
