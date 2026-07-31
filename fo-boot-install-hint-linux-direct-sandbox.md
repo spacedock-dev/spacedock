@@ -7,7 +7,7 @@ started: 2026-07-31T02:32:43Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-fo-boot-install-hint-linux-direct-sandbox
 issue: spacedock-dev/spacedock#581
 gates:
     version: 1
