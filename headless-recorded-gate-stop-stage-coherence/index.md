@@ -414,3 +414,25 @@ Cycle 5 fixes only the queued-to-implementation false negative in the
 provider-neutral journey trace. The supported transition now passes, every
 pre-dispatch validation repair and post-prepare mutation remains rejected, and
 the cumulative candidate stays within the authorized three-test-file ceiling.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Reconstruct queued -> implementation -> gated validation and verify the prior authority and stage-order mutants against exact candidate `4aa59dafe`.
+  The focused live-tag fixture/coherence and command-log tests pass. The retained positives cover queued-to-implementation and implementation-to-validation transitions; validation substitution, early validation repair, combined substitution, post-prepare mutation, decision, consume, withdrawal, duplicate prepare, missing or late implementation dispatch, and successor dispatch remain rejected.
+- SKIPPED: Spend the fresh supported Sonnet journey.
+  The required preflight found that the current live runner cannot preserve the admissible proof after a green run, so validation stopped before model execution and claims no aggregate, cached, transcript, provider, or shell-derived substitute.
+- FAILED: Preserve the fresh journey's durable state, gate room, state Git history, provider-neutral command log, and open unresolved gate evidence.
+  `runClaudeGateGuardrailScenario` creates the exercised workflow and command log under `t.TempDir()`, but `claudeLiveRunner.run` copies only `claude-stream.jsonl` and `claude-final-message.txt` into the persistent scenario artifact directory. Test cleanup therefore deletes the required durable evidence. The archived PR #583 Sonnet artifact confirms that the default scenario directory contains only those two files.
+- DONE: Cross-check AC-1 through AC-3, the authorized surface, and the implementation verification record.
+  AC-1's queued topology and AC-3's three-test-file `+85/-10` surface remain evidenced; focused and diff checks pass, and the implementation report records full, race, and format checks green. AC-2 cannot be validly proven because its required durable evidence is not retained, so the frozen candidate is REJECTED.
+- DONE: Classify the finding and retain the First Officer disposition.
+  Released workflow: mandatory supported Sonnet default-headless gate-stop proof; harm: a green run destroys the provider-neutral evidence and forces forbidden transcript evidence or an unverifiable aggregate; `value-ac[AC-2]:` requires the durable entity, gate room, state Git history, and command log; trigger: the current artifact writer plus the prior archived artifact's two-file contents. Material; task-owned outcome/evidence defect; FIX authorized.
+- DONE: Bound the correction without mutating validation's frozen candidate.
+  Preserve `4aa59dafe`; after the gate assertions, copy the exercised workflow tree beneath the existing scenario artifact directory and prove the retained entity/state Git, gate room, and command log remain gradeable. No generic artifact framework, transcript/provider observer, product change, or unrelated cleanup; remain within three files and `+90/-15`.
+
+### Summary
+
+REJECTED. The corrected command-log grader now accepts the exact queued journey
+and rejects the prior mutants, but the mandatory live lane discards AC-2's
+durable proof on success. Sonnet was intentionally not spent after that preflight
+failure, and candidate `4aa59dafe` remains unchanged.
