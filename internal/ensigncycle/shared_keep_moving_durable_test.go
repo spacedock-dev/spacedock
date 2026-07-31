@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
@@ -309,11 +310,13 @@ func durableIndependentOverlap(t *testing.T, root string, expected map[string]st
 		rank[hash] = i
 	}
 	latestEngagement, firstTerminal := -1, len(rank)
+	proofs := map[string]durableJourneyProof{}
 	for slug, stage := range expected {
 		proof, reason := durableTaskJourney(t, root, slug, stage, expected)
 		if reason != "" {
 			return fmt.Errorf("%s: %s", slug, reason)
 		}
+		proofs[slug] = proof
 		if rank[proof.engaged] > latestEngagement {
 			latestEngagement = rank[proof.engaged]
 		}
@@ -321,10 +324,45 @@ func durableIndependentOverlap(t *testing.T, root string, expected map[string]st
 			firstTerminal = rank[proof.terminal]
 		}
 	}
-	if latestEngagement >= firstTerminal {
+	if latestEngagement >= firstTerminal &&
+		!durableDelayedPersistenceOverlap(root, proofs, rank, firstTerminal) {
 		return fmt.Errorf("independent task journeys do not overlap before terminalization")
 	}
 	return nil
+}
+func durableDelayedPersistenceOverlap(root string, proofs map[string]durableJourneyProof, rank map[string]int, firstTerminal int) bool {
+	starts := map[string]time.Time{}
+	var frontier, earliestTerminal time.Time
+	engagedBeforeTerminal := 0
+	for slug, proof := range proofs {
+		started, err := time.Parse(time.RFC3339Nano, durableField(durableBlobAt(root, proof.engaged, slug), "started"))
+		if err != nil {
+			return false
+		}
+		completed, err := time.Parse(time.RFC3339Nano, durableField(durableBlobAt(root, proof.terminal, slug), "completed"))
+		if err != nil {
+			return false
+		}
+		starts[slug] = started
+		if earliestTerminal.IsZero() || completed.Before(earliestTerminal) {
+			earliestTerminal = completed
+		}
+		if rank[proof.engaged] < firstTerminal {
+			engagedBeforeTerminal++
+			if frontier.IsZero() || started.After(frontier) {
+				frontier = started
+			}
+		}
+	}
+	if engagedBeforeTerminal < 2 {
+		return false
+	}
+	for _, started := range starts {
+		if started.After(frontier) || !started.Before(earliestTerminal) {
+			return false
+		}
+	}
+	return true
 }
 func assertDurableSmallestMechanism(t *testing.T, root string, tr mechanismTrace, edits, commissioned []string) error {
 	expected := map[string]string{}
@@ -529,6 +567,78 @@ func TestDurableKeepMovingRequiresOverlappingJourneys(t *testing.T) {
 		!strings.Contains(err.Error(), "do not overlap") {
 		t.Fatalf("serialized journey error = %v, want overlap failure", err)
 	}
+}
+func TestDurableKeepMovingDelayedPersistence(t *testing.T) {
+	tests := []struct {
+		name, mutation string
+		wantPass       bool
+	}{
+		{"corroborated frontier", "", true},
+		{"absent start", "absent-start", false},
+		{"unparseable start", "unparseable-start", false},
+		{"start at first terminal", "start-at-terminal", false},
+		{"start after first terminal", "start-after-terminal", false},
+		{"no corroborating frontier", "no-frontier", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := assertDurableKeepMoving(t, durableDelayedPersistenceFixture(t, tt.mutation))
+			if tt.wantPass && err != nil {
+				t.Fatal(err)
+			}
+			if !tt.wantPass && err == nil {
+				t.Fatal("delayed persistence passed, want failure")
+			}
+		})
+	}
+}
+func durableDelayedPersistenceFixture(t *testing.T, mutation string) string {
+	root := t.TempDir()
+	slugs := []string{kmApprovedGate, kmReadyOne, kmReadyTwo}
+	for _, slug := range slugs {
+		writeFile(t, filepath.Join(root, slug+".md"), durableEntity(slug, kmNextStage, "", ""))
+	}
+	gitInit(t, root)
+	report := func(slug, started string) {
+		path := filepath.Join(root, slug+".md")
+		if started != "" {
+			writeFile(t, path, strings.Replace(readFile(t, path), "started: ", "started: "+started, 1))
+		}
+		durableAppendReport(t, root, slug)
+		gitCommitPathScoped(t, root, slug+".md", "worker: "+slug)
+	}
+	archive := func(slug, completed string) {
+		path := filepath.Join(root, slug+".md")
+		content := strings.Replace(readFile(t, path), "status: implementation", "status: done", 1)
+		content = strings.Replace(content, "completed:", "completed: "+completed, 1)
+		content = strings.Replace(content, "verdict:", "verdict: passed", 1)
+		writeFile(t, filepath.Join(root, "_archive", slug+".md"), content)
+		git(t, root, "rm", "-q", "--", slug+".md")
+		git(t, root, "add", "--", "_archive/"+slug+".md")
+		git(t, root, "commit", "-q", "-m", "archive: "+slug)
+	}
+	report(kmApprovedGate, "2026-07-31T00:00:00Z")
+	if mutation != "no-frontier" {
+		report(kmReadyOne, "2026-07-31T00:00:00Z")
+	}
+	archive(kmApprovedGate, "2026-07-31T00:01:00Z")
+	if mutation == "no-frontier" {
+		report(kmReadyOne, "2026-07-31T00:00:00Z")
+	}
+	started := "2026-07-31T00:00:00Z"
+	if mutation == "absent-start" {
+		started = ""
+	} else if mutation == "unparseable-start" {
+		started = "not-a-time"
+	} else if mutation == "start-at-terminal" {
+		started = "2026-07-31T00:01:00Z"
+	} else if mutation == "start-after-terminal" {
+		started = "2026-07-31T00:01:01Z"
+	}
+	report(kmReadyTwo, started)
+	archive(kmReadyOne, "2026-07-31T00:02:00Z")
+	archive(kmReadyTwo, "2026-07-31T00:02:00Z")
+	return durableAddQuestioned(t, root, true)
 }
 func TestDurableQuestionedRejectsUnrelatedEdit(t *testing.T) {
 	if err := assertDurableKeepMoving(t, durableAddQuestioned(t, durableJourneyFixture(t, "parallel-dispatch"), false)); err == nil ||

@@ -43,6 +43,9 @@ All expected tasks must engage before any one terminalizes, and that final archi
 terminal fields. A questioned hold requires a stage transition and ticket-file-only Stage Report.
 Dispatch and terminal commits may span the complete expected-ticket set, but never a partial set
 or foreign ticket; worker reports and canonical archives remain individually attributed.
+When a report persists a previously set start after another ticket terminalizes, canonical
+timestamps count only if two earlier ticket engagements corroborate a frontier no earlier than
+every expected start, and every expected start strictly predates the earliest completion.
 Same-slug sidecars are allowed only there or at a corrected-held boundary; foreign slugs reject.
 Transcript JSONL, command text, provider events, and model narration remain diagnostic only; the commissioned-task fallback uses the same durable oracle.
 
