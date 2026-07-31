@@ -68,6 +68,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:1ec520cb9a98aeb59797200800c6dc1fcb06a3a07ad4f84717b1c1cac8ec24b3
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8bnkrtq4rw46xkbez5zrbmmj:ideation:2
+                briefing: briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-07-31T00:05:30.189465Z"
+                decision: approve
+                reason: 'Captain conn approves the retained-history correction: exact live Git evidence proves the only false red is same-task review sidecars at archive/held boundaries, while dispatch/report/terminal scope and all foreign-path controls remain strict and the parser deletion stays net-negative.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.
