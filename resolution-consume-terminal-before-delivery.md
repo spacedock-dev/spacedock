@@ -129,6 +129,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:3bfc167f984b109c89582f30e205e4adb6dbc586474827b3be040e02a2ea6f8d
                 room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:1w62z8c5fq5g5cmhzf5sd79w:validation:1
+                briefing: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-31T23:57:15.933493Z"
+                decision: revise
+                reason: 'REJECT validation, route to implementation (captain ''send it back'', 2026-08-01): the implementation invented an unapproved second authority-mutation architecture at an underspecified seam — internal/status/envelope.go (+217) with bindingTerminalApproval/gatesApplicationMutator/hasConsumedTerminalApplication, updateFrontmatterNode generalized to splice the gates YAML subtree (mutate.go +40), ValidateApplicationMutation and AdvanceTargetTerminal exported into status, setEnvelope.ceremony guard bypass, ConsumeResult.Route duplicating existing readiness vocabulary, and a 521-line CLI fixture. FO-verified harm proofs: (1) bindingTerminalApproval (envelope.go:51) collapses absent/errored/stale/consumed/superseded authority into nil and merge.go:135 falls through nil to the legacy gate-less finalize — an entity with a real pending terminal application whose briefing room is disturbed or gates record unreadable gets terminalized with authority left pending (the impl''s own residual-risk claim said this case was fail-closed; it is fail-OPEN); (2) the authority mutation rides runSet/atomicWrite without .gates.lock or compare-before-replace, racing lock-holding gates operations (widening the accepted prepare-shadowing residual past its sign-off). The ''+205 within 2%'' accounting excluded exactly the files carrying the central transition (~468 gross vs +205 declared, 2.3x). Rework instruction (captain-endorsed necessity review prescription): DELETE envelope.go, revert the mutate.go generalization, return the gates exports private, remove the Route const, the archive exception, and the ceremony bypass; implement TWO narrow gates-owned high-level operations over the existing locked compare-before-replace variadic replacement machinery in internal/gates/io.go (writeEntityDocument:188) — (a) finalize a valid pending terminal application with terminal status+verdict+completed in one locked replacement, (b) supersede a valid pending terminal application and route through the validated declared feedback-to in one locked replacement; merge guard selects the operation after establishing delivery/rework proof; invalid/unreadable/stale authority refuses byte-clean, only a genuinely gate-less entity uses the legacy path; retain the pr: pr-merge:N or local-merge:SHA sentinel through archive as durable delivery proof (captain-ratified amendment vs the design letter''s in-envelope pr retirement) and clear mod-block in its own small step before the atomic op (crash-between leaves nonterminal+pending, retryable); slim the CLI fixture to the smallest falsifiable set that still drives the real fail->rework->re-enter->done journey; the existing merge-guard suite keeps covering the three delivery classes.'
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 sprint: durable-decisions
 ---
 
