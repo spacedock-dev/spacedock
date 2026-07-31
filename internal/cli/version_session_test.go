@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -37,11 +38,13 @@ var claudeSession = map[string]string{
 // expected outputs are in-test literals, independent of the production strings.
 //
 // The organising rule under test: inside a session, report the session; outside
-// one, report the version. So the outside case is ONE line — no Runtime line, no
-// Sandbox line, and no contract token (AC-4) — while every in-session case adds
-// exactly three lines below it.
+// one, report the version. Both shapes start with the same TWO lines — the
+// version line and the `OS: <goos>/<goarch>` line — so the outside case is two
+// lines (no Runtime line, no Sandbox line, and no contract token), while every
+// in-session case adds exactly three lines below them.
 func TestVersionSessionRender(t *testing.T) {
 	version := displayVersion()
+	osToken := runtime.GOOS + "/" + runtime.GOARCH
 	cases := []struct {
 		name     string
 		vars     map[string]string
@@ -56,15 +59,17 @@ func TestVersionSessionRender(t *testing.T) {
 			vars:     claudeSession,
 			lookPath: lookMissing,
 			want: "spacedock " + version + "\n" +
+				"OS: " + osToken + "\n" +
 				"Runtime: claude (CLAUDECODE, session afd74765)\n" +
 				"Sandbox: inside (agent-safehouse)\n" +
 				"contract 3\n",
 		},
 		{
-			name:     "outside-every-runtime-is-one-line",
+			name:     "outside-every-runtime-is-two-lines",
 			vars:     map[string]string{},
 			lookPath: lookFound,
-			want:     "spacedock " + version + "\n",
+			want: "spacedock " + version + "\n" +
+				"OS: " + osToken + "\n",
 		},
 		{
 			// A host whose identity variable is unset takes the same path as a host
@@ -74,6 +79,7 @@ func TestVersionSessionRender(t *testing.T) {
 			vars:     map[string]string{"CLAUDECODE": "1"},
 			lookPath: lookFound,
 			want: "spacedock " + version + "\n" +
+				"OS: " + osToken + "\n" +
 				"Runtime: claude (CLAUDECODE)\n" +
 				"Sandbox: not sandboxed (safehouse available)\n" +
 				"contract 3\n",
@@ -89,6 +95,7 @@ func TestVersionSessionRender(t *testing.T) {
 			},
 			lookPath: lookMissing,
 			want: "spacedock " + version + "\n" +
+				"OS: " + osToken + "\n" +
 				"Runtime: pi (PI_CODING_AGENT, PI_CODING_AGENT_DIR)\n" +
 				"Sandbox: not sandboxed (safehouse not installed)\n" +
 				"contract 3\n",
@@ -100,6 +107,7 @@ func TestVersionSessionRender(t *testing.T) {
 			vars:     map[string]string{"CODEX_THREAD_ID": "01937f2a-bbbb-cccc"},
 			lookPath: lookFound,
 			want: "spacedock " + version + "\n" +
+				"OS: " + osToken + "\n" +
 				"Runtime: codex (CODEX_THREAD_ID, session 01937f2a)\n" +
 				"Sandbox: not sandboxed (safehouse available)\n" +
 				"contract 3\n",
@@ -115,6 +123,7 @@ func TestVersionSessionRender(t *testing.T) {
 			},
 			lookPath: lookFound,
 			want: "spacedock " + version + "\n" +
+				"OS: " + osToken + "\n" +
 				"Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE) — pass --host\n" +
 				"Sandbox: not sandboxed (safehouse available)\n" +
 				"contract 3\n",
@@ -141,6 +150,14 @@ func TestVersionSessionRender(t *testing.T) {
 			}
 			if line1 != "spacedock "+version {
 				t.Fatalf("line 1 = %q, want %q", line1, "spacedock "+version)
+			}
+			// AC (OS line): line 2 is always the OS/arch line, in both shapes.
+			line2 := strings.SplitN(got, "\n", 3)[1]
+			if !regexp.MustCompile(`^OS: [a-z0-9]+/[a-z0-9]+$`).MatchString(line2) {
+				t.Fatalf("line 2 = %q, want `OS: <goos>/<goarch>`", line2)
+			}
+			if line2 != "OS: "+osToken {
+				t.Fatalf("line 2 = %q, want %q", line2, "OS: "+osToken)
 			}
 		})
 	}

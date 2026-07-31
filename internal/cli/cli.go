@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"unicode/utf8"
 
@@ -826,20 +827,25 @@ const frozenContractToken = "contract 3"
 //
 // Line 1 is `spacedock <version>` and nothing else. It is load-bearing: the
 // FO/ensign version gate parses that token and aborts on any other shape (cobra's
-// auto version-flag is deliberately NOT used). The frozen contract token moved
-// BELOW it — the integer-era prose says "run --version and parse contract <N>"
-// and never pins it to line 1 — and prints inside a session only, since every
-// integer-era reader is itself a session.
+// auto version-flag is deliberately NOT used). Line 2 is always
+// `OS: <goos>/<goarch>` — in BOTH output shapes — so user issue reports carry
+// the platform and later gate-logic versions can read the OS from `--version`
+// once a compatible binary exists. The frozen contract token moved BELOW line 1
+// — the integer-era prose says "run --version and parse contract <N>" and never
+// pins it to line 1 — and prints inside a session only, since every integer-era
+// reader is itself a session.
 //
 // Ambiguous markers are REPORTED, never guessed at, and never fail: refusing here
 // would break the version gate and therefore every boot, including the nested-
 // runtime marker leak that occurs in practice.
 func printVersion(w io.Writer, getenv func(string) string, lookPath func(string) (string, error)) {
 	fmt.Fprintf(w, "spacedock %s\n", displayVersion())
+	fmt.Fprintf(w, "OS: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 
 	host, markers, identity, ambiguous := runtimehost.Detect(getenv)
 	if !ambiguous && host == "" {
-		// Outside every runtime — a human at a terminal. One line, nothing else.
+		// Outside every runtime — a human at a terminal. Two lines: the version
+		// line plus the OS line, nothing else.
 		return
 	}
 

@@ -4,6 +4,7 @@ package contract
 
 import (
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -111,7 +112,7 @@ func compareNamed(host, manifestPath, pluginVersion, binaryVersion string, edgeC
 		// integer-era source build (`dev`, pre-D3 embed) — treated as too-old,
 		// with the existing remedy's "build from source" arm doubling as the
 		// rebuild hint.
-		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy(edgeCask))}
+		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy(edgeCask, runtime.GOOS))}
 	}
 	pMajor, pMinor, pOk := ParseMajorMinor(pluginVersion)
 	if !pOk {
@@ -129,7 +130,7 @@ func compareNamed(host, manifestPath, pluginVersion, binaryVersion string, edgeC
 	}
 	switch {
 	case bMajor < pMajor || (bMajor == pMajor && bMinor < pMinor):
-		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy(edgeCask))}
+		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy(edgeCask, runtime.GOOS))}
 	case bMajor > pMajor || (bMajor == pMajor && bMinor > pMinor):
 		return Result{Verdict: TooOldPlugin, Message: mismatchMessage(binaryVersion, pluginVersion, "Update the plugin to continue.", tooOldPluginRemedy(host))}
 	default:
@@ -221,14 +222,24 @@ func mismatchMessage(binaryVersion, pluginVersion, direction, remedy string) str
 		binaryVersion, pluginVersion, direction, remedy)
 }
 
-// tooOldBinaryRemedy is the pinned too-old-binary remedy block: it leads with the
-// Homebrew upgrade, keeps the source-build fallback, and names the binary-vs-plugin
-// distinction (refreshing the plugin instead is a different command). edgeCask
-// names the edge `spacedock@next` cask as the upgrade target when the running
-// binary was installed from it: that cask is a separate Homebrew token, so a plain
-// `brew upgrade spacedock` is a no-op for an @next install. edgeCask=false leaves
-// the block unchanged.
-func tooOldBinaryRemedy(edgeCask bool) string {
+// tooOldBinaryRemedy is the pinned too-old-binary remedy block. goos is
+// threaded explicitly (the caller supplies runtime.GOOS) so tests pin the OS
+// deterministically. On Linux the remedy leads with the documented curl|sh
+// install path — a Linux host has no brew — and the edgeCask flag is ignored
+// there: `spacedock@next` is a brew-only token, meaningless without Homebrew,
+// so the curl|sh lead supersedes the edge-cask branch. On macOS it leads with
+// the Homebrew upgrade, keeps the source-build fallback, and names the
+// binary-vs-plugin distinction (refreshing the plugin instead is a different
+// command); edgeCask names the edge `spacedock@next` cask as the upgrade target
+// when the running binary was installed from it: that cask is a separate
+// Homebrew token, so a plain `brew upgrade spacedock` is a no-op for an @next
+// install. edgeCask=false leaves the block unchanged.
+func tooOldBinaryRemedy(edgeCask bool, goos string) string {
+	if goos == "linux" {
+		return "  Install the latest binary: curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh\n" +
+			"  Or build from source: go build -o spacedock ./cmd/spacedock\n" +
+			"  Or refresh the plugin instead: spacedock install"
+	}
 	formula := "spacedock"
 	if edgeCask {
 		formula = "spacedock@next"
