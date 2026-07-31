@@ -32,6 +32,7 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+started: 2026-07-31T16:34:00Z
 ---
 
 The FO version gate's dev-stamp abort class does not survive contact with in-tree builds: source builds and CI candidates stamp `<latest-tag>+dev`, which IS major.minor-compatible with the in-tree skills, but the gate prose names the dev-stamp class only by its extreme (`dev` — an integer-era build carrying no major.minor at all) and never states the converse, so strict live-agent readers classify compatible dev-suffixed tokens as the abort class. Evidence is deterministic: codex's runtime red twice on identical reads where claude/pi read green; main's lanes with the old prose were green 07-13/07-19.
