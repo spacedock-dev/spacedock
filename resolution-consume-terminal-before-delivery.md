@@ -47,6 +47,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:ef1f7e213fe8df4f23a021f55c580b0bd9f2bb24e0199034b12e1c5ffe6dc228
                 room-ref: ./resolution-consume-terminal-before-delivery/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:1w62z8c5fq5g5cmhzf5sd79w:ideation:1
+                briefing: briefing:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-07-31T16:07:38.629153Z"
+                decision: revise
+                reason: 'REJECT THE ARCHITECTURE, redo ideation with feedback: three staff-review rounds produced a coherence ratchet (two new application states, reversal journal, scanner rewrite, new lock/CAS regime, guards in prepare/status-set/dispatch/readiness, crash-recovery machinery, legacy adoption, ~2000 insertions across 16 surfaces) that made the wrong mechanism internally safer without challenging its existence. Boundary is wrong: hook-keyed deferral retains the hole on hookless/merge-local/manual-local-merge paths (fo-merge-core:13 terminal delivery runs under both policies); reversed/reversal turns the authorization record into a delivery journal while superseded already carries unspent (durable-decisions: effect receipts declined); legacy adoption violates the unreleased-v1 no-compat/no-migration ruling (durable-decisions); --by person:* validates a caller string, not authority; finding 18 is downstream trivia. Captain minimum design: (1) every terminal approval remains pending, gate consume routes it to the terminal merge ceremony WITHOUT spending (hook on gate consumption causing pending, no longer keyed on stage); (2) merge guard becomes the sole terminal consumer; (3) successful delivery atomically writes pending->consumed + terminal status + verdict + completed; (4) delivery failure requiring rework writes pending->superseded, routes via the declared feedback-to, clears delivery state; (5) retryable delivery trouble leaves the same approval pending; (6) NO delivering/reversed/reversal/arbitrary --to/actor flag/compat path/scanner rewrite/new lock architecture unless the minimal transaction independently proves one necessary. Also on record: the ideation briefing was defective (claimed three review rounds, bound only two; third reviewer output unreferenced).'
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 ---
 
 A gate approval on a terminal-target stage (`validation → done`) is *immediately consumable into terminal status*: the binding approval's authority is marked spent (`consumed=true`) and the entity's status flips to `done` at consume time, while delivery (PR push, CI, merge) and workflow terminal fields (`verdict`, `completed`) remain pending. Three desyncs follow:
