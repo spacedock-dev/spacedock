@@ -121,16 +121,3 @@ Implementation begins with CLI tests for AC-1, then removes routing and round-on
 ### Summary
 
 The ideation defines a deletion-first v1 cut: remove advisory round grammar and development policy from generic gates while preserving binding decisions byte-for-byte. It records measured baselines, bounded surface and semantics, workflow-owned correction evidence, reproducible tests, and concrete documentation edits without designing a replacement recorder.
-
-## Stage Report: ideation
-
-- DONE: Produce a concrete, bounded problem statement, proposed approach, streamlined scenario, and expected surface for removing workflow-specific advisory rounds.
-  The body limits v1 to deleting the advisory CLI/parser/projector, preserves binding gates, and estimates 13-18 files with explicit tolerance.
-- DONE: Define independently falsifiable end-state acceptance criteria with a reproducible test plan, declared semantic scope, tolerance, and required documentation diff.
-  AC-1 through AC-4 name observable failure conditions; the plan binds CLI, source inventory, workflow fixture, full/race suites, and exact doc replacements to them.
-- DONE: Exercise or explicitly record the riskiest unverified mechanism and explain why the simplest alternative cannot deliver the value.
-  Focused gate/CLI tests passed and live help/dispatch probes confirmed separable round routing; retaining or renaming it leaves the policy classifier reachable and fails AC-2.
-
-### Summary
-
-Fleshed out the v1 removal as a deletion-first, medium-complexity task with no replacement recorder or migration. The design preserves byte-compatible binding gate decisions while returning finding classification and correction-round projection authority to the workflow.
