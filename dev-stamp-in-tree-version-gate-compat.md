@@ -56,6 +56,7 @@ gates:
                 state: consumed
                 blockers: []
 started: 2026-07-31T16:34:00Z
+worktree: .worktrees/spacedock-ensign-dev-stamp-in-tree-version-gate-compat
 ---
 
 ## Problem statement
