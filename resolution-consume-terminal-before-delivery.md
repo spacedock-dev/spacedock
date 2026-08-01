@@ -148,6 +148,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:475fb7f4386b1a3dbb14d770dbe2e4ad068d7e8a2b3b308f26f0d468c70464a5
                 room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:1w62z8c5fq5g5cmhzf5sd79w:validation:2
+                briefing: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-01T01:26:37.026511Z"
+                decision: revise
+                reason: 'Captain''s narrow-revision review (accepted): (1) reworkDelivery''s default output prints elig.TargetStage (done) — must name the gate record''s GATED stage to re-enter, asserted in the existing round-trip test; (2) digest-stale fixture carries empty mod-block, so refusal-before-clear ordering is unpinned — strengthen the SAME fixture: arm the hook, tamper the retained room, assert complete entity bytes (incl. mod-block + pr sentinel) unchanged, no new harness; (3) AC-2 cites the rework-deleted TestTerminalSpendOnlyInDeliveryEnvelope — repair the AC-2 evidence MAP (one gate-bearing terminal-finalize test through the shared finalize fn + the existing merge-guard suite covering the three delivery classes), do NOT restore the fixture; (4) Roborev against the corrected tip with findings classified by supported trigger/observable harm/task ownership before any edit; then focused + full go + race suites under the CI-matching isolated home/env (ambient markers stripped). Explicitly NOT expanded: the lock-removal hole (recorded disproportionate-now — single-FO sequential journey; promote when concurrent-FO support lands), the entityField private mechanism (keep), report arithmetic (repair prose on this append, no product change). This attempt closes as corrected-in-place; the corrected package presents fresh.'
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 sprint: durable-decisions
 ---
 
