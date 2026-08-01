@@ -170,3 +170,16 @@ These do not change the five ACs or the test plan; they tighten how implementati
 ### Summary
 
 Revised the testimonial prompt so the driving agent identifies its harness/runtime, model, and verifiable version/build before answering, with explicit `unknown` handling. Updated the output template, acceptance criterion, and artifact-backed test plan while keeping session-scale counts separate from identity and retaining the testimonial's human, non-marketing register.
+
+## Stage Report: implementation
+
+- DONE: Apply the skill edit per the entity's before/after diff: testimonial-collection step at Phase 3 (verbatim prompt) + `## Agent Testimonial` section with provenance fields in skills/debrief/SKILL.md
+  Commit f3270077a on worktree branch spacedock-ensign/debrief-agent-testimonial-prompt (pushed); prompt, honesty clause, and unknown-never-guess instruction landed verbatim; provenance labels use plain nouns (tasks/workers/PRs).
+- DONE: Verification-shape constraint from captain cycle 3: NO prose greps added anywhere in the change or its tests
+  Diff touches only skills/debrief/SKILL.md prose; no tests added, no regex/static self-check instructions in the skill text.
+- DONE: Scope discipline: skills/debrief/SKILL.md and docs site template surfaces ONLY as the design says
+  Single-file diff (27 insertions, 5 deletions); docs-site untouched per ideation finding that no docs page duplicates the template; AC-5 live-lane evidence and driver-run qualitative inspection deferred to validation as the checklist directs.
+
+### Summary
+
+Implemented the designed before/after in `skills/debrief/SKILL.md`: new Phase 3 Step 1 "Collect the agent testimonial" with the verbatim self-identification + honesty-clause prompt, recording `{agent_testimonial}` and agent-supplied `{harness_runtime}`/`{model}`/`{model_version_build}` with `unknown` preserved and session-scale counts derived separately from session data; the Phase 4 debrief template gains the `## Agent Testimonial` section with Date/Harness/Model/Version/Session-scale provenance lines. Subsequent Phase 3 steps renumbered (Present draft→2, Captain commentary→3, Handle spacedock issues→4) and both step cross-references updated. One small reconciliation: the design's collective `{session_scale}` placeholder in the Phase 3 prose was rendered as the three concrete placeholders the template actually uses (`{tasks_touched}`, `{workers_dispatched}`, `{prs_touched_or_merged}`) so the two parts agree. Regression gate `go test ./...` passes except a pre-existing, unrelated env-marker failure in internal/cli (TestVersionAmbiguousMarkersExitZero fails identically on the stashed base). Behavioral/live-lane proof (AC-1/2/3/5) is owed by validation, not this stage.
