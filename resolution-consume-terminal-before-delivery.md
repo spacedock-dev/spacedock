@@ -199,6 +199,7 @@ gates:
                 state: pending
                 blockers: []
 sprint: durable-decisions
+mod-block: merge:pr-merge
 ---
 
 A gate approval on a terminal-target stage (`validation → done`) is *immediately consumable into terminal status*: the binding approval's authority is marked spent (`consumed=true`) and the entity's status flips to `done` at consume time, while delivery (PR push, CI, merge) and workflow terminal fields (`verdict`, `completed`) remain pending. Three desyncs follow:
