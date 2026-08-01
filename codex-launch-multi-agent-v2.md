@@ -10,6 +10,21 @@ score: 1.0
 worktree:
 issue:
 sprint: durable-decisions
+gates:
+    version: 1
+    current:
+        gate: gate:z5gwwz2748sg6vxr0g3kdsar:ideation
+    records:
+        - id: gate:z5gwwz2748sg6vxr0g3kdsar:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:z5gwwz2748sg6vxr0g3kdsar-ideation-1
+              briefing:
+                id: briefing:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-1:revision-1
+                digest: sha256:988c0401c86e31c5e9a300df8dd7e3527e171d1b7dbbb56aa40262ffa6b0ec24
+                digest-domain: canonical-bytes
+                request-digest: sha256:91d6338b0e681ec994ea130511078c95074dd505919b22665c7666e7fa16c408
+                room-ref: ./codex-launch-multi-agent-v2/review/ideation/briefing-1
 ---
 
 Spacedock's Codex front door should guarantee the observable collaboration lifecycle its first officer needs: spawn a worker, follow up with the same worker, inspect/list and wait for workers, and receive completion. The guarantee belongs to the launch configuration and behavioral proof, not to bootstrap prose, an ambient user config, or the undocumented `multi_agent_v2` label.

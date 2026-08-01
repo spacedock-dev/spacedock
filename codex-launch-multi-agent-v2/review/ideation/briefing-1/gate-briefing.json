@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-1:revision-1",
+  "question": "Approve z5 ideation for implementation after reconciling the requested multi_agent_v2 isolated-home settings and AC evidence?",
+  "artifacts": [
+    {
+      "id": "artifact:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a4283f218d4b7d25b4079fc420cce985c622c82b/codex-launch-multi-agent-v2/review/ideation/fo-gate-review.md",
+      "rev": "sha256:74c155800aff9a6e6abe82f71622d032817efa3b71ba06b35fcdfc1294891db5",
+      "mediaType": "text/markdown",
+      "summary": "Three DONE ideation signals, but AC-1 through AC-4 have no citations and the requested multi_agent_v2 isolated-home fragment is not in the selected approach. Revise before implementation."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/a4283f218d4b7d25b4079fc420cce985c622c82b/codex-launch-multi-agent-v2.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:197390737311634cf3471a0df4623e2e645204c490020ac9e3d2dace39099b4f"
+    }
+  ]
+}
