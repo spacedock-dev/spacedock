@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-1:revision-1",
+  "question": "Approve the validation package for codex-launch-multi-agent-v2 and consume authorization to enter done?",
+  "artifacts": [
+    {
+      "id": "artifact:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/40e08141949daee8d2e76a69f614d1cbc754918a/codex-launch-multi-agent-v2/review/validation/fo-gate-review.md",
+      "rev": "sha256:3586ad2b5eae7b123f1b8dad6e7e7337027535d6c387a92008044676d9484022",
+      "mediaType": "text/markdown",
+      "summary": "Validation found material evidence and product defects: the lifecycle oracle bypasses spacedock codex and accepts zero-worker marker-only fakes, reserved Codex config spellings still permit agents.enabled=false after the owned layer, and E-3 is absent. Science Officer recommends REVISE and the correction route is bound in the review artifact."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/40e08141949daee8d2e76a69f614d1cbc754918a/codex-launch-multi-agent-v2.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:2083146589523fe892df472966587917db19fe85639eb7bd1cd1215ef5b74ac0"
+    }
+  ]
+}
