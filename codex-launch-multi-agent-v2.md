@@ -277,3 +277,16 @@ REJECTED. Route correction through the validation feedback gate. The narrow repa
   - FO authorization: `fix` the three findings within the approved semantic
     surface, then fresh-dispatch validation; preserve the exact findings and
     evidence unchanged in the feedback package.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: inject supported controls plus the exact multi_agent_v2 inline TOML layer across all launch variants
+  Commit `383b4da8b` retains the exact layer; the complete-argv matrix fails if plain, local-plugin, Safehouse, or resume changes its placement, order, uniqueness, or any table field.
+- DONE: reject reserved or conflicting forwarded settings before plugin install or host launch
+  Attached `-cagents.enabled=false`, quoted dotted components, space/equals forms, nested v2 fields, and feature toggles now fail with the pinned diagnostic and zero install/launch calls; unrelated config remains a passing control.
+- DONE: prove complete argv, unsupported-host failure, and isolated-home lifecycle behavior within the approved surface
+  Eight files/+379 stayed within 10/+380; the 41.54s live run used built `spacedock codex`, parsed ordered typed parent/child records and v2 context, and required a zero-event disabled control; the vocabulary-only fake, unsupported-host, full, race, format, and detached-commit audits passed.
+
+### Summary
+
+Cycle 2 closes M1-M3 without changing their preserved findings or weakening the oracle. The first bounded live attempt exposed a completed-worker wait race; the final proof keeps the worker active until the ordered list/wait sequence, caps the subprocess at two minutes, and passes through the launcher at `383b4da8b`.
