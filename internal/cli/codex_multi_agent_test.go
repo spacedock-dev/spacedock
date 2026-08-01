@@ -20,14 +20,12 @@ var wantCodexCollaborationLayer = []string{"-c", "agents.enabled=true", "-c", "f
 func wantCodexArgv(tail ...string) []string {
 	return append(append([]string{"codex"}, wantCodexCollaborationLayer...), tail...)
 }
-
 func TestCodexCollaborationLayerCompleteArgv(t *testing.T) {
 	checkout, _ := localPluginCheckout(t, "codex")
 	tests := []struct {
 		name, dir  string
 		args, tail []string
 	}{{"plain", "", nil, []string{"--ask-for-approval", "on-request", wantCodexBootstrapPrompt}}, {"local plugin", "", []string{"--plugin-dir", checkout}, []string{"--ask-for-approval", "on-request", wantCodexBootstrapPrompt}}, {"safehouse", "safehouse", nil, []string{"--dangerously-bypass-approvals-and-sandbox", wantCodexBootstrapPrompt}}, {"resume", "", []string{"--", "resume", "thread-123"}, []string{"resume", "thread-123"}}}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("CODEX_HOME", t.TempDir())
@@ -46,12 +44,10 @@ func TestCodexCollaborationLayerCompleteArgv(t *testing.T) {
 		})
 	}
 }
-
 func TestCodexRejectsOwnedCollaborationOverridesBeforeSideEffects(t *testing.T) {
 	checkout, _ := localPluginCheckout(t, "codex")
 	conflicts := [][]string{{"-c", "agents.enabled=false"}, {`-cagents.enabled=false`}, {`-c`, `"agents".enabled=false`}, {`-c"features"."multi_agent"=false`}, {`--config='features'.'multi_agent_v2'.tool_namespace="other"`}, {"-c=features.multi_agent=false"}, {"--config", "features.multi_agent_v2={}"}, {"--config=features.multi_agent_v2.max_concurrent_threads_per_session=2"}, {"-c", `features.multi_agent_v2.tool_namespace="collaboration"`}, {"-c", "features.multi_agent_v2.hide_spawn_agent_metadata=true"}, {"--enable", "multi_agent"}, {"--disable=multi_agent"}, {"--enable=multi_agent_v2"}, {"--disable", "multi_agent_v2"}}
 	const wantDiagnostic = "spacedock codex: collaboration settings are managed by Spacedock; remove the forwarded override\n"
-
 	for _, conflict := range conflicts {
 		name := strings.NewReplacer("/", "_", "=", "_", " ", "_").Replace(strings.Join(conflict, "_"))
 		t.Run(name, func(t *testing.T) {
@@ -64,7 +60,6 @@ func TestCodexRejectsOwnedCollaborationOverridesBeforeSideEffects(t *testing.T) 
 			}
 		})
 	}
-
 	t.Run("unrelated config remains forwarded", func(t *testing.T) {
 		host := &fakeHost{manifest: compatibleManifest(t)}
 		var stdout, stderr bytes.Buffer
@@ -93,19 +88,14 @@ func (h *rejectingCodexHost) Launch(argv []string, env []string) (int, error) {
 	fmt.Fprintln(h.stderr, "error: unsupported configuration key: features.multi_agent_v2")
 	return 78, nil
 }
-
 func TestCodexUnsupportedHostFailsBeforeSession(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	host := &rejectingCodexHost{fakeHost: fakeHost{manifest: compatibleManifest(t)}, stderr: &stderr}
 	code := runCodex(context.Background(), nil, t.TempDir(), host, lookFound, &stdout, &stderr)
-	if code != 78 {
-		t.Fatalf("exit = %d, want native host exit 78", code)
-	}
-	if !strings.Contains(stderr.String(), "unsupported configuration key: features.multi_agent_v2") {
-		t.Fatalf("native config diagnostic was not preserved: %q", stderr.String())
+	if code != 78 || !strings.Contains(stderr.String(), "unsupported configuration key: features.multi_agent_v2") {
+		t.Fatalf("exit=%d, want 78 with native config diagnostic (stderr=%q)", code, stderr.String())
 	}
 }
-
 func TestCodexIsolatedHomeCollaborationLifecycle(t *testing.T) {
 	if os.Getenv("SPACEDOCK_LIVE_CODEX_MULTI_AGENT") != "1" {
 		t.Skip("set SPACEDOCK_LIVE_CODEX_MULTI_AGENT=1 to spend one short live Codex turn")
@@ -152,7 +142,6 @@ func TestCodexIsolatedHomeCollaborationLifecycle(t *testing.T) {
 	if err := gradeCodexLifecycle(out, sessions, ready, done, parent); err != nil {
 		t.Fatalf("structured launcher lifecycle: %v\nstdout:\n%s", err, out)
 	}
-
 	disabled := exec.Command("codex", "-c", "agents.enabled=false", "exec", "--json", "--skip-git-repo-check", "Attempt one native worker spawn. If the tool is unavailable, reply exactly DISABLED_CONTROL.")
 	disabled.Env = cmd.Env
 	disabledOut, err := disabled.Output()
@@ -179,8 +168,7 @@ type codexSessionEvent struct {
 }
 
 func gradeCodexLifecycle(stdout []byte, sessions map[string][]byte, ready, done, parent string) error {
-	var parentID string
-	parentDone := false
+	parentID, parentDone := "", false
 	for _, line := range bytes.Split(stdout, []byte("\n")) {
 		var event codexStreamEvent
 		if json.Unmarshal(line, &event) == nil {
@@ -192,8 +180,7 @@ func gradeCodexLifecycle(stdout []byte, sessions map[string][]byte, ready, done,
 	}
 	wantTools := []string{"spawn_agent", "wait_agent", "followup_task", "list_agents", "wait_agent"}
 	var tools []string
-	var target, lastCall string
-	listSawTarget := false
+	target, lastCall, listSawTarget := "", "", false
 	for _, line := range bytes.Split(sessions[parentID], []byte("\n")) {
 		var event codexSessionEvent
 		if json.Unmarshal(line, &event) != nil || event.Type != "response_item" {
@@ -201,6 +188,12 @@ func gradeCodexLifecycle(stdout []byte, sessions map[string][]byte, ready, done,
 		}
 		if event.Payload.Type == "function_call" && slices.Contains(wantTools, event.Payload.Name) {
 			tools, lastCall = append(tools, event.Payload.Name), event.Payload.Name
+			if event.Payload.Name == "wait_agent" {
+				var args struct{ Target string }
+				if err := json.Unmarshal([]byte(event.Payload.Arguments), &args); err != nil || args.Target != "" && args.Target != target {
+					return fmt.Errorf("wait target %q != spawned worker %q", args.Target, target)
+				}
+			}
 			if event.Payload.Name == "followup_task" {
 				var args struct{ Target string }
 				_ = json.Unmarshal([]byte(event.Payload.Arguments), &args)
@@ -233,7 +226,6 @@ func gradeCodexLifecycle(stdout []byte, sessions map[string][]byte, ready, done,
 	}
 	return nil
 }
-
 func countCodexCollaborationEvents(stdout []byte) (count int) {
 	for _, line := range bytes.Split(stdout, []byte("\n")) {
 		var event codexStreamEvent
@@ -270,8 +262,16 @@ func sessionHasAssistantTexts(session []byte, want ...string) bool {
 }
 
 func TestCodexLifecycleOracleRejectsVocabularyOnly(t *testing.T) {
-	fake := []byte(`{"type":"item.completed","item":{"type":"agent_message","text":"spawn_agent followup_task list_agents wait_agent READY_7E91 DONE_7E91 PARENT_7E91 multi_agent_version v2"}}`)
-	if err := gradeCodexLifecycle(fake, nil, "READY_7E91", "DONE_7E91", "PARENT_7E91"); err == nil {
+	if err := gradeCodexLifecycle([]byte(`{"type":"item.completed","item":{"type":"agent_message","text":"spawn_agent followup_task list_agents wait_agent READY_7E91 DONE_7E91 PARENT_7E91 multi_agent_version v2"}}`), nil, "READY_7E91", "DONE_7E91", "PARENT_7E91"); err == nil {
 		t.Fatal("vocabulary-only fake host passed the structured lifecycle oracle")
+	}
+}
+
+func TestAdversarialLifecycleRejectsWrongWaitTargets(t *testing.T) {
+	if err := gradeCodexLifecycle([]byte("{\"type\":\"thread.started\",\"thread_id\":\"parent-id\"}\n{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"PARENT\"}}"), map[string][]byte{"parent-id": []byte(strings.ReplaceAll(`{"type":"turn_context","payload":{"multi_agent_version":"v2"}}|{"type":"response_item","payload":{"type":"function_call","name":"spawn_agent","arguments":"{}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{\"task_name\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call","name":"wait_agent","arguments":"{\"target\":\"worker-b\"}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{}"}}|{"type":"response_item","payload":{"type":"function_call","name":"followup_task","arguments":"{\"target\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{}"}}|{"type":"response_item","payload":{"type":"function_call","name":"list_agents","arguments":"{}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{\"agent_name\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call","name":"wait_agent","arguments":"{\"target\":\"worker-b\"}"}}`, "|", "\n")), "child-id": []byte(strings.ReplaceAll(`{"parent_thread_id":"parent-id","agent_path":"worker-a"}|{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"READY"}]}}|{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"DONE"}]}}`, "|", "\n"))}, "READY", "DONE", "PARENT"); err == nil {
+		t.Fatal("wrong-worker waits passed the same-worker lifecycle oracle")
+	}
+	if err := gradeCodexLifecycle([]byte("{\"type\":\"thread.started\",\"thread_id\":\"parent-id\"}\n{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"PARENT\"}}"), map[string][]byte{"parent-id": []byte(strings.ReplaceAll(`{"type":"turn_context","payload":{"multi_agent_version":"v2"}}|{"type":"response_item","payload":{"type":"function_call","name":"spawn_agent","arguments":"{}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{\"task_name\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call","name":"wait_agent","arguments":"{\"timeout_ms\":10000}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{}"}}|{"type":"response_item","payload":{"type":"function_call","name":"followup_task","arguments":"{\"target\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{}"}}|{"type":"response_item","payload":{"type":"function_call","name":"list_agents","arguments":"{}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{\"agent_name\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call","name":"wait_agent","arguments":"{\"timeout_ms\":10000}"}}`, "|", "\n")), "child-id": []byte(strings.ReplaceAll(`{"parent_thread_id":"parent-id","agent_path":"worker-b"}|{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"READY"}]}}|{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"DONE"}]}}`, "|", "\n"))}, "READY", "DONE", "PARENT"); err == nil {
+		t.Fatal("targetless waits with a misbound child passed the same-worker lifecycle oracle")
 	}
 }
