@@ -67,6 +67,11 @@ func (d ptyLiveDriver) withStubPATH(dir string) liveDriver {
 	return d
 }
 
+func (d ptyLiveDriver) withInvocationLedger(t *testing.T, ledger testInvocationLedger) liveDriver {
+	d.env = withSpacedockShimShellEnv(t, ledger.instrumentEnv(d.env), ledger.shimDir)
+	return d
+}
+
 // newPtyLiveDriver builds the pty driver against the SAME isolated auth/HOME tree
 // the headless suite uses (isolatedClaudeEnv: OAuth benchmark-token / API key, else
 // SKIP) so AC-6's skip-not-fatal-without-auth holds with no parallel auth path.

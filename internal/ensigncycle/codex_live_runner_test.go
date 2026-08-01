@@ -73,6 +73,7 @@ func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedR
 		"merge-hook-guardrail":          runCodexMergeHookGuardrailScenario,
 		"filing":                        runCodexFilingScenario,
 		"shallow-boot":                  runCodexShallowBootScenario,
+		"multi-workflow-boot":           runCodexMultiWorkflowBootScenario,
 		"self-evidence-merge-triage":    runCodexSelfEvidenceMergeTriageScenario,
 		"smallest-sufficient-mechanism": runCodexSmallestSufficientMechanismScenario,
 		"keep-moving-posture":           runCodexKeepMovingScenario,
@@ -241,7 +242,7 @@ func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenari
 	if err := assertRejectionFlow(entityAfter, result.finalMessage+"\n"+result.jsonl); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation", codexRecordedRejectionRound(result.jsonl)); err != nil {
+	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation"); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	// assertRejectionFlow (above) proves the two-cycle re-review OCCURRED from the
@@ -369,15 +370,17 @@ func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario s
 }
 
 // runCodexFilingScenario drives the real FO against an EMPTY workflow and asks it
-// to file one seed entity. Like the Claude runner it grades the FO's recorded
-// command stream — the FO filed via `spacedock … new <slug>`, not a `--next-id`
-// preview-then-write — because the durable end-state file is indistinguishable
-// between the two paths. The file must also actually land, so the stream grade is
-// proof of HOW, not just THAT, the entity was filed.
+// to file one seed entity. Like the Claude runner it grades the test-local
+// launcher's actual argv ledger — the FO executed `spacedock new <slug>`, not a
+// `--next-id` preview-then-write — because the durable end-state file is
+// indistinguishable between the two paths. The file must also actually land, so
+// the ledger proves HOW while the file proves THAT.
 func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := writeFilingWorkflow(t, workflowRoot)
+	ledger := newTestInvocationLedger(t, spacedockBinary(t))
+	runner.env = ledger.instrumentEnv(runner.env)
 
 	result, err := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot))
 	if err != nil {
@@ -386,7 +389,9 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 	if _, err := os.Stat(entityPath); err != nil {
 		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertCodexFilingViaNew(result.jsonl, filingSlug); err != nil {
+	invocations := ledger.read(t)
+	writeInvocationLedgerArtifact(t, result.artifactDir, invocations)
+	if err := assertFilingViaNew(invocations, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
@@ -413,6 +418,26 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 
 	obs := gatherShallowBootObservation(t, workflowRoot, "", fixture, gateBefore, result.finalMessage)
 	if err := assertShallowBoot(obs); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
+}
+
+func runCodexMultiWorkflowBootScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	projectRoot := t.TempDir()
+	fixture := writeMultiWorkflowBootFixture(t, projectRoot)
+	ledger := newTestInvocationLedger(t, spacedockBinary(t))
+	runner.env = ledger.instrumentEnv(runner.env)
+
+	result, err := runner.run(t, scenario, projectRoot, multiWorkflowBootPrompt(projectRoot))
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	invocations := ledger.read(t)
+	writeInvocationLedgerArtifact(t, result.artifactDir, invocations)
+	obs := gatherMultiWorkflowBootObservation(t, fixture, invocations, result.finalMessage)
+	if err := assertMultiWorkflowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)

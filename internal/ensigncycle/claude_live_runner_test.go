@@ -86,6 +86,7 @@ type liveDriver interface {
 	model() string
 	home() string
 	withStubPATH(dir string) liveDriver
+	withInvocationLedger(t *testing.T, ledger testInvocationLedger) liveDriver
 }
 
 // liveResult is the host-neutral observed state the shared assertions consume.
@@ -164,6 +165,7 @@ func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRunti
 		"merge-hook-guardrail":          runClaudeMergeHookGuardrailScenario,
 		"filing":                        runClaudeFilingScenario,
 		"shallow-boot":                  runClaudeShallowBootScenario,
+		"multi-workflow-boot":           runClaudeMultiWorkflowBootScenario,
 		"self-evidence-merge-triage":    runClaudeSelfEvidenceMergeTriageScenario,
 		"smallest-sufficient-mechanism": runClaudeSmallestSufficientMechanismScenario,
 		"keep-moving-posture":           runClaudeKeepMovingScenario,
@@ -302,6 +304,28 @@ func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 	return r
 }
 
+func (r claudeLiveRunner) withInvocationLedger(t *testing.T, ledger testInvocationLedger) liveDriver {
+	r.env = withSpacedockShimShellEnv(t, ledger.instrumentEnv(r.env), ledger.shimDir)
+	return r
+}
+
+func TestClaudeInvocationLedgerSurvivesFrontDoorLauncherPin(t *testing.T) {
+	ledger := newTestInvocationLedger(t, writeSuccessfulLedgerTarget(t))
+	driver := claudeLiveRunner{env: os.Environ()}
+	driver = driver.withInvocationLedger(t, ledger).(claudeLiveRunner)
+	driver.env = replaceEnvValue(driver.env, "SPACEDOCK_BIN", writeSuccessfulLedgerTarget(t))
+
+	cmd := exec.Command("/bin/bash", "-c", `"$SPACEDOCK_BIN" status --boot --identify --json`)
+	cmd.Env = driver.env
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("ledgered Claude shell failed after front-door launcher pin: %v\n%s", err, output)
+	}
+	got := ledger.read(t)
+	if len(got) != 1 || got[0].tool != "spacedock" || strings.Join(got[0].args, "\x00") != "status\x00--boot\x00--identify\x00--json" {
+		t.Fatalf("Claude shell bypassed invocation ledger after front-door launcher pin: %#v", got)
+	}
+}
+
 func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	if claudeModelFamily(runner.model(), "opus") {
@@ -354,7 +378,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	if err := assertRejectionFlow(after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation", claudeRecordedRejectionRound(result.stream)); err != nil {
+	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation"); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	// Single-entity (`-p`) reviewer producer-signal. The Claude runner launches
@@ -472,21 +496,24 @@ func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario share
 }
 
 // runClaudeFilingScenario drives the real FO against an EMPTY workflow and asks it
-// to file one seed entity. It grades the FO's recorded tool-call stream — the FO
-// filed via `spacedock … new <slug>`, not the `--next-id` + `Write` pair — because
-// the durable end-state file is indistinguishable between the two paths. The file
-// must also actually land (the run produced a real seed), so the stream grade is
-// proof of HOW, not just THAT, the entity was filed.
+// to file one seed entity. It grades the test-local launcher's actual argv ledger
+// — the FO executed `spacedock new <slug>`, not the `--next-id` flow — because the
+// durable end-state file is indistinguishable between the two paths. The file must
+// also actually land, so the ledger proves HOW while the file proves THAT.
 func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := writeFilingWorkflow(t, workflowRoot)
+	ledger := newTestInvocationLedger(t, spacedockBinary(t))
+	runner = runner.withInvocationLedger(t, ledger)
 
 	result := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot))
 	if _, err := os.Stat(entityPath); err != nil {
 		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertClaudeFilingViaNew(result.stream, filingSlug); err != nil {
+	invocations := ledger.read(t)
+	writeInvocationLedgerArtifact(t, result.artifactDir, invocations)
+	if err := assertFilingViaNew(invocations, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
@@ -527,6 +554,23 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	// shallow-boot-window observation, riding the same journeymetrics ledger pipe
 	// emitClaudeScenarioMetrics below already uses.
 	emitShallowBootWindowMetrics(t, result.stream, runner.model())
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
+func runClaudeMultiWorkflowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	projectRoot := t.TempDir()
+	fixture := writeMultiWorkflowBootFixture(t, projectRoot)
+	ledger := newTestInvocationLedger(t, spacedockBinary(t))
+	runner = runner.withInvocationLedger(t, ledger)
+
+	result := runner.run(t, scenario, projectRoot, multiWorkflowBootPrompt(projectRoot))
+	invocations := ledger.read(t)
+	writeInvocationLedgerArtifact(t, result.artifactDir, invocations)
+	obs := gatherMultiWorkflowBootObservation(t, fixture, invocations, result.finalMessage)
+	if err := assertMultiWorkflowBoot(obs); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 

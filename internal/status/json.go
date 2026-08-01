@@ -6,18 +6,25 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"strconv"
 	"strings"
 )
 
-// jsonValue is one of the three shapes a --json document is built from: a leaf
-// string, an ordered object, or an array of ordered objects. Every leaf is a
-// string — the all-strings contract — so an agent parses with one rule and the
-// bytes stay stable run-to-run.
+// jsonValue is one of the shapes a --json document is built from: a leaf value,
+// an ordered object, or an array of ordered objects. Existing status records keep
+// their string-valued fields unless a newer public schema explicitly opts into a
+// native JSON type, and insertion order keeps the bytes stable run-to-run.
 type jsonValue interface{ writeJSON(b *bytes.Buffer) }
 
-// jsonStr is a string leaf. score "0.38", team_state.present "true", and every
-// other value flow through here, never as a number or bool.
+// jsonStr is a string leaf. score "0.38", team_state.present "true", and most
+// existing status fields flow through here to preserve the historical string-valued
+// status contract. New self-describing envelopes may opt into native JSON booleans
+// or numbers where their public schema requires them.
 type jsonStr string
+
+type jsonBool bool
+
+type jsonInt int
 
 // jsonObj is an ordered key->value object. Insertion order IS emission order, so
 // the byte output is reproducible (no Go map iteration).
@@ -52,6 +59,16 @@ func (o *jsonObj) setValue(key string, val jsonValue) *jsonObj {
 }
 
 func (s jsonStr) writeJSON(b *bytes.Buffer) { writeJSONString(b, string(s)) }
+
+func (v jsonBool) writeJSON(b *bytes.Buffer) {
+	if v {
+		b.WriteString("true")
+		return
+	}
+	b.WriteString("false")
+}
+
+func (v jsonInt) writeJSON(b *bytes.Buffer) { b.WriteString(strconv.Itoa(int(v))) }
 
 func (o *jsonObj) writeJSON(b *bytes.Buffer) {
 	b.WriteByte('{')
