@@ -267,14 +267,18 @@ func TestTerminalRetryLeavesAuthorityPending(t *testing.T) {
 	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "pr=#7"); code != 0 {
 		t.Fatalf("open PR exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
 	code, out, errOut := terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root)
 	if code != 0 || !strings.Contains(out, "blocked") {
 		t.Fatalf("blocked exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
-	fields := entityFields(t, entity)
-	if strings.TrimSpace(fields["status"]) != "validation" || strings.TrimSpace(fields["verdict"]) != "" ||
-		strings.TrimSpace(fields["completed"]) != "" {
-		t.Fatalf("retry window moved terminal fields: %v", fields)
+	// Retryable trouble moves NOTHING: the complete entity bytes —
+	// mod-block, pr, and every other field included — survive untouched.
+	if after, _ := os.ReadFile(entity); !bytes.Equal(before, after) {
+		t.Fatalf("blocked guard moved bytes in the retry window:\nbefore:\n%s\nafter:\n%s", before, after)
 	}
 	if got := gateApplicationStates(t, entity); !slices.Equal(got, []string{"pending"}) {
 		t.Fatalf("retry window moved authority: %v", got)
@@ -393,6 +397,46 @@ func TestTerminalSetRefusedWhileApprovalPending(t *testing.T) {
 	}
 	if got := gateApplicationStates(t, entity); !slices.Equal(got, []string{"pending"}) {
 		t.Fatalf("--force must not spend authority: applications = %v", got)
+	}
+}
+
+// TestTerminalSetRefusedOnUnclassifiableAuthority is the fail-closed half of
+// the sole-consumer refusal, exercised HOOKLESS so no downstream merge-hook
+// guard can mask it: a non-forced terminal --set whose gate authority cannot
+// be classified (retained briefing room disturbed) is refused by default —
+// never allowed through with authority left pending — byte-clean.
+func TestTerminalSetRefusedOnUnclassifiableAuthority(t *testing.T) {
+	root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{feedbackTo: "implementation"})
+	approvedTerminalGate(t, root)
+	if code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); code != 0 {
+		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	// Disturb the retained briefing room: digest-stale authority.
+	var requestFile string
+	if err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() && info.Name() == "request.json" {
+			requestFile = p
+		}
+		return nil
+	}); err != nil || requestFile == "" {
+		t.Fatalf("locate retained request.json: %v %q", err, requestFile)
+	}
+	if err := os.WriteFile(requestFile, []byte("tampered"), 0o644); err != nil {
+		t.Fatalf("disturb briefing room: %v", err)
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "status=done")
+	if code == 0 || !strings.Contains(errOut, "cannot be classified") || !strings.Contains(errOut, "sole terminal consumer") {
+		t.Fatalf("terminal --set with digest-stale authority must refuse fail-closed: exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	if after, _ := os.ReadFile(entity); !bytes.Equal(before, after) {
+		t.Fatal("digest-stale terminal --set refusal changed the entity")
+	}
+	if got := gateApplicationStates(t, entity); !slices.Equal(got, []string{"pending"}) {
+		t.Fatalf("digest-stale terminal --set refusal moved authority: %v", got)
 	}
 }
 

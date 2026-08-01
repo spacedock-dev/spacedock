@@ -257,7 +257,19 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 			}
 		}
 		if terminalSet {
-			_, pending, _ := pendingTerminalApproval(entityPath, roots.definitionDir, strings.TrimSpace(currentFields["status"]))
+			// Fail-closed: only a genuinely gate-less entity (ErrNoGateRecord,
+			// flattened to pending=false, err=nil) takes the hand-set path.
+			// Unreadable/stale authority, a live pending approval, or any
+			// other gates-record shape refuses — a classification we cannot
+			// make must never default to permission.
+			_, pending, classErr := pendingTerminalApproval(entityPath, roots.definitionDir, strings.TrimSpace(currentFields["status"]))
+			if classErr != nil {
+				return errExit(stderr, fmt.Sprintf(
+					"entity %s: terminal status --set refused — its gate authority cannot be classified (%v); "+
+						"merge guard %s is the sole terminal consumer while that authority is unreadable, stale, or in force. "+
+						"(--force bypasses this guard.)",
+					slug, classErr, slug))
+			}
 			if pending {
 				return errExit(stderr, fmt.Sprintf(
 					"entity %s carries a pending terminal-target approval — merge guard %s is the sole terminal consumer: "+
