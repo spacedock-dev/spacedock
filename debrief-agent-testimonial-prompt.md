@@ -43,6 +43,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:de4f119414452c25426886c538b1338df13a04f6cd137b75c78d8a91f7297de6
                 room-ref: ./debrief-agent-testimonial-prompt/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:qdb1w5r7k9nvbvkf8qetcd5m:validation:1
+                briefing: briefing:qdb1w5r7k9nvbvkf8qetcd5m:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-01T15:19:51.458816Z"
+                decision: approve
+                reason: Approve; ratifies the AC-5 Pi-driver substitution (claude-live runs no debrief scenario — real-runtime leg = the Pi FO debrief through the new skill text, artifact e1bec01f7; merge evidence pairs claude-live lane result with this artifact). Driver-run qualitative shape per cycle-3 ruling.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 worktree: .worktrees/spacedock-ensign-debrief-agent-testimonial-prompt
 ---
 
