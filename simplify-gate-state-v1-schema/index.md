@@ -1,6 +1,6 @@
 ---
 title: Simplify the unreleased v1 gate-state schema
-status: backlog
+status: ideation
 source: "Durable-decisions sprint implementation-shape audit, 2026-07-24."
 score: "0.7"
 id: jccbpvjv5bg1jn0jbmj2yf8s
@@ -31,7 +31,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
