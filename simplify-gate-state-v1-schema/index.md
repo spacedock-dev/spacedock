@@ -20,6 +20,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:7b480163e7d4760504a04d5d91b979e8b942b0de4ab99b690f1619145e3c4db3
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:jccbpvjv5bg1jn0jbmj2yf8s:backlog:1
+                briefing: briefing:jccbpvjv5bg1jn0jbmj2yf8s:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-01T13:54:16.651475Z"
+                decision: approve
+                reason: Captain approved dispatching this durable-decisions ideation lane in parallel with wj, hq, and nth.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 The unreleased v1 gate-state implementation still carries prototype compatibility and a mutable current-gate pointer that duplicates derivable state and has already projected a stale approval.
