@@ -3,7 +3,7 @@
 **Sprint:** the entities matching `sprint: durable-decisions` — list with `spacedock status --workflow-dir docs/dev --where sprint=durable-decisions`. Membership and per-task state are the query, never enumerated here.
 **Target train:** stable **0.27.0** — bound at scope-lock 2026-07-21; movable by captain decision without re-carve (this line is the only place the train lives).
 **Theme:** the decision the captain makes becomes the state the system holds. 0260 shipped the gate-record notation as a hand-run convention and collected its failure evidence in one day of production use: a self-conflicting attempt pointer, stale applications, digests no committed tree reproduces, `--set` re-serialization breaking hand edits, results destroyed on the untested path. This sprint mechanizes the proven shape — a recorder that owns every gates write, a presentation command that cannot lose a result, eligibility only where live need exists, and the finding-decline reframed onto the same record model.
-**Scope-lock (captain, 2026-07-21; amended 2026-07-22):** the recorder group ONLY. Captain amendment adds `vn`, the folder-form state-commit persistence boundary, after live 3k dogfood proved that a recorded gate package otherwise requires manual Git commits. The panel, provenance, router, mining, and estate candidates remain held out.
+**Scope-lock (captain, 2026-07-21; amended 2026-07-22 and 2026-08-01):** the recorder group ONLY in the original build. Captain amendment added `vn`, the folder-form state-commit persistence boundary, after live 3k dogfood proved that a recorded gate package otherwise requires manual Git commits. The 2026-08-01 pre-stable necessity audit adds only the cuts required to make the unreleased v1 surface smaller and internally operable: terminal authority is spent only with delivery proof; preparation is limited to actionable gates; speculative application and gate-state fields are removed or justified; the workflow-specific round recorder is cut; provider-backed closure is proved on the exact candidate or cut; minor help and docs reconcile last. This amendment adds no compatibility or migration obligation. The panel, provenance, router, mining, and estate candidates remain held out.
 **Evidence:** `docs/dev/.spacedock-state/durable-gate-approval-pending-blockers/production-evidence-2026-07-20-fo-dry-run.md` (8 findings), the 0260 closure-pass findings (advisory-digest hole, pointer conflict, uncommitted seat), and `_debriefs/2026-07-20-01-0260-shaping.md` float findings 1-13.
 
 ## Goal (success criterion)
@@ -16,6 +16,59 @@ A captain's gate decision, once made, is recorded by machinery that cannot mis-f
 - Gate presentation is an overridable channel of the present-gate skill — default chat, override the hardened float script — with THIS repo's deliverable being the channel prose, the recorder-side validation verbs, and the subspace-free binary criterion (xb). The override script and its committed drive suite are a NAMED CROSS-REPO RELEASE CONDITION: the 0.27.0 pre-cut gates on a pinned subspace revision carrying that suite, owned by the subspace workflow — captain ruling 2026-07-21; this repo neither absorbs nor silently depends on it.
 - Blockers/eligibility ship only against a demonstrated live consumer; absent one, h1 closes as a recorded decline, not a build (h1 — its own body carries this condition). "Consumed exactly once" means the AUTHORIZATION: the application is spent atomically with the status transition, provably once; the dispatch EFFECT is the dispatch machinery's, documented at-least-once retryable (receipts stay declined per the boundary alignment) — captain ruling 2026-07-21 from the codex seat's exactly-once fork; the two crash windows get authorization-side fixtures that surface rather than double-fire.
 - The DoD line moved from 0260: a seeded correct-but-disproportionate finding produces a recorded decline — as the ensign's advisory resolution — and a zero-line diff in live replay (02av reframe). Honest mechanism statement (captain-approved restatement, 2026-07-21, closing the codex seat's fifth material finding): this proves the TRIAGE SEMANTICS on convention-recorded rounds — the record is hand-authored into the room per the contract's explicit interim; MACHINE recording of advisory rounds is the deferred rounds-generalization follow-up, not this train's claim.
+- Stable v1 exposes only machinery whose necessity has a demonstrated journey. Chat approval works without a presentation provider; a terminal approval remains pending until delivery proves the spend; invalid-stage preparation is byte-clean; open stale preparation has a truthful withdrawal; unused application and gate-state fields are removed or independently justified; workflow-specific advisory-round policy does not ship as a generic gate primitive; provider-backed closure remains only with an exact-candidate proof.
+
+## Pre-stable necessity cut (captain, 2026-08-01)
+
+The membership query remains authoritative. These names record responsibility boundaries, not a second roster:
+
+| Boundary | Owner | Required outcome |
+|---|---|---|
+| terminal approval and delivery | `resolution-consume-terminal-before-delivery` (`1w6`) | terminal consume routes without spending; delivery success spends and terminalizes atomically; delivery rework supersedes and routes |
+| stale open preparation | `withdraw-stale-open-gate-attempt` (`0m6`) | withdraw without a fabricated Resolution, then prepare a normal successor |
+| invalid-stage preparation | `reject-gate-prepare-outside-actionable-stage` (`hq3`) | refuse before entity or room mutation unless the current stage is an actionable gate |
+| application schema | `minimize-v1-gate-application-schema` (`nth`) | retain only state with a supported producer and consumer; no compatibility decoder |
+| gate-state schema | `simplify-gate-state-v1-schema` (`jcc`) | remove prototype digest compatibility and derive or minimally justify stored gate selection |
+| advisory rounds | `cut-workflow-specific-round-recorder-from-v1` (`wjk`) | remove the development-policy round surface from stable v1; redesign later as workflow-neutral |
+| provider closure | `prove-or-cut-provider-backed-gate-closure` (`a73`) | one pinned exact-candidate transaction or no public provider-backed closure in v1 |
+| help and docs | `polish-v1-gate-command-surface` (`f6c`) | reconcile discoverability and prose only after the semantic owners land |
+
+No cleanup ticket may absorb a semantic change from the rows above. No semantic owner may preserve a prototype shape merely because current pilot metadata contains it; a one-off state transformation is cheaper and more truthful than a compatibility layer before v1 release.
+
+## Streamlined common journeys
+
+### Chat approval into a nonterminal stage
+
+1. The First Officer runs `gate prepare`, then `state commit` so the canonical Briefing and request are durable.
+2. The First Officer presents the Briefing in chat and records the decision with `gate record --decision ... --actor ...`, then commits it. The actor is the renderer identity required by the recording-identity ruling: `agent:first-officer` for an FO-rendered delegated close, or `person:captain` for a Captain-rendered decision over content the Captain saw.
+3. On approval, `gate consume` atomically spends the pending application with the next-stage transition; the First Officer commits and dispatches that stage.
+
+The agent constructs no JSON and supplies no output paths. Chat is the default and requires no Subspace installation.
+
+### Chat approval into the terminal stage
+
+1. Preparation, presentation, recording, and state commits are identical to the nonterminal journey.
+2. `gate consume` leaves the terminal application pending and returns `approved-awaiting-merge`; it does not write terminal status.
+3. The merge guard proves delivery. Success atomically writes pending to consumed together with terminal status, verdict, and completion. Retryable trouble changes none of them. Rework atomically writes pending to superseded, clears delivery state, and routes to the declared feedback stage.
+4. A later validation uses a fresh gate attempt and fresh approval; superseded authority is never re-spent.
+
+### Review input changes before a decision
+
+1. The First Officer runs `gate withdraw --reason ...` against the open prepared attempt and commits the withdrawal.
+2. `gate prepare` creates the ordinary successor attempt and room.
+3. No `hold` Resolution is fabricated for content that was never decided.
+
+### Invalid preparation request
+
+At an ungated or terminal current stage, `gate prepare` exits nonzero before allocating an attempt or writing a room. The operator advances or completes the real workflow stage; there is nothing to withdraw or repair.
+
+### Hold and revise
+
+A hold records the Resolution and stops. A revise records the Resolution and routes through the workflow's declared feedback behavior. Neither case carries application metadata unless a demonstrated consumer actually applies it.
+
+### Provider override, if retained
+
+The First Officer prepares and commits the same room, then passes only the room locator to `/subspace:r gate <room>`. The provider owns presentation and its retained evidence package; Spacedock validates and records it with `gate record --room <room>`. Consumption is then identical to chat. The First Officer never parses `request.json`, reconstructs authority, or supplies provider output paths. If the pinned candidate cannot prove this transaction, stable v1 keeps chat and cuts the provider-only surface.
 
 ## Constraints
 
@@ -28,11 +81,12 @@ A captain's gate decision, once made, is recorded by machinery that cannot mis-f
 
 ## Sequencing
 
-1. **3k's gate is the opening event** — rebind the open attempt's briefing to the post-cut content, float, close. Everything designs against its approved contract.
-2. **3k implementation leads the build**; xb and h1 ideations may run in parallel once 3k's gate closes (they design against the contract, not the binary).
-3. **vn enters at ideation by captain amendment** and may implement in parallel once approved; it must land before xb's final end-to-end journey and sprint close-out, because room artifacts cannot remain a manual-Git side channel.
-4. **02av's reframe ideation dispatches only after 3k's gate closes** — its brief, boundary question, and design inputs are recorded in the entity (`## Reframe brief`). It must answer the plumbing-boundary question rather than absorb it.
-5. **xb is cross-repo sequenced** with the subspace-tui briefing-package surface; the working-copy-skill ritual is its interim and its evidence base.
+1. Land the already-proven core corrections first: `0m6` for truthful withdrawal, `1w6` for terminal authority/delivery, `zbc` for post-rework binding freshness, and `kd` for the dispatch-pinned launcher used by ensign-owned workflow calls.
+2. Ideate the independent v1 cuts in parallel: `hq3` invalid-stage preparation, `nth` application schema, `jcc` gate-state schema, and `wjk` removal of workflow-specific round recording. Their implementations may overlap in `internal/gates`; merge order must be declared at their ideation gates rather than discovered through conflict.
+3. Re-run the chat-default journey after those cuts. It is the minimum stable value and does not wait for a provider.
+4. Run `a73` only on that settled candidate. Retain provider-backed closure on one pinned end-to-end pass; otherwise cut it without delaying or weakening chat.
+5. Run `f6c` last. It reconciles help and documentation with landed behavior and may not invent semantics.
+6. The pre-cut audit then checks the exact candidate with `go test ./...`, `go test ./... -race`, clean formatting, state validation, and the smallest real chat journey. Provider evidence is required only if `a73` retained that surface.
 
 ## Out of scope
 
@@ -41,6 +95,8 @@ A captain's gate decision, once made, is recorded by machinery that cannot mis-f
 - The stakes member — parked, does not revive here.
 - The staff-review non-dispatching clarification (subspace shame log ask) — surfaced at lock, not ratified; stays with its own repo's report.
 - Direct edits to sibling repos; subspace-tui product work (xb consumes its surface, does not build it).
+- Reintroducing a generic advisory-round recorder in this cut. `workflow-neutral-advisory-round-recorder` retains that later design problem after `wjk` removes the development-policy implementation.
+- Multiple-Artifact gate preparation and Subspace convenience work beyond the minimal room-only provider proof. Those remain independently filed and cannot block the chat-default stable value.
 
 ## Lifecycle checklist
 
@@ -55,7 +111,8 @@ A captain's gate decision, once made, is recorded by machinery that cannot mis-f
 **Drive — Commander (separate cold-booted session)**
 - [ ] Implementation → validation → done per member; detached adversarial audit on shipped-contract surfaces
 - [ ] **Contract landing pass** (captain placement ruling, 2026-07-21): strip the spec's shaping scaffolding — owner-tag lines, diagram task-id prefixes (converted to component words with a render re-check via a float), example ids genericized — so the landed spec speaks only component terms. Owner: the Commander, as the recorder member's final step before its merge.
-- [ ] **⚠️ Pre-cut audit** before the tag
+- [x] **⚠️ Pre-cut necessity audit** — 2026-08-01 found the responsibility boundaries above; stable readiness remains false until their sprint owners close or their surfaces are cut
+- [ ] **⚠️ Exact-candidate verification** before the tag — chat journey required; provider journey conditional on `a73` retention
 - [ ] **Cut 0.27.0** — `go test ./...` + `-race` green, `gofmt` clean, then `docs/releasing.md` *(captain authorizes)*
 
 **Close — Shaping FO**
