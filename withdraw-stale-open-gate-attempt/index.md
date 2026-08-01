@@ -1,6 +1,6 @@
 ---
 title: Withdraw a stale open gate attempt without fabricating a decision
-status: done
+status: validation
 source: "Observed by the Subspace Shaping FO on 2026-07-26 after a legitimate sprint re-scope left a frozen request-backed attempt open with no truthful exit."
 started: 2026-07-26T10:50:55Z
 completed:
@@ -82,7 +82,7 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: consumed
+                state: pending
                 blockers: []
 mod-block: merge:pr-merge
 pr: "#580"
