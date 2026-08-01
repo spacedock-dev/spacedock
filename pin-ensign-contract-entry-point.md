@@ -1,6 +1,6 @@
 ---
 title: "Dispatched workers load the ensign contract through a resolving entry point, never the first-officer core"
-status: backlog
+status: ideation
 priority: 2
 sprint-readiness: ready
 source: "Captain, 2026-08-01, after diagnosing the pi ensign misload: every pi-spawned ensign this session (8 workers, both Kimi and gpt-5.6-luna) booted on the first-officer shared core — sometimes from stale .claude/.gemini plugin caches — because ~/.pi/agent/agents/ensign.md declares skills: ['spacedock:ensign'] and the preload silently fails, leaving the model to file-search for its contract. Root-cause question is OPEN: pi-subagents may not route agent-def preloads through pi's package resolver at all (the session was not started by assigning an agent, which motivates verifying rather than inferring)."
@@ -31,8 +31,9 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
+started: 2026-08-01T12:27:09Z
 ---
 
 ## Problem
