@@ -2,7 +2,9 @@ package ensigncycle
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -202,6 +204,94 @@ func TestSeedCodexLiveHomeCopiesOnlyAuthAndMinimalConfig(t *testing.T) {
 			t.Fatalf("isolated home must not copy %s, stat err=%v", name, err)
 		}
 	}
+}
+
+func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
+	shim := codexLiveWorkflowExecShim(t)
+	root := t.TempDir()
+	realCodex := filepath.Join(root, "real-codex")
+	logPath := filepath.Join(root, "codex-argv.log")
+	if err := os.WriteFile(realCodex, []byte("#!/usr/bin/env bash\nset -euo pipefail\nprintf '%s\\n' \"$*\" >> \"$SPACEDOCK_CODEX_LOG\"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	shimPath := filepath.Join(root, "codex")
+	if err := os.WriteFile(shimPath, []byte(shim), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	run := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command(shimPath, args...)
+		cmd.Env = append(os.Environ(),
+			"SPACEDOCK_CODEX_REAL_BIN="+realCodex,
+			"SPACEDOCK_CODEX_LOG="+logPath,
+		)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("Codex shim %v failed: %v\n%s", args, err, out)
+		}
+	}
+	run("login", "--with-api-key")
+	run("login", "status")
+	run("plugin", "list")
+	run("--ask-for-approval", "on-request", "exec", "--json", "prompt")
+
+	gotBytes, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := strings.Split(strings.TrimSpace(string(gotBytes)), "\n")
+	want := []string{
+		"login --with-api-key",
+		"login status",
+		"plugin list",
+		"--ask-for-approval on-request exec --model gpt-5.6-luna --json prompt",
+	}
+	if strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("Codex shim argv = %q, want %q", got, want)
+	}
+}
+
+func codexLiveWorkflowExecShim(t *testing.T) string {
+	t.Helper()
+	_, source, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("resolve Codex live env test source")
+	}
+	workflowPath := filepath.Join(filepath.Dir(source), "..", "..", ".github", "workflows", "runtime-live-e2e.yml")
+	workflow, err := os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatalf("read Codex live workflow: %v", err)
+	}
+	const start = `cat > "$shim_dir/codex" <<'SH'`
+	startAt := strings.Index(string(workflow), start)
+	if startAt < 0 {
+		t.Fatalf("Codex live workflow has no exec shim heredoc")
+	}
+	bodyStart := startAt + len(start)
+	if bodyStart < len(workflow) && workflow[bodyStart] == '\r' {
+		bodyStart++
+	}
+	if bodyStart >= len(workflow) || workflow[bodyStart] != '\n' {
+		t.Fatalf("Codex live workflow shim heredoc is not newline-delimited")
+	}
+	bodyStart++
+	endAt := strings.Index(string(workflow[bodyStart:]), "\n          SH\n")
+	if endAt < 0 {
+		t.Fatalf("Codex live workflow exec shim heredoc has no terminator")
+	}
+	body := string(workflow[bodyStart : bodyStart+endAt])
+	const yamlIndent = "          "
+	lines := strings.Split(body, "\n")
+	for i, line := range lines {
+		if line == "" {
+			continue
+		}
+		if !strings.HasPrefix(line, yamlIndent) {
+			t.Fatalf("Codex live workflow shim line %d lacks YAML indentation: %q", i+1, line)
+		}
+		lines[i] = strings.TrimPrefix(line, yamlIndent)
+	}
+	return strings.Join(lines, "\n") + "\n"
 }
 
 func TestCodexLiveEnvOmitsEmptyAPIKey(t *testing.T) {

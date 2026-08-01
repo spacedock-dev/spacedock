@@ -422,10 +422,14 @@ jobs:
           set -euo pipefail
 
           real_codex="${SPACEDOCK_CODEX_REAL_BIN:?SPACEDOCK_CODEX_REAL_BIN is not set}"
-          if [ "${1:-}" = "exec" ]; then
-            shift
-            exec "$real_codex" exec --model gpt-5.6-luna "$@"
-          fi
+          args=("$@")
+          for i in "${!args[@]}"; do
+            if [ "${args[$i]}" = "exec" ]; then
+              before=("${args[@]:0:i+1}")
+              after=("${args[@]:i+1}")
+              exec "$real_codex" "${before[@]}" --model gpt-5.6-luna "${after[@]}"
+            fi
+          done
           exec "$real_codex" "$@"
           SH
           chmod +x "$shim_dir/codex"
