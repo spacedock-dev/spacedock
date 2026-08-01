@@ -100,6 +100,7 @@ gates:
                 blockers: []
 started: 2026-08-01T12:27:09Z
 worktree: .worktrees/spacedock-ensign-pin-ensign-contract-entry-point
+mod-block: merge:pr-merge
 ---
 
 ## Problem
