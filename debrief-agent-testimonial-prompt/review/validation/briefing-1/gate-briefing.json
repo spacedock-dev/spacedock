@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qdb1w5r7k9nvbvkf8qetcd5m:validation:attempt-1:revision-1",
+  "question": "Validate qd: all five ACs satisfied driver-side on the session debrief artifact — approve to the terminal delivery ceremony with the Pi-driver AC-5 substitution ratified?",
+  "artifacts": [
+    {
+      "id": "artifact:qdb1w5r7k9nvbvkf8qetcd5m:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4f61a02a4799c21f36e629c61f719ea4e997867a/debrief-agent-testimonial-prompt/review/validation/validation-review-1.md",
+      "rev": "sha256:a6126942381fe124fb8d8578bc7ebbcf5647d18e3b01a4248b506a0b529c1e5f",
+      "mediaType": "text/markdown",
+      "summary": "Driver-run qualitative test PASSED: testimonial + provenance + split-root all satisfied with quotes; implementation single-file clean; AC-5 real-runtime leg ran on the Pi FO's own debrief (claude-live runs no debrief scenario) — approve=ratify host substitution"
+    }
+  ]
+}
