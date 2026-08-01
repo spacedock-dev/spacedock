@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-4:revision-1",
+  "question": "Approve PASS for validation cycle 3 post-corrections (candidate 8750d608b, gates-owned locked writer, all 5 acceptance conditions independently verified, fresh validator PASSED) — consuming toward terminal done and the pr-merge ceremony?",
+  "artifacts": [
+    {
+      "id": "artifact:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/1000748a5085202709138464030d0a73546e8ac8/resolution-consume-terminal-before-delivery.md",
+      "rev": "sha256:160b18d40603a56ea619a9c80b71a5ce2c5e99d086297512daea2ae21e6812aa",
+      "mediaType": "text/markdown",
+      "summary": "Candidate 8750d608b closes the resolution-consume hole with the captain minimal design: terminal consume routes pending approvals unspent (approved-awaiting-merge); merge guard finalizes via gates-owned FinalizeTerminalApproval (ONE locked candidate: pending to consumed + status + verdict + completed) or reworks via SupersedeTerminalApproval (pending to superseded + validated declared feedback-to); terminal --set refused while authority pends (fail-closed, Roborev catch fixed); pr sentinel retained through archive; mod-block cleared in its own step. ALL FIVE acceptance conditions independently verified by a fresh validator in its own isolated CI-matching env (fresh HOME, markers stripped): (1) rework output names the gated stage — the round-trip test asserts re-enter validation, and a revert-check proves the pre-fix --set fail-open; (2) armed digest-stale authority refuses with complete entity bytes unchanged (mod-block + pr sentinel armed pre-tamper); (3) AC-2 evidence map cites 10 existing, running tests; (4) Roborev 578: 5 findings classified trigger/harm/ownership before edit — 2 journey-owned fixed, 3 non-edits independently endorsed; (5) full go test ./... exit 0 — the earlier piruntime red is not reproducible under the identical isolated command on either main or tip (env trigger healed; branch touches no piruntime file); focused, gates, status, race all exit 0. Deferred per scope: lock-removal regression test (disproportionate-now per captain ruling), concurrency race class. Surface reconciled: 23 files; production core +500/−37 (plus correction delta) vs declared +205."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-4:revision-1:item-2",
+      "uri": "git-root://state/1000748a5085202709138464030d0a73546e8ac8/resolution-consume-terminal-before-delivery/review/validation/validator-output-9e98d897.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f346100cc722006128a0d4bc5060a73f8f4c187211e615c3a766f3e6e2b54a79"
+    }
+  ]
+}

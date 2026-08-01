@@ -178,6 +178,13 @@ gates:
               application:
                 action: none
                 state: not-applicable
+            - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-validation-4
+              briefing:
+                id: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-4:revision-1
+                digest: sha256:a81edeed7a0739d87c9499093fcb8ecbc79d9a3bf842ea271166cc5a84a128a7
+                digest-domain: canonical-bytes
+                request-digest: sha256:d37b4afdc50f8edf9ddacf4fbd66a60b8a116aa3e0359178b88414490a4e508a
+                room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-4
 sprint: durable-decisions
 ---
 
