@@ -360,7 +360,7 @@ All pinned tests reproduce green on 694d21db7 and each AC-2/3/4 leg replays red 
 - DONE: Run the tagged live leg on the candidate worktree on this host; quote pi-ensign-boot-grade.json fields as the gate-grade artifact
   `SPACEDOCK_BIN=/tmp/spacedock-candidate SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-pi-live-artifacts go test -tags live -run TestLivePiSubagentEnsignSmoke ./internal/ensigncycle` — PASS 135.4s on d9f38ca1e. Artifact: {"verdict":"pass","worker_transcripts_graded":1,"read_calls":5,"ensign_skill_read_rank":1,"first_officer_reads":0,"spawn_agent":"worker","spawn_skills":["ensign"]} — meets the AC-1 bar (rank <= 5, zero first-officer reads, agent=worker, skills=[ensign]).
 - DONE: Full go test ./... and -race (markers scrubbed) green, gofmt clean; AC-2/3/4 pins re-verified untouched
-  `go test ./...` EXIT=0 and `go test ./... -race` EXIT=0 (env scrubbed of PI_CODING_AGENT/PI_CODING_AGENT_DIR/CLAUDECODE/CODEX_THREAD_ID/SPACEDOCK_AMBIENT); `gofmt -l ./cmd ./internal` empty. AC-2 pins TestBuildPiHostEmitsSpawnAgentAndSkill/TestBuildPiHostAgentOverrideOmitsSkill/TestBuildClaudeHostGoldenByteIdentical PASS; AC-3/AC-4 internal/piruntime and internal/contractlint suites PASS — the cycle diff touches only the live-tagged harness file.
+  `go test ./...` EXIT=0 and `go test ./... -race` EXIT=0 (env scrubbed of PI_CODING_AGENT/PI_CODING_AGENT_DIR/CLAUDECODE/CODEX_THREAD_ID/SPACEDOCK_BIN); `gofmt -l ./cmd ./internal` empty. AC-2 pins TestBuildPiHostEmitsSpawnAgentAndSkill/TestBuildPiHostAgentOverrideOmitsSkill/TestBuildClaudeHostGoldenByteIdentical PASS; AC-3/AC-4 internal/piruntime and internal/contractlint suites PASS — the cycle diff touches only the live-tagged harness file.
 
 ### SKIPPED
 
