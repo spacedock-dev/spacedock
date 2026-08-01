@@ -399,6 +399,7 @@ Fresh-validator verification of 51af9bd16 against the entity's own ACs and test 
 - DONE: Delivery-state ordering per assignment: pr sentinel retained through archive, mod-block cleared in its own small committed step before the atomic op; smallest falsifiable test set kept with the real-CLI journey and existing merge-guard suite; go test (minus the 2 proven env failures), -race on touched packages, gofmt all green with observed exits.
   Journey re-driven live (compiled binary, /tmp/tdbg): rework clears mod-block+pr (`status: implementation`, app superseded), re-enter→regate→consume→`pr=pr-merge:7`→finalize→archived with `status: done`, `verdict: passed`, `completed`, app consumed, and `pr: pr-merge:7` RETAINED in `_archive/task.md`; rejected-verdict leg and gate-less legacy leg both finalize; stale-request.json leg refuses exit 1 byte-clean, no archive. CLI suite (TestTerminal*): PASS. `go test ./... -count=1`: only the 2 baseline environment failures (Codex config sandbox, --version runtime markers; re-proven on base in cycle 2). `go test -race -count=1` on gates/status/cli/ensigncycle: same 2 env failures, race-clean elsewhere. `gofmt -l ./cmd ./internal`: empty.
 - DONE: Honest no-exclusions surface re-measure + new-seam residual analysis (below).
+  Base→HEAD (`3522ee457..b4daa0791`): +1417/−78 over 22 files; semantic core +499/−45 vs declared +205, attribution in the 'Rework notes' section below; `grep` for delivering/reversed/reversal/--to/--by/journal/scanMods additions returns zero.
 
 ### Summary
 
