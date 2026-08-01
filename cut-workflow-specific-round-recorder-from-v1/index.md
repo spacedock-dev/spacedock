@@ -26,6 +26,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:13584896ffe679ba3def35d84099ea4402ac80d53f7836c89be8fa535efc32af
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:wjkhq0sktbbe3txx6jhnvcv2:backlog:1
+                briefing: briefing:wjkhq0sktbbe3txx6jhnvcv2:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-01T13:50:02.905125Z"
+                decision: approve
+                reason: Captain approved dispatching this durable-decisions ideation lane in parallel with hq, nth, and jc.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Remove the public `gate record --round` and `gate validate --round` surface from the stable v1 cut. The present implementation is coherent only for this repository's development review policy, so retaining it would make workflow-specific semantics part of the generic gate storage contract.
