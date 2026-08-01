@@ -25,6 +25,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:91d6338b0e681ec994ea130511078c95074dd505919b22665c7666e7fa16c408
                 room-ref: ./codex-launch-multi-agent-v2/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:z5gwwz2748sg6vxr0g3kdsar:ideation:1
+                briefing: briefing:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-01T16:10:09.609186Z"
+                decision: revise
+                reason: 'Captain-directed Science Officer send-back completed: preserve the exact multi_agent_v2 isolated-home fragment and bind AC-1 through AC-4 to falsifiable evidence; the prior Briefing is stale after the revised report.'
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 ---
 
 Spacedock's Codex front door should reproduce the captain's isolated-home multi-agent v2 configuration while also pinning Codex's documented stable multi-agent controls. The resulting first officer must observably spawn a worker, follow up with the same worker, inspect/list and wait for workers, and receive completion. The guarantee belongs to launch configuration plus behavioral proof, not bootstrap prose or ambient user config.
