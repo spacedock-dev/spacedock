@@ -5,6 +5,21 @@ source: "Durable-decisions sprint implementation-shape audit, 2026-07-24."
 score: "0.7"
 id: jccbpvjv5bg1jn0jbmj2yf8s
 sprint: durable-decisions
+gates:
+    version: 1
+    current:
+        gate: gate:jccbpvjv5bg1jn0jbmj2yf8s:backlog
+    records:
+        - id: gate:jccbpvjv5bg1jn0jbmj2yf8s:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:jccbpvjv5bg1jn0jbmj2yf8s-backlog-1
+              briefing:
+                id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:backlog:attempt-1:revision-1
+                digest: sha256:4d61c845361a3aaba15ec68a09a5090b03c963c532d61227de695e4473ae32c3
+                digest-domain: canonical-bytes
+                request-digest: sha256:7b480163e7d4760504a04d5d91b979e8b942b0de4ab99b690f1619145e3c4db3
+                room-ref: ./review/backlog/briefing-1
 ---
 
 The unreleased v1 gate-state implementation still carries prototype compatibility and a mutable current-gate pointer that duplicates derivable state and has already projected a stale approval.
