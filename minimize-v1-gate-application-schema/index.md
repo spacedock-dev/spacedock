@@ -49,6 +49,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:c4ea8d1d3f35a04792d3ef1191cf42e17433969db2276446db4cb9b4c4c8afdf
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nthcevf1snz7hm75gny3kd2e:ideation:1
+                briefing: briefing:nthcevf1snz7hm75gny3kd2e:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-01T16:08:30.024517Z"
+                decision: revise
+                reason: 'Captain directed send-back for Science Officer REVISE: AC-2 and AC-3 are planned only, with no concrete evidence; coordinate the design with jc and the internal-gates schema before re-gating.'
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
