@@ -2,7 +2,7 @@
 title: Cut workflow-specific advisory round recording from v1
 status: ideation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: generic gate code embeds the development workflow's Material/fixed/declined taxonomy, LOC estimate grammar, ensign role, and Feedback Cycles projection."
-started:
+started: 2026-08-01T14:00:47Z
 completed:
 verdict:
 score: "0.95"
