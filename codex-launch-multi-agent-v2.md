@@ -252,3 +252,28 @@ Validation recommends REJECTED at `c36e3f7d1`. Baseline, race, formatting, focus
 ### Recommendation
 
 REJECTED. Route correction through the validation feedback gate. The narrow repair is to reject every Codex-accepted spelling of the reserved semantic paths, then drive the built `spacedock codex` front door from an isolated home and parse typed parent/child records to assert one spawn, ordered waits and same-ID follow-up/list, distinct child outputs, parent completion, and v2 context. Add the disabled-control run with an explicit zero-collaboration event assertion and retain a fake-host negative that must fail the lifecycle grader.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED (Sol/medium validation + Science Officer, 2026-08-01) —
+  route through `feedback-to: implementation` before another validation pass.
+  - M1 (evidence defect; Material): user harm — the launcher cannot establish
+    its promised native collaboration lifecycle; observable harm — a zero-call
+    fake Codex passes the live test; affected value — `value-ac[AC-1]` the
+    supported isolated-home lifecycle must be observed through the launcher;
+    trigger evidence — direct `codex exec`, unordered concatenated JSONL and
+    prompt-supplied markers in the validator's detached falsifier.
+  - M2 (product defect; Material): user harm — forwarded configuration can
+    weaken the launcher guarantee; observable harm — Codex accepts attached
+    short and quoted dotted `agents.enabled=false` forms after the owned true
+    layer; affected value — `value-ac[AC-2]` forwarded configuration cannot
+    silently downgrade the owned settings; trigger evidence — Codex 0.146.0
+    probes and detached argv capture reach launch with exit 0.
+  - M3 (evidence defect; Material): user harm — the disabled-control boundary
+    is unverified; observable harm — the E-3 zero-collaboration negative is
+    absent; affected value — `value-ac[AC-4]` runtime proof must use the
+    behavioral oracle rather than a label or personal config; trigger evidence
+    — validation report's E-1..E-5 reproduction records no disabled run.
+  - FO authorization: `fix` the three findings within the approved semantic
+    surface, then fresh-dispatch validation; preserve the exact findings and
+    evidence unchanged in the feedback package.
