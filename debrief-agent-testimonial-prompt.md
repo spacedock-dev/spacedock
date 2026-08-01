@@ -111,6 +111,7 @@ Path-to-lane rule: the implementation touches `skills/debrief/SKILL.md` under `s
 4. **Regression gate (standard cost):** Run `go test ./...` to catch unrelated integration or contract regressions. If code paths under `internal/` are changed, also run the repo's normal `go test ./... -race` gate.
 5. **Required live lane (high cost, merge-gating):** Run the Runtime Live E2E lane that loads the changed skill surface. First-pass lane: `claude-live`. Evidence must include the lane result and the produced debrief artifact or transcript showing the prompt and generated testimonial section.
 
+- Cycle 3 (2026-08-01, captain ruling at the ideation gate): verification shape amended — **no prose greps anywhere** (AC-2's anti-grep stance stands and is reinforced). The testimonial section's adequacy is a **qualitative manual test driven by the operator/captain or the FO** through a real debrief flow: the produced `_debriefs/` artifact is inspected driver-side and the qualitative verdict is recorded with quoted artifact lines, not graded by harness regexes. Automated legs keep only machine-checkable claims — the prompt is asked under a real runtime (live lane per path→lane, first pass `claude-live`), the split-root `_debriefs/` landing path (AC-4), and identity/`unknown` preservation as inspected facts (AC-3). Test-plan items 1–3 are re-scoped from fixture/transcript grading to driver-run inspection at implementation.
 ## Stage Report
 
 ### Summary
