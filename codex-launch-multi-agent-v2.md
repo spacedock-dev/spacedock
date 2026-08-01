@@ -7,7 +7,7 @@ started: 2026-08-01T14:29:25Z
 completed:
 verdict:
 score: 1.0
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-launch-multi-agent-v2
 issue:
 sprint: durable-decisions
 gates:
