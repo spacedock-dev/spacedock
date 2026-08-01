@@ -1,0 +1,13 @@
+Pushed via SSH (`ca7fe4e6d..3411238b2`, fast-forward, no rebase needed). Validation complete.
+
+## Result
+
+Fresh cycle-3 acceptance validation of branch tip `8750d608b` under a self-hosted isolated CI-matching env (fresh `HOME=/tmp/1w62-val3-home`, `env -i`, ambient `SPACEDOCK_BIN`/`PI_CODING_AGENT`/`CLAUDECODE`/`CODEX_THREAD_ID` stripped):
+
+1. **Four corrections verified from code+tests with observed exits** — focused `TestTerminal|TestMergeGuard` exit 0; gates+status exit 0; `-race` on gates/status/cli/ensigncycle exit 0; gofmt clean. Round-trip asserts `re-enter validation as a successor attempt`; rework output uses fail-closed `currentStatus` (merge.go:537); digest-stale fixture arms mod-block+`pr-merge:7` BEFORE tamper with complete-bytes refusal and no-archive assertion.
+2. **Roborev 578 table independently judged** — revert-check (swap c0b60fafc `handlers.go` over tip) turns `TestTerminalSetRefusedOnUnclassifiableAuthority` red proving pre-fix fail-open (`exit=0, status: validation -> done`); AC-3 byte-clean snapshot read in the `8750d608b` diff; all three non-edit dispositions **endorsed** against their cited authorities (state-sync ownership via `emitSet`/`publishMergeArchive`; io.go compare surface is Bytes-OR-Gates+Status only; durable ruling :13 at `docs/roadmap/durable-decisions/index.md:13`).
+3. **Full `go test ./...` exit 0 — no red anywhere.** The correction round's piruntime red is NOT reproducible: `TestSpacedockPiExtensionBootstrapBehavior` passes under the identical isolated command on BOTH main @ 50c288a0a (temp detached worktree, removed) and the tip; its recorded trigger (stale Homebrew node 25.9.0_2/libllhttp) is gone (node v24.13.1); branch diff touches no piruntime file.
+4. **AC-2 evidence map verified** — all 10 cited tests exist and ran; composition matches code. Accounting reconciles figure-for-figure with `git diff --numstat` at both endpoints (23 files; core +500/−37 prefix; delta merge.go +5/−2, handlers.go +13/−1, terminal_consume_test.go +67/−10); cumulative tip gross differs (+1489/−86) purely by net-attribution, not a prose defect.
+5. **Report appended** — `## Stage Report: validation (cycle 3)` with Summary last in the state checkout, committed path-scoped (`3411238b2`), pushed via SSH.
+
+Residual risks: (i) the piruntime env red's healing means prior cycles' "baseline-correlated" claim can't be re-confirmed against the original trigger — current evidence is green-on-both; (ii) the two recorded residuals (pr-sentinel compare surface, concurrency race class) remain deferred per round scope. Recommendation: **PASSED**.
