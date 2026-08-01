@@ -243,6 +243,42 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 			postUpdateStatus = u.value
 		}
 	}
+	if !force && len(terminalNames) > 0 {
+		// Sole-terminal-consumer refusal: while the entity carries a binding
+		// pending terminal-target application, merge guard's locked gates write
+		// is the ONLY writer allowed to land terminal status — a hand --set to
+		// terminal would recreate the done-but-undelivered shape (authority
+		// unspent, delivery unproven). --force honors the uniform escape hatch.
+		// Refusal-only: no state or record is added.
+		terminalSet := false
+		for _, u := range set.updates {
+			if u.field == "status" && u.hasValue && terminalNames[u.value] {
+				terminalSet = true
+			}
+		}
+		if terminalSet {
+			// Fail-closed: only a genuinely gate-less entity (ErrNoGateRecord,
+			// flattened to pending=false, err=nil) takes the hand-set path.
+			// Unreadable/stale authority, a live pending approval, or any
+			// other gates-record shape refuses — a classification we cannot
+			// make must never default to permission.
+			_, pending, classErr := pendingTerminalApproval(entityPath, roots.definitionDir, strings.TrimSpace(currentFields["status"]))
+			if classErr != nil {
+				return errExit(stderr, fmt.Sprintf(
+					"entity %s: terminal status --set refused — its gate authority cannot be classified (%v); "+
+						"merge guard %s is the sole terminal consumer while that authority is unreadable, stale, or in force. "+
+						"(--force bypasses this guard.)",
+					slug, classErr, slug))
+			}
+			if pending {
+				return errExit(stderr, fmt.Sprintf(
+					"entity %s carries a pending terminal-target approval — merge guard %s is the sole terminal consumer: "+
+						"run `spacedock merge guard %s --verdict passed|rejected` (or `merge guard %s --rework` to send back). "+
+						"(--force bypasses this guard.)",
+					slug, slug, slug, slug))
+			}
+		}
+	}
 	if !force && finalizing && len(stages) > 0 && !terminalNames[postUpdateStatus] {
 		return errExit(stderr, fmt.Sprintf(
 			"entity %s cannot be finalized ('completed') while status '%s' is not the terminal stage. "+

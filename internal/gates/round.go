@@ -181,7 +181,7 @@ func rebuildRoundEntity(original []byte, pointer RoundPointer, projection string
 	if err != nil {
 		return nil, err
 	}
-	out, err := replaceTopLevels(original, true, topLevelReplacement{key: "review-round", data: block})
+	out, err := replaceTopLevels(original, topLevelReplacement{key: "review-round", data: block, insert: true})
 	if err != nil {
 		return nil, err
 	}

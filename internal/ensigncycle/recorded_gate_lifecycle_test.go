@@ -281,8 +281,12 @@ func TestRecordedGateLifecycleTerminalConsumeHasNoDispatchableSuccessor(t *testi
 	commitRecordedGateState(t, binary, fixture, "bind terminal gate package")
 	closeRecordedGate(t, binary, fixture, "approve")
 	commitRecordedGateState(t, binary, fixture, "record terminal gate decision")
-	assertCommandOutput(t, mustRecordedGate(t, binary, fixture.root, "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root).stdout, "consumed=true", "target-stage=done")
-	commitRecordedGateState(t, binary, fixture, "consume terminal gate authorization")
+	// Terminal-target consume routes without spending: the approval stays
+	// pending for merge guard's delivery envelope, and the routed entity (still
+	// at its gated stage) has no dispatchable successor — dispatch never
+	// selects a gated stage as stage work.
+	assertCommandOutput(t, mustRecordedGate(t, binary, fixture.root, "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root).stdout, "consumed=false", "target-stage=done", "route=approved-awaiting-merge")
+	commitRecordedGateState(t, binary, fixture, "route terminal gate approval to the merge ceremony")
 	assertCommandOutput(t, mustRecordedGate(t, binary, fixture.root, "status", "--workflow-dir", fixture.root, "--next", "--json").stdout, `"dispatchable":[]`)
 }
 

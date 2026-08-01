@@ -134,6 +134,13 @@ type Eligibility struct {
 	Eligible         bool
 }
 
+// RouteApprovedAwaitingMerge is the readiness vocabulary for an approval
+// whose target stage is terminal: consume spends nothing and writes no
+// status; the terminal merge ceremony (merge guard) is the sole terminal
+// consumer and spends the still-pending approval with delivery proof.
+// CurrentStageReadiness projects it; CLI consume reporting reuses it.
+const RouteApprovedAwaitingMerge = "approved-awaiting-merge"
+
 type ConsumeResult struct {
 	Eligibility
 	Consumed bool
@@ -216,7 +223,7 @@ func CurrentStageReadiness(doc *Document, status string, stages []ReadinessStage
 		return "invalid"
 	}
 	if target.Terminal {
-		return "approved-awaiting-merge"
+		return RouteApprovedAwaitingMerge
 	}
 	return "approved-awaiting-advance"
 }

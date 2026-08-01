@@ -637,7 +637,7 @@ func TestRoundCompleteOperationCASAndRollbackAreByteClean(t *testing.T) {
 			t.Fatal(err)
 		}
 		body := mustReadBytes(t, entity)
-		withoutPointer, err := replaceTopLevels(body, false, topLevelReplacement{key: "review-round"})
+		withoutPointer, err := replaceTopLevels(body, topLevelReplacement{key: "review-round"})
 		if err != nil {
 			t.Fatal(err)
 		}
