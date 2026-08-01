@@ -105,6 +105,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:26a53a4f9cdc8a4929c26bc574862f7b682e47c7bd0031ed199041ee03910175
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:z5gwwz2748sg6vxr0g3kdsar:validation:3
+                briefing: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-01T23:42:58.090537Z"
+                decision: approve
+                reason: Captain approved z5 after the cycle-3 gate review and Science Officer HOLD advisory; this approval accepts the current validation evidence and the bound implementation candidate.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 Spacedock's Codex front door should reproduce the captain's isolated-home multi-agent v2 configuration while also pinning Codex's documented stable multi-agent controls. The resulting first officer must observably spawn a worker, follow up with the same worker, inspect/list and wait for workers, and receive completion. The guarantee belongs to launch configuration plus behavioral proof, not bootstrap prose or ambient user config.
