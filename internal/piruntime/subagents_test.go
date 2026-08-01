@@ -30,3 +30,35 @@ func TestSubagentStageDispatchAddsOnlyPiTransportFields(t *testing.T) {
 		t.Fatalf("stage wrapper must not contain same-agent acceptance contract: %s", payload)
 	}
 }
+
+func TestSubagentDispatchSpawnFieldsRoundTrip(t *testing.T) {
+	// Default ensign dispatch: the build artifact's agent/skill bind the spawn.
+	wrapped := SubagentStageDispatch("assignment", "implementation", "label")
+	wrapped.Agent = "worker"
+	wrapped.Skill = "ensign"
+	payload, err := json.Marshal(wrapped)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var back SubagentDispatch
+	if err := json.Unmarshal(payload, &back); err != nil {
+		t.Fatal(err)
+	}
+	if back.Agent != "worker" || back.Skill != "ensign" {
+		t.Fatalf("agent/skill did not round-trip: %#v from %s", back, payload)
+	}
+
+	// Stage agent override: skill is omitted from the JSON entirely.
+	override := SubagentStageDispatch("assignment", "implementation", "label")
+	override.Agent = "custom:agent"
+	payload, err = json.Marshal(override)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(payload), `"agent":"custom:agent"`) {
+		t.Fatalf("override agent missing from payload: %s", payload)
+	}
+	if strings.Contains(string(payload), `"skill"`) {
+		t.Fatalf("skill must be omitted on an agent-override dispatch: %s", payload)
+	}
+}

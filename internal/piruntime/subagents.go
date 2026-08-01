@@ -10,6 +10,14 @@ type SubagentDispatch struct {
 	Context string `json:"context"`
 	Phase   string `json:"phase,omitempty"`
 	Label   string `json:"label,omitempty"`
+	// Agent/Skill mirror the dispatch-build pi artifact's spawn binding: the
+	// pi-subagents agent to spawn (the generic "worker", or the stage's agent:
+	// override) and the basename skill to deliver at spawn ("ensign" for the
+	// default dispatch; omitted on an agent override, whose agent owns its own
+	// contract). The host-neutral role identity stays in the artifact's
+	// subagent_type; these fields pin what pi-subagents is actually called with.
+	Agent string `json:"agent,omitempty"`
+	Skill string `json:"skill,omitempty"`
 }
 
 // SubagentStageDispatch wraps an already-built dispatch artifact prompt/content

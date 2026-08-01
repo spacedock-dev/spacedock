@@ -427,3 +427,167 @@ func TestBuildPiHostPreservesSplitRootEntityPath(t *testing.T) {
 		t.Fatalf("pi split-root dispatch body missing split-root state guidance:\n%s", body)
 	}
 }
+
+// TestBuildPiHostEmitsSpawnAgentAndSkill is AC-2's default-path assertion: a
+// pi dispatch with no stage agent: override carries the pi-subagents generic
+// write-capable agent ("worker") and the basename skill ("ensign") as spawn
+// fields, while subagent_type keeps the host-neutral role identity.
+func TestBuildPiHostEmitsSpawnAgentAndSkill(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(false))
+	worktreeRel := ".worktrees/spacedock-ensign-thing"
+	if err := os.MkdirAll(filepath.Join(root, worktreeRel), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	entityPath := filepath.Join(root, "thing.md")
+	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
+	gitInit(t, root)
+
+	stdin := mergeStdin(map[string]any{
+		"schema_version": 2,
+		"entity_path":    entityPath,
+		"workflow_dir":   root,
+		"stage":          "implementation",
+		"checklist":      []string{"- a"},
+		"team_name":      "fixture-pi-team",
+		"bare_mode":      false,
+		"host":           "pi",
+	}, nil)
+
+	native := runNative(stdin, "build", "--workflow-dir", root)
+	if native.exit != 0 {
+		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
+	}
+	var out struct {
+		SubagentType string  `json:"subagent_type"`
+		Agent        *string `json:"agent"`
+		Skill        *string `json:"skill"`
+	}
+	if err := json.Unmarshal([]byte(native.stdout), &out); err != nil {
+		t.Fatalf("stdout is not build JSON: %v\n%s", err, native.stdout)
+	}
+	if out.SubagentType != "spacedock:ensign" {
+		t.Errorf("subagent_type = %q, want host-neutral spacedock:ensign", out.SubagentType)
+	}
+	if out.Agent == nil || *out.Agent != "worker" {
+		t.Errorf("agent = %v, want %q (pi-subagents generic write-capable agent)", out.Agent, "worker")
+	}
+	if out.Skill == nil || *out.Skill != "ensign" {
+		t.Errorf("skill = %v, want %q (basename, the only form pi's resolver binds)", out.Skill, "ensign")
+	}
+	// AC-4's banned-string half for the build pi branch: the namespaced agent
+	// string must stay out of pi spawn surfaces (it names no pi-subagents agent).
+	body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
+	if strings.Contains(body, "agent: spacedock:ensign") {
+		t.Errorf("pi dispatch body must not name a pi-subagents agent spacedock:ensign:\n%s", body)
+	}
+}
+
+// TestBuildPiHostAgentOverrideOmitsSkill is AC-2's override assertion: a stage
+// agent: declaration takes over the spawn agent (an override agent owns its
+// own contract), so the skill field is omitted and subagent_type follows the
+// override as before.
+func TestBuildPiHostAgentOverrideOmitsSkill(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), readmeWithAgentOverride())
+	worktreeRel := ".worktrees/spacedock-satellite-thing"
+	if err := os.MkdirAll(filepath.Join(root, worktreeRel), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	entityPath := filepath.Join(root, "thing.md")
+	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
+	gitInit(t, root)
+
+	stdin := mergeStdin(map[string]any{
+		"schema_version": 2,
+		"entity_path":    entityPath,
+		"workflow_dir":   root,
+		"stage":          "implementation",
+		"checklist":      []string{"- a"},
+		"team_name":      "fixture-pi-team",
+		"bare_mode":      false,
+		"host":           "pi",
+	}, nil)
+
+	native := runNative(stdin, "build", "--workflow-dir", root)
+	if native.exit != 0 {
+		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(native.stdout), &fields); err != nil {
+		t.Fatalf("stdout is not build JSON: %v\n%s", err, native.stdout)
+	}
+	var agent string
+	if err := json.Unmarshal(fields["agent"], &agent); err != nil || agent != "custom:agent" {
+		t.Errorf("agent = %q (err %v), want the stage's agent: override", agent, err)
+	}
+	if _, present := fields["skill"]; present {
+		t.Errorf("skill key must be omitted when the stage overrides agent (the override owns its contract):\n%s", native.stdout)
+	}
+	var subagentType string
+	if err := json.Unmarshal(fields["subagent_type"], &subagentType); err != nil || subagentType != "custom:agent" {
+		t.Errorf("subagent_type = %q (err %v), want the override as before", subagentType, err)
+	}
+}
+
+// readmeWithAgentOverride declares an implementation stage routed to a custom
+// agent.
+func readmeWithAgentOverride() string {
+	return "---\n" +
+		"entity-type: task\n" +
+		"id-style: slug\n" +
+		"stages:\n" +
+		"  defaults:\n" +
+		"    worktree: false\n" +
+		"    concurrency: 1\n" +
+		"  states:\n" +
+		"    - name: initialization\n" +
+		"      initial: true\n" +
+		"    - name: implementation\n" +
+		"      worktree: true\n" +
+		"      agent: custom:agent\n" +
+		"    - name: done\n" +
+		"      terminal: true\n" +
+		"---\n" +
+		"# Agent Override Workflow\n" +
+		"\n### initialization\n\nseed.\n\n- **Outputs:** x.\n\n" +
+		"### implementation\n\nwork.\n\n- **Outputs:** y.\n\n" +
+		"### done\n\nterm.\n"
+}
+
+// TestBuildClaudeHostGoldenByteIdentical is AC-2's no-churn guard: the exact
+// claude-build fixture of the existing parity case single+flat+nonworktree+bare
+// is re-run and byte-compared against its checked-in golden, so the added pi
+// spawn fields cannot have disturbed claude output bytes.
+func TestBuildClaudeHostGoldenByteIdentical(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(false))
+	entityPath := filepath.Join(root, "thing.md")
+	writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
+	gitInit(t, root)
+
+	stdin := mergeStdin(map[string]any{
+		"schema_version": 2,
+		"entity_path":    entityPath,
+		"workflow_dir":   root,
+		"stage":          "backlog",
+		"checklist":      []string{"- a", "- b"},
+		"team_name":      "fixture-team",
+		"bare_mode":      true,
+	}, nil)
+
+	native := runNative(stdin, "build", "--workflow-dir", root)
+	if native.exit != 0 {
+		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
+	}
+	for _, banned := range []string{`"agent":`, `"skill":`} {
+		if strings.Contains(native.stdout, banned) {
+			t.Fatalf("claude build stdout must not carry pi spawn field %s:\n%s", banned, native.stdout)
+		}
+	}
+	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
+	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
+	assertGolden(t, "build-crossproduct-single+flat+nonworktree+bare", env)
+}
