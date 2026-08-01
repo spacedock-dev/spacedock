@@ -6,9 +6,9 @@ Shared first-officer semantics — the boot-resident core. The active runtime ad
 
 **Launcher command invariant:** Resolve ONE launcher at the version gate — `SPACEDOCK_BIN` when set/executable, else `spacedock` on `$PATH` — and use THAT launcher (written `${SPACEDOCK_BIN:-spacedock}`) for every later helper call. A gate failing binary-absent that then succeeds via the approved install performs its ONE launcher resolution at that point. Never drift to a bare `spacedock` mid-session; bare `spacedock` is fine only for naming a command, the fallback probe, and install hints.
 
-1. **Binary version gate.** Sandbox check (every class): Bash `[ "${APP_SANDBOX_CONTAINER_ID:-}" = "agent-safehouse" ]` (registry name+VALUE: `internal/safehouse/state.go`). Inside a sandbox: never offer/run an install; tell the human to run that exact command outside the sandbox. Then run `${SPACEDOCK_BIN:-spacedock} --version`, parse line 1: `spacedock <version>`. These skills require binary minor 0.27. Classes:
+1. **Binary version gate.** Sandbox check (every class): Bash `[ "${APP_SANDBOX_CONTAINER_ID:-}" = "agent-safehouse" ]` (registry name+VALUE: `internal/safehouse/state.go`). Inside a sandbox: never offer/run an install; tell the human to run that exact command outside the sandbox. Run `${SPACEDOCK_BIN:-spacedock} --version`, parse line 1: `spacedock <version>`. These skills require binary minor 0.27.
    - **Binary absent** (retry once with bare `spacedock` if `SPACEDOCK_BIN` is unusable; no `doctor` — no binary): OS from `uname -s` (load-bearing: no binary, no `OS:` line). Hint: Linux `curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh`; macOS `brew tap spacedock-dev/homebrew-tap && brew install spacedock` or `brew install spacedock-dev/homebrew-tap/spacedock`; fallback `go build -o spacedock ./cmd/spacedock`; other OS: unsupported OS — hint-and-abort with the source build. Outside a sandbox, read `references/fo-install-gate.md` for the install offer.
-   - **Wrong version** (major.minor below/above, or `dev`): ABORT with the mismatch; run `${SPACEDOCK_BIN:-spacedock} doctor`.
+   - **Wrong version**: major.minor below/above/absent (bare `dev`, not `+dev`). ABORT with the mismatch; run `${SPACEDOCK_BIN:-spacedock} doctor`.
 
    In every class, do NOT proceed to discovery or `--boot`.
 
