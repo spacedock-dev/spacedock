@@ -20,6 +20,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:c388fc6c91ceed158a374d9a6eb7e205d87a96e3c0f5da7de48b02f73b874151
                 room-ref: ./debrief-agent-testimonial-prompt/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:qdb1w5r7k9nvbvkf8qetcd5m:ideation:1
+                briefing: briefing:qdb1w5r7k9nvbvkf8qetcd5m:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-01T15:03:18.286273Z"
+                decision: approve
+                reason: 'Approve with amended verification terms: no prose greps anywhere; testimonial adequacy is a qualitative manual test driven by operator/captain or FO through a real debrief flow, inspecting the produced _debriefs/ artifact with quoted lines; automated = machine-checkable legs only (prompt asked under real runtime, claude-live first pass; split-root _debriefs/ path; identity/unknown preservation inspected). Cycle-3 entry records the ruling.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 ## Problem
