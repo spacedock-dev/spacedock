@@ -247,3 +247,48 @@ Correction review produced a smaller contract: status compares only `correction-
 ### Summary
 
 Implementation now makes post-rework gate preparation derive the latest same-stage correction round, bind its retained Briefing through an existing canonical Reference, and fail stale open authority across every retained operation and readiness projection. Initial gates and closed history retain their behavior; the exact candidate is `dfc14ca19`, with offline/race and clean Roborev proof complete and cross-runtime live proof explicitly deferred until `kd` lands.
+
+## Review-finding disposition
+
+### Finding: freshness fixture does not compile
+
+- Defect kind: evidence defect.
+- Release scope: Material — the repository's focused, full, and race test commands cannot compile the changed gate test package.
+- Released user and normal workflow: Contributors running the required Go validation commands.
+- Observable harm: AC-2/AC-3 gate-unit evidence cannot execute; the failure is at `internal/gates/prepare_test.go:1011`, where `replaceTopLevels` receives an untyped `true` instead of a `topLevelReplacement`.
+- Affected value AC or non-negotiable boundary: value-ac[AC-3] The stale scalar/Reference table must establish fail-closed behavior across gate operations.
+- Trigger evidence: focused, full, and race runs all fail with `cannot use true ... as topLevelReplacement`.
+- Proposed materiality: Material. Proposed task ownership: current candidate. Proposed disposition: fix the test fixture, then rerun the gate suite.
+
+### Finding: FO skill component cap is exceeded
+
+- Defect kind: outcome defect.
+- Release scope: Material — the standard full and race suites fail contract lint at the changed skill boundary.
+- Released user and normal workflow: Operators and CI loading the FO gate-lifecycle skill.
+- Observable harm: the candidate ships a `skills/fo-gate-lifecycle/SKILL.md` component of 6,656 bytes against the 6,600-byte cap.
+- Affected value AC or non-negotiable boundary: contract[internal/contractlint/fo_function_reference_invariant_test.go#TestFOInstructionComponentCaps] The fo-gate-lifecycle component must remain within its enforced size cap.
+- Trigger evidence: `TestFOInstructionComponentCaps` fails on the rebased candidate.
+- Proposed materiality: Material. Proposed task ownership: current candidate. Proposed disposition: narrow the documentation change, then rerun contract lint.
+
+### Finding: live rejection flow omits correction-round publication
+
+- Defect kind: outcome defect.
+- Release scope: Material — supported Codex and Claude rejection journeys reach cycle-2 PASS without durable `validation/1` round authority.
+- Released user and normal workflow: Operators relying on the cross-runtime rejection-flow workflow.
+- Observable harm: the later gate cannot reliably derive the retained advisory Briefing and correction-round binding because the live flow never invokes `gate record --round validation/1`.
+- Affected value AC or non-negotiable boundary: value-ac[AC-5] Cross-runtime rejection journeys must persist the round and pass the durable round/gate oracle.
+- Trigger evidence: exact-tip Codex focused run fails at 390.47s; exact-tip Sonnet full suite passes rejection-flow once; exact-tip Opus full suite fails rejection-flow at 610.16s. Repeated focused data were FAIL/PASS/PASS for Sonnet and FAIL/FAIL/FAIL for Opus.
+- Proposed materiality: Material. Proposed task ownership: current candidate/runtime integration. Proposed disposition: investigate and fix the live flow, then rerun the authorized journey matrix.
+
+## Stage Report: validation
+
+- FAILED: Run the applicable focused, full, race, formatting, and live checks, recording infrastructure blocks separately.
+  At `f2bd91044`, focused/full/race fail on the gate-test compile error and full/race also fail the 6,600-byte skill cap; gofmt and diff checks are clean. Live auth and binaries were available; no infrastructure block occurred. Exact-tip Sonnet active suite passed with one pre-existing TODO skip; exact-tip Opus and Codex rejection checks failed the round-publication oracle.
+- FAILED: Reproduce every acceptance criterion against the rebased candidate, including correction-round freshness and retained Briefing authority.
+  AC-1: offline durable oracle passes, but required clean live repetition is not met. AC-2: offline shared oracle passes, but gate unit evidence is unbuildable. AC-3: status stale-readiness proof passes, but the complete stale table cannot run. AC-4: status projection proof passes; full gate evidence remains blocked. AC-5: REJECTED by the Codex/Opus live failures and non-consecutive Sonnet repetition.
+- DONE: Perform the semantic adversarial pass, classify findings by defect kind and release scope, and recommend PASSED or REJECTED with evidence.
+  Detached audit passed the selected offline rejection and stale-readiness proofs; it found the same candidate compile boundary. Findings above are classified independently as evidence/outcome defects and material release scope. Recommendation: REJECTED.
+
+### Summary
+
+Validation ran against rebased candidate `f2bd91044`. The durable offline oracle and stale status projection pass, but the gate test package does not build, the FO component cap is exceeded, and live rejection flows do not reliably publish the correction round. No material finding is authorized for correction in this validation turn; the candidate is rejected pending FO disposition and a rerun.
