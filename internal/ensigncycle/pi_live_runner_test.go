@@ -3,6 +3,7 @@
 package ensigncycle
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -68,6 +69,12 @@ func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary str
 	sessionDir := t.TempDir()
 	cleanHome := t.TempDir()
 	seedPiLiveAuth(t, piHome, os.Getenv("HOME"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
+	// Patch 3 (validation attempt-1 correction): seed piHome/settings.json with
+	// the repo as a path package so pi-subagents' settings-package skill
+	// discovery (skills.ts collectSettingsPackageSkillPaths over
+	// agentDir/settings.json) resolves the basename skill "ensign"; auth-only
+	// piHome boots the child contract-free (skills: []).
+	writeFile(t, filepath.Join(piHome, "settings.json"), fmt.Sprintf("{\"packages\":[%q]}\n", "file:"+repo))
 	workflowRoot, stateRoot, entityPath = writePiSplitRootSmokeWorkflow(t)
 	artifactDir = filepath.Join(piLiveArtifactDir(t, name), "run")
 	if err := os.MkdirAll(filepath.Join(artifactDir, "sessions"), 0o755); err != nil {
@@ -178,16 +185,22 @@ func runPiSmokeDispatchBuild(t *testing.T, binary, workflowRoot, entityPath stri
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(binary, "build", "--workflow-dir", workflowRoot)
+	// Patches 1+2 (validation attempt-1 correction): the CLI surface is
+	// `dispatch build`, and stderr (e.g. the bare-mode advisory) must not
+	// contaminate the stdout JSON envelope parse.
+	cmd := exec.Command(binary, "dispatch", "build", "--workflow-dir", workflowRoot)
 	cmd.Dir = workflowRoot
 	cmd.Stdin = strings.NewReader(string(stdin))
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("dispatch build --host pi failed: %v\n%s", err, out)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("dispatch build --host pi failed: %v\nstderr:\n%s", err, stderr.String())
 	}
+	out := stdout.Bytes()
 	var envelope piSmokeEnvelope
 	if err := json.Unmarshal(out, &envelope); err != nil {
-		t.Fatalf("dispatch build stdout is not the build envelope: %v\n%s", err, out)
+		t.Fatalf("dispatch build stdout is not the build envelope: %v\n%s\nstderr:\n%s", err, out, stderr.String())
 	}
 	if envelope.Agent != "worker" || envelope.Skill != "ensign" {
 		t.Fatalf("pi build envelope = agent %q skill %q, want worker/ensign:\n%s", envelope.Agent, envelope.Skill, out)
@@ -298,6 +311,11 @@ func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string)
 		"PI_CODING_AGENT_SESSION_DIR", "PI_INTERCOM_PACKAGE_ROOT",
 		"PI_SUBAGENTS_PACKAGE_ROOT", "PI_OFFLINE",
 	)
+	// Optional-adjacent scrub (validation attempt-1 correction): an ambient
+	// PI_SUBAGENT_* family leaks hermeticity when the live lane runs nested
+	// inside a pi-subagents session (e.g. PI_SUBAGENT_CHILD=1 would exempt the
+	// parent FO from its own extension bootstrap).
+	env = dropEnvPrefix(env, "PI_SUBAGENT_")
 	env = append(env,
 		"HOME="+cleanHome,
 		"PI_CODING_AGENT_DIR="+piHome,
@@ -327,6 +345,40 @@ func TestPiLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
 		"PATH": "/spacedock/bin" + string(os.PathListSeparator) + "/parent/bin"}
 	for key, value := range want {
 		assertEnvValue(t, env, key, value)
+	}
+}
+
+// dropEnvPrefix removes every KEY=VALUE entry whose key carries prefix.
+func dropEnvPrefix(env []string, prefix string) []string {
+	kept := env[:0]
+	for _, kv := range env {
+		key := kv
+		if i := strings.IndexByte(kv, '='); i >= 0 {
+			key = kv[:i]
+		}
+		if strings.HasPrefix(key, prefix) {
+			continue
+		}
+		kept = append(kept, kv)
+	}
+	return kept
+}
+
+func TestPiLiveEnvScrubsAmbientPiSubagentMarkers(t *testing.T) {
+	t.Setenv("PI_SUBAGENT_CHILD", "1")
+	t.Setenv("PI_SUBAGENT_RUN_ID", "ambient-run")
+	t.Setenv("PI_SUBAGENT_DEPTH", "1")
+
+	env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin", "/target/package")
+
+	for _, kv := range env {
+		key := kv
+		if i := strings.IndexByte(kv, '='); i >= 0 {
+			key = kv[:i]
+		}
+		if strings.HasPrefix(key, "PI_SUBAGENT_") {
+			t.Fatalf("piLiveEnv leaked ambient marker %s", kv)
+		}
 	}
 }
 
