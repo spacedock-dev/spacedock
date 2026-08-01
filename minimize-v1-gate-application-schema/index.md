@@ -26,6 +26,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:1c1c9a1b2ce8ff70509a08507db6e35cbea319b2411678da6e2a7d9aa3af160d
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nthcevf1snz7hm75gny3kd2e:backlog:1
+                briefing: briefing:nthcevf1snz7hm75gny3kd2e:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-01T13:53:46.825149Z"
+                decision: approve
+                reason: Captain approved dispatching this durable-decisions ideation lane in parallel with wj, hq, and jc.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
