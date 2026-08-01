@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nthcevf1snz7hm75gny3kd2e:ideation:attempt-1:revision-1",
+  "question": "Approve the nth ideation design for implementation after necessity-first review and AC evidence repair?",
+  "artifacts": [
+    {
+      "id": "artifact:nthcevf1snz7hm75gny3kd2e:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a4ebd42f02b943a92886c0162b4b27d17da28ca0/minimize-v1-gate-application-schema/review/ideation/fo-gate-review.md",
+      "rev": "sha256:665894158c788290e565c637dd790b9da2d733e8c7f369e4ccc1f40db9eaa5e0",
+      "mediaType": "text/markdown",
+      "summary": "Three DONE ideation signals; AC-2 and AC-3 are unevidenced, and nth overlaps the shared internal/gates schema with wj and jc. Hold pending Science review and evidence."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nthcevf1snz7hm75gny3kd2e:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/a4ebd42f02b943a92886c0162b4b27d17da28ca0/minimize-v1-gate-application-schema/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:a3edb6ec5e6af459b2c49321db7dc0a24fdd92c0d9b9babcf1874e5c76182af6"
+    }
+  ]
+}

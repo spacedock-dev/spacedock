@@ -14,7 +14,7 @@ id: nthcevf1snz7hm75gny3kd2e
 gates:
     version: 1
     current:
-        gate: gate:nthcevf1snz7hm75gny3kd2e:backlog
+        gate: gate:nthcevf1snz7hm75gny3kd2e:ideation
     records:
         - id: gate:nthcevf1snz7hm75gny3kd2e:backlog
           stage: backlog
@@ -39,6 +39,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:nthcevf1snz7hm75gny3kd2e:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:nthcevf1snz7hm75gny3kd2e-ideation-1
+              briefing:
+                id: briefing:nthcevf1snz7hm75gny3kd2e:ideation:attempt-1:revision-1
+                digest: sha256:d7ad337095f1c498c77434c61e75c6fcefe5d4934c2afd723373d243ea290336
+                digest-domain: canonical-bytes
+                request-digest: sha256:c4ea8d1d3f35a04792d3ef1191cf42e17433969db2276446db4cb9b4c4c8afdf
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
