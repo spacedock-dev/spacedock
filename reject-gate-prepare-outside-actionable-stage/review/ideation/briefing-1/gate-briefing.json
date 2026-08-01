@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:hq3d00mewqrys3s0z9pf27df:ideation:attempt-1:revision-1",
+  "question": "Approve the hq ideation design for implementation after necessity-first review?",
+  "artifacts": [
+    {
+      "id": "artifact:hq3d00mewqrys3s0z9pf27df:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/25f7943596d1eb3b4b4970732e3b99d893fd8ad2/reject-gate-prepare-outside-actionable-stage/review/ideation/fo-gate-review.md",
+      "rev": "sha256:33bcecb0c9e71b6b17b8a70dda350d195ccc61524652aaf6edef577d1a3bfc85",
+      "mediaType": "text/markdown",
+      "summary": "Three DONE ideation signals; AC-1 through AC-3 have command/state evidence. Hold pending Science necessity review and current Briefing binding."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:hq3d00mewqrys3s0z9pf27df:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/25f7943596d1eb3b4b4970732e3b99d893fd8ad2/reject-gate-prepare-outside-actionable-stage/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:edcb005238e4214752a256d574868c18fd070a742127fa0d665c935d8ba3a9d6"
+    }
+  ]
+}
