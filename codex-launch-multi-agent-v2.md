@@ -86,6 +86,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:36f7b9dfe6811ad19739d9bbac0ac8e582884baece283ff45f5ec610ecbb3923
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:z5gwwz2748sg6vxr0g3kdsar:validation:2
+                briefing: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-01T17:57:10.685244Z"
+                decision: revise
+                reason: 'Captain-authorized direct send-back following Science Officer REVISE: fix M4 by parsing both ordered wait_agent argument records atomically and requiring each target to equal the spawned worker identity; retain the detached wrong-worker transcript as a negative and rerun validation. Prior M1-M3 corrections and product behavior remain accepted.'
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 ---
 
 Spacedock's Codex front door should reproduce the captain's isolated-home multi-agent v2 configuration while also pinning Codex's documented stable multi-agent controls. The resulting first officer must observably spawn a worker, follow up with the same worker, inspect/list and wait for workers, and receive completion. The guarantee belongs to launch configuration plus behavioral proof, not bootstrap prose or ambient user config.
