@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mxaaqb96syv7pq7ekg5a5194:ideation:attempt-1:revision-1",
+  "question": "Approve the mxaa ideation design (build-owned pi ensign delivery: agent worker + skill ensign; extension child exemption) and enter implementation in a worktree?",
+  "artifacts": [
+    {
+      "id": "artifact:mxaaqb96syv7pq7ekg5a5194:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/55c0e2605e61ae38b4ff1e33ab33db9c52195249/pin-ensign-contract-entry-point/review/ideation/ideation-review-1.md",
+      "rev": "sha256:bf67d3085875853c793dffdea576947c3689cfcbb4f5f4a5dfd309163b322a7c",
+      "mediaType": "text/markdown",
+      "summary": "Two verified root causes (basename resolver + child FO injection); minimal build-owned fix; AC-1 transcript boot test 0/8 baseline; live-evidence spike; 9-file ~190-line surface"
+    }
+  ]
+}

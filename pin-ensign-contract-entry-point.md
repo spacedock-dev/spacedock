@@ -8,7 +8,7 @@ id: mxaaqb96syv7pq7ekg5a5194
 gates:
     version: 1
     current:
-        gate: gate:mxaaqb96syv7pq7ekg5a5194:backlog
+        gate: gate:mxaaqb96syv7pq7ekg5a5194:ideation
     records:
         - id: gate:mxaaqb96syv7pq7ekg5a5194:backlog
           stage: backlog
@@ -33,6 +33,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:mxaaqb96syv7pq7ekg5a5194:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:mxaaqb96syv7pq7ekg5a5194-ideation-1
+              briefing:
+                id: briefing:mxaaqb96syv7pq7ekg5a5194:ideation:attempt-1:revision-1
+                digest: sha256:b29e25e8303e6175f9d23f4bb81eb9104d49a13d38671c36ae964f84aae263bf
+                digest-domain: canonical-bytes
+                request-digest: sha256:6835053f386bc35578c331282090258011558f9af8407520203c9d7aefe45138
+                room-ref: ./pin-ensign-contract-entry-point/review/ideation/briefing-1
 started: 2026-08-01T12:27:09Z
 ---
 
