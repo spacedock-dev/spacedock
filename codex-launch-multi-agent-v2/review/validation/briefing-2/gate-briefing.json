@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-2:revision-1",
+  "question": "Approve the cycle-2 validation package for codex-launch-multi-agent-v2 and consume authorization to enter done?",
+  "artifacts": [
+    {
+      "id": "artifact:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/befda708d06431abbc67f818fe1081a39c11a036/codex-launch-multi-agent-v2/review/validation/fo-gate-review.md",
+      "rev": "sha256:df0f7850d3ce6fc37975f1299e31612c956a93cf511a9316547ada7e31d2d4c4",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 validation proves the built front-door lifecycle, exact table, conflict rejection, disabled zero-event control, and all required suites, but a detached typed transcript with both wait_agent calls targeting worker-b instead of spawned worker-a passes because the grader does not compare wait targets. Science Officer recommends REVISE via one narrow same-worker wait-identity correction."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/befda708d06431abbc67f818fe1081a39c11a036/codex-launch-multi-agent-v2.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e88adc8821894788f4b21444c00f7bfff9d962c19aa8542f06b2ef4e61e46c4d"
+    }
+  ]
+}

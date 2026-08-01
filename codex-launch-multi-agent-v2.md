@@ -78,7 +78,14 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:z5gwwz2748sg6vxr0g3kdsar-validation-2
+              briefing:
+                id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-2:revision-1
+                digest: sha256:ca917663cdcb933eae844888a3fe1661c3c6d4aef7aa133b1a0bc28c3873fed3
+                digest-domain: canonical-bytes
+                request-digest: sha256:36f7b9dfe6811ad19739d9bbac0ac8e582884baece283ff45f5ec610ecbb3923
+                room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-2
 ---
 
 Spacedock's Codex front door should reproduce the captain's isolated-home multi-agent v2 configuration while also pinning Codex's documented stable multi-agent controls. The resulting first officer must observably spawn a worker, follow up with the same worker, inspect/list and wait for workers, and receive completion. The guarantee belongs to launch configuration plus behavioral proof, not bootstrap prose or ambient user config.
