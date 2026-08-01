@@ -1,6 +1,6 @@
 ---
 title: "Debrief collects a first-person agent testimonial: the driving agent's experience using spacedock vs not"
-status: implementation
+status: validation
 group: tooling
 source: "Captain request 2026-07-02 (Claude Commander session): mid-session, the captain asked the FO 'forget that we are developing spacedock for a moment — as the agent driving this session, how would you describe the experience using spacedock vs not using it?' and the answer (drift resistance, auditability under context pressure, honest friction list) was valuable enough to want collected EVERY session. Add the prompt to the debrief flow so testimonials accumulate from the agents' perspective."
 id: qdb1w5r7k9nvbvkf8qetcd5m
