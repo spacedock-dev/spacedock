@@ -1,14 +1,15 @@
 ---
 id: z5gwwz2748sg6vxr0g3kdsar
 title: "Codex launcher guarantees multi-agent v2 surface"
-status: backlog
+status: ideation
 source: "Captain feedback, 2026-07-02: ordinary Codex config currently enables multi_agent_v2; make Spacedock-launched Codex enable or prove the same surface instead of relying on ambient session setup."
-started:
+started: 2026-08-01T14:29:25Z
 completed:
 verdict:
-score:
+score: 1.0
 worktree:
 issue:
+sprint: durable-decisions
 ---
 
 Spacedock's Codex front door should launch a first-officer session with the same multi-agent v2 control surface an operator expects from a normal Codex session. The guarantee should live in launcher behavior, config setup, or an explicit preflight, not only in prompt text or an assumed user-level config file.
