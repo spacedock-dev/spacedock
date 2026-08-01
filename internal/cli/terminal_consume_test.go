@@ -170,7 +170,8 @@ func TestTerminalDeliveryFailureReworkRoundTrip(t *testing.T) {
 		t.Fatalf("record open PR exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	code, out, errOut = terminalInvoke(t, root, "merge", "guard", "task", "--rework", "--workflow-dir", root)
-	if code != 0 || !strings.Contains(out, "reworked: task -> implementation") || !strings.Contains(out, "superseded") {
+	if code != 0 || !strings.Contains(out, "reworked: task -> implementation") || !strings.Contains(out, "superseded") ||
+		!strings.Contains(out, "re-enter validation as a successor attempt") {
 		t.Fatalf("merge guard --rework exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	fields = entityFields(t, entity)
@@ -399,13 +400,25 @@ func TestTerminalSetRefusedWhileApprovalPending(t *testing.T) {
 // writer selection: a REAL pending terminal application whose retained
 // authority became unreadable (disturbed briefing room) must refuse the
 // finalization byte-clean — never terminalize with authority left pending.
+// The guard is ARMED before the tamper so the refusal must occur BEFORE any
+// mod-block clear: a clear-before-classify regression strips the mod-block and
+// turns the byte-clean assertion red.
 func TestMergeGuardRefusesDigestStaleAuthorityByteClean(t *testing.T) {
 	root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{hook: "pr-merge", feedbackTo: "implementation"})
 	approvedTerminalGate(t, root)
 	if code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); code != 0 {
 		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
-	// Disturb the retained briefing room recorded at prepare: tamper the
+	// Arm the merge guard FIRST (mod-block=merge:pr-merge, as the other armed
+	// legs do) and record the merged-PR sentinel.
+	if code, out, errOut := terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root); code != 0 ||
+		!strings.Contains(out, "armed") || !strings.Contains(out, "merge:pr-merge") {
+		t.Fatalf("merge guard arm exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "pr=pr-merge:7"); code != 0 {
+		t.Fatalf("record merge sentinel exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	// THEN disturb the retained briefing room recorded at prepare: tamper the
 	// room's retained request.json so its frozen digest no longer matches.
 	var requestFile string
 	if err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
@@ -419,19 +432,19 @@ func TestMergeGuardRefusesDigestStaleAuthorityByteClean(t *testing.T) {
 	if err := os.WriteFile(requestFile, []byte("tampered"), 0o644); err != nil {
 		t.Fatalf("disturb briefing room: %v", err)
 	}
-	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "pr=pr-merge:7"); code != 0 {
-		t.Fatalf("record merge sentinel exit=%d stdout=%q stderr=%q", code, out, errOut)
-	}
 	before, err := os.ReadFile(entity)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !bytes.Contains(before, []byte("mod-block: merge:pr-merge")) || !bytes.Contains(before, []byte("pr: pr-merge:7")) {
+		t.Fatalf("armed fixture expectation wrong — before bytes must carry the mod-block and pr sentinel:\n%s", before)
 	}
 	code, out, _ := terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root)
 	if code == 0 {
 		t.Fatalf("merge guard must refuse digest-stale authority: stdout=%q", out)
 	}
 	if after, _ := os.ReadFile(entity); !bytes.Equal(before, after) {
-		t.Fatalf("digest-stale refusal changed the entity:\nbefore:\n%s\nafter:\n%s", before, after)
+		t.Fatalf("digest-stale refusal changed the entity (mod-block and pr sentinel must survive byte-clean):\nbefore:\n%s\nafter:\n%s", before, after)
 	}
 	if _, err := os.Stat(filepath.Join(root, "_archive", "task.md")); !os.IsNotExist(err) {
 		t.Fatalf("digest-stale refusal must not archive: %v", err)

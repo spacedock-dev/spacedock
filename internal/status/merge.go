@@ -490,7 +490,7 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 // path; superseded authority is never re-spent.
 func reworkDelivery(roots roots, slug, entityPath string, fields map[string]string, quiet, asJSON bool, stdout, stderr io.Writer) int {
 	currentStatus := strings.TrimSpace(fields["status"])
-	elig, pendingApproval, classErr := pendingTerminalApproval(entityPath, roots.definitionDir, currentStatus)
+	_, pendingApproval, classErr := pendingTerminalApproval(entityPath, roots.definitionDir, currentStatus)
 	if classErr != nil {
 		return errExit(stderr, fmt.Sprintf(
 			"merge guard --rework requires a pending terminal-target approval on entity %s (consume's approved-awaiting-merge route); its authority cannot be validated: %v",
@@ -531,8 +531,11 @@ func reworkDelivery(roots roots, slug, entityPath string, fields map[string]stri
 	case quiet:
 		fmt.Fprintf(stdout, "merge-guard slug=%s signal=reworked feedback-to=%s application=superseded\n", slug, feedbackTo)
 	default:
+		// Re-entry belongs to the gate record's GATED stage, not the approval's
+		// terminal target: pendingTerminalApproval fails closed unless
+		// status == record.Stage, so currentStatus IS the gated stage here.
 		fmt.Fprintf(stdout, "reworked: %s -> %s (terminal approval superseded; delivery state cleared; re-enter %s as a successor attempt with a fresh approval).\n",
-			slug, feedbackTo, elig.TargetStage)
+			slug, feedbackTo, currentStatus)
 	}
 	return 0
 }
