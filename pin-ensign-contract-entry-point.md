@@ -85,6 +85,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:650164fcbe139d20d4521cad95d71d991ac2ab0b9b225c06eb6c63da308330c3
                 room-ref: ./pin-ensign-contract-entry-point/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mxaaqb96syv7pq7ekg5a5194:validation:2
+                briefing: briefing:mxaaqb96syv7pq7ekg5a5194:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-01T14:13:58.378167Z"
+                decision: approve
+                reason: 'Accepts cycle-2 validation PASS: all four ACs reproduced by exercise at d9f38ca1e (live graded boot, correction test-only) — approve to terminal delivery (chat)'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 started: 2026-08-01T12:27:09Z
 worktree: .worktrees/spacedock-ensign-pin-ensign-contract-entry-point
 ---
