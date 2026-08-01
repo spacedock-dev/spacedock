@@ -342,3 +342,16 @@ REJECTED. Route one narrow evidence correction through the validation feedback g
 - Cycle 2: REJECTED (Codex validation, 2026-08-02) — surface 8 files/+379 vs 10/+380; AC unchanged.
   - M4 (evidence defect; Material): released user/normal workflow — the shipped live proof is the acceptance gate for every supported Spacedock-launched Codex; observable harm — a typed, correctly ordered, exact-cardinality transcript with both waits targeting another worker passes; affected value — `value-ac[AC-1]` the isolated-home proof must establish one same-worker native lifecycle through completion; trigger evidence — detached `TestAdversarialLifecycleRejectsWrongWaitTargets` fails because `gradeCodexLifecycle` does not parse or compare either wait target.
   - Science Officer advisory: REVISE. FO authorization: `fix` M4 by parsing both ordered `wait_agent` argument records atomically, requiring each target to equal the spawned worker identity, retaining the detached wrong-worker transcript as a negative, and rerunning validation; preserve M4's finding and evidence unchanged.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: inject supported controls plus the exact multi_agent_v2 inline TOML layer across all launch variants
+  Commit `1a8a64cdb` preserves the accepted M1-M3 launcher layer and complete-argv oracle unchanged; the final candidate remains 8 files/+379 against `main`, within 10/+380.
+- DONE: reject reserved or conflicting forwarded settings before plugin install or host launch
+  The final focused unsupported-host check and full/race suites pass while the accepted attached-short, quoted-key, nested-field, and feature-toggle rejection coverage remains unchanged.
+- DONE: prove complete argv, unsupported-host failure, and isolated-home lifecycle behavior within the approved surface
+  `TestAdversarialLifecycleRejectsWrongWaitTargets` rejects both explicit `worker-b` waits and targetless waits whose child mailbox/session identity is misbound; the 42.35s live built-front-door run, disabled control, `go test ./...`, `go test ./... -race`, `git diff --check`, and formatting all pass.
+
+### Summary
+
+Cycle 3 corrects only M4 in the lifecycle oracle. Both ordered wait argument records are parsed atomically; an explicit wait target must equal the spawned task, while Codex 0.146's native targetless waits are accepted only as idle observations because exact one-spawn cardinality and the child `parent_thread_id`/`agent_path`, ordered READY/DONE mailbox output, and parent completion independently bind the lifecycle to that spawned identity.
