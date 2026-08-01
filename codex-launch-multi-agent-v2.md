@@ -355,3 +355,28 @@ REJECTED. Route one narrow evidence correction through the validation feedback g
 ### Summary
 
 Cycle 3 corrects only M4 in the lifecycle oracle. Both ordered wait argument records are parsed atomically; an explicit wait target must equal the spawned task, while Codex 0.146's native targetless waits are accepted only as idle observations because exact one-spawn cardinality and the child `parent_thread_id`/`agent_path`, ordered READY/DONE mailbox output, and parent completion independently bind the lifecycle to that spawned identity.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: reproduce each AC with applicable unit, race, CLI, and isolated-home lifecycle evidence
+  At `1a8a64cdb`, focused argv/conflict/unsupported/vocabulary/wrong-worker tests, `go test ./...`, `go test ./... -race`, `git diff --check`, and `gofmt -d ./cmd ./internal` passed; the real built-front-door lifecycle and disabled zero-event control passed in 52.81s.
+- FAILED: reproduce AC-1 and AC-4's targetless-wait same-worker identity as typed evidence
+  Detached `TestDetachedTargetlessWaitRejectsTypedMisboundChildWithSpoofedIdentityText` failed: an actual top-level `other-parent/worker-b` child passed when an unrelated JSON record carried expected `parent_thread_id/agent_path`, because the grader searches raw session bytes instead of parsing the child identity record atomically.
+- DONE: reproduce AC-2's exact table and fail-closed downgrade boundaries
+  Complete argv carried the owned stable controls and exact v2 table once; every covered forwarded reserved spelling failed before install/launch, the unrelated-config control passed, and the unsupported-host fixture propagated exit 78 with its native config diagnostic.
+- DONE: reproduce AC-3 across plain, local-plugin, Safehouse, and resume
+  `TestCodexCollaborationLayerCompleteArgv` atomically verified exact adjacency, order, uniqueness, table bytes, and the inner Safehouse boundary in all four variants.
+- FAILED: reproduce the complete E-1 through E-5 ledger as acceptance-quality evidence
+  E-1 argv, E-3 disabled zero-event control, E-4 real v2 context/completion, and E-5's supported-controls distinction were reproduced; E-2/E-4 cannot certify targetless same-worker binding because the child mailbox identity check accepts the detached misbound transcript above.
+- DONE: perform semantic adversarial audit of launcher composition, ordering, cardinality, same-worker identity, and unsupported/conflict boundaries
+  Throwaway checkout `/tmp/spacedock-codex-audit-cycle3.58z2ib/repo` at exact commit `1a8a64cdb` retained the explicit wrong-target and vocabulary negatives but exposed the targetless typed-identity falsifier without changing candidate bytes.
+- DONE: report exact evidence, docs/support-boundary checks, regressions, and a validation verdict without changing the deliverable
+  Candidate HEAD stayed clean at 8 files/+379 within 10/+380; docs correctly distinguish supported controls from the v2 label, but the claim that typed parent/child records grade a same-worker lifecycle still overstates the raw-substring identity check.
+
+### Summary
+
+The launcher behavior, full/race suites, live front-door lifecycle, disabled control, explicit wrong-target negative, and requested v2 context all pass. Validation nevertheless recommends REJECTED because the targetless-wait proof still does not parse the child mailbox identity atomically, so AC-1 and the shared AC-4 oracle remain falsifiable.
+
+### Recommendation
+
+REJECTED. M5 is an evidence defect and Material: released user/normal workflow — this oracle gates the supported launcher lifecycle; observable harm — a typed misbound child transcript passes; affected value — `value-ac[AC-1]` requires one same-worker isolated-home lifecycle; trigger evidence — the detached test above fails at `1a8a64cdb`. Cycle 3 therefore escalates under validation policy; do not mutate the candidate without a new disposition.
