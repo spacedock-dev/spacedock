@@ -290,3 +290,35 @@ REJECTED. Route correction through the validation feedback gate. The narrow repa
 ### Summary
 
 Cycle 2 closes M1-M3 without changing their preserved findings or weakening the oracle. The first bounded live attempt exposed a completed-worker wait race; the final proof keeps the worker active until the ordered list/wait sequence, caps the subprocess at two minutes, and passes through the launcher at `383b4da8b`.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: reproduce each AC with applicable unit, race, CLI, and isolated-home lifecycle evidence
+  Commit `383b4da8b`: focused launcher/conflict/unsupported/vocabulary tests, `go test ./...`, `go test ./... -race`, `git diff --check`, and `gofmt -d ./cmd ./internal` passed; the built-front-door live test plus disabled control passed in 31.13s.
+- FAILED: reproduce AC-1's exact same-worker lifecycle identity
+  The real isolated-home run completed, but the grader never parses either `wait_agent` target; a detached typed/ordered transcript with both waits aimed at `worker-b` instead of spawned `worker-a` passed, so AC-1's same-worker wait identity is not established.
+- DONE: reproduce AC-2's exact table and fail-closed forwarded/unsupported boundaries
+  Complete argv carries the three owned assignments once; attached-short, quoted dotted, space/equals, nested-field, and feature-toggle conflicts all returned the pinned pre-side-effect rejection, while the unsupported-host fixture propagated exit 78.
+- DONE: reproduce AC-3 across plain, local-plugin, Safehouse, and resume
+  `TestCodexCollaborationLayerCompleteArgv` passed and atomically checks exact order, adjacency, uniqueness, table bytes, and the inner Safehouse boundary for all four variants.
+- FAILED: reproduce AC-4's behavioral oracle as a complete lifecycle proof
+  The front-door positive, zero-event disabled control, v2 context, vocabulary-only rejection, and docs boundary pass, but the same typed oracle accepts wrong-worker waits and therefore cannot certify the documented same-worker lifecycle claim.
+- DONE: reproduce E-1 through E-5 and identify the exact residual boundary
+  E-1 argv and E-3 zero-event negative pass; E-2/E-4 execute via built `spacedock codex` and observe terminal outputs/v2 context but remain incomplete on wait identity; current official config/subagent docs still name `agents.enabled`, `agents.max_concurrent_threads_per_session`, and stable `features.multi_agent`, not `multi_agent_v2`.
+- DONE: perform semantic adversarial audit of launcher composition, ordering, cardinality, same-worker identity, and unsupported/conflict boundaries
+  Throwaway checkout `/tmp/spacedock-codex-audit-cycle2.fKRtyk/repo` at the exact commit retained the passing vocabulary-only negative but produced the falsifier above; the candidate worktree stayed unchanged at 8 files/+379, within 10/+380.
+- DONE: report exact evidence, docs/support-boundary checks, regressions, and a validation verdict without changing the deliverable
+  Candidate HEAD remained `383b4da8b9b80954cc435e87d674a4cb1443b321`; only this split-root validation report was written.
+
+### Summary
+
+Cycle 2 fixes the prior front-door, reserved-spelling, disabled-control, and vocabulary-only defects, and the observed live launcher behavior succeeds. Validation nevertheless finds one material evidence defect: typed ordering and cardinality can still certify waits directed at a different worker, leaving AC-1 and the shared AC-4 oracle unproved.
+
+### Recommendation
+
+REJECTED. Route one narrow evidence correction through the validation feedback gate: parse both `wait_agent` argument records atomically, require each target to equal the spawned worker identity, and retain the detached wrong-worker transcript as a negative test before rerunning validation.
+
+### Feedback Cycles
+
+- Cycle 2: REJECTED (Codex validation, 2026-08-02) — surface 8 files/+379 vs 10/+380; AC unchanged.
+  - M4 (evidence defect; Material): released user/normal workflow — the shipped live proof is the acceptance gate for every supported Spacedock-launched Codex; observable harm — a typed, correctly ordered, exact-cardinality transcript with both waits targeting another worker passes; affected value — `value-ac[AC-1]` the isolated-home proof must establish one same-worker native lifecycle through completion; trigger evidence — detached `TestAdversarialLifecycleRejectsWrongWaitTargets` fails because `gradeCodexLifecycle` does not parse or compare either wait target.
