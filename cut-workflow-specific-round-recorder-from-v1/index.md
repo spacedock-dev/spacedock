@@ -14,7 +14,7 @@ id: wjkhq0sktbbe3txx6jhnvcv2
 gates:
     version: 1
     current:
-        gate: gate:wjkhq0sktbbe3txx6jhnvcv2:backlog
+        gate: gate:wjkhq0sktbbe3txx6jhnvcv2:ideation
     records:
         - id: gate:wjkhq0sktbbe3txx6jhnvcv2:backlog
           stage: backlog
@@ -39,6 +39,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:wjkhq0sktbbe3txx6jhnvcv2:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:wjkhq0sktbbe3txx6jhnvcv2-ideation-1
+              briefing:
+                id: briefing:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-1:revision-1
+                digest: sha256:36d1434d6fe326e0b9a94e81b131ed047ee1e5986a4d5b2d1bcbe69e49f82f33
+                digest-domain: canonical-bytes
+                request-digest: sha256:bb1d202e76847364f51a17ff726b6c7e6f71a6820298d600aae3c67e658c01fa
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Remove the public `gate record --round` and `gate validate --round` surface from the stable v1 cut. The implementation is coherent only for this repository's development review policy; retaining it would freeze that policy into the generic durable-decision contract.
