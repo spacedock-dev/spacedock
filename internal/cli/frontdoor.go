@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -544,11 +545,6 @@ func containsResume(args []string) bool {
 // `spacedock:first-officer` skill explicitly.
 const codexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Assume $spacedock:first-officer for the entire session."
 
-// codexCollaborationLayer is launcher-owned and intentionally precedes every
-// other inner Codex argument. The documented stable controls enable native
-// collaboration; the exact v2 table pins Spacedock's concurrency, namespace,
-// and visible spawn-metadata contract without treating the v2 feature label as
-// the supported enablement boundary.
 var codexCollaborationLayer = []string{
 	"-c", "agents.enabled=true",
 	"-c", "features.multi_agent=true",
@@ -570,7 +566,7 @@ func hasCodexCollaborationOverride(args []string) bool {
 			}
 			i++
 		default:
-			for _, prefix := range []string{"-c=", "--config="} {
+			for _, prefix := range []string{"-c", "--config="} {
 				if strings.HasPrefix(arg, prefix) && reservedCodexConfig(strings.TrimPrefix(arg, prefix)) {
 					return true
 				}
@@ -586,11 +582,24 @@ func hasCodexCollaborationOverride(args []string) bool {
 }
 
 func reservedCodexConfig(assignment string) bool {
-	key, _, ok := strings.Cut(strings.TrimSpace(assignment), "=")
+	assignment = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(assignment), "="))
+	key, _, ok := strings.Cut(assignment, "=")
 	if !ok {
 		return false
 	}
-	key = strings.TrimSpace(key)
+	parts := strings.Split(key, ".")
+	for i, part := range parts {
+		part = strings.TrimSpace(part)
+		if len(part) >= 2 && part[0] == part[len(part)-1] && (part[0] == '\'' || part[0] == '"') {
+			if part[0] == '\'' {
+				part = part[1 : len(part)-1]
+			} else if unquoted, err := strconv.Unquote(part); err == nil {
+				part = unquoted
+			}
+		}
+		parts[i] = part
+	}
+	key = strings.Join(parts, ".")
 	return key == "agents.enabled" || key == "features.multi_agent" ||
 		key == "features.multi_agent_v2" || strings.HasPrefix(key, "features.multi_agent_v2.")
 }
