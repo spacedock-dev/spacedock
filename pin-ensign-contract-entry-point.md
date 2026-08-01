@@ -43,6 +43,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:6835053f386bc35578c331282090258011558f9af8407520203c9d7aefe45138
                 room-ref: ./pin-ensign-contract-entry-point/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mxaaqb96syv7pq7ekg5a5194:ideation:1
+                briefing: briefing:mxaaqb96syv7pq7ekg5a5194:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-01T12:42:14.985156Z"
+                decision: approve
+                reason: Accepts the build-owned pi ensign delivery design + child exemption as presented (verdict approve, chat)
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 started: 2026-08-01T12:27:09Z
 ---
 
