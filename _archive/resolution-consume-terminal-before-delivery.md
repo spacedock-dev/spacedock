@@ -1,11 +1,11 @@
 ---
 id: 1w62z8c5fq5g5cmhzf5sd79w
 title: "Resolution-consume semantic hole: gate approval spends authority into terminal status before delivery proof, leaving no send-back path when delivery later fails"
-status: validation
+status: done
 source: "FO self-incident, 2026-07-31, in session fielding the fo-boot-install-hint-linux-direct-sandbox PR-merge ceremony. Captain caught the model–reality mismatch: status=done + verdict/completed unset + mod-block=merge:pr-merge, all after the validation approval was consumed into done. Only the credential delay kept the failure mode from being ratified."
 started: 2026-07-31T14:27:47Z
-completed:
-verdict:
+completed: 2026-08-01T05:19:05Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-resolution-consume-terminal-before-delivery
 issue:
@@ -196,11 +196,12 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
 sprint: durable-decisions
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:590
+archived: 2026-08-01T05:19:05Z
 ---
 
 A gate approval on a terminal-target stage (`validation → done`) is *immediately consumable into terminal status*: the binding approval's authority is marked spent (`consumed=true`) and the entity's status flips to `done` at consume time, while delivery (PR push, CI, merge) and workflow terminal fields (`verdict`, `completed`) remain pending. Three desyncs follow:
