@@ -49,6 +49,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:bb1d202e76847364f51a17ff726b6c7e6f71a6820298d600aae3c67e658c01fa
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:wjkhq0sktbbe3txx6jhnvcv2:ideation:1
+                briefing: briefing:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-01T16:07:10.322447Z"
+                decision: revise
+                reason: 'Captain directed send-back for Science Officer REVISE: AC-2 and AC-3 lack concrete evidence, and the design must preserve the zbc correction-round producer; route for ideation correction.'
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 ---
 
 Remove the public `gate record --round` and `gate validate --round` surface from the stable v1 cut. The implementation is coherent only for this repository's development review policy; retaining it would freeze that policy into the generic durable-decision contract.
