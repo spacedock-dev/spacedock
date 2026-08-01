@@ -11,6 +11,21 @@ issue:
 pr:
 sprint: durable-decisions
 id: wjkhq0sktbbe3txx6jhnvcv2
+gates:
+    version: 1
+    current:
+        gate: gate:wjkhq0sktbbe3txx6jhnvcv2:backlog
+    records:
+        - id: gate:wjkhq0sktbbe3txx6jhnvcv2:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:wjkhq0sktbbe3txx6jhnvcv2-backlog-1
+              briefing:
+                id: briefing:wjkhq0sktbbe3txx6jhnvcv2:backlog:attempt-1:revision-1
+                digest: sha256:45e247730eceb6bb9fb0e68f806630bab3cdd2df47830efc5f4f9e40792351f8
+                digest-domain: canonical-bytes
+                request-digest: sha256:13584896ffe679ba3def35d84099ea4402ac80d53f7836c89be8fa535efc32af
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Remove the public `gate record --round` and `gate validate --round` surface from the stable v1 cut. The present implementation is coherent only for this repository's development review policy, so retaining it would make workflow-specific semantics part of the generic gate storage contract.

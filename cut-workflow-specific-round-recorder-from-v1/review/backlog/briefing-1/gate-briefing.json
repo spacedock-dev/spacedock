@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:wjkhq0sktbbe3txx6jhnvcv2:backlog:attempt-1:revision-1",
+  "question": "Should this durable-decisions sprint task enter ideation for the proposed stable-v1 cut?",
+  "artifacts": [
+    {
+      "id": "artifact:wjkhq0sktbbe3txx6jhnvcv2:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a3a0576d90436844b922c22ea49e626a98f1b7a8/cut-workflow-specific-round-recorder-from-v1/index.md",
+      "rev": "sha256:04e863ba9f068b1ec5b43021dca90e31639c2eb725499f9af46a9f6c9543f2f4",
+      "mediaType": "text/markdown",
+      "summary": "Approve ideation of the stable-v1 cut that removes workflow-specific advisory-round recording while preserving binding gate lifecycle behavior and the entity acceptance criteria."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:wjkhq0sktbbe3txx6jhnvcv2:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/af42c77d52de855f554fb8421a62e3b16b75f2ac/docs/roadmap/durable-decisions/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:123cf6ae94471eb8b73e5392eda294e16d98bcc0577e35bcdc087942a8afe964"
+    }
+  ]
+}
