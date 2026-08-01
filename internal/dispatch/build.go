@@ -61,16 +61,31 @@ var teamNamePattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`)
 // two sites that render Claude Agent envelopes.
 var modelEnum = map[string]bool{"sonnet": true, "opus": true, "haiku": true, "fable": true}
 
+// Pi spawn delivery defaults for `dispatch build --host pi`: pi-subagents
+// resolves agents and skills by directory basename only, so the artifact
+// carries the generic write-capable agent ("worker") and the basename skill
+// ("ensign"); a stage agent: override replaces agent and drops skill (the
+// override agent owns its own contract).
+const (
+	piSpawnAgent = "worker"
+	piSpawnSkill = "ensign"
+)
+
 // buildOutput is the stdout JSON envelope. Field order is the emission order
 // (insertion order in the oracle): schema_version, subagent_type, description,
 // fetch_commands, dispatch_file_path, prompt, model, then name / team_name /
-// run_in_background. Model is a *string so an unresolved model serializes as the
+// run_in_background, then the pi-only agent / skill pair. Model is a *string so an unresolved model serializes as the
 // JSON literal null; Name / TeamName / RunInBackground are *T with omitempty so
 // bare-mode dispatches omit the keys entirely (absent, not null). RunInBackground
 // is set only on the merged Claude shape (.178+: named background teammate, no
 // team_name) — it carries the worker→lead inter-agent communication half of the dispatch (the
 // `name` carries the lead→worker half), so a legacy team-name or bare dispatch
-// omits it.
+// omits it. Agent/Skill are the pi-only spawn binding: set only for
+// "host": "pi" fresh dispatches — the artifact itself names the pi-subagents
+// agent (piSpawnAgent, or the stage's agent: override) and basename skill
+// (piSpawnSkill; omitted on an override) so «worker.spawn» needs no local
+// convention. Claude/codex envelopes never carry them (omitempty), so their
+// bytes are unchanged.
 type buildOutput struct {
 	SchemaVersion   int      `json:"schema_version"`
 	SubagentType    string   `json:"subagent_type"`
@@ -82,6 +97,8 @@ type buildOutput struct {
 	Name            *string  `json:"name,omitempty"`
 	TeamName        *string  `json:"team_name,omitempty"`
 	RunInBackground *bool    `json:"run_in_background,omitempty"`
+	Agent           *string  `json:"agent,omitempty"`
+	Skill           *string  `json:"skill,omitempty"`
 }
 
 // buildAdvanceOutput is the stdout JSON envelope for `--advance` mode: a pointer
@@ -804,6 +821,16 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		// run_in_background confers. The FO maps this field to Agent verbatim.
 		runInBackground := true
 		out.RunInBackground = &runInBackground
+	}
+	if host == "pi" {
+		if agent, ok := stageMeta.Agent(); ok {
+			// Override owns its contract: replace agent, omit skill.
+			out.Agent = &agent
+		} else {
+			agent, skill := piSpawnAgent, piSpawnSkill
+			out.Agent = &agent
+			out.Skill = &skill
+		}
 	}
 
 	return emitBuildJSON(stdout, out)
