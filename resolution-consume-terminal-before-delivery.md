@@ -159,7 +159,25 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-validation-3
+              briefing:
+                id: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-3:revision-1
+                digest: sha256:5b1677f0af7764e86943f5c637380a89f35925ab8581f52d23906c75e046cc1c
+                digest-domain: canonical-bytes
+                request-digest: sha256:69c252cd3a8fd8e1a288872564605350de2114d5e42b10f69a36b65f9eeb94c8
+                room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:1w62z8c5fq5g5cmhzf5sd79w:validation:3
+                briefing: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-01T01:58:45.278682Z"
+                decision: hold
+                reason: 'FO shell-escaping error: the prepared summary contained a backtick-quoted phrase that bash command-substituted, corrupting the bound briefing''s summary sentence before presentation. Attempt superseded pre-presentation, no gate decision taken; to be replaced by an identical-artifact attempt with the summary prose corrected (backticks removed).'
+              application:
+                action: none
+                state: not-applicable
 sprint: durable-decisions
 ---
 
