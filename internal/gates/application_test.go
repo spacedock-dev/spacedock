@@ -461,8 +461,8 @@ func TestConsumeTerminalTargetRoutesWithoutSpending(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if result.Consumed || result.Route != RouteApprovedAwaitingMerge || !result.Eligible {
-			t.Fatalf("terminal consume = %#v, want unconsumed route %q", result, RouteApprovedAwaitingMerge)
+		if result.Consumed || !result.Eligible || !ApprovedAwaitingMergeRoute(entity, root) {
+			t.Fatalf("terminal consume = %#v routed=%t, want unconsumed approved-awaiting-merge routing", result, ApprovedAwaitingMergeRoute(entity, root))
 		}
 	}
 	after, err := os.ReadFile(entity)
@@ -490,7 +490,7 @@ func TestConsumeNonTerminalStillSpendsOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.Consumed || result.Route != "" {
+	if !result.Consumed || ApprovedAwaitingMergeRoute(entity, root) {
 		t.Fatalf("non-terminal consume = %#v, want spent with no route", result)
 	}
 }
@@ -510,7 +510,7 @@ func TestTerminalSpendAndReworkGuardReuse(t *testing.T) {
 	}
 	attempt := doc.Records[0].Attempts[len(doc.Records[0].Attempts)-1]
 	attempt.Application.State = "consumed"
-	if err := ValidateApplicationMutation(oldNode, doc, attempt.ID, "pending", "consumed"); err != nil {
+	if err := validateApplicationMutation(oldNode, doc, attempt.ID, "pending", "consumed"); err != nil {
 		t.Fatalf("envelope spend must reuse the pending->consumed guard: %v", err)
 	}
 	// A second spend is impossible: the once-consumed application is not
@@ -526,7 +526,7 @@ func TestTerminalSpendAndReworkGuardReuse(t *testing.T) {
 	}
 	attempt2 := doc2.Records[0].Attempts[len(doc2.Records[0].Attempts)-1]
 	attempt2.Application.State = "superseded"
-	if err := ValidateApplicationMutation(oldNode2, doc2, attempt2.ID, "pending", "superseded"); err != nil {
+	if err := validateApplicationMutation(oldNode2, doc2, attempt2.ID, "pending", "superseded"); err != nil {
 		t.Fatalf("rework route must reuse the pending->superseded guard: %v", err)
 	}
 	// A superseded application stays non-eligible (fail-closed, as today):

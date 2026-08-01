@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
-	"gopkg.in/yaml.v3"
 )
 
 // runSet handles the --set mutation flow with mod-block / merge-hook /
@@ -20,7 +19,7 @@ import (
 // --set branch of main().
 func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilter,
 	includeArchive, showNext, showBoot, showNextID, showValidate, hasFieldsFlag, quiet, asJSON bool,
-	envelope *setEnvelope, stdout, stderr io.Writer) int {
+	stdout, stderr io.Writer) int {
 
 	var incompatible []string
 	if showNext {
@@ -179,8 +178,7 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 		}
 	}
 
-	ceremonyEnvelope := envelope != nil && envelope.ceremony
-	if (modBlock != "" || clearingModBlock) && !force && !ceremonyEnvelope {
+	if (modBlock != "" || clearingModBlock) && !force {
 		if isTerminalUpdate() {
 			var reason string
 			if modBlock != "" && !clearingModBlock {
@@ -245,26 +243,28 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 			postUpdateStatus = u.value
 		}
 	}
-	if !force && envelope == nil && len(terminalNames) > 0 {
+	if !force && len(terminalNames) > 0 {
 		// Sole-terminal-consumer refusal: while the entity carries a binding
-		// pending terminal-target application, merge guard's delivery envelope is
-		// the ONLY writer allowed to land terminal status — a hand --set to
+		// pending terminal-target application, merge guard's locked gates write
+		// is the ONLY writer allowed to land terminal status — a hand --set to
 		// terminal would recreate the done-but-undelivered shape (authority
 		// unspent, delivery unproven). --force honors the uniform escape hatch.
-		// Refusal-only: no state or record is added, and merge guard's own
-		// envelope calls exempt themselves (envelope != nil).
+		// Refusal-only: no state or record is added.
 		terminalSet := false
 		for _, u := range set.updates {
 			if u.field == "status" && u.hasValue && terminalNames[u.value] {
 				terminalSet = true
 			}
 		}
-		if terminalSet && pendingTerminalApplicationFor(entityPath, roots.definitionDir, strings.TrimSpace(currentFields["status"])) {
-			return errExit(stderr, fmt.Sprintf(
-				"entity %s carries a pending terminal-target approval — merge guard %s is the sole terminal consumer: "+
-					"run `spacedock merge guard %s --verdict passed|rejected` (or `merge guard %s --rework` to send back). "+
-					"(--force bypasses this guard.)",
-				slug, slug, slug, slug))
+		if terminalSet {
+			_, pending, _ := pendingTerminalApproval(entityPath, roots.definitionDir, strings.TrimSpace(currentFields["status"]))
+			if pending {
+				return errExit(stderr, fmt.Sprintf(
+					"entity %s carries a pending terminal-target approval — merge guard %s is the sole terminal consumer: "+
+						"run `spacedock merge guard %s --verdict passed|rejected` (or `merge guard %s --rework` to send back). "+
+						"(--force bypasses this guard.)",
+					slug, slug, slug, slug))
+			}
 		}
 	}
 	if !force && finalizing && len(stages) > 0 && !terminalNames[postUpdateStatus] {
@@ -274,7 +274,7 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 			slug, postUpdateStatus, terminalStageName(roots.definitionDir), slug))
 	}
 
-	if !force && !ceremonyEnvelope && policy != mergeLocal && isTerminalUpdate() && modBlock == "" && postUpdatePR == "" && postUpdateVerdict != "rejected" {
+	if !force && policy != mergeLocal && isTerminalUpdate() && modBlock == "" && postUpdatePR == "" && postUpdateVerdict != "rejected" {
 		mergeHooks := scanMods(roots.definitionDir)["merge"]
 		if len(mergeHooks) > 0 {
 			return errExit(stderr, fmt.Sprintf(
@@ -353,17 +353,7 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 		}
 	}
 
-	var gatesMutator func(*yaml.Node) (*yaml.Node, error)
-	writeFn := atomicWrite
-	if envelope != nil {
-		// The envelope's application mutation and terminal fields land in the
-		// SAME candidate replacement through the envelope's own write seam (the
-		// AC-1 atomics assertion instruments envelopeWriteFn); merge guard passes
-		// envelopeWriteFn so a split-write envelope is observable.
-		gatesMutator = envelope.gatesMutator
-		writeFn = envelopeWriteFn
-	}
-	resolvedFields, err := updateFrontmatterNode(entityPath, set.updates, gatesMutator, writeFn)
+	resolvedFields, err := updateFrontmatter(entityPath, set.updates)
 	if err != nil {
 		return errExit(stderr, err.Error())
 	}

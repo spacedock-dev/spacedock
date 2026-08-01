@@ -201,10 +201,12 @@ it does NOT invoke the merge hook or make the merge verdict (you pass that in wi
 
 merge guard is the sole terminal consumer of a gate approval whose target is the
 terminal stage: "gate consume" leaves such an approval pending (route
-approved-awaiting-merge), and guard's successful delivery spends it — application,
-terminal status, verdict, and completed move in ONE write, with delivery state
-(mod-block/pr) retired in the same write. A non-forced terminal "status --set"
-while that approval is pending is refused in favor of this ceremony.
+approved-awaiting-merge), and guard's successful delivery spends it — the
+mod-block is cleared in its own step first, then application, terminal status,
+verdict, and completed move in ONE locked write; the pr merge sentinel is
+retained through archive as durable delivery proof. A non-forced terminal
+"status --set" while that approval is pending is refused in favor of this
+ceremony.
 
 --rework is the delivery-requires-rework outcome: when delivery fails beyond
 retry (e.g. the PR is closed unmerged), it writes the approval pending->superseded,

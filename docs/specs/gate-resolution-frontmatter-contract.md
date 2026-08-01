@@ -293,10 +293,11 @@ replacement. Consumption of a terminal-target approval is mechanism-agnostic rou
 not a spend: it writes nothing, leaves the application `pending` and the status at the
 gated stage, and returns the `approved-awaiting-merge` route; a repeated consume is
 idempotent re-routing. The terminal merge ceremony (`spacedock merge guard`) is the
-sole terminal consumer: with delivery proof it writes, in one replacement,
-`application.state: pending→consumed` plus the terminal status, `verdict`, and
-`completed`, retiring recorded delivery state (`mod-block`/`pr`) in the same
-replacement, and a non-forced `status --set` to a terminal stage is refused while a
+sole terminal consumer: with delivery proof it clears the `mod-block` in its
+own step, then writes, in one locked replacement, `application.state:
+pending→consumed` plus the terminal status, `verdict`, and `completed` — the
+`pr` merge sentinel is retained through archive as durable delivery proof —
+and a non-forced `status --set` to a terminal stage is refused while a
 pending terminal-target application is in force. `merge guard --rework` writes
 `application.state: pending→superseded` with `status :=` the record stage's declared
 `feedback-to` and delivery state cleared — through the same guarded application

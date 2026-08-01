@@ -69,16 +69,6 @@ func nowTimestamp() string {
 // body, leaving the opening/close fence lines and the post-fence body —
 // including the file's terminal newline state — untouched.
 func updateFrontmatter(path string, updates []fieldUpdate) (*resolvedFields, error) {
-	return updateFrontmatterNode(path, updates, nil, atomicWrite)
-}
-
-// updateFrontmatterNode is updateFrontmatter generalized: gatesMutator (when
-// non-nil) replaces the `gates` subtree value node — the delivery envelope's
-// application-state transition rides the same field-exact splice as the
-// terminal scalar fields — and writeFn is the one atomic candidate
-// replacement (atomicWrite in production; a test seam at the envelope's write
-// site). updates are the --set field operations resolved below.
-func updateFrontmatterNode(path string, updates []fieldUpdate, gatesMutator func(*yaml.Node) (*yaml.Node, error), writeFn func(string, []byte) error) (*resolvedFields, error) {
 	if !hasOpeningFence(path) {
 		return nil, fmt.Errorf("No frontmatter found in %s", path)
 	}
@@ -186,28 +176,6 @@ func updateFrontmatterNode(path string, updates []fieldUpdate, gatesMutator func
 		mapping.Content = append(mapping.Content, newKey, newVal)
 	}
 
-	// Replace the gates subtree, in the same candidate replacement, when the
-	// caller carries an application mutation (the terminal delivery envelope).
-	if gatesMutator != nil {
-		replaced := false
-		for i := 0; i+1 < len(mapping.Content); i += 2 {
-			k := mapping.Content[i]
-			if k.Kind != yaml.ScalarNode || k.Value != "gates" {
-				continue
-			}
-			next, gerr := gatesMutator(mapping.Content[i+1])
-			if gerr != nil {
-				return nil, gerr
-			}
-			mapping.Content[i+1] = next
-			replaced = true
-			break
-		}
-		if !replaced {
-			return nil, fmt.Errorf("frontmatter %s has no gates mapping to replace", path)
-		}
-	}
-
 	out, err := yaml.Marshal(&doc)
 	if err != nil {
 		return nil, fmt.Errorf("marshal frontmatter %s: %w", path, err)
@@ -222,7 +190,7 @@ func updateFrontmatterNode(path string, updates []fieldUpdate, gatesMutator func
 	rebuilt = append(rebuilt, newLines...)
 	rebuilt = append(rebuilt, lines[fmEnd:]...)
 
-	if err := writeFn(path, []byte(strings.Join(rebuilt, "\n"))); err != nil {
+	if err := atomicWrite(path, []byte(strings.Join(rebuilt, "\n"))); err != nil {
 		return nil, err
 	}
 	return resolved, nil
@@ -370,18 +338,13 @@ func runArchive(definitionDir, entityDir, spellingDir, slug string, force, quiet
 	// `verdict: rejected` entity is also exempted: it never ran the merge ceremony
 	// (no PR to require, no merge to gate on), so the requirement is vacuous — this
 	// matches the --set finalize path (runSet), keeping reject-then-archive on the
-	// happy path without --force. A consumed terminal-target application also
-	// satisfies the invariant: the delivery envelope spent merge guard's sole
-	// terminal-consumer approval — with the sentinel verified at finalize — and
-	// retired the sentinel (pr) in the same replacement, so its absence here is
-	// the post-envelope shape, not a skipped ceremony.
+	// happy path without --force.
 	policy, perr := resolveMergePolicy(definitionDir)
 	if perr != nil {
 		fmt.Fprintf(stderr, "Error: %s\n", perr)
 		return 1
 	}
-	if !force && policy != mergeLocal && verdict != "rejected" && modBlock == "" && pr == "" &&
-		!hasConsumedTerminalApplication(sourcePath) {
+	if !force && policy != mergeLocal && verdict != "rejected" && modBlock == "" && pr == "" {
 		mergeHooks := scanMods(definitionDir)["merge"]
 		if len(mergeHooks) > 0 {
 			fmt.Fprintf(stderr,

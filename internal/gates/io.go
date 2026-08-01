@@ -4,6 +4,7 @@ package gates
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,6 +15,11 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/gitsource"
 	"gopkg.in/yaml.v3"
 )
+
+// ErrNoGateRecord marks an entity with no gates record at all. Callers may
+// take a gate-free (legacy) path only on this exact condition; any other read
+// failure is hostile authority and must be refused byte-clean.
+var ErrNoGateRecord = errors.New("entity has no gates record")
 
 func Read(path string) (*Document, *yaml.Node, error) {
 	data, err := os.ReadFile(path)
@@ -30,7 +36,7 @@ func readData(data []byte) (*Document, *yaml.Node, error) {
 	}
 	gatesNode := mappingValue(root, "gates")
 	if gatesNode == nil {
-		return nil, nil, fmt.Errorf("entity has no gates record")
+		return nil, nil, ErrNoGateRecord
 	}
 	encoded, err := yaml.Marshal(gatesNode)
 	if err != nil {
@@ -185,7 +191,26 @@ func writeDocument(path string, expected *yaml.Node, doc *Document) error {
 	return writeEntityDocument(path, expected, nil, doc, nil)
 }
 
-func writeEntityDocument(path string, expected *yaml.Node, expectedStatus *string, doc *Document, status *string) error {
+// entityField is one extra top-level frontmatter scalar written in the SAME
+// locked candidate replacement as the gates/status swap. Its use is confined to
+// the terminal delivery write: verdict and completed land with the authority
+// spend so done-but-undelivered is unrepresentable. fields are inserted after
+// the last frontmatter line when absent (insert: true), never byte-shifting
+// existing fields.
+type entityField struct {
+	key   string
+	value string
+}
+
+// entityDocumentWriteFn is the ONE atomic candidate replacement at the gates
+// writer's write site (atomicWrite in production). Declared as a var so a
+// package-level assertion can observe that the terminal delivery write's
+// candidate carries all four field changes (application state, status,
+// verdict, completed) at once, and can fail the replacement mid-write to
+// prove the original bytes stay intact.
+var entityDocumentWriteFn = atomicWrite
+
+func writeEntityDocument(path string, expected *yaml.Node, expectedStatus *string, doc *Document, status *string, fields ...entityField) error {
 	if err := Validate(doc); err != nil {
 		return err
 	}
@@ -198,7 +223,7 @@ func writeEntityDocument(path string, expected *yaml.Node, expectedStatus *strin
 	if err != nil {
 		return err
 	}
-	replacements := []topLevelReplacement{{key: "gates", data: gatesBlock}}
+	replacements := []topLevelReplacement{{key: "gates", data: gatesBlock, insert: status == nil}}
 	if status != nil {
 		statusBlock, err := yaml.Marshal(struct {
 			Status string `yaml:"status"`
@@ -208,22 +233,40 @@ func writeEntityDocument(path string, expected *yaml.Node, expectedStatus *strin
 		}
 		replacements = append(replacements, topLevelReplacement{key: "status", data: statusBlock})
 	}
+	for _, f := range fields {
+		if strings.ContainsAny(f.key, ":\r\n") || strings.ContainsAny(f.value, "\r\n") {
+			return fmt.Errorf("entity field %q is not a plain one-line scalar", f.key)
+		}
+		// Emit the same plain-scalar line runSet writes (e.g. completed:
+		// 2026-08-01T00:00:00Z, not the quoted form yaml.Marshal picks for
+		// timestamp-shaped strings), so the locked write is byte-identical in
+		// shape to the --set it replaces.
+		replacements = append(replacements, topLevelReplacement{key: f.key, data: []byte(f.key + ": " + f.value + "\n"), insert: true})
+	}
 	return mutateEntity(path, entityExpectation{Gates: expected, Status: expectedStatus}, func(original []byte) ([]byte, error) {
-		out, err := replaceTopLevels(original, status == nil, replacements...)
+		out, err := replaceTopLevels(original, replacements...)
 		if err != nil {
 			return nil, err
 		}
 		if _, _, err := readData(out); err != nil {
 			return nil, fmt.Errorf("validate rebuilt gates: %w", err)
 		}
-		if status != nil {
+		if status != nil || len(fields) > 0 {
 			parsed, _, _, err := frontmatterNode(out)
-			if err != nil || mappingValue(parsed, "status") == nil || mappingValue(parsed, "status").Value != *status {
+			if err != nil {
 				return nil, fmt.Errorf("validate rebuilt workflow status")
+			}
+			if status != nil && (mappingValue(parsed, "status") == nil || mappingValue(parsed, "status").Value != *status) {
+				return nil, fmt.Errorf("validate rebuilt workflow status")
+			}
+			for _, f := range fields {
+				if node := mappingValue(parsed, f.key); node == nil || node.Value != f.value {
+					return nil, fmt.Errorf("validate rebuilt %s field", f.key)
+				}
 			}
 		}
 		return out, nil
-	}, atomicWrite)
+	}, entityDocumentWriteFn)
 }
 
 type entityExpectation struct {
@@ -274,9 +317,10 @@ type topLevelReplacement struct {
 	key        string
 	start, end int
 	data       []byte
+	insert     bool
 }
 
-func replaceTopLevels(original []byte, insertMissing bool, replacements ...topLevelReplacement) ([]byte, error) {
+func replaceTopLevels(original []byte, replacements ...topLevelReplacement) ([]byte, error) {
 	root, fmStart, fmEnd, err := frontmatterNode(original)
 	if err != nil {
 		return nil, err
@@ -284,7 +328,7 @@ func replaceTopLevels(original []byte, insertMissing bool, replacements ...topLe
 	for i := range replacements {
 		start, end, ok := topLevelRange(root, fmStart, fmEnd, replacements[i].key)
 		if !ok {
-			if !insertMissing {
+			if !replacements[i].insert {
 				return nil, fmt.Errorf("entity has no %s field", replacements[i].key)
 			}
 			start, end = fmEnd, fmEnd
@@ -294,7 +338,15 @@ func replaceTopLevels(original []byte, insertMissing bool, replacements ...topLe
 			replacements[i].data = []byte(strings.ReplaceAll(string(replacements[i].data), "\n", "\r\n"))
 		}
 	}
-	sort.Slice(replacements, func(i, j int) bool { return replacements[i].start > replacements[j].start })
+	// Later positions replace first so earlier offsets stay valid; equal
+	// offsets (insertions at the frontmatter end) apply last-listed first so
+	// the final buffer lists them in the order the caller gave.
+	sort.SliceStable(replacements, func(i, j int) bool {
+		if replacements[i].start == replacements[j].start {
+			return i > j
+		}
+		return replacements[i].start > replacements[j].start
+	})
 	out := append([]byte(nil), original...)
 	for _, replacement := range replacements {
 		out = append(append(append([]byte{}, out[:replacement.start]...), replacement.data...), out[replacement.end:]...)

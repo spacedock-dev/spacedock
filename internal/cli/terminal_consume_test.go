@@ -1,7 +1,8 @@
 // ABOUTME: Terminal-consume/delivery boundary, driven through the real CLI:
 // ABOUTME: consume routes (never spends) terminal approvals; merge guard is the
-// ABOUTME: sole terminal consumer (envelope | --rework); retryable trouble moves
-// ABOUTME: nothing. AC-1/AC-2/AC-3 of resolution-consume-terminal-before-delivery.
+// ABOUTME: sole terminal consumer via the gates-owned locked operations
+// ABOUTME: (finalize | --rework); retryable trouble moves nothing.
+// ABOUTME: AC-1/AC-2/AC-3 of resolution-consume-terminal-before-delivery.
 package cli
 
 import (
@@ -62,13 +63,18 @@ func terminalCLIWorkflow(t *testing.T, opts terminalWorkflowOpts) (root, entity 
 		{"add", "-A"},
 		{"commit", "-q", "-m", "seed"},
 	} {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
+		terminalRunGit(t, root, args...)
 	}
 	return root, entity
+}
+
+func terminalRunGit(t *testing.T, dir string, args ...string) {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git %v: %v\n%s", args, err, out)
+	}
 }
 
 func terminalInvoke(t *testing.T, root string, args ...string) (int, string, string) {
@@ -124,11 +130,12 @@ func gateApplicationStates(t *testing.T, entity string) []string {
 	return states
 }
 
-// TestTerminalDeliveryFailureReworkRoundTrip is AC-1: approval recorded ->
-// consume routes without spending -> merge guard arms; delivery fails beyond
-// retry -> --rework supersedes through the declared feedback-to with delivery
-// state cleared; rework, re-enter, fresh approval, delivery proven ->
-// merge guard --verdict passed finalizes status+verdict+completed+spend.
+// TestTerminalDeliveryFailureReworkRoundTrip is AC-1's value spine: approval
+// recorded -> consume routes without spending (pending, approved-awaiting-merge)
+// -> merge guard arms; delivery fails beyond retry -> --rework supersedes
+// through the declared feedback-to with delivery state cleared; rework,
+// re-enter, fresh approval, delivery proven -> merge guard --verdict passed
+// lands terminal status+verdict+completed+spend, pr sentinel retained.
 func TestTerminalDeliveryFailureReworkRoundTrip(t *testing.T) {
 	root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{hook: "pr-merge", feedbackTo: "implementation"})
 	approvedTerminalGate(t, root)
@@ -217,153 +224,34 @@ func TestTerminalDeliveryFailureReworkRoundTrip(t *testing.T) {
 	}
 
 	// Delivery proven: the merge sentinel records the landed PR; merge guard
-	// finalizes — terminal status, verdict, completed, and the spend land.
+	// finalizes — terminal status, verdict, completed, and the spend land in
+	// the gates-owned locked write; the pr sentinel is RETAINED through
+	// archive as durable delivery proof.
 	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "pr=pr-merge:7"); code != 0 {
 		t.Fatalf("record merge sentinel exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	code, out, errOut = terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root)
 	if code != 0 || !strings.Contains(out, "finalized: task -> done (verdict passed)") {
-		t.Fatalf("envelope finalize exit=%d stdout=%q stderr=%q", code, out, errOut)
+		t.Fatalf("finalize exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	archived := filepath.Join(root, "_archive", "task.md")
 	fields = entityFields(t, archived)
 	if strings.TrimSpace(fields["status"]) != "done" || strings.TrimSpace(fields["verdict"]) != "passed" ||
 		strings.TrimSpace(fields["completed"]) == "" {
-		t.Fatalf("envelope fields = status:%q verdict:%q completed:%q", fields["status"], fields["verdict"], fields["completed"])
+		t.Fatalf("finalized fields = status:%q verdict:%q completed:%q", fields["status"], fields["verdict"], fields["completed"])
+	}
+	if strings.TrimSpace(fields["pr"]) != "pr-merge:7" {
+		t.Fatalf("pr merge sentinel must be retained through archive as delivery proof: pr=%q", fields["pr"])
 	}
 	if got := gateApplicationStates(t, archived); !slices.Equal(got, []string{"superseded", "consumed"}) {
 		t.Fatalf("final application states = %v, want [superseded consumed]", got)
 	}
 }
 
-// TestTerminalSpendOnlyInDeliveryEnvelope is AC-2: across merge: pr, registered
-// merge: local, and manual local merge with NO registration, consume leaves the
-// approval pending and the delivery envelope is the only terminal entry —
-// terminal status, the verdict/completed pair, and the consumed application move
-// together and only there. Plus the --set refusal and idempotent re-consume.
-func TestTerminalSpendOnlyInDeliveryEnvelope(t *testing.T) {
-	classes := []struct {
-		name     string
-		opts     terminalWorkflowOpts
-		sentinel string
-	}{
-		{"merge-pr", terminalWorkflowOpts{hook: "pr-merge", feedbackTo: "implementation"}, "pr-merge:7"},
-		{"merge-local-registered", terminalWorkflowOpts{hook: "local-merge", localMerge: true, feedbackTo: "implementation"}, "local-merge:abc123f"},
-	}
-	for _, tc := range classes {
-		t.Run(tc.name, func(t *testing.T) {
-			root, entity := terminalCLIWorkflow(t, tc.opts)
-			approvedTerminalGate(t, root)
-			code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root)
-			if code != 0 || !strings.Contains(out, "consumed=false") || !strings.Contains(out, "route=approved-awaiting-merge") {
-				t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
-			}
-			// Pre-delivery invariant: nothing terminal anywhere.
-			fields := entityFields(t, entity)
-			if strings.TrimSpace(fields["status"]) != "validation" || strings.TrimSpace(fields["verdict"]) != "" ||
-				strings.TrimSpace(fields["completed"]) != "" {
-				t.Fatalf("pre-delivery terminal fields leaked: %v", fields)
-			}
-			if got := gateApplicationStates(t, entity); !slices.Equal(got, []string{"pending"}) {
-				t.Fatalf("pre-delivery application states = %v", got)
-			}
-			// Delivery proven → the envelope.
-			if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "pr="+tc.sentinel, "--workflow-dir", root); code != 0 {
-				t.Fatalf("record sentinel exit=%d stdout=%q stderr=%q", code, out, errOut)
-			}
-			code, out, errOut = terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root)
-			if code != 0 || !strings.Contains(out, "finalized: task -> done") {
-				t.Fatalf("finalize exit=%d stdout=%q stderr=%q", code, out, errOut)
-			}
-			fields = entityFields(t, filepath.Join(root, "_archive", "task.md"))
-			terminalDone := strings.TrimSpace(fields["status"]) == "done"
-			fullTerminal := strings.TrimSpace(fields["verdict"]) != "" && strings.TrimSpace(fields["completed"]) != "" &&
-				slices.Equal(gateApplicationStates(t, filepath.Join(root, "_archive", "task.md")), []string{"consumed"})
-			if terminalDone != fullTerminal {
-				t.Fatalf("AC-2 coherence: status terminal=%t but full terminal envelope=%t (fields=%v)", terminalDone, fullTerminal, fields)
-			}
-		})
-	}
-
-	t.Run("manual-local-merge-no-registration", func(t *testing.T) {
-		root, _ := terminalCLIWorkflow(t, terminalWorkflowOpts{localMerge: true, feedbackTo: "implementation"})
-		approvedTerminalGate(t, root)
-		if code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); code != 0 ||
-			!strings.Contains(out, "consumed=false") {
-			t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
-		}
-		// The captain merges locally FIRST; the merge commit exists before the
-		// guard runs. Record its sentinel, then let the guard observe it.
-		mergeSHA := manualMergeCommit(t, root)
-		if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "pr=local-merge:"+mergeSHA, "--workflow-dir", root); code != 0 {
-			t.Fatalf("record local merge sentinel exit=%d stdout=%q stderr=%q", code, out, errOut)
-		}
-		code, out, errOut := terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root)
-		if code != 0 || !strings.Contains(out, "finalized: task -> done") {
-			t.Fatalf("manual-merge finalize exit=%d stdout=%q stderr=%q", code, out, errOut)
-		}
-		fields := entityFields(t, filepath.Join(root, "_archive", "task.md"))
-		if strings.TrimSpace(fields["status"]) != "done" || strings.TrimSpace(fields["verdict"]) != "passed" ||
-			strings.TrimSpace(fields["completed"]) == "" {
-			t.Fatalf("manual-merge envelope fields = %v", fields)
-		}
-		if got := gateApplicationStates(t, filepath.Join(root, "_archive", "task.md")); !slices.Equal(got, []string{"consumed"}) {
-			t.Fatalf("manual-merge application states = %v, want [consumed]", got)
-		}
-	})
-
-	t.Run("terminal-set-refused-while-approval-pending", func(t *testing.T) {
-		root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{hook: "pr-merge", feedbackTo: "implementation"})
-		approvedTerminalGate(t, root)
-		if code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); code != 0 {
-			t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
-		}
-		before, err := os.ReadFile(entity)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Non-forced terminal --set: refused, naming merge guard.
-		code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "status=done")
-		if code == 0 || !strings.Contains(errOut, "sole terminal consumer") || !strings.Contains(errOut, "merge guard task") {
-			t.Fatalf("terminal --set must refuse naming merge guard: exit=%d stdout=%q stderr=%q", code, out, errOut)
-		}
-		after, err := os.ReadFile(entity)
-		if err != nil || !bytes.Equal(before, after) {
-			t.Fatalf("refused terminal --set changed the entity (read err=%v)", err)
-		}
-		// --force remains the uniform escape hatch: the status writes, the
-		// authority is untouched (never force-spent).
-		if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "status=done", "--force"); code != 0 {
-			t.Fatalf("forced terminal --set exit=%d stdout=%q stderr=%q", code, out, errOut)
-		}
-		fields := entityFields(t, entity)
-		if strings.TrimSpace(fields["status"]) != "done" {
-			t.Fatalf("forced terminal --set status = %q", fields["status"])
-		}
-		if got := gateApplicationStates(t, entity); !slices.Equal(got, []string{"pending"}) {
-			t.Fatalf("--force must not spend authority: applications = %v", got)
-		}
-	})
-
-	t.Run("re-consume-is-idempotent-routing", func(t *testing.T) {
-		root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{hook: "pr-merge", feedbackTo: "implementation"})
-		approvedTerminalGate(t, root)
-		for pass := 0; pass < 2; pass++ {
-			code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root)
-			if code != 0 || !strings.Contains(out, "consumed=false") || !strings.Contains(out, "route=approved-awaiting-merge") {
-				t.Fatalf("consume pass %d exit=%d stdout=%q stderr=%q", pass, code, out, errOut)
-			}
-		}
-		if got := gateApplicationStates(t, entity); !slices.Equal(got, []string{"pending"}) {
-			t.Fatalf("repeated consume moved authority: applications = %v", got)
-		}
-	})
-}
-
 // TestTerminalRetryLeavesAuthorityPending is AC-3: guard invoked before delivery
 // proof writes no authority/status/terminal-field change and reports waiting;
-// once delivery lands the envelope spends exactly once, and a re-invocation is
-// a clean refusal with no second write.
+// once delivery lands the locked write spends exactly once, and a re-invocation
+// is a clean refusal with no second write.
 func TestTerminalRetryLeavesAuthorityPending(t *testing.T) {
 	root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{hook: "pr-merge", feedbackTo: "implementation"})
 	approvedTerminalGate(t, root)
@@ -391,7 +279,7 @@ func TestTerminalRetryLeavesAuthorityPending(t *testing.T) {
 		t.Fatalf("retry window moved authority: %v", got)
 	}
 
-	// The retryable failure clears: delivery proven; the envelope lands once.
+	// The retryable failure clears: delivery proven; the locked write lands once.
 	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "pr=pr-merge:7"); code != 0 {
 		t.Fatalf("sentinel exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
@@ -472,6 +360,84 @@ func TestTerminalReworkRefusalMatrix(t *testing.T) {
 	}
 }
 
+// TestTerminalSetRefusedWhileApprovalPending is the AC-2 sole-consumer refusal:
+// a non-forced --set to terminal fails closed, naming merge guard, byte-clean;
+// --force is the uniform escape hatch and never spends authority.
+func TestTerminalSetRefusedWhileApprovalPending(t *testing.T) {
+	root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{hook: "pr-merge", feedbackTo: "implementation"})
+	approvedTerminalGate(t, root)
+	if code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); code != 0 {
+		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "status=done")
+	if code == 0 || !strings.Contains(errOut, "sole terminal consumer") || !strings.Contains(errOut, "merge guard task") {
+		t.Fatalf("terminal --set must refuse naming merge guard: exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil || !bytes.Equal(before, after) {
+		t.Fatalf("refused terminal --set changed the entity (read err=%v)", err)
+	}
+	// --force remains the uniform escape hatch: the status writes, the
+	// authority is untouched (never force-spent).
+	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "status=done", "--force"); code != 0 {
+		t.Fatalf("forced terminal --set exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	fields := entityFields(t, entity)
+	if strings.TrimSpace(fields["status"]) != "done" {
+		t.Fatalf("forced terminal --set status = %q", fields["status"])
+	}
+	if got := gateApplicationStates(t, entity); !slices.Equal(got, []string{"pending"}) {
+		t.Fatalf("--force must not spend authority: applications = %v", got)
+	}
+}
+
+// TestMergeGuardRefusesDigestStaleAuthorityByteClean pins the fail-closed
+// writer selection: a REAL pending terminal application whose retained
+// authority became unreadable (disturbed briefing room) must refuse the
+// finalization byte-clean — never terminalize with authority left pending.
+func TestMergeGuardRefusesDigestStaleAuthorityByteClean(t *testing.T) {
+	root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{hook: "pr-merge", feedbackTo: "implementation"})
+	approvedTerminalGate(t, root)
+	if code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); code != 0 {
+		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	// Disturb the retained briefing room recorded at prepare: tamper the
+	// room's retained request.json so its frozen digest no longer matches.
+	var requestFile string
+	if err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() && info.Name() == "request.json" {
+			requestFile = p
+		}
+		return nil
+	}); err != nil || requestFile == "" {
+		t.Fatalf("locate retained request.json: %v %q", err, requestFile)
+	}
+	if err := os.WriteFile(requestFile, []byte("tampered"), 0o644); err != nil {
+		t.Fatalf("disturb briefing room: %v", err)
+	}
+	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "pr=pr-merge:7"); code != 0 {
+		t.Fatalf("record merge sentinel exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, out, _ := terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root)
+	if code == 0 {
+		t.Fatalf("merge guard must refuse digest-stale authority: stdout=%q", out)
+	}
+	if after, _ := os.ReadFile(entity); !bytes.Equal(before, after) {
+		t.Fatalf("digest-stale refusal changed the entity:\nbefore:\n%s\nafter:\n%s", before, after)
+	}
+	if _, err := os.Stat(filepath.Join(root, "_archive", "task.md")); !os.IsNotExist(err) {
+		t.Fatalf("digest-stale refusal must not archive: %v", err)
+	}
+}
+
 // TestRoutedTerminalApprovalSurfacesExistingDisplay: the routed entity (pending
 // terminal application, status unchanged) shows through the EXISTING pending-
 // application display — no new readiness states.
@@ -490,32 +456,4 @@ func TestRoutedTerminalApprovalSurfacesExistingDisplay(t *testing.T) {
 	if fields := entityFields(t, entity); strings.TrimSpace(fields["status"]) != "validation" {
 		t.Fatalf("routed entity status moved: %q", fields["status"])
 	}
-}
-
-// manualMergeCommit performs a real --no-ff merge on the fixture's code repo and
-// returns the merge-commit SHA — the delivery proof a manual local merge leaves
-// behind BEFORE merge guard runs.
-func manualMergeCommit(t *testing.T, root string) string {
-	t.Helper()
-	gitC := func(args ...string) {
-		t.Helper()
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-	}
-	gitC("checkout", "-q", "-b", "task-branch")
-	writeFile(t, filepath.Join(root, "task-work.txt"), "work\n")
-	gitC("add", "task-work.txt")
-	gitC("commit", "-q", "-m", "task work")
-	gitC("checkout", "-q", "main")
-	gitC("merge", "--no-ff", "-q", "-m", "merge task branch", "task-branch")
-	cmd := exec.Command("git", "rev-parse", "HEAD")
-	cmd.Dir = root
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("rev-parse: %v\n%s", err, out)
-	}
-	return strings.TrimSpace(string(out))
 }

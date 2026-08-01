@@ -332,8 +332,8 @@ func TestBootReadyGateTerminalApprovalPersistsAtConsumeUntilDeliveryEnvelope(t *
 	// entity must keep surfacing through the existing approved-awaiting-merge
 	// display until delivery proof lands.
 	result, err := gates.ConsumeAt(entity, def)
-	if err != nil || result.Consumed || result.Route != gates.RouteApprovedAwaitingMerge {
-		t.Fatalf("consume = %#v, err=%v", result, err)
+	if err != nil || result.Consumed || !gates.ApprovedAwaitingMergeRoute(entity, def) {
+		t.Fatalf("consume = %#v routed=%t, err=%v", result, gates.ApprovedAwaitingMergeRoute(entity, def), err)
 	}
 	if got := identifyReadyRows(t, def); got != want {
 		t.Fatalf("routed terminal approval lost its ready row: %s, want %s", got, want)

@@ -327,14 +327,17 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					return exitCodeError{1}
 				}
 				fmt.Fprintf(stdout, "gate=%s attempt=%s application=%s/%s condition=%s eligible=%t consumed=%t target-stage=%s", result.Gate, result.Attempt, result.Action, result.ApplicationState, result.Condition, result.Eligible, result.Consumed, result.TargetStage)
-				if result.Route != "" {
-					// Terminal-target approvals are routed, not spent: consume leaves
-					// the application pending and reports the approved-awaiting-merge
-					// route (merge guard is the sole terminal consumer).
-					fmt.Fprintf(stdout, " route=%s", result.Route)
+				// Terminal-target approvals are routed, not spent: consume leaves
+				// the application pending; the printed route reuses the existing
+				// CurrentStageReadiness approved-awaiting-merge vocabulary rather
+				// than a ConsumeResult field (merge guard is the sole terminal
+				// consumer).
+				routed := !result.Consumed && result.Eligible && gates.ApprovedAwaitingMergeRoute(path, definitionDir)
+				if routed {
+					fmt.Fprintf(stdout, " route=%s", gates.RouteApprovedAwaitingMerge)
 				}
 				fmt.Fprintln(stdout)
-				if !result.Consumed && result.Route == "" {
+				if !result.Consumed && !routed {
 					return exitCodeError{1}
 				}
 				return nil
