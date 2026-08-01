@@ -307,6 +307,7 @@ harness `--skill` flags are unaffected. No doc diff proposed; FO/ensign skill
 instruction text change is limited to the `«worker.spawn»` binding line above
 and ships with its contractlint pin.
 
+- Cycle 2 (validation attempt-1, 2026-08-01): REJECTED — AC-1's committed tagged harness cannot produce the gate artifact: (1) build exec argv missing the `dispatch` subcommand (exit 2, unknown command: build); (2) `cmd.CombinedOutput()` merges the bare-mode stderr advisory into the JSON envelope parse; (3) hermetic piHome lacks settings.json package registration so the basename skill resolves to nothing (child meta `skills: []`, contract-free boot). All three findings Material/evidence-kind, owned by this task's diff. Fixes live-proven on a throwaway checkout (live leg passes in 124.7s; `pi-ensign-boot-grade.json` = ensign rank 1, zero first-officer reads). Routed to implementation: apply the three patches, re-run the tagged live leg on the candidate worktree, produce the gate-grade artifact. Deferred risk accepted: `piLiveEnv` lacks an ambient `PI_SUBAGENT_*` scrub (promote condition: lane run nested under pi-subagents).
 ## Stage Report: ideation
 
 - DONE: Verify Claude-side plain-basename vs namespaced skill declaration semantics before touching agents/ (no claude regression).
