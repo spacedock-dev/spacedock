@@ -11,6 +11,21 @@ issue:
 pr:
 sprint: durable-decisions
 id: nthcevf1snz7hm75gny3kd2e
+gates:
+    version: 1
+    current:
+        gate: gate:nthcevf1snz7hm75gny3kd2e:backlog
+    records:
+        - id: gate:nthcevf1snz7hm75gny3kd2e:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:nthcevf1snz7hm75gny3kd2e-backlog-1
+              briefing:
+                id: briefing:nthcevf1snz7hm75gny3kd2e:backlog:attempt-1:revision-1
+                digest: sha256:a969f6243a82f97def080d4c51f69732932877a9a96392b3df5ef48b28a7ba8f
+                digest-domain: canonical-bytes
+                request-digest: sha256:1c1c9a1b2ce8ff70509a08507db6e35cbea319b2411678da6e2a7d9aa3af160d
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.

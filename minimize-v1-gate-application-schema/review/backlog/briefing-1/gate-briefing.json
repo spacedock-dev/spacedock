@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nthcevf1snz7hm75gny3kd2e:backlog:attempt-1:revision-1",
+  "question": "Should this durable-decisions sprint task enter ideation for the minimal stable-v1 application schema?",
+  "artifacts": [
+    {
+      "id": "artifact:nthcevf1snz7hm75gny3kd2e:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/933e5e087909c71a8658392fb2246847b3dfc68d/minimize-v1-gate-application-schema/index.md",
+      "rev": "sha256:e28807a46fa5feb9f1b702650441dc910d99ee5d5584050e90d37b4435e64ed4",
+      "mediaType": "text/markdown",
+      "summary": "Approve ideation of the minimal stable-v1 application schema derived from supported producers and consumers, with no compatibility path for unused blocker, hold, or feedback fields."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nthcevf1snz7hm75gny3kd2e:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/af42c77d52de855f554fb8421a62e3b16b75f2ac/docs/roadmap/durable-decisions/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:123cf6ae94471eb8b73e5392eda294e16d98bcc0577e35bcdc087942a8afe964"
+    }
+  ]
+}
