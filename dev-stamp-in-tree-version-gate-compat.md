@@ -57,6 +57,8 @@ gates:
                 blockers: []
 started: 2026-07-31T16:34:00Z
 worktree: .worktrees/spacedock-ensign-dev-stamp-in-tree-version-gate-compat
+mod-block: merge:pr-merge
+pr: pr-merge:591
 ---
 
 ## Problem statement
