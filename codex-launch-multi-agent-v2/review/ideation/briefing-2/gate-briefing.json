@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-2:revision-1",
+  "question": "Approve z5 ideation for implementation after reconciling the requested multi_agent_v2 isolated-home settings and AC evidence?",
+  "artifacts": [
+    {
+      "id": "artifact:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/991866944d4e54f610a8dea1d7c7efc2cebdfa10/codex-launch-multi-agent-v2/review/ideation/fo-gate-review.md",
+      "rev": "sha256:f445907c7cb2cc3321ab3f81184ab74d36d32af20f05047a535598f0eaaeab2b",
+      "mediaType": "text/markdown",
+      "summary": "Revised ideation adds the exact multi_agent_v2 isolated-home fragment and cites falsifiable evidence for all ACs; review the updated package."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/991866944d4e54f610a8dea1d7c7efc2cebdfa10/codex-launch-multi-agent-v2.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:7e27b710a3b8d5d76f49123a74362271733c196b8fb1773660e2b7f3e3583edb"
+    }
+  ]
+}
