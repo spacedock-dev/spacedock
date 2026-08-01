@@ -42,6 +42,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:0e78927b5089450943d1f789e4c44d2a1cec5ee38cceeb0b6a67845213600d64
                 room-ref: ./dev-stamp-in-tree-version-gate-compat/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zexbrjhartgykvhm012f527w:ideation:1
+                briefing: briefing:zexbrjhartgykvhm012f527w:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-01T01:26:00.274289Z"
+                decision: approve
+                reason: 'Delegated sprint conn: the bound ideation proves the two-line bare-dev distinction is the smallest sufficient correction, preserves wrong-minor refusal, and requires one exact-tip Codex journey without compatibility or standing machinery.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 started: 2026-07-31T16:34:00Z
 ---
 
