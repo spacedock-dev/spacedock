@@ -4,6 +4,7 @@ status: backlog
 source: "Durable-decisions sprint implementation-shape audit, 2026-07-24."
 score: "0.7"
 id: jccbpvjv5bg1jn0jbmj2yf8s
+sprint: durable-decisions
 ---
 
 The unreleased v1 gate-state implementation still carries prototype compatibility and a mutable current-gate pointer that duplicates derivable state and has already projected a stale approval.
