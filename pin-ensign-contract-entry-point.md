@@ -66,6 +66,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:7bc284b9c5c5c55bd5d6135550148545f08c3c42a4b632ca5d90ea1be0ff059e
                 room-ref: ./pin-ensign-contract-entry-point/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mxaaqb96syv7pq7ekg5a5194:validation:1
+                briefing: briefing:mxaaqb96syv7pq7ekg5a5194:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-01T13:37:28.13926Z"
+                decision: revise
+                reason: 'Revise into one narrow correction round (captain: proceed): apply the three validator-proven test-only patches — argv ''dispatch'' for the build exec; stdout/stderr separation with stdout-only JSON parse; seed piHome/settings.json with the repo as path package — then re-run the tagged AC-1 live leg on the candidate worktree to produce the gate-grade boot artifact'
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 started: 2026-08-01T12:27:09Z
 worktree: .worktrees/spacedock-ensign-pin-ensign-contract-entry-point
 ---
