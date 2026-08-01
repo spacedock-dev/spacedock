@@ -282,7 +282,7 @@ If `gh` is not authenticated or fails, report the error and suggest the captain 
 
 ### Step 1 — Determine sequence number
 
-Look at existing files in `{debrief_root}/_debriefs/` matching today's date pattern `{YYYY-MM-DD}-*.md`. The sequence number is one more than the highest existing sequence for today, or `1` if none exist. For split-root this counts the state-checkout debriefs only — never `{dir}/_debriefs/` — so numbering continues the established history and a same-named orphan left in the definition dir cannot perturb the sequence.
+Look at existing files in `{debrief_root}/_debriefs/` matching today's date pattern `{YYYY-MM-DD}-*-{$harness}-{$model}.md` (matching against the session's own harness/model suffix); the `*.md` match alone is acceptable when checking for older files that predate the suffix. The sequence number is one more than the highest existing sequence for today, or `1` if none exist. For split-root this counts the state-checkout debriefs only — never `{dir}/_debriefs/` — so numbering continues the established history and a same-named orphan left in the definition dir cannot perturb the sequence.
 
 ### Step 2 — Calculate duration
 
@@ -301,7 +301,7 @@ Calculate the difference as a human-readable duration (e.g., `~2h30m`).
 mkdir -p {debrief_root}/_debriefs
 ```
 
-Write the debrief to `{debrief_root}/_debriefs/{date}-{sequence:02d}.md`:
+Write the debrief to `{debrief_root}/_debriefs/{date}-{sequence:02d}-{$harness}-{$model}.md`. The filename carries the session's harness and model: `$harness` = the host runtime short name (`pi`, `claude`, `codex`); `$model` = the FO session's live model slug, hyphenated lowercase (e.g. `kimi-k3`, `gpt-5-6-sol`, `claude-opus-4-8`) — on pi, read it via `intercom({action:"list"})`; on claude/codex, from the session's own model identity:
 
 ```markdown
 ---
@@ -363,15 +363,15 @@ next session", "Other backlog", "Ideation"}
 **Single-root** — commit on the current branch:
 
 ```bash
-git add {dir}/_debriefs/{date}-{sequence:02d}.md
+git add {dir}/_debriefs/{date}-{sequence:02d}-{$harness}-{$model}.md
 git commit -m "debrief: session {date} #{sequence} — {summary}"
 ```
 
 **Split-root** — commit path-scoped in the state checkout on its own branch, then push so peers see it (the state checkout is one shared, non-branched index; a bare `git add -A` / `git commit` would sweep up a sibling writer's staged entity, so name the path):
 
 ```bash
-git -C {state_checkout} add -- _debriefs/{date}-{sequence:02d}.md
-git -C {state_checkout} commit -m "debrief: session {date} #{sequence} — {summary}" -- _debriefs/{date}-{sequence:02d}.md
+git -C {state_checkout} add -- _debriefs/{date}-{sequence:02d}-{$harness}-{$model}.md
+git -C {state_checkout} commit -m "debrief: session {date} #{sequence} — {summary}" -- _debriefs/{date}-{sequence:02d}-{$harness}-{$model}.md
 git -C {state_checkout} push origin {state_branch}
 ```
 
@@ -388,4 +388,4 @@ Where `{summary}` is a brief count like "8 tasks completed, 3 new filed".
 
 Report the file path to the captain:
 
-> Debrief written to `{debrief_root}/_debriefs/{date}-{sequence:02d}.md` and committed.
+> Debrief written to `{debrief_root}/_debriefs/{date}-{sequence:02d}-{$harness}-{$model}.md` and committed.

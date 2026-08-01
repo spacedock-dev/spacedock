@@ -1,16 +1,18 @@
 # Command reference
 
-The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
+The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version and the host OS/arch, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
 
 ## --version
 
-`spacedock --version` reports the binary version, and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints one line:
+`spacedock --version` reports the binary version and the host OS/arch, and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints two lines:
 
     spacedock 0.26.0
+    OS: darwin/arm64
 
-Inside a session it also names the runtime it detected, the marker that proved it, which session this is, and whether this process is running inside a sandbox:
+Inside a session it also names the host OS/arch, the runtime it detected, the marker that proved it, which session this is, and whether this process is running inside a sandbox:
 
     spacedock 0.26.0
+    OS: darwin/arm64
     Runtime: claude (CLAUDECODE, session afd74765)
     Sandbox: inside (agent-safehouse)
     contract 3
@@ -23,7 +25,7 @@ When markers for more than one runtime are set — a nested session can leak the
 
     Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE) — pass --host
 
-Being outside every runtime is a normal state, not a fault — it means a human at a terminal. There is no `Runtime:` line at all in that case, because there is no session to report: the output is the single version line shown above.
+Being outside every runtime is a normal state, not a fault — it means a human at a terminal. There is no `Runtime:` line at all in that case, because there is no session to report: the output is the two lines shown above (the version line plus the `OS:` line).
 
 The `Sandbox:` line answers one question — is this process sandboxed? Inside a sandbox it names it; otherwise it reports whether safehouse is available to sandbox future launches:
 
@@ -90,7 +92,9 @@ The first officer runs these against workflow state as it moves entities; you op
 | `spacedock gate validate <entity>` | Validate the canonical v1 logical-gate selection, ordered attempts, Briefing bindings, frozen closures, typed application, and Resolution shape; report the current recorded decision. Prototype fields and unknown binary-owned fields fail closed. |
 | `spacedock gate validate <entity> --round STAGE/CYCLE` | Validate and read an advisory round through its entity pointer and immutable retained room. Every Resolution reports as advisory; no gate selection or workflow state changes. |
 | `spacedock gate eligibility <entity>` | Read the current application's fail-closed condition without mutating it or querying dependency entities. |
-| `spacedock gate consume <entity>` | Atomically advance status and spend an eligible pending approval once; stale approvals become superseded, while held or blocked approvals are refused. |
+| `spacedock gate consume <entity>` | Spend an eligible pending approval once and advance status atomically; stale approvals become superseded, while held or blocked approvals are refused. On an approval whose target stage is terminal, consume spends nothing and writes no status: it leaves the application `pending` and returns the route `approved-awaiting-merge` (idempotently, on repeat), and `merge guard` discovers/arms the delivery mechanism when it acts. |
+| `spacedock merge guard <slug> --verdict passed\|rejected` | Run the terminal merge ceremony and, with delivery proven, finalize: the sole terminal consumer of a pending terminal-target approval — the `mod-block` is cleared in its own step, then `application.state: consumed`, the terminal status, `verdict`, and `completed` move in one locked write, and the `pr` merge sentinel is retained through archive as durable delivery proof. |
+| `spacedock merge guard <slug> --rework` | Delivery requires rework: write the pending terminal-target approval `pending→superseded`, route the entity through the record stage's declared `feedback-to`, and clear `pr`/`mod-block`. Refuses without a pending terminal approval, or with a missing/undefined/terminal `feedback-to`. |
 | `spacedock new` | Create an entity (`new [--folder] SLUG`) from a body on stdin |
 | `spacedock dispatch` | Build the worker dispatch artifacts (`dispatch build`, `dispatch show-stage-def`) |
 | `spacedock state` | Manage a [split-root workflow](../advanced/split-root-state.md)'s state checkout (`state init` resumes one on a fresh clone, `state new` births one) |

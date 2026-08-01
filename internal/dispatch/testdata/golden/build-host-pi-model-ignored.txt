@@ -12,7 +12,9 @@
   "prompt": "Read /tmp/spacedock-dispatch/fixture-pi-team-spacedock-ensign-thing-stagemodel.md and treat its content as your assignment.",
   "model": null,
   "name": "spacedock-ensign-thing-stagemodel",
-  "team_name": "fixture-pi-team"
+  "team_name": "fixture-pi-team",
+  "agent": "worker",
+  "skill": "ensign"
 }
 
 ===== stderr =====

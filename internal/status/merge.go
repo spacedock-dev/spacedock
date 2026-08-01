@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/statesync"
 )
 
@@ -34,20 +35,29 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	}
 	asJSON := contains(rest, "--json")
 	quiet := contains(rest, "--quiet")
+	rework := contains(rest, "--rework")
 
 	verdict, err := parseSingleArg(rest, "--verdict", "passed|rejected")
 	if err != nil {
 		return errExit(stderr, err.Error())
+	}
+	// --rework is the delivery-requires-rework outcome — the IRREVERSIBLE
+	// supersede-and-route-back through the declared feedback-to — disjoint from
+	// a verdict: retryable delivery trouble (CI red, push failure) takes NEITHER
+	// flag and spends nothing; a reworked approval is superseded, never
+	// verdicted.
+	if rework && verdict != "" {
+		return errExit(stderr, "merge guard accepts --rework or --verdict, not both")
 	}
 	// Verdict gate: a verdict-less finalize is structurally unreachable — the verb
 	// requires the FO/captain's decision up front so it can never write a terminal
 	// status without a verdict in the same mutation (the team-mode-verdict-omission
 	// fix). Refuse BEFORE resolving the workflow so the omission is reported even on
 	// a malformed workflow.
-	if verdict == "" {
-		return errExit(stderr, "merge guard requires --verdict {passed|rejected}")
+	if !rework && verdict == "" {
+		return errExit(stderr, "merge guard requires --verdict {passed|rejected} or --rework")
 	}
-	if verdict != "passed" && verdict != "rejected" {
+	if !rework && verdict != "passed" && verdict != "rejected" {
 		return errExit(stderr, fmt.Sprintf("merge guard --verdict must be 'passed' or 'rejected', not '%s'", verdict))
 	}
 
@@ -55,7 +65,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	for i := 0; i < len(rest); i++ {
 		a := rest[i]
 		switch {
-		case a == "--json" || a == "--quiet":
+		case a == "--json" || a == "--quiet" || a == "--rework":
 			continue
 		case a == "--verdict":
 			i++ // skip the flag's value, already parsed by parseSingleArg
@@ -118,6 +128,18 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	mergeHooks := scanMods(roots.definitionDir)["merge"]
 	hookRegistered := len(mergeHooks) > 0
 
+	// The pending terminal-target approval merge guard is the sole consumer of:
+	// consume routes terminal approvals to this ceremony without spending
+	// (approved-awaiting-merge), so the binding spend/supersede happens here —
+	// through the gates-owned locked operations, with delivery proof (finalize)
+	// or on the --rework send-back, never at consume and never at a hand --set.
+	// Selection reads the CURRENT frontmatter at action time (finalize /
+	// reworkDelivery classify fail-closed themselves).
+
+	if rework {
+		return reworkDelivery(roots, slug, entityPath, fields, quiet, asJSON, stdout, stderr)
+	}
+
 	// State-delta classifier (the one genuinely-new logic): a pure read of
 	// pr/mod-block/verdict plus the policy decides armed / blocked / finalize. No
 	// new mutation primitive — every transition below emits a proven --set/--archive.
@@ -125,7 +147,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	case verdict == "rejected":
 		// A rejected entity never merged, so the pr-requirement is vacuous: finalize
 		// straight through, clearing an in-flight mod-block standalone first (AC-6).
-		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
+		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, entityPath, quiet, asJSON, stdout, stderr)
 
 	case prIndicatesMerged(pr):
 		// FINALIZE from a detected-MERGED state. The `pr` field carries a merge
@@ -135,7 +157,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		// (empty mod-block) state — the stranded case a re-validation bounce leaves
 		// behind (AC-2). The merge-hook guard is satisfied because the sentinel is a
 		// non-empty pr that honestly records the landed merge.
-		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
+		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, entityPath, quiet, asJSON, stdout, stderr)
 
 	case modBlockNamesMissingMergeMod(modBlock, mergeHooks):
 		// A mod-block naming a merge mod that no longer exists under _mods/, with no
@@ -171,7 +193,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		// the terminalize --set is unguarded and succeeds. A merge: pr with a hook
 		// registered never reaches here with an empty mod-block — auto-arm above claims
 		// that state — so the merge-hook guard cannot strand a finalize.
-		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
+		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, entityPath, quiet, asJSON, stdout, stderr)
 	}
 }
 
@@ -358,11 +380,24 @@ func arm(roots roots, slug, hook string, quiet, asJSON bool, stdout, stderr io.W
 	return signalArmed(roots.definitionDir, slug, hook, quiet, asJSON, stdout)
 }
 
-// finalize performs Phase C: clear an in-flight mod-block in a STANDALONE --set,
-// terminalize status+verdict+completed in ONE --set, then archive. Each step is a
-// proven guarded path; the verb refuses to proceed to a later step if an earlier
-// one's guard refuses, propagating the guard's exit 1 + stderr verbatim and never
-// passing --force.
+// finalize performs Phase C: classify the gate authority fail-closed, clear the
+// mod-block in its own small committed step, terminalize exactly once, then
+// archive. With a binding pending terminal-target approval, terminalization is
+// gates.FinalizeTerminalApproval — ONE locked compare-before-replace candidate
+// carrying the authority spend (application.state pending->consumed), the
+// terminal status, the verdict, and the completed stamp, through the gates
+// package's own write machinery (internal/status no longer mutates the gates
+// subtree). The pr merge sentinel is deliberately RETAINED through archive as
+// durable delivery proof. ONLY a genuinely gate-less entity takes the legacy
+// path (status+verdict+completed in one proven --set); an unreadable,
+// digest-stale, or non-binding authority refuses byte-clean BEFORE the
+// mod-block clear — the verb refuses to proceed to a later step if an earlier
+// one fails and never passes --force.
+//
+// The mod-block clear comes BEFORE the locked terminal write as its own small
+// step: a crash between them leaves the entity nonterminal with its authority
+// still pending, and the ceremony re-runs safely (the clear is idempotent, the
+// gates write validates fresh under the entity lock).
 //
 // The archive move + commit is ATOMIC: the on-disk rename (runArchive) and its commit
 // (commitArchiveMove) must both land or neither does. If the commit fails (a failing
@@ -371,7 +406,7 @@ func arm(roots roots, slug, hook string, quiet, asJSON bool, stdout, stderr io.W
 // find it on a re-run. So finalize snapshots the entity's pre-finalize bytes and live
 // location before mutating, and on commit failure reverses the move and restores the
 // original content, returning the entity to its exact pre-finalize state.
-func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookRegistered bool, quiet, asJSON bool, stdout, stderr io.Writer) int {
+func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookRegistered bool, entityPath string, quiet, asJSON bool, stdout, stderr io.Writer) int {
 	// Snapshot the pre-finalize state up front — before any mutation — so a failed
 	// archive commit can be rolled back to exactly the state the FO would re-run
 	// against. The live path and form resolve here while the file still sits at its
@@ -380,22 +415,39 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 	if snapErr != nil {
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to snapshot %s before finalize: %v", slug, snapErr))
 	}
+	terminal := terminalStageName(roots.definitionDir)
+	if terminal == "" {
+		return errExit(stderr, fmt.Sprintf("workflow %s declares no terminal stage — cannot finalize", roots.definitionDir))
+	}
+	// Fail-closed writer selection: only a genuinely gate-less entity takes the
+	// legacy finalization path. A REAL pending terminal application with a
+	// disturbed briefing room or an unreadable gates record is a refusal, never
+	// a legacy finalize with authority left pending.
+	currentStatus := strings.TrimSpace(ParseFrontmatter(entityPath)["status"])
+	_, pendingApproval, classErr := pendingTerminalApproval(entityPath, roots.definitionDir, currentStatus)
+	if classErr != nil {
+		return errExit(stderr, fmt.Sprintf("merge guard: refusing to finalize %s: %v", slug, classErr))
+	}
 	if modBlock != "" {
 		if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: "", hasValue: true}}, stderr); rc != 0 {
 			return rc
 		}
 	}
-	terminal := terminalStageName(roots.definitionDir)
-	if terminal == "" {
-		return errExit(stderr, fmt.Sprintf("workflow %s declares no terminal stage — cannot finalize", roots.definitionDir))
-	}
-	terminalize := []fieldUpdate{
-		{field: "status", value: terminal, hasValue: true},
-		{field: "verdict", value: verdict, hasValue: true},
-		{field: "completed", hasValue: false},
-	}
-	if rc := emitSet(roots, slug, terminalize, stderr); rc != 0 {
-		return rc
+	if pendingApproval {
+		// Sole-consumer write: gates owns the locked candidate carrying the
+		// spend, terminal status, verdict, and completed together.
+		if _, err := gates.FinalizeTerminalApproval(entityPath, roots.definitionDir, verdict, nowTimestamp()); err != nil {
+			return errExit(stderr, fmt.Sprintf("merge guard: terminal delivery write refused for %s: %v", slug, err))
+		}
+	} else {
+		terminalize := []fieldUpdate{
+			{field: "status", value: terminal, hasValue: true},
+			{field: "verdict", value: verdict, hasValue: true},
+			{field: "completed", hasValue: false},
+		}
+		if rc := emitSet(roots, slug, terminalize, stderr); rc != 0 {
+			return rc
+		}
 	}
 	if rc := runArchive(roots.definitionDir, roots.entityDir, roots.entityDirSpelling, slug, false, true, false, io.Discard, stderr); rc != 0 {
 		return rc
@@ -420,6 +472,112 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 	}
 	signalFinalized(roots.definitionDir, slug, terminal, verdict, worktree, hookRegistered, prIndicatesMerged(pr), durability, syncOutcome, quiet, asJSON, stdout)
 	return rc
+}
+
+// reworkDelivery is the delivery-requires-rework outcome — the IRREVERSIBLE
+// supersede-and-send-back (transient delivery trouble takes no flag and spends
+// nothing). It requires a binding pending terminal-target approval — the capsule
+// consume produced when routing `approved-awaiting-merge`. The declared
+// feedback-to is validated BEFORE any byte moves (a malformed declaration
+// refuses byte-clean); delivery state (mod-block/pr) is then cleared in its own
+// small committed step; finally gates.SupersedeTerminalApproval writes, in ONE
+// locked compare-before-replace candidate, application.state pending->superseded
+// and status := the declared feedback-to, re-validating both authority and
+// route under the entity lock. A crash between the clear and the locked write
+// leaves the entity nonterminal with its authority still pending and the
+// ceremony safely retryable. The superseded attempt is frozen history: re-entry
+// runs a successor attempt with a fresh approval through the existing prepare
+// path; superseded authority is never re-spent.
+func reworkDelivery(roots roots, slug, entityPath string, fields map[string]string, quiet, asJSON bool, stdout, stderr io.Writer) int {
+	currentStatus := strings.TrimSpace(fields["status"])
+	_, pendingApproval, classErr := pendingTerminalApproval(entityPath, roots.definitionDir, currentStatus)
+	if classErr != nil {
+		return errExit(stderr, fmt.Sprintf(
+			"merge guard --rework requires a pending terminal-target approval on entity %s (consume's approved-awaiting-merge route); its authority cannot be validated: %v",
+			slug, classErr))
+	}
+	if !pendingApproval {
+		return errExit(stderr, fmt.Sprintf(
+			"merge guard --rework requires a pending terminal-target approval on entity %s (consume's approved-awaiting-merge route); the entity carries none.",
+			slug))
+	}
+	// Validate the send-back route BEFORE clearing delivery state: a missing,
+	// undefined, or terminal declared feedback-to refuses closed, byte-clean.
+	if _, err := gates.DeclaredReworkTarget(roots.definitionDir, currentStatus); err != nil {
+		return errExit(stderr, err.Error())
+	}
+	var clears []fieldUpdate
+	if strings.TrimSpace(fields["mod-block"]) != "" {
+		clears = append(clears, fieldUpdate{field: "mod-block", value: "", hasValue: true})
+	}
+	if strings.TrimSpace(fields["pr"]) != "" {
+		clears = append(clears, fieldUpdate{field: "pr", value: "", hasValue: true})
+	}
+	if len(clears) > 0 {
+		if rc := emitSet(roots, slug, clears, stderr); rc != 0 {
+			return rc
+		}
+	}
+	feedbackTo, err := gates.SupersedeTerminalApproval(entityPath, roots.definitionDir)
+	if err != nil {
+		return errExit(stderr, fmt.Sprintf("merge guard --rework refused for %s: %v", slug, err))
+	}
+	switch {
+	case asJSON:
+		emitJSON(stdout, newJSONObj().
+			set("command", "merge-guard").set("slug", slug).
+			set("signal", "reworked").set("feedback-to", feedbackTo).
+			set("application", "superseded"))
+	case quiet:
+		fmt.Fprintf(stdout, "merge-guard slug=%s signal=reworked feedback-to=%s application=superseded\n", slug, feedbackTo)
+	default:
+		// Re-entry belongs to the gate record's GATED stage, not the approval's
+		// terminal target: pendingTerminalApproval fails closed unless
+		// status == record.Stage, so currentStatus IS the gated stage here.
+		fmt.Fprintf(stdout, "reworked: %s -> %s (terminal approval superseded; delivery state cleared; re-enter %s as a successor attempt with a fresh approval).\n",
+			slug, feedbackTo, currentStatus)
+	}
+	return 0
+}
+
+// pendingTerminalApproval classifies an entity's gate authority for the merge
+// ceremony, FAIL-CLOSED: it reports pending=true only for a binding pending
+// advance application whose target is the current stage's immediate README
+// successor AND that successor is terminal — the shape consume leaves behind
+// when routing approved-awaiting-merge. A genuinely gate-less entity (no gates
+// record at all) reports (nil-record legacy): pending=false, err=nil. Every
+// other shape — unreadable or digest-stale retained authority, a consumed or
+// superseded application, a non-terminal or non-successor target — returns an
+// error so the ceremony refuses byte-clean instead of terminalizing with
+// authority left pending.
+func pendingTerminalApproval(entityPath, workflowDir, currentStatus string) (gates.Eligibility, bool, error) {
+	elig, err := gates.EligibilityFileAt(entityPath, workflowDir)
+	if err != nil {
+		if errors.Is(err, gates.ErrNoGateRecord) {
+			return gates.Eligibility{}, false, nil
+		}
+		return gates.Eligibility{}, false, fmt.Errorf("gate authority unreadable or digest-stale: %w", err)
+	}
+	if elig.Eligible && elig.Action == "advance" && elig.ApplicationState == "pending" &&
+		terminalTargetSuccessor(workflowDir, currentStatus, elig.TargetStage) {
+		return elig, true, nil
+	}
+	return elig, false, fmt.Errorf("entity carries no binding pending terminal-target approval (condition %q)", elig.Condition)
+}
+
+// terminalTargetSuccessor reports whether current's immediate README successor
+// is target AND that successor is terminal — the status package's own read of
+// the workflow taxonomy, used only for the merge ceremony's fail-closed writer
+// selection (the gates package gates the locked write itself on its private
+// predicate; both must agree for the write to land).
+func terminalTargetSuccessor(workflowDir, current, target string) bool {
+	stages := parseStagesBlock(filepath.Join(workflowDir, "README.md"))
+	for i, s := range stages {
+		if s.Name == current {
+			return i+1 < len(stages) && stages[i+1].terminal && stages[i+1].Name == target
+		}
+	}
+	return false
 }
 
 func publishMergeArchive(roots roots, slug string, stdout, stderr io.Writer) (string, statesync.Outcome, int) {

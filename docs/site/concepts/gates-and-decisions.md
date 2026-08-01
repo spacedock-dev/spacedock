@@ -62,8 +62,16 @@ After completion verification, a gate with no selected attempt remains
 presenting anything. That bind selects the current-stage gate attempt,
 letting startup distinguish work still validating, an open attempt awaiting the
 Captain, an approval awaiting nonterminal advance, and an approval awaiting
-merge. Approval to a terminal target is consumed before the existing merge and
-terminalization path begins.
+merge. Approval to a terminal target is *held* at consume: `gate consume` spends
+nothing and writes no status — it leaves the application `pending` and returns
+the `approved-awaiting-merge` route, and `merge guard` is the sole terminal
+consumer. `merge guard` spends only with delivery proof: the `mod-block` is
+cleared in its own step first, then `application.state: consumed`, the terminal
+status, `verdict`, and `completed` move in one locked write, and the `pr` merge
+sentinel is retained through archive as durable delivery proof. A
+failed delivery that needs rework returns through the record stage's declared
+`feedback-to` as `superseded` (`merge guard --rework`); retryable delivery
+trouble leaves the approval pending and is safe to retry.
 
 Before the first officer shows a gate, it captures the exact bound Briefing identity,
 digest, and emitted room in committed machine state, then presents a compact snapshot

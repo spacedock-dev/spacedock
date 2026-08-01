@@ -173,6 +173,20 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 		result.Condition = "ineligible"
 		return result, nil
 	}
+	// A terminal-target approval is NOT spent here: consume leaves the
+	// application pending and the status untouched; readiness then projects the
+	// approved-awaiting-merge route (reported via CurrentStageReadiness —
+	// ConsumeResult carries no duplicate route field). The terminal merge
+	// ceremony (merge guard) is the sole terminal consumer; the ceremony
+	// trigger hangs off this consume-produced pending approval, not off the
+	// stage. Consume carries no merge-hook knowledge: no hook discovery, no
+	// arming, no scanner lookup — merge guard discovers and arms the delivery
+	// mechanism when it acts. Re-consuming the same still-pending terminal
+	// application leaves it pending again: routing is an at-least-once effect
+	// without authority movement.
+	if advanceTargetTerminal(workflowDir, status, eligibility.TargetStage) {
+		return result, nil
+	}
 	attempt.Application.State = "consumed"
 	if err := validateApplicationMutation(oldNode, doc, attempt.ID, "pending", "consumed"); err != nil {
 		return ConsumeResult{}, err
@@ -207,6 +221,23 @@ func applicationTargetMatches(workflowDir, current, target string) bool {
 	}
 	i := applicationStageIndex(stages, current)
 	return i >= 0 && i+1 < len(stages) && stages[i+1].Name == target
+}
+
+// advanceTargetTerminal reports whether current's declared advance target (its
+// immediate README successor) is the terminal stage. Callers establish the
+// successor match first (applicationTargetMatches); this only reads the
+// successor's terminal flag. An unparseable workflow reports false, matching
+// applicationTargetMatches' fail-closed shape.
+func advanceTargetTerminal(workflowDir, current, target string) bool {
+	if workflowDir == "" {
+		return false
+	}
+	stages, err := applicationStages(filepath.Join(workflowDir, "README.md"))
+	if err != nil {
+		return false
+	}
+	i := applicationStageIndex(stages, current)
+	return i >= 0 && i+1 < len(stages) && stages[i+1].Name == target && stages[i+1].Terminal
 }
 
 type reviewedInputCheck int
@@ -244,7 +275,9 @@ func inspectReviewedInput(entityPath string, binding Briefing) reviewedInputChec
 
 // validateApplicationMutation proves the selected application's state is the
 // only gates-record change. This is the narrow exception to closed-attempt
-// freezing used by consumption and staleness marking.
+// freezing used by consumption, staleness marking, and the terminal merge
+// ceremony's locked delivery writes in delivery.go (pending->consumed with
+// delivery proof, pending->superseded on the --rework route).
 func validateApplicationMutation(oldNode *yaml.Node, next *Document, attemptID, from, to string) error {
 	var old Document
 	if err := oldNode.Decode(&old); err != nil {
