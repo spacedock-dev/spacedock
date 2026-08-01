@@ -222,8 +222,19 @@ without adding compatibility code or a standing check. Repository formatting,
 
 - DONE: Declare the intended file and line replacement before editing.
   Only `skills/first-officer/references/first-officer-shared-core.md` lines 9 and 11 may change: line 9 removes only `Then ` and trailing ` Classes:`; line 11 becomes `   - **Wrong version**: major.minor below/above/absent (bare \`dev\`, not \`+dev\`). ABORT with the mismatch; run \`${SPACEDOCK_BIN:-spacedock} doctor\`.`
+- DONE: Apply only the two declared line replacements in skills/first-officer/references/first-officer-shared-core.md; preserve every other file and semantic boundary.
+  Commit `4ec2ebeba` is one file, 2 insertions/2 deletions, net +7 bytes; rebasing onto `origin/main` preserved that exact diff and no other candidate file changed.
+- DONE: Prove same-minor 0.27.0-pre2+dev passes while wrong-minor 0.26.0+dev and bare dev still fail, staying within the existing 26,754-byte cap.
+  Exact-tip binary/doctor returned compatible for `0.27.0-pre2+dev`; a stamped `0.26.0+dev` returned exit 1 with mismatch; `TestCompare` retained bare-`dev` rejection; core size is 26,753 bytes.
+- DONE: Run the focused mechanical tests, one exact-tip live Codex gate-guardrail journey, then gofmt/full/race/diff checks; request Roborev and classify every finding before any further edit.
+  Focused CLI/contract/contractlint, `go test ./...`, `go test ./... -race`, gofmt, and diff checks passed; live Codex `gate-guardrail` passed in 131.14s at source head `4ec2ebeba`; Roborev panel jobs 623/624 and synthesis 625 passed.
+- DONE: Record Roborev observations and authorized dispositions without mutating the reviewed tip.
+  FO authorized DECLINE unchanged for both explicitly non-blocking Polish notes: optional fixture arms are a forbidden standing-check expansion, and one-byte cap headroom causes no current harm; no rerun or candidate edit followed.
 
 ### Summary
 
-Before the first product edit, implementation is frozen to the approved one-file,
-two-line, net-+7-byte surface. No wider change is authorized.
+Implementation ships the approved two-line clarification at `4ec2ebeba`, with
+same-minor `+dev` accepted and wrong-minor/bare `dev` rejected. Exact-tip live,
+mechanical, full, race, cap, and two-reviewer Roborev proof are green; both Polish
+review notes were declined unchanged under FO authorization, so the reviewed tip
+and one-file boundary remain intact.
