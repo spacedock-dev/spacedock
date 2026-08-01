@@ -112,6 +112,98 @@ func TestSeedCodexLocalAuthCopiesOnlyAuthIntoIsolatedHome(t *testing.T) {
 	}
 }
 
+func TestSeedCodexLiveConfigWritesExactMultiAgentFragment(t *testing.T) {
+	codexHome := t.TempDir()
+
+	if err := seedCodexLiveConfig(codexHome); err != nil {
+		t.Fatalf("seedCodexLiveConfig errored: %v", err)
+	}
+
+	want := "[features.multi_agent_v2]\n" +
+		"max_concurrent_threads_per_session = 16\n" +
+		"tool_namespace = \"agents\"\n" +
+		"hide_spawn_agent_metadata = false\n"
+	got, err := os.ReadFile(filepath.Join(codexHome, "config.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != want {
+		t.Fatalf("config.toml = %q, want exact multi_agent_v2 fragment %q", got, want)
+	}
+
+	entries, err := os.ReadDir(codexHome)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Name() != "config.toml" {
+		t.Fatalf("isolated home entries = %#v, want only config.toml", entries)
+	}
+}
+
+func TestSeedCodexLiveHomeCopiesOnlyAuthAndMinimalConfig(t *testing.T) {
+	realHome := t.TempDir()
+	operatorCodexDir := filepath.Join(realHome, ".codex")
+	if err := os.MkdirAll(filepath.Join(operatorCodexDir, "plugins", "state"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(operatorCodexDir, "credentials.json"), []byte("operator-credential"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(operatorCodexDir, "config.toml"), []byte("operator-only = true\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	auth := []byte(`{"auth_mode":"chatgpt","tokens":{"refresh_token":"test"}}`)
+	if err := os.WriteFile(filepath.Join(operatorCodexDir, "auth.json"), auth, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	codexHome := t.TempDir()
+	if err := seedCodexLiveConfig(codexHome); err != nil {
+		t.Fatalf("seedCodexLiveConfig errored: %v", err)
+	}
+	if err := seedCodexLocalAuth(codexHome, realHome); err != nil {
+		t.Fatalf("seedCodexLocalAuth errored: %v", err)
+	}
+
+	entries, err := os.ReadDir(codexHome)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantEntries := []string{"auth.json", "config.toml"}
+	if len(entries) != len(wantEntries) {
+		t.Fatalf("isolated home entries = %#v, want exactly %v", entries, wantEntries)
+	}
+	for i, entry := range entries {
+		if entry.Name() != wantEntries[i] {
+			t.Fatalf("isolated home entry %d = %q, want %q", i, entry.Name(), wantEntries[i])
+		}
+	}
+
+	gotAuth, err := os.ReadFile(filepath.Join(codexHome, "auth.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(gotAuth) != string(auth) {
+		t.Fatalf("auth.json = %q, want copied auth", gotAuth)
+	}
+	gotConfig, err := os.ReadFile(filepath.Join(codexHome, "config.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantConfig := "[features.multi_agent_v2]\n" +
+		"max_concurrent_threads_per_session = 16\n" +
+		"tool_namespace = \"agents\"\n" +
+		"hide_spawn_agent_metadata = false\n"
+	if string(gotConfig) != wantConfig {
+		t.Fatalf("config.toml = %q, want minimal live fragment %q", gotConfig, wantConfig)
+	}
+	for _, name := range []string{"credentials.json", "plugins"} {
+		if _, err := os.Stat(filepath.Join(codexHome, name)); !os.IsNotExist(err) {
+			t.Fatalf("isolated home must not copy %s, stat err=%v", name, err)
+		}
+	}
+}
+
 func TestCodexLiveEnvOmitsEmptyAPIKey(t *testing.T) {
 	env := codexLiveEnv("/tmp/codex-home", "/tmp/home", "", "")
 	if _, ok := envValue(env, "OPENAI_API_KEY"); ok {
