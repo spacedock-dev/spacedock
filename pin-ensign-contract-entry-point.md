@@ -5,6 +5,21 @@ priority: 2
 sprint-readiness: ready
 source: "Captain, 2026-08-01, after diagnosing the pi ensign misload: every pi-spawned ensign this session (8 workers, both Kimi and gpt-5.6-luna) booted on the first-officer shared core — sometimes from stale .claude/.gemini plugin caches — because ~/.pi/agent/agents/ensign.md declares skills: ['spacedock:ensign'] and the preload silently fails, leaving the model to file-search for its contract. Root-cause question is OPEN: pi-subagents may not route agent-def preloads through pi's package resolver at all (the session was not started by assigning an agent, which motivates verifying rather than inferring)."
 id: mxaaqb96syv7pq7ekg5a5194
+gates:
+    version: 1
+    current:
+        gate: gate:mxaaqb96syv7pq7ekg5a5194:backlog
+    records:
+        - id: gate:mxaaqb96syv7pq7ekg5a5194:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:mxaaqb96syv7pq7ekg5a5194-backlog-1
+              briefing:
+                id: briefing:mxaaqb96syv7pq7ekg5a5194:backlog:attempt-1:revision-1
+                digest: sha256:d861ca46643dc1cf9100a563ad8ae289a697d67c8232cbb68372d02def8c850a
+                digest-domain: canonical-bytes
+                request-digest: sha256:c0a9bc4b100816269503de91e29f50c196dafbcc80f4f603ade1e69529724a31
+                room-ref: ./pin-ensign-contract-entry-point/review/backlog/briefing-1
 ---
 
 ## Problem

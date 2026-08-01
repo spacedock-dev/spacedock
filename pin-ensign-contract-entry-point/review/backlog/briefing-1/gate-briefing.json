@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mxaaqb96syv7pq7ekg5a5194:backlog:attempt-1:revision-1",
+  "question": "Accept the ensign-contract-entry-point task into ideation with the captain's packaging rulings (package-manifest agent def, baseline-name skills, provable child load) as direction?",
+  "artifacts": [
+    {
+      "id": "artifact:mxaaqb96syv7pq7ekg5a5194:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/21f5f070f10bfc87cc8756887072f4bdece97e6b/pin-ensign-contract-entry-point/review/backlog/backlog-review-1.md",
+      "rev": "sha256:8bc657264ceb5ad087e91afeb798c2bc8b51ff24d97fc4e755d95d932404bd2d",
+      "mediaType": "text/markdown",
+      "summary": "Root cause verified (basename-only resolver + unconditional FO bootstrap injection); fix = manifest-shipped agent def; acceptance = child provably booting ensign contract"
+    }
+  ]
+}
