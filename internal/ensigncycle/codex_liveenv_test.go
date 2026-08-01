@@ -231,9 +231,12 @@ func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
 		}
 	}
 	run("login", "--with-api-key")
-	run("login", "status")
-	run("plugin", "list")
+	run("login", "status", "exec")
+	run("plugin", "list", "exec")
+	run("plugin", "add", "exec")
+	run("exec", "--json", "prompt")
 	run("--ask-for-approval", "on-request", "exec", "--json", "prompt")
+	run("--dangerously-bypass-approvals-and-sandbox", "exec", "--json", "prompt")
 
 	gotBytes, err := os.ReadFile(logPath)
 	if err != nil {
@@ -242,12 +245,20 @@ func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
 	got := strings.Split(strings.TrimSpace(string(gotBytes)), "\n")
 	want := []string{
 		"login --with-api-key",
-		"login status",
-		"plugin list",
+		"login status exec",
+		"plugin list exec",
+		"plugin add exec",
+		"exec --model gpt-5.6-luna --json prompt",
 		"--ask-for-approval on-request exec --model gpt-5.6-luna --json prompt",
+		"--dangerously-bypass-approvals-and-sandbox exec --model gpt-5.6-luna --json prompt",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("Codex shim argv = %q, want %q", got, want)
+	}
+	for _, line := range got[4:] {
+		if strings.Count(line, "--model gpt-5.6-luna") != 1 {
+			t.Fatalf("pinned Codex exec argv = %q, want exactly one Luna model flag", line)
+		}
 	}
 }
 
