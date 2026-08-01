@@ -21,6 +21,12 @@ type codexLiveAuthDecision struct {
 	message string
 }
 
+const codexLiveMultiAgentConfig = `[features.multi_agent_v2]
+max_concurrent_threads_per_session = 16
+tool_namespace = "agents"
+hide_spawn_agent_metadata = false
+`
+
 func decideCodexLiveAuth(openAIAPIKey string, localAuthAvailable bool, required string) codexLiveAuthDecision {
 	if openAIAPIKey != "" {
 		return codexLiveAuthDecision{mode: codexAuthAPIKey}
@@ -47,6 +53,19 @@ func codexLocalAuthAvailable(realHome string) bool {
 	}
 	b, err := os.ReadFile(authPath)
 	return err == nil && strings.TrimSpace(string(b)) != ""
+}
+
+func seedCodexLiveConfig(codexHome string) error {
+	if codexHome == "" {
+		return fmt.Errorf("isolated CODEX_HOME is empty")
+	}
+	if err := os.MkdirAll(codexHome, 0o700); err != nil {
+		return fmt.Errorf("create isolated CODEX_HOME: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(codexHome, "config.toml"), []byte(codexLiveMultiAgentConfig), 0o600); err != nil {
+		return fmt.Errorf("write isolated Codex config: %w", err)
+	}
+	return nil
 }
 
 func seedCodexLocalAuth(codexHome, realHome string) error {

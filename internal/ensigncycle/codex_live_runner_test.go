@@ -10,19 +10,19 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/spacedock-dev/spacedock/internal/cli"
 )
 
 // The Codex runner adapter: it turns a host-neutral sharedRuntimeScenario into a
-// real `codex exec --json` launch and returns the (before, after, observed) state
+// real `spacedock codex` launch and returns the (before, after, observed) state
 // the shared assertions consume. Auth/HOME isolation (isolated CODEX_HOME +
-// copied auth.json / OPENAI_API_KEY), the local Codex marketplace+plugin install,
-// and the `--output-last-message` observed-extract are the ONLY Codex-specific
-// surface; the scenario table, fixtures, prompts, and assertions are shared with
-// the Claude runner.
+// minimal config plus copied auth.json / OPENAI_API_KEY), Spacedock-owned local
+// plugin setup, and the `--output-last-message` observed-extract are the ONLY
+// Codex-specific surface; the scenario table, fixtures, prompts, and assertions
+// are shared with the Claude runner.
 
 type codexLiveRunner struct {
+	binary       string
+	pluginDir    string
 	codexBin     string
 	env          []string
 	artifactRoot string
@@ -79,9 +79,20 @@ func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedR
 	}
 }
 
-func (r codexLiveRunner) withStubPATH(dir string) codexLiveRunner {
+func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner {
+	t.Helper()
 	r.env = withPATHPrefix(r.env, dir)
 	r.env = withRecordedGateEnv(r.env, "SPACEDOCK_BIN", filepath.Join(dir, "spacedock"))
+	// The Spacedock front door re-pins SPACEDOCK_BIN to its own executable before
+	// launching Codex. Put a Codex shim in front of the host only for recorded-gate
+	// fixtures so the child FO still resolves the fixture's command logger.
+	shim := filepath.Join(dir, "codex")
+	script := "#!/bin/sh\n" +
+		"export SPACEDOCK_BIN=" + shellQuote(filepath.Join(dir, "spacedock")) + "\n" +
+		"exec " + shellQuote(r.codexBin) + " \"$@\"\n"
+	if err := os.WriteFile(shim, []byte(script), 0o755); err != nil {
+		t.Fatalf("write recorded-gate Codex shim: %v", err)
+	}
 	return r
 }
 
@@ -91,7 +102,7 @@ func runCodexRecordedGateLifecycleScenario(t *testing.T, runner codexLiveRunner,
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
-	result, err := runner.withStubPATH(shimDir).run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
+	result, err := runner.withStubPATH(t, shimDir).run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -123,6 +134,9 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	artifactRoot := codexLiveArtifactDir(t, "codex-shared-scenarios")
 	codexHome := newCodexLiveIsolatedHome(t, repo, artifactRoot)
 	cleanHome := t.TempDir()
+	if err := seedCodexLiveConfig(codexHome); err != nil {
+		t.Fatalf("seed live Codex config: %v", err)
+	}
 	if decision.mode == codexAuthLocal {
 		if err := seedCodexLocalAuth(codexHome, realHome); err != nil {
 			t.Fatalf("seed local Codex auth: %v", err)
@@ -134,29 +148,16 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	if err := os.MkdirAll(setupDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	install, err := cli.WriteCodexLocalMarketplace(t.TempDir(), repo, "spacedock")
-	if err != nil {
-		t.Fatalf("write local Codex marketplace: %v", err)
-	}
 	switch decision.mode {
 	case codexAuthAPIKey:
 		runCodexLiveCommand(t, setupDir, "codex-login.txt", openAIAPIKey+"\n", env, codexBin, "login", "--with-api-key")
 	case codexAuthLocal:
 		runCodexLiveCommand(t, setupDir, "codex-login-status.txt", "", env, codexBin, "login", "status")
 	}
-	runCodexLiveCommand(t, setupDir, "codex-marketplace-add.txt", "", env, codexBin, "plugin", "marketplace", "add", install.MarketplaceRoot)
-	runCodexLiveCommand(t, setupDir, "codex-plugin-add.txt", "", env, codexBin, "plugin", "add", "spacedock@spacedock")
-	listing := runCodexLiveCommand(t, setupDir, "codex-plugin-list.txt", "", env, codexBin, "plugin", "list")
-	if !strings.Contains(listing, install.PluginPath) {
-		t.Fatalf("codex plugin list did not point at the local checkout path %q:\n%s", install.PluginPath, listing)
-	}
-	if strings.Contains(listing, "github.com") || strings.Contains(listing, "ref `next`") {
-		t.Fatalf("codex plugin list points at remote next, not the local checkout:\n%s", listing)
-	}
 
-	adapterPath := filepath.Join(install.PluginPath, "skills", "first-officer", "references", "codex-first-officer-runtime.md")
+	adapterPath := filepath.Join(repo, "skills", "first-officer", "references", "codex-first-officer-runtime.md")
 	if _, err := os.Stat(adapterPath); err != nil {
-		t.Fatalf("current-checkout plugin cache is missing r0 Codex adapter %s: %v", adapterPath, err)
+		t.Fatalf("current-checkout Codex adapter is missing %s: %v", adapterPath, err)
 	}
 	if err := os.WriteFile(filepath.Join(setupDir, "codex-runtime-adapter-present.txt"), []byte(adapterPath+"\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -166,7 +167,7 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 		t.Fatal("current-checkout source HEAD is empty")
 	}
 
-	return codexLiveRunner{codexBin: codexBin, env: env, artifactRoot: artifactRoot}
+	return codexLiveRunner{binary: binary, pluginDir: repo, codexBin: codexBin, env: env, artifactRoot: artifactRoot}
 }
 
 func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
@@ -203,7 +204,7 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
 
-	result, err := runner.withStubPATH(shimDir).run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
+	result, err := runner.withStubPATH(t, shimDir).run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -438,15 +439,19 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
-func codexExecArgv(workflowRoot, finalPath, prompt string) []string {
+func codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt string) []string {
 	return []string{
+		"codex",
+		"--plugin-dir", pluginDir,
+		"--skip-compat-check",
+		prompt,
+		"--",
 		"exec",
 		"--json",
 		"--enable", "multi_agent_v2",
 		"--dangerously-bypass-approvals-and-sandbox",
 		"--cd", workflowRoot,
 		"--output-last-message", finalPath,
-		prompt,
 	}
 }
 
@@ -458,8 +463,8 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
 	finalPath := filepath.Join(artifactDir, "codex-final-message.txt")
 	return runCodexProcess(codexProcessSpec{
-		bin:         r.codexBin,
-		argv:        codexExecArgv(workflowRoot, finalPath, prompt),
+		bin:         r.binary,
+		argv:        codexLiveFrontDoorArgv(r.pluginDir, workflowRoot, finalPath, prompt),
 		env:         r.env,
 		artifactDir: artifactDir,
 		finalPath:   finalPath,
@@ -507,8 +512,36 @@ func argvHasAdjacent(args []string, left, right string) bool {
 }
 
 func TestCodexLiveRunnerExecArgvEnablesMultiAgentV2(t *testing.T) {
-	args := codexExecArgv("/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
+	args := codexLiveFrontDoorArgv("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
 	if !argvHasAdjacent(args, "--enable", "multi_agent_v2") {
 		t.Fatalf("codex live exec argv must explicitly enable multi_agent_v2 because CODEX_HOME is isolated; args=%v", args)
+	}
+}
+
+func TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs(t *testing.T) {
+	args := codexLiveFrontDoorArgv("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
+	fence := -1
+	for i, arg := range args {
+		if arg == "--" {
+			fence = i
+			break
+		}
+	}
+	if fence < 0 {
+		t.Fatalf("Codex live argv has no host-argument fence: %v", args)
+	}
+	if args[0] != "codex" || !argvHasAdjacent(args[:fence], "--plugin-dir", "/tmp/plugin") {
+		t.Fatalf("Spacedock-owned Codex setup is not before host args: %v", args)
+	}
+	for _, arg := range args[fence+1:] {
+		if arg == "--plugin-dir" || arg == "/tmp/plugin" || arg == "--skip-compat-check" {
+			t.Fatalf("Spacedock-owned argument leaked after host fence: %v", args)
+		}
+	}
+	if args[fence+1] != "exec" {
+		t.Fatalf("Codex host argv does not start with exec: %v", args)
+	}
+	if !argvHasAdjacent(args, "--dangerously-bypass-approvals-and-sandbox", "--cd") {
+		t.Fatalf("Codex live argv does not preserve bypass-permission posture before workflow root: %v", args)
 	}
 }
