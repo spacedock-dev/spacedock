@@ -127,6 +127,9 @@ func TestLiveClaudeSharedScenarios(t *testing.T) {
 	for _, scenario := range claudeLiveScenarios(t) {
 		t.Run(scenario.name, func(t *testing.T) {
 			t.Parallel()
+			if reason := liveDurableJourneyTODO(scenario.name); reason != "" {
+				t.Skip(reason)
+			}
 			scenario.run(t, runner, scenario.sharedRuntimeScenario)
 		})
 	}

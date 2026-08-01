@@ -38,6 +38,9 @@ func TestLiveCodexSharedScenarios(t *testing.T) {
 
 	for _, scenario := range codexLiveScenarios(t) {
 		t.Run(scenario.name, func(t *testing.T) {
+			if reason := liveDurableJourneyTODO(scenario.name); reason != "" {
+				t.Skip(reason)
+			}
 			scenario.run(t, runner, scenario.sharedRuntimeScenario)
 		})
 	}

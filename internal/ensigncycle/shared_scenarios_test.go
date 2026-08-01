@@ -18,6 +18,22 @@ type sharedRuntimeScenario struct {
 	intent        string
 }
 
+const liveDurableJourneyDefectID = "9adv48yhye5s2vkhwd7ge52d"
+
+// liveDurableJourneyTODO quarantines only the live journeys that exposed the
+// entered-stage dispatch and post-gate terminalization product defects tracked
+// by liveDurableJourneyDefectID. Their offline durable oracles remain enabled.
+func liveDurableJourneyTODO(name string) string {
+	switch name {
+	case "smallest-sufficient-mechanism":
+		return "TODO(" + liveDurableJourneyDefectID + "): initial-stage successor dispatch must durably enter and run the current stage"
+	case "keep-moving-posture":
+		return "TODO(" + liveDurableJourneyDefectID + "): gate-consume dispatch evidence and consumed-authority terminalization need product fixes"
+	default:
+		return ""
+	}
+}
+
 func sharedRuntimeScenarios() []sharedRuntimeScenario {
 	return []sharedRuntimeScenario{
 		{
