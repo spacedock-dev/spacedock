@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mxaaqb96syv7pq7ekg5a5194:validation:attempt-2:revision-1",
+  "question": "Validate mxaa (attempt 2): all four ACs reproduced by exercise at candidate d9f38ca1e — approve into the terminal delivery ceremony?",
+  "artifacts": [
+    {
+      "id": "artifact:mxaaqb96syv7pq7ekg5a5194:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/04977f523e30c50013573e10f9305b88b4f87ab3/pin-ensign-contract-entry-point/review/validation/validation-review-2.md",
+      "rev": "sha256:1e7e07035ac4305de8cd473e07e31ed0e56f362ee22062804b4f2afd072bd504",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 PASS: AC-1 live leg graded pass on candidate (ensign rank 1, zero FO reads, baseline 0/8); correction test-only 57/5; AC-2/3/4 pins green; full suite x2 modes green"
+    }
+  ]
+}

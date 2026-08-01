@@ -77,7 +77,14 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:mxaaqb96syv7pq7ekg5a5194-validation-2
+              briefing:
+                id: briefing:mxaaqb96syv7pq7ekg5a5194:validation:attempt-2:revision-1
+                digest: sha256:54731e479302cff993fc7b133a1c02d7df71f679239f96965ffee72669677f56
+                digest-domain: canonical-bytes
+                request-digest: sha256:650164fcbe139d20d4521cad95d71d991ac2ab0b9b225c06eb6c63da308330c3
+                room-ref: ./pin-ensign-contract-entry-point/review/validation/briefing-2
 started: 2026-08-01T12:27:09Z
 worktree: .worktrees/spacedock-ensign-pin-ensign-contract-entry-point
 ---
