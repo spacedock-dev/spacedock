@@ -27,7 +27,7 @@ gates:
                 room-ref: ./codex-launch-multi-agent-v2/review/ideation/briefing-1
 ---
 
-Spacedock's Codex front door should guarantee the observable collaboration lifecycle its first officer needs: spawn a worker, follow up with the same worker, inspect/list and wait for workers, and receive completion. The guarantee belongs to the launch configuration and behavioral proof, not to bootstrap prose, an ambient user config, or the undocumented `multi_agent_v2` label.
+Spacedock's Codex front door should reproduce the captain's isolated-home multi-agent v2 configuration while also pinning Codex's documented stable multi-agent controls. The resulting first officer must observably spawn a worker, follow up with the same worker, inspect/list and wait for workers, and receive completion. The guarantee belongs to launch configuration plus behavioral proof, not bootstrap prose or ambient user config.
 
 ## Problem
 
@@ -48,17 +48,28 @@ The riskiest launch and runtime mechanisms were exercised before selecting a des
 - Current official Codex documentation names `agents.enabled` (default `true`) and `features.multi_agent` (stable, on by default). It does not name `multi_agent_v2` as the supported configuration contract.
 - A live `codex exec --json` used an isolated `CODEX_HOME` containing only copied authentication and the overrides `agents.enabled=true` and `features.multi_agent=true`. The parent transcript recorded `spawn_agent`, `wait_agent`, `followup_task`, `list_agents`, and `wait_agent`; the child recorded `CHILD_READY` then `CHILD_DONE`; the turn context recorded `multi_agent_version: v2`; and the parent returned `PARENT_DONE`.
 - The falsifying negative repeated the isolated launch with `agents.enabled=false`. No collaboration call appeared and the agent returned `SPAWN_UNAVAILABLE`.
+- The captain's actual ambient config contains this exact fragment:
 
-Conclusion: the label is neither necessary nor sufficient evidence. The two supported settings are the smallest launch-time control, and only the observable lifecycle is acceptance evidence.
+  ```toml
+  [features.multi_agent_v2]
+  max_concurrent_threads_per_session = 16
+  tool_namespace = "agents"
+  hide_spawn_agent_metadata = false
+  ```
+
+  Codex 0.146.0 accepts its equivalent inline table but `codex features list` still reports `multi_agent_v2 stable false`, proving the table and boolean feature-list label are not interchangeable.
+- A second isolated-home live run combined the exact table with `agents.enabled=true` and `features.multi_agent=true`. Parent thread `019fbe0d-76ca-79d1-9d5b-d2bfb110acf1` recorded `spawn_agent`, `list_agents`, and `wait_agent`; the child returned `FRAGMENT_CHILD`; the parent returned `FRAGMENT_PARENT`; and turn context recorded `multi_agent_version: v2` even though the identical `features list` invocation still printed `multi_agent_v2 stable false`.
+
+Conclusion: the supported controls and requested v2 table serve different purposes and must coexist. `agents.enabled=true` plus stable `features.multi_agent=true` are the supported enablement boundary; the exact `features.multi_agent_v2` table reproduces the captain's requested concurrency, namespace, and metadata shape. Only the observable lifecycle is acceptance evidence; the feature-list label is not.
 
 ## Proposed approach
 
-1. `spacedock codex` injects `-c agents.enabled=true -c features.multi_agent=true` immediately after the inner `codex` token. This position works for fresh launches and `resume`, survives the Safehouse wrap unchanged, overrides user/profile defaults, and does not create or merge a temporary config file.
-2. The launcher reserves those two config keys. A forwarded `-c`/`--config` assignment targeting either key, or `--enable`/`--disable multi_agent`, fails before plugin installation or `ops.Launch` with an actionable message explaining that Spacedock owns the collaboration guarantee. Redundant overrides are rejected too, keeping one effective source of truth and preventing last-override-wins ambiguity.
-3. A Codex version which does not accept either supported setting rejects config before creating the interactive first-officer turn; the native parser error is preserved and the host exits nonzero. Documentation states this Codex support boundary. No prompt fallback or downgraded dispatch is permitted.
+1. `spacedock codex` injects one launcher-owned config layer immediately after the inner `codex` token: `-c agents.enabled=true`, `-c features.multi_agent=true`, and the inline TOML equivalent of the captain's exact fragment, `-c 'features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}'`. This position works for fresh launches and `resume`, survives the Safehouse wrap unchanged, overrides user/profile defaults, and avoids a temporary config file.
+2. The launcher reserves all three owned paths. A forwarded `-c`/`--config` assignment targeting `agents.enabled`, `features.multi_agent`, or `features.multi_agent_v2`, or `--enable`/`--disable multi_agent[_v2]`, fails before plugin installation or `ops.Launch` with an actionable message explaining that Spacedock owns the collaboration guarantee. Redundant overrides are rejected too, keeping one effective source of truth and preventing last-override-wins ambiguity.
+3. A Codex version which does not accept the stable settings or v2 table rejects config before creating the interactive first-officer turn; the native parser error is preserved and the host exits nonzero. Documentation states this Codex support boundary. No prompt fallback or downgraded dispatch is permitted.
 4. Tests use one shared expected-argv helper so existing byte-exact launch oracles continue to assert the entire command, not merely search for substrings. A small live probe separately proves that the supported settings produce the lifecycle; it does not modify PR #585 or its existing live harness.
 
-This serves AC-1 and AC-2 with less machinery than a temporary `CODEX_HOME`/config merge, which would introduce file ownership, cleanup, auth, and profile-precedence hazards. Preserving the ambient home alone is insufficient because the clean-home case is the defect. A per-launch `codex doctor` preflight was rejected because it adds latency and reports the feature flag but not the complete collaboration lifecycle; explicit overrides plus a live lifecycle proof give a smaller and stronger boundary.
+This serves AC-1 and AC-2 with less machinery than a temporary `CODEX_HOME`/config merge, which would introduce file ownership, cleanup, auth, and profile-precedence hazards. The inline table is a semantically equivalent TOML value at the same config path and was exercised live from an isolated home. Preserving the ambient home alone is insufficient because the clean-home case is the defect. A per-launch `codex doctor` preflight was rejected because it adds latency and reports the stable feature flag but not the v2 table or complete collaboration lifecycle; explicit overrides plus live lifecycle proof give a smaller and stronger boundary.
 
 ## Out of scope
 
@@ -66,50 +77,65 @@ This serves AC-1 and AC-2 with less machinery than a temporary `CODEX_HOME`/conf
 - Redesigning Spacedock's dispatch or reuse contract.
 - Making multi-agent v1 behavior equivalent to v2.
 - Depending on a particular developer's local config as the only proof.
-- Enabling or asserting the `multi_agent_v2` feature-list label.
+- Treating the `multi_agent_v2` feature-list label as proof that the requested table or lifecycle is active.
 - Modifying PR #585 or its live harness.
 - Changing bootstrap/first-officer prose to simulate capability detection.
 
 ## Expected surface
 
-- `internal/cli/frontdoor.go`: 30-50 inserted lines for the owned config tokens, conflict recognition, and pre-launch diagnostic.
-- `internal/cli/codex_multi_agent_test.go` (new): 120-180 inserted lines for the variant/conflict matrix and a live-test entry point guarded by existing live prerequisites.
+- `internal/cli/frontdoor.go`: 35-60 inserted lines for the owned stable settings plus exact v2 table, conflict recognition, and pre-launch diagnostic.
+- `internal/cli/codex_multi_agent_test.go` (new): 140-210 inserted lines for the variant/conflict matrix and a live-test entry point guarded by existing live prerequisites.
 - Existing exact-argv launcher tests in `internal/cli/frontdoor_test.go`, `internal/cli/safehouse_frontdoor_test.go`, `internal/cli/launch_parity_test.go`, `internal/cli/codex_plugin_dir_test.go`, and `internal/cli/safehouse_knob_test.go`: 20-50 net inserted lines through a shared expected-argv helper and updated complete argv expectations.
-- `docs/site/reference/command-reference.md` and `docs/runtime-live-ci.md`: 8-20 inserted lines describing the launcher-owned settings, reserved forwarded keys, support boundary, and isolated-home lifecycle command.
+- `docs/site/reference/command-reference.md` and `docs/runtime-live-ci.md`: 10-24 inserted lines describing the stable settings, exact v2 table, reserved forwarded keys, support boundary, and isolated-home lifecycle command.
 
-Expected total: 8-9 files, 178-300 inserted lines, and at most 30 deleted lines. Tolerance is at most 10 files and 340 inserted lines. Exceeding either bound requires design re-entry rather than quietly broadening the mechanism.
+Expected total: the same 8-9 files, 205-344 inserted lines, and at most 30 deleted lines. Tolerance remains at most 10 files and 380 inserted lines; no additional implementation file is authorized. Exceeding either bound requires design re-entry rather than quietly broadening the mechanism.
 
-Declared semantic changes are limited to Codex launch runtime behavior and two forwarded-config grammar reservations. Every `spacedock codex` invocation carries the supported multi-agent settings, including plain, local-plugin, Safehouse, and resume launches; conflicting attempts fail before plugin mutation or host launch. Command names, stored formats, workflow state, plugin format, dispatch/reuse authority, Claude/Pi behavior, and bootstrap text do not change.
+Declared semantic changes are limited to Codex launch runtime behavior and three forwarded-config path reservations. Every `spacedock codex` invocation carries the two supported stable controls and exact requested v2 table, including plain, local-plugin, Safehouse, and resume launches; conflicting attempts fail before plugin mutation or host launch. The v2 table fixes the open-thread cap at 16, selects the `agents` tool namespace, and leaves spawn metadata visible. Command names, stored formats, workflow state, plugin format, dispatch/reuse authority, Claude/Pi behavior, and bootstrap text do not change.
 
 ## Acceptance criteria
 
 **AC-1 - A supported Spacedock-launched Codex can complete the native collaboration lifecycle from an isolated home.**
-Verified by: a live probe with no user config observes, in structured JSONL and child state, one spawn, one same-worker follow-up, list/inspect, wait, `CHILD_READY`, `CHILD_DONE`, and `PARENT_DONE`; it also records `multi_agent_version: v2`. Removing either launcher-owned supported setting or disabling `agents.enabled` makes this proof fail.
+Verified by: live evidence E-2 runs with no user config and observes, in structured JSONL and child state, one spawn, one same-worker follow-up, list/inspect, wait, `CHILD_READY`, `CHILD_DONE`, and `PARENT_DONE`; it also records `multi_agent_version: v2`. Removing either launcher-owned supported setting or disabling `agents.enabled` makes this proof fail as shown by E-3.
 
-**AC-2 - The launcher cannot silently downgrade through ambient or forwarded configuration.**
-Verified by: table tests start from ambient false settings and show the owned true overrides in complete argv, while every forwarded spelling targeting the reserved settings exits nonzero with the pinned diagnostic and records zero plugin installs and zero host launches. An instrumented unsupported host rejects the owned settings before opening a session and its nonzero exit/config diagnostic propagate; a live `agents.enabled=false` control produces no collaboration calls.
+**AC-2 - The launcher reproduces the captain's exact v2 table and cannot silently downgrade through ambient or forwarded configuration.**
+Verified by: live evidence E-4 combines the exact table with the stable controls in an isolated home and observes v2 spawn/list/wait plus child and parent completion while the feature-list label remains false. Launcher table tests start from ambient false settings and show all owned overrides in complete argv, while every forwarded spelling targeting the three reserved paths exits nonzero with the pinned diagnostic and records zero plugin installs and zero host launches. An instrumented unsupported host rejects the owned layer before opening a session and its nonzero exit/config diagnostic propagates.
 
 **AC-3 - Plain, local-plugin, Safehouse, and resume launches carry one identical supported enablement layer.**
-Verified by: complete-argv launcher tests assert the two tokens occur exactly once, immediately after the inner `codex` token, across all four variants; deleting either token or placing one outside the Safehouse inner argv fails the matrix.
+Verified by: complete-argv launcher tests seeded by instrumented capture E-1 assert the two stable tokens and exact inline v2 table occur exactly once, immediately after the inner `codex` token, across all four variants; deleting any element, changing a v2 field, or placing one outside the Safehouse inner argv fails the matrix.
 
 **AC-4 - Runtime proof and operator documentation use the supported settings and behavioral oracle, not the v2 label or personal config.**
-Verified by: the isolated-home live test copies authentication only, applies the same two settings, and grades structured lifecycle events; documentation names the supported keys, the rejection behavior, and the minimum host-support boundary. A guard rejects `multi_agent_v2` in this task's test/helper surface.
+Verified by: the isolated-home live test reproduces E-4 by copying authentication only, applies the stable controls plus exact v2 table, and grades structured lifecycle events. Documentation names all owned paths, the distinction demonstrated by E-4 between the v2 table and false feature-list label, the rejection behavior, and the minimum host-support boundary. A guard rejects any test that substitutes `codex features list` state for lifecycle evidence.
+
+## Evidence ledger
+
+- **E-1 — frontdoor handoff falsifier:** built `spacedock` with an instrumented `codex`/`safehouse`, isolated `CODEX_HOME`, and plain/local-plugin/Safehouse launches. Captured inner argv contained approval/bypass and bootstrap arguments but no multi-agent config. Repeating after implementation must show the full owned layer in each inner argv.
+- **E-2 — supported-controls lifecycle:** isolated home with copied authentication only; `codex exec --json -c agents.enabled=true -c features.multi_agent=true`. Parent thread `019fbdd7-f0c0-7183-ab4a-02420aac3911` recorded `spawn_agent`, `wait_agent`, `followup_task`, `list_agents`, `wait_agent`, and `PARENT_DONE`; its child recorded `CHILD_READY` then `CHILD_DONE`; turn context recorded `multi_agent_version: v2`.
+- **E-3 — disabled falsifier:** isolated home, same command with `agents.enabled=false`; stdout completed with `SPAWN_UNAVAILABLE` and no collaboration item. This independently moves the lifecycle in the wrong direction when enablement is removed.
+- **E-4 — exact-fragment reconciliation:** isolated home with copied authentication only; E-2 controls plus `-c 'features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}'`. Parent thread `019fbe0d-76ca-79d1-9d5b-d2bfb110acf1` recorded `spawn_agent`, `list_agents`, `wait_agent`, `FRAGMENT_PARENT`; child recorded `FRAGMENT_CHILD`; turn context recorded `multi_agent_version: v2`; the identical config passed to `codex features list` still reported `multi_agent_v2 stable false`, falsifying label-as-proof.
+- **E-5 — official supported boundary:** current Codex [Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents.md) and [Configuration Reference](https://learn.chatgpt.com/docs/config-file/config-reference.md) documentation identifies `agents.enabled` (default true), `agents.max_concurrent_threads_per_session`, and stable `features.multi_agent`; it does not document the captain's v2 table. The design therefore pins both the supported controls and the exercised requested table rather than relabeling one as the other.
 
 ## Test plan
 
 Implementation starts with failing focused tests, then changes launcher behavior:
 
-1. Add the complete-argv matrix for plain, explicit local-plugin, Safehouse, and exact `resume`. The matrix asserts adjacency, uniqueness, and the inner side of the wrapper boundary. Cost: low, fixture-backed, no model spend.
-2. Add a conflict matrix for `-c`, `--config`, equals forms accepted by Codex, and `--enable`/`--disable multi_agent`. Each case asserts exit 1, byte-stable actionable stderr, no install, and no launch. Include nearby unrelated config as a green control. Cost: low, fixture-backed.
-3. Add an instrumented unsupported-host case that rejects the two settings before starting a session. Assert the native actionable config diagnostic and nonzero exit propagate, and that its session/dispatch marker remains absent. Cost: low, process fixture.
-4. Add the supported settings in `frontdoor.go`, before passthrough and after the inner program token, and reject reserved conflicts immediately after front-door parsing. Update all affected complete-argv oracles through one test helper. Cost: low-to-medium because exact argv is intentionally broad regression coverage.
+1. Add the complete-argv matrix for plain, explicit local-plugin, Safehouse, and exact `resume`. The matrix asserts adjacency, uniqueness, exact values for all three v2 table fields, and the inner side of the wrapper boundary. Cost: low, fixture-backed, no model spend.
+2. Add a conflict matrix for `-c`, `--config`, equals forms accepted by Codex, and `--enable`/`--disable multi_agent[_v2]`. Cover the stable keys, the v2 table, and each v2 nested field spelling. Each case asserts exit 1, byte-stable actionable stderr, no install, and no launch. Include nearby unrelated config as a green control. Cost: low, fixture-backed.
+3. Add an instrumented unsupported-host case that rejects the owned stable-controls-plus-v2-table layer before starting a session. Assert the native actionable config diagnostic and nonzero exit propagate, and that its session/dispatch marker remains absent. Cost: low, process fixture.
+4. Add the complete owned layer in `frontdoor.go`, before passthrough and after the inner program token, and reject reserved conflicts immediately after front-door parsing. Update all affected complete-argv oracles through one test helper. Cost: low-to-medium because exact argv is intentionally broad regression coverage.
 5. Run the focused package tests, `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
-6. Run the isolated-home live proof with copied auth only. Parse JSONL rather than final prose: require the ordered parent tool set, one stable child identity across follow-up, both child terminal messages, parent completion, and `multi_agent_version: v2`. Run the disabled control and require zero collaboration calls. Cost: one short positive and one short negative Codex run; live and credential-gated.
+6. Run the isolated-home live proof with copied auth only and all owned settings, reproducing E-4. Parse JSONL rather than final prose: require the ordered parent tool set, one stable child identity across follow-up, both child terminal messages, parent completion, and `multi_agent_version: v2`; separately assert `features list` remains insufficient. Run the disabled control and require zero collaboration calls. Cost: one short positive and one short negative Codex run; live and credential-gated.
 7. Repeat the instrumented frontdoor capture for plain, local-plugin, and Safehouse launch shapes and retain concise artifacts. The live lifecycle is run once because the same inner tokens are proven byte-identical across variants; three paid lifecycle runs would add cost without testing a distinct Codex mechanism.
 
 ## Consultation record
 
 Standing Science Officer consultation (signed consultation supplied with the 2026-08-01 ideation dispatch): **REVISE**. Reference: current official Codex `Subagents` and `Configuration Reference` documentation plus the isolated Codex 0.146.0 probe. Reason to preserve in the gate: `agents.enabled` and stable `features.multi_agent` are the supported current controls; `multi_agent_v2=false` is only a local feature-label observation, so approval must rest on observable spawn, same-worker follow-up, list/wait, and completion across launcher variants, with a disabled/unsupported path that fails before worker dispatch.
+
+Direct Science Officer advisory send-back, 2026-08-01: **REVISE**. Material findings preserved unchanged:
+
+1. the current ideation approach selects agents.enabled=true + features.multi_agent=true and explicitly excludes the captain-required isolated-home fragment [features.multi_agent_v2] max_concurrent_threads_per_session=16, tool_namespace="agents", hide_spawn_agent_metadata=false; this is a scope mismatch;
+2. AC-1 through AC-4 have no independent evidence citations in the current entity report.
+
+Disposition: the revised approach carries the exact fragment as an inline TOML table alongside the supported controls, and the evidence ledger plus cycle-2 report citations bind every AC to falsifiable launch or live evidence. The open gate is intentionally untouched; the First Officer will withdraw the stale attempt and prepare a fresh Briefing.
 
 ## Stage Report: ideation
 
@@ -123,3 +149,16 @@ Standing Science Officer consultation (signed consultation supplied with the 202
 ### Summary
 
 Reframed the task from enabling an unproven `multi_agent_v2` label to guaranteeing the observable Codex collaboration lifecycle through supported settings. The spike demonstrated that current Spacedock does not own that configuration, while a clean-home live run with the supported settings completed the full lifecycle and the disabled control did not expose collaboration; the signed Science Officer REVISE rationale is retained for the gate.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Reconcile the captain-required isolated-home v2 fragment with the supported controls.
+  AC-1 and AC-2 evidence: E-2/E-3 establish the stable enablement boundary; E-4 independently proves the exact three-field v2 table coexists with it and completes a v2 lifecycle while the feature-list label remains false.
+- DONE: Anchor every acceptance criterion to falsifiable evidence.
+  AC-3 and AC-4 evidence: E-1 is the instrumented launcher falsifier and future argv oracle; E-4 is the isolated-home structured lifecycle oracle; E-5 binds the supported/documented boundary without substituting prose for runtime behavior.
+- DONE: Update proposed approach, test plan, and semantic scope together without widening files.
+  The same 8-9 implementation files remain authorized; complete argv, reserved-key, unsupported-host, disabled, and live JSONL tests now cover the stable controls plus exact table and fail on any missing or changed field.
+
+### Summary
+
+The revision accepts both Science Officer findings without changing product code or the open gate. It preserves the captain's exact v2 table alongside Codex's supported stable controls, adds independent falsifiers and AC citations, and keeps the implementation file surface unchanged.
