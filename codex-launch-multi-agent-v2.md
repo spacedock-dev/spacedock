@@ -194,3 +194,16 @@ Reframed the task from enabling an unproven `multi_agent_v2` label to guaranteei
 ### Summary
 
 The revision accepts both Science Officer findings without changing product code or the open gate. It preserves the captain's exact v2 table alongside Codex's supported stable controls, adds independent falsifiers and AC citations, and keeps the implementation file surface unchanged.
+
+## Stage Report: implementation
+
+- DONE: inject supported controls plus the exact multi_agent_v2 inline TOML layer across all launch variants
+  Commit c36e3f7d1 injects the layer directly after inner `codex`; `TestCodexCollaborationLayerCompleteArgv` fails if plain, local-plugin, Safehouse, or resume loses, duplicates, reorders, or changes any token.
+- DONE: reject reserved or conflicting forwarded settings before plugin install or host launch
+  The conflict matrix covers `-c`/`--config` and `--enable`/`--disable` space/equals forms plus every v2 field, requires the pinned diagnostic and zero install/launch calls, and retains an unrelated-config green control.
+- DONE: prove complete argv, unsupported-host failure, and isolated-home lifecycle behavior within the approved surface
+  Eight files/332 insertions stayed below 10/380; the unsupported-host test preserves exit 78/config stderr before a session, the 35.6s live isolated-home run observed spawn/follow-up/list/wait and all child/parent markers with v2 context, and `go test ./...` plus `go test ./... -race` passed.
+
+### Summary
+
+Spacedock now owns one Codex collaboration configuration source across every launch shape and refuses forwarded attempts to weaken or replace it before persistent or host side effects. The implementation includes offline argv/conflict/support-boundary proofs, a credential-gated isolated-home lifecycle oracle, and operator documentation without changing non-Codex behavior or using a prompt fallback.
