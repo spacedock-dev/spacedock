@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:hq3d00mewqrys3s0z9pf27df:backlog:attempt-1:revision-1",
+  "question": "Should this durable-decisions sprint task enter ideation for the actionable-stage preparation guard?",
+  "artifacts": [
+    {
+      "id": "artifact:hq3d00mewqrys3s0z9pf27df:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e1b563ca6ace16d98dd78117128b693383953f84/reject-gate-prepare-outside-actionable-stage/index.md",
+      "rev": "sha256:1871cfc423af8ddda3e213e7d0d578c957b9bb65b972260db902d70a025ba790",
+      "mediaType": "text/markdown",
+      "summary": "Approve ideation of a fail-closed gate preparation guard that permits attempts only at actionable gated stages and leaves ungated or terminal entities byte-identical."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:hq3d00mewqrys3s0z9pf27df:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/af42c77d52de855f554fb8421a62e3b16b75f2ac/docs/roadmap/durable-decisions/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:123cf6ae94471eb8b73e5392eda294e16d98bcc0577e35bcdc087942a8afe964"
+    }
+  ]
+}

@@ -11,6 +11,21 @@ issue:
 pr:
 sprint: durable-decisions
 id: hq3d00mewqrys3s0z9pf27df
+gates:
+    version: 1
+    current:
+        gate: gate:hq3d00mewqrys3s0z9pf27df:backlog
+    records:
+        - id: gate:hq3d00mewqrys3s0z9pf27df:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:hq3d00mewqrys3s0z9pf27df-backlog-1
+              briefing:
+                id: briefing:hq3d00mewqrys3s0z9pf27df:backlog:attempt-1:revision-1
+                digest: sha256:f38887cdc76574701bc3ae979313bf353a919f964ae293be62737d99ccd6c663
+                digest-domain: canonical-bytes
+                request-digest: sha256:7792cd306d70e0ede71e31eea77881d173b857c8dd91773ab69089d5c5750e38
+                room-ref: ./review/backlog/briefing-1
 ---
 
 `gate prepare` must fail before mutation unless the ticket's current workflow stage is a gate that can accept a new attempt. The command currently checks only that the stage exists. A real invocation at the ungated `implementation` stage exited zero, added a gate attempt, and wrote a room that the later recorder correctly refused as non-actionable.
