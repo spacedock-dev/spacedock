@@ -99,6 +99,22 @@ Each Codex shared scenario launches one `spacedock codex` front-door process, wh
 go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
 ```
 
+The launcher-specific isolated-home collaboration proof is separately opt-in
+because it spends one short Codex turn. It copies authentication only, supplies
+the same supported controls and exact v2 table that `spacedock codex` injects,
+and grades structured output for spawn, same-worker follow-up, list, wait, child
+completion, parent completion, and `multi_agent_version: v2`:
+
+```bash
+SPACEDOCK_LIVE_CODEX_MULTI_AGENT=1 go test -count=1 -run TestCodexIsolatedHomeCollaborationLifecycle ./internal/cli -v
+```
+
+Do not replace this behavioral oracle with `codex features list`: current Codex
+can report the `multi_agent_v2` label as false while accepting the exact table
+and completing the v2 lifecycle. The offline complete-argv and unsupported-host
+tests remain the no-model-spend proofs for launch placement and fail-closed host
+support.
+
 Run the Pi live proofs locally with the same package versions pinned in CI:
 
 ```bash
