@@ -107,8 +107,8 @@ func TestCodexForceSafehouseWrapsNoProfile(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
-		"codex", "--dangerously-bypass-approvals-and-sandbox", wantCodexBootstrapPrompt}
+	want := append([]string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--"},
+		wantCodexArgv("--dangerously-bypass-approvals-and-sandbox", wantCodexBootstrapPrompt)...)
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
@@ -144,8 +144,8 @@ func TestKnobImpliesSandboxOnNoProfile(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		want := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--enable=docker", "--",
-			"codex", "--dangerously-bypass-approvals-and-sandbox", wantCodexBootstrapPrompt}
+		want := append([]string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--enable=docker", "--"},
+			wantCodexArgv("--dangerously-bypass-approvals-and-sandbox", wantCodexBootstrapPrompt)...)
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 		}
@@ -165,7 +165,7 @@ func TestCodexPlainWhenNoTrigger(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"codex", "--ask-for-approval", "on-request", wantCodexBootstrapPrompt}
+	want := wantCodexArgv("--ask-for-approval", "on-request", wantCodexBootstrapPrompt)
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
@@ -246,7 +246,7 @@ func TestFenceTaskPromptOverride(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		want := []string{"codex", "--ask-for-approval", "on-request", "--model", "gpt-5.6-sol", wantCodexBootstrapPrompt + " @/tmp/handoff-file.md"}
+		want := wantCodexArgv("--ask-for-approval", "on-request", "--model", "gpt-5.6-sol", wantCodexBootstrapPrompt+" @/tmp/handoff-file.md")
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 		}
@@ -263,7 +263,7 @@ func TestCodexResumeSuppressesPrompt(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		want := []string{"codex", "resume", "abc-123"}
+		want := wantCodexArgv("resume", "abc-123")
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v (exact resume forwards without a prompt)", fake.launchedArg, want)
 		}
@@ -300,18 +300,18 @@ func TestCodexPostFenceUsesExactResumeToken(t *testing.T) {
 		{
 			name:        "model only retains bootstrap posture",
 			passthrough: []string{"--model", "gpt-5.6-sol"},
-			want:        []string{"codex", "--ask-for-approval", "on-request", "--model", "gpt-5.6-sol", wantCodexBootstrapPrompt},
+			want:        wantCodexArgv("--ask-for-approval", "on-request", "--model", "gpt-5.6-sol", wantCodexBootstrapPrompt),
 			wantBanner:  true,
 		},
 		{
 			name:        "model plus resume stays prompt free",
 			passthrough: []string{"--model", "gpt-5.6-sol", "resume", "abc-123"},
-			want:        []string{"codex", "--model", "gpt-5.6-sol", "resume", "abc-123"},
+			want:        wantCodexArgv("--model", "gpt-5.6-sol", "resume", "abc-123"),
 		},
 		{
 			name:        "resume-like option stays a fresh launch",
 			passthrough: []string{"--model", "gpt-5.6-sol", "--resume=abc-123"},
-			want:        []string{"codex", "--ask-for-approval", "on-request", "--model", "gpt-5.6-sol", "--resume=abc-123", wantCodexBootstrapPrompt},
+			want:        wantCodexArgv("--ask-for-approval", "on-request", "--model", "gpt-5.6-sol", "--resume=abc-123", wantCodexBootstrapPrompt),
 			wantBanner:  true,
 		},
 	}
@@ -349,7 +349,7 @@ func TestCodexPostFenceWithoutResumeBootstrapsFirstOfficer(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"codex", "--ask-for-approval", "on-request", "--future-codex-flag=handoff", "opaque-argument", wantCodexBootstrapPrompt}
+	want := wantCodexArgv("--ask-for-approval", "on-request", "--future-codex-flag=handoff", "opaque-argument", wantCodexBootstrapPrompt)
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
