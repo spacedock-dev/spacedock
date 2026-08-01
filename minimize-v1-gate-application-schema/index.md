@@ -1,6 +1,6 @@
 ---
 title: Minimize the unreleased v1 gate application schema
-status: backlog
+status: ideation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: production emits empty blockers but has no producer or demonstrated consumer for blockers, execution holds, or feedback payloads."
 started:
 completed:
@@ -37,7 +37,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
