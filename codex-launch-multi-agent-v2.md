@@ -1,7 +1,7 @@
 ---
 id: z5gwwz2748sg6vxr0g3kdsar
 title: "Codex launcher guarantees multi-agent v2 surface"
-status: ideation
+status: implementation
 source: "Captain feedback, 2026-07-02: ordinary Codex config currently enables multi_agent_v2; make Spacedock-launched Codex enable or prove the same surface instead of relying on ambient session setup."
 started: 2026-08-01T14:29:25Z
 completed:
@@ -55,7 +55,7 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
