@@ -5,6 +5,21 @@ group: tooling
 source: "Captain request 2026-07-02 (Claude Commander session): mid-session, the captain asked the FO 'forget that we are developing spacedock for a moment — as the agent driving this session, how would you describe the experience using spacedock vs not using it?' and the answer (drift resistance, auditability under context pressure, honest friction list) was valuable enough to want collected EVERY session. Add the prompt to the debrief flow so testimonials accumulate from the agents' perspective."
 id: qdb1w5r7k9nvbvkf8qetcd5m
 started: 2026-07-02T07:35:57Z
+gates:
+    version: 1
+    current:
+        gate: gate:qdb1w5r7k9nvbvkf8qetcd5m:ideation
+    records:
+        - id: gate:qdb1w5r7k9nvbvkf8qetcd5m:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:qdb1w5r7k9nvbvkf8qetcd5m-ideation-1
+              briefing:
+                id: briefing:qdb1w5r7k9nvbvkf8qetcd5m:ideation:attempt-1:revision-1
+                digest: sha256:c82a63c78fae819c2eeb8c5ae4fd4042a61898fb8674a6928921e3c6b34a0bbe
+                digest-domain: canonical-bytes
+                request-digest: sha256:c388fc6c91ceed158a374d9a6eb7e205d87a96e3c0f5da7de48b02f73b874151
+                room-ref: ./debrief-agent-testimonial-prompt/review/ideation/briefing-1
 ---
 
 ## Problem
