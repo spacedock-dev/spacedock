@@ -217,3 +217,13 @@ specifies the smallest cap-preserving correction. Existing tests retain the
 mechanical boundary; one live Codex journey proves the changed agent behavior
 without adding compatibility code or a standing check. Repository formatting,
 `go test ./...`, and `go test ./... -race` are green at the ideation baseline.
+
+## Stage Report: implementation
+
+- DONE: Declare the intended file and line replacement before editing.
+  Only `skills/first-officer/references/first-officer-shared-core.md` lines 9 and 11 may change: line 9 removes only `Then ` and trailing ` Classes:`; line 11 becomes `   - **Wrong version**: major.minor below/above/absent (bare \`dev\`, not \`+dev\`). ABORT with the mismatch; run \`${SPACEDOCK_BIN:-spacedock} doctor\`.`
+
+### Summary
+
+Before the first product edit, implementation is frozen to the approved one-file,
+two-line, net-+7-byte surface. No wider change is authorized.
