@@ -140,7 +140,14 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-validation-2
+              briefing:
+                id: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-2:revision-1
+                digest: sha256:00c5a96490b6754e0b023225c8ae57ddbc46825cd697e3eb6ce970d85074b944
+                digest-domain: canonical-bytes
+                request-digest: sha256:475fb7f4386b1a3dbb14d770dbe2e4ad068d7e8a2b3b308f26f0d468c70464a5
+                room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-2
 sprint: durable-decisions
 ---
 

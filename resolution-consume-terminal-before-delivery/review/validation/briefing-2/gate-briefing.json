@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-2:revision-1",
+  "question": "Approve PASS for the reworked cycle-2 implementation's validation (cycle 2) — gates-owned locked writer replacing the rejected seam, validator PASSED with 2 deferred evidence-defect holes — consuming toward terminal done and the pr-merge ceremony, with the honest core +500/−37 vs declared +205 on the record?",
+  "artifacts": [
+    {
+      "id": "artifact:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/94d4ee10886f4e641ead5af01cc7db72f1fdcfd4/resolution-consume-terminal-before-delivery.md",
+      "rev": "sha256:7e882fa0fce096b514e44a7ee8543db7efd6884aefa20b6c9cb5e73dc3975052",
+      "mediaType": "text/markdown",
+      "summary": "The captain-rejected status-envelope architecture is replaced by two gates-owned locked operations (delivery.go, +192) over writeEntityDocument's compare-before-replace machinery, narrowly extended for verdict/completed: FinalizeTerminalApproval (pending-\u003econsumed + terminal status + verdict + completed, ONE locked candidate) and SupersedeTerminalApproval (pending-\u003esuperseded + status := validated declared feedback-to). merge guard delegates; legacy finalization is ErrNoGateRecord-only; invalid/unreadable/digest-stale authority refuses byte-clean BEFORE the mod-block clear; mod-block clears in its own small step; the pr sentinel is retained through archive (captain-ratified amendment). Fresh validator recommends PASSED: ACs re-run with observed exits (journey, retry isolation, refusal matrix incl. digest-stale, sole-consumer set refusal, golden, seam atomics pair); detached adversarial audit catches envelope-split and digest-skip by named tests; live drive lands consume-\u003erework-\u003ere-enter-\u003eregate-\u003econsume-\u003esentinel-\u003efinalize with durable end states and pr: pr-merge retained in the archive; movable baseline reproduces the hole on main @3522ee457; full suite green modulo exactly the 2 pre-existing env failures re-proven identically red. Architecture verified from the diff: internal/status mutates no gates subtree; zero out-of-design machinery. TWO DEFERRED evidence-defect holes on the record: (1) .gates.lock acquisition at the new ops is pinned in source but uncaught by any test; (2) refusal-before-mod-block-clear ordering is pinned in source but uncaught (digest-stale fixture carries empty mod-block) — shipped code correct, bounded by the gates writer's compare-and-reject, classified deferred risk by the validator. Surface: +1417/−78 over 23 files (the implementation report's '22' named as accounting defect); production semantic core +500/−37 vs declared +205 (the captain-prescribed locked-writer seam + fail-closed orchestration cost)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/94d4ee10886f4e641ead5af01cc7db72f1fdcfd4/resolution-consume-terminal-before-delivery/review/validation/validator-output-2bbea749.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:a27ad401b8adf60d42ca76c26906d5b148bcb2e6792c1d637053885377260658"
+    }
+  ]
+}
