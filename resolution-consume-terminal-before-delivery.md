@@ -185,6 +185,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:d37b4afdc50f8edf9ddacf4fbd66a60b8a116aa3e0359178b88414490a4e508a
                 room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:1w62z8c5fq5g5cmhzf5sd79w:validation:4
+                briefing: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-4:revision-1
+                by: person:captain
+                at: "2026-08-01T04:07:13.375985Z"
+                decision: approve
+                reason: 'Captain approves (chat) the corrected cycle-2+rework resolution of the terminal-consume semantic hole — gates-owned locked writer (FinalizeTerminalApproval/SupersedeTerminalApproval), all five post-correction acceptance conditions independently verified by the fresh validator (revert-proven --set fail-open fix, armed digest-stale byte-clean, AC-2 evidence map, endorsed Roborev dispositions, isolated-env full-suite exit 0) — candidate 8750d608b enters terminal done and the pr-merge delivery ceremony. Residuals on record: lock-removal regression test disproportionate-now (promote with concurrent-FO support); concurrency race class deferred; piruntime red was env-triggered and healed.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 sprint: durable-decisions
 ---
 
