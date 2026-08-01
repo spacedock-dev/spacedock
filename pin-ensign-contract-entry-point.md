@@ -352,3 +352,20 @@ Recommendation: REJECTED — AC-1's gate evidence cannot be produced by the comm
 ### Summary
 
 All pinned tests reproduce green on 694d21db7 and each AC-2/3/4 leg replays red on base af42c77d5 with the quoted failure strings. The AC-1 live leg uncovers three blocking harness defects (wrong argv, stderr contamination, missing settings-package skill surface), none of which touch product code; with three narrow throwaway patches the same live leg passes and grades a real spawned worker at ensign-SKILL.md-read rank 1 with zero first-officer reads, so the captain's value shape is proven and the correction is confined to live-tagged test code. The 591+/24- surface is ruled justified (ruling-B attribution + package-convention scaffolding) with only a ~40-line polish margin.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Apply the three proven harness patches (argv dispatch; stdout/stderr split; seed piHome/settings.json path-package) — show the diff
+  Commit d9f38ca1e on spacedock-ensign/pin-ensign-contract-entry-point (pushed to origin): internal/ensigncycle/pi_live_runner_test.go only, +57/-5 — `exec.Command(binary, "dispatch", "build", ...)`, `bytes.Buffer` stdout/stderr split with stdout-only `json.Unmarshal`, `writeFile(piHome/settings.json, {"packages":["file:"+repo]})`. Test-only; no candidate semantics touched.
+- DONE: Run the tagged live leg on the candidate worktree on this host; quote pi-ensign-boot-grade.json fields as the gate-grade artifact
+  `SPACEDOCK_BIN=/tmp/spacedock-candidate SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-pi-live-artifacts go test -tags live -run TestLivePiSubagentEnsignSmoke ./internal/ensigncycle` — PASS 135.4s on d9f38ca1e. Artifact: {"verdict":"pass","worker_transcripts_graded":1,"read_calls":5,"ensign_skill_read_rank":1,"first_officer_reads":0,"spawn_agent":"worker","spawn_skills":["ensign"]} — meets the AC-1 bar (rank <= 5, zero first-officer reads, agent=worker, skills=[ensign]).
+- DONE: Full go test ./... and -race (markers scrubbed) green, gofmt clean; AC-2/3/4 pins re-verified untouched
+  `go test ./...` EXIT=0 and `go test ./... -race` EXIT=0 (env scrubbed of PI_CODING_AGENT/PI_CODING_AGENT_DIR/CLAUDECODE/CODEX_THREAD_ID/SPACEDOCK_AMBIENT); `gofmt -l ./cmd ./internal` empty. AC-2 pins TestBuildPiHostEmitsSpawnAgentAndSkill/TestBuildPiHostAgentOverrideOmitsSkill/TestBuildClaudeHostGoldenByteIdentical PASS; AC-3/AC-4 internal/piruntime and internal/contractlint suites PASS — the cycle diff touches only the live-tagged harness file.
+
+### SKIPPED
+
+- SKIPPED: none — every checklist item completed.
+
+### Summary
+
+Applied the validator-proven three-patch correction package verbatim (argv `dispatch build`, stdout/stderr separation with stdout-only envelope parse, piHome/settings.json path-package seed) plus the package's optional-adjacent ambient `PI_SUBAGENT_*` scrub in `piLiveEnv` — justified here because this run executed nested inside a pi-subagents session (the recorded promote-to-material condition; without the scrub the forked FO pi process would inherit `PI_SUBAGENT_CHILD=1` and exempt itself from its own bootstrap). One operational note for replay: this host's ambient `SPACEDOCK_BIN` points at the main checkout's stale binary, which lacks the pi agent/skill fields — the live leg must run with `SPACEDOCK_BIN` unset (harness falls back to `go build` of the worktree) or pointed at a freshly built candidate binary, mirroring the CI convention. The AC-1 gate artifact is now produced by the committed harness on the candidate branch: live-spawned worker boots the ensign contract at read rank 1 with zero first-officer reads.
