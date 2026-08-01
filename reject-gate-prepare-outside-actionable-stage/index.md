@@ -26,6 +26,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:7792cd306d70e0ede71e31eea77881d173b857c8dd91773ab69089d5c5750e38
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:hq3d00mewqrys3s0z9pf27df:backlog:1
+                briefing: briefing:hq3d00mewqrys3s0z9pf27df:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-01T13:50:37.494931Z"
+                decision: approve
+                reason: Captain approved dispatching this durable-decisions ideation lane in parallel with wj, nth, and jc.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 `gate prepare` must fail before mutation unless the ticket's current workflow stage is a gate that can accept a new attempt. The command currently checks only that the stage exists. A real invocation at the ungated `implementation` stage exited zero, added a gate attempt, and wrote a room that the later recorder correctly refused as non-actionable.
