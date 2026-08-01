@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-3:revision-1",
+  "question": "Captain disposition for cycle-3 validation: approve this candidate, authorize the bounded M5 evidence correction, or change the same-worker acceptance criterion?",
+  "artifacts": [
+    {
+      "id": "artifact:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/64cb1842363a1f536b93bffd59cc59ae5eb9d747/codex-launch-multi-agent-v2/review/validation/fo-gate-review.md",
+      "rev": "sha256:9d0aa1ee95e500e5dd6ca8ee078e3adc3f460552e1f1db435733e4a3bfa20bcc",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-3 validation passes the built front-door lifecycle, exact v2 table, conflict/unsupported boundaries, disabled control, full/race/focused/format suites, and explicit wrong-target negative. A detached misbound child passes because raw bytes.Contains combines parent_thread_id and agent_path from unrelated JSON, so AC-1/AC-4 same-worker evidence remains falsifiable. Science Officer recommends HOLD and Captain disposition."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://state/64cb1842363a1f536b93bffd59cc59ae5eb9d747/codex-launch-multi-agent-v2.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f4feafaf2095d577d126083a1021db68c485b92735007292796ae5aebaf2159"
+    }
+  ]
+}
