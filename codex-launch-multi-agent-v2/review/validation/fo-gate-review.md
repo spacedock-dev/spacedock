@@ -4,24 +4,21 @@ Entity: `codex-launch-multi-agent-v2`
 Stage: `validation`
 
 The fresh Sol/medium validator completed the required full, race, focused,
-formatting, credential-gated, and detached-audit checks. The report has three
-DONE items and three FAILED items. AC-1 through AC-4 are cited, but the
-failures are material.
+formatting, credential-gated, and detached-audit checks against cycle-2
+commit `383b4da8b`. The report has five DONE items and two FAILED items.
+AC-1 through AC-4 are cited, but one material evidence defect remains.
 
 Findings:
 
-- The lifecycle test calls `codex exec` directly and accepts unordered marker
-  presence; a zero-worker fake passes, so the Spacedock front door, order,
-  cardinality, same-worker identity, and v2 context are not proven.
-- Codex accepts attached short and quoted dotted reserved-key overrides after
-  the launcher-owned layer, so `agents.enabled=false` can still downgrade the
-  guarantee.
-- The disabled-control negative (E-3) is absent.
+- The corrected lifecycle test uses the built `spacedock codex` front door,
+  typed ordered records, exact cardinality, v2 context, and a zero-event
+  disabled control. However, it does not parse either `wait_agent` target; a
+  detached transcript where both waits target worker-b instead of spawned
+  worker-a passes, so same-worker wait identity is not proven.
 
 Science Officer advisory: REVISE. I agree with the classification and route.
 
-Recommendation: REVISE through validation feedback to implementation. The
-correction must canonicalize every accepted reserved-key spelling before
-side-effects, drive the built `spacedock codex` front door from an isolated
-home, parse typed ordered same-worker records, add the disabled negative, and
-rerun the required validation suite without weakening the oracle.
+Recommendation: REVISE through validation feedback to implementation. Parse
+both ordered `wait_agent` argument records atomically, require each target to
+equal the spawned worker identity, retain the detached wrong-worker transcript
+as a negative, and rerun validation without weakening the oracle.
