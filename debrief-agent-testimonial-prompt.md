@@ -58,6 +58,7 @@ gates:
                 blockers: []
 worktree: .worktrees/spacedock-ensign-debrief-agent-testimonial-prompt
 mod-block: merge:pr-merge
+pr: "#594"
 ---
 
 ## Problem
