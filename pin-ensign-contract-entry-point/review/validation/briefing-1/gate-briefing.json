@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mxaaqb96syv7pq7ekg5a5194:validation:attempt-1:revision-1",
+  "question": "Validation of mxaa: acknowledge REJECTED on AC-1 harness evidence defects (3 test-only fixes proven on throwaway) and revise into an implementation correction round?",
+  "artifacts": [
+    {
+      "id": "artifact:mxaaqb96syv7pq7ekg5a5194:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4748f511bc84e2755122cebb7801c9a6d19c8f99/pin-ensign-contract-entry-point/review/validation/validation-review-1.md",
+      "rev": "sha256:deb24cdce4d919513ce086ada9b4b384eb1d4fdce26c392ab75827a7e10959f8",
+      "mediaType": "text/markdown",
+      "summary": "AC-2/3/4 pass with red replays; AC-1 grading harness broken (argv, stderr merge, piHome packages) — 3 test-only fixes live-proven; route one narrow correction round"
+    }
+  ]
+}

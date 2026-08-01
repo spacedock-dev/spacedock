@@ -8,7 +8,7 @@ id: mxaaqb96syv7pq7ekg5a5194
 gates:
     version: 1
     current:
-        gate: gate:mxaaqb96syv7pq7ekg5a5194:ideation
+        gate: gate:mxaaqb96syv7pq7ekg5a5194:validation
     records:
         - id: gate:mxaaqb96syv7pq7ekg5a5194:backlog
           stage: backlog
@@ -56,6 +56,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:mxaaqb96syv7pq7ekg5a5194:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:mxaaqb96syv7pq7ekg5a5194-validation-1
+              briefing:
+                id: briefing:mxaaqb96syv7pq7ekg5a5194:validation:attempt-1:revision-1
+                digest: sha256:d7c78539e27fca663b55ff78be5877635d106392b725e300a20faa255fd6da6d
+                digest-domain: canonical-bytes
+                request-digest: sha256:7bc284b9c5c5c55bd5d6135550148545f08c3c42a4b632ca5d90ea1be0ff059e
+                room-ref: ./pin-ensign-contract-entry-point/review/validation/briefing-1
 started: 2026-08-01T12:27:09Z
 worktree: .worktrees/spacedock-ensign-pin-ensign-contract-entry-point
 ---
