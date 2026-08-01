@@ -20,6 +20,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:c0a9bc4b100816269503de91e29f50c196dafbcc80f4f603ade1e69529724a31
                 room-ref: ./pin-ensign-contract-entry-point/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mxaaqb96syv7pq7ekg5a5194:backlog:1
+                briefing: briefing:mxaaqb96syv7pq7ekg5a5194:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-01T12:26:59.34092Z"
+                decision: approve
+                reason: 'Accepts the task with amended direction: generic agent + load the right skill at spawn (codex pattern); no shipped def, no .pi, no manifest agents key; acceptance = spawned child provably boots ensign contract, zero first-officer reads'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 ## Problem
