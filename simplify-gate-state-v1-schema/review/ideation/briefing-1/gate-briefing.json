@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-1:revision-1",
+  "question": "Approve jc ideation design for implementation after repairing its acceptance-criteria contract?",
+  "artifacts": [
+    {
+      "id": "artifact:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/fd5e905e29ef3cfcda3616989dabedd24cf6568e/simplify-gate-state-v1-schema/review/ideation/fo-gate-review.md",
+      "rev": "sha256:dd14fc099399c9025d4e1925d18a59efd363cd86f6b68706aff27eb0405fc84a",
+      "mediaType": "text/markdown",
+      "summary": "Three DONE ideation signals, but no ## Acceptance criteria; AC scan fails. Hold pending entity contract repair."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/fd5e905e29ef3cfcda3616989dabedd24cf6568e/simplify-gate-state-v1-schema/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:541291b08eeeaee28316536d9566fc9d78d48b45ed67c660d0ff28991e28067d"
+    }
+  ]
+}

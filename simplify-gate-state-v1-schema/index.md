@@ -8,7 +8,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:jccbpvjv5bg1jn0jbmj2yf8s:backlog
+        gate: gate:jccbpvjv5bg1jn0jbmj2yf8s:ideation
     records:
         - id: gate:jccbpvjv5bg1jn0jbmj2yf8s:backlog
           stage: backlog
@@ -33,6 +33,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:jccbpvjv5bg1jn0jbmj2yf8s:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:jccbpvjv5bg1jn0jbmj2yf8s-ideation-1
+              briefing:
+                id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-1:revision-1
+                digest: sha256:3cf59dd9edae9ccd6acbf748297061107c7e8d80760740852bad494fdf6d9c30
+                digest-domain: canonical-bytes
+                request-digest: sha256:0d2eaeb477ff763f7ab39613d61800400946b586b9451ddac93e951630379021
+                room-ref: ./review/ideation/briefing-1
 started: 2026-08-01T14:01:17Z
 ---
 
