@@ -408,6 +408,30 @@ jobs:
             npm install -g @openai/codex
           fi
 
+      # Keep login/status/plugin commands on the real CLI, while pinning only
+      # the live runner's `codex exec` invocation. The absolute path prevents
+      # the shim from resolving itself through PATH.
+      - name: Pin Codex live exec model
+        run: |
+          set -euo pipefail
+          real_codex="$(command -v codex)"
+          shim_dir="$RUNNER_TEMP/spacedock-codex-shim"
+          mkdir -p "$shim_dir"
+          cat > "$shim_dir/codex" <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          real_codex="${SPACEDOCK_CODEX_REAL_BIN:?SPACEDOCK_CODEX_REAL_BIN is not set}"
+          if [ "${1:-}" = "exec" ]; then
+            shift
+            exec "$real_codex" exec --model gpt-5.6-luna "$@"
+          fi
+          exec "$real_codex" "$@"
+          SH
+          chmod +x "$shim_dir/codex"
+          printf 'SPACEDOCK_CODEX_REAL_BIN=%s\n' "$real_codex" >> "$GITHUB_ENV"
+          printf '%s\n' "$shim_dir" >> "$GITHUB_PATH"
+
       - name: Login to Codex
         run: |
           printf '%s\n' "$OPENAI_API_KEY" | codex login --with-api-key
