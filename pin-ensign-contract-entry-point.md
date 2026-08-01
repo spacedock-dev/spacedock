@@ -51,3 +51,7 @@ first-officer — verified by reading its session log's first tool calls.
    trap's surface; decide whether cleanup is in scope.
 
 ---
+
+### Feedback Cycles
+
+- Cycle 1 (2026-08-01, captain ruling in-session): Direction reset before first stage work — use the generic agent and load the right skill at spawn time ("same as codex"); no shipped agent-definition file, no .pi/agents path (.pi is local), no manifest agents registration. Acceptance stands: a spawned worker provably boots the ensign contract. FO diagnosis on record: basename-only skill resolution (probe-verified), the FO-bootstrap extension injecting into every child session (the active leak vector), and the current pi dispatch-build shape (file-pointer prompt, self-contained assignment, env-level SPACEDOCK_BIN wrapper, subagent_type spacedock:ensign, model=null with opus unsettable on pi).
