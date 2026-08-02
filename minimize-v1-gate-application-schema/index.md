@@ -160,3 +160,7 @@ Exercised on 2026-08-01 with `go test ./internal/gates -run 'TestRecordClosureSh
 ### Summary
 
 Ideation reduces application state to one approval-only `{target-stage,state}` token while preserving Resolution authority and existing consume/terminal behavior. It rejects compatibility machinery, requires a coordinated strict-format cut and one-time normalization, and supplies falsifiable package, CLI, state-validation, and surface-budget checks for implementation.
+
+### Feedback Cycles
+
+- Cycle 1: REVISE — Captain-directed send-back preserving the Science Officer finding: AC-2 and AC-3 are planned only, with no concrete evidence; coordinate the design with jc and the internal-gates schema before re-gating. Correction assignment: add concrete AC evidence and coordinate the reduced application schema with jc/internal-gates before fresh presentation.
