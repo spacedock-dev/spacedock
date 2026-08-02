@@ -19,6 +19,7 @@ stages:
       model: opus
     - name: implementation
       worktree: true
+      concurrency: 8
       context-sections:
         - Review-finding disposition
     - name: validation
