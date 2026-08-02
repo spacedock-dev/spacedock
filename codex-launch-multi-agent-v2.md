@@ -503,3 +503,26 @@ Validation cycle 5 recommends PASSED at `60a75ba658`. The shared live lane now r
 ### Recommendation
 
 PASSED. The candidate satisfies AC-1 through AC-4 and the authorized 9-file/+380 tolerance; the three named TODO skips remain explicitly non-evidence.
+
+## Stage Report: validation (cycle 6, stale base)
+
+- DONE: Validate the rebased Codex multi-agent-v2 candidate at exact head dcab66435 against origin/main 988163969, preserving the approved nine-file +380/-42 scope and five-commit patch equivalence.
+  Before the base advanced, `git range-diff` mapped all five pre-rebase commits exactly (`=`), and `git diff --numstat 988163969...dcab66435` reported exactly 9 files, +380/-42 with a clean candidate worktree.
+- DONE: Run focused multi-agent-v2 launcher/config/lifecycle tests, full and race suites, format/diff checks, detached evidence, and the required Codex live lane; triage only this rewritten head.
+  Focused launcher/config/oracle and live-runner boundary tests passed; `go test ./...`, `go test ./... -race`, `gofmt -d ./cmd ./internal`, and both diff checks exited 0; the isolated-home lifecycle plus disabled control passed in 52.24s.
+- DONE: Perform the detached adversarial audit at the exact rewritten head.
+  Detached checkout `/tmp/spacedock-codex-audit-rebase.cJTlOM/repo` at `dcab66435` passed complete-argv, reserved-conflict, unsupported-host, vocabulary-only, typed spoofed-identity, and live-runner boundary tests; the removed forwarded enable form exited 1 with the pinned pre-launch diagnostic.
+- FAILED: Complete the required shared Codex live lane as final evidence.
+  Four journeys completed (`gate-guardrail`, `recorded-gate-lifecycle`, `feedback-3-cycle-escalation`, `merge-hook-guardrail`) and `rejection-flow` retained its known TODO skip; the run was intentionally interrupted at the next boundary after `origin/main` advanced, so `filing` and later journeys are not evidence.
+- DONE: Reproduce the AC-1 through AC-4 evidence against the dispatched candidate before staleness was reported.
+  AC-1/AC-4 passed the isolated-home structured lifecycle and disabled zero-event negative; AC-2 passed exact layer, conflict, unsupported-host, and fail-closed runner checks; AC-3 passed byte-exact plain/local-plugin/Safehouse/resume argv identity.
+- SKIPPED: Record a fresh final validation recommendation for the new base.
+  `origin/main` advanced from dispatched base `988163969` to `48a7ea0d9` while the shared live lane was running; the First Officer requested a stop and fresh rebase, so this stale cycle cannot authorize PASSED or REJECTED for the successor candidate.
+
+### Summary
+
+The exact dispatched rewrite was green across focused, full, race, format, diff, detached, and short live evidence, with no new finding observed. The shared live lane was partially green but deliberately stopped after the base advanced; all evidence in this report is stale for gate authority and must be rerun on the next rebased head.
+
+### Recommendation
+
+WITHHELD — rebase onto `48a7ea0d9` or later and perform one fresh validation cycle.
