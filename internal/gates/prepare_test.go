@@ -384,7 +384,7 @@ func TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean(t *testing.T) {
 	})
 
 	t.Run("stale current selection", func(t *testing.T) {
-		workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
+		workflow, _, entity, artifact, _ := prepareFixture(t, "folder")
 		if _, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, Question: "Advance?", Artifact: artifact, Summary: "candidate"}); err != nil {
 			t.Fatal(err)
 		}
@@ -397,21 +397,15 @@ func TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean(t *testing.T) {
 				ID: "gate-attempt:task-other-1",
 				Briefing: Briefing{
 					ID: "briefing:task:other:attempt-1:revision-1", Digest: "sha256:" + strings.Repeat("3", 64),
-					DigestDomain: "canonical-bytes", RoomRef: "./other",
+					RoomRef: "./other",
 				},
 			}},
 		})
-		doc.Current.Gate = "gate:task:other"
 		if err := writeDocument(entity, oldNode, doc); err != nil {
 			t.Fatal(err)
 		}
-		before := treeDigest(t, state)
-		if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err == nil ||
-			!strings.Contains(err.Error(), "does not match gates.current") {
-			t.Fatalf("stale-selection withdrawal = %v", err)
-		}
-		if got := treeDigest(t, state); got != before {
-			t.Fatal("stale-selection refusal changed state tree")
+		if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err != nil {
+			t.Fatalf("status-derived withdrawal = %v", err)
 		}
 	})
 }
@@ -456,8 +450,9 @@ func TestPrepareUsesSlugIdentityWhenEntityHasNoStoredID(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if doc.Current.Gate != "gate:task:validation" {
-				t.Fatalf("gate=%q", doc.Current.Gate)
+			record, err := recordForStage(doc, "validation")
+			if err != nil || record.ID != "gate:task:validation" {
+				t.Fatalf("status-derived gate=%v/%q", err, record.ID)
 			}
 		})
 	}

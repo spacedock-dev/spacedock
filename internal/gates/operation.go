@@ -197,7 +197,11 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 	if err != nil {
 		return Summary{}, err
 	}
-	return CurrentSummary(doc), nil
+	stage, err := entityStatus(entityPath)
+	if err != nil {
+		return Summary{}, err
+	}
+	return CurrentSummary(doc, stage), nil
 }
 
 // Withdraw retires the selected request-backed prepared attempt without
@@ -226,12 +230,9 @@ func Withdraw(entityPath string, input WithdrawInput) (Summary, error) {
 	if err := validateRetainedAuthority(entityPath, workflowDir, doc); err != nil {
 		return Summary{}, err
 	}
-	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath, workflowDir)
+	doc, oldNode, _, attempt, err := currentStageAttempt(entityPath, workflowDir)
 	if err != nil {
 		return Summary{}, err
-	}
-	if doc.Current.Gate != record.ID {
-		return Summary{}, fmt.Errorf("current workflow stage does not match gates.current selection")
 	}
 	if state := attemptState(attempt); state != "open" {
 		return Summary{}, fmt.Errorf("attempt %s is frozen %s", attempt.ID, state)
@@ -260,7 +261,11 @@ func Withdraw(entityPath string, input WithdrawInput) (Summary, error) {
 	if err := writeDocument(entityPath, oldNode, doc); err != nil {
 		return Summary{}, err
 	}
-	return CurrentSummary(doc), nil
+	stage, err := entityStatus(entityPath)
+	if err != nil {
+		return Summary{}, err
+	}
+	return CurrentSummary(doc, stage), nil
 }
 
 func recordRoomLocked(entityPath string, input RecordInput) error {
@@ -476,7 +481,7 @@ func findRecord(doc *Document, id string) *GateRecord {
 }
 
 func sameBinding(left, right Briefing) bool {
-	return left.ID == right.ID && left.Digest == right.Digest && left.DigestDomain == right.DigestDomain &&
+	return left.ID == right.ID && left.Digest == right.Digest &&
 		left.RequestDigest == right.RequestDigest && left.RoomRef == right.RoomRef
 }
 
@@ -545,7 +550,6 @@ func closeAttempt(entityPath, workflowDir string, doc *Document, oldNode *yaml.N
 	}
 	attempt.Resolution = resolution
 	attempt.Application = application
-	doc.Current.Gate = record.ID
 	if err := Validate(doc); err != nil {
 		return err
 	}
@@ -816,9 +820,6 @@ func validateGateRoomRequest(briefingPath string, binding Briefing, gateID, atte
 }
 
 func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManifest, error) {
-	if binding.DigestDomain != "canonical-bytes" {
-		return nil, fmt.Errorf("Result association requires a canonical-bytes Briefing binding")
-	}
 	data, _, err := boundBriefingBytes(entityPath, binding)
 	if err != nil {
 		return nil, err

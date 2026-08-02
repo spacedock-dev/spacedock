@@ -68,7 +68,7 @@ func loadValidateRound(entityDir, room, briefingPath, logPath string, want *Brie
 	if err != nil {
 		return result, err
 	}
-	if want != nil && (want.ID != result.Manifest.ID || want.Digest != result.Digest || want.DigestDomain != "canonical-bytes") {
+	if want != nil && (want.ID != result.Manifest.ID || want.Digest != result.Digest) {
 		return result, fmt.Errorf("review-round pointer does not bind the retained Briefing")
 	}
 	if err := verifyRoundArtifacts(entityDir, room, result.Manifest); err != nil {
@@ -96,7 +96,7 @@ func recordRoundLockedWith(entityPath string, input RecordInput, beforePublish f
 		return err
 	}
 	pointer := RoundPointer{ID: fmt.Sprintf("round:%s:%s:%d", location.entityID, location.stage, location.cycle), Stage: location.stage, Cycle: location.cycle,
-		Briefing: Briefing{ID: inputRound.Manifest.ID, Digest: inputRound.Digest, DigestDomain: "canonical-bytes",
+		Briefing: Briefing{ID: inputRound.Manifest.ID, Digest: inputRound.Digest,
 			RoomRef: fmt.Sprintf("./review/%s/round-%d", location.stage, location.cycle)}}
 	if _, statErr := os.Lstat(location.room); location.pointer.ID == pointer.ID && os.IsNotExist(statErr) {
 		return fmt.Errorf("round identity already has a pointer without its immutable room")
@@ -162,14 +162,13 @@ func readRoundPointerData(data []byte) (RoundPointer, error) {
 	}
 	var pointer RoundPointer
 	briefingNode := mappingValue(node, "briefing")
-	if len(node.Content) != 8 || briefingNode == nil || len(briefingNode.Content) != 8 {
+	if len(node.Content) != 8 || briefingNode == nil || len(briefingNode.Content) != 6 {
 		return RoundPointer{}, fmt.Errorf("entity has invalid review-round pointer")
 	}
 	err = node.Decode(&pointer)
 	wantRoom := fmt.Sprintf("./review/%s/round-%d", pointer.Stage, pointer.Cycle)
 	if err != nil || pointer.ID == "" || !roundStageRE.MatchString(pointer.Stage) || pointer.Cycle < 1 ||
-		pointer.Briefing.ID == "" || !digestRE.MatchString(pointer.Briefing.Digest) ||
-		pointer.Briefing.DigestDomain != "canonical-bytes" || pointer.Briefing.RoomRef != wantRoom {
+		pointer.Briefing.ID == "" || !digestRE.MatchString(pointer.Briefing.Digest) || pointer.Briefing.RoomRef != wantRoom {
 		return RoundPointer{}, fmt.Errorf("entity has invalid review-round pointer")
 	}
 	return pointer, nil

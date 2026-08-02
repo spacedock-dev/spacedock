@@ -138,11 +138,11 @@ func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
 	if wantStatus != "validation" {
 		return fmt.Errorf("round-only state contains an ordinary gate record; `gate record --round` must retain only advisory review-round state")
 	}
-	if len(doc.Records) != 1 || doc.Current.Gate != "gate:rejection-task:validation" {
+	if len(doc.Records) != 1 || doc.Records[0].Stage != "validation" {
 		return fmt.Errorf("final gate selection does not identify exactly one rejection-task validation gate")
 	}
 	record := doc.Records[0]
-	if record.ID != doc.Current.Gate || record.Stage != "validation" || len(record.Attempts) != 1 {
+	if record.Stage != "validation" || len(record.Attempts) != 1 {
 		return fmt.Errorf("selected validation gate does not contain exactly one attempt")
 	}
 	attempt := record.Attempts[0]
@@ -300,7 +300,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	for _, control := range []struct{ entity, want string }{
 		{strings.Replace(openGateEntity, "              briefing:\n", "              state: open\n              briefing:\n", 1), "malformed final validation gate"},
 		{strings.Replace(openGateEntity, rejectionPreparedBriefingID, rejectionBriefingID, 1), "validation/1 advisory round was retained as a gate attempt"},
-		{strings.ReplaceAll(openGateEntity, "gate:rejection-task:validation", "gate:rejection-task:wrong"), "final gate selection does not identify"},
+		{strings.Replace(openGateEntity, "      stage: validation", "      stage: wrong", 1), "final gate selection does not identify"},
 	} {
 		writeFile(t, entityPath, control.entity)
 		if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil ||

@@ -65,7 +65,7 @@ func assertGateHeld(before, after string, expected gateHeldExpectation) error {
 	}
 	var selected *gates.GateRecord
 	for i := range doc.Records {
-		if doc.Records[i].ID == doc.Current.Gate {
+		if doc.Records[i].Stage == "validation" {
 			selected = &doc.Records[i]
 			break
 		}

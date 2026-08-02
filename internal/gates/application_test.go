@@ -129,9 +129,9 @@ func TestRecordRequiresCanonicalBriefingAtActionableCurrentStage(t *testing.T) {
 
 func TestRecordCanonicalSuccessorAndCrossGateReentry(t *testing.T) {
 	root, entity := recordStageFixture(t, "ideation", "briefing:org:task:ideation:attempt-2:revision-3", "      gate: true\n")
-	validationRecord := "    - id: gate:task:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:task-validation-1\n          briefing: {id: 'briefing:task:validation:attempt-1:revision-1', digest: 'sha256:" + strings.Repeat("2", 64) + "', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1}\n          resolution: {type: Resolution, id: resolution:validation:1, briefing: 'briefing:task:validation:attempt-1:revision-1', by: person:captain, at: now, decision: revise, reason: rework}\n"
-	ideationPrior := "        - id: gate-attempt:task-ideation-1\n          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: 'sha256:" + strings.Repeat("3", 64) + "', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1}\n          resolution: {type: Resolution, id: resolution:ideation:1, briefing: 'briefing:task:ideation:attempt-1:revision-1', by: person:captain, at: now, decision: hold, reason: wait}\n"
-	body := strings.Replace(readFile(t, entity), "current: {gate: 'gate:task:ideation'}", "current: {gate: 'gate:task:validation'}", 1)
+	validationRecord := "    - id: gate:task:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:task-validation-1\n          briefing: {id: 'briefing:task:validation:attempt-1:revision-1', digest: 'sha256:" + strings.Repeat("2", 64) + "', room-ref: ./review/validation/briefing-1}\n          resolution: {type: Resolution, id: resolution:validation:1, briefing: 'briefing:task:validation:attempt-1:revision-1', by: person:captain, at: now, decision: revise, reason: rework}\n"
+	ideationPrior := "        - id: gate-attempt:task-ideation-1\n          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: 'sha256:" + strings.Repeat("3", 64) + "', room-ref: ./review/ideation/briefing-1}\n          resolution: {type: Resolution, id: resolution:ideation:1, briefing: 'briefing:task:ideation:attempt-1:revision-1', by: person:captain, at: now, decision: hold, reason: wait}\n"
+	body := readFile(t, entity)
 	body = strings.Replace(body, "    - id: gate:task:ideation\n", validationRecord+"    - id: gate:task:ideation\n", 1)
 	body = strings.Replace(body, "        - id: gate-attempt:task-ideation-2\n", ideationPrior+"        - id: gate-attempt:task-ideation-2\n", 1)
 	if err := os.WriteFile(entity, []byte(body), 0o644); err != nil {
@@ -149,9 +149,6 @@ func TestRecordCanonicalSuccessorAndCrossGateReentry(t *testing.T) {
 	doc, _, err = Read(entity)
 	if err != nil {
 		t.Fatal(err)
-	}
-	if doc.Current.Gate != "gate:task:ideation" {
-		t.Fatalf("current gate = %q, want re-entered ideation", doc.Current.Gate)
 	}
 	if got := marshalAttempt(t, doc.Records[0].Attempts[0]); got != validationBefore {
 		t.Fatal("cross-gate re-entry modified the formerly selected validation record")
@@ -322,7 +319,7 @@ func TestEightCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
 			if tc.decision != "approve" {
 				reason = "\n            reason: recorded rationale"
 			}
-			source := "---\nstatus: ideation\ngates:\n  version: 1\n  current:\n    gate: gate:replay\n  records:\n    - id: gate:replay\n      stage: ideation\n      attempts:\n        - id: attempt:replay-" + string(rune('a'+i)) + "\n          briefing:\n            id: briefing:replay\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            digest-domain: canonical-bytes\n            room-ref: ./review\n          resolution:\n            type: Resolution\n            id: resolution:replay\n            briefing: briefing:replay\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: " + tc.decision + reason + "\n          application:\n            " + tc.application + "\n---\n# Replay\n"
+			source := "---\nstatus: ideation\ngates:\n  version: 1\n  records:\n    - id: gate:replay\n      stage: ideation\n      attempts:\n        - id: attempt:replay-" + string(rune('a'+i)) + "\n          briefing:\n            id: briefing:replay\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            room-ref: ./review\n          resolution:\n            type: Resolution\n            id: resolution:replay\n            briefing: briefing:replay\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: " + tc.decision + reason + "\n          application:\n            " + tc.application + "\n---\n# Replay\n"
 			doc, _, err := readData([]byte(source))
 			if err != nil {
 				t.Fatal(err)
@@ -362,10 +359,10 @@ func TestEightCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
 
 func eligibleDocument() *Document {
 	blockers := []Blocker{}
-	return &Document{Version: 1, Current: Selection{Gate: "gate:task:ideation"}, Records: []GateRecord{{
+	return &Document{Version: 1, Records: []GateRecord{{
 		ID: "gate:task:ideation", Stage: "ideation", Attempts: []Attempt{{
 			ID:          "attempt:1",
-			Briefing:    Briefing{ID: "briefing:1", Digest: "sha256:" + strings.Repeat("1", 64), DigestDomain: "canonical-bytes", RoomRef: "./review"},
+			Briefing:    Briefing{ID: "briefing:1", Digest: "sha256:" + strings.Repeat("1", 64), RoomRef: "./review"},
 			Resolution:  &Resolution{Type: "Resolution", ID: "resolution:1", Briefing: "briefing:1", By: "person:captain", At: "now", Decision: "approve"},
 			Application: &Application{Action: "advance", TargetStage: "implementation", State: "pending", Blockers: &blockers},
 		}},
@@ -398,13 +395,12 @@ func applicationWorkflow(t *testing.T) (string, string) {
 	}
 	entityBytes := "---\nstatus: ideation\ntitle: Preserve formatting\ngates:\n" +
 		"  version: 1\n" +
-		"  current: {gate: 'gate:task:ideation'}\n" +
 		"  records:\n" +
 		"    - id: gate:task:ideation\n" +
 		"      stage: ideation\n" +
 		"      attempts:\n" +
 		"        - id: gate-attempt:task-ideation-1\n" +
-		"          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1/briefing.json}\n" +
+		"          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: '" + digest + "', room-ref: ./review/ideation/briefing-1/briefing.json}\n" +
 		"---\n# Task\nBody.\n"
 	if err := os.WriteFile(entity, []byte(entityBytes), 0o644); err != nil {
 		t.Fatal(err)
@@ -421,8 +417,8 @@ func recordStageFixture(t *testing.T, status, briefingID, stageFlags string) (st
 	}
 	entity := filepath.Join(root, "task.md")
 	digest := "sha256:" + strings.Repeat("1", 64)
-	records := "    - id: gate:task:" + status + "\n      stage: " + status + "\n      attempts:\n        - id: gate-attempt:task-" + status + "-2\n          briefing: {id: '" + briefingID + "', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/" + status + "/briefing-2}\n"
-	body := "---\nstatus: " + status + "\ngates:\n  version: 1\n  current: {gate: 'gate:task:" + status + "'}\n  records:\n" + records + "---\n# Task\n"
+	records := "    - id: gate:task:" + status + "\n      stage: " + status + "\n      attempts:\n        - id: gate-attempt:task-" + status + "-2\n          briefing: {id: '" + briefingID + "', digest: '" + digest + "', room-ref: ./review/" + status + "/briefing-2}\n"
+	body := "---\nstatus: " + status + "\ngates:\n  version: 1\n  records:\n" + records + "---\n# Task\n"
 	if err := os.WriteFile(entity, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -516,7 +512,7 @@ func TestTerminalSpendAndReworkGuardReuse(t *testing.T) {
 	// A second spend is impossible: the once-consumed application is not
 	// pending, so eligibility refuses it before any writer runs.
 	consumedDoc := *doc
-	consumed := EvaluateEligibility(&consumedDoc, "implementation", true)
+	consumed := EvaluateEligibility(&consumedDoc, "ideation", true)
 	if consumed.Eligible || consumed.Condition != "consumed" {
 		t.Fatalf("re-spend eligibility = %#v, want fail-closed consumed", consumed)
 	}

@@ -66,7 +66,11 @@ func SummaryFileAt(path, workflowDir string) (Summary, error) {
 	if err := validateRetainedAuthority(path, workflowDir, doc); err != nil {
 		return Summary{}, err
 	}
-	return CurrentSummary(doc), nil
+	status, err := entityStatus(path)
+	if err != nil {
+		return Summary{}, err
+	}
+	return CurrentSummary(doc, status), nil
 }
 
 func validateRetainedAuthority(entityPath, workflowDir string, doc *Document) error {
