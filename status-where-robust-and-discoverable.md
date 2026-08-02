@@ -30,10 +30,8 @@ gates:
                 decision: approve
                 reason: 'Captain directed in chat: ''dispatch both''. Approve backlog->ideation for the --where robustness/discoverability/GH#314 gaps.'
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:3t9r36n9tbj116jp9g1k01tz:ideation
           stage: ideation
           attempts:
@@ -53,10 +51,8 @@ gates:
                 decision: approve
                 reason: 'Captain approved ideation in chat: AC-2 mechanism correctly deleted, AC-1 split into 2 guards, AC-3 status --help gap confirmed. Proceed to implementation.'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
 started: 2026-08-02T16:02:35Z
 worktree: .worktrees/spacedock-ensign-status-where-robust-and-discoverable
 ---
@@ -393,3 +389,31 @@ checkout during ideation rather than assumed:
 ### Summary
 
 The measured baseline changed two of the three ACs. AC-2's premise was wrong — `--archived` has always meant active-plus-archived, so the full-sprint query already works and the proposed `--include-archived` flag would have been command-surface sprawl; what failed was the FO contract calling it an "Archive view", which reads as archived-only. AC-1 turned out to need two guards rather than one, because one compound shape (`a!=1 b!=2`) parses to a legitimate field name and still silently matches all 156 rows — invisible without running it. AC-3 is larger than it reads: `spacedock status --help` is not an existing surface to amend, it currently prints the entity listing.
+
+## Stage Report: implementation
+
+- DONE: Check A rejects all four compound-in-one-string shapes with exit 1 naming the repeated-flag fix.
+  `countWhereOperators` (internal/status/parse.go) counts `!=`/`=` operators via `regexp.MustCompile("!=|=")`; >1 rejects before the field/value split. Live-verified all four shapes against `docs/dev` (previously 156/156 at exit 0, now exit 1); pinned by `TestWhereCompoundShapesRejected` (4 subtests, internal/status/where_validate_test.go).
+- DONE: Check B (validateWhereFields) rejects unknown/misspelled field names against the canonical known-field list with exit 1 listing known fields.
+  `validateWhereFields`/`knownWhereFields` (internal/status/parse.go) union scanned-entity keys, `loadEntitySchema().fields`, and the static `derivedWhereFields` (gate-condition, gate-eligible, gate-readiness, next-suppressed-by). Live-verified `--where 'nosuchfield!=x'` and `--where 'spint=...'` against `docs/dev` (previously 156 and 0 rows at exit 0, now exit 1 each); pinned by `TestWhereUnknownFieldRejected`.
+- DONE: Insert at the single call site after both materializers (handlers.go:493-495 per ideation).
+  `internal/status/handlers.go`: `validateWhereFields(entities, whereFilters)` inserted between `materializeSuppressedBy` and `applyFilters`, returning `errExit` on error — 3-line diff, no other call site touched.
+- DONE: Do not reject the counter-baseline cases named in AC-1.
+  Live-verified against `docs/dev`: `--where status=ideation` (22 rows), `--where sprint=0202-survey-improvements` (8), `--where 'pr!='` (8), `--where 'mod-block!='` (8), `--where 'next-suppressed-by = concurrency-full'` (3) — all exit 0, unchanged. Pinned by `TestWhereNoOverRejection` and `TestWhereDerivedNamesAccepted`.
+- DONE: Implement AC-2 as a doc-only change plus a regression pin; fix the FO contract's "Archive view" mislabel.
+  `skills/fo-status-viewer/SKILL.md`: replaced the `--next` / `--where "pr !="` line with `--where` as THE entity query (AND rule, known-field set) and reworded "Archive view: `--archived`" to "Archived-inclusive view ... active plus archived". No flag added. Regression pin: `TestWhereArchivedComposesAsActivePlusArchived` (internal/status/where_archived_test.go) reuses the existing `enum-scope-workflow` fixture (one active + one archived entity sharing `status=backlog`, differing only by placement) — `--where status=backlog` returns active-only; `--where status=backlog --archived` returns both. Fails if `--archived` stops composing with `--where` or becomes archived-only.
+- DONE: Implement AC-3 — wantsHelp guard on newStatusCommand, setStatusHelp in help.go.
+  `internal/cli/cli.go` newStatusCommand gained the same `if wantsHelp(args) { return cmd.Help() }` guard `newNewCommand` uses. `internal/cli/help.go` setStatusHelp renders the synopsis (--where as THE entity query, one-clause-per-flag AND rule, canonical known-field list, --archived as active-plus-archived). Live-verified `spacedock status --help` and `-h` exit 0 and print help instead of the 159-row listing; `spacedock new --help` and top-level `--help` unaffected. Pinned by `TestStatusHelpRendersQuerySynopsisNotEntityListing` and `TestStatusShortHelpFlagAlsoRendersHelp`.
+- DONE: Write the 3 new test files per the ideation's Test plan.
+  `internal/status/where_validate_test.go` (143 lines): 4 compound shapes, 2 unknown-field cases, no-over-rejection (`verdict!=`), 2 derived-name cases, empty-workflow guard. `internal/status/where_archived_test.go` (51 lines): AC-2 pin. `internal/cli/status_help_test.go` (57 lines): AC-3 pin plus `-h` spelling.
+- DONE: Run go test ./..., go test ./... -race, and the pinned parity goldens; gofmt -w ./cmd ./internal.
+  All green: `go test ./...` (all 19 packages ok, internal/cli 118.9s, internal/status 39.2s), `go test ./... -race` (all ok, internal/status 81.4s), `go test ./internal/status -run TestInd -v` (all 14 parity tests pass, e.g. `TestIndReadFlagsSeq`, `TestIndUsageErrorsExitDomain`). `gofmt -l ./cmd ./internal` empty both before and after `-w`.
+- DONE: Confirm the 2 declared observable-semantics changes land as scoped and nothing else.
+  `git diff` on `internal/cli/cli.go` and `internal/status/handlers.go` shows exactly the wantsHelp guard (5-line net) and the one validateWhereFields call (3 lines) — no other command's help handling or call site touched. Full surface: 8 files, 395 insertions / 3 deletions (declared estimate 315 ± 30% = 220-410; within tolerance).
+- SKIPPED: Fix the two incidental data bugs (tatus: typo, missing archived: stamps).
+  Out of scope per assignment; confirmed still present and unaffected — the `tatus` key surfaces in the live known-fields error message as expected corpus noise, not a regression.
+
+### Summary
+
+Two independent guards close #314: an operator-count syntax check (Check A) catches all four compound-in-one-string shapes regardless of field validity, and a corpus+schema+derived known-field union (Check B) catches misspelled/unknown field names — together closing the gap a single check could not (one compound shape parses to a legitimate field name). AC-2 needed no new mechanism, only a doc fix plus a regression pin, since `--archived` was already active-plus-archived. AC-3 created a help surface that did not exist (`status --help` previously ran the entity listing). All changes were live-verified against the real `docs/dev` corpus before and after, and the full suite (including race and the pinned oracle-parity goldens) is green.
+Commit: 59274d492 (branch spacedock-ensign/status-where-robust-and-discoverable)
