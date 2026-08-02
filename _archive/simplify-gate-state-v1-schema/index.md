@@ -1,6 +1,6 @@
 ---
 title: Simplify the unreleased v1 gate-state schema
-status: validation
+status: done
 source: "Durable-decisions sprint implementation-shape audit, 2026-07-24."
 score: "0.7"
 id: jccbpvjv5bg1jn0jbmj2yf8s
@@ -107,12 +107,15 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
 started: 2026-08-01T14:01:17Z
 worktree: .worktrees/spacedock-ensign-simplify-gate-state-v1-schema
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:599
+verdict: passed
+completed: 2026-08-02T14:41:51Z
+archived: 2026-08-02T14:41:51Z
 ---
 
 The unreleased v1 gate-state implementation still carries prototype compatibility and a mutable current-gate pointer that duplicates derivable state and has already projected a stale approval.
