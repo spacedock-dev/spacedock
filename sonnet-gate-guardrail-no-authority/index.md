@@ -213,3 +213,16 @@ AC-1, AC-3, and AC-4 all PASS with reproduced evidence: offline suites clean, th
 ### Feedback Cycles
 
 - Cycle 1: REJECTED (not a defect) — validation ensign (`spacedock-ensign-sonnet-gate-guardrail-no-authority-validation`); surface 3 files/82 lines vs estimate 44 lines (86%, over the declared 40% tolerance — driven entirely by `internal/ensigncycle/livescenario_adapter_live_test.go`, 46 lines vs 13 estimated, from turning one generic oracle message into seven exact ones); AC unchanged (no AC narrowed). Captain reviewed the deviation and did not request a design reset. FO disposition: fix (owned, Material — the remedy is the entity's own already-approved Expected-surface items). Routed to implementation: delete `claudeSonnetGateGuardrailTODO`, `TestClaudeSonnetGateGuardrailTODOModelScope`, the skip call, and the `docs/runtime-live-ci.md:138` note, citing this cycle's AC-1 evidence rather than re-running the live lane.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Delete the four quarantine items named in the feedback context, citing the validation stage's AC-1 evidence. Do not run the live test again.
+  Deleted `claudeSonnetGateGuardrailTODO`, `TestClaudeSonnetGateGuardrailTODOModelScope`, and the skip call in `runClaudeGateGuardrailScenario` (`internal/ensigncycle/claude_live_runner_test.go`), and the quarantine paragraph at `docs/runtime-live-ci.md:138`. Cited the validation stage's two-run live evidence (212.74s and 148.86s, both one `gate prepare` + one `state commit` + stop) rather than re-running the live lane. The Opus skip in the same function is untouched. No live test invoked this stage.
+- DONE: Run go test ./..., go test ./... -race, and gofmt -l ./cmd ./internal. All three must be clean.
+  All three clean at commit e36769727. `go vet -tags live ./internal/ensigncycle/...` also clean, confirming the live-gated file still compiles with the skip removed.
+- DONE: Commit and push the branch to origin. Report back the commit SHA and diff stat. Do not open a pull request yourself.
+  Commit `e36769727` on `spacedock-ensign/sonnet-gate-guardrail-no-authority`, pushed to origin. Diff stat vs `f7fce40ab`: `docs/runtime-live-ci.md | 1 -` and `internal/ensigncycle/claude_live_runner_test.go | 25 -------------------------` (2 files, 26 deletions) — exact match to the entity's declared Expected surface for these two items. No pull request opened.
+
+### Summary
+
+Removed the Sonnet gate-guardrail TODO quarantine per the FO-authorized fix disposition, using the validation stage's already-reproduced live evidence rather than spending another live run. `go test ./...`, `-race`, and `gofmt -l` are clean; the diff matches the entity's Expected surface exactly (-25/-1). Mechanism 2 (SKILL.md) remains deferred per the earlier captain decision and is untouched here.
