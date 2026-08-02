@@ -28,6 +28,7 @@ gates:
                 decision: approve
                 reason: 'Captain directed in chat: ''dispatch both'' (status-pagination-and-default-sorting + status-where-robust-and-discoverable). Ideation already complete with no spike needed; proceed to implementation.'
               application:
+                action: advance
                 target-stage: implementation
                 state: consumed
 worktree: .worktrees/spacedock-ensign-status-pagination-and-default-sorting
