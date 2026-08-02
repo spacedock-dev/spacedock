@@ -1,7 +1,7 @@
 ---
 id: zfmbm75wvmfj38h73wrtpqqy
 title: Add a shared, persisting git-scaffold test helper to close the identity-config gap
-status: implementation
+status: validation
 source: "Found while dogfooding collapse-gate-approval-ceremony's CI run, 2026-08-02: TestStampCommitsInlineBeforeWorktreeCreation's fixture omitted git config user.name/user.email, passing locally (ambient git identity) but failing on the CI runner (none). A follow-up search found no shared, persisting git-scaffold-init helper anywhere in the repo -- roughly 15-20 fixture functions across internal/cli and internal/dispatch each hand-roll their own init+config sequence independently, including one file-local gitInit helper (internal/dispatch/parity_harness_test.go) that only sets identity via scoped -c flags on its own seed commit, not a persisted git config, so it doesn't even cover a later plain git commit in the same repo. Captain directed: file and fast-track."
 started: 2026-08-02T14:31:58Z
 completed:
