@@ -608,8 +608,8 @@ Validation recommends PASSED for exact candidate `5a8be3220`. Deterministic, rep
   The approved pre-rebase delta was 20/+824/-60; the exact rebased PR is 20/+830/-66 because overlapping base edits change diff arithmetic, while `range-diff` marks both immediate pre/post-rebase candidate commits `=` patch-equivalent with no unrelated file or semantic drift.
 - DONE: Reproduce AC-1 through AC-3 from their command/state evidence on the rebased candidate.
   `TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume` freshly built the binary and drove prepare N → withdraw → cold boot → prepare N+1 → room close → consume; it fails if N changes, owns closure, or boot/readiness cardinality drifts.
-- DONE: Perform the semantic adversarial pass over state identity, terminality, mutation refusal, retained authority, and provider evidence.
-  Focused tests reject wrong actor/time/reason, conflicting states, provider output, corrupt request, repeat/closed/request-less/stale selection, lock contention, withdrawn room/chat record, consume, and later retained/provider drift without mutation.
+- DONE: Reproduce AC-2's byte-clean refusal, immutable withdrawn history, retained s4 authority, and unchanged closed-provider validation on exact head `4dd5322e9`.
+  `TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean` covered blank reason, provider output, corrupt request, repeat/closed, lock, request-less, and stale-selection tree digests; `TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume` kept N byte-identical through N+1 consume and rejected later N-request and N+1-Result drift without entity mutation.
 - DONE: Record every exact-head GitHub lane and recommend PASSED only after required live CI completed green.
   Run `30736599933`: offline, Claude Sonnet, Claude Opus, Codex, Pi, and journey-delta all completed SUCCESS; docs build and Ubuntu/macOS install checks also completed SUCCESS on `4dd5322e9`.
 - DONE: Recommend PASSED with deferred risks separated from material findings.
