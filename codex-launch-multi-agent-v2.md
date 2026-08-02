@@ -125,6 +125,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:5517193c7a03a9d8a78eb927f27fa86333a6ffa7a9bf179198cefa3e43b5b1ef
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:z5gwwz2748sg6vxr0g3kdsar:validation:4
+                briefing: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-4:revision-1
+                by: person:captain
+                at: "2026-08-02T01:45:32.207409Z"
+                decision: approve
+                reason: 'Captain approved validation cycle 4: AC-1 through AC-4 are independently evidenced, the exact multi_agent_v2 surface and M1-M4 behavior are green, the detached M5 spoof audit passes, and the 8-file/+379-26 candidate is within the approved scope.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 mod-block:
 ---
 
