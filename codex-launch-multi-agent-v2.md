@@ -149,6 +149,13 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-02T09:17:35.468332Z"
                 reason: 'Attempt 5 is stale: the candidate moved from dcab66435 on base 988163969 to 64f2f8773 on base 48a7ea0d9 after hq PR #598 merged. Cycle 7 now reports a reproducible recorded-gate-lifecycle failure; bind a fresh gate to that report.'
+            - id: gate-attempt:z5gwwz2748sg6vxr0g3kdsar-validation-6
+              briefing:
+                id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-6:revision-1
+                digest: sha256:c40931f5b3d340924fd670063b83071867b9466d645a52fef20f4a09db27f0ab
+                digest-domain: canonical-bytes
+                request-digest: sha256:cc65d216d6aeba86493a8d1fa3a7a8693c7cef7bfad8d9f65b8606174f0aa427
+                room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-6
 mod-block:
 ---
 

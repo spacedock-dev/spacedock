@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-6:revision-1",
+  "question": "Does the exact z5 candidate pass validation after the required Codex live lane found a material First Officer successor-dispatch defect?",
+  "artifacts": [
+    {
+      "id": "artifact:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-6:revision-1:item-1",
+      "uri": "git-root://state/51c3170000b4bdba1edb19c27dcca02407066ff9/codex-launch-multi-agent-v2/review/validation/fo-gate-review-cycle7.md",
+      "rev": "sha256:405be424a0082c3e0b79ffc51a830f7cfa2c7cb1b5add39ee7605e9ca931794f",
+      "mediaType": "text/markdown",
+      "summary": "AC-1 through AC-4 are evidenced, but the required Codex recorded-gate-lifecycle lane reproducibly shows no structured worker spawn after consume. Hold z5 and route the runtime/state-commit defect to its separate local task."
+    }
+  ]
+}
