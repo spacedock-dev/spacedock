@@ -126,7 +126,7 @@ Extract a one-sentence description from the entity body: read the entity file, l
 For each shipped entity, record:
 - Entity ID (numeric, e.g. `115`)
 - Entity slug (backticked)
-- PR number(s) with linked URL (see Phase 3 Step 3 for URL construction)
+- PR number(s) with linked URL (see Phase 3 Step 4 for URL construction)
 - One-sentence description
 
 Emit one bullet per shipped entity in this format:
@@ -196,9 +196,22 @@ If a filed entity also shipped in the same session (appears in both 2b and 2f), 
 
 ## Phase 3: Draft and Review
 
-### Step 1 — Present the draft
+### Step 1 — Collect the agent testimonial
 
-Before drafting, construct PR URLs by reading the Spacedock plugin manifest (same logic as Step 3 below). Find the `skills/` directory containing this skill file, read its sibling `.codex-plugin/plugin.json` (the `.claude-plugin/plugin.json` mirror carries the same fields for the Claude host), and extract the `repository` field. The `repository` field may be a plain URL string (e.g. `https://github.com/spacedock-dev/spacedock`) or an object (e.g. `{"type": "git", "url": "..."}`) — handle both. Derive `{owner}` and `{repo}` for PR links of the form `https://github.com/{owner}/{repo}/pull/{N}`.
+Ask the driving agent:
+
+> Before answering, self-identify as the agent driving this session:
+> - Harness/runtime: the agent harness or runtime you are operating in (for example Claude Code, Codex, or Pi).
+> - Model: the model name.
+> - Model version/build: the exact version or build when runtime metadata exposes it.
+>
+> Write `unknown` for any identity field you cannot verify; do not infer or guess. Then, setting the project's subject matter aside: how would you describe the experience using Spacedock versus driving the same work without it? Be honest about friction, costs, or places where the workflow got in your way; this is not a request for praise.
+
+Record the testimonial prose as `{agent_testimonial}` and its agent-supplied identity as `{harness_runtime}`, `{model}`, and `{model_version_build}`. Preserve `unknown` exactly where the agent cannot verify a value. Derive the session-scale counts `{tasks_touched}`, `{workers_dispatched}`, and `{prs_touched_or_merged}` (tasks touched, workers dispatched, PRs touched/merged) separately from the current session data; do not infer agent identity from those data or ask the agent to estimate session scale.
+
+### Step 2 — Present the draft
+
+Before drafting, construct PR URLs by reading the Spacedock plugin manifest (same logic as Step 4 below). Find the `skills/` directory containing this skill file, read its sibling `.codex-plugin/plugin.json` (the `.claude-plugin/plugin.json` mirror carries the same fields for the Claude host), and extract the `repository` field. The `repository` field may be a plain URL string (e.g. `https://github.com/spacedock-dev/spacedock`) or an object (e.g. `{"type": "git", "url": "..."}`) — handle both. Derive `{owner}` and `{repo}` for PR links of the form `https://github.com/{owner}/{repo}/pull/{N}`.
 
 Assemble the extracted data into a draft debrief and present it to the captain:
 
@@ -233,7 +246,7 @@ Assemble the extracted data into a draft debrief and present it to the captain:
 
 Note: there is no longer a grouped-by-entity "Commits" section. PR-associated commits are rolled up into the Shipped section via their PR link. Only workflow-only commits that did not flow through a PR appear in the "Non-PR commits" section.
 
-### Step 2 — Captain commentary
+### Step 3 — Captain commentary
 
 Wait for the captain to:
 - Add decisions (why gates were approved/rejected, scope changes, course corrections)
@@ -243,7 +256,7 @@ Wait for the captain to:
 
 Incorporate the captain's input into the final debrief.
 
-### Step 3 — Handle spacedock issues
+### Step 4 — Handle spacedock issues
 
 For each issue categorized as a spacedock issue, offer to file a GitHub issue:
 
@@ -351,6 +364,15 @@ Reverts and reverted commits should be cross-referenced, e.g.:
 
 ## Observations
 {captain-contributed content, or "_(none recorded)_" if none provided}
+
+## Agent Testimonial
+- Date: {YYYY-MM-DD}
+- Harness/runtime: {harness_runtime}
+- Model: {model}
+- Model version/build: {model_version_build}
+- Session scale: {tasks_touched} tasks touched; {workers_dispatched} workers dispatched; {prs_touched_or_merged} PRs touched/merged
+
+{agent_testimonial}
 
 ## What's Next
 {dispatchable entities, gate-blocked entities, deferred items — organized by
