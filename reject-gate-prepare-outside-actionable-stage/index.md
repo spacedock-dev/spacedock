@@ -6,7 +6,7 @@ started: 2026-08-01T14:00:57Z
 completed:
 verdict:
 score: "0.95"
-worktree:
+worktree: .worktrees/spacedock-ensign-reject-gate-prepare-outside-actionable-stage
 issue:
 pr:
 sprint: durable-decisions
