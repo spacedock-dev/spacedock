@@ -9,7 +9,7 @@ id: 3t9r36n9tbj116jp9g1k01tz
 gates:
     version: 1
     current:
-        gate: gate:3t9r36n9tbj116jp9g1k01tz:ideation
+        gate: gate:3t9r36n9tbj116jp9g1k01tz:validation
     records:
         - id: gate:3t9r36n9tbj116jp9g1k01tz:backlog
           stage: backlog
@@ -55,6 +55,16 @@ gates:
                 action: advance
                 target-stage: implementation
                 state: consumed
+        - id: gate:3t9r36n9tbj116jp9g1k01tz:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:3t9r36n9tbj116jp9g1k01tz-validation-1
+              briefing:
+                id: briefing:3t9r36n9tbj116jp9g1k01tz:validation:attempt-1:revision-1
+                digest: sha256:dfe84eb83bc263b11ff5f4e8e79e30e6ccc6050577dbed44c540fb6c8ff1e4cb
+                digest-domain: canonical-bytes
+                request-digest: sha256:0adda560d2e04428a87e52ede91c96f948f4eea16ed59a7e144fd72cf94490fe
+                room-ref: ./status-where-robust-and-discoverable/review/validation/briefing-1
 started: 2026-08-02T16:02:35Z
 worktree: .worktrees/spacedock-ensign-status-where-robust-and-discoverable
 ---

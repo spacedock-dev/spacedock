@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3t9r36n9tbj116jp9g1k01tz:validation:attempt-1:revision-1",
+  "question": "Validation PASSED (all 4 ACs independently reproduced against baseline+HEAD binaries on the live docs/dev corpus; 1 deferred risk, not material). Approve merge?",
+  "artifacts": [
+    {
+      "id": "artifact:3t9r36n9tbj116jp9g1k01tz:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f2ac787f9d62ffe1e59401d554a721f6d10c7fbe/status-where-robust-and-discoverable.md",
+      "rev": "sha256:2cf975f56fcdba6ba3c27b90defaa025913bc3fcc0d4d5d19aea4ab540afedcd",
+      "mediaType": "text/markdown",
+      "summary": "Validator built BOTH baseline (48a7ea0d9) and HEAD (59274d492) binaries and byte-diffed outputs on the real docs/dev corpus (157 active rows) rather than trusting isolated test runs: AC-1's 6 error-worthy shapes flip from match-all/silent-empty at exit 0 to exit 1 with named errors; AC-1's 5 counter-baseline cases are row-count-identical between binaries; AC-2's --archived active+archived composition and the FO contract wording fix both confirmed; AC-3's help surface confirmed byte-identical, baseline still runs the listing. Surface deviation (395/-3 vs 315+-30%) verified by reading every hunk, no unrelated changes. go test ./..., -race, and pinned parity goldens all green. One deferred risk: an archive-only custom field (superseded-by) is over-rejected by the unknown-field guard on an active-only query -- correctly classified non-material (no AC promises coverage beyond its 5 named cases; pre-fix behavior for this exact case was the worse silent-match-all bug)."
+    }
+  ]
+}
