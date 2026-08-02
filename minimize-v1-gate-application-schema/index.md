@@ -6,7 +6,7 @@ started: 2026-08-01T14:01:07Z
 completed:
 verdict:
 score: "0.9"
-worktree:
+worktree: .worktrees/spacedock-ensign-minimize-v1-gate-application-schema
 issue:
 pr:
 sprint: durable-decisions
