@@ -218,3 +218,17 @@ Reversed the default status sort to later-stage-first/score-descending with unkn
 ### Recommendation: REJECTED
 
 One material finding: AC-2's promised filtered/archived pagination-composition test is absent (evidence defect; mechanism independently verified correct). AC-1, AC-3, AC-4, and AC-5 all have valid, reproduced evidence with no material findings. Recommend a narrow fix — add the missing composition test(s) — not a design reset or re-litigation of the sort/pagination mechanism, which is proven correct throughout. Two deferred risks noted above (neither blocking).
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Add the missing AC-2 filtered/archived pagination-composition test(s) to internal/status/pagination_test.go, asserting total/visible/omitted rows against the FILTERED or ARCHIVED count, footer totals, and the JSON pagination object.
+  Added `buildFilterArchivePaginationFixture` (30 active `ideation` rows + 5 active `done` rows + 5 archived `done` rows under `_archive/`, no declared `stages:` block so score alone orders rows) plus `TestStatusPaginationFilteredComposition` and `TestStatusPaginationArchivedComposition` in internal/status/pagination_test.go (commit b73dcf43b). Filtered case: `--where status=ideation` page 1 = ideation-01..25 with footer "Showing 1-25 of 30 ..." (not 35 active or 40 all-scope), page 2 = ideation-26..30, JSON pagination total=30. Archived case: `--archived --page 2` = ideation-26..30 + done-01..05 + arch-01..05 (15 rows), JSON pagination total=40 start=26 end=40 has_next=false — matching the validator's independently-reproduced /tmp/sd-filter-paginate scenario.
+- DONE: Do not touch AC-1/AC-3/AC-4/AC-5 or redesign the sort/pagination mechanism.
+  Diff is additive-only to pagination_test.go (`git diff --stat` on b73dcf43b: 1 file changed, 127 insertions(+), 0 deletions(-)); no other file touched.
+- DONE: Falsify the new tests against the exact mechanism they claim to prove.
+  Temporarily changed `handlers.go`'s pagination window to `paginate(len(allEntities), ...)` (ignoring the `--where` filter): `TestStatusPaginationFilteredComposition` failed on the footer total (40 instead of 30). Separately disabled the `includeArchive` append: `TestStatusPaginationArchivedComposition` failed (page 2 missing the 5 `arch-*` rows). Both reverted before the real run (verified via `git diff --stat` = test-file-only).
+- DONE: Run go test ./internal/status/... and the full go test ./... plus -race after the fix; confirm all green.
+  `go test ./internal/status/... -run 'TestStatusPaginationFilteredComposition|TestStatusPaginationArchivedComposition' -v` both PASS; full `go test ./... -count=1` all packages ok (internal/status 46.4s); `go test ./... -race -count=1` all packages ok (internal/status 54.3s); `gofmt -l ./cmd ./internal` empty.
+
+### Summary
+Added the two missing AC-2 composition tests the validator's rejection named, reusing the existing pagination-fixture/parsing helpers and a new mixed active/archived/status fixture. Both tests were confirmed falsifiable by temporarily reintroducing the exact defect each guards against (unfiltered total, missing archive inclusion), then reverted before the final commit (b73dcf43b, test-file-only). No other AC, file, or mechanism was touched; full suite and -race are green.
