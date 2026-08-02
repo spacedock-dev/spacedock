@@ -1,7 +1,7 @@
 ---
 id: 7fhzvvk8d5smj858bp47xbjq
 title: Collapse the gate-approval ceremony from ~16 tool calls to 1-2
-status: implementation
+status: validation
 source: "Ships-counselor friction rollup, 2026-08-02, theme 1 (gate-approval ceremony): measured on sonnet-gate-guardrail-no-authority's ideation->implementation gate -- 16 discrete FO tool calls and 156s wall clock to apply one captain word ('approve'), with 0 additional captain turns needed. Recurs at every nonterminal gate for every entity, forever. Captain directed: file and dispatch (ideation, via a fable-model ensign)."
 started: 2026-08-02T06:25:27Z
 completed:
