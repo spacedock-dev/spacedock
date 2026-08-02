@@ -66,6 +66,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:f6c2c8bfc8838c4de57f5bcedff7101294e7ccf9e894ff5838f813325c5aa9b3
                 room-ref: ./collapse-gate-approval-ceremony/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:7fhzvvk8d5smj858bp47xbjq:ideation:2
+                briefing: briefing:7fhzvvk8d5smj858bp47xbjq:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-02T08:26:46.192801Z"
+                decision: approve
+                reason: 'Captain approved in chat: enter implementation. Cycle 3 closed the recovery-procedure gap the Subspace review found, verified against a real broken-origin fixture.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Applying one captain gate decision (approve/revise/hold) currently costs ~16 raw FO tool calls and ~2.5 minutes of wall clock, most of it mechanical: re-invoking `state commit` after nearly every binary call, then a separate set of frontmatter stamps and worktree creation before the next dispatch even begins. This entity is about collapsing that ceremony toward 1-2 calls per gate decision without weakening any of the authority/integrity checks the ceremony exists to enforce.
