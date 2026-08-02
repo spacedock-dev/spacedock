@@ -8,7 +8,7 @@ verdict:
 score: "0.95"
 worktree: .worktrees/spacedock-ensign-reject-gate-prepare-outside-actionable-stage
 issue:
-pr: "#598"
+pr: pr-merge:598
 sprint: durable-decisions
 id: hq3d00mewqrys3s0z9pf27df
 gates:
