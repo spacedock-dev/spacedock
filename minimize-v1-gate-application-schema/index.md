@@ -109,7 +109,7 @@ Do not redesign terminal delivery, current-gate selection, Resolution contents, 
 
 ## Expected surface and tolerance
 
-Expected implementation surface: 8-12 tracked files, about 80-160 insertions and 140-260 deletions (net negative), concentrated in `internal/gates/{model,operation,application}.go`, their focused tests, affected `internal/status`/`internal/cli` fixtures, `docs/specs/gate-resolution-frontmatter-contract.md`, `docs/site/reference/frontmatter-contract.md`, and normalized `docs/dev/.spacedock-state` entity files. Mechanical fixture/state normalization may raise the file count to 30 without raising semantic scope.
+Expected implementation surface: 8-12 product/test/doc files, about 80-160 insertions and 140-260 deletions (net negative), concentrated in `internal/gates/{model,operation,application}.go`, their focused tests, affected `internal/status`/`internal/cli` fixtures, `docs/specs/gate-resolution-frontmatter-contract.md`, `docs/site/reference/frontmatter-contract.md`, and normalized `docs/dev/.spacedock-state` entity files. The exercised pre-cut manifest contains 31 canonical-v1 pilot entities (16 active, 15 archived); those mechanical state normalizations are counted separately from the product/test/doc surface.
 
 Tolerance: up to 14 product/test/doc files, up to 220 insertions, and up to 35 normalized state/fixture files are acceptable if every extra file is a direct occurrence of a removed shape. Any new command, schema version, compatibility reader, migration engine, feedback router, or net-positive application-model LOC is outside tolerance and requires a new gate.
 
@@ -119,10 +119,10 @@ Tolerance: up to 14 product/test/doc files, up to 220 insertions, and up to 35 n
 Verified by: a table-driven recorder test closes approve, hold, and revise attempts and decodes resulting YAML nodes (not Go zero values). It asserts exact approval keys `{target-stage,state}` and no application node for hold/revise: a 67% leaf-key reduction. The test fails if any other key is emitted or either non-approval gains an application.
 
 **AC-2 - The clean v1 schema is the only accepted stored format after the cut.**
-Verified by: table-driven strict-read negatives independently inject `action`, `blockers`, `execution-hold`, and `feedback`, plus invalid `not-applicable`; each must return nonzero/error and leave bytes unchanged. Positive fixtures cover only pending, consumed, and superseded approval tokens. The repository-built CLI then validates every tracked active and archived pilot entity after one-time normalization; any legacy shape or unknown field fails the run.
+Verified by: table-driven strict-read negatives independently inject `action`, `blockers`, `execution-hold`, and `feedback`, plus invalid `not-applicable`; each must return an error and leave fixture bytes unchanged. Positive fixtures cover only pending, consumed, and superseded approval tokens. A checked-in 31-path pilot manifest is then iterated by a Go test through `gates.Read` and `Validate` for all 16 active and 15 `_archive` entities after one-time normalization; any legacy shape, unknown field, omitted path, or decode failure fails the run. `spacedock gate validate` remains an active-entity operator check, not evidence for archive coverage.
 
 **AC-3 - Removing non-approval applications and speculative leaves does not change approval spending, hold stopping, revise routing, or terminal-delivery authority.**
-Verified by: real-CLI fixtures drive (a) approve then repeated consume, observing one status transition and `pending→consumed`; (b) stale approve, observing only `pending→superseded`; (c) hold and revise, observing unchanged status, preserved Resolution identity/reason, and absent application; and (d) terminal consume/finalize/rework, observing the existing pending/consumed/superseded transitions. A duplicate spend, lost Resolution, changed route, or non-approval application fails its leg.
+Verified by: real-CLI fixtures drive (a) approve then repeated consume, observing one status transition, `pending→consumed`, and derived `application=advance/consumed`; (b) stale approve, observing only `pending→superseded`; (c) hold and revise, observing unchanged status, preserved Resolution identity/reason, and absent application; and (d) terminal consume/finalize/rework, observing the existing pending/consumed/superseded transitions. Eligibility retains a derived `Action: "advance"`, so the existing CLI vocabulary `application=advance/<state>` does not require a stored `action`. A duplicate spend, lost Resolution, changed route, non-approval application, or changed CLI route fails its leg.
 
 **AC-4 - The implementation stays within the approved deletion-oriented boundary.**
 Verified by: `git diff --numstat` and changed-path classification against the implementation base. It fails if product/test/doc insertions exceed 220, product/test/doc files exceed 14, normalized files exceed 35, or any changed path introduces command grammar, versioning, compatibility, migration, or routing machinery not declared above.
@@ -132,7 +132,7 @@ Verified by: `git diff --numstat` and changed-path classification against the im
 1. Add the table-driven model/recorder tests first (about 40-60 LOC): exact emitted YAML keys for three decisions, three valid approval states, and one independent negative per removed key/state. These are package tests because they exercise strict decoding and canonical writes directly; changing any promised shape makes a named row fail.
 2. Update the model, validator, producer, eligibility logic, and package fixtures (about 40-80 net insertions, with larger deletions). Run `go test ./internal/gates -count=1` and the focused status/CLI gate suites.
 3. Drive repository-built CLI fixtures for approve/consume/stale/hold/revise and the existing terminal delivery round trip (about 30-60 test LOC). Assert exit code and resulting on-disk YAML/status, not output substrings alone.
-4. Normalize every tracked active/archive occurrence once, then run the repository's entity-validation command over both roots. No live workflow test is needed: the claim is deterministic CLI and on-disk behavior, already expressible by fixtures.
+4. Check in the exercised 31-path pilot manifest, normalize each listed active/archive entity once, and add a Go test that iterates every manifest path through `gates.Read`/`Validate`. Also run the repository-built `gate validate` over active fixtures, but do not cite it for archives: that command reads only the resolved active path and `status --validate` does not call `gates.Validate` for every gate-bearing file. No live workflow test is needed because the claim is deterministic decoder, CLI, and on-disk behavior.
 5. Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; record any environment-correlated baseline failure separately. Check expected-surface thresholds with `git diff --numstat` and path review.
 
 ## Documentation diff required
@@ -147,6 +147,20 @@ Apply these user-visible changes during implementation:
 ## Risk spike
 
 Exercised on 2026-08-01 with `go test ./internal/gates -run 'TestRecordClosureShapesApplication|TestEightCanonicalApplicationShapesReplayByteIdentical|TestEligibilityFailClosedTable' -count=1` (exit 0). The current implementation demonstrably emits applications for all three decisions, requires `action: advance` and `blockers: []` for approval eligibility, and round-trips blocker, execution-hold, feedback, none, and not-applicable shapes. This proves the risky mechanism is the coordinated strict-decoder/model cut: producer-only cleanup cannot achieve AC-1/AC-2 because retained typed fields remain accepted canonical state. The spike seeds the exact-shape and negative rows in steps 1-2.
+
+## Cycle-2 evidence
+
+The strict negative baseline is deliberately red-before-cut. On 2026-08-02, `TestEightCanonicalApplicationShapesReplayByteIdentical` passed all eight legacy rows, including `approval_held`, `portable_hold`, and both feedback states; `TestRecordClosureShapesApplication` also passed approve/revise/hold and proved the current recorder emits all three applications. Therefore each AC-2 negative is independent and meaningful: removing only emission leaves the decoder accepting the exercised old rows, while deleting any one negative row leaves that legacy leaf unproved. The implementation must invert this baseline with named `action`, `blockers`, `execution-hold`, `feedback`, and `not-applicable` rejection rows and assert unchanged input bytes after each failed read.
+
+A throwaway Go harness (removed after the run) exercised `gates.Read` plus `Validate` over canonical entity paths in both roots rather than scanning prose or calling the active-only CLI. It found 16 readable active pilot entities with 44 applications (`action` 44, `blockers` 34) and 15 readable archived pilot entities with 67 applications (`action` 67, `blockers` 52). Those exact 31 paths are the normalization manifest; older pre-v1 archives and non-entity Markdown are outside this unreleased-v1 cut. The post-cut harness must report 31/31 valid, exactly `{target-stage,state}` on every remaining approval application, no application on hold/revise, and zero occurrences of the four removed keys or `not-applicable`.
+
+The runtime baseline is also exercised, not inferred. On 2026-08-02 the focused gates, status, and real-CLI commands exited 0 for approve/repeated consume, stale supersession, crash-window non-reconsumption, terminal pending/finalize/rework, shared readiness, and CLI `application=advance/pending`. The implementation reuses those fixtures and changes their YAML assertions: authority transitions and CLI route remain identical while hold/revise applications disappear. This is concrete AC-3 evidence because changing a status transition, duplicating a spend, losing a Resolution, or dropping the derived action/display breaks an already-running leg.
+
+## Coordination and merge seam
+
+The three lanes meet at one neutral reducer boundary, not through compatibility fields. `jc` owns selection of the current attempt by authoritative entity status plus a unique stage record; its implementation is currently byte-for-byte held under `mod-block=scope-reset:captain`, so this task requires no new jc API and must not mutate that worktree. After a Captain-authorized reset, jc first lands the status-derived unique-stage lookup; nth then rebases and removes stored application policy fields while consuming that lookup, projecting `Eligibility.Action = "advance"` from an approved pending/consumed/superseded token, and preserving CLI `application=advance/<state>`. If jc's approved selector contract changes, nth returns to the gate rather than adding a selector or compatibility field.
+
+`wj` confirmed this seam in its pushed Cycle-3 design at state commit `a0870d39c`: wj owns only correction-round policy/projection deletion and retains the neutral round producer/room; it does not alter route or application fields. The shared stage graph derives the approval successor; only approve stores `{target-stage,state}`; revise/hold remain Resolution-only; workflow `feedback-to` routing stays outside Application. Merge-order conflicts resolve as jc selector first, nth application reducer second, then wj's orthogonal round cleanup; no lane may reintroduce stored `action`, a policy-specific application shape, or a hidden compatibility field.
 
 ## Stage Report: ideation
 
@@ -164,3 +178,16 @@ Ideation reduces application state to one approval-only `{target-stage,state}` t
 ### Feedback Cycles
 
 - Cycle 1: REVISE — Captain-directed send-back preserving the Science Officer finding: AC-2 and AC-3 are planned only, with no concrete evidence; coordinate the design with jc and the internal-gates schema before re-gating. Correction assignment: add concrete AC evidence and coordinate the reduced application schema with jc/internal-gates before fresh presentation.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Add concrete falsifiable evidence for AC-1 through AC-4, including strict decode negatives, CLI behavior, normalization, and the current status of each scan.
+  AC-1, AC-2, AC-3, and AC-4 are each cited here: focused gates/status/CLI suites exited 0; a throwaway `gates.Read`/`Validate` harness measured 16 active plus 15 archived pilot files and 111 applications; the body fixes post-cut negatives and deletion-budget falsifiers.
+- DONE: Coordinate the approval-only schema with wj and jc through one neutral stage-route seam, with no hidden compatibility field or policy-specific application shape.
+  Wj confirmed and pushed the same seam at state `a0870d39c`; jc remains byte-clean under Captain hold, and the body records the exact selector-to-reducer handoff and post-reset merge order while preserving derived Action/CLI output.
+- DONE: Commit the Cycle-2 ideation report and rerun the authoritative checklist and AC scan before gate preparation.
+  This report is the path-scoped state commit artifact; the authoritative `status --read nth --checklist` and `--ac-scan` results are rerun immediately before completion and cited in the commit handoff.
+
+### Summary
+
+Cycle 2 turns AC-2 and AC-3 from future claims into executable baselines and exact post-cut falsifiers, including a real archived-entity decoder path and a bounded 31-file normalization manifest. It also fixes the jc-to-nth-to-wj seam without compatibility storage: jc selects, nth reduces approval authority and derives display action, and wj removes only round policy.
