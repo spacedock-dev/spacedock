@@ -30,10 +30,8 @@ gates:
                 decision: approve
                 reason: Roborev 2826 established a supported cold-restart stall after stage completion. Promote only the readiness projection and engage routing slice; reconcile prior scaffold/command work against landed s4 and add no second scheduler.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:skwchfe30ac6ntr63j1g0txj:ideation
           stage: ideation
           attempts:
@@ -53,10 +51,8 @@ gates:
                 decision: approve
                 reason: Independent staff re-review found all four prior material findings closed; the design delivers one readiness projection with no new scheduler or state machinery. Approval is recorded now; application waits for s4, gqs, and 0m6 to land.
               application:
-                action: advance
                 target-stage: implementation
                 state: pending
-                blockers: []
 ---
 
 ## Problem

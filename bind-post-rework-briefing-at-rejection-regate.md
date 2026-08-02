@@ -32,10 +32,8 @@ gates:
                 decision: approve
                 reason: 'Sprint conn: task protects decision integrity after rework, reuses existing machinery, and can be ideated independently of other critical lanes.'
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:zbcj98qfwtax61vxdzrf615e:ideation
           stage: ideation
           attempts:
@@ -55,10 +53,8 @@ gates:
                 decision: approve
                 reason: 'Sprint conn: revised design provides mechanical correction-episode freshness with one scalar plus existing pinned Reference, deriving authority without duplicated schema or new recorder.'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
 worktree: .worktrees/spacedock-ensign-bind-post-rework-briefing-at-rejection-regate
 started: 2026-07-30T15:54:52Z
 verdict: rejected

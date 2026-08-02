@@ -35,10 +35,6 @@ gates:
                 at: 2026-07-20T04:32:43Z
                 decision: revise
                 reason: "Four annotations: (1) briefing packaging should use separate artifacts (FO-side, 3k experiment); (2) is the new record command needed at all — apply the cheapest-check ordering; (3) add a final landing-spot review AC (core vs dev-specific) and propose the dev README change; (4) roborev-shaped in-stage AC coverage."
-              application:
-                action: feedback
-                target-stage: ideation
-                state: consumed
               note: "Subspace advisory float; four captain annotations included by id in the resolution. Annotation 1 is FO-owned (briefing packaging), 2-4 routed to the worker; next attempt opens at re-presentation."
             - id: gate-attempt:bw-ideation-2
               sequence: 2
@@ -55,7 +51,6 @@ gates:
                 at: 2026-07-20T04:51:38Z
                 decision: approve
               application:
-                action: advance
                 target-stage: implementation
                 state: superseded
               note: "Subspace advisory float, no annotations; third presentation (prose-only convention) approved. Superseded by attempt 3 (captain-approved staff-review folds); the approval itself stands."
@@ -76,7 +71,6 @@ gates:
                 decision: approve
                 reason: "Staff-review folds, captain-approved in chat with the concrete strengthened wording shown: past-tolerance deviation requires a recorded reconfirm/re-scope/park/escalate decision before further repair dispatch (no automatic re-dispatch); tolerance default named as 2x unless the entity declares otherwise; the testlint arm struck from AC-1 (one-off script, no committed check); the skill frontmatter description line added to the declared surface; title corrected to the prose-only convention the body ships."
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
               note: "FO applied the folds directly under the captain's edit-directly grant; codex staff review finding 1 and fable delta findings 8-10."

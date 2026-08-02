@@ -28,10 +28,6 @@ gates:
                 decision: revise
                 reason: 'The live workflow counterexample shows current validation stage is not gate readiness: five tickets share the stage, only three have complete reports, and one complete ticket still points at its old ideation gate. The shipped projection must derive from durable current-stage gate lifecycle state.'
                 adoption-note: 'helps only if gate readiness becomes first-class state—not something the FO infers from status: validation.'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:8n-validation-2
               briefing:
                 id: briefing:docs-dev:8n:validation:attempt-2:revision-1
@@ -48,10 +44,8 @@ gates:
                 reason: Validation is 11 DONE, 0 SKIPPED, 0 FAILED with AC-1 through AC-6 evidenced; focused/full/race/live-tag and adversarial checks are green, the 14-path diff is within authorized bounds, and Roborev re-panel found no issues.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
         - id: gate:docs-dev:8n:ideation
           stage: ideation
           attempts:
@@ -71,10 +65,8 @@ gates:
                 reason: The cycle-3 report is 3 DONE, 0 SKIPPED, 0 FAILED with AC-1 through AC-6 evidenced; the four-field projection distinguishes the Captain's 3-of-5 live counterexample without duplicating gate records or importing unrelated branch history.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
 sprint: durable-decisions
 mod-block:
 pr: pr-merge:561

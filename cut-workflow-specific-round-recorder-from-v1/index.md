@@ -35,10 +35,8 @@ gates:
                 decision: approve
                 reason: Captain approved dispatching this durable-decisions ideation lane in parallel with hq, nth, and jc.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:wjkhq0sktbbe3txx6jhnvcv2:ideation
           stage: ideation
           attempts:
@@ -57,10 +55,6 @@ gates:
                 at: "2026-08-01T16:07:10.322447Z"
                 decision: revise
                 reason: 'Captain directed send-back for Science Officer REVISE: AC-2 and AC-3 lack concrete evidence, and the design must preserve the zbc correction-round producer; route for ideation correction.'
-              application:
-                action: feedback
-                target-stage: ideation
-                state: superseded
             - id: gate-attempt:wjkhq0sktbbe3txx6jhnvcv2-ideation-2
               briefing:
                 id: briefing:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-2:revision-1
@@ -76,9 +70,6 @@ gates:
                 at: "2026-08-02T09:57:43.891639Z"
                 decision: hold
                 reason: Science approves the bounded WJ design, but NTH cycle 2 evidence and the JC reset path are not yet durable. Hold WJ at ideation to avoid independent implementation on a stale shared seam.
-              application:
-                action: none
-                state: not-applicable
             - id: gate-attempt:wjkhq0sktbbe3txx6jhnvcv2-ideation-3
               briefing:
                 id: briefing:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-3:revision-1

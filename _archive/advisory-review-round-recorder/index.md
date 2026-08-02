@@ -34,10 +34,8 @@ gates:
                 reason: Ideation reuses 3k as the sole recorder, persists the already-approved 02av advisory shape, makes the 3j decline replay falsifiable, and forbids gate, application, or workflow effects.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:fr-ideation-2
               briefing:
                 id: briefing:docs-dev:fr:ideation:attempt-2:revision-1
@@ -54,10 +52,8 @@ gates:
                 reason: Cycle-2 ideation replaces duplicate paths with explicit shared 3k primitives, mandatory entity and room CAS expectations, fixed worker authority, exact projection semantics, risk-first failure tests, and hard 365/500-LOC stops without changing ACs.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:fr-ideation-3
               briefing:
                 id: briefing:docs-dev:fr:ideation:attempt-3:revision-1
@@ -74,10 +70,8 @@ gates:
                 reason: The cycle-3 report is 2 DONE, 0 SKIPPED, 0 FAILED; AC-1 through AC-5 have durable evidence, and the independent boundary audit shows one-shot publication preserves the value while removing the disproportionate mutable-prefix mechanism.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:docs-dev:fr:implementation
           stage: implementation
           attempts:
@@ -96,10 +90,6 @@ gates:
                 decision: revise
                 reason: The implementation crossed its 680-LOC hard stop before CLI wiring, duplicated 3k writer and Review-and-Gate parsing paths, omitted retained-room CAS, and failed its risky-path coverage; ACs remain unchanged and require bounded mechanism re-ideation.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:fr-implementation-2
               briefing:
                 id: briefing:docs-dev:fr:implementation:attempt-2:revision-1
@@ -115,10 +105,6 @@ gates:
                 decision: revise
                 reason: Cycle-2 architecture is shared and AC-correct, but the 683-LOC pre-CLI checkpoint exceeds the invalid 365 estimate and retains named canonical-validation, projection, URI, duplication, and whole-operation failure-test defects; authorize one bounded correction under measured 540/600 hard stops.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:fr-implementation-3
               briefing:
                 id: briefing:docs-dev:fr:implementation:attempt-3:revision-1
@@ -134,10 +120,6 @@ gates:
                 decision: revise
                 reason: The corrected two-step design remains 670 net production LOC before CLI, above the 540 hard stop; an independent boundary audit shows the value can be preserved by one-shot completed-round publication within 580/640.
                 adoption-note: 'Re-ideate only the append semantics as one-shot completed rounds: immutable room creation once, exact replay no-op, divergent replay refusal, pointer and optional projection published together; preserve every value AC, remove interim/prefix-append machinery, and hard-stop at 580 pre-CLI or 640 total. Captain directive: ''why why is fr not sent back to rework?'''
-              application:
-                action: feedback
-                target-stage: implementation
-                state: pending
         - id: gate:docs-dev:fr:validation
           stage: validation
           attempts:
@@ -157,10 +139,8 @@ gates:
                 reason: Validation passed 12/12 checklist items at exact candidate 1ae990f5; all five ACs have independent behavioral evidence, the Codex live lane passed, zero production paths changed, and no material finding remains.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
               application:
-                action: advance
                 target-stage: done
                 state: superseded
-                blockers: []
             - id: gate-attempt:fr-validation-2
               briefing:
                 id: briefing:docs-dev:fr:validation:attempt-2:revision-1
@@ -177,10 +157,8 @@ gates:
                 reason: Exact rebased candidate 5617b65e has 5/5 ACs independently evidenced, full/race/live checks green, patch identity proven, and no material finding.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
 review-round:
     id: round:frze3yqm9da0vp0r53qqdc8t:implementation:6
     stage: implementation

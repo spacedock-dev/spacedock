@@ -34,10 +34,8 @@ gates:
                 decision: approve
                 reason: The observed supported re-scope cannot be represented truthfully today; ideation is authorized to define the minimum withdrawal semantics without weakening frozen room integrity.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:0m6vtrw4qh9w4x6bn06x5hen:ideation
           stage: ideation
           attempts:
@@ -57,10 +55,8 @@ gates:
                 decision: approve
                 reason: AC-1 through AC-3 are evidenced and staff corrections are closed. Record approval now; apply only after s4 lands so implementation rebases on the final prepare and retained-authority surface.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:0m6vtrw4qh9w4x6bn06x5hen:validation
           stage: validation
           attempts:
@@ -80,10 +76,8 @@ gates:
                 decision: approve
                 reason: 'Captain conn accepts candidate 5a8be3220: deterministic lifecycle and adversarial evidence prove truthful withdrawal, immutable attempt N, and provider-backed successor N+1; the skipped real-Claude repeat is externally quota-blocked before FO work and is not a product defect.'
               application:
-                action: advance
                 target-stage: done
                 state: superseded
-                blockers: []
             - id: gate-attempt:0m6vtrw4qh9w4x6bn06x5hen-validation-2
               briefing:
                 id: briefing:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-2:revision-1
@@ -100,10 +94,8 @@ gates:
                 decision: approve
                 reason: Captain authorized merge on green and sprint advancement on Science advisory approval; fresh cycle-2 report, AC-1/2/3 scan, exact-head CI, and Science Officer APPROVE/PASSED all support this candidate. The prior 5a8be3220 approval is stale.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
 mod-block:
 pr: pr-merge:580
 archived: 2026-08-02T08:04:26Z

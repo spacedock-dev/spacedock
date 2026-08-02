@@ -33,10 +33,8 @@ gates:
                 decision: approve
                 reason: 'Captain directed in chat: file the git-scaffold-helper follow-up and dispatch it fast-track.'
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:zfmbm75wvmfj38h73wrtpqqy:ideation
           stage: ideation
           attempts:
@@ -56,10 +54,8 @@ gates:
                 decision: approve
                 reason: 'Captain approved ideation in chat: proceed to implementation of internal/testgit.InitRepo and the ~34-site migration.'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:zfmbm75wvmfj38h73wrtpqqy:validation
           stage: validation
           attempts:
@@ -79,10 +75,8 @@ gates:
                 decision: approve
                 reason: 'Captain approved validation in chat: PASSED, all ACs independently reproduced, no material findings. Proceed to merge.'
               application:
-                action: advance
                 target-stage: done
                 state: pending
-                blockers: []
 mod-block: merge:pr-merge
 pr: "#601"
 ---

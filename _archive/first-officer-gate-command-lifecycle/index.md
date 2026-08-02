@@ -34,10 +34,8 @@ gates:
                 reason: Ideation codifies the demonstrated 3k/h1 lifecycle, makes every transition command load-bearing, captures all observed friction, and preserves the no-recorder/no-production-Go boundary.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-2
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-2:revision-1
@@ -54,10 +52,8 @@ gates:
                 reason: Cycle-2 ideation moves the complete lifecycle behind one deferred gate trigger, preserves the boot-core ceiling and strict spawn ACs, closes every gate-entry route including headless, and names all missing behavioral proof without changing product semantics.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-3
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-3:revision-2
@@ -74,10 +70,8 @@ gates:
                 reason: Canonical AC repair now preserves product value while removing unsupported proof obligations and cutting at least 399 LOC.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-4
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-4:revision-1
@@ -94,10 +88,8 @@ gates:
                 reason: Cycle 7 preserves the authority and durability outcomes, removes unproven ceremony, passed the focused gate tests named in ideation, and independent staff re-review reports APPROVE with no material findings.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-5
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-5:revision-1
@@ -114,10 +106,8 @@ gates:
                 reason: Cycle 13 preserves the three durable authority mutations, fixes the observed terminal merge deadlock through the existing ceremony, removes the false cache proof, constrains Pi evidence to root-assistant output, and declares a net-deleting nine-file implementation boundary.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-6
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-6:revision-1
@@ -134,10 +124,8 @@ gates:
                 reason: Cycle 18 closes both staff-review findings, restores supported rejection semantics without a new schema, makes live procedure ownership falsifiable, and limits implementation to seven existing files with a +95-addition hard stop; independent staff re-review approves with no material finding.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-7
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-7:revision-1
@@ -154,10 +142,8 @@ gates:
                 reason: Independent staff review found no material issue; the repaired eight-file design gives gate presentation one owner, makes exact-one root visibility deletion-sensitive, and preserves the existing recorder, provider, and runtime boundaries.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-8
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-8:revision-1
@@ -174,10 +160,8 @@ gates:
                 reason: Independent staff review found no material issue; the unreleased-v1 reset removes prototype marker and unbound-review assumptions, binds presentation to successful durable evidence, and keeps all supported-host and authority ACs falsifiable within an explicit ceiling.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-9
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-9:revision-1
@@ -194,10 +178,8 @@ gates:
                 reason: Independent staff review found no material issue; the repaired design restores the Captain-approved host proof split, makes delegated authority byte-exact, retains Pi failure evidence before cleanup, and requires measured deletion before any expansion.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-10
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-10:revision-1
@@ -214,10 +196,8 @@ gates:
                 reason: Independent staff review found no material issue; the repaired authority audit preserves every product-owned gate behavior while removing compatibility and forensic proof inflation, and the clean-branch plan is non-destructive.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-11
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-11:revision-1
@@ -234,10 +214,8 @@ gates:
                 reason: Independent staff review found the 15-line one-file range amendment irreducible direct product proof and conditioned it on removing redundant bind reparsing and measuring exactly +135/-152.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-ideation-12
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-12:revision-1
@@ -254,10 +232,8 @@ gates:
                 reason: Cycle 32 removes an unauthenticated provenance channel without weakening the behavioral no-authority boundary; independent staff review found no material issue and the nine-file correction is proportionate.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:docs-dev:6y:implementation
           stage: implementation
           attempts:
@@ -276,10 +252,6 @@ gates:
                 decision: revise
                 reason: The boot-resident lifecycle exceeds the hard shared-core ceiling by 5,534 bytes beyond available headroom, leaves a headless gate-entry bypass, and lacks required live-spawn and adversarial proof; ACs remain unchanged and require deferred gate-triggered topology re-ideation.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:6y-implementation-2
               briefing:
                 id: briefing:docs-dev:6y:implementation:attempt-2:revision-1
@@ -295,10 +267,6 @@ gates:
                 decision: revise
                 reason: 'The deferred lifecycle implementation preserves the end value, but its remaining failures are proof-boundary defects: a model-reconstructed command-only prompt mutant, an all-routes-by-all-hosts live matrix, and an unexposed Codex public-stream handle are not valid mandatory oracles; Pi still needs real async completion waiting and Claude needs a final corrected positive run.'
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
-              application:
-                action: feedback
-                target-stage: implementation
-                state: pending
         - id: gate:docs-dev:6y:validation
           stage: validation
           attempts:
@@ -318,10 +286,8 @@ gates:
                 reason: Validation reproduced AC-1 through AC-8 at exact tip b99f9c66; focused, full, race, docs, Codex, Claude, Pi, detached mutants, and final-tip Roborev are green with no candidate-scope material finding.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
             - id: gate-attempt:6y-validation-2
               briefing:
                 id: briefing:docs-dev:6y:validation:attempt-2:revision-1
@@ -337,10 +303,6 @@ gates:
                 decision: revise
                 reason: 'PR #565 offline CI and the isolated clean-config reproduction fail at the first fixture-backed state commit because the temporary state repository lacks local Git author identity; this is a material evidence defect and the candidate cannot merge.'
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:6y-validation-3
               briefing:
                 id: briefing:docs-dev:6y:validation:attempt-3:revision-1
@@ -356,10 +318,6 @@ gates:
                 decision: revise
                 reason: Exact tip 13d70249 fixes clean-runner Git identity but detached controls prove four material defects across supported rejection routing, captain decision semantics, live prompt ownership, and root-visible Claude evidence; AC-1, AC-6, AC-7, and AC-8 fail and require a design reset.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:6y-validation-4
               briefing:
                 id: briefing:docs-dev:6y:validation:attempt-4:revision-1
@@ -375,10 +333,8 @@ gates:
                 decision: approve
                 reason: Validation proves bind, delegated approval, consume, handoff, and durable successor effect on every applicable runtime; the remaining post-lifecycle Pi decision-facts extraction miss is Captain-deferred and no material outcome defect remains.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
 review-round:
     id: round:6yyyyemkqwsett3g1c991w9f:implementation:26
     stage: implementation

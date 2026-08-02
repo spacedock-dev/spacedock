@@ -33,10 +33,8 @@ gates:
                 decision: approve
                 reason: 'Captain directed in chat: file the gate-approval-ceremony friction as a task and dispatch it to ideation via a fable-model ensign.'
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:7fhzvvk8d5smj858bp47xbjq:ideation
           stage: ideation
           attempts:
@@ -55,10 +53,6 @@ gates:
                 at: "2026-08-02T07:54:09.623296Z"
                 decision: revise
                 reason: 'Subspace review surfaced an unresolved gap: the design documents what a mid-ceremony sync failure looks like (phase=record/consume, sync=failed/halted) but never states the FO''s actual recovery procedure per failure phase, and the composite gate record --consume is not safely re-entrant (record refuses to re-close an already-closed attempt; consume refuses a re-consume as already-consumed). Send back for an explicit per-phase recovery procedure before approval.'
-              application:
-                action: feedback
-                target-stage: ideation
-                state: superseded
             - id: gate-attempt:7fhzvvk8d5smj858bp47xbjq-ideation-2
               briefing:
                 id: briefing:7fhzvvk8d5smj858bp47xbjq:ideation:attempt-2:revision-1
@@ -75,10 +69,8 @@ gates:
                 decision: approve
                 reason: 'Captain approved in chat: enter implementation. Cycle 3 closed the recovery-procedure gap the Subspace review found, verified against a real broken-origin fixture.'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:7fhzvvk8d5smj858bp47xbjq:validation
           stage: validation
           attempts:
@@ -98,10 +90,8 @@ gates:
                 decision: approve
                 reason: 'Captain approved in chat: validation PASSED, AC-1/AC-2/AC-3 verified with reproduced evidence, +273% surface deviation acknowledged as legitimate. Dogfooding the collapsed ceremony (--consume) for this decision.'
               application:
-                action: advance
                 target-stage: done
                 state: pending
-                blockers: []
 review-round:
     id: round:7fhzvvk8d5smj858bp47xbjq:implementation:1
     stage: implementation

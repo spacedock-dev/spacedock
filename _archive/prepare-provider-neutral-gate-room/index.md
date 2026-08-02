@@ -33,10 +33,8 @@ gates:
                 decision: approve
                 reason: Captain approved filing the narrow post-em alignment task and dispatching it through the sprint.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:docs-dev:s4:ideation
           stage: ideation
           attempts:
@@ -55,10 +53,8 @@ gates:
                 decision: approve
                 reason: The corrected design removes manual room metadata and basename fiction, preserves provider neutrality, reuses existing proof surfaces, and passed independent staff review; implementation remains pending until 6y lands on xb-rebased main.
               application:
-                action: advance
                 target-stage: implementation
                 state: superseded
-                blockers: []
             - id: gate-attempt:s4-ideation-2
               briefing:
                 id: briefing:docs-dev:s4:ideation:attempt-2:revision-1
@@ -74,10 +70,8 @@ gates:
                 decision: approve
                 reason: Frozen room-owned sources remove checkout-topology coupling, the independent reopen spike falsifies the old locator, and staff review found no material issue; implementation remains dependency-held behind 6y.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
             - id: gate-attempt:s4-ideation-3
               briefing:
                 id: briefing:docs-dev:s4:ideation:attempt-3:revision-1
@@ -93,10 +87,8 @@ gates:
                 decision: approve
                 reason: Cycle 11 provides one mechanical provider-neutral prepare command, collision-free folder and flat rooms, exact Git-root and Briefing authority, no copied sources or stored association, and the sole room-only provider handoff; independent re-review found no remaining issue.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:s4ykctf21g60dvfgdd6cy9ny:validation
           stage: validation
           attempts:
@@ -116,10 +108,8 @@ gates:
                 decision: approve
                 reason: Independent validation reproduces AC-1 through AC-5 at 5484cee6; full/race/format checks and detached adversarial controls pass, with no material finding remaining.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
             - id: gate-attempt:s4ykctf21g60dvfgdd6cy9ny-validation-2
               briefing:
                 id: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-2:revision-1
@@ -135,9 +125,6 @@ gates:
                 at: "2026-07-29T20:39:50.115501Z"
                 decision: hold
                 reason: Superseded by validated candidate acae980fc145e624d9e04e7ec9f7fdb599585f6e after cleanup and CI; prepare a fresh Briefing.
-              application:
-                action: none
-                state: not-applicable
             - id: gate-attempt:s4ykctf21g60dvfgdd6cy9ny-validation-3
               briefing:
                 id: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-3:revision-1
@@ -154,10 +141,8 @@ gates:
                 decision: approve
                 reason: 'Validation PASSED at acae980f: AC-1 through AC-5, full/race/docs, focused gate journeys, and all s4-relevant CI lanes are green; Sonnet keep-moving red is outside the unchanged s4 scope and retained separately.'
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
 review-round:
     id: round:s4ykctf21g60dvfgdd6cy9ny:implementation:13
     stage: implementation

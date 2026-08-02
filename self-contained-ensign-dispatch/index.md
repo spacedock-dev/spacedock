@@ -28,10 +28,8 @@ gates:
                 decision: approve
                 reason: Real sprint dogfood proves fresh ensigns can resolve 0.26.0+dev while the FO uses 0.27.0-pre1; dispatch build already owns the exact stage subsection, so ideation should remove the redundant worker fetch and bound any remaining helper use.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:kd7877nnbd19d528xnpwwaj4:ideation
           stage: ideation
           attempts:
@@ -50,10 +48,8 @@ gates:
                 decision: approve
                 reason: 'Delegated sprint conn: exact two-binary spike and final independent staff re-review approve the self-contained artifact, pointer-only transport design; implementation must preserve legitimate ensign round recording through the builder-pinned launcher.'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:kd7877nnbd19d528xnpwwaj4:validation
           stage: validation
           attempts:
@@ -72,9 +68,6 @@ gates:
                 at: "2026-07-30T23:38:52.744855Z"
                 decision: hold
                 reason: 'Captain conn holds KD without rework: exact candidate b60d1c8 is deterministically green and has zero classified defects, but required live proof is red on the external Material Codex worker-spawn breach routed to f02j6dbnd4jakwczahv1tg2h; canonical Claude/Pi evidence is also infrastructure-blocked.'
-              application:
-                action: none
-                state: not-applicable
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 ---

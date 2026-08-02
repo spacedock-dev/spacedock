@@ -34,10 +34,8 @@ gates:
                 reason: The split-root remote can retain an active merge sentinel after local archive finalization; a restart-safe supported publication path is a material durable-decisions prerelease requirement.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:docs-dev:rd:ideation
           stage: ideation
           attempts:
@@ -57,10 +55,8 @@ gates:
                 reason: The design reuses one state publisher, preserves archived read-only semantics, closes crash and duplicate-shape gaps with real-Git evidence, and passed independent staff review; implementation remains pending until 6y lands.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:docs-dev:rd:validation
           stage: validation
           attempts:
@@ -79,10 +75,8 @@ gates:
                 decision: approve
                 reason: Independent revalidation proves AC-1 through AC-6 on the corrected exact candidate; the pathspec-magic sibling-sweep defect is closed symmetrically, full and race suites pass, and only the declared sibling-dirt plus peer-advance condition remains deferred outside the promised direct-push path.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
 mod-block:
 pr: pr-merge:568
 archived: 2026-07-25T20:22:13Z

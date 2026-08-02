@@ -34,10 +34,8 @@ gates:
                 reason: The task isolates the actual missing cross-repository consumer boundary, forbids durable source duplication, and requires a real moved-root Subspace proof before implementation.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:rqh46ey33aqq4rt72b4w1m2q:ideation
           stage: ideation
           attempts:
@@ -57,10 +55,8 @@ gates:
                 decision: approve
                 reason: The corrected design closes digest-domain, lifecycle-order, proof-policy, and circular-live-proof gaps. Record approval now; apply after s4 lands so both repositories implement against the final prepared-room contract.
               application:
-                action: advance
                 target-stage: implementation
                 state: pending
-                blockers: []
 ---
 
 Bridge recorder-ready Git-addressed Briefings to actual provider presentation without

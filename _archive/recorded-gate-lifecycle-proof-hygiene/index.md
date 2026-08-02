@@ -28,10 +28,8 @@ gates:
                 decision: approve
                 reason: The exact-tip audit reproduces both proof defects, existing executable controls preserve lifecycle value, and the accepted cleanup adds no product behavior or standing obligation.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:docs-dev:fh3n:ideation
           stage: ideation
           attempts:
@@ -50,10 +48,8 @@ gates:
                 decision: approve
                 reason: The corrected design removes the two proven proof-hygiene defects within an exact four-test-file, no-product boundary; executable lifecycle owners remain, and LOC is an estimate rather than gate authority.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:docs-dev:fh3n:validation
           stage: validation
           attempts:
@@ -72,10 +68,8 @@ gates:
                 decision: approve
                 reason: Independent validation proves the exact deletion-first four-test-file candidate satisfies all acceptance criteria, structural and archive controls, repository gates, and final Roborev; the credentialed journey red is byte-identical pre-existing canonical-open oracle debt, not a candidate regression.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
 worktree: .worktrees/spacedock-ensign-recorded-gate-lifecycle-proof-hygiene
 started: 2026-07-25T17:09:51Z
 review-round:

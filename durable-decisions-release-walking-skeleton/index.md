@@ -34,10 +34,8 @@ gates:
                 decision: approve
                 reason: The sprint's end value is an operable durable-decision journey; repeated late integration seams make one real release-candidate walking skeleton necessary before the pre-release.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:ph0zv6azcrhcxmg57wwnxah7:ideation
           stage: ideation
           attempts:
@@ -57,10 +55,8 @@ gates:
                 decision: approve
                 reason: Corrected ideation satisfies AC-1 through AC-5 and staff asks. Record approval now; do not apply until gqs, mn, rq, 0m6, s4, and v21 are terminal PASSED and exact candidate preflight is green.
               application:
-                action: advance
                 target-stage: implementation
                 state: superseded
-                blockers: []
             - id: gate-attempt:ph0zv6azcrhcxmg57wwnxah7-ideation-2
               briefing:
                 id: briefing:ph0zv6azcrhcxmg57wwnxah7:ideation:attempt-2:revision-1
@@ -77,10 +73,8 @@ gates:
                 decision: approve
                 reason: Cycle 4 adds sk as the eighth sprint member and terminal prerequisite while preserving all prior proof and authority decisions. This attempt supersedes the seven-member approval; hold application until gqs, sk, mn, 0m6, rq, s4, and v21 are terminal PASSED and merged.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
 ---
 
 The sprint has strong component proofs but repeatedly discovered integration seams only

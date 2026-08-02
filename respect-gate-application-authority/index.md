@@ -34,10 +34,8 @@ gates:
                 decision: approve
                 reason: 'The sprint''s real role error proves a narrow general contract gap: recording approval must not imply transition authority, while an explicit conn still permits consume and dispatch. Shape the contract and existing live proof without changing gate mechanics.'
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:mnea9vq3pv1rz1x1hdjbvdg9:ideation
           stage: ideation
           attempts:
@@ -57,10 +55,8 @@ gates:
                 decision: approve
                 reason: AC-1 through AC-4 are evidenced and staff corrections are closed. Record approval now; apply only after gqs is terminal PASSED so the broad-conn positive phase exercises the shipped entered-stage scheduler.
               application:
-                action: advance
                 target-stage: implementation
                 state: pending
-                blockers: []
 ---
 
 Recording a binding approval and applying it are separate operations. The shipped First Officer lifecycle must preserve that separation at the role boundary: presenting or recording an approval never enlarges the current session's assigned transition scope. A Shaping First Officer explicitly assigned to hold members at a gate records the exact Resolution and stops with approved-awaiting-advance; a Commander with the conn consumes the same frozen attempt, advances, and dispatches the entered stage.

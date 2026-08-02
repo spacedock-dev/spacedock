@@ -35,10 +35,8 @@ gates:
                 decision: approve
                 reason: Captain approved dispatching this durable-decisions ideation lane in parallel with wj, hq, and jc.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:nthcevf1snz7hm75gny3kd2e:ideation
           stage: ideation
           attempts:
@@ -57,10 +55,6 @@ gates:
                 at: "2026-08-01T16:08:30.024517Z"
                 decision: revise
                 reason: 'Captain directed send-back for Science Officer REVISE: AC-2 and AC-3 are planned only, with no concrete evidence; coordinate the design with jc and the internal-gates schema before re-gating.'
-              application:
-                action: feedback
-                target-stage: ideation
-                state: superseded
             - id: gate-attempt:nthcevf1snz7hm75gny3kd2e-ideation-2
               briefing:
                 id: briefing:nthcevf1snz7hm75gny3kd2e:ideation:attempt-2:revision-1
@@ -76,9 +70,6 @@ gates:
                 at: "2026-08-02T10:02:00.481726Z"
                 decision: hold
                 reason: Science confirms NTH evidence is complete but approval would authorize premature implementation. Hold until Captain-authorized JC scope reset and durable selector/API; then re-present NTH and WJ in order.
-              application:
-                action: none
-                state: not-applicable
             - id: gate-attempt:nthcevf1snz7hm75gny3kd2e-ideation-3
               briefing:
                 id: briefing:nthcevf1snz7hm75gny3kd2e:ideation:attempt-3:revision-1
@@ -95,10 +86,8 @@ gates:
                 decision: approve
                 reason: 'Science advisory approves the cycle-2 ideation direction now that JC #599 is merged and the WJ/NTH seam is explicit; implementation must use a fresh current-head binding and preserve the serialized JC-to-NTH-to-WJ order.'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.

@@ -29,10 +29,8 @@ gates:
                 decision: approve
                 reason: Captain directed an instrumented prerelease before sprint closure; the bounded pilot preserves release integrity while deferring non-blocking friction.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:0hympdejewzwkhe60ygqk15a:ideation
           stage: ideation
           attempts:
@@ -52,10 +50,8 @@ gates:
                 decision: approve
                 reason: Captain authorized v0.27.0-pre2; design proves the provider-free chat journey after gqs and keeps provider/follow-up work out of the cut.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
 started: 2026-07-30T14:04:09Z
 worktree: .worktrees/spacedock-ensign-gate-feature-prerelease-pilot
 ---

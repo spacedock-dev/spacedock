@@ -29,10 +29,8 @@ gates:
                 decision: approve
                 reason: Captain approved dispatching this durable-decisions ideation lane in parallel with wj, hq, and nth.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:jccbpvjv5bg1jn0jbmj2yf8s:ideation
           stage: ideation
           attempts:
@@ -51,10 +49,6 @@ gates:
                 at: "2026-08-02T01:32:41.555714Z"
                 decision: revise
                 reason: 'Per Science Officer advisory and the Captain-delegated send-back rule: split the exact Acceptance criteria section from Test plan so the mandatory AC scan passes; tighten the 12-18-file/80-180-insertions and 140-300-deletions scope to the minimum consumer surface; retain the stale-approval adversarial fixture and full/race plan. Repairing the entity invalidates this Briefing, so require a fresh current-stage binding.'
-              application:
-                action: feedback
-                target-stage: ideation
-                state: superseded
             - id: gate-attempt:jccbpvjv5bg1jn0jbmj2yf8s-ideation-2
               briefing:
                 id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-2:revision-1
@@ -71,10 +65,8 @@ gates:
                 decision: approve
                 reason: Captain authorized sprint advancement when Science Officer advisory approves; Science approved ideation attempt 2 with the six-production-file boundary, strict 24-file/180-plus/230-minus/net-negative guard, reducer consistency, and merge-order constraints.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:jccbpvjv5bg1jn0jbmj2yf8s:validation
           stage: validation
           attempts:
@@ -105,10 +97,8 @@ gates:
                 decision: approve
                 reason: 'Validation cycle 2 passed: the exact Captain-authorized 25-file scope includes internal/gates/io.go and internal/status/discover.go; AC-1 through AC-5, full/race checks, and the detached terminal-delivery audit are green. Science Officer confirms V-1 is resolved and no material finding remains.'
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
 started: 2026-08-01T14:01:17Z
 worktree: .worktrees/spacedock-ensign-simplify-gate-state-v1-schema
 mod-block:

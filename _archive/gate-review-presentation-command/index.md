@@ -31,10 +31,8 @@ gates:
                 reason: Spacedock 612b72fc and provider 198f7623 have 6/6 ACs evidenced, retained-delivery and association suites green, zero binary coupling, and no material finding.
                 adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
-                action: advance
                 target-stage: done
                 state: superseded
-                blockers: []
             - id: gate-attempt:xb-validation-2
               briefing:
                 id: briefing:docs-dev:xb:validation:attempt-2:revision-1
@@ -51,10 +49,8 @@ gates:
                 reason: Exact candidate 8fd1b869 satisfies all six supported prepared-room ACs at 17 files and 1,310/1,310 changed LOC; validation reports PASSED and Roborev 2070 is canonically triaged with no material finding.
                 adoption-note: Captain granted the First Officer the conn to approve sprint gates, PRs, CI, and merge; land only exact candidate 8fd1b869eb9797a032ec5b7e6ed06f15707eb562.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
             - id: gate-attempt:xb-validation-3
               briefing:
                 id: briefing:docs-dev:xb:validation:attempt-3:revision-1
@@ -71,10 +67,8 @@ gates:
                 reason: Rebased exact candidate 642ca090 is patch-identical across all 15 commits, preserves 17 files and 1,310/1,310 changed LOC, and passes all six ACs plus full/race/docs on current base b0ca008d.
                 adoption-note: Captain granted the First Officer the conn to approve sprint gates, PRs, CI, and merge; land only 642ca0901a920c701acd5e1ec82aa11387764e43.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
         - id: gate:docs-dev:xb:ideation
           stage: ideation
           attempts:
@@ -94,10 +88,8 @@ gates:
                 reason: Cycle 12 aligns all six ACs to the approved prepared-room boundary; independent staff re-review APPROVES; only +42/-0 test lines are authorized, projecting 1,297/1,300 changed LOC.
                 adoption-note: Captain granted the First Officer the conn to approve sprint gates and required suspicion of drift; preserve exact candidate 98ebb458 and add only the three recorded test variants.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
 review-round:
     id: round:xbatj4hxtxw9t83vvmfem27f:implementation:16
     stage: implementation

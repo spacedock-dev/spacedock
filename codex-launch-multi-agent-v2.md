@@ -33,10 +33,6 @@ gates:
                 at: "2026-08-01T16:10:09.609186Z"
                 decision: revise
                 reason: 'Captain-directed Science Officer send-back completed: preserve the exact multi_agent_v2 isolated-home fragment and bind AC-1 through AC-4 to falsifiable evidence; the prior Briefing is stale after the revised report.'
-              application:
-                action: feedback
-                target-stage: ideation
-                state: superseded
             - id: gate-attempt:z5gwwz2748sg6vxr0g3kdsar-ideation-2
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-2:revision-1
@@ -53,10 +49,8 @@ gates:
                 decision: approve
                 reason: Captain approved after Science Officer APPROVE advisory; exact features.multi_agent_v2 fragment and AC-1 through AC-4 evidence are bound in briefing-2.
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:z5gwwz2748sg6vxr0g3kdsar:validation
           stage: validation
           attempts:
@@ -75,10 +69,6 @@ gates:
                 at: "2026-08-01T17:13:08.344768Z"
                 decision: revise
                 reason: 'Captain-authorized direct send-back following Science Officer REVISE: replace the vacuous direct-codex marker oracle with a Spacedock-front-door typed ordered same-worker lifecycle proof; reject every accepted reserved-key spelling before side effects, including attached short and quoted dotted forms; add the disabled-control E-3 negative; rerun focused, full, race, format, detached-audit, and live validation.'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:z5gwwz2748sg6vxr0g3kdsar-validation-2
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-2:revision-1
@@ -94,10 +84,6 @@ gates:
                 at: "2026-08-01T17:57:10.685244Z"
                 decision: revise
                 reason: 'Captain-authorized direct send-back following Science Officer REVISE: fix M4 by parsing both ordered wait_agent argument records atomically and requiring each target to equal the spawned worker identity; retain the detached wrong-worker transcript as a negative and rerun validation. Prior M1-M3 corrections and product behavior remain accepted.'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:z5gwwz2748sg6vxr0g3kdsar-validation-3
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-3:revision-1
@@ -114,10 +100,8 @@ gates:
                 decision: approve
                 reason: Captain approved z5 after the cycle-3 gate review and Science Officer HOLD advisory; this approval accepts the current validation evidence and the bound implementation candidate.
               application:
-                action: advance
                 target-stage: done
                 state: superseded
-                blockers: []
             - id: gate-attempt:z5gwwz2748sg6vxr0g3kdsar-validation-4
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-4:revision-1
@@ -134,10 +118,8 @@ gates:
                 decision: approve
                 reason: 'Captain approved validation cycle 4: AC-1 through AC-4 are independently evidenced, the exact multi_agent_v2 surface and M1-M4 behavior are green, the detached M5 spoof audit passes, and the 8-file/+379-26 candidate is within the approved scope.'
               application:
-                action: advance
                 target-stage: done
                 state: superseded
-                blockers: []
             - id: gate-attempt:z5gwwz2748sg6vxr0g3kdsar-validation-5
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-5:revision-1
@@ -164,9 +146,6 @@ gates:
                 at: "2026-08-02T09:28:59.887424Z"
                 decision: hold
                 reason: 'Science classifies a material Codex First Officer runtime/state-commit outcome defect: the full and targeted recorded-gate-lifecycle runs have no structured worker.spawn event after consume, so the durable successor-dispatch predicate fails. Hold z5 unchanged; route the defect to local task codex-recorded-gate-successor-dispatch and require a fresh exact-head Codex lane.'
-              application:
-                action: none
-                state: not-applicable
 mod-block:
 ---
 

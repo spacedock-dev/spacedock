@@ -35,10 +35,8 @@ gates:
                 decision: approve
                 reason: Captain approved dispatching this durable-decisions ideation lane in parallel with wj, nth, and jc.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:hq3d00mewqrys3s0z9pf27df:ideation
           stage: ideation
           attempts:
@@ -58,10 +56,8 @@ gates:
                 decision: approve
                 reason: 'Captain approves the bounded pre-write actionable-stage guard: 3 files, 55-85 inserted lines, under the stated 4-file/110-line tolerance, preserving valid successor replay and existing gate formats.'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:hq3d00mewqrys3s0z9pf27df:validation
           stage: validation
           attempts:
@@ -92,10 +88,8 @@ gates:
                 decision: approve
                 reason: Captain authorized green merges and sprint advancement on Science advisory approval. Fresh cycle-2 validation on ab2f095d3 has complete AC-1/2/3 evidence, all focused/full/race/format/diff/detached checks green, scope within tolerance, and Science Officer APPROVE/PASSED.
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
 mod-block:
 archived: 2026-08-02T08:46:04Z
 ---

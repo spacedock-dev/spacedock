@@ -33,10 +33,8 @@ gates:
                 decision: approve
                 reason: 'Captain directed in chat: dispatch an opus ideation ensign to diagnose PR #585''s pre-quarantine CI failure, confirm the entity''s documented diagnosis against that evidence, and recommend a solution.'
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:3zzpdw704df1g8pg1x9thzmw:ideation
           stage: ideation
           attempts:
@@ -56,10 +54,8 @@ gates:
                 decision: approve
                 reason: 'Captain approved in chat: enter implementation with all three named mechanisms (prepare.go attribution, the two SKILL.md corrections, and mechanism 3''s oracle-condition disambiguation kept in scope, not cut). Entity retitled to reflect the corrected diagnosis (destructive room-state escape, not a crossed no-authority boundary).'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
 ---
 
 Restore the Sonnet gate-guardrail live proof by making `gate prepare` name which selected source it rejected, so the FO stops bisecting for the offending path by binding throwaway content and destroying binary-owned room state. The task removes the bounded Sonnet TODO quarantine only after an exact-tip live run proves exactly one successful `gate prepare`.

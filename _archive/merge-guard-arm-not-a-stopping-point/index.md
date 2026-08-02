@@ -36,7 +36,6 @@ gates:
                 decision: approve
                 reason: "Approved by the FO under the captain's explicit conn grant (2026-07-20). Delegated approval, NOT a captain decision — recorded as agent:first-officer. Grounds: both shipped ACs verified against evidence the validator REPRODUCED. AC-1's blind A/B was re-run from a pre-registration written before any reader — 0/3 before-text vs 3/3 after-text surface-and-stop — and in doing so the validator found that the RECORDED probe had tested the parked 843-byte paragraph rather than the shipped clause (cmp separates them at char 435), so this is the first evidence that the text actually shipping moves the baseline. It replicates. AC-2 measured two independent ways agreeing exactly: net -24 bytes, ratchet green, full suite green uncached. The payload substitution survives its hardest test: the original AC-1 is byte-identical to a frozen ideation briefing committed nine hours BEFORE the substitution (an immutable independent source, not self-reference), and two blind readers given only the entity body each identified the shipped text, flagged the parked paragraph as unshippable, and answered NO to whether the entity delivered what it set out to — so the retreat reads as a retreat. Detached adversarial audit held on both misattribution and information-loss attacks. Zero material findings; three deferred risks and four polish items recorded with triggers and promote conditions."
               application:
-                action: advance
                 target-stage: done
                 state: pending
               note: "MERGE PRECONDITION, unmet at approval: this diff touches skills/**/references/** (host-neutral FO contract), so offline plus every host lane is required. `offline` is RUN and GREEN — the cycle-1 red is fixed, and that red was caused by the parked clause's bytes. The three live lanes had NOT RUN at approval because the branch was unpushed and no PR existed; the validator stated that plainly rather than calling them green, and noted correctly that the captain's pi waiver covers a pi RED, not an UNRUN lane. FO note on its own conduct: the FO previously cited the cycle-2 probe's 3/3 result to the captain when recommending the payload substitution, without verifying which text that probe exercised. It had exercised the parked paragraph. The conclusion survived re-testing, but the evidence chain was broken and was caught only because the validation dispatch required re-running rather than accepting recorded numbers."
@@ -59,7 +58,6 @@ gates:
                 decision: approve
                 reason: "based on our new principle, write a estimated change, so future stage can refer to it to judge deviation"
               application:
-                action: advance
                 target-stage: implementation
                 state: superseded
               note: "Subspace advisory float, captain at the keyboard as person:reviewer; the resolution reason directs appending a declared expected surface to the body — applied post-approval as part of the approval's own terms, not drift. Superseded by attempt 2 (captain-approved staff-review vocabulary sweep); the approval itself stands."
@@ -80,7 +78,6 @@ gates:
                 decision: approve
                 reason: "Staff-review sweep, captain-approved in chat: the banned coined vocabulary removed from the group field and four body spots (plain 'captain judgment' / 'check ordering' wording; group regrouped to verification). No design change."
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
               note: "FO applied the sweep directly under the captain's edit-directly grant; codex finding 5 and fable delta finding 19."
