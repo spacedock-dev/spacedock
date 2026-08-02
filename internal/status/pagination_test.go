@@ -253,6 +253,133 @@ func TestStatusPaginationPageOutOfRange(t *testing.T) {
 	}
 }
 
+// buildFilterArchivePaginationFixture writes a mixed-status, mixed-scope
+// fixture with no declared stages: block (so every status is unknownStageOrder
+// and score alone orders rows, monotonically decreasing across the three
+// groups so composition order is unambiguous): 30 active "ideation" rows
+// (score 0.99..0.70), 5 active "done" rows (0.69..0.65), and 5 archived
+// "done" rows under _archive/ (0.64..0.60) — 35 active, 40 all-scope. This
+// proves --where/--archived compose with pagination against the
+// filtered/archived count, not the raw unfiltered entity count.
+func buildFilterArchivePaginationFixture(t *testing.T) string {
+	t.Helper()
+	def := t.TempDir()
+	writeFile(t, filepath.Join(def, "README.md"), "---\ncommissioned-by: spacedock@1\nid-style: slug\n---\n# Filter/Archive Pagination Fixture\n")
+	writeRow := func(dir, slug, status string, score float64) {
+		body := fmt.Sprintf("---\nstatus: %s\nscore: \"%.2f\"\n---\n", status, score)
+		writeFile(t, filepath.Join(dir, slug+".md"), body)
+	}
+	for i := 1; i <= 30; i++ {
+		writeRow(def, fmt.Sprintf("ideation-%02d", i), "ideation", 0.99-float64(i-1)*0.01)
+	}
+	for i := 1; i <= 5; i++ {
+		writeRow(def, fmt.Sprintf("done-%02d", i), "done", 0.69-float64(i-1)*0.01)
+	}
+	archiveDir := filepath.Join(def, "_archive")
+	for i := 1; i <= 5; i++ {
+		writeRow(archiveDir, fmt.Sprintf("arch-%02d", i), "done", 0.64-float64(i-1)*0.01)
+	}
+	return def
+}
+
+// TestStatusPaginationFilteredComposition proves --where composes with
+// pagination against the FILTERED row count (30 ideation rows), not the
+// 35-row active-scope or 40-row all-scope total: page 1 of --where
+// status=ideation shows ideation-01..25 with a footer naming 30, and page 2
+// shows the remaining ideation-26..30 with no footer.
+func TestStatusPaginationFilteredComposition(t *testing.T) {
+	def := buildFilterArchivePaginationFixture(t)
+	env := pinnedEnv(t)
+
+	out, stderr, code := runNative(t, def, env, "--workflow-dir", def, "--where", "status=ideation")
+	if code != 0 {
+		t.Fatalf("--where status=ideation exit=%d stderr=%q", code, stderr)
+	}
+	slugs, footer := splitTableAndFooter(t, out)
+	want := rowSlugs("ideation", 1, 25)
+	if !equalStrings(slugs, want) {
+		t.Fatalf("--where status=ideation page 1 rows = %v, want ideation-01..ideation-25\n%s", slugs, out)
+	}
+	wantFooter := "Showing 1-25 of 30 (page 1; use --page 2 or --limit 0 for all)"
+	if footer != wantFooter {
+		t.Fatalf("--where status=ideation footer = %q, want %q (filtered count 30, not the 35-active or 40-all-scope total)", footer, wantFooter)
+	}
+
+	out2, stderr2, code2 := runNative(t, def, env, "--workflow-dir", def, "--where", "status=ideation", "--page", "2")
+	if code2 != 0 {
+		t.Fatalf("--where status=ideation --page 2 exit=%d stderr=%q", code2, stderr2)
+	}
+	slugs2, footer2 := splitTableAndFooter(t, out2)
+	want2 := rowSlugs("ideation", 26, 30)
+	if !equalStrings(slugs2, want2) {
+		t.Fatalf("--where status=ideation --page 2 rows = %v, want ideation-26..ideation-30\n%s", slugs2, out2)
+	}
+	if footer2 != "" {
+		t.Fatalf("--where status=ideation --page 2 (last page) footer = %q, want empty", footer2)
+	}
+
+	jsonOut, jsonErr, jsonCode := runNative(t, def, env, "--workflow-dir", def, "--where", "status=ideation", "--json")
+	if jsonCode != 0 {
+		t.Fatalf("--where status=ideation --json exit=%d stderr=%q", jsonCode, jsonErr)
+	}
+	var envJ paginatedStatusEnvelope
+	if err := json.Unmarshal([]byte(jsonOut), &envJ); err != nil {
+		t.Fatalf("parse --json: %v\n%s", err, jsonOut)
+	}
+	wantPagination := map[string]string{
+		"page": "1", "limit": "25", "total": "30", "start": "1", "end": "25", "has_next": "true",
+	}
+	for k, v := range wantPagination {
+		if envJ.Pagination[k] != v {
+			t.Fatalf("--where status=ideation --json pagination[%q] = %q, want %q (filtered total 30)\n%s", k, envJ.Pagination[k], v, jsonOut)
+		}
+	}
+}
+
+// TestStatusPaginationArchivedComposition proves --archived composes with
+// pagination against the ALL-SCOPE row count (40: 30 active ideation + 5
+// active done + 5 archived done), not the 30-row filtered or 35-row
+// active-only count: --page 2 surfaces the 5 remaining ideation rows plus all
+// 10 done rows (active and archived), matching filter-then-sort-then-paginate
+// composition, as the last page with no footer/next.
+func TestStatusPaginationArchivedComposition(t *testing.T) {
+	def := buildFilterArchivePaginationFixture(t)
+	env := pinnedEnv(t)
+
+	out, stderr, code := runNative(t, def, env, "--workflow-dir", def, "--archived", "--page", "2")
+	if code != 0 {
+		t.Fatalf("--archived --page 2 exit=%d stderr=%q", code, stderr)
+	}
+	slugs, footer := splitTableAndFooter(t, out)
+	want := append(rowSlugs("ideation", 26, 30), append(rowSlugs("done", 1, 5), rowSlugs("arch", 1, 5)...)...)
+	if !equalStrings(slugs, want) {
+		t.Fatalf("--archived --page 2 rows = %v, want %v (5 remaining ideation + 5 active done + 5 archived done)\n%s", slugs, want, out)
+	}
+	if footer != "" {
+		t.Fatalf("--archived --page 2 (last page of 40) footer = %q, want empty", footer)
+	}
+
+	jsonOut, jsonErr, jsonCode := runNative(t, def, env, "--workflow-dir", def, "--archived", "--page", "2", "--json")
+	if jsonCode != 0 {
+		t.Fatalf("--archived --page 2 --json exit=%d stderr=%q", jsonCode, jsonErr)
+	}
+	var envJ paginatedStatusEnvelope
+	if err := json.Unmarshal([]byte(jsonOut), &envJ); err != nil {
+		t.Fatalf("parse --json: %v\n%s", err, jsonOut)
+	}
+	if len(envJ.Entities) != 15 {
+		t.Fatalf("--archived --page 2 --json entities count = %d, want 15", len(envJ.Entities))
+	}
+	wantPagination := map[string]string{
+		"page": "2", "limit": "25", "total": "40", "start": "26", "end": "40", "has_next": "false",
+	}
+	for k, v := range wantPagination {
+		if envJ.Pagination[k] != v {
+			t.Fatalf("--archived --page 2 --json pagination[%q] = %q, want %q (all-scope total 40)\n%s", k, envJ.Pagination[k], v, jsonOut)
+		}
+	}
+}
+
 // TestStatusPaginationLimitZero proves --limit 0 restores every row with the
 // new stage-then-score ordering intact and no footer/JSON truncation.
 func TestStatusPaginationLimitZero(t *testing.T) {
