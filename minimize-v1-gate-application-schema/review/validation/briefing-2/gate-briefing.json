@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nthcevf1snz7hm75gny3kd2e:validation:attempt-2:revision-1",
+  "question": "Should Captain authorize the cumulative correction surface for the validation candidate, or require compression below the approved AC-4 cap?",
+  "artifacts": [
+    {
+      "id": "artifact:nthcevf1snz7hm75gny3kd2e:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/64132f52c7eb24c0a9c21ab77b47bce73c425c9c/minimize-v1-gate-application-schema/review/validation/fo-gate-review-correction-2.md",
+      "rev": "sha256:e61a4fbbcaf3f80a83a027589768560351e0c065ed40b1ea86a8366fb183a837",
+      "mediaType": "text/markdown",
+      "summary": "Validation correction cycle 2 closes AC-1 through AC-3, but cumulative scope is 15 files and +344 insertions against the approved 14-file/+220 cap; Science advises HOLD for explicit Captain scope authorization."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nthcevf1snz7hm75gny3kd2e:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/64132f52c7eb24c0a9c21ab77b47bce73c425c9c/minimize-v1-gate-application-schema/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:7e5c630642f29a1b2f202c6a75b2b9184332f13ef9ac0399a8af766ad1a5d939"
+    }
+  ]
+}
