@@ -112,6 +112,7 @@ review-round:
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-1
 mod-block: merge:pr-merge
+pr: "#600"
 ---
 
 Applying one captain gate decision (approve/revise/hold) currently costs ~16 raw FO tool calls and ~2.5 minutes of wall clock, most of it mechanical: re-invoking `state commit` after nearly every binary call, then a separate set of frontmatter stamps and worktree creation before the next dispatch even begins. This entity is about collapsing that ceremony toward 1-2 calls per gate decision without weakening any of the authority/integrity checks the ceremony exists to enforce.
