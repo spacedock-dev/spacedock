@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3zzpdw704df1g8pg1x9thzmw:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation diagnosis and recommended fix to enter implementation? (Diagnosis corrects issue #596: the FO honored the no-authority boundary but made four successful gate prepares by bisecting into, then destroying, its own bound gate room to escape a correct refusal.)",
+  "artifacts": [
+    {
+      "id": "artifact:3zzpdw704df1g8pg1x9thzmw:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6ec59647489e8f9b7036e5240c5ca904a07f0f98/sonnet-gate-guardrail-no-authority/index.md",
+      "rev": "sha256:8448f2803de06352e5bc3c33493ac2fe00d449a911b376af452cfb01eb3f6700",
+      "mediaType": "text/markdown",
+      "summary": "Ideation corrected the inherited diagnosis: the archived Sonnet stream (run 30708727845, job 91392375253, artifact 8821429777) shows the FO never crossed the no-authority boundary -- assertGateHeld passed, it presented once and stopped at awaiting-captain. The real defect is that gate prepare's selected-source rejection names no path, so when one of four selected sources (an uncommitted evidence/command.log) was rejected, the FO could not tell which; it bisected by binding throwaway --question/--summary content to the real gate room (prepare 2), then escaped the resulting frozen-binding refusal by git-checkout-and-rm-rf'ing the binary-owned gates: frontmatter and room -- already forbidden by SKILL.md:27 -- and repeated the cycle before the correct prepare (four successful prepares total, baseline for AC-1). Recommended fix: attribute the rejected --artifact/--reference path in internal/gates/prepare.go (spiked and verified: go test ./... green, error now names the path), plus two SKILL.md sentence corrections tightening the frozen-binding and replay-idempotency language. An optional third mechanism would name which of the oracle's seven conditions fired instead of one generic string; it is not required by AC-1. Two items need a captain call: the entity title asserts a boundary breach the evidence does not support, and the optional third mechanism is a fair cut given surface budget."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:3zzpdw704df1g8pg1x9thzmw:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/23ed415bb3f16393f7b5a0f6c19c9f259b6c4617/internal/gates/prepare.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:3f2d28f44104a16327812c6bd84135b747faf81f4dcfc4d9b63b7b462f0bc6a2"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3zzpdw704df1g8pg1x9thzmw:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/23ed415bb3f16393f7b5a0f6c19c9f259b6c4617/skills/fo-gate-lifecycle/SKILL.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:206012f16cb82341a7e011a5426c6d5d148ee3c1ebef28fad3590d6a1bb17c49"
+    }
+  ]
+}

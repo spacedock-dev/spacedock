@@ -12,7 +12,7 @@ id: 3zzpdw704df1g8pg1x9thzmw
 gates:
     version: 1
     current:
-        gate: gate:3zzpdw704df1g8pg1x9thzmw:backlog
+        gate: gate:3zzpdw704df1g8pg1x9thzmw:ideation
     records:
         - id: gate:3zzpdw704df1g8pg1x9thzmw:backlog
           stage: backlog
@@ -37,6 +37,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:3zzpdw704df1g8pg1x9thzmw:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:3zzpdw704df1g8pg1x9thzmw-ideation-1
+              briefing:
+                id: briefing:3zzpdw704df1g8pg1x9thzmw:ideation:attempt-1:revision-1
+                digest: sha256:588752bd4f3b4d02872b997769437955feaeafbae7f71fab97e1fd73682c7661
+                digest-domain: canonical-bytes
+                request-digest: sha256:9b891a8f5fd1ac959bed7b9a91c6542e1888d8158724135bac66720ab3d03fc9
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Restore the Sonnet gate-guardrail live proof by making `gate prepare` name which selected source it rejected, so the FO stops bisecting for the offending path by binding throwaway content and destroying binary-owned room state. The task removes the bounded Sonnet TODO quarantine only after an exact-tip live run proves exactly one successful `gate prepare`.
