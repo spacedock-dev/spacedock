@@ -493,6 +493,9 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 	applyEffectiveIDs(entities, idStyle, allEntities)
 	materializeGateEligibility(entities, roots.definitionDir, explicitFields, allFieldsFlag, whereFilters)
 	materializeSuppressedBy(entities, stages, explicitFields, whereFilters)
+	if err := validateWhereFields(entities, whereFilters); err != nil {
+		return errExit(stderr, err.Error())
+	}
 	entities = applyFilters(entities, whereFilters)
 
 	switch {

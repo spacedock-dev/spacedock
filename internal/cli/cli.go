@@ -603,18 +603,23 @@ Examples:
 // the hand-rolled router did — cobra never consumes, reorders, or validates a
 // status flag (AC-5).
 func newStatusCommand(ctx context.Context, env []string, dir string, stdin io.Reader, stdout, stderr io.Writer, runner status.Runner) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:                "status [args]",
 		Short:              "Show or update workflow state",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if wantsHelp(args) {
+				return cmd.Help()
+			}
 			if code := runStatus(ctx, args, env, dir, stdin, stdout, stderr, runner); code != 0 {
 				return exitCodeError{code}
 			}
 			return nil
 		},
 	}
+	setStatusHelp(cmd, stdout)
+	return cmd
 }
 
 // newNewCommand wires `spacedock new [--folder] SLUG` as a pure alias for
