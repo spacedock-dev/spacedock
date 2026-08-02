@@ -72,6 +72,10 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:46ce53ca3f526387c1b68d078e9e242fdc6d538694094f8de87a7efcb8f36220
                 room-ref: ./review/validation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-02T08:28:30.473351Z"
+                reason: The validation candidate was rebased from d6958a782 onto origin/main 988163969; retire the old open Briefing before binding fresh validation authority for ab2f095d3.
 ---
 
 `gate prepare` must fail before mutation unless the ticket's current workflow stage is an actionable gate that can accept a new attempt. The command currently checks only that the stage exists. A real invocation at the ungated `implementation` stage exited zero, added a gate attempt, and wrote a room that the later recorder correctly refused as non-actionable.
