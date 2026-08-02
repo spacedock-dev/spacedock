@@ -8,7 +8,7 @@ verdict:
 score: "0.95"
 worktree: .worktrees/spacedock-ensign-reject-gate-prepare-outside-actionable-stage
 issue:
-pr:
+pr: "#598"
 sprint: durable-decisions
 id: hq3d00mewqrys3s0z9pf27df
 gates:
@@ -96,6 +96,7 @@ gates:
                 target-stage: done
                 state: pending
                 blockers: []
+mod-block: merge:pr-merge
 ---
 
 `gate prepare` must fail before mutation unless the ticket's current workflow stage is an actionable gate that can accept a new attempt. The command currently checks only that the stage exists. A real invocation at the ungated `implementation` stage exited zero, added a gate attempt, and wrote a room that the later recorder correctly refused as non-actionable.
