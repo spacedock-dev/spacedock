@@ -146,3 +146,16 @@ The remainder of that row, including selected-source authority and success outpu
 ### Summary
 
 The ideation now bounds the fix to strengthening the existing pre-write stage guard and proving zero mutation at ungated and terminal stages. It preserves valid replay and successor behavior, declares the precise runtime-only semantic change, and includes an implementation-ready test plan and concrete documentation wording.
+
+## Stage Report: implementation
+
+- DONE: Strengthen the existing pre-write gate-prepare stage guard to require gate=true and terminal=false.
+  Commit `d6958a782` rejects a resolved stage unless it is gated and nonterminal, before gate-state or room reads and writes.
+- DONE: Add focused tests for actionable, ungated, terminal, contradictory, and valid successor-reentry cases with zero-mutation snapshots.
+  `TestPrepareRequiresActionableCurrentStage` fails if any invalid stage mutates entity/review bytes or entry types, or if a held actionable attempt cannot allocate and retain successor attempt 2.
+- DONE: Apply the approved command-reference wording and remain within the 3-file/55-85-line estimate and 4-file/110-line tolerance.
+  The command row names the precondition and zero-mutation refusal; the committed surface is 3 files, 82 insertions, and 3 deletions, with `go test ./...` and `go test ./... -race` passing.
+
+### Summary
+
+Gate preparation now refuses ungated and terminal current stages before durable mutation while preserving actionable preparation and same-stage successor re-entry. The implementation updates the existing guard, focused package proof, and command reference only, and all required formatting, normal, and race checks pass.
