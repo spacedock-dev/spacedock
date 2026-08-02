@@ -61,6 +61,7 @@ gates:
                 blockers: []
 worktree: .worktrees/spacedock-ensign-bind-post-rework-briefing-at-rejection-regate
 started: 2026-07-30T15:54:52Z
+verdict: rejected
 ---
 
 ## Problem
