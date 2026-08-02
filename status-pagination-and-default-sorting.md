@@ -134,3 +134,25 @@ and the mode list should gain:
 
 ### Summary
 Expanded the seed into an implementation-ready design for bounded default status output with later-stage-first sorting and explicit pagination controls. The plan scopes pagination to the default listing path, identifies tests/fixtures/docs, and records that no spike is needed because existing native runner mechanisms cover the risky plumbing.
+
+## Stage Report: implementation
+
+- DONE: Reverse the default sort to (stage order descending, score descending, discovery tie-break); unknown stages grouped after known.
+  internal/status/format.go sortDefault (dfaf1519c); internal/status/sort_default_test.go TestSortDefaultStageThenScore proves validation-lo(0.10) < impl-hi(0.90) < tied impl-lo-a/impl-lo-b (discovery order) < ideation < backlog.
+- DONE: Add --page N / --limit N to the default listing (page 1-based default 1, limit default 25, --limit 0 disables); reject invalid/contradictory values.
+  internal/status/parse.go parsePageLimitArgs; TestParsePageLimitArgs covers page 0/negative/non-integer, limit negative/non-integer, missing args, and --page-with-limit-0 (rejected even at --page 1, since an explicit page makes no sense once --limit 0 asks for everything on one page).
+- DONE: Apply pagination only to the default listing path; reject --page/--limit on the nine non-listing modes with a named diagnostic.
+  internal/status/native_runner.go dispatch() incompatibility block; native_usage_test.go usageCases page-with-{next,boot,resolve,short-id,next-id,archive}/limit-with-{validate,read,set} plus page-with-limit-zero, each with a captured golden (e.g. testdata/golden/native-usage-page-with-next.txt: "Error: --page/--limit cannot be combined with --next").
+- DONE: Text-mode "Showing X-Y of Z (page N; use --page N+1 or --limit 0 for all)" footer (omitted in --quiet); JSON pagination object (page/limit/total/start/end/has_next, all strings) beside entities.
+  internal/status/format.go paginationFooter/printPaginationFooter; internal/status/json_commands.go paginationJSONObj; TestStatusPaginationDefaultBounds/Page2/PageOutOfRange/LimitZero in pagination_test.go assert the exact footer text, JSON field values, and the valid-empty-page-past-the-end case.
+- DONE: Update shell completions to include --page and --limit in status flags.
+  internal/cli/cli.go bashCompletion/zshCompletion status_flags; internal/cli/verbs_test.go TestCompletionShells extended to assert both flags appear.
+- DONE: Apply the exact documentation diff to command-reference.md and fo-status-viewer/SKILL.md.
+  docs/site/reference/command-reference.md status row and skills/fo-status-viewer/SKILL.md invocation line + Overview bullet, matching the entity's diff verbatim (the command-reference "from" text had since gained an unrelated --boot/--read parenthetical upstream of ideation's capture; only the targeted substring was replaced, preserving that text).
+- DONE: Tests per the Test plan (pagination-helper unit tests, stage-then-score fixture, CLI/JSON row-order tests, golden updates, --next goldens unchanged except incompatibility).
+  TestPaginate/TestPaginationFooter/TestParsePageLimitArgs (unit); TestSortDefaultStageThenScore (comparator fixture); TestStatusPagination* (CLI/JSON, parses rows via splitTableAndFooter and JSON via encoding/json, not substrings); 30 golden files regenerated via -update, reviewed diff-by-diff (git diff) to confirm each changed line is only the expected reorder or the added pagination object; seq-next.txt/seq-next.json/boot-structural.txt untouched.
+- DONE: go test ./..., go test ./... -race, gofmt -w ./cmd ./internal all pass.
+  Full suite green (internal/status 22.2s plain / 49.6s -race, whole repo including skills/integration); gofmt -l ./cmd ./internal empty after -w.
+
+### Summary
+Reversed the default status sort to later-stage-first/score-descending with unknown stages grouped last, and added --page/--limit pagination (default page=1 limit=25, --limit 0 for all) to the default listing only, refusing the flag on every other read/mutation mode and on the --page-with-limit-0 contradiction. Text and JSON both surface the pagination window (footer / pagination object); completions and the two named docs were updated per the entity's diff. All work is on branch spacedock-ensign/status-pagination-and-default-sorting at dfaf1519c, scoped to internal/status, internal/cli, docs/site/reference, and skills/fo-status-viewer as estimated — no surface deviation to report.
