@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rwpe45pdxffk2zfy24ejde6a:validation:attempt-1:revision-1",
+  "question": "Validation REJECTED on one material evidence-defect finding (AC-2's promised filtered/archived pagination-composition test is missing; mechanism independently verified correct). Approve revise (narrow fix: add the missing test) back to implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:rwpe45pdxffk2zfy24ejde6a:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0da26c7bae0c794f0e1a6371270ec91698608401/status-pagination-and-default-sorting.md",
+      "rev": "sha256:bb31b525d4a70921dc1227c84f9aebd3df3faa136cff61cf13e0946530e52502",
+      "mediaType": "text/markdown",
+      "summary": "AC-1/AC-3/AC-4/AC-5 all PASSED with reproduced evidence. AC-2: mechanism verified correct (validator independently built a 40-entity fixture confirming --where + --archived + pagination compose correctly), but no committed test combines --page/--limit with --where/--archived -- AC-2's own 'Tested by' clause requires this and it's absent. Classified evidence defect (not outcome defect), Material. Proposed narrow fix: add the missing test(s) to pagination_test.go using existing helpers -- no redesign. 2 deferred risks noted, neither blocking."
+    }
+  ]
+}

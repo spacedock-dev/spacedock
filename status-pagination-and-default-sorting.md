@@ -7,7 +7,7 @@ started: 2026-07-22T06:31:16Z
 gates:
     version: 1
     current:
-        gate: gate:rwpe45pdxffk2zfy24ejde6a:ideation
+        gate: gate:rwpe45pdxffk2zfy24ejde6a:validation
     records:
         - id: gate:rwpe45pdxffk2zfy24ejde6a:ideation
           stage: ideation
@@ -31,6 +31,16 @@ gates:
                 action: advance
                 target-stage: implementation
                 state: consumed
+        - id: gate:rwpe45pdxffk2zfy24ejde6a:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:rwpe45pdxffk2zfy24ejde6a-validation-1
+              briefing:
+                id: briefing:rwpe45pdxffk2zfy24ejde6a:validation:attempt-1:revision-1
+                digest: sha256:24d1452754c15dd97658958f0b501fc7527d6f7272dd99cf4812d14cda260bbd
+                digest-domain: canonical-bytes
+                request-digest: sha256:e611922fd88552dd99a7aa07a99d2ccb2e9dce2d9656d53f92ee745286ec35a8
+                room-ref: ./status-pagination-and-default-sorting/review/validation/briefing-1
 worktree: .worktrees/spacedock-ensign-status-pagination-and-default-sorting
 ---
 
