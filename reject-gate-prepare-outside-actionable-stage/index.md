@@ -83,6 +83,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:85a10b27696ece59656de141b9ac89dd516d66a5192beb771d5fc8adffa0e36b
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:hq3d00mewqrys3s0z9pf27df:validation:2
+                briefing: briefing:hq3d00mewqrys3s0z9pf27df:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-02T08:29:32.887486Z"
+                decision: approve
+                reason: Captain authorized green merges and sprint advancement on Science advisory approval. Fresh cycle-2 validation on ab2f095d3 has complete AC-1/2/3 evidence, all focused/full/race/format/diff/detached checks green, scope within tolerance, and Science Officer APPROVE/PASSED.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 `gate prepare` must fail before mutation unless the ticket's current workflow stage is an actionable gate that can accept a new attempt. The command currently checks only that the stage exists. A real invocation at the ungated `implementation` stage exited zero, added a gate attempt, and wrote a room that the later recorder correctly refused as non-actionable.
