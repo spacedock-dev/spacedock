@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rwpe45pdxffk2zfy24ejde6a:ideation:attempt-1:revision-1",
+  "question": "Ideation complete: stage-then-score default sort + --page/--limit pagination, no spike needed. Approve to enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:rwpe45pdxffk2zfy24ejde6a:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c15a4ea6b12186959cc1e6fbb03a340b380d8c11/status-pagination-and-default-sorting.md",
+      "rev": "sha256:1c6e90f508153add20480cb8be1feec896597f987fec26a6a4d99e2bfd589ec7",
+      "mediaType": "text/markdown",
+      "summary": "Design: reverse default sort to later-stage-first + score descending; add --page/--limit (default page=1 limit=25, --limit 0 for all); scope pagination to the default listing path only (--next/--boot/--read/etc. unaffected, explicitly rejected with --page/--limit). No spike needed -- reuses existing native-runner sort/flag-parsing machinery. Est. ~280-510 LOC across internal/status, internal/cli, docs/skill wording."
+    }
+  ]
+}

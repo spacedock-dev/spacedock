@@ -4,6 +4,21 @@ status: ideation
 score: 0.70
 id: rwpe45pdxffk2zfy24ejde6a
 started: 2026-07-22T06:31:16Z
+gates:
+    version: 1
+    current:
+        gate: gate:rwpe45pdxffk2zfy24ejde6a:ideation
+    records:
+        - id: gate:rwpe45pdxffk2zfy24ejde6a:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:rwpe45pdxffk2zfy24ejde6a-ideation-1
+              briefing:
+                id: briefing:rwpe45pdxffk2zfy24ejde6a:ideation:attempt-1:revision-1
+                digest: sha256:67ab918283c341a88f4b851da0a646f4de209766c5ef3e8a68485f3b10162fc0
+                digest-domain: canonical-bytes
+                request-digest: sha256:f602a1173a15ad93fcd313aecf4b898e97cdb6bdef2f39dc84bd4088b7d04f32
+                room-ref: ./status-pagination-and-default-sorting/review/ideation/briefing-1
 ---
 
 ### Goal
