@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7fhzvvk8d5smj858bp47xbjq:validation:attempt-1:revision-1",
+  "question": "Approve validation PASSED and enter done/terminal? AC-1/AC-2/AC-3 verified with reproduced evidence; roborev correction round resolved (7 fixed, 6 declined); +273% surface deviation acknowledged as legitimate.",
+  "artifacts": [
+    {
+      "id": "artifact:7fhzvvk8d5smj858bp47xbjq:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/81e570d987d797ace4ac1e8c3d48926138c66996/collapse-gate-approval-ceremony/index.md",
+      "rev": "sha256:3e84344d3506a2dff0983ece74aa68eab730e6c5a6bb9216617780ba2d08573d",
+      "mediaType": "text/markdown",
+      "summary": "Validation independently broke the AC-1 harness and 2 of the 7 roborev-fixed regressions to confirm each actually fails without its fix, not just trusting green. All three ACs verified with reproduced evidence. Surface at HEAD is 21 files/2182 lines vs the ideation estimate of 12/~800 (+273%, past the declared +/-40% tolerance) -- confirmed legitimate: ~1230 of ~1600 added test lines are the AC-1 real-fixture harness and two-writer HALT/recovery fixtures the Proof policy demands, plus the roborev round's 7 dedicated regression tests. No AC narrowed to reach PASSED."
+    }
+  ]
+}
