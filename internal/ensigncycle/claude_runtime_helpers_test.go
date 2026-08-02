@@ -86,10 +86,25 @@ func TestUnsetNestedSessionArgs(t *testing.T) {
 
 func assertRecordedGateHoldLog(log string) error {
 	const prepareToken = "exit=0\tgate prepare recorded-gate-task "
-	prepare, commit, head := strings.Index(log, prepareToken), strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task"), strings.LastIndex(log, "state-head\t")
-	if prepare < 0 || commit < prepare || head < commit || strings.Count(log, prepareToken) != 1 ||
-		strings.Contains(log[prepare:], " --decision ") || strings.Contains(log[prepare:], "gate consume recorded-gate-task") || strings.Contains(log[prepare:], "dispatch build ") {
-		return errGraded("gate hold crossed its committed no-authority boundary")
+	prepare := strings.Index(log, prepareToken)
+	commit := strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task")
+	head := strings.LastIndex(log, "state-head\t")
+	const boundary = "gate hold crossed its committed no-authority boundary: "
+	switch {
+	case prepare < 0:
+		return errGraded(boundary + "no successful gate prepare recorded")
+	case commit < prepare:
+		return errGraded(boundary + "state commit missing or before the successful gate prepare")
+	case head < commit:
+		return errGraded(boundary + "state-head missing or before the state commit")
+	case strings.Count(log, prepareToken) != 1:
+		return errGraded(boundary + "more than one successful gate prepare recorded")
+	case strings.Contains(log[prepare:], " --decision "):
+		return errGraded(boundary + "a decision was recorded after prepare")
+	case strings.Contains(log[prepare:], "gate consume recorded-gate-task"):
+		return errGraded(boundary + "the gate was consumed after prepare")
+	case strings.Contains(log[prepare:], "dispatch build "):
+		return errGraded(boundary + "a successor was dispatched after prepare")
 	}
 	return nil
 }
@@ -102,17 +117,24 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 	if err := assertRecordedGateHoldLog(prepared); err != nil {
 		t.Fatalf("prepare-first hold log rejected: %v", err)
 	}
-	for name, mutation := range map[string]string{
-		"retired bind":      strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation", "exit=0\tgate record recorded-gate-task --briefing briefing.md", 1),
-		"missing commit":    strings.Replace(prepared, "exit=0\tstate commit recorded-gate-task\n", "", 1),
-		"decision":          prepared + "exit=0\tgate record recorded-gate-task --decision approve\n",
-		"consume":           prepared + "exit=0\tgate consume recorded-gate-task\n",
-		"successor build":   prepared + "exit=0\tdispatch build successor\n",
-		"duplicate prepare": prepared + "exit=0\tgate prepare recorded-gate-task validation\n",
+	for name, tc := range map[string]struct {
+		mutation string
+		want     string
+	}{
+		"retired bind":      {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation", "exit=0\tgate record recorded-gate-task --briefing briefing.md", 1), "no successful gate prepare recorded"},
+		"missing commit":    {strings.Replace(prepared, "exit=0\tstate commit recorded-gate-task\n", "", 1), "state commit missing or before the successful gate prepare"},
+		"decision":          {prepared + "exit=0\tgate record recorded-gate-task --decision approve\n", "a decision was recorded after prepare"},
+		"consume":           {prepared + "exit=0\tgate consume recorded-gate-task\n", "the gate was consumed after prepare"},
+		"successor build":   {prepared + "exit=0\tdispatch build successor\n", "a successor was dispatched after prepare"},
+		"duplicate prepare": {prepared + "exit=0\tgate prepare recorded-gate-task validation\n", "more than one successful gate prepare recorded"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if err := assertRecordedGateHoldLog(mutation); err == nil {
+			err := assertRecordedGateHoldLog(tc.mutation)
+			if err == nil {
 				t.Fatal("mutated hold log unexpectedly accepted")
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error=%q want substring %q", err.Error(), tc.want)
 			}
 		})
 	}
