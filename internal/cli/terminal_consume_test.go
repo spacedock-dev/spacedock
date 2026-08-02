@@ -187,14 +187,6 @@ func TestTerminalDeliveryFailureReworkRoundTrip(t *testing.T) {
 	if got := gateApplicationStates(t, entity); !slices.Equal(got, []string{"superseded"}) {
 		t.Fatalf("--rework application states = %v, want [superseded]", got)
 	}
-	doc, _, err := gates.Read(entity)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if doc.Current.Gate != "gate:task:validation" {
-		t.Fatalf("--rework moved gates.current: %q", doc.Current.Gate)
-	}
-
 	// Rework; re-enter the gated stage through the normal lifecycle.
 	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "status=validation"); code != 0 {
 		t.Fatalf("re-enter validation exit=%d stdout=%q stderr=%q", code, out, errOut)

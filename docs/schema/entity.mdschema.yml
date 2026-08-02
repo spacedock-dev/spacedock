@@ -110,7 +110,7 @@
         "semantics": "closed canonical-v1 binary-owned durable gate records: logical gates, ordered stable attempts, one Briefing binding per attempt, optional reasoned withdrawal, and the exact adopted Resolution; the known opaque application subtree is owned by the application layer",
         "writer": "spacedock gate prepare|withdraw|record|consume",
         "invariants": [
-          "gates.current selects one logical gate and the last ordered attempt in each record is current",
+          "entity status selects exactly one record by stage; duplicate stage records fail closed and the last ordered attempt is current",
           "open attempts may replace their one briefing binding",
           "neither withdrawal nor Resolution means open; withdrawal alone means withdrawn; Resolution alone means closed; withdrawn and closed attempts are frozen",
           "withdrawal is request-backed and carries only fixed agent:first-officer attribution, a UTC timestamp, and a nonblank reason",
@@ -123,7 +123,7 @@
       "review-round": {
         "type": "mapping",
         "fields": ["id", "stage", "cycle", "briefing"],
-        "briefing_fields": ["id", "digest", "digest-domain", "room-ref"],
+        "briefing_fields": ["id", "digest", "room-ref"],
         "semantics": "current pointer to one immutable complete advisory Review & Gate room; exact replay is a no-op and divergent reuse fails closed",
         "writer": "spacedock gate record --round",
         "invariants": [

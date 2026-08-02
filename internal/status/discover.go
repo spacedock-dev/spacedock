@@ -215,7 +215,7 @@ func scanEntitiesActive(directory string, stderr io.Writer) []*entity {
 func newEntity(fields map[string]string, slug, path, scope string) *entity {
 	doc, _, gateErr := gates.Read(path)
 	if gateErr == nil {
-		summary := gates.CurrentSummary(doc)
+		summary := gates.CurrentSummary(doc, fields["status"])
 		fields["gate"] = summary.Gate
 		fields["gate-attempt"] = summary.Attempt
 		fields["gate-state"] = summary.State

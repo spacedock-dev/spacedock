@@ -22,8 +22,6 @@ func staticGateHeldExpectation() gateHeldExpectation {
 func recordedGateHeldEntity() string {
 	gates := "gates:\n" +
 		"  version: 1\n" +
-		"  current:\n" +
-		"    gate: gate:docs-dev:3k:validation\n" +
 		"  records:\n" +
 		"    - id: gate:docs-dev:3k:validation\n" +
 		"      stage: validation\n" +
@@ -32,7 +30,6 @@ func recordedGateHeldEntity() string {
 		"          briefing:\n" +
 		"            id: " + recordedGateBriefingID + "\n" +
 		"            digest: " + recordedGateDigest + "\n" +
-		"            digest-domain: canonical-bytes\n" +
 		"            room-ref: rooms/validation/attempt-1/revision-1\n"
 	return strings.Replace(recordedGateEntity(), "---\n# Recorded Gate Task", gates+"---\n# Recorded Gate Task", 1)
 }

@@ -106,6 +106,15 @@ func TestCurrentStageReadinessFailClosedTable(t *testing.T) {
 			a.Resolution.Decision, a.Resolution.Reason = "revise", "changes requested"
 			a.Application = &Application{Action: "feedback", TargetStage: "ideation", State: "pending"}
 		}, want: "feedback-pending"},
+		{name: "older terminal approval cannot override newer rejection", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
+			d.Records[0].Attempts[0].Application.TargetStage = "done"
+			newer := cloneDocument(t, d).Records[0].Attempts[0]
+			newer.ID, newer.Briefing.ID = "attempt:a-2", "briefing:a-2"
+			newer.Resolution.ID, newer.Resolution.Briefing = "resolution:a-2", newer.Briefing.ID
+			newer.Resolution.Decision, newer.Resolution.Reason = "revise", "changes requested"
+			newer.Application = &Application{Action: "feedback", TargetStage: "ideation", State: "pending"}
+			d.Records[0].Attempts = append(d.Records[0].Attempts, newer)
+		}, want: "feedback-pending"},
 		{name: "consumed approval", status: "ideation", doc: eligibleDocument(), mutate: setApplicationState("consumed"), want: "consumed"},
 		{name: "superseded approval", status: "ideation", doc: eligibleDocument(), mutate: setApplicationState("superseded"), want: "superseded"},
 		{name: "not applicable hold", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
@@ -140,15 +149,38 @@ func TestCurrentStageReadinessFailClosedTable(t *testing.T) {
 	}
 }
 
+func TestDuplicateStageRecordsFailClosedAndPreserveBytes(t *testing.T) {
+	doc := eligibleDocument()
+	duplicate := cloneDocument(t, doc).Records[0]
+	duplicate.ID = "gate:duplicate"
+	doc.Records = append(doc.Records, duplicate)
+	if got := CurrentStageReadiness(doc, "ideation", []ReadinessStage{{Name: "ideation", Gate: true}}); got != "invalid" {
+		t.Fatalf("duplicate-stage readiness = %q, want invalid", got)
+	}
+	body, err := yaml.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gatesBlock := "  " + strings.ReplaceAll(strings.TrimSuffix(string(body), "\n"), "\n", "\n  ") + "\n"
+	entity := writeEntity(t, "status: ideation\ngates:\n"+gatesBlock)
+	before := readFile(t, entity)
+	if _, _, err := Read(entity); err == nil || !strings.Contains(err.Error(), "multiple logical gates claim workflow stage ideation") {
+		t.Fatalf("duplicate-stage read error = %v, want ambiguity refusal", err)
+	}
+	if got := readFile(t, entity); got != before {
+		t.Fatal("duplicate-stage refusal changed entity bytes")
+	}
+}
+
 func TestPrototypeAndUnknownGateShapesFailClosed(t *testing.T) {
 	base := "status: ideation\n" + canonicalOpenGates()
 	cases := map[string]string{
-		"global attempt pointer":   strings.Replace(base, "    gate: gate:a\n", "    gate: gate:a\n    attempt: attempt:a-1\n", 1),
 		"record attempt pointer":   strings.Replace(base, "      stage: ideation\n", "      stage: ideation\n      current-attempt: attempt:a-1\n", 1),
 		"attempt sequence":         strings.Replace(base, "        - id: attempt:a-1\n", "        - id: attempt:a-1\n          sequence: 1\n", 1),
 		"attempt lineage":          strings.Replace(base, "        - id: attempt:a-1\n", "        - id: attempt:a-1\n          previous-attempt: attempt:a-0\n", 1),
 		"attempt state":            strings.Replace(base, "        - id: attempt:a-1\n", "        - id: attempt:a-1\n          state: open\n", 1),
-		"unknown gates field":      strings.Replace(base, "  current:\n", "  shadow: prototype\n  current:\n", 1),
+		"global attempt pointer":   strings.Replace(base, "  records:\n", "  current:\n    gate: gate:a\n  records:\n", 1),
+		"unknown gates field":      strings.Replace(base, "  records:\n", "  shadow: prototype\n  records:\n", 1),
 		"unknown record field":     strings.Replace(base, "      stage: ideation\n", "      stage: ideation\n      note: prototype\n", 1),
 		"unknown attempt field":    strings.Replace(base, "        - id: attempt:a-1\n", "        - id: attempt:a-1\n          note: prototype\n", 1),
 		"unknown briefing field":   strings.Replace(base, "            room-ref: ./room\n", "            room-ref: ./room\n            note: prototype\n", 1),
@@ -168,14 +200,14 @@ func TestPrototypeAndUnknownGateShapesFailClosed(t *testing.T) {
 	}
 }
 
-func TestLegacyRawFilePinDigestDomainFailsClosed(t *testing.T) {
-	entity := writeEntity(t, strings.Replace(canonicalOpenGates(), "digest-domain: canonical-bytes", "digest-domain: raw-file-pin", 1))
+func TestDigestDomainFieldFailsClosed(t *testing.T) {
+	entity := writeEntity(t, strings.Replace(canonicalOpenGates(), "            room-ref: ./room", "            room-ref: ./room\n            digest-domain: canonical-bytes", 1))
 	before := readFile(t, entity)
-	if _, _, err := Read(entity); err == nil || !strings.Contains(err.Error(), `unknown digest-domain "raw-file-pin"`) {
-		t.Fatalf("raw-file-pin read error = %v, want canonical-v1 refusal", err)
+	if _, _, err := Read(entity); err == nil || !strings.Contains(err.Error(), "field") {
+		t.Fatalf("digest-domain read error = %v, want canonical-v1 refusal", err)
 	}
 	if got := readFile(t, entity); got != before {
-		t.Fatal("rejected raw-file-pin read changed entity")
+		t.Fatal("rejected digest-domain read changed entity")
 	}
 }
 
@@ -200,7 +232,7 @@ func TestWriterCASValidationAtomicityAndLock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc.Current.Gate = "gate:missing"
+	doc.Records[0].Stage = ""
 	before := readFile(t, entity)
 	if err := writeDocument(entity, expected, doc); err == nil {
 		t.Fatal("invalid rebuilt document was accepted")
@@ -233,7 +265,7 @@ func TestExactCanonicalBriefingIsIndependentAssociationInventory(t *testing.T) {
 		t.Fatal(err)
 	}
 	entity := filepath.Join(filepath.Dir(room), "entity.md")
-	binding := Briefing{ID: "briefing:docs-dev:3k:validation:attempt-1:revision-1", Digest: "sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac", DigestDomain: "canonical-bytes", RoomRef: "./room/briefing.json"}
+	binding := Briefing{ID: "briefing:docs-dev:3k:validation:attempt-1:revision-1", Digest: "sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac", RoomRef: "./room/briefing.json"}
 	manifest, err := boundBriefingManifest(entity, binding)
 	if err != nil {
 		t.Fatal(err)
@@ -340,7 +372,7 @@ func completeBriefing(id, question string) string {
 }
 
 func canonicalOpenGates() string {
-	return "gates:\n  version: 1\n  current:\n    gate: gate:a\n  records:\n    - id: gate:a\n      stage: ideation\n      attempts:\n        - id: attempt:a-1\n          briefing:\n            id: briefing:a-1\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            digest-domain: canonical-bytes\n            room-ref: ./room\n"
+	return "gates:\n  version: 1\n  records:\n    - id: gate:a\n      stage: ideation\n      attempts:\n        - id: attempt:a-1\n          briefing:\n            id: briefing:a-1\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            room-ref: ./room\n"
 }
 
 func canonicalClosedFrontmatter() string {
@@ -348,7 +380,7 @@ func canonicalClosedFrontmatter() string {
 }
 
 func canonicalTwoGateFrontmatter() string {
-	return "status: ideation\ntitle: Task\ngates:\n  version: 1\n  current:\n    gate: gate:docs-dev:3k:validation\n  records:\n    - id: gate:docs-dev:3k:ideation\n      stage: ideation\n      attempts:\n        - id: gate-attempt:3k-ideation-9\n          briefing:\n            id: briefing:ideation:9\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            digest-domain: canonical-bytes\n            room-ref: ./review/ideation/9\n          resolution:\n            type: Resolution\n            id: resolution:ideation:9\n            briefing: briefing:ideation:9\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: approve\n          application:\n            action: advance\n            target-stage: implementation\n            state: pending\n            blockers:\n              - id: blocker:preserve-me\n                state: unsatisfied\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:validation:1\n            digest: sha256:" + strings.Repeat("2", 64) + "\n            digest-domain: canonical-bytes\n            room-ref: ./review/validation/1\n          resolution:\n            type: Resolution\n            id: resolution:validation:1\n            briefing: briefing:validation:1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: revise\n            reason: Re-enter ideation.\n"
+	return "status: ideation\ntitle: Task\ngates:\n  version: 1\n  records:\n    - id: gate:docs-dev:3k:ideation\n      stage: ideation\n      attempts:\n        - id: gate-attempt:3k-ideation-9\n          briefing:\n            id: briefing:ideation:9\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            room-ref: ./review/ideation/9\n          resolution:\n            type: Resolution\n            id: resolution:ideation:9\n            briefing: briefing:ideation:9\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: approve\n          application:\n            action: advance\n            target-stage: implementation\n            state: pending\n            blockers:\n              - id: blocker:preserve-me\n                state: unsatisfied\n    - id: gate:docs-dev:3k:validation\n      stage: validation\n      attempts:\n        - id: gate-attempt:3k-validation-1\n          briefing:\n            id: briefing:validation:1\n            digest: sha256:" + strings.Repeat("2", 64) + "\n            room-ref: ./review/validation/1\n          resolution:\n            type: Resolution\n            id: resolution:validation:1\n            briefing: briefing:validation:1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: revise\n            reason: Re-enter ideation.\n"
 }
 
 func readFile(t *testing.T, path string) string {

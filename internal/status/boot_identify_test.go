@@ -52,10 +52,10 @@ stages:
 
 func openGateEntity(slug, status, score string) string {
 	return "---\nid: " + slug + "\nstatus: " + status + "\nscore: " + score + "\ngates:\n" +
-		"  version: 1\n  current: {gate: 'gate:" + slug + ":" + status + "'}\n  records:\n" +
+		"  version: 1\n  records:\n" +
 		"    - id: gate:" + slug + ":" + status + "\n      stage: " + status + "\n      attempts:\n" +
 		"        - id: gate-attempt:" + slug + "-" + status + "-1\n" +
-		"          briefing: {id: 'briefing:" + slug + ":" + status + ":attempt-1', digest: 'sha256:" + strings.Repeat("1", 64) + "', digest-domain: canonical-bytes, room-ref: ./review/" + status + "/briefing-1}\n" +
+		"          briefing: {id: 'briefing:" + slug + ":" + status + ":attempt-1', digest: 'sha256:" + strings.Repeat("1", 64) + "', room-ref: ./review/" + status + "/briefing-1}\n" +
 		"---\n# " + slug + "\n"
 }
 
@@ -69,8 +69,8 @@ func approvedGateEntity(slug, status, target, score string) string {
 
 func withdrawnGateEntity(slug, status, score string) string {
 	body := strings.TrimSuffix(openGateEntity(slug, status, score), "---\n# "+slug+"\n")
-	body = strings.Replace(body, "digest-domain: canonical-bytes, room-ref:",
-		"digest-domain: canonical-bytes, request-digest: 'sha256:"+strings.Repeat("2", 64)+"', room-ref:", 1)
+	body = strings.Replace(body, "room-ref:",
+		"request-digest: 'sha256:"+strings.Repeat("2", 64)+"', room-ref:", 1)
 	return body +
 		"          withdrawal: {by: 'agent:first-officer', at: '2026-07-26T11:30:00.123456Z', reason: 'candidate is stale'}\n" +
 		"---\n# " + slug + "\n"
@@ -236,7 +236,7 @@ func TestBootIdentifyReadyGates(t *testing.T) {
 	}
 }
 
-func TestBootReadyGatesRequiresCurrentStageSelection(t *testing.T) {
+func TestBootReadyGatesUsesStatusDerivedSelection(t *testing.T) {
 	def, state := buildSplitRoot(t, identifyReadyGatesReadme, nil)
 	room := filepath.Join(state, "review", "validation", "briefing-1")
 	writeFile(t, filepath.Join(room, "briefing.json"),
@@ -252,28 +252,13 @@ func TestBootReadyGatesRequiresCurrentStageSelection(t *testing.T) {
 	}
 	entity := filepath.Join(state, "mf.md")
 	writeFile(t, entity, "---\nid: mf\nstatus: validation\ngates:\n"+
-		"  version: 1\n  current: {gate: 'gate:mf:ideation'}\n  records:\n"+
+		"  version: 1\n  records:\n"+
 		"    - id: gate:mf:ideation\n      stage: ideation\n      attempts:\n"+
-		"        - id: gate-attempt:mf-ideation-1\n          briefing: {id: 'briefing:mf:ideation:attempt-1', digest: 'sha256:"+strings.Repeat("2", 64)+"', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1}\n"+
+		"        - id: gate-attempt:mf-ideation-1\n          briefing: {id: 'briefing:mf:ideation:attempt-1', digest: 'sha256:"+strings.Repeat("2", 64)+"', room-ref: ./review/ideation/briefing-1}\n"+
 		"    - id: gate:mf:validation\n      stage: validation\n      attempts:\n"+
-		"        - id: gate-attempt:mf-validation-1\n          briefing: {id: 'briefing:mf:validation:attempt-1', digest: '"+digest+"', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1}\n"+
+		"        - id: gate-attempt:mf-validation-1\n          briefing: {id: 'briefing:mf:validation:attempt-1', digest: '"+digest+"', room-ref: ./review/validation/briefing-1}\n"+
 		"---\n# MF\n")
 
-	before := identifyReadyRows(t, def)
-	if before != "[]" {
-		t.Fatalf("stale old-stage selection scheduled mf: %s", before)
-	}
-	body, err := os.ReadFile(entity)
-	if err != nil {
-		t.Fatal(err)
-	}
-	selected := strings.Replace(string(body), "current: {gate: 'gate:mf:ideation'}", "current: {gate: 'gate:mf:validation'}", 1)
-	if selected == string(body) {
-		t.Fatal("current-stage selection fixture was not updated")
-	}
-	if err := os.WriteFile(entity, []byte(selected), 0o644); err != nil {
-		t.Fatal(err)
-	}
 	after := identifyReadyRows(t, def)
 	want := `[{"id":"mf","slug":"mf","current":"validation","readiness":"awaiting-captain"}]`
 	if after != want {
@@ -315,10 +300,10 @@ func TestBootReadyGateTerminalApprovalPersistsAtConsumeUntilDeliveryEnvelope(t *
 		t.Fatal(err)
 	}
 	writeFile(t, entity, "---\nid: 2n\nstatus: validation\ngates:\n"+
-		"  version: 1\n  current: {gate: 'gate:2n:validation'}\n  records:\n"+
+		"  version: 1\n  records:\n"+
 		"    - id: gate:2n:validation\n      stage: validation\n      attempts:\n"+
 		"        - id: gate-attempt:2n-validation-1\n"+
-		"          briefing: {id: 'briefing:2n:validation:attempt-1:revision-1', digest: '"+digest+"', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1/briefing.json}\n"+
+		"          briefing: {id: 'briefing:2n:validation:attempt-1:revision-1', digest: '"+digest+"', room-ref: ./review/validation/briefing-1/briefing.json}\n"+
 		"---\n# 2n\n")
 	if _, _, err := gates.Read(entity); err != nil {
 		t.Fatal(err)
@@ -373,7 +358,7 @@ func TestBootReadyGatesFailClosedLifecycleControls(t *testing.T) {
 		"feedback.md":   feedback,
 		"consumed.md":   consumed,
 		"superseded.md": superseded,
-		"malformed.md":  "---\nstatus: validation\ngates:\n  version: 1\n  current: {gate: missing}\n  records: []\n---\n",
+		"malformed.md":  "---\nstatus: validation\ngates:\n  version: 1\n  records: []\n---\n",
 		"terminal.md":   openGateEntity("terminal", "done", "100"),
 		"ordinary.md":   openGateEntity("ordinary", "implementation", "100"),
 	})
