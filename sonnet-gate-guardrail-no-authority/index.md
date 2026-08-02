@@ -6,7 +6,7 @@ started: 2026-08-02T00:49:50Z
 completed:
 verdict:
 score: 0.7
-worktree:
+worktree: .worktrees/spacedock-ensign-sonnet-gate-guardrail-no-authority
 issue:
 id: 3zzpdw704df1g8pg1x9thzmw
 gates:
