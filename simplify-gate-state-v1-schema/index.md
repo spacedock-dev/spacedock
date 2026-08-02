@@ -62,6 +62,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:e4e77cf1029b03939cbb1a8066f1f6a7f3f3f3d6d01913a8b7bd3e04e62ad32c
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:jccbpvjv5bg1jn0jbmj2yf8s:ideation:2
+                briefing: briefing:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-02T08:06:14.933867Z"
+                decision: approve
+                reason: Captain authorized sprint advancement when Science Officer advisory approves; Science approved ideation attempt 2 with the six-production-file boundary, strict 24-file/180-plus/230-minus/net-negative guard, reducer consistency, and merge-order constraints.
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 started: 2026-08-01T14:01:17Z
 ---
 
