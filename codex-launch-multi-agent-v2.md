@@ -156,6 +156,17 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:cc65d216d6aeba86493a8d1fa3a7a8693c7cef7bfad8d9f65b8606174f0aa427
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-6
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:z5gwwz2748sg6vxr0g3kdsar:validation:6
+                briefing: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-6:revision-1
+                by: agent:first-officer
+                at: "2026-08-02T09:28:59.887424Z"
+                decision: hold
+                reason: 'Science classifies a material Codex First Officer runtime/state-commit outcome defect: the full and targeted recorded-gate-lifecycle runs have no structured worker.spawn event after consume, so the durable successor-dispatch predicate fails. Hold z5 unchanged; route the defect to local task codex-recorded-gate-successor-dispatch and require a fresh exact-head Codex lane.'
+              application:
+                action: none
+                state: not-applicable
 mod-block:
 ---
 
