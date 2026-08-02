@@ -24,6 +24,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:2ee4ca7169ea0dbbe53f8d8a436d26bdd6bb84a7608e059a04ce7681d557efe2
                 room-ref: ./shared-git-scaffold-helper/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zfmbm75wvmfj38h73wrtpqqy:backlog:1
+                briefing: briefing:zfmbm75wvmfj38h73wrtpqqy:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T14:31:53.236223Z"
+                decision: approve
+                reason: 'Captain directed in chat: file the git-scaffold-helper follow-up and dispatch it fast-track.'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Add one shared, exported test helper that initializes a scratch git repo with a persisted `user.name`/`user.email` config in a single call, so no future fixture can reproduce the "works locally on ambient identity, fails on a clean CI runner" bug class, and migrate the existing hand-rolled fixtures to it.
