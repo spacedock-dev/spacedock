@@ -8,7 +8,7 @@ sprint: durable-decisions
 gates:
     version: 1
     current:
-        gate: gate:jccbpvjv5bg1jn0jbmj2yf8s:ideation
+        gate: gate:jccbpvjv5bg1jn0jbmj2yf8s:validation
     records:
         - id: gate:jccbpvjv5bg1jn0jbmj2yf8s:backlog
           stage: backlog
@@ -75,6 +75,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:jccbpvjv5bg1jn0jbmj2yf8s:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:jccbpvjv5bg1jn0jbmj2yf8s-validation-1
+              briefing:
+                id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-1:revision-1
+                digest: sha256:714c9fcdefb25c1259d2b9e7bac626729fa77d152235d97ee176793e080ce276
+                digest-domain: canonical-bytes
+                request-digest: sha256:3deb5e54760062691cf74382c2d955461e1712631db5649522bed1d55053aa41
+                room-ref: ./review/validation/briefing-1
 started: 2026-08-01T14:01:17Z
 worktree: .worktrees/spacedock-ensign-simplify-gate-state-v1-schema
 mod-block:

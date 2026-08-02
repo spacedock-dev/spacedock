@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-1:revision-1",
+  "question": "Should the JC schema implementation pass validation and proceed to merge?",
+  "artifacts": [
+    {
+      "id": "artifact:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c85da98514dab556fd238febac9f495ff488f818/simplify-gate-state-v1-schema/review/validation/fo-gate-review.md",
+      "rev": "sha256:897730d37bc441ec501652f5b834d0c389d8bdbfc112fa9050f044dcd71b9cd4",
+      "mediaType": "text/markdown",
+      "summary": "Hold the candidate pending scope authorization, NTH normalization, and reproduction or clearance of the terminal-delivery finding."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/c85da98514dab556fd238febac9f495ff488f818/simplify-gate-state-v1-schema/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6d99490fd9ee7ee6d975e969594cd4d696566bde1dcd90cb7768237e736c596e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://state/c85da98514dab556fd238febac9f495ff488f818/simplify-gate-state-v1-schema/review/validation/roborev-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0573bf6e405c9c9e91a1e45d91cad67f26b2878c2730bef98151f4dec2830240"
+    }
+  ]
+}
