@@ -1,10 +1,10 @@
 ---
 title: Reject gate prepare outside an actionable gated stage
-status: validation
+status: done
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: the real binary prepared and persisted a room while the ticket was in ungated implementation, then gate record refused it."
 started: 2026-08-01T14:00:57Z
-completed:
-verdict:
+completed: 2026-08-02T08:46:04Z
+verdict: passed
 score: "0.95"
 worktree: .worktrees/spacedock-ensign-reject-gate-prepare-outside-actionable-stage
 issue:
@@ -94,9 +94,10 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
-mod-block: merge:pr-merge
+mod-block:
+archived: 2026-08-02T08:46:04Z
 ---
 
 `gate prepare` must fail before mutation unless the ticket's current workflow stage is an actionable gate that can accept a new attempt. The command currently checks only that the stage exists. A real invocation at the ungated `implementation` stage exited zero, added a gate attempt, and wrote a room that the later recorder correctly refused as non-actionable.
