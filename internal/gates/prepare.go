@@ -153,7 +153,11 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 			var err error
 			source, err = gitsource.Inspect(roots, selected)
 			if err != nil {
-				return PrepareResult{}, err
+				flag := "--artifact"
+				if i > 0 {
+					flag = "--reference"
+				}
+				return PrepareResult{}, fmt.Errorf("%s %s: %w", flag, selected, err)
 			}
 		}
 		sources = append(sources, source)
