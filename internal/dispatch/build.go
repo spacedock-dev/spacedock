@@ -137,6 +137,12 @@ func runBuild(probe claudeteam.TeamStateProbe, opts buildOptions, stdin io.Reade
 		return code
 	}
 
+	if opts.Stamp {
+		if code := runStamp(opts, fields, stderr); code != 0 {
+			return code
+		}
+	}
+
 	return runBuildFields(probe, opts, fields, stdout, stderr)
 }
 

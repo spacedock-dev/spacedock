@@ -178,6 +178,11 @@ func gatePrepareCLIFixture(t *testing.T) (workflow, state, artifact string) {
 	writeFile(t, filepath.Join(state, "task.md"), "---\nid: task\nstatus: validation\ntitle: Task\n---\n# Task\n")
 	git(t, state, "add", ".")
 	git(t, state, "commit", "-q", "-m", "state fixture")
+	// Mechanism 1 (implicit split-root sync in gate record/consume): a real
+	// checkout is born on the state branch by `state init`/`new`, not `main` —
+	// statesync preflight rightly refuses the mismatch. Spike-verified one-line
+	// fixture alignment (AC-2's sole declared fixture change).
+	git(t, state, "branch", "-M", "spacedock-state/dev")
 	return workflow, state, artifact
 }
 

@@ -663,21 +663,23 @@ func TestRecordedGateLifecycleAC7ResumeMatrix(t *testing.T) {
 		bindRecordedGate(t, binary, fixture)
 		commitRecordedGateState(t, binary, fixture, "bind retained gate package")
 
-		// Fresh process 1 closes the gate and stops before its required state commit.
+		// Fresh process 1 closes the gate. Mechanism 1 (implicit split-root state
+		// sync in gate record/consume) commits the close itself — no separate
+		// `state commit` is required to make it durable.
 		closeRecordedGate(t, binary, fixture, "approve")
-		closedUncommitted := recordedGateTreeSnapshot(t, fixture.stateRoot)
+		closedCommitted := recordedGateTreeSnapshot(t, fixture.stateRoot)
 		entityRel := strings.TrimPrefix(fixture.entity, fixture.stateRoot+string(os.PathSeparator))
-		if exec.Command("git", "-C", fixture.stateRoot, "diff", "--quiet", "--", entityRel).Run() == nil {
-			t.Fatal("successful close was already committed")
+		if exec.Command("git", "-C", fixture.stateRoot, "diff", "--quiet", "--", entityRel).Run() != nil {
+			t.Fatal("successful close was not committed by the implicit sync")
 		}
-		if commits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-Sdecision: approve", "--", entityRel)); len(commits) != 0 {
-			t.Fatalf("uncommitted close already has %d decision commits", len(commits))
+		if commits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-Sdecision: approve", "--", entityRel)); len(commits) != 1 {
+			t.Fatalf("committed close has %d decision commits, want exactly 1", len(commits))
 		}
 		repeatClose := runRecordedGateCommand(binary, fixture.root, "", "gate", "record", "recorded-gate-task",
 			"--decision", "approve", "--actor", "agent:first-officer", "--reason", "duplicate",
 			"--workflow-dir", fixture.root)
 		assertRecordedGateByteCleanFailure(t, fixture, repeatClose, "closed")
-		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, closedUncommitted)
+		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, closedCommitted)
 
 		// Fresh process 2 resumes the uncommitted close and commits the exact pending state.
 		closeCommit := commitRecordedGateState(t, binary, fixture, "record delegated gate decision")

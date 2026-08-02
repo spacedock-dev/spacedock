@@ -89,6 +89,7 @@ func runStateCommit(ctx context.Context, args []string, env []string, dir string
 	}
 
 	committed := false
+	var outcome statesync.Outcome
 	if target.scope == entityScopeArchived {
 		clean, detail, checkErr := archivedTargetClean(checkout, target.pathspecs)
 		if checkErr != nil {
@@ -99,17 +100,18 @@ func runStateCommit(ctx context.Context, args []string, env []string, dir string
 			fmt.Fprintf(stderr, "spacedock state commit: archived entity %q is dirty; archived scope is publish-only and will not stage or commit it:\n%s\n", slug, detail)
 			return 1
 		}
+		outcome = statesync.Publish(checkout, branch)
 	} else {
-		// Active scope retains the path-scoped stage+commit behavior.
-		if ok, out := commitEntityPathsScoped(checkout, target.entityPaths, msg); !ok {
-			fmt.Fprintf(stderr, "spacedock state commit: git commit failed:\n%s\n", out)
+		// Active scope retains the path-scoped stage+commit behavior through the
+		// mechanism-1 seam shared with the gate record/consume verbs' implicit sync.
+		var syncErr error
+		committed, outcome, syncErr = syncActiveEntity(checkout, branch, slug, msg)
+		if syncErr != nil {
+			fmt.Fprintf(stderr, "spacedock state commit: git commit failed:\n%v\n", syncErr)
 			return 1
-		} else {
-			committed = out != ""
 		}
 	}
 
-	outcome := statesync.Publish(checkout, branch)
 	switch outcome.Result {
 	case statesync.ResultHalted:
 		return emitSyncHalt(stdout, stderr, jsonOut, "state commit", slug, branch, outcome)
@@ -244,8 +246,23 @@ func runStateSweep(ctx context.Context, args []string, env []string, dir string,
 // evidence and aborted its same-branch rebase. It never discovers paths or
 // mutates Git itself; the exit code enforces that a caller cannot proceed.
 func emitSyncHalt(stdout, stderr io.Writer, jsonOut bool, command, slug, branch string, outcome statesync.Outcome) int {
-	conflicting := outcome.ConflictingPaths
-	reportedPaths := strings.Join(conflicting, ", ")
+	reportedPaths := writeSyncHaltStderr(stderr, command, branch, outcome)
+	return emitSync(stdout, jsonOut, syncResult{
+		Command: command, Slug: slug, Result: "halted", StateBranch: branch,
+		ConflictingPaths: outcome.ConflictingPaths,
+		PeerCommit:       outcome.PeerCommit,
+		Reason:           fmt.Sprintf("HALT: same-entity rebase conflict on %s — rebase aborted, nothing force-pushed, manual intervention required.", reportedPaths),
+	}, 3)
+}
+
+// writeSyncHaltStderr renders the shared HALT stderr diagnostic — command names
+// the calling verb in the first line. Shared by `state commit`/`state ready`'s
+// JSON/prose envelope (emitSyncHalt) and the gate verbs' single-line
+// `sync=halted` rendering (mechanism 1), so the HALT prose stays byte-identical
+// across every caller. Returns the rendered conflicting-paths string for reuse
+// in a caller's own summary.
+func writeSyncHaltStderr(stderr io.Writer, command, branch string, outcome statesync.Outcome) string {
+	reportedPaths := strings.Join(outcome.ConflictingPaths, ", ")
 	if reportedPaths == "" {
 		reportedPaths = "none reported by Git"
 	}
@@ -257,12 +274,35 @@ func emitSyncHalt(stdout, stderr io.Writer, jsonOut bool, command, slug, branch 
 	fmt.Fprintf(stderr, "The rebase was aborted (checkout left clean) and nothing was force-pushed; a peer's edit is preserved on origin.\n")
 	fmt.Fprintf(stderr, "Next: HALT dispatch — do not dispatch against this state tree. Surface the conflicting path(s) and peer commit to the operator and stop.\n")
 	fmt.Fprintf(stderr, "Never `git push --force`/`--force-with-lease`; never re-run with `-X ours`/`-X theirs`; never discard either side.\n")
-	return emitSync(stdout, jsonOut, syncResult{
-		Command: command, Slug: slug, Result: "halted", StateBranch: branch,
-		ConflictingPaths: conflicting,
-		PeerCommit:       outcome.PeerCommit,
-		Reason:           fmt.Sprintf("HALT: same-entity rebase conflict on %s — rebase aborted, nothing force-pushed, manual intervention required.", reportedPaths),
-	}, 3)
+	return reportedPaths
+}
+
+// syncActiveEntity is the mechanism-1 implicit-sync seam: resolve slug's
+// active-scope commit-unit paths, stage+commit them (skip if clean), then
+// publish via the shared push/rebase/HALT sequence. Shared by `state commit`'s
+// active-scope path (below) and the gate record/consume verbs' implicit sync —
+// every caller already knows checkout/branch name a ready StateSplitRoot
+// checkout. Archived-scope entities are out of scope for every caller (a gate
+// only ever closes/consumes a live, active entity), so this refuses rather than
+// silently falling back to an unscoped `git add -A`.
+func syncActiveEntity(checkout, branch, slug, msg string) (committed bool, outcome statesync.Outcome, err error) {
+	target, found, err := resolveEntityCommitTarget(checkout, slug)
+	if err != nil {
+		return false, statesync.Outcome{}, err
+	}
+	if !found {
+		return false, statesync.Outcome{}, fmt.Errorf("no entity %q under %s", slug, checkout)
+	}
+	if target.scope != entityScopeActive {
+		return false, statesync.Outcome{}, fmt.Errorf("entity %q resolved to archived scope; this seam only commits active entities", slug)
+	}
+	ok, out := commitEntityPathsScoped(checkout, target.entityPaths, msg)
+	if !ok {
+		return false, statesync.Outcome{}, fmt.Errorf("git commit failed:\n%s", out)
+	}
+	committed = out != ""
+	outcome = statesync.Publish(checkout, branch)
+	return committed, outcome, nil
 }
 
 // commitEntityPathsScoped stages and commits exactly the entity unit with `add
