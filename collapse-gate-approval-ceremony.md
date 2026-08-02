@@ -9,6 +9,21 @@ verdict:
 score: 0.6
 worktree:
 issue:
+gates:
+    version: 1
+    current:
+        gate: gate:7fhzvvk8d5smj858bp47xbjq:backlog
+    records:
+        - id: gate:7fhzvvk8d5smj858bp47xbjq:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:7fhzvvk8d5smj858bp47xbjq-backlog-1
+              briefing:
+                id: briefing:7fhzvvk8d5smj858bp47xbjq:backlog:attempt-1:revision-1
+                digest: sha256:2cb1660e6fb16e9c6303564fc34d957a34155eda05ed8646a06b770a92ed221c
+                digest-domain: canonical-bytes
+                request-digest: sha256:a9c5b97c54d3372732e38b8ae7157af41a6aaca2dae2cdecece420ab2fd0572a
+                room-ref: ./collapse-gate-approval-ceremony/review/backlog/briefing-1
 ---
 
 Applying one captain gate decision (approve/revise/hold) currently costs ~16 raw FO tool calls and ~2.5 minutes of wall clock, most of it mechanical: re-invoking `state commit` after nearly every binary call, then a separate set of frontmatter stamps and worktree creation before the next dispatch even begins. This entity is about collapsing that ceremony toward 1-2 calls per gate decision without weakening any of the authority/integrity checks the ceremony exists to enforce.

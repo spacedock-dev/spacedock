@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7fhzvvk8d5smj858bp47xbjq:backlog:attempt-1:revision-1",
+  "question": "Should this backlog item enter ideation now, dispatched via a fable-model ensign per captain direction, chartered to design and choose among the three candidate ceremony-collapse mechanisms?",
+  "artifacts": [
+    {
+      "id": "artifact:7fhzvvk8d5smj858bp47xbjq:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/38c4f4c26f1361f1d616abb24527a9e52d16f535/collapse-gate-approval-ceremony.md",
+      "rev": "sha256:7b8f0a89d585130ccf0ffd75f4c10b540581d332720ab9bd6ab76b36a0725691",
+      "mediaType": "text/markdown",
+      "summary": "Applying one captain gate decision currently costs ~16 FO tool calls / 156s (measured on sonnet-gate-guardrail-no-authority's ideation-\u003eimplementation gate), recurring at every nonterminal gate for every entity forever. Three candidate collapse mechanisms are proposed, ascending in weight: (1) make state commit implicit inside gate record/consume; (2) a gate approve convenience verb composing record+consume+commit for the common captain-chat-approval path; (3) a dispatch advance verb folding the post-consume frontmatter stamps and worktree creation. Ideation should choose/combine without weakening any authority or integrity check the ceremony exists to enforce."
+    }
+  ]
+}
