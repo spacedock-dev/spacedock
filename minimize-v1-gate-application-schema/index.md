@@ -82,6 +82,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:nthcevf1snz7hm75gny3kd2e:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:nthcevf1snz7hm75gny3kd2e-validation-1
+              briefing:
+                id: briefing:nthcevf1snz7hm75gny3kd2e:validation:attempt-1:revision-1
+                digest: sha256:48bbb20ba55c27e6183f1f0b0533319152f8388f7f760f2299d3b5c14a97ee70
+                request-digest: sha256:5d33a8567615f3dc554c5028b042c28147083ded569639d4b5da82872f5e1b05
+                room-ref: ./review/validation/briefing-1
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
