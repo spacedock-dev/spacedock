@@ -401,3 +401,16 @@ The launcher behavior, full/race suites, live front-door lifecycle, disabled con
 ### Recommendation
 
 REJECTED. M5 is an evidence defect and Material: released user/normal workflow — this oracle gates the supported launcher lifecycle; observable harm — a typed misbound child transcript passes; affected value — `value-ac[AC-1]` requires one same-worker isolated-home lifecycle; trigger evidence — the detached test above fails at `1a8a64cdb`. Cycle 3 therefore escalates under validation policy; do not mutate the candidate without a new disposition.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Fix targetless-wait child identity binding by parsing the typed child record atomically and matching the spawned worker.
+  Commit `155747c2fc` decodes each `session_meta.payload.source.subagent.thread_spawn` record and requires its `parent_thread_id` and `agent_path` together; changing either field makes the lifecycle grader reject the child.
+- DONE: Retain a detached spoofed-identity negative and rerun focused lifecycle, full, race, format, and audit checks.
+  `TestDetachedTargetlessWaitRejectsTypedMisboundChildWithSpoofedIdentityText` rejects an actual `other-parent/worker-b` record despite unrelated expected identity text; focused tests, `go test ./...`, `go test ./... -race`, `git diff --check`, and `gofmt -d ./cmd ./internal` pass, as does the 47.13s live lifecycle plus disabled control.
+- DONE: Preserve the exact multi_agent_v2 launch/config surface and accepted M1-M4 behavior within the existing file/LOC boundary.
+  The complete-argv, reserved-conflict, unsupported-host, vocabulary, and explicit wrong-wait negatives pass; the candidate remains exactly 8 files/+379 against `main`, and the correction changes only `internal/cli/codex_multi_agent_test.go`.
+
+### Summary
+
+Cycle 4 corrects only M5 by binding the child identity fields from one typed session metadata record instead of independent raw-session substrings. The real isolated-home lifecycle, disabled control, full/race suites, formatting, and exact approved surface all pass at `155747c2fc`.
