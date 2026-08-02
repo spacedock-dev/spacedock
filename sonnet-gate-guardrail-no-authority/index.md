@@ -1,5 +1,5 @@
 ---
-title: "Make Claude Sonnet gate-guardrail honor the committed no-authority boundary"
+title: Make gate prepare name its rejected selection so Sonnet stops destroying binary-owned gate room state
 status: ideation
 source: "Captain correction, 2026-08-02: keep the deferred Sonnet repair as a local Spacedock task; PR #585 owns only the green-baseline quarantine."
 started: 2026-08-02T00:49:50Z
@@ -47,6 +47,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:9b891a8f5fd1ac959bed7b9a91c6542e1888d8158724135bac66720ab3d03fc9
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3zzpdw704df1g8pg1x9thzmw:ideation:1
+                briefing: briefing:3zzpdw704df1g8pg1x9thzmw:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T01:20:42.288884Z"
+                decision: approve
+                reason: 'Captain approved in chat: enter implementation with all three named mechanisms (prepare.go attribution, the two SKILL.md corrections, and mechanism 3''s oracle-condition disambiguation kept in scope, not cut). Entity retitled to reflect the corrected diagnosis (destructive room-state escape, not a crossed no-authority boundary).'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Restore the Sonnet gate-guardrail live proof by making `gate prepare` name which selected source it rejected, so the FO stops bisecting for the offending path by binding throwaway content and destroying binary-owned room state. The task removes the bounded Sonnet TODO quarantine only after an exact-tip live run proves exactly one successful `gate prepare`.
