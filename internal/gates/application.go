@@ -163,6 +163,7 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 			return ConsumeResult{}, err
 		}
 		result.ApplicationState = "superseded"
+		result.Wrote = true
 		return result, nil
 	}
 	if !eligibility.Eligible {
@@ -196,6 +197,7 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 	}
 	result.Consumed = true
 	result.ApplicationState = "consumed"
+	result.Wrote = true
 	return result, nil
 }
 

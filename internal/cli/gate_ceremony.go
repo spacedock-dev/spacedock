@@ -82,8 +82,12 @@ func runGateConsumeAndSync(path, definitionDir string, stdout, stderr io.Writer)
 
 	// A terminal-target route spends nothing (comment in gates.ConsumeAt): no
 	// write, so no sync — matching mechanism 1's "only when the verb wrote" rule.
-	wrote := result.Consumed || result.ApplicationState == "superseded"
-	if wrote {
+	// result.Wrote (not ApplicationState == "superseded"/"consumed") is the
+	// correct signal: EvaluateEligibility copies the attempt's CURRENT
+	// application state into ApplicationState on every read, including a pure
+	// refusal against an already-superseded or already-consumed application —
+	// checking ApplicationState alone would wrongly sync a repeat refusal.
+	if result.Wrote {
 		msg := fmt.Sprintf("gate: consume %s -> %s", status.EntitySlug(path), result.TargetStage)
 		if code := runGateSync(stdout, stderr, definitionDir, path, gateSyncPhaseConsume, msg); code != 0 {
 			return code

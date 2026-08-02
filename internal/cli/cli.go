@@ -240,6 +240,18 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintf(stderr, "Error: --consume is only valid with gate record\n")
 				return exitCodeError{2}
 			}
+			// --round is an advisory correction-round publication, not a close
+			// or a consume attempt — mechanism 1 deliberately excludes it from
+			// the implicit sync (Alternatives rejected 6: zero AC-1 benefit, a
+			// new failure surface for a verb outside the measured ceremony
+			// window), so it still needs an explicit `state commit` afterward,
+			// same as before mechanism 1. --consume has nothing to sequence
+			// here, so reject it as a usage error rather than silently
+			// ignoring it.
+			if consumeFlag && input.Round != "" {
+				fmt.Fprintln(stderr, "Error: --consume is not valid with --round (no close/consume attempt to sequence; --round still needs an explicit state commit)")
+				return exitCodeError{2}
+			}
 			if args[0] == "prepare" {
 				if summaryCount != 1 {
 					fmt.Fprintln(stderr, "gate prepare accepts --summary exactly once")

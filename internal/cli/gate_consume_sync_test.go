@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
@@ -286,6 +287,144 @@ func TestGateConsumeSyncFailedRecoversWithStateCommit(t *testing.T) {
 	}
 }
 
+// TestGateConsumeRepeatAfterSupersedeRunsNoSync pins finding 5 (roborev,
+// branch_final): EvaluateEligibility copies the attempt's CURRENT application
+// state into ApplicationState on every read, including a pure-refusal repeat
+// against an application ALREADY superseded from a prior call — so a naive
+// `ApplicationState == "superseded"` write-detector wrongly treats that repeat
+// as a fresh write and re-runs sync, sweeping up whatever else is dirty in the
+// entity's companion path and even risking a spurious HALT. The fix
+// (gates.ConsumeResult.Wrote, set only on a real mutation) must keep the
+// repeat byte-clean and side-effect-free: no sync line, no commit, and any
+// unrelated dirt left in the entity's companion directory between the two
+// calls stays untouched.
+func TestGateConsumeRepeatAfterSupersedeRunsNoSync(t *testing.T) {
+	workflowDir, checkout, briefing := staleableGatedSplitRootFixture(t)
+	hostDir := filepath.Dir(checkout)
+
+	mustSpacedock(t, hostDir, "gate", "record", "task", "--decision", "approve", "--actor", "person:captain", "--workflow-dir", workflowDir)
+
+	// Drift the bound briefing (no request-digest binding in this hand-crafted
+	// fixture, so this is the softer "stale reviewed input" path, not the
+	// harder tamper-detection error a request-digest-bound Briefing would
+	// raise) so reviewed input reads as definitively stale, not merely
+	// unreadable/"unknown" (which ConsumeAt treats as ineligible instead).
+	driftedOnce := strings.Replace(mustReadFile(t, briefing), "review", "revised review", 1)
+	if driftedOnce == mustReadFile(t, briefing) {
+		t.Fatal("drift fixture did not change the briefing content")
+	}
+	writeFile(t, briefing, driftedOnce)
+	git(t, checkout, "add", "-A")
+	git(t, checkout, "commit", "-q", "-m", "drift briefing")
+
+	// The stale-supersede path is a documented nonzero-exit outcome (consume
+	// spends nothing but does write pending->superseded), so this call is not
+	// run through mustSpacedock, which requires exit 0.
+	var firstOut, firstErr bytes.Buffer
+	firstCode := run(context.Background(), []string{"gate", "consume", "task", "--workflow-dir", workflowDir},
+		nil, hostDir, nil, &firstOut, &firstErr, &status.NativeRunner{}, nil)
+	if firstCode != 1 || !strings.Contains(firstOut.String(), "condition=stale") || !strings.Contains(firstOut.String(), "sync=") {
+		t.Fatalf("first (real) stale-supersede consume exit=%d stdout=%q stderr=%q, want exit 1, condition=stale, and a sync line", firstCode, firstOut.String(), firstErr.String())
+	}
+	if porcelain := git(t, checkout, "status", "--porcelain"); strings.TrimSpace(porcelain) != "" {
+		t.Fatalf("first supersede left the checkout dirty: %q", porcelain)
+	}
+
+	// Fresh, deliberately UNCOMMITTED dirt in the flat entity's own companion
+	// directory (checkout/task/, per flatEntityCommitPaths) — under the bug, a
+	// repeat consume's wrongly-triggered sync would path-scope-commit this too,
+	// even though nothing about the gate itself changed.
+	strayArtifact := filepath.Join(checkout, "task", "stray.txt")
+	if err := os.MkdirAll(filepath.Dir(strayArtifact), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, strayArtifact, "unrelated dirt\n")
+	headBefore := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD"))
+
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "consume", "task", "--workflow-dir", workflowDir},
+		nil, hostDir, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(out.String(), "condition=superseded") {
+		t.Fatalf("repeat consume exit=%d stdout=%q stderr=%q, want a condition=superseded refusal", code, out.String(), errOut.String())
+	}
+	if strings.Contains(out.String(), "sync=") {
+		t.Fatalf("repeat consume after supersede wrongly ran a sync: %q", out.String())
+	}
+	if head := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD")); head != headBefore {
+		t.Fatalf("repeat consume after supersede created a commit: before=%s after=%s", headBefore, head)
+	}
+	if porcelain := git(t, checkout, "status", "--porcelain", "--untracked-files=all"); !strings.Contains(porcelain, "stray.txt") {
+		t.Fatalf("repeat consume swept up the unrelated stray artifact; porcelain=%q", porcelain)
+	}
+}
+
+// staleableGatedSplitRootFixture hand-crafts (no real `gate prepare`) a
+// split-root workflow with a flat "task" entity holding an OPEN ideation gate
+// attempt bound WITHOUT a request-digest — the shape whose reviewed-input
+// check (inspectReviewedInput) reads the room-ref path directly as the
+// canonical Briefing file, so drifting that file's bytes produces the softer
+// "stale" condition rather than gate prepare's own request-digest-bound hard
+// tamper-detection error. Returns the workflow dir, the state checkout, and
+// the bound briefing's path.
+func staleableGatedSplitRootFixture(t *testing.T) (workflowDir, checkout, briefing string) {
+	t.Helper()
+	root := t.TempDir()
+	mainRoot := filepath.Join(root, "main")
+	workflowDir = filepath.Join(mainRoot, "docs", "dev")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	git(t, mainRoot, "init", "-q")
+	git(t, mainRoot, "config", "user.name", "Spacedock Test")
+	git(t, mainRoot, "config", "user.email", "spacedock@example.invalid")
+	writeFile(t, filepath.Join(workflowDir, "README.md"), gateCeremonyReadme)
+	git(t, mainRoot, "add", ".")
+	git(t, mainRoot, "commit", "-q", "-m", "main fixture")
+
+	checkout = filepath.Join(workflowDir, ".spacedock-state")
+	if err := os.MkdirAll(checkout, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	git(t, checkout, "init", "-q")
+	git(t, checkout, "config", "user.name", "Spacedock Test")
+	git(t, checkout, "config", "user.email", "spacedock@example.invalid")
+
+	briefing = filepath.Join(checkout, "review", "ideation", "briefing-1", "briefing.json")
+	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	briefingBytes := []byte(`{"type":"Briefing","version":"1","id":"briefing:task:ideation:attempt-1:revision-1","question":"Advance?","artifacts":[{"id":"artifact:review","uri":"review.md","rev":"sha256:` + strings.Repeat("2", 64) + `"}],"context":[]}`)
+	writeFile(t, briefing, string(briefingBytes))
+	digest, err := gates.CanonicalDigest(briefingBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entity := filepath.Join(checkout, "task.md")
+	writeFile(t, entity, "---\nid: task\nstatus: ideation\ntitle: Task\nstarted:\nworktree:\ngates:\n"+
+		"  version: 1\n"+
+		"  current: {gate: 'gate:task:ideation'}\n"+
+		"  records:\n"+
+		"    - id: gate:task:ideation\n"+
+		"      stage: ideation\n"+
+		"      attempts:\n"+
+		"        - id: gate-attempt:task-ideation-1\n"+
+		"          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: '"+digest+"', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1/briefing.json}\n"+
+		"---\n# Task\n")
+	git(t, checkout, "add", "-A")
+	git(t, checkout, "commit", "-q", "-m", "state fixture")
+	git(t, checkout, "branch", "-M", "spacedock-state/dev")
+	return workflowDir, checkout, briefing
+}
+
+func mustReadFile(t *testing.T, path string) string {
+	t.Helper()
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(body)
+}
+
 // singleHostOrigin returns a fresh clone of a throwaway bare origin, so
 // commissionGatedSplitWorkflow's push calls have a real (reachable) origin to
 // push to before blockPush breaks it.
@@ -462,5 +601,22 @@ func TestGateConsumeHaltsOnSameEntityConflict(t *testing.T) {
 	originTask := showOriginFile(t, bare, stateBranch, "task.md")
 	if !strings.Contains(originTask, "status: implementation") {
 		t.Fatalf("origin task should carry A's advance; got:\n%s", originTask)
+	}
+
+	// The HALT's whole guarantee is that B's own divergent write survives
+	// LOCALLY (aborted rebase restores B's original branch tip; nothing is
+	// force-pushed or discarded) even though it never reached origin — a test
+	// that only inspects the clean checkout and origin's content would still
+	// pass if B's local HEAD had been silently reset to match origin instead
+	// of genuinely halting with B's edit intact.
+	localTask := showOriginFile(t, checkoutB, "HEAD", "task.md")
+	if !strings.Contains(localTask, "title: Task (B)") {
+		t.Fatalf("B's local HEAD lost its own divergent edit after the HALT; got:\n%s", localTask)
+	}
+	if !strings.Contains(localTask, "state: consumed") || !strings.Contains(localTask, "status: implementation") {
+		t.Fatalf("B's local HEAD lost its own consumed write after the HALT; got:\n%s", localTask)
+	}
+	if _, ok := gitOK(t, checkoutB, "push", "origin", stateBranch); ok {
+		t.Fatal("a plain push after HALT must stay rejected; B's branch must still diverge from origin")
 	}
 }

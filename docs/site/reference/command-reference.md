@@ -113,11 +113,15 @@ remain untouched. Archived scope is publish-only: dirt or identity/shape collisi
 Because archived recovery never creates or amends a commit, `-m MSG` applies only
 to active entities and has no effect for an archived slug.
 
-The gate `record`/`consume` verbs and `dispatch build --stamp` run this same commit+publish
-sequence themselves whenever they write in a split-root workflow (their own
-`sync=.../phase=...` line, or `--stamp`'s stderr/exit, is the result) — do not
-re-run `state commit` after them. Recovering a `sync=failed` or a HALTed
-`sync=halted` (after its manual resolution) is the one case that still needs it:
+The gate `record`/`consume` verbs (their close/consume forms — chat-decision,
+room-backed, and standalone `consume`; NOT the `--round` advisory-publication
+form, which is out of mechanism 1's scope and still needs an explicit `state
+commit` afterward, same as before) and `dispatch build --stamp` run this same
+commit+publish sequence themselves whenever they write in a split-root workflow
+(their own `sync=.../phase=...` line, or `--stamp`'s stderr/exit, is the
+result) — do not re-run `state commit` after them. Recovering a `sync=failed`
+or a HALTed `sync=halted` (after its manual resolution) is the one case that
+still needs it:
 `spacedock state commit <slug>` publishes whatever that verb already committed
 locally but could not push, regardless of which command wrote it.
 

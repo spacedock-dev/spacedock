@@ -222,6 +222,54 @@ func TestGateRoundRecordAndValidateCLI(t *testing.T) {
 	}
 }
 
+// TestGateRoundRejectsConsumeFlagWithoutMutation pins finding 6 (roborev,
+// branch_final): --round is an advisory correction-round publication with no
+// close or consume attempt to sequence, and mechanism 1 deliberately excludes
+// it from the implicit sync (Alternatives rejected 6) — so --consume combined
+// with --round must be a usage error (exit 2) rather than silently ignored,
+// and the round must not be published.
+func TestGateRoundRejectsConsumeFlagWithoutMutation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: implementation\n      initial: true\n---\n# Workflow\n")
+	entityDir := filepath.Join(root, "task")
+	if err := os.MkdirAll(entityDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	entity := filepath.Join(entityDir, "index.md")
+	writeFile(t, entity, "---\nid: task\nstatus: implementation\ntitle: Task\n---\n# Task\n")
+	copyGateTestdata(t, filepath.Join(entityDir, "candidate.patch"), filepath.Join("advisory-round", "candidate.patch"))
+	inputs := filepath.Join(entityDir, "inputs")
+	if err := os.MkdirAll(inputs, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	briefing := filepath.Join(inputs, "briefing.json")
+	log := filepath.Join(inputs, "briefing.review.jsonl")
+	copyGateTestdata(t, briefing, filepath.Join("advisory-round", "briefing.json"))
+	copyGateTestdata(t, log, filepath.Join("advisory-round", "briefing.review.jsonl"))
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root,
+		"--round", "implementation/1", "--briefing", briefing, "--log", log, "--consume"},
+		nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 2 {
+		t.Fatalf("--consume + --round exit=%d stdout=%q stderr=%q, want exit 2", code, out.String(), errOut.String())
+	}
+	if out.Len() != 0 {
+		t.Fatalf("usage-error rejection wrote to stdout: %q", out.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(before, after) {
+		t.Fatal("--consume + --round usage-error rejection changed the entity")
+	}
+}
+
 func TestGateReviewVerbIsAbsentAndSideEffectFree(t *testing.T) {
 	root := t.TempDir()
 	before, err := os.ReadDir(root)
