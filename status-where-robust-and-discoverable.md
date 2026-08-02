@@ -419,3 +419,60 @@ The measured baseline changed two of the three ACs. AC-2's premise was wrong —
 
 Two independent guards close #314: an operator-count syntax check (Check A) catches all four compound-in-one-string shapes regardless of field validity, and a corpus+schema+derived known-field union (Check B) catches misspelled/unknown field names — together closing the gap a single check could not (one compound shape parses to a legitimate field name). AC-2 needed no new mechanism, only a doc fix plus a regression pin, since `--archived` was already active-plus-archived. AC-3 created a help surface that did not exist (`status --help` previously ran the entity listing). All changes were live-verified against the real `docs/dev` corpus before and after, and the full suite (including race and the pinned oracle-parity goldens) is green.
 Commit: 59274d492 (branch spacedock-ensign/status-where-robust-and-discoverable)
+
+## Review-finding disposition
+
+- Reviewer (validation, cycle 1): a corpus-only custom field that exists
+  exclusively on archived entities is falsely rejected as "unknown field" by
+  Check B when queried without `--archived`, on the real `docs/dev` corpus.
+  Live-verified: `docs/dev/.spacedock-state`'s own `superseded-by` field is
+  written only under `_archive/` (`grep -rl superseded-by
+  docs/dev/.spacedock-state` — hits only `_archive/*.md`).
+  `spacedock status --workflow-dir docs/dev --where 'superseded-by!=x'`
+  (no `--archived`) exits 1, `unknown field "superseded-by"`; the identical
+  query with `--archived` appended succeeds. Pre-fix, the same query on the
+  same corpus silently matched every active entity (the #314 pattern) rather
+  than erroring, so this is not a new wrong-answer class — it swaps one wrong
+  behavior (silent match-all) for a rough edge (a real field called
+  "unknown" instead of "archive-scoped").
+  - Released user and normal workflow: yes — `fo-status-viewer/SKILL.md`
+    directs the FO to query `docs/dev` directly rather than grep it, and
+    `superseded-by` is a real field the archive path writes today.
+  - Observable harm: a query naming a real, currently-used field is rejected
+    with a message implying a typo, with no hint to add `--archived`.
+  - Affected value AC or boundary: none: AC-1's over-rejection guarantee
+    enumerates five specific counter-baseline cases; an archive-only custom
+    field is not among them, and no AC promises corpus-derived field names
+    stay known regardless of `--archived` scope. The ideation doc's "each
+    half covers the other's hole" claim holds for the *canonical* archive-only
+    fields (verdict/completed/archived, covered by the schema half) but not
+    for a *workflow-custom* field that is archive-only by nature.
+  - Trigger evidence: reproduced live against `docs/dev` above.
+  - Tentative classification: **Deferred risk.** Trigger is real but narrow
+    (a custom field whose only writer is the archive path); promotes to
+    Material if a documented persona is found relying on unscoped queries
+    over such a field, or if a captain ruling extends AC-1's over-rejection
+    guarantee beyond its five named cases.
+
+## Stage Report: validation
+
+- DONE: Verify AC-1: reproduce TestWhereCompoundShapesRejected (all 4 subtests) and TestWhereUnknownFieldRejected yourself against the live docs/dev corpus; independently confirm the previously-reported baseline (156/156 or similar match-all) actually flips to exit 1 with the claimed row counts, not just that the test passes in isolation.
+  Built binaries from HEAD (59274d492) and from merge-base (48a7ea0d9). Baseline binary on live `docs/dev` (now 157 active rows, corpus has drifted since ideation's 156): `nosuchfield!=x`, both compound shapes, and `status!=backlog sprint=A` all return the full 159-line listing (157 rows + 2 header lines) at exit 0 — reproduces the #314 match-all; `sprint=A sprint-readiness=ready` returns 0 rows at exit 0 (silent empty). HEAD binary on the same corpus: all six shapes now exit 1 with `unknown field` or `takes one clause per flag` in stderr, stdout empty. `go test ./internal/status -run 'TestWhereCompoundShapesRejected|TestWhereUnknownFieldRejected' -v`: 6/6 subtests PASS.
+- DONE: Verify AC-1's no-over-rejection guarantee: reproduce TestWhereNoOverRejection and TestWhereDerivedNamesAccepted; confirm the 5 counter-baseline cases (--where status=ideation, --where sprint=X, --where 'pr!=', --where 'mod-block!=', --where 'next-suppressed-by = concurrency-full') still exit 0 with unchanged row counts.
+  Ran all 5 cases through both the baseline and HEAD binaries against live `docs/dev` and diffed line counts: status=ideation (22/22), sprint=0202-survey-improvements (8/8), pr!= (8/8), mod-block!= (8/8), next-suppressed-by = concurrency-full (3/3) — identical, both exit 0. `go test ./internal/status -run 'TestWhereNoOverRejection|TestWhereDerivedNamesAccepted|TestWhereEmptyWorkflowSkipsFieldValidation' -v`: all PASS.
+- DONE: Verify AC-2: reproduce TestWhereArchivedComposesAsActivePlusArchived; confirm --archived still means active-plus-archived and composes with --where, and that the FO contract doc no longer mislabels it "Archive view".
+  `go test -run TestWhereArchivedComposesAsActivePlusArchived -v`: both subtests (active-only, active-plus-archived) PASS. Live on `docs/dev`: `--where sprint=0202-survey-improvements` returns 6 data rows, adding `--archived` returns 11 — active is a strict subset, confirming composition, not a scope swap. `git diff` on `skills/fo-status-viewer/SKILL.md` confirmed the "Archive view" wording is gone, replaced by "Archived-inclusive view ... active plus archived".
+- DONE: Verify AC-3: reproduce TestStatusHelpRendersQuerySynopsisNotEntityListing and TestStatusShortHelpFlagAlsoRendersHelp; confirm spacedock status --help and -h both exit 0 and print the query synopsis (not the entity listing), and that spacedock new --help and top-level --help are genuinely unaffected.
+  Both tests PASS in isolation. Live: HEAD's `status --help` and `status -h` print the identical query synopsis (byte-diffed, `diff` empty) at exit 0; baseline binary's `status --help` instead ran the entity listing (confirmed: table header + rows). `new --help` and top-level `--help` on HEAD print their own unrelated synopses at exit 0, unchanged in shape from baseline.
+- DONE: Confirm the surface-deviation note (8 files, 395 insertions/3 deletions vs declared 315+-30%=220-410) is within tolerance and legitimately explained -- spot check the diff yourself, don't take the count on faith.
+  `git diff --numstat $(git merge-base main HEAD)..HEAD`: 8 files, exactly 395 insertions / 3 deletions, matching the report's claim. 315 ± 30% = 220.5–409.5; 395 falls inside. Read every hunk (`cli.go`, `handlers.go`, `parse.go`, `help.go`, `where_validate_test.go`, `where_archived_test.go`, `status_help_test.go`, `SKILL.md`): all lines are the declared mechanism (Check A/B, wantsHelp guard, setStatusHelp, the two doc stanzas) plus doc comments and 3 new test files — no unrelated or padding changes found.
+- DONE: Confirm the SKIPPED item (the two incidental data bugs) is correctly out of scope and unaffected, not silently masking a real regression.
+  Confirmed live: `docs/dev/.spacedock-state/multi-artifact-gate-prepare/index.md` still carries both `tatus: backlog` (typo) and `status: backlog`; the `tatus` key surfaces in the live known-fields error list as expected corpus noise, not a new regression. `_archive/` still contains entities without an `archived:` stamp (pre-existing, unrelated to this diff). Neither is touched by this change's files.
+- DONE: Run go test ./... -count=1, go test ./... -race -count=1, and go test ./internal/status -run TestInd -v (the pinned parity goldens) yourself from scratch; confirm all green.
+  All three run to completion from a clean state: `go test ./... -count=1` — 19/19 packages ok (internal/cli 113.0s, internal/status 45.2s). `go test ./... -race -count=1` — 19/19 packages ok (internal/cli 120.1s, internal/status 55.7s). `go test ./internal/status -run TestInd -v` — 8 top-level parity tests (incl. subtests) all PASS. `gofmt -l ./cmd ./internal` empty.
+- DONE: Recommend PASSED or REJECTED with evidence for each AC; list deferred risks separately from material findings.
+  See Summary and Review-finding disposition above.
+
+### Summary
+
+**PASSED.** All four ACs verified with independent, live evidence against the real `docs/dev` corpus (not just re-running the implementer's tests in isolation): AC-1's compound and unknown-field rejections flip a reproduced #314 match-all to a loud exit 1, its five named counter-baseline cases are byte-for-byte unchanged, AC-2's archive composition and contract wording are confirmed, and AC-3's help surface is proven against both the new and pre-fix binaries. The surface-deviation note checks out on inspection, not just by numstat. One new finding: an archive-only *custom* field (`superseded-by`, real and in current use in `docs/dev`) is over-rejected by Check B on an active-only query — classified as a **deferred risk**, not material, since no AC promises coverage beyond the five named counter-baseline cases and the pre-fix behavior for this exact case was the worse silent-match-all bug, not a correct result. `go test ./...`, `-race`, and the pinned parity goldens are all green from a clean build.
