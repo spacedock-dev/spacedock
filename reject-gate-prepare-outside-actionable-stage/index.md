@@ -159,3 +159,16 @@ The ideation now bounds the fix to strengthening the existing pre-write stage gu
 ### Summary
 
 Gate preparation now refuses ungated and terminal current stages before durable mutation while preserving actionable preparation and same-stage successor re-entry. The implementation updates the existing guard, focused package proof, and command reference only, and all required formatting, normal, and race checks pass.
+
+## Stage Report: validation
+
+- DONE: Independently verify AC-1 through AC-3 against the pre-write guard implementation and approved semantic boundary.
+  AC-1: `TestPrepareRequiresActionableCurrentStage` accepts gated `validation`; refuses ungated `implementation`, terminal `done`, and contradictory gated-terminal `contradictory` with the stable diagnostic while exact entity bytes and recursive review-tree paths, types, and bytes remain unchanged. AC-2: the same fixture retires attempt 1 with the existing hold lifecycle and proves retained attempt 1 plus successor attempt/room 2. AC-3: the command row states `gate: true` plus nonterminal, nonzero refusal, rejected-stage naming, and zero entity/review-tree mutation. Removing the guard, ignoring `terminal`, rejecting historical records, or dropping either documentation promise makes this evidence fail.
+- DONE: Run focused preparation tests, full and race suites, formatting and diff checks, and inspect zero-mutation/successor evidence.
+  `go test ./internal/gates -run 'TestPrepare.*(Actionable|Successor)' -count=1 -v`, `go test ./...`, and `go test ./... -race` passed; recursive `gofmt -d` over `cmd` and `internal` produced no diff, and `git diff --check` passed. Source tracing confirms the guard follows status resolution but precedes gate-state reads, target/room allocation, source inspection, and writes; HEAD and the candidate worktree remained unchanged at `d6958a782`.
+- DONE: Confirm the 3-file/82-insertion/3-deletion implementation remains within the 4-file/110-insertion tolerance and docs match behavior.
+  `git diff --numstat "$(git merge-base main HEAD)"..HEAD` reports only `internal/gates/prepare.go`, `internal/gates/prepare_test.go`, and `docs/site/reference/command-reference.md`, totaling 82 insertions and 3 deletions; no schema, other gate verb, grammar, success output, or lifecycle surface changed.
+
+### Summary
+
+Recommendation: PASSED. The actionable/ungated/terminal/contradictory matrix preserves one invariant—only a gated nonterminal stage may reach durable preparation—and valid same-stage successor allocation remains intact; no scaling hazard is introduced because the added stage lookup reuses the existing bounded workflow-stage parse and linear lookup before I/O-heavy preparation. All promised ACs have independently reproduced command/state evidence, no material finding or deferred risk was found, and the implementation stays within the approved scope and tolerance.
