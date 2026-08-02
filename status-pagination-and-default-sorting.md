@@ -19,6 +19,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:f602a1173a15ad93fcd313aecf4b898e97cdb6bdef2f39dc84bd4088b7d04f32
                 room-ref: ./status-pagination-and-default-sorting/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:rwpe45pdxffk2zfy24ejde6a:ideation:1
+                briefing: briefing:rwpe45pdxffk2zfy24ejde6a:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T16:01:41.91137Z"
+                decision: approve
+                reason: 'Captain directed in chat: ''dispatch both'' (status-pagination-and-default-sorting + status-where-robust-and-discoverable). Ideation already complete with no spike needed; proceed to implementation.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 ### Goal
