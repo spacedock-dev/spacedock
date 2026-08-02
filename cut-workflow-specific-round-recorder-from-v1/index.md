@@ -68,6 +68,17 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:915c92a2caad3262388d2465d2564073eb7bea15d5c59b5801aa3a72d53d3b68
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:wjkhq0sktbbe3txx6jhnvcv2:ideation:2
+                briefing: briefing:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-02T09:57:43.891639Z"
+                decision: hold
+                reason: Science approves the bounded WJ design, but NTH cycle 2 evidence and the JC reset path are not yet durable. Hold WJ at ideation to avoid independent implementation on a stale shared seam.
+              application:
+                action: none
+                state: not-applicable
 ---
 
 Cut the development-specific classification and Cycle projection from the public round surface while retaining its workflow-neutral correction-record producer for stable v1. Keeping policy would freeze this repository's review taxonomy into the generic durable-decision contract; deleting the structural producer would break zbc's post-rework freshness boundary.
