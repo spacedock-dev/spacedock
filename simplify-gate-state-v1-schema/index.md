@@ -205,3 +205,22 @@ The ideation contract is now independently scannable and implementation-ready wi
 ### Feedback Cycles
 
 - 2026-08-02 — Captain-authorized scope extension: add the direct stale lifecycle oracle `internal/ensigncycle/recorded_gate_lifecycle_test.go` to the implementation surface. Update only the removed-pointer assertion to prove status-derived record identity. The bounded surface is 25 files; no production files, compatibility reader, or new semantic behavior is authorized.
+
+## Stage Report: implementation
+
+- DONE: Commit the preserved JC implementation WIP on the rebased branch with the authorized wider scope.
+  Commit `f566f821b` removes stored gate selection and digest-domain metadata across 25 files, 167 additions, and 202 deletions (net -35); the 25th file is the Captain-authorized stale lifecycle oracle, with no added production surface or compatibility path.
+- DONE: Run focused gate, status, CLI, and ensigncycle tests; fix failures within that scope and record exact results.
+  `go test ./internal/gates -count=1` passes and fails if status lookup, last-attempt authority, duplicate-stage refusal, canonical association, or lifecycle mutation regresses; `go test ./internal/status ./internal/cli ./internal/ensigncycle -count=1` passes and fails if projections or command/dispatch oracles reintroduce pointer semantics.
+- DONE: Run gofmt, full tests, and race tests; append the implementation report and route immediately to validation.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; `go test ./...` and `go test ./... -race` pass and fail on repository-wide behavior or concurrent mutation regressions.
+- DONE: Prove current-candidate authority and eliminate the observed stale-approval class.
+  `TestCurrentStageReadinessFailClosedTable` makes an older terminal approval plus newer revise return `feedback-pending`; `TestDuplicateStageRecordsFailClosedAndPreserveBytes` returns ambiguity/invalid without changing bytes, for 0 of 2 false approval projections.
+- DONE: Prove the stored v1 shape is minimal, closed, and still canonical.
+  Gate fixtures and writer assertions omit `gates.current` and `digest-domain`; `TestDigestDomainFieldFailsClosed` rejects the removed field, while canonical digest, stale-input, replay, room recording, consume, finalize, and rework coverage remains green.
+- DONE: Update normative documentation and First Officer instructions to name one authority.
+  The schema/spec example and gate-lifecycle skill now define unique `status`-matched record selection, last ordered attempt authority, and implicit RFC 8785/JCS digest bytes; normative searches find no `gates.current` or `raw-file-pin`, and `digest-domain` remains only in its closed-schema refusal test.
+
+### Summary
+
+The clean v1 schema now derives the active gate from entity status and a unique stage record, then uses only that record's last attempt; duplicate stage records fail closed. Stored and emitted gate state no longer carries `gates.current` or `digest-domain`, while historical lifecycle behavior and canonical digest binding remain covered and all focused, full, and race suites pass.
