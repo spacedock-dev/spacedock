@@ -273,3 +273,30 @@ The clean v1 schema now derives the active gate from entity status and a unique 
 ### Summary
 
 Candidate behavior satisfies all five value criteria, and every required functional, full, race, formatting, and adversarial check passes. Validation nevertheless recommends REJECTED because two necessary production-consumer edits cross the accepted surface without the required Captain re-review; candidate code remains unchanged for that decision.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Verify candidate commit f566f821b is based on 48a7ea0 and matches the authorized 25-file, net-negative scope.
+  Exact ancestry is `48a7ea0d97042f0e7aaac258e1b77f16157c5281` → `f566f821b76bac1fd13a9a4639ca58310cf60fe3`; `git diff --stat/--numstat` proves 25 files, +167/-202, net -35, including only the three explicitly authorized extra consumers/oracles.
+- DONE: Run focused gates/status/CLI/ensigncycle tests, full tests, race tests, gofmt/diff checks, and the stale-pointer adversarial cases.
+  All four focused commands, `go test ./...`, and `go test ./... -race` pass; `gofmt -w ./cmd ./internal` changes no bytes and `git diff --check` is clean.
+- DONE: Run a detached two-record source-stage versus target-stage terminal-delivery fixture, reproduce AC-1 through AC-5 with independent evidence, classify findings, and record a PASSED or REJECTED validation report.
+  Detached commit `f566f821b` fixture proves finalization consumes only the `ideation` source-stage record, preserves the pre-existing `done` target-stage record, and then writes terminal status; no new finding exists and validation recommends PASSED.
+- DONE: AC-1 — Current-candidate authority.
+  `TestCurrentStageReadinessFailClosedTable` passes its 17-case matrix, including last-attempt rejection over an older terminal approval, stale old-stage history, open/closed/spent states, and ordinary/terminal boundaries.
+- DONE: AC-2 — Observed stale-approval class is eliminated.
+  The newer same-stage revise yields `feedback-pending`; `TestDuplicateStageRecordsFailClosedAndPreserveBytes` yields `invalid`, exact ambiguity refusal, and byte identity: false approval projections remain 0 of 2.
+- DONE: AC-3 — Stored v1 is minimal and closed.
+  `TestPrototypeAndUnknownGateShapesFailClosed` rejects removed `current`, `TestDigestDomainFieldFailsClosed` rejects removed digest metadata, and `TestExactCanonicalBriefingIsIndependentAssociationInventory` retains the canonical digest association.
+- DONE: AC-4 — Historical behavior survives.
+  Gates lifecycle, cross-stage re-entry, replay, supersession, terminal finalize/rework, status, CLI, and `TestRecordedGateLifecycleRealCLIReplay` all pass, followed by full and race suites.
+- DONE: AC-5 — Documentation names one authority.
+  Schema/spec and shipped lifecycle skill name unique status-stage selection and implicit JCS bytes; scoped normative search finds removed terms only in the intentional `digest-domain` refusal oracle.
+- DONE: Perform the semantic adversarial pass and classify every finding on defect-kind and release-scope axes.
+  Exact identity, cardinality, order, byte cleanliness, closed fields, cross-stage routing, terminal delivery, and status projection were exercised; no outcome/evidence defect, material finding, deferred risk, or polish finding remains.
+- DONE: Resolve the prior V-1 scope disposition against latest Captain feedback.
+  The 2026-08-02 re-review explicitly authorizes `internal/gates/io.go`, `internal/status/discover.go`, and the stale lifecycle oracle in the exact 25-file candidate, so V-1 no longer blocks this cycle.
+
+### Summary
+
+Validation cycle 2 recommends PASSED. Candidate `f566f821b` matches the Captain-authorized scope, satisfies AC-1 through AC-5 with independent focused and detached evidence, and passes formatting, full, and race validation without changing candidate bytes.
