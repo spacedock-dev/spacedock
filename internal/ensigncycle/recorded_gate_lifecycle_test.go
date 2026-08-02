@@ -190,7 +190,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
 
 	consume := run("consume", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
-	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
+	assertCommandOutput(t, consume.stdout, "consumed=true", "application=advance/consumed", "target-stage=handoff")
 	commitRecordedGateState(t, binary, fixture, "consume gate authorization")
 	durable, _, durableErr := gates.Read(fixture.entity)
 	requireRecordedGate(t, durableErr == nil && durable.Records[0].Attempts[0].Resolution.By == "agent:first-officer" && durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason, "approve durable snapshot unreadable")

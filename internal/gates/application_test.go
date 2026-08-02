@@ -2,13 +2,21 @@ package gates
 
 import (
 	"bytes"
+	_ "embed"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
 	"gopkg.in/yaml.v3"
 )
+
+// v1PilotManifest is the checked-in list of the active and archived pilot
+// entities whose durable format is part of this unreleased-v1 cut.
+//
+//go:embed testdata/v1_pilot_manifest.txt
+var v1PilotManifest string
 
 func TestEligibilityFailClosedTable(t *testing.T) {
 	base := eligibleDocument()
@@ -77,7 +85,7 @@ func TestRecordClosureShapesApplication(t *testing.T) {
 			if err := RecordSemantic(entity, RecordInput{Decision: tc.decision, Actor: "person:captain", Reason: reason, WorkflowDir: root}); err != nil {
 				t.Fatal(err)
 			}
-			doc, _, err := Read(entity)
+			doc, gatesNode, err := Read(entity)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -86,11 +94,177 @@ func TestRecordClosureShapesApplication(t *testing.T) {
 				if app == nil || app.TargetStage != tc.target || app.State != tc.state {
 					t.Fatalf("application = %#v, want target=%s state=%s", app, tc.target, tc.state)
 				}
+				if got := firstApplicationNode(gatesNode); !sameStrings(yamlMappingKeys(got), []string{"state", "target-stage"}) {
+					t.Fatalf("approval YAML application keys = %v, want [state target-stage]", yamlMappingKeys(got))
+				}
 			} else if app != nil {
 				t.Fatalf("%s unexpectedly carries application %#v", tc.decision, app)
+			} else if got := firstApplicationNode(gatesNode); got != nil {
+				t.Fatalf("%s unexpectedly emitted an application YAML node with keys %v", tc.decision, yamlMappingKeys(got))
 			}
 		})
 	}
+}
+
+func TestV1PilotManifestReadsAndValidates(t *testing.T) {
+	paths := manifestPaths(v1PilotManifest)
+	if len(paths) != 31 {
+		t.Fatalf("pilot manifest has %d paths, want 31", len(paths))
+	}
+	seen := make(map[string]bool, len(paths))
+	archives := 0
+	for _, rel := range paths {
+		if rel == "" || filepath.IsAbs(rel) || filepath.Clean(rel) != rel || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || seen[rel] {
+			t.Fatalf("manifest contains invalid or duplicate path %q", rel)
+		}
+		seen[rel] = true
+		if strings.HasPrefix(filepath.ToSlash(rel), "_archive/") {
+			archives++
+		}
+	}
+	if archives != 15 {
+		t.Fatalf("pilot manifest has %d archived paths, want 15", archives)
+	}
+	stateRoot := v1PilotStateRoot()
+	if stateRoot == "" {
+		t.Skip("shared docs/dev/.spacedock-state checkout is not reachable from the code worktree")
+	}
+	for _, rel := range paths {
+		rel, path := rel, filepath.Join(stateRoot, filepath.FromSlash(rel))
+		t.Run(rel, func(t *testing.T) {
+			if _, err := os.Stat(path); err != nil {
+				t.Fatalf("manifest path is not present: %v", err)
+			}
+			doc, gatesNode, err := Read(path)
+			if err != nil {
+				t.Fatalf("strict gates.Read: %v", err)
+			}
+			if err := Validate(doc); err != nil {
+				t.Fatalf("gates.Validate: %v", err)
+			}
+			assertPilotApplicationNodes(t, gatesNode)
+		})
+	}
+}
+
+func manifestPaths(raw string) []string {
+	var paths []string
+	for _, line := range strings.Split(raw, "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			paths = append(paths, line)
+		}
+	}
+	return paths
+}
+
+func v1PilotStateRoot() string {
+	if root := strings.TrimSpace(os.Getenv("SPACEDOCK_STATE_ROOT")); root != "" {
+		return root
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	for dir := cwd; ; dir = filepath.Dir(dir) {
+		candidate := filepath.Join(dir, "docs", "dev", ".spacedock-state")
+		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+			return candidate
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+	}
+}
+
+func assertPilotApplicationNodes(t *testing.T, gatesNode *yaml.Node) {
+	t.Helper()
+	records := yamlMappingValue(gatesNode, "records")
+	if records == nil || records.Kind != yaml.SequenceNode {
+		t.Fatalf("gates.records is not a sequence")
+	}
+	for _, record := range records.Content {
+		attempts := yamlMappingValue(record, "attempts")
+		if attempts == nil || attempts.Kind != yaml.SequenceNode {
+			t.Fatalf("gate record attempts is not a sequence")
+		}
+		for _, attempt := range attempts.Content {
+			resolution := yamlMappingValue(attempt, "resolution")
+			application := yamlMappingValue(attempt, "application")
+			decision := ""
+			if resolution != nil {
+				if n := yamlMappingValue(resolution, "decision"); n != nil {
+					decision = n.Value
+				}
+			}
+			if application == nil {
+				continue
+			}
+			if decision != "approve" {
+				t.Fatalf("non-approval decision %q carries application keys %v", decision, yamlMappingKeys(application))
+			}
+			if !sameStrings(yamlMappingKeys(application), []string{"state", "target-stage"}) {
+				t.Fatalf("approval application keys = %v, want [state target-stage]", yamlMappingKeys(application))
+			}
+		}
+	}
+}
+
+func firstApplicationNode(gatesNode *yaml.Node) *yaml.Node {
+	records := yamlMappingValue(gatesNode, "records")
+	if records == nil || len(records.Content) == 0 {
+		return nil
+	}
+	attempts := yamlMappingValue(records.Content[0], "attempts")
+	if attempts == nil || len(attempts.Content) == 0 {
+		return nil
+	}
+	return yamlMappingValue(attempts.Content[0], "application")
+}
+
+func yamlMappingValue(node *yaml.Node, key string) *yaml.Node {
+	if node == nil {
+		return nil
+	}
+	if node.Kind == yaml.DocumentNode {
+		if len(node.Content) == 0 {
+			return nil
+		}
+		node = node.Content[0]
+	}
+	if node.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if node.Content[i].Value == key {
+			return node.Content[i+1]
+		}
+	}
+	return nil
+}
+
+func yamlMappingKeys(node *yaml.Node) []string {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return nil
+	}
+	keys := make([]string, 0, len(node.Content)/2)
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		keys = append(keys, node.Content[i].Value)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func sameStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestRecordRequiresCanonicalBriefingAtActionableCurrentStage(t *testing.T) {
