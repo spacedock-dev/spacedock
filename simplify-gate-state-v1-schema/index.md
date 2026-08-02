@@ -201,3 +201,7 @@ Ideation defines a clean unreleased v1 with no stored current-gate pointer and n
 ### Summary
 
 The ideation contract is now independently scannable and implementation-ready without changing its clean-v1 direction. The repaired package narrows the implementation boundary to observed producers, consumers, and fixtures while keeping the stale-approval adversary and full/race validation obligations intact.
+
+### Feedback Cycles
+
+- 2026-08-02 — Captain-authorized scope extension: add the direct stale lifecycle oracle `internal/ensigncycle/recorded_gate_lifecycle_test.go` to the implementation surface. Update only the removed-pointer assertion to prove status-derived record identity. The bounded surface is 25 files; no production files, compatibility reader, or new semantic behavior is authorized.
