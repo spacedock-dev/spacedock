@@ -7,7 +7,7 @@ started: 2026-08-02T14:31:58Z
 completed:
 verdict:
 score: 0.5
-worktree:
+worktree: .worktrees/spacedock-ensign-shared-git-scaffold-helper
 issue:
 gates:
     version: 1
