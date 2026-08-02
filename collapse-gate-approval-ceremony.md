@@ -47,6 +47,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:761b97fee0d9f0a1e9fe2dc2bca4b905d7e9309cbc1672310af7bafac8dc999e
                 room-ref: ./collapse-gate-approval-ceremony/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:7fhzvvk8d5smj858bp47xbjq:ideation:1
+                briefing: briefing:7fhzvvk8d5smj858bp47xbjq:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T07:54:09.623296Z"
+                decision: revise
+                reason: 'Subspace review surfaced an unresolved gap: the design documents what a mid-ceremony sync failure looks like (phase=record/consume, sync=failed/halted) but never states the FO''s actual recovery procedure per failure phase, and the composite gate record --consume is not safely re-entrant (record refuses to re-close an already-closed attempt; consume refuses a re-consume as already-consumed). Send back for an explicit per-phase recovery procedure before approval.'
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 ---
 
 Applying one captain gate decision (approve/revise/hold) currently costs ~16 raw FO tool calls and ~2.5 minutes of wall clock, most of it mechanical: re-invoking `state commit` after nearly every binary call, then a separate set of frontmatter stamps and worktree creation before the next dispatch even begins. This entity is about collapsing that ceremony toward 1-2 calls per gate decision without weakening any of the authority/integrity checks the ceremony exists to enforce.
