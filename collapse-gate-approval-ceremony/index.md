@@ -89,6 +89,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:31080f3b57316763b319115a0855497eb8366a52e06b4421c6f76d7f397dcf25
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:7fhzvvk8d5smj858bp47xbjq:validation:1
+                briefing: briefing:7fhzvvk8d5smj858bp47xbjq:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T14:06:54.127273Z"
+                decision: approve
+                reason: 'Captain approved in chat: validation PASSED, AC-1/AC-2/AC-3 verified with reproduced evidence, +273% surface deviation acknowledged as legitimate. Dogfooding the collapsed ceremony (--consume) for this decision.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 review-round:
     id: round:7fhzvvk8d5smj858bp47xbjq:implementation:1
     stage: implementation
