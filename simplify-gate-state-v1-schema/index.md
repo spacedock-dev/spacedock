@@ -94,7 +94,7 @@ The record-by-stage helper already exists as `recordForStage` and rejects ambigu
 - Duplicate stage records: read/validate fails closed with an ambiguity error and leaves bytes unchanged.
 - Terminal approval: only the last attempt of the status-matched record can produce `approved-awaiting-merge`; a newly rejected candidate produces `feedback-pending` even if older attempts or other records were approved.
 
-## Acceptance criteria and test plan
+## Acceptance criteria
 
 - **AC-1 — Current-candidate authority:** For an entity at a gate stage, readiness is determined only by the last attempt of the sole record whose `stage` equals entity `status`. A table-driven Go test covers open, approve, revise, hold, consumed, superseded, multi-attempt, cross-stage history, and re-entry. It fails if any lookup uses an ID selector or a non-last attempt.
 - **AC-2 — Observed stale-approval class is eliminated:** A behavior fixture with an older terminal-target approval and a newly rejected same-stage candidate reports `feedback-pending` and never `approved-awaiting-merge`. A companion duplicate-stage fixture fails closed and preserves entity bytes. This is the independent end-value measure: false approval projections are **0 of 2 adversarial cases**, versus **1 of 2** under the current pointer-selected baseline.
@@ -102,7 +102,13 @@ The record-by-stage helper already exists as `recordForStage` and rejects ambigu
 - **AC-4 — Historical behavior survives:** Multi-stage records, multiple attempts, changed-Briefing supersession, same-stage replay, nonterminal consume, terminal finalize, and terminal rework retain their existing observable status/application outcomes. Focused gate package and status behavior tests exercise resulting bytes and readiness, followed by `go test ./...` and `go test ./... -race`.
 - **AC-5 — Documentation names one authority:** The schema and gate-resolution contract describe status-derived unique-stage selection and implicit canonical digest semantics, with no normative `gates.current`, `digest-domain`, or `raw-file-pin` support. A review of the rendered YAML example plus repository search over normative spec/schema files verifies the old fields are absent; historical roadmap evidence is intentionally preserved.
 
-Test cost is medium: primarily Go unit/behavior fixtures, no live workflow or provider is required. The stale-approval fixture is the first implementation test; existing prepare, application, delivery, boot-identify, and status coexist suites provide regression coverage. Full repository race testing is required because entity locks and atomic writes remain in scope.
+## Test plan
+
+Test cost is medium: Go unit and behavior fixtures only; no provider or live workflow is required. Implement AC-2 first as a table-driven fixture in `internal/gates/gates_test.go`: the stale-pointer baseline must reproduce one false approval across the two adversarial cases, while status-derived unique-stage selection must produce zero. The newer rejected-attempt case must return `feedback-pending`; the duplicate-stage case must return an ambiguity error, leave the entity bytes unchanged, and fail if validation accepts both records.
+
+Focused package tests cover the remaining criteria. `go test ./internal/gates -count=1` must exercise unique-stage lookup, last-attempt readiness, prepare/replay/supersession, consume, terminal finalize/rework, canonical digest association, exact replay, and closed-schema rejection. `go test ./internal/status ./internal/cli ./internal/ensigncycle -count=1` must prove boot/status projection and command-level lifecycle behavior still consume the shared reducer without reintroducing a selector. Golden and entity-byte assertions must fail if either removed field is emitted, if stale input is accepted, or if a rejected candidate projects approval.
+
+Repository validation is `gofmt -w ./cmd ./internal`, then `go test ./...`, then `go test ./... -race`. The implementation report must record the focused commands and both full-suite commands with the behavior each would falsify; repository search over `internal`, `skills/fo-gate-lifecycle`, `docs/specs`, and `docs/schema` must show no normative or emitted `gates.current`, `digest-domain`, or `raw-file-pin`, while allowing explicitly labeled historical evidence outside those paths.
 
 ## Risk spike and alternatives
 
@@ -114,7 +120,11 @@ Removing only the `raw-file-pin` branch while retaining `digest-domain` is insuf
 
 ## Expected surface, estimate, and semantic boundary
 
-Expected implementation surface is **12–18 files**, centered on `internal/gates/{model,operation,prepare,application,delivery}.go`, their focused tests/fixtures, `internal/status` gate fixtures, `skills/fo-gate-lifecycle/SKILL.md`, `docs/specs/gate-resolution-frontmatter-contract.md`, and `docs/schema/entity.mdschema.yml`. Estimate: **80–180 inserted lines**, chiefly adversarial tests and revised assertions, with **140–300 deleted lines**; required net delta is negative by at least 20 lines. Tolerance is up to **20 files or 240 insertions** if fixture updates expose additional canonical emitters; exceeding either bound or losing the negative net delta requires gate re-review.
+The direct field inventory fixes the minimum semantic surface. `gates.current` is produced by `internal/gates/prepare.go` and `internal/gates/operation.go`; it is validated and read for readiness in `internal/gates/model.go`, consumed for application/retained authority in `internal/gates/application.go`, and consumed for finalize/rework in `internal/gates/delivery.go`. `digest-domain` is produced by `internal/gates/prepare.go` and `internal/gates/round.go`; it is validated or compared in `internal/gates/model.go`, `internal/gates/operation.go`, `internal/gates/application.go`, and `internal/gates/round.go`. `internal/status/discover.go` and `internal/cli/cli.go` are transitive consumers through the unchanged gates APIs and are not expected to need production edits.
+
+Expected implementation surface is **20–22 files**: those six `internal/gates` production files; the five paired gate tests plus `internal/gates/testdata/advisory-round/recorded-entity.md`; command/status/integration fixtures in `internal/cli/{gate,terminal_consume}_test.go`, `internal/status/{gates_coexist,boot_identify}_test.go`, and `internal/ensigncycle/{gate_assert_impl,gate_assert,shared_round_recording}_test.go`; and the three normative consumers `skills/fo-gate-lifecycle/SKILL.md`, `docs/specs/gate-resolution-frontmatter-contract.md`, and `docs/schema/entity.mdschema.yml`. Estimate: **90–150 inserted lines** for the adversarial table and revised assertions, **110–190 deleted lines** from selector/domain code and fixtures, with a net deletion of at least 20 lines.
+
+Tolerance is **24 files, 180 insertions, and 230 deletions** to allow a discovered direct fixture/helper consumer or formatting split; the net delta must remain negative. Any production edit outside the six named gate files, any edit to the transitive `internal/status/discover.go` or `internal/cli/cli.go` consumers, any compatibility reader/migration, or exceeding a tolerance requires gate re-review.
 
 Declared semantic changes: stored gate frontmatter removes `current` and Briefing `digest-domain`; duplicate stage records become invalid; runtime gate selection derives from entity status and false stale approvals disappear. Command grammar, stdout/stderr vocabulary except ambiguity diagnostics, Resolution/application authority, IDs, room layout, locking, atomicity, and workflow status transitions do not change. No compatibility reader, migration command, or historical-roadmap rewrite is in scope.
 
@@ -156,3 +166,16 @@ Apply this wording in `docs/specs/gate-resolution-frontmatter-contract.md` and m
 ### Summary
 
 Ideation defines a clean unreleased v1 with no stored current-gate pointer and no one-value digest-domain field. The spike identified unique record-per-stage validation as the necessary condition for safe status derivation and seeded an adversarial regression test for the observed false-approval class.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Repair the ideation contract with a distinct exact Acceptance criteria section and a separate Test plan section.
+  The exact headings now expose AC-1 through AC-5 to `status --read jc --ac-scan`; the separate plan cites focused, full, and race commands and the failures they detect.
+- DONE: Tighten the proposed schema surface to the minimum consumer inventory and honest file/LOC tolerance while preserving the stale-approval adversarial fixture.
+  The inventory names each direct producer and consumer, bounds 20–22 expected files with a 24-file tolerance, and retains AC-2's 0-of-2 stale-approval measure plus AC-3's closed stored format.
+- DONE: Rerun the mandatory AC scan and record the full/race validation plan and all required stage-report evidence.
+  The corrected report explicitly evidences AC-1, AC-2, AC-3, AC-4, and AC-5; the independent scan is rerun after this report, and the test plan requires focused suites, `go test ./...`, and `go test ./... -race`.
+
+### Summary
+
+The ideation contract is now independently scannable and implementation-ready without changing its clean-v1 direction. The repaired package narrows the implementation boundary to observed producers, consumers, and fixtures while keeping the stale-approval adversary and full/race validation obligations intact.
