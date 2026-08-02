@@ -44,6 +44,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:86055f2d29fbfab3d7f5fba21ad4ee473cc25c83a0eba9e4c1d32ea77ae8dd38
                 room-ref: ./status-where-robust-and-discoverable/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3t9r36n9tbj116jp9g1k01tz:ideation:1
+                briefing: briefing:3t9r36n9tbj116jp9g1k01tz:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T16:15:14.729845Z"
+                decision: approve
+                reason: 'Captain approved ideation in chat: AC-2 mechanism correctly deleted, AC-1 split into 2 guards, AC-3 status --help gap confirmed. Proceed to implementation.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 started: 2026-08-02T16:02:35Z
 ---
 
