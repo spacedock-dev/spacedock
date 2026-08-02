@@ -68,6 +68,17 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:5ec7f938d894704f866a320c687dabe108f7dce7221768ec092201d0e8143da7
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nthcevf1snz7hm75gny3kd2e:ideation:2
+                briefing: briefing:nthcevf1snz7hm75gny3kd2e:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-02T10:02:00.481726Z"
+                decision: hold
+                reason: Science confirms NTH evidence is complete but approval would authorize premature implementation. Hold until Captain-authorized JC scope reset and durable selector/API; then re-present NTH and WJ in order.
+              application:
+                action: none
+                state: not-applicable
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
