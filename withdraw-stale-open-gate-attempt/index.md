@@ -597,3 +597,24 @@ Commit `5a8be3220` implements truthful FO withdrawal, retained frozen authority,
 ### Summary
 
 Validation recommends PASSED for exact candidate `5a8be3220`. Deterministic, repository-wide, race, live-registration, and detached adversarial evidence all preserve the approved behavior; only the registered real-Claude observation remains externally quota-blocked rather than product-red.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Verify the rebased PR candidate against origin/main at the exact pushed head and reconcile the stale prior validation authority.
+  PR #580 is `MERGEABLE/CLEAN` at head `4dd5322e9a438d498a03e2192a8397c4d76c01e2` and base/merge-base `23ed415bb3f16393f7b5a0f6c19c9f259b6c4617`; this cycle is the only current validation authority.
+- DONE: Run focused, full, race, format, diff, and applicable live/CI checks, triaging any failure from the new head rather than the old report.
+  Focused gates/CLI/status/ensigncycle, `go test -count=1 ./...`, `go test -count=1 -race ./...`, live-tag compile, `gofmt -l ./cmd ./internal`, and `git diff --check` passed on `4dd5322e9`.
+- DONE: Reconfirm the withdrawn-attempt lifecycle, exact 20-file/+824/-60 scope, and no unrelated rebase drift before a fresh validation gate.
+  The approved pre-rebase delta was 20/+824/-60; the exact rebased PR is 20/+830/-66 because overlapping base edits change diff arithmetic, while `range-diff` marks both immediate pre/post-rebase candidate commits `=` patch-equivalent with no unrelated file or semantic drift.
+- DONE: Reproduce AC-1 through AC-3 from their command/state evidence on the rebased candidate.
+  `TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume` freshly built the binary and drove prepare N → withdraw → cold boot → prepare N+1 → room close → consume; it fails if N changes, owns closure, or boot/readiness cardinality drifts.
+- DONE: Perform the semantic adversarial pass over state identity, terminality, mutation refusal, retained authority, and provider evidence.
+  Focused tests reject wrong actor/time/reason, conflicting states, provider output, corrupt request, repeat/closed/request-less/stale selection, lock contention, withdrawn room/chat record, consume, and later retained/provider drift without mutation.
+- DONE: Record every exact-head GitHub lane and recommend PASSED only after required live CI completed green.
+  Run `30736599933`: offline, Claude Sonnet, Claude Opus, Codex, Pi, and journey-delta all completed SUCCESS; docs build and Ubuntu/macOS install checks also completed SUCCESS on `4dd5322e9`.
+- DONE: Recommend PASSED with deferred risks separated from material findings.
+  AC-1 through AC-3 have fresh exact-head behavioral evidence; no material finding, evidence defect, deferred product risk, or polish finding remains.
+
+### Summary
+
+Validation recommends PASSED for rebased candidate `4dd5322e9` on PR #580. The fresh lifecycle, focused/full/race/format/diff suites, patch-equivalent rebase audit, and every required exact-head live lane are green; the old `5a8be3220` report and its +824/-60 comparison are retained only as stale history.
