@@ -9,8 +9,6 @@ started: 2026-07-21T01:43:36Z
 worktree: .worktrees/spacedock-ensign-gate-blockers-and-eligibility
 gates:
     version: 1
-    current:
-        gate: gate:gate-blockers-and-eligibility:validation
     records:
         - id: gate:gate-blockers-and-eligibility:validation
           stage: validation
@@ -19,7 +17,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:h1:validation:canonical-v1:revision-1
                 digest: sha256:7c670b058779747408567c5502e6c530522e68d32286b0a43290add76724a8c7
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution
@@ -29,7 +26,6 @@ gates:
                 at: "2026-07-22T16:41:24.293257Z"
                 decision: approve
                 reason: Exact candidate c7612661 passed 10/10 validation checks, AC-A1 through AC-A5 and AC-B1, independent false-green controls, byte-identical refusal paths, detached audit, focused/full/race tests, formatting, and clean-head verification; 642 production additions remain within the approved 2x ceiling and no material finding remains.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
 mod-block:
 pr: pr-merge:560
 verdict: passed

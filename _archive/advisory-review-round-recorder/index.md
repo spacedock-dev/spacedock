@@ -12,8 +12,6 @@ issue:
 sprint: durable-decisions
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:fr:validation
     records:
         - id: gate:docs-dev:fr:ideation
           stage: ideation
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:fr:ideation:attempt-1:revision-1
                 digest: sha256:3eb2739582cbde71c1430367b7de4ae1439ba477432fa9586a5ed4564a8e9909
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
@@ -32,7 +29,6 @@ gates:
                 at: "2026-07-23T03:01:03.948941Z"
                 decision: approve
                 reason: Ideation reuses 3k as the sole recorder, persists the already-approved 02av advisory shape, makes the 3j decline replay falsifiable, and forbids gate, application, or workflow effects.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -40,7 +36,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:fr:ideation:attempt-2:revision-1
                 digest: sha256:1997028a3179abc08095a49ca0eef667a9eb131a7e13223a0cbacb68c1e14574
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-2
               resolution:
                 type: Resolution
@@ -50,7 +45,6 @@ gates:
                 at: "2026-07-23T06:35:29.598151Z"
                 decision: approve
                 reason: Cycle-2 ideation replaces duplicate paths with explicit shared 3k primitives, mandatory entity and room CAS expectations, fixed worker authority, exact projection semantics, risk-first failure tests, and hard 365/500-LOC stops without changing ACs.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -58,7 +52,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:fr:ideation:attempt-3:revision-1
                 digest: sha256:7fc1a7945767d8b332c8550002d4e206aefa831af4746baa3c5b362ab69174b4
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-3
               resolution:
                 type: Resolution
@@ -68,7 +61,6 @@ gates:
                 at: "2026-07-23T08:16:15.40211Z"
                 decision: approve
                 reason: The cycle-3 report is 2 DONE, 0 SKIPPED, 0 FAILED; AC-1 through AC-5 have durable evidence, and the independent boundary audit shows one-shot publication preserves the value while removing the disproportionate mutable-prefix mechanism.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
               application:
                 target-stage: implementation
                 state: consumed
@@ -79,7 +71,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:fr:implementation:attempt-1:revision-1
                 digest: sha256:5d397bd2da15cd13c483c1c924aaac5130fc7ef15a7afb7feb074c0bdb0e0827
-                digest-domain: canonical-bytes
                 room-ref: ./review/implementation/briefing-1
               resolution:
                 type: Resolution
@@ -89,12 +80,10 @@ gates:
                 at: "2026-07-23T06:14:55.524908Z"
                 decision: revise
                 reason: The implementation crossed its 680-LOC hard stop before CLI wiring, duplicated 3k writer and Review-and-Gate parsing paths, omitted retained-room CAS, and failed its risky-path coverage; ACs remain unchanged and require bounded mechanism re-ideation.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
             - id: gate-attempt:fr-implementation-2
               briefing:
                 id: briefing:docs-dev:fr:implementation:attempt-2:revision-1
                 digest: sha256:5f48beeef18ebc98d03313da868aa6ea0da4b6236176cb4adc18dea36fa59b45
-                digest-domain: canonical-bytes
                 room-ref: ./review/implementation/briefing-2
               resolution:
                 type: Resolution
@@ -104,12 +93,10 @@ gates:
                 at: "2026-07-23T06:53:07.893364Z"
                 decision: revise
                 reason: Cycle-2 architecture is shared and AC-correct, but the 683-LOC pre-CLI checkpoint exceeds the invalid 365 estimate and retains named canonical-validation, projection, URI, duplication, and whole-operation failure-test defects; authorize one bounded correction under measured 540/600 hard stops.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
             - id: gate-attempt:fr-implementation-3
               briefing:
                 id: briefing:docs-dev:fr:implementation:attempt-3:revision-1
                 digest: sha256:ecbf5f82df866bde1f85bbd0d399c1dd0fba12f294bbdcc3d1382dbb000b91d4
-                digest-domain: canonical-bytes
                 room-ref: ./review/implementation/briefing-3
               resolution:
                 type: Resolution
@@ -119,7 +106,6 @@ gates:
                 at: "2026-07-23T07:12:03.145791Z"
                 decision: revise
                 reason: The corrected two-step design remains 670 net production LOC before CLI, above the 540 hard stop; an independent boundary audit shows the value can be preserved by one-shot completed-round publication within 580/640.
-                adoption-note: 'Re-ideate only the append semantics as one-shot completed rounds: immutable room creation once, exact replay no-op, divergent replay refusal, pointer and optional projection published together; preserve every value AC, remove interim/prefix-append machinery, and hard-stop at 580 pre-CLI or 640 total. Captain directive: ''why why is fr not sent back to rework?'''
         - id: gate:docs-dev:fr:validation
           stage: validation
           attempts:
@@ -127,7 +113,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:fr:validation:attempt-1:revision-1
                 digest: sha256:7407c32c4dab589e91ebc4609419808ebf8612a96c8a3a8b2b94ac1f1618438b
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution
@@ -137,7 +122,6 @@ gates:
                 at: "2026-07-23T13:33:32.354162Z"
                 decision: approve
                 reason: Validation passed 12/12 checklist items at exact candidate 1ae990f5; all five ACs have independent behavioral evidence, the Codex live lane passed, zero production paths changed, and no material finding remains.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
               application:
                 target-stage: done
                 state: superseded
@@ -145,7 +129,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:fr:validation:attempt-2:revision-1
                 digest: sha256:5419108541087f8b95422e03db0f9903665dbc6a981a7f397ef2fbeda4372a7b
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-2
               resolution:
                 type: Resolution
@@ -155,7 +138,6 @@ gates:
                 at: "2026-07-23T23:49:12.100279Z"
                 decision: approve
                 reason: Exact rebased candidate 5617b65e has 5/5 ACs independently evidenced, full/race/live checks green, patch identity proven, and no material finding.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: done
                 state: consumed

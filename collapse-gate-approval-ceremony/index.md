@@ -11,8 +11,6 @@ worktree: .worktrees/spacedock-ensign-collapse-gate-approval-ceremony
 issue:
 gates:
     version: 1
-    current:
-        gate: gate:7fhzvvk8d5smj858bp47xbjq:validation
     records:
         - id: gate:7fhzvvk8d5smj858bp47xbjq:backlog
           stage: backlog
@@ -21,7 +19,6 @@ gates:
               briefing:
                 id: briefing:7fhzvvk8d5smj858bp47xbjq:backlog:attempt-1:revision-1
                 digest: sha256:2cb1660e6fb16e9c6303564fc34d957a34155eda05ed8646a06b770a92ed221c
-                digest-domain: canonical-bytes
                 request-digest: sha256:a9c5b97c54d3372732e38b8ae7157af41a6aaca2dae2cdecece420ab2fd0572a
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -42,7 +39,6 @@ gates:
               briefing:
                 id: briefing:7fhzvvk8d5smj858bp47xbjq:ideation:attempt-1:revision-1
                 digest: sha256:3c04e6ddd4e374e5c0827f86553734cc4c484bea7563704d0d61ea0fac8bbcfe
-                digest-domain: canonical-bytes
                 request-digest: sha256:761b97fee0d9f0a1e9fe2dc2bca4b905d7e9309cbc1672310af7bafac8dc999e
                 room-ref: ./review/ideation/briefing-1
               resolution:
@@ -57,7 +53,6 @@ gates:
               briefing:
                 id: briefing:7fhzvvk8d5smj858bp47xbjq:ideation:attempt-2:revision-1
                 digest: sha256:b1d7b0169b2da0225f4b4366553387025bad0a32cca4bec65b1503247c5e3db3
-                digest-domain: canonical-bytes
                 request-digest: sha256:f6c2c8bfc8838c4de57f5bcedff7101294e7ccf9e894ff5838f813325c5aa9b3
                 room-ref: ./review/ideation/briefing-2
               resolution:
@@ -78,7 +73,6 @@ gates:
               briefing:
                 id: briefing:7fhzvvk8d5smj858bp47xbjq:validation:attempt-1:revision-1
                 digest: sha256:ddc2fe349524a82e65325b26b958ff92dcd943f4c7b274c81311b7d0a2772c2c
-                digest-domain: canonical-bytes
                 request-digest: sha256:31080f3b57316763b319115a0855497eb8366a52e06b4421c6f76d7f397dcf25
                 room-ref: ./review/validation/briefing-1
               resolution:

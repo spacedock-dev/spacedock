@@ -7,8 +7,6 @@ id: jccbpvjv5bg1jn0jbmj2yf8s
 sprint: durable-decisions
 gates:
     version: 1
-    current:
-        gate: gate:jccbpvjv5bg1jn0jbmj2yf8s:validation
     records:
         - id: gate:jccbpvjv5bg1jn0jbmj2yf8s:backlog
           stage: backlog
@@ -17,7 +15,6 @@ gates:
               briefing:
                 id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:backlog:attempt-1:revision-1
                 digest: sha256:4d61c845361a3aaba15ec68a09a5090b03c963c532d61227de695e4473ae32c3
-                digest-domain: canonical-bytes
                 request-digest: sha256:7b480163e7d4760504a04d5d91b979e8b942b0de4ab99b690f1619145e3c4db3
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -38,7 +35,6 @@ gates:
               briefing:
                 id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-1:revision-1
                 digest: sha256:3cf59dd9edae9ccd6acbf748297061107c7e8d80760740852bad494fdf6d9c30
-                digest-domain: canonical-bytes
                 request-digest: sha256:0d2eaeb477ff763f7ab39613d61800400946b586b9451ddac93e951630379021
                 room-ref: ./review/ideation/briefing-1
               resolution:
@@ -53,7 +49,6 @@ gates:
               briefing:
                 id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-2:revision-1
                 digest: sha256:c6b47fae9ccadec75149e579e644e171e0d9c4caac755b25b6667f3e75c5e555
-                digest-domain: canonical-bytes
                 request-digest: sha256:e4e77cf1029b03939cbb1a8066f1f6a7f3f3f3d6d01913a8b7bd3e04e62ad32c
                 room-ref: ./review/ideation/briefing-2
               resolution:
@@ -74,7 +69,6 @@ gates:
               briefing:
                 id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-1:revision-1
                 digest: sha256:714c9fcdefb25c1259d2b9e7bac626729fa77d152235d97ee176793e080ce276
-                digest-domain: canonical-bytes
                 request-digest: sha256:3deb5e54760062691cf74382c2d955461e1712631db5649522bed1d55053aa41
                 room-ref: ./review/validation/briefing-1
               withdrawal:
@@ -85,7 +79,6 @@ gates:
               briefing:
                 id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-2:revision-1
                 digest: sha256:2c86dc89abf175e2a02a8cb4be3207d82f6ea36bb9c815f728e93239e6443ce2
-                digest-domain: canonical-bytes
                 request-digest: sha256:607474c33ca60a6c0fed85bcc41f491e9ccdd03e41144ec4181bf038c36bcdc9
                 room-ref: ./review/validation/briefing-2
               resolution:

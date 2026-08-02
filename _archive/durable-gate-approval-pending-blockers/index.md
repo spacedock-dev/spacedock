@@ -10,8 +10,6 @@ group: recorder
 worktree: .worktrees/spacedock-ensign-durable-gate-approval-pending-blockers
 gates:
     version: 1
-    current:
-        gate: gate:durable-gate-approval-pending-blockers:validation
     records:
         - id: gate:durable-gate-approval-pending-blockers:validation
           stage: validation
@@ -20,7 +18,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:3k:validation:canonical-v1:revision-1
                 digest: sha256:3e8bd794cca22705c69f045e2b7e0eab1427c59f65772f9e3f864c0eb930b5a1
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-v1
               resolution:
                 type: Resolution
@@ -30,7 +27,6 @@ gates:
                 at: "2026-07-22T14:42:40.129654Z"
                 decision: approve
                 reason: 'Captain directive: approved after reviewing the presented 3k validation gate.'
-                adoption-note: 'Captain decision on the presented 3k validation gate: approved.'
 mod-block:
 pr: pr-merge:557
 verdict: passed

@@ -11,8 +11,6 @@ worktree:
 issue:
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:79:ideation
     records:
         - id: gate:docs-dev:79:backlog
           stage: backlog
@@ -21,7 +19,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:79:backlog:attempt-1:revision-1
                 digest: sha256:8dfcf2bcdfa6a4b7a67fc88a49f93068a86894ddf69766649827bc9521303c54
-                digest-domain: canonical-bytes
                 room-ref: ./entity-session-claim-lease/review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -41,7 +38,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:79:ideation:attempt-1:revision-3
                 digest: sha256:8bfc4bd1c2346c7d683bb031e197a1bce23b66dcf8e64676e90f0c134744f20d
-                digest-domain: canonical-bytes
                 room-ref: ./entity-session-claim-lease/review/ideation/briefing-1
               resolution:
                 type: Resolution

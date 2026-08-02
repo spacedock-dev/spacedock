@@ -12,8 +12,6 @@ sprint:
 id: rqh46ey33aqq4rt72b4w1m2q
 gates:
     version: 1
-    current:
-        gate: gate:rqh46ey33aqq4rt72b4w1m2q:ideation
     records:
         - id: gate:docs-dev:rqh4:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:rqh4:backlog:attempt-1:revision-1
                 digest: sha256:d620934ee0af1b72c38e80fdb640f6ea07bd95da9fd08729c38e9b9d04a4fce2
-                digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -32,7 +29,6 @@ gates:
                 at: "2026-07-25T06:28:30.836574Z"
                 decision: approve
                 reason: The task isolates the actual missing cross-repository consumer boundary, forbids durable source duplication, and requires a real moved-root Subspace proof before implementation.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: ideation
                 state: consumed
@@ -43,7 +39,6 @@ gates:
               briefing:
                 id: briefing:rqh46ey33aqq4rt72b4w1m2q:ideation:attempt-1:revision-1
                 digest: sha256:615ddbffcf9c2b02784dd50258b9793fdc75edb4de29c9cc719bab28d560455a
-                digest-domain: canonical-bytes
                 request-digest: sha256:072b1ae8eca461e3c9b1badcc5ce60c1b02fa51450b16a3dea206af894d442ec
                 room-ref: ./review/ideation/briefing-1
               resolution:

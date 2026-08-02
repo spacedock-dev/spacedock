@@ -12,8 +12,6 @@ issue:
 sprint: durable-decisions
 gates:
     version: 1
-    current:
-        gate: gate:z5gwwz2748sg6vxr0g3kdsar:validation
     records:
         - id: gate:z5gwwz2748sg6vxr0g3kdsar:ideation
           stage: ideation
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-1:revision-1
                 digest: sha256:988c0401c86e31c5e9a300df8dd7e3527e171d1b7dbbb56aa40262ffa6b0ec24
-                digest-domain: canonical-bytes
                 request-digest: sha256:91d6338b0e681ec994ea130511078c95074dd505919b22665c7666e7fa16c408
                 room-ref: ./codex-launch-multi-agent-v2/review/ideation/briefing-1
               resolution:
@@ -37,7 +34,6 @@ gates:
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:ideation:attempt-2:revision-1
                 digest: sha256:0cc3451492227cd3b8b756842301674a4339ae6e6c1e42c9e45944980bd6c75b
-                digest-domain: canonical-bytes
                 request-digest: sha256:c156fc7e30942202396dcc2fb1c1fafbe57cdd20ab1d5de5bf7808e1fcbf854e
                 room-ref: ./codex-launch-multi-agent-v2/review/ideation/briefing-2
               resolution:
@@ -58,7 +54,6 @@ gates:
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-1:revision-1
                 digest: sha256:1065cc2ea5b9aca994efb80974074c6cf36c7c486c853f7a5e84031ac0252314
-                digest-domain: canonical-bytes
                 request-digest: sha256:57030132e27b794a2e0bb1efbdf51f3e3debc12ac2d1b7c9b709822fa4d7ccc5
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-1
               resolution:
@@ -73,7 +68,6 @@ gates:
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-2:revision-1
                 digest: sha256:ca917663cdcb933eae844888a3fe1661c3c6d4aef7aa133b1a0bc28c3873fed3
-                digest-domain: canonical-bytes
                 request-digest: sha256:36f7b9dfe6811ad19739d9bbac0ac8e582884baece283ff45f5ec610ecbb3923
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-2
               resolution:
@@ -88,7 +82,6 @@ gates:
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-3:revision-1
                 digest: sha256:6e5d92302a28c91d4eb16f3c9e9a7d3a06d998db97e05a87545755f3ed859d31
-                digest-domain: canonical-bytes
                 request-digest: sha256:26a53a4f9cdc8a4929c26bc574862f7b682e47c7bd0031ed199041ee03910175
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-3
               resolution:
@@ -106,7 +99,6 @@ gates:
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-4:revision-1
                 digest: sha256:09da751636b2cf4f71c3f5e4c4c56ef52a3ae295d95db472f51f4e562734556b
-                digest-domain: canonical-bytes
                 request-digest: sha256:5517193c7a03a9d8a78eb927f27fa86333a6ffa7a9bf179198cefa3e43b5b1ef
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-4
               resolution:
@@ -124,7 +116,6 @@ gates:
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-5:revision-1
                 digest: sha256:d026b8eecbaa9a19a68bbb76a378c94e307e457f014e0ccab81ea76fe92fa736
-                digest-domain: canonical-bytes
                 request-digest: sha256:1592a30ba68b38d177c7081463bd2f787012e21edceb73330cfa22a201da133c
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-5
               withdrawal:
@@ -135,7 +126,6 @@ gates:
               briefing:
                 id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-6:revision-1
                 digest: sha256:c40931f5b3d340924fd670063b83071867b9466d645a52fef20f4a09db27f0ab
-                digest-domain: canonical-bytes
                 request-digest: sha256:cc65d216d6aeba86493a8d1fa3a7a8693c7cef7bfad8d9f65b8606174f0aa427
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-6
               resolution:

@@ -12,8 +12,6 @@ issue:
 sprint: durable-decisions
 gates:
     version: 1
-    current:
-        gate: gate:s4ykctf21g60dvfgdd6cy9ny:validation
     records:
         - id: gate:docs-dev:s4:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:s4:backlog:attempt-1:revision-1
                 digest: sha256:8d6888f2f9d067835f24c8845d703547638ff919f71f709c681e856551cfb80f
-                digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -42,7 +39,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:s4:ideation:attempt-1:revision-1
                 digest: sha256:2185e46203b2e4747d8a7db557f14737492cf519c9c7d40b632dfe83c51a0074
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
@@ -59,7 +55,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:s4:ideation:attempt-2:revision-1
                 digest: sha256:706374c6491bbf8b3a43a6469aa85eefbeb513d16f1dcfad1297b6eff97bb949
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-2
               resolution:
                 type: Resolution
@@ -76,7 +71,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:s4:ideation:attempt-3:revision-1
                 digest: sha256:d80b23af1136b1caffb1786878d98b1933799f38f25fbcb99dee36466cea3469
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-3
               resolution:
                 type: Resolution
@@ -96,7 +90,6 @@ gates:
               briefing:
                 id: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-1:revision-1
                 digest: sha256:41d147c7fa54768f565ea9b38576ddbbbb0ac6e5ca5857dd38b2be54a1dfc822
-                digest-domain: canonical-bytes
                 request-digest: sha256:eadaef834634c369adfee4b1aaa18136ca5ffa56baf85a19eef3285f824939da
                 room-ref: ./review/validation/briefing-1
               resolution:
@@ -114,7 +107,6 @@ gates:
               briefing:
                 id: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-2:revision-1
                 digest: sha256:7dbd6ff18dff892f6990f1d2c91e18b8045d8daf4df5037b89fe50b24b379d08
-                digest-domain: canonical-bytes
                 request-digest: sha256:9feeea66d117405f5799bbcf9dfff16724725ca4794bf90f1ac1a14a44329892
                 room-ref: ./review/validation/briefing-2
               resolution:
@@ -129,7 +121,6 @@ gates:
               briefing:
                 id: briefing:s4ykctf21g60dvfgdd6cy9ny:validation:attempt-3:revision-1
                 digest: sha256:964d4b12d4fde4b93f278926f319ee69afe2ad101f868b9d05bc3f8c6634f18f
-                digest-domain: canonical-bytes
                 request-digest: sha256:b9b4edefbff51ebf018a66402892076865321b9306726b092a162ff2f4b62db3
                 room-ref: ./review/validation/briefing-3
               resolution:

@@ -8,8 +8,6 @@ sprint:
 started: 2026-07-26T12:36:08Z
 gates:
     version: 1
-    current:
-        gate: gate:skwchfe30ac6ntr63j1g0txj:ideation
     records:
         - id: gate:skwchfe30ac6ntr63j1g0txj:backlog
           stage: backlog
@@ -18,7 +16,6 @@ gates:
               briefing:
                 id: briefing:skwchfe30ac6ntr63j1g0txj:backlog:attempt-1:revision-1
                 digest: sha256:49d1b8e3720bc54f0f9ef8db12d8ad33f7a277bdf156a9957b4a33d3a4134ddb
-                digest-domain: canonical-bytes
                 request-digest: sha256:688d21e89d03f92cf3db7cdcbe1c4d46b4866c540fe022d41439b27afc348392
                 room-ref: ./gate-agent-ergonomics/review/backlog/briefing-1
               resolution:
@@ -39,7 +36,6 @@ gates:
               briefing:
                 id: briefing:skwchfe30ac6ntr63j1g0txj:ideation:attempt-1:revision-1
                 digest: sha256:587fa107d3df8935fd4bfc212273e3fce57cb45e0f2834c5b5d786363fa7b4c2
-                digest-domain: canonical-bytes
                 request-digest: sha256:65a2e61692f30c33753f208d78a71547ac0ba3e93666b302d589b18d31b328fb
                 room-ref: ./gate-agent-ergonomics/review/ideation/briefing-1
               resolution:

@@ -7,8 +7,6 @@ sprint: durable-decisions
 id: fh3n4w4jg7tk015512tn1tsd
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:fh3n:validation
     records:
         - id: gate:docs-dev:fh3n:backlog
           stage: backlog
@@ -17,7 +15,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:fh3n:backlog:attempt-1:revision-1
                 digest: sha256:c51c3611a1855ff5eab3eed3507559b676a6748faa133150ca681f7a02984de1
-                digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -37,7 +34,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:fh3n:ideation:attempt-1:revision-1
                 digest: sha256:fcf51be338b2fa7929c8b54ba6ea5577653f13866877bb0364e497f86b03fe64
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
@@ -57,7 +53,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:fh3n:validation:attempt-1:revision-1
                 digest: sha256:a21ab988482ef787427d6735d3911787e724924753fbb27bfe27e17973cb6c50
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution

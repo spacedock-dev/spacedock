@@ -12,8 +12,6 @@ issue:
 sprint: durable-decisions
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:6y:validation
     records:
         - id: gate:docs-dev:6y:ideation
           stage: ideation
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-1:revision-1
                 digest: sha256:39dada7e95453a8738f41ca886881deebfa31edf16ba677cf95a580596f7dbc6
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
@@ -32,7 +29,6 @@ gates:
                 at: "2026-07-23T02:23:39.812888Z"
                 decision: approve
                 reason: Ideation codifies the demonstrated 3k/h1 lifecycle, makes every transition command load-bearing, captures all observed friction, and preserves the no-recorder/no-production-Go boundary.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -40,7 +36,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-2:revision-1
                 digest: sha256:53b3cd4c9ba72ecbe375bb2a638cba5cd840c0e19481342b52da1cf8db5f11f7
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-2
               resolution:
                 type: Resolution
@@ -50,7 +45,6 @@ gates:
                 at: "2026-07-23T06:38:37.347699Z"
                 decision: approve
                 reason: Cycle-2 ideation moves the complete lifecycle behind one deferred gate trigger, preserves the boot-core ceiling and strict spawn ACs, closes every gate-entry route including headless, and names all missing behavioral proof without changing product semantics.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -58,7 +52,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-3:revision-2
                 digest: sha256:b6ecdb249de0c91b3857b218cf2464ab7b8bafbdb1d2fce70c4f8526d0c827ce
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-3
               resolution:
                 type: Resolution
@@ -68,7 +61,6 @@ gates:
                 at: "2026-07-24T00:14:56.965625Z"
                 decision: approve
                 reason: Canonical AC repair now preserves product value while removing unsupported proof obligations and cutting at least 399 LOC.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -76,7 +68,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-4:revision-1
                 digest: sha256:ae9e79e14e9df46d29af40a9e570c2af47b0bb5dd049b9f30cf57b73a1607036
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-4
               resolution:
                 type: Resolution
@@ -86,7 +77,6 @@ gates:
                 at: "2026-07-24T09:08:13.257256Z"
                 decision: approve
                 reason: Cycle 7 preserves the authority and durability outcomes, removes unproven ceremony, passed the focused gate tests named in ideation, and independent staff re-review reports APPROVE with no material findings.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -94,7 +84,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-5:revision-1
                 digest: sha256:af93b06086234aa95c8ad1a98bf52bea7866c4ceeb86ce8ba3140881aa761ad3
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-5
               resolution:
                 type: Resolution
@@ -104,7 +93,6 @@ gates:
                 at: "2026-07-24T13:55:08.534375Z"
                 decision: approve
                 reason: Cycle 13 preserves the three durable authority mutations, fixes the observed terminal merge deadlock through the existing ceremony, removes the false cache proof, constrains Pi evidence to root-assistant output, and declares a net-deleting nine-file implementation boundary.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -112,7 +100,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-6:revision-1
                 digest: sha256:47bcff38eb3425ded2ee321c3639ad3a016a8db4f455a0e7029d65ad335af584
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-6
               resolution:
                 type: Resolution
@@ -122,7 +109,6 @@ gates:
                 at: "2026-07-24T18:24:50.60913Z"
                 decision: approve
                 reason: Cycle 18 closes both staff-review findings, restores supported rejection semantics without a new schema, makes live procedure ownership falsifiable, and limits implementation to seven existing files with a +95-addition hard stop; independent staff re-review approves with no material finding.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -130,7 +116,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-7:revision-1
                 digest: sha256:9c2501ebc0b72b6fe4ae64119265832a341d89713fc80b569a8c18d76c7a62bf
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-7
               resolution:
                 type: Resolution
@@ -140,7 +125,6 @@ gates:
                 at: "2026-07-24T19:14:28.321408Z"
                 decision: approve
                 reason: Independent staff review found no material issue; the repaired eight-file design gives gate presentation one owner, makes exact-one root visibility deletion-sensitive, and preserves the existing recorder, provider, and runtime boundaries.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -148,7 +132,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-8:revision-1
                 digest: sha256:c9a7c203e6d1db996be3325f5d55bcc3bc7ebe6d40d4b2bae9affba5d6f8bd10
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-8
               resolution:
                 type: Resolution
@@ -158,7 +141,6 @@ gates:
                 at: "2026-07-24T20:08:36.771738Z"
                 decision: approve
                 reason: Independent staff review found no material issue; the unreleased-v1 reset removes prototype marker and unbound-review assumptions, binds presentation to successful durable evidence, and keeps all supported-host and authority ACs falsifiable within an explicit ceiling.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -166,7 +148,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-9:revision-1
                 digest: sha256:202522443343dc2cf1c18284f79459f4dc3b4bde62e30a9061c560df90822292
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-9
               resolution:
                 type: Resolution
@@ -176,7 +157,6 @@ gates:
                 at: "2026-07-24T21:18:39.847514Z"
                 decision: approve
                 reason: Independent staff review found no material issue; the repaired design restores the Captain-approved host proof split, makes delegated authority byte-exact, retains Pi failure evidence before cleanup, and requires measured deletion before any expansion.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -184,7 +164,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-10:revision-1
                 digest: sha256:58dc4f8a7060b9d338526b4e30339c9d92e6de8c1a3019491b01121d60fa5b0f
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-10
               resolution:
                 type: Resolution
@@ -194,7 +173,6 @@ gates:
                 at: "2026-07-24T22:45:10.35744Z"
                 decision: approve
                 reason: Independent staff review found no material issue; the repaired authority audit preserves every product-owned gate behavior while removing compatibility and forensic proof inflation, and the clean-branch plan is non-destructive.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -202,7 +180,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-11:revision-1
                 digest: sha256:dad57c6aafd59c5303f6021f5d90d252f86a2f7b613f6a186320ea0317386f1b
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-11
               resolution:
                 type: Resolution
@@ -212,7 +189,6 @@ gates:
                 at: "2026-07-25T00:41:47.830839Z"
                 decision: approve
                 reason: Independent staff review found the 15-line one-file range amendment irreducible direct product proof and conditioned it on removing redundant bind reparsing and measuring exactly +135/-152.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -220,7 +196,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:ideation:attempt-12:revision-1
                 digest: sha256:29e1bbeff0c131fe7ba31813e763d5f2b67773ae3e593387532762d5fb4381a9
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-12
               resolution:
                 type: Resolution
@@ -230,7 +205,6 @@ gates:
                 at: "2026-07-25T06:05:57.735338Z"
                 decision: approve
                 reason: Cycle 32 removes an unauthenticated provenance channel without weakening the behavioral no-authority boundary; independent staff review found no material issue and the nine-file correction is proportionate.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: implementation
                 state: consumed
@@ -241,7 +215,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:implementation:attempt-1:revision-1
                 digest: sha256:3b5dcf4d8d48d6d3991976efe622e9d577d465b67bb82e52e380310ac0da1334
-                digest-domain: canonical-bytes
                 room-ref: ./review/implementation/briefing-1
               resolution:
                 type: Resolution
@@ -251,12 +224,10 @@ gates:
                 at: "2026-07-23T06:28:08.375697Z"
                 decision: revise
                 reason: The boot-resident lifecycle exceeds the hard shared-core ceiling by 5,534 bytes beyond available headroom, leaves a headless gate-entry bypass, and lacks required live-spawn and adversarial proof; ACs remain unchanged and require deferred gate-triggered topology re-ideation.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
             - id: gate-attempt:6y-implementation-2
               briefing:
                 id: briefing:docs-dev:6y:implementation:attempt-2:revision-1
                 digest: sha256:cc82fcd0474089c65e415ba09545dc18c26fd50b47e646785a5dda6cb827f61a
-                digest-domain: canonical-bytes
                 room-ref: ./review/implementation/briefing-2
               resolution:
                 type: Resolution
@@ -266,7 +237,6 @@ gates:
                 at: "2026-07-23T11:09:18.116708Z"
                 decision: revise
                 reason: 'The deferred lifecycle implementation preserves the end value, but its remaining failures are proof-boundary defects: a model-reconstructed command-only prompt mutant, an all-routes-by-all-hosts live matrix, and an unexposed Codex public-stream handle are not valid mandatory oracles; Pi still needs real async completion waiting and Claude needs a final corrected positive run.'
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
         - id: gate:docs-dev:6y:validation
           stage: validation
           attempts:
@@ -274,7 +244,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:validation:attempt-1:revision-1
                 digest: sha256:1bddbf112a8367cce288e428a4900715221e62d04ad35098e7e9dec50841baee
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution
@@ -284,7 +253,6 @@ gates:
                 at: "2026-07-24T17:13:28.512931Z"
                 decision: approve
                 reason: Validation reproduced AC-1 through AC-8 at exact tip b99f9c66; focused, full, race, docs, Codex, Claude, Pi, detached mutants, and final-tip Roborev are green with no candidate-scope material finding.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: done
                 state: consumed
@@ -292,7 +260,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6y:validation:attempt-2:revision-1
                 digest: sha256:c5fc51c725cd43460b01b65af4558fcfed164eb141c9cd7b8ab67b87c606557a
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-2
               resolution:
                 type: Resolution
@@ -302,12 +269,10 @@ gates:
                 at: "2026-07-24T17:19:34.698945Z"
                 decision: revise
                 reason: 'PR #565 offline CI and the isolated clean-config reproduction fail at the first fixture-backed state commit because the temporary state repository lacks local Git author identity; this is a material evidence defect and the candidate cannot merge.'
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
             - id: gate-attempt:6y-validation-3
               briefing:
                 id: briefing:docs-dev:6y:validation:attempt-3:revision-1
                 digest: sha256:0ae905b1aecc75768763f7d0c960af1f0894c7cf5d68c3f827e2b6ecfd6e957e
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-3
               resolution:
                 type: Resolution
@@ -317,12 +282,10 @@ gates:
                 at: "2026-07-24T17:57:53.206098Z"
                 decision: revise
                 reason: Exact tip 13d70249 fixes clean-runner Git identity but detached controls prove four material defects across supported rejection routing, captain decision semantics, live prompt ownership, and root-visible Claude evidence; AC-1, AC-6, AC-7, and AC-8 fail and require a design reset.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
             - id: gate-attempt:6y-validation-4
               briefing:
                 id: briefing:docs-dev:6y:validation:attempt-4:revision-1
                 digest: sha256:fea2cdd89a67f8c168f9f8216f310feae38109da9c4cc8caaad71ab59b874839
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-4
               resolution:
                 type: Resolution

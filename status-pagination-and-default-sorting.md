@@ -6,8 +6,6 @@ id: rwpe45pdxffk2zfy24ejde6a
 started: 2026-07-22T06:31:16Z
 gates:
     version: 1
-    current:
-        gate: gate:rwpe45pdxffk2zfy24ejde6a:validation
     records:
         - id: gate:rwpe45pdxffk2zfy24ejde6a:ideation
           stage: ideation
@@ -16,7 +14,6 @@ gates:
               briefing:
                 id: briefing:rwpe45pdxffk2zfy24ejde6a:ideation:attempt-1:revision-1
                 digest: sha256:67ab918283c341a88f4b851da0a646f4de209766c5ef3e8a68485f3b10162fc0
-                digest-domain: canonical-bytes
                 request-digest: sha256:f602a1173a15ad93fcd313aecf4b898e97cdb6bdef2f39dc84bd4088b7d04f32
                 room-ref: ./status-pagination-and-default-sorting/review/ideation/briefing-1
               resolution:
@@ -28,7 +25,6 @@ gates:
                 decision: approve
                 reason: 'Captain directed in chat: ''dispatch both'' (status-pagination-and-default-sorting + status-where-robust-and-discoverable). Ideation already complete with no spike needed; proceed to implementation.'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
         - id: gate:rwpe45pdxffk2zfy24ejde6a:validation
@@ -38,7 +34,6 @@ gates:
               briefing:
                 id: briefing:rwpe45pdxffk2zfy24ejde6a:validation:attempt-1:revision-1
                 digest: sha256:24d1452754c15dd97658958f0b501fc7527d6f7272dd99cf4812d14cda260bbd
-                digest-domain: canonical-bytes
                 request-digest: sha256:e611922fd88552dd99a7aa07a99d2ccb2e9dce2d9656d53f92ee745286ec35a8
                 room-ref: ./status-pagination-and-default-sorting/review/validation/briefing-1
               resolution:
@@ -49,15 +44,10 @@ gates:
                 at: "2026-08-02T16:50:26.685069Z"
                 decision: revise
                 reason: 'Captain authorized routing this rejection in chat (via the FM-repair + dispatch-both continuation): AC-2 evidence gap is material per the validator''s classification -- route back to implementation for the narrow fix (add the missing filtered/archived pagination-composition test); mechanism itself proven correct, no redesign.'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:rwpe45pdxffk2zfy24ejde6a-validation-2
               briefing:
                 id: briefing:rwpe45pdxffk2zfy24ejde6a:validation:attempt-2:revision-1
                 digest: sha256:1e41f87afb680c3bf98e822ca57bc2d5105450c310a05a29384fd4cb4a9149e8
-                digest-domain: canonical-bytes
                 request-digest: sha256:82d12cb3341d0a8234dd0a21ded4295c244c83c0f03686eb65b9dc5215a2c285
                 room-ref: ./status-pagination-and-default-sorting/review/validation/briefing-2
 worktree: .worktrees/spacedock-ensign-status-pagination-and-default-sorting

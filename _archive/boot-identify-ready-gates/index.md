@@ -7,8 +7,6 @@ id: 8n55etrw9wj10jfejdq5f1s8
 worktree: .worktrees/spacedock-ensign-boot-identify-ready-gates
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:8n:validation
     records:
         - id: gate:docs-dev:8n:validation
           stage: validation
@@ -17,7 +15,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:8n:validation:attempt-1:revision-1
                 digest: sha256:74fb6c8bf5bac2091c553e58084933d1c50ada8329310f959e1e49480b88555e
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution
@@ -27,12 +24,10 @@ gates:
                 at: "2026-07-23T08:32:11.092975Z"
                 decision: revise
                 reason: 'The live workflow counterexample shows current validation stage is not gate readiness: five tickets share the stage, only three have complete reports, and one complete ticket still points at its old ideation gate. The shipped projection must derive from durable current-stage gate lifecycle state.'
-                adoption-note: 'helps only if gate readiness becomes first-class state—not something the FO infers from status: validation.'
             - id: gate-attempt:8n-validation-2
               briefing:
                 id: briefing:docs-dev:8n:validation:attempt-2:revision-1
                 digest: sha256:e7f41232184d6b240ed825bfa5396a4666ade0d1f0a22e70b0090a9136b10e6e
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-2
               resolution:
                 type: Resolution
@@ -42,7 +37,6 @@ gates:
                 at: "2026-07-23T11:05:27.576075Z"
                 decision: approve
                 reason: Validation is 11 DONE, 0 SKIPPED, 0 FAILED with AC-1 through AC-6 evidenced; focused/full/race/live-tag and adversarial checks are green, the 14-path diff is within authorized bounds, and Roborev re-panel found no issues.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
               application:
                 target-stage: done
                 state: consumed
@@ -53,7 +47,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:8n:ideation:attempt-1:revision-1
                 digest: sha256:a683c42e8662b7b400b826fa6de85f6a6a1fa7eacaf16fbc3d38971f7648a6c0
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
@@ -63,7 +56,6 @@ gates:
                 at: "2026-07-23T08:48:57.211228Z"
                 decision: approve
                 reason: The cycle-3 report is 3 DONE, 0 SKIPPED, 0 FAILED with AC-1 through AC-6 evidenced; the four-field projection distinguishes the Captain's 3-of-5 live counterexample without duplicating gate records or importing unrelated branch history.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement.
               application:
                 target-stage: implementation
                 state: consumed

@@ -13,8 +13,6 @@ sprint: durable-decisions
 id: wjkhq0sktbbe3txx6jhnvcv2
 gates:
     version: 1
-    current:
-        gate: gate:wjkhq0sktbbe3txx6jhnvcv2:ideation
     records:
         - id: gate:wjkhq0sktbbe3txx6jhnvcv2:backlog
           stage: backlog
@@ -23,7 +21,6 @@ gates:
               briefing:
                 id: briefing:wjkhq0sktbbe3txx6jhnvcv2:backlog:attempt-1:revision-1
                 digest: sha256:45e247730eceb6bb9fb0e68f806630bab3cdd2df47830efc5f4f9e40792351f8
-                digest-domain: canonical-bytes
                 request-digest: sha256:13584896ffe679ba3def35d84099ea4402ac80d53f7836c89be8fa535efc32af
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -44,7 +41,6 @@ gates:
               briefing:
                 id: briefing:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-1:revision-1
                 digest: sha256:36d1434d6fe326e0b9a94e81b131ed047ee1e5986a4d5b2d1bcbe69e49f82f33
-                digest-domain: canonical-bytes
                 request-digest: sha256:bb1d202e76847364f51a17ff726b6c7e6f71a6820298d600aae3c67e658c01fa
                 room-ref: ./review/ideation/briefing-1
               resolution:
@@ -59,7 +55,6 @@ gates:
               briefing:
                 id: briefing:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-2:revision-1
                 digest: sha256:66eb240047269d7861200ce4c5c0667fb3139a8b7c621c34edc49f63f59d3c67
-                digest-domain: canonical-bytes
                 request-digest: sha256:915c92a2caad3262388d2465d2564073eb7bea15d5c59b5801aa3a72d53d3b68
                 room-ref: ./review/ideation/briefing-2
               resolution:
@@ -74,7 +69,6 @@ gates:
               briefing:
                 id: briefing:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-3:revision-1
                 digest: sha256:182bbf2881ea281e0b37e5df2a8a78cf5deb60f57691dc784b93a893199a5c9c
-                digest-domain: canonical-bytes
                 request-digest: sha256:ed5062b5037618d28123ba45285282d81120a3f70f5e6a3aa469e1fca1aa54b7
                 room-ref: ./review/ideation/briefing-3
 ---

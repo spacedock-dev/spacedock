@@ -10,8 +10,6 @@ issue:
 id: zbcj98qfwtax61vxdzrf615e
 gates:
     version: 1
-    current:
-        gate: gate:zbcj98qfwtax61vxdzrf615e:ideation
     records:
         - id: gate:zbcj98qfwtax61vxdzrf615e:backlog
           stage: backlog
@@ -20,7 +18,6 @@ gates:
               briefing:
                 id: briefing:zbcj98qfwtax61vxdzrf615e:backlog:attempt-1:revision-1
                 digest: sha256:a8668228e65695fdea30226ee877edb1031da0356a36cca5b245d644c3434802
-                digest-domain: canonical-bytes
                 request-digest: sha256:70a3922bccbd3031f2b3e4b7f5921d1b081db5861350376d92d8f6be23b6cc35
                 room-ref: ./bind-post-rework-briefing-at-rejection-regate/review/backlog/briefing-1
               resolution:
@@ -41,7 +38,6 @@ gates:
               briefing:
                 id: briefing:zbcj98qfwtax61vxdzrf615e:ideation:attempt-1:revision-1
                 digest: sha256:83bca9143edd196d23ffa806c2bbf8a8439d6057e1ad80832a3f7696be5f86be
-                digest-domain: canonical-bytes
                 request-digest: sha256:e816cf506a7ace8da21bfc41db71abd78ccc9dc4cbd3f065bb2bb804651b0c33
                 room-ref: ./bind-post-rework-briefing-at-rejection-regate/review/ideation/briefing-1
               resolution:

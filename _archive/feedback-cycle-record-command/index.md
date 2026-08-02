@@ -13,20 +13,15 @@ sprint: 0260-proportionality
 group: reframe
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:bw:ideation
-        attempt: gate-attempt:bw-ideation-3
     records:
         - id: gate:docs-dev:bw:ideation
           stage: ideation
-          current-attempt: gate-attempt:bw-ideation-3
           attempts:
             - id: gate-attempt:bw-ideation-1
-              sequence: 1
-              state: closed
               briefing:
                 id: briefing:bw-ideation-1
                 digest: sha256:51b38d47a1b15d0ea7b34d4908d20d257ae3e39f5bc587839075a78466d10167
+                room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
                 id: resolution:actor-1784521963753201000
@@ -35,14 +30,11 @@ gates:
                 at: 2026-07-20T04:32:43Z
                 decision: revise
                 reason: "Four annotations: (1) briefing packaging should use separate artifacts (FO-side, 3k experiment); (2) is the new record command needed at all — apply the cheapest-check ordering; (3) add a final landing-spot review AC (core vs dev-specific) and propose the dev README change; (4) roborev-shaped in-stage AC coverage."
-              note: "Subspace advisory float; four captain annotations included by id in the resolution. Annotation 1 is FO-owned (briefing packaging), 2-4 routed to the worker; next attempt opens at re-presentation."
             - id: gate-attempt:bw-ideation-2
-              sequence: 2
-              previous-attempt: gate-attempt:bw-ideation-1
-              state: closed
               briefing:
                 id: briefing:bw-ideation-2
                 digest: sha256:520f84901aae2b1e9fc0c78eaaf974cbec3a8b8cbb82db3d8eb7fecb9a778a6d
+                room-ref: ./review/ideation/briefing-2
               resolution:
                 type: Resolution
                 id: resolution:actor-1784523098406183000
@@ -53,15 +45,11 @@ gates:
               application:
                 target-stage: implementation
                 state: superseded
-              note: "Subspace advisory float, no annotations; third presentation (prose-only convention) approved. Superseded by attempt 3 (captain-approved staff-review folds); the approval itself stands."
             - id: gate-attempt:bw-ideation-3
-              sequence: 3
-              previous-attempt: gate-attempt:bw-ideation-2
-              state: closed
               briefing:
                 id: briefing:bw-ideation-3-chat
                 digest: sha256:837779a0b96ebddc7e695106109a6026034c28337686a73bba3d8d18f2ff8c6f
-                note: "chat presentation; ADVISORY digest — it hashes the working file at recording time (body folds applied, this attempt's own record excluded), which no single committed tree reproduces because an entity cannot self-bind its gates record. For drift checking, diff the entity BODY against the state commit that introduced this attempt; do not re-hash the current file."
+                room-ref: ./review/ideation/briefing-3
               resolution:
                 type: Resolution
                 id: resolution:captain-chat-bw-ideation-3
@@ -73,7 +61,6 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
-              note: "FO applied the folds directly under the captain's edit-directly grant; codex staff review finding 1 and fable delta findings 8-10."
 mod-block:
 pr: pr-merge:541
 archived: 2026-07-21T04:41:32Z

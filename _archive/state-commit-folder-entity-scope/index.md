@@ -14,8 +14,6 @@ sprint: durable-decisions
 group: recorder
 gates:
     version: 1
-    current:
-        gate: gate:state-commit-folder-entity-scope:validation
     records:
         - id: gate:state-commit-folder-entity-scope:ideation
           stage: ideation
@@ -24,7 +22,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:vn:ideation:canonical-v1:revision-1
                 digest: sha256:8191dc40c67c3854119c189622f6a15006e8a21fa9ac7ce2ce6f0618a66f496d
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-v1
               resolution:
                 type: Resolution
@@ -41,7 +38,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:vn:validation:canonical-v1:revision-1
                 digest: sha256:af40be6a0218d6334de45aaec07c9e7d37777aa849b31c049cea93d44d93d31b
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution
@@ -51,7 +47,6 @@ gates:
                 at: "2026-07-22T15:55:30.121749Z"
                 decision: approve
                 reason: All six acceptance criteria reproduced; Roborev material findings fixed; full, race, focused, format, and clean checks passed; live xb and vn gate-room commits proved exact folder scoping.
-                adoption-note: 'Captain: you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement.'
 mod-block:
 pr: pr-merge:558
 archived: 2026-07-22T16:05:43Z

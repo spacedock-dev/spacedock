@@ -12,8 +12,6 @@ sprint:
 id: ph0zv6azcrhcxmg57wwnxah7
 gates:
     version: 1
-    current:
-        gate: gate:ph0zv6azcrhcxmg57wwnxah7:ideation
     records:
         - id: gate:ph0zv6azcrhcxmg57wwnxah7:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:ph0zv6azcrhcxmg57wwnxah7:backlog:attempt-1:revision-1
                 digest: sha256:0782c65c06c7ee9378226b3a7ef88d92939a54c05d916fe3690cc7d99804278f
-                digest-domain: canonical-bytes
                 request-digest: sha256:77aabae5f9e5af378e377bc1eaefccde931c8932e5e6023a661f5eae4a22e438
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -43,7 +40,6 @@ gates:
               briefing:
                 id: briefing:ph0zv6azcrhcxmg57wwnxah7:ideation:attempt-1:revision-1
                 digest: sha256:8619d60bf5569c75c57ef8da9c2972e4ff4a043b475862be7797911777d514db
-                digest-domain: canonical-bytes
                 request-digest: sha256:40f0d4285d2eb22a47ea070f2bb79fd41cc560b22bf77f917015ec3695e71680
                 room-ref: ./review/ideation/briefing-1
               resolution:
@@ -61,7 +57,6 @@ gates:
               briefing:
                 id: briefing:ph0zv6azcrhcxmg57wwnxah7:ideation:attempt-2:revision-1
                 digest: sha256:a6ca1cbf7a1f140c6502651d120aedf593f285ee3f6e5959d503d025d484526a
-                digest-domain: canonical-bytes
                 request-digest: sha256:99b1efb3e948fc85581c419b0a481d24e31063882c4477b803af191339d0c9f0
                 room-ref: ./review/ideation/briefing-2
               resolution:

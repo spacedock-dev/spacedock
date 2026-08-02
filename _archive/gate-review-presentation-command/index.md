@@ -9,8 +9,6 @@ started: 2026-07-21T01:43:36Z
 worktree: .worktrees/spacedock-ensign-gate-review-presentation-command
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:xb:validation
     records:
         - id: gate:docs-dev:xb:validation
           stage: validation
@@ -19,7 +17,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:xb:validation:attempt-1:revision-1
                 digest: sha256:772a856dcd3dd7d5a1bcfb589854b4b7f5b70bb26393a7e1e90aa2605daf0911
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-2
               resolution:
                 type: Resolution
@@ -29,7 +26,6 @@ gates:
                 at: "2026-07-23T23:49:14.728783Z"
                 decision: approve
                 reason: Spacedock 612b72fc and provider 198f7623 have 6/6 ACs evidenced, retained-delivery and association suites green, zero binary coupling, and no material finding.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 target-stage: done
                 state: superseded
@@ -37,7 +33,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:xb:validation:attempt-2:revision-1
                 digest: sha256:cd2fa1035f22eb79e6d63dccc887cb5023b19c4b007fe819e8d8ed7a8fd377d7
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-3
               resolution:
                 type: Resolution
@@ -47,7 +42,6 @@ gates:
                 at: "2026-07-24T13:20:05.387082Z"
                 decision: approve
                 reason: Exact candidate 8fd1b869 satisfies all six supported prepared-room ACs at 17 files and 1,310/1,310 changed LOC; validation reports PASSED and Roborev 2070 is canonically triaged with no material finding.
-                adoption-note: Captain granted the First Officer the conn to approve sprint gates, PRs, CI, and merge; land only exact candidate 8fd1b869eb9797a032ec5b7e6ed06f15707eb562.
               application:
                 target-stage: done
                 state: consumed
@@ -55,7 +49,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:xb:validation:attempt-3:revision-1
                 digest: sha256:cf920b3c5ee291361d991f1db9f81e3797e2dae0da13d3995e21341215f7ce56
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-4
               resolution:
                 type: Resolution
@@ -65,7 +58,6 @@ gates:
                 at: "2026-07-24T13:28:37.78285Z"
                 decision: approve
                 reason: Rebased exact candidate 642ca090 is patch-identical across all 15 commits, preserves 17 files and 1,310/1,310 changed LOC, and passes all six ACs plus full/race/docs on current base b0ca008d.
-                adoption-note: Captain granted the First Officer the conn to approve sprint gates, PRs, CI, and merge; land only 642ca0901a920c701acd5e1ec82aa11387764e43.
               application:
                 target-stage: done
                 state: consumed
@@ -76,7 +68,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:xb:ideation:attempt-1:revision-1
                 digest: sha256:a552c2b7978d9fb642beddba360b926bcf3c334072dba60d31744bba18cae552
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-4
               resolution:
                 type: Resolution
@@ -86,7 +77,6 @@ gates:
                 at: "2026-07-24T12:18:27.93418Z"
                 decision: approve
                 reason: Cycle 12 aligns all six ACs to the approved prepared-room boundary; independent staff re-review APPROVES; only +42/-0 test lines are authorized, projecting 1,297/1,300 changed LOC.
-                adoption-note: Captain granted the First Officer the conn to approve sprint gates and required suspicion of drift; preserve exact candidate 98ebb458 and add only the three recorded test variants.
               application:
                 target-stage: implementation
                 state: consumed

@@ -8,8 +8,6 @@ priority: medium
 id: 3t9r36n9tbj116jp9g1k01tz
 gates:
     version: 1
-    current:
-        gate: gate:3t9r36n9tbj116jp9g1k01tz:validation
     records:
         - id: gate:3t9r36n9tbj116jp9g1k01tz:backlog
           stage: backlog
@@ -18,7 +16,6 @@ gates:
               briefing:
                 id: briefing:3t9r36n9tbj116jp9g1k01tz:backlog:attempt-1:revision-1
                 digest: sha256:7e024b6712a45735483d7b6546e0aef114b7a7bb385b049038147d585537c0d6
-                digest-domain: canonical-bytes
                 request-digest: sha256:5079ac1476c67b3215a065329c37f6183a0eb29a278e83783cbd76026ae623b3
                 room-ref: ./status-where-robust-and-discoverable/review/backlog/briefing-1
               resolution:
@@ -30,7 +27,6 @@ gates:
                 decision: approve
                 reason: 'Captain directed in chat: ''dispatch both''. Approve backlog->ideation for the --where robustness/discoverability/GH#314 gaps.'
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
         - id: gate:3t9r36n9tbj116jp9g1k01tz:ideation
@@ -40,7 +36,6 @@ gates:
               briefing:
                 id: briefing:3t9r36n9tbj116jp9g1k01tz:ideation:attempt-1:revision-1
                 digest: sha256:25dc9938c0182e38f2158831de267b500e6a43326a3d140a4af8e67daf31b467
-                digest-domain: canonical-bytes
                 request-digest: sha256:86055f2d29fbfab3d7f5fba21ad4ee473cc25c83a0eba9e4c1d32ea77ae8dd38
                 room-ref: ./status-where-robust-and-discoverable/review/ideation/briefing-1
               resolution:
@@ -52,7 +47,6 @@ gates:
                 decision: approve
                 reason: 'Captain approved ideation in chat: AC-2 mechanism correctly deleted, AC-1 split into 2 guards, AC-3 status --help gap confirmed. Proceed to implementation.'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
         - id: gate:3t9r36n9tbj116jp9g1k01tz:validation
@@ -62,7 +56,6 @@ gates:
               briefing:
                 id: briefing:3t9r36n9tbj116jp9g1k01tz:validation:attempt-1:revision-1
                 digest: sha256:dfe84eb83bc263b11ff5f4e8e79e30e6ccc6050577dbed44c540fb6c8ff1e4cb
-                digest-domain: canonical-bytes
                 request-digest: sha256:0adda560d2e04428a87e52ede91c96f948f4eea16ed59a7e144fd72cf94490fe
                 room-ref: ./status-where-robust-and-discoverable/review/validation/briefing-1
 started: 2026-08-02T16:02:35Z

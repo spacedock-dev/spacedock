@@ -12,8 +12,6 @@ sprint:
 id: mnea9vq3pv1rz1x1hdjbvdg9
 gates:
     version: 1
-    current:
-        gate: gate:mnea9vq3pv1rz1x1hdjbvdg9:ideation
     records:
         - id: gate:mnea9vq3pv1rz1x1hdjbvdg9:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:mnea9vq3pv1rz1x1hdjbvdg9:backlog:attempt-1:revision-1
                 digest: sha256:064cebf9ee6699261c5213d4b8b9ff42350c64e13060bcd07876a995c7a8e8e7
-                digest-domain: canonical-bytes
                 request-digest: sha256:4fb4b00f0b0d4dd7dfe9be7b26b4dd904d00a9ed3f7361c2e73dd24871a1fcef
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -43,7 +40,6 @@ gates:
               briefing:
                 id: briefing:mnea9vq3pv1rz1x1hdjbvdg9:ideation:attempt-1:revision-1
                 digest: sha256:374fc38f469e16f29364e38d8349926fa1ea80f626accf8b1f9fa364c350809b
-                digest-domain: canonical-bytes
                 request-digest: sha256:3ec2dbae290741be802855503aec98a083f2364fdb8e42f0344bab8f77a4cc64
                 room-ref: ./review/ideation/briefing-1
               resolution:

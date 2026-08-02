@@ -12,8 +12,6 @@ issue:
 sprint: durable-decisions
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:rd:validation
     records:
         - id: gate:docs-dev:rd:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:rd:backlog:attempt-1:revision-1
                 digest: sha256:a6109cdc4013c201d8a268c32dc6795d354718cfdeae85ba0fd84546ed720659
-                digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -32,7 +29,6 @@ gates:
                 at: "2026-07-24T15:38:08.065814Z"
                 decision: approve
                 reason: The split-root remote can retain an active merge sentinel after local archive finalization; a restart-safe supported publication path is a material durable-decisions prerelease requirement.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
               application:
                 target-stage: ideation
                 state: consumed
@@ -43,7 +39,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:rd:ideation:attempt-1:revision-1
                 digest: sha256:3737281543bf5be0e7b815157905b792b8adaf1ca4a756da8b531b8ae5a9c8af
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
@@ -53,7 +48,6 @@ gates:
                 at: "2026-07-24T15:58:44.401791Z"
                 decision: approve
                 reason: The design reuses one state publisher, preserves archived read-only semantics, closes crash and duplicate-shape gaps with real-Git evidence, and passed independent staff review; implementation remains pending until 6y lands.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
               application:
                 target-stage: implementation
                 state: consumed
@@ -64,7 +58,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:rd:validation:attempt-1:revision-1
                 digest: sha256:5388622aea1ba0ff2c28f9c8cfa3a48afaf7952ab07a198aae4960c48750f017
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution

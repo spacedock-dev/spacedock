@@ -12,8 +12,6 @@ sprint: durable-decisions
 id: 0m6vtrw4qh9w4x6bn06x5hen
 gates:
     version: 1
-    current:
-        gate: gate:0m6vtrw4qh9w4x6bn06x5hen:validation
     records:
         - id: gate:0m6vtrw4qh9w4x6bn06x5hen:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:0m6vtrw4qh9w4x6bn06x5hen:backlog:attempt-1:revision-1
                 digest: sha256:9bfedeb38906e04bae528cedfdb96f101efaa1d63c819b44922a8ee6e5db60f6
-                digest-domain: canonical-bytes
                 request-digest: sha256:0526bd61039ea579f7595d23e5ccfd8bd3d3f18ee7ce5b64b211456df37f8524
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -43,7 +40,6 @@ gates:
               briefing:
                 id: briefing:0m6vtrw4qh9w4x6bn06x5hen:ideation:attempt-1:revision-1
                 digest: sha256:8319f9b10709cca9e5ae3f6c547b1fd2db6abef666f020013f38bdf845da5c0d
-                digest-domain: canonical-bytes
                 request-digest: sha256:d0bc5693618ca77595374a51ae615385e9c3cb0fd4f62f740be8263ccdb6c2a7
                 room-ref: ./review/ideation/briefing-1
               resolution:
@@ -64,7 +60,6 @@ gates:
               briefing:
                 id: briefing:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-1:revision-1
                 digest: sha256:2811a3f1ae4343575536d65c3cea66a0d644e97182cf1814476d23f9e0b9f61c
-                digest-domain: canonical-bytes
                 request-digest: sha256:c43512b5f252776d536e89b7065dbcf5784b7fc96d7e84aa5e8fff63e5cd89af
                 room-ref: ./review/validation/briefing-1
               resolution:
@@ -82,7 +77,6 @@ gates:
               briefing:
                 id: briefing:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-2:revision-1
                 digest: sha256:658468c64c65eedc3f5f02a11f329084ef6acde73f071f9238f3078c44dcf88a
-                digest-domain: canonical-bytes
                 request-digest: sha256:4d9578638c01f1b590fbfa3e2971c6b73b921cd729a49a7a43294b80bade36be
                 room-ref: ./review/validation/briefing-2
               resolution:

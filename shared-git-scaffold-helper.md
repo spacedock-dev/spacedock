@@ -11,8 +11,6 @@ worktree: .worktrees/spacedock-ensign-shared-git-scaffold-helper
 issue:
 gates:
     version: 1
-    current:
-        gate: gate:zfmbm75wvmfj38h73wrtpqqy:validation
     records:
         - id: gate:zfmbm75wvmfj38h73wrtpqqy:backlog
           stage: backlog
@@ -21,7 +19,6 @@ gates:
               briefing:
                 id: briefing:zfmbm75wvmfj38h73wrtpqqy:backlog:attempt-1:revision-1
                 digest: sha256:ed3ebaef25d66a395a77d778b29879d7ff5ad90f40fc8b65d157c3df486059fd
-                digest-domain: canonical-bytes
                 request-digest: sha256:2ee4ca7169ea0dbbe53f8d8a436d26bdd6bb84a7608e059a04ce7681d557efe2
                 room-ref: ./shared-git-scaffold-helper/review/backlog/briefing-1
               resolution:
@@ -42,7 +39,6 @@ gates:
               briefing:
                 id: briefing:zfmbm75wvmfj38h73wrtpqqy:ideation:attempt-1:revision-1
                 digest: sha256:59cc466ce2cb6c8f36c103d8c766897d685bced367fe201841e6359f9e2fb05e
-                digest-domain: canonical-bytes
                 request-digest: sha256:098b5702b7624a02cfba8844f982aa3292d74c16bf74be81fdaa8ca0e615d9de
                 room-ref: ./shared-git-scaffold-helper/review/ideation/briefing-1
               resolution:
@@ -63,7 +59,6 @@ gates:
               briefing:
                 id: briefing:zfmbm75wvmfj38h73wrtpqqy:validation:attempt-1:revision-1
                 digest: sha256:1f2880904ef54a288493985bbb3fa667f5e12b851ea9955b9c2ee34a5776978f
-                digest-domain: canonical-bytes
                 request-digest: sha256:2af1e2077d9d1970d4ee4041865a2356de2f047fa2a7fb043b19c987608559e2
                 room-ref: ./shared-git-scaffold-helper/review/validation/briefing-1
               resolution:

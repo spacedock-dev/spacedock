@@ -11,8 +11,6 @@ issue:
 id: 3zzpdw704df1g8pg1x9thzmw
 gates:
     version: 1
-    current:
-        gate: gate:3zzpdw704df1g8pg1x9thzmw:ideation
     records:
         - id: gate:3zzpdw704df1g8pg1x9thzmw:backlog
           stage: backlog
@@ -21,7 +19,6 @@ gates:
               briefing:
                 id: briefing:3zzpdw704df1g8pg1x9thzmw:backlog:attempt-1:revision-1
                 digest: sha256:7219fe904750e1ac346ab7f93d65e116616903534c52ab69b8e68e2ffd1feae2
-                digest-domain: canonical-bytes
                 request-digest: sha256:bfb3db79c83645d85a289bafe2850daf02435cf131631ffafaa2688f5bfb7533
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -42,7 +39,6 @@ gates:
               briefing:
                 id: briefing:3zzpdw704df1g8pg1x9thzmw:ideation:attempt-1:revision-1
                 digest: sha256:588752bd4f3b4d02872b997769437955feaeafbae7f71fab97e1fd73682c7661
-                digest-domain: canonical-bytes
                 request-digest: sha256:9b891a8f5fd1ac959bed7b9a91c6542e1888d8158724135bac66720ab3d03fc9
                 room-ref: ./review/ideation/briefing-1
               resolution:
