@@ -41,6 +41,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:e611922fd88552dd99a7aa07a99d2ccb2e9dce2d9656d53f92ee745286ec35a8
                 room-ref: ./status-pagination-and-default-sorting/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:rwpe45pdxffk2zfy24ejde6a:validation:1
+                briefing: briefing:rwpe45pdxffk2zfy24ejde6a:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T16:50:26.685069Z"
+                decision: revise
+                reason: 'Captain authorized routing this rejection in chat (via the FM-repair + dispatch-both continuation): AC-2 evidence gap is material per the validator''s classification -- route back to implementation for the narrow fix (add the missing filtered/archived pagination-composition test); mechanism itself proven correct, no redesign.'
+              application:
+                action: feedback
+                target-stage: implementation
+                state: pending
 worktree: .worktrees/spacedock-ensign-status-pagination-and-default-sorting
 ---
 
