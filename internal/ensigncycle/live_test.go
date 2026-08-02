@@ -5,7 +5,6 @@
 package ensigncycle
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // This is the live analog of TestEnsignCycleMechanicalOutputs (cycle_test.go).
@@ -413,10 +414,7 @@ func cachedLivePluginDir(t *testing.T, repo string) string {
 		}
 		// git init so the FO's `git rev-parse --show-toplevel` resolves to this
 		// workflow-free root, not an enclosing checkout that has a docs/dev.
-		if out, gitErr := exec.Command("git", "-C", staged, "init", "-q").CombinedOutput(); gitErr != nil {
-			livePluginErr = fmt.Errorf("git init staged plugin: %v: %s", gitErr, out)
-			return
-		}
+		testgit.InitRepo(t, staged, "-q")
 		livePluginPath = staged
 	})
 	if livePluginErr != nil {

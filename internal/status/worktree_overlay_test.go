@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // buildWorktreeBacked materializes a NON-split-root workflow in a git repo with
@@ -35,8 +37,8 @@ func buildWorktreeBacked(t *testing.T, readme, pipelineEntity, worktreeEntity st
 // overlay's find_git_root resolves to root.
 func gitInitWorktreeFixture(t *testing.T, dir string) {
 	t.Helper()
+	testgit.InitRepo(t, dir, "-q")
 	for _, args := range [][]string{
-		{"init", "-q"},
 		{"-c", "user.email=t@t", "-c", "user.name=t", "add", "-A"},
 		{"-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init"},
 	} {

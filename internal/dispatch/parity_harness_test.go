@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // runResult is one run's three channels.
@@ -80,8 +81,8 @@ func readDispatchBody(t *testing.T, path string) string {
 // gitInit initializes a git repo at dir so find_git_root resolves there.
 func gitInit(t *testing.T, dir string) {
 	t.Helper()
+	testgit.InitRepo(t, dir, "-q")
 	for _, args := range [][]string{
-		{"init", "-q"},
 		{"-c", "user.email=t@t", "-c", "user.name=t", "add", "-A"},
 		{"-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init"},
 	} {
@@ -97,10 +98,7 @@ func gitInit(t *testing.T, dir string) {
 // not add/commit, so it works on an empty directory.
 func gitInitBare(t *testing.T, dir string) {
 	t.Helper()
-	cmd := exec.Command("git", "-C", dir, "init", "-q")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v\n%s", err, out)
-	}
+	testgit.InitRepo(t, dir, "-q")
 }
 
 // gitAddOrigin adds a named `origin` remote to the repo at dir, pointing at a

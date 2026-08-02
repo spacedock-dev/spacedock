@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // writeSplitReadmeRepo sets up the PRE-birth state `state new` onboards: a cloned
@@ -224,9 +225,7 @@ func TestStateNewRefusesAlreadyBirthed(t *testing.T) {
 func TestStateNewNoRemoteBestEffort(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root := t.TempDir()
-	git(t, root, "init", "-q")
-	git(t, root, "config", "user.email", "t@t")
-	git(t, root, "config", "user.name", "t")
+	testgit.InitRepo(t, root, "-q")
 	workflowDir := filepath.Join(root, "docs", "dev")
 	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
 		t.Fatal(err)
@@ -267,7 +266,7 @@ func TestStateNewInlineErrors(t *testing.T) {
 		[]byte("---\ncommissioned-by: spacedock@1\nid-style: slug\nstate: $inline\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: done\n      terminal: true\n---\n\n# Inline WF\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	git(t, root, "init", "-q")
+	testgit.InitRepo(t, root, "-q")
 	git(t, root, "add", "-A")
 	git(t, root, "commit", "-q", "-m", "init")
 

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 const enteredStageReadme = `---
@@ -284,9 +286,7 @@ func buildEnteredStageFixture(t *testing.T, body string) (def, state, entity str
 	t.Helper()
 	def, state = buildSplitRoot(t, enteredStageReadme, map[string]string{"entered-task.md": body})
 	entity = filepath.Join(state, "entered-task.md")
-	gitC(t, state, "init", "-q")
-	gitC(t, state, "config", "user.email", "test@example.com")
-	gitC(t, state, "config", "user.name", "test")
+	testgit.InitRepo(t, state, "-q")
 	gitC(t, state, "add", "--", "entered-task.md")
 	gitC(t, state, "commit", "-q", "-m", "seed entered stage", "--", "entered-task.md")
 	return def, state, entity

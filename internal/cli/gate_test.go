@@ -12,6 +12,7 @@ import (
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 func TestGateWithdrawCLIUsesExactGrammarAndImplicitFirstOfficerAttribution(t *testing.T) {
@@ -159,9 +160,7 @@ func gatePrepareCLIFixture(t *testing.T) (workflow, state, artifact string) {
 	if err := os.MkdirAll(workflow, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	git(t, mainRoot, "init", "-q")
-	git(t, mainRoot, "config", "user.name", "Spacedock Test")
-	git(t, mainRoot, "config", "user.email", "spacedock@example.invalid")
+	testgit.InitRepo(t, mainRoot, "-q")
 	writeFile(t, filepath.Join(workflow, "README.md"), "---\nid-style: slug\nstate: .state\nstages:\n  states:\n    - name: validation\n      initial: true\n      gate: true\n    - name: done\n      terminal: true\n---\n# Workflow\n")
 	artifact = filepath.Join(mainRoot, "gate-review.md")
 	writeFile(t, artifact, "# Review\n")
@@ -172,9 +171,7 @@ func gatePrepareCLIFixture(t *testing.T) (workflow, state, artifact string) {
 	if err := os.MkdirAll(state, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	git(t, state, "init", "-q")
-	git(t, state, "config", "user.name", "Spacedock Test")
-	git(t, state, "config", "user.email", "spacedock@example.invalid")
+	testgit.InitRepo(t, state, "-q")
 	writeFile(t, filepath.Join(state, "task.md"), "---\nid: task\nstatus: validation\ntitle: Task\n---\n# Task\n")
 	git(t, state, "add", ".")
 	git(t, state, "commit", "-q", "-m", "state fixture")
