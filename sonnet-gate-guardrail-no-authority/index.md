@@ -9,6 +9,21 @@ score: 0.7
 worktree:
 issue:
 id: 3zzpdw704df1g8pg1x9thzmw
+gates:
+    version: 1
+    current:
+        gate: gate:3zzpdw704df1g8pg1x9thzmw:backlog
+    records:
+        - id: gate:3zzpdw704df1g8pg1x9thzmw:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:3zzpdw704df1g8pg1x9thzmw-backlog-1
+              briefing:
+                id: briefing:3zzpdw704df1g8pg1x9thzmw:backlog:attempt-1:revision-1
+                digest: sha256:7219fe904750e1ac346ab7f93d65e116616903534c52ab69b8e68e2ffd1feae2
+                digest-domain: canonical-bytes
+                request-digest: sha256:bfb3db79c83645d85a289bafe2850daf02435cf131631ffafaa2688f5bfb7533
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Restore the Sonnet gate-guardrail live proof after the model stops issuing a second successful `gate prepare` before committing the first hold. The task removes the bounded Sonnet TODO quarantine only after an exact-tip live run proves the committed no-authority boundary.

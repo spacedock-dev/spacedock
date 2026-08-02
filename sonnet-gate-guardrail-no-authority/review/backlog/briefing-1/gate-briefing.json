@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3zzpdw704df1g8pg1x9thzmw:backlog:attempt-1:revision-1",
+  "question": "Should this backlog item enter ideation now, chartered to diagnose PR #585's pre-quarantine CI failure, confirm the entity's documented diagnosis against that evidence, and recommend the smallest contract/runner fix?",
+  "artifacts": [
+    {
+      "id": "artifact:3zzpdw704df1g8pg1x9thzmw:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/445dc3b6fe2419873707aa28754aaf0ed4fe0471/sonnet-gate-guardrail-no-authority/index.md",
+      "rev": "sha256:ea4dac4be7f1573eccd3eb0b9a769e717a2347ad90cd4034d02b34c227070682",
+      "mediaType": "text/markdown",
+      "summary": "The Sonnet live lane at PR #585's former head 57489d491 (CI run 30708727845, job 91392375253, artifact 8821429777) recorded two successful gate prepare operations before state commit, crossing the committed no-authority boundary GitHub issue #596 diagnosed (issue closed 2026-08-02, superseded by this task per Captain correction). PR #585 quarantines only this Sonnet case; this task owns the repair and the promotion condition -- restore the live proof after Sonnet performs exactly one gate prepare, then state commit, then present-and-stop."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:3zzpdw704df1g8pg1x9thzmw:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/c43819b50d9364ebf17ea1ae9f7c251e63b341b4/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:90e55b205b642908525f771a51fb7a0a14adff660c39c284a3967ee21ab7ede5"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3zzpdw704df1g8pg1x9thzmw:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/c43819b50d9364ebf17ea1ae9f7c251e63b341b4/internal/ensigncycle/claude_live_runner_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:2f165d0fb12b8503b75e30f3e879253e0017f9d63efdcfefc5edf7e22da8d7a6"
+    }
+  ]
+}
