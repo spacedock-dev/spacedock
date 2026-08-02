@@ -21,7 +21,7 @@ Each runner adapter turns a shared scenario into a real launch and returns `(bef
 |---------|--------------|---------------|
 | Auth / HOME isolation | isolated `CODEX_HOME` + minimal `config.toml` plus copied `auth.json` / `OPENAI_API_KEY` | clean `HOME` + OAuth benchmark-token / `ANTHROPIC_API_KEY` (`isolatedClaudeEnv`) |
 | Plugin install | `spacedock codex --plugin-dir <checkout>` consumes the checkout before `--` | `spacedock claude --plugin-dir <checkout> --skip-compat-check` |
-| Launch | `spacedock codex <task> -- exec --json --enable multi_agent_v2 --output-last-message <file>` | `spacedock claude -- -p <prompt> --output-format stream-json` |
+| Launch | `spacedock codex <task> -- exec --json --output-last-message <file>`; the launcher injects `agents.enabled=true`, stable `features.multi_agent=true`, and exact `features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}`, rejects forwarded overrides, and fails if the host cannot accept them | `spacedock claude -- -p <prompt> --output-format stream-json` |
 | `observed` extract | durable workflow state; final message only where the scenario promises user-facing text | durable workflow state; final message only where the scenario promises user-facing text |
 | Artifacts | jsonl / final-message / stderr | stream jsonl / final-message |
 
@@ -54,17 +54,7 @@ every expected start, and every expected start strictly predates the earliest co
 Same-slug sidecars are allowed only there or at a corrected-held boundary; foreign slugs reject.
 Transcript JSONL, command text, provider events, and model narration remain diagnostic only; the commissioned-task fallback uses the same durable oracle.
 
-Codex deliberately follows the Spacedock front door before handing off host arguments. The
-runner passes `--plugin-dir` and `--skip-compat-check` before `--`; the front door installs the
-current checkout and appends the fixed first-officer bootstrap to the task. After `--`, the
-runner passes Codex's `exec` command, explicitly enables `multi_agent_v2`, and uses
-`--dangerously-bypass-approvals-and-sandbox` to match Claude's live `bypassPermissions` posture.
-The isolated home receives only the three-key `features.multi_agent_v2` fragment and, for local
-OAuth, `auth.json`; it never copies the operator's full config, plugin cache, or other
-credentials. Codex has no Claude `--agent` flag or equivalent stream result event, so its
-bootstrap is positional and its final message comes from `--output-last-message`. CI pins the
-Codex model through the existing non-recursive `codex exec` shim; the runner does not duplicate
-that pin.
+Codex follows the Spacedock front door: `--plugin-dir` and `--skip-compat-check` stay before the `--` fence, while `exec` and `--dangerously-bypass-approvals-and-sandbox` stay after it. The isolated home copies only the three-key v2 fixture and authentication, never the operator's full config or plugin cache; Codex final output comes from `--output-last-message`, and CI retains its non-recursive model-pinning shim. The separately opt-in launcher proof (`SPACEDOCK_LIVE_CODEX_MULTI_AGENT=1 go test -count=1 -run TestCodexIsolatedHomeCollaborationLifecycle ./internal/cli -v`) grades typed records for ordered same-worker spawn/follow-up/list/wait, terminal outputs, and `multi_agent_version: v2`, plus a disabled zero-event control; `codex features list` is not a substitute because its v2 label can remain false while the exact table completes the lifecycle.
 
 **To add a shared runtime scenario:**
 
@@ -98,10 +88,6 @@ Each Codex shared scenario launches one `spacedock codex` front-door process, wh
 ```bash
 go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
 ```
-
-The launcher-specific isolated-home collaboration proof is separately opt-in because it spends two short Codex turns. It copies authentication only, supplies its positive prompt through a built `spacedock codex` front door, and grades typed parent and child records for one ordered same-worker spawn/follow-up/list/wait lifecycle, terminal child and parent output, and `multi_agent_version: v2`. A direct disabled control separately requires zero collaboration events. Run `SPACEDOCK_LIVE_CODEX_MULTI_AGENT=1 go test -count=1 -run TestCodexIsolatedHomeCollaborationLifecycle ./internal/cli -v`.
-
-Do not replace this behavioral oracle with `codex features list`: current Codex can report the `multi_agent_v2` label as false while accepting the exact table and completing the v2 lifecycle. The offline complete-argv and unsupported-host tests remain the no-model-spend proofs for launch placement and fail-closed host support.
 
 Run the Pi live proofs locally with the same package versions pinned in CI:
 
