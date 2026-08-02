@@ -70,6 +70,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:2af1e2077d9d1970d4ee4041865a2356de2f047fa2a7fb043b19c987608559e2
                 room-ref: ./shared-git-scaffold-helper/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zfmbm75wvmfj38h73wrtpqqy:validation:1
+                briefing: briefing:zfmbm75wvmfj38h73wrtpqqy:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T15:44:04.309119Z"
+                decision: approve
+                reason: 'Captain approved validation in chat: PASSED, all ACs independently reproduced, no material findings. Proceed to merge.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 Add one shared, exported test helper that initializes a scratch git repo with a persisted `user.name`/`user.email` config in a single call, so no future fixture can reproduce the "works locally on ambient identity, fails on a clean CI runner" bug class, and migrate the existing hand-rolled fixtures to it.
