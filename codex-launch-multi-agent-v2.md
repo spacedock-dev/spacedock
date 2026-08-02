@@ -145,6 +145,10 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:1592a30ba68b38d177c7081463bd2f787012e21edceb73330cfa22a201da133c
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-5
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-02T09:17:35.468332Z"
+                reason: 'Attempt 5 is stale: the candidate moved from dcab66435 on base 988163969 to 64f2f8773 on base 48a7ea0d9 after hq PR #598 merged. Cycle 7 now reports a reproducible recorded-gate-lifecycle failure; bind a fresh gate to that report.'
 mod-block:
 ---
 
