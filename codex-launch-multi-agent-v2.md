@@ -475,3 +475,24 @@ PASSED. All promised ACs have behavioral evidence, the required live and detache
 ### Summary
 
 Cycle 5 restores the required shared Codex live lane without weakening launcher ownership or its reserved-override rejection. The real front-door suite, offline/race suites, formatting, diff, and detached adversarial evidence all pass at `60a75ba658`, with the correction held to 9 files and exactly +380 lines overall.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Independently verify AC-1 through AC-4 against the corrected launcher-owned collaboration surface and the authorized runner/docs disposition.
+  At exact commit `60a75ba658`, AC-1/AC-4 passed the real built-front-door isolated-home lifecycle in 39.91s with ordered typed same-worker events, v2 context, and a disabled zero-event control; AC-2/AC-3 passed exact-layer, reserved-conflict, unsupported-host, and four-variant complete-argv tests. The refreshed official Codex manual documents `agents.enabled`, `agents.max_concurrent_threads_per_session`, and stable `features.multi_agent`, but not `multi_agent_v2` or its three private fields, matching the docs' supported-boundary distinction.
+- DONE: Reproduce the build-tag shared Codex live lane, focused/full/race/format/diff/detached checks, and record exact green or skipped evidence.
+  `TestLiveCodexSharedScenarios` passed in 792.62s: seven enabled journeys passed (gate-guardrail, recorded-gate-lifecycle, feedback-3-cycle-escalation, merge-hook-guardrail, filing, shallow-boot, self-evidence-merge-triage) and three existing TODO journeys skipped rather than counting as evidence. Focused CLI/live-runner tests, `go test ./...`, `go test ./... -race`, zero-byte `gofmt -d ./cmd ./internal`, and both `git diff --check` forms exited 0.
+- DONE: Confirm the corrected candidate is 9 files, +380/-42 against main, preserves the fail-closed reserved-override guard, and has no unrelated scope expansion.
+  `git diff --numstat main...HEAD` reports exactly 9 files/+380/-42; cycle 5 changes only `internal/ensigncycle/codex_live_runner_test.go` and `docs/runtime-live-ci.md`. Detached checkout `/tmp/spacedock-codex-audit-cycle5.OYNdOw/repo` at the exact commit passed reserved-spelling and lifecycle-spoof negatives, runner/front-door tests, and rejected the removed `--enable multi_agent_v2` form with exit 1 and the pinned pre-launch diagnostic.
+- SKIPPED: Treat the three existing shared live TODO journeys as passes.
+  `rejection-flow` remains `TODO(zbcj98qfwtax61vxdzrf615e)`; `smallest-sufficient-mechanism` and `keep-moving-posture` remain `TODO(9adv48yhye5s2vkhwd7ge52d)`. Their zero-second skips provide no capability evidence.
+- DONE: Verify the deletion excess over the ideation narrative is explicitly justified and does not change product semantics.
+  The 12 deletions beyond the estimate replace the obsolete forwarded-enable assertion and stale 11-line operator narrative with a compact launcher-owned source-of-truth description; the runner still preserves the front-door fence, bypass posture, isolated home, final-message path, and all seven enabled journeys.
+
+### Summary
+
+Validation cycle 5 recommends PASSED at `60a75ba658`. The shared live lane now reaches Codex through Spacedock without forwarding a reserved override, launcher ownership remains fail-closed, all requested offline/race/live/adversarial evidence is green, and no material finding, deferred risk, unrelated runner edit, compatibility fallback, or scope expansion remains.
+
+### Recommendation
+
+PASSED. The candidate satisfies AC-1 through AC-4 and the authorized 9-file/+380 tolerance; the three named TODO skips remain explicitly non-evidence.
