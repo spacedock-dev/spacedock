@@ -293,7 +293,9 @@ The pass traced approval record -> strict decoder -> eligibility -> consume -> t
 
 REJECTED. AC-1, AC-2, and AC-3 retain material evidence/outcome findings. The implementation behavior is largely correct on isolated fixtures, but the exact-schema boundary, consumed CLI projection, and durable pilot-state coverage are not yet independently proven.
 
-## Stage Report: implementation (correction round 1)
+## Stage Report: implementation
+
+Correction round 1 (validation send-back) is recorded in this latest implementation report; the prior implementation report above remains historical evidence.
 
 - DONE: Close the exact-schema evidence hole at the YAML boundary. `TestRecordClosureShapesApplication` now traverses the decoded YAML node, asserting approval applications have exactly `{target-stage,state}` and that hold/revise emit no application node. The detached producer mutant that added an accepted `policy` leaf failed this test before the mutation was reverted.
 - DONE: Close the consumed-action evidence hole through the real recorded CLI lifecycle. `TestRecordedGateLifecycleRealCLIReplay` now requires `application=advance/consumed` on the consuming command. The detached reducer mutant that projected `wrong/consumed` failed the lifecycle test before restoration.
