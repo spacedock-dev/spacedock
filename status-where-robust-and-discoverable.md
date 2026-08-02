@@ -21,6 +21,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:5079ac1476c67b3215a065329c37f6183a0eb29a278e83783cbd76026ae623b3
                 room-ref: ./status-where-robust-and-discoverable/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3t9r36n9tbj116jp9g1k01tz:backlog:1
+                briefing: briefing:3t9r36n9tbj116jp9g1k01tz:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T16:02:24.444201Z"
+                decision: approve
+                reason: 'Captain directed in chat: ''dispatch both''. Approve backlog->ideation for the --where robustness/discoverability/GH#314 gaps.'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 ## Problem
