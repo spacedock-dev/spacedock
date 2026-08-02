@@ -292,3 +292,15 @@ The pass traced approval record -> strict decoder -> eligibility -> consume -> t
 ### Validation recommendation
 
 REJECTED. AC-1, AC-2, and AC-3 retain material evidence/outcome findings. The implementation behavior is largely correct on isolated fixtures, but the exact-schema boundary, consumed CLI projection, and durable pilot-state coverage are not yet independently proven.
+
+## Stage Report: implementation (correction round 1)
+
+- DONE: Close the exact-schema evidence hole at the YAML boundary. `TestRecordClosureShapesApplication` now traverses the decoded YAML node, asserting approval applications have exactly `{target-stage,state}` and that hold/revise emit no application node. The detached producer mutant that added an accepted `policy` leaf failed this test before the mutation was reverted.
+- DONE: Close the consumed-action evidence hole through the real recorded CLI lifecycle. `TestRecordedGateLifecycleRealCLIReplay` now requires `application=advance/consumed` on the consuming command. The detached reducer mutant that projected `wrong/consumed` failed the lifecycle test before restoration.
+- DONE: Check in and iterate the real 31-path pilot manifest. `internal/gates/testdata/v1_pilot_manifest.txt` contains 16 active and 15 archived paths; `TestV1PilotManifestReadsAndValidates` resolves the shared state checkout, runs strict `gates.Read` plus `Validate` for every listed file, and checks every remaining application YAML node for the exact two-key approval shape and no non-approval application. A detached reintroduction of `action: advance` failed the iterator at the mutated path.
+- DONE: Reconcile the listed pilot state under First Officer authority without compatibility decoding. State commit `812b7a47e` removed concurrent unsupported `gates.current`, `digest-domain`, `adoption-note`, and older archived gate bookkeeping from the 30 dirty listed files, removed legacy application leaves/non-approval application blocks, and supplied canonical bindings for two historical records whose v1 decoder-required fields were absent. The manifest now passes 31/31; unrelated state entities were untouched.
+- DONE: Run the correction gates. Code commit `37d2442be` is gofmt-clean; `go test ./...` and `go test ./... -race` both exited 0. Focused gates, manifest, and recorded-CLI correction tests also exited 0 after restoring the detached mutants.
+
+### Summary
+
+The validation findings are closed with independent evidence at each promised boundary: exact YAML-node key sets, consumed CLI action projection, and a durable 31-path strict-read/validation iterator. Pilot state is reconciled to the candidate schema without a compatibility reader, and detached extra-leaf, wrong-action, and reintroduced-state mutants each failed the new guards. Recommendation: READY FOR VALIDATION.
