@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zfmbm75wvmfj38h73wrtpqqy:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation for a shared internal/testgit.InitRepo helper (migrating ~34 non-bare git-init scaffold sites across 9 packages) and enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:zfmbm75wvmfj38h73wrtpqqy:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/46370d5e83b517b1c3195a2578d1324799cd4d36/shared-git-scaffold-helper.md",
+      "rev": "sha256:c6768b34519ce99a62a18a588d57515f9e1c4654d50ca815bf5c8a587492bae1",
+      "mediaType": "text/markdown",
+      "summary": "Ideation confirmed+tightened the fast-tracked stub: new internal/testgit.InitRepo(t, dir, initArgs...) persists git identity; migrates ~34 scaffold sites (9 packages, not the stub's ~15-20). Spike found HOME-scrub doesn't reproduce the bug (git auto-detects username@hostname); user.useConfigOnly=true does. AC-1 re-anchored on a new contractlint guard (offender count ~34-\u003e0, regression-proof) rather than a one-shot grep. AC-3 rewritten with a positive/negative falsifiability pair."
+    }
+  ]
+}
