@@ -47,6 +47,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:098b5702b7624a02cfba8844f982aa3292d74c16bf74be81fdaa8ca0e615d9de
                 room-ref: ./shared-git-scaffold-helper/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zfmbm75wvmfj38h73wrtpqqy:ideation:1
+                briefing: briefing:zfmbm75wvmfj38h73wrtpqqy:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T14:58:09.890516Z"
+                decision: approve
+                reason: 'Captain approved ideation in chat: proceed to implementation of internal/testgit.InitRepo and the ~34-site migration.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Add one shared, exported test helper that initializes a scratch git repo with a persisted `user.name`/`user.email` config in a single call, so no future fixture can reproduce the "works locally on ambient identity, fails on a clean CI runner" bug class, and migrate the existing hand-rolled fixtures to it.
