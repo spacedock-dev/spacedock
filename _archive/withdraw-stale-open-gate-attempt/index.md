@@ -1,10 +1,10 @@
 ---
 title: Withdraw a stale open gate attempt without fabricating a decision
-status: validation
+status: done
 source: "Observed by the Subspace Shaping FO on 2026-07-26 after a legitimate sprint re-scope left a frozen request-backed attempt open with no truthful exit."
 started: 2026-07-26T10:50:55Z
-completed:
-verdict:
+completed: 2026-08-02T08:04:26Z
+verdict: passed
 score: 1.0
 worktree: .worktrees/spacedock-ensign-withdraw-stale-open-gate-attempt
 issue:
@@ -102,10 +102,11 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:580
+archived: 2026-08-02T08:04:26Z
 ---
 
 A provider-neutral prepared attempt can be frozen open after its reviewed candidate
