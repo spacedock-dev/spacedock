@@ -224,3 +224,37 @@ The ideation contract is now independently scannable and implementation-ready wi
 ### Summary
 
 The clean v1 schema now derives the active gate from entity status and a unique stage record, then uses only that record's last attempt; duplicate stage records fail closed. Stored and emitted gate state no longer carries `gates.current` or `digest-domain`, while historical lifecycle behavior and canonical digest binding remain covered and all focused, full, and race suites pass.
+
+## Review-finding disposition
+
+- Finding V-1 — candidate production scope exceeds the approved mechanism boundary.
+  - Exact evidence: `internal/gates/io.go:69-73` changes `SummaryFileAt` to read status and select by stage; `internal/status/discover.go:218` changes status projection to pass status into `CurrentSummary`.
+  - Released user and normal workflow: both paths serve ordinary gate summary/status projection, so these are production consumers rather than the Captain-authorized stale lifecycle test oracle.
+  - Observable harm: behavior tests are green, but the candidate cannot establish that its production mechanism is authorized; the accepted body required gate re-review for either edit and the 2026-08-02 extension authorized only `internal/ensigncycle/recorded_gate_lifecycle_test.go`.
+  - Authority: `captain-ruling[2026-08-02]` authorizes only the direct stale lifecycle oracle as the 25th file, with no production-path expansion.
+  - Trigger evidence: `git diff --name-status 48a7ea0d9..f566f821b` includes both production paths; the implementation report nevertheless says there was no added production surface.
+  - Classification: evidence defect; release scope `Needs decision` because only the Captain can widen the approved mechanism boundary; ownership is ideation/design scope, not a narrow implementation correction.
+  - Proposed disposition: route for Captain decision and hold candidate bytes unchanged; approve these two required consumers explicitly or reset the mechanism/surface before another validation pass.
+
+## Stage Report: validation
+
+- FAILED: Verify candidate commit f566f821b is based on 48a7ea0 and matches the authorized 25-file, net-negative scope.
+  Ancestry passes and the exact diff is 25 files, +167/-202 (net -35), but V-1 finds two unreviewed production paths where the Captain authorized only the 25th test oracle.
+- DONE: Run focused gates/status/CLI/ensigncycle tests, full tests, race tests, gofmt/diff checks, and the stale-pointer adversarial cases.
+  Focused package commands, `go test ./...`, serialized race proof, and the exact cached `go test ./... -race` rerun pass; `gofmt -w ./cmd ./internal`, `git diff --check`, and a clean worktree prove formatting made no candidate change.
+- DONE: Reproduce AC-1 through AC-5 with independent evidence, classify findings, and record a PASSED or REJECTED validation report.
+  AC-1 through AC-5 reproduce successfully; V-1 is an evidence/scope defect owned by Captain design authority, so validation recommends REJECTED pending scope re-review.
+- DONE: AC-1 — Current-candidate authority.
+  `TestCurrentStageReadinessFailClosedTable` asserts the exact route matrix and fails if a non-last attempt or non-status record controls readiness; prepare/application tests cover cross-stage re-entry.
+- DONE: AC-2 — Observed stale-approval class is eliminated.
+  The older terminal approval plus newer revise returns `feedback-pending`; duplicate-stage data returns `invalid`, decode-refuses with the exact ambiguity diagnostic, and preserves bytes: 0 of 2 false approvals.
+- DONE: AC-3 — Stored v1 is minimal and closed.
+  `TestDigestDomainFieldFailsClosed` rejects the removed field byte-clean, prototype-field cases reject `gates.current`, and the canonical fixture retains digest `sha256:0a54f1baec0120c1c93523e6900a6ce28e025c570289e5dfa9835e28099042ac`.
+- DONE: AC-4 — Historical behavior survives.
+  Focused gates/CLI/status suites and `TestRecordedGateLifecycleRealCLIReplay` exercise replay, supersession, consume, terminal finalize/rework, status transition, and durable record identity; full and race suites pass.
+- DONE: AC-5 — Documentation names one authority.
+  Normative schema/spec and shipped lifecycle skill describe status-derived unique-stage selection and implicit JCS bytes; scoped search finds removed terms only in the intentional `digest-domain` refusal test.
+
+### Summary
+
+Candidate behavior satisfies all five value criteria, and every required functional, full, race, formatting, and adversarial check passes. Validation nevertheless recommends REJECTED because two necessary production-consumer edits cross the accepted surface without the required Captain re-review; candidate code remains unchanged for that decision.
