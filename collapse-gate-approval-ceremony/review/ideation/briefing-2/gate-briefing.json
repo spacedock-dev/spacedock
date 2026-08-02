@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7fhzvvk8d5smj858bp47xbjq:ideation:attempt-2:revision-1",
+  "question": "Approve this design to enter implementation? Cycle 3 closes the recovery-procedure gap from the Subspace review with a verified (spiked, not asserted) per-phase recovery procedure.",
+  "artifacts": [
+    {
+      "id": "artifact:7fhzvvk8d5smj858bp47xbjq:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/2176c0a3052e742e0e35ad1260d7e6f81c941260/collapse-gate-approval-ceremony.md",
+      "rev": "sha256:7b5051abbb6877063bc49dcc39e8690403ccce5f1ce557afde8d2f8aec11cbeb",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 3 closes the gap the Subspace review found: the design now states, and spike-verifies against a real broken-origin fixture, exactly what the FO runs after a mid-ceremony sync failure -- standalone state commit \u003cslug\u003e publishes whatever a failed gate verb left locally committed but unpushed, for either phase (record or consume), after which the lifecycle's existing Resume discipline picks the next verb. Non-re-entrancy of the composite is demonstrated, not assumed: a repeat gate record refuses frozen-closed, a repeat gate consume refuses byte-clean as already-consumed. One design refinement fell out of the spike: sync now runs only when the verb actually wrote, keeping refusal diagnostics side-effect-free. Doc diff and AC-2 updated to cover recovery."
+    }
+  ]
+}
