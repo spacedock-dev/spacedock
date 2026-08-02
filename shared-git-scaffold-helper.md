@@ -83,6 +83,8 @@ gates:
                 target-stage: done
                 state: pending
                 blockers: []
+mod-block: merge:pr-merge
+pr: "#601"
 ---
 
 Add one shared, exported test helper that initializes a scratch git repo with a persisted `user.name`/`user.email` config in a single call, so no future fixture can reproduce the "works locally on ambient identity, fails on a clean CI runner" bug class, and migrate the existing hand-rolled fixtures to it.
