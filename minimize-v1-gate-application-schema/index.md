@@ -231,3 +231,53 @@ Cycle 2 turns AC-2 and AC-3 from future claims into executable baselines and exa
 ### Summary
 
 The unreleased v1 gate application schema is now minimal and approval-only: exactly `target-stage` and `state` are persisted, and only approvals carry the token. Removed legacy fields and invalid states reject strictly without writes; hold/revise behavior derives from their Resolution and application absence. Approval spending, stale supersession, terminal delivery, status projections, and CLI vocabulary remain intact. Recommendation: PASSED.
+
+## Stage Report: validation
+
+- DONE: Run the focused implementation and repository checks. `gofmt -d ./cmd ./internal` exited 0 with no diff. The focused gate schema/lifecycle rows (`TestEligibilityFailClosedTable`, `TestRecordClosureShapesApplication`, `TestCanonicalApplicationShapesReplayByteIdentical`, `TestRemovedApplicationShapesFailClosedWithoutMutation`, consume/stale/terminal/rework rows) exited 0. Focused status projection rows exited 0. The recorded CLI lifecycle rows (`TestRecordedGateLifecycleAC5RefusalMatrix`, `TestRecordedGateLifecycleAC7ResumeMatrix`, and `TestRecordedGateLifecycleTerminalConsumeHasNoDispatchableSuccessor`) exited 0. A rerun of `go test ./...` exited 0 and `go test ./... -race` exited 0. The first full-suite attempt had one `TestSonnetTeamDeleteHangReplay` replay miss; the exact test rerun exited 0 and the subsequent full suite passed.
+- DONE: Check AC-1's recorder/replay and strict-negative behavior. The positive rows pass for `pending`, `consumed`, and `superseded`; `TestRemovedApplicationShapesFailClosedWithoutMutation` passes independent `action`, `blockers`, `execution-hold`, `feedback`, and `not-applicable` rejection rows with byte-clean input. The recorder rows pass for approve carrying an application and hold/revise carrying none. These rows do not, however, inspect the emitted approval mapping's exact YAML key set. A detached adversarial audit added a new accepted `Application.Policy` leaf and made the producer emit it; both recorder and replay rows still passed. AC-1 therefore has a material evidence defect despite the current producer emitting the intended two keys.
+- DONE: Check AC-2's format and state evidence. The strict negatives and positive state rows pass, and `status --validate` exits 0 as an active-entity operator check. No checked-in 31-path manifest or Go test iterating that manifest exists in the implementation commit. Reproducing the claimed state scan against the 27 paths changed by `f59905108` with the candidate `gates.Read`/`Validate` reports 0 valid paths: the shared state files carry concurrent newer fields (`gates.current`, `briefing.digest-domain`, and `resolution.adoption-note`) that this candidate intentionally rejects. More directly, state commit `0da26c7ba` reintroduced `application.action: advance` into the normalized pilot path `status-pagination-and-default-sorting.md` (and into `status-where-robust-and-discoverable.md`), while that schema is supposed to reject `action`. AC-2 has both a missing-evidence defect (manifest/test) and a material current-state format defect; archive coverage is not established by the active-only validator.
+- DONE: Check AC-3 lifecycle preservation. Focused package and recorded-CLI fixtures pass approve/repeated consume, stale supersession, hold/revise Resolution-only closure, terminal pending/finalize/rework, and byte-clean refusal paths. The current status fixture preserves `advance/pending`; on-disk transitions preserve `pending -> consumed` or `pending -> superseded`. A detached adversarial audit changed the derived `Eligibility.Action` only for consumed applications to `wrong`; the focused gates and recorded CLI lifecycle rows still passed because they assert `consumed=true`, target, and on-disk state but not CLI `application=advance/consumed`. AC-3 consequently has a material derived-route evidence defect.
+- DONE: Check AC-4 scope. The implementation commit `fc57d64e2` against its parent changed 14 product/test/doc files with 138 insertions and 177 deletions; state normalization commit `f59905108` changed 27 paths, within the 14/220/35 tolerances. No new command, versioning, compatibility reader, migration, or feedback router appears in that commit. The branch also contains the earlier unrelated `5668cda1d` `docs/dev/README.md` insertion, so a raw merge-base-to-HEAD count is 15 files and 139 insertions; that pre-existing dispatch-capacity change is outside the implementation commit and is recorded as branch contamination, not credited to this candidate.
+
+### AC evidence matrix
+
+- **AC-1 — REJECTED (evidence defect, material release scope).** Current behavior rows pass and the clean producer is observable in fixture bytes, but the detached `Policy`-leaf mutation stayed green. The required exact YAML-node key assertion is absent; a future accepted leaf can violate the two-key contract without failing the claimed test.
+- **AC-2 — REJECTED (outcome and evidence defects, material release scope).** Five strict negative rows pass, but the required checked-in 31-path manifest/iterator is absent. The shared normalized pilot has a durable `action` reintroduced by `0da26c7ba`, and the candidate reader rejects the concurrent `current`/`digest-domain`/`adoption-note` state shape. The active-only `status --validate` result cannot establish archive coverage.
+- **AC-3 — REJECTED (evidence defect, material release scope).** Lifecycle transitions and Resolution identity/reasons remain correct in the focused fixtures, but no test asserts consumed CLI `application=advance/consumed`; the detached wrong-action audit stayed green.
+- **AC-4 — PASSED.** `fc57d64e2` is within the declared implementation surface and deletion budget; the unrelated prior README change is excluded from the candidate classification and must not be attributed to this implementation.
+
+### Semantic adversarial pass
+
+The pass traced approval record -> strict decoder -> eligibility -> consume -> terminal delivery/rework and hold/revise Resolution-only closure across pending, consumed, superseded, stale, repeated, and terminal cases. It found two observable test-strength holes: extra approval leaves are not checked at the YAML-node boundary, and the consumed CLI action projection is not asserted. It also found the current shared-state normalization race: a listed pilot path regained `action`, and the claimed manifest is not durable. No new multiplicative I/O, unbounded allocation, or size-limit regression was observed in the changed Go hot paths. Old snapshots under review/artifact directories remain outside the declared pilot scope and are deferred only if the captain confirms they are never read as entities.
+
+## Review-finding disposition
+
+### Finding 1 — exact approval key and consumed-action evidence holes
+
+- Reviewer observation authority: detached throwaway audits `/tmp/spacedock-gate-audit.sp66X1` and `/tmp/spacedock-gate-audit2.UMjfzM` (candidate bytes untouched).
+- Released user/workflow: operators depend on a two-key approval token and the existing `application=advance/<state>` CLI route.
+- Observable harm: an emitted accepted `policy` key or a consumed `wrong/<state>` action leaves the focused test rows green while violating the promised stored/displayed contract.
+- Affected authority: `value-ac[AC-1]` exact `{target-stage,state}` emission; `value-ac[AC-3]` derived consumed action route.
+- Trigger evidence: both mutated focused suites exited 0 (`go test ./internal/gates ...`, `go test ./internal/ensigncycle ...`).
+- Defect kind: evidence defect. Release scope: material, because both mutations occur on supported approval/consume paths and directly violate value ACs.
+- Worker proposal: add independent YAML-node key-set assertions for approve/hold/revise and a real CLI consume assertion for `application=advance/consumed`; rerun the detached audit. No candidate mutation was made pending FO authorization.
+
+### Finding 2 — pilot manifest and durable-state format drift
+
+- Reviewer observation authority: repository state checkout inspection, `git show f59905108`, `git show 0da26c7ba`, and the throwaway `gates.Read`/`Validate` scan.
+- Released user/workflow: the unreleased v1 cut promises one clean format across the named active and archived pilot entities.
+- Observable harm: the promised manifest/iterator is absent; a normalized pilot entity durably contains `application.action`, and candidate reads reject the concurrent state fields, so the clean format is not demonstrably the only stored state.
+- Affected authority: `value-ac[AC-2]` clean-v1-only acceptance and 31-path coverage.
+- Trigger evidence: no manifest/test path exists in `fc57d64e2`; `0da26c7ba` adds `action: advance` to `status-pagination-and-default-sorting.md`; the candidate scan reports strict decode errors on the changed state paths.
+- Defect kind: outcome defect for the reintroduced state plus evidence defect for missing coverage. Release scope: material; the trigger is a current supported state checkout and directly violates AC-2.
+- Worker proposal: route to the first officer for a controller-authorized state repair/manifest decision. Do not mutate concurrent state or add compatibility decoding in this validation lane.
+
+### Deferred risks and polish
+
+- Deferred risk: legacy pre-v1 archived snapshots and review artifacts still contain removed application prose. Trigger is an operator treating an artifact/snapshot as a canonical entity; this is outside the declared 31-path pilot and no supported `gates.Read` path consumes those artifacts. Promote to material if a supported resolver begins selecting one.
+- Polish: the first full-suite run had a single nondeterministic streamwatch replay miss; the exact test and the complete rerun passed, with no candidate-specific failure reproduced.
+
+### Validation recommendation
+
+REJECTED. AC-1, AC-2, and AC-3 retain material evidence/outcome findings. The implementation behavior is largely correct on isolated fixtures, but the exact-schema boundary, consumed CLI projection, and durable pilot-state coverage are not yet independently proven.
