@@ -342,3 +342,21 @@ All three mechanisms landed with the collapsed ceremony verified end-to-end (`ga
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — roborev branch_final; surface 21/2182 vs estimate 12/800 (273%); AC unchanged
+
+### Correction Round 1 (roborev branch_final, resolved)
+
+roborev's branch_final review (correctness/codex + product/opus, synthesis verdict F) found 13 findings; team-lead classified 7 material (must fix) and 6 correct-but-disproportionate (decline, recorded). All 7 fixed, each with a dedicated regression test; for finding 5 I confirmed by temporarily reverting the fix that its test actually fails without it. Commit 012c2edbf.
+
+- Finding 1 (stamp.go retry skips sync when already stamped): sync now runs unconditionally in split-root mode, not just when this call stamped something. `TestStampRetriesSyncOnRetryEvenWhenAlreadyStamped`.
+- Finding 2 (stamp.go validates one path, mutates another): resolves the canonical entity path via `status.ResolveActivePath` and refuses a mismatch before any write. `TestStampRefusesMismatchedEntityPath`.
+- Finding 3 (inline workflows get no commit, worktree built off stale HEAD): `--stamp` now commits the entity's dirty state directly in the main repo for inline workflows before creating the worktree. `TestStampCommitsInlineBeforeWorktreeCreation`.
+- Finding 4 (any object at the worktree path treated as idempotent): verified via `git worktree list --porcelain` against exactly `{worker_key}/{slug}`; anything else is a refusal. `TestStampRefusesWorktreePathOnWrongBranch`.
+- Finding 5 (`ApplicationState == "superseded"` misfires on a repeat refusal): added `gates.ConsumeResult.Wrote`, set only on a real mutation; gate sync on that. `TestConsumeRepeatAfterStaleSupersedeReportsNoWrite` (gates package) + `TestGateConsumeRepeatAfterSupersedeRunsNoSync` (CLI, proves an unrelated dirty companion-dir file is NOT swept into a spurious commit).
+- Finding 6 (`--round` doesn't sync, silently ignores `--consume`): scoped the doc's auto-sync sentence to the close/consume forms only (`--round` stays deliberately out of mechanism 1's scope, Alternatives rejected 6); `--consume`+`--round` is now an exit-2 usage error. `TestGateRoundRejectsConsumeFlagWithoutMutation`.
+- Finding 7 (two-writer consume HALT test didn't check B's divergent state survived): added assertions on B's local HEAD content and that a plain push stays rejected. Strengthened `TestGateConsumeHaltsOnSameEntityConflict` in place.
+
+Declined (correct-but-disproportionate, recorded in the round with why-not-material/promotes-when, no fix): a per-stage `agent:` override leaking an unused worktree (no shipped workflow uses one yet); `git worktree add -b` non-idempotence if the branch survives without its directory (outside the supported recovery flow); the gate sync path committing before preflight discovers a wrong branch/in-progress rebase (only reachable from an already-unsupported checkout state); a self-contradictory landing-table row for the terminal case (doc clarity only — behavior is unambiguous and tested); duplicated/mislabeled stderr diagnostics (prose only, exit code and sync=/phase= line are correct); and stampFixture's unused parameter plus the now-numerically-duplicated byte-cap ratchet test (test hygiene).
+
+One incidental observation surfaced while checking finding 6's artifact convention, not chased further per team-lead (out of scope for this entity): `internal/gates/round.go`'s `verifyRoundArtifacts` only verifies a scheme-less (plain relative-path) artifact URI's digest against room contents — a `git-root://` URI (any URI carrying a scheme) is accepted without verification. Might be worth its own follow-up someday if round artifacts are ever expected to be tamper-evident the way gate `prepare`'s selected sources are.
+
+Round recorded via `gate record collapse-gate-approval-ceremony --round implementation/1` (real binary, dry-run verified first in a scratch copy), committed and pushed as f424cb43d. `go test ./...`, `go test ./... -race`, and `gofmt -l ./cmd ./internal` all clean after the fixes.
