@@ -49,6 +49,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:eacaaa30def18073b26b7013f54c78c5f60e32d845f01ce86a373ae474b69035
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:hq3d00mewqrys3s0z9pf27df:ideation:1
+                briefing: briefing:hq3d00mewqrys3s0z9pf27df:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T01:30:01.201939Z"
+                decision: approve
+                reason: 'Captain approves the bounded pre-write actionable-stage guard: 3 files, 55-85 inserted lines, under the stated 4-file/110-line tolerance, preserving valid successor replay and existing gate formats.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 `gate prepare` must fail before mutation unless the ticket's current workflow stage is an actionable gate that can accept a new attempt. The command currently checks only that the stage exists. A real invocation at the ungated `implementation` stage exited zero, added a gate attempt, and wrote a room that the later recorder correctly refused as non-actionable.
