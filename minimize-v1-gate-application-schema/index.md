@@ -60,7 +60,14 @@ gates:
               application:
                 action: feedback
                 target-stage: ideation
-                state: pending
+                state: superseded
+            - id: gate-attempt:nthcevf1snz7hm75gny3kd2e-ideation-2
+              briefing:
+                id: briefing:nthcevf1snz7hm75gny3kd2e:ideation:attempt-2:revision-1
+                digest: sha256:38b43486d7e09452ef4f5eb27e367fd09822d4bcca8fee67e6a845ab1d23f7c2
+                digest-domain: canonical-bytes
+                request-digest: sha256:5ec7f938d894704f866a320c687dabe108f7dce7221768ec092201d0e8143da7
+                room-ref: ./review/ideation/briefing-2
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.

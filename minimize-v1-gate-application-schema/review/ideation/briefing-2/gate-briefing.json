@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nthcevf1snz7hm75gny3kd2e:ideation:attempt-2:revision-1",
+  "question": "Should the cycle 2 approval-only schema design enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:nthcevf1snz7hm75gny3kd2e:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/488442f147c217405dd822cfdae4aa4bd559941c/minimize-v1-gate-application-schema/review/ideation/fo-gate-review-cycle2.md",
+      "rev": "sha256:c7f0178daf0bb8512ff9579b412fa7a22e737ac2616db465b298ee641f452f83",
+      "mediaType": "text/markdown",
+      "summary": "Hold the approval-only schema until the JC reset path and the WJ/NTH seam are authorized."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nthcevf1snz7hm75gny3kd2e:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/488442f147c217405dd822cfdae4aa4bd559941c/minimize-v1-gate-application-schema/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1570b4f6077dd606ca498d29f0af5d19cb1248093ebc9eaff6e110aacfdbd1a1"
+    }
+  ]
+}
