@@ -143,3 +143,7 @@ Implementation begins with CLI tests for AC-1, then removes routing and round-on
 ### Summary
 
 The ideation defines a deletion-first v1 cut: remove advisory round grammar and development policy from generic gates while preserving binding decisions byte-for-byte. It records measured baselines, bounded surface and semantics, workflow-owned correction evidence, reproducible tests, and concrete documentation edits without designing a replacement recorder.
+
+### Feedback Cycles
+
+- Cycle 1: REVISE — Captain-directed send-back preserving the Science Officer finding: AC-2 and AC-3 lack concrete evidence, and the design must preserve the zbc correction-round producer. Correction assignment: add concrete AC evidence and retain the zbc producer while keeping advisory-round ownership in the workflow/First Officer.
