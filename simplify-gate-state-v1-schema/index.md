@@ -96,6 +96,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:607474c33ca60a6c0fed85bcc41f491e9ccdd03e41144ec4181bf038c36bcdc9
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:jccbpvjv5bg1jn0jbmj2yf8s:validation:2
+                briefing: briefing:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-02T13:30:54.038146Z"
+                decision: approve
+                reason: 'Validation cycle 2 passed: the exact Captain-authorized 25-file scope includes internal/gates/io.go and internal/status/discover.go; AC-1 through AC-5, full/race checks, and the detached terminal-delivery audit are green. Science Officer confirms V-1 is resolved and no material finding remains.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 started: 2026-08-01T14:01:17Z
 worktree: .worktrees/spacedock-ensign-simplify-gate-state-v1-schema
 mod-block:
