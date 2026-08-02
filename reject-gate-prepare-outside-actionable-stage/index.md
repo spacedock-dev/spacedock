@@ -1,6 +1,6 @@
 ---
 title: Reject gate prepare outside an actionable gated stage
-status: ideation
+status: implementation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: the real binary prepared and persisted a room while the ticket was in ungated implementation, then gate record refused it."
 started: 2026-08-01T14:00:57Z
 completed:
@@ -60,7 +60,7 @@ gates:
               application:
                 action: advance
                 target-stage: implementation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
