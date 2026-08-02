@@ -9,7 +9,7 @@ id: 3t9r36n9tbj116jp9g1k01tz
 gates:
     version: 1
     current:
-        gate: gate:3t9r36n9tbj116jp9g1k01tz:backlog
+        gate: gate:3t9r36n9tbj116jp9g1k01tz:ideation
     records:
         - id: gate:3t9r36n9tbj116jp9g1k01tz:backlog
           stage: backlog
@@ -34,6 +34,16 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:3t9r36n9tbj116jp9g1k01tz:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:3t9r36n9tbj116jp9g1k01tz-ideation-1
+              briefing:
+                id: briefing:3t9r36n9tbj116jp9g1k01tz:ideation:attempt-1:revision-1
+                digest: sha256:25dc9938c0182e38f2158831de267b500e6a43326a3d140a4af8e67daf31b467
+                digest-domain: canonical-bytes
+                request-digest: sha256:86055f2d29fbfab3d7f5fba21ad4ee473cc25c83a0eba9e4c1d32ea77ae8dd38
+                room-ref: ./status-where-robust-and-discoverable/review/ideation/briefing-1
 started: 2026-08-02T16:02:35Z
 ---
 

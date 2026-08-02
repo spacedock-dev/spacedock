@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3t9r36n9tbj116jp9g1k01tz:ideation:attempt-1:revision-1",
+  "question": "Ideation complete (AC-2 mechanism deleted as unnecessary, AC-1 split into 2 guards, AC-3 revealed status --help doesn't exist). Approve to enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:3t9r36n9tbj116jp9g1k01tz:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6107fa5bf9e2732bf89f9d9c83a98614797a0708/status-where-robust-and-discoverable.md",
+      "rev": "sha256:d16d5f9a9e2bf47fc87cb9e6762a040a3006f91884d330b437f3427e3163fcb3",
+      "mediaType": "text/markdown",
+      "summary": "Every claim measured live, not assumed: AC-1 needs 2 guards (compound-string check + known-field check) since one shape (sprint!=A ...) parses to a legit field and still silently matches all 156 rows. AC-2's proposed new flag is deleted -- --archived already means active+archived (measured 11=6+5); the real defect is the FO contract mislabeling it 'Archive view'. AC-3 is bigger than scoped: spacedock status --help doesn't exist today (prints the 156-row listing instead, missing the wantsHelp guard newNewCommand already has). Est. 7 files/~315 LOC +-30%. No spike needed, 6 mechanisms exercised live. 2 incidental unrelated data bugs found and filed as notes only (a 'tatus:' frontmatter typo, 12 archived entities missing the archived: stamp) -- not fixed in this entity."
+    }
+  ]
+}
