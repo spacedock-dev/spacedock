@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zfmbm75wvmfj38h73wrtpqqy:backlog:attempt-1:revision-1",
+  "question": "Enter ideation now, fast-tracked given this is a well-scoped, low-risk mechanical refactor?",
+  "artifacts": [
+    {
+      "id": "artifact:zfmbm75wvmfj38h73wrtpqqy:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/594e4c58a2c4f9e13c9653bcf9411cb1da0b7387/shared-git-scaffold-helper.md",
+      "rev": "sha256:14344cfc6ee7e1ce163aa45d6dfd176bb9edefe6f1e58e3f38fffca51db61141",
+      "mediaType": "text/markdown",
+      "summary": "Found while dogfooding collapse-gate-approval-ceremony's CI run: no shared, persisting git-scaffold-init helper exists anywhere in the repo -- ~15-20 fixtures across internal/cli and internal/dispatch hand-roll init+config independently, which is exactly why one fixture omitted the identity config and passed locally (ambient identity) but failed on a clean CI runner. Add one shared helper, migrate existing fixtures to it, no behavior change."
+    }
+  ]
+}
