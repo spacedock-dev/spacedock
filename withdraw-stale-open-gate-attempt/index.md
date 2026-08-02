@@ -105,7 +105,7 @@ gates:
                 state: pending
                 blockers: []
 mod-block: merge:pr-merge
-pr: "#580"
+pr: pr-merge:580
 ---
 
 A provider-neutral prepared attempt can be frozen open after its reviewed candidate
