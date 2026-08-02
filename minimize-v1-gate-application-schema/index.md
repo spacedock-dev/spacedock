@@ -91,6 +91,14 @@ gates:
                 digest: sha256:48bbb20ba55c27e6183f1f0b0533319152f8388f7f760f2299d3b5c14a97ee70
                 request-digest: sha256:5d33a8567615f3dc554c5028b042c28147083ded569639d4b5da82872f5e1b05
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nthcevf1snz7hm75gny3kd2e:validation:1
+                briefing: briefing:nthcevf1snz7hm75gny3kd2e:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-02T17:30:29.18351Z"
+                decision: revise
+                reason: Captain standing order sends rejected validation findings back to implementation; Science Officer advisory is REVISE/SEND BACK. Preserve AC-1, AC-2, and AC-3 findings unchanged and apply the concrete correction assignment.
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
