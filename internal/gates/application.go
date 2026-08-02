@@ -20,14 +20,8 @@ func EvaluateEligibility(doc *Document, status string, reviewedInputCurrent bool
 	if doc == nil {
 		return result
 	}
-	var record *GateRecord
-	for i := range doc.Records {
-		if doc.Records[i].ID == doc.Current.Gate {
-			record = &doc.Records[i]
-			break
-		}
-	}
-	if record == nil || len(record.Attempts) == 0 {
+	record, err := recordForStage(doc, status)
+	if err != nil || len(record.Attempts) == 0 {
 		return result
 	}
 	attempt := &record.Attempts[len(record.Attempts)-1]
@@ -103,7 +97,7 @@ func eligibilityFileAt(path, workflowDir string) (Eligibility, error) {
 		return Eligibility{}, err
 	}
 	inputState := reviewedInputUnknown
-	if record := findRecord(doc, doc.Current.Gate); record != nil && len(record.Attempts) > 0 {
+	if record, err := recordForStage(doc, status); err == nil && len(record.Attempts) > 0 {
 		inputState = inspectReviewedInput(path, record.Attempts[len(record.Attempts)-1].Briefing)
 	}
 	result := EvaluateEligibility(doc, status, inputState == reviewedInputCurrent)
@@ -140,9 +134,9 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 	if err != nil {
 		return ConsumeResult{}, err
 	}
-	record := findRecord(doc, doc.Current.Gate)
+	record, recordErr := recordForStage(doc, status)
 	inputState := reviewedInputUnknown
-	if record != nil && len(record.Attempts) > 0 {
+	if recordErr == nil && len(record.Attempts) > 0 {
 		inputState = inspectReviewedInput(path, record.Attempts[len(record.Attempts)-1].Briefing)
 	}
 	eligibility := EvaluateEligibility(doc, status, inputState == reviewedInputCurrent)
@@ -254,21 +248,16 @@ func inspectReviewedInput(entityPath string, binding Briefing) reviewedInputChec
 	path := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
 	var digest string
 	var err error
-	switch binding.DigestDomain {
-	case "canonical-bytes":
-		var data []byte
-		if binding.RequestDigest == "" {
-			data, err = os.ReadFile(path)
-		} else {
-			data, _, err = boundBriefingBytes(entityPath, binding)
-		}
-		if err != nil {
-			return reviewedInputUnknown
-		}
-		digest, err = CanonicalDigest(data)
-	default:
+	var data []byte
+	if binding.RequestDigest == "" {
+		data, err = os.ReadFile(path)
+	} else {
+		data, _, err = boundBriefingBytes(entityPath, binding)
+	}
+	if err != nil {
 		return reviewedInputUnknown
 	}
+	digest, err = CanonicalDigest(data)
 	if err == nil && digest == binding.Digest {
 		return reviewedInputCurrent
 	}

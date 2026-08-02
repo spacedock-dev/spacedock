@@ -16,12 +16,7 @@ var declineDispositionRE = regexp.MustCompile(`^class: correct-but-disproportion
 
 type Document struct {
 	Version int          `yaml:"version" json:"version"`
-	Current Selection    `yaml:"current" json:"current"`
 	Records []GateRecord `yaml:"records" json:"records"`
-}
-
-type Selection struct {
-	Gate string `yaml:"gate" json:"gate"`
 }
 
 type GateRecord struct {
@@ -85,7 +80,6 @@ type Feedback struct {
 type Briefing struct {
 	ID            string `yaml:"id" json:"id"`
 	Digest        string `yaml:"digest" json:"digest"`
-	DigestDomain  string `yaml:"digest-domain" json:"digest-domain"`
 	RequestDigest string `yaml:"request-digest,omitempty" json:"request-digest,omitempty"`
 	RoomRef       string `yaml:"room-ref" json:"room-ref"`
 }
@@ -184,14 +178,14 @@ func CurrentStageReadiness(doc *Document, status string, stages []ReadinessStage
 	if doc == nil {
 		return "validating"
 	}
-	var record *GateRecord
-	for i := range doc.Records {
-		if doc.Records[i].ID == doc.Current.Gate {
-			record = &doc.Records[i]
-			break
+	record, err := recordForStage(doc, status)
+	if err != nil {
+		if strings.Contains(err.Error(), "no logical gate") {
+			return "validating"
 		}
+		return "invalid"
 	}
-	if record == nil || record.Stage != status || len(record.Attempts) == 0 {
+	if len(record.Attempts) == 0 {
 		return "validating"
 	}
 	attempt := &record.Attempts[len(record.Attempts)-1]
@@ -254,11 +248,7 @@ func Validate(doc *Document) error {
 	if doc.Version != 1 {
 		return fmt.Errorf("gates.version must be 1")
 	}
-	if doc.Current.Gate == "" {
-		return fmt.Errorf("gates.current must name a gate")
-	}
-	gateIDs, attemptIDs, briefingIDs, resolutionIDs := map[string]bool{}, map[string]bool{}, map[string]bool{}, map[string]bool{}
-	selected := false
+	gateIDs, stages, attemptIDs, briefingIDs, resolutionIDs := map[string]bool{}, map[string]bool{}, map[string]bool{}, map[string]bool{}, map[string]bool{}
 	for ri := range doc.Records {
 		r := &doc.Records[ri]
 		pendingApplications := 0
@@ -266,9 +256,10 @@ func Validate(doc *Document) error {
 			return fmt.Errorf("record %d has missing or duplicate identity or no attempts", ri+1)
 		}
 		gateIDs[r.ID] = true
-		if r.ID == doc.Current.Gate {
-			selected = true
+		if stages[r.Stage] {
+			return fmt.Errorf("multiple logical gates claim workflow stage %s", r.Stage)
 		}
+		stages[r.Stage] = true
 		for ai := range r.Attempts {
 			a := &r.Attempts[ai]
 			if a.ID == "" || attemptIDs[a.ID] {
@@ -279,9 +270,6 @@ func Validate(doc *Document) error {
 				return fmt.Errorf("attempt %s has invalid or duplicate briefing binding", a.ID)
 			}
 			briefingIDs[a.Briefing.ID] = true
-			if a.Briefing.DigestDomain != "canonical-bytes" {
-				return fmt.Errorf("attempt %s has unknown digest-domain %q", a.ID, a.Briefing.DigestDomain)
-			}
 			if a.Briefing.RequestDigest != "" && !digestRE.MatchString(a.Briefing.RequestDigest) {
 				return fmt.Errorf("attempt %s has invalid request-digest", a.ID)
 			}
@@ -335,9 +323,6 @@ func Validate(doc *Document) error {
 		if pendingApplications > 1 {
 			return fmt.Errorf("gate %s carries more than one pending application", r.ID)
 		}
-	}
-	if !selected {
-		return fmt.Errorf("gates.current pointer does not resolve to one logical gate")
 	}
 	return nil
 }
@@ -394,12 +379,14 @@ func validateResolution(r *Resolution, briefingID string) error {
 	return nil
 }
 
-func CurrentSummary(doc *Document) Summary {
-	for i := range doc.Records {
-		r := &doc.Records[i]
-		if r.ID != doc.Current.Gate || len(r.Attempts) == 0 {
-			continue
-		}
+func CurrentSummary(doc *Document, stage ...string) Summary {
+	var r *GateRecord
+	if len(stage) > 0 {
+		r, _ = recordForStage(doc, stage[0])
+	} else if len(doc.Records) == 1 {
+		r = &doc.Records[0]
+	}
+	if r != nil && len(r.Attempts) > 0 {
 		a := &r.Attempts[len(r.Attempts)-1]
 		s := Summary{Gate: r.ID, Attempt: a.ID, State: attemptState(a), Briefing: a.Briefing.ID}
 		if a.Resolution != nil {

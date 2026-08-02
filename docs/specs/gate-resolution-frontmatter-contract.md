@@ -68,8 +68,6 @@ The binary accepts and emits one canonical `gates:` shape:
 ```yaml
 gates:
   version: 1
-  current:
-    gate: gate:example:sample:validation
   records:
     - id: gate:example:sample:validation
       stage: validation
@@ -78,7 +76,6 @@ gates:
           briefing:
             id: briefing:sample-validation-1a
             digest: sha256:3333333333333333333333333333333333333333333333333333333333333333
-            digest-domain: canonical-bytes
             request-digest: sha256:4444444444444444444444444444444444444444444444444444444444444444
             room-ref: ./review/validation/briefing-1
           provider-evidence:
@@ -101,19 +98,20 @@ gates:
 `records` and `attempts` are ordered. The last attempt in a record is current. An
 attempt is open when both `withdrawal` and `resolution` are absent, withdrawn when only
 `withdrawal` is present, and closed when only `resolution` is present. Withdrawn and
-closed attempts are frozen. `gates.current.gate` selects the logical gate eligible for
-later application. These facts remove any need for separate attempt pointers, sequence
+closed attempts are frozen. Entity `status` selects exactly one record by its `stage`;
+duplicate stage records fail closed. The last ordered attempt in that record is current
+and eligible for later application. These facts remove any need for separate attempt pointers, sequence
 numbers, lineage pointers, or explicit lifecycle state.
 
 The binary-owned model is closed: unsupported fields inside `gates` fail validation.
-In particular, the pilot-only `gates.current.attempt`, `current-attempt`, `sequence`,
+In particular, the pilot-only attempt selector, `current-attempt`, `sequence`,
 `previous-attempt`, and explicit attempt `state` encodings are rejected. There is no
 migration or compatibility rewrite. The `application` field is the typed one-use
 lifecycle boundary owned by the application layer on the same canonical-v1 writer surface.
 
-Every Briefing binding includes an id, SHA-256 digest, the `canonical-bytes` digest
-domain, and an exact file or room reference. `canonical-bytes` is SHA-256 over RFC
-8785/JCS canonical Briefing JSON bytes. A request-backed room additionally freezes its
+Every Briefing binding includes an id, canonical SHA-256 digest, and an exact file or room
+reference. Version 1 digests are unconditionally RFC 8785/JCS canonical Briefing JSON
+bytes. A request-backed room additionally freezes its
 request digest; that request names the canonical Briefing with a clean room-relative
 locator, id, and digest. No reader infers a canonical basename.
 
@@ -189,7 +187,7 @@ Before either ordinary close, the recorder resolves authoritative current status
 workflow taxonomy and requires a nonterminal `gate: true` stage. The bound Briefing must use the canonical v1 stage-qualified identity and name that same stage. Malformed identity, mismatch, or non-actionable stage fails before Resolution construction and leaves entity bytes unchanged.
 
 Cross-logical-gate re-entry is ordinary: workflow stage selects the target record even
-when `gates.current.gate` names a different closed gate. The successful write selects the
+when another stage's closed gate is retained in history. The successful write selects the
 target record but does not modify either record's earlier closures.
 
 ## Room-backed Result association
@@ -316,8 +314,8 @@ outside `gates` and the Markdown body are preserved byte-for-byte. The per-entit
 rejects concurrent recorder writers; there is no retry, lease, daemon, or recovery
 protocol.
 
-The model enforces unique gate, attempt, Briefing, and Resolution ids; a resolvable
-current logical gate; non-empty attempt histories; exact Resolution-to-Briefing binding;
+The model enforces unique gate, stage, attempt, Briefing, and Resolution ids; a unique
+status-matched logical gate when one exists; non-empty attempt histories; exact Resolution-to-Briefing binding;
 and portable `approve`, `revise`, or `hold` decisions. `revise` and `hold` require a
 reason or an included same-Briefing Annotation. Withdrawals require fixed
 `agent:first-officer` attribution, a UTC timestamp, a nonblank reason, and a valid
@@ -347,7 +345,7 @@ decision; it does not authenticate chat or apply the result.
 
 ## Explicitly outside v1
 
-- Prototype-format compatibility, `raw-file-pin`, migration, and arbitrary
+- Prototype-format compatibility, migration, and arbitrary
   unknown-field preservation inside `gates`.
 - Presentation-channel execution, transport, UI, and evidence production beyond the
   opaque prepared-room handoff.
@@ -361,7 +359,7 @@ decision; it does not authenticate chat or apply the result.
 The release tests must fail if any of these outcomes regress:
 
 1. Open/rebind/close/successor behavior changes, or a successor mutates a frozen closure.
-2. Cross-gate re-entry targets global selection instead of current workflow stage.
+2. Cross-gate re-entry follows current workflow stage rather than historical records.
 3. A prototype field or arbitrary unknown binary-owned field becomes readable or writable.
 4. A stale, invalid, or lock-contended write changes the entity.
 5. A canonical write changes bytes outside `gates` or alters opaque application data.

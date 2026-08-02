@@ -17,7 +17,7 @@ Load before engaged gate action. It grants no writes; read `fo-write-core.md` be
 | `gate record` | Closes that attempt from one semantic source; never advances status. |
 | `gate consume` | Applies one eligible approval; terminal targets route unspent to merge guard. |
 
-**Boot projection.** Use actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`; read its entity, never infer readiness from stage. `awaiting-captain` is open; `withdrawn-awaiting-prepare` needs its successor prepared; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. Retained authority for resume/present must match current status; prior-stage authority is history. If no selected attempt (omitted `validating`) or it mismatches, prepare current stage and present only its emitted binding.
+**Boot projection.** Use actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`; read its entity and resolve the unique record whose `stage` equals status. `awaiting-captain` is open; `withdrawn-awaiting-prepare` needs its successor prepared; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. Retained authority for resume/present must match current status; prior-stage authority is history. If no matching attempt (omitted `validating`) or it is ambiguous, prepare current stage and present only its emitted binding.
 
 **Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select a Markdown gate-review Artifact and References, author its concise summary, then commit selections. Supply judgment and paths; never author JSON, ids, digests, Git-root locators, or room coordinates. Paths use launch cwd.
 

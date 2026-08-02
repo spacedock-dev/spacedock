@@ -139,7 +139,8 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		value string
 		count int
 	}{
-		{"gate identity", "gate: " + gateID, 1},
+		{"gate record identity", "id: " + gateID, 1},
+		{"gate record stage", "stage: validation", 1},
 		{"attempt identity", "id: " + attemptID, 1},
 		{"briefing identity", "id: " + briefingID, 1},
 		{"briefing resolution link", "briefing: " + briefingID, 1},
@@ -759,7 +760,7 @@ func TestRecordedGateLifecycleProvenanceMutants(t *testing.T) {
 	valid := recordedGateObservation{
 		events: append([]string(nil), recordedGateRequiredEvents...),
 		before: "status: validation",
-		after: "status: handoff\ngate: gate:recorded-gate-task:validation\nid: gate-attempt:recorded-gate-task-validation-1\n" +
+		after: "status: handoff\nid: gate:recorded-gate-task:validation\nstage: validation\nid: gate-attempt:recorded-gate-task-validation-1\n" +
 			"id: " + recordedGateBriefingID + "\ndigest: " + recordedGateDigest + "\n" +
 			"id: resolution:spacedock:recorded-gate-task:validation:1\nbriefing: " + recordedGateBriefingID + "\n" +
 			"by: agent:first-officer\n                decision: approve\n                reason: " + recordedGateReason + "\n" +

@@ -712,8 +712,6 @@ func advisoryRoundFixtureAt(t *testing.T, root string) (string, string, string, 
 		"custom: preserve-me\n" +
 		"gates:\n" +
 		"  version: 1\n" +
-		"  current:\n" +
-		"    gate: gate:task:ideation\n" +
 		"  records:\n" +
 		"    - id: gate:task:ideation\n" +
 		"      stage: ideation\n" +
@@ -722,7 +720,6 @@ func advisoryRoundFixtureAt(t *testing.T, root string) (string, string, string, 
 		"          briefing:\n" +
 		"            id: briefing:task:ideation:1\n" +
 		"            digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" +
-		"            digest-domain: canonical-bytes\n" +
 		"            room-ref: ./review/ideation/briefing-1\n" +
 		"title: Task\n" +
 		"---\n" +

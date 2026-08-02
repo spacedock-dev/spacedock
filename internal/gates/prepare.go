@@ -222,7 +222,6 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	binding := Briefing{
 		ID:            briefingID,
 		Digest:        briefingDigest,
-		DigestDomain:  "canonical-bytes",
 		RequestDigest: requestDigest,
 		RoomRef:       roomRef,
 	}
@@ -258,7 +257,6 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 		}
 		record.Attempts = append(record.Attempts, Attempt{ID: attemptID, Briefing: binding})
 	}
-	doc.Current.Gate = gateID
 	if err := Validate(doc); err != nil {
 		if created {
 			rollbackPreparedRoom(room, createdParents)
