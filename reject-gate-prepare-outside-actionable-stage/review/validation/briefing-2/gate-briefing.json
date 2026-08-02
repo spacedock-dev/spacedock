@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:hq3d00mewqrys3s0z9pf27df:validation:attempt-2:revision-1",
+  "question": "Does fresh validation cycle 2 on rebased hq head ab2f095d3 satisfy AC-1 through AC-3 and authorize advancement to done?",
+  "artifacts": [
+    {
+      "id": "artifact:hq3d00mewqrys3s0z9pf27df:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/2b0d37c35c2d28d04e3d5127c5d0b5fcf1470ac0/reject-gate-prepare-outside-actionable-stage/review/validation/fo-gate-review-cycle2.md",
+      "rev": "sha256:efb038287766c5c01e4dcb052f5de66d1f61da6e8aa13281a7ba52899d2a9e45",
+      "mediaType": "text/markdown",
+      "summary": "Fresh hq validation PASSED on ab2f095d3 against origin/main 988163969; all AC evidence, focused/full/race/format/diff, and detached adversarial checks are green. Science Officer APPROVE/PASSED. The prior d6958a782 attempt was withdrawn as stale."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:hq3d00mewqrys3s0z9pf27df:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/2b0d37c35c2d28d04e3d5127c5d0b5fcf1470ac0/reject-gate-prepare-outside-actionable-stage/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:364d4218836c0d05e0f24e56da9f57a9b32f4012615902774b82a5cacbefb794"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:hq3d00mewqrys3s0z9pf27df:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/9881639697d1af391133c9ecf4111fd1673f537c/docs/site/reference/command-reference.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4be1536befbd8dbd03bc40075100d5b3536f917259e83d1c0a41231efb829daa"
+    }
+  ]
+}

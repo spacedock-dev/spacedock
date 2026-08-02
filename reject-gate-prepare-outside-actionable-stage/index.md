@@ -76,6 +76,13 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-02T08:28:30.473351Z"
                 reason: The validation candidate was rebased from d6958a782 onto origin/main 988163969; retire the old open Briefing before binding fresh validation authority for ab2f095d3.
+            - id: gate-attempt:hq3d00mewqrys3s0z9pf27df-validation-2
+              briefing:
+                id: briefing:hq3d00mewqrys3s0z9pf27df:validation:attempt-2:revision-1
+                digest: sha256:930a062ad3f15e884bd19853612050cb7c6d7f6b6905e7a8e19a59b0064cfee4
+                digest-domain: canonical-bytes
+                request-digest: sha256:85a10b27696ece59656de141b9ac89dd516d66a5192beb771d5fc8adffa0e36b
+                room-ref: ./review/validation/briefing-2
 ---
 
 `gate prepare` must fail before mutation unless the ticket's current workflow stage is an actionable gate that can accept a new attempt. The command currently checks only that the stage exists. A real invocation at the ungated `implementation` stage exited zero, added a gate attempt, and wrote a room that the later recorder correctly refused as non-actionable.
