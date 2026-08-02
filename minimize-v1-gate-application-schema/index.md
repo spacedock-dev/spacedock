@@ -1,10 +1,10 @@
 ---
 title: Minimize the unreleased v1 gate application schema
-status: implementation
+status: done
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: production emits empty blockers but has no producer or demonstrated consumer for blockers, execution holds, or feedback payloads."
 started: 2026-08-01T14:01:07Z
-completed:
-verdict:
+completed: 2026-08-02T16:47:19Z
+verdict: PASSED
 score: "0.9"
 worktree: .worktrees/spacedock-ensign-minimize-v1-gate-application-schema
 issue:
@@ -218,3 +218,16 @@ Ideation reduces application state to one approval-only `{target-stage,state}` t
 ### Summary
 
 Cycle 2 turns AC-2 and AC-3 from future claims into executable baselines and exact post-cut falsifiers, including a real archived-entity decoder path and a bounded 31-file normalization manifest. It also fixes the jc-to-nth-to-wj seam without compatibility storage: jc selects, nth reduces approval authority and derives display action, and wj removes only round policy.
+
+## Stage Report: implementation
+
+- DONE: Reduce the v1 `Application` model, validator, producer, and eligibility reducer to the approval-only `{target-stage,state}` token. Approval still derives `advance` for status/CLI display; hold and revise now complete with a Resolution and no application, while consume, stale supersession, and terminal authority transitions remain unchanged.
+  Code commit `fc57d64e2` removes the speculative action, blockers, execution-hold, and feedback fields and updates operation/application behavior plus affected status and lifecycle fixtures.
+- DONE: Prove the clean format is exclusive and legacy shapes fail closed without mutation. Positive replay rows cover `pending`, `consumed`, and `superseded`; independent negatives inject `action`, `blockers`, `execution-hold`, `feedback`, and `not-applicable` and assert byte-clean failure. Recorder, status, CLI, and ensign-cycle tests assert exact YAML keys and absent non-approval applications.
+- DONE: Normalize the bounded 31-path pilot (16 active, 15 archived) and preserve the state branch's path-scoped history. State commit `f59905108` changed 27 listed entities (the remaining four were already clean), removing legacy application leaves and non-approval application blocks; it was pushed to `origin/spacedock-state/dev`.
+- DONE: Apply the four required documentation updates and stay within the approved deletion-oriented surface. The implementation changed 14 product/test/doc files; no command grammar, schema version, compatibility reader, migration engine, or feedback router was added.
+- DONE: Run the repository gates. `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` all exited 0 at code commit `fc57d64e2`.
+
+### Summary
+
+The unreleased v1 gate application schema is now minimal and approval-only: exactly `target-stage` and `state` are persisted, and only approvals carry the token. Removed legacy fields and invalid states reject strictly without writes; hold/revise behavior derives from their Resolution and application absence. Approval spending, stale supersession, terminal delivery, status projections, and CLI vocabulary remain intact. Recommendation: PASSED.
