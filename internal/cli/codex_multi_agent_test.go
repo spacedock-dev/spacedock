@@ -148,8 +148,15 @@ func TestCodexIsolatedHomeCollaborationLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("disabled control: %v\n%s", err, disabledOut)
 	}
-	if n := countCodexCollaborationEvents(disabledOut); n != 0 {
-		t.Fatalf("disabled control emitted %d collaboration events:\n%s", n, disabledOut)
+	disabledEvents := 0
+	for _, line := range bytes.Split(disabledOut, []byte("\n")) {
+		var event codexStreamEvent
+		if json.Unmarshal(line, &event) == nil && event.Item.Type == "collab_tool_call" {
+			disabledEvents++
+		}
+	}
+	if disabledEvents != 0 {
+		t.Fatalf("disabled control emitted %d collaboration events:\n%s", disabledEvents, disabledOut)
 	}
 }
 
@@ -164,6 +171,14 @@ type codexSessionEvent struct {
 		Type, Role, Name, Arguments, Output string
 		Version                             string `json:"multi_agent_version"`
 		Content                             []struct{ Type, Text string }
+		Source                              struct {
+			Subagent struct {
+				ThreadSpawn struct {
+					ParentThreadID string `json:"parent_thread_id"`
+					AgentPath      string `json:"agent_path"`
+				} `json:"thread_spawn"`
+			}
+		}
 	}
 }
 
@@ -180,10 +195,14 @@ func gradeCodexLifecycle(stdout []byte, sessions map[string][]byte, ready, done,
 	}
 	wantTools := []string{"spawn_agent", "wait_agent", "followup_task", "list_agents", "wait_agent"}
 	var tools []string
-	target, lastCall, listSawTarget := "", "", false
+	target, lastCall, listSawTarget, v2 := "", "", false, false
 	for _, line := range bytes.Split(sessions[parentID], []byte("\n")) {
 		var event codexSessionEvent
-		if json.Unmarshal(line, &event) != nil || event.Type != "response_item" {
+		if json.Unmarshal(line, &event) != nil {
+			continue
+		}
+		v2 = v2 || event.Type == "turn_context" && event.Payload.Version == "v2"
+		if event.Type != "response_item" {
 			continue
 		}
 		if event.Payload.Type == "function_call" && slices.Contains(wantTools, event.Payload.Name) {
@@ -217,35 +236,18 @@ func gradeCodexLifecycle(stdout []byte, sessions map[string][]byte, ready, done,
 	}
 	var child []byte
 	for id, session := range sessions {
-		if id != parentID && bytes.Contains(session, []byte(`"parent_thread_id":"`+parentID+`"`)) && bytes.Contains(session, []byte(`"agent_path":"`+target+`"`)) {
-			child = session
+		for _, line := range bytes.Split(session, []byte("\n")) {
+			var event codexSessionEvent
+			if id != parentID && json.Unmarshal(line, &event) == nil && event.Type == "session_meta" && event.Payload.Source.Subagent.ThreadSpawn.ParentThreadID == parentID && event.Payload.Source.Subagent.ThreadSpawn.AgentPath == target {
+				child = session
+			}
 		}
 	}
-	if !slices.Equal(tools, wantTools) || target == "" || !listSawTarget || !parentDone || !sessionHasV2(sessions[parentID]) || !sessionHasAssistantTexts(child, ready, done) {
-		return fmt.Errorf("tools=%v target=%q listed=%t parent-complete=%t v2/child outputs=%t", tools, target, listSawTarget, parentDone, sessionHasV2(sessions[parentID]) && sessionHasAssistantTexts(child, ready, done))
+	if !slices.Equal(tools, wantTools) || target == "" || !listSawTarget || !parentDone || !v2 || !sessionHasAssistantTexts(child, ready, done) {
+		return fmt.Errorf("tools=%v target=%q listed=%t parent-complete=%t v2/child outputs=%t", tools, target, listSawTarget, parentDone, v2 && sessionHasAssistantTexts(child, ready, done))
 	}
 	return nil
 }
-func countCodexCollaborationEvents(stdout []byte) (count int) {
-	for _, line := range bytes.Split(stdout, []byte("\n")) {
-		var event codexStreamEvent
-		if json.Unmarshal(line, &event) == nil && event.Item.Type == "collab_tool_call" {
-			count++
-		}
-	}
-	return
-}
-
-func sessionHasV2(session []byte) bool {
-	for _, line := range bytes.Split(session, []byte("\n")) {
-		var event codexSessionEvent
-		if json.Unmarshal(line, &event) == nil && event.Type == "turn_context" && event.Payload.Version == "v2" {
-			return true
-		}
-	}
-	return false
-}
-
 func sessionHasAssistantTexts(session []byte, want ...string) bool {
 	next := 0
 	for _, line := range bytes.Split(session, []byte("\n")) {
@@ -260,18 +262,16 @@ func sessionHasAssistantTexts(session []byte, want ...string) bool {
 	}
 	return next == len(want)
 }
-
 func TestCodexLifecycleOracleRejectsVocabularyOnly(t *testing.T) {
 	if err := gradeCodexLifecycle([]byte(`{"type":"item.completed","item":{"type":"agent_message","text":"spawn_agent followup_task list_agents wait_agent READY_7E91 DONE_7E91 PARENT_7E91 multi_agent_version v2"}}`), nil, "READY_7E91", "DONE_7E91", "PARENT_7E91"); err == nil {
 		t.Fatal("vocabulary-only fake host passed the structured lifecycle oracle")
 	}
 }
-
-func TestAdversarialLifecycleRejectsWrongWaitTargets(t *testing.T) {
+func TestDetachedTargetlessWaitRejectsTypedMisboundChildWithSpoofedIdentityText(t *testing.T) {
 	if err := gradeCodexLifecycle([]byte("{\"type\":\"thread.started\",\"thread_id\":\"parent-id\"}\n{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"PARENT\"}}"), map[string][]byte{"parent-id": []byte(strings.ReplaceAll(`{"type":"turn_context","payload":{"multi_agent_version":"v2"}}|{"type":"response_item","payload":{"type":"function_call","name":"spawn_agent","arguments":"{}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{\"task_name\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call","name":"wait_agent","arguments":"{\"target\":\"worker-b\"}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{}"}}|{"type":"response_item","payload":{"type":"function_call","name":"followup_task","arguments":"{\"target\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{}"}}|{"type":"response_item","payload":{"type":"function_call","name":"list_agents","arguments":"{}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{\"agent_name\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call","name":"wait_agent","arguments":"{\"target\":\"worker-b\"}"}}`, "|", "\n")), "child-id": []byte(strings.ReplaceAll(`{"parent_thread_id":"parent-id","agent_path":"worker-a"}|{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"READY"}]}}|{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"DONE"}]}}`, "|", "\n"))}, "READY", "DONE", "PARENT"); err == nil {
 		t.Fatal("wrong-worker waits passed the same-worker lifecycle oracle")
 	}
-	if err := gradeCodexLifecycle([]byte("{\"type\":\"thread.started\",\"thread_id\":\"parent-id\"}\n{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"PARENT\"}}"), map[string][]byte{"parent-id": []byte(strings.ReplaceAll(`{"type":"turn_context","payload":{"multi_agent_version":"v2"}}|{"type":"response_item","payload":{"type":"function_call","name":"spawn_agent","arguments":"{}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{\"task_name\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call","name":"wait_agent","arguments":"{\"timeout_ms\":10000}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{}"}}|{"type":"response_item","payload":{"type":"function_call","name":"followup_task","arguments":"{\"target\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{}"}}|{"type":"response_item","payload":{"type":"function_call","name":"list_agents","arguments":"{}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{\"agent_name\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call","name":"wait_agent","arguments":"{\"timeout_ms\":10000}"}}`, "|", "\n")), "child-id": []byte(strings.ReplaceAll(`{"parent_thread_id":"parent-id","agent_path":"worker-b"}|{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"READY"}]}}|{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"DONE"}]}}`, "|", "\n"))}, "READY", "DONE", "PARENT"); err == nil {
-		t.Fatal("targetless waits with a misbound child passed the same-worker lifecycle oracle")
+	if err := gradeCodexLifecycle([]byte("{\"type\":\"thread.started\",\"thread_id\":\"parent-id\"}\n{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"PARENT\"}}"), map[string][]byte{"parent-id": []byte(strings.ReplaceAll(`{"type":"turn_context","payload":{"multi_agent_version":"v2"}}|{"type":"response_item","payload":{"type":"function_call","name":"spawn_agent","arguments":"{}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{\"task_name\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call","name":"wait_agent","arguments":"{\"timeout_ms\":10000}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{}"}}|{"type":"response_item","payload":{"type":"function_call","name":"followup_task","arguments":"{\"target\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{}"}}|{"type":"response_item","payload":{"type":"function_call","name":"list_agents","arguments":"{}"}}|{"type":"response_item","payload":{"type":"function_call_output","output":"{\"agent_name\":\"worker-a\"}"}}|{"type":"response_item","payload":{"type":"function_call","name":"wait_agent","arguments":"{\"timeout_ms\":10000}"}}`, "|", "\n")), "child-id": []byte(strings.ReplaceAll(`{"type":"session_meta","payload":{"source":{"subagent":{"thread_spawn":{"parent_thread_id":"other-parent","agent_path":"worker-b"}}}}}|{"type":"unrelated","payload":{"parent_thread_id":"parent-id","agent_path":"worker-a"}}|{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"READY"}]}}|{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"DONE"}]}}`, "|", "\n"))}, "READY", "DONE", "PARENT"); err == nil {
+		t.Fatal("targetless waits with typed misbound child and spoofed identity text passed")
 	}
 }
