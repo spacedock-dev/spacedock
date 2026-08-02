@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-2:revision-1",
+  "question": "Approve the repaired clean-v1 gate-state schema ideation for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/20176ae096598ecfba745806a5342a82b1cdbb6a/simplify-gate-state-v1-schema/review/ideation/fo-gate-review-cycle2.md",
+      "rev": "sha256:66bb4f4bef4aeb519f882d60f6079d34a42633c08cf9510c3988fb67b9d40d9a",
+      "mediaType": "text/markdown",
+      "summary": "The corrected ideation now has independently scannable AC-1 through AC-5, retains the stale-approval 0-of-2 adversarial measure, and narrows the implementation inventory to 20-22 files with a 24-file tolerance."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/20176ae096598ecfba745806a5342a82b1cdbb6a/simplify-gate-state-v1-schema/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3a55bd3da6f631809a3d3cac2c1156396a17510feb9e0896732c1fccbd0b16ae"
+    }
+  ]
+}

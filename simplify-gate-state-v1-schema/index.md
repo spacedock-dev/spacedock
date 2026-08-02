@@ -54,7 +54,14 @@ gates:
               application:
                 action: feedback
                 target-stage: ideation
-                state: pending
+                state: superseded
+            - id: gate-attempt:jccbpvjv5bg1jn0jbmj2yf8s-ideation-2
+              briefing:
+                id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-2:revision-1
+                digest: sha256:c6b47fae9ccadec75149e579e644e171e0d9c4caac755b25b6667f3e75c5e555
+                digest-domain: canonical-bytes
+                request-digest: sha256:e4e77cf1029b03939cbb1a8066f1f6a7f3f3f3d6d01913a8b7bd3e04e62ad32c
+                room-ref: ./review/ideation/briefing-2
 started: 2026-08-01T14:01:17Z
 ---
 
