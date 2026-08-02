@@ -14,7 +14,7 @@ id: hq3d00mewqrys3s0z9pf27df
 gates:
     version: 1
     current:
-        gate: gate:hq3d00mewqrys3s0z9pf27df:ideation
+        gate: gate:hq3d00mewqrys3s0z9pf27df:validation
     records:
         - id: gate:hq3d00mewqrys3s0z9pf27df:backlog
           stage: backlog
@@ -62,6 +62,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:hq3d00mewqrys3s0z9pf27df:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:hq3d00mewqrys3s0z9pf27df-validation-1
+              briefing:
+                id: briefing:hq3d00mewqrys3s0z9pf27df:validation:attempt-1:revision-1
+                digest: sha256:0fbf8ca57395569466acc734f86f167a98694e150bc80c6de5241f146580253f
+                digest-domain: canonical-bytes
+                request-digest: sha256:46ce53ca3f526387c1b68d078e9e242fdc6d538694094f8de87a7efcb8f36220
+                room-ref: ./review/validation/briefing-1
 ---
 
 `gate prepare` must fail before mutation unless the ticket's current workflow stage is an actionable gate that can accept a new attempt. The command currently checks only that the stage exists. A real invocation at the ungated `implementation` stage exited zero, added a gate attempt, and wrote a room that the later recorder correctly refused as non-actionable.

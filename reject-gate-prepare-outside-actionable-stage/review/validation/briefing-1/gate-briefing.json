@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:hq3d00mewqrys3s0z9pf27df:validation:attempt-1:revision-1",
+  "question": "Does the completed validation prove that gate preparation is restricted to actionable nonterminal stages while preserving valid successor replay?",
+  "artifacts": [
+    {
+      "id": "artifact:hq3d00mewqrys3s0z9pf27df:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6b18b1dad64f91c36381990d37c2c81ffd090e3c/reject-gate-prepare-outside-actionable-stage/review/validation/fo-gate-review.md",
+      "rev": "sha256:33f0db5547c97085d022850d70459ee99b9a693b01e9390fb6ca7fb393e36e41",
+      "mediaType": "text/markdown",
+      "summary": "Validation passes AC-1 through AC-3 with focused, full, race, format, and diff evidence; the three-file candidate remains within the approved tolerance."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:hq3d00mewqrys3s0z9pf27df:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/6b18b1dad64f91c36381990d37c2c81ffd090e3c/reject-gate-prepare-outside-actionable-stage/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c5ca20d62b9da7dc29ba7ef494ba9e8e8083a88cbb4a059f3b0e37be0d651a4c"
+    }
+  ]
+}
