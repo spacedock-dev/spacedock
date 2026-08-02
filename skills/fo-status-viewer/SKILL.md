@@ -12,7 +12,7 @@ The `${SPACEDOCK_BIN:-spacedock} status` launcher owns path resolution and mutat
 
 Invoke it as:
 ```
-${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--next|--archived|--where ...|--boot|--validate|--resolve REF]
+${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--page N|--limit N|--next-id|--next|--archived|--where ...|--boot|--validate|--resolve REF]
 ```
 
 - `--boot` — startup roll-up (mods, ID style, next-ID candidate, orphans, PR state, dispatchables). Incompatible with `--next`, `--next-id`, `--archived`, `--where`.
@@ -36,7 +36,7 @@ The commissioned README directs the captain to dispatch the FO to inspect workfl
 - any ad-hoc question a `status` view answers (a single entity, entities in a stage, PR-pending).
 
 **Canonical invocations** (all start with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir}`):
-- Overview: no extra flags.
+- Overview: no extra flags shows the first 25 rows, sorted by later stage first then score descending; use `--page N` for more or `--limit 0` for the full table.
 - Dispatchables: `--next`.
 - Archive view: `--archived`.
 - Single-entity: `--resolve {ref}` then `--where slug={resolved-slug}`.

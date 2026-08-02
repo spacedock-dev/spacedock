@@ -3,8 +3,8 @@
 ===== stdout =====
 ID     SLUG                           STATUS               TITLE                          SCORE    NEXT-SUPPRESSED-BY
 --     ----                           ------               -----                          -----    ------------------
-waiting waiting                        ideation             Ready but next stage is full   0.80     concurrency-full
-building building                       build                In-flight build                0.90     worktree-set
 gated  gated                          review               Sitting at a gate              0.70     gate
+building building                       build                In-flight build                0.90     worktree-set
+waiting waiting                        ideation             Ready but next stage is full   0.80     concurrency-full
 
 ===== stderr =====

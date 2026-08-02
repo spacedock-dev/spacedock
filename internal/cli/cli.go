@@ -934,7 +934,7 @@ _spacedock() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
   verbs="claude codex pi install doctor status new state merge completion dispatch --version --help"
-  status_flags="--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root"
+  status_flags="--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root --page --limit"
   if [ "$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=( $(compgen -W "$verbs" -- "$cur") )
     return 0
@@ -955,7 +955,7 @@ const zshCompletion = `#compdef spacedock
 _spacedock() {
   local -a verbs status_flags
   verbs=(claude codex pi install doctor status new state merge completion dispatch --version --help)
-  status_flags=(--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root)
+  status_flags=(--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root --page --limit)
   if (( CURRENT == 2 )); then
     compadd -- $verbs
     return

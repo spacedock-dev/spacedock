@@ -3,7 +3,7 @@
 ===== stdout =====
 ID     SLUG                           STATUS               TITLE                          SCORE
 --     ----                           ------               -----                          -----
-intro  intro                          draft                Intro                          0.7
 guide  guide                          published            Guide                          0.4
+intro  intro                          draft                Intro                          0.7
 
 ===== stderr =====

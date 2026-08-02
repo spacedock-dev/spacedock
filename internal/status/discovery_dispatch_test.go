@@ -33,8 +33,8 @@ func TestDiscoveryRendersEnclosingWorkflow(t *testing.T) {
 	}
 	_ = def
 	slugs := tableSlugs(t, out)
-	if !equalStrings(slugs, []string{"refactor-dispatch", "add-login"}) {
-		t.Fatalf("slugs = %v, want stage-ordered [refactor-dispatch add-login]\n%s", slugs, out)
+	if !equalStrings(slugs, []string{"add-login", "refactor-dispatch"}) {
+		t.Fatalf("slugs = %v, want stage-ordered [add-login refactor-dispatch]\n%s", slugs, out)
 	}
 }
 

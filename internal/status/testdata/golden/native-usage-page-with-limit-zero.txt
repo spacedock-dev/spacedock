@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: --page cannot be combined with --limit 0 (--limit 0 disables pagination and returns every row on one page)
