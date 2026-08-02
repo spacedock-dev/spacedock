@@ -298,10 +298,15 @@ REJECTED. AC-1, AC-2, and AC-3 retain material evidence/outcome findings. The im
 Correction round 1 (validation send-back) is recorded in this latest implementation report; the prior implementation report above remains historical evidence.
 
 - DONE: Close the exact-schema evidence hole at the YAML boundary. `TestRecordClosureShapesApplication` now traverses the decoded YAML node, asserting approval applications have exactly `{target-stage,state}` and that hold/revise emit no application node. The detached producer mutant that added an accepted `policy` leaf failed this test before the mutation was reverted.
+  Evidence: The detached `policy: mutant` producer failed with YAML keys `[policy state target-stage]`, proving the exact-node assertion is load-bearing.
 - DONE: Close the consumed-action evidence hole through the real recorded CLI lifecycle. `TestRecordedGateLifecycleRealCLIReplay` now requires `application=advance/consumed` on the consuming command. The detached reducer mutant that projected `wrong/consumed` failed the lifecycle test before restoration.
+  Evidence: The detached projection mutant emitted `application=wrong/consumed`, and `TestRecordedGateLifecycleRealCLIReplay` rejected that output.
 - DONE: Check in and iterate the real 31-path pilot manifest. `internal/gates/testdata/v1_pilot_manifest.txt` contains 16 active and 15 archived paths; `TestV1PilotManifestReadsAndValidates` resolves the shared state checkout, runs strict `gates.Read` plus `Validate` for every listed file, and checks every remaining application YAML node for the exact two-key approval shape and no non-approval application. A detached reintroduction of `action: advance` failed the iterator at the mutated path.
+  Evidence: The manifest iterator passed strict read/validation for 31/31 paths, while a detached `action: advance` reintroduction failed at the mutated path.
 - DONE: Reconcile the listed pilot state under First Officer authority without compatibility decoding. State commit `812b7a47e` removed concurrent unsupported `gates.current`, `digest-domain`, `adoption-note`, and older archived gate bookkeeping from the 30 dirty listed files, removed legacy application leaves/non-approval application blocks, and supplied canonical bindings for two historical records whose v1 decoder-required fields were absent. The manifest now passes 31/31; unrelated state entities were untouched.
+  Evidence: State commit `812b7a47e` reconciled the 30 dirty listed files; no compatibility reader was added, and the post-repair manifest remained 31/31.
 - DONE: Run the correction gates. Code commit `37d2442be` is gofmt-clean; `go test ./...` and `go test ./... -race` both exited 0. Focused gates, manifest, and recorded-CLI correction tests also exited 0 after restoring the detached mutants.
+  Evidence: Commit `37d2442be` passed gofmt, focused correction tests, `go test ./...`, and `go test ./... -race` after all detached mutants were restored.
 
 ### Summary
 
