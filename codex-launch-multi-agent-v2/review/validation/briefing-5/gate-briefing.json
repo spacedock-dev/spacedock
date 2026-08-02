@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-5:revision-1",
+  "question": "Does validation cycle 5 prove the corrected launcher-owned multi_agent_v2 surface and a green shared Codex live lane without forwarding reserved overrides?",
+  "artifacts": [
+    {
+      "id": "artifact:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-5:revision-1:item-1",
+      "uri": "git-root://state/9c2aed39426a78cbaaac0e515a90bf2a4c1eee65/codex-launch-multi-agent-v2/review/validation/fo-gate-review-cycle5.md",
+      "rev": "sha256:5c3a64584b6bd0cd5e270bc05a6d7c8e4c78bd6535d746193b34bf0f78bb14e7",
+      "mediaType": "text/markdown",
+      "summary": "Fresh validation passes AC-1 through AC-4, the isolated lifecycle, seven enabled shared live journeys, full/race/format/diff/detached checks, and the exact 9-file scope."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-5:revision-1:item-2",
+      "uri": "git-root://state/9c2aed39426a78cbaaac0e515a90bf2a4c1eee65/codex-launch-multi-agent-v2.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:b063fcb00cf0736f1b99037dd88fd608d0d4d33c24d54189c4410d74f68a69b6"
+    }
+  ]
+}
