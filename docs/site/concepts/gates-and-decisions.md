@@ -48,6 +48,12 @@ is recorder-ready, the first officer passes that same room to `gate record --roo
 the recorder recomputes request, Briefing, Result, inventory, and Git pins, derives the
 complete association in memory, and writes no `association.json`.
 
+If a prepared room becomes stale before any provider decision, the first officer runs
+`gate withdraw` with a reason. Withdrawal is not approve, revise, or hold: it preserves
+the old room without a Resolution, provider evidence, application, or stage change.
+Cold boot reports `withdrawn-awaiting-prepare`; ordinary `gate prepare` then appends
+attempt N+1, which alone can receive the later Captain decision.
+
 ## The three calls
 
 - **Approve.** The decision is recorded first. A separate application step may then advance eligible work exactly once.
@@ -61,8 +67,8 @@ After completion verification, a gate with no selected attempt remains
 `validating`. The first officer binds and commits the retained Briefing before
 presenting anything. That bind selects the current-stage gate attempt,
 letting startup distinguish work still validating, an open attempt awaiting the
-Captain, an approval awaiting nonterminal advance, and an approval awaiting
-merge. Approval to a terminal target is *held* at consume: `gate consume` spends
+Captain, a withdrawal awaiting replacement preparation, an approval awaiting
+nonterminal advance, and an approval awaiting merge. Approval to a terminal target is *held* at consume: `gate consume` spends
 nothing and writes no status — it leaves the application `pending` and returns
 the `approved-awaiting-merge` route, and `merge guard` is the sole terminal
 consumer. `merge guard` spends only with delivery proof: the `mod-block` is

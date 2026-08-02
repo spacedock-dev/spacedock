@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 // antiShutdownOverride counters upstream claude-code #55297 (a regression in 2.1.126;
@@ -365,6 +367,78 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	}
 	if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
+func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	fixture := writePreparedRecordedGateFixtureAt(t, workflowRoot)
+	binary := buildRecordedGateBinary(t)
+	commitRecordedGateState(t, binary, fixture, "commit selected gate inputs")
+	prepared := mustRecordedGate(t, binary, fixture.root,
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the stale candidate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Stale candidate.",
+		"--reference", fixture.references[0],
+		"--reference", fixture.references[1],
+		"--workflow-dir", fixture.root)
+	firstRoom := outputValue(prepared.stdout, "room")
+	firstBriefing := readFile(t, filepath.Join(firstRoom, "gate-briefing.json"))
+	firstRequest := readFile(t, filepath.Join(firstRoom, "request.json"))
+	commitRecordedGateState(t, binary, fixture, "prepare stale attempt")
+	mustRecordedGate(t, binary, fixture.root,
+		"gate", "withdraw", "recorded-gate-task",
+		"--reason", "Sprint re-scope replaced the reviewed candidate.",
+		"--workflow-dir", fixture.root)
+	commitRecordedGateState(t, binary, fixture, "withdraw stale attempt")
+
+	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+	shimDir := writeRecordedGateLoggingShim(t, binary, commandLog)
+	runner = runner.withStubPATH(shimDir)
+	if copied, ok := runner.(claudeLiveRunner); ok {
+		copied.env = withSpacedockShimShellEnv(t, copied.env, shimDir)
+		runner = copied
+	}
+	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
+
+	doc, _, err := gates.Read(fixture.entity)
+	if err != nil {
+		t.Fatalf("read recovered entity: %v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if len(doc.Records) != 1 || len(doc.Records[0].Attempts) != 2 {
+		t.Fatalf("recovery attempts = %#v\nArtifacts: %s", doc.Records, result.artifactDir)
+	}
+	withdrawn, current := doc.Records[0].Attempts[0], doc.Records[0].Attempts[1]
+	if withdrawn.Withdrawal == nil || withdrawn.Resolution != nil || withdrawn.ProviderEvidence != nil || withdrawn.Application != nil {
+		t.Fatalf("withdrawn attempt lost its clean terminal state: %#v\nArtifacts: %s", withdrawn, result.artifactDir)
+	}
+	if current.Withdrawal != nil || current.Resolution != nil || current.ProviderEvidence != nil || current.Application != nil ||
+		!strings.HasSuffix(current.ID, "-2") {
+		t.Fatalf("recovery did not stop on open successor N+1: %#v\nArtifacts: %s", current, result.artifactDir)
+	}
+	if readFile(t, filepath.Join(firstRoom, "gate-briefing.json")) != firstBriefing ||
+		readFile(t, filepath.Join(firstRoom, "request.json")) != firstRequest {
+		t.Fatalf("recovery rewrote withdrawn room bytes\nArtifacts: %s", result.artifactDir)
+	}
+	secondRoom := filepath.Join(filepath.Dir(fixture.entity), filepath.FromSlash(current.Briefing.RoomRef))
+	entries, err := os.ReadDir(secondRoom)
+	if err != nil || len(entries) != 2 {
+		t.Fatalf("successor room is not the emitted two-file room: entries=%v err=%v\nArtifacts: %s", entries, err, result.artifactDir)
+	}
+	log := readFile(t, commandLog)
+	const prepare = "exit=0\tgate prepare recorded-gate-task "
+	if strings.Count(log, prepare) != 1 ||
+		strings.Count(log, "exit=0\tstate commit recorded-gate-task") != 1 ||
+		strings.Contains(log, "gate record recorded-gate-task") ||
+		strings.Contains(log, "gate consume recorded-gate-task") ||
+		strings.Contains(log, "dispatch build ") {
+		t.Fatalf("withdrawn recovery crossed its prepare/commit gate-stop boundary\n%s\nArtifacts: %s", log, result.artifactDir)
+	}
+	if !validatingStatus.MatchString(readFile(t, fixture.entity)) {
+		t.Fatalf("withdrawn recovery changed workflow status\nArtifacts: %s", result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }

@@ -58,6 +58,7 @@ func TestStatusProjectsSharedGateReadinessReducer(t *testing.T) {
 		"sp.md": "---\nid: sp\nstatus: validation\nscore: 100\n---\n# incomplete\n",
 		"mf.md": openGateEntity("mf", "validation", "90"),
 		"r4.md": openGateEntity("r4", "validation", "80"),
+		"wd.md": withdrawnGateEntity("wd", "validation", "75"),
 		"2n.md": approvedGateEntity("2n", "validation", "done", "70"),
 		"ax.md": approvedGateEntity("ax", "validation", "implementation", "65"),
 		"qc.md": "---\nid: qc\nstatus: validation\nscore: 60\n---\n# incomplete\n",
@@ -75,7 +76,8 @@ func TestStatusProjectsSharedGateReadinessReducer(t *testing.T) {
 	}
 	want := map[string]string{
 		"sp": "validating", "mf": "awaiting-captain", "r4": "awaiting-captain",
-		"2n": "approved-awaiting-merge", "ax": "approved-awaiting-advance", "qc": "validating",
+		"wd": "withdrawn-awaiting-prepare", "2n": "approved-awaiting-merge",
+		"ax": "approved-awaiting-advance", "qc": "validating",
 	}
 	for _, entity := range result.Entities {
 		id := entity["id"]
@@ -85,6 +87,10 @@ func TestStatusProjectsSharedGateReadinessReducer(t *testing.T) {
 		if id == "2n" && (entity["gate-state"] != "closed" || entity["gate-decision"] != "approve" ||
 			entity["gate-application"] != "advance/pending" || entity["gate-target-stage"] != "done") {
 			t.Errorf("2n lost canonical gate details: %#v", entity)
+		}
+		if id == "wd" && (entity["gate-state"] != "withdrawn" || entity["gate-decision"] != "" ||
+			entity["gate-application"] != "" || entity["gate-target-stage"] != "") {
+			t.Errorf("wd projected closure details: %#v", entity)
 		}
 	}
 

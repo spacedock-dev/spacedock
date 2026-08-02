@@ -8,10 +8,72 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
+
+func TestGateWithdrawCLIUsesExactGrammarAndImplicitFirstOfficerAttribution(t *testing.T) {
+	workflow, state, artifact := gatePrepareCLIFixture(t)
+	entity := filepath.Join(state, "task.md")
+	if _, err := gates.Prepare(entity, gates.PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Advance?",
+		Artifact:    artifact,
+		Summary:     "candidate",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{
+		"gate", "withdraw", "task",
+		"--reason", "Sprint re-scope replaced the candidate.",
+		"--actor", "person:captain",
+		"--workflow-dir", workflow,
+	}, nil, filepath.Dir(workflow), nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 2 || !strings.Contains(errOut.String(), "gate withdraw accepts exactly one --reason") {
+		t.Fatalf("actor refusal exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, _ := os.ReadFile(entity)
+	if !bytes.Equal(before, after) {
+		t.Fatal("usage refusal changed entity")
+	}
+
+	out.Reset()
+	errOut.Reset()
+	code = run(context.Background(), []string{
+		"gate", "withdraw", "task",
+		"--reason", "Sprint re-scope replaced the candidate.",
+		"--workflow-dir", workflow,
+	}, nil, filepath.Dir(workflow), nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 || errOut.Len() != 0 {
+		t.Fatalf("withdraw exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	want := "withdrawn gate=gate:task:validation attempt=gate-attempt:task-validation-1 state=withdrawn briefing=briefing:task:validation:attempt-1:revision-1\n"
+	if out.String() != want {
+		t.Fatalf("withdraw stdout=%q want=%q", out.String(), want)
+	}
+	doc, _, err := gates.Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt := doc.Records[0].Attempts[0]
+	if attempt.Withdrawal == nil || attempt.Withdrawal.By != "agent:first-officer" ||
+		attempt.Withdrawal.Reason != "Sprint re-scope replaced the candidate." {
+		t.Fatalf("withdrawal = %#v", attempt.Withdrawal)
+	}
+	if parsed, err := time.Parse(time.RFC3339Nano, attempt.Withdrawal.At); err != nil || parsed.Location() != time.UTC {
+		t.Fatalf("withdrawal timestamp = %q (%v)", attempt.Withdrawal.At, err)
+	}
+	if attempt.Resolution != nil || attempt.ProviderEvidence != nil || attempt.Application != nil {
+		t.Fatalf("withdrawal fabricated closure: %#v", attempt)
+	}
+}
 
 func TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface(t *testing.T) {
 	workflow, state, artifact := gatePrepareCLIFixture(t)
@@ -40,7 +102,7 @@ func TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface(t *testing.
 	if code != 0 {
 		t.Fatalf("help exit=%d stderr=%q", code, errOut.String())
 	}
-	for _, token := range []string{"gate prepare", "--question", "--artifact", "--summary", "--reference", "--workflow-dir", "record", "validate", "eligibility", "consume"} {
+	for _, token := range []string{"gate prepare", "gate withdraw", "--reason", "--question", "--artifact", "--summary", "--reference", "--workflow-dir", "record", "validate", "eligibility", "consume"} {
 		if !strings.Contains(out.String(), token) {
 			t.Fatalf("gate help missing %q:\n%s", token, out.String())
 		}
@@ -164,7 +226,7 @@ func TestGateReviewVerbIsAbsentAndSideEffectFree(t *testing.T) {
 
 	var out, errOut bytes.Buffer
 	code := run(context.Background(), []string{"gate", "review", "task"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-	if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: prepare|record|validate|eligibility|consume)") {
+	if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: prepare|withdraw|record|validate|eligibility|consume)") {
 		t.Fatalf("gate review exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	after, err := os.ReadDir(root)
