@@ -86,6 +86,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:c15f2c195fb130e2b6eee9f3674b5bdae17895e789a205eee7f96216e37c6d05
                 room-ref: ./review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nthcevf1snz7hm75gny3kd2e:ideation:3
+                briefing: briefing:nthcevf1snz7hm75gny3kd2e:ideation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-02T14:48:27.141744Z"
+                decision: approve
+                reason: 'Science advisory approves the cycle-2 ideation direction now that JC #599 is merged and the WJ/NTH seam is explicit; implementation must use a fresh current-head binding and preserve the serialized JC-to-NTH-to-WJ order.'
+              application:
+                action: advance
+                target-stage: implementation
+                state: pending
+                blockers: []
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
