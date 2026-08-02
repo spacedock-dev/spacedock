@@ -1,10 +1,10 @@
 ---
 title: Minimize the unreleased v1 gate application schema
-status: validation
+status: implementation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: production emits empty blockers but has no producer or demonstrated consumer for blockers, execution holds, or feedback payloads."
 started: 2026-08-01T14:01:07Z
-completed: 2026-08-02T16:47:19Z
-verdict: PASSED
+completed:
+verdict: rejected
 score: "0.9"
 worktree: .worktrees/spacedock-ensign-minimize-v1-gate-application-schema
 issue:
