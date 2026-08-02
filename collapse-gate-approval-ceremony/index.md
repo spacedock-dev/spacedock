@@ -79,6 +79,15 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+review-round:
+    id: round:7fhzvvk8d5smj858bp47xbjq:implementation:1
+    stage: implementation
+    cycle: 1
+    briefing:
+        id: briefing:7fhzvvk8d5smj858bp47xbjq:implementation:round-1
+        digest: sha256:c261304b3d0fd93b70900ebdc7d72992348eeda27d13b95f5928acfbda07e2ee
+        digest-domain: canonical-bytes
+        room-ref: ./review/implementation/round-1
 ---
 
 Applying one captain gate decision (approve/revise/hold) currently costs ~16 raw FO tool calls and ~2.5 minutes of wall clock, most of it mechanical: re-invoking `state commit` after nearly every binary call, then a separate set of frontmatter stamps and worktree creation before the next dispatch even begins. This entity is about collapsing that ceremony toward 1-2 calls per gate decision without weakening any of the authority/integrity checks the ceremony exists to enforce.
@@ -329,3 +338,7 @@ Separately (not a scope question): `go test ./...` also surfaced `internal/ensig
 ### Summary
 
 All three mechanisms landed with the collapsed ceremony verified end-to-end (`gate_ceremony_count_test.go`'s before/after harness converges to identical end-state predicates), the full negative/recovery/HALT surface tested including genuine two-writer conflicts at both sync phases, and the Doc diff applied to all five named files with the bulk of the new explanation living in the uncapped `fo-dispatch-core.md` per captain direction. `go test ./...`, `go test ./... -race`, and `gofmt -l ./cmd ./internal` are all clean, including the two component-byte-cap tests at their captain-approved raised ceilings. Two things exceeded the ideation's own declared tolerance and are worth flagging for validation's judgment rather than mine: production Go landed at ~478 lines against the ~250-line estimate (+91%, outside +/-40%) and tests at ~1005 lines against ~450 (+123%) -- driven mainly by the two-writer HALT fixtures and the AC-1 harness's real split-root setup, which I judged necessary for falsifiability rather than padding, but flagging per the declared-tolerance discipline rather than deciding it myself.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — roborev branch_final; surface 21/2182 vs estimate 12/800 (273%); AC unchanged
