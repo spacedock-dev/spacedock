@@ -216,7 +216,7 @@ func claudeSonnetGateGuardrailTODO(model string) string {
 	if !claudeModelFamily(model, "sonnet") {
 		return ""
 	}
-	return "TODO(#596): Claude Sonnet gate-guardrail is temporarily non-evidence pending a fresh passing promotion run"
+	return "TODO(3zzpdw704df1g8pg1x9thzmw): Claude Sonnet gate-guardrail is temporarily non-evidence for local task sonnet-gate-guardrail-no-authority pending a fresh passing promotion run"
 }
 
 func TestClaudeSonnetGateGuardrailTODOModelScope(t *testing.T) {
