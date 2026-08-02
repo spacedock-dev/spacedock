@@ -526,3 +526,24 @@ The exact dispatched rewrite was green across focused, full, race, format, diff,
 ### Recommendation
 
 WITHHELD — rebase onto `48a7ea0d9` or later and perform one fresh validation cycle.
+
+## Stage Report: validation (cycle 7, final base)
+
+- DONE: Validate the exact candidate and approved scope against the dispatched final base.
+  `HEAD` remained `64f2f8773a3ba4d848c15f7c9f71bbc45e55c395` and `origin/main` remained `48a7ea0d97042f0e7aaac258e1b77f16157c5281`; the worktree was clean, `git diff --numstat` reported exactly 9 files/+380/-42, and `git range-diff 988163969..dcab66435 48a7ea0d9..64f2f8773` mapped all five commits with `=`.
+- DONE: Reproduce focused launcher/config/lifecycle evidence, full and race suites, formatting/diff integrity, and detached adversarial evidence.
+  Complete argv for plain/local-plugin/Safehouse/resume, every reserved forwarded spelling, unsupported-host propagation, vocabulary-only rejection, typed spoofed-child rejection, live-runner front-door boundaries, `go test ./...`, `go test ./... -race`, zero-byte `gofmt -d ./cmd ./internal`, and both diff checks passed. Detached checkout `/tmp/spacedock-codex-audit-final.QGQOmW/repo` at exact head retained those negatives and the removed `--enable multi_agent_v2` form produced the pinned exit-1 pre-launch diagnostic.
+- DONE: Reproduce AC-1 through AC-4's exact launcher-owned collaboration evidence on the final head.
+  The built-front-door isolated-home lifecycle plus disabled zero-event control passed in 37.87s; the typed oracle observed ordered spawn/wait/follow-up/list/wait, same-worker binding, child and parent terminal messages, and `multi_agent_version: v2`. Exact-layer, conflict, unsupported-host, and four-variant argv tests passed, and `status --read ... --stage validation --ac-scan` reported AC-1 through AC-4 cited with no unevidenced AC.
+- FAILED: Complete the required shared Codex live lane as green final evidence.
+  `TestLiveCodexSharedScenarios` failed after 745.38s: six enabled journeys passed (`gate-guardrail`, `feedback-3-cycle-escalation`, `merge-hook-guardrail`, `filing`, `shallow-boot`, and `self-evidence-merge-triage`), the three existing TODO journeys skipped, and `recorded-gate-lifecycle` failed because the durable oracle reported `successor dispatch was not observed after consume`. A targeted retained-artifact rerun reproduced the same failure after 241.33s. Its JSONL shows prepare, bind commit, decision record, close commit, consume, consumed commit, dispatch build, worker spawn, and a committed marker, but the shipped ordering/ancestry predicate still rejects the run; the model's final-message claim is not acceptance evidence.
+- DONE: Preserve the reproducible live failure artifacts and classify the gate impact without changing candidate code.
+  Retained artifacts are under `/tmp/spacedock-codex-final-live-artifacts/codex-shared-scenarios/recorded-gate-lifecycle`. Released user/normal workflow: a Codex first officer driving a consumed recorded gate into successor handoff; observable harm: it claims durable successor completion while the required durable oracle cannot establish post-consume dispatch ordering/ancestry; affected authority: the mandatory shared Codex live lane required by this validation; trigger evidence: the full lane and one isolated rerun fail the same `assertRecordedGateLifecycle` predicate at exact head `64f2f8773`.
+
+### Summary
+
+Final-base validation independently establishes the launcher-owned multi-agent-v2 surface and AC-1 through AC-4 at the exact nine-file candidate. Approval is nevertheless blocked because the required shared Codex lane is reproducibly red on `recorded-gate-lifecycle`; six enabled journeys pass and three known TODOs remain non-evidence, but a claiming final message cannot override the failed durable oracle.
+
+### Recommendation
+
+REJECTED. Route the reproducible `recorded-gate-lifecycle` failure through the validation feedback gate, preserving the retained JSONL and exact predicate failure; do not treat the green isolated collaboration lifecycle or six other shared journeys as a substitute for the mandatory red lane.
