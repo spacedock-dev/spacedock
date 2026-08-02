@@ -585,7 +585,7 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			closeCommit := commitRecordedGateState(t, binary, fixture, "durably record "+decision)
 			closed, _, err := gates.Read(fixture.entity)
 			attempt := closed.Records[0].Attempts[0]
-			requireRecordedGate(t, err == nil && readFile(t, fixture.entity) == recordedGateEntityAt(t, fixture, closeCommit) && attempt.Resolution.Decision == decision && attempt.Resolution.Reason == reasons[i] && attempt.Application.Action == map[string]string{"revise": "feedback", "hold": "none"}[decision], "%s close/route snapshot mismatch", calls[i])
+			requireRecordedGate(t, err == nil && readFile(t, fixture.entity) == recordedGateEntityAt(t, fixture, closeCommit) && attempt.Resolution.Decision == decision && attempt.Resolution.Reason == reasons[i] && attempt.Application == nil, "%s close/route snapshot mismatch", calls[i])
 			before := treeDigest(t, fixture.stateRoot)
 			result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 			assertRecordedGateByteCleanFailure(t, fixture, result, "condition")
@@ -597,21 +597,16 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			}
 		})
 	}
-	t.Run("blocked", func(t *testing.T) {
+	t.Run("removed-application-shape", func(t *testing.T) {
 		fixture := writeRecordedGateFixture(t)
 		bindRecordedGate(t, binary, fixture)
 		closeRecordedGate(t, binary, fixture, "approve")
-		closeCommit := commitRecordedGateState(t, binary, fixture, "durably record blocked approval")
-		closeSnapshot := recordedGateEntityAt(t, fixture, closeCommit)
-		if !strings.Contains(closeSnapshot, "decision: approve") || !strings.Contains(closeSnapshot, "state: pending") {
-			t.Fatalf("blocked approval close was not durable before consume:\n%s", closeSnapshot)
-		}
 		body := readFile(t, fixture.entity)
-		writeFile(t, fixture.entity, strings.Replace(body, "                blockers: []",
-			"                blockers:\n                    - id: blocker:external\n                      state: unsatisfied", 1))
+		writeFile(t, fixture.entity, strings.Replace(body, "                target-stage: handoff",
+			"                action: advance\n                target-stage: handoff", 1))
 		before := treeDigest(t, fixture.stateRoot)
 		result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
-		assertRecordedGateByteCleanFailure(t, fixture, result, "blocked")
+		assertRecordedGateByteCleanFailure(t, fixture, result, "field action")
 		if after := treeDigest(t, fixture.stateRoot); after != before {
 			t.Fatal("blocked consume changed workflow bytes")
 		}

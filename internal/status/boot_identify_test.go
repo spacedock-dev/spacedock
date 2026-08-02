@@ -63,7 +63,7 @@ func approvedGateEntity(slug, status, target, score string) string {
 	body := strings.TrimSuffix(openGateEntity(slug, status, score), "---\n# "+slug+"\n")
 	return body +
 		"          resolution: {type: Resolution, id: 'resolution:" + slug + ":1', briefing: 'briefing:" + slug + ":" + status + ":attempt-1', by: 'person:captain', at: '2026-07-23T00:00:00Z', decision: approve}\n" +
-		"          application: {action: advance, target-stage: " + target + ", state: pending, blockers: []}\n" +
+		"          application: {target-stage: " + target + ", state: pending}\n" +
 		"---\n# " + slug + "\n"
 }
 
@@ -341,12 +341,12 @@ func TestBootReadyGateTerminalApprovalPersistsAtConsumeUntilDeliveryEnvelope(t *
 
 func TestBootReadyGatesFailClosedLifecycleControls(t *testing.T) {
 	blocked := strings.Replace(approvedGateEntity("blocked", "validation", "done", "90"),
-		"blockers: []", "blockers: [{id: blocker:x, state: unsatisfied}]", 1)
+		"target-stage: done", "blockers: [{id: blocker:x, state: unsatisfied}]\n                target-stage: done", 1)
 	held := strings.Replace(approvedGateEntity("held", "validation", "done", "80"),
-		"blockers: []}", "blockers: [], execution-hold: {state: active}}", 1)
+		"target-stage: done", "execution-hold: {state: active}\n                target-stage: done", 1)
 	feedback := strings.Replace(approvedGateEntity("feedback", "validation", "done", "70"),
 		"decision: approve}", "decision: revise, reason: revise}", 1)
-	feedback = strings.Replace(feedback, "action: advance", "action: feedback", 1)
+	feedback = strings.Replace(feedback, "target-stage: done", "action: feedback\n                target-stage: done", 1)
 	consumed := strings.Replace(approvedGateEntity("consumed", "validation", "done", "60"),
 		"state: pending", "state: consumed", 1)
 	superseded := strings.Replace(approvedGateEntity("superseded", "validation", "done", "50"),

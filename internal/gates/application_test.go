@@ -24,25 +24,22 @@ func TestEligibilityFailClosedTable(t *testing.T) {
 		{name: "stale reviewed input", status: "ideation", current: false, condition: "stale"},
 		{name: "superseded", status: "ideation", current: true, mutate: setApplicationState("superseded"), condition: "superseded"},
 		{name: "consumed", status: "ideation", current: true, mutate: setApplicationState("consumed"), condition: "consumed"},
-		{name: "active hold", status: "ideation", current: true, mutate: func(d *Document) {
-			d.Records[0].Attempts[0].Application.ExecutionHold = &ExecutionHold{State: "active"}
-		}, condition: "held"},
-		{name: "unknown hold", status: "ideation", current: true, mutate: func(d *Document) {
-			d.Records[0].Attempts[0].Application.ExecutionHold = &ExecutionHold{State: "mystery"}
-		}, condition: "ineligible"},
-		{name: "blocker present", status: "ideation", current: true, mutate: func(d *Document) {
-			blockers := []Blocker{{ID: "blocker:x", State: "unsatisfied"}}
-			d.Records[0].Attempts[0].Application.Blockers = &blockers
-		}, condition: "blocked"},
 		{name: "wrong stage", status: "validation", current: true, condition: "ineligible"},
+		{name: "hold without application", status: "ideation", current: true, mutate: func(d *Document) {
+			d.Records[0].Attempts[0].Resolution.Decision = "hold"
+			d.Records[0].Attempts[0].Resolution.Reason = "wait"
+			d.Records[0].Attempts[0].Application = nil
+		}, condition: "not-applicable"},
+		{name: "revise without application", status: "ideation", current: true, mutate: func(d *Document) {
+			d.Records[0].Attempts[0].Resolution.Decision = "revise"
+			d.Records[0].Attempts[0].Resolution.Reason = "changes requested"
+			d.Records[0].Attempts[0].Application = nil
+		}, condition: "feedback-pending"},
 		{name: "wrong decision", status: "ideation", current: true, mutate: func(d *Document) {
 			d.Records[0].Attempts[0].Resolution.Decision = "revise"
 		}, condition: "ineligible"},
 		{name: "missing application", status: "ideation", current: true, mutate: func(d *Document) {
 			d.Records[0].Attempts[0].Application = nil
-		}, condition: "ineligible"},
-		{name: "missing blockers field", status: "ideation", current: true, mutate: func(d *Document) {
-			d.Records[0].Attempts[0].Application.Blockers = nil
 		}, condition: "ineligible"},
 		{name: "missing target", status: "ideation", current: true, mutate: func(d *Document) {
 			d.Records[0].Attempts[0].Application.TargetStage = ""
@@ -64,11 +61,12 @@ func TestEligibilityFailClosedTable(t *testing.T) {
 
 func TestRecordClosureShapesApplication(t *testing.T) {
 	for _, tc := range []struct {
-		decision, action, target, state string
+		decision, target, state string
+		wantApplication         bool
 	}{
-		{decision: "approve", action: "advance", target: "implementation", state: "pending"},
-		{decision: "revise", action: "feedback", target: "ideation", state: "pending"},
-		{decision: "hold", action: "none", state: "not-applicable"},
+		{decision: "approve", target: "implementation", state: "pending", wantApplication: true},
+		{decision: "revise", wantApplication: false},
+		{decision: "hold", wantApplication: false},
 	} {
 		t.Run(tc.decision, func(t *testing.T) {
 			root, entity := applicationWorkflow(t)
@@ -84,11 +82,12 @@ func TestRecordClosureShapesApplication(t *testing.T) {
 				t.Fatal(err)
 			}
 			app := doc.Records[0].Attempts[0].Application
-			if app == nil || app.Action != tc.action || app.TargetStage != tc.target || app.State != tc.state {
-				t.Fatalf("application = %#v, want %s/%s/%s", app, tc.action, tc.target, tc.state)
-			}
-			if tc.decision == "approve" && (app.Blockers == nil || len(*app.Blockers) != 0) {
-				t.Fatalf("approval blockers = %#v, want explicit empty list", app.Blockers)
+			if tc.wantApplication {
+				if app == nil || app.TargetStage != tc.target || app.State != tc.state {
+					t.Fatalf("application = %#v, want target=%s state=%s", app, tc.target, tc.state)
+				}
+			} else if app != nil {
+				t.Fatalf("%s unexpectedly carries application %#v", tc.decision, app)
 			}
 		})
 	}
@@ -300,18 +299,13 @@ func TestConsumeCrashWindowsNeverReconsumeAuthorization(t *testing.T) {
 	}
 }
 
-func TestEightCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
+func TestCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
 	cases := []struct {
 		name, decision, application, encoded string
 	}{
-		{"approval pending", "approve", "action: advance\n            target-stage: implementation\n            state: pending\n            blockers: []", "              application:\n                action: advance\n                target-stage: implementation\n                state: pending\n                blockers: []\n"},
-		{"approval consumed", "approve", "action: advance\n            target-stage: implementation\n            state: consumed\n            blockers: []", "              application:\n                action: advance\n                target-stage: implementation\n                state: consumed\n                blockers: []\n"},
-		{"approval superseded", "approve", "action: advance\n            target-stage: implementation\n            state: superseded\n            blockers: []", "              application:\n                action: advance\n                target-stage: implementation\n                state: superseded\n                blockers: []\n"},
-		{"approval held", "approve", "action: advance\n            target-stage: implementation\n            state: pending\n            blockers: []\n            execution-hold: {id: hold:1, state: active, by: person:captain}", "              application:\n                action: advance\n                target-stage: implementation\n                state: pending\n                blockers: []\n                execution-hold:\n                    id: hold:1\n                    state: active\n                    by: person:captain\n"},
-		{"portable hold", "hold", "action: none\n            state: not-applicable", "              application:\n                action: none\n                state: not-applicable\n"},
-		{"feedback pending", "revise", "action: feedback\n            target-stage: ideation\n            state: pending", "              application:\n                action: feedback\n                target-stage: ideation\n                state: pending\n"},
-		{"feedback consumed", "revise", "action: feedback\n            target-stage: implementation\n            state: consumed\n            feedback: {cycle: 1, finding-ref: resolution:1, finding-digest: 'sha256:" + strings.Repeat("2", 64) + "'}", "              application:\n                action: feedback\n                target-stage: implementation\n                state: consumed\n                feedback:\n                    cycle: 1\n                    finding-ref: resolution:1\n                    finding-digest: sha256:" + strings.Repeat("2", 64) + "\n"},
-		{"historical consumed without blockers", "approve", "action: advance\n            target-stage: implementation\n            state: consumed", "              application:\n                action: advance\n                target-stage: implementation\n                state: consumed\n"},
+		{"approval pending", "approve", "target-stage: implementation\n            state: pending", "              application:\n                target-stage: implementation\n                state: pending\n"},
+		{"approval consumed", "approve", "target-stage: implementation\n            state: consumed", "              application:\n                target-stage: implementation\n                state: consumed\n"},
+		{"approval superseded", "approve", "target-stage: implementation\n            state: superseded", "              application:\n                target-stage: implementation\n                state: superseded\n"},
 	}
 	for i, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -357,14 +351,36 @@ func TestEightCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
 	}
 }
 
+func TestRemovedApplicationShapesFailClosedWithoutMutation(t *testing.T) {
+	for _, tc := range []struct {
+		name, decision, application string
+	}{
+		{"action", "approve", "action: advance\n            target-stage: implementation\n            state: pending"},
+		{"blockers", "approve", "target-stage: implementation\n            state: pending\n            blockers: []"},
+		{"execution-hold", "approve", "target-stage: implementation\n            state: pending\n            execution-hold: {state: active}"},
+		{"feedback", "approve", "target-stage: implementation\n            state: pending\n            feedback: {cycle: 1}"},
+		{"not-applicable", "hold", "state: not-applicable"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			source := "---\nstatus: ideation\ngates:\n  version: 1\n  records:\n    - id: gate:legacy\n      stage: ideation\n      attempts:\n        - id: attempt:legacy\n          briefing:\n            id: briefing:legacy:ideation:attempt-1:revision-1\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            room-ref: ./review\n          resolution:\n            type: Resolution\n            id: resolution:legacy\n            briefing: briefing:legacy:ideation:attempt-1:revision-1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: " + tc.decision + "\n            reason: legacy\n          application:\n            " + tc.application + "\n---\n# Legacy\n"
+			before := []byte(source)
+			if _, _, err := readData(before); err == nil {
+				t.Fatal("removed application shape was accepted")
+			}
+			if !bytes.Equal(before, []byte(source)) {
+				t.Fatal("failed read mutated fixture bytes")
+			}
+		})
+	}
+}
+
 func eligibleDocument() *Document {
-	blockers := []Blocker{}
 	return &Document{Version: 1, Records: []GateRecord{{
 		ID: "gate:task:ideation", Stage: "ideation", Attempts: []Attempt{{
 			ID:          "attempt:1",
 			Briefing:    Briefing{ID: "briefing:1", Digest: "sha256:" + strings.Repeat("1", 64), RoomRef: "./review"},
 			Resolution:  &Resolution{Type: "Resolution", ID: "resolution:1", Briefing: "briefing:1", By: "person:captain", At: "now", Decision: "approve"},
-			Application: &Application{Action: "advance", TargetStage: "implementation", State: "pending", Blockers: &blockers},
+			Application: &Application{TargetStage: "implementation", State: "pending"},
 		}},
 	}}}
 }

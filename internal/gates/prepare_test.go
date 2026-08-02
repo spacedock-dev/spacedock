@@ -634,12 +634,9 @@ func TestRetainedProviderResolutionMismatchRejectsEligibilityAndConsumeWithoutCh
 	attempt := &doc.Records[0].Attempts[0]
 	attempt.Resolution.Decision = "approve"
 	attempt.Resolution.Reason = ""
-	blockers := []Blocker{}
 	attempt.Application = &Application{
-		Action:      "advance",
 		TargetStage: "done",
 		State:       "pending",
-		Blockers:    &blockers,
 	}
 	if err := writeDocument(entity, oldNode, doc); err != nil {
 		t.Fatal(err)
