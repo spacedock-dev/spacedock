@@ -1,0 +1,1 @@
+- Cycle 2: REJECTED — validation/Science Officer; surface 14 files/+138/-177 vs estimate 8-12 files/+80-160/-140-260 (100% of approved file tolerance); AC unchanged.
