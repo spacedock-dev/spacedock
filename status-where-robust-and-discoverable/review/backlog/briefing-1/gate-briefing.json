@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3t9r36n9tbj116jp9g1k01tz:backlog:attempt-1:revision-1",
+  "question": "Approve entering ideation? (--where robustness: field-name validation/GH #314, archived-inclusive sprint queries, and status --help discoverability)",
+  "artifacts": [
+    {
+      "id": "artifact:3t9r36n9tbj116jp9g1k01tz:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f490e243e26990f9d073835169d1200d21ca6485/status-where-robust-and-discoverable.md",
+      "rev": "sha256:b262dcbefd696785328803923c772826337ae1b2a8b9319906d6634925193f69",
+      "mediaType": "text/markdown",
+      "summary": "Backlog stub, 3 gaps on one surface: (1) --where silently matches-all on unknown/misspelled field (GH #314) instead of erroring; (2) --where sprint=X excludes done/archived so a full-sprint view forces a grep of _archive/; (3) --where is under-documented in status --help and the FO contract, so the FO reflexively greps instead of querying. 4 ACs proposed (field-validation error, archived-inclusive query, status --help/FO-contract discoverability, go test ./internal/status green)."
+    }
+  ]
+}

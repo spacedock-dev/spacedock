@@ -6,6 +6,21 @@ score: ""
 source: "GitHub #314 (status --where silently matches-all on an unknown field) + an FO repeatedly falling back to find/grep over the state dir. Three gaps on one surface push the FO/Commander off the native query onto raw shell. FO session 2026-07-04: a live example of gap 3 — the FO pulled the full ~50-row board (no --where filter) to locate 2 rows (one in-flight, one gated) instead of a filtered query. Added as a motivating example for AC-3's discoverability case."
 priority: medium
 id: 3t9r36n9tbj116jp9g1k01tz
+gates:
+    version: 1
+    current:
+        gate: gate:3t9r36n9tbj116jp9g1k01tz:backlog
+    records:
+        - id: gate:3t9r36n9tbj116jp9g1k01tz:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:3t9r36n9tbj116jp9g1k01tz-backlog-1
+              briefing:
+                id: briefing:3t9r36n9tbj116jp9g1k01tz:backlog:attempt-1:revision-1
+                digest: sha256:7e024b6712a45735483d7b6546e0aef114b7a7bb385b049038147d585537c0d6
+                digest-domain: canonical-bytes
+                request-digest: sha256:5079ac1476c67b3215a065329c37f6183a0eb29a278e83783cbd76026ae623b3
+                room-ref: ./status-where-robust-and-discoverable/review/backlog/briefing-1
 ---
 
 ## Problem
