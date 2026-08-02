@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7fhzvvk8d5smj858bp47xbjq:ideation:attempt-1:revision-1",
+  "question": "Approve this design to enter implementation? Collapses the measured 10-command gate ceremony to 2 (gate record --consume, dispatch build --stamp) via implicit state sync scoped to gate record/consume only (prepare excluded after staff review).",
+  "artifacts": [
+    {
+      "id": "artifact:7fhzvvk8d5smj858bp47xbjq:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b1f096d90616036c0f52299010b4e502dc65e407/collapse-gate-approval-ceremony.md",
+      "rev": "sha256:bfd3ff1912a9378b3b53982c84891a9961632ceca505d8a2d908852c12406bc2",
+      "mediaType": "text/markdown",
+      "summary": "Two flags on existing verbs (gate record --consume; dispatch build --stamp) plus implicit state sync inside gate record/consume replace the measured 10 binary/git commands with 2, without moving any authority boundary. An independent staff review found real gaps (network I/O added to gate prepare with zero AC-1 benefit; two contract clauses that would misroute a new sync-failure exit; an underspecified --consume exit space; an unexercised rebase-conflict path; one tautological AC-1 assertion) -- all five fixed and spot-checked: mechanism 1 narrowed to record/consume only, the shared-core and dispatch-core doc gaps closed, an 8-row sync=/phase= discriminator added, a real two-writer conflict-HALT spike run (exit 3 demonstrated, not asserted), and AC-1's verification reframed around real end-state parity."
+    }
+  ]
+}
