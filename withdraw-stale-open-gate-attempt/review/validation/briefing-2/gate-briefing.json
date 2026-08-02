@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-2:revision-1",
+  "question": "Does the fresh validation cycle 2 for rebased PR #580 satisfy all acceptance criteria and exact-head CI requirements for transition to done?",
+  "artifacts": [
+    {
+      "id": "artifact:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/1b8c425562b2abc58d863dcbf9a7a6d0e9be3336/withdraw-stale-open-gate-attempt/review/validation/fo-gate-review-cycle2.md",
+      "rev": "sha256:1fcd01df1f7117055952bdffa387d666d2e307c92622f1b426f3b477f93b8833",
+      "mediaType": "text/markdown",
+      "summary": "Fresh cycle-2 validation is PASSED on exact rebased head 4dd5322e9; all AC evidence and required CI lanes are green, with Science Officer APPROVE/PASSED. Bind this fresh authority; the prior 5a8be3220 approval is stale."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/1b8c425562b2abc58d863dcbf9a7a6d0e9be3336/withdraw-stale-open-gate-attempt/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1007a6cd4d6c140d7c6ffc4e09db6d72ebb4796a192ea4e5f10ec6216ab1fb9b"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/23ed415bb3f16393f7b5a0f6c19c9f259b6c4617/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c988e1536cfc94b79ed227d6561671b6e642599c201b26e2fdf2995ea03f579c"
+    }
+  ]
+}

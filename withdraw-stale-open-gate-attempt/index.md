@@ -82,8 +82,15 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: superseded
                 blockers: []
+            - id: gate-attempt:0m6vtrw4qh9w4x6bn06x5hen-validation-2
+              briefing:
+                id: briefing:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-2:revision-1
+                digest: sha256:658468c64c65eedc3f5f02a11f329084ef6acde73f071f9238f3078c44dcf88a
+                digest-domain: canonical-bytes
+                request-digest: sha256:4d9578638c01f1b590fbfa3e2971c6b73b921cd729a49a7a43294b80bade36be
+                room-ref: ./review/validation/briefing-2
 mod-block: merge:pr-merge
 pr: "#580"
 ---
