@@ -79,6 +79,13 @@ gates:
               application:
                 action: none
                 state: not-applicable
+            - id: gate-attempt:nthcevf1snz7hm75gny3kd2e-ideation-3
+              briefing:
+                id: briefing:nthcevf1snz7hm75gny3kd2e:ideation:attempt-3:revision-1
+                digest: sha256:feac214c3d3d152dbf626f9dd34aa34c5653c1d1e34990cba174ebdc13392e96
+                digest-domain: canonical-bytes
+                request-digest: sha256:c15f2c195fb130e2b6eee9f3674b5bdae17895e789a205eee7f96216e37c6d05
+                room-ref: ./review/ideation/briefing-3
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
