@@ -91,6 +91,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:4d9578638c01f1b590fbfa3e2971c6b73b921cd729a49a7a43294b80bade36be
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0m6vtrw4qh9w4x6bn06x5hen:validation:2
+                briefing: briefing:0m6vtrw4qh9w4x6bn06x5hen:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-02T08:02:48.262099Z"
+                decision: approve
+                reason: Captain authorized merge on green and sprint advancement on Science advisory approval; fresh cycle-2 report, AC-1/2/3 scan, exact-head CI, and Science Officer APPROVE/PASSED all support this candidate. The prior 5a8be3220 approval is stale.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 mod-block: merge:pr-merge
 pr: "#580"
 ---
