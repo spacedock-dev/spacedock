@@ -7,7 +7,7 @@ started: 2026-08-02T06:25:27Z
 completed:
 verdict:
 score: 0.6
-worktree:
+worktree: .worktrees/spacedock-ensign-collapse-gate-approval-ceremony
 issue:
 gates:
     version: 1
