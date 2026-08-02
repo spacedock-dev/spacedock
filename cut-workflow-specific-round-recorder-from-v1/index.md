@@ -90,11 +90,36 @@ During implementation review, a reviewer reports a finding. The worker records e
 - Authority changes: finding classification, disposition, correction ownership, cycle projection, and escalation remain workflow/First-Officer responsibilities; the generic binary has none.
 - Runtime behavior: neutral round record/validate remains callable and no longer rejects a structurally valid log for missing development-specific reviewer/ensign disposition patterns. It never mutates the body. Binding prepare, record (room and chat), validate, withdraw, eligibility, consume, and merge behavior are unchanged.
 
+## Shared route seams
+
+This task owns no stage-route policy. It preserves the workflow-neutral seam shared with `nth` and `jc`: `jc`'s status-derived unique-stage lookup selects the gate attempt before the reducer; the reducer derives the next route from the workflow stage graph; approval alone may produce the existing neutral Application/Eligibility projection (`action: advance`, with the existing pending/consumed state); and revise/hold remain Resolution-only while workflow feedback routing stays outside Application. `nth` may remove policy-specific application fields without changing that neutral reducer. Wj must not add a round-derived route, application field, feedback target, or status transition.
+
+The separate `zbc` seam is structural rather than routing policy: wj retains `gate record --round`, `gate validate --round`, the `review-round` identity, and the existing immutable two-file room exactly so `zbc` can bind a later post-rework Briefing to the newest correction episode. Round publication continues to leave binding `gates:` and the neutral stage-route reducer untouched.
+
 ## Expected surface and tolerance
 
-Expected implementation surface: 10-14 files, approximately 300-520 deleted lines and no more than 220 inserted lines (replacement producer tests and workflow wording). Primary code is `internal/cli/{cli.go,gate_test.go}`, `internal/gates/{round.go,round_test.go,review.go,model.go,io.go,operation.go}`, and `internal/ensigncycle/shared_round_recording_test.go`. Contract/documentation is `docs/specs/gate-resolution-frontmatter-contract.md`, `docs/schema/entity.mdschema.yml`, `docs/site/reference/{command-reference.md,frontmatter-contract.md}`, `docs/dev/README.md`, `skills/feedback-rejection-flow/SKILL.md`, and `skills/commission/references/templates/development.md`; only directly affected files need change, and `zbc`'s entity/worktree is not part of this task.
+Expected implementation surface: exactly 16 files, approximately 300-520 deleted lines and no more than 220 inserted lines (replacement producer tests and workflow wording):
 
-Tolerance: up to 16 files, 650 deletions, and 300 insertions is allowed when compile errors or existing contract fixtures reveal another direct policy dependency. Deleting or changing the identity/immutability semantics of `review-round`, its two-file room, `gate record --round`, or `gate validate --round` is outside tolerance, as is any change to binding `gates:`, gate application/status semantics, or runtime-host behavior; any such change requires a design reset.
+1. `internal/cli/cli.go`
+2. `internal/cli/gate_test.go`
+3. `internal/gates/round.go`
+4. `internal/gates/round_test.go`
+5. `internal/gates/review.go`
+6. `internal/gates/model.go`
+7. `internal/gates/io.go`
+8. `internal/gates/operation.go`
+9. `internal/ensigncycle/shared_round_recording_test.go`
+10. `docs/specs/gate-resolution-frontmatter-contract.md`
+11. `docs/schema/entity.mdschema.yml`
+12. `docs/site/reference/command-reference.md`
+13. `docs/site/reference/frontmatter-contract.md`
+14. `docs/dev/README.md`
+15. `skills/feedback-rejection-flow/SKILL.md`
+16. `skills/commission/references/templates/development.md`
+
+This is the candidate, not a lower range: all 16 files are expected to change. `internal/cli/pi_launch_test.go` contains a historical comment mentioning “feedback-cycle-2” but no recorder policy or command dependency, so it is deliberately outside the candidate. `zbc`, `nth`, and `jc` entity/worktree files are also outside this task.
+
+Tolerance: the file cap is 16 (zero unlisted-file tolerance), with up to 650 deletions and 300 insertions across those files for compile fixes or existing contract fixtures. A required 17th file is evidence that this inventory is incomplete and requires a design reset before editing it. Deleting or changing the identity/immutability semantics of `review-round`, its two-file room, `gate record --round`, or `gate validate --round` is outside tolerance, as is any change to the neutral `jc` lookup/`nth` stage-route seam, binding `gates:`, gate application/status semantics, or runtime-host behavior; any such change requires a design reset regardless of LOC.
 
 ## Risk exercise
 
@@ -116,7 +141,7 @@ Verified by adapting `TestRejectionFlowRoundRecordingDurableOracleAndNoInvocatio
 
 **AC-4 — Binding durable decisions remain format- and behavior-compatible.**
 
-Verified by the existing gate package and CLI fixtures for prepare, room/chat Resolution record, validate, withdraw, eligibility, consume, and terminal merge guard, followed by `go test ./...` and `go test ./... -race`. Any fixture-byte change to `gates:`/binding rooms or changed application/status result falsifies AC-4.
+Verified by the existing gate package and CLI fixtures for prepare, room/chat Resolution record, validate, withdraw, eligibility, consume, and terminal merge guard, followed by `go test ./...` and `go test ./... -race`. Focused route fixtures must also retain status-derived unique-stage selection before reduction, stage-graph-derived advance, approve-only Application, revise/hold Resolution-only behavior, and the existing `Eligibility.Action=advance` plus `application=advance/<state>` projection. Any fixture-byte change to `gates:`/binding rooms, changed application/status result, round-derived route, or policy field added to the neutral Application falsifies AC-4.
 
 ## Documentation diff
 
@@ -129,7 +154,7 @@ Verified by the existing gate package and CLI fixtures for prepare, room/chat Re
 
 ## Test plan
 
-Implementation begins with CLI tests for AC-1 and the split positive/negative producer oracle for AC-3, then deletes classifier/projection code until the AC-2 inventory reaches zero. Run focused gate/CLI producer and binding tests for AC-2 and AC-4, schema/spec contract checks, commission and feedback-rejection skill smoke tests for AC-3, then `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. Estimated complexity is medium deletion work: fixture and CLI tests are required; one fixture-backed workflow scenario is required; a live workflow/host run is not required because neither runtime dispatch nor host integration changes. Do not build a replacement recorder, compatibility alias, hidden legacy mode, migration, or schema version, and do not modify `zbc` implementation code.
+Implementation begins with CLI tests for AC-1 and the split positive/negative producer oracle for AC-3, then deletes classifier/projection code until the AC-2 inventory reaches zero. Run focused gate/CLI producer and binding tests for AC-2 and AC-4, including the existing neutral lookup/reducer/Application projections named above; run schema/spec contract checks and commission/feedback-rejection skill smoke tests for AC-3; then run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. Before implementation claims completion, compare `git diff --name-only` with the exact 16-file list and reset the design on any 17th file. Estimated complexity is medium deletion work: fixture and CLI tests are required; one fixture-backed workflow scenario is required; a live workflow/host run is not required because neither runtime dispatch nor host integration changes. Do not build a replacement recorder, compatibility alias, hidden legacy mode, migration, or schema version, and do not modify `zbc`, `nth`, or `jc` implementation code.
 
 ## Stage Report: ideation
 
@@ -160,3 +185,16 @@ The ideation defines a deletion-first v1 cut: remove advisory round grammar and 
 ### Summary
 
 Cycle 2 narrows the deletion to development-specific policy and preserves the neutral correction-round producer required by zbc. AC-2 and AC-3 now carry measured baselines, executable controls, exact expected on-disk state, and explicit falsifiers; the mandatory independent scan cites both checklist evidence lines.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Reconcile the exact 16-file wj surface with the expected-surface estimate and tolerance, and update the design so the estimate cannot understate the candidate.
+  The design now enumerates all 16 expected files, makes 16 the hard cap with a reset at file 17, and records measured evidence `candidate_files=16`; deletion/insertion tolerance remains 650/300 only within those named files.
+- DONE: Make the shared neutral stage-route seam explicit for wj, nth, and jc while preserving zbc's correction-round producer and the existing round room.
+  Wj preserves jc's upstream unique-stage lookup, nth's stage-graph/approve-only Application boundary, Resolution-only revise/hold, and zbc's unchanged `review-round` plus immutable two-file room; any route or room semantic change is a design reset.
+- DONE: Rerun the authoritative ideation checklist and AC scan, and record the revised bounded design and documentation diff.
+  AC-1 evidence: the CLI oracle rejects policy grammar while retaining round/binding verbs. AC-2 evidence: the independent production inventory measures 28 policy lines with target zero. AC-3 evidence: the producer oracle passes with the exact pointer/two-file room and its no-invocation control fails. AC-4 evidence: existing binding/route fixtures remain the mandatory full/race-test compatibility baseline.
+
+### Summary
+
+Cycle 3 replaces the understated range with an exact, enumerated 16-file candidate and zero unlisted-file tolerance. It also separates the three shared boundaries cleanly: jc selects, nth reduces/routes, wj removes round policy while retaining zbc's structural producer; the documentation diff and executable AC falsifiers remain bounded to wj.
