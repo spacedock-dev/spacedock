@@ -449,6 +449,12 @@ func TestStampCommitsInlineBeforeWorktreeCreation(t *testing.T) {
 	// inline workflow (mechanism 1 never syncs inline).
 	writeFile(t, entityPath, entityFM("Thing", "implementation", ""))
 	gitInit(t, root)
+	// gitInit's own commit passes -c user.name/user.email inline, but the
+	// inline --stamp commit under test (stampCommitInline) runs a plain `git
+	// commit` that relies on the repo's configured identity — CI runners carry
+	// no global git identity, so that commit fails there without this.
+	runGitFatal(t, root, "config", "user.name", "Spacedock Test")
+	runGitFatal(t, root, "config", "user.email", "spacedock@example.invalid")
 	writeFile(t, entityPath, strings.Replace(entityFM("Thing", "implementation", ""), "Body.", "Body (post-decision, uncommitted).", 1))
 	if headBefore, dirty := gitOutput(t, root, "rev-parse", "HEAD"), gitOutput(t, root, "status", "--porcelain"); strings.TrimSpace(dirty) == "" {
 		t.Fatalf("fixture setup did not leave the entity dirty relative to HEAD=%s", strings.TrimSpace(headBefore))
