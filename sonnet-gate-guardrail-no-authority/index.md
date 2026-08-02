@@ -2,7 +2,7 @@
 title: "Make Claude Sonnet gate-guardrail honor the committed no-authority boundary"
 status: ideation
 source: "Captain correction, 2026-08-02: keep the deferred Sonnet repair as a local Spacedock task; PR #585 owns only the green-baseline quarantine."
-started:
+started: 2026-08-02T00:49:50Z
 completed:
 verdict:
 score: 0.7
