@@ -118,6 +118,13 @@ gates:
                 target-stage: done
                 state: superseded
                 blockers: []
+            - id: gate-attempt:z5gwwz2748sg6vxr0g3kdsar-validation-4
+              briefing:
+                id: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-4:revision-1
+                digest: sha256:09da751636b2cf4f71c3f5e4c4c56ef52a3ae295d95db472f51f4e562734556b
+                digest-domain: canonical-bytes
+                request-digest: sha256:5517193c7a03a9d8a78eb927f27fa86333a6ffa7a9bf179198cefa3e43b5b1ef
+                room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-4
 mod-block:
 ---
 

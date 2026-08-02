@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-4:revision-1",
+  "question": "Approve Codex multi-agent v2 validation cycle 4 for delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/d7c7184352b03b347648d128c04dcb3dd3538a57/codex-launch-multi-agent-v2/review/validation/fo-gate-review-cycle4.md",
+      "rev": "sha256:a1268736878543d945fbcf1a32c387f94f13ef245f1b8ba4f9d197a289c434f3",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 4 independently proves AC-1 through AC-4, exact multi_agent_v2 launch/config, full and race suites, and detached M5 spoof rejection; candidate remains 8 files/+379/-26 with no material finding."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-4:revision-1:item-2",
+      "uri": "git-root://state/d7c7184352b03b347648d128c04dcb3dd3538a57/codex-launch-multi-agent-v2.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f9ea6ad6d9a98bddd832eeb972ebbf8d387f20d22d93fc3cdb18f70142f6de83"
+    }
+  ]
+}
