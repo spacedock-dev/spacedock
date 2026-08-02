@@ -215,6 +215,7 @@ The ideation contract is now independently scannable and implementation-ready wi
 ### Feedback Cycles
 
 - 2026-08-02 — Captain-authorized scope extension: add the direct stale lifecycle oracle `internal/ensigncycle/recorded_gate_lifecycle_test.go` to the implementation surface. Update only the removed-pointer assertion to prove status-derived record identity. The bounded surface is 25 files; no production files, compatibility reader, or new semantic behavior is authorized.
+- 2026-08-02 — Captain confirms the earlier wider-scope approval also included the required production consumers `internal/gates/io.go` and `internal/status/discover.go`. This gate re-review authorizes the exact 25-file candidate (`167` insertions, `202` deletions, net `-35`) with no additional production paths, compatibility reader, migration, or new semantic behavior.
 
 ## Stage Report: implementation
 
