@@ -7,16 +7,6 @@ import (
 	"strings"
 )
 
-// The smallest-sufficient-mechanism scenario grades the FO's MECHANISM TRACE — its
-// actual tool calls — not the durable end-state, which is identical whether the FO
-// applied a deterministic task in-house or climbed to a worker/PR, and whether it
-// engaged a commissioned stage silently or narrated a per-entity justification. Like
-// the `filing` assertions the trace is host-specific (Claude tool_use blocks vs Codex
-// command_execution / spawn_agent collab items), so each host has an extractor that
-// fills the host-neutral mechanismTrace the shared grader consumes. They sit under the
-// DEFAULT build tags (stdlib JSON only) so the offline negative exercises them without
-// a model.
-
 // The smallest-sufficient-mechanism fixture tokens: the two deterministic edit files
 // whose content the FO already holds, the convention-direct strategy doc, and the two
 // commissioned entities the FO engages via the standing dispatch loop (a standing,
@@ -224,7 +214,6 @@ func ssmAdvancesToDone(command string) bool {
 // naming a commissioned entity.
 func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTrace {
 	tr := newMechanismTrace()
-	dispatchEvidence := codexDispatchCompletionEvidenceFromJSONL(jsonl, commissioned)
 	for _, line := range strings.Split(jsonl, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -289,11 +278,6 @@ func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTr
 					tr.justifiedPerEntity[e] = true
 				}
 			}
-		}
-	}
-	for _, e := range commissioned {
-		if dispatchEvidence.doneReport[e] {
-			tr.engaged[e] = true
 		}
 	}
 	return tr

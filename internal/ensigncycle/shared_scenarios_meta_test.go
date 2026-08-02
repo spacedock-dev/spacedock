@@ -6,6 +6,19 @@ import (
 	"testing"
 )
 
+func TestLiveDurableJourneyTODOExactScope(t *testing.T) {
+	want := map[string]bool{
+		"smallest-sufficient-mechanism": true,
+		"keep-moving-posture":           true,
+	}
+	for _, scenario := range sharedRuntimeScenarios() {
+		got := liveDurableJourneyTODO(scenario.name) != ""
+		if got != want[scenario.name] {
+			t.Errorf("liveDurableJourneyTODO(%q) present = %t, want %t", scenario.name, got, want[scenario.name])
+		}
+	}
+}
+
 // TestSharedRuntimeScenarioDefinitions is the AC-1 guard: the shared runtime
 // scenarios are defined once, in host-neutral code. It pins the scenario ID set,
 // requires every scenario to carry its runtime-neutral facts (provenance, intent),

@@ -422,10 +422,24 @@ jobs:
           set -euo pipefail
 
           real_codex="${SPACEDOCK_CODEX_REAL_BIN:?SPACEDOCK_CODEX_REAL_BIN is not set}"
-          if [ "${1:-}" = "exec" ]; then
-            shift
-            exec "$real_codex" exec --model gpt-5.6-luna "$@"
-          fi
+          # The live runner reaches Codex through one of these exact front-door
+          # prefixes. Match the subcommand boundary, not an arbitrary token:
+          # plugin paths/arguments may legitimately be named "exec".
+          case "${1:-}" in
+            exec)
+              exec "$real_codex" exec --model gpt-5.6-luna "${@:2}"
+              ;;
+            --ask-for-approval)
+              if [ "${2:-}" = "on-request" ] && [ "${3:-}" = "exec" ]; then
+                exec "$real_codex" "${@:1:3}" --model gpt-5.6-luna "${@:4}"
+              fi
+              ;;
+            --dangerously-bypass-approvals-and-sandbox)
+              if [ "${2:-}" = "exec" ]; then
+                exec "$real_codex" "${@:1:2}" --model gpt-5.6-luna "${@:3}"
+              fi
+              ;;
+          esac
           exec "$real_codex" "$@"
           SH
           chmod +x "$shim_dir/codex"
