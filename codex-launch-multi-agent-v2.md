@@ -414,3 +414,22 @@ REJECTED. M5 is an evidence defect and Material: released user/normal workflow â
 ### Summary
 
 Cycle 4 corrects only M5 by binding the child identity fields from one typed session metadata record instead of independent raw-session substrings. The real isolated-home lifecycle, disabled control, full/race suites, formatting, and exact approved surface all pass at `155747c2fc`.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Independently verify AC-1 through AC-4 against the cycle-4 implementation and current captain scope.
+  At `155747c2fc`, AC-1/AC-4 passed the real built-front-door isolated-home lifecycle plus disabled zero-event control; AC-2 passed exact-layer, conflict, and unsupported-host tests; AC-3 passed complete argv for plain, local-plugin, Safehouse, and resume.
+- DONE: Run focused lifecycle, full, race, format, detached adversarial, and audit checks; record exact green/red evidence.
+  Focused lifecycle/config tests passed; `go test ./...` and `go test ./... -race` exited 0; `gofmt -d ./cmd ./internal`, `git diff --check`, and the candidate worktree were clean. No requested check was red.
+- DONE: Confirm the isolated-home launch contains the exact multi_agent_v2 TOML and no M1-M4 regression.
+  The live test passed in 49.99s through the built `spacedock codex` front door with the exact 16-thread/`agents`/visible-metadata table, ordered typed lifecycle and v2 context; reserved-spelling, vocabulary-only, wrong-wait, unsupported-host, and disabled-control proofs retained M1-M4.
+- DONE: Perform the required detached adversarial audit and report any material/evidence finding with all four fields.
+  Throwaway checkout `/tmp/spacedock-codex-audit-cycle4.1V41Lh/repo` at exact commit `155747c2fc7bc0f4e8d7538db126521e164e364a` rejected the typed misbound child despite spoofed expected identity text; no new material or evidence finding arose, so no four-field disposition entry is required.
+
+### Summary
+
+Cycle-4 validation independently reproduces AC-1 through AC-4 and recommends PASSED. The candidate remains exactly 8 files, +379/-26 against `origin/main`, preserves the approved launcher-owned multi-agent surface and M1-M4 behavior, and closes M5 by requiring the parent and worker identity fields to coexist in one typed child session record.
+
+### Recommendation
+
+PASSED. All promised ACs have behavioral evidence, the required live and detached adversarial proofs are green, and no material finding or deferred risk remains.
