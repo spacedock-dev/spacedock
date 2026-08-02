@@ -85,6 +85,10 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:3deb5e54760062691cf74382c2d955461e1712631db5649522bed1d55053aa41
                 room-ref: ./review/validation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-02T13:14:22.63187Z"
+                reason: The Captain confirmed that the earlier wider-scope approval included internal/gates/io.go and internal/status/discover.go. The open briefing froze the narrower scope and must be replaced with a binding that records the exact 25-file authorization.
 started: 2026-08-01T14:01:17Z
 worktree: .worktrees/spacedock-ensign-simplify-gate-state-v1-schema
 mod-block:
