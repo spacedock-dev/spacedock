@@ -24,6 +24,19 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:a9c5b97c54d3372732e38b8ae7157af41a6aaca2dae2cdecece420ab2fd0572a
                 room-ref: ./collapse-gate-approval-ceremony/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:7fhzvvk8d5smj858bp47xbjq:backlog:1
+                briefing: briefing:7fhzvvk8d5smj858bp47xbjq:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-02T06:25:11.852955Z"
+                decision: approve
+                reason: 'Captain directed in chat: file the gate-approval-ceremony friction as a task and dispatch it to ideation via a fable-model ensign.'
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 Applying one captain gate decision (approve/revise/hold) currently costs ~16 raw FO tool calls and ~2.5 minutes of wall clock, most of it mechanical: re-invoking `state commit` after nearly every binary call, then a separate set of frontmatter stamps and worktree creation before the next dispatch even begins. This entity is about collapsing that ceremony toward 1-2 calls per gate decision without weakening any of the authority/integrity checks the ceremony exists to enforce.
