@@ -154,3 +154,44 @@ Expanded the seed into an implementation-ready design for bounded default status
 
 ### Summary
 Reversed the default status sort to later-stage-first/score-descending with unknown stages grouped last, and added --page/--limit pagination (default page=1 limit=25, --limit 0 for all) to the default listing only, refusing the flag on every other read/mutation mode and on the --page-with-limit-0 contradiction. Text and JSON both surface the pagination window (footer / pagination object); completions and the two named docs were updated per the entity's diff. All work is on branch spacedock-ensign/status-pagination-and-default-sorting at dfaf1519c, scoped to internal/status, internal/cli, docs/site/reference, and skills/fo-status-viewer as estimated — no surface deviation to report.
+
+## Review-finding disposition
+
+### AC-2 filtered/archived pagination composition has no automated test (open)
+
+- Reviewer observation: AC-2's own "Tested by" clause requires "a fixture with more than 25 active rows and a second filtered/archived case" asserting visible/omitted row IDs, footer totals, and the JSON pagination object under filtering. `internal/status/pagination_test.go` only exercises an unfiltered, non-archived, single-status 30-row fixture (`TestStatusPaginationDefaultBounds`/`Page2`/`PageOutOfRange`/`LimitZero`); `grep -rn '"--page"\|"--limit"' internal/status/*_test.go` shows no case combining `--page`/`--limit` with `--where` or `--archived`. The implementation stage report's claim that `TestStatusPagination*` "proves" AC-2 is therefore overstated for this sub-claim — no committed, repeatable test establishes it.
+- Defect kind: evidence defect (not outcome — see reproduction below).
+- Released user and normal workflow: any first officer/captain combining `--where` or `--archived` with the default paginated listing — a common, supported status invocation.
+- Observable harm: the exact composition AC-2 promises tested (filter-then-sort-then-paginate, with totals reflecting the filtered/archived count) has zero durable regression coverage; a future change reordering filter/paginate would ship undetected.
+- Authority: `value-ac[AC-2]`.
+- Trigger evidence: `internal/status/handlers.go` `runRead` computes `win := paginate(len(entities), page, limit)` after `entities = applyFilters(entities, whereFilters)` and after archive entities are appended — the mechanism is correctly ordered, but no test pins this order.
+- Independent reproduction (validator, not committed as a test): built a 40-entity fixture at `/tmp/sd-filter-paginate` (30 active `ideation` rows + 5 active `done` rows + 5 archived `done` rows). `status --where status=ideation` returned exactly the 30 filtered rows with footer "Showing 1-25 of 30 ..." (not 40); `status --archived --page 2` returned rows 26-40 (15 rows: the 5 remaining ideation + all 10 done), matching filter-then-paginate composition. The shipped mechanism is correct; only the promised test is missing.
+- Materiality (validator-proposed, not FO-authorized): Material — `value-ac[AC-2]` names this exact scenario as required evidence and it is absent, not hypothetical or out-of-scope.
+- Proposed disposition: narrow fix — add the missing filtered/archived pagination-composition test(s) to `pagination_test.go`, asserting total/visible/omitted rows against the filtered or archived count (not the raw entity count), using the existing `buildPaginationFixture`/`splitTableAndFooter`/`paginatedStatusEnvelope` helpers. No sort/pagination redesign needed — the mechanism is proven correct.
+- First Officer authorization: pending.
+
+### Deferred risks
+
+- AC-1's "unknown stages remain grouped after known stages" clause (Proposed approach item 1) has no automated regression test — AC-1's literal "Tested by" text does not require it, and I independently confirmed correct behavior (a `totally-unknown-stage` row with score 0.99 sorted last, after `validation` 0.10 and `backlog` 0.50, in a throwaway fixture; a second fixture confirmed two unknown-stage rows still sort score-descending against each other). Promote to material if AC-1's text is revised to require this coverage, or the next time `format.go`'s comparator is touched without a regression test guarding it.
+- The implementation stage report states "30 golden files regenerated via -update"; the actual diff touches 35 files under `internal/status/testdata/golden/` (20 modified, 15 newly created for usage-error cases). Cosmetic reporting inaccuracy only — every file's diff content was spot-checked (all 20 modified, a sample of the 15 new) and each change is exactly the expected reorder, added pagination object, or new usage-error golden.
+
+## Stage Report: validation
+
+- DONE: Verify AC-1: reproduce TestSortDefaultStageThenScore yourself; independently confirm the default sort order (validation before implementation before ideation before backlog, score descending within stage, stable discovery-order ties, unknown stages grouped last) against a fresh fixture or the live checkout's own status output.
+  `go test ./internal/status -run TestSortDefaultStageThenScore -v` passes; independently reproduced with two throwaway fixtures at `/tmp/sd-unknown-fixture` and `/tmp/sd-two-unknown` confirming unknown-stage grouping (see Deferred risks).
+- DONE: Verify AC-2 and AC-3: reproduce the pagination tests and TestParsePageLimitArgs; confirm --page/--limit compose correctly with --where filtering and archive inclusion, and that --limit 0 preserves full row set with the new ordering.
+  `TestPaginate`/`TestPaginationFooter`/`TestParsePageLimitArgs`/`TestStatusPaginationDefaultBounds`/`Page2`/`PageOutOfRange`/`LimitZero` all pass; filter/archive composition independently reproduced at `/tmp/sd-filter-paginate` (see Review-finding disposition — behavior correct, but no committed test covers this composition; material finding recorded).
+- DONE: Verify AC-4: reproduce the incompatibility rejection on the 9 named non-listing modes plus the --page-with-limit-0 contradiction; confirm exit 1 with the diagnostic naming the flag.
+  `TestNativeUsageErrorsExitOneNotTwo` covers all 9 modes (--next, --boot, --read, --resolve, --short-id, --next-id, --set, --archive, --validate) plus page-with-limit-zero; every golden (e.g. `native-usage-page-with-next.txt`) asserts exit 1 and `Error: --page/--limit cannot be combined with --{flag}`.
+- DONE: Verify AC-5: confirm the documentation diff landed verbatim, and that the completion tests actually assert --page/--limit presence.
+  `git diff 48a7ea0d9..dfaf1519c -- docs/site/reference/command-reference.md skills/fo-status-viewer/SKILL.md` matches the entity's specified substitution verbatim (command-reference's surrounding text had drifted upstream since ideation captured it; only the targeted substring was replaced, correctly preserving the drift); `internal/cli/verbs_test.go` `TestCompletionShells` asserts both `--page` and `--limit` appear in bash/zsh completion output, not a substring of the whole file.
+- DONE: Spot-check a sample of the regenerated golden files' diffs; confirm each changed line is only the expected reorder or added pagination object, and that seq-next.txt/seq-next.json/boot-structural.txt are untouched.
+  Reviewed all 20 modified goldens (`seq-default.*`, `seq-archived.json`, `seq-where.json`, `ind-seq-*`, `native-read-*`, `native-slug-default.txt`, `ind-slug-default.txt`, `native-folder-report-append.txt`, `next-suppressed-*`, `argv-unknown-toplevel.txt`, `comment-roundtrip-fields-read.txt`) plus 11 of the 15 newly added `native-usage-{page,limit}-*` goldens — every diff is exactly a row reorder, an added `pagination` object, or a new usage-error message naming the right flag; `seq-next.txt`, `seq-next.json`, `boot-structural.txt` do not appear in `git diff --name-status`.
+- DONE: Run go test ./... -count=1 and go test ./... -race -count=1 yourself from scratch; confirm both green.
+  Both full-repo runs exit 0 with every package `ok` (internal/status 71.8s plain / 41.0s race; whole-repo plain run ~292s wall incl. internal/cli 208s and ensigncycle 275s). `go vet ./...` and `gofmt -l ./cmd ./internal` both clean.
+- DONE: Recommend PASSED or REJECTED with evidence for each AC; list deferred risks separately from material findings.
+  See Recommendation below and Review-finding disposition / Deferred risks above.
+
+### Recommendation: REJECTED
+
+One material finding: AC-2's promised filtered/archived pagination-composition test is absent (evidence defect; mechanism independently verified correct). AC-1, AC-3, AC-4, and AC-5 all have valid, reproduced evidence with no material findings. Recommend a narrow fix — add the missing composition test(s) — not a design reset or re-litigation of the sort/pagination mechanism, which is proven correct throughout. Two deferred risks noted above (neither blocking).
