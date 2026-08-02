@@ -89,6 +89,13 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-02T13:14:22.63187Z"
                 reason: The Captain confirmed that the earlier wider-scope approval included internal/gates/io.go and internal/status/discover.go. The open briefing froze the narrower scope and must be replaced with a binding that records the exact 25-file authorization.
+            - id: gate-attempt:jccbpvjv5bg1jn0jbmj2yf8s-validation-2
+              briefing:
+                id: briefing:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-2:revision-1
+                digest: sha256:2c86dc89abf175e2a02a8cb4be3207d82f6ea36bb9c815f728e93239e6443ce2
+                digest-domain: canonical-bytes
+                request-digest: sha256:607474c33ca60a6c0fed85bcc41f491e9ccdd03e41144ec4181bf038c36bcdc9
+                room-ref: ./review/validation/briefing-2
 started: 2026-08-01T14:01:17Z
 worktree: .worktrees/spacedock-ensign-simplify-gate-state-v1-schema
 mod-block:

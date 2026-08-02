@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-2:revision-1",
+  "question": "Should the validated JC candidate enter the terminal merge ceremony?",
+  "artifacts": [
+    {
+      "id": "artifact:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/06f7cb16e0676a6f1b2cf52d89a6fca346f66a6f/simplify-gate-state-v1-schema/review/validation/fo-gate-review-cycle2.md",
+      "rev": "sha256:6d1ac1fc5f8b0f1af27b16e5c333323be39cedb59c06d216d861793e1d126f30",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 2 passed: Captain-authorized 25-file scope, AC-1 through AC-5, full/race, and detached delivery audit are green."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/06f7cb16e0676a6f1b2cf52d89a6fca346f66a6f/simplify-gate-state-v1-schema/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:70cc4d061831006d565eb02fa9bf453064b5e1149461997680ed2fc49e00ab45"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:jccbpvjv5bg1jn0jbmj2yf8s:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://state/06f7cb16e0676a6f1b2cf52d89a6fca346f66a6f/simplify-gate-state-v1-schema/review/validation/roborev-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0573bf6e405c9c9e91a1e45d91cad67f26b2878c2730bef98151f4dec2830240"
+    }
+  ]
+}
