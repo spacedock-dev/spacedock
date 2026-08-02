@@ -112,7 +112,7 @@ gates:
 started: 2026-08-01T14:01:17Z
 worktree: .worktrees/spacedock-ensign-simplify-gate-state-v1-schema
 mod-block: merge:pr-merge
-pr: "#599"
+pr: pr-merge:599
 ---
 
 The unreleased v1 gate-state implementation still carries prototype compatibility and a mutable current-gate pointer that duplicates derivable state and has already projected a stale approval.
