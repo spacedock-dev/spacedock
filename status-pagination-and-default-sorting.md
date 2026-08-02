@@ -232,3 +232,22 @@ One material finding: AC-2's promised filtered/archived pagination-composition t
 
 ### Summary
 Added the two missing AC-2 composition tests the validator's rejection named, reusing the existing pagination-fixture/parsing helpers and a new mixed active/archived/status fixture. Both tests were confirmed falsifiable by temporarily reintroducing the exact defect each guards against (unfiltered total, missing archive inclusion), then reverted before the final commit (b73dcf43b, test-file-only). No other AC, file, or mechanism was touched; full suite and -race are green.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce TestStatusPaginationFilteredComposition and TestStatusPaginationArchivedComposition; independently confirm the filtered/archived composition scenarios.
+  `go test ./internal/status/... -run 'TestStatusPaginationFilteredComposition|TestStatusPaginationArchivedComposition' -v` both PASS.
+- DONE: Confirm the tests are genuinely falsifiable by independently reintroducing the exact defects each guards against.
+  Changed `internal/status/handlers.go`'s pagination line to `paginate(len(allEntities), page, limit)` (ignoring `--where`): `TestStatusPaginationFilteredComposition` failed, footer read "of 40" not "of 30"; `TestStatusPaginationArchivedComposition` still passed (unaffected). Reverted, then separately gated the archive append with `if false && includeArchive`: `TestStatusPaginationArchivedComposition` failed, page 2 missing all 5 `arch-*` rows; `TestStatusPaginationFilteredComposition` still passed. Reverted; `git diff --stat`/`git status --short` confirmed clean at HEAD (b73dcf43b) after each revert. Both failures match the implementation report's falsification claims exactly.
+- DONE: Confirm the correction round diff is additive-only (127 insertions, 0 deletions, pagination_test.go only) and did not touch AC-1/AC-3/AC-4/AC-5's mechanism or tests.
+  `git show --stat b73dcf43b`: `internal/status/pagination_test.go | 127 +++++++++++++++++++++++++++++++++++++` / `1 file changed, 127 insertions(+)` — no deletions, no other file.
+- DONE: Re-confirm AC-1, AC-3, AC-4, AC-5 still hold.
+  `TestSortDefaultStageThenScore` (AC-1), `TestParsePageLimitArgs`/`TestStatusPaginationLimitZero` (AC-3), `TestNativeUsageErrorsExitOneNotTwo` all 24 subtests including the 9 non-listing modes + page-with-limit-zero (AC-4), `TestCompletionShells` in internal/cli (AC-5) all PASS; doc diff substrings in command-reference.md and fo-status-viewer/SKILL.md re-grepped and still present verbatim.
+- DONE: Run go test ./... -count=1 and go test ./... -race -count=1 from scratch; confirm both green.
+  Both full-repo runs from a fresh `-count=1` exit 0, every package `ok` (plain: internal/status 26.6s, internal/cli 66.6s, ensigncycle 108.8s; race: internal/status 34.7s, internal/cli 77.8s, ensigncycle 121.3s). `gofmt -l ./cmd ./internal` empty.
+- DONE: Recommend PASSED or REJECTED with evidence.
+  See Recommendation below.
+
+### Recommendation: PASSED
+
+All five ACs have valid, independently reproduced evidence. The AC-2 evidence gap from correction round 1 is closed: the two new tests exist, pass, compose against the filtered/archived count (not the raw or active-only count) as AC-2's "Tested by" clause requires, and are genuinely falsifiable — I independently reintroduced both named defects (ignore-filter, skip-archive-append) and each new test failed exactly as the implementation report claimed, in isolation from the other. The correction diff is additive-only (127/0/1-file) and AC-1/AC-3/AC-4/AC-5 are untouched and still pass on their existing tests. Full suite and `-race` are green from scratch. No new material findings. The two previously-recorded deferred risks (AC-1 unknown-stage-grouping regression coverage; the 30-vs-35-golden-file reporting inaccuracy) remain open but non-blocking and were not in scope for this re-validation round. Ready for merge.
