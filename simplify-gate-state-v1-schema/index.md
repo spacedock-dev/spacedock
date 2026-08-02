@@ -43,6 +43,18 @@ gates:
                 digest-domain: canonical-bytes
                 request-digest: sha256:0d2eaeb477ff763f7ab39613d61800400946b586b9451ddac93e951630379021
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:jccbpvjv5bg1jn0jbmj2yf8s:ideation:1
+                briefing: briefing:jccbpvjv5bg1jn0jbmj2yf8s:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-02T01:32:41.555714Z"
+                decision: revise
+                reason: 'Per Science Officer advisory and the Captain-delegated send-back rule: split the exact Acceptance criteria section from Test plan so the mandatory AC scan passes; tighten the 12-18-file/80-180-insertions and 140-300-deletions scope to the minimum consumer surface; retain the stale-approval adversarial fixture and full/race plan. Repairing the entity invalidates this Briefing, so require a fresh current-stage binding.'
+              application:
+                action: feedback
+                target-stage: ideation
+                state: pending
 started: 2026-08-01T14:01:17Z
 ---
 
