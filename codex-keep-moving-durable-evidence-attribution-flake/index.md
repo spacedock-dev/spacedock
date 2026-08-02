@@ -164,7 +164,7 @@ gates:
                 state: consumed
                 blockers: []
 mod-block:
-pr: "#585"
+pr: pr-merge:585
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.
