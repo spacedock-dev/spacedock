@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rwpe45pdxffk2zfy24ejde6a:validation:attempt-2:revision-1",
+  "question": "Re-validation PASSED: AC-2 correction confirmed (additive-only, both new tests independently falsified against their target defects). All 5 ACs green. Approve merge?",
+  "artifacts": [
+    {
+      "id": "artifact:rwpe45pdxffk2zfy24ejde6a:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/b3ef63a3220c16c99916e0f1dd77e42e7e40d6e3/status-pagination-and-default-sorting.md",
+      "rev": "sha256:19978b6fa1f0dc8abd8665b5264f71534a16e1ce8869b6f2a06d90f5d305663d",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 validator independently reproduced both new AC-2 tests, then falsified each by reintroducing its target defect (ignore --where filter; skip archive append) -- both failed exactly as claimed, in isolation from each other. Correction diff confirmed additive-only (127/0/1-file, b73dcf43b). AC-1/AC-3/AC-4/AC-5 re-confirmed still passing, untouched. Full suite + race green from scratch. No new findings; the 2 prior deferred risks remain open but non-blocking and out of scope for this round. Ready for merge."
+    }
+  ]
+}

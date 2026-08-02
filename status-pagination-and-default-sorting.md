@@ -52,7 +52,14 @@ gates:
               application:
                 action: feedback
                 target-stage: implementation
-                state: pending
+                state: superseded
+            - id: gate-attempt:rwpe45pdxffk2zfy24ejde6a-validation-2
+              briefing:
+                id: briefing:rwpe45pdxffk2zfy24ejde6a:validation:attempt-2:revision-1
+                digest: sha256:1e41f87afb680c3bf98e822ca57bc2d5105450c310a05a29384fd4cb4a9149e8
+                digest-domain: canonical-bytes
+                request-digest: sha256:82d12cb3341d0a8234dd0a21ded4295c244c83c0f03686eb65b9dc5215a2c285
+                room-ref: ./status-pagination-and-default-sorting/review/validation/briefing-2
 worktree: .worktrees/spacedock-ensign-status-pagination-and-default-sorting
 ---
 
