@@ -212,28 +212,6 @@ func claudeRejectionFlowTODOModel(model string) bool {
 	return claudeModelFamily(model, "opus") || claudeModelFamily(model, "sonnet")
 }
 
-func claudeSonnetGateGuardrailTODO(model string) string {
-	if !claudeModelFamily(model, "sonnet") {
-		return ""
-	}
-	return "TODO(3zzpdw704df1g8pg1x9thzmw): Claude Sonnet gate-guardrail is temporarily non-evidence for local task sonnet-gate-guardrail-no-authority pending a fresh passing promotion run"
-}
-
-func TestClaudeSonnetGateGuardrailTODOModelScope(t *testing.T) {
-	for model, wantSkip := range map[string]bool{
-		"sonnet":          true,
-		"claude-sonnet-5": true,
-		"opus":            false,
-		"claude-opus-4-8": false,
-		"haiku":           false,
-	} {
-		got := claudeSonnetGateGuardrailTODO(model)
-		if (got != "") != wantSkip {
-			t.Errorf("claudeSonnetGateGuardrailTODO(%q) = %q, wantSkip %t", model, got, wantSkip)
-		}
-	}
-}
-
 func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	if claudeModelFamily(runner.model(), "sonnet") {
@@ -329,9 +307,6 @@ func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 
 func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
-	if reason := claudeSonnetGateGuardrailTODO(runner.model()); reason != "" {
-		t.Skip(reason)
-	}
 	if claudeModelFamily(runner.model(), "opus") {
 		t.Skip("TODO(w5bfnrvpcphw857nzz93340c): Opus must reliably render the exact selected Briefing digest before re-enabling this journey")
 	}
