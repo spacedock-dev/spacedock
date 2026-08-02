@@ -1,7 +1,7 @@
 ---
 id: 8bnkrtq4rw46xkbez5zrbmmj
 title: Codex keep-moving durable-evidence attribution false-red
-status: done
+status: validation
 source: "PR #513 Runtime Live E2E run 29392675038, codex-live job 87279446937"
 started: 2026-07-30T23:05:41Z
 completed:
@@ -161,7 +161,7 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: consumed
+                state: pending
                 blockers: []
 mod-block:
 pr: pr-merge:585
