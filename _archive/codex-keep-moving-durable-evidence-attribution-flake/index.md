@@ -1,11 +1,11 @@
 ---
 id: 8bnkrtq4rw46xkbez5zrbmmj
 title: Codex keep-moving durable-evidence attribution false-red
-status: validation
+status: done
 source: "PR #513 Runtime Live E2E run 29392675038, codex-live job 87279446937"
 started: 2026-07-30T23:05:41Z
-completed:
-verdict:
+completed: 2026-08-02T00:55:00Z
+verdict: passed
 score: 0.8
 worktree: .worktrees/spacedock-ensign-codex-keep-moving-durable-evidence-attribution-flake
 issue:
@@ -161,10 +161,11 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
 mod-block:
 pr: pr-merge:585
+archived: 2026-08-02T00:55:00Z
 ---
 
 The keep-moving live scenario must credit each completed task from its own durable workflow journey, without making a provider transcript dialect part of the product verdict.
