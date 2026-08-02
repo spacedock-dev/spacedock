@@ -3,6 +3,7 @@ package gates
 import (
 	"bytes"
 	"encoding/json"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,6 +13,80 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
+
+func TestPrepareRequiresActionableCurrentStage(t *testing.T) {
+	for stage, allow := range map[string]bool{"validation": true, "implementation": false, "done": false, "contradictory": false} {
+		t.Run(stage, func(t *testing.T) {
+			workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+			body, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			body = bytes.Replace(body, []byte("status: validation"), []byte("status: "+stage), 1)
+			if err := os.WriteFile(entity, body, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			review := filepath.Join(state, "task", "review")
+			beforeReview := prepareTreeSnapshot(t, review)
+
+			input := PrepareInput{WorkflowDir: workflow, Question: "Review?", Artifact: artifact, Summary: "summary"}
+			result, err := Prepare(entity, input)
+			if allow {
+				if err != nil || result.State != "open" {
+					t.Fatalf("actionable stage result=%#v error=%v", result, err)
+				}
+				if err := RecordSemantic(entity, RecordInput{Decision: "hold", Actor: "person:captain", Reason: "wait", WorkflowDir: workflow}); err != nil {
+					t.Fatal(err)
+				}
+				successor, err := Prepare(entity, input)
+				if err != nil {
+					t.Fatal(err)
+				}
+				doc, _, err := Read(entity)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if successor.Briefing != "briefing:task:validation:attempt-2:revision-1" || filepath.Base(successor.Room) != "briefing-2" || len(doc.Records) != 1 || len(doc.Records[0].Attempts) != 2 || doc.Records[0].Attempts[0].Briefing.ID != result.Briefing || doc.Records[0].Attempts[0].Resolution == nil || doc.Records[0].Attempts[1].ID != "gate-attempt:task-validation-2" {
+					t.Fatalf("invalid retained successor: result=%#v records=%#v", successor, doc.Records)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), stage) || !strings.Contains(err.Error(), "is not an actionable gate") {
+				t.Fatalf("stage %q error=%v", stage, err)
+			}
+			afterEntity, readErr := os.ReadFile(entity)
+			if readErr != nil {
+				t.Fatal(readErr)
+			}
+			if !bytes.Equal(afterEntity, body) || prepareTreeSnapshot(t, review) != beforeReview {
+				t.Fatalf("stage %q refusal changed entity bytes or review tree", stage)
+			}
+		})
+	}
+}
+
+func prepareTreeSnapshot(t *testing.T, root string) string {
+	t.Helper()
+	if _, err := os.Stat(root); os.IsNotExist(err) {
+		return ""
+	}
+	var entryTypes strings.Builder
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		entryTypes.WriteString(rel + "\x00" + entry.Type().String() + "\x00")
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return entryTypes.String() + treeDigest(t, root)
+}
 
 func TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities(t *testing.T) {
 	for _, form := range []string{"folder", "flat"} {
@@ -1001,7 +1076,7 @@ func prepareFixture(t *testing.T, form string) (workflow, state, entity, artifac
 	mainRoot := filepath.Dir(filepath.Dir(workflow))
 	prepareGitRun(t, mainRoot, "init", "-q")
 	prepareGitIdentity(t, mainRoot)
-	if err := os.WriteFile(filepath.Join(workflow, "README.md"), []byte("---\nid-style: slug\nstate: ../../../state\nstages:\n  states:\n    - name: validation\n      initial: true\n      gate: true\n    - name: done\n      terminal: true\n---\n# Workflow\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(workflow, "README.md"), []byte("---\nid-style: slug\nstate: ../../../state\nstages:\n  states:\n    - name: validation\n      initial: true\n      gate: true\n    - name: implementation\n    - name: done\n      terminal: true\n    - name: contradictory\n      gate: true\n      terminal: true\n---\n# Workflow\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	artifact = filepath.Join(mainRoot, "gate-review.md")

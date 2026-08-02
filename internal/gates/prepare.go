@@ -641,8 +641,12 @@ func validatePreparedStage(workflowDir, stage string) error {
 	if err != nil {
 		return err
 	}
-	if applicationStageIndex(stages, stage) < 0 {
+	stageIndex := applicationStageIndex(stages, stage)
+	if stageIndex < 0 {
 		return fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
+	}
+	if !stages[stageIndex].Gate || stages[stageIndex].Terminal {
+		return fmt.Errorf("workflow stage %s is not an actionable gate", stage)
 	}
 	return nil
 }
