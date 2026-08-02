@@ -79,6 +79,13 @@ gates:
               application:
                 action: none
                 state: not-applicable
+            - id: gate-attempt:wjkhq0sktbbe3txx6jhnvcv2-ideation-3
+              briefing:
+                id: briefing:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-3:revision-1
+                digest: sha256:182bbf2881ea281e0b37e5df2a8a78cf5deb60f57691dc784b93a893199a5c9c
+                digest-domain: canonical-bytes
+                request-digest: sha256:ed5062b5037618d28123ba45285282d81120a3f70f5e6a3aa469e1fca1aa54b7
+                room-ref: ./review/ideation/briefing-3
 ---
 
 Cut the development-specific classification and Cycle projection from the public round surface while retaining its workflow-neutral correction-record producer for stable v1. Keeping policy would freeze this repository's review taxonomy into the generic durable-decision contract; deleting the structural producer would break zbc's post-rework freshness boundary.

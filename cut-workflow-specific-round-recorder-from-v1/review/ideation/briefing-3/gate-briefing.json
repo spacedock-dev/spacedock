@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-3:revision-1",
+  "question": "Should the cycle 3 ideation design enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/fd62c7197d0531169ea6f3a51bfd7ba1dc0854d4/cut-workflow-specific-round-recorder-from-v1/review/ideation/fo-gate-review-cycle3.md",
+      "rev": "sha256:deba73e0a43dc563d0e73ff609d8e40160a7ee62e039872a74b9a9393b78985f",
+      "mediaType": "text/markdown",
+      "summary": "Approve the exact 16-file bounded design with the neutral jc/nth/wj seam and zbc producer preserved."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:wjkhq0sktbbe3txx6jhnvcv2:ideation:attempt-3:revision-1:item-2",
+      "uri": "git-root://state/fd62c7197d0531169ea6f3a51bfd7ba1dc0854d4/cut-workflow-specific-round-recorder-from-v1/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8f9de6a271f34b5db1039473e3138ce000981b8bef0210b93568392f39b087ce"
+    }
+  ]
+}
