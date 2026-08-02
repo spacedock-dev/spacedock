@@ -256,12 +256,20 @@ func TestGateConsumeSyncFailedRecoversWithStateCommit(t *testing.T) {
 	headBefore := strings.TrimSpace(git(t, checkout, "rev-parse", "HEAD"))
 
 	// Not re-entrant: repeat consume is a byte-clean refusal, no new commit.
+	// Since PR #599 (Simplify v1 gate state schema, 9ab72ea9f) dropped the
+	// stable gates.current gate-ID pointer, the current gate is now resolved
+	// by matching the entity's live status against a record's stage
+	// (recordForStage) rather than by a stable ID — so once the first call's
+	// local (unpushed) advance has moved status past ideation, a repeat call
+	// finds no record for the new status at all and reports "ineligible"
+	// rather than the old "consumed". The guarantee this test exists to pin
+	// is unaffected: no double-write, no new commit, no sync.
 	out.Reset()
 	errOut.Reset()
 	code = run(context.Background(), []string{"gate", "consume", "task", "--workflow-dir", workflowDir},
 		nil, hostClone, nil, &out, &errOut, &status.NativeRunner{}, nil)
-	if code != 1 || !strings.Contains(out.String(), "condition=consumed") || !strings.Contains(out.String(), "consumed=false") {
-		t.Fatalf("repeat consume exit=%d stdout=%q stderr=%q, want a consumed refusal", code, out.String(), errOut.String())
+	if code != 1 || !strings.Contains(out.String(), "condition=ineligible") || !strings.Contains(out.String(), "consumed=false") {
+		t.Fatalf("repeat consume exit=%d stdout=%q stderr=%q, want an ineligible refusal", code, out.String(), errOut.String())
 	}
 	if strings.Contains(out.String(), "sync=") {
 		t.Fatalf("repeat consume refusal must run no sync: %s", out.String())
@@ -402,13 +410,12 @@ func staleableGatedSplitRootFixture(t *testing.T) (workflowDir, checkout, briefi
 	entity := filepath.Join(checkout, "task.md")
 	writeFile(t, entity, "---\nid: task\nstatus: ideation\ntitle: Task\nstarted:\nworktree:\ngates:\n"+
 		"  version: 1\n"+
-		"  current: {gate: 'gate:task:ideation'}\n"+
 		"  records:\n"+
 		"    - id: gate:task:ideation\n"+
 		"      stage: ideation\n"+
 		"      attempts:\n"+
 		"        - id: gate-attempt:task-ideation-1\n"+
-		"          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: '"+digest+"', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1/briefing.json}\n"+
+		"          briefing: {id: 'briefing:task:ideation:attempt-1:revision-1', digest: '"+digest+"', room-ref: ./review/ideation/briefing-1/briefing.json}\n"+
 		"---\n# Task\n")
 	git(t, checkout, "add", "-A")
 	git(t, checkout, "commit", "-q", "-m", "state fixture")
