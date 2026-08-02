@@ -453,3 +453,25 @@ Cycle-4 validation independently reproduces AC-1 through AC-4 and recommends PAS
 ### Recommendation
 
 PASSED. All promised ACs have behavioral evidence, the required live and detached adversarial proofs are green, and no material finding or deferred risk remains.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Remove the obsolete forwarded --enable multi_agent_v2 pair from the shared Codex live runner and keep launcher-owned config as the sole source.
+  Commit `60a75ba658` removes the reserved pair and rewrites the runner assertion so either forwarded `--enable` or `--disable` makes the build-tag check fail.
+- DONE: Correct docs/runtime-live-ci.md to describe launcher-owned enablement and retain the exact v2 table/support boundary.
+  The launch row now names both stable controls, the exact 16-thread/`agents`/visible-metadata table, forwarded-override rejection, and fail-closed host support; the setup paragraph retains fence, bypass, isolated-home, final-message, and lifecycle-oracle details.
+- DONE: Reproduce the shared live Codex smoke through the Spacedock front door, then rerun focused, full, race, format, diff, and detached checks.
+  `TestLiveCodexSharedScenarios` passed in 765.06s (seven enabled journeys passed; three existing TODO journeys skipped); focused CLI/live-tag tests, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and `git diff --check` passed, as did the detached spoofed-identity test at exact commit `60a75ba658`.
+
+### Review Finding Disposition
+
+- Released user and normal workflow: the required shared Codex live lane invokes each supported journey through `spacedock codex` with its isolated home and local checkout.
+- Observable harm: the runner forwarded a launcher-reserved `--enable multi_agent_v2` pair, so the shared lane exited 1 before host launch with `collaboration settings are managed by Spacedock; remove the forwarded override`.
+- Affected authority: `value-ac[AC-2]` — launcher-owned collaboration settings cannot be silently downgraded or shadowed by forwarded configuration.
+- Trigger evidence: pre-correction `internal/ensigncycle/codex_live_runner_test.go:454` appended the reserved pair; `go run ./cmd/spacedock codex -- --enable multi_agent_v2` reproduced the pinned rejection before launch.
+- Classification, ownership, disposition: Material integration/test defect owned by the current candidate; the First Officer authorized fixing runner/docs only while preserving the fail-closed product guard.
+- Exact scope delta: final candidate is 9 files, +380/-42 against `main`; file and insertion tolerance remain satisfied. Deletions exceed the ideation estimate of 30 by 12 because the obsolete live-runner assertion and stale 11-line operator narrative were replaced by a compact launcher-owned source-of-truth description; product semantics are unchanged.
+
+### Summary
+
+Cycle 5 restores the required shared Codex live lane without weakening launcher ownership or its reserved-override rejection. The real front-door suite, offline/race suites, formatting, diff, and detached adversarial evidence all pass at `60a75ba658`, with the correction held to 9 files and exactly +380 lines overall.
