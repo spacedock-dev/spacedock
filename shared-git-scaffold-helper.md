@@ -12,7 +12,7 @@ issue:
 gates:
     version: 1
     current:
-        gate: gate:zfmbm75wvmfj38h73wrtpqqy:ideation
+        gate: gate:zfmbm75wvmfj38h73wrtpqqy:validation
     records:
         - id: gate:zfmbm75wvmfj38h73wrtpqqy:backlog
           stage: backlog
@@ -60,6 +60,16 @@ gates:
                 target-stage: implementation
                 state: consumed
                 blockers: []
+        - id: gate:zfmbm75wvmfj38h73wrtpqqy:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:zfmbm75wvmfj38h73wrtpqqy-validation-1
+              briefing:
+                id: briefing:zfmbm75wvmfj38h73wrtpqqy:validation:attempt-1:revision-1
+                digest: sha256:1f2880904ef54a288493985bbb3fa667f5e12b851ea9955b9c2ee34a5776978f
+                digest-domain: canonical-bytes
+                request-digest: sha256:2af1e2077d9d1970d4ee4041865a2356de2f047fa2a7fb043b19c987608559e2
+                room-ref: ./shared-git-scaffold-helper/review/validation/briefing-1
 ---
 
 Add one shared, exported test helper that initializes a scratch git repo with a persisted `user.name`/`user.email` config in a single call, so no future fixture can reproduce the "works locally on ambient identity, fails on a clean CI runner" bug class, and migrate the existing hand-rolled fixtures to it.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zfmbm75wvmfj38h73wrtpqqy:validation:attempt-1:revision-1",
+  "question": "Validation PASSED (independently reproduced, no material findings). Approve merge for the shared git-scaffold test helper (internal/testgit.InitRepo, 38 sites migrated, contractlint guard 38-\u003e0)?",
+  "artifacts": [
+    {
+      "id": "artifact:zfmbm75wvmfj38h73wrtpqqy:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ba48859fa66650e2b24776c92aab3264af7495bb/shared-git-scaffold-helper.md",
+      "rev": "sha256:396108f68dfc883097e0b476f6c490fa5de52b6dfdf348429e1d6fdb7a22808c",
+      "mediaType": "text/markdown",
+      "summary": "Validator independently reproduced all 3 ACs from scratch (not taking implementer's word): AC-1 guard baseline reproduced from a clean merge-base checkout (38 offenders) and confirmed 0 post-migration; AC-2 full+race suites green from-scratch plus a 6-file diff sample confirming mechanical-only changes; AC-3 positive/negative falsifiability pair re-derived at raw shell level outside the Go harness. Surface-deviation (455 vs ~165 insertions) explained by 2 real AST false-positive classes + 1 legitimately in-scope extra site (gitInitBare). No material findings, no deferred risks. PASSED."
+    }
+  ]
+}
