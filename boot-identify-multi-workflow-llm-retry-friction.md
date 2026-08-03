@@ -1,6 +1,6 @@
 ---
 title: Self-describing boot identify schema and contract hint to eliminate LLM duplicate CLI retry loop
-status: done
+status: validation
 score: 0.85
 id: 32vshm0h2h04gs7hzcf315g0
 source: "recorded Pi First Officer boot session at this repository root, cross-checked against PR #480"
@@ -8,8 +8,6 @@ worktree: .worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-fri
 pr: "#584"
 gates:
     version: 1
-    current:
-        gate: gate:32vshm0h2h04gs7hzcf315g0:validation
     records:
         - id: gate:32vshm0h2h04gs7hzcf315g0:validation
           stage: validation
@@ -18,7 +16,6 @@ gates:
               briefing:
                 id: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-1:revision-1
                 digest: sha256:84e0a3472ae3f057927220894ac94cfb220dd0a83f0cafc6648ac8677714f6f0
-                digest-domain: canonical-bytes
                 request-digest: sha256:e0f3aac5c1546b34119fd1e4884da69de987bec69432d183ceea4d2c921d8f91
                 room-ref: ./boot-identify-multi-workflow-llm-retry-friction/review/validation/briefing-1
               resolution:
@@ -37,7 +34,6 @@ gates:
               briefing:
                 id: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-2:revision-1
                 digest: sha256:7212731d0a5cccd5f1b0745e52e6ec62d1394ec98ec719d623528e9cef31d543
-                digest-domain: canonical-bytes
                 request-digest: sha256:d7525df2dc16c55bf993b138a1df3022b7d20cb5279c900c1594c77f396ac2cf
                 room-ref: ./boot-identify-multi-workflow-llm-retry-friction/review/validation/briefing-2
               resolution:
@@ -57,7 +53,6 @@ gates:
               briefing:
                 id: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-3:revision-1
                 digest: sha256:3ffeb276e7eefad2631295ab839d981bc7200d140db9320916f23edc671ba6c2
-                digest-domain: canonical-bytes
                 request-digest: sha256:0a42b328d0bc869ab8c30b636d7fcb6ec7dd80d2a31240e8655f749a69690e08
                 room-ref: ./boot-identify-multi-workflow-llm-retry-friction/review/validation/briefing-3
               resolution:
@@ -71,7 +66,7 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: consumed
+                state: pending
                 blockers: []
 mod-block: merge:pr-merge
 completed:
