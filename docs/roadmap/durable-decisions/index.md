@@ -3,7 +3,7 @@
 **Sprint:** the entities matching `sprint: durable-decisions` — list with `spacedock status --workflow-dir docs/dev --where sprint=durable-decisions`. Membership and per-task state are the query, never enumerated here.
 **Target train:** stable **0.27.0** — bound at scope-lock 2026-07-21; movable by captain decision without re-carve (this line is the only place the train lives).
 **Theme:** the decision the captain makes becomes the state the system holds. 0260 shipped the gate-record notation as a hand-run convention and collected its failure evidence in one day of production use: a self-conflicting attempt pointer, stale applications, digests no committed tree reproduces, `--set` re-serialization breaking hand edits, results destroyed on the untested path. This sprint mechanizes the proven shape — a recorder that owns every gates write, a presentation command that cannot lose a result, eligibility only where live need exists, and the finding-decline reframed onto the same record model.
-**Scope-lock (captain, 2026-07-21; amended 2026-07-22 and 2026-08-01):** the recorder group ONLY in the original build. Captain amendment added `vn`, the folder-form state-commit persistence boundary, after live 3k dogfood proved that a recorded gate package otherwise requires manual Git commits. The 2026-08-01 pre-stable necessity audit adds only the cuts required to make the unreleased v1 surface smaller and internally operable: terminal authority is spent only with delivery proof; preparation is limited to actionable gates; speculative application and gate-state fields are removed or justified; the workflow-specific round recorder is cut; provider-backed closure is proved on the exact candidate or cut; minor help and docs reconcile last. This amendment adds no compatibility or migration obligation. The panel, provenance, router, mining, and estate candidates remain held out.
+**Scope-lock (captain, 2026-07-21; amended 2026-07-22, 2026-08-01, and 2026-08-03):** the recorder group ONLY in the original build. Captain amendment added `vn`, the folder-form state-commit persistence boundary, after live 3k dogfood proved that a recorded gate package otherwise requires manual Git commits. The 2026-08-01 pre-stable necessity audit adds only the cuts required to make the unreleased v1 surface smaller and internally operable: terminal authority is spent only with delivery proof; preparation is limited to actionable gates; speculative application and gate-state fields are removed or justified; the workflow-specific round recorder is cut; provider-backed closure is proved on the exact candidate or cut; minor help and docs reconcile last. The 2026-08-03 amendment adds `sk`, `ej9`, and `g3`. These tasks make completed gates discoverable, make event-loop stops truthful, and define moving-target conflict ownership. These amendments add no compatibility or migration obligation. The panel, provenance, router, mining, and estate candidates remain held out.
 **Evidence:** `docs/dev/.spacedock-state/durable-gate-approval-pending-blockers/production-evidence-2026-07-20-fo-dry-run.md` (8 findings), the 0260 closure-pass findings (advisory-digest hole, pointer conflict, uncommitted seat), and `_debriefs/2026-07-20-01-0260-shaping.md` float findings 1-13.
 
 ## Goal (success criterion)
@@ -29,6 +29,9 @@ The membership query remains authoritative. These names record responsibility bo
 | invalid-stage preparation | `reject-gate-prepare-outside-actionable-stage` (`hq3`) | refuse before entity or room mutation unless the current stage is an actionable gate |
 | application schema | `minimize-v1-gate-application-schema` (`nth`) | retain only state with a supported producer and consumer; no compatibility decoder |
 | gate-state schema | `simplify-gate-state-v1-schema` (`jcc`) | remove prototype digest compatibility and derive or minimally justify stored gate selection |
+| completed-gate discovery | `gate-agent-ergonomics` (`sk`) | derive the gate-preparation action from durable evidence; add no stored scheduler state |
+| event-loop order | `make-fo-event-loop-ordering-explicit` (`ej9`) | process merge, gate, dispatch, and wait actions in one explicit order; stop only after the truthful idle check |
+| moving-target conflicts | `define-fo-moving-target-conflict-ownership` (`g3`) | preserve authority and exact evidence; require Captain-owned reconciliation and fresh validation |
 | advisory rounds | `cut-workflow-specific-round-recorder-from-v1` (`wjk`) | remove the development-policy round surface from stable v1; redesign later as workflow-neutral |
 | provider closure | `prove-or-cut-provider-backed-gate-closure` (`a73`) | one pinned exact-candidate transaction or no public provider-backed closure in v1 |
 | help and docs | `polish-v1-gate-command-surface` (`f6c`) | reconcile discoverability and prose only after the semantic owners land |
@@ -83,10 +86,12 @@ The First Officer prepares and commits the same room, then passes only the room 
 
 1. Land the already-proven core corrections first: `0m6` for truthful withdrawal, `1w6` for terminal authority/delivery, `zbc` for post-rework binding freshness, and `kd` for the dispatch-pinned launcher used by ensign-owned workflow calls.
 2. Ideate the independent v1 cuts in parallel: `hq3` invalid-stage preparation, `nth` application schema, `jcc` gate-state schema, and `wjk` removal of workflow-specific round recording. Their implementations may overlap in `internal/gates`; merge order must be declared at their ideation gates rather than discovered through conflict.
-3. Re-run the chat-default journey after those cuts. It is the minimum stable value and does not wait for a provider.
-4. Run `a73` only on that settled candidate. Retain provider-backed closure on one pinned end-to-end pass; otherwise cut it without delaying or weakening chat.
-5. Run `f6c` last. It reconciles help and documentation with landed behavior and may not invent semantics.
-6. The pre-cut audit then checks the exact candidate with `go test ./...`, `go test ./... -race`, clean formatting, state validation, and the smallest real chat journey. Provider evidence is required only if `a73` retained that surface.
+3. Land the dependencies of `sk`, then implement `sk`. Its approved design requires landed `s4`, `gqs`, and `0m6` behavior.
+4. Ideate `ej9` and `g3` in parallel. Implement `ej9` after `sk` fixes completed-gate discovery. `g3` owns conflict recovery and fresh-evidence rules.
+5. Re-run the chat-default journey after those cuts. It is the minimum stable value and does not wait for a provider.
+6. Run `a73` only on that settled candidate. Retain provider-backed closure on one pinned end-to-end pass. Otherwise, cut it without delaying chat.
+7. Run `f6c` last. It reconciles help and documentation with landed behavior and must not invent semantics.
+8. Run the pre-cut audit on the exact candidate. Run the full tests, race tests, formatting, state check, and smallest real chat journey. Provider evidence is required only if `a73` retained that surface.
 
 ## Out of scope
 
