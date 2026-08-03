@@ -171,9 +171,9 @@ front-door smoke. This direction avoids a duplicate live run.
 - [x] **Preflight staff review** — Fable checked sprint-wide
   DoD ownership, sequencing, collisions, blast radius, missing scope, and Commander
   cold-boot readiness. Both rounds and their folds are in `staff-review.md`.
-- [ ] **Present ideation gates** — checklist accounting and AC cross-check per
-  task. The captain decides.
-- [ ] **Package** — write `dispatch-sprint-execution.md` for a cold-booted Commander.
+- [x] **Present ideation gates** — the Captain approved `3d`, `15e`, and `ys` on
+  2026-08-03. Each gate has a recorded pending advance for the Commander to consume.
+- [x] **Package** — `dispatch-sprint-execution.md` is the cold-boot Commander package.
 
 ### Drive — Commander
 
@@ -187,6 +187,6 @@ front-door smoke. This direction avoids a duplicate live run.
 
 ## Status
 
-**Shaping — ideation and preflight review complete.** Registry semantics,
-the three outcome members, the `v0.27.0` target, and deferred member `rm` are durable.
-Captain gates and the Commander package remain open.
+**Shaping complete — ready for a cold-boot Commander.** Registry semantics, the
+three approved outcome members, the `v0.27.0` target, and deferred member `rm` are
+durable. The Commander must drive `3d`, then `15e`, then `ys`.
