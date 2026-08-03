@@ -46,35 +46,8 @@ type ProviderEvidence struct {
 }
 
 type Application struct {
-	Action        string         `yaml:"action" json:"action"`
-	TargetStage   string         `yaml:"target-stage,omitempty" json:"target-stage,omitempty"`
-	State         string         `yaml:"state" json:"state"`
-	Blockers      *[]Blocker     `yaml:"blockers,omitempty" json:"blockers,omitempty"`
-	ExecutionHold *ExecutionHold `yaml:"execution-hold,omitempty" json:"execution-hold,omitempty"`
-	Feedback      *Feedback      `yaml:"feedback,omitempty" json:"feedback,omitempty"`
-}
-
-type Blocker struct {
-	ID               string `yaml:"id,omitempty" json:"id,omitempty"`
-	Kind             string `yaml:"kind,omitempty" json:"kind,omitempty"`
-	Ref              string `yaml:"ref,omitempty" json:"ref,omitempty"`
-	ExpectedRevision string `yaml:"expected-revision,omitempty" json:"expected-revision,omitempty"`
-	ExpectedState    string `yaml:"expected-state,omitempty" json:"expected-state,omitempty"`
-	State            string `yaml:"state,omitempty" json:"state,omitempty"`
-}
-
-type ExecutionHold struct {
-	ID     string `yaml:"id,omitempty" json:"id,omitempty"`
-	State  string `yaml:"state" json:"state"`
-	By     string `yaml:"by,omitempty" json:"by,omitempty"`
-	At     string `yaml:"at,omitempty" json:"at,omitempty"`
-	Reason string `yaml:"reason,omitempty" json:"reason,omitempty"`
-}
-
-type Feedback struct {
-	Cycle         int    `yaml:"cycle,omitempty" json:"cycle,omitempty"`
-	FindingRef    string `yaml:"finding-ref,omitempty" json:"finding-ref,omitempty"`
-	FindingDigest string `yaml:"finding-digest,omitempty" json:"finding-digest,omitempty"`
+	TargetStage string `yaml:"target-stage" json:"target-stage"`
+	State       string `yaml:"state" json:"state"`
 }
 
 type Briefing struct {
@@ -203,36 +176,25 @@ func CurrentStageReadiness(doc *Document, status string, stages []ReadinessStage
 	}
 	app := attempt.Application
 	if app == nil {
-		return "invalid"
+		switch attempt.Resolution.Decision {
+		case "hold":
+			return "not-applicable"
+		case "revise":
+			return "feedback-pending"
+		default:
+			return "invalid"
+		}
 	}
 	switch app.State {
-	case "consumed", "superseded", "not-applicable":
+	case "consumed", "superseded":
 		return app.State
 	case "pending":
 	default:
 		return "invalid"
 	}
-	if attempt.Resolution.Decision == "revise" {
-		if app.Action == "feedback" && strings.TrimSpace(app.TargetStage) != "" {
-			return "feedback-pending"
-		}
+	if attempt.Resolution.Decision != "approve" ||
+		strings.TrimSpace(app.TargetStage) == "" || app.TargetStage == status {
 		return "invalid"
-	}
-	if attempt.Resolution.Decision != "approve" || app.Action != "advance" ||
-		app.Blockers == nil || strings.TrimSpace(app.TargetStage) == "" || app.TargetStage == status {
-		return "invalid"
-	}
-	if app.ExecutionHold != nil {
-		switch app.ExecutionHold.State {
-		case "active":
-			return "held"
-		case "released":
-		default:
-			return "invalid"
-		}
-	}
-	if len(*app.Blockers) != 0 {
-		return "blocked"
 	}
 	target, ok := stageByName[app.TargetStage]
 	if !ok {
@@ -342,23 +304,15 @@ func validateWithdrawal(withdrawal *Withdrawal) error {
 
 func validateApplication(a *Application, decision string) error {
 	switch a.State {
-	case "pending", "consumed", "superseded", "not-applicable":
+	case "pending", "consumed", "superseded":
 	default:
-		return fmt.Errorf("application state must be pending, consumed, superseded, or not-applicable")
+		return fmt.Errorf("application state must be pending, consumed, or superseded")
 	}
-	switch decision {
-	case "approve":
-		if a.Action != "advance" || strings.TrimSpace(a.TargetStage) == "" || a.State == "not-applicable" {
-			return fmt.Errorf("approve application must be advance with a target stage")
-		}
-	case "revise":
-		if a.Action != "feedback" || strings.TrimSpace(a.TargetStage) == "" || a.State == "not-applicable" {
-			return fmt.Errorf("revise application must be feedback with a target stage")
-		}
-	case "hold":
-		if a.Action != "none" || a.TargetStage != "" || a.State != "not-applicable" {
-			return fmt.Errorf("hold application must be none/not-applicable")
-		}
+	if decision != "approve" {
+		return fmt.Errorf("only approve resolutions may carry an application")
+	}
+	if strings.TrimSpace(a.TargetStage) == "" {
+		return fmt.Errorf("approve application must have a target stage")
 	}
 	return nil
 }
@@ -393,7 +347,7 @@ func CurrentSummary(doc *Document, stage ...string) Summary {
 			s.Resolution, s.Decision = a.Resolution.ID, a.Resolution.Decision
 		}
 		if a.Application != nil {
-			s.Application = a.Application.Action + "/" + a.Application.State
+			s.Application = "advance/" + a.Application.State
 			s.ApplicationState = a.Application.State
 			s.TargetStage = a.Application.TargetStage
 		}

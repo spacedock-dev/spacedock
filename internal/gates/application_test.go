@@ -2,13 +2,21 @@ package gates
 
 import (
 	"bytes"
+	_ "embed"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
 	"gopkg.in/yaml.v3"
 )
+
+// v1PilotManifest is the checked-in list of the active and archived pilot
+// entities whose durable format is part of this unreleased-v1 cut.
+//
+//go:embed testdata/v1_pilot_manifest.txt
+var v1PilotManifest string
 
 func TestEligibilityFailClosedTable(t *testing.T) {
 	base := eligibleDocument()
@@ -24,25 +32,22 @@ func TestEligibilityFailClosedTable(t *testing.T) {
 		{name: "stale reviewed input", status: "ideation", current: false, condition: "stale"},
 		{name: "superseded", status: "ideation", current: true, mutate: setApplicationState("superseded"), condition: "superseded"},
 		{name: "consumed", status: "ideation", current: true, mutate: setApplicationState("consumed"), condition: "consumed"},
-		{name: "active hold", status: "ideation", current: true, mutate: func(d *Document) {
-			d.Records[0].Attempts[0].Application.ExecutionHold = &ExecutionHold{State: "active"}
-		}, condition: "held"},
-		{name: "unknown hold", status: "ideation", current: true, mutate: func(d *Document) {
-			d.Records[0].Attempts[0].Application.ExecutionHold = &ExecutionHold{State: "mystery"}
-		}, condition: "ineligible"},
-		{name: "blocker present", status: "ideation", current: true, mutate: func(d *Document) {
-			blockers := []Blocker{{ID: "blocker:x", State: "unsatisfied"}}
-			d.Records[0].Attempts[0].Application.Blockers = &blockers
-		}, condition: "blocked"},
 		{name: "wrong stage", status: "validation", current: true, condition: "ineligible"},
+		{name: "hold without application", status: "ideation", current: true, mutate: func(d *Document) {
+			d.Records[0].Attempts[0].Resolution.Decision = "hold"
+			d.Records[0].Attempts[0].Resolution.Reason = "wait"
+			d.Records[0].Attempts[0].Application = nil
+		}, condition: "not-applicable"},
+		{name: "revise without application", status: "ideation", current: true, mutate: func(d *Document) {
+			d.Records[0].Attempts[0].Resolution.Decision = "revise"
+			d.Records[0].Attempts[0].Resolution.Reason = "changes requested"
+			d.Records[0].Attempts[0].Application = nil
+		}, condition: "feedback-pending"},
 		{name: "wrong decision", status: "ideation", current: true, mutate: func(d *Document) {
 			d.Records[0].Attempts[0].Resolution.Decision = "revise"
 		}, condition: "ineligible"},
 		{name: "missing application", status: "ideation", current: true, mutate: func(d *Document) {
 			d.Records[0].Attempts[0].Application = nil
-		}, condition: "ineligible"},
-		{name: "missing blockers field", status: "ideation", current: true, mutate: func(d *Document) {
-			d.Records[0].Attempts[0].Application.Blockers = nil
 		}, condition: "ineligible"},
 		{name: "missing target", status: "ideation", current: true, mutate: func(d *Document) {
 			d.Records[0].Attempts[0].Application.TargetStage = ""
@@ -64,11 +69,12 @@ func TestEligibilityFailClosedTable(t *testing.T) {
 
 func TestRecordClosureShapesApplication(t *testing.T) {
 	for _, tc := range []struct {
-		decision, action, target, state string
+		decision, target, state string
+		wantApplication         bool
 	}{
-		{decision: "approve", action: "advance", target: "implementation", state: "pending"},
-		{decision: "revise", action: "feedback", target: "ideation", state: "pending"},
-		{decision: "hold", action: "none", state: "not-applicable"},
+		{decision: "approve", target: "implementation", state: "pending", wantApplication: true},
+		{decision: "revise", wantApplication: false},
+		{decision: "hold", wantApplication: false},
 	} {
 		t.Run(tc.decision, func(t *testing.T) {
 			root, entity := applicationWorkflow(t)
@@ -79,19 +85,186 @@ func TestRecordClosureShapesApplication(t *testing.T) {
 			if err := RecordSemantic(entity, RecordInput{Decision: tc.decision, Actor: "person:captain", Reason: reason, WorkflowDir: root}); err != nil {
 				t.Fatal(err)
 			}
-			doc, _, err := Read(entity)
+			doc, gatesNode, err := Read(entity)
 			if err != nil {
 				t.Fatal(err)
 			}
 			app := doc.Records[0].Attempts[0].Application
-			if app == nil || app.Action != tc.action || app.TargetStage != tc.target || app.State != tc.state {
-				t.Fatalf("application = %#v, want %s/%s/%s", app, tc.action, tc.target, tc.state)
-			}
-			if tc.decision == "approve" && (app.Blockers == nil || len(*app.Blockers) != 0) {
-				t.Fatalf("approval blockers = %#v, want explicit empty list", app.Blockers)
+			if tc.wantApplication {
+				if app == nil || app.TargetStage != tc.target || app.State != tc.state {
+					t.Fatalf("application = %#v, want target=%s state=%s", app, tc.target, tc.state)
+				}
+				if got := firstApplicationNode(gatesNode); !sameStrings(yamlMappingKeys(got), []string{"state", "target-stage"}) {
+					t.Fatalf("approval YAML application keys = %v, want [state target-stage]", yamlMappingKeys(got))
+				}
+			} else if app != nil {
+				t.Fatalf("%s unexpectedly carries application %#v", tc.decision, app)
+			} else if got := firstApplicationNode(gatesNode); got != nil {
+				t.Fatalf("%s unexpectedly emitted an application YAML node with keys %v", tc.decision, yamlMappingKeys(got))
 			}
 		})
 	}
+}
+
+func TestV1PilotManifestReadsAndValidates(t *testing.T) {
+	paths := manifestPaths(v1PilotManifest)
+	if len(paths) != 31 {
+		t.Fatalf("pilot manifest has %d paths, want 31", len(paths))
+	}
+	seen := make(map[string]bool, len(paths))
+	archives := 0
+	for _, rel := range paths {
+		if rel == "" || filepath.IsAbs(rel) || filepath.Clean(rel) != rel || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || seen[rel] {
+			t.Fatalf("manifest contains invalid or duplicate path %q", rel)
+		}
+		seen[rel] = true
+		if strings.HasPrefix(filepath.ToSlash(rel), "_archive/") {
+			archives++
+		}
+	}
+	if archives != 15 {
+		t.Fatalf("pilot manifest has %d archived paths, want 15", archives)
+	}
+	stateRoot := v1PilotStateRoot()
+	if stateRoot == "" {
+		t.Skip("shared docs/dev/.spacedock-state checkout is not reachable from the code worktree")
+	}
+	for _, rel := range paths {
+		rel, path := rel, filepath.Join(stateRoot, filepath.FromSlash(rel))
+		t.Run(rel, func(t *testing.T) {
+			if _, err := os.Stat(path); err != nil {
+				t.Fatalf("manifest path is not present: %v", err)
+			}
+			doc, gatesNode, err := Read(path)
+			if err != nil {
+				t.Fatalf("strict gates.Read: %v", err)
+			}
+			if err := Validate(doc); err != nil {
+				t.Fatalf("gates.Validate: %v", err)
+			}
+			assertPilotApplicationNodes(t, gatesNode)
+		})
+	}
+}
+
+func manifestPaths(raw string) []string {
+	var paths []string
+	for _, line := range strings.Split(raw, "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			paths = append(paths, line)
+		}
+	}
+	return paths
+}
+
+func v1PilotStateRoot() string {
+	if root := strings.TrimSpace(os.Getenv("SPACEDOCK_STATE_ROOT")); root != "" {
+		return root
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	for dir := cwd; ; dir = filepath.Dir(dir) {
+		candidate := filepath.Join(dir, "docs", "dev", ".spacedock-state")
+		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+			return candidate
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+	}
+}
+
+func assertPilotApplicationNodes(t *testing.T, gatesNode *yaml.Node) {
+	t.Helper()
+	records := yamlMappingValue(gatesNode, "records")
+	if records == nil || records.Kind != yaml.SequenceNode {
+		t.Fatalf("gates.records is not a sequence")
+	}
+	for _, record := range records.Content {
+		attempts := yamlMappingValue(record, "attempts")
+		if attempts == nil || attempts.Kind != yaml.SequenceNode {
+			t.Fatalf("gate record attempts is not a sequence")
+		}
+		for _, attempt := range attempts.Content {
+			resolution := yamlMappingValue(attempt, "resolution")
+			application := yamlMappingValue(attempt, "application")
+			decision := ""
+			if resolution != nil {
+				if n := yamlMappingValue(resolution, "decision"); n != nil {
+					decision = n.Value
+				}
+			}
+			if application == nil {
+				continue
+			}
+			if decision != "approve" {
+				t.Fatalf("non-approval decision %q carries application keys %v", decision, yamlMappingKeys(application))
+			}
+			if !sameStrings(yamlMappingKeys(application), []string{"state", "target-stage"}) {
+				t.Fatalf("approval application keys = %v, want [state target-stage]", yamlMappingKeys(application))
+			}
+		}
+	}
+}
+
+func firstApplicationNode(gatesNode *yaml.Node) *yaml.Node {
+	records := yamlMappingValue(gatesNode, "records")
+	if records == nil || len(records.Content) == 0 {
+		return nil
+	}
+	attempts := yamlMappingValue(records.Content[0], "attempts")
+	if attempts == nil || len(attempts.Content) == 0 {
+		return nil
+	}
+	return yamlMappingValue(attempts.Content[0], "application")
+}
+
+func yamlMappingValue(node *yaml.Node, key string) *yaml.Node {
+	if node == nil {
+		return nil
+	}
+	if node.Kind == yaml.DocumentNode {
+		if len(node.Content) == 0 {
+			return nil
+		}
+		node = node.Content[0]
+	}
+	if node.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if node.Content[i].Value == key {
+			return node.Content[i+1]
+		}
+	}
+	return nil
+}
+
+func yamlMappingKeys(node *yaml.Node) []string {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return nil
+	}
+	keys := make([]string, 0, len(node.Content)/2)
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		keys = append(keys, node.Content[i].Value)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func sameStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestRecordRequiresCanonicalBriefingAtActionableCurrentStage(t *testing.T) {
@@ -348,18 +521,13 @@ func TestConsumeCrashWindowsNeverReconsumeAuthorization(t *testing.T) {
 	}
 }
 
-func TestEightCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
+func TestCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
 	cases := []struct {
 		name, decision, application, encoded string
 	}{
-		{"approval pending", "approve", "action: advance\n            target-stage: implementation\n            state: pending\n            blockers: []", "              application:\n                action: advance\n                target-stage: implementation\n                state: pending\n                blockers: []\n"},
-		{"approval consumed", "approve", "action: advance\n            target-stage: implementation\n            state: consumed\n            blockers: []", "              application:\n                action: advance\n                target-stage: implementation\n                state: consumed\n                blockers: []\n"},
-		{"approval superseded", "approve", "action: advance\n            target-stage: implementation\n            state: superseded\n            blockers: []", "              application:\n                action: advance\n                target-stage: implementation\n                state: superseded\n                blockers: []\n"},
-		{"approval held", "approve", "action: advance\n            target-stage: implementation\n            state: pending\n            blockers: []\n            execution-hold: {id: hold:1, state: active, by: person:captain}", "              application:\n                action: advance\n                target-stage: implementation\n                state: pending\n                blockers: []\n                execution-hold:\n                    id: hold:1\n                    state: active\n                    by: person:captain\n"},
-		{"portable hold", "hold", "action: none\n            state: not-applicable", "              application:\n                action: none\n                state: not-applicable\n"},
-		{"feedback pending", "revise", "action: feedback\n            target-stage: ideation\n            state: pending", "              application:\n                action: feedback\n                target-stage: ideation\n                state: pending\n"},
-		{"feedback consumed", "revise", "action: feedback\n            target-stage: implementation\n            state: consumed\n            feedback: {cycle: 1, finding-ref: resolution:1, finding-digest: 'sha256:" + strings.Repeat("2", 64) + "'}", "              application:\n                action: feedback\n                target-stage: implementation\n                state: consumed\n                feedback:\n                    cycle: 1\n                    finding-ref: resolution:1\n                    finding-digest: sha256:" + strings.Repeat("2", 64) + "\n"},
-		{"historical consumed without blockers", "approve", "action: advance\n            target-stage: implementation\n            state: consumed", "              application:\n                action: advance\n                target-stage: implementation\n                state: consumed\n"},
+		{"approval pending", "approve", "target-stage: implementation\n            state: pending", "              application:\n                target-stage: implementation\n                state: pending\n"},
+		{"approval consumed", "approve", "target-stage: implementation\n            state: consumed", "              application:\n                target-stage: implementation\n                state: consumed\n"},
+		{"approval superseded", "approve", "target-stage: implementation\n            state: superseded", "              application:\n                target-stage: implementation\n                state: superseded\n"},
 	}
 	for i, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -405,14 +573,36 @@ func TestEightCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
 	}
 }
 
+func TestRemovedApplicationShapesFailClosedWithoutMutation(t *testing.T) {
+	for _, tc := range []struct {
+		name, decision, application string
+	}{
+		{"action", "approve", "action: advance\n            target-stage: implementation\n            state: pending"},
+		{"blockers", "approve", "target-stage: implementation\n            state: pending\n            blockers: []"},
+		{"execution-hold", "approve", "target-stage: implementation\n            state: pending\n            execution-hold: {state: active}"},
+		{"feedback", "approve", "target-stage: implementation\n            state: pending\n            feedback: {cycle: 1}"},
+		{"not-applicable", "hold", "state: not-applicable"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			source := "---\nstatus: ideation\ngates:\n  version: 1\n  records:\n    - id: gate:legacy\n      stage: ideation\n      attempts:\n        - id: attempt:legacy\n          briefing:\n            id: briefing:legacy:ideation:attempt-1:revision-1\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            room-ref: ./review\n          resolution:\n            type: Resolution\n            id: resolution:legacy\n            briefing: briefing:legacy:ideation:attempt-1:revision-1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: " + tc.decision + "\n            reason: legacy\n          application:\n            " + tc.application + "\n---\n# Legacy\n"
+			before := []byte(source)
+			if _, _, err := readData(before); err == nil {
+				t.Fatal("removed application shape was accepted")
+			}
+			if !bytes.Equal(before, []byte(source)) {
+				t.Fatal("failed read mutated fixture bytes")
+			}
+		})
+	}
+}
+
 func eligibleDocument() *Document {
-	blockers := []Blocker{}
 	return &Document{Version: 1, Records: []GateRecord{{
 		ID: "gate:task:ideation", Stage: "ideation", Attempts: []Attempt{{
 			ID:          "attempt:1",
 			Briefing:    Briefing{ID: "briefing:1", Digest: "sha256:" + strings.Repeat("1", 64), RoomRef: "./review"},
 			Resolution:  &Resolution{Type: "Resolution", ID: "resolution:1", Briefing: "briefing:1", By: "person:captain", At: "now", Decision: "approve"},
-			Application: &Application{Action: "advance", TargetStage: "implementation", State: "pending", Blockers: &blockers},
+			Application: &Application{TargetStage: "implementation", State: "pending"},
 		}},
 	}}}
 }

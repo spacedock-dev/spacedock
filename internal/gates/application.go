@@ -14,7 +14,7 @@ import (
 
 // EvaluateEligibility is a pure read over a validated gate record, the entity's
 // current status, and the caller's digest comparison. It never queries another
-// entity or attempts to satisfy a blocker.
+// entity or attempts to perform workflow effects.
 func EvaluateEligibility(doc *Document, status string, reviewedInputCurrent bool) Eligibility {
 	result := Eligibility{Condition: "ineligible"}
 	if doc == nil {
@@ -28,9 +28,19 @@ func EvaluateEligibility(doc *Document, status string, reviewedInputCurrent bool
 	result.Gate, result.Attempt = record.ID, attempt.ID
 	app := attempt.Application
 	if app == nil {
+		if attempt.Resolution != nil {
+			switch attempt.Resolution.Decision {
+			case "hold":
+				result.Condition = "not-applicable"
+			case "revise":
+				result.Condition = "feedback-pending"
+			}
+		}
 		return result
 	}
-	result.Action, result.TargetStage = app.Action, app.TargetStage
+	// The enclosing approval Resolution fixes the operation. Keep the existing
+	// CLI/readiness vocabulary by deriving its action rather than storing it.
+	result.Action, result.TargetStage = "advance", app.TargetStage
 	result.ApplicationState = app.State
 	switch app.State {
 	case "consumed":
@@ -38,9 +48,6 @@ func EvaluateEligibility(doc *Document, status string, reviewedInputCurrent bool
 		return result
 	case "superseded":
 		result.Condition = "superseded"
-		return result
-	case "not-applicable":
-		result.Condition = "not-applicable"
 		return result
 	case "pending":
 	default:
@@ -52,23 +59,8 @@ func EvaluateEligibility(doc *Document, status string, reviewedInputCurrent bool
 	}
 	if status != record.Stage || attemptState(attempt) != "closed" ||
 		attempt.Resolution.Briefing != attempt.Briefing.ID ||
-		attempt.Resolution.Decision != "approve" || app.Action != "advance" ||
-		strings.TrimSpace(app.TargetStage) == "" || app.TargetStage == record.Stage ||
-		app.Blockers == nil {
-		return result
-	}
-	if app.ExecutionHold != nil {
-		switch app.ExecutionHold.State {
-		case "active":
-			result.Condition = "held"
-			return result
-		case "released":
-		default:
-			return result
-		}
-	}
-	if len(*app.Blockers) != 0 {
-		result.Condition = "blocked"
+		attempt.Resolution.Decision != "approve" ||
+		strings.TrimSpace(app.TargetStage) == "" || app.TargetStage == record.Stage {
 		return result
 	}
 	result.Condition = "approved-pending"

@@ -41,6 +41,7 @@ func TestAssertGateHeld(t *testing.T) {
 	requireRecordedGate(t, assertGateHeld(before, after, expected) == nil, "held gate failed")
 	resolved := strings.Replace(after, "          briefing:\n", "          resolution:\n            type: Resolution\n            id: resolution:docs-dev:3k:validation:1\n            briefing: "+recordedGateBriefingID+"\n            by: captain\n            at: 2026-07-28T00:00:00Z\n            decision: approve\n          briefing:\n", 1)
 	applied := strings.Replace(resolved, "          briefing:\n", "          application:\n            action: advance\n            target-stage: handoff\n            state: pending\n          briefing:\n", 1)
+	applied = strings.Replace(applied, "            action: advance\n", "", 1)
 	for name, mutant := range map[string]string{
 		"unbound":         before,
 		"advanced":        strings.Replace(after, "status: validation", "status: handoff", 1),

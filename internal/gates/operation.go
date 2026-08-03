@@ -559,8 +559,23 @@ func closeAttempt(entityPath, workflowDir string, doc *Document, oldNode *yaml.N
 func applicationForDecision(entityPath, workflowDir, stage, decision string) (*Application, error) {
 	switch decision {
 	case "hold":
-		return &Application{Action: "none", State: "not-applicable"}, nil
-	case "approve", "revise":
+		// Holds are complete Resolutions and carry no application.
+		return nil, nil
+	case "revise":
+		// Validate the stage taxonomy for advisory-round callers, while keeping
+		// the feedback-to route outside the durable application object.
+		if workflowDir == "" {
+			workflowDir = filepath.Dir(entityPath)
+		}
+		stages, err := applicationStages(filepath.Join(workflowDir, "README.md"))
+		if err != nil {
+			return nil, err
+		}
+		if applicationStageIndex(stages, stage) < 0 {
+			return nil, fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
+		}
+		return nil, nil
+	case "approve":
 	default:
 		return nil, fmt.Errorf("unsupported application decision %q", decision)
 	}
@@ -575,18 +590,10 @@ func applicationForDecision(entityPath, workflowDir, stage, decision string) (*A
 	if i < 0 {
 		return nil, fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
 	}
-	if decision == "revise" {
-		target := stages[i].FeedbackTo
-		if target == "" {
-			target = stage
-		}
-		return &Application{Action: "feedback", TargetStage: target, State: "pending"}, nil
-	}
 	if i+1 >= len(stages) || strings.TrimSpace(stages[i+1].Name) == "" {
 		return nil, fmt.Errorf("workflow stage %s has no advance target", stage)
 	}
-	blockers := []Blocker{}
-	return &Application{Action: "advance", TargetStage: stages[i+1].Name, State: "pending", Blockers: &blockers}, nil
+	return &Application{TargetStage: stages[i+1].Name, State: "pending"}, nil
 }
 
 type applicationStage struct {

@@ -94,17 +94,10 @@ func TestCurrentStageReadinessFailClosedTable(t *testing.T) {
 		{name: "approved terminal target", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
 			d.Records[0].Attempts[0].Application.TargetStage = "done"
 		}, want: "approved-awaiting-merge"},
-		{name: "blocked approval", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
-			blockers := []Blocker{{ID: "blocker:x", State: "unsatisfied"}}
-			d.Records[0].Attempts[0].Application.Blockers = &blockers
-		}, want: "blocked"},
-		{name: "held approval", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
-			d.Records[0].Attempts[0].Application.ExecutionHold = &ExecutionHold{State: "active"}
-		}, want: "held"},
-		{name: "feedback pending", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
+		{name: "feedback pending without application", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
 			a := &d.Records[0].Attempts[0]
 			a.Resolution.Decision, a.Resolution.Reason = "revise", "changes requested"
-			a.Application = &Application{Action: "feedback", TargetStage: "ideation", State: "pending"}
+			a.Application = nil
 		}, want: "feedback-pending"},
 		{name: "older terminal approval cannot override newer rejection", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
 			d.Records[0].Attempts[0].Application.TargetStage = "done"
@@ -112,19 +105,16 @@ func TestCurrentStageReadinessFailClosedTable(t *testing.T) {
 			newer.ID, newer.Briefing.ID = "attempt:a-2", "briefing:a-2"
 			newer.Resolution.ID, newer.Resolution.Briefing = "resolution:a-2", newer.Briefing.ID
 			newer.Resolution.Decision, newer.Resolution.Reason = "revise", "changes requested"
-			newer.Application = &Application{Action: "feedback", TargetStage: "ideation", State: "pending"}
+			newer.Application = nil
 			d.Records[0].Attempts = append(d.Records[0].Attempts, newer)
 		}, want: "feedback-pending"},
 		{name: "consumed approval", status: "ideation", doc: eligibleDocument(), mutate: setApplicationState("consumed"), want: "consumed"},
 		{name: "superseded approval", status: "ideation", doc: eligibleDocument(), mutate: setApplicationState("superseded"), want: "superseded"},
-		{name: "not applicable hold", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
+		{name: "not applicable hold without application", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
 			a := &d.Records[0].Attempts[0]
 			a.Resolution.Decision, a.Resolution.Reason = "hold", "wait"
-			a.Application = &Application{Action: "none", State: "not-applicable"}
+			a.Application = nil
 		}, want: "not-applicable"},
-		{name: "missing explicit blockers", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
-			d.Records[0].Attempts[0].Application.Blockers = nil
-		}, want: "invalid"},
 		{name: "unknown target", status: "ideation", doc: eligibleDocument(), mutate: func(d *Document) {
 			d.Records[0].Attempts[0].Application.TargetStage = "missing"
 		}, want: "invalid"},
