@@ -72,6 +72,7 @@ gates:
                 action: advance
                 target-stage: done
                 state: pending
+                blockers: []
 started: 2026-08-02T16:02:35Z
 worktree: .worktrees/spacedock-ensign-status-where-robust-and-discoverable
 mod-block: merge:pr-merge
