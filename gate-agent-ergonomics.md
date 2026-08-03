@@ -1,6 +1,6 @@
 ---
 title: Make recorded gate operation self-guiding for First Officers
-status: ideation
+status: implementation
 source: "Durable-decisions sprint dogfood: manual 0c and xb gate/round operation, 2026-07-24."
 score: 1.0
 id: skwchfe30ac6ntr63j1g0txj
@@ -48,7 +48,7 @@ gates:
                 reason: Independent staff re-review found all four prior material findings closed; the design delivers one readiness projection with no new scheduler or state machinery. Approval is recorded now; application waits for s4, gqs, and 0m6 to land.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
