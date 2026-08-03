@@ -139,17 +139,20 @@ front-door smoke. This direction avoids a duplicate live run.
 
 ## Ideation and staff-review focus
 
-- Dispatch all ideation tasks to Sol ensigns. Each ensign must use
-  `$simple-english` in pragmatic mode for the complete plan.
-- Dispatch the first three ideation tasks in parallel:
-  `bind-live-registry-to-source`, `converge-shared-live-suite-entrypoint`, and
-  `add-pi-common-live-runner`.
-- Ideate `bind-live-registry-to-source` first. Spike one annotation and the full
-  reconciliation join. Make the guard fail, then make it pass.
-- The bind design must define the annotation grammar, attachment points, procedure
-  location, watched paths, and guard command.
-- Ideate `add-pi-common-live-runner` in the first parallel group. Make sure that
-  all common journeys are feasible on Pi before later work depends on that claim.
+- The three outcome members are `ys`, `3d`, and `15e`. Their ideation is complete.
+- This shaping pass used Codex Sol ensigns and `$simple-english` in pragmatic mode.
+  The workflow-wide `model: opus` setting does not map to a Codex spawn model.
+  The dispatch builder emitted `model: null`. The Sol override from the Captain governed.
+- `ys` owns the portable common-journey surface. It reuses the annotation join,
+  guard fail-then-pass, canonical entry-point, journey-promotion, and Pi-feasibility
+  evidence from its absorbed design inputs.
+- `ys` uses one candidate branch with seven reviewable landing steps. The staff
+  review must audit its collision map, step boundaries, rollback points, and final
+  selector cut as the seam with the highest blast radius.
+- `3d` owns truthful live results. It reuses the AC2 false-green proof and adds the
+  Codex progress-aware liveness proof.
+- `15e` owns named lane evidence. It must map each selector to one evidence claim
+  and each retained control or metric to one producer and consumer.
 - The staff review must examine the dependency on `durable-decisions`. It must
   state the effect on the `v0.27.0` train if the upstream repair is late.
 - The staff review must not count the planned SSOT link, SHA, or guard as current
@@ -163,7 +166,7 @@ front-door smoke. This direction avoids a duplicate live run.
   the single SHA guard, deferred-upstream policy, and `v0.27.0` target are locked.
 - [x] **Carve** — sprint fields are stamped, deferred candidates are separated from
   the drivable query, and this index records the real goal, scope, and DoD.
-- [ ] **Ideate each gated member** — exercise the riskiest mechanism first and do
+- [x] **Ideate each gated member** — exercise the riskiest mechanism first and do
   not re-ideate an already banked design.
 - [ ] **Preflight staff review** — one fresh independent reviewer checks sprint-wide
   DoD ownership, sequencing, collisions, blast radius, missing scope, and Commander
@@ -184,7 +187,6 @@ front-door smoke. This direction avoids a duplicate live run.
 
 ## Status
 
-**Shaping — scope-lock and carve complete.** Registry semantics, task membership,
-the `v0.27.0` target, and the deferred-upstream release bar are durable. Member
-ideation, independent preflight review, captain gates, and the Commander package
-remain open.
+**Shaping — ideation complete. Preflight review in progress.** Registry semantics,
+the three outcome members, the `v0.27.0` target, and deferred member `rm` are durable.
+The Fable review hygiene fold, captain gates, and the Commander package remain open.
