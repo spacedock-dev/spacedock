@@ -8,34 +8,6 @@ verdict:
 worktree:
 sprint:
 group:
-gates:
-    version: 1
-    current:
-        gate: gate:docs-dev:0qe:ideation
-        attempt: gate-attempt:0qe-ideation-1
-    records:
-        - id: gate:docs-dev:0qe:ideation
-          stage: ideation
-          current-attempt: gate-attempt:0qe-ideation-1
-          attempts:
-            - id: gate-attempt:0qe-ideation-1
-              sequence: 1
-              state: closed
-              briefing:
-                id: briefing:0qe-ideation-1
-                digest: sha256:10581a261293596e17f359b840d8f610f431141daadb4f09763d5185fe674670
-              note: "Captain hold via float, 2026-07-20 (resolution:actor-1784524018982597000): the FO briefing lacked orientation — no plain statement of what the entity is or what AC-2 refers to. Attempt stays open; re-present with real context or fold into the lure-scenario catalog per the pending captain choice."
-              resolution:
-                type: Resolution
-                id: resolution:captain-chat-0qe-ideation-1
-                briefing: briefing:0qe-ideation-1
-                by: person:captain
-                at: 2026-07-20T05:40:00Z
-                decision: approve
-                reason: "Merged in chat into the lure-scenario catalog (the check-ordering entity's test plan) as its fifth scenario — the reviewer-side trap: means-AC satisfied, end value regressed, the gate must reject. Fixture spec stays banked in this body; the entity ships nothing separately."
-              application:
-                action: none
-                state: not-applicable
 ---
 
 Single-fixture design proof for AC-2: gate must reject when means-only AC is paired with regressed end-value.

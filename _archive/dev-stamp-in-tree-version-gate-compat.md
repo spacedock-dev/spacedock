@@ -6,8 +6,6 @@ issue: spacedock-dev/spacedock#581
 id: zexbrjhartgykvhm012f527w
 gates:
     version: 1
-    current:
-        gate: gate:zexbrjhartgykvhm012f527w:ideation
     records:
         - id: gate:zexbrjhartgykvhm012f527w:backlog
           stage: backlog
@@ -16,7 +14,6 @@ gates:
               briefing:
                 id: briefing:zexbrjhartgykvhm012f527w:backlog:attempt-1:revision-1
                 digest: sha256:0e8e9d466ebe2768f6c01a89a402a427d03ad1ed03ef5080a4b111e2ac0ec2b7
-                digest-domain: canonical-bytes
                 request-digest: sha256:cd777a48b4365012f90310e3cda8ae4e29c3d20f2439dc16bd00db91141bd4d0
                 room-ref: ./dev-stamp-in-tree-version-gate-compat/review/backlog/briefing-1
               resolution:
@@ -39,7 +36,6 @@ gates:
               briefing:
                 id: briefing:zexbrjhartgykvhm012f527w:ideation:attempt-1:revision-1
                 digest: sha256:14a4ffd0a63ed60b4622b5759c0fa191bd13fa72fec3f81698bd6349204bbcc8
-                digest-domain: canonical-bytes
                 request-digest: sha256:0e78927b5089450943d1f789e4c44d2a1cec5ee38cceeb0b6a67845213600d64
                 room-ref: ./dev-stamp-in-tree-version-gate-compat/review/ideation/briefing-1
               resolution:

@@ -7,8 +7,6 @@ source: "Captain, 2026-08-01, after diagnosing the pi ensign misload: every pi-s
 id: mxaaqb96syv7pq7ekg5a5194
 gates:
     version: 1
-    current:
-        gate: gate:mxaaqb96syv7pq7ekg5a5194:validation
     records:
         - id: gate:mxaaqb96syv7pq7ekg5a5194:backlog
           stage: backlog
@@ -17,7 +15,6 @@ gates:
               briefing:
                 id: briefing:mxaaqb96syv7pq7ekg5a5194:backlog:attempt-1:revision-1
                 digest: sha256:d861ca46643dc1cf9100a563ad8ae289a697d67c8232cbb68372d02def8c850a
-                digest-domain: canonical-bytes
                 request-digest: sha256:c0a9bc4b100816269503de91e29f50c196dafbcc80f4f603ade1e69529724a31
                 room-ref: ./pin-ensign-contract-entry-point/review/backlog/briefing-1
               resolution:
@@ -40,7 +37,6 @@ gates:
               briefing:
                 id: briefing:mxaaqb96syv7pq7ekg5a5194:ideation:attempt-1:revision-1
                 digest: sha256:b29e25e8303e6175f9d23f4bb81eb9104d49a13d38671c36ae964f84aae263bf
-                digest-domain: canonical-bytes
                 request-digest: sha256:6835053f386bc35578c331282090258011558f9af8407520203c9d7aefe45138
                 room-ref: ./pin-ensign-contract-entry-point/review/ideation/briefing-1
               resolution:
@@ -63,7 +59,6 @@ gates:
               briefing:
                 id: briefing:mxaaqb96syv7pq7ekg5a5194:validation:attempt-1:revision-1
                 digest: sha256:d7c78539e27fca663b55ff78be5877635d106392b725e300a20faa255fd6da6d
-                digest-domain: canonical-bytes
                 request-digest: sha256:7bc284b9c5c5c55bd5d6135550148545f08c3c42a4b632ca5d90ea1be0ff059e
                 room-ref: ./pin-ensign-contract-entry-point/review/validation/briefing-1
               resolution:
@@ -74,15 +69,10 @@ gates:
                 at: "2026-08-01T13:37:28.13926Z"
                 decision: revise
                 reason: 'Revise into one narrow correction round (captain: proceed): apply the three validator-proven test-only patches — argv ''dispatch'' for the build exec; stdout/stderr separation with stdout-only JSON parse; seed piHome/settings.json with the repo as path package — then re-run the tagged AC-1 live leg on the candidate worktree to produce the gate-grade boot artifact'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:mxaaqb96syv7pq7ekg5a5194-validation-2
               briefing:
                 id: briefing:mxaaqb96syv7pq7ekg5a5194:validation:attempt-2:revision-1
                 digest: sha256:54731e479302cff993fc7b133a1c02d7df71f679239f96965ffee72669677f56
-                digest-domain: canonical-bytes
                 request-digest: sha256:650164fcbe139d20d4521cad95d71d991ac2ab0b9b225c06eb6c63da308330c3
                 room-ref: ./pin-ensign-contract-entry-point/review/validation/briefing-2
               resolution:

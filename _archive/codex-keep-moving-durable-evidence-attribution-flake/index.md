@@ -12,8 +12,6 @@ issue:
 milestone: 0.25.0
 gates:
     version: 1
-    current:
-        gate: gate:8bnkrtq4rw46xkbez5zrbmmj:validation
     records:
         - id: gate:8bnkrtq4rw46xkbez5zrbmmj:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:8bnkrtq4rw46xkbez5zrbmmj:backlog:attempt-1:revision-1
                 digest: sha256:f74c978f7bac349914d3380c445388cf82767c0647d3267768c425649fb719a8
-                digest-domain: canonical-bytes
                 request-digest: sha256:83ed6b8050afb6ea2e3737bf14a7c57f164095922ad8f37db84546e5cde6f84d
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -45,7 +42,6 @@ gates:
               briefing:
                 id: briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-1:revision-1
                 digest: sha256:a9e29deee9056d26159a1c6772e5b213e73467dd03ce07cfe9186d9660bbdde2
-                digest-domain: canonical-bytes
                 request-digest: sha256:1e8eef615d1bd19e2011de8bac8ca2650c19caa690e13e9a85903a430c39ba30
                 room-ref: ./review/ideation/briefing-1
               resolution:
@@ -65,7 +61,6 @@ gates:
               briefing:
                 id: briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-2:revision-1
                 digest: sha256:bd9ac766740cfa3c2c1c43e7a54076063521e8f124824f2116c3c7d6b14b46fe
-                digest-domain: canonical-bytes
                 request-digest: sha256:1ec520cb9a98aeb59797200800c6dc1fcb06a3a07ad4f84717b1c1cac8ec24b3
                 room-ref: ./review/ideation/briefing-2
               resolution:
@@ -85,7 +80,6 @@ gates:
               briefing:
                 id: briefing:8bnkrtq4rw46xkbez5zrbmmj:ideation:attempt-3:revision-1
                 digest: sha256:33afe927a33a75aecb584781c9baccd3a047443a10c672ae1eb9ed184f27e8dd
-                digest-domain: canonical-bytes
                 request-digest: sha256:7aeb5e296e4be785452ad21b8391f18693898fc8178c746b7966dfaf0d698af3
                 room-ref: ./review/ideation/briefing-3
               resolution:
@@ -108,7 +102,6 @@ gates:
               briefing:
                 id: briefing:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-1:revision-1
                 digest: sha256:1288b9c4b1ef14bc523f1a3a2fbd05d9290dbf29ef90f04c739b02d455e162a5
-                digest-domain: canonical-bytes
                 request-digest: sha256:585b217773f5644bf9042deb977dc7c15a65b941250d86b2d2752d31237f970b
                 room-ref: ./review/validation/briefing-1
               resolution:
@@ -119,15 +112,10 @@ gates:
                 at: "2026-07-31T01:45:21.357752Z"
                 decision: revise
                 reason: 'Rejected under sprint conn: validation reproduced four Material task-owned false greens—serialized independent work, preexisting-room rebind, nonterminal canonical archive, and unrelated questioned-ticket mutation—so AC-1, AC-2, and AC-4 are not proven.'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:8bnkrtq4rw46xkbez5zrbmmj-validation-2
               briefing:
                 id: briefing:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-2:revision-1
                 digest: sha256:51ae13152debfb8de8449d73b5e178d3c95c42e06722c2afb262111801d9e4f3
-                digest-domain: canonical-bytes
                 request-digest: sha256:c2cb632fd93dbed9bf8ddfadda3adff07635c2d4bf208ffd182db0b8886d5d3e
                 room-ref: ./review/validation/briefing-2
               resolution:
@@ -147,7 +135,6 @@ gates:
               briefing:
                 id: briefing:8bnkrtq4rw46xkbez5zrbmmj:validation:attempt-3:revision-1
                 digest: sha256:c5e2e3321bf5fad14bdf1fa0445f5448f419895055877da5dddf21175c357656
-                digest-domain: canonical-bytes
                 request-digest: sha256:1cba9f135ce1d8f9cb56a9867d539bcd78464550fbac19053beb64c653a6032e
                 room-ref: ./review/validation/briefing-3
               resolution:

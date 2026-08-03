@@ -11,8 +11,6 @@ issue:
 id: 6gkz4z2qweheyj17ck5tythn
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:6g:validation
     records:
         - id: gate:docs-dev:6g:ideation
           stage: ideation
@@ -21,7 +19,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6g:ideation:attempt-1:revision-1
                 digest: sha256:a91e6243eab3b12d756db99283f05e7d74aa48f037bc418dc0327060536fc768
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
@@ -31,7 +28,6 @@ gates:
                 at: "2026-07-23T14:53:56.796844Z"
                 decision: approve
                 reason: The ideation supplies a real steering trace, preserves durable completion authority, and bounds implementation to five Codex-only files with independent negative controls.
-                adoption-note: file codex runtime issue; dispatch, and do not forget to asyncwait; use captain steering as active-loop resumption while workers continue unchanged.
               application:
                 action: advance
                 target-stage: implementation
@@ -41,7 +37,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6g:ideation:attempt-2:revision-1
                 digest: sha256:85cca2e27e401b206fa7d0d375f3a331256c520bfd1af66f3c7416851b3eeaec
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-2
               resolution:
                 type: Resolution
@@ -51,15 +46,10 @@ gates:
                 at: "2026-07-25T17:48:22.634251Z"
                 decision: revise
                 reason: The steering semantics and adversarial proof are sound, but the gate package still makes file and LOC estimates binding reset authority; revise them to advisory drift evidence and retain only semantic scope expansion as a reset trigger.
-              application:
-                action: feedback
-                target-stage: ideation
-                state: superseded
             - id: gate-attempt:6g-ideation-3
               briefing:
                 id: briefing:docs-dev:6g:ideation:attempt-3:revision-1
                 digest: sha256:d14f37ba0ac249ae495ebc96e3c90f3144cae9780546d0d645ae8c142d74b227
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-3
               resolution:
                 type: Resolution
@@ -81,7 +71,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:6g:validation:attempt-1:revision-1
                 digest: sha256:12ef44e574a581df377d90ae4b3e321558a8ad8fb44c480af40705b9dae506ca
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution

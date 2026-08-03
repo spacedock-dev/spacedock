@@ -12,8 +12,6 @@ sprint: durable-decisions
 id: v2183mw7c09a10pw185p33cw
 gates:
     version: 1
-    current:
-        gate: gate:v2183mw7c09a10pw185p33cw:validation
     records:
         - id: gate:docs-dev:v218:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:v218:backlog:attempt-1:revision-1
                 digest: sha256:3bca6f4b585c9cba9d631473d31ed38033ffd4c4dc3718f0c7c9518f2c567a74
-                digest-domain: canonical-bytes
                 room-ref: ./source-build-compatibility-identity/review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -44,7 +41,6 @@ gates:
               briefing:
                 id: briefing:v2183mw7c09a10pw185p33cw:ideation:attempt-1:revision-1
                 digest: sha256:dacc92b408f96fb9a93300315c485c979f680243f35a76702d26045670d1ea37
-                digest-domain: canonical-bytes
                 request-digest: sha256:203a90685eef4879a5e1c192fe2b104df1a95b4d7277b2a57ab5661395f5a1b4
                 room-ref: ./source-build-compatibility-identity/review/ideation/briefing-1
               resolution:
@@ -67,7 +63,6 @@ gates:
               briefing:
                 id: briefing:v2183mw7c09a10pw185p33cw:validation:attempt-1:revision-1
                 digest: sha256:4dc6274fd812784c34b3a64d0e7d8354033282340c26fcfe1047f8e7e7f9c5c5
-                digest-domain: canonical-bytes
                 request-digest: sha256:8c59377a84496abb8b4b995418156a5718862d99a6bdef5ae044cb5bd864314c
                 room-ref: ./source-build-compatibility-identity/review/validation/briefing-1
               resolution:

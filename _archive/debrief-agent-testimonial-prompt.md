@@ -7,8 +7,6 @@ id: qdb1w5r7k9nvbvkf8qetcd5m
 started: 2026-07-02T07:35:57Z
 gates:
     version: 1
-    current:
-        gate: gate:qdb1w5r7k9nvbvkf8qetcd5m:validation
     records:
         - id: gate:qdb1w5r7k9nvbvkf8qetcd5m:ideation
           stage: ideation
@@ -17,7 +15,6 @@ gates:
               briefing:
                 id: briefing:qdb1w5r7k9nvbvkf8qetcd5m:ideation:attempt-1:revision-1
                 digest: sha256:c82a63c78fae819c2eeb8c5ae4fd4042a61898fb8674a6928921e3c6b34a0bbe
-                digest-domain: canonical-bytes
                 request-digest: sha256:c388fc6c91ceed158a374d9a6eb7e205d87a96e3c0f5da7de48b02f73b874151
                 room-ref: ./debrief-agent-testimonial-prompt/review/ideation/briefing-1
               resolution:
@@ -40,7 +37,6 @@ gates:
               briefing:
                 id: briefing:qdb1w5r7k9nvbvkf8qetcd5m:validation:attempt-1:revision-1
                 digest: sha256:a43bfdb5f13b537fd02239bd91d767b560fd1a09a2ff707a87cd8ad5dc21f4c6
-                digest-domain: canonical-bytes
                 request-digest: sha256:de4f119414452c25426886c538b1338df13a04f6cd137b75c78d8a91f7297de6
                 room-ref: ./debrief-agent-testimonial-prompt/review/validation/briefing-1
               resolution:

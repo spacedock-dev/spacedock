@@ -11,8 +11,6 @@ worktree: .worktrees/spacedock-ensign-version-output-runtime-and-sandbox-state
 issue:
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:cn:validation
     records:
         - id: gate:docs-dev:cn:backlog
           stage: backlog
@@ -21,7 +19,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:cn:backlog:attempt-1:revision-1
                 digest: sha256:7adb8b917e29b7e52dacb9e330ae55d3f76edd72a05619f9d72821e0a1c5a6aa
-                digest-domain: canonical-bytes
                 room-ref: ./version-output-runtime-and-sandbox-state/review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -43,7 +40,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:cn:ideation:attempt-1:revision-2
                 digest: sha256:784787fef86b6b4caf18557c61dddc839dfe37209bab72d0d725cdd90763e9ac
-                digest-domain: canonical-bytes
                 room-ref: ./version-output-runtime-and-sandbox-state/review/ideation/briefing-1
               resolution:
                 type: Resolution
@@ -53,15 +49,10 @@ gates:
                 at: "2026-07-27T08:53:23.476676Z"
                 decision: revise
                 reason: 'Captain resolved the float in the review TUI (resolution:captain-1785142370707298000) with two annotations, direction accepted. 1: the Runtime line should also carry the session identifier, not only the host and the marker that proved it. 2: the outside-a-session sandbox strings are wrong in shape — outside a session it is never wrapped, so ''not wrapped'' is a constant carrying no information; report availability instead. Design direction and the rest of the six acceptance criteria stand.'
-              application:
-                action: feedback
-                target-stage: ideation
-                state: superseded
             - id: gate-attempt:cn-ideation-2
               briefing:
                 id: briefing:docs-dev:cn:ideation:attempt-2:revision-1
                 digest: sha256:8d8348fe9e1f1083c56532dd3d4d96286bd649d6c36c02205a48297276b02650
-                digest-domain: canonical-bytes
                 room-ref: ./version-output-runtime-and-sandbox-state/review/ideation/briefing-2
               resolution:
                 type: Resolution
@@ -83,7 +74,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:cn:validation:attempt-1:revision-1
                 digest: sha256:b6b5b1817572959dc856399c844fa7e06a5a091ce2c1eabd8a09c4f5db129c66
-                digest-domain: canonical-bytes
                 room-ref: ./version-output-runtime-and-sandbox-state/review/validation/briefing-1
               resolution:
                 type: Resolution

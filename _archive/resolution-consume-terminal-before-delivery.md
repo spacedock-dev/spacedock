@@ -11,8 +11,6 @@ worktree: .worktrees/spacedock-ensign-resolution-consume-terminal-before-deliver
 issue:
 gates:
     version: 1
-    current:
-        gate: gate:1w62z8c5fq5g5cmhzf5sd79w:validation
     records:
         - id: gate:1w62z8c5fq5g5cmhzf5sd79w:backlog
           stage: backlog
@@ -21,7 +19,6 @@ gates:
               briefing:
                 id: briefing:1w62z8c5fq5g5cmhzf5sd79w:backlog:attempt-1:revision-1
                 digest: sha256:45c7f88e4a02a5eea0d3febe7431f09b3425a4e963fe0eff7bef7d9e5398bb84
-                digest-domain: canonical-bytes
                 request-digest: sha256:f808d3e34848fa57e0df5e17b9e278ccce23b1c7d8a77548f944bda23ce7a343
                 room-ref: ./resolution-consume-terminal-before-delivery/review/backlog/briefing-1
               resolution:
@@ -44,7 +41,6 @@ gates:
               briefing:
                 id: briefing:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-1:revision-1
                 digest: sha256:ad6fd4f9c9c7305d565a8f6a2fe5e6d5fd362f08d362ff92a7c53f70747049a1
-                digest-domain: canonical-bytes
                 request-digest: sha256:ef1f7e213fe8df4f23a021f55c580b0bd9f2bb24e0199034b12e1c5ffe6dc228
                 room-ref: ./resolution-consume-terminal-before-delivery/review/ideation/briefing-1
               resolution:
@@ -55,15 +51,10 @@ gates:
                 at: "2026-07-31T16:07:38.629153Z"
                 decision: revise
                 reason: 'REJECT THE ARCHITECTURE, redo ideation with feedback: three staff-review rounds produced a coherence ratchet (two new application states, reversal journal, scanner rewrite, new lock/CAS regime, guards in prepare/status-set/dispatch/readiness, crash-recovery machinery, legacy adoption, ~2000 insertions across 16 surfaces) that made the wrong mechanism internally safer without challenging its existence. Boundary is wrong: hook-keyed deferral retains the hole on hookless/merge-local/manual-local-merge paths (fo-merge-core:13 terminal delivery runs under both policies); reversed/reversal turns the authorization record into a delivery journal while superseded already carries unspent (durable-decisions: effect receipts declined); legacy adoption violates the unreleased-v1 no-compat/no-migration ruling (durable-decisions); --by person:* validates a caller string, not authority; finding 18 is downstream trivia. Captain minimum design: (1) every terminal approval remains pending, gate consume routes it to the terminal merge ceremony WITHOUT spending (hook on gate consumption causing pending, no longer keyed on stage); (2) merge guard becomes the sole terminal consumer; (3) successful delivery atomically writes pending->consumed + terminal status + verdict + completed; (4) delivery failure requiring rework writes pending->superseded, routes via the declared feedback-to, clears delivery state; (5) retryable delivery trouble leaves the same approval pending; (6) NO delivering/reversed/reversal/arbitrary --to/actor flag/compat path/scanner rewrite/new lock architecture unless the minimal transaction independently proves one necessary. Also on record: the ideation briefing was defective (claimed three review rounds, bound only two; third reviewer output unreferenced).'
-              application:
-                action: feedback
-                target-stage: ideation
-                state: superseded
             - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-ideation-2
               briefing:
                 id: briefing:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-2:revision-1
                 digest: sha256:c13ba33fc886a0d7495e0a9cdcc90470e08530b5329c3a49deec3d04fc9865be
-                digest-domain: canonical-bytes
                 request-digest: sha256:56b930775335682a3542f050abfea5733e934938850c35fb5b359ecebf4e2f7c
                 room-ref: ./resolution-consume-terminal-before-delivery/review/ideation/briefing-2
               resolution:
@@ -74,15 +65,10 @@ gates:
                 at: "2026-07-31T16:48:49.253795Z"
                 decision: revise
                 reason: 'Captain''s pre-approval corrections (chat): (1) gate consume must not discover or arm merge hooks — terminal-target consume leaves approval pending and returns the approved-awaiting-merge route, merge guard discovers/arms the delivery mechanism when it acts; (2) merge guard --failed renamed --rework for the irreversible supersede-and-route. Direction accepted and applied in-body (commit da05ef20b); this attempt''s bound briefing predates the corrections, so it closes as refined-in-place and the corrected package presents fresh as the next attempt.'
-              application:
-                action: feedback
-                target-stage: ideation
-                state: superseded
             - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-ideation-3
               briefing:
                 id: briefing:1w62z8c5fq5g5cmhzf5sd79w:ideation:attempt-3:revision-1
                 digest: sha256:a2102a754d56f29a159edb391ef5217ac30b2711984cb6d34fdf466c6fbcb9e1
-                digest-domain: canonical-bytes
                 request-digest: sha256:c5680ad3ec4e9c02c5e96ca75e5e0cdc4358f2e2b13a43d2639fc52d318394b0
                 room-ref: ./resolution-consume-terminal-before-delivery/review/ideation/briefing-3
               resolution:
@@ -105,7 +91,6 @@ gates:
               briefing:
                 id: briefing:1w62z8c5fq5g5cmhzf5sd79w:implementation:attempt-1:revision-1
                 digest: sha256:b0f9bcd2019289c8fb76f44bbf3a40c3d2f1ec75a521f26c0845d262a4d0f72a
-                digest-domain: canonical-bytes
                 request-digest: sha256:0b0897c884c0993f75f8cdd54b8ea50467d01f02935fa92f49e53c0590a1b2df
                 room-ref: ./resolution-consume-terminal-before-delivery/review/implementation/briefing-1
               resolution:
@@ -116,9 +101,6 @@ gates:
                 at: "2026-07-31T17:51:33.525893Z"
                 decision: hold
                 reason: 'FO sequencing error: this attempt was prepared against the un-advanced entity status (implementation, an ungated stage) instead of validation; the dispatch-side advance to validation was skipped. No gate decision is taken on this attempt; the entity advances to validation and the gated validation stage presents separately. Attempt bytes preserved.'
-              application:
-                action: none
-                state: not-applicable
         - id: gate:1w62z8c5fq5g5cmhzf5sd79w:validation
           stage: validation
           attempts:
@@ -126,7 +108,6 @@ gates:
               briefing:
                 id: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-1:revision-1
                 digest: sha256:feafd7e5108310614570a1fdfb3c5233251dea97a2bf7f0f5e0d63ef724ca5f2
-                digest-domain: canonical-bytes
                 request-digest: sha256:3bfc167f984b109c89582f30e205e4adb6dbc586474827b3be040e02a2ea6f8d
                 room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-1
               resolution:
@@ -137,15 +118,10 @@ gates:
                 at: "2026-07-31T23:57:15.933493Z"
                 decision: revise
                 reason: 'REJECT validation, route to implementation (captain ''send it back'', 2026-08-01): the implementation invented an unapproved second authority-mutation architecture at an underspecified seam — internal/status/envelope.go (+217) with bindingTerminalApproval/gatesApplicationMutator/hasConsumedTerminalApplication, updateFrontmatterNode generalized to splice the gates YAML subtree (mutate.go +40), ValidateApplicationMutation and AdvanceTargetTerminal exported into status, setEnvelope.ceremony guard bypass, ConsumeResult.Route duplicating existing readiness vocabulary, and a 521-line CLI fixture. FO-verified harm proofs: (1) bindingTerminalApproval (envelope.go:51) collapses absent/errored/stale/consumed/superseded authority into nil and merge.go:135 falls through nil to the legacy gate-less finalize — an entity with a real pending terminal application whose briefing room is disturbed or gates record unreadable gets terminalized with authority left pending (the impl''s own residual-risk claim said this case was fail-closed; it is fail-OPEN); (2) the authority mutation rides runSet/atomicWrite without .gates.lock or compare-before-replace, racing lock-holding gates operations (widening the accepted prepare-shadowing residual past its sign-off). The ''+205 within 2%'' accounting excluded exactly the files carrying the central transition (~468 gross vs +205 declared, 2.3x). Rework instruction (captain-endorsed necessity review prescription): DELETE envelope.go, revert the mutate.go generalization, return the gates exports private, remove the Route const, the archive exception, and the ceremony bypass; implement TWO narrow gates-owned high-level operations over the existing locked compare-before-replace variadic replacement machinery in internal/gates/io.go (writeEntityDocument:188) — (a) finalize a valid pending terminal application with terminal status+verdict+completed in one locked replacement, (b) supersede a valid pending terminal application and route through the validated declared feedback-to in one locked replacement; merge guard selects the operation after establishing delivery/rework proof; invalid/unreadable/stale authority refuses byte-clean, only a genuinely gate-less entity uses the legacy path; retain the pr: pr-merge:N or local-merge:SHA sentinel through archive as durable delivery proof (captain-ratified amendment vs the design letter''s in-envelope pr retirement) and clear mod-block in its own small step before the atomic op (crash-between leaves nonterminal+pending, retryable); slim the CLI fixture to the smallest falsifiable set that still drives the real fail->rework->re-enter->done journey; the existing merge-guard suite keeps covering the three delivery classes.'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-validation-2
               briefing:
                 id: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-2:revision-1
                 digest: sha256:00c5a96490b6754e0b023225c8ae57ddbc46825cd697e3eb6ce970d85074b944
-                digest-domain: canonical-bytes
                 request-digest: sha256:475fb7f4386b1a3dbb14d770dbe2e4ad068d7e8a2b3b308f26f0d468c70464a5
                 room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-2
               resolution:
@@ -156,15 +132,10 @@ gates:
                 at: "2026-08-01T01:26:37.026511Z"
                 decision: revise
                 reason: 'Captain''s narrow-revision review (accepted): (1) reworkDelivery''s default output prints elig.TargetStage (done) — must name the gate record''s GATED stage to re-enter, asserted in the existing round-trip test; (2) digest-stale fixture carries empty mod-block, so refusal-before-clear ordering is unpinned — strengthen the SAME fixture: arm the hook, tamper the retained room, assert complete entity bytes (incl. mod-block + pr sentinel) unchanged, no new harness; (3) AC-2 cites the rework-deleted TestTerminalSpendOnlyInDeliveryEnvelope — repair the AC-2 evidence MAP (one gate-bearing terminal-finalize test through the shared finalize fn + the existing merge-guard suite covering the three delivery classes), do NOT restore the fixture; (4) Roborev against the corrected tip with findings classified by supported trigger/observable harm/task ownership before any edit; then focused + full go + race suites under the CI-matching isolated home/env (ambient markers stripped). Explicitly NOT expanded: the lock-removal hole (recorded disproportionate-now — single-FO sequential journey; promote when concurrent-FO support lands), the entityField private mechanism (keep), report arithmetic (repair prose on this append, no product change). This attempt closes as corrected-in-place; the corrected package presents fresh.'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-validation-3
               briefing:
                 id: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-3:revision-1
                 digest: sha256:5b1677f0af7764e86943f5c637380a89f35925ab8581f52d23906c75e046cc1c
-                digest-domain: canonical-bytes
                 request-digest: sha256:69c252cd3a8fd8e1a288872564605350de2114d5e42b10f69a36b65f9eeb94c8
                 room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-3
               resolution:
@@ -175,14 +146,10 @@ gates:
                 at: "2026-08-01T01:58:45.278682Z"
                 decision: hold
                 reason: 'FO shell-escaping error: the prepared summary contained a backtick-quoted phrase that bash command-substituted, corrupting the bound briefing''s summary sentence before presentation. Attempt superseded pre-presentation, no gate decision taken; to be replaced by an identical-artifact attempt with the summary prose corrected (backticks removed).'
-              application:
-                action: none
-                state: not-applicable
             - id: gate-attempt:1w62z8c5fq5g5cmhzf5sd79w-validation-4
               briefing:
                 id: briefing:1w62z8c5fq5g5cmhzf5sd79w:validation:attempt-4:revision-1
                 digest: sha256:a81edeed7a0739d87c9499093fcb8ecbc79d9a3bf842ea271166cc5a84a128a7
-                digest-domain: canonical-bytes
                 request-digest: sha256:d37b4afdc50f8edf9ddacf4fbd66a60b8a116aa3e0359178b88414490a4e508a
                 room-ref: ./resolution-consume-terminal-before-delivery/review/validation/briefing-4
               resolution:

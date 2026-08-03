@@ -12,8 +12,6 @@ sprint: durable-decisions
 id: v3vt8gp2yffmn62r8p95gkph
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:v3v:validation
     records:
         - id: gate:docs-dev:v3:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:v3:backlog:attempt-1:revision-1
                 digest: sha256:2cda6cc97a6f5db6ef432781f25aae29f9781316c73999451d134ac549d26dc6
-                digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -32,7 +29,6 @@ gates:
                 at: "2026-07-25T08:11:16.055672Z"
                 decision: approve
                 reason: Two retained 6y Claude journeys prove the live harness leaks the Codex runtime marker; the narrow ideation preserves production ambiguity refusal and is required for a truthful host journey.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
               application:
                 action: advance
                 target-stage: ideation
@@ -45,7 +41,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:v3:ideation:attempt-1:revision-1
                 digest: sha256:39164702899552b7c9c24b4e4067d0776eead9834ad958da907f50da8f2654d2
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
@@ -55,7 +50,6 @@ gates:
                 at: "2026-07-25T08:24:47.475905Z"
                 decision: approve
                 reason: The design isolates the proven harness leak at existing per-host environment seams, preserves production ambiguity refusal, and supplies falsifiable builder plus live evidence within a declared six-file surface; implementation must wait for landed 6y.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
               application:
                 action: advance
                 target-stage: implementation
@@ -68,7 +62,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:v3v:validation:attempt-1:revision-1
                 digest: sha256:8300e31f733d31c534070e90aeaddb5c2bbd5cb6e22564a2a1142222d5924869
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution

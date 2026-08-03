@@ -26,10 +26,6 @@ gates:
                 at: "2026-07-31T01:07:04.432249Z"
                 decision: revise
                 reason: 'Revised under sprint conn: current Codex CI reproduced the filing transcript false-negative that the execution-grounded ledger fixes, but PR #551 must be rebased onto current main and re-proven before its stale validation can be accepted.'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:32vshm0h2h04gs7hzcf315g0-validation-2
               briefing:
                 id: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-2:revision-1

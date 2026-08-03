@@ -9,17 +9,11 @@ group:
 started: 2026-07-20T01:44:22Z
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:js6:ideation
-        attempt: gate-attempt:js6-ideation-1
     records:
         - id: gate:docs-dev:js6:ideation
           stage: ideation
-          current-attempt: gate-attempt:js6-ideation-1
           attempts:
             - id: gate-attempt:js6-ideation-1
-              sequence: 1
-              state: closed
               briefing:
                 id: briefing:js6-ideation-1a
                 digest: sha256:6984a7e9a1809cfd9b34eafdcdf7b158c13fe23ae2088f3ce707781a7f3eaefa
@@ -32,9 +26,6 @@ gates:
                 at: 2026-07-20T03:05:44Z
                 decision: hold
                 reason: Parked at the sprint re-lock essence test — the read-through's would-be consumers are already served (validators read per-entity value ACs; roborev injects its config posture line); spike evidence banked in the entity body for revival.
-              application:
-                action: none
-                state: not-applicable
 sprint-readiness:
 ---
 

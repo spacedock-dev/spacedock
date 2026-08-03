@@ -6,8 +6,6 @@ score: "0.8"
 id: 0cj3qf6fefedfj7j9exq62jb
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:0c:validation
     records:
         - id: gate:docs-dev:0c:backlog
           stage: backlog
@@ -16,7 +14,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:0c:backlog:attempt-1:revision-1
                 digest: sha256:116794807857c45a046d56cf9217b822e6c4fbe21077edb36f0951a02995f364
-                digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -38,7 +35,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:0c:ideation:attempt-1:revision-1
                 digest: sha256:b1e0cf2b6b7300464550d7af90d873802f7f51550a908d9eeb8cc62e0ea34400
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-1
               resolution:
                 type: Resolution
@@ -48,7 +44,6 @@ gates:
                 at: "2026-07-24T09:11:43.521688Z"
                 decision: approve
                 reason: Cycle 3 preserves the single-fetch boundary, proved the real-parser raw-span and mixed-newline mechanisms, stays within the declared surface, and independent staff re-review reports APPROVE with no material findings.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge. Use your judgement. make sure the implementation declares their intended change (loc etc) and be suspicious about any drift.
               application:
                 action: advance
                 target-stage: implementation
@@ -61,7 +56,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:0c:validation:attempt-1:revision-1
                 digest: sha256:fc9e60c5c84fb15d4aa4b5aaecb8f1001419c6c90cf36ffae3386403449ab14c
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution
@@ -71,7 +65,6 @@ gates:
                 at: "2026-07-24T11:41:44.818812Z"
                 decision: approve
                 reason: 'Delegated sprint approval: exact candidate 396c92a3 satisfies all six ACs with 15/0/0 validation, Roborev 1990 clean, and all five live CI jobs green.'
-                adoption-note: Captain granted the First Officer the conn to approve sprint gates, relevant CI lanes, PRs, and merge; land only exact candidate 396c92a302e1ac220d552d6f16600e9f08ccb622.
               application:
                 action: advance
                 target-stage: done

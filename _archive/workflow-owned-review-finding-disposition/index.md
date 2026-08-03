@@ -13,8 +13,6 @@ sprint: durable-decisions
 id: rhx820qrkn6vxpday10nch36
 gates:
     version: 1
-    current:
-        gate: gate:rhx820qrkn6vxpday10nch36:validation
     records:
         - id: gate:rhx820qrkn6vxpday10nch36:backlog
           stage: backlog
@@ -23,7 +21,6 @@ gates:
               briefing:
                 id: briefing:rhx820qrkn6vxpday10nch36:backlog:attempt-1:revision-1
                 digest: sha256:f5c4251b4617310097bca5e1d14a03f5d177df80b0e452751b510e9b8eae30de
-                digest-domain: canonical-bytes
                 request-digest: sha256:50ec6a9d980e9ca88e45a5c22e5f7e394b6c0d6a5e3044a15a4dbf617515fcc7
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -45,7 +42,6 @@ gates:
               briefing:
                 id: briefing:rhx820qrkn6vxpday10nch36:ideation:attempt-1:revision-1
                 digest: sha256:721699dca2d94770e8334bb36781e0365e4bc7c38191c1fd8fddc43a35a2f797
-                digest-domain: canonical-bytes
                 request-digest: sha256:de17345385e778d647dd1295ee0b2310571be8be85cd3091bb9784f79eaa7c6f
                 room-ref: ./review/ideation/briefing-1
               resolution:
@@ -65,7 +61,6 @@ gates:
               briefing:
                 id: briefing:rhx820qrkn6vxpday10nch36:ideation:attempt-2:revision-1
                 digest: sha256:f6fcc82989bd95c7a8aba7b022653f1e597374f85ee27df65d2144949ae7d968
-                digest-domain: canonical-bytes
                 request-digest: sha256:8a5711522986db809808d79aefd66a49e671ffd0aea276558a9617090bbf58db
                 room-ref: ./review/ideation/briefing-2
               resolution:
@@ -87,7 +82,6 @@ gates:
               briefing:
                 id: briefing:rhx820qrkn6vxpday10nch36:validation:attempt-1:revision-1
                 digest: sha256:2caefd1f2fe0c5bb68030d778b6ea3748dd1a0b4bb0637c7c1096e7824b46db9
-                digest-domain: canonical-bytes
                 request-digest: sha256:b1d5f3086e673ba9b4fa703788fde8150325094fc2a787fd385a4c33065c246d
                 room-ref: ./review/validation/briefing-1
               provider-evidence:
@@ -101,15 +95,10 @@ gates:
                 at: "2026-07-30T12:25:21.608963Z"
                 decision: revise
                 reason: can you construct the briefing with anoter artifact that is the output of git diff --stat ?
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:rhx820qrkn6vxpday10nch36-validation-2
               briefing:
                 id: briefing:rhx820qrkn6vxpday10nch36:validation:attempt-2:revision-1
                 digest: sha256:c44de3e02bf0f7d94f1cfaa7dd731df82295500394863d45b001d96bb0bf0dce
-                digest-domain: canonical-bytes
                 request-digest: sha256:310991ba23c93bb08a9b59ccb3e3a106b6f078ecc814ae508c115b6c45c4969e
                 room-ref: ./review/validation/briefing-2
               provider-evidence:

@@ -11,8 +11,6 @@ worktree: .worktrees/spacedock-ensign-fo-boot-install-hint-linux-direct-sandbox
 issue: spacedock-dev/spacedock#581
 gates:
     version: 1
-    current:
-        gate: gate:z3j0tsbr6t3mqd39rhs8bbvq:validation
     records:
         - id: gate:z3j0tsbr6t3mqd39rhs8bbvq:backlog
           stage: backlog
@@ -21,7 +19,6 @@ gates:
               briefing:
                 id: briefing:z3j0tsbr6t3mqd39rhs8bbvq:backlog:attempt-1:revision-1
                 digest: sha256:36af7b28170688e41da0817d982617ceb0a1f940079357dcc366a1b51645650c
-                digest-domain: canonical-bytes
                 request-digest: sha256:50e8a9607112885a2d5a6617c28b2e10290f6e6cc307de5a4876e0681bf09cc0
                 room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/backlog/briefing-1
               resolution:
@@ -44,7 +41,6 @@ gates:
               briefing:
                 id: briefing:z3j0tsbr6t3mqd39rhs8bbvq:ideation:attempt-1:revision-1
                 digest: sha256:e1ce7f0a4d254da36db5ad188231cd0d4f0f602f2e19075bc0426c0512180744
-                digest-domain: canonical-bytes
                 request-digest: sha256:33d4ee7592c0c772b14fe8d5b516fba514d4a3023f747ca4a2ae7fcc4d3cec36
                 room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/ideation/briefing-1
               provider-evidence:
@@ -60,15 +56,10 @@ gates:
                 includes:
                     - annotation:captain-1785472336725531000
                     - annotation:captain-1785472400412596000
-              application:
-                action: feedback
-                target-stage: ideation
-                state: superseded
             - id: gate-attempt:z3j0tsbr6t3mqd39rhs8bbvq-ideation-2
               briefing:
                 id: briefing:z3j0tsbr6t3mqd39rhs8bbvq:ideation:attempt-2:revision-1
                 digest: sha256:573dde7bed1a333a300dc00869fb87eddf1cc5f9af2c737cb88a1aca6d40e372
-                digest-domain: canonical-bytes
                 request-digest: sha256:cf8f93923cec1252583cabef0d587898d5d9d4de25baa77df0e45c13887382e2
                 room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/ideation/briefing-2
               provider-evidence:
@@ -94,7 +85,6 @@ gates:
               briefing:
                 id: briefing:z3j0tsbr6t3mqd39rhs8bbvq:validation:attempt-1:revision-1
                 digest: sha256:fb03bf8649c16e730ec38b31534dcce2e21458b31b82c6b13d9ed3a599cee781
-                digest-domain: canonical-bytes
                 request-digest: sha256:6a7223ff089e31bd8e1dc58d5dde9deddd77154169b4123a52fbd7a2f9267992
                 room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/validation/briefing-1
               provider-evidence:
@@ -108,14 +98,10 @@ gates:
                 at: "2026-07-31T05:49:29.983673Z"
                 decision: hold
                 reason: this is very hard to check what evidence you have already gathered, and what requires me to test manually
-              application:
-                action: none
-                state: not-applicable
             - id: gate-attempt:z3j0tsbr6t3mqd39rhs8bbvq-validation-2
               briefing:
                 id: briefing:z3j0tsbr6t3mqd39rhs8bbvq:validation:attempt-2:revision-1
                 digest: sha256:a5465bde4228df460a1c1e801dfcbfc68821cf4e0dfc35a0dd48a7ed4486be05
-                digest-domain: canonical-bytes
                 request-digest: sha256:0d1e4c8ae711c96ed7b094d50c57320ca803265e2b2c607a34f277a5bddb8b4a
                 room-ref: ./fo-boot-install-hint-linux-direct-sandbox/review/validation/briefing-2
               provider-evidence:

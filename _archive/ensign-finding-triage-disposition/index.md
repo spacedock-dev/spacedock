@@ -11,8 +11,6 @@ worktree: .worktrees/spacedock-ensign-ensign-finding-triage-disposition
 sprint-readiness:
 gates:
     version: 1
-    current:
-        gate: gate:ensign-finding-triage-disposition:validation
     records:
         - id: gate:ensign-finding-triage-disposition:validation
           stage: validation
@@ -21,7 +19,6 @@ gates:
               briefing:
                 id: briefing:docs-dev:02av:validation:canonical-v1:revision-1
                 digest: sha256:fc31fe9a3ed18b5c8dae203e74431fd6494beac263dbc5d2b6e5af5a35f8905b
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution
@@ -31,7 +28,6 @@ gates:
                 at: "2026-07-22T16:28:18.503661Z"
                 decision: approve
                 reason: Exact candidate e85eb0cf passed 12/12 validation checks, AC-1/2/3, live replay, negative controls, detached audit, full and race tests, formatting, and clean-head verification; no material finding remains.
-                adoption-note: you have the conn toward the sprint goal. authorized to approve gates, PR, relevant CI lanes, and merge.
 mod-block:
 pr: pr-merge:559
 verdict: passed

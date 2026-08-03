@@ -12,8 +12,6 @@ sprint: durable-decisions
 id: gqsw81ghf48hr2n3jg6k7nx8
 gates:
     version: 1
-    current:
-        gate: gate:gqsw81ghf48hr2n3jg6k7nx8:validation
     records:
         - id: gate:gqsw81ghf48hr2n3jg6k7nx8:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:gqsw81ghf48hr2n3jg6k7nx8:backlog:attempt-1:revision-1
                 digest: sha256:4a74b1208239ddf0168759fe2f50fa4bb2a02e1329133d29a83aa7e455a7ed47
-                digest-domain: canonical-bytes
                 request-digest: sha256:2e8c911fa6c4c2dbea158e9a20cee9bfa16054eada3d2b9774b92e76bba2d053
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -45,7 +42,6 @@ gates:
               briefing:
                 id: briefing:gqsw81ghf48hr2n3jg6k7nx8:ideation:attempt-1:revision-1
                 digest: sha256:2ce71b3cd6b65d989346a0ab81180b6e43bd5a42c3a82ffdda5ba880187e8a00
-                digest-domain: canonical-bytes
                 request-digest: sha256:303aa4c963d300d0a06d86d1d5fad040cffd12b29c8661a8c8b3ffc3f4cfffae
                 room-ref: ./review/ideation/briefing-1
               resolution:
@@ -68,7 +64,6 @@ gates:
               briefing:
                 id: briefing:gqsw81ghf48hr2n3jg6k7nx8:validation:attempt-1:revision-1
                 digest: sha256:8dac2e7f8bd99cfb9d84fac2446fac12fc318fc571c22c6c4ee7baad2486d203
-                digest-domain: canonical-bytes
                 request-digest: sha256:9e8cde28a37107216caafc407f253db2014a9d827a871c344d75c6330b78040a
                 room-ref: ./review/validation/briefing-1
               resolution:
@@ -79,15 +74,10 @@ gates:
                 at: "2026-07-30T14:12:33.606877Z"
                 decision: revise
                 reason: 'Captain narrowed pre2 to the provider-free journey: retain worktree-safe entered-stage actionability, revert merge-finalization changes, and remove the cold checklist-omission promise.'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:gqsw81ghf48hr2n3jg6k7nx8-validation-2
               briefing:
                 id: briefing:gqsw81ghf48hr2n3jg6k7nx8:validation:attempt-2:revision-1
                 digest: sha256:a0344d898b3119b92251a00735af627ba1b2b8d5808fa25b554407b1b8617c77
-                digest-domain: canonical-bytes
                 request-digest: sha256:3790c53f7931f353153cdec7d9a5b8290eecc0381a2d83c4e7f30a09d3b5524c
                 room-ref: ./review/validation/briefing-2
               resolution:

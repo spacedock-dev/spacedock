@@ -13,17 +13,11 @@ milestone: 0.26.0
 mod-block:
 gates:
     version: 1
-    current:
-        gate: gate:docs-dev:c6:validation
-        attempt: gate-attempt:c6-validation-1
     records:
         - id: gate:docs-dev:c6:validation
           stage: validation
-          current-attempt: gate-attempt:c6-validation-1
           attempts:
             - id: gate-attempt:c6-validation-1
-              sequence: 1
-              state: closed
               briefing:
                 id: briefing:docs-dev:c6:validation:attempt-1:revision-1
                 digest: sha256:9cbd614ab8fd3f61095db3373c958dbb3f1bef441f35807a1260c43dd9d99dfe

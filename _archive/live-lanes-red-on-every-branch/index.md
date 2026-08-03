@@ -11,8 +11,6 @@ worktree: .worktrees/spacedock-ensign-live-lanes-red-on-every-branch
 issue:
 gates:
     version: 1
-    current:
-        gate: gate:se0v37bt7mhsrmhta1nyns0r:validation
     records:
         - id: gate:se0v37bt7mhsrmhta1nyns0r:backlog
           stage: backlog
@@ -21,7 +19,6 @@ gates:
               briefing:
                 id: briefing:se0v37bt7mhsrmhta1nyns0r:backlog:attempt-1:revision-1
                 digest: sha256:a19bdffd9042fe57c50bc9d86b6f84cbea1c947d4b3929bd171cb44e3c99d875
-                digest-domain: canonical-bytes
                 room-ref: ./review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -43,7 +40,6 @@ gates:
               briefing:
                 id: briefing:se0v37bt7mhsrmhta1nyns0r:ideation:attempt-1:revision-2
                 digest: sha256:7b0cf07c49f5286b085dbbd884f45aafb247dddd7a2075d7344010a640b7aad2
-                digest-domain: canonical-bytes
                 room-ref: ./review/ideation/briefing-2
               resolution:
                 type: Resolution
@@ -65,7 +61,6 @@ gates:
               briefing:
                 id: briefing:se0v37bt7mhsrmhta1nyns0r:validation:attempt-1:revision-1
                 digest: sha256:9f5025e5b0119f3895e26f7cb072e9eeac8772b99e85413c1668561aa09494d8
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution
@@ -75,15 +70,10 @@ gates:
                 at: "2026-07-29T04:32:30.299796Z"
                 decision: revise
                 reason: 'Run 30421227237 is 3/4: Sonnet, Opus, and Pi passed; Codex durably consumed the approved gate, dispatched implementation, and archived done, but the keep-moving extractor recognizes only legacy status --set advancement. Revise only that successful-consume oracle and preserve failed-consume/no-advance controls.'
-              application:
-                action: feedback
-                target-stage: implementation
-                state: superseded
             - id: gate-attempt:se0v37bt7mhsrmhta1nyns0r-validation-2
               briefing:
                 id: briefing:se0v37bt7mhsrmhta1nyns0r:validation:attempt-2:revision-1
                 digest: sha256:d1bda481ebfe324306db85476d7b001ecd2cc432348e032905457819480272a1
-                digest-domain: canonical-bytes
                 room-ref: ./review/validation/briefing-2
               resolution:
                 type: Resolution
