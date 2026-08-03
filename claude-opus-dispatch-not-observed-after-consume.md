@@ -1,29 +1,62 @@
 ---
 id: 5n4k6djrq8gtvd54zg9s6zhs
-title: Claude-opus live agent's recorded-gate-lifecycle successor dispatch not observed as committed-before-dispatch
+title: recorded-gate-lifecycle grader has two unrelated bugs that both produce "successor dispatch not observed after consume"
 status: backlog
-source: "Found on PR #600 (collapse-gate-approval-ceremony) claude-live (claude-opus-4-8, CI-E2E-OPUS) CI, 2026-08-02, run 30754109029, job 91513297850: TestLiveClaudeSharedScenarios/recorded-gate-lifecycle failed 'successor dispatch was not observed after consume' (recorded_gate_lifecycle_test.go:135, assertRecordedGateLifecycle's recordedGateCommittedBeforeDispatch check). Pulled the actual Claude transcript (runtime-live-e2e-claude-live-claude-opus-4-8 artifact): the agent issued the classic 3-step ceremony (gate record --decision approve, then gate consume, then dispatch build) in the correct order, and its final message narrates a coherent successful completion (marker recorded, durable commit, stage report present) -- no obvious agent-side ordering mistake like the sibling codex-live failure on the same run (dispatch build --checklist-file raced ahead of the file write, filed separately as codex-live-dispatch-build-checklist-race). Checked whether this is another PR #599 (gate-schema-simplification) casualty: built the binary from this branch and ran a real prepare/record/consume cycle in a scratch fixture to measure the actual YAML nesting depth of 'state: consumed' under the new schema -- still 16 spaces, unchanged, so the exact-string git log -S pickaxe search in recordedGateLiveObservation (recorded_gate_lifecycle_test.go ~L1019) should still match. Root cause NOT yet identified. Captain directed: treat as a candidate flake alongside the codex-live issue, do not block the merge, rerun to confirm green, file for diagnosis."
+source: "Originally filed 2026-08-02 as an opus-specific, root-cause-unknown candidate flake (TestLiveClaudeSharedScenarios/recorded-gate-lifecycle, PR #600 run 30754109029 job 91513297850). Amended 2026-08-03 after a dedicated diagnostic (opus, high effort) root-caused it with a local repro: the same error string is produced by TWO distinct, deterministic one-line grader bugs in internal/ensigncycle/recorded_gate_lifecycle_test.go, not live-model nondeterminism. Confirmed recurring on a second, independent instance: codex-live hit the identical error string on PR #600's rerun (run 30754109029, job 91518827444) via the SECOND bug below, proving this is not opus-specific. Classification: test-defect, high confidence (opus reproduced locally; codex confirmed from live stdout). Captain directed: file/amend based on the classification workflow's findings."
 started:
 completed:
 verdict:
-score: 0.4
+score: 0.5
 worktree:
 issue:
 ---
 
-`recordedGateCommittedBeforeDispatch` (internal/ensigncycle/recorded_gate_lifecycle_test.go:1193) verifies, via `git log -S<exact-string>` pickaxe searches and `git merge-base --is-ancestor` ancestry checks against the state checkout's git history, that the record-commit precedes the consume-commit precedes the dispatch-head commit. On this run it returned false for the Claude-opus live scenario even though: (a) `dispatch.builds == 1` and `successfulBuilds == 1` (the build-count check earlier in `assertRecordedGateLifecycle` passed), (b) the agent's own transcript shows the 3 commands issued in the correct order, and (c) the final message describes a complete, coherent success.
+`assertRecordedGateLifecycle` (internal/ensigncycle/recorded_gate_lifecycle_test.go:121) collapses `!o.dispatch.ordered || !o.dispatch.committed` into one error string ("successor dispatch was not observed after consume"), so two unrelated bugs in how `ordered`/`committed` get computed both surface identically. Both are one-line fixes.
 
-## What's ruled out so far
+## Bug 1 — unanchored substring match lets a harmless `--help` probe poison the ordering check
 
-- Not the codex-live issue (dispatch build racing ahead of a checklist-file write) -- different assertion, different mechanism, and the transcript shows correct command order.
-- Not a YAML-nesting-depth regression from PR #599's schema simplification -- measured directly (16 spaces, unchanged) via a real prepare/record/consume cycle built from this branch's binary.
+`recordedGateLiveObservation` (recorded_gate_lifecycle_test.go:983-986) locates command-log phases with unanchored `strings.Index` over the whole log:
 
-## Open questions for diagnosis
+```go
+prepareAt := strings.Index(log, "exit=0\tgate prepare ")
+bindCommitAt := strings.Index(log, "exit=0\tstate commit recorded-gate-task")
+decisionAt := strings.Index(log, "exit=0\tgate record ")
+ordered = prepareAt >= 0 && bindCommitAt > prepareAt && decisionAt > bindCommitAt
+```
 
-- Is `close`/`consumed`/`dispatchHead` commit resolution (the `git log --reverse --format=%H -S...` pickaxe searches at recorded_gate_lifecycle_test.go ~L1017-1019) actually finding the right commits for this run, or resolving empty/wrong due to some other git pickaxe quirk (e.g. `-S` only detects a *change in occurrence count*, not any touching diff -- worth checking whether the fixture's repo history could trip that)?
-- Is this reproducible on a clean rerun, or a one-off? (Rerun in isolation before assuming either way.)
-- If reproducible: is the defect in the test's git-ancestry detection mechanism, or a genuine ordering/timing issue in how the live Claude harness records the consume commit relative to dispatch?
+`"exit=0\tgate record "` also matches the read-only line `exit=0\tgate record --help`. In the failing opus run the agent ran `gate prepare --help` then `gate record --help` (both harmless, read-only) before doing any real work. Measured on the actual run artifact (artifact 8835777822): `prepareAt=251` (the `--help` probe), `decisionAt=303` (the `gate record --help` probe, matched instead of the real decision-record command later in the log), `bindCommitAt=1648` -> `decisionAt < bindCommitAt` -> `ordered=false`. A passing rerun's log (artifact 8836227123) has only the `gate prepare --help` probe, no `gate record --help` probe, so `decisionAt` correctly lands on the real command and `ordered=true`. The line-983 `dispatch build` phase-detection already excludes `--help` (confirmed at ~line 1010); this same guard is simply missing for the `prepare`/`record` phases.
 
-## Out of scope (for now)
+Reproduced locally with the real binary (scratch test at the diagnostic's scratchpad, `internal/ensigncycle/zz_repro_test.go`): the same command sequence without help probes grades PASS; inserting a `gate record --help` probe before the real `state commit` flips `ordered` to false and reproduces the exact failure message.
 
-Any code change to the assertion or to gate/dispatch mechanics -- this entity is for diagnosis first.
+**Fix:** anchor the phase-detection to exclude `--help` invocations, the same way the existing `dispatch build` detection already does (or match complete lines rather than substrings).
+
+## Bug 2 — hardcoded resolution-ID literal misses the room-backed close path
+
+`recordedGateLiveObservation` (recorded_gate_lifecycle_test.go:1018) pickaxes a literal chat-path resolution ID:
+
+```go
+closeCommit := ... git log --reverse --format=%H -S"id: resolution:spacedock:recorded-gate-task:validation:1" ...
+```
+
+That exact literal is produced only by `chatResolutionID` (internal/gates/operation.go:758-763) -- the `--decision`/`--actor` close path. Codex's live run closed via the **room-backed** path instead: `gate record ... --room ... --consume`, which produces a provider-authored resolution ID (`resolution=resolution:captain-recorded-gate-task-validation-1`) written verbatim from the room's provider `result.json` by `recordRoomLocked` (internal/gates/operation.go ~line 400). The hardcoded pickaxe string never matches that ID, so `close == ""`, and `recordedGateCommittedBeforeDispatch` (line 1193) returns false on its very first guard clause -- independent of Bug 1, and independent of anything about `--consume`/`--stamp` timing (both the collapsed and classic ceremony shapes grade PASS correctly once this is accounted for).
+
+Ironically, `recordedGateLiveObservation` already derives `resolutionID` correctly by regex from the entity's own post-state a few lines later (line 1023) and `assertRecordedGateLifecycle` uses that derived value elsewhere -- only this one commit-lookup pickaxe still hardcodes the literal.
+
+**Fix:** use the regex-derived `resolutionID` (already computed at line 1023) for the pickaxe search instead of the hardcoded chat-path literal, or pickaxe on a room-agnostic substring common to both closing shapes.
+
+## What's ruled out
+
+- Not model nondeterminism -- both bugs are deterministic string-matching gaps triggered by legal, unmodeled agent behavior (a `--help` probe; closing via the room-backed path), not by anything random.
+- Not the codex-live dispatch-build-checklist-race issue (different assertion entirely; filed separately as `codex-live-dispatch-build-checklist-race`).
+- Not a YAML-nesting-depth regression from PR #599's schema simplification -- measured directly (16 spaces, unchanged).
+- Not `-S`'s occurrence-count semantics, not `--stamp` timing/durability, not a real difference in behavior between the collapsed `--consume` and classic 2-step ceremony shapes -- all confirmed fine in the local repro; the two bugs above are the entire explanation for both recurrences.
+
+## Acceptance criteria (rough, for ideation to firm up)
+
+- **AC-1** — A `--help` probe (of `gate prepare`, `gate record`, or `gate consume`) issued at any point in a live agent's command log no longer perturbs `ordered`'s phase detection. Verified by a fixture/unit test reproducing Bug 1's exact repro (insert a `gate record --help` line before the real sequence; assert `ordered` stays true).
+- **AC-2** — A room-backed close (`gate record --room ... --consume`) is correctly recognized as committed by `recordedGateCommittedBeforeDispatch`. Verified by a fixture/unit test reproducing Bug 2 (a room-backed close followed by dispatch; assert `committed` is true).
+- **AC-3** — The classic chat-path close (`--decision`/`--actor`) continues to work unchanged; no regression on either existing passing shape.
+
+## Out of scope
+
+Any change to the actual gate/dispatch mechanics, `--stamp`, or `--consume` -- confirmed correct. This is a test/grader-only fix.
