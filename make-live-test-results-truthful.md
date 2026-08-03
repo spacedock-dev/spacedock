@@ -1,6 +1,6 @@
 ---
 title: Make live test results tell the truth
-status: backlog
+status: ideation
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 1a and wp as design inputs."
 score: 1.0
 sprint: live-test-truth
@@ -30,7 +30,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
