@@ -19,6 +19,19 @@ gates:
                 digest: sha256:21d99a321493d7d1a6f8699d6f36913a7e9774e952adc96574d482409e4f46d1
                 request-digest: sha256:97c4053e9255b7e7a298ec8cc026e0ea331cf318f5e26605d74b2d41b66c8da4
                 room-ref: ./make-live-lanes-buy-named-evidence/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:15ec08nz1ypn0dzs8b8xznr7:backlog:1
+                briefing: briefing:15ec08nz1ypn0dzs8b8xznr7:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T12:18:54.272717Z"
+                decision: approve
+                reason: Captain explicitly approved the outcome-shaped recarve and directed immediate redispatch.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 ## Outcome
