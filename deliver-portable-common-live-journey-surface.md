@@ -59,6 +59,17 @@ gates:
                 digest: sha256:8ceb3d3a6bff4e1abe4624b053b0f7ddf8ac9374bdbfffad03ddd36c4c418d8e
                 request-digest: sha256:06aa372cedc1f9cd2f0edc5616e8c3a79f8007a6043e64c80c21a614b4ed6447
                 room-ref: ./deliver-portable-common-live-journey-surface/review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ys7ncwh9kr8w5h9hdkz5apat:ideation:3
+                briefing: briefing:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-03T14:45:30.772745Z"
+                decision: approve
+                reason: Approved after staff review. Land the portable common journey surface after 3d and 15e.
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-03T12:19:31Z
 ---
 
