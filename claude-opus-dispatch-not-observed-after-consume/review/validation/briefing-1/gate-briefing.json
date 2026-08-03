@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5n4k6djrq8gtvd54zg9s6zhs:validation:attempt-1:revision-1",
+  "question": "Does the validated test-only grader correction satisfy AC-1 through AC-3 and advance this sprint task to terminal review?",
+  "artifacts": [
+    {
+      "id": "artifact:5n4k6djrq8gtvd54zg9s6zhs:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f717f6aa75581e38f87641f1d322f874b81347a2/claude-opus-dispatch-not-observed-after-consume.md",
+      "rev": "sha256:ac79b1017485add9e7009047b65f636bbf32e015ea375aa493f63bcedc6ee148",
+      "mediaType": "text/markdown",
+      "summary": "Validation passed all acceptance criteria on 48f001276 atop exact NTH head 7ece33938, including focused, full, race, and semantic adversarial controls; approve to proceed to terminal review with no gate or dispatch mechanics changed."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:5n4k6djrq8gtvd54zg9s6zhs:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/48f0012768b01aae696e5dfe745324c88d97146b/internal/ensigncycle/recorded_gate_lifecycle_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:68ab06be5de40d23c5990a322ce3437e833961d887b8e7a039106bb25297cb31"
+    }
+  ]
+}
