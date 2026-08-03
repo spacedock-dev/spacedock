@@ -28,6 +28,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-03T13:53:46Z
 ---
 
 Legacy state written before the v1 application-schema cut can contain `application.action` and `application.blockers`. The canonical gate reader currently rejects that state before it can expose the valid `target-stage` and `state` fields.
