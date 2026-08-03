@@ -1,6 +1,6 @@
 ---
 title: Promote standalone common behaviors into the shared live journey suite
-status: backlog
+status: ideation
 source: "Desired live-test registry inventory, 2026-08-03"
 started:
 completed:
@@ -35,7 +35,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
