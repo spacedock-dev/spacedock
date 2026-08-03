@@ -317,3 +317,32 @@ Wrong AC decisions now fail on durable state, while healthy Codex JSONL progress
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — detached validation/First Officer; surface 9 files/571 changed LOC vs estimate 9 files/492 changed LOC (116%); AC unchanged. Material task-owned AC-1 evidence defect: the partial oracle accepted malformed gate state and an older `revise` that masked a later `approve`. FO disposition: fix. Replace the partial parser and synthetic action with canonical complete-record validation plus the workflow-derived `feedback-to` route; retain malformed, duplicate-record, later-approve, wrong-route, wrong-decision, and unchanged-state negatives. The authorized correction remains within the approved nine-file +401/-201 tolerance. The separate seven-path current manifest drift is outside 3d and snapshot substitution does not count as canonical full-suite evidence.
+
+## Stage Report: validation
+
+- DONE: Reproduce every AC against independent evidence, including the durable correct/wrong/unchanged AC2 branches and the progress/stall Codex controls; reject any oracle that can pass while the visible result is wrong.
+  AC-1's correct branch passes; malformed, duplicate-record, later-approve, wrong-route, wrong-decision, accepted-status, and unchanged controls fail through canonical `gates.Read` validation and workflow-derived `feedback-to` routing.
+- DONE: Perform the mandated detached adversarial audit on a throwaway checkout, tracing complete JSONL identity, order, lifecycle, quiet-reset cardinality, kill/reap cleanup, one-process execution, retained fault artifacts, the 60-second quiet budget, and the unchanged 40-minute suite backstop.
+  The audit observed 31 ordered complete events, one invocation, byte-identical retained JSONL, progress past four quiet budgets, and a 60.44-second kill/reap; CI still selects `-timeout 40m`.
+- FAILED: Reproduce the standard repository checks and both changed live paths on the candidate, resolve the current-state manifest failure versus the immutable-snapshot workaround, verify the nine-file +400/-172 surface and pre-ys selector boundary, and classify every finding by defect kind and release scope.
+  Both live paths pass and commit `17985b60f` is nine files, +401/-170, on pre-`ys` `TestLiveCodexSharedScenarios`; current-checkout `go test ./...` and `go test ./... -race` fail the same seven stale pilot-manifest paths, so the immutable snapshot is not accepted.
+- DONE: AC-1 (VALUE) - The AC2 scenario rejects the wrong durable decision.
+  Offline bidirectional controls and detached hostile records pass; the corrected positive live branch passed in 194.60s with artifacts under `/tmp/spacedock-live-truth-rereview-artifacts/ac2`.
+- DONE: AC-2 (VALUE) - A progressing Codex run stays alive.
+  The deterministic process survives 31 events and more than four quiet budgets; Luna/max `gate-guardrail` passed in 321.98s with exit 0 and no timeout.
+- DONE: AC-3 - A stalled Codex run fails within the 60-second quiet budget.
+  The scaled stall retains the last event, stderr, process result, artifact path, kill/reap, and one invocation; the production-budget audit failed at 60.44s as required.
+- DONE: AC-4 - The suite timeout stays a runaway backstop.
+  Source guards reject a fixed Codex deadline, `codex_single_run_test.go` has none, and `.github/workflows/runtime-live-e2e.yml` retains the 40-minute Codex suite timeout.
+- FAILED: Material finding — current-state v1 pilot manifest drift (evidence defect; release-blocking; outside 3d ownership).
+  Seven entries introduced by code commit `9ff2aa50c` now live under `_archive`; this common current-checkout trigger violates `contract[AGENTS.md#Expected Commands]` and keeps both mandatory suites red until the repository-level manifest/count owner updates the canonical current-state check.
+- SKIPPED: Immutable state snapshot substitution.
+  Snapshot `73f41e2a2` predates the archive moves and is not the current substrate selected by `TestV1PilotManifestReadsAndValidates`; its green result cannot satisfy the repository gate.
+- SKIPPED: Deferred risk — a complete Codex JSONL line above 16 MiB can stop `bufio.Scanner` and deadlock reap.
+  The trigger is unobserved and outside the current host evidence (largest live line: 35,627 bytes); promote to Material if a supported Codex lane can emit a line at or above 16 MiB or promises unbounded event size.
+- FAILED: Recommendation — REJECTED.
+  All candidate value ACs have valid current evidence and the cycle-1 task-owned finding is closed, but the independent material current-checkout repository blocker remains.
+
+### Summary
+
+The corrected candidate makes wrong durable decisions red and healthy JSONL progress green. Validation recommends REJECTED only because the canonical current checkout cannot pass the repository's required full and race suites; the stale manifest belongs outside 3d and must not be hidden by a historical snapshot.
