@@ -2,7 +2,7 @@
 title: Prove or cut provider-backed gate closure before stable v1
 status: ideation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: provider evidence exists in pilot state, but the stable surface lacks one pinned exact-candidate end-to-end proof while the chat journey is the primary value path."
-started:
+started: 2026-08-03T23:54:07Z
 completed:
 verdict:
 score: "0.85"
