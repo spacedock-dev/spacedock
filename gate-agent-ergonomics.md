@@ -441,3 +441,90 @@ Ideation now isolates one missing scheduler projection. Mechanical report eviden
 makes the cold gate discoverable; human semantic review decides whether the existing
 s4 preparation operation may run. All neighboring states retain their gqs, s4, 0m6,
 application, feedback, merge, terminal, and archive owners.
+
+## Stage Report: implementation
+
+- DONE: Implemented the canonical status-owned `needs-preparation` projection. The
+  reducer classifies existing current-stage authority first, then promotes only a
+  mechanically complete, path-clean, committed exact-stage report. Absent authority
+  and prior-stage authority promote; selected/open, withdrawn, closed, malformed, and
+  empty-record documents retain their existing owner or fail closed. No parser, store,
+  schema, command, adapter, provider, runner, scheduler binary, retry, cache, or
+  lifecycle mutation was added.
+- DONE: Extended machine `status --next --json` to the ordered
+  `command`/`dispatchable`/`ready_gates` envelope. Boot identify and next use the same
+  four-key ready-gate rows; `needs-preparation` is actionable but never dispatchable.
+  Human `--next` remains unchanged. Updated the canonical JSON golden to include the
+  empty `ready_gates` array.
+- DONE: Added the First Officer route in `fo-gate-lifecycle` and `fo-dispatch-core`:
+  re-read the exact report and commit, issue one concrete `report-incomplete:` veto
+  with zero side effects when semantic review fails, or invoke existing `gate prepare`
+  exactly once on a semantic pass, commit/re-read `awaiting-captain`, and present once.
+  The scheduler consumes the same envelope on the initial and post-idle reads and
+  applies ready-gate-first priority. Existing open/withdrawn/pending/revise/hold/
+  consumed/terminal routes remain owned by s4, gqs, or 0m6.
+- DONE: Pinned and audited dependency tips: s4
+  `acae980fc145e624d9e04e7ec9f7fdb599585f6e`, gqs
+  `cb01129b6325f7af646363785c24ef69e8bd16bd`, and 0m6
+  `9881639697d1af391133c9ecf4111fd1673f537c`; all are ancestors of implementation
+  HEAD `ae1233a8b`.
+- DONE: Exact code/docs scope at `ae1233a8b` (13 files, 227 insertions, 22 deletions):
+  `internal/gates/model.go`, `internal/gates/gates_test.go`,
+  `internal/status/discover.go`, `internal/status/format.go`,
+  `internal/status/handlers.go`, `internal/status/json_commands.go`,
+  `internal/status/gate_readiness_needs_preparation_test.go`,
+  `internal/status/testdata/golden/seq-next.json`,
+  `docs/site/concepts/gates-and-decisions.md`,
+  `docs/site/reference/command-reference.md`,
+  `skills/fo-gate-lifecycle/SKILL.md`,
+  `skills/first-officer/references/fo-dispatch-core.md`, and
+  `skills/first-officer/references/first-officer-shared-core.md`.
+- DONE: Formatting and static checks: `gofmt -w ./cmd ./internal` completed with no
+  remaining diff; `git diff --check` passed; `go test ./internal/contractlint -count=1`
+  passed.
+- DONE: Focused functional evidence:
+  `go test ./internal/status -run
+  'TestGateReadiness|TestBootIdentifyReadyGates|TestStatusProjectsSharedGateReadinessReducer|TestEnteredStage' -count=1`
+  passed, including absent/prior authority promotion and dirty/malformed rejection;
+  the full `go test ./internal/status -count=1` package passed. The focused gates
+  readiness/prepare/withdraw tests, recorded-gate lifecycle/review tests, and JSON
+  golden tests passed after the envelope update.
+- DONE: Focused race evidence:
+  `go test -race` passed for the focused status, gates, contractlint, and ensigncycle
+  selections. Full race compile-only coverage (`go test -race ./... -run '^$' -count=1`)
+  passed for every package.
+- AC-1 evidence: `TestGateReadinessPromotesMechanicallyCompleteColdReports` covers
+  absent and prior-stage authority, and asserts one `needs-preparation` row, an empty
+  dispatchable array, the shared next envelope, and the `gate-readiness` projection;
+  `TestGateReadinessRejectsDirtyAndMalformedColdReports` covers the fail-closed
+  cleanliness/malformed controls. The semantic-veto and one-prepare engage behavior is
+  encoded in the FO route text and awaits the registered live-lane validation.
+- AC-2 evidence: `nextJSON` emits the ordered two-array envelope, the updated
+  `seq-next.json` golden passes, and `TestBootIdentifyReadyGates` plus the focused
+  status suite preserve boot/next dispatch parity and existing human output. The
+  post-idle ready-gate-first rule is documented in `fo-dispatch-core`; it needs the
+  live scheduler lane for behavioral execution evidence.
+- AC-3 evidence: `CurrentStageReadinessWithReport` promotes only absent authority and
+  leaves selected open/withdrawn/closed or malformed documents to existing reducers;
+  focused `internal/gates` prepare/withdraw and `internal/ensigncycle` lifecycle/review
+  tests pass. No preparation, withdrawal, recorder, or application implementation was
+  changed.
+- AC-4 evidence: the dependency ancestry audit and 13-file scope show one status
+  projection plus declarative FO/docs changes; forbidden-scope search found no new
+  parser/store/schema/adapter/provider/runner/scheduler/retry/cache implementation.
+- BLOCKED: Full `go test ./...` and full `go test ./... -race` reached all packages but
+  fail only in `internal/gates/TestV1PilotManifestReadsAndValidates`: six manifest
+  paths named by the repository's v1 pilot fixture are absent from the shared state
+  checkout (`bind-post-rework-briefing-at-rejection-regate.md`,
+  `collapse-gate-approval-ceremony/index.md`,
+  `minimize-v1-gate-application-schema/index.md`,
+  `shared-git-scaffold-helper.md`, `status-pagination-and-default-sorting.md`, and
+  `status-where-robust-and-discoverable.md`). The status JSON golden mismatch seen on
+  the first full run was corrected in `ae1233a8b`; the full status package then passed.
+  No live Claude/Codex/Pi runner lane was started in this implementation worktree, so
+  there is no live authorization evidence to claim.
+- NEXT: Keep the implementation entity at `status: implementation` pending Captain
+  review/validation. The validation stage should first restore or mount the six shared
+  state manifests, then rerun the complete offline/race matrix and the registered
+  recorded-gate live lanes. Do not prepare, consume, or mutate a validation gate from
+  this implementation report.
