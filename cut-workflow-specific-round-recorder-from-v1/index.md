@@ -1,6 +1,6 @@
 ---
 title: Cut workflow-specific advisory round recording from v1
-status: ideation
+status: implementation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: generic gate code embeds the development workflow's Material/fixed/declined taxonomy, LOC estimate grammar, ensign role, and Feedback Cycles projection."
 started: 2026-08-01T14:00:47Z
 completed:
@@ -81,7 +81,7 @@ gates:
                 reason: Captain approved cycle 3 ideation direction; preserve the serialized jc/nth/wj seam and zbc review-round producer, then advance to implementation.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Cut the development-specific classification and Cycle projection from the public round surface while retaining its workflow-neutral correction-record producer for stable v1. Keeping policy would freeze this repository's review taxonomy into the generic durable-decision contract; deleting the structural producer would break zbc's post-rework freshness boundary.
