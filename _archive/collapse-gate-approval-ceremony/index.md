@@ -1,11 +1,11 @@
 ---
 id: 7fhzvvk8d5smj858bp47xbjq
 title: Collapse the gate-approval ceremony from ~16 tool calls to 1-2
-status: validation
+status: done
 source: "Ships-counselor friction rollup, 2026-08-02, theme 1 (gate-approval ceremony): measured on sonnet-gate-guardrail-no-authority's ideation->implementation gate -- 16 discrete FO tool calls and 156s wall clock to apply one captain word ('approve'), with 0 additional captain turns needed. Recurs at every nonterminal gate for every entity, forever. Captain directed: file and dispatch (ideation, via a fable-model ensign)."
 started: 2026-08-02T06:25:27Z
-completed:
-verdict:
+completed: 2026-08-03T01:10:40Z
+verdict: passed
 score: 0.6
 worktree: .worktrees/spacedock-ensign-collapse-gate-approval-ceremony
 issue:
@@ -85,7 +85,7 @@ gates:
                 reason: 'Captain approved in chat: validation PASSED, AC-1/AC-2/AC-3 verified with reproduced evidence, +273% surface deviation acknowledged as legitimate. Dogfooding the collapsed ceremony (--consume) for this decision.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 review-round:
     id: round:7fhzvvk8d5smj858bp47xbjq:implementation:1
     stage: implementation
@@ -95,8 +95,9 @@ review-round:
         digest: sha256:c261304b3d0fd93b70900ebdc7d72992348eeda27d13b95f5928acfbda07e2ee
         digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-1
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:600
+archived: 2026-08-03T01:10:40Z
 ---
 
 Applying one captain gate decision (approve/revise/hold) currently costs ~16 raw FO tool calls and ~2.5 minutes of wall clock, most of it mechanical: re-invoking `state commit` after nearly every binary call, then a separate set of frontmatter stamps and worktree creation before the next dispatch even begins. This entity is about collapsing that ceremony toward 1-2 calls per gate decision without weakening any of the authority/integrity checks the ceremony exists to enforce.
