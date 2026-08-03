@@ -1,6 +1,6 @@
 ---
 title: Define FO ownership and recovery for moving-target PR conflicts
-status: backlog
+status: ideation
 source: "Captain follow-up after the 2026-08-03 durable-decisions conflict diagnosis."
 started:
 completed:
@@ -34,7 +34,7 @@ gates:
                 reason: Captain conn authorizes approval when SO concurs. SO concurs with parallel EJ/G3 ideation; keep EJ-before-G3 implementation landing because they share the FO dispatch and merge contract.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Define the ownership, durable hold, evidence, and keep-moving behavior when a pending PR meets a moving merge target. The task closes the contract ambiguity without adding a resolver worker or changing the workflow definition.
