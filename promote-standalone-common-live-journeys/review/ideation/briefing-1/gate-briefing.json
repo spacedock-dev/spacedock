@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:r4qk46605sjcphj44cvkcsk4:ideation:attempt-1:revision-1",
+  "question": "Approve this ideation plan as the implementation baseline?",
+  "artifacts": [
+    {
+      "id": "artifact:r4qk46605sjcphj44cvkcsk4:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/edd6546e6ef2c2599c31c77d3ccdeef022872041/promote-standalone-common-live-journeys.md",
+      "rev": "sha256:66ffd736dc1b25d7b25b2f6c97939b9363ba5981487aed2cc201968416f7ad3b",
+      "mediaType": "text/markdown",
+      "summary": "The plan reconciles all six standalone common journeys, preserves distinct oracles, and sequences AC re-anchor behind its falsifiability repair."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:r4qk46605sjcphj44cvkcsk4:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/2997da9a243f36ad31f483f63ce29b1b838c3410/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:r4qk46605sjcphj44cvkcsk4:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/2997da9a243f36ad31f483f63ce29b1b838c3410/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e"
+    }
+  ]
+}

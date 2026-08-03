@@ -37,6 +37,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:r4qk46605sjcphj44cvkcsk4:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:r4qk46605sjcphj44cvkcsk4-ideation-1
+              briefing:
+                id: briefing:r4qk46605sjcphj44cvkcsk4:ideation:attempt-1:revision-1
+                digest: sha256:c54e46c73cff782789ebca53b54860837d826ae3bd89e1546ef26e6e58cb9b37
+                request-digest: sha256:6be3137e2d5255c6a21f319f0fdd8970250216f7a35e43d2716bc48f86c7da5f
+                room-ref: ./promote-standalone-common-live-journeys/review/ideation/briefing-1
 ---
 
 ## Problem
