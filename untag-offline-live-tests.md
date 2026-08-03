@@ -9,9 +9,9 @@ verdict:
 score: 0.7
 worktree:
 issue:
-sprint: live-test-truth
+sprint:
 group: hygiene
-sprint-readiness: ready
+sprint-readiness: absorbed
 ---
 
 Remove the `//go:build live` constraint from 12 test functions in `internal/ensigncycle` that are offline-nature (no real model call, no live host launch) but are currently gated behind the `live` build tag, meaning they never run in any CI job -- not `go test ./...`, not any live lane. Untagging costs zero live spend and lets the existing offline `go test ./...` job start running them.
