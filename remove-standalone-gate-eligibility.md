@@ -31,6 +31,26 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:bv3hhbqr5spt1wn4557qyp8c:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:bv3hhbqr5spt1wn4557qyp8c-ideation-1
+              briefing:
+                id: briefing:bv3hhbqr5spt1wn4557qyp8c:ideation:attempt-1:revision-1
+                digest: sha256:51ad1e4dc1e6df9e6b757e77cc9644037d18afbf08ffe5ab56dc9f51432fb9ea
+                request-digest: sha256:979bc8d6359e29a5c0c77a5ea03430b7379976d34f8d219e91a1f874e06a5bb6
+                room-ref: ./remove-standalone-gate-eligibility/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:bv3hhbqr5spt1wn4557qyp8c:ideation:1
+                briefing: briefing:bv3hhbqr5spt1wn4557qyp8c:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-03T23:53:15.718694Z"
+                decision: approve
+                reason: 'Science Officer concurs: approve the ideation design now; keep its implementation advance held until G3 completes. The Captain directed the next ideation dispatch.'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-03T23:33:06Z
 ---
 
