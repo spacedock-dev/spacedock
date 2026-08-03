@@ -50,6 +50,17 @@ gates:
                 digest: sha256:1e41f87afb680c3bf98e822ca57bc2d5105450c310a05a29384fd4cb4a9149e8
                 request-digest: sha256:82d12cb3341d0a8234dd0a21ded4295c244c83c0f03686eb65b9dc5215a2c285
                 room-ref: ./status-pagination-and-default-sorting/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:rwpe45pdxffk2zfy24ejde6a:validation:2
+                briefing: briefing:rwpe45pdxffk2zfy24ejde6a:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-03T00:27:15.853594Z"
+                decision: approve
+                reason: 'Captain approved re-validation in chat: AC-2 correction confirmed via independent falsification, all 5 ACs green. Proceed to merge.'
+              application:
+                target-stage: done
+                state: pending
 worktree: .worktrees/spacedock-ensign-status-pagination-and-default-sorting
 ---
 
