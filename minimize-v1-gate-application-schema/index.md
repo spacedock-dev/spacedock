@@ -8,7 +8,7 @@ verdict: rejected
 score: "0.9"
 worktree: .worktrees/spacedock-ensign-minimize-v1-gate-application-schema
 issue:
-pr: "#602"
+pr: pr-merge:602
 sprint: durable-decisions
 id: nthcevf1snz7hm75gny3kd2e
 gates:
