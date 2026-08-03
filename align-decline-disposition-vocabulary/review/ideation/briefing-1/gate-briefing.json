@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:shra0x0r2bf7ka0q1m4ft79a:ideation:attempt-1:revision-1",
+  "question": "Should sh proceed with the bounded ideation direction that keeps finding classes opaque to generic gate recording and waits for WJ parser-policy removal?",
+  "artifacts": [
+    {
+      "id": "artifact:shra0x0r2bf7ka0q1m4ft79a:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/881902a36d07e95b524bcfdb071f866c06d7fba8/align-decline-disposition-vocabulary/gate-review.md",
+      "rev": "sha256:15aa87dcf23d0d45b373b9c8cc317c3b954a0f7b290aa332d023bea35aa72a6f",
+      "mediaType": "text/markdown",
+      "summary": "Three ideation signals are DONE: opaque workflow-owned classes, structural arbitrary-class proof, and a bounded WJ coordination seam; implementation remains held until WJ lands."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:shra0x0r2bf7ka0q1m4ft79a:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/ef47b876b68ec4e2007251d598c7ce2f3577784a/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:7c88e5d269b29cc8211a942f4a8e70aec9d97593ea1a204ce8707ccd1e62329a"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:shra0x0r2bf7ka0q1m4ft79a:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/ef47b876b68ec4e2007251d598c7ce2f3577784a/docs/specs/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d6a360a274cc024bbeb514cbe1b433e879d4debcc94529ef414212f99ced64eb"
+    }
+  ]
+}
