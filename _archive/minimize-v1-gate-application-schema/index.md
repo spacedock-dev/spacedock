@@ -1,10 +1,10 @@
 ---
 title: Minimize the unreleased v1 gate application schema
-status: validation
+status: done
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: production emits empty blockers but has no producer or demonstrated consumer for blockers, execution holds, or feedback payloads."
 started: 2026-08-01T14:01:07Z
-completed:
-verdict: rejected
+completed: 2026-08-03T12:14:30Z
+verdict: passed
 score: "0.9"
 worktree: .worktrees/spacedock-ensign-minimize-v1-gate-application-schema
 issue:
@@ -132,8 +132,9 @@ gates:
                 reason: Captain approved for merge when all required CI lanes are green.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 mod-block:
+archived: 2026-08-03T12:14:31Z
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
