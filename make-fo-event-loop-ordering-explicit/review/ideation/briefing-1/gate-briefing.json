@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ej9kwkvw94w6rh6n5ek7qrbf:ideation:attempt-1:revision-1",
+  "question": "Does the ideation establish an executable, falsifiable event-loop order that processes mod/PR and gate work before dispatch, performs one idle/reconcile retry after an empty result, and waits only for unresolved workers?",
+  "artifacts": [
+    {
+      "id": "artifact:ej9kwkvw94w6rh6n5ek7qrbf:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4d63448fd1bd4ae46a70c348b1644d53f219dd37/make-fo-event-loop-ordering-explicit.md",
+      "rev": "sha256:89b9bd1af8311ec8827fc4faf3bb6bbcac06294b92fa090309c5dc0f3da6d923",
+      "mediaType": "text/markdown",
+      "summary": "Ideation evidence: the report reproduces the false-stop trace, specifies ordered mod/PR and ready-gate handling before dispatch, one idle/reconcile retry, the Codex unresolved-worker wait predicate, and the keep-moving matrix without changing state or workflow schema."
+    }
+  ]
+}
