@@ -1,0 +1,80 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1",
+  "question": "Does this corrected plan deliver one portable common-journey surface after 3d and 15e without double-owning the AC2 repair?",
+  "artifacts": [
+    {
+      "id": "artifact:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/c95e740d13c4a7dcee110d8b8f8d7850c6a12009/deliver-portable-common-live-journey-surface.md",
+      "rev": "sha256:ad2e7645ed28da51944aa7da400b4d6a84244b61f205d301b363a57452450e86",
+      "mediaType": "text/markdown",
+      "summary": "The plan composes banked registry, entry-point, Pi, and journey-promotion evidence. It lands last, consumes 3d and 15e, removes only the AC2 standalone wrapper, and owns final selector, guard, guide, and registry migration."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/1d1bd2e7aa283573aa580d5df2f70b697e945249/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1:item-3",
+      "uri": "git-root://main/1d1bd2e7aa283573aa580d5df2f70b697e945249/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:fed8234cebf79aea61288adaacc884ba2c539ec216e030c04114da5262e4333c"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1:item-4",
+      "uri": "git-root://main/1d1bd2e7aa283573aa580d5df2f70b697e945249/docs/roadmap/live-test-truth/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e37bfeecfeccf129250a66b4b04d6aace1273b341f98494af044c8504a1776e6"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1:item-5",
+      "uri": "git-root://state/c95e740d13c4a7dcee110d8b8f8d7850c6a12009/_archive/bind-live-registry-to-source.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:bb429ebcc3ab5eaba14119215f6eb46a753e2be3bddf8ae319a59fec290e5391"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1:item-6",
+      "uri": "git-root://state/c95e740d13c4a7dcee110d8b8f8d7850c6a12009/_archive/converge-shared-live-suite-entrypoint.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9e4e83018bedd77310fb7eebb02f848ba5badeb6d0dbd405ef3ec98585798f25"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1:item-7",
+      "uri": "git-root://state/c95e740d13c4a7dcee110d8b8f8d7850c6a12009/_archive/add-pi-common-live-runner.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9d85a461f4cde87221d884c689f845ba8683b7c2f935b25d0bf32c44a99c6da1"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1:item-8",
+      "uri": "git-root://state/c95e740d13c4a7dcee110d8b8f8d7850c6a12009/_archive/promote-standalone-common-live-journeys.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:495692e623ca0680f7217d55662a9d9614bd96d5af9f9b36f2b4bf336135105c"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1:item-9",
+      "uri": "git-root://state/c95e740d13c4a7dcee110d8b8f8d7850c6a12009/make-live-test-results-truthful.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8e3f6b6e966ee91974bcad8ffa81b523a13d328fc44bcd32d81ff33869aa6b8c"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-3:revision-1:item-10",
+      "uri": "git-root://state/c95e740d13c4a7dcee110d8b8f8d7850c6a12009/make-live-lanes-buy-named-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4c84697a5ce844027d7acdfeae6adbb0d67302268761b81a5a3d3486575befce"
+    }
+  ]
+}
