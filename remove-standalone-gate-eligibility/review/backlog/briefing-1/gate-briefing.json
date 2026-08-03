@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:bv3hhbqr5spt1wn4557qyp8c:backlog:attempt-1:revision-1",
+  "question": "Should this sprint task enter ideation to remove only the public gate eligibility ceremony while preserving the private fail-closed authority predicate at consume and terminal delivery boundaries?",
+  "artifacts": [
+    {
+      "id": "artifact:bv3hhbqr5spt1wn4557qyp8c:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c4eac99931cd44a0a616c7d53c5f37d4b46d4346/remove-standalone-gate-eligibility.md",
+      "rev": "sha256:3d6e4e0ab6f0ed889cf964ececc64a83e225e3af281420fb73863ffc1a214090",
+      "mediaType": "text/markdown",
+      "summary": "Backlog seed and acceptance criteria define a v1 cut: remove the public eligibility command and its operator vocabulary, retain atomic internal guards, and prove the real lifecycle plus negative controls. The sprint index lists this boundary as a required outcome after the moving-target owner lands."
+    }
+  ]
+}

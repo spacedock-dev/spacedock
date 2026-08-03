@@ -8,6 +8,29 @@ group: gate-operator-ux
 milestone: 0.27.0
 sprint-readiness: ready
 id: bv3hhbqr5spt1wn4557qyp8c
+gates:
+    version: 1
+    records:
+        - id: gate:bv3hhbqr5spt1wn4557qyp8c:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:bv3hhbqr5spt1wn4557qyp8c-backlog-1
+              briefing:
+                id: briefing:bv3hhbqr5spt1wn4557qyp8c:backlog:attempt-1:revision-1
+                digest: sha256:4b936d38cb7ea50d8823bb73c50ef257b510d64736bf786950a32ff37c97ed58
+                request-digest: sha256:098a9a069ace77b1c9afdc1e0166bb33788841d7d2ea8f37e8b14f43f41def03
+                room-ref: ./remove-standalone-gate-eligibility/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:bv3hhbqr5spt1wn4557qyp8c:backlog:1
+                briefing: briefing:bv3hhbqr5spt1wn4557qyp8c:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-03T23:30:19.040582Z"
+                decision: approve
+                reason: Captain directed dispatch of the next ideation; latest recorded SO concurrence places bv after g3 and preserves the private fail-closed predicate while removing only the public eligibility ceremony.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Outcome
