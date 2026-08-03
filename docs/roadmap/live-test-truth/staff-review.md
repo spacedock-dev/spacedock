@@ -31,6 +31,17 @@
 | Archive paths must preserve spike evidence. | Material | Fixed | Fresh gate references use the 12 `_archive` reports. |
 | The quiet-budget values appeared inconsistent. | Material | Fixed | `3d` names the 60-second product value and the 30-second probe value separately. |
 
+## What held under refutation
+
+- All eight DoD bullets have owners. Bullets 1 and 3 belong to `ys`. Bullets 4 and 5 belong to `15e`. Bullet 6 splits between `15e` (controls and metrics) and `3d` (liveness). Bullet 2 splits between `ys` and deferred `rm`. Bullets 7 and 8 belong to the Commander drive and every member test plan.
+- The landing order `3d`, then `15e`, then `ys` serializes every shared surface: the live CI guide, the workflow and release guards, and the Codex runner files.
+- No member body counts the planned SSOT link, SHA, or guard as current evidence.
+- The index, registry, entity state, and archive are committed and published. A cold checkout reproduces every review input.
+
+## Note for the Commander package
+
+Archived members do not resolve through `status --resolve`. The package must cite absorbed design inputs by path. The annotation grammar lives at `docs/dev/.spacedock-state/_archive/bind-live-registry-to-source.md`.
+
 ## Remaining release dependency
 
 `rm` remains deferred and release-blocking. If its upstream product repairs miss `v0.27.0`, the Captain must move the train or change the release bar.
