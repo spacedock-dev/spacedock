@@ -108,3 +108,16 @@ Ironically, `recordedGateLiveObservation` already derives `resolutionID` correct
 ## Out of scope
 
 Any change to the actual gate/dispatch mechanics, `--stamp`, or `--consume` -- confirmed correct. This is a test/grader-only fix.
+
+## Stage Report: implementation
+
+- DONE: Make recorded-gate phase matching line-anchored and ignore exact `--help` probes for prepare, record, and consume, so read-only discovery cannot poison ordered/consumed detection.
+  Code commit `48f001276` adds `recordedGatePhaseAt`/`recordedGateHelpProbe` and a focused phase-order regression, plus an end-to-end replay with all three phase help probes.
+- DONE: Derive the close pickaxe from the post-state Resolution ID instead of the chat-only literal, allowing provider-authored room-backed Resolution IDs while retaining classic chat close behavior.
+  `TestRecordedGateCommittedBeforeDispatchResolutionPaths` exercises both room-backed and classic closes through consumed state and dispatch ancestry.
+- DONE: Preserve gate and dispatch mechanics; changes are confined to `internal/ensigncycle/recorded_gate_lifecycle_test.go` and add no product command behavior.
+- DONE: Run focused regressions and the complete ensigncycle package suite. Focused rows passed; `go test ./internal/ensigncycle -count=1` passed (105.234s).
+
+### Summary
+
+The recorded-gate grader now ignores harmless help probes when detecting ordered lifecycle phases and recognizes the actual Resolution ID written by either the room-backed or classic close path. Focused regressions cover all three help probes and both close mechanisms; the complete ensigncycle test package is green. Gate and dispatch implementation code remains unchanged.
