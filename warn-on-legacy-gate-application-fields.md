@@ -1,6 +1,6 @@
 ---
 title: Warn on legacy gate application fields
-status: implementation
+status: validation
 source: "Captain directive 2026-08-03: unknown keys in the exact gate application mapping must warn, not fail the state read."
 score: "1.0"
 sprint: durable-decisions
