@@ -31,6 +31,7 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+started: 2026-08-03T11:22:01Z
 ---
 
 `internal/livescenario/ac2_reanchor.go` stays green when the deliverable clause it exists to verify is deleted — a committed live check that cannot fail (verified pre-tag major in the archived entity). The archived owner was merged into ac2-design-proof-fixture, which was itself archived into the check-ordering task's lure catalog carrying only the reviewer-side fixture; the Go-scenario repair vanished from every sprint document while the file stayed on disk. Repair: drive the scenario both ways (correct and incorrect FO behavior) asserting divergent durable state, proven RED-first against the clause-removed deliverable — the archived entity's test plan, unchanged. Next train; not part of 0260 (captain decision, staff-review round: 0.26.0 ships with this known and recorded, not silently).
