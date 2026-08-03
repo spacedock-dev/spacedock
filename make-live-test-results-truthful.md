@@ -59,6 +59,17 @@ gates:
                 digest: sha256:300b09a445442cb7cb7d61b8a707479749a9bd9acd8110a0bb3216de1f9311e9
                 request-digest: sha256:2e880d7988a60bb97bfc6b6b99d08809dcd17978300082a782846d08b6a123c7
                 room-ref: ./make-live-test-results-truthful/review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3d2rqxrgvqky085mn170x3zp:ideation:3
+                briefing: briefing:3d2rqxrgvqky085mn170x3zp:ideation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-03T14:45:21.039996Z"
+                decision: approve
+                reason: Approved after staff review. Land truthful live-result oracles first.
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-03T12:19:34Z
 ---
 
