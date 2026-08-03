@@ -168,9 +168,9 @@ front-door smoke. This direction avoids a duplicate live run.
   the drivable query, and this index records the real goal, scope, and DoD.
 - [x] **Ideate each gated member** — exercise the riskiest mechanism first and do
   not re-ideate an already banked design.
-- [ ] **Preflight staff review** — one fresh independent reviewer checks sprint-wide
+- [x] **Preflight staff review** — Fable checked sprint-wide
   DoD ownership, sequencing, collisions, blast radius, missing scope, and Commander
-  cold-boot readiness.
+  cold-boot readiness. Both rounds and their folds are in `staff-review.md`.
 - [ ] **Present ideation gates** — checklist accounting and AC cross-check per
   task. The captain decides.
 - [ ] **Package** — write `dispatch-sprint-execution.md` for a cold-booted Commander.
@@ -187,6 +187,6 @@ front-door smoke. This direction avoids a duplicate live run.
 
 ## Status
 
-**Shaping — ideation complete. Preflight review in progress.** Registry semantics,
+**Shaping — ideation and preflight review complete.** Registry semantics,
 the three outcome members, the `v0.27.0` target, and deferred member `rm` are durable.
-The Fable review hygiene fold, captain gates, and the Commander package remain open.
+Captain gates and the Commander package remain open.
