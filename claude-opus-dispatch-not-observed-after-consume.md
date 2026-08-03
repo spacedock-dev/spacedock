@@ -98,7 +98,7 @@ gates:
                 target-stage: done
                 state: pending
                 blockers: []
-mod-block:
+mod-block: merge:pr-merge
 ---
 
 `assertRecordedGateLifecycle` (internal/ensigncycle/recorded_gate_lifecycle_test.go:121) collapses `!o.dispatch.ordered || !o.dispatch.committed` into one error string ("successor dispatch was not observed after consume"), so two unrelated bugs in how `ordered`/`committed` get computed both surface identically. Both are one-line fixes.
