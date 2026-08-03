@@ -161,3 +161,24 @@ The recorded-gate grader now ignores harmless help probes when detecting ordered
 ### Summary
 
 Validation passes all three acceptance criteria. Help probes for prepare, record, and consume no longer poison ordered detection; room-backed and classic closes both resolve committed detection through the actual Resolution ID; and focused, full, and race ensigncycle suites are green on the exact candidate.
+
+## Stage Report: implementation (actor correction)
+
+- DONE: Derive the expected approval actor from the first successful close command while retaining `agent:first-officer` as the default for synthetic observations. Room-backed `gate record --room` resolves to `person:captain`; chat `--actor` values are validated and matched exactly at the YAML line boundary.
+  Code commit `206a4737c` updates only `internal/ensigncycle/recorded_gate_lifecycle_test.go`; the existing help-probe and Resolution-ID fixes remain intact.
+- DONE: Add the reviewed room-backed consumed lifecycle regression and preserve classic actor-swap protection.
+  `TestRecordedGateCommittedBeforeDispatchResolutionPaths/room-backed` now executes `gate record --room ... --consume`, then uses the shared full lifecycle assertion (with provider reason optional), exact actor checks, and `gates.Read` durable actor verification. `TestRecordedGateLifecycleProvenanceMutants` retains the classic actor-swap mutant and adds a forged actor-suffix mutant.
+- DONE: Run focused, full, race, and exact live Codex evidence for the corrected candidate.
+  Focused actor/room/classic rows passed; `go test ./internal/ensigncycle -count=1` passed in 186.391s; `go test ./internal/ensigncycle -race -count=1` passed in 191.068s; exact `go test -tags live ./internal/ensigncycle -run '^TestLiveCodexSharedScenarios$/recorded-gate-lifecycle$' -count=1 -timeout=20m` passed in 250.915s.
+
+### Summary
+
+The grader now derives and exact-matches the expected approval actor from the successful close mode, so room-backed captain approvals no longer fail on a hardcoded First Officer identity. The room-backed `--consume` path is covered through full lifecycle, durable-state, and dispatch ancestry checks; classic actor and forged-actor negatives remain load-bearing. All local, race, and exact live Codex checks passed, with no gate or dispatch mechanics changed.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Apply the authorized actor-oracle correction. `206a4737c` derives the expected approval actor from the successful close mode: room-backed close uses `person:captain`, an explicit chat `--actor` is validated and matched exactly, and synthetic observations default to `agent:first-officer`. The existing help-probe exclusions and post-state Resolution-ID pickaxe remain intact.
+- DONE: Preserve the room-backed consumed lifecycle as a full assertion and retain actor-swap protection. The room-backed `gate record --room ... --consume` regression uses the shared full lifecycle assertion, including durable state and dispatch ancestry; the classic actor-swap negative remains load-bearing (with forged actor-suffix coverage retained).
+- DONE: Preserve test-only scope. `206a4737c` changes only `internal/ensigncycle/recorded_gate_lifecycle_test.go`; gate and dispatch mechanics are unchanged.
+- DONE: Evidence is green for the corrected candidate. Focused actor/room/classic regressions passed; `go test ./internal/ensigncycle -count=1` passed in 186.391s; `go test ./internal/ensigncycle -race -count=1` passed in 191.068s; exact `go test -tags live ./internal/ensigncycle -run '^TestLiveCodexSharedScenarios$/recorded-gate-lifecycle$' -count=1 -timeout=20m` passed in 250.915s.
+- CHECKLIST OUTCOME: 3 DONE, 0 FAILED, 0 SKIPPED.
