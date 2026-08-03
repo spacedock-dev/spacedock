@@ -32,28 +32,141 @@ gates:
 started: 2026-08-03T02:00:11Z
 ---
 
-The gate parser must accept the non-material finding classes that the workflow contract declares.
+Generic correction-round recording must preserve workflow-owned finding content without
+predefining or restricting its class vocabulary.
 
 ## Problem
 
-The workflow defines `deferred-risk` and `polish`, but the parser accepts only `correct-but-disproportionate` for a decline. A valid documented disposition therefore fails as invalid.
+The generic correction-round recorder currently recognizes the development workflow's
+`correct-but-disproportionate` decline grammar. The active workflow instead declares
+Material, Deferred risk, Polish, and Needs decision, and another workflow may declare a
+different taxonomy. A generic allowlist therefore rejects structurally valid workflow
+content and gives the launcher policy authority that belongs to the workflow.
+
+## End value
+
+Any workflow can retain an arbitrary well-formed finding class and disposition in a
+correction-round Annotation without teaching generic gate code that vocabulary. The
+retained log remains byte-exact and subject to the recorder's workflow-neutral integrity
+checks.
 
 ## Proposed approach
 
-Align the parser with the declared class vocabulary. Keep materiality rules in the workflow. Add command and parser tests for every declared class and for malformed dispositions.
+Land this task after WJ (`cut-workflow-specific-round-recorder-from-v1`). WJ owns deletion
+of `declineDispositionRE`, `dispositionKind`, `classifyCompletedRound`, actor/taxonomy
+judgments, and the development-specific projection path. This task does not repeat or
+partially reimplement that deletion.
+
+Add one package-level round-recorder regression. Starting from the existing structurally
+valid fixture, give an Annotation a deliberately workflow-foreign body such as
+`class: orbital-debt; disposition: carry-until-reentry; basis: workflow-local policy`.
+Record the round, validate it through the retained round API, and compare the retained
+`briefing.review.jsonl` with the supplied bytes. Then attempt a divergent replay whose
+only change is the opaque class/disposition body; it must fail and leave the retained
+room and entity byte-identical.
+
+The arbitrary token is test-owned input, not a production constant. The test therefore
+fails if generic code later restores an allowlist for the development classes or parses
+workflow body semantics.
+
+## Explicit no-allowlist decision
+
+Generic gate code has no finding-class or disposition allowlist. It does not enumerate
+`deferred-risk`, `polish`, `correct-but-disproportionate`, the test's `orbital-debt`, or
+any other workflow label. Adding declared classes to the existing regular expression,
+moving the list to another generic table, or accepting an extensible registry in the
+round command is explicitly rejected: each alternative still makes generic code the
+taxonomy owner.
+
+## Semantic boundaries
+
+- Command grammar: unchanged by this task; WJ's neutral `gate record --round` and
+  `gate validate --round` surfaces are the prerequisite baseline.
+- Stored formats: unchanged. `review-round` and the canonical two-file room remain, and
+  the exact supplied Briefing and JSONL bytes remain immutable.
+- Authority: workflow policy alone defines class names, materiality, required evidence,
+  and disposition meaning. Generic code owns only record structure and integrity.
+- Runtime validation retained: valid JSONL shape, unique and ordered identities,
+  attribution, same-Briefing association, backward `includes` references, canonical
+  Briefing/artifact binding, derived room shape, pointer consistency, and immutable
+  replay behavior.
+- Runtime validation forbidden: interpreting Annotation body fields, class labels,
+  disposition labels, rationale vocabulary, promotion rules, or workflow actor roles.
+- No workflow, skill, schema, command-output, host adapter, or binding-gate behavior is
+  changed by this task. WJ owns its already-approved contract and documentation edits.
+
+## Expected surface and tolerance
+
+Expected implementation surface: exactly one file, `internal/gates/round_test.go`, with
+35-70 inserted lines and at most 10 deleted lines, reusing the existing advisory-round
+fixture and byte-tree helpers.
+
+Tolerance: still exactly one file, at most 100 insertions and 20 deletions for fixture
+adaptation. Any production-code change, documentation or skill edit, second file, or
+change to command grammar, stored format, authority, or runtime behavior requires a
+design reset. WJ's implementation must be merged first; an implementation worker must
+not make this regression pass by deleting or modifying the parser itself.
+
+## Mechanism and alternatives
+
+The dedicated record/validate/divergent-replay regression serves AC-1 by exercising the
+supported producer and observing disk bytes. Merely adding `deferred-risk` and `polish`
+to the old regex is simpler locally but cannot deliver the end value because the next
+workflow-defined class fails. Relying only on WJ's deletion inventory is also
+insufficient: zero named development tokens does not prove that an arbitrary body can
+traverse record, persistence, and validation unchanged.
+
+No spike needed. Existing tests already prove the neutral producer, exact replay,
+divergent replay refusal, and byte-clean failure helpers; WJ's approved design retains
+those mechanisms. This task combines those proven paths with workflow-foreign body data
+instead of introducing a mechanism.
 
 ## Out of scope
 
-Do not change finding ownership, materiality policy, or the review-round storage model.
+Parser deletion and generic-policy cleanup (WJ); changes to the development taxonomy;
+classification or authorization policy; Feedback Cycles projection; round storage;
+binding gate behavior; CLI output; migrations; registries; and compatibility modes are
+out of scope.
 
 ## Acceptance criteria
 
-**AC-1 - Every declared non-material class parses as a valid decline disposition.**
-Verified by: parser and CLI tests that submit `deferred-risk`, `polish`, and `correct-but-disproportionate` records and assert successful validation.
+**AC-1 - A structurally valid correction round with an arbitrary workflow-owned finding class records and validates without generic taxonomy knowledge, while preserving the exact supplied log bytes.**
 
-**AC-2 - Invalid class names remain rejected.**
-Verified by: a negative parser test that changes one class name to an undeclared value and asserts the existing invalid-disposition error.
+Verified by: the new round test supplies `orbital-debt` (a label absent from production
+vocabulary), records and validates successfully, and byte-compares the retained JSONL
+with the independent input. Replacing opaque acceptance with any class allowlist makes
+the positive control fail.
+
+**AC-2 - Opaque workflow content does not weaken structural identity, association, reference, or immutability checks.**
+
+Verified by: the same regression changes only the already-retained opaque body and
+attempts a replay; the operation must fail and the entity plus retained room must remain
+byte-identical. Existing round tests continue to reject malformed JSONL, duplicate or
+forward identities, cross-Briefing records, invalid `includes`, bad room shape, and
+changed retained bytes. Removing one of those guards or permitting the divergent replay
+falsifies AC-2.
 
 ## Test plan
 
-Run focused parser and CLI tests. Run `go test ./...` for the full suite.
+After WJ is merged, add the focused fixture-backed regression in
+`internal/gates/round_test.go`. Run its positive record/validate control and its
+divergent-replay negative control together; the observable proof is exit/error behavior
+plus resulting on-disk bytes, not source inspection. Then run `gofmt -w ./cmd ./internal`,
+`go test ./...`, and `go test ./... -race`. Estimated complexity is low: one Go test
+file, no new fixture file, no CLI fixture, and no live workflow/host run because command
+and runtime-host semantics do not change.
+
+## Stage Report: ideation
+
+- DONE: Flesh out the opaque workflow-owned finding-class design and remove the generic allowlist target.
+  The design explicitly rejects all generic allowlists/registries and assigns taxonomy semantics solely to workflow policy, with WJ owning parser deletion.
+- DONE: Rewrite the entity acceptance criteria and test plan around structural acceptance of arbitrary well-formed classes.
+  AC-1 uses a production-foreign class and exact disk bytes; AC-2 couples it to a divergent-replay refusal and the existing structural failure suite.
+- DONE: Record the expected surface, tolerance, semantic boundaries, and WJ coordination seam.
+  The follow-on is capped at one test file and 100 insertions/20 deletions, requires WJ first, and forbids production, format, command, authority, and host changes.
+
+### Summary
+
+Reframed the task from expanding a generic class parser to pinning workflow ownership
+with a falsifiable opaque-body regression. The bounded follow-on adds only a round test;
+WJ remains the sole owner of parser deletion and shared contract updates.
