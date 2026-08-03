@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:jympnaf11wg4qmd4z85a3ayv:backlog:attempt-1:revision-1",
+  "question": "Approve the bounded compatibility change that treats only legacy application.action and application.blockers as warnings while preserving strict errors for all other unknown or invalid gate fields?",
+  "artifacts": [
+    {
+      "id": "artifact:jympnaf11wg4qmd4z85a3ayv:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d5d9102831e4bf40551bd49343c4aaa8d237790e/warn-on-legacy-gate-application-fields.md",
+      "rev": "sha256:492b8fa39947144be414174b30e577f90b064c7ba3e8601bafc01f6f653da131",
+      "mediaType": "text/markdown",
+      "summary": "Retain canonical target-stage/state parsing, sanitize only a deep decode copy at the exact application path, return deterministic structured warnings, preserve original bytes for CAS/write, and show warnings only on explicit status --validate and gate validate; do not broaden compatibility."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:jympnaf11wg4qmd4z85a3ayv:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f2e11fede65219e037397655460173d53735ad39/internal/gates/io.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:321d676b4695757ab2ba4a4ae4c5aa9b494a63c347dc58785e8ed1e91322c9f3"
+    }
+  ]
+}

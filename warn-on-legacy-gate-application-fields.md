@@ -5,6 +5,18 @@ source: "Captain directive 2026-08-03: legacy application.action and application
 score: "1.0"
 sprint: durable-decisions
 id: jympnaf11wg4qmd4z85a3ayv
+gates:
+    version: 1
+    records:
+        - id: gate:jympnaf11wg4qmd4z85a3ayv:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:jympnaf11wg4qmd4z85a3ayv-backlog-1
+              briefing:
+                id: briefing:jympnaf11wg4qmd4z85a3ayv:backlog:attempt-1:revision-1
+                digest: sha256:899a41fbeb26148c4e30be8a8fbe36c8c18fde57e87823e09a3f772a843a0a68
+                request-digest: sha256:612e30cdf011456f2204d8c05c092a8213f074722a427806282324bb35215dd8
+                room-ref: ./warn-on-legacy-gate-application-fields/review/backlog/briefing-1
 ---
 
 Legacy state written before the v1 application-schema cut can contain `application.action` and `application.blockers`. The canonical gate reader currently rejects that state before it can expose the valid `target-stage` and `state` fields.
