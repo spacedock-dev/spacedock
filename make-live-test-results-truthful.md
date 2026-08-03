@@ -313,3 +313,7 @@ The plan combines the proved AC2 gate oracle with a proved Codex JSONL reset pat
 ### Summary
 
 Wrong AC decisions now fail on durable state, while healthy Codex JSONL progress resets one shared quiet budget. The implementation preserves one-process execution, actionable stall artifacts, and the 40-minute suite backstop.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — detached validation/First Officer; surface 9 files/571 changed LOC vs estimate 9 files/492 changed LOC (116%); AC unchanged. Material task-owned AC-1 evidence defect: the partial oracle accepted malformed gate state and an older `revise` that masked a later `approve`. FO disposition: fix. Replace the partial parser and synthetic action with canonical complete-record validation plus the workflow-derived `feedback-to` route; retain malformed, duplicate-record, later-approve, wrong-route, wrong-decision, and unchanged-state negatives. The authorized correction remains within the approved nine-file +401/-201 tolerance. The separate seven-path current manifest drift is outside 3d and snapshot substitution does not count as canonical full-suite evidence.
