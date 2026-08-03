@@ -1,6 +1,6 @@
 ---
 title: Accept all declared non-material finding classes
-status: backlog
+status: ideation
 source: "Captain-approved local task from debrief issue 2, 2026-08-02"
 score: 0.7
 worktree:
@@ -28,7 +28,7 @@ gates:
                 reason: Captain approves the corrected opaque workflow-owned finding-class direction; enter ideation to rewrite the task body, ACs, and test plan.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 The gate parser must accept the non-material finding classes that the workflow contract declares.
