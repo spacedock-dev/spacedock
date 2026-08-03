@@ -560,3 +560,155 @@ six absent shared-state manifests (`bind-post-rework-briefing-at-rejection-regat
 `status-pagination-and-default-sorting.md`, and
 `status-where-robust-and-discoverable.md`); registered Claude/Codex/Pi live lanes were
 skipped because this worktree had no live-lane authorization.
+
+## Stage Report: validation
+
+- DONE: Re-validated the implementation at exact code HEAD
+  `f35436e0a7526ebf5aeeb9e3adaa1b9da4c951ea` (`status: surface cold gated report
+  preparation`, parent `11308c81662b8399731811370207e858e3279552`). The code worktree
+  was clean before and after validation. The implementation patch remains the same
+  13-file, +227/-22 surface described above. The required dependency tips are all
+  ancestors of this HEAD: s4 `acae980fc145e624d9e04e7ec9f7fdb599585f6e`, gqs
+  `cb01129b6325f7af646363785c24ef69e8bd16bd`, and 0m6
+  `9881639697d1af391133c9ecf4111fd1673f537c`. `git merge-base HEAD origin/main` is
+  `20cfc809a7342b2428509c76ddd6e91423db39b7`.
+
+- DONE: Audited changed-surface drift after the implementation report. The exact
+  `origin/main...HEAD` range is 16 files, +801/-27: the same 13 implementation files
+  (+227/-22) plus three pre-existing registry/design documents from the rebased
+  parents (`docs/roadmap/durable-decisions/index.md`,
+  `docs/roadmap/live-test-truth/index.md`, and `docs/runtime-live-ci-registry.md`).
+  Those three files came from `11308c816`/`46e78e3fd`; validation added no code,
+  command, schema, parser, scheduler, runner, or owner surface.
+
+- DONE: Re-ran the focused acceptance and owner suites. All passed:
+  `go test ./internal/status -run 'TestGateReadiness|TestBootIdentifyReadyGates|TestStatusProjectsSharedGateReadinessReducer|TestEnteredStage' -count=1`,
+  `go test ./internal/gates -run 'TestCurrentStageReadiness|TestPrepare|TestWithdraw' -count=1`,
+  `go test ./internal/ensigncycle -run 'TestRecordedGateLifecycle|TestRecordedGateReview' -count=1`,
+  `go test ./internal/status -count=1`, and
+  `go test ./internal/contractlint -count=1`. The focused status and gates runs
+  cover absent and prior-stage authority promotion, path-clean committed reports,
+  dirty/malformed rejection, selected open/withdrawn/closed authority, approved
+  pending advance/merge, feedback/hold/consumed/superseded/not-applicable, ordinary
+  and terminal stages, and invalid topology.
+
+- DONE: Re-ran the semantic adversarial matrix against production reducers and the
+  existing lifecycle oracles. These all passed: status matrix (`TestGate*`,
+  `TestBootIdentifyReadyGates`, `TestStatusProjectsSharedGateReadinessReducer`,
+  `TestEnteredStage`, and default-stage controls); gates matrix
+  (`TestCurrentStageReadiness*`, withdrawal/prepare/replay/refusal, eligibility,
+  record/consume, round, duplicate/prototype/digest fail-closed controls); and
+  recorded-gate matrix (`TestRecordedGateLifecycleRealCLIReplay`,
+  `EnteredStageRecoveryMatrix`, `AC5RefusalMatrix`, `AC7ResumeMatrix`,
+  `ProvenanceMutants`, `MissingEventControls`, `TerminalConsumeHasNoDispatchableSuccessor`,
+  `CollapsedConsumeTrace`, and gate assertion controls). The structural-pass,
+  semantic-veto obligation remains judgment-owned by the FO route; the tests and
+  skill contract require one concrete `report-incomplete:` stop with zero prepare,
+  legacy bind, mutation, presentation, idle, or repeat-next effects. No live claim
+  is made for a semantic-veto prose judgment that the existing lanes do not execute.
+
+- DONE: Re-validated the machine envelope. The cold split-root fixture's exact
+  `--next --json` contract is one object with ordered keys
+  `command`, `dispatchable`, `ready_gates`; absent/prior candidates have an empty
+  dispatchable array and one four-key `needs-preparation` row. The retained Claude
+  boot read from the real recorded-gate fixture emitted this exact candidate row
+  (the boot envelope also carries definition/stage metadata):
+
+  ```json
+  {"id":"recorded-gate-task","slug":"recorded-gate-task","current":"validation","readiness":"needs-preparation"}
+  ```
+
+  The retained Codex post-consume scheduler read emitted the corresponding exact
+  next envelope (the lower-priority non-gate row remains in `dispatchable` and the
+  gate array is empty after consumption):
+
+  ```json
+  {"command":"next","dispatchable":[{"id":"recorded-gate-task","slug":"recorded-gate-task","current":"handoff","next":"handoff","worktree":"no"}],"ready_gates":[]}
+  ```
+
+  The direct current-workflow read also returned the same ordered envelope with an
+  empty `dispatchable` array and the ordered canonical `ready_gates` rows; no human
+  `--next` output changed.
+
+- FAILED: Complete offline and race suites are red only at the pre-existing shared
+  state manifest oracle. `go test ./...` and `go test ./... -race` reached every
+  package; all packages pass except
+  `internal/gates/TestV1PilotManifestReadsAndValidates`. The six historical paths
+  named in the implementation report remain absent:
+  `bind-post-rework-briefing-at-rejection-regate.md`,
+  `collapse-gate-approval-ceremony/index.md`,
+  `minimize-v1-gate-application-schema/index.md`,
+  `shared-git-scaffold-helper.md`, `status-pagination-and-default-sorting.md`, and
+  `status-where-robust-and-discoverable.md`. The current run also reports
+  `cut-workflow-specific-round-recorder-from-v1/index.md`, which was archived by
+  pre-existing state commit `2987a085c` at 2026-08-03 22:48:45 +0800, after the
+  implementation HEAD and its six-path report. All seven are absent from the
+  active state root but present under `_archive`; no unrelated fixture was edited.
+
+- DONE: Formatting and contract checks passed after the full runs:
+  `gofmt -w ./cmd ./internal` (no code diff), `git diff --check`, and
+  `go test ./internal/contractlint -count=1`. The final code worktree remained
+  clean.
+
+- DONE: Ran the registered live validation lanes and preserved retained evidence.
+  Runtime access was available; no lane was labeled green when it skipped:
+
+  - Claude Sonnet: exit 0, **SKIPPED** by
+    `TODO(w5bfnrvpcphw857nzz93340c): Sonnet must reliably render the exact selected
+    Briefing digest before re-enabling this journey`.
+  - Claude Opus (`SPACEDOCK_LIVE_MODEL=claude-opus-4-8`): **PASS** on the initial
+    run (372.58s) and on a retained-artifact rerun (415.43s).
+  - Codex: **PASS** on the initial run (228.28s) and on a retained-artifact rerun
+    (223.57s). The retained JSONL setup records source HEAD
+    `f35436e0a7526ebf5aeeb9e3adaa1b9da4c951ea`.
+  - Pi recorded-gate lifecycle: exit 0, **SKIPPED** by
+    `TODO(9w59t6m1qc46hccd54p04z2j): delegated gate presentation-to-application/dispatch
+    is unreliable`; `TestPiSharedScenarioCoverage` and
+    `TestSharedScenarioRunnerCoverage` passed. No lane was unauthorized or
+    falsely promoted to green.
+
+  Retained artifacts are under
+  `/tmp/spacedock-gate-agent-ergonomics-validation-live-20260804/` (outside both
+  worktrees). Claude hashes: `claude-stream.jsonl`
+  `d433b8e2b45f2f5c034c5d523a380f1f55e12f33123fdc800a81eb2460953cf4`,
+  `command.log` `799ab8e82eec1482e7739fe18353a584c6904ae746d7cec28bc06d765f4b347d`,
+  and `claude-final-message.txt`
+  `06048e85f611b967d0742f5f968d1af9722e12f418544445c4e65550454f4aff`.
+  Codex hashes: `codex-exec.jsonl`
+  `be4aa028fcc047358907495faa748f63022646cf8de5421b911d1f9bdb239039`,
+  `codex-exec.stderr.txt`
+  `29d3053d2febe6c9fd03e6b014411b0fc67e2955964bec88842a6423397562dd`,
+  `codex-final-message.txt`
+  `6bce962d9aeb351b251d7cb8ef2371f9762a6da22bbc2f192412a9d7328cdff0`, and
+  `codex-process-result.txt`
+  `9b914c6b416c41418dd833bc079d8b02b398ed0baa492bfe13cfaddc65a74782`.
+  The live artifacts show one cold `needs-preparation` boot row, exactly one
+  `gate prepare`, one binding commit, one approval/consume path, and one committed
+  successor dispatch for each green host; the semantic-veto and post-idle-created
+  gate controls remain offline/prose-owned as stated above.
+
+### Completion checklist accounting
+
+1. **DONE — exact-head revalidation.** Acceptance criteria, focused status/gates
+   suites, exact machine envelopes, semantic matrix, dependency ancestry, and
+   changed-surface drift are recorded above for `f35436e0a`.
+2. **FAILED — complete offline/race suites; DONE — formatting and contract checks.**
+   The only failure is the seven absent active-state manifest paths described above;
+   no implementation or unrelated state fixture changed.
+3. **DONE — registered live lanes executed and classified.** Opus and Codex passed
+   with retained artifacts; Sonnet and Pi were explicit TODO skips, not green proof.
+
+Checklist totals: 3 top-level items — 2 DONE and 1 FAILED due to the pre-existing
+shared-state manifest environment; live subcheck totals are 2 PASS, 2 SKIPPED, and
+0 unauthorized.
+
+### Summary
+
+Validation confirms the exact-head readiness projection, canonical scheduler
+envelope, fail-closed owner matrix, and green Opus/Codex recorded-gate lifecycle.
+The complete offline and race commands remain red only because the shared state
+checkout lacks six historical active manifests plus one entity archived after the
+implementation report; this validation did not restore or edit those fixtures.
+Sonnet and Pi remain explicit quarantined skips, while retained Opus/Codex artifacts
+provide durable live evidence at the path and hashes above. The entity remains at the
+Captain's validation gate for final review.
