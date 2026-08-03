@@ -406,3 +406,5 @@ Checklist counts: DONE 6; SKIPPED 0; FAILED 0.
 ### Validation recommendation (fresh NTH tip)
 
 PASSED. The exact candidate reproduces AC-1 through AC-4 with focused, immutable full/race, formatting, diff, and scope evidence. The only unpinned failure is the disclosed four-path archival drift in the shared state checkout. Do not consume or recreate terminal approval; the next First Officer action is a fresh gate and Captain approval.
+
+Post-report live-state note: concurrent state commits `596c23d1f` and `de6bf2964` archived `status-where-robust-and-discoverable.md` after the recorded four-path run. A fresh unpinned manifest check therefore reports five path-missing entries (the prior four plus that path); this is shared-state archival drift and does not change the immutable `812b7a47e` proof or the candidate result.
