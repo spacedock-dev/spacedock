@@ -71,6 +71,17 @@ gates:
                 digest: sha256:85b204e0e6998ea11c2b57adf84408b4dc442d634bae75087aeae967d57b7dac
                 request-digest: sha256:53dbff1fcab6fea02fa1be14db08ac6e05e56c176b17e08b235c326b4708c7a9
                 room-ref: ./warn-on-legacy-gate-application-fields/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:jympnaf11wg4qmd4z85a3ayv:validation:1
+                briefing: briefing:jympnaf11wg4qmd4z85a3ayv:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T15:19:34.052215Z"
+                decision: approve
+                reason: 'Captain-approved validation: SO concurs. HEAD 8a001a522 verifies the exact application warning boundary; focused suites pass and the seven pilot-manifest omissions are pre-existing environment paths.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-03T13:53:46Z
 worktree: .worktrees/spacedock-ensign-warn-on-legacy-gate-application-fields
 ---
