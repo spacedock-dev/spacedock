@@ -1,11 +1,11 @@
 ---
 id: 5n4k6djrq8gtvd54zg9s6zhs
 title: recorded-gate-lifecycle grader has two unrelated bugs that both produce "successor dispatch not observed after consume"
-status: validation
+status: done
 source: "Originally filed 2026-08-02 as an opus-specific, root-cause-unknown candidate flake (TestLiveClaudeSharedScenarios/recorded-gate-lifecycle, PR #600 run 30754109029 job 91513297850). Amended 2026-08-03 after a dedicated diagnostic (opus, high effort) root-caused it with a local repro: the same error string is produced by TWO distinct, deterministic one-line grader bugs in internal/ensigncycle/recorded_gate_lifecycle_test.go, not live-model nondeterminism. Confirmed recurring on a second, independent instance: codex-live hit the identical error string on PR #600's rerun (run 30754109029, job 91518827444) via the SECOND bug below, proving this is not opus-specific. Classification: test-defect, high confidence (opus reproduced locally; codex confirmed from live stdout). Captain directed: file/amend based on the classification workflow's findings."
 started: 2026-08-03T05:32:35Z
-completed:
-verdict:
+completed: 2026-08-03T12:26:14Z
+verdict: passed
 score: 0.5
 worktree: .worktrees/spacedock-ensign-claude-opus-dispatch-not-observed-after-consume
 issue:
@@ -96,10 +96,11 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:602
+archived: 2026-08-03T12:26:15Z
 ---
 
 `assertRecordedGateLifecycle` (internal/ensigncycle/recorded_gate_lifecycle_test.go:121) collapses `!o.dispatch.ordered || !o.dispatch.committed` into one error string ("successor dispatch was not observed after consume"), so two unrelated bugs in how `ordered`/`committed` get computed both surface identically. Both are one-line fixes.
