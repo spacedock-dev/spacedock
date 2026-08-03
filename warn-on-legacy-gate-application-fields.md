@@ -62,6 +62,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:jympnaf11wg4qmd4z85a3ayv:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:jympnaf11wg4qmd4z85a3ayv-validation-1
+              briefing:
+                id: briefing:jympnaf11wg4qmd4z85a3ayv:validation:attempt-1:revision-1
+                digest: sha256:85b204e0e6998ea11c2b57adf84408b4dc442d634bae75087aeae967d57b7dac
+                request-digest: sha256:53dbff1fcab6fea02fa1be14db08ac6e05e56c176b17e08b235c326b4708c7a9
+                room-ref: ./warn-on-legacy-gate-application-fields/review/validation/briefing-1
 started: 2026-08-03T13:53:46Z
 worktree: .worktrees/spacedock-ensign-warn-on-legacy-gate-application-fields
 ---

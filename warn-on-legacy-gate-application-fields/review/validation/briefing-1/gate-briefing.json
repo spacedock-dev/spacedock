@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:jympnaf11wg4qmd4z85a3ayv:validation:attempt-1:revision-1",
+  "question": "Does the rebased implementation satisfy the approved warning-only exact-application boundary and strict negatives?",
+  "artifacts": [
+    {
+      "id": "artifact:jympnaf11wg4qmd4z85a3ayv:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/23f07a6680395ded19d7708ee7d45fcdf35e5856/warn-on-legacy-gate-application-fields.md",
+      "rev": "sha256:dc9ff16d4590c62efa392562cc452eeffc81e253e0a0fe0843ca5c8d1e7527e5",
+      "mediaType": "text/markdown",
+      "summary": "Validation at 8a001a522 passes focused suites and formatting; full and race suites have only seven pre-existing pilot-manifest state-path omissions."
+    }
+  ]
+}
