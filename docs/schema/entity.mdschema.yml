@@ -115,7 +115,7 @@
           "neither withdrawal nor Resolution means open; withdrawal alone means withdrawn; Resolution alone means closed; withdrawn and closed attempts are frozen",
           "withdrawal is request-backed and carries only fixed agent:first-officer attribution, a UTC timestamp, and a nonblank reason",
           "withdrawn attempts carry no Resolution, provider evidence, or application",
-          "unsupported prototype fields and arbitrary unknown fields inside binary-owned gates fail closed; only the known application field has opaque application-layer-owned nested data",
+          "unsupported prototype fields and arbitrary unknown fields outside records[*].attempts[*].application mappings fail closed; unknown keys inside those exact mappings warn on explicit validation, are ignored for authority, and are never written",
           "canonical gates writes preserve top-level frontmatter outside gates and the entity body byte-for-byte",
           "recording never changes status or dispatches"
         ]

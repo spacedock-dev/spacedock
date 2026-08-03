@@ -340,17 +340,17 @@ func TestBootReadyGateTerminalApprovalPersistsAtConsumeUntilDeliveryEnvelope(t *
 	}
 }
 
-func TestBootReadyGatesFailClosedLifecycleControls(t *testing.T) {
-	blocked := strings.Replace(approvedGateEntity("blocked", "validation", "done", "90"),
-		"target-stage: done", "blockers: [{id: blocker:x, state: unsatisfied}]\n                target-stage: done", 1)
-	held := strings.Replace(approvedGateEntity("held", "validation", "done", "80"),
-		"target-stage: done", "execution-hold: {state: active}\n                target-stage: done", 1)
-	feedback := strings.Replace(approvedGateEntity("feedback", "validation", "done", "70"),
+func TestBootReadyGatesIgnoreUnknownApplicationExtensions(t *testing.T) {
+	blocked := strings.Replace(approvedGateEntity("blocked", "validation", "implementation", "90"),
+		"application: {target-stage: implementation, state: pending}", "application:\n                blockers: [{id: blocker:x, state: unsatisfied}]\n                target-stage: implementation\n                state: pending", 1)
+	held := strings.Replace(approvedGateEntity("held", "validation", "implementation", "80"),
+		"application: {target-stage: implementation, state: pending}", "application:\n                execution-hold: {state: active}\n                target-stage: implementation\n                state: pending", 1)
+	feedback := strings.Replace(approvedGateEntity("feedback", "validation", "implementation", "70"),
 		"decision: approve}", "decision: revise, reason: revise}", 1)
-	feedback = strings.Replace(feedback, "target-stage: done", "action: feedback\n                target-stage: done", 1)
-	consumed := strings.Replace(approvedGateEntity("consumed", "validation", "done", "60"),
+	feedback = strings.Replace(feedback, "application: {target-stage: implementation, state: pending}", "application:\n                action: feedback\n                target-stage: implementation\n                state: pending", 1)
+	consumed := strings.Replace(approvedGateEntity("consumed", "validation", "implementation", "60"),
 		"state: pending", "state: consumed", 1)
-	superseded := strings.Replace(approvedGateEntity("superseded", "validation", "done", "50"),
+	superseded := strings.Replace(approvedGateEntity("superseded", "validation", "implementation", "50"),
 		"state: pending", "state: superseded", 1)
 	def, _ := buildSplitRoot(t, identifyReadyGatesReadme, map[string]string{
 		"validating.md": "---\nstatus: validation\n---\n",
@@ -363,8 +363,9 @@ func TestBootReadyGatesFailClosedLifecycleControls(t *testing.T) {
 		"terminal.md":   openGateEntity("terminal", "done", "100"),
 		"ordinary.md":   openGateEntity("ordinary", "implementation", "100"),
 	})
-	if got := identifyReadyRows(t, def); got != "[]" {
-		t.Fatalf("fail-closed lifecycle controls scheduled rows: %s", got)
+	want := `[{"id":"blocked","slug":"blocked","current":"validation","readiness":"approved-awaiting-advance"},{"id":"held","slug":"held","current":"validation","readiness":"approved-awaiting-advance"}]`
+	if got := identifyReadyRows(t, def); got != want {
+		t.Fatalf("unknown application extensions must not block authority: got %s want %s", got, want)
 	}
 }
 
