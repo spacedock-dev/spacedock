@@ -3,9 +3,9 @@ title: Repair the ac2 re-anchor live scenario so it can fail
 status: ideation
 source: "0260 preflight staff review, 2026-07-20 — re-filed from the archived ac2-reanchor-scenario-falsifiable, whose repair scope was dropped in a double archive merge."
 id: 1azrdbz8bke5m0c3qbehye5c
-sprint: live-test-truth
+sprint:
 group: common-journey
-sprint-readiness: ready
+sprint-readiness: absorbed
 gates:
     version: 1
     records:
