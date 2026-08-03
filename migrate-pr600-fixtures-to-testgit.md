@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:69cg49x2fzprarbg32pkbvgn:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:69cg49x2fzprarbg32pkbvgn-ideation-1
+              briefing:
+                id: briefing:69cg49x2fzprarbg32pkbvgn:ideation:attempt-1:revision-1
+                digest: sha256:e6f9816f47a12ef491c570d9ded8aa1368334d00259606695b1cfdc022c827cb
+                request-digest: sha256:9cb31ff23a7a31fa4ee5559b81890b085e9fcb15206e21c7775bd354252c9668
+                room-ref: ./migrate-pr600-fixtures-to-testgit/review/ideation/briefing-1
 ---
 
 `main`'s `go test ./internal/contractlint/... -run TestNoHandRolledGitInitOutsideTestgit` fails: 7 non-bare `git init` scaffold sites outside `testgit.InitRepo`, all introduced by `collapse-gate-approval-ceremony` (#600):

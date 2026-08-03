@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:69cg49x2fzprarbg32pkbvgn:ideation:attempt-1:revision-1",
+  "question": "Captain directed fast-track straight to implementation; design already fully scoped in the backlog filing. Approve to enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:69cg49x2fzprarbg32pkbvgn:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/60269cca18bfa1ba73e9f31e14f28300abc63884/migrate-pr600-fixtures-to-testgit.md",
+      "rev": "sha256:bbcf9fa28f901ec3f02692ac48460542f82a82bdbb090cf5a6334eff661194c1",
+      "mediaType": "text/markdown",
+      "summary": "No new ideation work needed -- backlog filing already pins exact 7 file:line sites, substitution pattern (identical to the 38 already-migrated sites), ACs, and test plan. Captain explicitly directed fast-track."
+    }
+  ]
+}
