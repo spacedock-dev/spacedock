@@ -1,6 +1,6 @@
 ---
 title: status pagination and stage-then-score default sorting
-status: validation
+status: done
 score: 0.70
 id: rwpe45pdxffk2zfy24ejde6a
 started: 2026-07-22T06:31:16Z
@@ -60,10 +60,13 @@ gates:
                 reason: 'Captain approved re-validation in chat: AC-2 correction confirmed via independent falsification, all 5 ACs green. Proceed to merge.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 worktree: .worktrees/spacedock-ensign-status-pagination-and-default-sorting
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:603
+verdict: passed
+completed: 2026-08-03T01:11:23Z
+archived: 2026-08-03T01:11:23Z
 ---
 
 ### Goal
