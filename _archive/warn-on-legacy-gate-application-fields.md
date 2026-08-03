@@ -1,6 +1,6 @@
 ---
 title: Warn on legacy gate application fields
-status: validation
+status: done
 source: "Captain directive 2026-08-03: unknown keys in the exact gate application mapping must warn, not fail the state read."
 score: "1.0"
 sprint: durable-decisions
@@ -81,11 +81,14 @@ gates:
                 reason: 'Captain-approved validation: SO concurs. HEAD 8a001a522 verifies the exact application warning boundary; focused suites pass and the seven pilot-manifest omissions are pre-existing environment paths.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-03T13:53:46Z
 worktree: .worktrees/spacedock-ensign-warn-on-legacy-gate-application-fields
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:611
+verdict: passed
+completed: 2026-08-03T15:40:31Z
+archived: 2026-08-03T15:40:31Z
 ---
 
 Legacy or extension state can contain keys that are not part of the v1 application
