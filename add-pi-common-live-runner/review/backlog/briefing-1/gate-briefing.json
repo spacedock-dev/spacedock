@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:tj41e4f404mz7ast3yh9enwc:backlog:attempt-1:revision-1",
+  "question": "Approve this task for risk-first ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:tj41e4f404mz7ast3yh9enwc:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://main/7f9e9216dea3e087e088d18b019e9f821d095031/docs/roadmap/live-test-truth/index.md",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e",
+      "mediaType": "text/markdown",
+      "summary": "Prove that one shared fixture can run through Pi and price complete common-journey coverage before bulk migration."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:tj41e4f404mz7ast3yh9enwc:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/7f9e9216dea3e087e088d18b019e9f821d095031/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    }
+  ]
+}
