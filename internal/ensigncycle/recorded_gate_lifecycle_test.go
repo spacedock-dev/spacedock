@@ -77,16 +77,17 @@ type recordedGateDispatchProof struct {
 }
 
 type recordedGateObservation struct {
-	events       []string
-	before       string
-	after        string
-	dispatch     recordedGateDispatchProof
-	expectedNext string
-	gateID       string
-	attemptID    string
-	briefingID   string
-	digest       string
-	resolutionID string
+	events        []string
+	before        string
+	after         string
+	dispatch      recordedGateDispatchProof
+	expectedNext  string
+	expectedActor string
+	gateID        string
+	attemptID     string
+	briefingID    string
+	digest        string
+	resolutionID  string
 }
 
 func assertRecordedGateLifecycle(o recordedGateObservation) error {
@@ -107,6 +108,10 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 	if resolutionID == "" {
 		resolutionID = "resolution:spacedock:recorded-gate-task:validation:1"
 	}
+	expectedActor := o.expectedActor
+	if expectedActor == "" {
+		expectedActor = "agent:first-officer"
+	}
 	if !validRecordedGateEventTrace(o.events) {
 		return fmt.Errorf("gate lifecycle recorded event trace %v, want %v (classic) or %v (mechanism-2 --consume fast path)",
 			o.events, recordedGateRequiredEvents, recordedGateCollapsedEventTrace)
@@ -123,7 +128,7 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 	if strings.Contains(o.before, recordedGateDispatchMarker) {
 		return fmt.Errorf("successor marker already existed before the lifecycle began")
 	}
-	for _, want := range []string{"status: " + o.expectedNext, "state: consumed", "by: agent:first-officer"} {
+	for _, want := range []string{"status: " + o.expectedNext, "state: consumed"} {
 		if !strings.Contains(o.after, want) {
 			return fmt.Errorf("durable post-state missing %q", want)
 		}
@@ -147,13 +152,25 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		{"briefing digest", "digest: " + digest, 1},
 		{"resolution identity", "id: " + resolutionID, 1},
 		{"approval decision", "\n                decision: approve", 1},
-		{"approval actor", "by: agent:first-officer", 1},
+		{"approval actor", "by: " + expectedActor, 1},
 		{"approval reason", "\n                reason:", 1},
 		{"forged adoption note", "adoption-note:", 0},
 		{"application target", "target-stage: " + o.expectedNext, 1},
 		{"consumed application", "\n                state: consumed", 1},
 	} {
-		if got := strings.Count(authority, exact.value); got != exact.count || (exact.label == "approval reason" && strings.Trim(strings.TrimSpace(strings.SplitN(strings.SplitN(authority, exact.value, 2)[1], "\n", 2)[0]), `"'`) == "") {
+		got := strings.Count(authority, exact.value)
+		if exact.label == "approval actor" {
+			got = recordedGateExactLineCount(authority, exact.value)
+		}
+		if exact.label == "approval reason" && expectedActor == "person:captain" {
+			// Provider-authored approvals may omit a reason. If present, it
+			// must still be a nonblank single field, just like chat reasons.
+			if got > 1 || (got == 1 && strings.Trim(strings.TrimSpace(strings.SplitN(strings.SplitN(authority, exact.value, 2)[1], "\n", 2)[0]), `"'`) == "") {
+				return fmt.Errorf("durable post-state %s count = %d, want at most one nonblank value for %q", exact.label, got, exact.value)
+			}
+			continue
+		}
+		if got != exact.count || (exact.label == "approval reason" && strings.Trim(strings.TrimSpace(strings.SplitN(strings.SplitN(authority, exact.value, 2)[1], "\n", 2)[0]), `"'`) == "") {
 			return fmt.Errorf("durable post-state %s count = %d, want %d for %q", exact.label, got, exact.count, exact.value)
 		}
 	}
@@ -164,6 +181,16 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		return fmt.Errorf("gate lifecycle left entity byte-identical")
 	}
 	return nil
+}
+
+func recordedGateExactLineCount(body, want string) int {
+	count := 0
+	for _, line := range strings.Split(body, "\n") {
+		if strings.TrimSpace(line) == want {
+			count++
+		}
+	}
+	return count
 }
 
 type recordedGateFixture struct {
@@ -772,7 +799,7 @@ func TestRecordedGateLifecycleProvenanceMutants(t *testing.T) {
 			"by: agent:first-officer\n                decision: approve\n                reason: " + recordedGateReason + "\n" +
 			"target-stage: handoff\n                state: consumed\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.",
 		dispatch:     recordedGateDispatchProof{builds: 1, successfulBuilds: 1, durableEffects: 1, ordered: true, committed: true},
-		expectedNext: "handoff",
+		expectedNext: "handoff", expectedActor: "agent:first-officer",
 	}
 	if err := assertRecordedGateLifecycle(valid); err != nil {
 		t.Fatalf("baseline: %v", err)
@@ -786,6 +813,9 @@ func TestRecordedGateLifecycleProvenanceMutants(t *testing.T) {
 	for name, mutate := range map[string]func(*recordedGateObservation){
 		"actor-swap": func(o *recordedGateObservation) {
 			o.after = strings.Replace(o.after, "by: agent:first-officer", "by: person:captain", 1)
+		},
+		"actor-suffix": func(o *recordedGateObservation) {
+			o.after = strings.Replace(o.after, "by: agent:first-officer", "by: agent:first-officer-forged", 1)
 		},
 		"blank-reason":         func(o *recordedGateObservation) { o.after = strings.Replace(o.after, recordedGateReason, "", 1) },
 		"forged-adoption-note": func(o *recordedGateObservation) { o.after = "adoption-note: forged\n" + o.after },
@@ -982,6 +1012,46 @@ func TestRecordedGateLifecyclePhaseDetectionIgnoresHelpProbes(t *testing.T) {
 	}
 }
 
+func TestRecordedGateExpectedActorFromSuccessfulClose(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		log  string
+		want string
+	}{
+		{
+			name: "chat actor",
+			log:  "exit=0\tgate record --help\nexit=0\tgate record recorded-gate-task --decision approve --actor person:captain",
+			want: "person:captain",
+		},
+		{
+			name: "room actor with consume",
+			log:  "exit=0\tgate record recorded-gate-task --room /tmp/review-room --consume",
+			want: "person:captain",
+		},
+		{
+			name: "actor equals form",
+			log:  "exit=0\tgate record recorded-gate-task --decision approve --actor=agent:first-officer",
+			want: "agent:first-officer",
+		},
+		{
+			name: "failed close ignored",
+			log:  "exit=1\tgate record recorded-gate-task --decision approve --actor person:captain",
+			want: "",
+		},
+		{
+			name: "unsupported actor does not become expectation",
+			log:  "exit=0\tgate record recorded-gate-task --decision approve --actor agent:ensign",
+			want: "",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := recordedGateExpectedActor(tc.log); got != tc.want {
+				t.Fatalf("recordedGateExpectedActor() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestRecordedGateCommittedBeforeDispatchResolutionPaths(t *testing.T) {
 	binary := buildRecordedGateBinary(t)
 	for _, tc := range []struct {
@@ -1012,41 +1082,56 @@ func TestRecordedGateCommittedBeforeDispatchResolutionPaths(t *testing.T) {
 				}
 				writeRecordedGateProviderDecision(t, room)
 				close = mustRecordedGate(t, binary, fixture.root,
-					"gate", "record", "recorded-gate-task", "--room", room,
+					"gate", "record", "recorded-gate-task", "--room", room, "--consume",
 					"--workflow-dir", fixture.root)
+				assertCommandOutput(t, close.stdout, "state=closed", "decision=approve", "consumed=true", "target-stage=handoff")
 			} else {
 				close = mustRecordedGate(t, binary, fixture.root,
 					"gate", "record", "recorded-gate-task",
 					"--decision", "approve", "--actor", "agent:first-officer",
 					"--reason", recordedGateReason,
 					"--workflow-dir", fixture.root)
+				assertCommandOutput(t, close.stdout, "state=closed", "decision=approve")
 			}
-			assertCommandOutput(t, close.stdout, "state=closed", "decision=approve")
-			commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
-			consume := mustRecordedGate(t, binary, fixture.root,
-				"gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
-			assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
+			if !tc.room {
+				commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
+				consume := mustRecordedGate(t, binary, fixture.root,
+					"gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
+				assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
+			}
 			consumedCommit := commitRecordedGateState(t, binary, fixture, "consume gate authorization")
 
-			writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n")
+			writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The consumed approval entered handoff.\n\n### Summary\n\nThe handoff completed after the consumed approval.\n")
 			gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record successor effect")
 			commandLog := filepath.Join(fixture.root, "command.log")
 			recordLine := "exit=0\tgate record recorded-gate-task --decision approve --actor agent:first-officer"
 			if tc.room {
-				recordLine = "exit=0\tgate record recorded-gate-task --room " + outputValue(bind.stdout, "room")
+				recordLine = "exit=0\tgate record recorded-gate-task --room " + outputValue(bind.stdout, "room") + " --consume"
 			}
-			writeFile(t, commandLog, strings.Join([]string{
+			logLines := []string{
 				"exit=0\tgate prepare recorded-gate-task --question Advance?",
 				"exit=0\tstate commit recorded-gate-task --workflow-dir /wf",
 				recordLine,
-				"exit=0\tgate consume recorded-gate-task --workflow-dir /wf",
 				"dispatch-head\t" + consumedCommit,
 				"begin\tdispatch build --workflow-dir /wf",
 				"exit=0\tdispatch build --workflow-dir /wf",
-			}, "\n"))
+			}
+			if !tc.room {
+				logLines = append(logLines[:3], append([]string{"exit=0\tgate consume recorded-gate-task --workflow-dir /wf"}, logLines[3:]...)...)
+			}
+			writeFile(t, commandLog, strings.Join(logLines, "\n"))
 			observation := recordedGateLiveObservation(t, fixture, before, commandLog)
 			if !observation.dispatch.ordered || !observation.dispatch.committed {
 				t.Fatalf("%s close was not recognized as ordered and committed before dispatch: %+v", tc.name, observation.dispatch)
+			}
+			if err := assertRecordedGateLifecycle(observation); err != nil {
+				t.Fatalf("%s consumed lifecycle graded FAIL: %v", tc.name, err)
+			}
+			if tc.room {
+				durable, _, err := gates.Read(fixture.entity)
+				if err != nil || durable.Records[0].Attempts[0].Resolution.By != "person:captain" {
+					t.Fatalf("room-backed close actor = %q (err=%v), want person:captain", durable.Records[0].Attempts[0].Resolution.By, err)
+				}
 			}
 		})
 	}
@@ -1120,6 +1205,7 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	briefingID := firstRecordedGateMatch(after, `(?m)^\s+id: (briefing:[^\s]+)$`)
 	digest := firstRecordedGateMatch(after, `(?m)^\s+digest: (sha256:[0-9a-f]{64})$`)
 	resolutionID := firstRecordedGateMatch(after, `(?m)^\s+id: (resolution:[^\s]+)$`)
+	expectedActor := recordedGateExpectedActor(log)
 	closeCommit := ""
 	if resolutionID != "" {
 		closeCommit = strings.SplitN(strings.TrimSpace(git(t, fixture.stateRoot, "log", "--reverse", "--format=%H", "-S"+"id: "+resolutionID, "--", entityRel)), "\n", 2)[0]
@@ -1131,8 +1217,9 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 			builds: builds, successfulBuilds: successfulBuilds, durableEffects: effects, ordered: ordered,
 			committed: recordedGateCommittedBeforeDispatch(t, fixture, closeCommit, consumedCommit, dispatchHead, strings.Join(commits, " ")),
 		},
-		expectedNext: "handoff",
-		gateID:       gateID, attemptID: attemptID, briefingID: briefingID,
+		expectedNext:  "handoff",
+		expectedActor: expectedActor,
+		gateID:        gateID, attemptID: attemptID, briefingID: briefingID,
 		digest: digest, resolutionID: resolutionID,
 	}
 }
@@ -1158,6 +1245,36 @@ func recordedGateHelpProbe(line string) bool {
 		}
 	}
 	return false
+}
+
+// recordedGateExpectedActor derives the authority a successful close command
+// is expected to persist. Room-backed Results are captain-authored by contract;
+// chat closes carry their explicit --actor value. An empty result lets
+// synthetic observations use assertRecordedGateLifecycle's stable
+// agent:first-officer default without accepting arbitrary entity by: values.
+func recordedGateExpectedActor(log string) string {
+	for _, line := range strings.Split(log, "\n") {
+		if !strings.HasPrefix(line, "exit=0\tgate record ") || recordedGateHelpProbe(line) {
+			continue
+		}
+		fields := strings.Fields(line)
+		for i, field := range fields {
+			switch {
+			case field == "--room" || strings.HasPrefix(field, "--room="):
+				return "person:captain"
+			case field == "--actor" && i+1 < len(fields):
+				if actor := fields[i+1]; actor == "person:captain" || actor == "agent:first-officer" {
+					return actor
+				}
+			case strings.HasPrefix(field, "--actor="):
+				actor := strings.TrimPrefix(field, "--actor=")
+				if actor == "person:captain" || actor == "agent:first-officer" {
+					return actor
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func firstRecordedGateMatch(body, pattern string) string {
