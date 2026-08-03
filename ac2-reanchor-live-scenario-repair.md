@@ -31,6 +31,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:1azrdbz8bke5m0c3qbehye5c:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:1azrdbz8bke5m0c3qbehye5c-ideation-1
+              briefing:
+                id: briefing:1azrdbz8bke5m0c3qbehye5c:ideation:attempt-1:revision-1
+                digest: sha256:a61cbdba183ea3b02324947a02f047095ff627dea42f89aa80e5799c8631485e
+                request-digest: sha256:b855d8e8eb36902992badaf6745b302a1af028d20fa7f0c3488b011a0cc982d6
+                room-ref: ./ac2-reanchor-live-scenario-repair/review/ideation/briefing-1
 started: 2026-08-03T11:22:01Z
 ---
 

@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1azrdbz8bke5m0c3qbehye5c:ideation:attempt-1:revision-1",
+  "question": "Does this plan replace the false-green narrative oracle with the smallest durable two-way gate decision proof?",
+  "artifacts": [
+    {
+      "id": "artifact:1azrdbz8bke5m0c3qbehye5c:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/51cbbac987cb0d86667b2b9d4cec39ae6bd587f1/ac2-reanchor-live-scenario-repair.md",
+      "rev": "sha256:e3476223e7fa9b706d68f42f451f94efa0389b419772fa450fbf7a757c824044",
+      "mediaType": "text/markdown",
+      "summary": "The spike reproduced a 96.70-second false green after removal of the operative policy clauses. The plan uses one validation gate and two parked target stages so revise reaches rework while approve reaches accepted. It grades durable entity state, preserves the registry fixture ID, and changes only three test-support files."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:1azrdbz8bke5m0c3qbehye5c:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/17d3f5a71db5e1fd2d48062b700a9580cae835c3/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:1azrdbz8bke5m0c3qbehye5c:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/17d3f5a71db5e1fd2d48062b700a9580cae835c3/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e"
+    }
+  ]
+}
