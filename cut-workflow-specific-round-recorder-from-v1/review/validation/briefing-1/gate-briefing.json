@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:wjkhq0sktbbe3txx6jhnvcv2:validation:attempt-1:revision-1",
+  "question": "Does the exact WJ validation candidate satisfy the four value ACs while keeping the recorded repository-wide suite blockers explicitly deferred as environment evidence risk?",
+  "artifacts": [
+    {
+      "id": "artifact:wjkhq0sktbbe3txx6jhnvcv2:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1ec55184752b1f852e6b457821d35eb10cf19fe1/cut-workflow-specific-round-recorder-from-v1/index.md",
+      "rev": "sha256:1cdf0b48f8c9215a6b21f666ccd6047f52e31e319324a4bbab098d568b480339",
+      "mediaType": "text/markdown",
+      "summary": "Validate exact head d1aac2e035f4e52c94141a2deb218ab5872d0fa5 with parent 7ece33938d525d3a39c32aa8a524eaaa373e3350, exact 16-file boundary, clean formatting, focused non-race/race AC evidence, and no route/binding/runtime changes; do not call full CI green because six top-level manifests are missing from shared state and two unrelated race harness cases time out. Revisit only after a clean state checkout restores those manifests and a rerun still fails changed code."
+    }
+  ]
+}
