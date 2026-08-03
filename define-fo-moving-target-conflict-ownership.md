@@ -44,6 +44,17 @@ gates:
                 digest: sha256:4d10f045deb6106fb8b30200e4e726677c24b73aa534c4cdffe7a86d3fba85ce
                 request-digest: sha256:4459edfb7e1c00dca121c198716a0b3fa42dd76a97fa07d5d8479ad75ff9e69e
                 room-ref: ./define-fo-moving-target-conflict-ownership/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:g3912c6f6jkgd0yjmyg6h7yn:ideation:1
+                briefing: briefing:g3912c6f6jkgd0yjmyg6h7yn:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-03T16:19:06.88638Z"
+                decision: approve
+                reason: Captain conn authorizes approval when SO concurs. The ideation fixture proves pending authority preservation, conflict abort and ownership handoff, exact-head freshness, and keep-moving without a resolver. Hold G3 implementation until EJ lands; SO concurs with EJ-before-G3 implementation ordering.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Define the ownership, durable hold, evidence, and keep-moving behavior when a pending PR meets a moving merge target. The task closes the contract ambiguity without adding a resolver worker or changing the workflow definition.
