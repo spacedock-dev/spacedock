@@ -38,6 +38,17 @@ gates:
                 digest: sha256:e5f97bfce5a2299aa57619f4ae2cd821a4525030a67bacd6ae285ba6a042a53b
                 request-digest: sha256:248cf154f72b2e140024d082e8001703eba6e83b55c9c672832df7a3b5704200
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:shra0x0r2bf7ka0q1m4ft79a:ideation:1
+                briefing: briefing:shra0x0r2bf7ka0q1m4ft79a:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T03:32:43.98711Z"
+                decision: approve
+                reason: 'Captain authorizes approval after Science Officer agreement: classes remain opaque and workflow-owned, no generic allowlist is added, WJ owns parser-policy removal, and sh supplies only residual proof.'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-03T02:00:11Z
 ---
 
