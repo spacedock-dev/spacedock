@@ -18,6 +18,17 @@ gates:
                 digest: sha256:f49fe5e9642d6d82e859daaa33ac43e37ebf1482336fb24b7904c304d67dc8f0
                 request-digest: sha256:ed9980aecefd08f4b0cc43f731466b3fecd8925fb3afba6d8f6a315795043b0a
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:shra0x0r2bf7ka0q1m4ft79a:backlog:1
+                briefing: briefing:shra0x0r2bf7ka0q1m4ft79a:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T01:56:25.061748Z"
+                decision: approve
+                reason: Captain approves the corrected opaque workflow-owned finding-class direction; enter ideation to rewrite the task body, ACs, and test plan.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 The gate parser must accept the non-material finding classes that the workflow contract declares.
