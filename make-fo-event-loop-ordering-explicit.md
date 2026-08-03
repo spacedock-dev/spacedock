@@ -134,3 +134,9 @@ Focused status, gate-lifecycle, and Codex wait tests already pass. Add a host-ne
 The separate unhandled-completion-ledger risk remains: a final-status/mailbox completion can arrive while the FO is handling another request, and no durable completion feed currently records that it was handled. Ordering the available drain and reconcile operations reduces the window but cannot recover a lost completion or make a reconcile without session identity authoritative; the live `dispatch reconcile --workflow-dir docs/dev` probe reported git/filesystem drift only because no team identity was resolved. Keep that ledger/reclaim work separate, and make wait fail-safe when roster identity is absent.
 
 Recommendation for implementation-gate entry: **APPROVE ideation**. Land a contract-first numbered event-loop trace plus a small host-neutral command-log reducer/fixture and the Codex wait matrix. Make the mixed falsifying fixture red against the current `status --next=[]` stop before updating the contract and adapter notes. Preserve all current state fields, command bytes, transport APIs, gate authority, and stage behavior; the intended semantic change is ordering and stop-reason observability only.
+
+### Ideation completion checklist
+
+- DONE — replayed the false-stop trace and recorded the ordered mod/PR, gate, dispatch, idle/reconcile, and wait decisions.
+- DONE — reconciled ACs, test plan, and Codex wait predicate against existing state/transport boundaries and named unresolved risks.
+- DONE — committed the ideation report with falsifying evidence and the implementation-gate recommendation.
