@@ -72,7 +72,7 @@ gates:
 started: 2026-08-02T16:02:35Z
 worktree: .worktrees/spacedock-ensign-status-where-robust-and-discoverable
 mod-block: merge:pr-merge
-pr: "#605"
+pr: pr-merge:605
 ---
 
 ## Problem
