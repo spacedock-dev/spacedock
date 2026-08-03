@@ -80,7 +80,7 @@ The spike used the real `spacedock codex` front door at commit `17d3f5a71`. It u
 
 The final harness kept `CODEX_HOME` outside the plugin checkout. It also started the launcher from a directory without `.safehouse`.
 
-The run used a 30-second quiet budget and a 2-second fixed comparison gate. It produced these results:
+The run used a 30-second probe quiet budget and a 2-second fixed comparison gate. It produced these results:
 
 - The process exited 0 after 8.72 seconds.
 - Four valid JSONL events reset the quiet timer.
@@ -89,6 +89,8 @@ The run used a 30-second quiet budget and a 2-second fixed comparison gate. It p
 - The final message was `activity-reset-spike-ok`.
 
 Thus, the run continued beyond the fixed comparison gate and stopped cleanly. Stream activity can control Codex liveness end to end.
+
+The 30-second value made the probe faster. It does not change the product quiet budget.
 
 The existing controls also passed:
 
@@ -124,7 +126,9 @@ Terminal merge state is another alternative. It adds unrelated behavior and is n
 
 Replace the Codex process deadline with the existing shared `streamWatcher`.
 
-The runner will start one process and stream stdout into `codex-exec.jsonl`. Each complete JSONL line will reset `quietBudgetDefault`.
+The runner will start one process and stream stdout into `codex-exec.jsonl`. It will apply `quietBudgetDefault`, which is 60 seconds.
+
+Each complete JSONL line will reset this budget.
 
 The runner will keep stderr in `codex-exec.stderr.txt`. It will not retry or start a second Codex process.
 
@@ -170,7 +174,7 @@ Tested by: the oracle accepts `revise/feedback/rework`. It rejects `approve/adva
 
 Tested by: a deterministic process runs beyond four quiet budgets under JSONL activity. One focused live Codex journey also passes.
 
-**AC-3 - A stalled Codex run fails within the quiet budget.**
+**AC-3 - A stalled Codex run fails within the 60-second quiet budget.**
 
 Tested by: a helper emits one event and stalls. The failure names that event and the artifact directory.
 
@@ -210,11 +214,15 @@ Run the focused process and watcher tests:
 go test ./internal/ensigncycle -run 'TestCodexProcess|TestDrainToExit' -count=1
 ```
 
-Run one real journey through the changed Codex process boundary:
+Before `ys` lands, run one real journey through the changed Codex process boundary.
+
+`TestLiveCodexSharedScenarios` is pre-`ys` evidence for `3d`:
 
 ```bash
 SPACEDOCK_LIVE_ARTIFACT_DIR="$artifact_dir" go test -tags live -count=1 -timeout 40m -run '^TestLiveCodexSharedScenarios/gate-guardrail$' ./internal/ensigncycle -v
 ```
+
+`ys` owns the final canonical selector migration to `TestLiveSharedScenarios`. After `ys` lands, use its canonical selector for final sprint validation.
 
 For AC-4, add `codex_single_run_test.go` to the live-budget source guard. Ban `context.WithTimeout` and `codexScenarioTimeout` on this path.
 
