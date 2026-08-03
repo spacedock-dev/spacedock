@@ -1,6 +1,6 @@
 ---
 title: Make FO event-loop ordering and idle wait explicit
-status: ideation
+status: implementation
 source: "Captain follow-up after the 2026-08-03 durable-decisions execution-gap diagnosis."
 started: 2026-08-03T16:00:51Z
 completed:
@@ -54,7 +54,7 @@ gates:
                 reason: Captain conn authorizes approval when SO concurs. The ideation report supplies the false-stop trace, ordered mod/PR and gate handling, idle/reconcile retry, unresolved-worker wait matrix, and keep-moving evidence. SO concurs with EJ-before-G3 implementation landing after SK validation.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Make the First Officer event loop mechanically explicit so a dispatch-only empty result cannot hide merge recovery, ready gates, or a required idle/reconcile pass. The task preserves the existing state and runtime boundaries; it makes the ordering observable and testable.
