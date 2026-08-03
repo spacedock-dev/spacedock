@@ -29,6 +29,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-03T02:00:11Z
 ---
 
 The gate parser must accept the non-material finding classes that the workflow contract declares.
