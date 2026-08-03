@@ -1,7 +1,7 @@
 ---
 id: 69cg49x2fzprarbg32pkbvgn
 title: Migrate 7 PR #600 test fixtures to testgit.InitRepo (git-scaffold guard reds on main)
-status: backlog
+status: ideation
 source: "main is currently broken: go test ./internal/contractlint/... -run TestNoHandRolledGitInitOutsideTestgit fails with 7 non-bare git init sites outside testgit.InitRepo, all in collapse-gate-approval-ceremony's (#600) own test files. shared-git-scaffold-helper's (#601) ideation explicitly anticipated this exact scenario ('Whichever branch lands second should migrate it to testgit.InitRepo... otherwise the guard will flag it on merge') -- #600 merged before the guard existed on main, #601 landed the guard second, and #600's fixtures were never migrated. Captain directed: fix, main is broken."
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain approved in chat: main is red on this, fast-track to implementation.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 `main`'s `go test ./internal/contractlint/... -run TestNoHandRolledGitInitOutsideTestgit` fails: 7 non-bare `git init` scaffold sites outside `testgit.InitRepo`, all introduced by `collapse-gate-approval-ceremony` (#600):
