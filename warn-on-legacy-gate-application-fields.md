@@ -237,6 +237,21 @@ production code.
   `go run /tmp/jy_ideation_revision_probe.go` observed arbitrary extension warnings, unchanged source node, unrelated-key failure, malformed-shape failures, invalid-state failure, duplicate-canonical failure, and missing-target failure.
 - DONE: Record the chosen direction, rejected alternatives, exact probes, and a complete ideation revision report
   The proposed reader API, canonical allow-list at the exact application path, sequencing dependency, semantic risk, doc diff, alternatives, and test matrix are recorded above.
+- AC-1 evidence (see AC-1 above): `go run /tmp/jy_ideation_revision_probe.go` retained
+  canonical `target-stage: implementation` and `state: pending` while emitting sorted
+  warnings for `action`, `binding`, `blockers`, `execution-hold`, `feedback`, and
+  `nested`; strict canonical decode succeeded.
+- AC-2 evidence (see AC-2 above): the same probe returned errors for an unrelated
+  top-level key, malformed YAML, non-mapping/null/sequence applications, a missing
+  target, invalid state, duplicate canonical key, and a non-application binding-shaped
+  field. The exact application mapping alone was filtered.
+- AC-3 evidence (see AC-3 above): the probe sorted warnings by `{path, field}` and
+  printed a stable warning list; the test plan adds reversed-order and repeated-read
+  fixtures plus explicit `status --validate`/`gate validate` warning goldens.
+- AC-4 evidence (see AC-4 above): the probe compared the original cloned source node
+  after filtering and confirmed `source-preservation=ok`; the proposed writer keeps
+  that original node and the test plan adds raw-byte preservation and canonical-write
+  assertions.
 
 ### Summary
 
