@@ -58,6 +58,17 @@ gates:
                 digest: sha256:dfe84eb83bc263b11ff5f4e8e79e30e6ccc6050577dbed44c540fb6c8ff1e4cb
                 request-digest: sha256:0adda560d2e04428a87e52ede91c96f948f4eea16ed59a7e144fd72cf94490fe
                 room-ref: ./status-where-robust-and-discoverable/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3t9r36n9tbj116jp9g1k01tz:validation:1
+                briefing: briefing:3t9r36n9tbj116jp9g1k01tz:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T03:30:20.857642Z"
+                decision: approve
+                reason: 'Captain approved in chat (''push status-where-robust-and-discoverable''): validation PASSED, all 4 ACs independently reproduced against baseline+HEAD binaries, 1 non-material deferred risk. Proceed to merge.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-02T16:02:35Z
 worktree: .worktrees/spacedock-ensign-status-where-robust-and-discoverable
 ---
