@@ -8,9 +8,9 @@ verdict:
 score: 0.75
 worktree:
 issue:
-sprint: live-test-truth
+sprint:
 group: lane-hygiene
-sprint-readiness: ready
+sprint-readiness: absorbed
 id: b8wfn1hm4p8208a99e5mh49z
 ---
 
