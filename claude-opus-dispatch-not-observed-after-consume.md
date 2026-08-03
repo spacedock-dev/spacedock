@@ -35,6 +35,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:5n4k6djrq8gtvd54zg9s6zhs:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:5n4k6djrq8gtvd54zg9s6zhs-ideation-1
+              briefing:
+                id: briefing:5n4k6djrq8gtvd54zg9s6zhs:ideation:attempt-1:revision-1
+                digest: sha256:c25d90024d75d419ab353a4223a6cf894f50e4c290e330645dcfac59af04b323
+                request-digest: sha256:cf56fe16fe0a4a5f00777da9a6ba3b906450dbe419ff5fc35b07bd7621efbf9c
+                room-ref: ./claude-opus-dispatch-not-observed-after-consume/review/ideation/briefing-1
 ---
 
 `assertRecordedGateLifecycle` (internal/ensigncycle/recorded_gate_lifecycle_test.go:121) collapses `!o.dispatch.ordered || !o.dispatch.committed` into one error string ("successor dispatch was not observed after consume"), so two unrelated bugs in how `ordered`/`committed` get computed both surface identically. Both are one-line fixes.

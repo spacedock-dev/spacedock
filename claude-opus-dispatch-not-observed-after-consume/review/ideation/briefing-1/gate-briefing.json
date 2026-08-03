@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5n4k6djrq8gtvd54zg9s6zhs:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation design for the two deterministic recorded-gate grader fixes and authorize implementation in a worktree.",
+  "artifacts": [
+    {
+      "id": "artifact:5n4k6djrq8gtvd54zg9s6zhs:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/3ead23c80bc9bb0aed85e83b67fe784ef3233fa9/claude-opus-dispatch-not-observed-after-consume.md",
+      "rev": "sha256:d6c3fe3c67cbfa83b5a342e79a308a117f2bb08d977ca741513ad20cf7b3a6f5",
+      "mediaType": "text/markdown",
+      "summary": "The diagnostic isolates two one-line test-only matcher defects with reproducible acceptance criteria; implementation must not alter gate or dispatch behavior."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:5n4k6djrq8gtvd54zg9s6zhs:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/ef47b876b68ec4e2007251d598c7ce2f3577784a/internal/ensigncycle/recorded_gate_lifecycle_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:e3e720096d62cea324042fadd3d64cc59e1b7874cac4a75fb1b33b6f41b0ea0e"
+    }
+  ]
+}
