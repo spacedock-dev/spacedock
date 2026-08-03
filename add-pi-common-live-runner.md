@@ -2,7 +2,7 @@
 title: Add Pi as a first-class adapter for every common live journey
 status: ideation
 source: "Desired live-test registry requires common journeys on every supported runtime, 2026-08-03"
-started:
+started: 2026-08-03T10:48:52Z
 completed:
 verdict:
 score: 0.9
