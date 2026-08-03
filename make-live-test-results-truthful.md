@@ -49,6 +49,10 @@ gates:
                 digest: sha256:e548fefa006f3370bfd6916b7ffeedb3b8fb10e8473e8a983d5b33e5a21596a2
                 request-digest: sha256:77ed13df7454fc323fa438511104b0f1007a9bba45b122753f8db4943dd82a47
                 room-ref: ./make-live-test-results-truthful/review/ideation/briefing-2
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-03T14:33:52.416943Z"
+                reason: Preflight review closure changed the shared sprint index after attempt 2 was frozen. Replace it with a final package that binds the review artifact.
 started: 2026-08-03T12:19:34Z
 ---
 
