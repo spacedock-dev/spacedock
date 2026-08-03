@@ -384,3 +384,25 @@ The NTH implementation is integrated with the required F0 base through one manua
 ### Remaining delivery/validation action
 
 Fresh First Officer validation and a new terminal approval are required. This worker did not consume or recreate approval.
+
+## Stage Report: validation (fresh NTH tip 7ece3393)
+
+Checklist counts: DONE 6; SKIPPED 0; FAILED 0.
+
+- DONE: Validate candidate identity and ownership. The code worktree is clean at `7ece33938d525d3a39c32aa8a524eaaa373e3350`, with parents `9ff2aa50c1a65254336e492d918745d44cd74162` (NTH) and `f3a03c6f896d13f647dc6712a4b8bad7cdfdd35e` (F0). The branch points at the candidate and no approval or product bytes were changed.
+- DONE: Re-run focused schema and lifecycle evidence on the exact tip. The focused `internal/gates` selection covering eligibility, exact YAML-node recorder keys, 31-path manifest, canonical replay, strict removed-shape negatives, repeated/stale/crash-window consume, terminal routing, nonterminal spending, and rework exited 0. Focused `internal/status`, `internal/cli`, and `internal/ensigncycle` selections covering status projections, collapsed `--consume`/sync/HALT rows, real CLI `application=advance/consumed`, AC5/AC7 refusal/resume, terminal no-successor, and collapsed consume trace each exited 0.
+- DONE: Re-run format and repository quality evidence against immutable repaired state. `gofmt -w ./cmd ./internal` made no diff. With `SPACEDOCK_STATE_ROOT` pinned to a detached checkout of repaired state commit `812b7a47e`, `go test ./... -count=1` and `go test ./... -race` both exited 0; the manifest iterator read and validated all 31 paths (16 active and 15 archived).
+- DONE: Reconcile AC-1 through AC-3 from observable evidence. AC-1 exact approval keys are asserted at the decoded YAML node and hold/revise have no application; strict negatives reject `action`, `blockers`, `execution-hold`, `feedback`, and `not-applicable` without mutation. AC-2 has the checked-in 31-path manifest and strict read/Validate iterator, with the detached repaired snapshot proving 31/31. AC-3 preserves one-use consume, stale supersession, hold/revise Resolution-only closure, terminal pending/finalize/rework authority, and the real CLI `application=advance/consumed` projection.
+- DONE: Re-check AC-4 integration seam and scope. `git diff --numstat f3a03c6f8..7ece33938` reports 15 paths, 344 insertions, and 178 deletions, matching the authorized NTH implementation plus evidence correction. The sole command-reference overlap retains F0 collapsed-gate `--consume`, `dispatch build --stamp`, split-root `sync=... phase=record|consume`, and HALT recovery while retaining approval-only application wording. No command grammar, versioning, compatibility reader, migration engine, feedback router, or unrelated product path appears; `git diff --check` is clean.
+- DONE: Distinguish live shared-state drift from immutable repaired-state proof. An unpinned manifest run and an unpinned `go test ./... -count=1` run report only four expected `path is not present` failures for entries that the live checkout has since archived; all other packages pass. The live state branch remains clean, and the four missing paths are unrelated archival drift, not candidate behavior.
+
+### AC evidence matrix (fresh NTH tip)
+
+- **AC-1 — PASSED.** Exact decoded-node key assertions, absent hold/revise applications, and byte-clean strict negatives pass; the integrated recorder and model remain approval-only `{target-stage,state}`.
+- **AC-2 — PASSED on immutable repaired state; live caveat disclosed.** The pinned `812b7a47e` checkout passes 31/31 strict reads and validations. The unpinned shared checkout cannot satisfy the manifest because four listed files were archived after repair; this is path drift, not a legacy-shape acceptance or candidate decode failure.
+- **AC-3 — PASSED.** Focused gate/status/CLI/ensign-cycle evidence preserves pending-to-consumed, stale-to-superseded, Resolution-only hold/revise, terminal delivery/rework, exactly-once refusal, and the derived consumed CLI route.
+- **AC-4 — PASSED.** The integrated diff remains within the authorized deletion-oriented surface and preserves F0's command/sync/HALT semantics without forbidden machinery.
+
+### Validation recommendation (fresh NTH tip)
+
+PASSED. The exact candidate reproduces AC-1 through AC-4 with focused, immutable full/race, formatting, diff, and scope evidence. The only unpinned failure is the disclosed four-path archival drift in the shared state checkout. Do not consume or recreate terminal approval; the next First Officer action is a fresh gate and Captain approval.
