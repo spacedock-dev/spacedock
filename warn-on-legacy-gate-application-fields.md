@@ -1,6 +1,6 @@
 ---
 title: Warn on legacy gate application fields
-status: backlog
+status: ideation
 source: "Captain directive 2026-08-03: legacy application.action and application.blockers must warn, not fail the state read."
 score: "1.0"
 sprint: durable-decisions
@@ -27,7 +27,7 @@ gates:
                 reason: Captain directed dispatch of the bounded warning-only compatibility implementation; preserve strict errors for all other fields and reconcile shared io.go before merge.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Legacy state written before the v1 application-schema cut can contain `application.action` and `application.blockers`. The canonical gate reader currently rejects that state before it can expose the valid `target-stage` and `state` fields.
