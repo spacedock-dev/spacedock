@@ -207,3 +207,16 @@ The corrected candidate derives approval identity from the close mode, fully ver
 ### Summary
 
 The final implementation report preserves the close-mode actor oracle, full room-backed consumed lifecycle proof, actor-swap controls, test-only boundary, and focused/full/race/live evidence.
+
+## Stage Report: validation (fresh candidate 206a4737c)
+
+- DONE: Verify the corrected actor oracle and room-backed close path. `go test ./internal/ensigncycle -run 'TestRecordedGateLifecyclePhaseDetectionIgnoresHelpProbes|TestRecordedGateExpectedActorFromSuccessfulClose|TestRecordedGateCommittedBeforeDispatchResolutionPaths|TestRecordedGateLifecycleRealCLIReplay|TestRecordedGateLifecycleProvenanceMutants|TestRecordedGateLifecycleMissingEventControls|TestRecordedGateLifecycleCollapsedConsumeTrace' -count=1 -v` passed. This covers prepare/record/consume `--help` probes, room-backed `gate record --room ... --consume`, classic explicit `--actor`, synthetic default, exact actor-swap and forged-suffix negatives, missing-event rejection, and collapsed/classic traces.
+- DONE: Reproduce the adjacent semantic adversarial matrix. `go test ./internal/ensigncycle -run 'TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume|TestRecordedGateLifecycleTerminalConsumeHasNoDispatchableSuccessor|TestRecordedGateLifecycleEnteredStageRecoveryMatrix|TestRecordedGateLifecycleAC5RefusalMatrix|TestRecordedGateLifecycleAC7ResumeMatrix' -count=1 -v` passed all 5 matrix tests and 33 subtests, including terminal/no-successor, entered-stage recovery, refusal, and resume controls.
+- DONE: Run complete package and race evidence at exact candidate `206a4737cc073df243607117c8e19914f62905e6`. `go test ./internal/ensigncycle -count=1` passed (`ok`, 176.585s); `go test ./internal/ensigncycle -race -count=1` passed (`ok`, 197.796s).
+- DONE: Run exact live Codex recorded-gate lifecycle evidence. `go test -tags live ./internal/ensigncycle -run '^TestLiveCodexSharedScenarios$/recorded-gate-lifecycle$' -count=1 -timeout=20m` passed (`ok`, 332.517s), with no residual grader failure.
+- DONE: Detached audit and scope check. `git diff --check 7ece33938..206a4737c` is clean; candidate parent is `48f001276`; `git diff --name-status` reports only `M internal/ensigncycle/recorded_gate_lifecycle_test.go`; worktree is clean and `gofmt -d internal/ensigncycle/recorded_gate_lifecycle_test.go` is empty. No product gate or dispatch mechanics changed.
+- CHECKLIST OUTCOME: 5 DONE, 0 FAILED, 0 SKIPPED.
+
+### Summary
+
+Validation PASSED for `206a4737c`. The actor expectation is derived from the successful close mode (captain for room-backed, exact explicit chat actor, First Officer default for synthetic observations), room-backed consumed lifecycle and classic actor controls pass, all adversarial matrices reject invalid variants, and focused/full/race/exact-live evidence is green. The change remains test-only.
