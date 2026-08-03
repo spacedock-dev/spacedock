@@ -37,6 +37,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:tj41e4f404mz7ast3yh9enwc:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:tj41e4f404mz7ast3yh9enwc-ideation-1
+              briefing:
+                id: briefing:tj41e4f404mz7ast3yh9enwc:ideation:attempt-1:revision-1
+                digest: sha256:ef75e23f510c2b349155973dda33caeab6684190f275bbd11f74492a1a8b92e6
+                request-digest: sha256:2ed73cad1e0b03f316e6bbf5cf30c1811912f012caab5e7e1885218ae50811b3
+                room-ref: ./add-pi-common-live-runner/review/ideation/briefing-1
 ---
 
 ## Problem
