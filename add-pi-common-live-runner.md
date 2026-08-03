@@ -1,6 +1,6 @@
 ---
 title: Add Pi as a first-class adapter for every common live journey
-status: backlog
+status: ideation
 source: "Desired live-test registry requires common journeys on every supported runtime, 2026-08-03"
 started:
 completed:
@@ -35,7 +35,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
