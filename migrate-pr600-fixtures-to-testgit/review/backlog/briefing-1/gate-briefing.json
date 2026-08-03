@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:69cg49x2fzprarbg32pkbvgn:backlog:attempt-1:revision-1",
+  "question": "main is red: 7 non-bare git init sites from PR #600's own fixtures, un-migrated to testgit.InitRepo (exactly the scenario shared-git-scaffold-helper's ideation predicted for whichever branch landed second). Fast-track approve to fix now?",
+  "artifacts": [
+    {
+      "id": "artifact:69cg49x2fzprarbg32pkbvgn:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/367b7ece5eb0803332319494c0e78288f40003b9/migrate-pr600-fixtures-to-testgit.md",
+      "rev": "sha256:bf63a113e5ac210c5712f0c0d905fb0ba40eb2d77047dc033cab0c1ad905eb39",
+      "mediaType": "text/markdown",
+      "summary": "Mechanical migration, 7 sites across 3 files (gate_ceremony_count_test.go x2, gate_consume_sync_test.go x4, build_stamp_test.go x1), same pattern as the other 38 sites already migrated. Confirmed via a fresh main checkout: go test ./internal/contractlint/... -run TestNoHandRolledGitInitOutsideTestgit fails today listing exactly these 7."
+    }
+  ]
+}

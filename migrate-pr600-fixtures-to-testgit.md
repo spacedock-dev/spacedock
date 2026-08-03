@@ -9,6 +9,18 @@ verdict:
 score: 1.0
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:69cg49x2fzprarbg32pkbvgn:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:69cg49x2fzprarbg32pkbvgn-backlog-1
+              briefing:
+                id: briefing:69cg49x2fzprarbg32pkbvgn:backlog:attempt-1:revision-1
+                digest: sha256:3dcb2e496bec15fb1f6fff236ea46e95ff6f3c3c9d458b5bce7718eac1a91848
+                request-digest: sha256:974a38278549ec3905b599efe3b1954fda0a14f1489e814fea511a36d1a78854
+                room-ref: ./migrate-pr600-fixtures-to-testgit/review/backlog/briefing-1
 ---
 
 `main`'s `go test ./internal/contractlint/... -run TestNoHandRolledGitInitOutsideTestgit` fails: 7 non-bare `git init` scaffold sites outside `testgit.InitRepo`, all introduced by `collapse-gate-approval-ceremony` (#600):
