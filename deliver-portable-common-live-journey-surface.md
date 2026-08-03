@@ -1,6 +1,6 @@
 ---
 title: Deliver one portable common live-journey surface
-status: backlog
+status: ideation
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 3w, h3, tj, and r4 as design inputs."
 score: 1.0
 sprint: live-test-truth
@@ -30,7 +30,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
