@@ -8,9 +8,9 @@ verdict:
 score: 0.95
 worktree:
 issue:
-sprint: live-test-truth
+sprint:
 group: registry
-sprint-readiness: ready
+sprint-readiness: absorbed
 id: 3w2rx3aw4vcympx84zt8mtv7
 gates:
     version: 1
