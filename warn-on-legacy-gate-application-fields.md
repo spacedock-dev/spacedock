@@ -51,6 +51,17 @@ gates:
                 digest: sha256:d3b6425224611ec75fa9fa4d167d77d63bd5e88538d9ccd1ead278dbf57102ca
                 request-digest: sha256:8a4af690385527958cbea4d249f2c8566acbfc5b311cbb5b345aee4650454007
                 room-ref: ./warn-on-legacy-gate-application-fields/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:jympnaf11wg4qmd4z85a3ayv:ideation:2
+                briefing: briefing:jympnaf11wg4qmd4z85a3ayv:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-03T14:25:30.564741Z"
+                decision: approve
+                reason: 'Captain approved the revised exact-application warning boundary: every unknown application key warns and is ignored for canonical decode/eligibility; all non-application unknowns, malformed shapes, invalid canonical data, duplicates, and bad bindings remain fatal. Implement after WJ PR #610 merges.'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-03T13:53:46Z
 ---
 
