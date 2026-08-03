@@ -1,6 +1,6 @@
 ---
 title: Require Codex worker spawn after approved gate advance
-status: done
+status: validation
 source: "KD validation cycle 4, Codex keep-moving-posture at b60d1c8"
 started: 2026-07-30T23:39:35Z
 completed:
@@ -12,8 +12,6 @@ milestone: 0.27.0
 id: f02j6dbnd4jakwczahv1tg2h
 gates:
     version: 1
-    current:
-        gate: gate:f02j6dbnd4jakwczahv1tg2h:validation
     records:
         - id: gate:f02j6dbnd4jakwczahv1tg2h:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:f02j6dbnd4jakwczahv1tg2h:backlog:attempt-1:revision-1
                 digest: sha256:7deff3c5b9e3616c2f7619faf23da6168456c71d8cd968d5c68a3a73c08306f7
-                digest-domain: canonical-bytes
                 request-digest: sha256:bd94ed0c5d9047c300db27b7014a1289f1bedd84f037fa6ecf938bd72bf53150
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -45,7 +42,6 @@ gates:
               briefing:
                 id: briefing:f02j6dbnd4jakwczahv1tg2h:ideation:attempt-1:revision-1
                 digest: sha256:82e64986e9e8a9be0dff8d59e0a6d59bb9ac21759ba9878ab6b3027a007e6244
-                digest-domain: canonical-bytes
                 request-digest: sha256:cdcfda518e8129d2f9efe37b76f885b6735371118b21d14679a68f4b110b3b21
                 room-ref: ./review/ideation/briefing-1
               resolution:
@@ -68,7 +64,6 @@ gates:
               briefing:
                 id: briefing:f02j6dbnd4jakwczahv1tg2h:validation:attempt-1:revision-1
                 digest: sha256:e53378cb09a8ce112fb5b72778f95d2de90b996a2ff992a68f0c00408fa7db12
-                digest-domain: canonical-bytes
                 request-digest: sha256:6cb3d4d30825f763d13c21578f84d8d6281426f7c9fc1179540bbda3c173907f
                 room-ref: ./review/validation/briefing-1
               resolution:
@@ -82,7 +77,7 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: consumed
+                state: pending
                 blockers: []
 mod-block: merge:pr-merge
 pr: pr-merge:582
