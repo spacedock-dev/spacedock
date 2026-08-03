@@ -528,3 +528,23 @@ application, feedback, merge, terminal, and archive owners.
   state manifests, then rerun the complete offline/race matrix and the registered
   recorded-gate live lanes. Do not prepare, consume, or mutate a validation gate from
   this implementation report.
+
+### Completion checklist accounting
+
+The three dispatched checklist items are accounted for explicitly:
+
+1. **DONE — implementation and acceptance criteria.** The approved projection,
+   scheduler envelope, owner routing, dependency pins, and AC-1 through AC-4 evidence
+   are recorded above at code HEAD `ae1233a8b`.
+2. **FAILED — full-suite evidence; SKIPPED — live-lane evidence.** Both
+   `go test ./...` and `go test ./... -race` reached every package but are red only at
+   `internal/gates/TestV1PilotManifestReadsAndValidates` because six required manifest
+   paths are absent from the shared state checkout. Registered Claude/Codex/Pi live
+   lanes were skipped because this worktree had no live-lane authorization; no live
+   result is claimed.
+3. **DONE — report, scope, formatting, and adversarial accounting.** The exact
+   13-file scope, dependency ancestry, `gofmt`, `git diff --check`, focused tests,
+   malformed/dirty controls, and next-stage recommendation are recorded above.
+
+Checklist totals: 3 top-level items — 2 DONE, 1 with FAILED full-suite evidence and
+SKIPPED live-lane evidence; subcheck totals are 2 DONE, 1 FAILED, and 1 SKIPPED.
