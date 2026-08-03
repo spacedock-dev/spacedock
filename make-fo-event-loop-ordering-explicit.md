@@ -2,7 +2,7 @@
 title: Make FO event-loop ordering and idle wait explicit
 status: ideation
 source: "Captain follow-up after the 2026-08-03 durable-decisions execution-gap diagnosis."
-started:
+started: 2026-08-03T16:00:51Z
 completed:
 verdict:
 score: 0.98
