@@ -8,7 +8,7 @@ verdict:
 score: 0.85
 worktree:
 issue:
-sprint:
+sprint: live-test-truth
 group: common-evidence
 sprint-readiness: defer
 id: rmz8te1nt2a2akrkjfhaa37p
