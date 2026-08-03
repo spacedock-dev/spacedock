@@ -6,6 +6,18 @@ score: 0.7
 worktree:
 issue:
 id: shra0x0r2bf7ka0q1m4ft79a
+gates:
+    version: 1
+    records:
+        - id: gate:shra0x0r2bf7ka0q1m4ft79a:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:shra0x0r2bf7ka0q1m4ft79a-backlog-1
+              briefing:
+                id: briefing:shra0x0r2bf7ka0q1m4ft79a:backlog:attempt-1:revision-1
+                digest: sha256:f49fe5e9642d6d82e859daaa33ac43e37ebf1482336fb24b7904c304d67dc8f0
+                request-digest: sha256:ed9980aecefd08f4b0cc43f731466b3fecd8925fb3afba6d8f6a315795043b0a
+                room-ref: ./review/backlog/briefing-1
 ---
 
 The gate parser must accept the non-material finding classes that the workflow contract declares.
