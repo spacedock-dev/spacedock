@@ -2,7 +2,7 @@
 title: Promote standalone common behaviors into the shared live journey suite
 status: ideation
 source: "Desired live-test registry inventory, 2026-08-03"
-started:
+started: 2026-08-03T11:21:39Z
 completed:
 verdict:
 score: 0.9
