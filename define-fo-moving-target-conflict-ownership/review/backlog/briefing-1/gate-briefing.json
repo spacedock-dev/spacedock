@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:g3912c6f6jkgd0yjmyg6h7yn:backlog:attempt-1:revision-1",
+  "question": "Does the conflict-ownership design preserve pending authority, name Captain and branch-owner responsibilities, require fresh exact-head evidence, and keep unrelated sprint work moving without a resolver escape hatch?",
+  "artifacts": [
+    {
+      "id": "artifact:g3912c6f6jkgd0yjmyg6h7yn:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/61df36f79248ead6446099470b4ce4d468b831de/define-fo-moving-target-conflict-ownership.md",
+      "rev": "sha256:c74bc4ae89b411e91522e9a1d26b83cd05a11e00f98710dca15ddcbfc9bda4a6",
+      "mediaType": "text/markdown",
+      "summary": "Ideation review: moving-target fixture, ownership handoff, exact-head freshness, per-entity hold, and keep-moving matrix are specified with no resolver, state, or workflow-schema changes."
+    }
+  ]
+}

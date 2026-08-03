@@ -12,6 +12,18 @@ sprint: durable-decisions
 group: fo-contract
 milestone: 0.27.0
 id: g3912c6f6jkgd0yjmyg6h7yn
+gates:
+    version: 1
+    records:
+        - id: gate:g3912c6f6jkgd0yjmyg6h7yn:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:g3912c6f6jkgd0yjmyg6h7yn-backlog-1
+              briefing:
+                id: briefing:g3912c6f6jkgd0yjmyg6h7yn:backlog:attempt-1:revision-1
+                digest: sha256:fbe944ff1e7905c23765219faa581bc2c1cba4980f68664253038adacb2afafa
+                request-digest: sha256:7c706e3f3ab394a0653b087e1007f2aab9246a08c95e8c8947bb976a60d2736a
+                room-ref: ./define-fo-moving-target-conflict-ownership/review/backlog/briefing-1
 ---
 
 Define the ownership, durable hold, evidence, and keep-moving behavior when a pending PR meets a moving merge target. The task closes the contract ambiguity without adding a resolver worker or changing the workflow definition.
