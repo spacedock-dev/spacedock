@@ -43,6 +43,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-03T14:22:46.909612Z"
                 reason: Preflight staff review found cross-member ownership and sequencing defects, and the shared sprint index changed. Withdraw this stale binding before the authorized fold.
+            - id: gate-attempt:3d2rqxrgvqky085mn170x3zp-ideation-2
+              briefing:
+                id: briefing:3d2rqxrgvqky085mn170x3zp:ideation:attempt-2:revision-1
+                digest: sha256:e548fefa006f3370bfd6916b7ffeedb3b8fb10e8473e8a983d5b33e5a21596a2
+                request-digest: sha256:77ed13df7454fc323fa438511104b0f1007a9bba45b122753f8db4943dd82a47
+                room-ref: ./make-live-test-results-truthful/review/ideation/briefing-2
 started: 2026-08-03T12:19:34Z
 ---
 

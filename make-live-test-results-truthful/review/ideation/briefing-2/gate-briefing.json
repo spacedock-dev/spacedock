@@ -1,0 +1,45 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3d2rqxrgvqky085mn170x3zp:ideation:attempt-2:revision-1",
+  "question": "Does this corrected plan make false-green decisions and false-red Codex timeouts mechanically visible before final selector migration?",
+  "artifacts": [
+    {
+      "id": "artifact:3d2rqxrgvqky085mn170x3zp:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/7a8b3962f9de12dfd7c3ea7f1644a75b97498cc5/make-live-test-results-truthful.md",
+      "rev": "sha256:171c12fe7c9fa9f241e53c315a54f09e557ae9ca0baee4bdc87495d8f9063fe0",
+      "mediaType": "text/markdown",
+      "summary": "The plan owns the AC2 durable oracle and 60-second Codex progress-aware liveness. Its focused old selector is pre-ys evidence; ys owns final canonical selector migration."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/7224ef482842f5daf44fca4157228bb9ac93cbd4/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/7224ef482842f5daf44fca4157228bb9ac93cbd4/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:25d6127a28c79f2b38e2c1f8a02b66210e017f6f6c9ea5d098c0fd64e359be34"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-2:revision-1:item-4",
+      "uri": "git-root://state/7a8b3962f9de12dfd7c3ea7f1644a75b97498cc5/_archive/ac2-reanchor-live-scenario-repair.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3e60b6f4cef7a311bba987326c7f7ae491d4cc9c41a34b6802eacf4609712f3c"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-2:revision-1:item-5",
+      "uri": "git-root://state/7a8b3962f9de12dfd7c3ea7f1644a75b97498cc5/_archive/make-codex-live-timeout-progress-aware.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:722707e6d7cd685e3aff1fbcda19f1adb872a0cdf3f3b0de71fc53c65bca4102"
+    }
+  ]
+}
