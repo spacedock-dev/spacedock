@@ -1,10 +1,10 @@
 ---
 title: Require Codex worker spawn after approved gate advance
-status: validation
+status: done
 source: "KD validation cycle 4, Codex keep-moving-posture at b60d1c8"
 started: 2026-07-30T23:39:35Z
-completed:
-verdict:
+completed: 2026-08-03T03:56:36Z
+verdict: passed
 score: 0.95
 worktree: .worktrees/spacedock-ensign-codex-approved-gate-worker-spawn
 issue:
@@ -77,10 +77,11 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: pending
+                state: consumed
                 blockers: []
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:582
+archived: 2026-08-03T03:56:36Z
 ---
 
 A supported headless Codex keep-moving journey advanced `approved-gate`, built its implementation dispatch artifact, never invoked `spawn_agent` / `worker.spawn`, then read a report and terminalized the task. This violates the shipped dispatch boundary and silently bypasses worker execution and write-scope authority.
