@@ -1,6 +1,6 @@
 ---
 title: Warn on legacy gate application fields
-status: ideation
+status: implementation
 source: "Captain directive 2026-08-03: unknown keys in the exact gate application mapping must warn, not fail the state read."
 score: "1.0"
 sprint: durable-decisions
@@ -61,7 +61,7 @@ gates:
                 reason: 'Captain approved the revised exact-application warning boundary: every unknown application key warns and is ignored for canonical decode/eligibility; all non-application unknowns, malformed shapes, invalid canonical data, duplicates, and bad bindings remain fatal. Implement after WJ PR #610 merges.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-03T13:53:46Z
 ---
 
