@@ -17,6 +17,17 @@ gates:
                 digest: sha256:899a41fbeb26148c4e30be8a8fbe36c8c18fde57e87823e09a3f772a843a0a68
                 request-digest: sha256:612e30cdf011456f2204d8c05c092a8213f074722a427806282324bb35215dd8
                 room-ref: ./warn-on-legacy-gate-application-fields/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:jympnaf11wg4qmd4z85a3ayv:backlog:1
+                briefing: briefing:jympnaf11wg4qmd4z85a3ayv:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T13:53:01.677814Z"
+                decision: approve
+                reason: Captain directed dispatch of the bounded warning-only compatibility implementation; preserve strict errors for all other fields and reconcile shared io.go before merge.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Legacy state written before the v1 application-schema cut can contain `application.action` and `application.blockers`. The canonical gate reader currently rejects that state before it can expose the valid `target-stage` and `state` fields.
