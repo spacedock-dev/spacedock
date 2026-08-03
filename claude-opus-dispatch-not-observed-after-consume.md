@@ -193,3 +193,17 @@ The grader now derives and exact-matches the expected approval actor from the su
 ### Summary
 
 The corrected candidate derives approval identity from the close mode, fully verifies the room-backed consumed lifecycle, and retains actor-provenance negatives. The implementation is test-only, and focused, full, race, and exact live Codex evidence is green.
+
+## Stage Report: implementation
+
+- DONE: Preserve the actor oracle by close mode.
+  Evidence: code commit `206a4737c` derives `person:captain` for a successful room-backed close, validates and exact-matches explicit chat `--actor`, defaults synthetic observations to `agent:first-officer`, and retains the help-probe and post-state Resolution-ID fixes.
+- DONE: Preserve the room-backed consumed lifecycle and actor-swap controls.
+  Evidence: `TestRecordedGateCommittedBeforeDispatchResolutionPaths/room-backed` runs `gate record --room ... --consume` through the shared full lifecycle assertion, including durable state and dispatch ancestry; `TestRecordedGateLifecycleProvenanceMutants` retains classic actor-swap and forged actor-suffix negatives.
+- DONE: Preserve test-only scope and the corrected-candidate validation evidence.
+  Evidence: `git show --name-only --format= 206a4737c` lists only `internal/ensigncycle/recorded_gate_lifecycle_test.go`; focused actor/room/classic regressions passed; `go test ./internal/ensigncycle -count=1` passed in 186.391s; `go test ./internal/ensigncycle -race -count=1` passed in 191.068s; exact `go test -tags live ./internal/ensigncycle -run '^TestLiveCodexSharedScenarios$/recorded-gate-lifecycle$' -count=1 -timeout=20m` passed in 250.915s.
+- CHECKLIST OUTCOME: 3 DONE, 0 FAILED, 0 SKIPPED.
+
+### Summary
+
+The final implementation report preserves the close-mode actor oracle, full room-backed consumed lifecycle proof, actor-swap controls, test-only boundary, and focused/full/race/live evidence.
