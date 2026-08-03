@@ -105,6 +105,17 @@ gates:
                 digest: sha256:4d367180d827c2f098f80470525bdfb375dabbdbf147b2351477521c45827c48
                 request-digest: sha256:0aee2c38193fd16960a8f63c863f7522281ff1cba02004f5e68c216f32fdeaa4
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nthcevf1snz7hm75gny3kd2e:validation:2
+                briefing: briefing:nthcevf1snz7hm75gny3kd2e:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-03T00:26:19.390011Z"
+                decision: approve
+                reason: Captain approved the validation candidate and accepts the disclosed cumulative evidence-only correction surface of 15 files and +344 insertions.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
