@@ -12,6 +12,18 @@ sprint: live-test-truth
 group: registry
 sprint-readiness: ready
 id: 3w2rx3aw4vcympx84zt8mtv7
+gates:
+    version: 1
+    records:
+        - id: gate:3w2rx3aw4vcympx84zt8mtv7:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:3w2rx3aw4vcympx84zt8mtv7-backlog-1
+              briefing:
+                id: briefing:3w2rx3aw4vcympx84zt8mtv7:backlog:attempt-1:revision-1
+                digest: sha256:31091557195718f78a0f4425d97cdb4fad7653b621456e030b063c5ff7e09fb1
+                request-digest: sha256:6dbc7d42c596779e0d531fdd9a0dd73238546e9f3b6279f9ab3882dede2112dc
+                room-ref: ./bind-live-registry-to-source/review/backlog/briefing-1
 ---
 
 ## Problem
