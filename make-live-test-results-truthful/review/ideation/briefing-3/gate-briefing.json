@@ -1,0 +1,52 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3d2rqxrgvqky085mn170x3zp:ideation:attempt-3:revision-1",
+  "question": "Does this corrected plan make false-green decisions and false-red Codex timeouts mechanically visible before final selector migration?",
+  "artifacts": [
+    {
+      "id": "artifact:3d2rqxrgvqky085mn170x3zp:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/766e2e42576174c98ae3c8e85447457ecf9ab820/make-live-test-results-truthful.md",
+      "rev": "sha256:8e3f6b6e966ee91974bcad8ffa81b523a13d328fc44bcd32d81ff33869aa6b8c",
+      "mediaType": "text/markdown",
+      "summary": "The plan owns the AC2 durable oracle and 60-second Codex progress-aware liveness. Its focused old selector is pre-ys evidence; ys owns final canonical selector migration."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/1d1bd2e7aa283573aa580d5df2f70b697e945249/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-3:revision-1:item-3",
+      "uri": "git-root://main/1d1bd2e7aa283573aa580d5df2f70b697e945249/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:fed8234cebf79aea61288adaacc884ba2c539ec216e030c04114da5262e4333c"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-3:revision-1:item-4",
+      "uri": "git-root://main/1d1bd2e7aa283573aa580d5df2f70b697e945249/docs/roadmap/live-test-truth/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e37bfeecfeccf129250a66b4b04d6aace1273b341f98494af044c8504a1776e6"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-3:revision-1:item-5",
+      "uri": "git-root://state/766e2e42576174c98ae3c8e85447457ecf9ab820/_archive/ac2-reanchor-live-scenario-repair.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3e60b6f4cef7a311bba987326c7f7ae491d4cc9c41a34b6802eacf4609712f3c"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-3:revision-1:item-6",
+      "uri": "git-root://state/766e2e42576174c98ae3c8e85447457ecf9ab820/_archive/make-codex-live-timeout-progress-aware.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:722707e6d7cd685e3aff1fbcda19f1adb872a0cdf3f3b0de71fc53c65bca4102"
+    }
+  ]
+}
