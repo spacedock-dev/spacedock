@@ -24,6 +24,17 @@ gates:
                 digest: sha256:fbe944ff1e7905c23765219faa581bc2c1cba4980f68664253038adacb2afafa
                 request-digest: sha256:7c706e3f3ab394a0653b087e1007f2aab9246a08c95e8c8947bb976a60d2736a
                 room-ref: ./define-fo-moving-target-conflict-ownership/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:g3912c6f6jkgd0yjmyg6h7yn:backlog:1
+                briefing: briefing:g3912c6f6jkgd0yjmyg6h7yn:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-03T15:59:40.23286Z"
+                decision: approve
+                reason: Captain conn authorizes approval when SO concurs. SO concurs with parallel EJ/G3 ideation; keep EJ-before-G3 implementation landing because they share the FO dispatch and merge contract.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Define the ownership, durable hold, evidence, and keep-moving behavior when a pending PR meets a moving merge target. The task closes the contract ambiguity without adding a resolver worker or changing the workflow definition.
