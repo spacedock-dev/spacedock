@@ -1,6 +1,6 @@
 ---
 title: Make live test results tell the truth
-status: ideation
+status: implementation
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 1a and wp as design inputs."
 score: 1.0
 sprint: live-test-truth
@@ -69,7 +69,7 @@ gates:
                 reason: Approved after staff review. Land truthful live-result oracles first.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-03T12:19:34Z
 ---
 
