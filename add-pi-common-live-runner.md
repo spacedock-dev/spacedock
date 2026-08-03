@@ -24,6 +24,19 @@ gates:
                 digest: sha256:75c779adf9f75759ab31035e7433523ee1a64a5a351eb725e3bc838061a5a7ca
                 request-digest: sha256:b2e61d14956245e69ed188a2d46d2d53dd2bc2e1c2af97fa94def22578bc1346
                 room-ref: ./add-pi-common-live-runner/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:tj41e4f404mz7ast3yh9enwc:backlog:1
+                briefing: briefing:tj41e4f404mz7ast3yh9enwc:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T10:34:56.368971Z"
+                decision: approve
+                reason: Captain approved the prepared Sol ideation cohort with make it so.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 ## Problem
