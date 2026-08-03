@@ -2,7 +2,7 @@
 title: "Gates & decisions"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-03 03:56:58"
+last_updated: "2026-08-03 12:13:44"
 ---
 
 # Gates & decisions
@@ -48,6 +48,8 @@ If a prepared room becomes stale before any provider decision, the first officer
 - **Approve.** The decision is recorded first. A separate application step may then advance eligible work exactly once.
 - **Redo with feedback.** You accept the direction but send concrete fixes back. The recorded decision is `revise`, and its reason says the direction is accepted.
 - **Reject.** With a configured feedback target, the recorded decision is `revise`, its reason says the direction is rejected, and the work bounces to that owner. Without a feedback target, the decision is `hold` and the first officer stops for routing help.
+
+Only approve creates an application. Revise and hold are complete when their Resolution is recorded; workflow routing, not an application payload, handles feedback.
 
 Redo and reject differ only in whether you accept the direction; both carry your concrete asks so the next worker has something to act on. Nothing closes without its verdict on the record. Your call translates into the existing `approve`, `revise`, and `hold` record; automatic bounce applies only when a reviewer recommends `REJECTED` at a configured feedback gate.
 

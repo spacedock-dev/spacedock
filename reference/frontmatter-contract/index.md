@@ -2,7 +2,7 @@
 title: "Frontmatter contract"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-03 03:56:58"
+last_updated: "2026-08-03 12:13:44"
 ---
 
 # Frontmatter contract
@@ -21,7 +21,9 @@ A gate decision is recorded in the entity's versioned `gates` collection before 
 
 `review-round` is the current pointer to one immutable advisory Review & Gate room. It repeats only the round, stage, cycle, and canonical Briefing binding; Resolutions remain in `briefing.review.jsonl`. Round recording shares the gate recorder's lock, full-entity compare-and-swap validation, and atomic entity replacement, but carries no gate selection, application, or status effect.
 
-A recorded approval carries a one-use application. Status surfaces it as `approved-pending` until it is consumed, `consumed` once the approval has advanced exactly once through the ordinary transition path, `superseded` if the reviewed input changed before it was consumed, and `not-applicable` for a reviewer hold. A present dependency blocker or an active execution hold keeps the application ineligible; the application is never consumed twice.
+The known `application` subtree is approval-only and contains exactly `target-stage` and `state`; revise and hold carry no application.
+
+A recorded approval carries a one-use application. Status surfaces it as `approved-pending`, `consumed`, or `superseded`. Hold and revise carry no application; their Resolution remains the durable decision. The application is never consumed twice.
 
 ## Sitemap
 
