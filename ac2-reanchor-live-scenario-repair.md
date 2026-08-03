@@ -40,6 +40,10 @@ gates:
                 digest: sha256:a61cbdba183ea3b02324947a02f047095ff627dea42f89aa80e5799c8631485e
                 request-digest: sha256:b855d8e8eb36902992badaf6745b302a1af028d20fa7f0c3488b011a0cc982d6
                 room-ref: ./ac2-reanchor-live-scenario-repair/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-03T12:16:50.649074Z"
+                reason: Captain recarved the sprint into outcome-shaped delivery units. Preserve this report as design input; do not present or consume this component-shaped attempt.
 started: 2026-08-03T11:22:01Z
 ---
 
