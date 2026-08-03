@@ -123,3 +123,16 @@ Any change to the actual gate/dispatch mechanics, `--stamp`, or `--consume` -- c
 ### Summary
 
 The recorded-gate grader now ignores harmless help probes when detecting ordered lifecycle phases and recognizes the actual Resolution ID written by either the room-backed or classic close path. Focused regressions cover all three help probes and both close mechanisms; the complete ensigncycle test package is green. Gate and dispatch implementation code remains unchanged.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 across `gate prepare`, `gate record`, and `gate consume` help probes while preserving ordered phase detection.
+  `TestRecordedGateLifecyclePhaseDetectionIgnoresHelpProbes` passed with all three exact `--help` lines interleaved in the lifecycle log; it confirms the real prepare/commit/record offsets remain ordered and consume help is not treated as a phase. `TestRecordedGateLifecycleRealCLIReplay` also passed its end-to-end replay after inserting prepare, record, and consume help probes.
+- DONE: Reproduce AC-2 for room-backed and classic close paths using the actual post-state Resolution ID.
+  `TestRecordedGateCommittedBeforeDispatchResolutionPaths` passed both `classic-chat` and `room-backed` subtests. Each performs prepare, close, consume, a successor commit, and dispatch ancestry inspection; both observations reported `ordered=true` and `committed=true`.
+- DONE: Confirm AC-3 and run focused, full, and race ensigncycle tests at candidate `48f001276` atop `7ece33938`.
+  Focused command `go test ./internal/ensigncycle -run 'TestRecordedGateLifecyclePhaseDetectionIgnoresHelpProbes|TestRecordedGateCommittedBeforeDispatchResolutionPaths|TestRecordedGateLifecycleRealCLIReplay' -count=1 -v` passed. Full `go test ./internal/ensigncycle -count=1` passed in 279.254s; `go test ./internal/ensigncycle -race -count=1` passed in 282.522s. No files were modified during validation.
+
+### Summary
+
+Validation passes all three acceptance criteria. Help probes for prepare, record, and consume no longer poison ordered detection; room-backed and classic closes both resolve committed detection through the actual Resolution ID; and focused, full, and race ensigncycle suites are green on the exact candidate.
