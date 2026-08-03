@@ -336,10 +336,13 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					fmt.Fprintln(stderr, "Error: gate validate accepts only --workflow-dir")
 					return exitCodeError{2}
 				}
-				s, err := gates.SummaryFileAt(path, definitionDir)
+				s, warnings, err := gates.SummaryFileDiagnosticsAt(path, definitionDir)
 				if err != nil {
 					fmt.Fprintln(stderr, "Error:", err)
 					return exitCodeError{1}
+				}
+				for _, warning := range warnings {
+					fmt.Fprintln(stderr, gates.FormatWarning(path, warning))
 				}
 				fmt.Fprintf(stdout, "gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
 				return nil

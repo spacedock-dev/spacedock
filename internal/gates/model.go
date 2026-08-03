@@ -1,5 +1,5 @@
 // ABOUTME: Canonical v1 durable gate-resolution and one-use application model.
-// ABOUTME: Validation keeps unknown or conflicting application state fail-closed.
+// ABOUTME: Canonical validation keeps unknown or conflicting application state fail-closed.
 package gates
 
 import (

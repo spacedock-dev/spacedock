@@ -101,12 +101,15 @@ duplicate stage records fail closed. The last ordered attempt in that record is 
 and eligible for later application. These facts remove any need for separate attempt pointers, sequence
 numbers, lineage pointers, or explicit lifecycle state.
 
-The binary-owned model is closed: unsupported fields inside `gates` fail validation.
-In particular, the pilot-only attempt selector, `current-attempt`, `sequence`,
-`previous-attempt`, and explicit attempt `state` encodings are rejected. There is no
+The binary-owned model is closed for canonical validation and writes. In particular,
+the pilot-only attempt selector, `current-attempt`, `sequence`, `previous-attempt`,
+and explicit attempt `state` encodings are rejected. A read tolerates unknown keys
+only under each `records[*].attempts[*].application` mapping, reports them as warnings
+on explicit `status --validate` or `gate validate`, ignores them for authority, and
+never writes them. All other unknown or malformed fields fail closed. There is no
 migration or compatibility rewrite. The `application` field is an approval-only
-authority token with exactly `target-stage` and `state`, where state is `pending`,
-`consumed`, or `superseded`. Revise and hold carry no application.
+authority token whose canonical fields are exactly `target-stage` and `state`, where
+state is `pending`, `consumed`, or `superseded`. Revise and hold carry no application.
 
 Every Briefing binding includes an id, canonical SHA-256 digest, and an exact file or room
 reference. Version 1 digests are unconditionally RFC 8785/JCS canonical Briefing JSON
