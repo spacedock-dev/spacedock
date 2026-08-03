@@ -91,6 +91,17 @@ gates:
                 digest: sha256:387925c13f510cf76f3c23f84e8a4af138a0a67c7bb52aea9f1a9f82e81ea9b5
                 request-digest: sha256:898e27ed5cd7725809383b09f151a24a37b1b26d8b2daa56cc91a7a4ff111a2b
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:wjkhq0sktbbe3txx6jhnvcv2:validation:1
+                briefing: briefing:wjkhq0sktbbe3txx6jhnvcv2:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T14:15:58.812712Z"
+                decision: approve
+                reason: Captain approved WJ validation PASSED with deferred evidence risk at exact head d1aac2e035f4e52c94141a2deb218ab5872d0fa5; focused AC evidence is green and full-suite blockers are recorded as environment risk.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Cut the development-specific classification and Cycle projection from the public round surface while retaining its workflow-neutral correction-record producer for stable v1. Keeping policy would freeze this repository's review taxonomy into the generic durable-decision contract; deleting the structural producer would break zbc's post-rework freshness boundary.
