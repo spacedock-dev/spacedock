@@ -227,12 +227,12 @@ atomicity branches remain.
 
 ### Ideation completion checklist
 
-- DONE — traced every production `gate eligibility` route and every
+- DONE: traced every production `gate eligibility` route and every
   `EvaluateEligibility`/`EligibilityFileAt` caller, including the status and merge
   consumers that are not test-only.
-- DONE — recorded the concrete unreleased-v1 CLI/status/docs design, the no-alias/no-
+- DONE: recorded the concrete unreleased-v1 CLI/status/docs design, the no-alias/no-
   readiness-class boundary, and the operator replacements through status and acting
   commands.
-- DONE — defined the real lifecycle, refusal matrix, detached mutation proof, and
+- DONE: defined the real lifecycle, refusal matrix, detached mutation proof, and
   focused/full/race/formatting/live-lane gates, with baseline focused evidence and
   the unrelated shared-state manifest failure called out.
