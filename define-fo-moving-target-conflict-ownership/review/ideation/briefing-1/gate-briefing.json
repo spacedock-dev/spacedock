@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:g3912c6f6jkgd0yjmyg6h7yn:ideation:attempt-1:revision-1",
+  "question": "Does the ideation prove a moving-target PR conflict keeps pending authority, assigns Captain/branch-owner/FO responsibilities, invalidates stale evidence, and keeps unrelated sprint work moving without a resolver escape hatch?",
+  "artifacts": [
+    {
+      "id": "artifact:g3912c6f6jkgd0yjmyg6h7yn:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e514135ce7b3b11093ca29ec54d806fc02ec5d4f/define-fo-moving-target-conflict-ownership.md",
+      "rev": "sha256:78937809acd37299a6ece6836ab806e41559aeb5a2761e7e80a83b161c04a194",
+      "mediaType": "text/markdown",
+      "summary": "Ideation evidence: a live conflict fixture records pre/post state and abort paths, the report assigns semantic reconciliation to the Captain and branch owner, transport/state safety to the FO, requires fresh exact-head evidence, and preserves independent dispatch."
+    }
+  ]
+}
