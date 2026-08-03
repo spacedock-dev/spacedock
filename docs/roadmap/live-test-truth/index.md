@@ -126,16 +126,16 @@ front-door smoke. This direction avoids a duplicate live run.
 
 ## Dependencies and sequencing
 
-1. Bind registry IDs and fixture identities to source.
-2. Converge the existing Claude/Codex shared suite on the canonical entry point.
-3. In parallel, normalize standalone common journeys, untag offline tests, repair
-   the AC value-reanchor proof, and clean independent runtime-specific lanes.
-4. Add the Pi common adapter against the stable canonical suite.
-5. Re-enable quarantined common cases only after their upstream product repairs
-   land, preserving their strict oracles.
-6. Reconcile the assembled registry against source and CI, record the SHA, and run
-   the sprint-wide live and offline proof. Land the SSOT link, first SHA, and guard
-   together.
+1. Land `3d`. It owns the AC2 durable oracle and Codex progress-aware liveness.
+2. Land `15e` after `3d`. It consumes that liveness behavior and finalizes named
+   lane evidence on the current selectors.
+3. Land `ys` last. It consumes the final behavior from `3d` and `15e`, then owns
+   the canonical selector, workflow guard, live CI guide, and registry migration.
+4. Restore `rm` only after its upstream product repairs land. Preserve its strict
+   oracles and deferred sprint membership until then.
+5. Reconcile the assembled registry against source and CI. Record the SHA, then
+   run the sprint-wide live and offline proof. Land the SSOT link, first SHA, and
+   guard together.
 
 ## Ideation and staff-review focus
 
