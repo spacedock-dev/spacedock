@@ -9,9 +9,9 @@ verdict:
 score: 0.8
 worktree:
 issue:
-sprint: live-test-truth
+sprint:
 group: runtime-specific
-sprint-readiness: defer
+sprint-readiness: superseded
 ---
 
 Add `TestLivePiSubagentEnsignSmoke` to the pi-live job's `-run` selector so the AC-1 ensign-boot-contract grader it carries actually gates CI, instead of being a landed-but-never-checked assertion.
