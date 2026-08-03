@@ -19,6 +19,19 @@ gates:
                 digest: sha256:ff92cf6104cdc81f88ab51f6a59f33f3d1f42e72d7e72f712a2f50d5ae61fc47
                 request-digest: sha256:f9af92f7f1823701ddcf301aadddf68012f7af8eb4656ea6a6ced3772ec14e48
                 room-ref: ./deliver-portable-common-live-journey-surface/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ys7ncwh9kr8w5h9hdkz5apat:backlog:1
+                briefing: briefing:ys7ncwh9kr8w5h9hdkz5apat:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T12:18:32.293007Z"
+                decision: approve
+                reason: Captain explicitly approved the outcome-shaped recarve and directed immediate redispatch.
+              application:
+                action: advance
+                target-stage: ideation
+                state: pending
+                blockers: []
 ---
 
 ## Outcome
