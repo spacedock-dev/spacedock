@@ -7,9 +7,9 @@ Date: 2026-07-22
 
 The recorder makes a captain's decision durable before any workflow status change or
 dispatch. It owns the logical gate, ordered attempts, immutable Briefing binding, and
-portable Resolution. The application layer owns what an approval does through the typed
-`application` subtree on a closed attempt; the same recorder binary owns its guarded
-writes.
+portable Resolution. A closed approval carries the typed one-use `application`
+subtree; revise and hold are complete Resolutions with no application. The same
+recorder binary owns its guarded writes.
 
 Presentation remains an overridable channel of the present-gate skill, not a recorder
 verb. Chat decisions use `gate record --decision`. A selected override receives only
@@ -89,10 +89,8 @@ gates:
             at: 2026-07-22T09:00:00Z
             decision: approve
           application:
-            action: advance
             target-stage: done
             state: pending
-            blockers: []
 ```
 
 `records` and `attempts` are ordered. The last attempt in a record is current. An
@@ -106,8 +104,9 @@ numbers, lineage pointers, or explicit lifecycle state.
 The binary-owned model is closed: unsupported fields inside `gates` fail validation.
 In particular, the pilot-only attempt selector, `current-attempt`, `sequence`,
 `previous-attempt`, and explicit attempt `state` encodings are rejected. There is no
-migration or compatibility rewrite. The `application` field is the typed one-use
-lifecycle boundary owned by the application layer on the same canonical-v1 writer surface.
+migration or compatibility rewrite. The `application` field is an approval-only
+authority token with exactly `target-stage` and `state`, where state is `pending`,
+`consumed`, or `superseded`. Revise and hold carry no application.
 
 Every Briefing binding includes an id, canonical SHA-256 digest, and an exact file or room
 reference. Version 1 digests are unconditionally RFC 8785/JCS canonical Briefing JSON
@@ -180,8 +179,8 @@ Resolution, provider evidence, application, status change, successor, or room wr
 
 `spacedock gate record` also accepts either the prepared room's room-backed Result or
 a semantic chat decision. Either closing source closes only the last open
-attempt for the current stage and derives its `advance/pending`, `feedback/pending`,
-or `none/not-applicable` application.
+attempt for the current stage. Approve derives one `application` with
+`target-stage` and `state: pending`; revise and hold write no application.
 
 Before either ordinary close, the recorder resolves authoritative current status in the
 workflow taxonomy and requires a nonterminal `gate: true` stage. The bound Briefing must use the canonical v1 stage-qualified identity and name that same stage. Malformed identity, mismatch, or non-actionable stage fails before Resolution construction and leaves entity bytes unchanged.
