@@ -37,6 +37,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:3w2rx3aw4vcympx84zt8mtv7:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:3w2rx3aw4vcympx84zt8mtv7-ideation-1
+              briefing:
+                id: briefing:3w2rx3aw4vcympx84zt8mtv7:ideation:attempt-1:revision-1
+                digest: sha256:63116cc2293870f9f7b98c45a5248b989d6be64e7e06192f0c5300a41f8f76bd
+                request-digest: sha256:ac23001e17ea181847c75d0f584e9a26d94af06f5e6b50e5d69b512191b6db65
+                room-ref: ./bind-live-registry-to-source/review/ideation/briefing-1
 ---
 
 ## Problem
