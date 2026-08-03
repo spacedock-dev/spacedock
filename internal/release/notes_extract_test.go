@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // TestAnnotatedTagBodyRoundTrips locks AC-3's seam in a throwaway `git init`
@@ -31,9 +33,7 @@ func TestAnnotatedTagBodyRoundTrips(t *testing.T) {
 		return string(out)
 	}
 
-	git("init", "-q")
-	git("config", "user.email", "test@example.com")
-	git("config", "user.name", "test")
+	testgit.InitRepo(t, dir, "-q")
 	git("commit", "-q", "--allow-empty", "-m", "seed")
 
 	body := "A clean release.\n- feat: the user value\n- fix: the other thing"
@@ -84,9 +84,7 @@ func TestReleaseYAMLGuardRejectsEmptyBody(t *testing.T) {
 		}
 		return string(out)
 	}
-	git("init", "-q")
-	git("config", "user.email", "test@example.com")
-	git("config", "user.name", "test")
+	testgit.InitRepo(t, dir, "-q")
 	git("commit", "-q", "--allow-empty", "-m", "seed")
 
 	// Lightweight, subject-only annotated, and empty-second-`-m` annotated tags

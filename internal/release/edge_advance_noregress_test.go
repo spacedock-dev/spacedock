@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // patchNoRegressFixture builds the AC-3 scenario in a temp git repo: `next` has
@@ -64,9 +66,7 @@ func newPatchNoRegressFixture(t *testing.T) patchNoRegressFixture {
 	}
 	const foProse = "skills/first-officer/references/first-officer-shared-core.md"
 
-	git("init", "-q")
-	git("config", "user.email", "test@example.com")
-	git("config", "user.name", "test")
+	testgit.InitRepo(t, dir, "-q")
 
 	// Shared ancestor both the old release line and `next` descend from.
 	write(".claude-plugin/plugin.json", pluginJSON("0.24.0-pre1"))

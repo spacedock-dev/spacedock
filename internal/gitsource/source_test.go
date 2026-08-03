@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 func TestInspectAndResolveUseExactLocalGitObjectsAcrossMovedRoots(t *testing.T) {
@@ -241,9 +243,7 @@ func initRepository(t *testing.T, name string, files map[string]string) string {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	gitRun(t, root, "init", "-q")
-	gitRun(t, root, "config", "user.name", "Spacedock Test")
-	gitRun(t, root, "config", "user.email", "spacedock@example.invalid")
+	testgit.InitRepo(t, root, "-q")
 	for name, body := range files {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

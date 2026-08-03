@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // reconcileFixture is one self-contained fixture that holds a tmp HOME (so the
@@ -595,9 +596,7 @@ func teamConfigJSONWithSession(name, leadSessionID string, members []claudeteam.
 // origin (a local file:// remote at a sibling dir) and a "next" branch.
 func repoGitInit(t *testing.T, dir string) {
 	t.Helper()
-	mustGit(t, dir, "init", "-q", "-b", "main")
-	mustGit(t, dir, "config", "user.email", "t@t")
-	mustGit(t, dir, "config", "user.name", "t")
+	testgit.InitRepo(t, dir, "-q", "-b", "main")
 	writeFile(t, filepath.Join(dir, "seed.txt"), "seed\n")
 	mustGit(t, dir, "add", "-A")
 	mustGit(t, dir, "commit", "-q", "-m", "seed")
