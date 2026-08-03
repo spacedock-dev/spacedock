@@ -63,7 +63,7 @@ gates:
                 state: pending
 worktree: .worktrees/spacedock-ensign-status-pagination-and-default-sorting
 mod-block: merge:pr-merge
-pr: "#603"
+pr: pr-merge:603
 ---
 
 ### Goal
