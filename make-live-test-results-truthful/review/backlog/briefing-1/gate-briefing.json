@@ -1,0 +1,45 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3d2rqxrgvqky085mn170x3zp:backlog:attempt-1:revision-1",
+  "question": "Does this outcome unit make both false-green and false-red live results mechanically visible?",
+  "artifacts": [
+    {
+      "id": "artifact:3d2rqxrgvqky085mn170x3zp:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/863c1fa06d3613bf6386996a4718fa9527f2b403/make-live-test-results-truthful.md",
+      "rev": "sha256:cdd67aa52ae39502bc77b636007bb139bbb80f23682084b067afd8253ddbda19",
+      "mediaType": "text/markdown",
+      "summary": "Reuse the completed AC2 durable-oracle proof and spike the remaining Codex progress-aware liveness path."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/17d3f5a71db5e1fd2d48062b700a9580cae835c3/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/17d3f5a71db5e1fd2d48062b700a9580cae835c3/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:backlog:attempt-1:revision-1:item-4",
+      "uri": "git-root://state/863c1fa06d3613bf6386996a4718fa9527f2b403/ac2-reanchor-live-scenario-repair.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3e60b6f4cef7a311bba987326c7f7ae491d4cc9c41a34b6802eacf4609712f3c"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:backlog:attempt-1:revision-1:item-5",
+      "uri": "git-root://state/863c1fa06d3613bf6386996a4718fa9527f2b403/make-codex-live-timeout-progress-aware.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:722707e6d7cd685e3aff1fbcda19f1adb872a0cdf3f3b0de71fc53c65bca4102"
+    }
+  ]
+}

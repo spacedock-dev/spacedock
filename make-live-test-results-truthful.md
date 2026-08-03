@@ -7,6 +7,18 @@ sprint: live-test-truth
 group: truthful-results
 sprint-readiness: ready
 id: 3d2rqxrgvqky085mn170x3zp
+gates:
+    version: 1
+    records:
+        - id: gate:3d2rqxrgvqky085mn170x3zp:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:3d2rqxrgvqky085mn170x3zp-backlog-1
+              briefing:
+                id: briefing:3d2rqxrgvqky085mn170x3zp:backlog:attempt-1:revision-1
+                digest: sha256:a7eebcb6d8b2b5e90be67cd6c6ada2294f0a241bec98632fa93596e4c902b33b
+                request-digest: sha256:6437632e4af360e5c2a901a16ea56e7362e805727387ffb8937e12284a63e91e
+                room-ref: ./make-live-test-results-truthful/review/backlog/briefing-1
 ---
 
 ## Outcome
