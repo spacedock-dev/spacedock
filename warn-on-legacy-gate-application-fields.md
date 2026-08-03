@@ -45,6 +45,12 @@ gates:
                 at: "2026-08-03T14:10:57.122806Z"
                 decision: revise
                 reason: 'Captain broadened the compatibility boundary: every unknown key in the exact records[*].attempts[*].application mapping must warn deterministically, not only action/blockers. Keep non-application unknowns, malformed/non-mapping applications, missing or invalid canonical fields, duplicate canonical keys, and bad bindings fatal. Update the task body, ACs, docs diff, and test matrix; do not authorize implementation under the old narrow brief.'
+            - id: gate-attempt:jympnaf11wg4qmd4z85a3ayv-ideation-2
+              briefing:
+                id: briefing:jympnaf11wg4qmd4z85a3ayv:ideation:attempt-2:revision-1
+                digest: sha256:d3b6425224611ec75fa9fa4d167d77d63bd5e88538d9ccd1ead278dbf57102ca
+                request-digest: sha256:8a4af690385527958cbea4d249f2c8566acbfc5b311cbb5b345aee4650454007
+                room-ref: ./warn-on-legacy-gate-application-fields/review/ideation/briefing-2
 started: 2026-08-03T13:53:46Z
 ---
 

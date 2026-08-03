@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:jympnaf11wg4qmd4z85a3ayv:ideation:attempt-2:revision-1",
+  "question": "Approve the revised compatibility boundary: every unknown key in the exact gates.records[*].attempts[*].application mapping is warning-only, while non-application unknowns and malformed, invalid, duplicate, or unbound data remain fatal?",
+  "artifacts": [
+    {
+      "id": "artifact:jympnaf11wg4qmd4z85a3ayv:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/802f238f813d2c77b6be452b37d25ae393405d0f/warn-on-legacy-gate-application-fields.md",
+      "rev": "sha256:f7286f7ababe0c9134bc621bead93d3f78ef1519c7c3a774e29022af5bb52c48",
+      "mediaType": "text/markdown",
+      "summary": "Implement the exact application-path decode-copy seam. Preserve canonical target-stage/state and strict Validate; filter every other application key, emit deterministic warnings, keep original bytes for CAS/writes, and show warnings only on explicit validation surfaces. Unknown application extensions such as action, blockers, execution-hold, feedback, and nested/binding-shaped values are ignored and cannot constrain eligibility; non-application unknowns, malformed/non-mapping/null/sequence applications, duplicate canonical keys, invalid canonical fields, and bad bindings remain fatal. Implement only after WJ PR #610 lands; then validate jy before SK rebase/fresh validation."
+    }
+  ]
+}
