@@ -74,6 +74,12 @@ No new ideation spike is necessary. The combined plan joins two proved seams: th
 
 Implementation starts with the exact Pi selector as a focused test. A failure stops migration before the full Pi suite incurs cost.
 
+## Dependencies
+
+`3d` lands before this task. It owns the AC2 durable-oracle repair and unit tests.
+
+`15e` lands after `3d` and before this task. This task lands last and consumes the final behavior from both tasks.
+
 ## Target behavior
 
 `TestLiveSharedScenarios` is the only authoritative top-level test for common journeys. It contains exactly 16 registry subtests.
@@ -91,7 +97,7 @@ The Pi lane runs all 16 journeys. A coverage row, quarantine, skip, or Pi-only t
 ## Complete approach
 
 1. Add focused tests for one suite identity, adapter selection, map parity, and exact workflow selectors.
-2. Repair the `ac-value-reanchor` durable oracle before its common runner becomes release evidence.
+2. `3d` repairs the `ac-value-reanchor` durable oracle before this task promotes its common runner.
 3. Add the four approved annotation forms to declarations that already exist.
 4. Create `TestLiveSharedScenarios` and the common 10-journey runner map.
 5. Move Claude and Codex transport behavior into adapters without changing their launch contracts.
@@ -123,7 +129,7 @@ The Pi trace reader serves AC-4. Durable state alone cannot prove Pi child ident
 | Claude and Codex runner files | `h3` moves common behavior. `3w` adds suite bindings. | Keep only transport adapters and host-specific evidence. Put the suite annotation on the common test. |
 | Pi runner files | `tj` proposed a Pi suite and map. `r4` expands the final journey count. | Add one Pi adapter for the common 16-journey map. Do not add `TestLivePiSharedScenarios`. |
 | Fixtures and assertions | `3w` binds builders. `r4` extracts six contracts. | Extract each builder once, add its annotation there, and reuse existing assertions. |
-| `ac-value-reanchor` | The repair changes the oracle. `r4` promotes the result. | Land the durable oracle first. Then remove its standalone wrapper during promotion. |
+| `ac-value-reanchor` | `3d` changes the oracle. `r4` promotes the result. | Depend on the repair from `3d`. Remove only the standalone wrapper during promotion. |
 | Workflow and release guards | All four inputs change selectors or coverage. | Edit these files after all runners exist. Require the exact common selector in every lane. |
 | `docs/runtime-live-ci.md` | All four inputs add overlapping instructions. | Apply one final documentation change with three commands, 16 journeys, costs, artifacts, reconciliation, and one SHA. |
 
@@ -193,7 +199,7 @@ Run non-mutating journeys before mutating journeys. Within each group, run lower
 
 Use one branch and one final workflow change. Do not merge partially authoritative selectors between steps.
 
-1. Land offline failing tests and the `ac-value-reanchor` durable repair.
+1. Land focused failing tests for the final suite identity and promotion boundaries.
 2. Land source annotation grammar and bindings for declarations that already exist.
 3. Land the canonical Claude and Codex entry point with the first 10 common runners.
 4. Land the six promoted journeys, fixture variants, and retired standalone tests.
@@ -267,7 +273,7 @@ Run the SHA guard with one stale base and the recorded base. The stale base must
 
 ## Expected surface
 
-The baseline is 36 files, about 2,200 insertions, and about 1,700 deletions. The tolerance is 42 files and 2,750 insertions.
+The baseline is 34 files, about 2,060 insertions, and about 1,650 deletions. The tolerance is 42 files and 2,750 insertions.
 
 | Surface | Expected change | Purpose |
 |---|---:|---|
@@ -277,8 +283,7 @@ The baseline is 36 files, about 2,200 insertions, and about 1,700 deletions. The
 | Claude and Codex live runner files | about 150 insertions and 670 deletions | Keep transport adapters and remove duplicate journey maps. |
 | Pi shared runner and trace files | two new files, about 500 insertions | Add Pi launch, sessions, traces, costs, and artifacts. |
 | Shared fixture and assertion files | about 320 insertions | Extract six contracts, gate composites, variants, and annotations. |
-| `internal/livescenario/ac2_reanchor.go` and its unit test | about 140 insertions and 50 deletions | Make the value decision produce divergent durable state. |
-| Six standalone common live tests | delete about 690 lines | Remove competing top-level identities after promotion. |
+| Six standalone common live tests | delete about 690 lines | Remove competing top-level identities. For AC2, remove only its standalone wrapper. |
 | Pi coverage and recorded-gate quarantine files | delete about 185 lines | Remove non-executable substitutes. |
 | `shared_coverage_meta_test.go` and `journey_metrics_live_test.go` | about 70 insertions and 45 deletions | Require 16 runners, three adapters, and stable metrics. |
 | Seven proof, experiment, and existing fixture files | about 25 insertions | Add proof, experiment, and fixture annotations. |
