@@ -12,6 +12,18 @@ sprint: durable-decisions
 group: fo-contract
 milestone: 0.27.0
 id: ej9kwkvw94w6rh6n5ek7qrbf
+gates:
+    version: 1
+    records:
+        - id: gate:ej9kwkvw94w6rh6n5ek7qrbf:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:ej9kwkvw94w6rh6n5ek7qrbf-backlog-1
+              briefing:
+                id: briefing:ej9kwkvw94w6rh6n5ek7qrbf:backlog:attempt-1:revision-1
+                digest: sha256:4dbaa852a23e16b0c2c732a3fac6956ef5f95db8c603f428b1636a5983d3064b
+                request-digest: sha256:2716adf5a2f9014015e76146c012c4feb29a71001469f747748059142ecf26cb
+                room-ref: ./make-fo-event-loop-ordering-explicit/review/backlog/briefing-1
 ---
 
 Make the First Officer event loop mechanically explicit so a dispatch-only empty result cannot hide merge recovery, ready gates, or a required idle/reconcile pass. The task preserves the existing state and runtime boundaries; it makes the ordering observable and testable.

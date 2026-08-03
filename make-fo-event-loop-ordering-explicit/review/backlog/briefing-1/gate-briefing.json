@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ej9kwkvw94w6rh6n5ek7qrbf:backlog:attempt-1:revision-1",
+  "question": "Does the event-loop design provide a truthful, testable order that processes merge/gate actions before dispatch, retries idle once, and waits only for unresolved workers?",
+  "artifacts": [
+    {
+      "id": "artifact:ej9kwkvw94w6rh6n5ek7qrbf:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b11161bd2cbc009122bf88214faed6704db2e38d/make-fo-event-loop-ordering-explicit.md",
+      "rev": "sha256:f35c49a95f6fa463fd0ec23de28d848d3661a60f463f0755b5bf23da47366ba6",
+      "mediaType": "text/markdown",
+      "summary": "Ideation review: falsifying trace, explicit action ordering, one idle/reconcile retry, unresolved-worker wait predicate, and keep-moving matrix are specified without changing state or workflow schema."
+    }
+  ]
+}
