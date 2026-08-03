@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:r4qk46605sjcphj44cvkcsk4:backlog:attempt-1:revision-1",
+  "question": "Approve this task for risk-first ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:r4qk46605sjcphj44cvkcsk4:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0fdded99b7e7630113e292d8865b787e9c7dd189/promote-standalone-common-live-journeys.md",
+      "rev": "sha256:0c643919c977f5e3722980f4579c28f9cb1765271c66dfdd59fd653ebe551743",
+      "mediaType": "text/markdown",
+      "summary": "Promote standalone common behavior into canonical shared journeys without duplicating gate assertions or runtime transport."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:r4qk46605sjcphj44cvkcsk4:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/2997da9a243f36ad31f483f63ce29b1b838c3410/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:r4qk46605sjcphj44cvkcsk4:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/2997da9a243f36ad31f483f63ce29b1b838c3410/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e"
+    }
+  ]
+}

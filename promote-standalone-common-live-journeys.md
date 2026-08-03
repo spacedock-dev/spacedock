@@ -12,6 +12,18 @@ sprint: live-test-truth
 group: common-runner
 sprint-readiness: ready
 id: r4qk46605sjcphj44cvkcsk4
+gates:
+    version: 1
+    records:
+        - id: gate:r4qk46605sjcphj44cvkcsk4:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:r4qk46605sjcphj44cvkcsk4-backlog-1
+              briefing:
+                id: briefing:r4qk46605sjcphj44cvkcsk4:backlog:attempt-1:revision-1
+                digest: sha256:88c06435c9d215a9101c54108777e7553ffbfd61eed6a8cc041d02829236d274
+                request-digest: sha256:8f3ec87bf5943cdeed8428bfcc78f626e9f0b108612fe2037f11f506de0f30b6
+                room-ref: ./promote-standalone-common-live-journeys/review/backlog/briefing-1
 ---
 
 ## Problem
