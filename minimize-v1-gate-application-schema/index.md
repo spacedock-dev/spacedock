@@ -8,7 +8,7 @@ verdict: rejected
 score: "0.9"
 worktree: .worktrees/spacedock-ensign-minimize-v1-gate-application-schema
 issue:
-pr:
+pr: "#602"
 sprint: durable-decisions
 id: nthcevf1snz7hm75gny3kd2e
 gates:
@@ -116,6 +116,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
+mod-block: merge:pr-merge
 ---
 
 Keep only application state that a supported command creates and a supported consumer spends. The unreleased v1 model currently carries blockers, execution holds, feedback payloads, and leaf fields that were designed speculatively but have no live producer or consumer.
