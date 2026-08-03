@@ -8,7 +8,7 @@ verdict:
 score: "0.95"
 worktree: .worktrees/spacedock-ensign-cut-workflow-specific-round-recorder-from-v1
 issue:
-pr:
+pr: "#610"
 sprint: durable-decisions
 id: wjkhq0sktbbe3txx6jhnvcv2
 gates:
@@ -102,6 +102,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
+mod-block: merge:pr-merge
 ---
 
 Cut the development-specific classification and Cycle projection from the public round surface while retaining its workflow-neutral correction-record producer for stable v1. Keeping policy would freeze this repository's review taxonomy into the generic durable-decision contract; deleting the structural producer would break zbc's post-rework freshness boundary.
