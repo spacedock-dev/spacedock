@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3d2rqxrgvqky085mn170x3zp:validation:attempt-1:revision-1",
+  "question": "Should 3d remain held at validation until the canonical current-checkout manifest blocker is repaired?",
+  "artifacts": [
+    {
+      "id": "artifact:3d2rqxrgvqky085mn170x3zp:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0888d188fc12f613077ec49de52e0d1a8582c087/make-live-test-results-truthful/review/validation-review.md",
+      "rev": "sha256:865c1434efeb27a58f46b926733b12ab797c7968525776f24b99954f7be2ded2",
+      "mediaType": "text/markdown",
+      "summary": "All four 3d ACs and both changed live paths pass, but the required full and race suites are red on seven stale pilot-manifest paths outside 3d ownership; recommend HOLD."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/0888d188fc12f613077ec49de52e0d1a8582c087/make-live-test-results-truthful.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:14efef07c47dac3e0a4ca49c4e76532b8ca2a0e9a639e19b77aff8b99d3ce309"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/a97a2b4cf9a1b708c6750d9758f3f5a67ef34d58/AGENTS.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:20a501101aeb53e5644576313ff54b18793d968a0e05fc51a1b3eac3680fcbdb"
+    }
+  ]
+}

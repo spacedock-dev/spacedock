@@ -70,6 +70,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:3d2rqxrgvqky085mn170x3zp:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:3d2rqxrgvqky085mn170x3zp-validation-1
+              briefing:
+                id: briefing:3d2rqxrgvqky085mn170x3zp:validation:attempt-1:revision-1
+                digest: sha256:2a92323df769b11785a7a522557ef05797ae25b3f44f412688c408f4bd1c94df
+                request-digest: sha256:083a25c48521ad3b983c0f875f87c5750ee1890a05732c73f7ea43519c0677de
+                room-ref: ./make-live-test-results-truthful/review/validation/briefing-1
 started: 2026-08-03T12:19:34Z
 worktree: .worktrees/spacedock-ensign-make-live-test-results-truthful
 ---
