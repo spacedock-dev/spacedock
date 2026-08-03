@@ -122,6 +122,17 @@ gates:
                 digest: sha256:5a0702352daa36db0ce420c7a86ff1b24d0701d7e3b7623233d4d9a0a92ab997
                 request-digest: sha256:72cd417d27b20f2ed9feb8f8fb36ff06ba48e49a794a85cbaed1cf7b66c4ac6b
                 room-ref: ./review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nthcevf1snz7hm75gny3kd2e:validation:3
+                briefing: briefing:nthcevf1snz7hm75gny3kd2e:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-03T12:10:51.670528Z"
+                decision: approve
+                reason: Captain approved for merge when all required CI lanes are green.
+              application:
+                target-stage: done
+                state: pending
 mod-block:
 ---
 
