@@ -49,6 +49,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:skwchfe30ac6ntr63j1g0txj:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:skwchfe30ac6ntr63j1g0txj-validation-1
+              briefing:
+                id: briefing:skwchfe30ac6ntr63j1g0txj:validation:attempt-1:revision-1
+                digest: sha256:a29d71f9cc1bdd4664ecd6c58325791cd4f455dbdb4a53b3a3370aafb7b52c3f
+                request-digest: sha256:2a013593bd7763a9633da55c7444fd925fc71191c08e6490a70c6a4e0a0d7712
+                room-ref: ./gate-agent-ergonomics/review/validation/briefing-1
 worktree: .worktrees/spacedock-ensign-gate-agent-ergonomics
 ---
 

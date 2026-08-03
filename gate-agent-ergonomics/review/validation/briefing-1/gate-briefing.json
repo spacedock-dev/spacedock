@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:skwchfe30ac6ntr63j1g0txj:validation:attempt-1:revision-1",
+  "question": "Does validation prove the exact-head gate-readiness projection and scheduler envelope with the required checks honestly classified, including the pre-existing manifest failure and quarantined live-lane skips?",
+  "artifacts": [
+    {
+      "id": "artifact:skwchfe30ac6ntr63j1g0txj:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/facc9a9a5d96e9915daa925db473250f7c04c170/gate-agent-ergonomics.md",
+      "rev": "sha256:846feeca79c75f2884f5ac45fd93070a15484addd97335756514f221227b4a90",
+      "mediaType": "text/markdown",
+      "summary": "Validation evidence: exact HEAD f35436e0a is clean and rebased; focused status/gates/ensigncycle/contractlint and adversarial matrices pass; Opus and Codex live lanes pass with retained artifacts; full offline/race remain red only on seven absent historical manifests; Sonnet/Pi are explicit TODO skips."
+    }
+  ]
+}
