@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-1:revision-1",
+  "question": "Does this composed plan deliver one portable and accountable common live-journey surface without component-only landing units?",
+  "artifacts": [
+    {
+      "id": "artifact:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/87c7ba0e0afea4da4707a39d5779c0992b7cab9d/deliver-portable-common-live-journey-surface.md",
+      "rev": "sha256:198803a1633c6613abf5415ac5c1dca67729eca90ccd3f096d5aa032cad1ad96",
+      "mediaType": "text/markdown",
+      "summary": "The plan composes four completed spikes into one implementation sequence. It makes registry reconciliation, one canonical selector, sixteen journey identities, and Claude/Codex/Pi execution observable through the same operator-facing surface."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/17d3f5a71db5e1fd2d48062b700a9580cae835c3/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/17d3f5a71db5e1fd2d48062b700a9580cae835c3/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://state/87c7ba0e0afea4da4707a39d5779c0992b7cab9d/bind-live-registry-to-source.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:bb429ebcc3ab5eaba14119215f6eb46a753e2be3bddf8ae319a59fec290e5391"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-1:revision-1:item-5",
+      "uri": "git-root://state/87c7ba0e0afea4da4707a39d5779c0992b7cab9d/converge-shared-live-suite-entrypoint.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9e4e83018bedd77310fb7eebb02f848ba5badeb6d0dbd405ef3ec98585798f25"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-1:revision-1:item-6",
+      "uri": "git-root://state/87c7ba0e0afea4da4707a39d5779c0992b7cab9d/add-pi-common-live-runner.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9d85a461f4cde87221d884c689f845ba8683b7c2f935b25d0bf32c44a99c6da1"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-1:revision-1:item-7",
+      "uri": "git-root://state/87c7ba0e0afea4da4707a39d5779c0992b7cab9d/promote-standalone-common-live-journeys.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:495692e623ca0680f7217d55662a9d9614bd96d5af9f9b36f2b4bf336135105c"
+    }
+  ]
+}
