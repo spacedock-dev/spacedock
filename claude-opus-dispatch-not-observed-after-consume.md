@@ -85,6 +85,19 @@ gates:
                 digest: sha256:87ccb2889902d4c84f5ae2c14332c949cad15f0a9f2905734304f8928f2ee92e
                 request-digest: sha256:94e31f44d5a7c87c6ded23c0a5a3fba2824cf938d5eb92bc71e3d8eb979a0317
                 room-ref: ./claude-opus-dispatch-not-observed-after-consume/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:5n4k6djrq8gtvd54zg9s6zhs:validation:2
+                briefing: briefing:5n4k6djrq8gtvd54zg9s6zhs:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-03T08:49:53.842281Z"
+                decision: approve
+                reason: 'Captain approves the fresh validation: actor-by-close-mode, room-backed consumed lifecycle, adversarial matrix, full/race, exact live Codex, and detached scope evidence all pass; integrate 206a4737c through NTH with no standalone 5n PR.'
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 mod-block:
 ---
 
