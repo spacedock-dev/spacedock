@@ -6,7 +6,7 @@ started: 2026-08-01T14:00:47Z
 completed:
 verdict:
 score: "0.95"
-worktree:
+worktree: .worktrees/spacedock-ensign-cut-workflow-specific-round-recorder-from-v1
 issue:
 pr:
 sprint: durable-decisions
