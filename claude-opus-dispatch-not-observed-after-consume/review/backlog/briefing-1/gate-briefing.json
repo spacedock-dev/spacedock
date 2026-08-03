@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5n4k6djrq8gtvd54zg9s6zhs:backlog:attempt-1:revision-1",
+  "question": "Approve the bounded test-only grader repair for the two deterministic recorded-gate matcher defects, then rerun exact-head Codex CI.",
+  "artifacts": [
+    {
+      "id": "artifact:5n4k6djrq8gtvd54zg9s6zhs:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ffd896f54c8779586bd4713e7b0fd631f4ea37e5/claude-opus-dispatch-not-observed-after-consume.md",
+      "rev": "sha256:650d959dcdb0d370e1d7f2077d344a68462fd046aaf44c6f032875089ad9d232",
+      "mediaType": "text/markdown",
+      "summary": "Fix help-probe phase matching and room-backed Resolution-ID matching in the live grader only; preserve gate and dispatch implementation."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:5n4k6djrq8gtvd54zg9s6zhs:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/ef47b876b68ec4e2007251d598c7ce2f3577784a/internal/ensigncycle/recorded_gate_lifecycle_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:e3e720096d62cea324042fadd3d64cc59e1b7874cac4a75fb1b33b6f41b0ea0e"
+    }
+  ]
+}

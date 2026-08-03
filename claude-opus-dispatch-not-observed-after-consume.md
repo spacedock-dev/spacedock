@@ -10,6 +10,18 @@ score: 0.5
 worktree:
 issue:
 sprint: durable-decisions
+gates:
+    version: 1
+    records:
+        - id: gate:5n4k6djrq8gtvd54zg9s6zhs:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:5n4k6djrq8gtvd54zg9s6zhs-backlog-1
+              briefing:
+                id: briefing:5n4k6djrq8gtvd54zg9s6zhs:backlog:attempt-1:revision-1
+                digest: sha256:8fc216f76f0d60cc8db0e45c265ec26a52da62664706961590568fedabd8dba6
+                request-digest: sha256:e726acf13dbe439061d23043e0004e21b5f503a2a101b2bf931ec9158c9403ed
+                room-ref: ./claude-opus-dispatch-not-observed-after-consume/review/backlog/briefing-1
 ---
 
 `assertRecordedGateLifecycle` (internal/ensigncycle/recorded_gate_lifecycle_test.go:121) collapses `!o.dispatch.ordered || !o.dispatch.committed` into one error string ("successor dispatch was not observed after consume"), so two unrelated bugs in how `ordered`/`committed` get computed both surface identically. Both are one-line fixes.
