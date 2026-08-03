@@ -53,6 +53,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-03T14:33:56.141728Z"
                 reason: Preflight review closure changed the shared sprint index after attempt 2 was frozen. Replace it with a final package that binds the review artifact.
+            - id: gate-attempt:15ec08nz1ypn0dzs8b8xznr7-ideation-3
+              briefing:
+                id: briefing:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1
+                digest: sha256:845b4e5d389bff504eef32b1a2743226a282a0c2e6ac678c92ca2a818a3bc1b3
+                request-digest: sha256:8533fcc684e1456ca323b073d760c687adee5ad882287db8881fb2961e93cabe
+                room-ref: ./make-live-lanes-buy-named-evidence/review/ideation/briefing-3
 started: 2026-08-03T12:19:37Z
 ---
 

@@ -1,0 +1,87 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1",
+  "question": "Does this corrected plan make each retained live-lane surface serve one non-duplicate evidence claim between 3d and ys?",
+  "artifacts": [
+    {
+      "id": "artifact:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/bf9377520a86365f25480ecd5e68e3251598904c/make-live-lanes-buy-named-evidence.md",
+      "rev": "sha256:4c84697a5ce844027d7acdfeae6adbb0d67302268761b81a5a3d3486575befce",
+      "mediaType": "text/markdown",
+      "summary": "The plan lands after 3d and preserves its liveness behavior. It finalizes named lane evidence on current selectors, then ys owns the final selector, guard, and guide migration."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/1d1bd2e7aa283573aa580d5df2f70b697e945249/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-3",
+      "uri": "git-root://main/1d1bd2e7aa283573aa580d5df2f70b697e945249/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:fed8234cebf79aea61288adaacc884ba2c539ec216e030c04114da5262e4333c"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-4",
+      "uri": "git-root://main/1d1bd2e7aa283573aa580d5df2f70b697e945249/docs/roadmap/live-test-truth/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e37bfeecfeccf129250a66b4b04d6aace1273b341f98494af044c8504a1776e6"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-5",
+      "uri": "git-root://state/bf9377520a86365f25480ecd5e68e3251598904c/_archive/consolidate-pi-front-door-smoke-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:2b1829b8093f723a5406d4cadd81c8de2117cb5ecb7baa58e99009e77ac620fd"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-6",
+      "uri": "git-root://state/bf9377520a86365f25480ecd5e68e3251598904c/_archive/retire-legacy-pty-live-lane.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:ad5330c3c8b79283e3b91613a293af2cc6621c6dc696ee1134ddf162aa96555e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-7",
+      "uri": "git-root://state/bf9377520a86365f25480ecd5e68e3251598904c/_archive/wire-claude-dispatch-recovery-live-proofs.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:351564c522f7e126799e6a32151034a95c22c648f184af03e034d6b266e305ba"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-8",
+      "uri": "git-root://state/bf9377520a86365f25480ecd5e68e3251598904c/_archive/remove-dead-live-lane-controls-and-metrics.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f83897678fbcf25a551ecc1cf6b80afff334dbbd768ab8e091f85b31d92c7946"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-9",
+      "uri": "git-root://state/bf9377520a86365f25480ecd5e68e3251598904c/_archive/untag-offline-live-tests.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:585156956012436fc1a317afffa608758f3e4ddfdedf7a88072f5ad003438071"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-10",
+      "uri": "git-root://state/bf9377520a86365f25480ecd5e68e3251598904c/_archive/wire-pi-subagent-smoke.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d2af067879211dfa1f93e235f284fb89d1536d049e6b3b4e209df4a549ab65a6"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-3:revision-1:item-11",
+      "uri": "git-root://state/bf9377520a86365f25480ecd5e68e3251598904c/make-live-test-results-truthful.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d50897f5d32dcd472b0f50a24c7b9df0faca302ee3dc8d340c708d98a9f8086f"
+    }
+  ]
+}
