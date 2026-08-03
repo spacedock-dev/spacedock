@@ -24,10 +24,10 @@ import (
 )
 
 type RecordInput struct {
-	BriefingPath, RoomPath            string
-	LogPath, FeedbackCyclePath, Round string
-	Actor, Decision                   string
-	Reason, WorkflowDir               string
+	BriefingPath, RoomPath string
+	LogPath, Round         string
+	Actor, Decision        string
+	Reason, WorkflowDir    string
 }
 
 type WithdrawInput struct {
@@ -161,8 +161,8 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 		defer unlock()
 		return Summary{}, recordRoundLockedWith(entityPath, input, nil, atomicWrite)
 	}
-	if input.LogPath != "" || input.FeedbackCyclePath != "" {
-		return Summary{}, fmt.Errorf("--log and --feedback-cycle require --round")
+	if input.LogPath != "" {
+		return Summary{}, fmt.Errorf("--log requires --round")
 	}
 	if input.BriefingPath != "" {
 		return Summary{}, fmt.Errorf("gate record --briefing requires --round")

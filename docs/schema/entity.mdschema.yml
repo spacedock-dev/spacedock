@@ -124,11 +124,11 @@
         "type": "mapping",
         "fields": ["id", "stage", "cycle", "briefing"],
         "briefing_fields": ["id", "digest", "room-ref"],
-        "semantics": "current pointer to one immutable complete advisory Review & Gate room; exact replay is a no-op and divergent reuse fails closed",
+        "semantics": "current pointer to one immutable complete review room; exact replay is a no-op and divergent reuse fails closed",
         "writer": "spacedock gate record --round",
         "invariants": [
           "id is round:<entity-id>:<stage>:<cycle> and room-ref is ./review/<stage>/round-<cycle>",
-          "the pointer and optional Feedback Cycles projection enter one atomic entity replacement",
+          "the pointer enters one atomic entity replacement; workflow-defined body sections remain untouched",
           "round recording never selects or closes a gate, creates an application, or changes status"
         ]
       }

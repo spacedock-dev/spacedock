@@ -9,14 +9,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 )
 
 type loadedRound struct {
-	Briefing, Log  []byte
-	Manifest       *briefingManifest
-	Review         reviewLog
-	Triage, Digest string
+	Briefing, Log []byte
+	Manifest      *briefingManifest
+	Review        reviewLog
+	Digest        string
 }
 type roundLocation struct {
 	stage, room, entityID string
@@ -41,7 +40,7 @@ func resolveRound(entityPath, spec string) (roundLocation, error) {
 	root, _, _, _ := frontmatterNode(result.entity)
 	id := mappingValue(root, "id")
 	if id == nil || strings.TrimSpace(id.Value) == "" {
-		return result, fmt.Errorf("entity has no identity for advisory round")
+		return result, fmt.Errorf("entity has no identity for correction round")
 	}
 	result.entityID = id.Value
 	if result.pointer.ID != "" && result.pointer.ID != fmt.Sprintf("round:%s:%s:%d", id.Value, result.pointer.Stage, result.pointer.Cycle) {
@@ -80,8 +79,7 @@ func loadValidateRound(entityDir, room, briefingPath, logPath string, want *Brie
 	if result.Review, err = parseReviewLog(result.Log, result.Manifest.ID); err != nil {
 		return result, err
 	}
-	result.Triage, err = classifyCompletedRound(result.Review)
-	return result, err
+	return result, nil
 }
 func recordRoundLockedWith(entityPath string, input RecordInput, beforePublish func(string), replace func(string, []byte) error) error {
 	location, err := resolveRound(entityPath, input.Round)
@@ -101,26 +99,14 @@ func recordRoundLockedWith(entityPath string, input RecordInput, beforePublish f
 	if _, statErr := os.Lstat(location.room); location.pointer.ID == pointer.ID && os.IsNotExist(statErr) {
 		return fmt.Errorf("round identity already has a pointer without its immutable room")
 	}
-	line := ""
-	project := inputRound.Triage != "no-findings"
-	if project {
-		if input.FeedbackCyclePath == "" {
-			return fmt.Errorf("triaged round requires --feedback-cycle")
-		}
-		if line, err = readFeedbackCycle(input.FeedbackCyclePath, location.cycle, inputRound.Review.Reviewer.Decision); err != nil {
-			return err
-		}
-	} else if input.FeedbackCyclePath != "" {
-		return fmt.Errorf("no-findings round does not accept --feedback-cycle")
-	}
 	if beforePublish != nil {
 		beforePublish(location.room)
 	}
 	return publishRound(location.room, roundRoomBytes{Exists: true, Briefing: inputRound.Briefing, Log: inputRound.Log}, func(replay bool) error {
 		return mutateEntity(entityPath, entityExpectation{Bytes: location.entity}, func(entity []byte) ([]byte, error) {
-			next, err := rebuildRoundEntity(entity, pointer, line, location.cycle, project)
+			next, err := rebuildRoundEntity(entity, pointer)
 			if err == nil && replay && !bytes.Equal(next, entity) {
-				return nil, fmt.Errorf("immutable round replay does not match the entity pointer and projection")
+				return nil, fmt.Errorf("immutable round replay does not match the entity pointer")
 			}
 			return next, err
 		}, replace)
@@ -141,7 +127,7 @@ func ValidateRoundFile(entityPath, spec string) (RoundSummary, error) {
 	if err != nil {
 		return RoundSummary{}, err
 	}
-	summary := RoundSummary{ID: location.pointer.ID, Stage: location.stage, Cycle: location.cycle, Briefing: loaded.Manifest.ID, Triage: loaded.Triage}
+	summary := RoundSummary{ID: location.pointer.ID, Stage: location.stage, Cycle: location.cycle, Briefing: loaded.Manifest.ID}
 	for _, entry := range loaded.Review.Entries {
 		item := RoundEntrySummary{Type: entry.Type, ID: entry.ID, Advisory: entry.Resolution != nil}
 		if entry.Resolution != nil {
@@ -173,7 +159,7 @@ func readRoundPointerData(data []byte) (RoundPointer, error) {
 	}
 	return pointer, nil
 }
-func rebuildRoundEntity(original []byte, pointer RoundPointer, projection string, cycle int, project bool) ([]byte, error) {
+func rebuildRoundEntity(original []byte, pointer RoundPointer) ([]byte, error) {
 	block, err := yaml.Marshal(struct {
 		Round RoundPointer `yaml:"review-round"`
 	}{pointer})
@@ -181,10 +167,6 @@ func rebuildRoundEntity(original []byte, pointer RoundPointer, projection string
 		return nil, err
 	}
 	out, err := replaceTopLevels(original, topLevelReplacement{key: "review-round", data: block, insert: true})
-	if err != nil {
-		return nil, err
-	}
-	out, err = spliceFeedbackCycle(out, projection, cycle, project)
 	if err != nil {
 		return nil, err
 	}
@@ -225,20 +207,4 @@ func verifyRoundArtifacts(entityDir, room string, manifest *briefingManifest) er
 		}
 	}
 	return nil
-}
-func readFeedbackCycle(path string, cycle int, decision string) (string, error) {
-	body, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	if !utf8.Valid(body) {
-		return "", fmt.Errorf("--feedback-cycle must be UTF-8")
-	}
-	line := strings.TrimSuffix(string(body), "\n")
-	match := feedbackCycleRE.FindStringSubmatch(line)
-	if len(match) == 0 || match[1] != strconv.Itoa(cycle) || (match[2] == "PASSED") != (decision == "approve") ||
-		strings.TrimSpace(match[3]) != match[3] || strings.TrimSpace(match[4]) != match[4] || strings.TrimSpace(match[5]) != match[5] {
-		return "", fmt.Errorf("--feedback-cycle must contain exactly one canonical Cycle %d line", cycle)
-	}
-	return line, nil
 }
