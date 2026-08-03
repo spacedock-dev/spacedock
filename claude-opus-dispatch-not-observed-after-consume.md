@@ -132,6 +132,8 @@ The recorded-gate grader now ignores harmless help probes when detecting ordered
   `TestRecordedGateCommittedBeforeDispatchResolutionPaths` passed both `classic-chat` and `room-backed` subtests. Each performs prepare, close, consume, a successor commit, and dispatch ancestry inspection; both observations reported `ordered=true` and `committed=true`.
 - DONE: Confirm AC-3 and run focused, full, and race ensigncycle tests at candidate `48f001276` atop `7ece33938`.
   Focused command `go test ./internal/ensigncycle -run 'TestRecordedGateLifecyclePhaseDetectionIgnoresHelpProbes|TestRecordedGateCommittedBeforeDispatchResolutionPaths|TestRecordedGateLifecycleRealCLIReplay' -count=1 -v` passed. Full `go test ./internal/ensigncycle -count=1` passed in 279.254s; `go test ./internal/ensigncycle -race -count=1` passed in 282.522s. No files were modified during validation.
+- DONE: Perform the required semantic adversarial pass over adjacent lifecycle variants.
+  The focused control run passed `TestRecordedGateLifecycleMissingEventControls` (each omitted phase rejected), `TestRecordedGateLifecycleCollapsedConsumeTrace` (fast-path and classic traces both accepted while incomplete close is rejected), terminal/no-successor and entered-stage recovery matrices, plus both Resolution-ID paths. The phase helper is line-scoped and token-based; it ignores only successful lines containing an exact `--help` field, while preserving out-of-order/missing-phase rejection. `git diff --check` is clean and the changed path is test-only, with no new I/O or allocation hot path.
 
 ### Summary
 
