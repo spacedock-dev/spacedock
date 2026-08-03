@@ -540,66 +540,6 @@ func publishRound(room string, next roundRoomBytes, commitEntity func(bool) erro
 	return nil
 }
 
-func spliceFeedbackCycle(data []byte, line string, cycle int, project bool) ([]byte, error) {
-	_, _, fmEnd, err := frontmatterNode(data)
-	if err != nil {
-		return nil, err
-	}
-	prefix := fmt.Sprintf("- Cycle %d:", cycle)
-	insert, headings, exact, cycles := len(data), 0, 0, 0
-	inFence, inSection := false, false
-	for offset := lineOffset(data, fmEnd+1); offset < len(data); {
-		end := bytes.IndexByte(data[offset:], '\n')
-		if end < 0 {
-			end = len(data) - offset
-		}
-		text := strings.TrimSuffix(string(data[offset:offset+end]), "\r")
-		trim := strings.TrimSpace(text)
-		if strings.HasPrefix(trim, "```") || strings.HasPrefix(trim, "~~~") {
-			inFence = !inFence
-		} else if !inFence {
-			level := strings.IndexFunc(text, func(r rune) bool { return r != '#' })
-			if level == 3 && strings.TrimSpace(text[level:]) == "Feedback Cycles" {
-				headings++
-				inSection = true
-			} else if inSection && level > 0 && level <= 3 {
-				insert = offset
-				inSection = false
-			}
-			if inSection {
-				if text == line {
-					exact++
-				}
-				if strings.HasPrefix(text, prefix) {
-					cycles++
-				}
-			}
-		}
-		offset += end + 1
-	}
-	if headings > 1 || !project && cycles != 0 || project && (cycles != exact || cycles > 1) {
-		return nil, fmt.Errorf("Feedback Cycles projection conflicts with %s", prefix)
-	}
-	if !project || exact == 1 {
-		return data, nil
-	}
-	if headings == 0 {
-		sep := "\n\n"
-		if bytes.HasSuffix(data, []byte("\n\n")) {
-			sep = ""
-		} else if bytes.HasSuffix(data, []byte("\n")) {
-			sep = "\n"
-		}
-		return append(data, []byte(sep+"### Feedback Cycles\n\n"+line+"\n")...), nil
-	}
-	sep := ""
-	if insert > 0 && data[insert-1] != '\n' {
-		sep = "\n"
-	}
-	add := []byte(sep + line + "\n\n")
-	return append(append(append([]byte{}, data[:insert]...), add...), data[insert:]...), nil
-}
-
 func writeSyncedFile(path string, data []byte) error {
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {

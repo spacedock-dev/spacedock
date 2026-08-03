@@ -90,84 +90,8 @@ func parseReviewLog(data []byte, briefingID string) (reviewLog, error) {
 		}
 		result.Entries, prior[entry.ID] = append(result.Entries, entry), entry
 	}
+	if result.Reviewer == nil {
+		return result, fmt.Errorf("review log has no Resolution")
+	}
 	return result, nil
-}
-func classifyCompletedRound(log reviewLog) (string, error) {
-	if log.Reviewer == nil || log.Reviewer.By == "actor:ensign" {
-		return "", fmt.Errorf("review log has no reviewer Resolution")
-	}
-	reviewerIndex := 0
-	for log.Entries[reviewerIndex].Resolution != log.Reviewer {
-		reviewerIndex++
-	}
-	findings := map[string]bool{}
-	for _, id := range log.Reviewer.Includes {
-		findings[id] = true
-	}
-	for _, entry := range log.Entries[:reviewerIndex] {
-		if entry.Resolution != nil || !findings[entry.ID] {
-			return "", fmt.Errorf("reviewer Resolution does not close every reviewer finding")
-		}
-	}
-	if len(findings) == 0 {
-		if reviewerIndex != 0 || len(log.Entries) != 1 || log.Reviewer.Decision != "approve" {
-			return "", fmt.Errorf("no-findings round must contain only one reviewer approve Resolution")
-		}
-		return "no-findings", nil
-	}
-	covered, dispositions := map[string]bool{}, map[string]bool{}
-	fixed, declined := 0, 0
-	for _, entry := range log.Entries[reviewerIndex+1:] {
-		if entry.Resolution == nil {
-			isFixed, isDeclined := dispositionKind(entry.Body)
-			if entry.By != "actor:ensign" || len(entry.Includes) == 0 || isFixed == isDeclined {
-				return "", fmt.Errorf("worker triage contains an invalid disposition")
-			}
-			if isFixed {
-				fixed++
-			} else {
-				declined++
-			}
-			dispositions[entry.ID] = true
-			for _, finding := range entry.Includes {
-				if !findings[finding] || covered[finding] {
-					return "", fmt.Errorf("worker disposition does not include a reviewer finding")
-				}
-				covered[finding] = true
-			}
-			continue
-		}
-		if entry.Resolution.By != "actor:ensign" || entry.Resolution != log.Entries[len(log.Entries)-1].Resolution {
-			return "", fmt.Errorf("worker triage contains an unauthorized Resolution")
-		}
-		for _, id := range entry.Includes {
-			if !dispositions[id] {
-				return "", fmt.Errorf("worker Resolution includes an invalid disposition")
-			}
-			delete(dispositions, id)
-		}
-	}
-	if len(covered) != len(findings) || len(dispositions) != 0 ||
-		log.Entries[len(log.Entries)-1].Resolution == nil || log.Entries[len(log.Entries)-1].By != "actor:ensign" {
-		return "", fmt.Errorf("findings-bearing round requires complete actor:ensign triage")
-	}
-	if fixed == 0 {
-		return "all-declines", nil
-	}
-	if declined == 0 {
-		return "all-fixed", nil
-	}
-	return "mixed", nil
-}
-
-func dispositionKind(body string) (bool, bool) {
-	if body == "class: material; disposition: fixed" {
-		return true, false
-	}
-	meaningful := func(value string) bool {
-		value = "|" + strings.Trim(strings.ToLower(value), " .") + "|"
-		return !strings.Contains("||none|n/a|na|no reason|no condition|never|not applicable|false|", value)
-	}
-	match := declineDispositionRE.FindStringSubmatch(body)
-	return false, len(match) == 3 && meaningful(match[1]) && meaningful(match[2])
 }

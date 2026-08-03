@@ -11,8 +11,6 @@ import (
 
 var digestRE = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 var roundStageRE = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
-var feedbackCycleRE = regexp.MustCompile(`^- Cycle ([1-9][0-9]*): (PASSED|REJECTED) — ([^;\r\n]+); surface ([^;\r\n]+) vs estimate ([^;\r\n]+) \(([0-9]+)%\); AC (unchanged|narrowed: [^;\r\n]+)$`)
-var declineDispositionRE = regexp.MustCompile(`^class: correct-but-disproportionate; why-not-material: ([^ ;\r\n](?:[^;\r\n]*[^ ;\r\n])?); promotes-when: ([^ ;\r\n](?:[^;\r\n]*[^ ;\r\n])?)$`)
 
 type Document struct {
 	Version int          `yaml:"version" json:"version"`
@@ -69,9 +67,9 @@ type RoundEntrySummary struct {
 }
 
 type RoundSummary struct {
-	ID, Stage, Briefing, Triage string
-	Cycle                       int
-	Entries                     []RoundEntrySummary
+	ID, Stage, Briefing string
+	Cycle               int
+	Entries             []RoundEntrySummary
 }
 
 type Resolution struct {

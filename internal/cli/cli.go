@@ -178,7 +178,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve (or a room-backed close) and is\nrejected as a usage error with --decision revise|hold. In a split-root workflow, a\nsuccessful close or consume ends with a machine-parseable `sync=.../phase=...` line;\nbranch on that final line plus the exit code, never on which prose lines printed.")
+				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve (or a room-backed close) and is\nrejected as a usage error with --decision revise|hold. In a split-root workflow, a\nsuccessful close or consume ends with a machine-parseable `sync=.../phase=...` line;\nbranch on that final line plus the exit code, never on which prose lines printed.")
 				return nil
 			}
 			if len(args) < 2 || (args[0] != "prepare" && args[0] != "withdraw" && args[0] != "record" && args[0] != "validate" && args[0] != "eligibility" && args[0] != "consume") {
@@ -217,8 +217,6 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					input.Round = args[i+1]
 				case "--log":
 					input.LogPath = args[i+1]
-				case "--feedback-cycle":
-					input.FeedbackCyclePath = args[i+1]
 				case "--question":
 					prepareInput.Question = args[i+1]
 					questionCount++
@@ -454,7 +452,7 @@ func printRound(s gates.RoundSummary, err error, stdout, stderr io.Writer) error
 		fmt.Fprintln(stderr, "Error:", err)
 		return exitCodeError{1}
 	}
-	fmt.Fprintf(stdout, "round=%s stage=%s cycle=%d briefing=%s triage=%s entries=%d\n", s.ID, s.Stage, s.Cycle, s.Briefing, s.Triage, len(s.Entries))
+	fmt.Fprintf(stdout, "round=%s stage=%s cycle=%d briefing=%s entries=%d\n", s.ID, s.Stage, s.Cycle, s.Briefing, len(s.Entries))
 	for _, entry := range s.Entries {
 		fmt.Fprintf(stdout, "entry=%s type=%s advisory=%t decision=%s\n", entry.ID, entry.Type, entry.Advisory, entry.Decision)
 	}
