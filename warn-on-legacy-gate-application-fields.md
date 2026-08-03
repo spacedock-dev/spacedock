@@ -1,7 +1,7 @@
 ---
 title: Warn on legacy gate application fields
 status: ideation
-source: "Captain directive 2026-08-03: legacy application.action and application.blockers must warn, not fail the state read."
+source: "Captain directive 2026-08-03: unknown keys in the exact gate application mapping must warn, not fail the state read."
 score: "1.0"
 sprint: durable-decisions
 id: jympnaf11wg4qmd4z85a3ayv
@@ -48,36 +48,43 @@ gates:
 started: 2026-08-03T13:53:46Z
 ---
 
-Legacy state written before the v1 application-schema cut can contain
-`application.action` and `application.blockers`. The canonical gate reader currently
-rejects that state before it can expose the valid `target-stage` and `state` fields.
+Legacy or extension state can contain keys that are not part of the v1 application
+schema. The canonical gate reader currently rejects that state before it can expose
+valid `target-stage` and `state` fields. The Captain wants those unknown keys to be
+warning-only when, and only when, they occur in the exact application mapping owned by
+`gates.records[*].attempts[*].application`.
 
 ## Problem
 
 `internal/gates/io.go` uses strict YAML known-field decoding for the complete gates
-tree. The removed application keys therefore produce a fatal
-`field action not found in type gates.Application` error and block status, eligibility,
-and gate recovery. These two legacy keys are compatibility findings, not authority;
-unrelated unknown keys and invalid canonical values remain fatal.
+tree. Removed or extension application keys therefore produce fatal
+`field <name> not found in type gates.Application` errors and block status,
+eligibility, and gate recovery. Unknown application keys are compatibility findings,
+not authority; unknown keys outside that exact mapping and invalid canonical values
+remain fatal.
 
 ## Proposed approach
 
 Add a diagnostic read path beside the existing `Read` contract. Read the entity bytes
 once, parse the frontmatter, and retain the original `gates` node for compare-and-swap
 and all later writes. Deep-clone only that node for validation. At exactly
-`gates.records[*].attempts[*].application`, remove mapping keys named `action` or
-`blockers` from the clone and collect `{path, field}` warnings. Sort and de-duplicate
-the warnings by path and field, then decode the clone with `yaml.Decoder.KnownFields(true)`
-and run the unchanged `Validate` function.
+`gates.records[*].attempts[*].application`, require a mapping, retain only the
+canonical `target-stage` and `state` entries in the validation clone, and remove every
+other mapping key. Collect one `{path, field}` warning for each unknown key, including
+extensions such as `action`, `blockers`, `execution-hold`, and `feedback`. Sort and
+de-duplicate warnings by path and field, then decode the clone with
+`yaml.Decoder.KnownFields(true)` and run the unchanged `Validate` function. Unknown
+application values are ignored for authority and are never silently honored.
 
 Expose `ReadDiagnostics` (or the equivalent named warning-returning reader) and keep
 `Read` as a compatibility wrapper that discards warnings. `status --validate` and
 `gate validate` render stable `Warning:` lines that include the entity path and the
-exact legacy field. Ordinary status, eligibility, and consume reads accept the legacy
-keys without changing their existing output or authority behavior unless a caller
-explicitly requests diagnostics. A non-mapping `application`, malformed YAML, an
-unrelated unknown key, an invalid canonical value, a bad binding, or any legacy key at
-another path remains a hard error.
+exact unknown field. Ordinary status, eligibility, and consume reads accept unknown
+application keys without changing their existing output or authority behavior unless
+a caller explicitly requests diagnostics. A non-mapping, null, or sequence
+`application`, malformed YAML, an unrelated unknown key, an invalid canonical value,
+a bad binding, a duplicate canonical key, or an unknown key at another path remains a
+hard error.
 
 The writer never receives the filtered clone. A successful compatibility read therefore
 does not rewrite or normalize bytes; only an existing explicit state mutation can
@@ -95,31 +102,48 @@ may discard WJ's exact-head evidence. No WJ or SK worktree is changed by ideatio
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — Valid legacy applications remain readable.**
-On a fixture set with four valid canonical applications carrying the legacy keys (two
-`action`, two `blockers`), all four reads succeed and retain the canonical
-`target-stage`/`state` values, with exactly four structured warnings. The current
-strict reader is the moving baseline: it succeeds on 0/4. `status --validate` and
-`gate validate` exit zero for those entities.
+**AC-1 (VALUE) — Valid applications with arbitrary extensions remain readable.**
+On a fixture set with valid canonical applications carrying arbitrary unknown keys
+(`action`, `blockers`, `execution-hold`, `feedback`, and at least one nested or
+non-string value), every read succeeds and retains the canonical
+`target-stage`/`state` values. Each distinct unknown `{path, field}` produces exactly
+one structured warning. `status --validate` and `gate validate` exit zero and report
+the warnings. Unknown values are ignored; they do not change routing, eligibility,
+authority, or stored canonical state. Against the current strict-reader baseline
+(0/5 compatibility fixtures readable), the revised reader must read 5/5; an approve
+Resolution with a valid next-stage target and `state: pending` remains
+`approved-pending` eligible when its binding is current.
 
 **AC-2 — Strict authority and shape checks remain fail-closed.**
-Fixtures with an unrelated application/gates key, a non-mapping application, malformed
-YAML, a missing target stage, an invalid application state, a bad binding, or a legacy
-key outside the exact application path exit nonzero and perform no write. A mapping
-that contains only `action`/`blockers` plus valid canonical fields is the sole
-compatibility exception.
+Fixtures with an unrelated application/gates key, a non-mapping/null/sequence
+application, malformed YAML, a missing target stage, an invalid application state, a
+duplicate canonical key, a bad binding, or an unknown key outside the exact application
+path exit nonzero and perform no write. A mapping with valid canonical fields plus any
+number or shape of unknown extension keys is accepted; no other location is relaxed.
 
 **AC-3 — Diagnostics are deterministic and operator-visible.**
-Repeated reads of the same entity produce the same sorted, de-duplicated warning list;
-the explicit validation surfaces print one stable `Warning:` line per `{path, field}`
-and keep the normal success/exit result. Ordinary read output remains byte-compatible
-unless diagnostics are requested.
+Repeated reads of the same entity produce the same sorted, de-duplicated warning list,
+independent of source mapping order. The explicit validation surfaces print one stable
+`Warning:` line per `{path, field}` and keep the normal success/exit result. Ordinary
+read output remains byte-compatible unless diagnostics are requested.
 
 **AC-4 — Compatibility reads preserve source bytes and canonical writes.**
 A successful diagnostic read leaves the original entity bytes unchanged, including
 unrelated frontmatter and application formatting. A later approved state mutation
 writes only the canonical `target-stage` and `state` application shape through the
 existing locked writer.
+
+## Semantic risk and controls
+
+The deliberate risk is that an unknown application extension may have represented a
+constraint in an older producer. Under this contract the reader ignores that key for
+decode, eligibility, and authority, and reports it as a warning; it never silently
+honors `execution-hold`, `feedback`, or another extension. Canonical behavior is
+unchanged: an approve Resolution with a valid next-stage `target-stage` and
+`state: pending` remains eligible, while missing or invalid canonical values remain
+fatal. A bad binding outside the application mapping remains fatal. The exact path
+boundary, warning output, strict validation of the filtered clone, and byte
+preservation limit this compatibility exception.
 
 ## Expected surface and semantic boundaries
 
@@ -128,9 +152,10 @@ Expected changes are limited to `internal/gates/io.go` and focused gates tests,
 `internal/cli/cli.go` and gate-validation golden tests, plus the gate-resolution
 contract and frontmatter/command reference wording. Estimate 6–10 files and
 `+180/-45` lines, with a 2x tolerance. Allowed semantic change: read-time tolerance
-and explicit warning diagnostics for exactly two historical keys at one path. Stored
-canonical schema, `Application` fields, `Validate`, authority spending, CAS/write
-behavior, command grammar, workflow taxonomy, and worker transport remain unchanged.
+and explicit warning diagnostics for every unknown key at one exact application path.
+Stored canonical schema, `Application` fields, `Validate`, authority spending,
+CAS/write behavior, command grammar, workflow taxonomy, and worker transport remain
+unchanged.
 
 ## Mechanism choices and rejected alternatives
 
@@ -143,68 +168,85 @@ behavior, command grammar, workflow taxonomy, and worker transport remain unchan
 - **A warning-returning reader plus an old `Read` wrapper** serves AC-3 while keeping
   ordinary read callers stable. Printing warnings from every status/eligibility read
   would change scripts and scheduler output without an explicit diagnostic request.
-- **Exact path and field allow-list** serves all four ACs. A generic unknown-field
-  compatibility mode or a migration rewrite is broader than the value and would
-  conceal future schema errors.
+- **Exact path with canonical-field allow-list** serves all four ACs. A generic
+  unknown-field compatibility mode outside the application mapping or a migration
+  rewrite is broader than the value and would conceal future schema errors. Within the
+  exact mapping, warning every non-canonical key is intentional so future extensions
+  do not create a new fatal-read outage; those extensions are not authority.
 
 ## Documentation diff proposed by ideation
 
 In `docs/specs/gate-resolution-frontmatter-contract.md`, replace “The binary-owned
-model is closed: unsupported fields inside `gates` fail closed” with: “The binary-owned
-model is closed for canonical validation and writes. A reader tolerates only legacy
-`action` and `blockers` keys under each `records[*].attempts[*].application`, reports
-them as warnings on explicit `status --validate` or `gate validate`, and never writes
-them. All other unknown or malformed fields fail closed.” Keep the canonical example
-unchanged.
+model is closed: unsupported fields inside `gates` fail closed” with: “The
+binary-owned model is closed for canonical validation and writes. A reader tolerates
+unknown keys only under each `records[*].attempts[*].application` mapping, reports
+them as warnings on explicit `status --validate` or `gate validate`, ignores them for
+authority, and never writes them. All other unknown or malformed fields fail closed.”
+Keep the canonical example unchanged and state that `target-stage` and `state` remain
+the only canonical application fields.
 
 In `docs/site/reference/frontmatter-contract.md`, replace “Unknown or prototype fields
 inside binary-owned `gates` fail closed” with the same bounded exception and add:
-“`status --validate` and `gate validate` print the entity path and legacy field; normal
-reads preserve their existing output.” Replace the following “contains exactly
-`target-stage` and `state`” sentence with “Canonical writes contain exactly ...;
-read-only compatibility may observe the two named legacy keys as warnings.”
+“`status --validate` and `gate validate` print the entity path and unknown field;
+normal reads preserve their existing output. Unknown application extensions are
+ignored and are never authority.” Replace the following “contains exactly
+`target-stage` and `state`” sentence with “Canonical writes contain exactly
+`target-stage` and `state`; read-only compatibility may observe arbitrary unknown
+application keys as warnings.”
 
 In `docs/site/reference/command-reference.md`, extend the `gate validate` row with:
-“It also reports warning-only legacy `application.action`/`application.blockers` at
-the exact application path; unrelated unknown fields remain errors.”
+“It also reports warning-only unknown keys under the exact application path (including
+legacy `action`/`blockers` and extensions such as `execution-hold`/`feedback`);
+unrelated unknown fields remain errors.”
 
 ## Test plan
 
 Start with the reader fixture matrix and the decode-copy probe before implementation:
-valid `action`, valid `blockers`, both together, repeated reads, reversed mapping order,
-unrelated key, non-mapping application, malformed YAML, missing target, invalid state,
-bad binding, and legacy keys at a non-application path. Assert warning order/content,
-canonical projection, strict errors, and unchanged source bytes. Add status and gate
-CLI goldens for explicit warning output and an ordinary-read compatibility case.
+valid `action`, valid `blockers`, both together, arbitrary `execution-hold`, arbitrary
+`feedback`, a nested extension value, repeated reads, reversed mapping order, repeated
+unknown names at separate application paths, unrelated key,
+non-mapping/null/sequence application, malformed YAML,
+missing target, invalid state, duplicate canonical key, bad binding, and unknown keys
+at a non-application path. Assert warning order/content and de-duplication, canonical
+projection, strict errors, ignored extension values, and unchanged source bytes. Add
+status and gate CLI goldens for explicit warning output (including arbitrary extension
+names) and an ordinary-read compatibility case.
 
-Update the old `TestRemovedApplicationShapesFailClosedWithoutMutation` rows only for
-`action` and `blockers`; retain fail-closed rows for `execution-hold`, `feedback`,
-`not-applicable`, and all unrelated fields. Run focused gates/status/CLI tests, then
+Update the old `TestRemovedApplicationShapesFailClosedWithoutMutation` rows so every
+unknown key in the exact application mapping is warning-only; retain fail-closed rows
+for `not-applicable` and all unrelated paths. Run focused gates/status/CLI tests, then
 `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
 
 ## Riskiest mechanism probe
 
-The throwaway `go run ./tmp/jy_ideation_probe.go` exercised a YAML-node deep clone,
-exact-path stripping, deterministic sorting, strict decode, validation, and source-node
-preservation. It produced four sorted warnings (`records[0]` action/blockers followed
-by `records[1]` action/blockers); the unrelated key remained a strict unknown-field
-error; `invalid-state` and `missing-target` remained `Validate` errors. The probe was
-removed after the result was recorded; implementation tests must make the evidence
-durable.
+The throwaway `go run /tmp/jy_ideation_revision_probe.go` exercised a YAML-node deep
+clone, exact-path filtering, deterministic sorting, strict decode, validation, and
+source-node preservation. It produced sorted warnings for `action`, `blockers`,
+`execution-hold`, `feedback`, and a nested extension. The same run kept an unrelated
+key, malformed YAML, invalid state, missing target, non-mapping application, duplicate
+canonical key, and a non-application binding-shaped unknown field as errors. An
+unknown binding-shaped key inside the application mapping is covered by the warning
+path. Implementation tests must make the evidence durable; the temporary probe is not
+production code.
 
 ## Stage Report: ideation
 
-- DONE: Validate the smallest warning-only compatibility design against every acceptance criterion
+- DONE: Validate the revised warning-only compatibility design against every acceptance criterion
   AC-1 through AC-4 define measurable success, strict-negative controls, diagnostics, and byte-preserving writes.
 - DONE: Exercise the riskiest decode-copy, deterministic-warning, byte-preservation, and strict-negative paths
-  `go run ./tmp/jy_ideation_probe.go` observed sorted warnings, unchanged source node, unrelated-key failure, invalid-state failure, and missing-target failure.
-- DONE: Record the chosen direction, rejected alternatives, exact probes, and a complete ideation report
-  The proposed reader API, exact allow-list/path, sequencing dependency, expected surface, doc diff, alternatives, and test matrix are recorded above.
+  `go run /tmp/jy_ideation_revision_probe.go` observed arbitrary extension warnings, unchanged source node, unrelated-key failure, malformed-shape failures, invalid-state failure, duplicate-canonical failure, and missing-target failure.
+- DONE: Record the chosen direction, rejected alternatives, exact probes, and a complete ideation revision report
+  The proposed reader API, canonical allow-list at the exact application path, sequencing dependency, semantic risk, doc diff, alternatives, and test matrix are recorded above.
 
 ### Summary
 
-Ideation selects a narrow diagnostic-read compatibility seam: clone and filter only
-legacy `action`/`blockers`, then retain strict canonical validation and the original
-write node. Science Officer concurrence places implementation after WJ's exact-head
+The ideation revision broadens the compatibility seam from two named legacy fields to
+every unknown key in the exact
+`gates.records[*].attempts[*].application` mapping. The reader clones and filters all
+non-canonical keys, emits deterministic warnings, retains strict canonical validation,
+and keeps the original node for compare-and-swap and writes. Unknown keys outside that
+mapping, malformed shapes, duplicate canonical keys, invalid canonical values, and bad
+bindings remain fatal. Extensions such as `execution-hold` and `feedback` are ignored,
+not honored. Science Officer concurrence keeps implementation after WJ's exact-head
 validation and before SK's rebase/fresh validation; no production code or sibling
-worktree was changed in this stage.
+worktree was changed in this revision.
