@@ -1,6 +1,6 @@
 ---
 title: Converge common live journeys on one runtime-neutral test entry point
-status: backlog
+status: ideation
 source: "Desired live-test registry common-journey semantics, 2026-08-03"
 started:
 completed:
@@ -35,7 +35,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
