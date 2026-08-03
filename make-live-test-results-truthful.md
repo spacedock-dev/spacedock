@@ -39,6 +39,10 @@ gates:
                 digest: sha256:f97998b1bff713e954f7193f927be3ed5b6d980435df74c398f21f2c93e9c884
                 request-digest: sha256:42cad5cfdc0b6ea8c20d137ac5e21fcc2898d88924a0cfa5d3e8e315a1fbd127
                 room-ref: ./make-live-test-results-truthful/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-03T14:22:46.909612Z"
+                reason: Preflight staff review found cross-member ownership and sequencing defects, and the shared sprint index changed. Withdraw this stale binding before the authorized fold.
 started: 2026-08-03T12:19:34Z
 ---
 
