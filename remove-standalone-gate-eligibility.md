@@ -90,6 +90,16 @@ Run focused gate, CLI, status, terminal-delivery, and recorded-lifecycle tests. 
 
 ## Stage Report: ideation
 
+- DONE: traced every production `gate eligibility` route and every
+  `EvaluateEligibility`/`EligibilityFileAt` caller, including the status and merge
+  consumers that are not test-only.
+- DONE: recorded the concrete unreleased-v1 CLI/status/docs design, the no-alias/no-
+  readiness-class boundary, and the operator replacements through status and acting
+  commands.
+- DONE: defined the real lifecycle, refusal matrix, detached mutation proof, and
+  focused/full/race/formatting/live-lane gates, with baseline focused evidence and
+  the unrelated shared-state manifest failure called out.
+
 ### Production caller trace and authority boundary
 
 The tree-wide production trace is small and has two distinct classes of caller.
@@ -224,15 +234,3 @@ command-log lifecycle first, then the detached guard mutants, followed by the
 documentation/help sweep. The intended semantic change is only removal of the
 operator ceremony and its redundant diagnostic projection; all authority and
 atomicity branches remain.
-
-### Ideation completion checklist
-
-- DONE: traced every production `gate eligibility` route and every
-  `EvaluateEligibility`/`EligibilityFileAt` caller, including the status and merge
-  consumers that are not test-only.
-- DONE: recorded the concrete unreleased-v1 CLI/status/docs design, the no-alias/no-
-  readiness-class boundary, and the operator replacements through status and acting
-  commands.
-- DONE: defined the real lifecycle, refusal matrix, detached mutation proof, and
-  focused/full/race/formatting/live-lane gates, with baseline focused evidence and
-  the unrelated shared-state manifest failure called out.
