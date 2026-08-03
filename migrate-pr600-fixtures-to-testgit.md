@@ -83,3 +83,18 @@ Offline only. `go test ./internal/contractlint/...`, `go test ./internal/cli/...
 ## Out of scope
 
 Any other test-fixture cleanup, any production code change.
+
+## Stage Report: implementation
+
+- DONE: Migrate all 7 hand-rolled git init scaffold sites to testgit.InitRepo
+  gate_ceremony_count_test.go:71,84; gate_consume_sync_test.go:133,144,385,396; dispatch/build_stamp_test.go:30 — commit 54d52d1c2 on spacedock-ensign/migrate-pr600-fixtures-to-testgit
+- DONE: Run go test ./internal/contractlint/... -run TestNoHandRolledGitInitOutsideTestgit -v and confirm 0 offenders (currently 7)
+  before: 7 offenders listed by name; after: PASS, 0 offenders
+- DONE: Run go test ./internal/cli/... ./internal/dispatch/... and the full go test ./... plus go test ./... -race; confirm all green
+  internal/cli and internal/dispatch both ok; full `go test ./...` ok across all 17 packages; full `go test ./... -race` ok across all 17 packages, no data races
+- DONE: gofmt -w ./cmd ./internal; confirm clean
+  `gofmt -l ./cmd ./internal` reported no files both before commit and after
+
+### Summary
+
+Read the already-migrated idiom from the 38-site migration (commit 97007928d) in the same packages — internal/cli/gate_test.go and internal/dispatch/{parity_harness_test.go,reconcile_test.go} — then applied the identical substitution: each 3-line `git init` + `config user.name` + `config user.email` (or file-local `runGitFatal` equivalent) collapsed to one `testgit.InitRepo(t, dir, "-q"[, extra init args])` call, plus the `internal/testgit` import. No assertions, fixture content, or identity values used elsewhere in these tests were touched. Guard test dropped from 7 offenders to 0; full suite and `-race` green with no other changes.
