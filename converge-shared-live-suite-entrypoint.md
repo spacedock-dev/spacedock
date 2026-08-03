@@ -2,7 +2,7 @@
 title: Converge common live journeys on one runtime-neutral test entry point
 status: ideation
 source: "Desired live-test registry common-journey semantics, 2026-08-03"
-started:
+started: 2026-08-03T10:48:38Z
 completed:
 verdict:
 score: 0.95
