@@ -302,3 +302,18 @@ worktree was changed in this revision.
 ### Summary
 
 Implementation is complete on branch `spacedock-ensign/warn-on-legacy-gate-application-fields` at `c5bd1225b9434763b9a76fd238d9699a2e564bef`, directly based on WJ tip `ea6723acb630c7eac64712f5b30e08f35a5a44e6`. Unknown application extensions warn only at explicit validation surfaces and cannot alter eligibility or authority; all unrelated and malformed gate state remains strict. Both full and race suites are green outside the pre-existing six missing pilot-manifest paths.
+
+## Stage Report: validation
+
+- DONE: Independently verify AC-1 and AC-2 at the rebased Jy head: arbitrary unknown keys inside the exact application mapping warn and are ignored, while unrelated paths, malformed application shapes, invalid or duplicate canonical fields, and bad bindings remain hard errors.
+  `internal/gates` diagnostics tests passed at HEAD `8a001a5224b27a5d0fc0800098cad6358153698d`; they exercise nested/non-string extensions, exact-path filtering, canonical projection, malformed/null/sequence applications, strict canonical failures, unrelated keys, and retained binding failures.
+- DONE: Verify AC-3 and AC-4: warning order and de-duplication are deterministic; explicit status/gate validation surfaces show warnings; ordinary reads stay quiet; source bytes and canonical compare-and-swap writes preserve the contract.
+  Focused `internal/status`, `internal/cli`, `internal/gates`, and `internal/ensigncycle` suites passed; tests assert sorted warnings, explicit `Warning:` output, quiet ordinary reads, byte preservation, and canonical write shapes.
+- DONE: Run the required focused suites plus gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race.
+  `gofmt -w ./cmd ./internal` was clean; focused suites passed. Full and race suites passed all implementation packages and failed only the pre-existing pilot-manifest checkout omissions listed below.
+- DONE: Record exact HEAD, diff/LOC, test outcomes, and the pre-existing six pilot-manifest path omissions separately; do not change the approved semantic scope.
+  HEAD `8a001a5224b27a5d0fc0800098cad6358153698d`, parent `e3a89ae8e69116cd0078c26479d6dbbf2db396eb`, diff from WJ tip `ea6723acb630c7eac64712f5b30e08f35a5a44e6`: 13 files, `+466/-47` (net `+419`). Both full commands report the same seven absent state paths: `bind-post-rework-briefing-at-rejection-regate.md`, `collapse-gate-approval-ceremony/index.md`, `cut-workflow-specific-round-recorder-from-v1/index.md`, `minimize-v1-gate-application-schema/index.md`, `shared-git-scaffold-helper.md`, `status-pagination-and-default-sorting.md`, and `status-where-robust-and-discoverable.md`.
+
+### Summary
+
+Validation confirms the approved exact application-path compatibility boundary at the WJ-derived head. Unknown application extensions warn only on explicit validation and cannot affect eligibility or authority; malformed shapes, canonical defects, unrelated keys, and bad bindings remain fatal. No code or semantic scope changed during validation; full and race failures are limited to the seven pre-existing pilot-manifest path omissions above.
