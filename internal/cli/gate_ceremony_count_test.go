@@ -12,6 +12,7 @@ import (
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // gateCeremonyReadme declares the measured shape: a gate:true ideation stage
@@ -68,9 +69,7 @@ func gateCeremonyFixture(t *testing.T) (mainRoot, workflowDir, entityPath, check
 	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	git(t, mainRoot, "init", "-q")
-	git(t, mainRoot, "config", "user.name", "Spacedock Test")
-	git(t, mainRoot, "config", "user.email", "spacedock@example.invalid")
+	testgit.InitRepo(t, mainRoot, "-q")
 	writeFile(t, filepath.Join(workflowDir, "README.md"), gateCeremonyReadme)
 	artifact := filepath.Join(mainRoot, "gate-review.md")
 	writeFile(t, artifact, "# Review\n\nReady to proceed to implementation.\n")
@@ -81,9 +80,7 @@ func gateCeremonyFixture(t *testing.T) (mainRoot, workflowDir, entityPath, check
 	if err := os.MkdirAll(statePath, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	git(t, statePath, "init", "-q")
-	git(t, statePath, "config", "user.name", "Spacedock Test")
-	git(t, statePath, "config", "user.email", "spacedock@example.invalid")
+	testgit.InitRepo(t, statePath, "-q")
 	writeFile(t, filepath.Join(statePath, "task.md"), "---\nid: task\nstatus: ideation\ntitle: Task\nstarted:\nworktree:\n---\n# Task\n")
 	git(t, statePath, "add", ".")
 	git(t, statePath, "commit", "-q", "-m", "state fixture")

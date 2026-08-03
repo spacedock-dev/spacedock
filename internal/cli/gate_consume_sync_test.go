@@ -12,6 +12,7 @@ import (
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // TestGateConsumeFlagRejectsNonApproveDecisionBeforeWrite pins mechanism 2's
@@ -130,9 +131,7 @@ func gatedTerminalSplitRootFixture(t *testing.T) (hostClone, workflowDir string)
 	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	git(t, hostClone, "init", "-q")
-	git(t, hostClone, "config", "user.name", "Spacedock Test")
-	git(t, hostClone, "config", "user.email", "spacedock@example.invalid")
+	testgit.InitRepo(t, hostClone, "-q")
 	writeFile(t, filepath.Join(workflowDir, "README.md"), "---\nid-style: slug\nstate: .spacedock-state\nstages:\n  states:\n    - name: validation\n      initial: true\n      gate: true\n    - name: done\n      terminal: true\n---\n# Terminal Fixture\n")
 	git(t, hostClone, "add", ".")
 	git(t, hostClone, "commit", "-q", "-m", "main fixture")
@@ -141,9 +140,7 @@ func gatedTerminalSplitRootFixture(t *testing.T) (hostClone, workflowDir string)
 	if err := os.MkdirAll(statePath, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	git(t, statePath, "init", "-q")
-	git(t, statePath, "config", "user.name", "Spacedock Test")
-	git(t, statePath, "config", "user.email", "spacedock@example.invalid")
+	testgit.InitRepo(t, statePath, "-q")
 	writeFile(t, filepath.Join(statePath, "task.md"), "---\nid: task\nstatus: validation\ntitle: Task\n---\n# Task\n")
 	git(t, statePath, "add", ".")
 	git(t, statePath, "commit", "-q", "-m", "state fixture")
@@ -382,9 +379,7 @@ func staleableGatedSplitRootFixture(t *testing.T) (workflowDir, checkout, briefi
 	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	git(t, mainRoot, "init", "-q")
-	git(t, mainRoot, "config", "user.name", "Spacedock Test")
-	git(t, mainRoot, "config", "user.email", "spacedock@example.invalid")
+	testgit.InitRepo(t, mainRoot, "-q")
 	writeFile(t, filepath.Join(workflowDir, "README.md"), gateCeremonyReadme)
 	git(t, mainRoot, "add", ".")
 	git(t, mainRoot, "commit", "-q", "-m", "main fixture")
@@ -393,9 +388,7 @@ func staleableGatedSplitRootFixture(t *testing.T) (workflowDir, checkout, briefi
 	if err := os.MkdirAll(checkout, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	git(t, checkout, "init", "-q")
-	git(t, checkout, "config", "user.name", "Spacedock Test")
-	git(t, checkout, "config", "user.email", "spacedock@example.invalid")
+	testgit.InitRepo(t, checkout, "-q")
 
 	briefing = filepath.Join(checkout, "review", "ideation", "briefing-1", "briefing.json")
 	if err := os.MkdirAll(filepath.Dir(briefing), 0o755); err != nil {
