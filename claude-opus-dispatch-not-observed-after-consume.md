@@ -66,6 +66,19 @@ gates:
                 digest: sha256:c8d6a31ea31100f7d92a0b05f49f3d2da0951c425edc261a7516fad9756cd942
                 request-digest: sha256:b87d46ce3eeb580c7c9bafaf785c3eaf1302ca43e8aed13285a9c54a403cd61d
                 room-ref: ./claude-opus-dispatch-not-observed-after-consume/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:5n4k6djrq8gtvd54zg9s6zhs:validation:1
+                briefing: briefing:5n4k6djrq8gtvd54zg9s6zhs:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T06:46:01.674641Z"
+                decision: approve
+                reason: Captain approved the validated test-only grader correction; all acceptance criteria and adversarial controls pass, and the normal terminal merge ceremony is authorized.
+              application:
+                action: advance
+                target-stage: done
+                state: pending
+                blockers: []
 ---
 
 `assertRecordedGateLifecycle` (internal/ensigncycle/recorded_gate_lifecycle_test.go:121) collapses `!o.dispatch.ordered || !o.dispatch.committed` into one error string ("successor dispatch was not observed after consume"), so two unrelated bugs in how `ordered`/`committed` get computed both surface identically. Both are one-line fixes.
