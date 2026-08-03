@@ -37,6 +37,15 @@ gates:
                 target-stage: ideation
                 state: consumed
                 blockers: []
+        - id: gate:h3b5tgk77vx9qqdmbjtpsh98:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:h3b5tgk77vx9qqdmbjtpsh98-ideation-1
+              briefing:
+                id: briefing:h3b5tgk77vx9qqdmbjtpsh98:ideation:attempt-1:revision-1
+                digest: sha256:775f2c29f39d9d6ca3113f4b7ca0929d56aad827ae534b015d116b32966d2919
+                request-digest: sha256:07744725dc0976cfee2f7e78aaf7069613a9394287fd281cfdfd343fc8a747c3
+                room-ref: ./converge-shared-live-suite-entrypoint/review/ideation/briefing-1
 ---
 
 ## Problem

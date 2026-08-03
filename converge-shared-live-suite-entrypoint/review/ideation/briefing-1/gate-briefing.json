@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:h3b5tgk77vx9qqdmbjtpsh98:ideation:attempt-1:revision-1",
+  "question": "Approve this ideation plan as the implementation baseline?",
+  "artifacts": [
+    {
+      "id": "artifact:h3b5tgk77vx9qqdmbjtpsh98:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d28c9aec9679fd3e7a5e847a0a64b31c6aca64ad/converge-shared-live-suite-entrypoint.md",
+      "rev": "sha256:2542765a5eb443d938aabeb8ae4b9b82aaaa73a532acb8ff922729580d73c83c",
+      "mediaType": "text/markdown",
+      "summary": "The plan proves one canonical journey identity across Claude and Codex and keeps host-specific behavior behind adapters."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:h3b5tgk77vx9qqdmbjtpsh98:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/2997da9a243f36ad31f483f63ce29b1b838c3410/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:h3b5tgk77vx9qqdmbjtpsh98:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/2997da9a243f36ad31f483f63ce29b1b838c3410/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e"
+    }
+  ]
+}
