@@ -1,6 +1,6 @@
 ---
 title: Make the headless recorded-gate stop fixture stage-coherent
-status: done
+status: validation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started: 2026-07-31T00:32:10Z
 completed:
@@ -12,8 +12,6 @@ milestone: 0.27.0
 id: 26nk8qd48zknqnn4kc123sez
 gates:
     version: 1
-    current:
-        gate: gate:26nk8qd48zknqnn4kc123sez:validation
     records:
         - id: gate:26nk8qd48zknqnn4kc123sez:backlog
           stage: backlog
@@ -22,7 +20,6 @@ gates:
               briefing:
                 id: briefing:26nk8qd48zknqnn4kc123sez:backlog:attempt-1:revision-1
                 digest: sha256:fea869611abb6a21b3bdf569d264e8c7dbc6166b5869203beec12d8aec962afb
-                digest-domain: canonical-bytes
                 request-digest: sha256:c6dd2c6b17d18deb57e14686317e8a856fb17c96ae5f6072c601fd0beba9b649
                 room-ref: ./review/backlog/briefing-1
               resolution:
@@ -45,7 +42,6 @@ gates:
               briefing:
                 id: briefing:26nk8qd48zknqnn4kc123sez:ideation:attempt-1:revision-1
                 digest: sha256:9f7a7ba5dbde944edbd8684a2fd8e26f6305540a7161c2ea14c92258829cf3e8
-                digest-domain: canonical-bytes
                 request-digest: sha256:b7db54faa91d87e7ad21b7f5c00ad09a1b32223be38ac796f429f7c43426b544
                 room-ref: ./review/ideation/briefing-1
               resolution:
@@ -68,7 +64,6 @@ gates:
               briefing:
                 id: briefing:26nk8qd48zknqnn4kc123sez:validation:attempt-1:revision-1
                 digest: sha256:af0b932089b520d6a7f6bf9540212c4cd00e230d23d700ca818197aab897520f
-                digest-domain: canonical-bytes
                 request-digest: sha256:be5b7d159d41a9cdc211381c985188e4944201e942229b408ea178f1a905e861
                 room-ref: ./review/validation/briefing-1
               resolution:
@@ -82,7 +77,7 @@ gates:
               application:
                 action: advance
                 target-stage: done
-                state: consumed
+                state: pending
                 blockers: []
 review-round:
     id: round:26nk8qd48zknqnn4kc123sez:implementation:11
@@ -91,7 +86,6 @@ review-round:
     briefing:
         id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-11
         digest: sha256:370073614a38a6ff5faa63d7430694103e3a658196eda8b044c4a2e378c55a52
-        digest-domain: canonical-bytes
         room-ref: ./review/implementation/round-11
 mod-block: merge:pr-merge
 pr: "#583"
