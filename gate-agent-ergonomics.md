@@ -4,7 +4,7 @@ status: ideation
 source: "Durable-decisions sprint dogfood: manual 0c and xb gate/round operation, 2026-07-24."
 score: 1.0
 id: skwchfe30ac6ntr63j1g0txj
-sprint:
+sprint: durable-decisions
 started: 2026-07-26T12:36:08Z
 gates:
     version: 1
