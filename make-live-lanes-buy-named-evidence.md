@@ -130,7 +130,9 @@ The Claude and Codex shared selectors contain these current journey IDs:
 - `smallest-sufficient-mechanism`
 - `keep-moving-posture`
 
-The common-suite task owns changes to these identities. This task must preserve its final `TestLiveSharedScenarios` selector if that task lands first.
+`15e` lands after `3d` and consumes its Codex progress-aware liveness behavior. It then updates the current selectors, workflow guards, and live CI guide.
+
+`ys` lands last. It owns the final migration of those shared surfaces to `TestLiveSharedScenarios`.
 
 ## Current control map
 
@@ -242,7 +244,7 @@ Move the smallest required helper code with each test. Do not expose a live host
 
 ## Implementation plan
 
-1. Add workflow guard tests for the final selectors, controls, artifacts, and consumers.
+1. Add workflow guard tests for the post-`3d`, pre-`ys` selectors, controls, artifacts, and consumers.
 2. Add an offline command that names all 12 deterministic tests without `-tags live`.
 3. Add Pi grade tests with retained session fixtures and wrong boot-contract controls.
 4. Make the selected Pi smoke run both durable-state graders.
@@ -331,7 +333,7 @@ go test ./internal/release -run 'TestRuntimeLiveWorkflow|TestWorkflowsPreserveAn
 
 Mutate each retained selector out of a temporary workflow. Each mutation must fail with the missing claim name.
 
-Restore the PTY selector, the Pi quarantine, `effort`, or the Pi metrics path. Each restoration must fail the final-shape guard.
+Restore the PTY selector, the Pi quarantine, `effort`, or the Pi metrics path. Each restoration must fail the lane-shape guard.
 
 Run all 12 deterministic tests without the live tag:
 
