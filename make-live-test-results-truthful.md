@@ -294,3 +294,22 @@ After:
 ### Summary
 
 The plan combines the proved AC2 gate oracle with a proved Codex JSONL reset path. It makes wrong decisions red and keeps healthy Codex progress green.
+
+## Stage Report: implementation
+
+- DONE: Make the AC re-anchor scenario grade the durable gate branch.
+  The neutral fixture now records raw measurements at `validation`. The oracle accepts only `revise`, the configured `feedback` route, and parked status `rework`. Offline controls reject approve, advance, accepted, and unchanged states even when the final message narrates rejection.
+- DONE: Replace the Codex fixed process deadline with shared stream liveness.
+  One `codex exec` process streams complete JSONL lines through `streamWatcher`. Each line resets the 60-second quiet budget. Silence kills and reaps that process without retry.
+- DONE: Preserve useful fault evidence and the suite backstop.
+  Stall failures retain JSONL, stderr, the process result, the last event, and the artifact directory. Source guards ban the removed Codex deadline, and `.github/workflows/runtime-live-e2e.yml` still uses `-timeout 40m`.
+- DONE: Prove both changed live paths.
+  The AC2 positive branch passed in 254.46 seconds with durable `decision: revise` and status `rework`; artifacts are in `/tmp/spacedock-live-test-truth-ac2-retry.QV9MqO`. An earlier run in `/tmp/spacedock-live-test-truth-ac2.kkSVCQ` exposed a contradictory stop instruction after the model chose revise; the runbook was corrected, and no negative actuator was repeated. The pre-`ys` Codex `gate-guardrail` journey passed in 117.94 seconds with `gpt-5.6-luna` at maximum reasoning; `/tmp/spacedock-live-test-truth-codex.bz7ka2/codex-process-result.txt` records exit 0, no timeout, and the final event.
+- DONE: Run formatting, focused controls, full tests, and race tests.
+  `gofmt -w ./cmd ./internal`, live-tag compilation, the AC controls, the Codex activity/stall controls, and five focused race repetitions passed. A raw `go test ./...` exposed seven paths that the current shared state branch archived while `v1_pilot_manifest.txt` still names them. Against immutable state snapshot `73f41e2a2232ebb561710bce568641ec976d5f3d`, which contains all 31 declared fixtures, both `go test ./...` and `go test ./... -race` passed.
+- DONE: Keep the approved implementation surface.
+  Commit `fcd8f7881` changes the expected nine files by 400 insertions and 172 deletions, within the approved tolerance.
+
+### Summary
+
+Wrong AC decisions now fail on durable state, while healthy Codex JSONL progress resets one shared quiet budget. The implementation preserves one-process execution, actionable stall artifacts, and the 40-minute suite backstop.
