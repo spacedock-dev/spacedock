@@ -15,15 +15,19 @@ var (
 	defaultNextFields   = []string{"id", "slug", "status"}
 )
 
-// stageOrder maps a status to its 1-based stage order; unknown statuses get 99.
-// Matches stage_order.
+// unknownStageOrder is the stageOrder result for a status the workflow's
+// stages: block does not declare.
+const unknownStageOrder = 99
+
+// stageOrder maps a status to its 1-based stage order; unknown statuses get
+// unknownStageOrder. Matches stage_order.
 func stageOrder(status string, stages []Stage) int {
 	for i, s := range stages {
 		if s.Name == status {
 			return i + 1
 		}
 	}
-	return 99
+	return unknownStageOrder
 }
 
 // scoreSortVal returns the comparable score component: -score for numeric
@@ -60,19 +64,82 @@ func pythonFloat(score string) (float64, bool) {
 	return f, true
 }
 
-// sortDefault sorts entities by (stage order asc, score). A stable sort
-// preserves the discovery (slug) order for equal keys, matching Python's stable
-// sorted().
+// sortDefault sorts entities by (stage order descending among known stages,
+// score descending). A stage unknown to the workflow's stages: block
+// (unknownStageOrder) is grouped after every known stage regardless of the
+// descending direction, so a malformed/unmodeled status stays visible without
+// displacing active work closer to completion. A stable sort preserves the
+// discovery (slug) order for equal keys.
 func sortDefault(entities []*entity, stages []Stage) []*entity {
 	out := append([]*entity(nil), entities...)
 	sort.SliceStable(out, func(i, j int) bool {
 		oi, oj := stageOrder(out[i].fields["status"], stages), stageOrder(out[j].fields["status"], stages)
-		if oi != oj {
-			return oi < oj
+		iUnknown, jUnknown := oi == unknownStageOrder, oj == unknownStageOrder
+		if iUnknown != jUnknown {
+			return !iUnknown
+		}
+		if !iUnknown && oi != oj {
+			return oi > oj
 		}
 		return scoreSortVal(out[i].fields["score"]) < scoreSortVal(out[j].fields["score"])
 	})
 	return out
+}
+
+// defaultPageLimit is the row cap the default status listing applies when the
+// operator passes no explicit --limit.
+const defaultPageLimit = 25
+
+// paginationWindow is the resolved [start,end) slice (0-based, end exclusive)
+// of a sorted row set for one --page/--limit request, plus the metadata the
+// text footer and JSON pagination object render.
+type paginationWindow struct {
+	page    int
+	limit   int
+	total   int
+	start   int
+	end     int
+	hasNext bool
+}
+
+// paginate computes the pagination window over total already-sorted rows.
+// limit=0 disables pagination: the whole set, one page, no next. A page past
+// the end (start clipped to total) is a valid empty window, not an error.
+func paginate(total, page, limit int) paginationWindow {
+	if limit == 0 {
+		return paginationWindow{page: page, limit: 0, total: total, start: 0, end: total, hasNext: false}
+	}
+	start := (page - 1) * limit
+	if start > total {
+		start = total
+	}
+	end := start + limit
+	if end > total {
+		end = total
+	}
+	return paginationWindow{page: page, limit: limit, total: total, start: start, end: end, hasNext: end < total}
+}
+
+// display returns the 1-based inclusive (start, end) row numbers the footer
+// and JSON pagination object report. An empty window (e.g. a page past the
+// last row) has no "row 1" to anchor to, so it reports (0, 0).
+func (w paginationWindow) display() (start, end int) {
+	if w.start >= w.end {
+		return 0, 0
+	}
+	return w.start + 1, w.end
+}
+
+// paginationFooter renders the text-mode "Showing 1-25 of 83 (page 1; use
+// --page 2 or --limit 0 for all)" footer, or "" when there is no next page
+// (every matching row is already shown).
+func paginationFooter(w paginationWindow) string {
+	if !w.hasNext {
+		return ""
+	}
+	start, end := w.display()
+	return fmt.Sprintf("Showing %d-%d of %d (page %d; use --page %d or --limit 0 for all)",
+		start, end, w.total, w.page, w.page+1)
 }
 
 // computeReadyGates returns only durable gate states that require scheduling,
@@ -109,11 +176,13 @@ func padRight(s string, w int) string {
 	return s + strings.Repeat(" ", w-n)
 }
 
-// printStatusTable writes the default table, optionally with extra columns.
-// Matches print_status_table. suppressHeader drops the header + separator rows
-// for --quiet, emitting data rows only.
-func printStatusTable(w io.Writer, entities []*entity, stages []Stage, extras []string, suppressHeader bool) {
+// printStatusTable writes the default table, optionally with extra columns,
+// bounded to the page/limit window. Matches print_status_table plus the
+// pagination slice. suppressHeader drops the header + separator rows AND the
+// pagination footer for --quiet, emitting data rows only.
+func printStatusTable(w io.Writer, entities []*entity, stages []Stage, extras []string, suppressHeader bool, win paginationWindow) {
 	sorted := sortDefault(entities, stages)
+	page := sorted[win.start:win.end]
 
 	if len(extras) == 0 {
 		row := func(a, b, c, d, e string) string {
@@ -124,10 +193,11 @@ func printStatusTable(w io.Writer, entities []*entity, stages []Stage, extras []
 			fmt.Fprintln(w, row("ID", "SLUG", "STATUS", "TITLE", "SCORE"))
 			fmt.Fprintln(w, row("--", "----", "------", "-----", "-----"))
 		}
-		for _, e := range sorted {
+		for _, e := range page {
 			fmt.Fprintln(w, row(e.fields["id"], e.fields["slug"], e.fields["status"],
 				e.fields["title"], e.fields["score"]))
 		}
+		printPaginationFooter(w, suppressHeader, win)
 		return
 	}
 
@@ -141,13 +211,25 @@ func printStatusTable(w io.Writer, entities []*entity, stages []Stage, extras []
 		fmt.Fprintln(w, base("ID", "SLUG", "STATUS", "TITLE", "SCORE")+" "+joinExtras(headerExtras))
 		fmt.Fprintln(w, base("--", "----", "------", "-----", "-----")+" "+joinExtras(sepExtras))
 	}
-	for _, e := range sorted {
+	for _, e := range page {
 		cells := make([]string, len(extras))
 		for i, name := range extras {
 			cells[i] = formatColumnCell(name, e.fields[name])
 		}
 		fmt.Fprintln(w, base(e.fields["id"], e.fields["slug"], e.fields["status"],
 			e.fields["title"], e.fields["score"])+" "+joinExtras(cells))
+	}
+	printPaginationFooter(w, suppressHeader, win)
+}
+
+// printPaginationFooter writes the pagination footer line unless suppressed
+// (--quiet) or there is no next page to point to.
+func printPaginationFooter(w io.Writer, suppressHeader bool, win paginationWindow) {
+	if suppressHeader {
+		return
+	}
+	if footer := paginationFooter(win); footer != "" {
+		fmt.Fprintln(w, footer)
 	}
 }
 

@@ -1,1 +1,1 @@
-{"command":"status","entities":[{"id":"002","slug":"002-vendor-script","status":"ideation","title":"Vendor the status script","score":"0.60"},{"id":"004","slug":"004-no-score","status":"ideation","title":"Entity without a score","score":""}]}
+{"command":"status","entities":[{"id":"002","slug":"002-vendor-script","status":"ideation","title":"Vendor the status script","score":"0.60"},{"id":"004","slug":"004-no-score","status":"ideation","title":"Entity without a score","score":""}],"pagination":{"page":"1","limit":"25","total":"2","start":"1","end":"2","has_next":"false"}}

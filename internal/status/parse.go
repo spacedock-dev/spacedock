@@ -4,6 +4,7 @@ package status
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -287,6 +288,51 @@ func parseSetArgs(args []string) (*setUpdate, error) {
 		}
 	}
 	return nil, nil
+}
+
+// parsePageLimitArgs parses --page N and --limit N for the default status
+// listing. page defaults to 1, limit defaults to defaultPageLimit; --limit 0
+// disables pagination. pageSet/limitSet report whether the flag was
+// explicitly supplied (so callers can reject it on non-listing commands and
+// detect the --page-with-limit-0 contradiction — an explicit page selection
+// makes no sense once --limit 0 asks for every row on one unbounded page).
+func parsePageLimitArgs(args []string) (page, limit int, pageSet, limitSet bool, err error) {
+	page = 1
+	limit = defaultPageLimit
+	i := 0
+	for i < len(args) {
+		switch args[i] {
+		case "--page":
+			if i+1 >= len(args) {
+				return 0, 0, false, false, fmt.Errorf("--page requires an integer argument")
+			}
+			n, perr := strconv.Atoi(args[i+1])
+			if perr != nil || n < 1 {
+				return 0, 0, false, false, fmt.Errorf("--page must be a positive integer, got %q", args[i+1])
+			}
+			page = n
+			pageSet = true
+			i += 2
+			continue
+		case "--limit":
+			if i+1 >= len(args) {
+				return 0, 0, false, false, fmt.Errorf("--limit requires an integer argument")
+			}
+			n, perr := strconv.Atoi(args[i+1])
+			if perr != nil || n < 0 {
+				return 0, 0, false, false, fmt.Errorf("--limit must be a non-negative integer, got %q", args[i+1])
+			}
+			limit = n
+			limitSet = true
+			i += 2
+			continue
+		}
+		i++
+	}
+	if pageSet && limit == 0 {
+		return 0, 0, false, false, fmt.Errorf("--page cannot be combined with --limit 0 (--limit 0 disables pagination and returns every row on one page)")
+	}
+	return page, limit, pageSet, limitSet, nil
 }
 
 // parseNewArg parses --new [--folder] <slug>. Returns slug or "". The optional

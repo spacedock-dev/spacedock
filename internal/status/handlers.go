@@ -402,6 +402,7 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 	includeArchive, showNext, showBoot, showNextID, showValidate, identify bool,
 	explicitFields []string, allFieldsFlag, asJSON, quiet bool,
 	hasArchiveSlug, hasSet, hasResolve bool,
+	page, limit int,
 	stdout, stderr io.Writer) int {
 
 	readme := filepath.Join(roots.definitionDir, "README.md")
@@ -515,13 +516,14 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 		extras := resolveExtraFields(entities, explicitFields, allFieldsFlag, defaultNextFields, nextFixedFields)
 		printNextTable(stdout, entities, stages, extras, quiet)
 	default:
+		win := paginate(len(entities), page, limit)
 		if asJSON {
 			fields := resolveJSONFields(entities, explicitFields, allFieldsFlag, defaultStatusFields)
-			emitJSON(stdout, statusJSON(entities, stages, fields))
+			emitJSON(stdout, statusJSON(entities, stages, fields, win))
 			return 0
 		}
 		extras := resolveExtraFields(entities, explicitFields, allFieldsFlag, defaultStatusFields, defaultStatusFields)
-		printStatusTable(stdout, entities, stages, extras, quiet)
+		printStatusTable(stdout, entities, stages, extras, quiet, win)
 	}
 	return 0
 }

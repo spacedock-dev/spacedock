@@ -139,9 +139,9 @@ func TestSplitRootStatusNoSymlink(t *testing.T) {
 	if got := sortedCopy(slugs); !equalStrings(got, []string{"add-login", "refactor-dispatch"}) {
 		t.Fatalf("active slugs = %v, want [add-login refactor-dispatch]\n%s", got, out)
 	}
-	// Stage ordering proves stages came from the main README: ideation < impl.
-	if !equalStrings(slugs, []string{"refactor-dispatch", "add-login"}) {
-		t.Fatalf("stage ordering = %v, want [refactor-dispatch add-login]\n%s", slugs, out)
+	// Stage ordering proves stages came from the main README: impl before ideation.
+	if !equalStrings(slugs, []string{"add-login", "refactor-dispatch"}) {
+		t.Fatalf("stage ordering = %v, want [add-login refactor-dispatch]\n%s", slugs, out)
 	}
 }
 
