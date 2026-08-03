@@ -30,6 +30,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:15ec08nz1ypn0dzs8b8xznr7:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:15ec08nz1ypn0dzs8b8xznr7-ideation-1
+              briefing:
+                id: briefing:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1
+                digest: sha256:e714241f573d403ab40e249008ec231862cbecf6923caa0702215e3d0ab16bea
+                request-digest: sha256:750737199c2a6462a3f41bcb547930871600e3b38b7301c4fc159a1aae11fa9f
+                room-ref: ./make-live-lanes-buy-named-evidence/review/ideation/briefing-1
 started: 2026-08-03T12:19:37Z
 ---
 

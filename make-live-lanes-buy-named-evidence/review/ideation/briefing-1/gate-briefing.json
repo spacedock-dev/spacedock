@@ -1,0 +1,73 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1",
+  "question": "Does this plan make every retained live-lane surface serve one visible and non-duplicate evidence claim?",
+  "artifacts": [
+    {
+      "id": "artifact:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ada9f762b2f4654695971013dd3b5eba19a3d39f/make-live-lanes-buy-named-evidence.md",
+      "rev": "sha256:5537d1522aa5413ce29bdf60bc2285c3561d521bb86b0eb91ccbb314c6dd4f3b",
+      "mediaType": "text/markdown",
+      "summary": "The plan maps selectors to claims and controls or metrics to producers and consumers. It consolidates Pi smoke evidence, removes obsolete Claude PTY work, retains required recovery proofs, moves deterministic tests offline, and measures saved spend."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f2e11fede65219e037397655460173d53735ad39/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/f2e11fede65219e037397655460173d53735ad39/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://state/ada9f762b2f4654695971013dd3b5eba19a3d39f/consolidate-pi-front-door-smoke-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:2b1829b8093f723a5406d4cadd81c8de2117cb5ecb7baa58e99009e77ac620fd"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1:item-5",
+      "uri": "git-root://state/ada9f762b2f4654695971013dd3b5eba19a3d39f/retire-legacy-pty-live-lane.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:ad5330c3c8b79283e3b91613a293af2cc6621c6dc696ee1134ddf162aa96555e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1:item-6",
+      "uri": "git-root://state/ada9f762b2f4654695971013dd3b5eba19a3d39f/wire-claude-dispatch-recovery-live-proofs.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:351564c522f7e126799e6a32151034a95c22c648f184af03e034d6b266e305ba"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1:item-7",
+      "uri": "git-root://state/ada9f762b2f4654695971013dd3b5eba19a3d39f/remove-dead-live-lane-controls-and-metrics.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f83897678fbcf25a551ecc1cf6b80afff334dbbd768ab8e091f85b31d92c7946"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1:item-8",
+      "uri": "git-root://state/ada9f762b2f4654695971013dd3b5eba19a3d39f/untag-offline-live-tests.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:585156956012436fc1a317afffa608758f3e4ddfdedf7a88072f5ad003438071"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:ideation:attempt-1:revision-1:item-9",
+      "uri": "git-root://state/ada9f762b2f4654695971013dd3b5eba19a3d39f/wire-pi-subagent-smoke.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d2af067879211dfa1f93e235f284fb89d1536d049e6b3b4e209df4a549ab65a6"
+    }
+  ]
+}
