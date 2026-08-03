@@ -114,6 +114,12 @@ type Eligibility struct {
 // CurrentStageReadiness projects it; CLI consume reporting reuses it.
 const RouteApprovedAwaitingMerge = "approved-awaiting-merge"
 
+// RouteNeedsPreparation is the scheduler-only readiness value for a gated
+// current stage whose report is mechanically complete but has no current
+// attempt authority. It is a candidate for First Officer semantic review, not
+// an approval or a permission to mutate the entity.
+const RouteNeedsPreparation = "needs-preparation"
+
 type ConsumeResult struct {
 	Eligibility
 	Consumed bool
@@ -202,6 +208,29 @@ func CurrentStageReadiness(doc *Document, status string, stages []ReadinessStage
 		return RouteApprovedAwaitingMerge
 	}
 	return "approved-awaiting-advance"
+}
+
+// CurrentStageReadinessWithReport extends CurrentStageReadiness with the
+// status-owned mechanical report proof. A complete report promotes only the
+// no-current-authority shape; every selected, malformed, or otherwise
+// classified authority keeps the canonical result above. Keeping this wrapper
+// beside the reducer lets status and any future machine projection share the
+// exact ordering and fail-closed behavior without adding durable gate state.
+func CurrentStageReadinessWithReport(doc *Document, status string, stages []ReadinessStage, reportComplete bool) string {
+	readiness := CurrentStageReadiness(doc, status, stages)
+	if !reportComplete || readiness != "validating" {
+		return readiness
+	}
+	if doc == nil {
+		return RouteNeedsPreparation
+	}
+	if len(doc.Records) == 0 {
+		return "invalid"
+	}
+	if _, err := recordForStage(doc, status); err != nil && strings.Contains(err.Error(), "no logical gate") {
+		return RouteNeedsPreparation
+	}
+	return readiness
 }
 
 func Validate(doc *Document) error {

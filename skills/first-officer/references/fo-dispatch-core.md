@@ -172,7 +172,15 @@ In a split-root workflow, `gate record`'s close and `gate consume` commit and sy
 
 After each agent completion, run `«dispatch.next-action»()` (skeleton below).
 
+**Scheduler envelope and priority.** Machine `status --next --json` returns one object: `{"command":"next","dispatchable":[…],"ready_gates":[…]}`. `ready_gates` is the same ordered four-key index emitted by boot identify; human `--next` is unchanged. On every read, process the first ready-gate row before any dispatchable row. `needs-preparation` is a gate candidate, never entered-stage dispatch.
+
+For `needs-preparation`, load `spacedock:fo-gate-lifecycle`, re-read the entity, latest exact-stage report/checklist, and path-scoped clean commit, then decide semantic completeness. A defect stops once with `report-incomplete: <concrete reason>` and zero prepare, legacy bind, state mutation/commit, presentation, idle, or repeat-next effects. On a semantic pass, supply only question, one committed Markdown Artifact, summary, and References to exactly one existing `gate prepare`; require emitted `room`, `briefing`, `digest`, `state=open`, commit its binding, and re-read the same envelope. Present only one same-slug `awaiting-captain`; any nonzero/mismatched result stops without retry. Existing open, withdrawn, stale, closed, pending, revise, hold, blocked, feedback, consumed, superseded, not-applicable, terminal, archived, malformed, and mismatched states retain their owners and never route through this candidate.
+
+An exact prior-stage replay candidate may exercise s4's existing selection/replay idempotency during that one invocation; FO creates no attempt counter, retry token, cache, or alternate authority.
+
 These are FO-internal scheduling reads — consume them as `--json` (compact, byte-stable, every value a string), not the padded human table a token proxy can mangle; `--fields` narrows to the keys needed. Envelopes: `status`/`--where` → `{"command":"status","entities":[…]}`; `--next` → `{"command":"next","dispatchable":[…]}`. The captain-facing state display (shared-core) still forwards the human table verbatim.
+
+The `--next` envelope now also carries canonical `ready_gates`; the scheduler-envelope rule above supersedes the abbreviated shape in this historical sentence.
 
 ## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration
 
@@ -182,6 +190,8 @@ When PRESENT, invoke `«roster-reconcile»()` before the inbound-message drain. 
 1. **Check mod-blocked entities** — Run `status --where "mod-block !=" --json --fields id,slug,mod-block`. For each entity in `entities`, re-read the blocking mod and resume its pending action (e.g. re-present the PR summary); do not dispatch new work for it.
 2. **Run `status --next --json --fields id,slug`** — Dispatch any newly ready entity in `dispatchable` (each row carries the fixed `id,slug,current,next,worktree` plus named frontmatter keys; `--fields` is additive over those five, the computed dispatch columns are not projectable).
 3. **If nothing is dispatchable** — After the first empty `status --next`, invoke `«hooks.run»("idle")` exactly once, then `«roster-reconcile»()` when PRESENT, then the second `status --next`. Dispatch anything newly unblocked; otherwise end the iteration.
+
+The two scheduler reads consume the same `dispatchable+ready_gates` envelope. If both arrays are empty on the first read, idle runs once; after the second read apply ready-gate-first priority again and stop only when both arrays remain empty. A gate made ready by idle must therefore win over dispatch and cannot be reported as false quiescence.
 
 - **done-when:** a ready entity is dispatched, a mod-block's pending action is resumed, a ready entity is held at the consent stop above, or nothing is dispatchable and the iteration ends.
 - → **prose** (deterministic mechanism, binary pending — NOT judgment-owned), becomes `` `spacedock dispatch next-action` `` — no driver binary backs it yet (descoped to roadmap 0222); the FO hand-follows the deterministic skeleton above and does not probe for the unshipped command (runtime-support.md's `→ prose` trichotomy).
