@@ -7,6 +7,18 @@ sprint: live-test-truth
 group: named-live-evidence
 sprint-readiness: ready
 id: 15ec08nz1ypn0dzs8b8xznr7
+gates:
+    version: 1
+    records:
+        - id: gate:15ec08nz1ypn0dzs8b8xznr7:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:15ec08nz1ypn0dzs8b8xznr7-backlog-1
+              briefing:
+                id: briefing:15ec08nz1ypn0dzs8b8xznr7:backlog:attempt-1:revision-1
+                digest: sha256:21d99a321493d7d1a6f8699d6f36913a7e9774e952adc96574d482409e4f46d1
+                request-digest: sha256:97c4053e9255b7e7a298ec8cc026e0ea331cf318f5e26605d74b2d41b66c8da4
+                room-ref: ./make-live-lanes-buy-named-evidence/review/backlog/briefing-1
 ---
 
 ## Outcome
