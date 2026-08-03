@@ -329,7 +329,7 @@ Flags:
   --scope-notes-file FILE       Optional scope-notes file (flag/file mode).
   --feedback-context-file FILE  Optional feedback-context file; required with --feedback-reflow (flag/file mode).
   --team-name NAME              Select the legacy TeamCreate-registry dispatch shape. On host=claude, auto-team is the default — omit this unless you mean legacy team mode.
-  --bare-mode                   Emit the bare sequential shape (no name, no team_name, no run_in_background).
+  --bare-mode                   Emit the bare sequential shape (no name, no team_name, no run_in_background); unsupported on host=codex.
   --feedback-reflow             Route a rejection back to its feedback-to target stage; requires --feedback-context-file.
   --advance                     Emit a reuse-advance pointer message for a live worker instead of a spawn envelope. Incompatible with --bare-mode.
   --stamp                       Fold the ordinary post-gate dispatch steps (started/worktree frontmatter stamps, state commit+sync, worktree creation) into this build, before assembling the envelope. Refuses (no mutation) unless the entity's status already equals --stage. Incompatible with --advance.

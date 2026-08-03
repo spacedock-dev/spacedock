@@ -66,6 +66,8 @@ Add support in small layers. Each layer should have its own proof.
 
 2. **Dispatch host mode**
    - Teach `spacedock dispatch build` to accept `host: "<host>"` when the assignment shape differs by host.
+   - If a generic dispatch mode has no faithful native call shape, reject that host/mode combination before artifact creation; do not silently reinterpret it.
+   - Codex fresh dispatch is always named, so `host=codex` rejects `bare_mode`.
    - Keep entity paths and worktree paths explicit, especially for split-root workflows (`state: .spacedock-state`).
    - Test both positive shape and banned-tool negative cases.
 
