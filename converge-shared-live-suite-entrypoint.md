@@ -8,9 +8,9 @@ verdict:
 score: 0.95
 worktree:
 issue:
-sprint: live-test-truth
+sprint:
 group: common-runner
-sprint-readiness: ready
+sprint-readiness: absorbed
 id: h3b5tgk77vx9qqdmbjtpsh98
 gates:
     version: 1
