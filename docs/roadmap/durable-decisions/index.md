@@ -34,9 +34,18 @@ The membership query remains authoritative. These names record responsibility bo
 | moving-target conflicts | `define-fo-moving-target-conflict-ownership` (`g3`) | preserve authority and exact evidence; require Captain-owned reconciliation and fresh validation |
 | advisory rounds | `cut-workflow-specific-round-recorder-from-v1` (`wjk`) | remove the development-policy round surface from stable v1; redesign later as workflow-neutral |
 | provider closure | `prove-or-cut-provider-backed-gate-closure` (`a73`) | one pinned exact-candidate transaction or no public provider-backed closure in v1 |
-| help and docs | `polish-v1-gate-command-surface` (`f6c`) | reconcile discoverability and prose only after the semantic owners land |
+| help and docs | `polish-v1-gate-command-surface` (`f6c`) | reconcile discoverability and prose only after the semantic owners land; execute the re-homed Contract landing pass — strip owner tags and genericize example ids in the contract spec, with a render re-check (captain re-homing, 2026-08-03) |
 
 No cleanup ticket may absorb a semantic change from the rows above. No semantic owner may preserve a prototype shape merely because current pilot metadata contains it; a one-off state transformation is cheaper and more truthful than a compatibility layer before v1 release.
+
+## Remainder exit contract (captain, 2026-08-03)
+
+The remainder of this sprint is the pre-stable necessity cut, and the cut table above is its definition of done. The sprint's theme applied to itself: the captain's cut decisions become the state the spec holds.
+
+- **Done when the table closes.** Every boundary row ends in exactly one of two states: its required outcome landed and verified by merge evidence, or its surface cut. Row state lives in the membership query and merge history, never in this file; a row is never closed by assumption or an inherited label.
+- **The spec is the surviving contract.** At close, `docs/specs/gate-resolution-frontmatter-contract.md` describes exactly the machinery that shipped: cut surfaces recorded only under "Explicitly outside v1", no pending sections, no shaping scaffolding. Every semantic owner's PR carries its own spec-section edit (the one-spec rule); the scaffolding strip belongs to `f6c` via the re-homed Contract landing pass.
+- **Anything not a row is not in the sprint.** A member carrying `sprint: durable-decisions` without a boundary row either gains one by captain decision or is cut from the sprint; `bv` and `47g` are decided under this rule now, not queued (`47g` was already flagged cut-or-reshape). New discoveries during the remainder file as next-train seeds, never as members.
+- **Cross-sprint release edge:** the live-test-truth sprint's deferred `rm` (restore-quarantined-common-live-journeys) and its `v0.27.0` DoD wait on this sprint's remaining landings; a slip here blocks that cut or moves the shared train — a captain decision visible from both indexes.
 
 ## Streamlined common journeys
 
@@ -115,7 +124,7 @@ The First Officer prepares and commits the same room, then passes only the room 
 
 **Drive — Commander (separate cold-booted session)**
 - [ ] Implementation → validation → done per member; detached adversarial audit on shipped-contract surfaces
-- [ ] **Contract landing pass** (captain placement ruling, 2026-07-21): strip the spec's shaping scaffolding — owner-tag lines, diagram task-id prefixes (converted to component words with a render re-check via a float), example ids genericized — so the landed spec speaks only component terms. Owner: the Commander, as the recorder member's final step before its merge.
+- [ ] **Contract landing pass** (captain placement ruling, 2026-07-21): strip the spec's shaping scaffolding — owner-tag lines, diagram task-id prefixes (converted to component words with a render re-check via a float), example ids genericized — so the landed spec speaks only component terms. Owner: the Commander, as the recorder member's final step before its merge. **Re-homed 2026-08-03:** the recorder merged without the pass; ownership moves to `f6c` (its cut-table row carries it) and this checkbox closes with `f6c`.
 - [x] **⚠️ Pre-cut necessity audit** — 2026-08-01 found the responsibility boundaries above; stable readiness remains false until their sprint owners close or their surfaces are cut
 - [ ] **⚠️ Exact-candidate verification** before the tag — chat journey required; provider journey conditional on `a73` retention
 - [ ] **Cut 0.27.0** — `go test ./...` + `-race` green, `gofmt` clean, then `docs/releasing.md` *(captain authorizes)*
