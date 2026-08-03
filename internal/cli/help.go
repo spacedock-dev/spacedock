@@ -180,6 +180,49 @@ Examples:
 	})
 }
 
+// setStatusHelp installs a per-command help renderer for `status`: the query
+// flag surface instead of the root's grouped menu (cobra walks to the parent
+// HelpFunc only when a child has none). It names --where as THE entity query,
+// the one-clause-per-flag AND rule (a repeated-clause string is an error, not an
+// AND — the #314 fix), the canonical known-field list, and --archived's
+// active-plus-archived semantics (it composes with --where; it does not swap
+// scope) — the discoverability surface `status --help` did not previously
+// provide (before this, RunE had no wantsHelp guard, so --help fell through to
+// the entity listing).
+func setStatusHelp(cmd *cobra.Command, w io.Writer) {
+	cmd.SetHelpFunc(func(c *cobra.Command, _ []string) {
+		fmt.Fprint(w, c.Short+`
+
+Usage:
+  spacedock status --workflow-dir DIR [query flags]
+
+Query flags:
+  --where FIELD=VALUE  Filter entities — THE entity query; repeat the flag to AND clauses
+  --archived           Include archived entities (active PLUS archived, not archived-only)
+  --fields a,b,c       Project to these fields    --all-fields  Show every stored field
+  --next               Dispatchable entities      --boot        Startup roll-up
+  --resolve REF        Resolve slug/id/prefix     --next-id     Preview the next id
+  --validate           Check workflow state       --json        Machine-readable output
+
+Operators (one clause per flag):
+  field=value   equals             field!=value  not equals
+  field=        field is empty     field!=       field is non-empty
+
+Repeat --where to AND clauses. Two clauses in one string is an error, not an AND.
+
+Known fields are this workflow's entity frontmatter keys plus the canonical set
+(id, slug, status, title, score, source, worktree, pr, started, completed,
+verdict, mod-block, archived, issue). An unknown field is an error that lists them.
+
+Examples:
+  spacedock status --workflow-dir docs/dev --where status=ideation
+  spacedock status --workflow-dir docs/dev --where sprint=X --where 'sprint-readiness!=defer'
+  spacedock status --workflow-dir docs/dev --where sprint=X --archived
+  spacedock status --workflow-dir docs/dev --where sprint=X --archived --fields slug,status,verdict,archived
+`)
+	})
+}
+
 // setMergeHelp installs a per-command help renderer for `merge`: the `guard`
 // subcommand synopsis, its flag surface, and the three-phase ceremony it drives,
 // instead of the root's grouped menu (cobra walks to the parent HelpFunc only when
