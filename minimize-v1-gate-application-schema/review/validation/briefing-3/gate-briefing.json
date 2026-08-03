@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nthcevf1snz7hm75gny3kd2e:validation:attempt-3:revision-1",
+  "question": "Approve the integrated NTH candidate for terminal delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:nthcevf1snz7hm75gny3kd2e:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/927c08f9b0044f43d12229bbabc327239f25cd65/minimize-v1-gate-application-schema/review/validation/fo-gate-review-integrated-3ed36751a.md",
+      "rev": "sha256:7d473c98eb7d3cf36acab3ea22d81f517a781577ab858a328787ec57f84e6876",
+      "mediaType": "text/markdown",
+      "summary": "Fresh validation PASSED for exact integrated head 3ed36751a; focused and pinned full/race evidence is green, with only disclosed concurrent archival drift."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nthcevf1snz7hm75gny3kd2e:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://state/927c08f9b0044f43d12229bbabc327239f25cd65/minimize-v1-gate-application-schema/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:bdd5cca852165b9136e8cc4700c68d0dd1a963c30fe28866b8b447e17986162d"
+    }
+  ]
+}
