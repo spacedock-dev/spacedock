@@ -2,7 +2,7 @@
 title: Define FO ownership and recovery for moving-target PR conflicts
 status: ideation
 source: "Captain follow-up after the 2026-08-03 durable-decisions conflict diagnosis."
-started:
+started: 2026-08-03T16:01:22Z
 completed:
 verdict:
 score: 0.95
