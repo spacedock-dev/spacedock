@@ -114,7 +114,7 @@ If a gated reviewer recommends `REJECTED` at a configured feedback gate, new/unr
 
 The worktree-ownership rules (and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches.
 
-The FO declares state intent by invoking the prose-functions below. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied. Every state write is one call: `«state.commit»(slug)`.
+The FO declares state intent by invoking the prose-functions below. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied. Every state write is one call: `«state.commit»(slug)` — the gate verbs and `--stamp` self-sync; see fo-dispatch-core.md.
 
 ## «state.boot»(): read all local startup identify in one call
 

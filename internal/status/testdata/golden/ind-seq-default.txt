@@ -3,10 +3,10 @@
 ===== stdout =====
 ID     SLUG                           STATUS               TITLE                          SCORE
 --     ----                           ------               -----                          -----
-001    001-alpha                      backlog              Alpha task                     0.80
+003    003-gamma                      implementation       Gamma folder task              0.90
 002    002-beta                       ideation             Beta task                      0.50
 004    004-delta                      ideation             Delta no score                 
-003    003-gamma                      implementation       Gamma folder task              0.90
+001    001-alpha                      backlog              Alpha task                     0.80
 005    005-epsilon                    parked               Epsilon weird status           0.30
 
 ===== stderr =====

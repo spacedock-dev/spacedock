@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // edgeReconcileResult carries the SHAs and merge output a reconcile-fixture run
@@ -79,9 +81,7 @@ func runEdgeReconcileFixture(t *testing.T, tag string) edgeReconcileResult {
 	const preCutCalendar = "0.0.2026050101"
 	marketplaceJSON := "{\n  \"name\": \"spacedock-edge\",\n  \"plugins\": [\n    {\n      \"name\": \"spacedock\",\n      \"version\": \"" + preCutCalendar + "\"\n    }\n  ]\n}\n"
 
-	git("init", "-q")
-	git("config", "user.email", "test@example.com")
-	git("config", "user.name", "test")
+	testgit.InitRepo(t, dir, "-q")
 
 	// Base commit — the shared ancestor `next` and `main` both descend from.
 	write(".claude-plugin/plugin.json", pluginJSON("0.23.0-pre1"))

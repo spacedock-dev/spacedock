@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // stageMergeFixture copies a status-package merge fixture into a fresh
@@ -41,15 +42,13 @@ func stageMergeFixture(t *testing.T, fixture string) string {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	// Set a PERSISTENT local identity on the temp repo. The verb's own commits
-	// (commitArchiveMove) run plain `git commit` without `-c`, so they must resolve
-	// an identity from the repo's config — independent of global/system config and
-	// git's auto-detection. A CI lane with no global identity and auto-detection
-	// disabled would otherwise exit-128 the verb's commit.
+	// InitRepo persists a PERSISTENT local identity on the temp repo. The verb's own
+	// commits (commitArchiveMove) run plain `git commit` without `-c`, so they must
+	// resolve an identity from the repo's config — independent of global/system
+	// config and git's auto-detection. A CI lane with no global identity and
+	// auto-detection disabled would otherwise exit-128 the verb's commit.
+	testgit.InitRepo(t, dst, "-q")
 	for _, args := range [][]string{
-		{"init", "-q"},
-		{"config", "user.email", "test@example.com"},
-		{"config", "user.name", "spacedock-test"},
 		{"add", "-A"},
 		{"commit", "-q", "-m", "seed"},
 	} {

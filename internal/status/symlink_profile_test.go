@@ -123,9 +123,10 @@ func TestSymlinkStateProfile(t *testing.T) {
 		}
 	}
 
-	// AC-1: ordering follows the stages block read through the symlink:
-	// refactor-dispatch (ideation) < add-login (implementation) < seed-archive (review).
-	wantOrder := []string{"refactor-dispatch", "add-login", "seed-archive"}
+	// AC-1: ordering follows the stages block read through the symlink, later
+	// stage first: seed-archive (review), then add-login (implementation), then
+	// refactor-dispatch (ideation).
+	wantOrder := []string{"seed-archive", "add-login", "refactor-dispatch"}
 	if !equalStrings(slugs, wantOrder) {
 		t.Fatalf("stage ordering = %v, want %v (proves stages block resolved through symlink)\n%s",
 			slugs, wantOrder, out)

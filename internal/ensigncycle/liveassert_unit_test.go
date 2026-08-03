@@ -5,6 +5,8 @@ package ensigncycle
 import (
 	"path/filepath"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // These run under the DEFAULT build tags (no //go:build live) so `go test ./...`
@@ -92,7 +94,7 @@ func TestSomeCommitNamesOnly(t *testing.T) {
 		root := t.TempDir()
 		writeFile(t, filepath.Join(root, "README.md"), "readme")
 		writeFile(t, filepath.Join(root, "make-it-work.md"), "entity")
-		git(t, root, "init", "-q")
+		testgit.InitRepo(t, root, "-q")
 
 		// One commit that adds README.md AND make-it-work.md together (sibling
 		// sweep) — the incomplete cycle's non-path-scoped commit.

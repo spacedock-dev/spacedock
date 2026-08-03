@@ -27,6 +27,7 @@ func TestDispatchBuildHelpBeforeRequiredFlags(t *testing.T) {
 				"workflow_dir",
 				"stage",
 				"checklist",
+				"unsupported on host=codex",
 			)
 			assertNotContains(t, res.stdout, "requires --workflow-dir")
 		})

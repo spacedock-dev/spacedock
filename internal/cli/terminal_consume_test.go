@@ -17,6 +17,7 @@ import (
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // terminalWorkflowOpts shapes the terminal-boundary CLI fixture.
@@ -56,10 +57,8 @@ func terminalCLIWorkflow(t *testing.T, opts terminalWorkflowOpts) (root, entity 
 	writeFile(t, filepath.Join(root, "gate-review.md"), "# Review\n")
 	entity = filepath.Join(root, "task.md")
 	writeFile(t, entity, "---\nid: task\nstatus: validation\ntitle: Task\n---\n# Task\n")
+	testgit.InitRepo(t, root, "-q")
 	for _, args := range [][]string{
-		{"init", "-q"},
-		{"config", "user.email", "test@example.com"},
-		{"config", "user.name", "spacedock-test"},
 		{"add", "-A"},
 		{"commit", "-q", "-m", "seed"},
 	} {

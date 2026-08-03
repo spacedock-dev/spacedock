@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 func TestClaudeLiveInstallsExactCandidateOutsideCheckout(t *testing.T) {
@@ -174,7 +176,7 @@ func candidateFixture(t *testing.T) (string, string) {
 		}
 		return strings.TrimSpace(string(out))
 	}
-	git("init", "-q")
+	testgit.InitRepo(t, checkout, "-q")
 	git("add", ".")
 	git("commit", "-qm", "fixture")
 	return checkout, git("rev-parse", "HEAD")

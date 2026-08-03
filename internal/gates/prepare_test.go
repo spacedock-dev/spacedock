@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 	"gopkg.in/yaml.v3"
 )
 
@@ -1066,8 +1067,7 @@ func prepareFixture(t *testing.T, form string) (workflow, state, entity, artifac
 		t.Fatal(err)
 	}
 	mainRoot := filepath.Dir(filepath.Dir(workflow))
-	prepareGitRun(t, mainRoot, "init", "-q")
-	prepareGitIdentity(t, mainRoot)
+	testgit.InitRepo(t, mainRoot, "-q")
 	if err := os.WriteFile(filepath.Join(workflow, "README.md"), []byte("---\nid-style: slug\nstate: ../../../state\nstages:\n  states:\n    - name: validation\n      initial: true\n      gate: true\n    - name: implementation\n    - name: done\n      terminal: true\n    - name: contradictory\n      gate: true\n      terminal: true\n---\n# Workflow\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -1082,8 +1082,7 @@ func prepareFixture(t *testing.T, form string) (workflow, state, entity, artifac
 	if err := os.MkdirAll(state, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	prepareGitRun(t, state, "init", "-q")
-	prepareGitIdentity(t, state)
+	testgit.InitRepo(t, state, "-q")
 	switch form {
 	case "folder":
 		entity = filepath.Join(state, "task", "index.md")
@@ -1105,12 +1104,6 @@ func prepareFixture(t *testing.T, form string) (workflow, state, entity, artifac
 	prepareGitRun(t, state, "add", ".")
 	prepareGitRun(t, state, "commit", "-q", "-m", "state fixture")
 	return workflow, state, entity, artifact, reference
-}
-
-func prepareGitIdentity(t *testing.T, dir string) {
-	t.Helper()
-	prepareGitRun(t, dir, "config", "user.name", "Spacedock Test")
-	prepareGitRun(t, dir, "config", "user.email", "spacedock@example.invalid")
 }
 
 func prepareGitRun(t *testing.T, dir string, args ...string) {

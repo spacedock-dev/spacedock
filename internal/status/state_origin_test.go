@@ -6,22 +6,15 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // gitInit initializes a bare-minimum git repo at dir so a remote query resolves
 // there. No remote is added, so `git remote get-url origin` exits non-zero.
 func gitInitNoRemote(t *testing.T, dir string) {
 	t.Helper()
-	for _, args := range [][]string{
-		{"init", "-q"},
-		{"config", "user.email", "t@t"},
-		{"config", "user.name", "t"},
-	} {
-		cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-	}
+	testgit.InitRepo(t, dir, "-q")
 }
 
 // TestStateHasOriginNoRemote (detection unit, seeds AC-1/AC-2 false path): a

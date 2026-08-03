@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // identifyPRReadme declares a split-root slug workflow whose implementation stage
@@ -376,9 +377,7 @@ func TestBootIdentifyIsSideEffectFree(t *testing.T) {
 		"add-login.md": "---\nstatus: implementation\npr: \"#42\"\n---\n",
 	})
 	// The state checkout is a real git repo so HEAD/tree can be diffed.
-	gitC(t, state, "init", "-q")
-	gitC(t, state, "config", "user.email", "t@t")
-	gitC(t, state, "config", "user.name", "t")
+	testgit.InitRepo(t, state, "-q")
 	gitC(t, state, "add", "-A")
 	gitC(t, state, "commit", "-q", "-m", "seed")
 

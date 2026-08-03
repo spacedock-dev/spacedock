@@ -74,6 +74,11 @@ func TestCompletionShells(t *testing.T) {
 				t.Fatalf("completion %s script missing verb %q:\n%s", shell, verb, stdout.String())
 			}
 		}
+		for _, flag := range []string{"--page", "--limit"} {
+			if !strings.Contains(stdout.String(), flag) {
+				t.Fatalf("completion %s script missing status flag %q:\n%s", shell, flag, stdout.String())
+			}
+		}
 	}
 
 	// Missing shell and unknown shell both exit 2 with the named usage error.

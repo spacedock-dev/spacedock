@@ -3,10 +3,10 @@
 ===== stdout =====
 ID     SLUG                           STATUS               TITLE                          SCORE
 --     ----                           ------               -----                          -----
-001    001-design-seam                backlog              Design the runner seam         0.80
+005    005-archived-cleanup           done                 Archived cleanup task          0.40
+003    003-wire-cli                   implementation       Wire the CLI routing           0.90
 002    002-vendor-script              ideation             Vendor the status script       0.60
 004    004-no-score                   ideation             Entity without a score         
-003    003-wire-cli                   implementation       Wire the CLI routing           0.90
-005    005-archived-cleanup           done                 Archived cleanup task          0.40
+001    001-design-seam                backlog              Design the runner seam         0.80
 
 ===== stderr =====

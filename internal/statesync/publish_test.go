@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 func git(t *testing.T, dir string, args ...string) string {
@@ -28,9 +30,7 @@ func publishedRepo(t *testing.T) (repo, bare, branch string) {
 	t.Helper()
 	repo = t.TempDir()
 	bare = filepath.Join(t.TempDir(), "origin.git")
-	git(t, repo, "init", "-q")
-	git(t, repo, "config", "user.email", "test@example.com")
-	git(t, repo, "config", "user.name", "test")
+	testgit.InitRepo(t, repo, "-q")
 	if err := os.WriteFile(filepath.Join(repo, "task.md"), []byte("state\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
