@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1azrdbz8bke5m0c3qbehye5c:backlog:attempt-1:revision-1",
+  "question": "Approve this task for risk-first ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:1azrdbz8bke5m0c3qbehye5c:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/451259e3aff10626ba0a52712abac614c35e46c9/ac2-reanchor-live-scenario-repair.md",
+      "rev": "sha256:b6fe45e8e1eec8af499e737ff537934ef4d7a040eaebb458de62cf846b20e768",
+      "mediaType": "text/markdown",
+      "summary": "Restore falsifiability by proving divergent durable outcomes for correct and clause-removed first-officer behavior."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:1azrdbz8bke5m0c3qbehye5c:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/2997da9a243f36ad31f483f63ce29b1b838c3410/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:1azrdbz8bke5m0c3qbehye5c:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/2997da9a243f36ad31f483f63ce29b1b838c3410/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e"
+    }
+  ]
+}
