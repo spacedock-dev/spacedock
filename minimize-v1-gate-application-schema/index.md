@@ -352,3 +352,18 @@ The pass traced strict decode -> YAML-node shape -> Resolution authority -> elig
 ### Validation recommendation (correction cycle 2)
 
 PASSED. AC-1 through AC-4 reproduce on unchanged candidate bytes with exact-node, real-CLI, 31-path, focused/full/race, and formatting evidence. The prior validation findings are closed by independent guards and the reconciled pilot state; no material finding remains.
+
+## Stage Report: implementation (integration correction)
+
+- DONE: Integrate the NTH deliverable with the required F0 tip by a safe non-fast-forward merge on the existing branch. Merge commit `7ece33938d525d3a39c32aa8a524eaaa373e3350` has parents NTH `9ff2aa50c1a65254336e492d918745d44cd74162` and F0 `f3a03c6f896d13f647dc6712a4b8bad7cdfdd35e`; the branch was pushed without force to `origin/spacedock-ensign/minimize-v1-gate-application-schema`.
+- DONE: Resolve the only merge conflict, `docs/site/reference/command-reference.md`, manually. The resolution keeps F0's collapsed-gate `--consume` rows, `dispatch build --stamp` wording, split-root `sync=... phase=record|consume` behavior, and HALT recovery text. It keeps NTH's approval-only semantics by stating that only approve creates the application and removing the obsolete “held or blocked approvals are refused” claim. No automatic conflict choice, reset, `-X ours`/`-X theirs`, force-push, or approval mutation was used.
+- DONE: Preserve the integrated behavior and quality evidence. `gofmt -w ./cmd ./internal` exited 0. The focused gate-schema/status/CLI/ensign-cycle suite (exact-node recorder, strict negatives, consume/stale/terminal/rework lifecycle, and collapsed sync rows) exited 0. `go test ./...` and `go test ./... -race` each exited 0 against immutable repaired state snapshot `812b7a47e` (the live shared checkout has since archived four manifest paths; an unpinned run therefore reports only those four expected path-missing baseline failures). All non-manifest packages passed in that live-checkout run as well.
+- DONE: Inspect the integrated diff and final ownership. Against F0, `git diff --numstat f3a03c6f8..7ece33938` is 15 paths, 344 insertions, and 178 deletions (the NTH implementation plus its evidence correction); no new command grammar, versioning, compatibility reader, migration engine, feedback router, or unrelated product path was introduced. The code worktree is clean at the pushed merge commit.
+
+### Summary
+
+The NTH schema correction is safely merged with the current collapsed-gate F0 base. The sole documentation overlap is reconciled by retaining all `--consume`/`--stamp`, split-root sync, and HALT recovery rules while documenting the approval-only two-field application model. Focused and full/race suites pass with the repaired pilot-state snapshot; no candidate mutation consumed or recreated any workflow approval.
+
+### Remaining delivery/validation action
+
+The next First Officer action is fresh validation and a new terminal approval for this integrated candidate. The worker did not consume or recreate approval.
