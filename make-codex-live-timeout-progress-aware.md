@@ -8,9 +8,9 @@ verdict:
 score: 0.85
 worktree:
 issue:
-sprint: live-test-truth
+sprint:
 group: lane-reliability
-sprint-readiness: ready
+sprint-readiness: absorbed
 id: wp4b3zdv05fxxfz2yyhf002s
 ---
 
