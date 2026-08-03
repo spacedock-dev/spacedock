@@ -28,10 +28,8 @@ gates:
                 decision: approve
                 reason: Captain explicitly approved the outcome-shaped recarve and directed immediate redispatch.
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:ys7ncwh9kr8w5h9hdkz5apat:ideation
           stage: ideation
           attempts:
