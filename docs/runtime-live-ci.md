@@ -93,7 +93,9 @@ go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./in
 
 Run the Codex shared suite locally (`npm install -g @openai/codex` then `codex login`, or set `OPENAI_API_KEY`). Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test seeds only the minimal `features.multi_agent_v2` fragment and copies only `auth.json` for the local subscription path; it does not copy local plugin state, other credentials, or the rest of the operator's Codex config. CI does not use local subscription auth.
 
-Each Codex shared scenario launches one `spacedock codex` front-door process, which launches one `codex exec`. A fixed 15-minute wall-clock process limit is its only scenario-level liveness guard; JSONL activity, `wait_agent` events, and durable writes do not extend the deadline, and the runner does not retry. The runner preserves JSONL, stderr, the process result, and post-run durable entity/Git evidence, then requires exit 0 and grades the existing workflow assertions. A failed keep-moving run prints and retains its native Git root; a passing run removes it. The suite-wide `-timeout 40m` remains a loose outer backstop.
+Each Codex shared scenario launches one `spacedock codex` front-door process, which launches one `codex exec`. The shared stream watcher applies a 60-second quiet budget to each Codex scenario. Each complete JSONL line resets the budget.
+
+On stream silence, the runner kills the process and reports the last event and artifact directory. It preserves JSONL, stderr, the process result, and post-run durable entity/Git evidence, and it does not retry. A failed keep-moving run prints and retains its native Git root; a passing run removes it. The suite-wide `-timeout 40m` remains the runaway backstop.
 
 ```bash
 go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
