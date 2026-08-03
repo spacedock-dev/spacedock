@@ -371,8 +371,11 @@ The next First Officer action is fresh validation and a new terminal approval fo
 ## Stage Report: implementation
 
 - DONE: Integrate the NTH deliverable with F0 tip `f3a03c6f896d13f647dc6712a4b8bad7cdfdd35e` by a safe non-fast-forward merge into the existing NTH branch. Git reported exactly one conflict, `docs/site/reference/command-reference.md`; the manual resolution preserved collapsed-gate `--consume`, `dispatch build --stamp`, split-root sync/phase, and HALT recovery wording while retaining NTH approval-only application semantics.
+  Evidence: Merge commit `7ece33938d525d3a39c32aa8a524eaaa373e3350` records F0 as a parent, and the merge output reported no conflict other than `docs/site/reference/command-reference.md`; its committed content retains the named command rules and approval-only wording.
 - DONE: Run the required quality evidence. `gofmt -w ./cmd ./internal` exited 0; the focused gate-schema/status/CLI/ensign-cycle suite exited 0; and `go test ./...` plus `go test ./... -race` each exited 0 against repaired state snapshot `812b7a47e`. The unpinned live-state run's only failure is the known four-path manifest drift after those paths were archived; every other package passed.
+  Evidence: The recorded commands exited 0 with repaired snapshot `812b7a47e`; the live-state rerun isolated only the four archived manifest paths, with all non-manifest packages passing.
 - DONE: Commit and publish the bounded integration correction. Merge commit `7ece33938d525d3a39c32aa8a524eaaa373e3350` (parents NTH `9ff2aa50c1a65254336e492d918745d44cd74162` and F0 `f3a03c6f8`) is pushed to `origin/spacedock-ensign/minimize-v1-gate-application-schema`; `git diff --numstat f3a03c6f8..7ece33938` is 15 paths, 344 insertions, and 178 deletions, with no unrelated or forbidden machinery. The code worktree is clean.
+  Evidence: `git show` confirms both parents and the pushed branch points at `7ece33938`; the F0-base diff reports 15 paths and `344/178` insertions/deletions, and `git status --short` is empty in the code worktree.
 
 ### Summary
 
