@@ -85,7 +85,7 @@ gates:
 started: 2026-08-03T13:53:46Z
 worktree: .worktrees/spacedock-ensign-warn-on-legacy-gate-application-fields
 mod-block: merge:pr-merge
-pr: "#611"
+pr: pr-merge:611
 ---
 
 Legacy or extension state can contain keys that are not part of the v1 application
