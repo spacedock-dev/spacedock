@@ -219,3 +219,16 @@ Cycle 2 narrows the deletion to development-specific policy and preserves the ne
 ### Summary
 
 Cycle 3 replaces the understated range with an exact, enumerated 16-file candidate and zero unlisted-file tolerance. It also separates the three shared boundaries cleanly: jc selects, nth reduces/routes, wj removes round policy while retaining zbc's structural producer; the documentation diff and executable AC falsifiers remain bounded to wj.
+
+## Stage Report: implementation
+
+- DONE: Remove development-only advisory classification, `--feedback-cycle` grammar, triage output, and `Feedback Cycles` projection while retaining the neutral correction-round producer.
+  Base was the Captain-required integrated NTH tip `7ece33938d525d3a39c32aa8a524eaaa373e3350`; implementation commit is `461500c14b3c40189511cbe8a03d7abd334e2b70`. Production inventory over `internal/gates` and `internal/cli` reports zero matches for `correct-but-disproportionate|actor:ensign|feedbackCycleRE|FeedbackCyclePath|feedback-cycle|spliceFeedbackCycle|classifyCompletedRound|\.Triage|Triage:`. `gate record/validate --round` retains the `review-round` pointer, immutable two-file room, and byte-clean replay; workflow-owned Cycle prose is preserved but never parsed or written.
+- DONE: Preserve the jc-to-nth-to-wj seam, approval-only Application behavior, and binding gate verbs with focused producer and CLI evidence.
+  `go test ./internal/gates -run '^TestRound' -count=1`, `go test ./internal/cli -run 'TestGateRound' -count=1`, and `go test ./internal/ensigncycle -run 'TestRejectionFlowRound' -count=1` passed. Their race equivalents passed. The CLI test proves the removed `--feedback-cycle` flag exits 2 and leaves entity bytes identical; neutral foreign actors/labels publish and validate; the ensign-cycle oracle prewrites the Cycle line and confirms exactly two retained room files and unchanged binding state.
+- DONE: Apply the exact 16-file bounded surface, format it, and record full-suite evidence.
+  `gofmt -w ./cmd ./internal` completed. `go test ./...` and `go test ./... -race` reached all packages; both are blocked only by the pre-existing `internal/gates/TestV1PilotManifestReadsAndValidates` fixture lookup for four absent manifests under `docs/dev/.spacedock-state` (`bind-post-rework-briefing-at-rejection-regate.md`, `collapse-gate-approval-ceremony/index.md`, `shared-git-scaffold-helper.md`, and `status-pagination-and-default-sorting.md`). All other packages passed. `git diff --name-only` is exactly the enumerated 16 files, and the code worktree is clean. No merge conflicts or rebases occurred; base was already the required NTH tip.
+
+### Summary
+
+WJ removes generic development finding policy and projection from the round recorder, leaving a workflow-neutral immutable Briefing/log room plus `review-round` identity for zbc. The FO/workflow now owns classification and Cycle prose; binding gate and route/application semantics remain untouched. Full and race suites have only the known missing state-checkout fixture blocker described above.
