@@ -9,7 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"github.com/spacedock-dev/spacedock/internal/gates"
+	statuspkg "github.com/spacedock-dev/spacedock/internal/status"
 )
 
 // AuthorACReanchorScenario gives the first officer raw mechanism and value
@@ -18,6 +19,7 @@ import (
 // resulting entity frontmatter: revise, feedback, and the rework target must all
 // be durable. Final-message narration is diagnostic and cannot satisfy it.
 func AuthorACReanchorScenario() Scenario {
+	var entityPath, workflowDir string
 	return Scenario{
 		Name: "ac-reanchor/means-pass-value-regressed",
 		Runbook: strings.Join([]string{
@@ -28,72 +30,34 @@ func AuthorACReanchorScenario() Scenario {
 			"You have the conn to resolve exactly this one gate from the existing evidence. Prepare and present the gate review, record the decision, and apply its configured route until the entity reaches the resulting parked stage.",
 			"Then stop. Do not dispatch workers, edit the report, archive the entity, or perform work in the resulting stage.",
 		}, "\n"),
-		Setup: writeACReanchorFixture,
+		Setup: func(dir string) (string, error) {
+			workflowDir = dir
+			var err error
+			entityPath, err = writeACReanchorFixture(dir)
+			return entityPath, err
+		},
 		Assert: func(_, after EntityState, _ string) error {
-			state, err := parseACReanchorState(after.Body)
+			doc, _, err := gates.Read(entityPath)
 			if err != nil {
-				return err
+				return fmt.Errorf("validation gate is not canonical: %w", err)
 			}
-			if state.Status != "rework" {
-				return fmt.Errorf("gate did not route the measured value to rework: status=%q", state.Status)
+			summary := gates.CurrentSummary(doc, "validation")
+			if summary.State != "closed" || summary.Decision != "revise" || summary.Application != "" {
+				return fmt.Errorf("validation gate stored wrong latest decision: state=%q decision=%q application=%q", summary.State, summary.Decision, summary.Application)
 			}
-			decision, action, target, ok := state.latestValidationDecision()
-			if !ok {
-				return fmt.Errorf("validation gate has no stored decision and application")
+			feedbackTo, err := gates.DeclaredReworkTarget(workflowDir, "validation")
+			if err != nil {
+				return fmt.Errorf("validation feedback route is invalid: %w", err)
 			}
-			if decision != "revise" || action != "feedback" || target != "rework" {
-				return fmt.Errorf("gate stored wrong durable branch: decision=%q action=%q target-stage=%q", decision, action, target)
+			if feedbackTo != "rework" {
+				return fmt.Errorf("validation gate has wrong feedback route: feedback-to=%q", feedbackTo)
+			}
+			if status := statuspkg.ParseFrontmatterData([]byte(after.Body))["status"]; status != feedbackTo {
+				return fmt.Errorf("gate did not apply the feedback route: status=%q feedback-to=%q", status, feedbackTo)
 			}
 			return nil
 		},
 	}
-}
-
-type acReanchorState struct {
-	Status string `yaml:"status"`
-	Gates  struct {
-		Records []struct {
-			Stage    string `yaml:"stage"`
-			Attempts []struct {
-				Resolution *struct {
-					Decision string `yaml:"decision"`
-				} `yaml:"resolution"`
-				Application *struct {
-					Action      string `yaml:"action"`
-					TargetStage string `yaml:"target-stage"`
-				} `yaml:"application"`
-			} `yaml:"attempts"`
-		} `yaml:"records"`
-	} `yaml:"gates"`
-}
-
-func parseACReanchorState(body string) (acReanchorState, error) {
-	var state acReanchorState
-	parts := strings.SplitN(body, "---", 3)
-	if len(parts) != 3 || strings.TrimSpace(parts[0]) != "" {
-		return state, fmt.Errorf("entity has no complete frontmatter")
-	}
-	if err := yaml.Unmarshal([]byte(parts[1]), &state); err != nil {
-		return state, fmt.Errorf("parse entity frontmatter: %w", err)
-	}
-	return state, nil
-}
-
-func (s acReanchorState) latestValidationDecision() (decision, action, target string, ok bool) {
-	for _, record := range s.Gates.Records {
-		if record.Stage != "validation" || len(record.Attempts) == 0 {
-			continue
-		}
-		attempt := record.Attempts[len(record.Attempts)-1]
-		if attempt.Resolution == nil {
-			return "", "", "", false
-		}
-		if attempt.Application == nil {
-			return attempt.Resolution.Decision, "feedback", "rework", true
-		}
-		return attempt.Resolution.Decision, attempt.Application.Action, attempt.Application.TargetStage, true
-	}
-	return "", "", "", false
 }
 
 // writeACReanchorFixture creates and commits a standalone workflow. Gate record
