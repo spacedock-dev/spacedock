@@ -98,3 +98,18 @@ Any other test-fixture cleanup, any production code change.
 ### Summary
 
 Read the already-migrated idiom from the 38-site migration (commit 97007928d) in the same packages — internal/cli/gate_test.go and internal/dispatch/{parity_harness_test.go,reconcile_test.go} — then applied the identical substitution: each 3-line `git init` + `config user.name` + `config user.email` (or file-local `runGitFatal` equivalent) collapsed to one `testgit.InitRepo(t, dir, "-q"[, extra init args])` call, plus the `internal/testgit` import. No assertions, fixture content, or identity values used elsewhere in these tests were touched. Guard test dropped from 7 offenders to 0; full suite and `-race` green with no other changes.
+
+## Stage Report: validation
+
+- DONE: Verify AC-1: reproduce go test ./internal/contractlint/... -run TestNoHandRolledGitInitOutsideTestgit -v yourself; confirm 0 offenders on this branch
+  ran on worktree HEAD 54d52d1c2; PASS, 0 offenders reported.
+- DONE: Verify AC-2: spot-check the diff for all 7 sites yourself -- confirm each hunk is exactly the init/identity substitution, no assertion or fixture-content changes
+  `git log -p -1 54d52d1c2` over the three files: each of the 7 hunks replaces a 3-line `git`/`runGitFatal` init+config sequence with one `testgit.InitRepo(t, dir, "-q")` call plus the new import; no other line in the hunks changed. testgit.InitRepo sets identity to "Spacedock Test"/"spacedock@example.invalid", matching 6 of 7 sites' prior literal identity already; the 7th (build_stamp_test.go:30, previously "t"/"t@t") has no assertion anywhere in the file that reads back author name/email, so the identity-value change is behaviorally inert. The two other "t@t"/"config user.name" hits in this file (lines 308-309, 455-456) are `config`-only calls on an already-cloned/`gitInit`-initialized repo, not `git init` sites, so they are correctly out of the guard's scope and untouched.
+- DONE: Run go test ./... -count=1 and go test ./... -race -count=1 yourself from scratch; confirm both green
+  both green across all 20 packages (`internal/cli` 103s/125s, `internal/dispatch` 29s/49s, full run ~5-6min each); also re-ran `gofmt -l ./cmd ./internal` — no output.
+
+### Summary
+
+Reproduced all cited evidence independently from the worktree at commit 54d52d1c2 on branch spacedock-ensign/migrate-pr600-fixtures-to-testgit: the guard test is green (0 offenders), the diff for all 7 sites is a pure init/identity substitution with no assertion or fixture-content drift (including checking that the one site whose literal identity value changed, build_stamp_test.go:30, has no test that depends on that value), and both `go test ./...` and `go test ./... -race` pass clean from scratch. No material or deferred findings. Recommend PASSED — this is main-unblocking and ready for merge.
+
+**Recommendation: PASSED**
