@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // stampFixture builds a single-repo split-root workflow: a main repo with a
@@ -27,9 +28,7 @@ func stampFixture(t *testing.T, status_, worktreeStage string, worktree bool) (m
 	if err := os.MkdirAll(mainRepo, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	runGitFatal(t, mainRepo, "init", "-q")
-	runGitFatal(t, mainRepo, "config", "user.email", "t@t")
-	runGitFatal(t, mainRepo, "config", "user.name", "t")
+	testgit.InitRepo(t, mainRepo, "-q")
 
 	workflowDir = filepath.Join(mainRepo, "docs", "dev")
 	writeFile(t, filepath.Join(workflowDir, "README.md"), readmeWorktree(true))
