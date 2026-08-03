@@ -1,0 +1,59 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ys7ncwh9kr8w5h9hdkz5apat:backlog:attempt-1:revision-1",
+  "question": "Does this outcome unit give operators one portable, accountable common live-journey surface?",
+  "artifacts": [
+    {
+      "id": "artifact:ys7ncwh9kr8w5h9hdkz5apat:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/26f5b4709fec87e67244e1b5d9975777a04455d2/deliver-portable-common-live-journey-surface.md",
+      "rev": "sha256:2be065664f59285d79bb1adb510560f9d9718c9bbe91b96629fb5fecf1967264",
+      "mediaType": "text/markdown",
+      "summary": "Compose the completed registry, canonical-entry-point, Pi, and journey-promotion evidence into one end-to-end delivery plan."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/17d3f5a71db5e1fd2d48062b700a9580cae835c3/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/17d3f5a71db5e1fd2d48062b700a9580cae835c3/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:backlog:attempt-1:revision-1:item-4",
+      "uri": "git-root://state/26f5b4709fec87e67244e1b5d9975777a04455d2/bind-live-registry-to-source.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:bb429ebcc3ab5eaba14119215f6eb46a753e2be3bddf8ae319a59fec290e5391"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:backlog:attempt-1:revision-1:item-5",
+      "uri": "git-root://state/26f5b4709fec87e67244e1b5d9975777a04455d2/converge-shared-live-suite-entrypoint.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9e4e83018bedd77310fb7eebb02f848ba5badeb6d0dbd405ef3ec98585798f25"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:backlog:attempt-1:revision-1:item-6",
+      "uri": "git-root://state/26f5b4709fec87e67244e1b5d9975777a04455d2/add-pi-common-live-runner.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9d85a461f4cde87221d884c689f845ba8683b7c2f935b25d0bf32c44a99c6da1"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:backlog:attempt-1:revision-1:item-7",
+      "uri": "git-root://state/26f5b4709fec87e67244e1b5d9975777a04455d2/promote-standalone-common-live-journeys.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:495692e623ca0680f7217d55662a9d9614bd96d5af9f9b36f2b4bf336135105c"
+    }
+  ]
+}
