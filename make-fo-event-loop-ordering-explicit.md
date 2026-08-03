@@ -84,3 +84,53 @@ Start with the smallest falsifying fixture: replay the current false-stop trace 
 - Ideation must replay the falsifying fixture and record the exact ordered trace before selecting a landing shape.
 - Implementation must keep the trace assertions independent of contract prose and preserve the existing state and command bytes.
 - Validation must cover the empty-first-query retry, gate/merge separation, unresolved-worker wait predicate, and keep-moving matrix, then run full, race, formatting, and relevant live evidence.
+
+## Stage Report: ideation
+
+### False-stop replay and ordered trace
+
+The current checkout provides a direct falsifier for treating an empty dispatch query as idle (run 2026-08-04):
+
+```text
+status --where 'mod-block !=' --json --fields id,slug,mod-block
+  26n/headless-recorded-gate-stop-stage-coherence  merge:pr-merge
+  32/boot-identify-multi-workflow-llm-retry-friction merge:pr-merge
+  93/document-dispatch-entity-path-base              merge:pr-merge
+status --next --json --fields id,slug
+  {"dispatchable":[]}
+status --boot --identify --json
+  {"dispatchable":[],"ready_gates":[],"pr_state":{"status":"local",...},"team_state":{"present":true,...}}
+```
+
+The first query exposes three pending PR/merge actions; the second query alone therefore cannot be a stop decision. The boot-identify status and recorded fixtures provide the complementary gate case: `internal/status/boot_identify_test.go` passes with `ready_gates` rows `mf` (`awaiting-captain`), `r4` (`awaiting-captain`), `wd` (`withdrawn-awaiting-prepare`), and `2n` (`approved-awaiting-merge`) alongside dispatchable `dispatch-me`. The terminal-gate test keeps `approved-awaiting-merge` in `ready_gates` through `gate consume` until merge delivery, proving that consume is not worker dispatch. The Codex wait fixture `TestCodexWaitAgentSteeringEvidence` also passes: after spawn and active-scope exhaustion it records `wait_agent(timeout_ms:300000)`, retries after captain steering, then verifies the durable report after `final_status`.
+
+The implementation-gate trace must be explicit about both the existing baseline and the required decision order. For each iteration:
+
+1. If a roster is addressable, reconcile it; then drain addressable inbound worker messages. If the runtime has no roster/message primitive, record that adapter boundary rather than inferring a clean roster.
+2. Query `status --where "mod-block !="`; process every blocking mod/PR before dispatch. A merged PR records its sentinel and runs merge guard; an open PR remains held; a closed PR asks the Captain; an unavailable check is skipped without clearing the block. No new worker is dispatched by this branch.
+3. Read the boot/status `ready_gates` projection and route each gate as state work: present `awaiting-captain`, prepare a successor for `withdrawn-awaiting-prepare`, consume/advance `approved-awaiting-advance` (with successor and observed spawn), and deliver/merge `approved-awaiting-merge` (never spawn). Any unresolved gate prevents an idle claim.
+4. Run `status --next`; dispatch every returned row, requiring worker-spawn evidence (a successful dispatch build is not spawn evidence). Keep moving independent ready rows when one row is blocked.
+5. Only after the first empty `status --next`, run the idle hook exactly once, reconcile when the adapter supports it, and run one second `status --next`. Dispatch newly released work; if the second result is still empty, report an explicit `no-dispatchable` stop only when there is no mod/PR action, gate action, or other state work.
+6. In Codex, emit `wait_agent(timeout_ms:300000)` only when an active unresolved worker remains and the post-retry scope has no dispatchable, gate, mod, or state work. A completed, errored, or absent worker never qualifies. A timeout retries the same epoch; a completion notification starts durable report/state verification and another iteration. Pi has no `wait_agent`; Claude's reconcile and idle behavior follows its bound team identity.
+
+This order makes the false-stop trace observable: the current status-only path is `mod-block? -> status --next=[] -> idle/stop`, while the required path is `message drain -> mod/PR -> ready_gates -> status --next -> (idle once + reconcile + status --next retry) -> explicit stop or guarded wait`.
+
+### Acceptance-criteria and boundary reconciliation
+
+The ACs and existing boundaries are consistent, with the following implementation fixtures required:
+
+| AC | Fixture assertion | Existing boundary preserved |
+| --- | --- | --- |
+| AC-1 | Mixed mod/PR + gate + dispatchable command log proves mod and gate actions precede `status --next`, while the independent row dispatches. | `status` is read-only; PR merge guard and gate lifecycle own mutation. |
+| AC-2 | First empty result emits one idle hook, one reconcile, one retry; released work dispatches; unchanged empty reports `no-dispatchable`. | `hooks.run` remains caller-owned and exact-once; no new scheduler command. |
+| AC-3 | Active-unresolved/completed/errored/absent matrix permits wait only for active-unresolved with an otherwise empty scope. | Codex uses `list_agents`/`wait_agent`; completion attribution is mailbox/task-path plus durable state, never a handle alone. |
+| AC-4 | `awaiting-captain`, `approved-awaiting-advance`, and `approved-awaiting-merge` route to presentation, consume/advance, and merge respectively, with no false worker spawn/idle. | `ready_gates` and gate bytes remain authoritative; terminal consume remains pending until merge delivery. |
+| AC-5 | One blocked row does not prevent two independent ready rows from reaching dispatch/gate actions. | Keep-moving semantics and worker write scopes remain unchanged. |
+
+Focused status, gate-lifecycle, and Codex wait tests already pass. Add a host-neutral command-log/event-loop fixture first, then adapter-specific assertions; do not invent a shipped `dispatch next-action` command. Run the focused suites, `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`; run host live lanes only if runtime adapter notes change.
+
+### Unresolved risk and recommendation
+
+The separate unhandled-completion-ledger risk remains: a final-status/mailbox completion can arrive while the FO is handling another request, and no durable completion feed currently records that it was handled. Ordering the available drain and reconcile operations reduces the window but cannot recover a lost completion or make a reconcile without session identity authoritative; the live `dispatch reconcile --workflow-dir docs/dev` probe reported git/filesystem drift only because no team identity was resolved. Keep that ledger/reclaim work separate, and make wait fail-safe when roster identity is absent.
+
+Recommendation for implementation-gate entry: **APPROVE ideation**. Land a contract-first numbered event-loop trace plus a small host-neutral command-log reducer/fixture and the Codex wait matrix. Make the mixed falsifying fixture red against the current `status --next=[]` stop before updating the contract and adapter notes. Preserve all current state fields, command bytes, transport APIs, gate authority, and stage behavior; the intended semantic change is ordering and stop-reason observability only.
