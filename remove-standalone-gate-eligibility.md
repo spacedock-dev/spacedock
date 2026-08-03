@@ -1,6 +1,6 @@
 ---
 title: Remove the standalone gate eligibility ceremony
-status: backlog
+status: ideation
 source: "Captain simplification review, 2026-08-03: eligibility is a necessary atomic safety predicate but an unnecessary operator preflight and readiness vocabulary."
 score: 0.9
 sprint: durable-decisions
@@ -30,7 +30,7 @@ gates:
                 reason: Captain directed dispatch of the next ideation; latest recorded SO concurrence places bv after g3 and preserves the private fail-closed predicate while removing only the public eligibility ceremony.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ## Outcome
