@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5n4k6djrq8gtvd54zg9s6zhs:validation:attempt-2:revision-1",
+  "question": "Does the corrected recorded-gate lifecycle grader satisfy validation and authorize integration into NTH PR #602?",
+  "artifacts": [
+    {
+      "id": "artifact:5n4k6djrq8gtvd54zg9s6zhs:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/2757a90a303926b0a69ec10f2c4bfb8b2ef7add8/claude-opus-dispatch-not-observed-after-consume.md",
+      "rev": "sha256:a128809e353f48dbe3fbcfdcc533b2866d1956d86fa62fc8569f29f29e07fc7a",
+      "mediaType": "text/markdown",
+      "summary": "Validation passed on 206a4737c: actor-by-close-mode, room-backed consumed lifecycle, adversarial controls, full/race, exact live Codex, and detached scope audit are green; authorize shared-PR integration only."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:5n4k6djrq8gtvd54zg9s6zhs:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/ef47b876b68ec4e2007251d598c7ce2f3577784a/internal/ensigncycle/recorded_gate_lifecycle_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:e3e720096d62cea324042fadd3d64cc59e1b7874cac4a75fb1b33b6f41b0ea0e"
+    }
+  ]
+}

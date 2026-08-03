@@ -79,6 +79,12 @@ gates:
                 target-stage: done
                 state: superseded
                 blockers: []
+            - id: gate-attempt:5n4k6djrq8gtvd54zg9s6zhs-validation-2
+              briefing:
+                id: briefing:5n4k6djrq8gtvd54zg9s6zhs:validation:attempt-2:revision-1
+                digest: sha256:87ccb2889902d4c84f5ae2c14332c949cad15f0a9f2905734304f8928f2ee92e
+                request-digest: sha256:94e31f44d5a7c87c6ded23c0a5a3fba2824cf938d5eb92bc71e3d8eb979a0317
+                room-ref: ./claude-opus-dispatch-not-observed-after-consume/review/validation/briefing-2
 mod-block:
 ---
 
