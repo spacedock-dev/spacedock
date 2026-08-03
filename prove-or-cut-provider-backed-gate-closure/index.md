@@ -1,6 +1,6 @@
 ---
 title: Prove or cut provider-backed gate closure before stable v1
-status: backlog
+status: ideation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: provider evidence exists in pilot state, but the stable surface lacks one pinned exact-candidate end-to-end proof while the chat journey is the primary value path."
 started:
 completed:
@@ -33,7 +33,7 @@ gates:
                 reason: Science Officer concurs with the parallel BV/A7 ideation branch. Captain directed the next ideation dispatch. This gate only authorizes shaping the exact-candidate provider proof or cut; it does not authorize provider implementation or fallback machinery.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if the exact release candidate can complete the same gate transaction as chat through one pinned provider package; otherwise remove the provider-only public surface from 0.27 rather than ship an unproven second path.
