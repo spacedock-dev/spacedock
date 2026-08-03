@@ -1,4 +1,4 @@
-# sh — corrected ideation direction
+# sh — ideation gate review
 
 ## End value
 
@@ -7,33 +7,24 @@ owning the development workflow's finding taxonomy. Workflow-owned labels must
 remain available to the workflow that declares them, without a generic parser
 allowlist blocking a valid round.
 
-## Recommendation
+## Chosen direction
 
-Move `align-decline-disposition-vocabulary` from backlog to ideation only after
-reframing it as a workflow-ownership task.
+Keep class and disposition content opaque to the generic recorder. Validate only
+record shape, identity, Briefing association, included immutable bytes, and the
+workflow-owned policy boundary. WJ remains the sole owner of parser-policy
+removal; sh supplies the regression and workflow-level contract proof.
 
-The ideation worker must:
+## Implementation boundary
 
-- remove the proposed allowlist for `deferred-risk`, `polish`, and
-  `correct-but-disproportionate`;
-- make the generic round path preserve class/disposition content as opaque
-  workflow data and validate only record shape, identity, Briefing association,
-  includes, and immutable bytes;
-- coordinate with WJ, which owns removal of the generic development-policy
-  parser; sh owns the regression and workflow-level contract gap that proves an
-  arbitrary well-formed workflow class is accepted;
-- place taxonomy and semantic disposition rules in workflow-owned policy, not
-  in generic gate code.
+- No generic allowlist or registry for `deferred-risk`, `polish`,
+  `correct-but-disproportionate`, or any future class.
+- Prove acceptance with a production-foreign class and exact disk bytes, plus
+  divergent-replay refusal through the existing structural failure suite.
+- Keep the follow-on to one test file and the stated 100 insertions/20 deletions;
+  forbid production, format, command, authority, and host changes.
 
 ## Decision ask
 
-Approve to enter ideation and rewrite the task body, acceptance criteria, and
-test plan around the opaque-class invariant. A later ideation gate must approve
-the exact implementation surface before any code dispatch.
-
-## Evidence
-
-- `docs/dev/.spacedock-state/align-decline-disposition-vocabulary.md`
-- `docs/dev/README.md` — Review-finding disposition
-- `docs/dev/.spacedock-state/cut-workflow-specific-round-recorder-from-v1/index.md`
-- `docs/specs/gate-resolution-frontmatter-contract.md`
+Approve the ideation direction so sh can follow WJ into a bounded implementation
+that proves arbitrary well-formed workflow classes remain available. Do not
+dispatch sh implementation until WJ has landed the shared parser-policy seam.
