@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:a732sahay8wzgqrd2yr0xxr7:backlog:attempt-1:revision-1",
+  "question": "Should this task enter ideation to prove one pinned provider-backed gate transaction on the exact v1 candidate or cut the provider-only public surface while preserving the chat journey?",
+  "artifacts": [
+    {
+      "id": "artifact:a732sahay8wzgqrd2yr0xxr7:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ad91158352a33284e013edbd68037f983e7cb27a/prove-or-cut-provider-backed-gate-closure/index.md",
+      "rev": "sha256:83999c3f18518339dc93968c0421a1b1381526992ad2703c21c3670113ea917c",
+      "mediaType": "text/markdown",
+      "summary": "Backlog seed makes provider closure conditional: retain only one exact-candidate room-only provider transaction with one authority value, or remove the provider-only entry points without adding fallback machinery. The chat path remains the primary stable value and the existing provider-room fixture is the smallest proof surface."
+    }
+  ]
+}

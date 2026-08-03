@@ -11,6 +11,29 @@ issue:
 pr:
 sprint: durable-decisions
 id: a732sahay8wzgqrd2yr0xxr7
+gates:
+    version: 1
+    records:
+        - id: gate:a732sahay8wzgqrd2yr0xxr7:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:a732sahay8wzgqrd2yr0xxr7-backlog-1
+              briefing:
+                id: briefing:a732sahay8wzgqrd2yr0xxr7:backlog:attempt-1:revision-1
+                digest: sha256:018e08a55eb205b626903dd53e5d99b610662dc63e1f22adaff859f2b5381970
+                request-digest: sha256:dbd10def580302ef507bb0f7e07338bad509c91e76a3910101935c3f81834dc5
+                room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:a732sahay8wzgqrd2yr0xxr7:backlog:1
+                briefing: briefing:a732sahay8wzgqrd2yr0xxr7:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-03T23:53:47.120708Z"
+                decision: approve
+                reason: Science Officer concurs with the parallel BV/A7 ideation branch. Captain directed the next ideation dispatch. This gate only authorizes shaping the exact-candidate provider proof or cut; it does not authorize provider implementation or fallback machinery.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if the exact release candidate can complete the same gate transaction as chat through one pinned provider package; otherwise remove the provider-only public surface from 0.27 rather than ship an unproven second path.
