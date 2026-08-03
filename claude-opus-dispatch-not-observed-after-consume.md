@@ -118,6 +118,7 @@ Any change to the actual gate/dispatch mechanics, `--stamp`, or `--consume` -- c
 - DONE: Preserve gate and dispatch mechanics; changes are confined to `internal/ensigncycle/recorded_gate_lifecycle_test.go` and add no product command behavior.
   Evidence: `git show --name-only --format= 48f001276` lists only `internal/ensigncycle/recorded_gate_lifecycle_test.go`; no files under `internal/gates` or dispatch implementation paths changed.
 - DONE: Run focused regressions and the complete ensigncycle package suite. Focused rows passed; `go test ./internal/ensigncycle -count=1` passed (105.234s).
+  Evidence: `go test ./internal/ensigncycle -race -count=1` also exited 0 (`ok github.com/spacedock-dev/spacedock/internal/ensigncycle`, 123.877s).
 
 ### Summary
 
