@@ -46,6 +46,10 @@ gates:
                 digest: sha256:63116cc2293870f9f7b98c45a5248b989d6be64e7e06192f0c5300a41f8f76bd
                 request-digest: sha256:ac23001e17ea181847c75d0f584e9a26d94af06f5e6b50e5d69b512191b6db65
                 room-ref: ./bind-live-registry-to-source/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-03T12:16:35.077935Z"
+                reason: Captain recarved the sprint into outcome-shaped delivery units. Preserve this report as design input; do not present or consume this component-shaped attempt.
 ---
 
 ## Problem
