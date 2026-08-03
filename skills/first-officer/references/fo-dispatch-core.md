@@ -14,15 +14,9 @@ Interpret the scheduler row before mutation. `current == next` dispatches that e
 2. Invoke `«dispatch.checklist»(entity, stage)` and retain its numbered output.
 3. Check for obvious conflicts if multiple worktree stages would touch overlapping files.
 4. Determine `dispatch_agent_id` from the stage `agent:` property. Default to `ensign` when absent.
-5. Update main-branch frontmatter for dispatch:
-   ```
-   ${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage} worktree=.worktrees/{worker_key}-{slug} started
-   ```
-   Here `{next_stage}` is the row's selected target, including `current` for a `current == next` row. Omit `worktree=...` for non-worktree stages. Bare `started` auto-fills a UTC ISO 8601 timestamp (skipped if already set).
-6. Commit the state transition on main: `dispatch: {slug} entering {next_stage}`.
-7. Create the worktree on first dispatch to a worktree stage.
-8. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`). On rejection reflow, that file carries the already-authorized package and concrete revise assignment with workflow labels unchanged; it never asks the target worker to classify again.
-9. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case.
+5. For a gate-consumed entry, `status` is already advanced: run `«dispatch.build» --stamp`, which stamps `started`/`worktree=`, commits+syncs state, and creates the declared worktree before emitting the envelope. For a non-gated entry, first advance with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, then the same `--stamp` build.
+6. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`). On rejection reflow, that file carries the already-authorized package and concrete revise assignment with workflow labels unchanged; it never asks the target worker to classify again.
+7. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case.
 
 A feedback-stage worker checks and reports on what was produced; it does not silently take over the prior stage.
 
@@ -144,15 +138,35 @@ The ONLY initial-dispatch path: route input through `spacedock dispatch build`, 
     [--feedback-context-file {feedback_context_file}] \
     [--team-name {team_name} | --bare-mode] \
     [--feedback-reflow] \
-    [--advance]
+    [--advance] \
+    [--stamp]
   ```
-  `host` derives from the runtime (`--host` is for tests/cross-host tooling only). `--bare-mode` reads from live team state, never inferred from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage. Add `--advance` when advancing a reused live worker instead of spawning one: the emitted envelope carries no spawn/transport fields (nothing is spawned; the adapter enumerates them) and `prompt` is the reuse-advance pointer message, forwarded to the reuse-advance handle instead of `«worker.spawn»`; `--advance` is incompatible with `--bare-mode`.
+  `host` derives from the runtime (`--host` is for tests/cross-host tooling only). `--bare-mode` reads from live team state, never inferred from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage. Add `--advance` when advancing a reused live worker instead of spawning one: the emitted envelope carries no spawn/transport fields (nothing is spawned; the adapter enumerates them) and `prompt` is the reuse-advance pointer message, forwarded to the reuse-advance handle instead of `«worker.spawn»`; `--advance` is incompatible with `--bare-mode`. Add `--stamp` for an ordinary (non-reuse) dispatch into a gate-consumed or freshly-advanced entry: it folds the `started`/`worktree=` frontmatter stamps, the state commit+sync, and worktree creation into this same call, before assembly; it refuses (no mutation) unless the entity's status already equals `--stage`, and is incompatible with `--advance` (a reuse advance presupposes an already-stamped live worker).
   Feedback context is opaque transport: preserve the authorized finding, evidence, workflow classification, disposition, workflow-defined correction projection, and assignment bytes.
 - **done-when:** on exit 0, `«worker.spawn»` is called with every helper-emitted field — the spawn/transport fields the adapter enumerates plus `description`/`model`/`prompt` — forwarded unchanged. `description` is REQUIRED. `prompt` is the ~175-char file-pointer the ensign Reads on first action — do not strip or rewrite it. Null `model` is `«worker-identity»`'s per-host case, not a core omit-on-null.
-- **block:** on non-zero exit (or missing binary) ONLY — read stderr, report the helper failure to the captain, then use the adapter's Break-Glass Manual Dispatch template (stage definition inlined verbatim; conditional `model` slot per `«worker-identity»`'s canonical model space). A zero-exit run is never a break-glass trigger.
+- **block:** on non-zero exit (or missing binary), read stderr FIRST: a `dispatch build --stamp:`-prefixed diagnostic is a stamp/sync failure — no envelope was emitted and no authority burned; remedy the named problem and rerun the same build, never break-glass. Exit 3 is `«halt.rebase-conflict»` — HALT dispatch entirely (shared-core HALT clause); never manually dispatch against a halted or unsynced state tree. Only an assembly failure (nonzero WITHOUT the `--stamp:` prefix, or missing binary) triggers the adapter's Break-Glass Manual Dispatch template.
 - → **shipped**: `` `spacedock dispatch build` `` — invoke it directly per the effect above.
 
 When `«async-dispatch»` blocks, dispatch one entity at a time and process each completion inline.
+
+## Gate Record/Consume Implicit Sync
+
+In a split-root workflow, `gate record`'s close and `gate consume` commit and sync their own write before returning — no separate `«state.commit»` call. Branch on the FINAL `sync=... phase=record|consume` line plus the exit code, never on which prose lines printed. A refusal path (nothing written) runs no sync and emits no sync line.
+
+| Landing position | Final line | Exit |
+|---|---|---|
+| close refused (validation, nothing durable) | no `recorded` line, no sync line | 1 or 2 |
+| close durable, record-sync failed | `sync=failed phase=record` | 1 |
+| close durable, record-sync rebase conflict | `sync=halted phase=record` + HALT stderr | 3 |
+| close durable+synced, consume refused (ineligible/blocked, no write) | `sync=... phase=record` + consume diagnostic | 1 |
+| close durable+synced, consume stale (superseded write, synced) | `sync=... phase=consume` | 1 |
+| advanced, consume-sync failed | `sync=failed phase=consume` | 1 |
+| advanced, consume-sync rebase conflict | `sync=halted phase=consume` + HALT stderr | 3 |
+| advanced and synced (or terminal `route=`, unspent — no sync) | `sync=pushed\|local-only\|no-op phase=consume` | 0 |
+
+`gate record --consume` sequences the record and consume handlers in one call: close, sync, consume, sync. It requires `--decision approve` for a chat-source close (a chat-source revise/hold is a usage error, exit 2, before any write); a room-source close reports the close and skips consume (`consume=skipped`, exit 0) when the room's decision resolves to revise/hold.
+
+**Recovery.** A durable-but-unsynced landing (`sync=failed`, or `sync=halted` after the HALT's manual resolution) recovers with `«state.commit»(slug)` — the standalone verb publishes whatever is locally committed but unpushed, whichever command wrote it — then resume from the durable position: a pending approval runs standalone `gate consume`; a consumed one runs `dispatch build --stamp`. Never re-run the failed gate verb or the `--consume` composite: record refuses a re-close (frozen closed) and consume refuses a re-consume (byte-clean refusal, no new commit).
 
 ## Event Loop
 

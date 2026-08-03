@@ -146,6 +146,14 @@ const RouteApprovedAwaitingMerge = "approved-awaiting-merge"
 type ConsumeResult struct {
 	Eligibility
 	Consumed bool
+	// Wrote reports whether THIS call wrote a real mutation (a fresh advance or
+	// a fresh pending->superseded supersede) — distinct from ApplicationState,
+	// which EvaluateEligibility always copies from the attempt's current
+	// application state, including on a pure-refusal read against an
+	// already-superseded or already-consumed application. Callers deciding
+	// whether to sync/commit must branch on Wrote, never on
+	// ApplicationState == "superseded" or "consumed" alone.
+	Wrote bool
 }
 
 // ReadinessStage is the minimum workflow taxonomy needed to reduce a selected

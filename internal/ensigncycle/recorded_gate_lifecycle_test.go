@@ -16,10 +16,48 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
+// recordedGateRequiredEvents labels the classic three-step trace (prepare,
+// decision-record, consume) the scripted CLI-replay fixtures below drive
+// directly. A live agent following the now-documented captain-approve fast
+// path instead closes with `gate record --decision approve --consume` in one
+// call, producing the two-step recordedGateCollapsedEventTrace — both are
+// valid gate-lifecycle traces; see validRecordedGateEventTrace.
 var recordedGateRequiredEvents = []string{
 	"prepare",
 	"decision-record",
 	"consume",
+}
+
+// recordedGateCollapsedEventTrace is mechanism 2's collapsed shape: one
+// `gate record --decision approve --consume` call sequences the close and the
+// consume attempt, so the command-log detector emits a single combined event
+// rather than two separate ones.
+var recordedGateCollapsedEventTrace = []string{
+	"prepare",
+	"decision-record-and-consume",
+}
+
+// validRecordedGateEventTrace reports whether events form one of the two
+// valid gate-lifecycle traces before dispatch: the classic separate
+// decision-record then consume, or mechanism 2's single combined
+// decision-record-and-consume. Neither shape is more "correct" than the
+// other — --consume is opt-in, not mandatory — so both must authorize
+// dispatch identically.
+func validRecordedGateEventTrace(events []string) bool {
+	return recordedGateEventsEqual(events, recordedGateRequiredEvents) ||
+		recordedGateEventsEqual(events, recordedGateCollapsedEventTrace)
+}
+
+func recordedGateEventsEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 const recordedGateDispatchMarker = "RECORDED-GATE-SUCCESSOR-DISPATCHED"
@@ -69,13 +107,9 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 	if resolutionID == "" {
 		resolutionID = "resolution:spacedock:recorded-gate-task:validation:1"
 	}
-	if len(o.events) != len(recordedGateRequiredEvents) {
-		return fmt.Errorf("gate lifecycle recorded %d events, want %d before dispatch", len(o.events), len(recordedGateRequiredEvents))
-	}
-	for i, want := range recordedGateRequiredEvents {
-		if got := o.events[i]; got != want {
-			return fmt.Errorf("gate lifecycle event %d = %q, want %q", i+1, got, want)
-		}
+	if !validRecordedGateEventTrace(o.events) {
+		return fmt.Errorf("gate lifecycle recorded event trace %v, want %v (classic) or %v (mechanism-2 --consume fast path)",
+			o.events, recordedGateRequiredEvents, recordedGateCollapsedEventTrace)
 	}
 	if o.dispatch.builds != 1 || o.dispatch.successfulBuilds != 1 {
 		return fmt.Errorf("successor dispatch build attempts/successes = %d/%d, want 1/1", o.dispatch.builds, o.dispatch.successfulBuilds)
@@ -664,21 +698,23 @@ func TestRecordedGateLifecycleAC7ResumeMatrix(t *testing.T) {
 		bindRecordedGate(t, binary, fixture)
 		commitRecordedGateState(t, binary, fixture, "bind retained gate package")
 
-		// Fresh process 1 closes the gate and stops before its required state commit.
+		// Fresh process 1 closes the gate. Mechanism 1 (implicit split-root state
+		// sync in gate record/consume) commits the close itself — no separate
+		// `state commit` is required to make it durable.
 		closeRecordedGate(t, binary, fixture, "approve")
-		closedUncommitted := recordedGateTreeSnapshot(t, fixture.stateRoot)
+		closedCommitted := recordedGateTreeSnapshot(t, fixture.stateRoot)
 		entityRel := strings.TrimPrefix(fixture.entity, fixture.stateRoot+string(os.PathSeparator))
-		if exec.Command("git", "-C", fixture.stateRoot, "diff", "--quiet", "--", entityRel).Run() == nil {
-			t.Fatal("successful close was already committed")
+		if exec.Command("git", "-C", fixture.stateRoot, "diff", "--quiet", "--", entityRel).Run() != nil {
+			t.Fatal("successful close was not committed by the implicit sync")
 		}
-		if commits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-Sdecision: approve", "--", entityRel)); len(commits) != 0 {
-			t.Fatalf("uncommitted close already has %d decision commits", len(commits))
+		if commits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-Sdecision: approve", "--", entityRel)); len(commits) != 1 {
+			t.Fatalf("committed close has %d decision commits, want exactly 1", len(commits))
 		}
 		repeatClose := runRecordedGateCommand(binary, fixture.root, "", "gate", "record", "recorded-gate-task",
 			"--decision", "approve", "--actor", "agent:first-officer", "--reason", "duplicate",
 			"--workflow-dir", fixture.root)
 		assertRecordedGateByteCleanFailure(t, fixture, repeatClose, "closed")
-		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, closedUncommitted)
+		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, closedCommitted)
 
 		// Fresh process 2 resumes the uncommitted close and commits the exact pending state.
 		closeCommit := commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
@@ -762,13 +798,8 @@ func TestRecordedGateLifecycleProvenanceMutants(t *testing.T) {
 	}
 }
 func authorizeRecordedGateDispatch(events []string, entity, successor string) error {
-	if len(events) != len(recordedGateRequiredEvents) {
-		return fmt.Errorf("trace incomplete: got %v", events)
-	}
-	for i, want := range recordedGateRequiredEvents {
-		if events[i] != want {
-			return fmt.Errorf("trace event %d = %q, want %q", i+1, events[i], want)
-		}
+	if !validRecordedGateEventTrace(events) {
+		return fmt.Errorf("trace incomplete or invalid: got %v", events)
 	}
 	if !strings.Contains(entity, "status: "+successor) || !strings.Contains(entity, "state: consumed") {
 		return fmt.Errorf("authorization was not atomically consumed into %s", successor)
@@ -852,17 +883,73 @@ func recordedGateEventsFromCommandLog(log string) []string {
 		if !strings.HasPrefix(line, "exit=0\tgate ") || strings.Contains(line, " --help") {
 			continue
 		}
+		isDecisionRecord := started && strings.Contains(line, "gate record ") && (strings.Contains(line, " --decision ") || strings.Contains(line, " --room "))
 		switch {
 		case strings.Contains(line, "gate prepare "):
 			started = true
 			events = append(events, "prepare")
-		case started && strings.Contains(line, "gate record ") && (strings.Contains(line, " --decision ") || strings.Contains(line, " --room ")):
+		case isDecisionRecord && strings.Contains(line, " --consume"):
+			// Mechanism 2's fast path: one call sequences the close and the
+			// consume attempt, so no separate "gate consume" line follows —
+			// label it as the single combined event rather than losing the
+			// consume half entirely.
+			events = append(events, "decision-record-and-consume")
+		case isDecisionRecord:
 			events = append(events, "decision-record")
 		case started && strings.Contains(line, "gate consume "):
 			events = append(events, "consume")
 		}
 	}
 	return events
+}
+
+// TestRecordedGateLifecycleCollapsedConsumeTrace pins the codex-live CI fix:
+// a live agent that closes with `gate record --decision approve --consume`
+// (mechanism 2's captain-approve fast path, now the documented primary form)
+// must be recognized as a complete, valid, dispatch-authorizing trace even
+// though no separate "gate consume" line ever appears in its command log —
+// without weakening the classic separate-command trace's own validation.
+func TestRecordedGateLifecycleCollapsedConsumeTrace(t *testing.T) {
+	collapsedLog := "exit=0\tgate prepare recorded-gate-task --question Advance? --workflow-dir /wf\n" +
+		"exit=0\tstate commit recorded-gate-task --workflow-dir /wf\n" +
+		"exit=0\tgate record recorded-gate-task --decision approve --actor person:captain --consume --workflow-dir /wf\n"
+	events := recordedGateEventsFromCommandLog(collapsedLog)
+	if want := recordedGateCollapsedEventTrace; !recordedGateEventsEqual(events, want) {
+		t.Fatalf("collapsed log events = %v, want %v", events, want)
+	}
+	if !validRecordedGateEventTrace(events) {
+		t.Fatalf("collapsed trace %v rejected as invalid", events)
+	}
+	if err := authorizeRecordedGateDispatch(events, "status: handoff\nstate: consumed", "handoff"); err != nil {
+		t.Fatalf("collapsed trace did not authorize dispatch: %v", err)
+	}
+
+	// The classic separate-command trace must still validate identically.
+	classicLog := "exit=0\tgate prepare recorded-gate-task --question Advance? --workflow-dir /wf\n" +
+		"exit=0\tstate commit recorded-gate-task --workflow-dir /wf\n" +
+		"exit=0\tgate record recorded-gate-task --decision approve --actor person:captain --workflow-dir /wf\n" +
+		"exit=0\tgate consume recorded-gate-task --workflow-dir /wf\n"
+	classicEvents := recordedGateEventsFromCommandLog(classicLog)
+	if !recordedGateEventsEqual(classicEvents, recordedGateRequiredEvents) {
+		t.Fatalf("classic log events = %v, want %v", classicEvents, recordedGateRequiredEvents)
+	}
+	if !validRecordedGateEventTrace(classicEvents) {
+		t.Fatalf("classic trace %v rejected as invalid", classicEvents)
+	}
+
+	// A close with --decision but no --consume and no separate consume call
+	// is genuinely incomplete (nothing ever spent the approval) and must
+	// still be rejected.
+	incompleteLog := "exit=0\tgate prepare recorded-gate-task --question Advance? --workflow-dir /wf\n" +
+		"exit=0\tstate commit recorded-gate-task --workflow-dir /wf\n" +
+		"exit=0\tgate record recorded-gate-task --decision approve --actor person:captain --workflow-dir /wf\n"
+	incompleteEvents := recordedGateEventsFromCommandLog(incompleteLog)
+	if validRecordedGateEventTrace(incompleteEvents) {
+		t.Fatalf("incomplete trace %v wrongly accepted as valid", incompleteEvents)
+	}
+	if err := authorizeRecordedGateDispatch(incompleteEvents, "status: handoff\nstate: consumed", "handoff"); err == nil {
+		t.Fatal("incomplete trace wrongly authorized dispatch")
+	}
 }
 
 func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
@@ -899,7 +986,11 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	ordered = prepareAt >= 0 && bindCommitAt > prepareAt && decisionAt > bindCommitAt
 	dispatchHead, buildCommand := "", ""
 	for _, line := range strings.Split(log, "\n") {
-		if strings.HasPrefix(line, "exit=0\tgate consume ") {
+		// A separate "gate consume" line is the classic form; mechanism 2's
+		// --consume fast path sequences the consume attempt into the same
+		// "gate record ... --consume" call, so no separate line ever appears.
+		if strings.HasPrefix(line, "exit=0\tgate consume ") ||
+			(strings.HasPrefix(line, "exit=0\tgate record ") && strings.Contains(line, " --consume")) {
 			consumed = true
 		}
 		if strings.HasPrefix(line, "begin\tdispatch build ") && !strings.Contains(line, " --help") {

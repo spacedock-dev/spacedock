@@ -226,6 +226,54 @@ func TestConsumeStaleSupersedesWithoutEffect(t *testing.T) {
 	}
 }
 
+// TestConsumeRepeatAfterStaleSupersedeReportsNoWrite pins the fix for the
+// wrote-detection bug: EvaluateEligibility copies the attempt's CURRENT
+// application state into ApplicationState on every read — including a pure
+// refusal against an application that is ALREADY superseded from a prior
+// call — so ApplicationState == "superseded" alone cannot distinguish a fresh
+// write from a repeat no-op read. Only ConsumeResult.Wrote may be used for
+// that; a caller checking ApplicationState instead would sync/commit on a
+// repeat call that wrote nothing.
+func TestConsumeRepeatAfterStaleSupersedeReportsNoWrite(t *testing.T) {
+	root, entity := applicationWorkflow(t)
+	if err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: root}); err != nil {
+		t.Fatal(err)
+	}
+	room := filepath.Join(filepath.Dir(entity), "review", "ideation", "briefing-1", "briefing.json")
+	if err := os.WriteFile(room, []byte(completeBriefing("briefing:task:ideation:1", "drifted")), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	first, err := Consume(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !first.Wrote || first.ApplicationState != "superseded" {
+		t.Fatalf("first (real) supersede = %#v, want Wrote=true ApplicationState=superseded", first)
+	}
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	second, err := Consume(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second.Wrote {
+		t.Fatalf("repeat consume after supersede reported Wrote=true, want false (no write): %#v", second)
+	}
+	if second.ApplicationState != "superseded" {
+		t.Fatalf("repeat consume ApplicationState = %q, want superseded (read of the already-superseded state)", second.ApplicationState)
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(before, after) {
+		t.Fatal("repeat consume after supersede changed entity bytes despite Wrote=false")
+	}
+}
+
 func TestConsumeRefusesTargetRemovedFromCurrentWorkflow(t *testing.T) {
 	root, entity := applicationWorkflow(t)
 	if err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: root}); err != nil {

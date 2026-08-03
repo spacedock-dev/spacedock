@@ -83,8 +83,9 @@ Before the first officer shows a gate, it captures the exact bound Briefing iden
 digest, and emitted room in committed machine state, then presents a compact snapshot
 identity in prose. A run without decision authority
 stops with that attempt open: it writes no Resolution, consumes nothing, advances
-nothing, and dispatches nothing. After an authorized decision, it records and commits
-the Resolution before every route. Approval then uses `gate consume`, which rechecks
+nothing, and dispatches nothing. After an authorized decision, the recorder itself
+commits and syncs the Resolution before every route (`--consume` folds the approve's
+consume into the same call). Approval then uses `gate consume`, which rechecks
 the retained request, Briefing, Git sources, and eligibility before atomically writing
 the successor stage and consumed mark. Until that first-entered working stage has
 a durable, complete Stage Report, `status --next` and boot name it as both
