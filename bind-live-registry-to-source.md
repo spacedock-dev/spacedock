@@ -2,7 +2,7 @@
 title: Bind the desired live-test registry to tests and fixture builders
 status: ideation
 source: "Captain semantic lock for docs/runtime-live-ci-registry.md, 2026-08-03"
-started:
+started: 2026-08-03T10:41:35Z
 completed:
 verdict:
 score: 0.95
