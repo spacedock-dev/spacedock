@@ -1,6 +1,6 @@
 ---
 title: Bind the desired live-test registry to tests and fixture builders
-status: backlog
+status: ideation
 source: "Captain semantic lock for docs/runtime-live-ci-registry.md, 2026-08-03"
 started:
 completed:
@@ -35,7 +35,7 @@ gates:
               application:
                 action: advance
                 target-stage: ideation
-                state: pending
+                state: consumed
                 blockers: []
 ---
 
