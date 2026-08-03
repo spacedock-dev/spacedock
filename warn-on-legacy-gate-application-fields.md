@@ -28,6 +28,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:jympnaf11wg4qmd4z85a3ayv:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:jympnaf11wg4qmd4z85a3ayv-ideation-1
+              briefing:
+                id: briefing:jympnaf11wg4qmd4z85a3ayv:ideation:attempt-1:revision-1
+                digest: sha256:9861a730590c25991e7af1d7b0812e4cac142d703a976ade09c1ba8899c4fc39
+                request-digest: sha256:4467110f4d270d10859812828ea2ecfc7588e71d48d433ca964ef0dfd8ac784b
+                room-ref: ./warn-on-legacy-gate-application-fields/review/ideation/briefing-1
 started: 2026-08-03T13:53:46Z
 ---
 

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:jympnaf11wg4qmd4z85a3ayv:ideation:attempt-1:revision-1",
+  "question": "Approve the narrow implementation that tolerates only legacy application.action and application.blockers as deterministic warnings while preserving strict canonical validation and byte-preserving writes?",
+  "artifacts": [
+    {
+      "id": "artifact:jympnaf11wg4qmd4z85a3ayv:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/215437875a7543f13e9c0e30a8b16a86594b4a94/warn-on-legacy-gate-application-fields.md",
+      "rev": "sha256:a6258c1f535e510430f4a445f1812e589e6bc7c7b90ef49782ae7fe7610701e9",
+      "mediaType": "text/markdown",
+      "summary": "Implement the decode-copy compatibility seam at records[*].attempts[*].application: strip only action and blockers from a cloned YAML node, retain the original node for CAS and writes, expose structured warnings through explicit validation surfaces, and keep all unrelated unknown fields, malformed shapes, invalid values, and bindings fatal. Land only after WJ exact head d1aac2e03 is approved and merged; then validate jy before rebasing SK."
+    }
+  ]
+}
