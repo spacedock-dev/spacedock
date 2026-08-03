@@ -8,9 +8,9 @@ verdict:
 score: 0.85
 worktree:
 issue:
-sprint: live-test-truth
+sprint:
 group: runtime-specific
-sprint-readiness: ready
+sprint-readiness: absorbed
 id: 5p51c69b215nyyfm1x72ewzc
 ---
 
