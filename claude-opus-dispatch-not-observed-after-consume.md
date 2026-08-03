@@ -182,3 +182,14 @@ The grader now derives and exact-matches the expected approval actor from the su
 - DONE: Preserve test-only scope. `206a4737c` changes only `internal/ensigncycle/recorded_gate_lifecycle_test.go`; gate and dispatch mechanics are unchanged.
 - DONE: Evidence is green for the corrected candidate. Focused actor/room/classic regressions passed; `go test ./internal/ensigncycle -count=1` passed in 186.391s; `go test ./internal/ensigncycle -race -count=1` passed in 191.068s; exact `go test -tags live ./internal/ensigncycle -run '^TestLiveCodexSharedScenarios$/recorded-gate-lifecycle$' -count=1 -timeout=20m` passed in 250.915s.
 - CHECKLIST OUTCOME: 3 DONE, 0 FAILED, 0 SKIPPED.
+
+## Stage Report: implementation
+
+- DONE: Preserve the corrected actor oracle. Commit `206a4737c` derives `person:captain` for a successful room-backed close, validates and exact-matches an explicit chat `--actor`, and defaults synthetic observations to `agent:first-officer`; the help-probe and post-state Resolution-ID fixes remain intact.
+- DONE: Preserve room-backed lifecycle coverage and actor-swap protection. The room-backed `gate record --room ... --consume` regression uses the shared full lifecycle assertion, including durable state and dispatch ancestry; the classic actor-swap negative and forged actor-suffix control remain load-bearing.
+- DONE: Preserve test-only scope and the corrected-candidate evidence. The code commit changes only `internal/ensigncycle/recorded_gate_lifecycle_test.go`, with no gate or dispatch mechanics changed. Focused actor/room/classic regressions passed; `go test ./internal/ensigncycle -count=1` passed in 186.391s; `go test ./internal/ensigncycle -race -count=1` passed in 191.068s; exact `go test -tags live ./internal/ensigncycle -run '^TestLiveCodexSharedScenarios$/recorded-gate-lifecycle$' -count=1 -timeout=20m` passed in 250.915s.
+- CHECKLIST OUTCOME: 3 DONE, 0 FAILED, 0 SKIPPED.
+
+### Summary
+
+The corrected candidate derives approval identity from the close mode, fully verifies the room-backed consumed lifecycle, and retains actor-provenance negatives. The implementation is test-only, and focused, full, race, and exact live Codex evidence is green.
