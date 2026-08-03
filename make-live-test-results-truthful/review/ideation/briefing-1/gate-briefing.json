@@ -1,0 +1,45 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3d2rqxrgvqky085mn170x3zp:ideation:attempt-1:revision-1",
+  "question": "Does this plan make false-green decisions and false-red Codex timeouts mechanically visible through live results?",
+  "artifacts": [
+    {
+      "id": "artifact:3d2rqxrgvqky085mn170x3zp:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2a55804bdafe9d3501ced85411c1c11881c3f242/make-live-test-results-truthful.md",
+      "rev": "sha256:d7a3c37372f2e0f7255e6f995e7b1db88fcd325e715c73d60cdd31fa09e22ea0",
+      "mediaType": "text/markdown",
+      "summary": "The plan reuses the AC2 durable two-way oracle and proves the Codex activity-reset seam. It makes wrong decisions red, keeps progressing runs alive, and makes quiet stalls fail with the last progress evidence."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f2e11fede65219e037397655460173d53735ad39/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/f2e11fede65219e037397655460173d53735ad39/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f300e8e53ba3df155a5f67383da50fe5a1927ce3a8743e9db5f3f268c440b2e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://state/2a55804bdafe9d3501ced85411c1c11881c3f242/ac2-reanchor-live-scenario-repair.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3e60b6f4cef7a311bba987326c7f7ae491d4cc9c41a34b6802eacf4609712f3c"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:3d2rqxrgvqky085mn170x3zp:ideation:attempt-1:revision-1:item-5",
+      "uri": "git-root://state/2a55804bdafe9d3501ced85411c1c11881c3f242/make-codex-live-timeout-progress-aware.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:722707e6d7cd685e3aff1fbcda19f1adb872a0cdf3f3b0de71fc53c65bca4102"
+    }
+  ]
+}
