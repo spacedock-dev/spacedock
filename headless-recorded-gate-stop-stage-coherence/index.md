@@ -95,6 +95,7 @@ review-round:
         room-ref: ./review/implementation/round-11
 mod-block: merge:pr-merge
 pr: "#583"
+sprint: durable-decisions
 ---
 
 ## Problem statement
