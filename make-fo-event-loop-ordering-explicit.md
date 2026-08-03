@@ -24,6 +24,17 @@ gates:
                 digest: sha256:4dbaa852a23e16b0c2c732a3fac6956ef5f95db8c603f428b1636a5983d3064b
                 request-digest: sha256:2716adf5a2f9014015e76146c012c4feb29a71001469f747748059142ecf26cb
                 room-ref: ./make-fo-event-loop-ordering-explicit/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ej9kwkvw94w6rh6n5ek7qrbf:backlog:1
+                briefing: briefing:ej9kwkvw94w6rh6n5ek7qrbf:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T15:55:01.310359Z"
+                decision: approve
+                reason: Captain conn approves ideation. SO concurs with parallel ideation for EJ and G3; preserve EJ-before-G3 implementation landing because both define the shared FO dispatch/merge contract.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Make the First Officer event loop mechanically explicit so a dispatch-only empty result cannot hide merge recovery, ready gates, or a required idle/reconcile pass. The task preserves the existing state and runtime boundaries; it makes the ordering observable and testable.
