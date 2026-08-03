@@ -1,0 +1,73 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-2:revision-1",
+  "question": "Does this corrected plan deliver one portable common-journey surface after 3d and 15e without double-owning the AC2 repair?",
+  "artifacts": [
+    {
+      "id": "artifact:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/81ee48cda9a3dca5e29ef3d05b500e3088e14760/deliver-portable-common-live-journey-surface.md",
+      "rev": "sha256:4628a21f4e872bf55be17de4d658e4b29e17b22c917e4928dd943253e21d893b",
+      "mediaType": "text/markdown",
+      "summary": "The plan composes banked registry, entry-point, Pi, and journey-promotion evidence. It lands last, consumes 3d and 15e, removes only the AC2 standalone wrapper, and owns final selector, guard, guide, and registry migration."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/7224ef482842f5daf44fca4157228bb9ac93cbd4/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/7224ef482842f5daf44fca4157228bb9ac93cbd4/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:25d6127a28c79f2b38e2c1f8a02b66210e017f6f6c9ea5d098c0fd64e359be34"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-2:revision-1:item-4",
+      "uri": "git-root://state/81ee48cda9a3dca5e29ef3d05b500e3088e14760/_archive/bind-live-registry-to-source.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:bb429ebcc3ab5eaba14119215f6eb46a753e2be3bddf8ae319a59fec290e5391"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-2:revision-1:item-5",
+      "uri": "git-root://state/81ee48cda9a3dca5e29ef3d05b500e3088e14760/_archive/converge-shared-live-suite-entrypoint.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9e4e83018bedd77310fb7eebb02f848ba5badeb6d0dbd405ef3ec98585798f25"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-2:revision-1:item-6",
+      "uri": "git-root://state/81ee48cda9a3dca5e29ef3d05b500e3088e14760/_archive/add-pi-common-live-runner.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9d85a461f4cde87221d884c689f845ba8683b7c2f935b25d0bf32c44a99c6da1"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-2:revision-1:item-7",
+      "uri": "git-root://state/81ee48cda9a3dca5e29ef3d05b500e3088e14760/_archive/promote-standalone-common-live-journeys.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:495692e623ca0680f7217d55662a9d9614bd96d5af9f9b36f2b4bf336135105c"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-2:revision-1:item-8",
+      "uri": "git-root://state/81ee48cda9a3dca5e29ef3d05b500e3088e14760/make-live-test-results-truthful.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:171c12fe7c9fa9f241e53c315a54f09e557ae9ca0baee4bdc87495d8f9063fe0"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:ideation:attempt-2:revision-1:item-9",
+      "uri": "git-root://state/81ee48cda9a3dca5e29ef3d05b500e3088e14760/make-live-lanes-buy-named-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:72f4c17d73384d4689b223626c9cec176935076fa43bc39d84bb644a3a850dc2"
+    }
+  ]
+}
