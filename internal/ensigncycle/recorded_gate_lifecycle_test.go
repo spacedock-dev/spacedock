@@ -669,18 +669,19 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			}
 		})
 	}
-	t.Run("removed-application-shape", func(t *testing.T) {
+	t.Run("application-extension-warning", func(t *testing.T) {
 		fixture := writeRecordedGateFixture(t)
 		bindRecordedGate(t, binary, fixture)
 		closeRecordedGate(t, binary, fixture, "approve")
 		body := readFile(t, fixture.entity)
 		writeFile(t, fixture.entity, strings.Replace(body, "                target-stage: handoff",
 			"                action: advance\n                target-stage: handoff", 1))
-		before := treeDigest(t, fixture.stateRoot)
 		result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
-		assertRecordedGateByteCleanFailure(t, fixture, result, "field action")
-		if after := treeDigest(t, fixture.stateRoot); after != before {
-			t.Fatal("blocked consume changed workflow bytes")
+		if result.exit != 0 || !strings.Contains(result.stdout, "consumed=true") {
+			t.Fatalf("application extension should warn and consume: exit=%d stdout=%q stderr=%q", result.exit, result.stdout, result.stderr)
+		}
+		if strings.Contains(readFile(t, fixture.entity), "action: advance") {
+			t.Fatal("canonical consume retained the ignored application extension")
 		}
 	})
 	t.Run("repeat-consume", func(t *testing.T) {

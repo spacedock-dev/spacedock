@@ -573,7 +573,7 @@ func TestCanonicalApplicationShapesReplayByteIdentical(t *testing.T) {
 	}
 }
 
-func TestRemovedApplicationShapesFailClosedWithoutMutation(t *testing.T) {
+func TestApplicationExtensionShapesWarnWithoutMutation(t *testing.T) {
 	for _, tc := range []struct {
 		name, decision, application string
 	}{
@@ -586,11 +586,139 @@ func TestRemovedApplicationShapesFailClosedWithoutMutation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			source := "---\nstatus: ideation\ngates:\n  version: 1\n  records:\n    - id: gate:legacy\n      stage: ideation\n      attempts:\n        - id: attempt:legacy\n          briefing:\n            id: briefing:legacy:ideation:attempt-1:revision-1\n            digest: sha256:" + strings.Repeat("1", 64) + "\n            room-ref: ./review\n          resolution:\n            type: Resolution\n            id: resolution:legacy\n            briefing: briefing:legacy:ideation:attempt-1:revision-1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: " + tc.decision + "\n            reason: legacy\n          application:\n            " + tc.application + "\n---\n# Legacy\n"
 			before := []byte(source)
-			if _, _, err := readData(before); err == nil {
-				t.Fatal("removed application shape was accepted")
+			doc, _, warnings, err := readDataDiagnostics(before)
+			if tc.name == "not-applicable" {
+				if err == nil {
+					t.Fatal("invalid application state was accepted")
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("application extension was rejected: %v", err)
+				}
+				if doc == nil || len(warnings) != 1 || warnings[0].Field == "" {
+					t.Fatalf("warnings = %#v, doc=%#v; want one extension warning", warnings, doc)
+				}
 			}
 			if !bytes.Equal(before, []byte(source)) {
-				t.Fatal("failed read mutated fixture bytes")
+				t.Fatal("read mutated fixture bytes")
+			}
+		})
+	}
+}
+
+func TestReadDiagnosticsFiltersOnlyExactApplicationMappings(t *testing.T) {
+	source := "---\nstatus: ideation\ngates:\n" +
+		"  version: 1\n" +
+		"  records:\n" +
+		"    - id: gate:one\n" +
+		"      stage: ideation\n" +
+		"      attempts:\n" +
+		"        - id: attempt:one\n" +
+		"          briefing: {id: briefing:one, digest: sha256:" + strings.Repeat("1", 64) + ", room-ref: ./review}\n" +
+		"          resolution: {type: Resolution, id: resolution:one, briefing: briefing:one, by: person:captain, at: 2026-07-22T00:00:00Z, decision: approve}\n" +
+		"          application:\n" +
+		"            nested: [one, two]\n" +
+		"            target-stage: implementation\n" +
+		"            state: pending\n" +
+		"            feedback: {owner: old-producer}\n" +
+		"            blockers: []\n" +
+		"            action: advance\n" +
+		"            action: duplicate-legacy-value\n" +
+		"            execution-hold: true\n" +
+		"    - id: gate:two\n" +
+		"      stage: validation\n" +
+		"      attempts:\n" +
+		"        - id: attempt:two\n" +
+		"          briefing: {id: briefing:two, digest: sha256:" + strings.Repeat("2", 64) + ", room-ref: ./review}\n" +
+		"          resolution: {type: Resolution, id: resolution:two, briefing: briefing:two, by: person:captain, at: 2026-07-22T00:00:00Z, decision: approve}\n" +
+		"          application: {target-stage: done, state: consumed, binding: {gate: old-producer}}\n" +
+		"---\n# Task\n"
+	doc, original, warnings, err := readDataDiagnostics([]byte(source))
+	if err != nil {
+		t.Fatalf("diagnostic read = %v", err)
+	}
+	path := filepath.Join(t.TempDir(), "task.md")
+	if err := os.WriteFile(path, []byte(source), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := ReadDiagnostics(path); err != nil {
+		t.Fatal(err)
+	}
+	after, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(before, after) {
+		t.Fatal("diagnostic read changed source bytes")
+	}
+	if len(warnings) != 6 {
+		t.Fatalf("warnings = %#v, want six unknown application keys", warnings)
+	}
+	for i := 1; i < len(warnings); i++ {
+		if warnings[i-1].Path > warnings[i].Path || warnings[i-1].Path == warnings[i].Path && warnings[i-1].Field > warnings[i].Field {
+			t.Fatalf("warnings are not sorted: %#v", warnings)
+		}
+	}
+	gotFields := make([]string, 0, len(warnings))
+	for _, warning := range warnings {
+		gotFields = append(gotFields, warning.Field)
+	}
+	if strings.Join(gotFields, ",") != "action,blockers,execution-hold,feedback,nested,binding" {
+		t.Fatalf("warning fields = %v", gotFields)
+	}
+	if got := doc.Records[0].Attempts[0].Application; got == nil || got.TargetStage != "implementation" || got.State != "pending" {
+		t.Fatalf("first canonical application = %#v", got)
+	}
+	if got := doc.Records[1].Attempts[0].Application; got == nil || got.TargetStage != "done" || got.State != "consumed" {
+		t.Fatalf("second canonical application = %#v", got)
+	}
+	if original == nil || yamlMappingValue(original, "records") == nil {
+		t.Fatal("diagnostic read did not return the original gates node")
+	}
+	originalBytes, err := yaml.Marshal(original)
+	if err != nil || !bytes.Contains(originalBytes, []byte("action")) || !bytes.Contains(originalBytes, []byte("nested")) {
+		t.Fatalf("original gates node was filtered: %s", originalBytes)
+	}
+}
+
+func TestReadDiagnosticsRejectsNonMappingApplicationShapes(t *testing.T) {
+	for _, tc := range []struct {
+		name, value string
+	}{
+		{"null", "null"},
+		{"sequence", "[legacy]"},
+		{"scalar", "legacy"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			source := "gates:\n  version: 1\n  records:\n    - id: gate:shape\n      stage: ideation\n      attempts:\n        - id: attempt:shape\n          briefing: {id: briefing:shape, digest: sha256:" + strings.Repeat("1", 64) + ", room-ref: ./review}\n          resolution: {type: Resolution, id: resolution:shape, briefing: briefing:shape, by: person:captain, at: 2026-07-22T00:00:00Z, decision: approve}\n          application: " + tc.value + "\n"
+			if _, _, _, err := readDataDiagnostics([]byte(source)); err == nil {
+				t.Fatal("non-mapping application was accepted")
+			}
+		})
+	}
+}
+
+func TestReadDiagnosticsKeepsCanonicalAndBindingFailuresStrict(t *testing.T) {
+	base := func(application, briefing string) string {
+		return "gates:\n  version: 1\n  records:\n    - id: gate:strict\n      stage: ideation\n      attempts:\n        - id: attempt:strict\n          briefing: {id: briefing:strict, digest: " + briefing + ", room-ref: ./review}\n          resolution: {type: Resolution, id: resolution:strict, briefing: briefing:strict, by: person:captain, at: 2026-07-22T00:00:00Z, decision: approve}\n          application:\n" + application + "\n"
+	}
+	for _, tc := range []struct {
+		name, source string
+	}{
+		{"missing target", base("            state: pending", "sha256:"+strings.Repeat("1", 64))},
+		{"invalid state", base("            target-stage: implementation\n            state: waiting", "sha256:"+strings.Repeat("1", 64))},
+		{"duplicate canonical", base("            target-stage: implementation\n            target-stage: other\n            state: pending", "sha256:"+strings.Repeat("1", 64))},
+		{"bad binding", base("            target-stage: implementation\n            state: pending", "not-a-digest")},
+		{"unknown outside application", base("            target-stage: implementation\n            state: pending\n          binding: wrong", "sha256:"+strings.Repeat("1", 64))},
+		{"malformed YAML", "gates: [\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, _, _, err := readDataDiagnostics([]byte(tc.source)); err == nil {
+				t.Fatal("strict defect was accepted")
 			}
 		})
 	}
