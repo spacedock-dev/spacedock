@@ -283,3 +283,22 @@ bindings remain fatal. Extensions such as `execution-hold` and `feedback` are ig
 not honored. Science Officer concurrence keeps implementation after WJ's exact-head
 validation and before SK's rebase/fresh validation; no production code or sibling
 worktree was changed in this revision.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved exact-application warning boundary
+  Commit `0ad6c36d08d36d0e066a60386a0a1e7783cc47f8` adds `ReadDiagnostics`, clones only the gates node for strict validation, strips every non-canonical key under `gates.records[*].attempts[*].application`, emits sorted/de-duplicated `{path, field}` warnings, and keeps the original node for CAS and writes. Canonical `target-stage` and `state` remain authoritative; malformed application shapes, non-application unknowns, invalid canonical values, duplicate canonical keys, and bad bindings remain fatal.
+- DONE: Surface diagnostics and preserve compatibility semantics
+  `status --validate` and `gate validate` print stable `Warning:` lines with entity paths; ordinary status, eligibility, and consume reads stay warning-free. Explicit gate validation still checks retained request/provider authority. Canonical state mutation removes ignored extensions from the written application shape.
+- DONE: Update fixtures, authority controls, and contract wording
+  Commit `c5bd1225b9434763b9a76fd238d9699a2e564bef` updates boot readiness controls to prove `blockers` and `execution-hold` do not gate a valid approval, and aligns `docs/schema/entity.mdschema.yml`, frontmatter contracts, and command reference text with the exact warning boundary.
+- DONE: Verify focused behavior and formatting
+  `gofmt -w ./cmd ./internal` passed. Focused `go test` passed for gates diagnostics, status validation warnings, gate validation warnings/retained-binding rejection, boot readiness extension controls, and the recorded-gate consume lifecycle. The focused test matrix covers arbitrary nested values, warning order and de-duplication, source-byte preservation, malformed/null/sequence applications, missing/invalid canonical fields, duplicate canonical keys, unknown fields outside application, and bad retained request binding.
+- DONE: Record implementation size and full-suite evidence
+  Diff from WJ tip `ea6723acb630c7eac64712f5b30e08f35a5a44e6`: 13 files, `+466/-47` lines (net `+419`), including `+310/-13` production/docs and `+156/-34` focused test updates. Full `go test ./...` was run; the remaining failure is the pre-existing pilot-manifest fixture checkout omission (six listed state paths absent), while the formerly stale removed-application lifecycle and boot controls now pass.
+- DONE: Run the required race suite
+  `go test ./... -race` completed with the same six pre-existing pilot-manifest state-path omissions and no race or implementation failures; every other package passed under the race detector.
+
+### Summary
+
+Implementation is complete on branch `spacedock-ensign/warn-on-legacy-gate-application-fields` at `c5bd1225b9434763b9a76fd238d9699a2e564bef`, directly based on WJ tip `ea6723acb630c7eac64712f5b30e08f35a5a44e6`. Unknown application extensions warn only at explicit validation surfaces and cannot alter eligibility or authority; all unrelated and malformed gate state remains strict. Both full and race suites are green outside the pre-existing six missing pilot-manifest paths.
