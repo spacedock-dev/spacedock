@@ -41,6 +41,17 @@ gates:
                 digest: sha256:e6f9816f47a12ef491c570d9ded8aa1368334d00259606695b1cfdc022c827cb
                 request-digest: sha256:9cb31ff23a7a31fa4ee5559b81890b085e9fcb15206e21c7775bd354252c9668
                 room-ref: ./migrate-pr600-fixtures-to-testgit/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:69cg49x2fzprarbg32pkbvgn:ideation:1
+                briefing: briefing:69cg49x2fzprarbg32pkbvgn:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-03T01:43:17.007022Z"
+                decision: approve
+                reason: Captain directed fast-track straight to implementation; design fully pre-scoped in the filing.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 `main`'s `go test ./internal/contractlint/... -run TestNoHandRolledGitInitOutsideTestgit` fails: 7 non-bare `git init` scaffold sites outside `testgit.InitRepo`, all introduced by `collapse-gate-approval-ceremony` (#600):
