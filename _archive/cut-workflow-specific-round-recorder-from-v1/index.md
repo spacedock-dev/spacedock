@@ -1,14 +1,14 @@
 ---
 title: Cut workflow-specific advisory round recording from v1
-status: validation
+status: done
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: generic gate code embeds the development workflow's Material/fixed/declined taxonomy, LOC estimate grammar, ensign role, and Feedback Cycles projection."
 started: 2026-08-01T14:00:47Z
-completed:
-verdict:
+completed: 2026-08-03T14:48:44Z
+verdict: passed
 score: "0.95"
 worktree: .worktrees/spacedock-ensign-cut-workflow-specific-round-recorder-from-v1
 issue:
-pr: "#610"
+pr: pr-merge:610
 sprint: durable-decisions
 id: wjkhq0sktbbe3txx6jhnvcv2
 gates:
@@ -101,8 +101,9 @@ gates:
                 reason: Captain approved WJ validation PASSED with deferred evidence risk at exact head d1aac2e035f4e52c94141a2deb218ab5872d0fa5; focused AC evidence is green and full-suite blockers are recorded as environment risk.
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
+archived: 2026-08-03T14:48:45Z
 ---
 
 Cut the development-specific classification and Cycle projection from the public round surface while retaining its workflow-neutral correction-record producer for stable v1. Keeping policy would freeze this repository's review taxonomy into the generic durable-decision contract; deleting the structural producer would break zbc's post-rework freshness boundary.
