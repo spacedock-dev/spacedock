@@ -171,3 +171,18 @@ Ideation now records the exact seven archive rebindings and their rename evidenc
 ### Summary
 
 The intended seven-path/22-archive oracle repair is staged but uncommitted. Its focused read-only falsifier exposes one independent historical `application.action` finding in the newly rebound archive entity. Provenance and current warning semantics show a compatibility-only legacy field; ownership and any normalization decision remain with the state/FO lane, so no candidate commit or further rerun is made.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Rebind all seven stale manifest entries to their current `_archive` paths and update the archive count to 22 while preserving 31 total entries.
+  Commit `3d5af7c92d7d17f6d0c5ac6742f14a2fa7729af2` makes the seven path substitutions and both 15-to-22 oracle-line updates; the focused test passed all 31 records, and reverting a binding or count makes its path/cardinality checks fail.
+- DONE: Keep the strict Read, Validate, and approval-application-node assertions unchanged; do not restore active records or add a historical fixture snapshot.
+  The focused pass exercised strict `Read`, `Validate`, and exact `[state target-stage]` application keys against state HEAD `ab33f713035bd1767df28b05663913ef606c5257`; the commit has no parser, state, snapshot, runtime, or `3d` file.
+- DONE: Run the focused manifest test, `go test ./...`, `go test ./... -race`, `gofmt`, and `git diff --check`; commit only the two expected oracle files.
+  `gofmt -w ./cmd ./internal`, `go test -v ./internal/gates -run '^TestV1PilotManifestReadsAndValidates$' -count=1`, both repository suites, and `git diff --check` exited 0; the commit is exactly two files and +9/-9.
+- DONE: Verify the approved surface after formatting and tests.
+  Exact path/name/count assertions and the final diff confirmed 31 unique manifest lines, 22 `_archive/` lines, seven absent active bindings, seven present archive bindings, and no candidate edits outside the two oracle files.
+
+### Summary
+
+The v1 pilot manifest now follows all seven durable archive moves and expects 22 archived records while preserving 31 total records and the strict current-checkout audit. The focused, full, and race suites pass against the repaired split-root state; the committed candidate is limited to the approved two-file +9/-9 oracle update.
