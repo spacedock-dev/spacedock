@@ -291,7 +291,7 @@ provider evidence is promoted to candidate proof.
 - DONE: Define the minimal retained-provider or clean-cut design, including one authority value, expected surface, documentation changes, and no fallback or multiplexer machinery.
   Retention uses one `approver`/`resolution.by` authority and an 8-file bounded Spacedock surface; failure uses a separate 10-file chat-only cut with explicit CLI/skill/spec docs and no provider fallback.
 - DONE: Specify falsifiable live/provider and cut-path evidence using the existing fixture, with exact candidate, refusal, chat-preservation, full/race, formatting, and required-lane requirements.
-  AC-1 through AC-4 name candidate/binary hashes, capability/refusal and room-only argv evidence, chat green controls, provider full/race/contract plus Spacedock full/race/format checks, and clean-cut negative smoke requirements.
+  AC-1, AC-2, AC-3, and AC-4 name candidate/binary hashes, capability/refusal and room-only argv evidence, chat green controls, provider full/race/contract plus Spacedock full/race/format checks, and clean-cut negative smoke requirements.
 
 ### Summary
 
