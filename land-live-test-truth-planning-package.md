@@ -47,7 +47,9 @@ Merging those files as part of `3d` would misattribute 777 insertions and seven 
 
 ## Proposed approach
 
-Use the existing final planning commit `b0a2541f656e0b6d72d01d411160c1694910cbee` as one parent and merge current `origin/main` as the other in a dedicated branch. The preflight merge-tree is conflict-free and preserves both the authored planning history and all current-main work.
+Use the existing final planning commit `b0a2541f656e0b6d72d01d411160c1694910cbee` as one parent and merge current `origin/main` as the other in a dedicated branch. The preflight merge-tree is conflict-free and preserves both the substantive authored planning history and all current-main work.
+
+Remove only the trailing blank line at EOF in `docs/roadmap/live-test-truth/staff-review.md`. The authored tree otherwise remains byte-identical to the planning tip. This is the only authorized drift from that tree.
 
 Open and merge a separate documentation PR. Then merge the resulting current `origin/main` into `3d` and require its diff to contain only the approved nine implementation files.
 
@@ -60,28 +62,28 @@ Do not rewrite local `main`, force-push, squash the planning history into `3d`, 
 | `docs/roadmap/durable-decisions/index.md` | Link the sprint and remainder exit contract | +21 / -7 |
 | `docs/roadmap/live-test-truth/dispatch-sprint-execution.md` | Add the Commander execution package | +140 / -0 |
 | `docs/roadmap/live-test-truth/index.md` | Add the reviewed sprint plan and sequence | +192 / -0 |
-| `docs/roadmap/live-test-truth/staff-review.md` | Add the preflight and DoD review record | +50 / -0 |
+| `docs/roadmap/live-test-truth/staff-review.md` | Add the preflight and DoD review record; remove its trailing EOF blank line | +49 / -0 |
 | `docs/runtime-live-ci-registry.md` | Add the desired live-test registry | +374 / -0 |
 
-Expected total: exactly five files, 777 insertions, and seven deletions. No tolerance for additional paths; normal line-count drift is not expected because the candidate reuses the already-authored tree.
+Expected total: exactly five files, 776 insertions, and seven deletions. No tolerance for additional paths or any other byte drift from the already-authored tree.
 
 ## Acceptance criteria
 
 **AC-1 (VALUE) - The reviewed sprint plan and desired live-test registry are durable on `main` before 3d lands.**
 
-Verified by: the candidate contains exactly the five expected files at the authored final contents, including the member sequence `3d` → `15e` → `ys` and the deferred `rm` boundary.
+Verified by: the candidate contains exactly the five expected files at the authored final contents except for the authorized EOF blank-line removal, including the member sequence `3d` → `15e` → `ys` and the deferred `rm` boundary.
 
 **AC-2 (VALUE) - The planning package no longer contaminates 3d's implementation PR surface.**
 
 Verified by: after this candidate lands and current main is integrated, `git diff --name-status origin/main...<3d-candidate>` contains only 3d's approved nine paths.
 
-**AC-3 - Current-main work and authored planning history are both preserved without destructive rewriting.**
+**AC-3 - Current-main work and substantive authored planning history are both preserved without destructive rewriting.**
 
-Verified by: the candidate has the existing planning tip and current `origin/main` as merge ancestry, is zero commits behind current main, and no force/reset operation is used.
+Verified by: the candidate has the existing planning tip and current `origin/main` as merge ancestry, is zero commits behind current main, differs from the merged planning tree only by the authorized EOF blank-line removal, and no force/reset operation is used.
 
 ## Test plan
 
-Verify the exact five-file `origin/main...candidate` name-status and +777/-7 numstat. Run `git diff --check`, then the repository-required checks:
+Verify the exact five-file `origin/main...candidate` name-status and +776/-7 numstat. Compare the five candidate blobs with `b0a2541f656e0b6d72d01d411160c1694910cbee`: four must match, and `staff-review.md` must differ only by the removed trailing EOF blank line. Run `git diff --check`, then the repository-required checks:
 
 ```bash
 gofmt -w ./cmd ./internal
@@ -90,3 +92,21 @@ go test ./... -race
 ```
 
 No live runtime lane is required because this prerequisite changes documentation only. Relevant PR CI is the secret-free offline, docs, and install surface.
+
+No spike is needed. `git merge-tree --write-tree origin/main b0a2541f656e0b6d72d01d411160c1694910cbee` already exercised the only topology mechanism without mutating a branch: it exited zero, produced the five declared paths, and preserved all five authored blobs. Its one concrete hygiene finding is independently reproducible: `git diff --check origin/main...b0a2541f656e0b6d72d01d411160c1694910cbee` rejects the trailing blank line that this plan requires the implementation to remove.
+
+## Stage Report: ideation
+
+- DONE: Audit whether a separate planning-package prerequisite is necessary to keep 3d within its approved nine-file surface; compare the simpler alternatives of dropping the files or carrying them in 3d and record why they are insufficient.
+  `3d` declares nine implementation paths; dropping the package loses the sprint contract and desired registry, while carrying it adds five unrelated paths and misattributes 777 insertions and seven deletions to `3d`.
+- DONE: Verify the existing final planning tip b0a2541f656e0b6d72d01d411160c1694910cbee and current origin/main merge conflict-free into exactly the five declared paths with +777/-7; record no-spike-needed grounds or a concrete finding.
+  After `git fetch origin main`, `origin/main` was `1947aacb0d7c3481c18a846f3566645fd2cb89ee`; `git merge-tree --write-tree` exited zero with tree `635cabd99999f8f703526450eb3c28eae54fd05e`, and name-status/numstat proved five paths at +777/-7 with all five blobs matching the planning tip.
+  `git diff --check` exited 2 on `docs/roadmap/live-test-truth/staff-review.md:50: new blank line at EOF`; the tightened plan authorizes only that removal and requires the post-trim green control at +776/-7.
+- DONE: Review and, if needed, tighten Outcome, Problem, Proposed approach, Expected surface, AC-1 through AC-3, and Test plan so every criterion has falsifiable evidence and no 3d implementation path enters scope.
+  The body now distinguishes substantive history from incidental whitespace, fixes the expected count, requires four exact blob matches plus one single-line exception, and keeps all nine `3d` paths outside nz6.
+- DONE: Append a complete ideation stage report with exact commands/results and a concise summary; commit only land-live-test-truth-planning-package.md in the split-root state checkout.
+  This report records the topology proof, necessity alternatives, exact whitespace finding, and the path-scoped state-commit requirement.
+
+### Summary
+
+The separate prerequisite is necessary to keep `3d` truthful to its approved nine-file surface while retaining the sprint plan and desired registry. The merge mechanism is already proven conflict-free; ideation found and bounded one trailing-blank-line defect, so implementation must land five paths at +776/-7 with no other authored-byte drift.
