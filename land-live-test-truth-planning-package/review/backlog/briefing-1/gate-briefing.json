@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nz6816mcf0qsdp1bsh3wzp1w:backlog:attempt-1:revision-1",
+  "question": "Should the already-authored five-file planning package land as a separate prerequisite before 3d?",
+  "artifacts": [
+    {
+      "id": "artifact:nz6816mcf0qsdp1bsh3wzp1w:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/8579207c3f47e1a2841f34a4e9b84ad766bfb0b9/land-live-test-truth-planning-package.md",
+      "rev": "sha256:2227710ffebb8ad214fa53820c2c103826bae102d6d1ea9b63420363c27bd776",
+      "mediaType": "text/markdown",
+      "summary": "Recommend admission: a separate five-file PR preserves the sprint contract and restores 3d to its approved nine-file surface."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nz6816mcf0qsdp1bsh3wzp1w:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/a97a2b4cf9a1b708c6750d9758f3f5a67ef34d58/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:498b2c50808a9f1825d215a869b7131f7c8ec9f16188ea0e9ab4368ae39c43fc"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:nz6816mcf0qsdp1bsh3wzp1w:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/a97a2b4cf9a1b708c6750d9758f3f5a67ef34d58/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    }
+  ]
+}

@@ -7,6 +7,29 @@ sprint: live-test-truth
 group: truthful-results
 sprint-readiness: ready
 id: nz6816mcf0qsdp1bsh3wzp1w
+gates:
+    version: 1
+    records:
+        - id: gate:nz6816mcf0qsdp1bsh3wzp1w:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:nz6816mcf0qsdp1bsh3wzp1w-backlog-1
+              briefing:
+                id: briefing:nz6816mcf0qsdp1bsh3wzp1w:backlog:attempt-1:revision-1
+                digest: sha256:c7c0ad74b08f72262c252d3cb0ac737f78564490e45e1ead7d2607caf4173754
+                request-digest: sha256:e121dd798c26230dd3488085f80aaee58276ffbc06722f9c7228b5480b2c8ab6
+                room-ref: ./land-live-test-truth-planning-package/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nz6816mcf0qsdp1bsh3wzp1w:backlog:1
+                briefing: briefing:nz6816mcf0qsdp1bsh3wzp1w:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-04T15:00:27.945095Z"
+                decision: approve
+                reason: Captain/root explicitly directed a separate prerequisite PR for these five planning and registry paths so 3d remains within its approved nine-file surface; delegated conn authorizes this admission.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Land the already-authored sprint plan separately so implementation members retain their approved product surfaces.
