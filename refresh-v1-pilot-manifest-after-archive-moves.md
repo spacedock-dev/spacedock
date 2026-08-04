@@ -72,7 +72,7 @@ gates:
                 state: pending
 started: 2026-08-04T13:34:28Z
 worktree: .worktrees/spacedock-ensign-refresh-v1-pilot-manifest-after-archive-moves
-pr: "#612"
+pr: pr-merge:612
 mod-block: merge:pr-merge
 ---
 
