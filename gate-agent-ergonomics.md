@@ -58,6 +58,10 @@ gates:
                 digest: sha256:a29d71f9cc1bdd4664ecd6c58325791cd4f455dbdb4a53b3a3370aafb7b52c3f
                 request-digest: sha256:2a013593bd7763a9633da55c7444fd925fc71191c08e6490a70c6a4e0a0d7712
                 room-ref: ./gate-agent-ergonomics/review/validation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-04T15:32:17.489446Z"
+                reason: validation candidate changed after clean rebase onto origin/main 1947aacb; prior Briefing and evidence are stale
 worktree: .worktrees/spacedock-ensign-gate-agent-ergonomics
 ---
 
