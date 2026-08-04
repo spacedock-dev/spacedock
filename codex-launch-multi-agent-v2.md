@@ -542,3 +542,20 @@ Final-base validation independently establishes the launcher-owned multi-agent-v
 ### Recommendation
 
 REJECTED. Route the reproducible `recorded-gate-lifecycle` failure through the validation feedback gate, preserving the retained JSONL and exact predicate failure; do not treat the green isolated collaboration lifecycle or six other shared journeys as a substitute for the mandatory red lane.
+
+## Stage Report: validation (cycle 8, post-PR #582)
+
+- DONE: Run focused multi-agent-v2 launcher/config/lifecycle checks, full and race suites, format/diff checks, detached audit, and the Codex/shared-live lanes on exact HEAD 37abaa8b3.
+  Focused argv/config/oracle and live-runner boundary tests, `go test ./...`, `go test ./... -race`, zero-byte `gofmt -d ./cmd ./internal`, and both diff checks passed; detached checkout `/tmp/spacedock-codex-audit-z5.HrdUPq/repo` passed the same high-risk negatives and a built front door returned exit 1 with the exact reserved-override diagnostic. The isolated-home live test passed in 52.42s, and `TestLiveCodexSharedScenarios` passed in 671.25s with all seven enabled journeys green and the three existing TODO journeys explicitly skipped.
+- DONE: Verify AC-1 through AC-4 with independent front-door behavior and exact argv/state evidence; do not reuse cycle-7 evidence from the old base.
+  AC-1: the fresh built-front-door isolated-home run observed typed ordered spawn/wait/follow-up/list/wait events, one stable child identity, both child terminal messages, parent completion, `multi_agent_version: v2`, and a disabled zero-event control. AC-2: exact-table, reserved-spelling, unrelated-control, unsupported-host, and built-binary pre-launch rejection checks passed. AC-3: complete argv passed exact adjacency, order, uniqueness, and bytes across plain, local-plugin, Safehouse-inner, and resume. AC-4: the fresh behavioral oracle passed while the same current host still reported `multi_agent_v2 stable false`; vocabulary-only and spoofed-identity negatives remained red.
+- DONE: Perform the semantic adversarial matrix, classify the recorded-gate lifecycle finding, and recommend PASSED only when the required live evidence is current and green.
+  The matrix covered separate/attached/equals/quoted config spellings, every reserved root and nested v2 path, unrelated config, four launch routes, unsupported host, disabled collaboration, vocabulary-only output, spoofed child identity, and targetless wait; the launcher hot path remains one bounded argv scan with no blocking I/O or implicit size allocation. The prior recorded-gate finding was a Material outcome failure on the superseded head, but it is not present on this candidate: the fresh durable oracle passed `recorded-gate-lifecycle` in 226.21s after prepare/bind/record/close/consume and observed successor handoff, so no current material or deferred finding remains.
+
+### Summary
+
+Fresh validation recommends PASSED at exact HEAD `37abaa8b35e7044d24dc06e009c047d875558bff`. The five-commit patch maps unchanged by `git range-diff`, scope remains exactly 9 files/+380/-42 against dispatched merge base `db7f1e84aef5df2daf20fb02deac440df4ae1af1`, and the worktree is clean; `origin/main` is now `655aa679f588523388b808d8686809522ab6e8ec`, a known distinction reserved for later PR/mergeability reconciliation rather than this commissioned exact-head validation.
+
+### Recommendation
+
+PASSED. AC-1 through AC-4 and the mandatory shared-live lane are current and green; the three named TODO skips remain non-evidence.
