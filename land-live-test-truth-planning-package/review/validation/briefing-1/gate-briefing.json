@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nz6816mcf0qsdp1bsh3wzp1w:validation:attempt-1:revision-1",
+  "question": "Should validated nz6 candidate 7461beda4 advance to terminal delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:nz6816mcf0qsdp1bsh3wzp1w:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/023c7ba9e32e22d2a0109e5c9a742e57153edff2/land-live-test-truth-planning-package.md",
+      "rev": "sha256:c6cd1a6314432138b9c56c1443985e15fb1e4752fe772687926927ec88a7b521",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: fresh independent validation passed every AC and required suite, found no material or deferred risk, and proved disposable 3d reintegration returns to exactly nine paths."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nz6816mcf0qsdp1bsh3wzp1w:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/a97a2b4cf9a1b708c6750d9758f3f5a67ef34d58/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:498b2c50808a9f1825d215a869b7131f7c8ec9f16188ea0e9ab4368ae39c43fc"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:nz6816mcf0qsdp1bsh3wzp1w:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/a97a2b4cf9a1b708c6750d9758f3f5a67ef34d58/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    }
+  ]
+}

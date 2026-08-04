@@ -50,6 +50,26 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:nz6816mcf0qsdp1bsh3wzp1w:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:nz6816mcf0qsdp1bsh3wzp1w-validation-1
+              briefing:
+                id: briefing:nz6816mcf0qsdp1bsh3wzp1w:validation:attempt-1:revision-1
+                digest: sha256:44e72f4594a47ea229f6e89fcf0e1a4d8d2777ed73bc9248c3c48b0a2e507703
+                request-digest: sha256:a544366da12dee93ff46e0a13950379f37a6ac5663aa91e2fb8c9e0839b91c14
+                room-ref: ./land-live-test-truth-planning-package/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nz6816mcf0qsdp1bsh3wzp1w:validation:1
+                briefing: briefing:nz6816mcf0qsdp1bsh3wzp1w:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-04T15:45:30.476189Z"
+                decision: approve
+                reason: Delegated Captain conn authorizes this explicit topology prerequisite. Fresh no-history validation reports 8 DONE, 0 SKIPPED, 0 FAILED; AC-1 through AC-3, negative controls, exact five-file +776/-7 scope, disposable nine-path 3d integration, full/race/gofmt/diff checks all pass with no findings.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-04T15:03:51Z
 worktree: .worktrees/spacedock-ensign-land-live-test-truth-planning-package
 ---
