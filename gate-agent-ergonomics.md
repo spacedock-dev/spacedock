@@ -80,6 +80,7 @@ gates:
                 target-stage: done
                 state: pending
 worktree: .worktrees/spacedock-ensign-gate-agent-ergonomics
+mod-block: merge:pr-merge
 ---
 
 ## Problem
