@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:v72wj17717g4xpkhss7mhv06:backlog:attempt-1:revision-1",
+  "question": "Approve this narrow current-checkout manifest repair for ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:v72wj17717g4xpkhss7mhv06:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5fd7c7b0fc2dbf51122424f4d2664122ba72f886/refresh-v1-pilot-manifest-after-archive-moves/review/backlog-review.md",
+      "rev": "sha256:064db0b63b39fee7758aa4edef90bba712cacd6516ae0f7ea8e96abfff859c97",
+      "mediaType": "text/markdown",
+      "summary": "Update seven stale active paths to their archived locations and change the independent archive count from 15 to 22 so current-checkout full and race suites can become truthful again."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:v72wj17717g4xpkhss7mhv06:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/5fd7c7b0fc2dbf51122424f4d2664122ba72f886/refresh-v1-pilot-manifest-after-archive-moves.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:6ceb4ad7724ff1a0b663b237c7e19f7d878e51ec591f8b5e535c8ea2b5d22625"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:v72wj17717g4xpkhss7mhv06:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/a97a2b4cf9a1b708c6750d9758f3f5a67ef34d58/internal/gates/application_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:51ee8dbe4ef0773ce9d23ef2962b494c5377cc81d8142bcbf8ecc4998caa163b"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:v72wj17717g4xpkhss7mhv06:backlog:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/a97a2b4cf9a1b708c6750d9758f3f5a67ef34d58/internal/gates/testdata/v1_pilot_manifest.txt",
+      "mediaType": "text/plain",
+      "rev": "sha256:65c88b5f99a49c147f74c23f5b6b79a8140173b2327706c7460f90b56e646c37"
+    }
+  ]
+}

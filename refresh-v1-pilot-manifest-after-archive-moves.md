@@ -7,6 +7,18 @@ sprint: live-test-truth
 group: truthful-results
 sprint-readiness: ready
 id: v72wj17717g4xpkhss7mhv06
+gates:
+    version: 1
+    records:
+        - id: gate:v72wj17717g4xpkhss7mhv06:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:v72wj17717g4xpkhss7mhv06-backlog-1
+              briefing:
+                id: briefing:v72wj17717g4xpkhss7mhv06:backlog:attempt-1:revision-1
+                digest: sha256:dc05dceae13f21d186bec0f876a5274a694ab6936a7087de5fd4ede203697f31
+                request-digest: sha256:c3384e6b08937607a5425293f40d531a5a7a7fc026e316a7fc3413ea25157899
+                room-ref: ./refresh-v1-pilot-manifest-after-archive-moves/review/backlog/briefing-1
 ---
 
 Restore truthful current-checkout validation after seven v1 pilot tasks moved from active state into the archive.
