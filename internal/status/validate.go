@@ -3,6 +3,7 @@
 package status
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 // entityEvidence formats the Error: ... workflow= scope= slug= id= [display=]
@@ -174,14 +177,25 @@ func validateWorkflow(definitionDir, entityDir, idStyle string, includeExternalP
 	if !includeExternalProof {
 		return errs, nil
 	}
+	// Apply display IDs before both gate and schema diagnostics. This keeps the
+	// evidence line stable for sd-b32 workflows regardless of which warning tier
+	// produced it.
+	applyEffectiveIDs(entities, idStyle, entities)
+
+	// Explicit validation also validates the binary-owned gate trees. Ordinary
+	// status reads keep their historical projection behavior, but the explicit
+	// diagnostic surface must report strict gate errors and bounded application
+	// extension warnings with the same entity evidence shape as other findings.
+	gateErrs, gateWarns := gateValidationDiagnostics(entities, entityDir)
+	errs = append(errs, gateErrs...)
+	warns = append(warns, gateWarns...)
 
 	// Warn-tier per-field schema conformance shares the same opt-in as the
 	// external-proof sub-check: only the explicit --validate command computes it,
 	// reusing the entities already enumerated above (with effective ids applied so
 	// the evidence line carries the display id). Warns are returned separately so
 	// the caller keeps them out of the exit-code decision.
-	applyEffectiveIDs(entities, idStyle, entities)
-	warns = fieldConformanceWarnings(entities, entityDir)
+	warns = append(warns, fieldConformanceWarnings(entities, entityDir)...)
 
 	// require-external-proof sub-check: when the workflow opts in, every
 	// active entity is classified and each flagged AC is emitted as a standard
@@ -208,6 +222,24 @@ func validateWorkflow(definitionDir, entityDir, idStyle string, includeExternalP
 		}
 	}
 
+	return errs, warns
+}
+
+func gateValidationDiagnostics(entities []*entity, workflowDir string) (errs, warns []string) {
+	for _, e := range entities {
+		_, _, compatibility, err := gates.ReadDiagnostics(e.path)
+		if err != nil {
+			if errors.Is(err, gates.ErrNoGateRecord) {
+				continue
+			}
+			errs = append(errs, entityEvidenceLine("Error", e, workflowDir, "invalid gates: "+err.Error(), e.displayID))
+			continue
+		}
+		for _, warning := range compatibility {
+			problem := fmt.Sprintf("unknown gate application field '%s' at %s", warning.Field, warning.Path)
+			warns = append(warns, entityEvidenceLine("Warning", e, workflowDir, problem, e.displayID))
+		}
+	}
 	return errs, warns
 }
 

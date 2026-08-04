@@ -101,12 +101,15 @@ duplicate stage records fail closed. The last ordered attempt in that record is 
 and eligible for later application. These facts remove any need for separate attempt pointers, sequence
 numbers, lineage pointers, or explicit lifecycle state.
 
-The binary-owned model is closed: unsupported fields inside `gates` fail validation.
-In particular, the pilot-only attempt selector, `current-attempt`, `sequence`,
-`previous-attempt`, and explicit attempt `state` encodings are rejected. There is no
+The binary-owned model is closed for canonical validation and writes. In particular,
+the pilot-only attempt selector, `current-attempt`, `sequence`, `previous-attempt`,
+and explicit attempt `state` encodings are rejected. A read tolerates unknown keys
+only under each `records[*].attempts[*].application` mapping, reports them as warnings
+on explicit `status --validate` or `gate validate`, ignores them for authority, and
+never writes them. All other unknown or malformed fields fail closed. There is no
 migration or compatibility rewrite. The `application` field is an approval-only
-authority token with exactly `target-stage` and `state`, where state is `pending`,
-`consumed`, or `superseded`. Revise and hold carry no application.
+authority token whose canonical fields are exactly `target-stage` and `state`, where
+state is `pending`, `consumed`, or `superseded`. Revise and hold carry no application.
 
 Every Briefing binding includes an id, canonical SHA-256 digest, and an exact file or room
 reference. Version 1 digests are unconditionally RFC 8785/JCS canonical Briefing JSON
@@ -226,64 +229,32 @@ validation, eligibility, and consumption all resolve and recheck the same frozen
 request/Briefing/source authority. Room-backed evidence is valid only on a prepared,
 request-digest-bound attempt.
 
-## Round records and triage dispositions (advisory; owner: 02av)
+## Round records (workflow-neutral correction evidence)
 
 A correction round reuses the recorder vocabulary without becoming a gate: its reviewed
-snapshot is an immutable, digest-bound Briefing; reviewer findings are same-Briefing
-Annotations; and the reviewer verdict is an advisory Resolution. The worker's triage is
-a separate advisory Resolution on that Briefing. Round Resolutions carry no application,
-do not select a logical gate, and cannot advance workflow status.
+snapshot is an immutable, digest-bound Briefing; same-Briefing Annotations and
+Resolutions are retained in an ordered review log. Round entries carry no application,
+do not select a logical gate, and cannot advance workflow status. Finding labels,
+materiality, disposition, ownership, and any workflow prose are opaque to the generic
+recorder and remain the responsibility of the active workflow and First Officer.
 
-For every correct-but-disproportionate finding, the triage Resolution `includes` a
-worker-authored Annotation that itself includes the reviewer's finding Annotation. Its
-body records the class, why the finding is not material to an entity value AC or
-non-negotiable boundary, and the condition that promotes it to material. Material
-findings are fixed; needs-decision findings are escalated. A finding neither fixed nor
-represented by the triage Resolution is not triaged.
-
-```yaml
-- type: Annotation
-  id: annotation:decline-symlink-prototype
-  briefing: briefing:02av-implementation-round-1
-  by: actor:ensign
-  includes: [annotation:finding-symlink-prototype]
-  body: >
-    class: correct-but-disproportionate; why-not-material: no value AC breaks and the
-    crafted-symlink trigger is outside the supported flow; promotes-when: a released
-    user reaches it through an operator-selected repository.
-- type: Resolution
-  id: resolution:ensign-02av-implementation-round-1
-  briefing: briefing:02av-implementation-round-1
-  by: actor:ensign
-  decision: revise
-  reason: "triage: 0 material fixed; 1 declined"
-  includes: [annotation:decline-symlink-prototype]
-```
-
-No findings means no triage Resolution. An all-declines round instead has a real triage
-Resolution recording zero fixes and including every decline Annotation; those states
-must never project alike. Once reviewer and authorized worker triage entries are
-complete, `spacedock gate record <entity> --round STAGE/CYCLE --briefing
-PATH/briefing.json --log PATH/briefing.review.jsonl --feedback-cycle FILE` publishes
-the canonical two-file room at `review/<stage>/round-<cycle>`, then atomically writes
-the exact `review-round` pointer and Feedback Cycles projection. A complete no-findings
-log omits both worker triage and `--feedback-cycle`.
+`spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json
+--log PATH/briefing.review.jsonl` publishes the canonical two-file room at
+`review/<stage>/round-<cycle>`, then atomically writes the exact `review-round` pointer.
+The producer does not parse or write a `### Feedback Cycles` section. A workflow may
+append its authorized Cycle line before invoking the producer; the recorder preserves
+that body byte-for-byte. `spacedock gate validate <entity> --round STAGE/CYCLE`
+replays the pointer and reports every Resolution as advisory structural evidence.
 
 Round recording requires a folder-form entity at `<slug>/index.md`, so its accumulating
 `review/` artifacts are scoped beside that entity. Flat entities refuse before locking
 or writing; the recorder does not alter the approved derived room path to compensate.
 `STAGE` must name a stage in the workflow definition, but need not equal current
-`status`: explicit historical backfill remains supported. Decline bodies must use the
-exact structured class/rationale/promotion fields above with substantive values. A
-projected Feedback Cycles line must match the complete documented grammar, its cycle
-must equal `CYCLE`, and its verdict must agree with the reviewer Resolution.
+`status`: explicit historical backfill remains supported.
 
 The room is immutable: exact whole-room replay is a whole-tree no-op; any different
-Briefing, log, room shape, pointer, or projection fails closed. Findings-bearing
-reviewer-only logs are incomplete and never persist. New-room publication rolls back
-if the full-entity compare-and-swap or atomic pointer/projection replacement fails.
-`spacedock gate validate <entity> --round STAGE/CYCLE` reads the ordered log through
-the pointer and reports every Resolution as advisory.
+Briefing, log, room shape, or pointer fails closed. New-room publication rolls back if
+the full-entity compare-and-swap or atomic pointer replacement fails.
 
 Narrowing a value AC to make a finding pass is not a round disposition. It opens a real
 gate attempt whose binding Resolution is captain-owned; the correction loop cannot

@@ -111,6 +111,9 @@ func TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface(t *testing.
 	if !strings.Contains(out.String(), "gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json") {
 		t.Fatalf("gate help lost the intentional advisory-round Briefing input:\n%s", out.String())
 	}
+	if strings.Contains(out.String(), "--feedback-cycle") || strings.Contains(out.String(), "triage=") {
+		t.Fatalf("gate help retained removed workflow policy:\n%s", out.String())
+	}
 }
 
 func TestGatePrepareCLIRejectsSummaryCardinalityAndEncodingBeforeMutation(t *testing.T) {
@@ -199,23 +202,56 @@ func TestGateRoundRecordAndValidateCLI(t *testing.T) {
 	}
 	briefing := filepath.Join(inputs, "briefing.json")
 	log := filepath.Join(inputs, "briefing.review.jsonl")
-	feedback := filepath.Join(inputs, "feedback-cycle.txt")
 	copyGateTestdata(t, briefing, filepath.Join("advisory-round", "briefing.json"))
 	copyGateTestdata(t, log, filepath.Join("advisory-round", "briefing.review.jsonl"))
-	writeFile(t, feedback, "- Cycle 1: REJECTED — Roborev; surface 1/580 vs estimate 580 (100%); AC unchanged\n")
 	var out, errOut bytes.Buffer
 	invoke := func(args ...string) int {
 		out.Reset()
 		errOut.Reset()
 		return run(context.Background(), args, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	}
-	args := []string{"gate", "record", "task", "--workflow-dir", root, "--round", "implementation/1", "--briefing", briefing, "--log", log, "--feedback-cycle", feedback}
-	if code := invoke(args...); code != 0 || !strings.Contains(out.String(), "round=round:task:implementation:1") || !strings.Contains(out.String(), "triage=all-declines") {
+	args := []string{"gate", "record", "task", "--workflow-dir", root, "--round", "implementation/1", "--briefing", briefing, "--log", log}
+	if code := invoke(args...); code != 0 || !strings.Contains(out.String(), "round=round:task:implementation:1") || strings.Contains(out.String(), "triage=") {
 		t.Fatalf("round record exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
 	if code := invoke("gate", "validate", "task", "--workflow-dir", root, "--round", "implementation/1"); code != 0 ||
 		strings.Count(out.String(), "advisory=true") != 2 || !strings.Contains(out.String(), "annotation:job-592") {
 		t.Fatalf("round validate exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+}
+
+func TestGateRoundRejectsRemovedFeedbackCycleWithoutMutation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: implementation\n      initial: true\n---\n# Workflow\n")
+	entityDir := filepath.Join(root, "task")
+	if err := os.MkdirAll(entityDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	entity := filepath.Join(entityDir, "index.md")
+	writeFile(t, entity, "---\nid: task\nstatus: implementation\ntitle: Task\n---\n# Task\n")
+	inputs := filepath.Join(entityDir, "inputs")
+	if err := os.MkdirAll(inputs, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	briefing := filepath.Join(inputs, "briefing.json")
+	log := filepath.Join(inputs, "briefing.review.jsonl")
+	copyGateTestdata(t, briefing, filepath.Join("advisory-round", "briefing.json"))
+	copyGateTestdata(t, log, filepath.Join("advisory-round", "briefing.review.jsonl"))
+	before, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--round", "implementation/1", "--briefing", briefing, "--log", log, "--feedback-cycle", filepath.Join(inputs, "feedback-cycle.txt")}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 2 || !strings.Contains(errOut.String(), "unknown gate flag: --feedback-cycle") {
+		t.Fatalf("removed flag exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	after, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(before, after) {
+		t.Fatal("removed flag rejection changed entity bytes")
 	}
 }
 
