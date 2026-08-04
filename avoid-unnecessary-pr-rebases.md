@@ -1,7 +1,7 @@
 ---
 id: ep2cz3zsb2qpyyh889nyeqpr
 title: Avoid unnecessary rebases before opening mergeable PRs
-status: backlog
+status: ideation
 source: GitHub issue #616; Captain intake 2026-08-05
 started:
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: 'Captain directed intake and dispatch and made issue #616 desired behavior authoritative for this sprint session.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Prevent the `pr-merge` workflow from rewriting an already validated candidate merely because `origin/main` advanced when the branch remains cleanly mergeable.
