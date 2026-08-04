@@ -1,6 +1,6 @@
 ---
 title: Land the live-test-truth planning package
-status: validation
+status: done
 source: "Captain-directed topology prerequisite before 3d, 2026-08-04"
 score: 1.0
 sprint: live-test-truth
@@ -69,11 +69,14 @@ gates:
                 reason: Delegated Captain conn authorizes this explicit topology prerequisite. Fresh no-history validation reports 8 DONE, 0 SKIPPED, 0 FAILED; AC-1 through AC-3, negative controls, exact five-file +776/-7 scope, disposable nine-path 3d integration, full/race/gofmt/diff checks all pass with no findings.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-04T15:03:51Z
 worktree: .worktrees/spacedock-ensign-land-live-test-truth-planning-package
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:614
+verdict: passed
+completed: 2026-08-04T15:49:37Z
+archived: 2026-08-04T15:49:37Z
 ---
 
 Land the already-authored sprint plan separately so implementation members retain their approved product surfaces.
