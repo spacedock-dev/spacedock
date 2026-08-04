@@ -81,6 +81,7 @@ gates:
                 state: pending
 worktree: .worktrees/spacedock-ensign-gate-agent-ergonomics
 mod-block: merge:pr-merge
+pr: "#617"
 ---
 
 ## Problem
