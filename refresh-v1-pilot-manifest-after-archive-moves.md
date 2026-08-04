@@ -1,6 +1,6 @@
 ---
 title: Refresh the v1 pilot manifest after archive moves
-status: implementation
+status: validation
 source: "Captain-directed live-test-truth prerequisite, 2026-08-04"
 score: 1.0
 sprint: live-test-truth
