@@ -1,6 +1,6 @@
 ---
 title: Make live test results tell the truth
-status: validation
+status: done
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 1a and wp as design inputs."
 score: 1.0
 sprint: live-test-truth
@@ -99,11 +99,14 @@ gates:
                 reason: 'Fresh independent evidence accepts the direction: wrong durable AC decisions now fail, meaningful complete Codex JSONL progress prevents false timeout, true silence still kills with retained evidence, and all required suites pass.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-03T12:19:34Z
 worktree: .worktrees/spacedock-ensign-make-live-test-results-truthful
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:615
+verdict: passed
+completed: 2026-08-04T16:32:13Z
+archived: 2026-08-04T16:32:14Z
 ---
 
 ## Outcome
