@@ -1,6 +1,6 @@
 ---
 title: Land the live-test-truth planning package
-status: ideation
+status: implementation
 source: "Captain-directed topology prerequisite before 3d, 2026-08-04"
 score: 1.0
 sprint: live-test-truth
@@ -49,7 +49,7 @@ gates:
                 reason: Delegated Captain conn authorizes this topology prerequisite. Ideation completed 4 DONE, 0 SKIPPED, 0 FAILED; AC-1 through AC-3 each have direct diff/topology evidence, and the approved surface is exactly five files +776/-7 with no other drift.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-04T15:03:51Z
 ---
 
