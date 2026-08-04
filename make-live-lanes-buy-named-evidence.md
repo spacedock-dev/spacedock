@@ -295,7 +295,9 @@ The PR metrics connection serves AC-4 and AC-5. Deleting Codex metrics removes a
 
 ## Expected surface
 
-The baseline is 22 files, about 350 insertions, and about 1,750 deletions. The tolerance is 27 files, 460 insertions, and 2,150 deletions.
+The baseline is 22 files, about 350 insertions, and about 1,750 deletions. The corrected tolerance is 27 files, 1,000 insertions, and 2,400 deletions.
+
+The delegated Captain conn authorized this estimate correction on 2026-08-05 after the complete compacted candidate measured 27 files, 993 insertions, and 2,381 deletions. The correction covers only the named surfaces below. It adds no outcome or path class; the original estimate undercounted moved deterministic controls, the new falsifiable Pi grade and lane guard, and the actual size of the approved PTY and quarantined-Pi deletions.
 
 | Surface | Expected change |
 |---|---:|
