@@ -725,3 +725,195 @@ implementation report; this validation did not restore or edit those fixtures.
 Sonnet and Pi remain explicit quarantined skips, while retained Opus/Codex artifacts
 provide durable live evidence at the path and hashes above. The entity remains at the
 Captain's validation gate for final review.
+
+## Stage Report: validation (fresh exact-tip cycle)
+
+- DONE: Re-validated the assigned candidate without editing implementation files.
+  Code HEAD was exactly `94a66df8c937b58d7ffbebed3467ba135fdfb633`, the assigned
+  clean-rebase base was `origin/main` `1947aacb0d7c3481c18a846f3566645fd2cb89ee`,
+  and `git merge-base HEAD origin/main` at the target was that same `1947aacb0`.
+  The code worktree was clean before and after every check. No gate prepare,
+  record, consume, state mutation, or implementation edit was made.
+
+- FAILED: The shared `origin/main` ref advanced during this validation to
+  `db7f1e84aef5df2daf20fb02deac440df4ae1af1` (PR #614). The candidate is now stale:
+  `git merge-base HEAD origin/main` remains `1947aacb0`,
+  `git rev-list --left-right --count origin/main...HEAD` is `13 3`, and
+  `git diff --stat HEAD..origin/main` is 17 files, +255/-260. That current-main
+  range removes the candidate's readiness implementation and focused test files
+  (`internal/gates/model.go`, `internal/gates/gates_test.go`,
+  `internal/status/discover.go`, `internal/status/format.go`,
+  `internal/status/handlers.go`, `internal/status/json_commands.go`, and
+  `internal/status/gate_readiness_needs_preparation_test.go`) while also changing
+  the gate/docs surface. This validator did not rebase or reconcile a changed
+  candidate. Exact-tip evidence below is therefore not a current-main validation
+  result and cannot clear the gate.
+
+- DONE: Audited the exact assigned diff against its target base. The range
+  `1947aacb0...94a66df8` is 16 files, +801/-27: the same 13-file implementation
+  surface (+227/-22) from the implementation report plus the three parent-supplied
+  roadmap/registry documents (`docs/roadmap/durable-decisions/index.md`,
+  `docs/roadmap/live-test-truth/index.md`, and
+  `docs/runtime-live-ci-registry.md`). Validation added no code, parser, store,
+  schema, command, scheduler, runner, provider, adapter, or owner surface.
+  The required s4/gqs/0m6 tips remain ancestors of exact HEAD:
+  `acae980fc145e624d9e04e7ec9f7fdb599585f6e`,
+  `cb01129b6325f7af646363785c24ef69e8bd16bd`, and
+  `9881639697d1af391133c9ecf4111fd1673f537c`.
+
+- DONE: Focused exact-tip functional checks all passed:
+
+  - `go test ./internal/status -run 'TestGateReadiness|TestBootIdentifyReadyGates|TestStatusProjectsSharedGateReadinessReducer|TestEnteredStage' -count=1`
+  - `go test ./internal/gates -run 'TestCurrentStageReadiness|TestPrepare|TestWithdraw' -count=1`
+  - `go test ./internal/ensigncycle -run 'TestRecordedGateLifecycle|TestRecordedGateReview' -count=1`
+  - `go test ./internal/contractlint -count=1`
+
+  The full status package also passed. The focused status/gates controls independently
+  reproduce absent and prior-stage authority promotion, committed/path-clean report
+  proof, dirty/malformed rejection, selected open/withdrawn/closed authority,
+  approved advance/merge, feedback/hold/consumed/superseded/not-applicable,
+  ordinary/terminal stages, and invalid topology.
+
+- DONE: The PR #612 shared-state manifest blocker is fixed on the exact target.
+  `go test ./internal/gates -run 'TestV1PilotManifestReadsAndValidates$' -count=1 -v`
+  passed every listed path, including the seven `_archive/` entries that were
+  missing in the prior cycle (`bind-post-rework-briefing-at-rejection-regate.md`,
+  `collapse-gate-approval-ceremony/index.md`,
+  `cut-workflow-specific-round-recorder-from-v1/index.md`,
+  `minimize-v1-gate-application-schema/index.md`,
+  `shared-git-scaffold-helper.md`, `status-pagination-and-default-sorting.md`,
+  and `status-where-robust-and-discoverable.md`).
+
+- DONE: Complete exact-tip offline and race suites passed. `go test ./...` passed
+  all packages, including `internal/gates`, `internal/status`,
+  `internal/ensigncycle`, `internal/dispatch`, `internal/cli`, and
+  `skills/integration`. `go test ./... -race` passed the same package set. The
+  previous manifest-only red is absent at `94a66df8`; these results do not waive
+  the later current-main drift above.
+
+- DONE: Formatting and contract checks passed without changing code:
+  `gofmt -d ./cmd ./internal` produced no output, `git diff --check` passed, and
+  `go test ./internal/contractlint -count=1` passed. The read-only `gofmt -d`
+  check was used because validation is forbidden to edit implementation files.
+
+- DONE: Re-ran the required semantic adversarial matrix against production
+  reducers and existing lifecycle oracles. The status matrix passed
+  `TestGateReadinessPromotesMechanicallyCompleteColdReports`,
+  `TestGateReadinessRejectsDirtyAndMalformedColdReports`,
+  `TestBootIdentifyReadyGates`, `TestStatusProjectsSharedGateReadinessReducer`,
+  `TestEnteredStageProjectionRequiresCommittedCompleteReport` (including wrong
+  stage, later-malformed masking, dirty target, and dirty sibling controls),
+  `TestEnteredStageMutationControls`, `TestEnteredStageLegacySuppressionControls`,
+  default-stage controls, and boot/next parity. The gates matrix passed
+  `TestCurrentStageReadinessFailClosedTable`,
+  `TestCurrentStageReadinessWithReportPromotesOnlyAbsentAuthority`, all prepare/
+  withdraw/replay/refusal controls, eligibility, record/consume, round,
+  duplicate/prototype/unknown-shape, and digest-domain fail-closed controls. The
+  recorded-gate matrix passed `TestRecordedGateLifecycleRealCLIReplay`,
+  withdrawn cold-boot replacement, terminal consume, entered-stage recovery,
+  AC5 refusal, AC7 resume, provenance mutants, collapsed consume, committed-before-
+  dispatch, missing-event, phase-help, and gate-guardrail controls. Exact output,
+  ordering, cardinality, byte-clean refusal, authority identity, and terminal-state
+  assertions all passed.
+
+- DONE: AC-1 exact-tip mechanical evidence is independently reproduced. The
+  split-root status fixture emits exactly one four-key `needs-preparation` row for
+  both absent and prior-stage authority, an empty `dispatchable` array, and the
+  same ordered two-array `--next --json` envelope; field projection reports the
+  same readiness. Dirty target and malformed gate controls emit no candidate. The
+  structural-pass/semantic-veto path remains judgment-owned by the First Officer
+  contract: `skills/fo-gate-lifecycle/SKILL.md` and
+  `skills/first-officer/references/fo-dispatch-core.md` require one concrete
+  `report-incomplete:` stop with zero prepare, legacy bind, commit, presentation,
+  idle, or repeat-next effects. No live lane exercised that prose-only semantic
+  veto, so no behavioral veto claim is made.
+
+- DONE: AC-2 exact-tip machine-envelope behavior is independently reproduced by
+  status tests and the updated JSON golden. `--next --json` emits ordered
+  `command`, `dispatchable`, `ready_gates`; ready rows retain exactly
+  `id`, `slug`, `current`, `readiness`, and `needs-preparation` never enters
+  `dispatchable`. Human `--next` behavior remains unchanged. The ready-gate-first
+  initial/post-idle event-loop rule is present in the existing declarative FO
+  contract, but no executable cold-candidate/post-idle live control exists; this
+  is an evidence limitation, not an inferred pass.
+
+- DONE: AC-3 exact-tip ownership and integrity matrix passes. Existing open,
+  withdrawn, stale, closed, pending, revise, hold, blocked, feedback, consumed,
+  superseded, not-applicable, terminal, archived, malformed, and mismatched
+  authorities remain on their existing reducers; prepare/withdraw/replay and
+  whole-tree byte controls pass. No new recorder, withdrawal, application,
+  provider, parser, scheduler binary, retry, cache, or mutation owner appears in
+  the exact diff.
+
+- DONE: AC-4 exact-tip scope audit passes. Status is the only new readiness
+  projection; s4 remains preparation/room owner, gqs remains report-evidence
+  owner, and 0m6 remains withdrawal/replacement owner. The exact diff contains no
+  forbidden execution surface. The current-main drift means this audit must be
+  repeated after a clean rebase before final approval.
+
+- FAILED: Required registered live coverage is incomplete, and no complete PASS is
+  claimed. Exact-tip results were:
+
+  - Claude Sonnet:
+    `SPACEDOCK_LIVE_MODEL=sonnet go test -tags live -count=1 -timeout 40m -run 'TestLiveClaudeSharedScenarios/recorded-gate-lifecycle$' ./internal/ensigncycle -v`
+    exited 0 but **SKIPPED** by
+    `TODO(w5bfnrvpcphw857nzz93340c): Sonnet must reliably render the exact selected Briefing digest before re-enabling this journey`.
+  - Claude Opus (`SPACEDOCK_LIVE_MODEL=claude-opus-4-8`) passed the same lane in
+    439.80s.
+  - Codex first exact-tip run exited 1 after 275.19s: the live oracle observed
+    two successful `dispatch build` attempts instead of the required one (`2/2`,
+    want `1/1`). An immediate clean rerun passed in 244.70s. This is recorded as
+    a transient host/model reproducibility finding; it was not hidden or promoted
+    to green by the first failure, and no implementation change was authorized.
+  - Pi:
+    `go test -tags live -count=1 -timeout 40m -run 'TestSharedScenarioRunnerCoverage|TestPiSharedScenarioCoverage|TestLivePiRecordedGateLifecycle' ./internal/ensigncycle -v`
+    passed both coverage meta-tests, while the lifecycle lane was **SKIPPED** by
+    `TODO(9w59t6m1qc46hccd54p04z2j): delegated gate presentation-to-application/dispatch is unreliable`.
+
+  The Sonnet/Pi skips are existing quarantines, not authorization failures, but
+  the stage contract explicitly says a skipped or red required lane is not green.
+  The exact-tip live set therefore remains incomplete.
+
+- DEFERRED RISK: The Codex duplicate-dispatch observation is a supported-host
+  reproducibility risk, not a proven candidate code defect: the only source delta
+  from the prior validated candidate is the PR #612 manifest-path refresh, the
+  offline dispatch cardinality oracles pass, and the immediate rerun passed. Promote
+  this to a material outcome finding if two consecutive clean runs reproduce
+  duplicate builds, or if an offline command-log control fails; do not fix it in
+  this entity because live-test-truth sprint members are out of scope.
+
+- MATERIAL EVIDENCE FINDING: The candidate is stale against current `origin/main`
+  (`db7f1e84`), and the required live matrix is incomplete (Sonnet/Pi skips plus
+  one Codex red run). These are evidence/release-scope blockers, not a finding that
+  the exact 94a implementation fails its offline value behavior. A clean rebase or
+  explicit current-main reconciliation, followed by the full focused/full/race/
+  semantic/live matrix, is required before a new validation recommendation.
+
+### Completion checklist accounting
+
+1. **DONE for the assigned exact tip; BLOCKED for current-main release evidence.**
+   Focused, full, race, manifest, formatting, dependency, acceptance, and semantic
+   matrix checks were reproduced at `94a66df8`; the candidate then became stale when
+   shared `origin/main` advanced to `db7f1e84`.
+2. **DONE for exact-tip offline/race; FAILED for complete live coverage.** Both
+   complete offline commands pass at the assigned tip. Opus and one Codex rerun
+   pass; Sonnet and Pi are explicit quarantined skips, and the first Codex run is
+   a recorded red duplicate-dispatch result.
+3. **DONE — report, scope, findings, and no-mutation accounting.** Only this
+   state-entity report is being changed; no implementation or gate bytes changed.
+
+Checklist totals: exact-tip offline checks 2 PASS; required live subchecks 2 PASS,
+2 SKIPPED, and 1 transient RED before rerun. Current-main freshness is a material
+evidence blocker. **Recommendation: REJECTED/HOLD** pending clean rebase or
+reconciliation onto current `origin/main` and complete supported live coverage.
+
+### Summary
+
+At the assigned exact HEAD `94a66df8`, the full offline/race suites, PR #612
+manifest oracle, focused ownership suites, and adversarial matrix all pass, and
+Claude Opus plus a Codex rerun pass the recorded-gate lane. Validation cannot
+recommend a complete PASS: shared `origin/main` advanced to `db7f1e84` and now
+removes the candidate surface, Sonnet and Pi remain explicitly skipped, and the
+first Codex run recorded a duplicate dispatch before its clean rerun. No candidate
+or gate mutation was made; rebase/reconciliation and fresh complete live evidence
+are required.
