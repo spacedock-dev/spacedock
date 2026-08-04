@@ -50,6 +50,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:v72wj17717g4xpkhss7mhv06:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:v72wj17717g4xpkhss7mhv06-validation-1
+              briefing:
+                id: briefing:v72wj17717g4xpkhss7mhv06:validation:attempt-1:revision-1
+                digest: sha256:1f3746cbc8dc880458d56c04eff33dfd5d09045830aab3ac0dbcb79cd050e228
+                request-digest: sha256:88e5098aa969046f49372d16a265a560b00466b0b079529fab73232b55ade9cd
+                room-ref: ./refresh-v1-pilot-manifest-after-archive-moves/review/validation/briefing-1
 started: 2026-08-04T13:34:28Z
 worktree: .worktrees/spacedock-ensign-refresh-v1-pilot-manifest-after-archive-moves
 ---

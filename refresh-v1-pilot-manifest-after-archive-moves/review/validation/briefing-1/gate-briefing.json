@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:v72wj17717g4xpkhss7mhv06:validation:attempt-1:revision-1",
+  "question": "Should validated candidate 0b8ca50de advance to delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:v72wj17717g4xpkhss7mhv06:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7598def5a44ffb41b72c15b8b2f5298ed33c8174/refresh-v1-pilot-manifest-after-archive-moves.md",
+      "rev": "sha256:05a5e96d06b49eb925b3f843183d171d63fe4f534bf8844f9d9cd1ab8cf6f36d",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation PASSED: 8 DONE, one justified offline-only live-lane skip, no failures or findings; exact two-file +9/-9 candidate, current-state focused and negative controls, full/race suites, clean 0-behind/1-ahead PR topology."
+    }
+  ]
+}
