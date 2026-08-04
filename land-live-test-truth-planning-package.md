@@ -131,3 +131,16 @@ No spike is needed. `git merge-tree --write-tree origin/main b0a2541f656e0b6d72d
 ### Summary
 
 The separate prerequisite is necessary to keep `3d` truthful to its approved nine-file surface while retaining the sprint plan and desired registry. The merge mechanism is already proven conflict-free; ideation found and bounded one trailing-blank-line defect, so implementation must land five paths at +776/-7 with no other authored-byte drift.
+
+## Stage Report: implementation
+
+- DONE: Integrate current origin/main into the dedicated nz6 branch while preserving the existing planning tip ancestry; remove only the approved trailing EOF blank line from staff-review.md and commit the resulting candidate without force/reset.
+  Merge commit `603594374d034cfcef0190a5e15b71094badf1cb` preserves planning tip `b0a2541f656e0b6d72d01d411160c1694910cbee` and `origin/main` `1947aacb0d7c3481c18a846f3566645fd2cb89ee`; candidate `7461beda42382391a80ca9b14d42fafebaebaf55` removes only the final blank line.
+- DONE: Prove the immutable candidate is 0 behind current main with exactly the five approved paths at +776/-7, four blobs byte-identical to b0a2541f and staff-review.md differing only by this deletion; run git diff --check.
+  A post-test fetch left `origin/main` at `1947aacb`; left/right count was `0 12`, shortstat was exactly five files with 776 insertions and seven deletions, four blob hashes matched, the trimmed fifth matched after deleting its last blank line, and `git diff --check origin/main...HEAD` exited 0; any added path, byte drift, or whitespace defect fails these assertions.
+- DONE: Run gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race; append a complete implementation report with exact SHA/results and commit only the nz6 entity path in split-root state.
+  `gofmt -w ./cmd ./internal` left the worktree clean at `7461beda4`; `go test ./...` and `go test ./... -race` both exited 0, exercising all packages including CLI, gates, status, live-scenario fixtures, and skill integration, where a compile, behavior, fixture, or race regression would fail the respective suite.
+
+### Summary
+
+Current main and the substantive planning history are now joined without rewriting either side. The immutable candidate contains exactly the approved five-file planning package, with only the authorized EOF cleanup, and all repository-required checks pass; no live runtime lane was required for this documentation-only change.
