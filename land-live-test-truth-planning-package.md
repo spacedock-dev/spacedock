@@ -1,6 +1,6 @@
 ---
 title: Land the live-test-truth planning package
-status: backlog
+status: ideation
 source: "Captain-directed topology prerequisite before 3d, 2026-08-04"
 score: 1.0
 sprint: live-test-truth
@@ -29,7 +29,7 @@ gates:
                 reason: Captain/root explicitly directed a separate prerequisite PR for these five planning and registry paths so 3d remains within its approved nine-file surface; delegated conn authorizes this admission.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Land the already-authored sprint plan separately so implementation members retain their approved product surfaces.
