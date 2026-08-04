@@ -228,8 +228,7 @@ roadmap's provider row records the cut and names no external fallback.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — The exact candidate has one closure outcome: a complete retained
-provider transaction or no provider closure surface.**
+**AC-1 (VALUE) — The exact candidate has one closure outcome: a complete retained provider transaction or no provider closure surface.**
 
 Verified either by one live run at the pinned Spacedock/Subspace commits that records
 the exact candidate tuple, capability exits, one room-only invocation, Result and
