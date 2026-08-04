@@ -1,6 +1,6 @@
 ---
 title: Land the live-test-truth planning package
-status: implementation
+status: validation
 source: "Captain-directed topology prerequisite before 3d, 2026-08-04"
 score: 1.0
 sprint: live-test-truth
