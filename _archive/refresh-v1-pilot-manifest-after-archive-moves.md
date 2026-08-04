@@ -1,6 +1,6 @@
 ---
 title: Refresh the v1 pilot manifest after archive moves
-status: validation
+status: done
 source: "Captain-directed live-test-truth prerequisite, 2026-08-04"
 score: 1.0
 sprint: live-test-truth
@@ -69,11 +69,14 @@ gates:
                 reason: Captain delegated the conn for this repair. Independent validation is PASSED with 8 DONE, one justified offline-only live-lane skip, zero failures/findings, exact two-file +9/-9 scope, green focused/negative/full/race proof, and clean PR topology.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-04T13:34:28Z
 worktree: .worktrees/spacedock-ensign-refresh-v1-pilot-manifest-after-archive-moves
 pr: pr-merge:612
-mod-block: merge:pr-merge
+mod-block:
+verdict: passed
+completed: 2026-08-04T14:53:40Z
+archived: 2026-08-04T14:53:40Z
 ---
 
 Restore truthful current-checkout validation after seven v1 pilot tasks moved from active state into the archive.
