@@ -192,7 +192,7 @@ The canonical candidate `0b8ca50dee7b8c6c6b2cf5e09a1580452f55b30f` is topology-c
 ## Stage Report: implementation (cycle 3)
 
 - DONE: Finalize the two-file oracle repair after the authorized archived-state normalization, preserving 31 total entries, 22 archived entries, and strict application-node assertions.
-  The implementation worktree is clean at commit `3d5af7c92d7d17f6d0c5ac6742f14a2fa7729af2` (`test: refresh v1 pilot manifest archive paths`), which changes only `internal/gates/testdata/v1_pilot_manifest.txt` and `internal/gates/application_test.go` with the approved +9/-9 surface. The manifest has seven current `_archive/` bindings; the test still requires 31 unique records, 22 archived paths, strict `Read`/`Validate`, and exact `[state target-stage]` approval application keys.
+  The implementation worktree is clean at canonical commit `0b8ca50de` (`test: refresh v1 pilot manifest archive paths`), a topology-only transplant of the same two-file repair formerly recorded as `3d5af7c92`. It changes only `internal/gates/testdata/v1_pilot_manifest.txt` and `internal/gates/application_test.go` with the approved +9/-9 surface. The manifest has seven current `_archive/` bindings; the test still requires 31 unique records, 22 archived paths, strict `Read`/`Validate`, and exact `[state target-stage]` approval application keys.
 - DONE: Verify the authorized state normalization before claiming the focused oracle pass.
   State commit `ab33f7130` (`state: normalize archived gate application fields`) removed legacy `action: advance` and `blockers: []` from all three approval applications in `_archive/status-where-robust-and-discoverable.md`; the recorded pre-image hash is `3955b5c90873d3f09e2618aed7c34e126f7401767cae449b43cff7ddf49aee51` and the post-image hash is `8550aac8adb2c40b5d5b8575f98a168160d419e749fa1c5f55ae1ef9db06935f`.
 - DONE: Run the required formatting, focused, full, race, and diff checks from the implementation worktree.
@@ -202,4 +202,4 @@ The canonical candidate `0b8ca50dee7b8c6c6b2cf5e09a1580452f55b30f` is topology-c
 
 ### Summary
 
-The v1 pilot manifest now truthfully resolves all 31 current records, including 22 archived records, and the strict application-node oracle passes after the separately authorized normalization commit `ab33f7130`. The two-file implementation commit `3d5af7c92` is complete; focused, full, race, gofmt, and diff-check evidence is recorded, with no unrelated changes.
+The v1 pilot manifest now truthfully resolves all 31 current records, including 22 archived records, and the strict application-node oracle passes after the separately authorized normalization commit `ab33f7130`. The canonical two-file implementation commit `0b8ca50de` (topology-only transplant of `3d5af7c92`) is complete; focused, full, race, gofmt, and diff-check evidence is recorded, with no unrelated changes.
