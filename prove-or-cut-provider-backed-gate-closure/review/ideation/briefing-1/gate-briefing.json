@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:a732sahay8wzgqrd2yr0xxr7:ideation:attempt-1:revision-1",
+  "question": "Does the ideation make provider-backed closure a falsifiable exact-candidate choice—one room-only retained transaction or a clean chat-only cut—without fallback machinery or unproven archived evidence?",
+  "artifacts": [
+    {
+      "id": "artifact:a732sahay8wzgqrd2yr0xxr7:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/456935c21f335b7203413921b3ad9cb8245b18de/prove-or-cut-provider-backed-gate-closure/index.md",
+      "rev": "sha256:78bc2a7461731f4345a04fdca2babeb23fe94e61ca46c785772e649a053d10fb",
+      "mediaType": "text/markdown",
+      "summary": "A7 pins Spacedock a97a2b4cf9a1b708c6750d9758f3f5a67ef34d58 and Subspace e6006dcaf0b64daebd29e9d4e4d226ce5e6716fa; traces prepare/room/provider/result/record/validate/consume; defines retained and clean-cut surfaces and one authority value. The q0 contract fixture passes, while the retained-delivery fixture stalled at noninteractive EOF and is explicitly not proof. Implementation must prove the exact pair or cut provider closure."
+    }
+  ]
+}
