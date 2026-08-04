@@ -458,9 +458,9 @@ func codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt string) [
 	}
 }
 
-// run launches one `codex exec --json` for one shared scenario. Its only
-// scenario-level liveness guard is a fixed wall-clock deadline; JSONL activity,
-// wait events, and durable writes cannot reset it or trigger another launch.
+// run launches one `codex exec --json` for one shared scenario. Each complete
+// JSONL line resets the shared quiet budget. Stream silence kills that sole
+// process; activity and durable writes never trigger another launch.
 func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) (codexScenarioResult, error) {
 	t.Helper()
 	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
@@ -471,7 +471,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 		env:         r.env,
 		artifactDir: artifactDir,
 		finalPath:   finalPath,
-		timeout:     codexScenarioTimeout,
+		quietBudget: quietBudgetDefault,
 	})
 }
 

@@ -1,9 +1,9 @@
 package ensigncycle
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-const codexScenarioTimeout = 15 * time.Minute
-
 type codexScenarioResult struct {
 	finalMessage string
 	jsonl        string
@@ -21,6 +19,7 @@ type codexScenarioResult struct {
 	duration     time.Duration
 	exitCode     int
 	timedOut     bool
+	lastEvent    string
 }
 
 type codexProcessSpec struct {
@@ -29,15 +28,18 @@ type codexProcessSpec struct {
 	env         []string
 	artifactDir string
 	finalPath   string
-	timeout     time.Duration
+	quietBudget time.Duration
 }
 
 // runCodexProcess is the complete Codex scenario process boundary. It starts one
-// command under one fixed wall-clock deadline and writes stdout and stderr
-// directly to the scenario artifacts. Runtime events and workflow writes are not
-// observed until after Run returns, so they cannot alter liveness or cause a retry.
+// command, writes stdout and stderr to scenario artifacts, and also streams each
+// complete stdout JSONL line through streamWatcher. Stream progress resets the
+// quiet budget. Silence kills the sole process; no retry or second launch occurs.
 func runCodexProcess(spec codexProcessSpec) (codexScenarioResult, error) {
 	result := codexScenarioResult{artifactDir: spec.artifactDir, exitCode: -1}
+	if spec.quietBudget <= 0 {
+		return result, fmt.Errorf("Codex quiet budget must be positive")
+	}
 	if err := os.MkdirAll(spec.artifactDir, 0o755); err != nil {
 		return result, fmt.Errorf("create Codex artifact directory: %w", err)
 	}
@@ -54,34 +56,38 @@ func runCodexProcess(spec codexProcessSpec) (codexScenarioResult, error) {
 		return result, fmt.Errorf("create Codex stderr artifact: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), spec.timeout)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, spec.bin, spec.argv...)
+	streamReader, streamWriter := io.Pipe()
+	cmd := exec.Command(spec.bin, spec.argv...)
 	cmd.Env = spec.env
-	cmd.Stdout = stdout
+	cmd.Stdout = io.MultiWriter(stdout, streamWriter)
 	cmd.Stderr = stderr
 
 	started := time.Now()
-	runErr := cmd.Run()
-	result.duration = time.Since(started)
-	result.timedOut = errors.Is(ctx.Err(), context.DeadlineExceeded)
-	if runErr == nil {
-		result.exitCode = 0
+	startErr := cmd.Start()
+	var runErr, stallErr error
+	if startErr != nil {
+		runErr = startErr
+		_ = streamWriter.CloseWithError(startErr)
 	} else {
-		var exitErr *exec.ExitError
-		if errors.As(runErr, &exitErr) {
-			result.exitCode = exitErr.ExitCode()
-		}
+		poller := newCmdPoller(cmd, streamWriter)
+		watcher := newStreamWatcher(newPipeLineSource(streamReader), poller, func(string) {})
+		_, stallErr = watcher.drainToExit(spec.quietBudget, "codex exec")
+		result.exitCode, runErr = poller.wait()
+		var timeout *stepTimeout
+		result.timedOut = errors.As(stallErr, &timeout)
 	}
+	result.duration = time.Since(started)
+	_ = streamReader.Close()
 	closeErr := errors.Join(stdout.Close(), stderr.Close())
 
-	processResult := fmt.Sprintf(
-		"started: %s\nexit_code: %d\ntimed_out: %t\nduration: %s\n",
-		started.UTC().Format(time.RFC3339Nano), result.exitCode, result.timedOut, result.duration,
-	)
-	resultErr := os.WriteFile(filepath.Join(spec.artifactDir, "codex-process-result.txt"), []byte(processResult), 0o644)
 	jsonl, readErr := os.ReadFile(jsonlPath)
 	result.jsonl = string(jsonl)
+	result.lastEvent = lastCodexEvent(result.jsonl)
+	processResult := fmt.Sprintf(
+		"started: %s\nexit_code: %d\ntimed_out: %t\nduration: %s\nlast_event: %s\n",
+		started.UTC().Format(time.RFC3339Nano), result.exitCode, result.timedOut, result.duration, result.lastEvent,
+	)
+	resultErr := os.WriteFile(filepath.Join(spec.artifactDir, "codex-process-result.txt"), []byte(processResult), 0o644)
 	if final, err := os.ReadFile(spec.finalPath); err == nil {
 		result.finalMessage = string(final)
 	} else if !errors.Is(err, os.ErrNotExist) {
@@ -91,13 +97,23 @@ func runCodexProcess(spec codexProcessSpec) (codexScenarioResult, error) {
 	if artifactErr := errors.Join(closeErr, resultErr, readErr); artifactErr != nil {
 		return result, fmt.Errorf("finalize Codex process artifacts: %w", artifactErr)
 	}
+	if stallErr != nil {
+		return result, fmt.Errorf("%w\nLast event: %s\nArtifacts: %s", stallErr, result.lastEvent, result.artifactDir)
+	}
 	if runErr != nil {
-		if result.timedOut {
-			return result, fmt.Errorf("codex exec exceeded fixed %s deadline", spec.timeout)
-		}
 		return result, fmt.Errorf("codex exec exited %d: %w", result.exitCode, runErr)
 	}
 	return result, nil
+}
+
+func lastCodexEvent(jsonl string) string {
+	lines := strings.Split(strings.TrimSpace(jsonl), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		if event := strings.TrimSpace(lines[i]); event != "" {
+			return event
+		}
+	}
+	return "<none>"
 }
 
 // captureCodexRejectionEvidence snapshots the durable rejection-flow outcome
@@ -137,12 +153,12 @@ func TestCodexSingleRunPreservesFaultEvidence(t *testing.T) {
 	cases := []struct {
 		name         string
 		mode         string
-		timeout      time.Duration
+		quietBudget  time.Duration
 		wantExit     int
 		wantTimedOut bool
 	}{
-		{name: "nonzero exit", mode: "exit-23", timeout: 2 * time.Second, wantExit: 23},
-		{name: "hard deadline", mode: "stall", timeout: 2 * time.Second, wantExit: -1, wantTimedOut: true},
+		{name: "nonzero exit", mode: "exit-23", quietBudget: 2 * time.Second, wantExit: 23},
+		{name: "quiet timeout", mode: "stall", quietBudget: 2 * time.Second, wantExit: -1, wantTimedOut: true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -164,7 +180,7 @@ func TestCodexSingleRunPreservesFaultEvidence(t *testing.T) {
 				env:         append(os.Environ(), "GO_WANT_CODEX_SINGLE_RUN_HELPER=1"),
 				artifactDir: artifactDir,
 				finalPath:   finalPath,
-				timeout:     tc.timeout,
+				quietBudget: tc.quietBudget,
 			})
 			entityAfter, captureErr := captureCodexRejectionEvidence(workflowRoot, entityPath, artifactDir)
 			if runErr == nil {
@@ -210,6 +226,74 @@ func TestCodexSingleRunPreservesFaultEvidence(t *testing.T) {
 	}
 }
 
+func codexProcessFixture(t *testing.T, name, mode string, quietBudget time.Duration) (codexProcessSpec, string) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	writeFile(t, filepath.Join(workflowRoot, "rejection-task.md"), "# Rejection Task\n")
+	gitInit(t, workflowRoot)
+	artifactDir := filepath.Join(t.TempDir(), name)
+	invocations := filepath.Join(t.TempDir(), "invocations.txt")
+	return codexProcessSpec{
+		bin: os.Args[0], argv: []string{
+			"-test.run=^TestCodexSingleRunHelperProcess$", "--", mode, workflowRoot, invocations,
+		},
+		env: append(os.Environ(), "GO_WANT_CODEX_SINGLE_RUN_HELPER=1", "GORACE=atexit_sleep_ms=0"), artifactDir: artifactDir,
+		finalPath: filepath.Join(artifactDir, "codex-final-message.txt"), quietBudget: quietBudget,
+	}, invocations
+}
+
+func TestCodexProcessActivityResetsQuietBudget(t *testing.T) {
+	const quietBudget = 250 * time.Millisecond
+	spec, invocations := codexProcessFixture(t, "activity-reset", "progress-then-exit", quietBudget)
+	result, err := runCodexProcess(spec)
+	if err != nil {
+		t.Fatalf("progressing process should stay alive beyond its quiet budget: %v", err)
+	}
+	if result.duration <= 4*quietBudget {
+		t.Fatalf("helper duration = %s, want more than four quiet budgets (%s)", result.duration, 4*quietBudget)
+	}
+	if result.exitCode != 0 || result.timedOut {
+		t.Fatalf("process classification = exit %d timeout %t, want exit 0 timeout false", result.exitCode, result.timedOut)
+	}
+	if got := strings.Count(strings.TrimSpace(result.jsonl), "\n") + 1; got < 5 {
+		t.Fatalf("complete JSONL events = %d, want at least 5", got)
+	}
+	if got := strings.Fields(readFile(t, invocations)); len(got) != 1 {
+		t.Fatalf("codex invocation records = %v, want exactly one", got)
+	}
+}
+
+func TestCodexProcessQuietTimeoutPreservesFaultEvidence(t *testing.T) {
+	const quietBudget = 250 * time.Millisecond
+	spec, invocations := codexProcessFixture(t, "quiet-timeout", "stall", quietBudget)
+	result, runErr := runCodexProcess(spec)
+	if runErr == nil {
+		t.Fatal("silent process unexpectedly passed")
+	}
+	lastEvent := strings.TrimSpace(result.jsonl)
+	if !strings.Contains(lastEvent, `"sequence":1`) || strings.Contains(lastEvent, "\n") {
+		t.Fatalf("partial JSONL must preserve exactly the last complete event: %q", result.jsonl)
+	}
+	if !strings.Contains(runErr.Error(), lastEvent) || !strings.Contains(runErr.Error(), spec.artifactDir) {
+		t.Fatalf("quiet-timeout error must name last event and artifact directory: %v", runErr)
+	}
+	if result.exitCode != -1 || !result.timedOut {
+		t.Fatalf("stalled process was not killed: exit %d timeout %t", result.exitCode, result.timedOut)
+	}
+	if got := readFile(t, filepath.Join(spec.artifactDir, "codex-exec.stderr.txt")); !strings.Contains(got, "single-run stderr marker") {
+		t.Fatalf("stderr artifact missing marker: %q", got)
+	}
+	process := readFile(t, filepath.Join(spec.artifactDir, "codex-process-result.txt"))
+	for _, want := range []string{"exit_code: -1", "timed_out: true", lastEvent} {
+		if !strings.Contains(process, want) {
+			t.Fatalf("process result missing %q:\n%s", want, process)
+		}
+	}
+	if got := strings.Fields(readFile(t, invocations)); len(got) != 1 {
+		t.Fatalf("codex invocation records = %v, want exactly one", got)
+	}
+}
+
 func TestCodexSingleRunHelperProcess(t *testing.T) {
 	if os.Getenv("GO_WANT_CODEX_SINGLE_RUN_HELPER") != "1" {
 		return
@@ -232,7 +316,7 @@ func TestCodexSingleRunHelperProcess(t *testing.T) {
 		os.Exit(2)
 	}
 	fmt.Fprintln(os.Stderr, "single-run stderr marker")
-	fmt.Println(`{"type":"item.started","item":{"type":"collab_tool_call","tool":"wait_agent"}}`)
+	fmt.Println(`{"type":"item.started","sequence":1,"item":{"type":"collab_tool_call","tool":"wait_agent"}}`)
 	entityPath := filepath.Join(workflowRoot, "rejection-task.md")
 	f, err := os.OpenFile(entityPath, os.O_APPEND|os.O_WRONLY, 0o644)
 	if err != nil {
@@ -260,9 +344,15 @@ func TestCodexSingleRunHelperProcess(t *testing.T) {
 	if mode == "exit-23" {
 		os.Exit(23)
 	}
+	if mode == "progress-then-exit" {
+		for sequence := 2; sequence <= 31; sequence++ {
+			time.Sleep(50 * time.Millisecond)
+			fmt.Printf("{\"type\":\"item.started\",\"sequence\":%d,\"item\":{\"type\":\"collab_tool_call\",\"tool\":\"wait_agent\"}}\n", sequence)
+		}
+		os.Exit(0)
+	}
 	for {
-		fmt.Println(`{"type":"item.started","item":{"type":"collab_tool_call","tool":"wait_agent"}}`)
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 
