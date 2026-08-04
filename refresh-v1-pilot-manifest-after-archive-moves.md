@@ -1,6 +1,6 @@
 ---
 title: Refresh the v1 pilot manifest after archive moves
-status: ideation
+status: implementation
 source: "Captain-directed live-test-truth prerequisite, 2026-08-04"
 score: 1.0
 sprint: live-test-truth
@@ -49,7 +49,7 @@ gates:
                 reason: 'Science officer concurs: the current-state audit is intentionally live, and the seven missing entries are ordinary archive moves. Rebinding them and changing the independent archive count to 22 preserves strict Read/Validate/application-node coverage and the 31-record invariant.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-04T13:34:28Z
 ---
 
