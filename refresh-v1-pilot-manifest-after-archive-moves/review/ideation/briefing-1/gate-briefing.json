@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:v72wj17717g4xpkhss7mhv06:ideation:attempt-1:revision-1",
+  "question": "Should the current-state v1 pilot manifest be updated to the seven archived paths and archive count 22 while preserving strict validation?",
+  "artifacts": [
+    {
+      "id": "artifact:v72wj17717g4xpkhss7mhv06:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/db55403b6c85315f26d5d95021e29b682a9380f6/refresh-v1-pilot-manifest-after-archive-moves.md",
+      "rev": "sha256:4b9948d06539e3ed56f8eddb37dd0c434188d104e1ac0f6c4b96c49468940661",
+      "mediaType": "text/markdown",
+      "summary": "Science-officer-approved two-file oracle refresh: rebind seven moved records under _archive and change the archive cardinality from 15 to 22; retain 31 total records and strict Read/Validate/application-node checks."
+    }
+  ]
+}
