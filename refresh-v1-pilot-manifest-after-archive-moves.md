@@ -203,3 +203,28 @@ The canonical candidate `0b8ca50dee7b8c6c6b2cf5e09a1580452f55b30f` is topology-c
 ### Summary
 
 The v1 pilot manifest now truthfully resolves all 31 current records, including 22 archived records, and the strict application-node oracle passes after the separately authorized normalization commit `ab33f7130`. The canonical two-file implementation commit `0b8ca50de` (topology-only transplant of `3d5af7c92`) is complete; focused, full, race, gofmt, and diff-check evidence is recorded, with no unrelated changes.
+
+## Stage Report: validation
+
+- DONE: Independently verify immutable candidate 0b8ca50dee7b8c6c6b2cf5e09a1580452f55b30f is exactly the approved two files and +9/-9, with no parser, snapshot, runtime, state, or 3d change.
+  `git show --format=fuller --stat --oneline --decorate --no-renames HEAD`, `git diff --numstat HEAD^!`, and `git diff --name-status HEAD^!` exited 0 and showed only `internal/gates/application_test.go` (+2/-2) and `internal/gates/testdata/v1_pilot_manifest.txt` (+7/-7); final HEAD/status were the requested SHA and clean.
+- DONE: Reproduce the 31-record focused current-checkout oracle against split-root state HEAD ab33f713035bd1767df28b05663913ef606c5257, including 22 archived paths and exact canonical approval-application keys.
+  Detached state `git rev-parse HEAD` returned `ab33f713035bd1767df28b05663913ef606c5257`; `SPACEDOCK_STATE_ROOT=/tmp/spacedock-v72-validation.sMFpfp/state go test -v ./internal/gates -run '^TestV1PilotManifestReadsAndValidates$' -count=1` exited 0 for all 31 subtests, while an independent count returned `total=31 archived=22 duplicates=0` and the unchanged oracle enforced exact `[state target-stage]` keys.
+- DONE: Run independent negative controls showing a reverted archive binding and a 22-to-15 count regression fail; keep the candidate commit immutable by using a temporary detached worktree or equivalent disposable copy.
+  In detached candidate `0b8ca50de`, the same focused command exited 1 after one archive binding was reverted (`pilot manifest has 21 archived paths, want 22`) and exited 1 after the oracle was restored from 22 to 15 (`pilot manifest has 22 archived paths, want 15`); the disposable worktrees were removed and the candidate stayed clean.
+- DONE: Run gofmt verification, go test ./..., go test ./... -race, and git diff --check; report exact commands, exit status, and any material finding.
+  Detached `gofmt -w ./cmd ./internal` plus `git diff --exit-code` exited 0; candidate `go test ./...`, `go test ./... -race`, `git diff --check`, and `git diff --check HEAD^ HEAD` each exited 0 without a state-root override, failure, race report, formatting delta, or material finding.
+- DONE: Verify the candidate is 0 behind/1 ahead of origin/main and its stable patch-id equals superseded pre-transplant commit 3d5af7c92d7d17f6d0c5ac6742f14a2fa7729af2 (`164f505c3f1ae7f4df49d05e1590c6a2b777b91f`), so no unrelated sprint-planning commits enter the PR.
+  `git fetch origin main` exited 0; `git rev-list --left-right --count origin/main...HEAD` returned `0 1`, HEAD's parent/merge-base was `20cfc809a7342b2428509c76ddd6e91423db39b7`, and `git patch-id --stable` returned `164f505c3f1ae7f4df49d05e1590c6a2b777b91f` for both commits.
+- DONE: Verify AC-1, including identity, order, and current-path semantics rather than cardinality alone.
+  The default no-override focused command also exited 0; stripping `_archive/` produced the same ordered-manifest SHA-256 before and after, and all seven old active paths were absent while their archive destinations existed at `ab33f7130`.
+- DONE: Verify AC-2 and AC-3 with independent repository and surface evidence.
+  Both mandatory suites exited 0 against the live shared checkout, while the immutable two-file +9/-9 commit contains no production reader, parser, snapshot, runtime, state, gate-authority, or downstream-3d path.
+- SKIPPED: Run a live runtime lane.
+  The approved scope explicitly requires no live lane because the repair changes only an offline current-state oracle; no runtime hot path, allocation, I/O, or format behavior changed.
+- DONE: Recommend PASSED, with findings classified separately.
+  PASSED: all three ACs have falsifiable evidence; material findings: none; deferred risks: none; polish findings: none.
+
+### Summary
+
+Validation independently reproduced the exact-state and live-checkout oracle, both regression controls, full and race suites, formatting/diff hygiene, immutable surface, clean PR topology, and stable patch identity. Candidate `0b8ca50de` satisfies AC-1 through AC-3 with no findings, so the validation recommendation is PASSED.
