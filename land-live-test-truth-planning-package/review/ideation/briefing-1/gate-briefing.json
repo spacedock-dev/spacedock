@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nz6816mcf0qsdp1bsh3wzp1w:ideation:attempt-1:revision-1",
+  "question": "Should nz6 advance to implementation with the exact five-file +776/-7 planning package?",
+  "artifacts": [
+    {
+      "id": "artifact:nz6816mcf0qsdp1bsh3wzp1w:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/92d4483bf94abc9b02599f882732159f6679aa63/land-live-test-truth-planning-package.md",
+      "rev": "sha256:f6b41887d850d4fb7a27257b20a6d4cb9fc3b91df7074b3b0c80f3655a6c89c3",
+      "mediaType": "text/markdown",
+      "summary": "Recommend advance: ideation proves the separate prerequisite is necessary, the merge is conflict-free, all three ACs are falsifiable, and the only authorized authored-byte drift is one EOF blank-line removal."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nz6816mcf0qsdp1bsh3wzp1w:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/a97a2b4cf9a1b708c6750d9758f3f5a67ef34d58/docs/roadmap/live-test-truth/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:498b2c50808a9f1825d215a869b7131f7c8ec9f16188ea0e9ab4368ae39c43fc"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:nz6816mcf0qsdp1bsh3wzp1w:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/a97a2b4cf9a1b708c6750d9758f3f5a67ef34d58/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5f975046a812a185c929bdaa0493a612ba84e4a9abe669093035db43f63af7be"
+    }
+  ]
+}

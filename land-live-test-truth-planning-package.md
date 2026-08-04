@@ -30,6 +30,26 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:nz6816mcf0qsdp1bsh3wzp1w:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:nz6816mcf0qsdp1bsh3wzp1w-ideation-1
+              briefing:
+                id: briefing:nz6816mcf0qsdp1bsh3wzp1w:ideation:attempt-1:revision-1
+                digest: sha256:725dc09060b05ec0be4e455727fd67c0cb8b882fb4816fd39aeac6b9423a5c97
+                request-digest: sha256:d2f6308f1920b378be6ec434e6ac29b6dfd402e2089b44af569279f69ffa3503
+                room-ref: ./land-live-test-truth-planning-package/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nz6816mcf0qsdp1bsh3wzp1w:ideation:1
+                briefing: briefing:nz6816mcf0qsdp1bsh3wzp1w:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-04T15:08:32.089823Z"
+                decision: approve
+                reason: Delegated Captain conn authorizes this topology prerequisite. Ideation completed 4 DONE, 0 SKIPPED, 0 FAILED; AC-1 through AC-3 each have direct diff/topology evidence, and the approved surface is exactly five files +776/-7 with no other drift.
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-04T15:03:51Z
 ---
 
