@@ -19,6 +19,17 @@ gates:
                 digest: sha256:dc05dceae13f21d186bec0f876a5274a694ab6936a7087de5fd4ede203697f31
                 request-digest: sha256:c3384e6b08937607a5425293f40d531a5a7a7fc026e316a7fc3413ea25157899
                 room-ref: ./refresh-v1-pilot-manifest-after-archive-moves/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:v72wj17717g4xpkhss7mhv06:backlog:1
+                briefing: briefing:v72wj17717g4xpkhss7mhv06:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-04T13:33:48.63634Z"
+                decision: approve
+                reason: Captain delegated the conn and directed this exact two-file manifest repair; reproduced failures and archive history show the plan restores current-checkout truth without widening semantics.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Restore truthful current-checkout validation after seven v1 pilot tasks moved from active state into the archive.
