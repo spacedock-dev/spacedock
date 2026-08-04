@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-7:revision-1",
+  "question": "Approve exact-head validation and proceed to merge delivery without an ancestry-only rebase?",
+  "artifacts": [
+    {
+      "id": "artifact:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-7:revision-1:item-1",
+      "uri": "git-root://state/5aa47b81226b2c7608c52fb9da23f9ba15c51494/codex-launch-multi-agent-v2.md",
+      "rev": "sha256:0201aed419c6b0a16c7b89b03dc2759d86a5bda91b8c7cb495b58a2751619e38",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 8 passes all three validation checklist items and AC-1 through AC-4 at exact head 37abaa8b3; full/race, detached, isolated-front-door, and shared-live evidence are green, and issue #616 policy preserves this cleanly mergeable validated head."
+    }
+  ]
+}
