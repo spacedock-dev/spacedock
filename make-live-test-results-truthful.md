@@ -103,6 +103,7 @@ gates:
 started: 2026-08-03T12:19:34Z
 worktree: .worktrees/spacedock-ensign-make-live-test-results-truthful
 mod-block: merge:pr-merge
+pr: "#615"
 ---
 
 ## Outcome
