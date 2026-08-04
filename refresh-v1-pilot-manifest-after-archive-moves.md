@@ -39,6 +39,17 @@ gates:
                 digest: sha256:20b082741d6ec6ed7a6befc6efe5eeb2a9cceb8c1fc1bd3033220801e546b3f0
                 request-digest: sha256:cf1b0d6620fc5abd801c7200641c1e36d5ec2c78ca4d3d30899fdc4ac986f8a4
                 room-ref: ./refresh-v1-pilot-manifest-after-archive-moves/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:v72wj17717g4xpkhss7mhv06:ideation:1
+                briefing: briefing:v72wj17717g4xpkhss7mhv06:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-04T13:48:06.673607Z"
+                decision: approve
+                reason: 'Science officer concurs: the current-state audit is intentionally live, and the seven missing entries are ordinary archive moves. Rebinding them and changing the independent archive count to 22 preserves strict Read/Validate/application-node coverage and the 31-record invariant.'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-04T13:34:28Z
 ---
 
