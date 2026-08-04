@@ -1,6 +1,6 @@
 ---
 title: Refresh the v1 pilot manifest after archive moves
-status: backlog
+status: ideation
 source: "Captain-directed live-test-truth prerequisite, 2026-08-04"
 score: 1.0
 sprint: live-test-truth
@@ -29,7 +29,7 @@ gates:
                 reason: Captain delegated the conn and directed this exact two-file manifest repair; reproduced failures and archive history show the plan restores current-checkout truth without widening semantics.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Restore truthful current-checkout validation after seven v1 pilot tasks moved from active state into the archive.
