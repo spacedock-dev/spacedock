@@ -917,3 +917,160 @@ removes the candidate surface, Sonnet and Pi remain explicitly skipped, and the
 first Codex run recorded a duplicate dispatch before its clean rerun. No candidate
 or gate mutation was made; rebase/reconciliation and fresh complete live evidence
 are required.
+
+## Stage Report: validation (fresh exact-head cycle after PR #612)
+
+- DONE: Revalidated the candidate at exact code HEAD
+  `cd76f52abc3b3f00c0344566ad039f62586936d2`, which is the assigned clean-rebase
+  target and is currently exactly `origin/main`
+  (`db7f1e84aef5df2daf20fb02deac440df4ae1af1`). `git merge-base HEAD origin/main`
+  equals `db7f1e84`; `git rev-list --left-right --count origin/main...HEAD` is
+  `0 1`. The code worktree was clean before and after every check. Validation made
+  no implementation, gate, room, or state mutation.
+
+  Validation records the rebase lesson explicitly: a rebase invalidates prior
+  evidence because the candidate bytes changed; it does not automatically imply a
+  behavior defect. This cycle therefore reran the local focused, full, race, and
+  semantic checks at the exact head, while the registered live matrix is handed off
+  as one exact-head CI run.
+
+- DONE: Audited the exact diff against current main. `git diff --stat
+  origin/main...HEAD` is the same 13-file, +227/-22 implementation surface from
+  the implementation report: the status/gates projection and tests, JSON golden,
+  First Officer contract text, and gate documentation. Required s4, gqs, and 0m6
+  dependency tips remain ancestors of this HEAD:
+  `acae980fc145e624d9e04e7ec9f7fdb599585f6e`,
+  `cb01129b6325f7af646363785c24ef69e8bd16bd`, and
+  `9881639697d1af391133c9ecf4111fd1673f537c`. No new parser, store, schema,
+  command, scheduler binary, runner, provider, adapter, retry, cache, or lifecycle
+  owner was introduced.
+
+- DONE: Focused functional checks all passed at the exact head:
+
+  - `go test ./internal/status -run 'TestGateReadiness|TestBootIdentifyReadyGates|TestStatusProjectsSharedGateReadinessReducer|TestEnteredStage' -count=1`
+  - `go test ./internal/gates -run 'TestCurrentStageReadiness|TestPrepare|TestWithdraw' -count=1`
+  - `go test ./internal/ensigncycle -run 'TestRecordedGateLifecycle|TestRecordedGateReview' -count=1`
+  - `go test ./internal/contractlint -count=1`
+
+  The full status package also passed. These controls reproduce absent and
+  prior-stage authority promotion, committed/path-clean exact-stage report proof,
+  dirty/malformed rejection, selected open/withdrawn/closed authority, pending
+  advance/merge, feedback/hold/consumed/superseded/not-applicable, ordinary and
+  terminal stages, and invalid topology.
+
+- DONE: The PR #612 shared-state manifest blocker is fixed on this exact target.
+  `go test ./internal/gates -run 'TestV1PilotManifestReadsAndValidates$' -count=1 -v`
+  passed every active and `_archive/` manifest entry, including the seven paths
+  that were absent in the prior cycle (`bind-post-rework-briefing-at-rejection-
+  regate.md`, `collapse-gate-approval-ceremony/index.md`,
+  `cut-workflow-specific-round-recorder-from-v1/index.md`,
+  `minimize-v1-gate-application-schema/index.md`,
+  `shared-git-scaffold-helper.md`, `status-pagination-and-default-sorting.md`,
+  and `status-where-robust-and-discoverable.md`).
+
+- DONE: Complete offline and race suites passed without exceptions:
+  `go test ./...` and `go test ./... -race`. All packages, including
+  `internal/gates`, `internal/status`, `internal/ensigncycle`, `internal/dispatch`,
+  `internal/cli`, and `skills/integration`, reported `ok`.
+
+- DONE: Formatting and contract checks are clean. `gofmt -d ./cmd ./internal`
+  produced no output, `git diff --check` passed, and
+  `go test ./internal/contractlint -count=1` passed. The read-only `gofmt -d`
+  check was used because validation is forbidden to edit implementation files.
+
+- DONE: Re-ran the semantic adversarial matrix against production reducers and
+  existing lifecycle oracles. All targeted status, gates, and recorded-gate
+  controls passed:
+
+  - status: `TestGateReadiness*`, `TestBootIdentifyReadyGates`,
+    `TestStatusProjectsSharedGateReadinessReducer`,
+    `TestEnteredStageProjectionRequiresCommittedCompleteReport`,
+    `TestEnteredStageMutationControls`, `TestEnteredStageLegacySuppressionControls`,
+    default-stage controls, and boot/next JSON parity;
+  - gates: `TestCurrentStageReadiness*`, all prepare/withdraw/replay/refusal,
+    eligibility, record/consume, round, duplicate/prototype/unknown-shape, digest,
+    terminal-delivery, and application-shape controls;
+  - recorded-gate lifecycle: `TestRecordedGateLifecycle*`, expected-actor,
+    committed-before-dispatch, missing-event, phase-detection, gate-held, and
+    guardrail controls.
+
+  Exact output/order/cardinality, authority identity, path-clean byte refusal,
+  terminal state, stale/withdrawn ownership, later-malformed masking, dirty target
+  versus dirty sibling, and no-direct-preparation invariants all passed. The
+  structural-pass/semantic-veto obligation remains First Officer judgment-owned;
+  the declarative route requires one concrete `report-incomplete:` stop with zero
+  prepare, legacy bind, mutation, presentation, idle, or repeat-next effects.
+
+- DONE: AC-1 mechanical evidence is independently reproduced. The split-root
+  status controls emit exactly one four-key `needs-preparation` row for both absent
+  and prior-stage authority, an empty `dispatchable` array, and the ordered
+  `command`/`dispatchable`/`ready_gates` next envelope; dirty and malformed reports
+  emit no candidate. The registered Claude Opus recorded-gate lane also passed on
+  this exact head (382.88s), providing one live cold-gate lifecycle proof. Sonnet
+  and the remaining host lanes are not promoted to green below, so no complete
+  multi-host live claim is made; the semantic-veto prose has no executable live
+  control in this repository.
+
+- DONE: AC-2 machine-envelope evidence passes in status tests and the JSON golden.
+  `--next --json` has ordered `command`, `dispatchable`, and `ready_gates` keys;
+  ready rows retain exactly `id`, `slug`, `current`, and `readiness`; and
+  `needs-preparation` never enters `dispatchable`. Human `--next` output is
+  unchanged. Ready-gate-first handling on initial and post-idle reads is present
+  in the existing First Officer contract; no executable post-idle-created-gate
+  lane exists, so that prose-only boundary is explicitly not over-claimed.
+
+- DONE: AC-3 ownership/integrity controls pass. Open, withdrawn, stale, closed,
+  pending, revise, hold, blocked, feedback, consumed, superseded, not-applicable,
+  terminal, archived, malformed, and mismatched authorities remain on their
+  existing reducers; prepare/withdraw/replay and whole-tree byte controls pass.
+  No direct preparation, duplicate attempt, recorder mutation, or new owner is
+  observable in the exact diff or tests.
+
+- DONE: AC-4 scope audit passes. Status is the only readiness projection; s4 remains
+  preparation/room owner, gqs remains report-evidence owner, 0m6 remains
+  withdrawal/replacement owner, and the event loop remains declarative. The
+  implementation surface contains no forbidden execution mechanism.
+
+- FAILED (release evidence): Required local live coverage is intentionally not
+  complete. The Sonnet command exited 0 as an explicit quarantine skip:
+  `TODO(w5bfnrvpcphw857nzz93340c): Sonnet must reliably render the exact selected
+  Briefing digest before re-enabling this journey`. Claude Opus passed as recorded
+  above. A Codex lane had been started immediately before the First Officer's scope
+  correction and was interrupted at ~32s (exit 1) when instructed not to launch
+  additional local Codex/Pi lanes. Pi was not launched. Per current FO direction,
+  Codex and Pi coverage is handed off to the registered exact-head CI lanes; skipped,
+  aborted, or deferred lanes are not green evidence. No local PASS is claimed.
+
+- MATERIAL EVIDENCE FINDING: The candidate's deterministic value behavior is green,
+  but the required supported-host live matrix is incomplete in this validation
+  environment (Sonnet quarantined skip, Codex intentionally aborted at scope
+  correction, Pi deferred to CI). This blocks a complete validation PASS without
+  indicating an offline outcome defect. Reopen/recommend PASS only after the
+  registered CI lanes execute at this exact head and classify every skip/red result;
+  live-test-truth sprint members remain out of scope for this entity.
+
+### Completion checklist accounting
+
+1. **DONE — exact-head checks and acceptance evidence.** Focused, full, race,
+   manifest, formatting, dependency, acceptance, and adversarial matrix checks all
+   pass at `cd76f52ab`; current `origin/main` is the same commit.
+2. **FAILED — complete supported live coverage.** Opus passes; Sonnet is an
+   explicit quarantine skip; Codex was aborted when the FO narrowed scope to CI;
+   Pi was not launched. The required live result set is deferred to exact-head CI.
+3. **DONE — report, scope, findings, and no-mutation accounting.** Only this state
+   entity report is changed; the code worktree remains clean and no gate bytes were
+   mutated.
+
+Checklist totals: offline focused/full/race/manifest checks PASS; live subchecks 1
+PASS, 1 SKIPPED, 1 ABORTED, and 1 DEFERRED-to-CI. **Recommendation: REJECTED/HOLD**
+pending the registered CI live lanes; do not consume or present this validation
+gate as a complete PASS.
+
+### Summary
+
+Fresh exact-head validation is green for the implementation's deterministic status,
+gate ownership, scheduler envelope, manifest, full/race, and adversarial behavior.
+Claude Opus also passes the recorded-gate lifecycle. The gate remains on HOLD because
+the supported live matrix is intentionally incomplete: Sonnet is quarantined,
+Codex was stopped when scope moved to CI, and Pi is deferred to CI. No implementation
+or gate mutation was made; the next authority is the registered exact-head CI lanes.
