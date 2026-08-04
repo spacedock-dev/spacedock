@@ -152,3 +152,22 @@ No live runtime lane is required because this task changes only an offline curre
 ### Summary
 
 Ideation now records the exact seven archive rebindings and their rename evidence while preserving 31 total and 22 archived records. The implementation remains a two-file offline-oracle repair proved by the focused, full, and race suites; no generator, parser, state-history, runtime-lane, or `3d` change is introduced.
+
+## Stage Report: implementation
+
+- DONE: Apply the seven current `_archive/` bindings and the independent archive-count update in the candidate worktree, leaving the two expected oracle files as the only candidate edits (+9/-9).
+  `internal/gates/testdata/v1_pilot_manifest.txt` now names all seven archived destinations, and `internal/gates/application_test.go` expects 22 archived paths while retaining the 31-entry invariant and strict Read/Validate/application-node assertions. The candidate changes remain uncommitted pending the finding below.
+- DONE: Run a read-only focused falsifier against the intended two-file repair and preserve the exact new finding without widening the candidate.
+  The focused test passes all seven path-presence/Read/Validate checks until `_archive/status-where-robust-and-discoverable.md`, then fails unchanged strict application-node coverage: `approval application keys = [action state target-stage], want [state target-stage]` at `application_test.go:145`. The extra `action: advance` is present on all three approval applications in the archived entity; the test therefore fails one subtest, not a stale-path or count assertion.
+- DONE: Trace the finding to durable provenance and the merged legacy-warning reader/writer behavior.
+  State commits `0da26c7ba` and `49329e0c9` explicitly authorized `action: advance` frontmatter repairs while the stale binary/schema required that key; `596c23d1f` archived the entity unchanged. Code commit `247940e4b` subsequently minimized the canonical application to `target-stage` and `state`; merged warning support in `e3a89ae8e` filters unknown application keys for strict decode, returns the original node for CAS/audit, and warns rather than mutating historical bytes. Canonical writers strip the extension only on a later entity mutation.
+
+### Finding disposition
+
+- Materiality: non-material to runtime authority and parser validity. `Read`/`Validate` accept this historical application through the warning path, and `action` is non-authoritative because an approval always derives `advance`; it is material only to this pilot's deliberate canonical-byte audit.
+- Ownership: the archived state entity and its historical frontmatter belong to the state/FO maintainer. The two-file manifest candidate must not normalize that state or relax its independent audit assertion; the disjoint downstream `3d` candidate remains untouched.
+- Proposed disposition: record the finding and defer a separately authorized, path-scoped state normalization (or an explicit audit-policy decision) to the state owner. Do not modify the archive, alter the strict assertion, rerun suites, or commit the candidate until the First Officer authorizes that follow-up. No race/full-suite result is claimed from this interrupted falsifier pass.
+
+### Summary
+
+The intended seven-path/22-archive oracle repair is staged but uncommitted. Its focused read-only falsifier exposes one independent historical `application.action` finding in the newly rebound archive entity. Provenance and current warning semantics show a compatibility-only legacy field; ownership and any normalization decision remain with the state/FO lane, so no candidate commit or further rerun is made.
