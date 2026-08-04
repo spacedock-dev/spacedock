@@ -188,3 +188,18 @@ The intended seven-path/22-archive oracle repair is staged but uncommitted. Its 
 ### Summary
 
 The canonical candidate `0b8ca50dee7b8c6c6b2cf5e09a1580452f55b30f` is topology-clean against `origin/main` and preserves the exact approved two-file +9/-9 repair patch. Existing focused, full, and race evidence remains attributed to the pre-transplant run; this handback verified topology and stable patch identity only, without rerunning suites or changing code.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Finalize the two-file oracle repair after the authorized archived-state normalization, preserving 31 total entries, 22 archived entries, and strict application-node assertions.
+  The implementation worktree is clean at commit `3d5af7c92d7d17f6d0c5ac6742f14a2fa7729af2` (`test: refresh v1 pilot manifest archive paths`), which changes only `internal/gates/testdata/v1_pilot_manifest.txt` and `internal/gates/application_test.go` with the approved +9/-9 surface. The manifest has seven current `_archive/` bindings; the test still requires 31 unique records, 22 archived paths, strict `Read`/`Validate`, and exact `[state target-stage]` approval application keys.
+- DONE: Verify the authorized state normalization before claiming the focused oracle pass.
+  State commit `ab33f7130` (`state: normalize archived gate application fields`) removed legacy `action: advance` and `blockers: []` from all three approval applications in `_archive/status-where-robust-and-discoverable.md`; the recorded pre-image hash is `3955b5c90873d3f09e2618aed7c34e126f7401767cae449b43cff7ddf49aee51` and the post-image hash is `8550aac8adb2c40b5d5b8575f98a168160d419e749fa1c5f55ae1ef9db06935f`.
+- DONE: Run the required formatting, focused, full, race, and diff checks from the implementation worktree.
+  `gofmt -w ./cmd ./internal` exited 0 with no candidate diff; `go test -v ./internal/gates -run '^TestV1PilotManifestReadsAndValidates$' -count=1` passed all 31 manifest subtests; `go test ./...` exited 0 (including `internal/ensigncycle` in 279.836s and `internal/release` in 23.423s); `go test ./... -race` exited 0 (including `internal/dispatch` in 42.583s, `internal/status` in 46.689s, and `internal/release` in 23.873s); and `git diff --check` exited 0.
+- DONE: Confirm no unrelated candidate or state changes remain and leave the implementation ready for fresh validation.
+  The code worktree has no uncommitted changes, the candidate commit is path-scoped to the two oracle files, and the state checkout is clean after the report update. No parser, runtime, historical snapshot, or downstream `3d` candidate files were changed.
+
+### Summary
+
+The v1 pilot manifest now truthfully resolves all 31 current records, including 22 archived records, and the strict application-node oracle passes after the separately authorized normalization commit `ab33f7130`. The two-file implementation commit `3d5af7c92` is complete; focused, full, race, gofmt, and diff-check evidence is recorded, with no unrelated changes.
