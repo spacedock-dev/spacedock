@@ -73,7 +73,7 @@ gates:
 started: 2026-08-04T15:03:51Z
 worktree: .worktrees/spacedock-ensign-land-live-test-truth-planning-package
 mod-block: merge:pr-merge
-pr: "#614"
+pr: pr-merge:614
 ---
 
 Land the already-authored sprint plan separately so implementation members retain their approved product surfaces.
