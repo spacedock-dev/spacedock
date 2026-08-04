@@ -192,13 +192,15 @@ base-only case, or reuses old-head evidence, must fail.
 
 ## Expected surface and semantic boundaries
 
-Expected changes are 5 files and approximately +180/-20 lines:
+Expected changes are 6-8 files and approximately +300/-20 lines:
 
 - `mods/pr-merge.md`: replace the mandatory rebase with the probe and routes.
 - `docs/dev/_mods/pr-merge.md`: apply the same rule to the split-root variant.
 - `skills/first-officer/references/claude-fo-dispatch.md`: make ancestry-only
   `stale-branch` rows report-only.
 - `skills/integration/pr_merge_policy_test.go`: add real Git and state fixtures.
+- `internal/ensigncycle/` shared fixture and Claude runner files: prove that the
+  live adapter reports ancestry drift without rebasing the clean candidate.
 - `docs/site/advanced/mods-and-standing-teammates.md`: document the user-visible
   no-rewrite policy.
 
@@ -232,8 +234,9 @@ rebase an ancestry-only `stale-branch` row.
 
 Run the focused integration package, `go test ./...`, `go test ./... -race`,
 `gofmt -w ./cmd ./internal`, `git diff --check`, and the existing contract lints.
-A live-host run is not required because the fixture runs the exact declarative
-command and no runtime API changes.
+Run one isolated Claude fixture with a clean `1 1` branch. The fixture must show
+that the reconcile pass does not change its head. It must then reach the clean
+merge-boundary decision. Other host lanes are unchanged and do not need a run.
 
 ## Stage Report: ideation
 
@@ -242,7 +245,7 @@ command and no runtime API changes.
 - DONE: Specify recorded-owner reconciliation and authority preservation for genuinely conflicting branches under AC-2.
   The conflict route uses the recorded stage, branch, and worktree owner, preserves delivery state, and forbids rework, automatic resolution, and force operations.
 - DONE: Bound exact-head evidence invalidation and regression coverage, including the clean ahead/behind case from issue #616, under AC-3.
-  The design refreshes only mergeability for base drift, names the five stale evidence classes for a changed candidate, and defines real-Git and state-byte fixtures.
+  The design names the exact refresh set and defines real-Git, state-byte, and live Claude regression fixtures.
 
 ### Summary
 
