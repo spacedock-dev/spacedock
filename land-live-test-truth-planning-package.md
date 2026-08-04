@@ -144,3 +144,26 @@ The separate prerequisite is necessary to keep `3d` truthful to its approved nin
 ### Summary
 
 Current main and the substantive planning history are now joined without rewriting either side. The immutable candidate contains exactly the approved five-file planning package, with only the authorized EOF cleanup, and all repository-required checks pass; no live runtime lane was required for this documentation-only change.
+
+## Stage Report: validation
+
+- DONE: Independently verify candidate 7461beda42382391a80ca9b14d42fafebaebaf55 is current-main-fresh, preserves both planning/current-main ancestry, and contains exactly the five approved documentation paths at +776/-7 with four exact b0a2541f blob matches plus only the authorized staff-review EOF deletion; run diff/check and negative drift controls in disposable state.
+  Fresh fetch retained `origin/main` `1947aacb`; ancestry checks report zero commits behind and preserve `b0a2541f`, while exact name/numstat, four blob hashes, atomic fifth-blob transform, and `git diff --check` pass; untrimmed +777 and one-byte drift controls fail the oracle.
+- DONE: Reproduce AC-1 through AC-3, including a disposable integration simulation that merges nz6 into 3d candidate 4d2d45cd57af16ddcf4baba02ad1161d8248e23f and proves the resulting 3d diff against the simulated planning base is exactly its approved nine paths with no planning/registry path.
+  Throwaway merge tree `b8fbf74a55b64b76556cb90df9113ad3752b4bdf` is conflict-free: all nine implementation blobs equal `4d2d45cd`, all five planning blobs equal nz6, and the pre-integration 14-path negative control contracts to exactly nine; both disposable checkouts were removed.
+- DONE: Run gofmt verification, go test ./..., and go test ./... -race independently; classify findings, recommend PASSED or REJECTED, append a complete validation report, and commit only the nz6 entity path in split-root state.
+  Immutable `gofmt -l ./cmd ./internal` returned no paths; full and race suites exited 0 across every package, where formatting drift, compile/fixture/behavior failure, or a detected data race would make the corresponding command fail.
+- DONE: AC-1 (VALUE) - The reviewed sprint plan and desired live-test registry are durable on `main` before 3d lands.
+  Exact authored blobs independently retain the ordered `3d` then `15e` then `ys` sequence, deferred release-blocking `rm` boundary, five-path cardinality, and sole one-byte EOF authorization.
+- DONE: AC-2 (VALUE) - The planning package no longer contaminates 3d's implementation PR surface.
+  Disposable integration diff against nz6 is exactly the declared nine 3d paths at +401/-170 and contains no live-test-truth planning, durable-decisions index, or live-CI registry path.
+- DONE: AC-3 - Current-main work and substantive authored planning history are both preserved without destructive rewriting.
+  Both `1947aacb` and `b0a2541f` are candidate ancestors; `7461beda` is zero commits behind fetched main, its merge parent preserves both histories, and its only post-merge change is the authorized EOF deletion.
+- DONE: Semantic adversarial pass and finding classification.
+  Identity, cardinality, order, bytes, attribution, ancestry, terminal diff state, whitespace, and adjacent untrimmed/extra-byte/pre-integration variants all satisfy one exact-tree invariant; no material, deferred-risk, or polish finding remains.
+- DONE: Recommendation — PASSED.
+  Every AC has independently reproduced evidence, required suites are green, immutable candidate HEAD/worktree stayed clean, and no live lane is required for the documentation-only surface.
+
+### Summary
+
+Fresh validation recommends PASSED for immutable candidate `7461beda42382391a80ca9b14d42fafebaebaf55`. The candidate is current-main-fresh, byte-exact to the approved authored package except for the sole EOF deletion, and a disposable integration proves 3d returns to its truthful nine-path surface; all repository-required checks pass.
