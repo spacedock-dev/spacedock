@@ -79,6 +79,10 @@ gates:
                 digest: sha256:2a92323df769b11785a7a522557ef05797ae25b3f44f412688c408f4bd1c94df
                 request-digest: sha256:083a25c48521ad3b983c0f875f87c5750ee1890a05732c73f7ea43519c0677de
                 room-ref: ./make-live-test-results-truthful/review/validation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-04T15:00:14.613395Z"
+                reason: 'Validation attempt is stale: its sole repository blocker was the v1 manifest drift, which merged in PR #612; replace the attempt before fresh validation at candidate tip 4d2d45cd5.'
 started: 2026-08-03T12:19:34Z
 worktree: .worktrees/spacedock-ensign-make-live-test-results-truthful
 ---
