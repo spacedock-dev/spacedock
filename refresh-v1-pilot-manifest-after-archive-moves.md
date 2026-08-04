@@ -59,7 +59,7 @@ The current focused test fails exactly these seven active bindings, and each des
 | `status-pagination-and-default-sorting.md` | `_archive/status-pagination-and-default-sorting.md` | `b67f466e6` |
 | `status-where-robust-and-discoverable.md` | `_archive/status-where-robust-and-discoverable.md` | `596c23d1f` |
 
-All seven destination files exist, and `git show --find-renames` reports each entity move as `R099`. The archive count therefore changed from 15 to 22 while the total manifest cardinality stayed 31.
+All seven destination files exist, and `git show --find-renames` reports each entity move as `R099`. The archive count therefore changed from 15 to 22 while the total manifest cardinality stayed 31. Baseline `go test ./...` and `go test ./... -race` runs pass every other package and fail `internal/gates` only on these same seven paths.
 
 ## Proposed approach
 
@@ -124,7 +124,7 @@ No live runtime lane is required because this task changes only an offline curre
 - DONE: Confirm the focused current-checkout failure maps exactly to seven normal archive moves and changes archive cardinality from 15 to 22 while total cardinality stays 31.
   The focused test fails only the seven named active paths; all destinations exist as R099 archive moves, and an in-memory rebinding yields 22 archived entries out of 31.
 - DONE: Produce a complete two-file design whose value proof is the existing focused oracle plus current-checkout full and race suites, without adding a generator, parser change, state rewrite, or standing check.
-  AC-1 fails if any rebinding or the 22-count oracle is reverted; AC-2 requires both full suites against the default current state checkout, with no live lane or new mechanism.
+  Both baseline suites fail only on the seven stale bindings; AC-1 catches a reverted binding/count, and AC-2 requires both repaired suites against the default current state checkout.
 - DONE: Keep the expected surface at `internal/gates/testdata/v1_pilot_manifest.txt` and `internal/gates/application_test.go`, +8/-8 with the declared tolerance, and preserve 3d as an untouched downstream consumer.
   The baseline remains two files and +8/-8 with a +10/-10 ceiling; both count-literal sites may realize +9/-9, and the disjoint `3d` worktree/entity remain out of scope.
 
