@@ -359,3 +359,32 @@ Wrong AC decisions now fail on durable state, while healthy Codex JSONL progress
 ### Summary
 
 The corrected candidate makes wrong durable decisions red and healthy JSONL progress green. Validation recommends REJECTED only because the canonical current checkout cannot pass the repository's required full and race suites; the stale manifest belongs outside 3d and must not be hidden by a historical snapshot.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently verify immutable candidate 03bd07e58ef7a74a404c880c73599c2f80de7609 is 0 behind current main db7f1e84aef5df2daf20fb02deac440df4ae1af1 and exactly the approved nine-file +401/-170 surface, with no planning/registry path; reproduce AC-1 through AC-4 and close the prior current-manifest blocker against the live split-root checkout.
+  `rev-list` is 0/4 and merge-base is current main; the exact nine-path diff is +401/-170, while current-state `TestV1PilotManifestReadsAndValidates`, full, and race suites now pass and would red on stale declared fixture paths.
+- DONE: Run the focused AC re-anchor, Codex process/watcher, live-tag compile, manifest, gofmt, full, and race checks; perform the mandated detached adversarial audit of complete gate-record identity/order and Codex quiet-reset/kill/reap evidence without modifying candidate bytes.
+  All named checks passed; throwaway audit mutations red on later approve, mismatched briefing identity, malformed complete record, and duplicate stage, while 31 ordered events reset liveness and a production 60.31s stall killed/reaped one process to exit -1.
+- DONE: Verify the already-recorded changed-live-path artifacts remain attributable to the unchanged feature commits, classify all findings, recommend PASSED or REJECTED, append a complete final validation report, and commit only make-live-test-results-truthful.md in split-root state; do not approve or consume a gate.
+  Codex `source-head.txt` names `17985b60f`; its changed live paths are byte-unchanged in the candidate, and the AC2 artifact records canonical revise plus rework from the same post-correction run window. No gate action was taken.
+- DONE: AC-1 (VALUE) - The AC2 scenario rejects the wrong durable decision.
+  Before, a wrong durable decision could go green; now canonical revise/feedback/rework passes while approve, later approve, wrong target/route, malformed/duplicate records, and unchanged state red independently of narration.
+- DONE: AC-2 (VALUE) - A progressing Codex run stays alive.
+  Before, healthy progress could false-timeout; the exact audit retained 31 complete ordered JSONL events over more than four quiet budgets with one invocation and exit 0, and the unchanged pre-ys live artifact ran 5m21s without timeout.
+- DONE: AC-3 - A stalled Codex run fails within the 60-second quiet budget.
+  A fresh production-budget audit tripped at 60.31s, retained byte-identical partial JSONL/stderr/result evidence, named the last event and artifact directory, and proved kill plus reap with one invocation.
+- DONE: AC-4 - The suite timeout stays a runaway backstop.
+  The source guard and live-tag compile pass, the Codex runner uses `quietBudgetDefault`, and CI still selects the pre-ys Codex journey with `-timeout 40m` and no fixed Codex process deadline.
+- DONE: Closed findings — cycle-1 partial oracle and current-state manifest drift.
+  Both were Material evidence defects: `17985b60f` closes AC-1 at the complete-record boundary, and landed prerequisite `0b8ca50de` makes the current split-root manifest/full/race controls green; neither remains release-blocking.
+- SKIPPED: Subscription-backed Pi/Codex/Claude actuators.
+  Dispatch reserves those local subscription lanes to the Commander; validation reused attributable live artifacts and reran all deterministic/offline controls plus live-tag compilation.
+- SKIPPED: Deferred risk — a complete Codex JSONL line above 16 MiB can stop the scanner.
+  The exact trigger remains outside the supported/observed workflow (largest attributable live line: 35,627 bytes); promote to Material if a supported lane emits at least 16 MiB or the product promises unbounded event size.
+- DONE: Recommendation — PASSED.
+  All four ACs have direct falsifiable evidence, all mandatory current-checkout checks pass, and no Material finding remains.
+
+### Summary
+
+The standalone value is directly proved: wrong durable AC decisions now produce red results, and meaningful complete JSONL progress keeps a healthy Codex run alive. Silence still fails with retained fault evidence, while the 40-minute suite timeout remains only the runaway backstop. Final validation recommends PASSED; candidate topology is scope hygiene only.
