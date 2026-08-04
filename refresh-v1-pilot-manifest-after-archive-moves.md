@@ -59,6 +59,17 @@ gates:
                 digest: sha256:1f3746cbc8dc880458d56c04eff33dfd5d09045830aab3ac0dbcb79cd050e228
                 request-digest: sha256:88e5098aa969046f49372d16a265a560b00466b0b079529fab73232b55ade9cd
                 room-ref: ./refresh-v1-pilot-manifest-after-archive-moves/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:v72wj17717g4xpkhss7mhv06:validation:1
+                briefing: briefing:v72wj17717g4xpkhss7mhv06:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-04T14:49:17.828722Z"
+                decision: approve
+                reason: Captain delegated the conn for this repair. Independent validation is PASSED with 8 DONE, one justified offline-only live-lane skip, zero failures/findings, exact two-file +9/-9 scope, green focused/negative/full/race proof, and clean PR topology.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-04T13:34:28Z
 worktree: .worktrees/spacedock-ensign-refresh-v1-pilot-manifest-after-archive-moves
 ---
