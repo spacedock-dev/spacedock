@@ -73,6 +73,7 @@ gates:
 started: 2026-08-04T13:34:28Z
 worktree: .worktrees/spacedock-ensign-refresh-v1-pilot-manifest-after-archive-moves
 pr: "#612"
+mod-block: merge:pr-merge
 ---
 
 Restore truthful current-checkout validation after seven v1 pilot tasks moved from active state into the archive.
