@@ -30,6 +30,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-04T15:03:51Z
 ---
 
 Land the already-authored sprint plan separately so implementation members retain their approved product surfaces.
