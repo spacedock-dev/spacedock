@@ -51,6 +51,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-04T13:34:28Z
+worktree: .worktrees/spacedock-ensign-refresh-v1-pilot-manifest-after-archive-moves
 ---
 
 Restore truthful current-checkout validation after seven v1 pilot tasks moved from active state into the archive.
