@@ -1,6 +1,6 @@
 ---
 title: Make every live-lane minute buy named evidence
-status: ideation
+status: implementation
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 5p5, b91, v5w, b8, dv, and supersedes 36."
 score: 1.0
 sprint: live-test-truth
@@ -69,7 +69,7 @@ gates:
                 reason: Approved after staff review. Land named-evidence lane hygiene after 3d.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-03T12:19:37Z
 ---
 
