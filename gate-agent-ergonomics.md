@@ -62,6 +62,23 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-04T15:32:17.489446Z"
                 reason: validation candidate changed after clean rebase onto origin/main 1947aacb; prior Briefing and evidence are stale
+            - id: gate-attempt:skwchfe30ac6ntr63j1g0txj-validation-2
+              briefing:
+                id: briefing:skwchfe30ac6ntr63j1g0txj:validation:attempt-2:revision-1
+                digest: sha256:0aded4a5ce61b1f3220af35d9148c7253f8ecf5684ba24941c95b5e560bfe3c4
+                request-digest: sha256:670753cbdd2797055e642fb835eef65db08310ed9130ea42c9c99856f87193ef
+                room-ref: ./gate-agent-ergonomics/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:skwchfe30ac6ntr63j1g0txj:validation:2
+                briefing: briefing:skwchfe30ac6ntr63j1g0txj:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-04T16:35:46.115735Z"
+                decision: approve
+                reason: Captain explicitly directed opening the PR. Deterministic exact-head validation and all AC evidence pass; required live lanes are deferred to exact-head CI and remain a merge prerequisite.
+              application:
+                target-stage: done
+                state: pending
 worktree: .worktrees/spacedock-ensign-gate-agent-ergonomics
 ---
 
