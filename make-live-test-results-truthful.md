@@ -83,6 +83,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-04T15:00:14.613395Z"
                 reason: 'Validation attempt is stale: its sole repository blocker was the v1 manifest drift, which merged in PR #612; replace the attempt before fresh validation at candidate tip 4d2d45cd5.'
+            - id: gate-attempt:3d2rqxrgvqky085mn170x3zp-validation-2
+              briefing:
+                id: briefing:3d2rqxrgvqky085mn170x3zp:validation:attempt-2:revision-1
+                digest: sha256:8869f0652edb6b43aa8fd0927bf59d9f5a4cd230afb807d55e71828fe40539d4
+                request-digest: sha256:d0e193fc453de044a59344378fd36b36678162b9da1ea10ec082d105044508ca
+                room-ref: ./make-live-test-results-truthful/review/validation/briefing-2
 started: 2026-08-03T12:19:34Z
 worktree: .worktrees/spacedock-ensign-make-live-test-results-truthful
 ---

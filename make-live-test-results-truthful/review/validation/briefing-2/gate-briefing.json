@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3d2rqxrgvqky085mn170x3zp:validation:attempt-2:revision-1",
+  "question": "Should candidate 03bd07e58 make wrong durable AC decisions fail and keep progressing Codex runs alive?",
+  "artifacts": [
+    {
+      "id": "artifact:3d2rqxrgvqky085mn170x3zp:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/ad636c5398a1afaab438781a214ff75e022b7ef3/make-live-test-results-truthful.md",
+      "rev": "sha256:9575e30672f65ab9da39c065b7fde6c0d2bd0c376c63a0950e0c11bb6b7d872d",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: fresh validation proved wrong durable decisions turn red, meaningful complete Codex JSONL activity prevents false timeout, true silence still kills and preserves evidence, and all required suites pass."
+    }
+  ]
+}
