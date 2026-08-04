@@ -30,6 +30,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-04T13:34:28Z
 ---
 
 Restore truthful current-checkout validation after seven v1 pilot tasks moved from active state into the archive.
