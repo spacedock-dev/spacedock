@@ -33,11 +33,6 @@ on:
         required: false
         type: string
         default: ""
-      effort:
-        description: "Effort hint for the live run (low, high, xhigh). Default low."
-        required: false
-        type: string
-        default: "low"
   # pull_request (NOT pull_request_target): runs the PR-head version of this
   # workflow, and withholds repo secrets from FORK PRs — a fork's malicious code
   # cannot exfiltrate live API keys because the secrets are simply absent.
@@ -50,8 +45,8 @@ permissions:
 
 jobs:
   # Gate job: the secret-free offline suite must pass before the live job burns
-  # env-approval. NO environment, NO secret — the live-tagged test compiles out of
-  # the default `go test ./...` surface, so this job is the AC-3 secret-free gate.
+    # env-approval. NO environment, NO secret. Deterministic harness controls run on
+    # this default surface; only tests that launch a real host retain the live tag.
   offline:
     runs-on: ubuntu-latest
     steps:
@@ -73,6 +68,9 @@ jobs:
 
       - name: Run offline test suite
         run: go test ./...
+
+      - name: Run deterministic live-harness controls offline
+        run: go test ./internal/ensigncycle -count=1 -run 'TestClaudeTODOModelScope|TestClaudeRejectionFlowTODOModelScope|TestClaudeSonnetGateGuardrailTODOModelScope|TestCleanupKeepMovingRootRetainsOnlyFailures|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs|TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle|TestShallowBootFixtureContainsOnlyHeldGate|TestPiLiveSmokePromptRequiresExactStageReportHeading|TestPiLiveEnvDropsForeignRuntimeMarkers|TestPiLiveEnvScrubsAmbientPiSubagentMarkers|TestPiIntercomPackageRootDefaultsBesideSubagents'
 
   # Live job: a matrix over two separately-approved variants. sonnet is the
   # Python-land floor (CI-E2E); claude-opus-4-8 is the upper tier (CI-E2E-OPUS).
@@ -108,7 +106,6 @@ jobs:
       # rather than the retired team-tool-capable 2.1.177 (#395, now retired).
       DISABLE_AUTOUPDATER: "1"
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"
       # Per-leg artifact root the shared Claude scenario runner writes its
       # stream/final-message artifacts under (claudeLiveArtifactDir reads it). The
       # /${{ matrix.model }} segment keeps the two matrix legs from colliding.
@@ -131,15 +128,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
-
-      # tmux is the pty/tmux team-mode harness's transport (it drives a real
-      # interactive claude session in a detached tmux pane). ubuntu-latest does not
-      # ship tmux, so install it before the pty team-mode step below.
-      - name: Install tmux
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y tmux
-          tmux -V
 
       - name: Install Claude Code
         env:
@@ -248,7 +236,6 @@ jobs:
           echo "- \`claude --version\`: \`$(claude --version)\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Model: \`${{ matrix.model }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Effort: \`${{ inputs.effort }}\`" >> "$GITHUB_STEP_SUMMARY"
 
       # Archivable per-job config dir under $RUNNER_TEMP, exported to later steps
       # via $GITHUB_ENV. $RUNNER_TEMP is the runtime shell variable (the `runner`
@@ -266,8 +253,7 @@ jobs:
       # dispatch-close + the on-disk terminal end-state, so it greens whether the
       # headless `-p` FO drove team or bare (no team-vs-bare coin). Headless `-p` goes
       # bare per the captain's go-bare determination, so this step carries no
-      # forced-team test; live team end-to-end (roster injection, the bounded teardown
-      # marker) runs in the dedicated pty/tmux team-mode step below.
+      # forced-team test.
       # TestLiveDefaultHeadlessStopsAtGate is AC-a: default `-p` with NO conn drives to
       # a gate:true stage and EXITS reporting gate status, without resolving the gate.
       # TestLiveZeroDiscoverReportsAndStops is the cheap boot-only lean-boot guard (a
@@ -280,7 +266,7 @@ jobs:
       # full `-json` event stream to the `--jsonfile` archive for root-cause
       # retrieval. gotestsum preserves the underlying `go test` exit code, so the
       # step stays red on failure.
-      - name: Run live ensign cycle
+      - name: Run live Claude E2E
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
@@ -311,47 +297,17 @@ jobs:
           set -o pipefail
           gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/
 
-      # The pty/tmux team-mode harness: a REAL interactive claude session (not -p)
-      # where the native team tools are exposed and the session stays resident while
-      # teammates work. TestLivePtyStandingResidencyInjectsCommOfficer asserts the
-      # comm-officer standing teammate lands in the team config.json members[];
-      # TestLivePtyEnsignCycleTeamTeardown drives a real TeamCreate->dispatch->
-      # terminalize->teardown and grades the bounded TERMINAL_TEARDOWN_BOUNDED marker
-      # with the same grader the offline fixture suite uses. These are the live team
-      # end-to-end coverage headless `-p` cannot carry. The per-stage no-progress
-      # quiet budget is the real guard; -timeout is a loose backstop.
-      #
-      # if: !cancelled() decouples this step from a failure in the earlier ensign-cycle
-      # step (e.g. an unrelated TestLiveZeroDiscover flake), so the AC-3/4 pty proof
-      # always runs and reports its own pass/fail. It still skips on a real cancellation.
-      - name: Run live pty team-mode harness
+      # Current Claude substrate proofs. Each exact test name owns one claim:
+      # merged named-Agent dispatch, explicit bare dispatch, or break-glass recovery
+      # after a real helper failure. They share one command and one detail artifact.
+      # The 20-minute timeout is the approved total backstop for each matrix leg.
+      - name: Run live Claude substrate proofs
         if: ${{ !cancelled() }}
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
           set -o pipefail
-          gotestsum --jsonfile pty-team-mode-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run 'TestLivePtyStandingResidencyInjectsCommOfficer|TestLivePtyEnsignCycleTeamTeardown' ./internal/ensigncycle/
-
-      # The MERGED team-mode lane: a HEADLESS `claude -p` FO (no tmux) on the
-      # current/unpinned merged host (>=2.1.178) drives the workflow as a named
-      # BACKGROUND Agent dispatch (no TeamCreate) — the in-process team shape #396
-      # committed. TestLiveMergedTeamModeDispatch asserts no TeamCreate (init tools +
-      # no tool_use), a merged Agent dispatch (name + run_in_background + no
-      # team_name), the on-disk subagents meta member (agentType=spacedock:ensign),
-      # reconcile (no --team-name) exit 0, and the team-lead completion target. This
-      # is the second live lane: the legacy pty lane above SKIPs on a merged host
-      # (native team tools gone), this lane is the regression sensor for the merged
-      # floor. No tmux needed — it is a `-p` launch like the shared-scenario step.
-      #
-      # if: !cancelled() decouples it from an earlier step's failure so it always
-      # runs and reports its own pass/fail; it still skips on a real cancellation.
-      - name: Run live merged team-mode lane
-        if: ${{ !cancelled() }}
-        env:
-          SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
-        run: |
-          set -o pipefail
-          gotestsum --jsonfile merged-team-mode-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveMergedTeamModeDispatch ./internal/ensigncycle/
+          gotestsum --jsonfile claude-substrate-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 20m -run 'TestLiveMergedTeamModeDispatch|TestLiveBareReachable|TestLiveBreakGlassShimRecovery' ./internal/ensigncycle/
 
       - name: Upload live artifacts
         if: always()
@@ -362,8 +318,7 @@ jobs:
             ${{ runner.temp }}/spacedock-live-bin/spacedock
             ./live-e2e-detail.jsonl
             ./claude-shared-scenarios-detail.jsonl
-            ./pty-team-mode-detail.jsonl
-            ./merged-team-mode-detail.jsonl
+            ./claude-substrate-detail.jsonl
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/*/projects
             live-artifacts/claude/**
@@ -633,7 +588,6 @@ jobs:
       SPACEDOCK_PI_LIVE_REQUIRED: "1"
       SPACEDOCK_PI_LIVE_CHILD_MODEL: openai/gpt-5.4
       SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/pi
-      SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi
       PI_OFFLINE: "1"
     steps:
       - name: Check required secret
@@ -815,7 +769,6 @@ jobs:
           echo "### Pi live tool versions" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`pi --version\`: \`$(pi --version)\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Effort: \`${{ inputs.effort }}\`" >> "$GITHUB_STEP_SUMMARY"
 
       # Clean step log + archived `-json` detail from one run per step (see the
       # claude-live job for the rationale).
@@ -827,7 +780,7 @@ jobs:
       - name: Run live Pi front-door smoke
         run: |
           set -o pipefail
-          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 15m -run 'TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle' ./internal/ensigncycle
+          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()
@@ -839,22 +792,20 @@ jobs:
             ./pi-coverage-detail.jsonl
             ./pi-front-door-smoke-detail.jsonl
             live-artifacts/pi/**
-            live-artifacts/journey-metrics/**
           if-no-files-found: warn
 
   # AC-3: posts a per-PR delta of this run's journey-cost observations against
   # the latest published release ledger, as a single sticky-updating PR comment
   # (`gh pr comment --edit-last`, so repeated pushes update ONE comment instead
   # of appending a new one). PR-only — a workflow_dispatch run has no PR to
-  # comment on. needs: claude-live with no explicit `if:` on that edge means
-  # this job runs only once claude-live's matrix completed successfully;
-  # shallow-boot-window (like every scenario this comments on) is Claude-only.
+  # comment on. The job waits for both live metric producers and consumes both
+  # artifacts, so Codex duration and token changes are visible before release.
   # A job-level permissions block grants pull-requests: write beyond the
   # workflow-level contents: read default; specifying any job-level permissions
   # replaces (not merges with) the workflow default, so contents/actions read
   # are restated here for checkout and cross-job artifact download.
   journey-delta-comment:
-    needs: claude-live
+    needs: [claude-live, codex-live]
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -874,6 +825,12 @@ jobs:
           pattern: runtime-live-e2e-claude-live-*
           path: ${{ runner.temp }}/current-run-artifacts
           merge-multiple: true
+
+      - name: Download this run's Codex journey metrics
+        uses: actions/download-artifact@v5
+        with:
+          name: runtime-live-e2e-codex-live
+          path: ${{ runner.temp }}/current-run-artifacts
 
       # Best-effort: no previously published release (or one with no
       # journey-costs asset) means no baseline to diff against. `|| true` /

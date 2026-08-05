@@ -66,12 +66,16 @@ is recorded; workflow routing, not an application payload, handles feedback.
 Redo and reject differ only in whether you accept the direction; both carry your concrete asks so the next worker has something to act on. Nothing closes without its verdict on the record.
 Your call translates into the existing `approve`, `revise`, and `hold` record; automatic bounce applies only when a reviewer recommends `REJECTED` at a configured feedback gate.
 
-After completion verification, a gate with no selected attempt remains
-`validating`. The first officer binds and commits the retained Briefing before
-presenting anything. That bind selects the current-stage gate attempt,
-letting startup distinguish work still validating, an open attempt awaiting the
-Captain, a withdrawal awaiting replacement preparation, an approval awaiting
-nonterminal advance, and an approval awaiting merge. Approval to a terminal target is *held* at consume: `gate consume` spends
+After completion verification, a gate with no current-stage authority remains
+`validating` until gqs's mechanical report checks pass. It then appears as
+`needs-preparation` on boot and every machine scheduler read. Engage performs
+semantic report review. A concrete `report-incomplete:` veto stops without
+mutation; otherwise the First Officer calls `gate prepare` exactly once with its
+question, Artifact, summary, and References, commits the emitted binding,
+re-reads `awaiting-captain`, and presents it. Open, withdrawn, stale, closed,
+and spent attempts retain their existing lifecycle routes.
+
+Approval to a terminal target is *held* at consume: `gate consume` spends
 nothing and writes no status — it leaves the application `pending` and returns
 the `approved-awaiting-merge` route, and `merge guard` is the sole terminal
 consumer. `merge guard` spends only with delivery proof: the `mod-block` is
