@@ -458,3 +458,34 @@ all reproducible suites pass, and the live-state red remains unrelated fixture d
 The shipped `pr-merge` conflict path is now portable and self-contained, with no
 sprint-local owner IDs. Exact-SHA delivery, unknown-error handling, version, and
 the customized development mod remain unchanged.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Validate exact candidate `f9fc3dbd4`: only `mods/pr-merge.md` changes at version `0.27.0`, the customized dev mod is unchanged, and the shipped artifact contains no sprint-local G3/D8/owner-path reference.
+  `f9fc3dbd45b8804858ca1b2da664925c568fb109` is one file at `+13/-4`; dev baseline matches byte-for-byte and the sole sprint-local owner reference is gone.
+- DONE: Reproduce portable conflict behavior plus **AC-1 (VALUE)** exact-SHA clean delivery in real Git under zsh.
+  `/tmp/spacedock-validation-616-portable.BvL9ek` preserved clean state and pushed approved `a6cb071c` after local HEAD moved to `578a8074`, with no rebase, force, or automatic resolution.
+- DONE: Reproduce **AC-2** conflict and unknown behavior with authority preserved and no forced reconciliation.
+  Content-conflict evidence was surfaced with reconciliation owner unset; equal-exit-1 unavailable-object stderr stopped distinctly as unknown; non-clean state/actions were unchanged.
+- DONE: Run focused, full, and race suites with reproducible state evidence.
+  Contract/integration and immutable pilot checks passed; full and race suites exited 0 with state `73f41e2a2`; live state alone lacks the same eight archived manifest paths.
+- SKIPPED: Fix inherited qualified-PR reference loss in this candidate.
+  Separate follow-up (auditor medium-high): preserve `owner/repo#N` and pass its qualifier to `gh --repo`; baseline behavior predates EP2.
+- SKIPPED: Add split-root support to the inherited shipped baseline in this candidate.
+  Separate follow-up (auditor high): resolve entity checkout/backend for scan, audit link, and state, or explicitly declare inline-only support.
+- SKIPPED: Remove inherited ambient-cwd and conflicting-SHA assumptions in this candidate.
+  Separate follow-up (auditor high): use `git -C {worktree}`, `status --workflow-dir {dir}`, and shorten the captured `CANDIDATE_SHA` only.
+- SKIPPED: Generalize inherited dev-template and obsolete report assumptions in this candidate.
+  Separate follow-up (auditor high): use entity vocabulary, current `- DONE:` items, and declared workflow stage roles/content selection.
+- SKIPPED: Remove the inherited Claude-specific reconcile-sweep wording in this candidate.
+  Separate follow-up (auditor low): remove it or describe a generic optional merged-PR backstop.
+- SKIPPED: Make inherited `gh pr create` title/body transport shell-safe in this candidate.
+  Separate follow-up (auditor high): use a reviewed body file with `--body-file` and safely separated arguments.
+- DONE: Recommend PASSED only if the candidate-introduced self-containment defect is gone and no material finding remains.
+  Recommend PASSED: the candidate regression is corrected and AC-1/AC-2 pass; six inherited baseline findings remain explicitly routed as separate follow-ups, not EP2 regressions.
+
+### Summary
+
+The shipped conflict rule is now portable, preserves pending authority, and
+leaves reconciliation ownership to consuming workflows. Candidate evidence passes;
+the six exact-artifact audit findings remain visible without expanding EP2 scope.
