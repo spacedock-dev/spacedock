@@ -237,6 +237,7 @@ The index and worktree stayed clean. No ref changed and no rebase ran.
 - Cycle 1: REJECTED — validation real-Git/zsh matrix; surface 2 files/34 LOC vs estimate 40 (85%); AC unchanged
 - Cycle 2: REJECTED — Captain scope/version reset; surface 2 files/34 LOC vs estimate 40 (85%); AC unchanged
 - Cycle 3: REJECTED — Captain self-contained-mod correction; surface 1 file/17 LOC vs estimate 40 (43%); AC unchanged
+- Cycle 4: REJECTED — Captain inherited-containment correction; surface 1 file/17 LOC vs estimate 40 (43%); AC unchanged
 
 ## Stage Report: ideation
 
