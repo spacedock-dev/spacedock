@@ -915,3 +915,46 @@ The pushed two-commit candidate is ready for fresh independent validation withou
 ### Summary
 
 Cycle 8 closes the final Pi result-content ambiguity while preserving native metrics, the pure 64-cell desired table, and all six exact product bindings. Independent focused, detached, full, race, history, and ceiling proof is green, so validation recommends PASSED without any live spend or candidate mutation.
+
+## Stage Report: implementation (cycle 9)
+
+- DONE: Start from the clean approved Cycle-8 candidate and preserve its product behavior.
+  Baseline candidate is `2b0177dfe13da63dfd7cf30ceb6162a889e51890`; its watched core is `ce6992d36cb3d84972d44049a4a45c9557c80bb2`.
+- DONE: Represent the exact hosted Codex failure as the seventh source binding.
+  `Codex + withdrawn-gate-recovery` now maps to existing repair `47gnqfm1ft6f2hcahz98m2jv`.
+- DONE: Ground the binding in durable hosted evidence already supplied by the First Officer.
+  Codex run `31029501075`, job `92386614637`, artifact `8940307070` passed full-ensign, gate-guardrail, and default-headless before withdrawn-gate recovery exhausted three attempts.
+- DONE: Add the expected binding red-first to the live TODO evidence set.
+  At baseline, `go test -tags live ./internal/ensigncycle -run '^TestSharedLiveTODOEvidenceSet$' -count=1` exited 1 because the Codex withdrawn-gate cell had no reason.
+- DONE: Add reconciliation coverage and owner/target mutation controls red-first.
+  At baseline, `go test ./internal/contractlint -run '^TestRuntimeLiveRegistryReconciliation$' -count=1` exited 1 because the seventh exact owner binding was absent.
+- DONE: Make the smallest representation-only implementation.
+  Shared scenario desired state adds one exact Codex withdrawn-gate case and reuses the existing `47gnqfm1ft6f2hcahz98m2jv` owner; no repair behavior was added.
+- DONE: Make owner mutations discriminating.
+  Reconciliation tests move only that cell to Pi, Claude Sonnet, and Claude Opus and require each wrong-owner form to fail.
+- DONE: Keep the operator inventory truthful.
+  `docs/runtime-live-ci.md` now says seven target-scoped `MISSING-EVIDENCE` results and names the Codex run, journey, repair, prior passes, and three-attempt failure.
+- DONE: Preserve pure desired-state semantics.
+  The matrix remains 64 desired cells; TODO bindings remain non-passing evidence, and unverified Pi/Opus targets remain required and runnable.
+- DONE: Preserve all prior six source bindings and evidence boundaries.
+  Sonnet remains 3, prior Codex remains 2, Pi rejection-flow remains 1, and the new Codex binding raises the exact total to 7.
+- DONE: Re-run focused live, rejection, Pi metric, large-row, reconciliation, mutation, and SHA controls on final bytes.
+  The final focused commands exited 0; ensigncycle completed in 0.478s and contractlint in 0.407s.
+- DONE: Apply required formatting and repository checks.
+  `gofmt -w ./cmd ./internal` made no final diff, and `git diff --check` is clean.
+- DONE: Run the full repository suite on the final candidate.
+  `go test ./...` exited 0; the slowest reported package was `internal/status` at 18.431s.
+- DONE: Run the full race suite on the same final bytes.
+  `go test ./... -race` exited 0; `internal/ensigncycle` completed in 119.825s.
+- DONE: Preserve the exact two-commit watched-core/SHA-binder history.
+  Core `af214fc4f3452241205f170ec21676bae49f66c8` is followed by docs-only binder `88488379684801f02949544f54e2248b5be4488d`.
+- DONE: Verify the binder and remote state.
+  The registry SHA names the exact core; the binder changes only `docs/runtime-live-ci.md`; candidate and origin both equal `88488379684801f02949544f54e2248b5be4488d` and the worktree is clean.
+- DONE: Stay within the fixed review surface.
+  The merge-base diff is exactly 42 files, 2,306 insertions, and 666 deletions, below the +2,750 insertion ceiling.
+- DONE: Preserve the execution hold and ownership boundaries.
+  No product fix, fixture, prompt, adapter, launcher, metric, live/model/hosted/substrate run, retry, approval, rejection, or external evidence spend occurred in implementation.
+
+### Summary
+
+Cycle 9 truthfully adds the supplied Codex withdrawn-gate failure as the seventh exact TODO source binding. The pushed representation-only pair preserves all product/runtime behavior and prior evidence, while focused, full, race, history, origin, and 42-file ceiling checks are green.
