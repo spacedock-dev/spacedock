@@ -12,9 +12,6 @@ import (
 
 var reconciliationSHA = regexp.MustCompile("Registry reconciliation SHA: `([0-9a-f]{40})`")
 
-// TestRuntimeLiveRegistryReconciliationSHA is independent of the semantic
-// inventory check. It proves that no watched source changed after the recorded
-// reconciliation commit and that a stale base names every changed path.
 func TestRuntimeLiveRegistryReconciliationSHA(t *testing.T) {
 	repo := repoRoot(t)
 	doc, err := os.ReadFile(filepath.Join(repo, "docs", "runtime-live-ci.md"))

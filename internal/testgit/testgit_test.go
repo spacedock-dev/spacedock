@@ -79,12 +79,6 @@ func TestInitRepoPersistsUserEmailInRepoConfig(t *testing.T) {
 	}
 }
 
-// TestInitRepoDisablesAutomaticMaintenanceLocally guards throwaway repositories
-// against Git commands spawning detached maintenance while a test is tearing its
-// TempDir down. maintenance.auto is the modern causal switch; gc.auto=0 is the
-// compatible fallback for older Git versions that predate `git maintenance`.
-// Both keys are ordinary repo-local config, so old Git safely stores the newer
-// key even when it does not act on it.
 func TestInitRepoDisablesAutomaticMaintenanceLocally(t *testing.T) {
 	dir := t.TempDir()
 	InitRepo(t, dir)
@@ -119,12 +113,6 @@ func TestInitRepoDisablesAutomaticMaintenanceLocally(t *testing.T) {
 	}
 }
 
-// TestInitRepoSuppressesTraceableAutomaticMaintenance proves the config is the
-// causal seam when this Git version exposes automatic work in TRACE2. The
-// positive control reenables maintenance but keeps it synchronous, so the test
-// never creates the detached cleanup race it guards against. Older Git versions
-// that store the keys but do not expose either child command skip this behavioral
-// supplement; the version-neutral local-config test above remains mandatory.
 func TestInitRepoSuppressesTraceableAutomaticMaintenance(t *testing.T) {
 	enabled := t.TempDir()
 	InitRepo(t, enabled)

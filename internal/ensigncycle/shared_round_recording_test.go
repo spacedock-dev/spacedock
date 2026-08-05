@@ -127,63 +127,55 @@ func codexRecordedRejectionRound(jsonl string) bool {
 	return false
 }
 
-func piRecordedRejectionRound(jsonl string) bool {
+type piToolResult struct {
+	toolName string
+	isError  *bool
+	position int
+	content  []json.RawMessage
+}
+
+func correlatedPiBash(jsonl string, match, reject func(string) bool) (piToolResult, bool) {
 	type invocation struct {
 		id       string
 		position int
 	}
 	var invocations []invocation
-	toolCallIDs := map[string]int{}
-	type toolResult struct {
-		toolName string
-		isError  *bool
-		position int
-		content  []struct {
-			Type      string `json:"type"`
-			Text      string `json:"text"`
-			ID        string `json:"id"`
-			Name      string `json:"name"`
-			Arguments struct {
-				Command string `json:"command"`
-			} `json:"arguments"`
-		}
-	}
-	results := map[string][]toolResult{}
+	callIDs := map[string]int{}
+	results := map[string][]piToolResult{}
+	rejected := false
 	for position, line := range strings.Split(jsonl, "\n") {
 		var entry struct {
 			Type    string `json:"type"`
 			Message struct {
-				Role       string `json:"role"`
-				ToolCallID string `json:"toolCallId"`
-				ToolName   string `json:"toolName"`
-				IsError    *bool  `json:"isError"`
-				Content    []struct {
-					Type      string `json:"type"`
-					Text      string `json:"text"`
-					ID        string `json:"id"`
-					Name      string `json:"name"`
-					Arguments struct {
-						Command string `json:"command"`
-					} `json:"arguments"`
-				} `json:"content"`
+				Role       string            `json:"role"`
+				ToolCallID string            `json:"toolCallId"`
+				ToolName   string            `json:"toolName"`
+				IsError    *bool             `json:"isError"`
+				Content    []json.RawMessage `json:"content"`
 			} `json:"message"`
 		}
 		if json.Unmarshal([]byte(line), &entry) != nil || entry.Type != "message" {
 			continue
 		}
 		if entry.Message.Role == "assistant" {
-			for _, block := range entry.Message.Content {
+			for _, raw := range entry.Message.Content {
+				var block struct {
+					Type, ID, Name string
+					Arguments      struct{ Command string }
+				}
+				_ = json.Unmarshal(raw, &block)
 				if block.Type != "toolCall" || block.ID == "" {
 					continue
 				}
-				toolCallIDs[block.ID]++
-				if block.Name == "bash" && commandRecordsRejectionRound(block.Arguments.Command) {
+				callIDs[block.ID]++
+				if block.Name == "bash" && match(block.Arguments.Command) {
 					invocations = append(invocations, invocation{id: block.ID, position: position})
 				}
+				rejected = rejected || block.Name == "bash" && reject != nil && reject(block.Arguments.Command)
 			}
 		}
 		if entry.Message.Role == "toolResult" && entry.Message.ToolCallID != "" {
-			results[entry.Message.ToolCallID] = append(results[entry.Message.ToolCallID], toolResult{
+			results[entry.Message.ToolCallID] = append(results[entry.Message.ToolCallID], piToolResult{
 				toolName: entry.Message.ToolName,
 				isError:  entry.Message.IsError,
 				position: position,
@@ -191,21 +183,38 @@ func piRecordedRejectionRound(jsonl string) bool {
 			})
 		}
 	}
-	if len(invocations) != 1 || toolCallIDs[invocations[0].id] != 1 {
-		return false
+	if len(invocations) != 1 || callIDs[invocations[0].id] != 1 || rejected {
+		return piToolResult{}, false
 	}
 	correlated := results[invocations[0].id]
 	if len(correlated) != 1 || correlated[0].position <= invocations[0].position || correlated[0].toolName != "bash" || correlated[0].isError == nil || *correlated[0].isError {
+		return piToolResult{}, false
+	}
+	return correlated[0], true
+}
+
+func piRecordedRejectionRound(jsonl string) bool {
+	correlated, ok := correlatedPiBash(jsonl, commandRecordsRejectionRound, nil)
+	if !ok {
 		return false
 	}
 	summaries, complete := 0, 0
-	for _, block := range correlated[0].content {
+	for _, raw := range correlated.content {
+		var block struct{ Type, Text string }
+		_ = json.Unmarshal(raw, &block)
 		if block.Type == "text" {
 			summaries += len(rejectionRoundSummary.FindAllString(block.Text, -1))
 			complete += len(rejectionRoundSuccess.FindAllString(block.Text, -1))
 		}
 	}
 	return summaries == 1 && complete == 1
+}
+
+func assertPiFilingViaNew(jsonl, slug string) error {
+	if _, ok := correlatedPiBash(jsonl, func(command string) bool { return commandFilesViaNew(command, slug) }, nextIDInvocation.MatchString); ok {
+		return nil
+	}
+	return fmt.Errorf("Pi did not record exactly one successful atomic `spacedock new %s` call without manual `--next-id` evidence", slug)
 }
 
 func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
@@ -544,5 +553,24 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 	noInvocation := codexCommandOutput("spacedock status rejection-task --workflow-dir .", "", 0, "completed")
 	if codexRecordedRejectionRound(noInvocation) {
 		t.Fatal("no-invocation transcript falsely satisfied the round invocation extractor")
+	}
+}
+
+func piFilingCall(id, command string) string {
+	return fmt.Sprintf(`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":%q,"name":"bash","arguments":{"command":%q}}]}}`, id, command)
+}
+
+func TestAssertPiFilingViaNew(t *testing.T) {
+	call := piFilingCall("call_file", "cd /tmp/workflow && cat <<'EOF' | ${SPACEDOCK_BIN:-spacedock} new "+filingSlug+"\n---\ntitle: Wire The Thing\n---\nbody\nEOF")
+	result := `{"type":"message","message":{"role":"toolResult","toolCallId":"call_file","toolName":"bash","content":[{"type":"text","text":"created: /tmp/workflow/wire-the-thing.md id=001\n"}],"isError":false}}`
+	if err := assertPiFilingViaNew(call+"\n"+result, filingSlug); err != nil {
+		t.Fatalf("exact archived Pi filing success failed: %v", err)
+	}
+	for name, transcript := range map[string]string{"missing result": call, "failed result": call + "\n" + strings.Replace(result, `"isError":false`, `"isError":true`, 1), "duplicate invocation": call + "\n" + result + "\n" + call, "duplicate result": call + "\n" + result + "\n" + result, "reused call ID": call + "\n" + result + "\n" + piFilingCall("call_file", "spacedock status"), "manual next-id": call + "\n" + result + "\n" + piFilingCall("call_next", "spacedock status --next-id")} {
+		t.Run(name, func(t *testing.T) {
+			if assertPiFilingViaNew(transcript, filingSlug) == nil {
+				t.Fatal("ambiguous or manual Pi filing evidence passed")
+			}
+		})
 	}
 }

@@ -6,11 +6,6 @@ import (
 	"testing"
 )
 
-// InitRepo initializes a git repo at dir and persists identity plus automatic-
-// maintenance disablement in the repo's own config. Throwaway test repositories
-// must not leave detached maintenance writing into a TempDir during cleanup.
-// maintenance.auto is the modern switch; gc.auto=0 covers older Git versions.
-// Extra args are appended to `git init` (e.g. "-b", "main").
 func InitRepo(t testing.TB, dir string, initArgs ...string) {
 	t.Helper()
 	runGit(t, dir, append([]string{"init"}, initArgs...)...)

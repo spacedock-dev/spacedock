@@ -99,11 +99,9 @@ type liveResult struct {
 	// journey-metrics fold can observe the ensign's --read adoption. cwd is the
 	// EvalSymlinks-resolved FO working dir — the form Claude Code encodes into the
 	// projects path.
-	configDir string
-	cwd       string
-	runtime   string
-	// sessionJSONL is the runtime-native archived root session. Pi uses it for
-	// correlated tool evidence and measured usage; stdout/stderr is not a session.
+	configDir    string
+	cwd          string
+	runtime      string
 	sessionJSONL string
 }
 
@@ -498,7 +496,11 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 	if _, err := os.Stat(entityPath); err != nil {
 		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertClaudeFilingViaNew(result.stream, filingSlug); err != nil {
+	evidence, assertFiling := result.stream, assertClaudeFilingViaNew
+	if result.runtime == "pi" {
+		evidence, assertFiling = result.sessionJSONL, assertPiFilingViaNew
+	}
+	if err := assertFiling(evidence, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())

@@ -40,9 +40,6 @@ type liveEvidenceKey struct {
 	journey string
 }
 
-// liveDurableJourneyTODO keeps every desired journey selectable while
-// withholding only target-specific evidence disproved by a durable live run.
-// Fixtures and offline durable oracles remain enabled for every target.
 func liveDurableJourneyTODO(target liveEvidenceTarget, name string) string {
 	switch (liveEvidenceKey{target: target, journey: name}) {
 	case liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "full-ensign-cycle"}:

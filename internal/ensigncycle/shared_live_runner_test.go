@@ -50,8 +50,6 @@ func runSharedScenario(t *testing.T, adapter sharedLiveRuntimeAdapter, scenario 
 	adapter.runSharedScenario(t, scenario)
 }
 
-// sharedScenarioRunners is the sole executable common-journey map. Runtime
-// adapters select transport; they do not own a second journey registry.
 func sharedScenarioRunners() map[string]sharedScenarioRunner {
 	return map[string]sharedScenarioRunner{
 		"full-ensign-cycle":                  runSharedScenario,
