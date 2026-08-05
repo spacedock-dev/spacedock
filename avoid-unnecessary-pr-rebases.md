@@ -291,3 +291,30 @@ recorded SHA. No command, shared reconciliation, host, or evidence machinery cha
 The prior red was live-state drift in a fixed release-pilot manifest test, not a
 candidate regression. The supported immutable state fixture makes both complete
 suites green while the approved two-file candidate remains byte-for-byte unchanged.
+
+## Stage Report: validation
+
+- DONE: Validate commit `af64ffb01` only and keep the approved implementation surface unchanged.
+  `af64ffb018a88679aac1972c5af157ce64a43502` remains a clean two-file `+25/-9` candidate; `gofmt`, `git diff --check`, and HEAD/status snapshots changed no candidate bytes.
+- FAILED: Verify the two mod files preserve the Captain-approved candidate SHA, use read-only merge-tree classification, and push the exact SHA without rebasing.
+  Both record the SHA and use non-mutating `merge-tree`, but their exact zsh push refspec becomes `<SHA>efs/heads/<branch>` and fails before PR creation; no rebase occurred.
+- DONE: Reproduce clean, conflict, unknown-error, and moved-local-branch cases with real Git evidence and confirm no mutation of candidate/index/worktree.
+  `/tmp/spacedock-validation-616.Lyum7i` observed clean=0 on a `1 1` graph, conflict=1, command-error=1, and unchanged HEAD/refs/index/worktree/authority/action markers for every merge-tree exercise.
+- FAILED: Verify **AC-1 (VALUE) - A clean `1 1` candidate reaches PR creation with its approved SHA.**
+  After the local branch moved, zsh interpreted `"$CANDIDATE_SHA:refs/heads/candidate"` via its `:r` modifier; real Git exited 1 with no remote branch, while brace-delimited control pushed the approved SHA exactly.
+- FAILED: Verify **AC-2 - Conflict and unknown results stop delivery without changing authority.**
+  Stops and mutation guards held, but an unavailable-object command error exited 1 with `not something we can merge`, so the prose falsely calls unknown failure a content conflict and refers it to G3/D8.
+- DONE: Classify the AC-1 finding on both required axes.
+  Material outcome defect: current zsh is an observed normal runtime; the promised clean PR is not created. Rework must brace the refspec as `${CANDIDATE_SHA}:refs/heads/{branch}` in both approved files.
+- DONE: Classify the AC-2 finding on both required axes.
+  Material outcome defect: exit 1 is not uniquely a content-conflict verdict. Per Captain clarification, rework must require FO inspection of stdout/stderr/context and classify uncertainty as unknown, without new machinery or rigid preflight.
+- DONE: Run the required focused and repository-wide suites; diagnose the reported internal/gates fixture-path failures from this exact head and classify them from current evidence.
+  Focused contract/integration suites passed; both full suites failed only the pilot manifest test on eight now-archived live-state paths, while its immutable state `73f41e2a2` control passed and its test blob equals `main`.
+- FAILED: Recommend PASSED with no material finding.
+  Recommend REJECTED: AC-1 and AC-2 each have a material outcome defect; the unrelated live-state fixture drift does not contribute to rejection.
+
+### Summary
+
+The read-only mergeability exercise preserves candidate authority, but the exact
+zsh refspec prevents clean PR delivery and exit 1 cannot by itself establish a
+content conflict. Rework the two mod files as directed, then rerun this real-Git matrix.
