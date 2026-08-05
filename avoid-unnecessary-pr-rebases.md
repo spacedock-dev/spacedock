@@ -354,3 +354,26 @@ content conflict. Rework the two mod files as directed, then rerun this real-Git
 The corrected mods preserve zsh refspec syntax and treat merge-tree status as one
 signal rather than a verdict. Actual conflict evidence routes to G3/D8, while tool
 failure or ambiguity stops as unknown without changing pending authority.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Validate corrected candidate `a20331ef0` only and preserve the approved two-file surface.
+  `a20331ef0bceeca6fba34b5c607a63b772b7dc8e` remains clean at `+25/-9`; `gofmt`, `git diff --check`, HEAD, and status snapshots changed no candidate bytes.
+- DONE: Verify the two mod files preserve the Captain-approved candidate SHA, use read-only merge-tree classification, and push the exact SHA without rebasing.
+  Both record the SHA, expose merge-tree stdout/stderr/status/context for semantic judgment, forbid rebase, and brace `${CANDIDATE_SHA}:refs/heads/{branch}` for zsh.
+- DONE: Verify **AC-1 (VALUE) - A clean `1 1` candidate reaches PR creation with its approved SHA.**
+  `/tmp/spacedock-validation-616-cycle2.XaIkKI` observed clean exit 0 with unchanged HEAD/refs/index/worktree, then zsh pushed recorded `772d1a81` while the local branch stood at `3e128394`.
+- DONE: Verify **AC-2 - Conflict and unknown results stop delivery without changing authority.**
+  Equal exit-1 cases were distinguished atomically: `CONFLICT (content)` routed to G3/D8, while unavailable-object stderr reported unknown; neither changed refs/index/worktree/authority/actions.
+- DONE: Reproduce clean, conflict, unknown-error, and moved-local-branch cases with real Git evidence and confirm no mutation of candidate/index/worktree.
+  The matrix asserted exact identity and terminal action state across all four variants; only the authorized clean exact-SHA push created a remote branch.
+- DONE: Run the required focused and repository-wide suites; diagnose the reported internal/gates fixture-path failures from this exact head and classify them from current evidence.
+  Contract/integration and immutable-state pilot checks passed; `go test ./...` and `go test ./... -race` passed with state `73f41e2a2`; live state alone lacks eight archived manifest paths.
+- DONE: Recommend PASSED with deferred risks separated from material findings.
+  Recommend PASSED: both prior material outcome defects are corrected, all AC evidence is valid, and no material, deferred-risk, or polish finding remains.
+
+### Summary
+
+The corrected two-file policy preserves the approved SHA through mergeability
+judgment and zsh delivery. AC-1 and AC-2 pass the full adversarial matrix, and the
+remaining live-state test red is independently proven fixture drift.
