@@ -634,3 +634,26 @@ Cycle 3 independently closes the ys-owned Codex/Pi shim defect in both direction
 ### Summary
 
 All 16 common journeys remain selected while every runtime now truthfully exposes the exact four owner-linked evidence gaps: one 26n default-headless gap and three 9a gaps. Machine reconciliation, mutation controls, full/race suites, and the two-commit SHA binding are green and published for independent validation.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Independently inspect candidate 70a61f9e36b86ad260aaf28eba506b5b3ac81a30, watched core 0c66a7babe175f005d24d1b936d7e64fcd4f350a, reports/history, merge base, and exact diff; do not trust the implementation summary.
+  Exact merge base is `507a4bc12e48a3e4a813219602c488f09c81a5d8`; five representation files change in core, the binder changes one docs line, and the complete surface is 41 files/+1757/-663.
+- FAILED: Reproduce exact 16-journey/one-map/three-adapter parity and exact four TODO mappings: default-headless-gate-stop→26nk8qd48zknqnn4kc123sez and auto-continue-after-implementation/smallest-sufficient-mechanism/keep-moving-posture→9adv48yhye5s2vkhwd7ge52d.
+  Cardinality/owners pass, but cheap exact selectors prove every adapter skips all four: 26n is evidenced only on Sonnet, while 9a names Sonnet/Codex evidence and no Pi or Opus trigger, so runtime-global mappings are semantically false.
+- FAILED: Run bidirectional wrong-owner, duplicate/count, removal, hidden-skip, runner/adapter/selector, fixture, and reconciliation mutations; confirm the new 26n row is MISSING-EVIDENCE, not pass/exception, and that no product/runtime behavior changed.
+  All 27 built-in mutations pass and detached owner/removal changes fail with `MISSING-EVIDENCE owner`/`UNOWNED-EVIDENCE`; however the mechanism cannot mutate or validate target scope, and the desired registry improperly contains an observed-evidence table.
+- SKIPPED: Reprove the prior shallow-history, first-failure, gate-start, and Codex/Pi SPACEDOCK_BIN shim controls in both directions, plus formatting, focused workflow/SHA controls, go test ./..., go test ./... -race, diff check, ceiling, and clean exact origin head.
+  Prior controls, formatting, workflow/SHA, diff, ceiling, origin, and normal suite pass (`ensigncycle` 228.689s); Captain stopped validation before race after the target-scope accuracy correction.
+- DONE: Send the First Officer a concise local checkpoint before any hosted/model-backed evidence. Do not launch, approve, reject, cancel, or rerun GitHub jobs yourself; the First Officer will supply exact common-selector run/job/artifact IDs after the checkpoint.
+  Sent the local checkpoint while normal tests ran; no GitHub or model-backed action was taken.
+- SKIPPED: After receiving hosted IDs, independently inspect only the Sonnet, Codex, and direct-OpenAI Pi TestLiveSharedScenarios step results and uploaded common artifacts at exact candidate head.
+  Captain canceled the evidence phase before race/hosted work because target-unaware skips would suppress rather than measure Codex/Pi journeys; no Cycle-4 run IDs exist.
+- DONE: Treat Opus, Claude substrate proofs, Pi front-door smoke, and prior Sonnet break-glass evidence as irrelevant to this ys gate. Record their non-execution/skips accurately; do not broaden scope or repair adjacent product/runtime findings.
+  None ran; Opus remains unverified/missing rather than an exception, and candidate bytes stayed untouched.
+- FAILED: Recommend PASSED only if AC-1 through AC-4 have reproducible local plus exact-head common-selector evidence; append/push a path-scoped validation cycle-4 report with classifications, exact commands/SHAs/run IDs/artifacts, and final verdict.
+  Recommend REJECTED. Material ys evidence defect: normal common lanes lose target-attributable evidence; `value-ac[AC-4]` requires exact runtime attribution; cheap all-adapter skips plus Sonnet-only run `30996911834` and 9a's Codex/Sonnet-only source prove the trigger.
+
+### Summary
+
+Cycle 4 confirms the structural four-owner accounting but rejects its runtime-global mechanism. The next correction must keep the desired registry a pure SSOT and represent proven failures, unverified targets, and passing evidence per target; no race, hosted run, or candidate mutation followed the Captain's stop.
