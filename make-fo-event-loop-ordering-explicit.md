@@ -283,3 +283,16 @@ Cycle 3 fixes only rollout attribution by carrying the actual isolated Codex hom
 ### Summary
 
 Validation cycle 3 recommends PASSED with no material, deferred-risk, or polish findings. AC-1 through AC-5 have falsifiable command, state, or exact-head live evidence; the candidate stays within approved scope and adds no scheduler, controller, command, state field, or completion ledger.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Commit a minimal current-main reconciliation that preserves EJ event-loop ordering and wait semantics.
+  Merge commit `c7f3bc0d8` resolves the sole `fo-dispatch-core.md` overlap by retaining main's canonical `dispatchable+ready_gates` retry rule and EJ's ordered all-actions stop/wait rule; `origin/main` is an ancestor and no conflict remains.
+- DONE: Keep the approved nine-file EJ surface; do not add scheduler, command, state, or authority behavior.
+  Against current `origin/main` (`be0e8453e`), the candidate remains the approved nine files at +242/-11; the reconciliation adds no candidate file or semantic surface.
+- DONE: Run focused checks plus gofmt, full, and race suites; record the exact new candidate head and any residual conflict.
+  Exact head `c7f3bc0d890c6fc380ea710d133b6ac0505c278b` passes focused event-loop/wait, status, and contractlint tests, `gofmt -w ./cmd ./internal`, `git diff --check`, full and race suites with immutable state `a0169cc2d8a5e4912ed33f75ca8422a767e71c9e`, and the default-layout exact-head Codex live wait matrix; residual conflict: none.
+
+### Summary
+
+Reconciled EJ onto current main with one manual conflict resolution that composes main's ready-gate scheduler envelope with EJ's explicit event-loop ordering and unresolved-worker wait semantics. The exact candidate remains nine files at +242/-11 and is ready for fresh validation; an initial full-suite run against obsolete state snapshot `73f41e2a` exposed only expected pilot-manifest drift and was replaced by the compatible immutable snapshot cited above.
