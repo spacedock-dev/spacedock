@@ -1,7 +1,7 @@
 ---
 id: ep2cz3zsb2qpyyh889nyeqpr
 title: Avoid unnecessary rebases before opening mergeable PRs
-status: ideation
+status: implementation
 source: GitHub issue #616; Captain intake 2026-08-05
 started: 2026-08-04T17:00:42Z
 completed:
@@ -52,7 +52,7 @@ gates:
                 reason: 'Captain approved the narrow two-mod issue #616 design after final Science Officer approval.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Remove the mandatory rebase from the `pr-merge` policy. Keep the approved
