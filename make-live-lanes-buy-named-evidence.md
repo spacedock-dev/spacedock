@@ -433,3 +433,49 @@ The Claude recovery tests already use the current front door and have offline ne
 ### Summary
 
 The plan gives every retained live minute a named claim and a visible artifact. It deletes duplicate, skipped, and unowned surfaces instead of preserving decorative machinery.
+
+## Stage Report: implementation
+
+- DONE: Add workflow guard tests for the post-`3d`, pre-`ys` selectors, controls, artifacts, and consumers.
+  Commit `4cc0d890d` adds exact ownership and mutation guards; removing a selector, consumer, or dead-surface ban makes them fail.
+- DONE: Add an offline command that names all 12 deterministic tests without `-tags live`.
+  The exact untagged selector passed in 0.646s; adding `-tags live` or losing a named test fails the workflow guard.
+- DONE: Add Pi grade tests with retained session fixtures and wrong boot-contract controls.
+  Retained root/child JSONL fixtures grade exact reads, models, durations, and cost; missing ensign or added FO reads fail.
+- DONE: Make the selected Pi smoke run both durable-state graders.
+  `TestLivePiFrontDoorSmoke` passed in 183.87s (184.96s wall) and emitted the boot-contract plus durable-state grade.
+- DONE: Delete the duplicate and always-skipped Pi wrappers.
+  The selected lane now has one Pi smoke; restoring either retired selector fails the named-evidence inventory.
+- DONE: Add the two Claude recovery selectors beside the merged proof.
+  The workflow owns merged, bare, and break-glass claims in one exact 20-minute selector and one detail artifact.
+- DONE: Delete the legacy PTY workflow and source surfaces.
+  Four PTY files, tmux setup, the legacy environment flag, selectors, and artifact names are absent and guarded.
+- DONE: Move the 12 deterministic tests and their required helpers to untagged files.
+  Default `go test` runs all 12 controls; the exact focused command passed and live-only host launchers still compile separately.
+- DONE: Delete `effort` and the dead Pi metrics path.
+  Workflow mutations restoring either surface fail; Pi publishes its grade where it has an actual producer.
+- DONE: Connect Codex metrics to the PR delta job.
+  The PR comparison now needs and downloads both Claude and Codex artifacts; removing Codex consumption fails a guard.
+- DONE: Update the operating guide and exact local commands.
+  `docs/runtime-live-ci.md` names the final selectors, proof ownership, artifact flow, and measured avoided spend.
+- DONE: Run the focused, full, race, format, and approved live gates.
+  Format/diff checks, focused guards, live-tag compile, full suite, race suite, Pi, and approved Sonnet proofs are green.
+
+### Evidence
+
+- Scope: code commit `4cc0d890df7067ebcffd6c265c2553b38b267940`; exactly 27 files, +988/-2391, within 27/+1000/-2400.
+- Repository gates: `go test ./...` 535.64s wall (`ensigncycle` 502.983s); race 259.72s wall (`ensigncycle` 240.800s).
+- Pi model `openai-codex/gpt-5.6-luna:max`: root 179744ms/$0.147308, child 39271ms/$0.0232442, total $0.1705522.
+- Pi grade: `/tmp/spacedock-live-evidence.Lg2JSH/pi-rerun/pi-frontdoor-smoke/run/pi-ensign-boot-grade.json`; retained baseline 104.808s/$0.277493.
+- Sonnet selector: bare PASS 127.30s, merged PASS 143.23s, and initial strict break-glass RED 204.91s; selector wall 476.48s.
+- Root cause was fixture-versus-contract drift: naming `widget-task` selected required single-entity blocking dispatch; the strict recovery oracle stayed unchanged.
+- `TestDispatchRecoveryPromptsSelectIntendedDispatchModes` went RED before the prompt fix and GREEN after bare stayed named while break-glass became unaddressed.
+- Final `claude-sonnet-5` break-glass PASS: 190.73s (193.07s wall), 342905-byte stream, $1.0088629 measured cost.
+- Sonnet artifacts: `/tmp/spacedock-live-evidence.Lg2JSH/claude-sonnet-breakglass-final`; metric: `/tmp/spacedock-live-evidence.Lg2JSH/journey-metrics/claude-sonnet-breakglass-final/shared-scenarios/break-glass-shim--claude--llm--llm-live--claude-sonnet-5--measured.json`.
+- Bare metric cost was $0.87640815; merged cost was unavailable because its expect-then-kill proof ends at durable terminal state before a result event.
+- Opus was NOT RELEVANT locally: selector/model wiring was unchanged, and the approved required consumer proofs were Sonnet and Pi; no Opus run was spent.
+- Baseline run `30378538074` measured merged Sonnet 127s and Opus 144s with cost unavailable; deletion removes 17s tmux setup and avoids a 172.5s duplicate Pi smoke.
+
+### Summary
+
+The live workflow now buys one named claim, reachable artifact, and honest consumer for every selected minute. Duplicate Pi, quarantined Pi, and legacy PTY spend are gone; the surviving Claude, Codex, and Pi evidence is guarded against silent drift.
