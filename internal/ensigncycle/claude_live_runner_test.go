@@ -171,7 +171,7 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 		}
 		runner = copied
 	}
-	fixture := writePreparedRecordedGateFixture(t)
+	fixture := writeCommonPreparedRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
@@ -513,7 +513,7 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	fixture := writeShallowBootWorkflow(t, workflowRoot)
+	fixture := writeCommonShallowBootWorkflow(t, workflowRoot)
 	gateBefore := readFile(t, fixture.gateEntityPath)
 
 	result := runner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))

@@ -18,6 +18,18 @@ import (
 // build tags so the offline negative-case tests (AC-5) reuse them without spending
 // a model, alongside the //go:build live runners that drive them for real.
 
+//spacedock:live-fixture id=recorded-gate/prepared
+func writeCommonPreparedRecordedGateFixture(t *testing.T) recordedGateFixture {
+	t.Helper()
+	return writePreparedRecordedGateFixture(t)
+}
+
+//spacedock:live-fixture id=boot/held-gate
+func writeCommonShallowBootWorkflow(t *testing.T, root string) shallowBootFixture {
+	t.Helper()
+	return writeShallowBootWorkflow(t, root)
+}
+
 //spacedock:live-fixture id=recorded-gate/held
 func writeGateWorkflow(t *testing.T, root string) recordedGateFixture {
 	return writePreparedRecordedGateFixtureAt(t, root)

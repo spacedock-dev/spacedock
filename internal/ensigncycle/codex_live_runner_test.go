@@ -108,7 +108,7 @@ func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner 
 
 func runCodexRecordedGateLifecycleScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
-	fixture := writePreparedRecordedGateFixture(t)
+	fixture := writeCommonPreparedRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
@@ -409,7 +409,7 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	fixture := writeShallowBootWorkflow(t, workflowRoot)
+	fixture := writeCommonShallowBootWorkflow(t, workflowRoot)
 	gateBefore := readFile(t, fixture.gateEntityPath)
 
 	result, err := runner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))

@@ -1304,7 +1304,6 @@ func writeRecordedGateFixture(t *testing.T) recordedGateFixture {
 	return writeRecordedGateFixtureAt(t, t.TempDir())
 }
 
-//spacedock:live-fixture id=recorded-gate/prepared
 func writePreparedRecordedGateFixture(t *testing.T) recordedGateFixture {
 	t.Helper()
 	return writePreparedRecordedGateFixtureAt(t, t.TempDir())
