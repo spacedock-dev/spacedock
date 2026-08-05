@@ -79,6 +79,14 @@ gates:
                 digest: sha256:4d5a3dd9eb9439cc7a373f0390facf31024eda89a916effe8711b43ff7ec395d
                 request-digest: sha256:06b3d3dbd8bb47e6b0a6180cb7773fa5a8542c8bd7bafe8def7e66746441e691
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:26nk8qd48zknqnn4kc123sez:validation:2
+                briefing: briefing:26nk8qd48zknqnn4kc123sez:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-05T17:36:29.774279Z"
+                decision: hold
+                reason: 'Fresh exact-head Sonnet promotion probe reproduced a Material AC-2 direct-gate outcome defect: the runtime dispatched validation and committed its report before preparing the open validation gate. Candidate 8d07b1a58 is unchanged and owns no fix. Hold without implementation rework or another Sonnet spend; route blocker to 3zzpdw704df1g8pg1x9thzmw.'
 review-round:
     id: round:26nk8qd48zknqnn4kc123sez:implementation:11
     stage: implementation
