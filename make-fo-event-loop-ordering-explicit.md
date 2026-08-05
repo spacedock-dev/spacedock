@@ -202,3 +202,16 @@ Committed a seven-file, +200/-10 implementation that makes the FO loop drain and
 ### Summary
 
 Validation recommends REJECTED for one Material evidence defect: AC-3's test duplicates the intended predicate locally and cannot fail when the shipped Codex adapter is wrong. AC-1, AC-2, AC-4, and AC-5 have reproduced exact trace evidence, all immutable offline suites are green, and the narrow correction is an adapter-driven Codex wait matrix rather than a new controller.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Replace the disconnected test-local wait predicate with an exact-head, real-adapter-driven Codex matrix.
+  Commit `51eb5da25` removes the local predicate oracle and adds a live matrix that installs the current checkout through the real Codex launcher, verifies the installed source head, and reads the resulting Codex rollout function calls.
+- DONE: Prove exact `wait_agent(timeout_ms: 300000)` behavior for active unresolved workers only, and demonstrate that an inverted shipped adapter fails.
+  The exact-head matrix passed active-unresolved/completed/errored/absent: the active case emitted exactly one `wait_agent` call with exact arguments `{"timeout_ms":300000}`, while every terminal or absent case emitted none. In detached throwaway checkout `/tmp/spacedock-ej-invert.FK2i4R/worktree`, reversing only the shipped adapter rule made the active-unresolved subtest fail with observed calls `0/0`, wanted `1/1`; this proves the matrix is falsifiable through the delivered adapter rather than a duplicated formula.
+- DONE: Preserve the ordered-loop behavior and authorized surface, then rerun focused, full, race, formatting, and relevant live verification.
+  The candidate remains exactly eight files at +240/-10. Focused event-loop/gate/wait and contractlint suites passed; `gofmt -w ./cmd ./internal` left the worktree clean; `go test ./...` and `go test ./... -race` passed with immutable `SPACEDOCK_STATE_ROOT` commit `73f41e2a2232ebb561710bce568641ec976d5f3d`; and the exact-head Codex live matrix passed all four cases. The previously recorded mutable live-state pilot-manifest drift remains separate from candidate behavior and is not represented as green.
+
+### Summary
+
+Cycle 2 closes the validation finding without changing the event-loop contract: AC-3 now observes the real installed adapter and exact Codex rollout call, rejects the inverted adapter, and retains the active-only wait rule. The implementation and its adapter-bound evidence are ready for validation re-entry.
