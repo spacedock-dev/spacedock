@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-4:revision-1",
+  "question": "Approve EP2 validation and retain terminal delivery authority?",
+  "artifacts": [
+    {
+      "id": "artifact:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/a9ec6b32aa9379680ebe315d4fbfaf46c046cf8a/avoid-unnecessary-pr-rebases.md",
+      "rev": "sha256:7ee806f0c7c750de487611bcd83f0bab31e1d1976200acfda186e42bf284fbde",
+      "mediaType": "text/markdown",
+      "summary": "Exact one-file candidate passed all seven validation items and both acceptance criteria."
+    }
+  ]
+}
