@@ -239,3 +239,16 @@ Cycle 2 closes the validation finding without changing the event-loop contract: 
 ### Summary
 
 Validation cycle 2 recommends REJECTED for a narrow Material AC-3 evidence defect in rollout-path attribution. The shipped adapter behaves correctly and the live oracle detects inversion, but the candidate must carry the runner's actual isolated Codex-home path into the observer so the same proof works by default and in CI.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Plumb the actual isolated codexHome path from newCodexLiveIsolatedHome through codexLiveRunner into observedCodexWaitCalls.
+  Commit `5fa79d480` retains the created home on the live runner and makes rollout discovery start at that exact path; reverting either handoff reproduces `session rollout ... = [], want one` under default temporary artifacts.
+- DONE: Make the real-adapter wait matrix pass all four cases under default local/CI layout, retain the external-root control, and keep detached adapter inversion failures.
+  Exact-head default and external-root runs both pass active `1/1` exact-300000 plus zero completed/errored/absent calls; detached `/tmp/spacedock-ej-pathfix-invert.ndZf4W/worktree` fails active `0/0` wanted `1/1` and completed with one forbidden wait when only the shipped adapter rule is inverted.
+- DONE: Preserve adapter behavior and approved scope; rerun focused, contractlint, formatting, immutable full/race, and relevant exact-head live evidence.
+  The nine-file +242/-11 candidate changes only two live-test harness paths in this cycle; focused ordered-loop/gate/wait/home tests, contractlint, gofmt, diff-check, and immutable `SPACEDOCK_STATE_ROOT=73f41e2a2232ebb561710bce568641ec976d5f3d` full/race all pass, with no adapter, command, state, scheduler, controller, or completion-ledger change.
+
+### Summary
+
+Cycle 3 fixes only rollout attribution by carrying the actual isolated Codex home through the existing runner. AC-3 now runs and grades the real adapter in both supported default and external artifact layouts, while the unchanged negative control still rejects both inverted decisions.
