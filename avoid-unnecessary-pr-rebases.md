@@ -251,3 +251,20 @@ decision through PR creation and delegates real conflicts to the existing owner 
 
 Cycle 3 corrects issue #616 in the two policy files that cause the rewrite. The
 mod keeps the approved SHA on a clean result and fails closed on conflict or error.
+
+## Stage Report: implementation
+
+- DONE: Change only the two approved pr-merge mod files to remove mandatory ancestry rebase and preserve the Captain-approved candidate SHA.
+  Code commit `af64ffb01` changes only `mods/pr-merge.md` and `docs/dev/_mods/pr-merge.md`; both drafts expose the recorded SHA and neither delivery path rebases it.
+- DONE: Implement the read-only clean/conflict/unknown merge-tree decision and exact-SHA refspec push while delegating conflicts to G3/D8.
+  Fixture `/tmp/spacedock-pr-merge-cycle3.QOqi7m` would fail if clean were not exit 0, conflict not exit 1, unknown not exit 128, or the remote ref differed from the recorded SHA.
+- DONE: Stay within about +30/-10 and prove the clean 1 1, conflict, unknown, and moved-local-branch cases without committed prose-grep tests.
+  Commit `af64ffb01` is two files at +25/-9; the direct real-Git fixture preserved clean HEAD/refs/index/worktree and pushed `527936e` after the local branch moved to `5fe8104`.
+- FAILED: Run the repository-wide normal and race suites without environmental fixture failures.
+  Both commands passed every other package but `internal/gates` expected seven entity paths absent from the shared `.spacedock-state` checkout; focused `internal/contractlint` and `skills/integration` tests passed.
+
+### Summary
+
+The two pr-merge policies now record and display the approved candidate, decide
+mergeability without mutation, fail closed on conflict or error, and push the
+recorded SHA. No command, shared reconciliation, host, or evidence machinery changed.
