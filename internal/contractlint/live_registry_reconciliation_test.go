@@ -37,8 +37,20 @@ type desiredLiveRegistry struct {
 	targets         map[string]string
 	suite           string
 	experimentTests []string
-	missingEvidence map[string]string
 	diagnostics     []string
+}
+
+type missingEvidenceKey struct {
+	target  string
+	journey string
+}
+
+var auditedMissingEvidence = map[missingEvidenceKey]string{
+	{target: "claude-sonnet", journey: "default-headless-gate-stop"}:    "26nk8qd48zknqnn4kc123sez",
+	{target: "claude-sonnet", journey: "smallest-sufficient-mechanism"}: "9adv48yhye5s2vkhwd7ge52d",
+	{target: "claude-sonnet", journey: "keep-moving-posture"}:           "9adv48yhye5s2vkhwd7ge52d",
+	{target: "codex", journey: "smallest-sufficient-mechanism"}:         "9adv48yhye5s2vkhwd7ge52d",
+	{target: "codex", journey: "keep-moving-posture"}:                   "9adv48yhye5s2vkhwd7ge52d",
 }
 
 func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
@@ -53,6 +65,13 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	runner := readContractFile(t, filepath.Join(repo, "internal", "ensigncycle", "shared_live_runner_test.go"))
 	if err := reconcileLiveRegistry(desired, actual, workflow, scenarios, runner); err != nil {
 		t.Fatal(err)
+	}
+	evidence, err := extractMissingEvidence(scenarios)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, diagnostic := range missingEvidenceDiagnostics(evidence) {
+		t.Log(diagnostic)
 	}
 }
 
@@ -142,22 +161,9 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 		"changed suite entry": func(s string) string {
 			return strings.ReplaceAll(s, "`TestLiveSharedScenarios/", "`TestLiveOtherScenarios/")
 		},
-		"deleted TODO row": func(s string) string {
-			return strings.Replace(s, "| `auto-continue-after-implementation` | `9adv48yhye5s2vkhwd7ge52d` |\n", "", 1)
-		},
-		"duplicate TODO row": func(s string) string {
-			row := "| `auto-continue-after-implementation` | `9adv48yhye5s2vkhwd7ge52d` |"
-			return strings.Replace(s, row, row+"\n"+row, 1)
-		},
-		"retagged TODO owner": func(s string) string {
-			return strings.Replace(s, "| `keep-moving-posture` | `9adv48yhye5s2vkhwd7ge52d` |", "| `keep-moving-posture` | `otherowner` |", 1)
-		},
-		"retagged default-headless TODO owner": func(s string) string {
-			return strings.Replace(s, "| `default-headless-gate-stop` | `26nk8qd48zknqnn4kc123sez` |", "| `default-headless-gate-stop` | `otherowner` |", 1)
-		},
-		"duplicate default-headless TODO row": func(s string) string {
-			row := "| `default-headless-gate-stop` | `26nk8qd48zknqnn4kc123sez` |"
-			return strings.Replace(s, row, row+"\n"+row, 1)
+		"observed evidence ledger": func(s string) string {
+			ledger := "## Missing live evidence\n\n| Common journey | Target | Repair owner |\n|---|---|---|\n| `keep-moving-posture` | `codex` | `9adv48yhye5s2vkhwd7ge52d` |\n\n"
+			return strings.Replace(s, "## Runtime-specific live proofs\n", ledger+"## Runtime-specific live proofs\n", 1)
 		},
 	}
 	for name, mutate := range registryMutations {
@@ -177,36 +183,59 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	evidenceMutations := map[string]func(map[string]string){
-		"removed default-headless TODO": func(m map[string]string) {
-			delete(m, "default-headless-gate-stop")
+	evidenceMutations := map[string]func(map[missingEvidenceKey]string){
+		"removed default-headless TODO": func(m map[missingEvidenceKey]string) {
+			delete(m, missingEvidenceKey{target: "claude-sonnet", journey: "default-headless-gate-stop"})
 		},
-		"retagged default-headless TODO": func(m map[string]string) {
-			m["default-headless-gate-stop"] = "other-owner"
+		"retagged default-headless TODO": func(m map[missingEvidenceKey]string) {
+			m[missingEvidenceKey{target: "claude-sonnet", journey: "default-headless-gate-stop"}] = "other-owner"
 		},
-		"removed TODO": func(m map[string]string) {
+		"removed TODO": func(m map[missingEvidenceKey]string) {
 			for id := range m {
 				delete(m, id)
 				break
 			}
 		},
-		"unowned TODO": func(m map[string]string) { m["shallow-boot"] = "" },
-		"retagged TODO": func(m map[string]string) {
+		"unowned TODO": func(m map[missingEvidenceKey]string) {
+			m[missingEvidenceKey{target: "codex", journey: "shallow-boot"}] = ""
+		},
+		"retagged TODO": func(m map[missingEvidenceKey]string) {
 			for id := range m {
 				m[id] = "other-owner"
 				break
 			}
 		},
+		"wrong target": func(m map[missingEvidenceKey]string) {
+			owner := m[missingEvidenceKey{target: "codex", journey: "keep-moving-posture"}]
+			delete(m, missingEvidenceKey{target: "codex", journey: "keep-moving-posture"})
+			m[missingEvidenceKey{target: "pi", journey: "keep-moving-posture"}] = owner
+		},
+		"global TODO": func(m map[missingEvidenceKey]string) {
+			m[missingEvidenceKey{journey: "keep-moving-posture"}] = "9adv48yhye5s2vkhwd7ge52d"
+		},
+		"suppressed proven pass": func(m map[missingEvidenceKey]string) {
+			m[missingEvidenceKey{target: "codex", journey: "default-headless-gate-stop"}] = "26nk8qd48zknqnn4kc123sez"
+		},
 	}
 	for name, mutate := range evidenceMutations {
 		t.Run(name, func(t *testing.T) {
-			candidate := cloneStringMap(evidence)
+			candidate := cloneMissingEvidence(evidence)
 			mutate(candidate)
-			if reconcileMissingEvidence(desired.missingEvidence, candidate) == nil {
+			if reconcileMissingEvidence(auditedMissingEvidence, candidate) == nil {
 				t.Fatal("missing-evidence mutation escaped reconciliation")
 			}
 		})
 	}
+	t.Run("duplicate source binding", func(t *testing.T) {
+		binding := `liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "keep-moving-posture"}`
+		mutated := strings.Replace(scenarios, binding, binding+",\n\t\t"+binding, 1)
+		if mutated == scenarios {
+			t.Fatal("source mutation did not apply")
+		}
+		if _, err := extractMissingEvidence(mutated); err == nil || !strings.Contains(err.Error(), "DUPLICATE MISSING-EVIDENCE") {
+			t.Fatalf("duplicate source binding error = %v", err)
+		}
+	})
 }
 
 func parseDesiredLiveRegistry(t *testing.T, source string) desiredLiveRegistry {
@@ -214,10 +243,12 @@ func parseDesiredLiveRegistry(t *testing.T, source string) desiredLiveRegistry {
 	common := registrySection(t, source, "Common journeys")
 	proofs := registrySection(t, source, "Runtime-specific live proofs")
 	experiments := registrySection(t, source, "Non-gating live experiments")
-	missing := registrySection(t, source, "Missing live evidence")
 	targets := registrySection(t, source, "Supported runtime targets")
 
-	desired := desiredLiveRegistry{proofs: map[string]string{}, proofEntries: map[string]string{}, targets: map[string]string{}, missingEvidence: map[string]string{}}
+	desired := desiredLiveRegistry{proofs: map[string]string{}, proofEntries: map[string]string{}, targets: map[string]string{}}
+	if strings.Contains(source, "\n## Missing live evidence\n") {
+		desired.diagnostics = append(desired.diagnostics, "IMPURE desired registry contains observed missing evidence")
+	}
 	fixtureSet := map[string]bool{}
 	for _, block := range registryBlocks(common) {
 		desired.journeys = append(desired.journeys, block.id)
@@ -249,17 +280,6 @@ func parseDesiredLiveRegistry(t *testing.T, source string) desiredLiveRegistry {
 			fixtureSet[id] = true
 		}
 	}
-	for _, line := range strings.Split(missing, "\n") {
-		if !strings.HasPrefix(line, "|") || strings.Contains(line, "---") || strings.Contains(line, "Common journey") {
-			continue
-		}
-		fields := registryCodeToken.FindAllStringSubmatch(line, -1)
-		if len(fields) != 2 {
-			desired.diagnostics = append(desired.diagnostics, "INVALID missing-evidence row "+line)
-			continue
-		}
-		addUniqueBinding(desired.missingEvidence, fields[0][1], fields[1][1], "missing-evidence", &desired.diagnostics)
-	}
 	for _, line := range strings.Split(targets, "\n") {
 		if !strings.HasPrefix(line, "|") || strings.Contains(line, "---") || strings.Contains(line, "Target") {
 			continue
@@ -280,7 +300,7 @@ func parseDesiredLiveRegistry(t *testing.T, source string) desiredLiveRegistry {
 		desired.fixtures = append(desired.fixtures, id)
 	}
 	sort.Strings(desired.fixtures)
-	if desired.suite == "" || len(desired.journeys) == 0 || len(desired.proofs) == 0 || len(desired.targets) == 0 || len(desired.missingEvidence) == 0 {
+	if desired.suite == "" || len(desired.journeys) == 0 || len(desired.proofs) == 0 || len(desired.targets) == 0 {
 		t.Fatal("normative live registry parser produced an empty required class")
 	}
 	return desired
@@ -474,13 +494,13 @@ func reconcileLiveRegistry(desired desiredLiveRegistry, actual liveInventory, wo
 			diagnostics = append(diagnostics, "MISSING runner "+id)
 		}
 	}
-	if !strings.Contains(runner, "liveDurableJourneyTODO(scenario.name)") || strings.Count(runner, "t.Skip(reason)") != 1 {
+	if !strings.Contains(runner, "liveDurableJourneyTODO(adapter.liveEvidenceTarget(), scenario.name)") || strings.Count(runner, "t.Skip(reason)") != 1 {
 		diagnostics = append(diagnostics, "UNOWNED-EVIDENCE common TODO accounting")
 	}
 	evidence, err := extractMissingEvidence(scenarios)
 	if err != nil {
 		diagnostics = append(diagnostics, err.Error())
-	} else if err := reconcileMissingEvidence(desired.missingEvidence, evidence); err != nil {
+	} else if err := reconcileMissingEvidence(auditedMissingEvidence, evidence); err != nil {
 		diagnostics = append(diagnostics, err.Error())
 	}
 	for _, lane := range wantLanes {
@@ -500,13 +520,13 @@ func reconcileLiveRegistry(desired desiredLiveRegistry, actual liveInventory, wo
 	return nil
 }
 
-func extractMissingEvidence(source string) (map[string]string, error) {
-	ownerMatches := regexp.MustCompile(`([A-Za-z][A-Za-z0-9]*)\s*=\s*"([a-z0-9]+)"`).FindAllStringSubmatch(source, -1)
-	owners := map[string]string{}
-	for _, match := range ownerMatches {
-		owners[match[1]] = match[2]
+func extractMissingEvidence(source string) (map[missingEvidenceKey]string, error) {
+	constantMatches := regexp.MustCompile(`(?m)([A-Za-z][A-Za-z0-9]*)[^=\n]*=\s*"([a-z0-9-]+)"`).FindAllStringSubmatch(source, -1)
+	constants := map[string]string{}
+	for _, match := range constantMatches {
+		constants[match[1]] = match[2]
 	}
-	if len(owners) == 0 {
+	if len(constants) == 0 {
 		return nil, fmt.Errorf("MISSING-EVIDENCE repair owner")
 	}
 	start := strings.Index(source, "func liveDurableJourneyTODO")
@@ -517,14 +537,25 @@ func extractMissingEvidence(source string) (map[string]string, error) {
 	if end := strings.Index(rest[1:], "\nfunc "); end >= 0 {
 		rest = rest[:end+1]
 	}
-	out := map[string]string{}
-	caseOwner := regexp.MustCompile(`case "([a-z0-9-]+)":\s*return "TODO\(" \+ ([A-Za-z][A-Za-z0-9]*) \+`)
-	for _, match := range caseOwner.FindAllStringSubmatch(rest, -1) {
-		owner, ok := owners[match[2]]
+	out := map[missingEvidenceKey]string{}
+	caseOwner := regexp.MustCompile(`(?s)case (.*?):\n\s*return "TODO\(" \+ ([A-Za-z][A-Za-z0-9]*) \+`)
+	keyPattern := regexp.MustCompile(`liveEvidenceKey\{target: ([A-Za-z][A-Za-z0-9]*), journey: "([a-z0-9-]+)"\}`)
+	for _, clause := range caseOwner.FindAllStringSubmatch(rest, -1) {
+		owner, ok := constants[clause[2]]
 		if !ok {
-			return nil, fmt.Errorf("MISSING-EVIDENCE repair owner %s", match[2])
+			return nil, fmt.Errorf("MISSING-EVIDENCE repair owner %s", clause[2])
 		}
-		out[match[1]] = owner
+		for _, match := range keyPattern.FindAllStringSubmatch(clause[1], -1) {
+			target, ok := constants[match[1]]
+			if !ok {
+				return nil, fmt.Errorf("MISSING-EVIDENCE target %s", match[1])
+			}
+			key := missingEvidenceKey{target: target, journey: match[2]}
+			if prior, exists := out[key]; exists {
+				return nil, fmt.Errorf("DUPLICATE MISSING-EVIDENCE journey=%s target=%s owners=%s,%s", key.journey, key.target, prior, owner)
+			}
+			out[key] = owner
+		}
 	}
 	if len(out) == 0 {
 		return nil, fmt.Errorf("MISSING-EVIDENCE TODO cases")
@@ -532,19 +563,19 @@ func extractMissingEvidence(source string) (map[string]string, error) {
 	return out, nil
 }
 
-func reconcileMissingEvidence(want, got map[string]string) error {
+func reconcileMissingEvidence(want, got map[missingEvidenceKey]string) error {
 	var diagnostics []string
-	for id, owner := range want {
-		gotOwner, ok := got[id]
+	for key, owner := range want {
+		gotOwner, ok := got[key]
 		if !ok {
-			diagnostics = append(diagnostics, "MISSING-EVIDENCE TODO "+id)
+			diagnostics = append(diagnostics, fmt.Sprintf("MISSING-EVIDENCE journey=%s target=%s owner=%s", key.journey, key.target, owner))
 		} else if gotOwner != owner {
-			diagnostics = append(diagnostics, "MISSING-EVIDENCE owner "+id+"="+gotOwner)
+			diagnostics = append(diagnostics, fmt.Sprintf("MISSING-EVIDENCE journey=%s target=%s owner=%s got-owner=%s", key.journey, key.target, owner, gotOwner))
 		}
 	}
-	for id, owner := range got {
-		if _, ok := want[id]; !ok {
-			diagnostics = append(diagnostics, "UNOWNED-EVIDENCE "+id+"="+owner)
+	for key, owner := range got {
+		if _, ok := want[key]; !ok {
+			diagnostics = append(diagnostics, fmt.Sprintf("UNOWNED-EVIDENCE journey=%s target=%s owner=%s", key.journey, key.target, owner))
 		}
 	}
 	if len(diagnostics) != 0 {
@@ -552,6 +583,15 @@ func reconcileMissingEvidence(want, got map[string]string) error {
 		return fmt.Errorf("live evidence reconciliation: %s", strings.Join(diagnostics, "; "))
 	}
 	return nil
+}
+
+func missingEvidenceDiagnostics(evidence map[missingEvidenceKey]string) []string {
+	diagnostics := make([]string, 0, len(evidence))
+	for key, owner := range evidence {
+		diagnostics = append(diagnostics, fmt.Sprintf("MISSING-EVIDENCE journey=%s target=%s owner=%s", key.journey, key.target, owner))
+	}
+	sort.Strings(diagnostics)
+	return diagnostics
 }
 
 func compareIDs(kind string, got, want []string) []string {
@@ -679,6 +719,14 @@ func cloneStringMap(values map[string]string) map[string]string {
 		out[k] = v
 	}
 	return out
+}
+
+func cloneMissingEvidence(values map[missingEvidenceKey]string) map[missingEvidenceKey]string {
+	cloned := make(map[missingEvidenceKey]string, len(values))
+	for key, value := range values {
+		cloned[key] = value
+	}
+	return cloned
 }
 func cloneLiveInventory(in liveInventory) liveInventory {
 	return liveInventory{journeys: append([]string(nil), in.journeys...), fixtures: append([]string(nil), in.fixtures...), proofs: cloneStringMap(in.proofs), proofEntries: cloneStringMap(in.proofEntries), suites: append([]string(nil), in.suites...), suiteEntries: append([]string(nil), in.suiteEntries...), topLevelTests: append([]string(nil), in.topLevelTests...), diagnostics: append([]string(nil), in.diagnostics...)}

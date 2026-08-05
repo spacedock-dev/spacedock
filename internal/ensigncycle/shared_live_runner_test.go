@@ -21,7 +21,7 @@ func TestLiveSharedScenarios(t *testing.T) {
 			if run == nil {
 				t.Fatalf("shared scenario %q has no common runner", scenario.name)
 			}
-			if reason := liveDurableJourneyTODO(scenario.name); reason != "" {
+			if reason := liveDurableJourneyTODO(adapter.liveEvidenceTarget(), scenario.name); reason != "" {
 				t.Skip(reason)
 			}
 			run(t, adapter, scenario)
@@ -39,6 +39,7 @@ func runSharedScenarioSequence(scenarios []sharedRuntimeScenario, run func(share
 
 type sharedLiveRuntimeAdapter interface {
 	runtimeName() string
+	liveEvidenceTarget() liveEvidenceTarget
 	runSharedScenario(*testing.T, sharedRuntimeScenario)
 }
 

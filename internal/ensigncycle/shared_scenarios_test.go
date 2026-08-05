@@ -23,18 +23,32 @@ const (
 	defaultHeadlessGateStopDefectID = "26nk8qd48zknqnn4kc123sez"
 )
 
-// liveDurableJourneyTODO keeps desired journeys selectable while truthfully
-// withholding live evidence for product behavior owned by the repair member.
-// Their fixtures and offline durable oracles remain enabled.
-func liveDurableJourneyTODO(name string) string {
-	switch name {
-	case "default-headless-gate-stop":
+type liveEvidenceTarget string
+
+const (
+	liveEvidenceTargetClaudeSonnet liveEvidenceTarget = "claude-sonnet"
+	liveEvidenceTargetClaudeOpus   liveEvidenceTarget = "claude-opus"
+	liveEvidenceTargetCodex        liveEvidenceTarget = "codex"
+	liveEvidenceTargetPi           liveEvidenceTarget = "pi"
+)
+
+type liveEvidenceKey struct {
+	target  liveEvidenceTarget
+	journey string
+}
+
+// liveDurableJourneyTODO keeps every desired journey selectable while
+// withholding only target-specific evidence disproved by a durable live run.
+// Fixtures and offline durable oracles remain enabled for every target.
+func liveDurableJourneyTODO(target liveEvidenceTarget, name string) string {
+	switch (liveEvidenceKey{target: target, journey: name}) {
+	case liveEvidenceKey{target: liveEvidenceTargetClaudeSonnet, journey: "default-headless-gate-stop"}:
 		return "TODO(" + defaultHeadlessGateStopDefectID + "): headless drive must stop after exactly one durable gate preparation"
-	case "auto-continue-after-implementation":
-		return "TODO(" + liveDurableJourneyDefectID + "): implementation completion must dispatch a fresh validator without stopping"
-	case "smallest-sufficient-mechanism":
+	case liveEvidenceKey{target: liveEvidenceTargetClaudeSonnet, journey: "smallest-sufficient-mechanism"},
+		liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "smallest-sufficient-mechanism"}:
 		return "TODO(" + liveDurableJourneyDefectID + "): initial-stage successor dispatch must durably enter and run the current stage"
-	case "keep-moving-posture":
+	case liveEvidenceKey{target: liveEvidenceTargetClaudeSonnet, journey: "keep-moving-posture"},
+		liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "keep-moving-posture"}:
 		return "TODO(" + liveDurableJourneyDefectID + "): gate-consume dispatch evidence and consumed-authority terminalization need product fixes"
 	default:
 		return ""

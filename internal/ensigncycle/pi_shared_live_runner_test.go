@@ -17,6 +17,8 @@ type piSharedLiveAdapter struct{}
 
 func (piSharedLiveAdapter) runtimeName() string { return "pi" }
 
+func (piSharedLiveAdapter) liveEvidenceTarget() liveEvidenceTarget { return liveEvidenceTargetPi }
+
 func (piSharedLiveAdapter) runSharedScenario(t *testing.T, scenario sharedRuntimeScenario) {
 	driver := newPiSharedLiveDriver(t)
 	switch scenario.name {

@@ -75,6 +75,33 @@ func TestSharedLiveRuntimeSelection(t *testing.T) {
 	}
 }
 
+func TestSharedLiveEvidenceTargets(t *testing.T) {
+	t.Setenv("SPACEDOCK_LIVE_MODEL", "sonnet")
+	claude, err := selectSharedLiveRuntime("claude")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := claude.liveEvidenceTarget(); got != liveEvidenceTargetClaudeSonnet {
+		t.Fatalf("Sonnet evidence target = %q, want %q", got, liveEvidenceTargetClaudeSonnet)
+	}
+	t.Setenv("SPACEDOCK_LIVE_MODEL", "claude-opus-4-8")
+	if got := claude.liveEvidenceTarget(); got != liveEvidenceTargetClaudeOpus {
+		t.Fatalf("Opus evidence target = %q, want %q", got, liveEvidenceTargetClaudeOpus)
+	}
+	for runtime, want := range map[string]liveEvidenceTarget{
+		"codex": liveEvidenceTargetCodex,
+		"pi":    liveEvidenceTargetPi,
+	} {
+		adapter, err := selectSharedLiveRuntime(runtime)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := adapter.liveEvidenceTarget(); got != want {
+			t.Errorf("%s evidence target = %q, want %q", runtime, got, want)
+		}
+	}
+}
+
 func TestPromotedCommonJourneyEntrypoints(t *testing.T) {
 	for _, name := range []string{
 		"full-ensign-cycle",
@@ -159,28 +186,47 @@ func TestSharedCodexAndPiDriversPreserveSpacedockShimAfterFrontDoorPin(t *testin
 }
 
 func TestSharedLiveTODOEvidenceSet(t *testing.T) {
-	want := map[string]string{
-		"default-headless-gate-stop":         defaultHeadlessGateStopDefectID,
-		"auto-continue-after-implementation": liveDurableJourneyDefectID,
-		"smallest-sufficient-mechanism":      liveDurableJourneyDefectID,
-		"keep-moving-posture":                liveDurableJourneyDefectID,
+	targets := []liveEvidenceTarget{
+		liveEvidenceTargetClaudeSonnet,
+		liveEvidenceTargetClaudeOpus,
+		liveEvidenceTargetCodex,
+		liveEvidenceTargetPi,
 	}
-	for _, scenario := range sharedRuntimeScenarios() {
-		reason := liveDurableJourneyTODO(scenario.name)
-		owner, missing := want[scenario.name]
-		if missing {
-			if reason == "" || !strings.HasPrefix(reason, "TODO("+owner+"):") {
-				t.Errorf("TODO journey %q reason = %q, want exact owner TODO(%s)", scenario.name, reason, owner)
+	want := map[liveEvidenceKey]string{
+		{target: liveEvidenceTargetClaudeSonnet, journey: "default-headless-gate-stop"}:    defaultHeadlessGateStopDefectID,
+		{target: liveEvidenceTargetClaudeSonnet, journey: "smallest-sufficient-mechanism"}: liveDurableJourneyDefectID,
+		{target: liveEvidenceTargetClaudeSonnet, journey: "keep-moving-posture"}:           liveDurableJourneyDefectID,
+		{target: liveEvidenceTargetCodex, journey: "smallest-sufficient-mechanism"}:        liveDurableJourneyDefectID,
+		{target: liveEvidenceTargetCodex, journey: "keep-moving-posture"}:                  liveDurableJourneyDefectID,
+	}
+	for _, target := range targets {
+		t.Run(string(target), func(t *testing.T) {
+			found := 0
+			for _, scenario := range sharedRuntimeScenarios() {
+				key := liveEvidenceKey{target: target, journey: scenario.name}
+				reason := liveDurableJourneyTODO(target, scenario.name)
+				owner, missing := want[key]
+				if missing {
+					if reason == "" || !strings.HasPrefix(reason, "TODO("+owner+"):") {
+						t.Errorf("TODO %s/%s reason = %q, want exact owner TODO(%s)", target, scenario.name, reason, owner)
+					}
+					found++
+					continue
+				}
+				if reason != "" {
+					t.Errorf("runnable %s/%s unexpectedly has missing-evidence TODO %q", target, scenario.name, reason)
+				}
 			}
-			delete(want, scenario.name)
-			continue
-		}
-		if reason != "" {
-			t.Errorf("implemented journey %q unexpectedly has missing-evidence TODO %q", scenario.name, reason)
-		}
-	}
-	if len(want) != 0 {
-		t.Fatalf("TODO journeys are hidden from the shared scenario table: %v", want)
+			expected := 0
+			for key := range want {
+				if key.target == target {
+					expected++
+				}
+			}
+			if found != expected {
+				t.Fatalf("%s TODO bindings found = %d, want %d", target, found, expected)
+			}
+		})
 	}
 }
 

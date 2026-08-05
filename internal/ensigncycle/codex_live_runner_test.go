@@ -32,6 +32,8 @@ type codexSharedLiveAdapter struct{}
 
 func (codexSharedLiveAdapter) runtimeName() string { return "codex" }
 
+func (codexSharedLiveAdapter) liveEvidenceTarget() liveEvidenceTarget { return liveEvidenceTargetCodex }
+
 func (codexSharedLiveAdapter) runSharedScenario(t *testing.T, scenario sharedRuntimeScenario) {
 	runner := newCodexLiveRunner(t)
 	driver := codexAsLiveDriver{runner: runner}

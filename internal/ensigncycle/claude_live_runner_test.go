@@ -107,6 +107,17 @@ type claudeSharedLiveAdapter struct{}
 
 func (claudeSharedLiveAdapter) runtimeName() string { return "claude" }
 
+func (claudeSharedLiveAdapter) liveEvidenceTarget() liveEvidenceTarget {
+	switch envOr("SPACEDOCK_LIVE_MODEL", "sonnet") {
+	case "sonnet":
+		return liveEvidenceTargetClaudeSonnet
+	case "claude-opus-4-8":
+		return liveEvidenceTargetClaudeOpus
+	default:
+		return liveEvidenceTarget("claude-" + envOr("SPACEDOCK_LIVE_MODEL", "sonnet"))
+	}
+}
+
 func (claudeSharedLiveAdapter) runSharedScenario(t *testing.T, scenario sharedRuntimeScenario) {
 	runner := newClaudeLiveRunner(t)
 	switch scenario.name {
