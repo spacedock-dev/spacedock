@@ -1,11 +1,11 @@
 ---
 id: ep2cz3zsb2qpyyh889nyeqpr
 title: Avoid unnecessary rebases before opening mergeable PRs
-status: validation
+status: done
 source: GitHub issue #616; Captain intake 2026-08-05
 started: 2026-08-04T17:00:42Z
-completed:
-verdict:
+completed: 2026-08-05T14:22:07Z
+verdict: passed
 score: 1.0
 worktree: .worktrees/spacedock-ensign-avoid-unnecessary-pr-rebases
 issue: "#616"
@@ -114,9 +114,10 @@ gates:
                 reason: All six shipped-mod containment corrections passed exact-head validation; both acceptance criteria have executable evidence.
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:627
+archived: 2026-08-05T14:22:08Z
 ---
 
 Remove the mandatory rebase from the `pr-merge` policy. Keep the approved
