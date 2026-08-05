@@ -1,6 +1,6 @@
 ---
 title: Make the headless recorded-gate stop fixture stage-coherent
-status: validation
+status: implementation
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started: 2026-07-31T00:32:10Z
 completed:
@@ -31,10 +31,8 @@ gates:
                 decision: approve
                 reason: 'Captain conn approves focused ideation because the required Sonnet lane exposes a no-authority breach from contradictory fixture state; the task must distinguish fixture ownership from a real withdrawal-contract defect before any PR #580 mutation.'
               application:
-                action: advance
                 target-stage: ideation
                 state: consumed
-                blockers: []
         - id: gate:26nk8qd48zknqnn4kc123sez:ideation
           stage: ideation
           attempts:
@@ -53,10 +51,8 @@ gates:
                 decision: approve
                 reason: 'Approved under sprint conn: the corrected ideation isolates a fixture-owned contradiction, preserves the no-authority boundary, limits changes to three test files, and requires one supported Sonnet live proof before validation.'
               application:
-                action: advance
                 target-stage: implementation
                 state: consumed
-                blockers: []
         - id: gate:26nk8qd48zknqnn4kc123sez:validation
           stage: validation
           attempts:
@@ -75,10 +71,8 @@ gates:
                 decision: approve
                 reason: 'Validation passed against the literal ACs: the final test-only candidate proves the queued direct-gate journey, retains provider-neutral success/failure evidence, regrades the supported Sonnet run green, passes focused/full/race/format checks, and removes the invented validation-worker scope.'
               application:
-                action: advance
                 target-stage: done
-                state: pending
-                blockers: []
+                state: superseded
 review-round:
     id: round:26nk8qd48zknqnn4kc123sez:implementation:11
     stage: implementation
@@ -87,8 +81,8 @@ review-round:
         id: briefing:26nk8qd48zknqnn4kc123sez:implementation:round-11
         digest: sha256:370073614a38a6ff5faa63d7430694103e3a658196eda8b044c4a2e378c55a52
         room-ref: ./review/implementation/round-11
-mod-block: merge:pr-merge
-pr: "#583"
+mod-block:
+pr:
 sprint: durable-decisions
 ---
 
