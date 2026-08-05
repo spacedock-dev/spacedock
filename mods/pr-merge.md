@@ -56,7 +56,7 @@ Wait for the captain's explicit approval before pushing. Do NOT infer approval f
 Resolve the current integration tip as `BASE_SHA=$(git rev-parse "$BASE")`, then exercise the approved commit against it without changing the candidate ref, index, or worktree: `git merge-tree --write-tree "$BASE_SHA" "$CANDIDATE_SHA"`. Inspect its stdout, stderr, exit status, and repository context; the exit status is one signal, not the semantic verdict.
 
 - If the evidence indicates a clean merge, continue without rebasing.
-- If the evidence indicates an actual content conflict, stop PR and local-merge delivery, refer reconciliation to the G3/D8 owner path, and preserve the pending delivery authority.
+- If the evidence indicates an actual content conflict, stop PR and local-merge delivery, surface the conflict evidence, and preserve the pending delivery authority. Do not rebase, automatically resolve, or use force operations; leave reconciliation owner selection to the consuming workflow.
 - If the command fails or the evidence is incomplete or ambiguous, mergeability is unknown: report the error, preserve the pending authority, and stop delivery; do not rebase or use local merge as a fallback.
 
 For a clean result, push the approved commit with the exact-SHA refspec: `git push origin "${CANDIDATE_SHA}:refs/heads/{branch}"`. If that push fails, report to the captain and fall back to local merge.
