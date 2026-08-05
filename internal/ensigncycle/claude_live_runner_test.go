@@ -74,13 +74,9 @@ func withPATHPrefix(env []string, dir string) []string {
 	return out
 }
 
-// liveDriver is the transport seam: it turns a prompt + workflow root into the
-// observed (finalMessage, stream) the shared assertions consume. The headless
-// `-p` runner (claudeLiveRunner) and the pty/tmux runner (ptyLiveDriver) are two
-// implementations; the scenario orchestration and assertions do not know which
-// transport ran. model and home expose the two concrete facts the per-scenario
-// orchestration needs beyond the launch itself — the metrics tag (model) and the
-// isolated team root the shallow-boot scenario probes (home/.claude/teams).
+// liveDriver turns a prompt and workflow root into the observed final message
+// and stream that the shared assertions consume. model and home expose the two
+// facts the per-scenario orchestration needs beyond the headless launch.
 // withStubPATH returns a driver copy whose launched FO subprocess resolves a stub
 // binary in dir first (the shallow-boot scenario's stub `gh` reporting MERGED).
 type liveDriver interface {
@@ -91,10 +87,8 @@ type liveDriver interface {
 }
 
 // liveResult is the host-neutral observed state the shared assertions consume.
-// headless `-p`: finalMessage is the stream's result/success event, stream is the
-// stream-json transcript. pty/tmux: finalMessage is the FO-pane final text, stream
-// is the session jsonl written under CLAUDE_CONFIG_DIR (the SAME stream-json
-// dialect the assertions grade). The transport is invisible to the assertions.
+// finalMessage is the headless stream's result/success event and stream is its
+// stream-json transcript.
 type liveResult struct {
 	finalMessage string
 	stream       string
@@ -104,8 +98,7 @@ type liveResult struct {
 	// (under {configDir}/projects/{encode(cwd)}/{FO-session-id}/subagents), so the
 	// journey-metrics fold can observe the ensign's --read adoption. cwd is the
 	// EvalSymlinks-resolved FO working dir — the form Claude Code encodes into the
-	// projects path. Empty on transports that do not record them (the pty driver),
-	// so the fold no-ops to FO-front-door counts.
+	// projects path.
 	configDir string
 	cwd       string
 }
@@ -156,10 +149,8 @@ func claudeLiveScenarios(t *testing.T) []claudeLiveScenario {
 }
 
 // claudeScenarioRunners maps each shared scenario ID to its runner. The runners
-// take the liveDriver seam, not a concrete runner, so the SAME map drives the
-// headless `-p` runner and the pty/tmux driver. It is the parity guard: the shared
-// coverage meta-test fails if this map lacks a runner for any
-// sharedRuntimeScenarios() ID.
+// take the liveDriver seam, not a concrete runner. It is the parity guard: the
+// shared coverage meta-test fails if this map lacks a runner for any scenario ID.
 func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRuntimeScenario) {
 	return map[string]func(*testing.T, liveDriver, sharedRuntimeScenario){
 		"gate-guardrail":                runClaudeGateGuardrailScenario,
@@ -172,67 +163,6 @@ func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRunti
 		"self-evidence-merge-triage":    runClaudeSelfEvidenceMergeTriageScenario,
 		"smallest-sufficient-mechanism": runClaudeSmallestSufficientMechanismScenario,
 		"keep-moving-posture":           runClaudeKeepMovingScenario,
-	}
-}
-
-func TestClaudeTODOModelScope(t *testing.T) {
-	for _, tc := range []struct {
-		model, family string
-		want          bool
-	}{
-		{"sonnet", "sonnet", true},
-		{"claude-sonnet-5", "sonnet", true},
-		{"claude-opus-4-8", "sonnet", false},
-		{"opus", "opus", true},
-		{"claude-opus-4-8", "opus", true},
-		{"openrouter/opossum", "opus", false},
-	} {
-		if got := claudeModelFamily(tc.model, tc.family); got != tc.want {
-			t.Errorf("claudeModelFamily(%q, %q) = %t, want %t", tc.model, tc.family, got, tc.want)
-		}
-	}
-}
-
-func TestClaudeRejectionFlowTODOModelScope(t *testing.T) {
-	for model, want := range map[string]bool{
-		"sonnet": true, "claude-sonnet-5": true,
-		"opus": true, "claude-opus-4-8": true,
-		"haiku": false, "openrouter/opossum": false,
-	} {
-		if got := claudeRejectionFlowTODOModel(model); got != want {
-			t.Errorf("claudeRejectionFlowTODOModel(%q) = %t, want %t", model, got, want)
-		}
-	}
-}
-
-func claudeModelFamily(model, family string) bool {
-	model = strings.ToLower(strings.TrimSpace(model))
-	return model == family || strings.Contains(model, "claude-"+family+"-")
-}
-
-func claudeRejectionFlowTODOModel(model string) bool {
-	return claudeModelFamily(model, "opus") || claudeModelFamily(model, "sonnet")
-}
-
-func claudeSonnetGateGuardrailTODO(model string) string {
-	if !claudeModelFamily(model, "sonnet") {
-		return ""
-	}
-	return "TODO(3zzpdw704df1g8pg1x9thzmw): Claude Sonnet gate-guardrail is temporarily non-evidence for local task sonnet-gate-guardrail-no-authority pending a fresh passing promotion run"
-}
-
-func TestClaudeSonnetGateGuardrailTODOModelScope(t *testing.T) {
-	for model, wantSkip := range map[string]bool{
-		"sonnet":          true,
-		"claude-sonnet-5": true,
-		"opus":            false,
-		"claude-opus-4-8": false,
-		"haiku":           false,
-	} {
-		got := claudeSonnetGateGuardrailTODO(model)
-		if (got != "") != wantSkip {
-			t.Errorf("claudeSonnetGateGuardrailTODO(%q) = %q, wantSkip %t", model, got, wantSkip)
-		}
 	}
 }
 
@@ -257,12 +187,7 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 	writeFile(t, bashEnv, "export SPACEDOCK_BIN="+filepath.Join(shimDir, "spacedock")+"\n")
 	writeFile(t, filepath.Join(shellEnvDir, ".zshenv"), readFile(t, bashEnv))
 	runner = runner.withStubPATH(shimDir)
-	switch copied := runner.(type) {
-	case claudeLiveRunner:
-		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
-		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
-		runner = copied
-	case ptyLiveDriver:
+	if copied, ok := runner.(claudeLiveRunner); ok {
 		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
 		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
 		runner = copied

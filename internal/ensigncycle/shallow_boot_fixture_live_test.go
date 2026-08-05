@@ -1,5 +1,3 @@
-//go:build live
-
 package ensigncycle
 
 import (
