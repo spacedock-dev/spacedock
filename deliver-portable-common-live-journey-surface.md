@@ -76,9 +76,9 @@ worktree: .worktrees/spacedock-ensign-deliver-portable-common-live-journey-surfa
 
 ## Outcome
 
-A test operator can select one common journey by one stable identity on Claude, Codex, or Pi. The registry makes missing journeys, missing live evidence, and orphan fixtures visible.
+A test operator can select one common journey by one stable identity on Claude Sonnet, Claude Opus, Codex, or Pi. The registry remains the pure desired-state table; source reconciliation separately makes target-scoped owner failures, missing run evidence, and orphan fixtures visible.
 
-The task delivers a complete and accurate representation of the desired journey table. Registry annotations, fixture bindings, runtime adapters, selectors, owner-linked product TODOs, and reconciliation are implementation steps. Product behavior repair remains owned by the named repair members; this task neither hides those gaps nor absorbs their fixes.
+The task delivers a complete and accurate representation of the desired journey table and the observed evidence state. Registry annotations, fixture bindings, runtime adapters, selectors, target-scoped owner TODOs, and reconciliation are implementation steps. A proven pass stays runnable; an unverified required target stays runnable and is reported as missing run evidence. Product behavior repair remains owned by the named repair members; this task neither hides those gaps nor absorbs their fixes.
 
 ## Problem
 
@@ -118,9 +118,9 @@ One common runner map owns every journey. One adapter registry owns runtime sele
 
 Common runners own fixture selection, prompts, normalized evidence, and host-neutral assertions. Adapters own authentication, launch, output parsing, liveness, and host artifacts.
 
-Each source declaration carries its stable registry annotation. Reconciliation reports desired gaps and fails ambiguous or orphaned bindings.
+Each source declaration carries its stable registry annotation. Reconciliation compares the pure desired registry with source, derives observed target-scoped gaps from TODO bindings, and fails ambiguous, orphaned, global, or wrongly owned bindings.
 
-Every lane selects all 16 journeys. A product-owned gap stays present and reachable but emits an explicit `TODO(<repair-id>)` skip, and reconciliation reports it as missing evidence. A TODO is not passing evidence or a runtime exception. A coverage row, unowned skip, quarantine, or Pi-only top-level test does not count as evidence.
+Every target selects all 16 journeys. Only a target with durable evidence of an owner-linked product failure emits `TODO(<repair-id>)`; reconciliation reports the exact journey, target, and owner as missing evidence. Proven passing and unverified required targets remain executable. A TODO is not passing evidence or a runtime exception. A coverage row, unowned/global skip, quarantine, or Pi-only top-level test does not count as evidence.
 
 ## Complete approach
 
@@ -144,7 +144,7 @@ The common runner map serves AC-2 and AC-4. Three runtime maps are insufficient 
 
 Stable source annotations serve AC-2 and AC-3. Builder names in the registry are insufficient because source moves can change desired state.
 
-The reconciled inventory, exact owner-linked TODO set, and SHA guard serve AC-2 and AC-3. Semantic checks must live on the repository's contractlint boundary and prove values that can diverge from the documentation.
+The reconciled inventory, exact target-scoped owner TODO set, desired-registry purity guard, and SHA guard serve AC-2 and AC-3. Semantic checks must live on the repository's contractlint boundary and prove values that can diverge from the documentation.
 
 The Pi trace reader serves AC-4. Durable state alone cannot prove Pi child identity or required tool selection. A product-owned TODO records missing evidence; it does not prove the journey.
 
@@ -245,11 +245,11 @@ The same `^TestLiveSharedScenarios$/^shallow-boot$` selector passes on Claude, C
 
 The workflow guard proves that every live lane uses this top-level identity. A restored old suite name makes the guard fail.
 
-**AC-2 (VALUE) — The complete desired table and its evidence gaps are represented truthfully.**
+**AC-2 (VALUE) — The complete desired table and target-scoped evidence state are represented truthfully.**
 
 Registry, scenario-table, and runner-map parity is 16 of 16. The count of standalone common-journey top-level tests is zero.
 
-Reconciliation reports 16 bound journey IDs and no missing suite lane. Every product-owned gap remains in the table and common runner, carries an exact `TODO(<repair-id>)`, and is reported as missing evidence rather than an exception or pass. Removing one runner or selector, hiding a TODO journey, or adding an unowned skip makes the proof fail.
+The desired registry requires all 16 journeys on Claude Sonnet, Claude Opus, Codex, and Pi and contains no observed-gap ledger. Reconciliation reports 16 bound journey IDs and no missing suite lane, then derives each proven product gap from source as an exact journey+target+`TODO(<repair-id>)` result. Proven passes and unverified required targets remain runnable; reports distinguish them instead of inferring a failure or exception. Removing one runner or selector, hiding a target TODO, adding a global/unowned skip, suppressing a proven pass, changing target/owner/cardinality, or reintroducing an observed-gap registry section makes the proof fail.
 
 **AC-3 — Fixtures have accountable use.**
 
@@ -261,7 +261,7 @@ Reconciliation reports zero duplicate, invalid, orphan, unaccounted-test, and un
 
 Common fixtures and assertions contain no host-specific branch. The adapter factory contains the only runtime-selection branch.
 
-Fake-adapter tests prove the boundary. Complete live lanes enumerate the same 16 identities, prove unchanged launch, liveness, metrics, and artifact behavior for implemented journeys, and expose the exact owner-linked missing-evidence set for product-owned gaps. A TODO or externally blocked run does not count as passing evidence.
+Fake-adapter tests prove the boundary. Cheap controls enumerate the same 16 identities for Claude Sonnet, Claude Opus, Codex, and Pi and expose the exact target-scoped owner set without launching a model. Complete live lanes prove unchanged launch, liveness, metrics, and artifact behavior for runnable journeys. A TODO, an unverified target, or an externally blocked run does not count as passing evidence; each retains its distinct classification.
 
 ## Test plan
 
@@ -273,9 +273,9 @@ go test ./internal/ensigncycle -run 'TestGateJourneyOverlap|TestAutoContinue|Tes
 go test ./internal/release -run 'TestRuntimeLiveWorkflow|TestWorkflowsPreserveAndPublishJourneyCosts' -count=1
 ```
 
-The parity tests compare the registry IDs, scenario table, runner map, and adapter registry in both directions.
+The parity tests compare the registry IDs, scenario table, runner map, and adapter registry in both directions. Target enumeration separately exercises Claude Sonnet, Claude Opus, Codex, and Pi without a host launch and requires only exact durable owner failures to skip.
 
-The negative tests remove one runner, add one orphan fixture, swap gate starts, stop auto-continue, and select the wrong re-anchor branch.
+The negative tests remove one runner, add one orphan fixture, swap gate starts, stop auto-continue, select the wrong re-anchor branch, reintroduce an observed-gap registry ledger, and mutate missing-evidence target, owner, cardinality, or global scope. A Codex default-headless suppression mutant protects its proven pass.
 
 Run one representative journey with the same selector on every runtime:
 
@@ -287,7 +287,7 @@ SPACEDOCK_LIVE_RUNTIME=pi SPACEDOCK_PI_LIVE_REQUIRED=1 go test -tags live -count
 
 Run the six promoted selectors on Claude and Codex. Then run those same selectors on Pi.
 
-Run each complete live lane through `TestLiveSharedScenarios`. Every lane must enumerate all 16 journeys. Implemented journeys must run for real. Skips are permitted only for the exact product-owned `TODO(<repair-id>)` set and must appear as missing evidence in reconciliation; an unowned skip, quarantine, runtime exception, coverage-only row, or hidden selector fails the proof.
+Run each complete live lane through `TestLiveSharedScenarios`. Every required target must enumerate all 16 journeys. Runnable journeys must run for real. Skips are permitted only for exact target-scoped product-owned `TODO(<repair-id>)` bindings and must appear as journey+target+owner missing evidence in reconciliation. Proven passes remain runnable. Unverified targets remain runnable and are reported as missing run evidence, never as exceptions or inferred owner failures. An unowned/global skip, quarantine, runtime exception, coverage-only row, hidden selector, or desired-registry evidence ledger fails the proof.
 
 Run the required repository checks:
 
@@ -658,3 +658,30 @@ All 16 common journeys remain selected while every runtime now truthfully expose
 ### Summary
 
 Cycle 4 confirms the structural four-owner accounting but rejects its runtime-global mechanism. The next correction must keep the desired registry a pure SSOT and represent proven failures, unverified targets, and passing evidence per target; no race, hosted run, or candidate mutation followed the Captain's stop.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Audit the durable 26n and 9a evidence before changing selection; classify proven passes, proven owner failures, and unverified required targets without inference.
+  Run `30996911834` detail JSONL proves Claude Sonnet default-headless failed after two preparations and Codex default-headless passed in 62.12s; Pi stopped earlier and Opus supplied no journey result. Run `30706782428` detail JSONL proves smallest-sufficient and keep-moving failed on both Codex (76.61s/128.60s) and Sonnet (299.34s/568.20s), and contains no auto-continue selector. The archived wm entity independently proves Claude auto-continue session `e59d1f3b` passed and records the Pi origin leg as environment-blocked, not a product failure.
+
+  | Journey | Claude Sonnet | Claude Opus | Codex | Pi |
+  |---|---|---|---|---|
+  | `default-headless-gate-stop` | proven owner failure → `26nk8qd48zknqnn4kc123sez` | unverified, runnable | proven pass, runnable | unverified, runnable |
+  | `auto-continue-after-implementation` | proven historical pass, runnable | unverified, runnable | unverified, runnable | environment-blocked/unverified, runnable |
+  | `smallest-sufficient-mechanism` | proven owner failure → `9adv48yhye5s2vkhwd7ge52d` | unverified, runnable | proven owner failure → `9adv48yhye5s2vkhwd7ge52d` | unverified, runnable |
+  | `keep-moving-posture` | proven owner failure → `9adv48yhye5s2vkhwd7ge52d` | unverified, runnable | proven owner failure → `9adv48yhye5s2vkhwd7ge52d` | unverified, runnable |
+
+- DONE: Add red-first desired-registry purity and target-scope controls, then implement the smallest evidence seam behind adapter/model selection.
+  RED: the target enumeration did not compile because adapters had no evidence-target identity, and registry reconciliation failed with `IMPURE desired registry contains observed missing evidence`. GREEN: adapters expose only Sonnet/Opus/Codex/Pi evidence identity; the common selector supplies it to the existing TODO seam; no runner map, fixture, assertion, host launch, command, or product behavior changed.
+- DONE: Keep `docs/runtime-live-ci-registry.md` a pure desired-state SSOT and derive exact observed gaps from source.
+  Removed the entire `## Missing live evidence` section. Reconciliation parses source TODO cases into five journey+target+owner results and emits exact `MISSING-EVIDENCE journey=<id> target=<target> owner=<owner>` diagnostics. Reintroduced-ledger, global binding, wrong-target, wrong-owner, removal/cardinality, duplicate-source, unowned, and proven-Codex-pass suppression mutations all fail.
+- DONE: Enumerate Claude Sonnet, Claude Opus, Codex, and Pi cheaply; retain all 16 identities and leave every unverified target runnable.
+  Four exact `TestSharedLiveTODOEvidenceSet/<target>` selectors pass without a model: Sonnet has three TODO cells, Codex has two, Opus has zero, and Pi has zero. Auto-continue is runnable on all four; default-headless stays runnable on Codex, Opus, and Pi.
+- DONE: Reprove parity, first-failure, gate-start, Codex/Pi shim, workflow, registry, SHA, formatting, full, race, diff, and ceiling controls without a local-live, model-backed, or hosted run.
+  Focused controls passed. `go test ./...` passed (`ensigncycle` 214.687s); `go test ./... -race` passed (`ensigncycle` 218.388s); `gofmt -w ./cmd ./internal`, `git diff --check`, exact current/stale SHA guards, and workflow selectors are green. No paid/local-live/hosted lane, Opus run, substrate proof, or Pi smoke ran.
+- DONE: Preserve the watched-core then documentation-only binder shape, push both commits, and remain below the authorized surface ceiling.
+  Watched core `386fd7a8bfa6f7c1597fe0171cee6cb5857a542a` is bound by docs-only head `e023619ed1f6a00a85f6ad88741c8b8ebad2d3b1`; both are pushed. Final surface against merge base `507a4bc12e48a3e4a813219602c488f09c81a5d8` is 40 files/+1870/-664, below 42 files/+2750 insertions.
+
+### Summary
+
+Cycle 5 replaces target-blind journey quarantines with five durable-evidence bindings while preserving the pure 16-journey/four-target desired registry. Proven passes and all unverified required targets remain runnable; only exact Sonnet/Codex owner failures skip. Source-derived reconciliation, adversarial purity/scope controls, full/race checks, and the two-commit SHA binding are green and pushed, with no product repair or model spend.
