@@ -173,3 +173,28 @@ Recommendation for implementation-gate entry: **APPROVE ideation**. Land a contr
 ### Summary
 
 Committed a seven-file, +200/-10 implementation that makes the FO loop drain and route mod/PR and gate work before dispatch projection, retries an empty projection once, and chooses explicit stop or guarded unresolved-worker wait. The fixture is contract-prose-independent and preserves stored state, command grammar, gate authority, transport APIs, and the unshipped scheduler boundary; immutable verification is green and the distinct mutable-state/live-host drift is recorded above without false-greening it.
+
+## Review-finding disposition
+
+- Finding: AC-3's purported Codex runtime matrix is disconnected from the shipped adapter. `TestCodexWaitPredicate` calls only a test-local `shouldWaitForWorker` formula and never loads or exercises the Codex runtime contract or observes a `wait_agent` call.
+- Released user and normal workflow: a Codex First Officer choosing whether to monitor an active unresolved worker, or to stop for a completed, errored, or absent worker, after the one-shot retry and with no other work.
+- Observable harm: a wrong shipped predicate can stop while a worker is unresolved or wait on terminal work while the suite remains green.
+- Authority: `contract[docs/dev/README.md#validation]` requires reproducing each AC's cited evidence and rejecting evidence that cannot establish the delivered behavior; this leaves AC-3 unproved.
+- Trigger evidence: in throwaway checkout `/tmp/spacedock-ej-audit.6dMqaV`, inverting the candidate adapter to wait on completed workers and reject active unresolved workers still left both focused tests green.
+- Proposal: Material evidence defect owned by EJ validation; preserve candidate bytes and correct only the proof. Replace the local predicate oracle with an exact-head, real-adapter-driven Codex matrix that observes exact `wait_agent(timeout_ms: 300000)` emission for active unresolved and absence for completed, errored, and absent workers; do not add another scheduler/controller.
+- Recommendation: REJECTED until AC-3 has valid adapter-bound evidence. Mutable pilot-manifest drift and the Pi account failure below are separate and are not candidate findings.
+
+## Stage Report: validation
+
+- DONE: Reproduce the mixed mod/PR, ready-gate, and independent-dispatch command-log behavior and verify AC-1, AC-4, and AC-5 with exact order and spawn evidence.
+  AC-1: `mixed` is reconcile, drain, mod-hold, three gate routes, then next and independent-a/b dispatch; AC-4: gate-present/advance/merge precede next and only independent-a/b spawn; AC-5: both independent tasks dispatch while blocked-pr remains held. Reordering or an extra gate spawn fails the fixture oracle.
+- FAILED: Adversarially verify the one-shot idle/reconcile/retry path and Codex unresolved-worker wait matrix for AC-2 and AC-3 across active, completed, errored, and absent workers.
+  AC-2 passes exact retry and unchanged-empty traces: one idle, one reconcile, one second next, then released dispatch or `no-dispatchable`. AC-3 fails its proof boundary because an inverted shipped adapter still passes the test-local matrix.
+- DONE: Confirm no stored-state, command-grammar, gate-authority, transport, or shipped-scheduler drift; run focused, full, race, formatting, and required exact-head live evidence with AC-1 through AC-5 citations.
+  Candidate `e2d947287` is exactly seven files at +200/-10; no state/CLI implementation changed, `git diff --check` and `gofmt -d` are clean, and the scheduler remains explicitly prose-only. Immutable `SPACEDOCK_STATE_ROOT` commit `73f41e2a` passes full and race; Codex and Claude exact-head shallow-boot pass.
+- DONE: Separate mutable fixture and live-host failures from candidate behavior.
+  Mutable `TestV1PilotManifestReadsAndValidates` alone misses eight paths moved under `_archive`; Pi reaches the exact-head front door but OpenRouter rejects before behavior with HTTP 402 credit/max-token limits. Neither touches AC-1 through AC-5 candidate semantics.
+
+### Summary
+
+Validation recommends REJECTED for one Material evidence defect: AC-3's test duplicates the intended predicate locally and cannot fail when the shipped Codex adapter is wrong. AC-1, AC-2, AC-4, and AC-5 have reproduced exact trace evidence, all immutable offline suites are green, and the narrow correction is an adapter-driven Codex wait matrix rather than a new controller.
