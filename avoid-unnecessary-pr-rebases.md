@@ -339,3 +339,18 @@ suites green while the approved two-file candidate remains byte-for-byte unchang
 The read-only mergeability exercise preserves candidate authority, but the exact
 zsh refspec prevents clean PR delivery and exit 1 cannot by itself establish a
 content conflict. Rework the two mod files as directed, then rerun this real-Git matrix.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Brace the recorded candidate variable in the exact-SHA push refspec in both approved mod files so supported zsh pushes the approved SHA exactly.
+  Commit `a20331ef0` uses `${CANDIDATE_SHA}:refs/heads/{branch}` twice; fixture `/tmp/spacedock-ep2-zsh-matrix.YC9RZY` would fail if remote `dff1890` followed moved local head `e745af0`.
+- DONE: Replace rigid exit-code semantics with First Officer inspection of merge-tree output and context: actual content conflict routes to G3/D8; command failure or uncertainty reports unknown and preserves authority.
+  The same zsh fixture observed conflict and unavailable-object results both at exit 1 but distinguished `CONFLICT (content)` stdout from `not something we can merge` stderr, with refs/index/worktrees unchanged.
+- DONE: Keep the two-file scope and rerun the real-Git zsh clean/conflict/unknown/moved-branch matrix plus focused, full, and race suites with exact evidence.
+  Candidate `a20331ef0` remains two files at +25/-9; contract/integration, full, and race suites exited 0 using `SPACEDOCK_STATE_ROOT` snapshot `73f41e2a2` for the fixed 31-path pilot manifest.
+
+### Summary
+
+The corrected mods preserve zsh refspec syntax and treat merge-tree status as one
+signal rather than a verdict. Actual conflict evidence routes to G3/D8, while tool
+failure or ambiguity stops as unknown without changing pending authority.
