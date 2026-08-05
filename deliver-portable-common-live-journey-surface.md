@@ -1,6 +1,6 @@
 ---
 title: Deliver one portable common live-journey surface
-status: validation
+status: implementation
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 3w, h3, tj, and r4 as design inputs."
 score: 1.0
 sprint: live-test-truth
