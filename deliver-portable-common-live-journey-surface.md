@@ -1104,3 +1104,34 @@ Cycle 10 PASSED independently at exact candidate `f390bf5d3ac37882db6fb1af9edb34
 ### Summary
 
 Cycle 11 repairs only auto-continue fixture reachability: both commissioned Git-backed shapes now run serially through one canonical journey with distinct artifacts and the same durable oracle. The harness-invalid run creates no product evidence or owner, and focused/full/race/history/origin/ceiling proof is green on the pushed replacement pair.
+
+## Stage Report: validation (cycle 11)
+
+- DONE: Verify exact candidate provenance, history, and remote equality.
+  Candidate/origin are clean at `37d91f673bda7ccdf9b7e63f6dc0134407895173`; core is `1fa6d52254cf7acb009e474b688e4861bb6fbc20` and merge base is `507a4bc12e48a3e4a813219602c488f09c81a5d8`.
+- DONE: Independently verify the supplied hosted artifact without launching a run.
+  Run `31034783581`, job `92404363889`, artifact `8942417379`, and `source-head.txt` bind exact source `f390bf5d3ac37882db6fb1af9edb34a9c991c9ff`.
+- DONE: Verify the exact hosted outcome and root cause.
+  Nine runnable journeys passed, exact owned withdrawn/rejection cells skipped, and auto-continue alone failed in 12.58s after its sole boot-identify in fixture cwd correctly found no commissioned workflow.
+- DONE: Preserve the hosted-versus-static evidence classification.
+  The archived transcript shows no post-probe mutation; the missing marker and absent split-root/Git staging make the run harness-invalid, with no product evidence, repair owner, or TODO binding.
+- DONE: Reproduce red baseline and green candidate discovery behavior independently.
+  Both exact README definitions fail real `status.DiscoverWorkflowDir` at `f390bf5d3`; both resolve to their exact fixture roots on `37d91f673`, and removing either commissioned marker fails again.
+- DONE: Verify exact Git and state-root baselines.
+  Single-root uses its definition root; split-root uses `.spacedock-state` for the entity and state Git root; every repository has exactly one clean seed commit, while raw no-Git variants fail.
+- DONE: Verify one canonical journey launches exactly both variants serially.
+  The common runner launches `auto-continue/single-root` then `auto-continue/split-root`; removal, duplication, and reverse-order source mutants each fail the exact sequence control.
+- DONE: Verify distinct artifact identity and unchanged semantic oracle.
+  Both artifact labels contain their exact fixture IDs and a wrong-label mutant fails; neutral prompt and durable `assertAutoContinue` hashes are byte-identical to baseline, including the stopped-after-implementation negative.
+- DONE: Verify adapters, product surfaces, selectors, and evidence state remain unchanged.
+  Cycle 11 changes exactly five existing fixture/test/docs files, no host adapter/product skill/binary/launcher/runtime/workflow selector/new file; desired state remains pure 64 and evidence remains eight bindings (Sonnet=3, Codex=4, Pi=1, Opus=0).
+- DONE: Reprove focused parity, fixture accountability, SHA, binding mutation, and Pi boundaries.
+  Runner/definition/runtime parity, annotations/use, current+stale SHA, exact TODO mutations, Pi four-entry rejection recording, native identity/cost/complete-large-row metrics, and release controls all exit 0.
+- DONE: Verify formatting, surface ceiling, and exact-byte repository suites.
+  Read-only `gofmt -l ./cmd ./internal` is empty and `git diff --check` passes; surface is 42 files/+2558/-671; full passes (`ensigncycle` 103.856s, wall 115.74s) and race passes (`ensigncycle` 115.016s, wall 127.82s).
+- DONE: Preserve candidate, runtime, and workflow authority boundaries.
+  Validation changed no candidate bytes, transitioned no state, launched no live/model/hosted/substrate/smoke action, filed no owner, and made no product fix; PASSED with no material, deferred-risk, or polish findings.
+
+### Summary
+
+Cycle 11 PASSED independently at exact candidate `37d91f673bda7ccdf9b7e63f6dc0134407895173`. The correction repairs only fixture reachability and two-shape coverage, while the frozen hosted failure remains correctly classified as harness-invalid and all product/evidence boundaries stay unchanged.
