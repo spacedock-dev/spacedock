@@ -1,6 +1,6 @@
 ---
 title: Make recorded gate operation self-guiding for First Officers
-status: implementation
+status: validation
 source: "Durable-decisions sprint dogfood: manual 0c and xb gate/round operation, 2026-07-24."
 score: 1.0
 id: skwchfe30ac6ntr63j1g0txj
