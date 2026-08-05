@@ -495,3 +495,53 @@ Candidate structure, reconciliation, focused controls, formatting, full tests, a
 ### Summary
 
 The three authorized evidence defects are corrected and locally verified: offline reconciliation has full Git history, the common suite stops after its first failed journey, and gate journeys select and prove distinct start states. The pushed two-commit shape preserves a watched-path reconciliation commit followed by a documentation-only SHA binding.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently inspect the implementation report, candidate diff, commit history, and exact merge base; do not trust the implementer's summary alone.
+  Inspected rejected `14f0e4147` through corrected core `5bb44e7b4d7bf3092b738a74d6ede04f4b0a5aed` and docs-only head `ae2a19e8cfdedace6b4d20e32821490666016e63`; origin/main merge base remains `507a4bc12e48a3e4a813219602c488f09c81a5d8`.
+- DONE: Extract AC-1 through AC-4 from the entity and reproduce every cited code, command, or durable-state proof; reject self-referential or static prose-only evidence.
+  Reproduced local structure, mutation, SHA, full/race, and exact-head hosted run `30996911834`; AC-2/3 are green, but real AC-1/4 lanes fail before complete evidence.
+- DONE: Verify one authoritative TestLiveSharedScenarios entry point, exactly 16 registry-ordered common journey subtests, one common runner map, and exactly three runtime adapters.
+  Live listing exposes only `TestLiveSharedScenarios`; parity tests prove the exact ordered 16, one runner map, and Claude/Codex/Pi selection including empty/unknown rejection.
+- FAILED: Prove the same shallow-boot selector works with only SPACEDOCK_LIVE_RUNTIME changing across Claude, Codex, and Pi; accept the recorded local Pi OpenRouter 402 only as externally blocked evidence and require hosted direct-OpenAI Pi proof.
+  Hosted Sonnet, Codex, and direct-OpenAI Pi each failed before shallow-boot; no exact-head three-runtime shallow selector proof exists.
+- DONE: Verify all three workflow lanes select TestLiveSharedScenarios and that restoring an old top-level suite name makes the independent workflow guard fail.
+  Release guards pass exact selector checks and mutations; hosted jobs invoked the one selector with only runtime/model environment differences.
+- DONE: Reproduce bidirectional registry/scenario/runner/adapter parity and all adversarial removals: missing runner, orphan fixture, wrong gate start, stopped auto-continue, and wrong AC re-anchor branch.
+  Reconciliation’s 24 mutants, stopped-auto-continue, AC re-anchor branches, and `TestGateJourneyOverlap` pass; detached swapped gate fixtures fail with the wrong required start.
+- DONE: Verify every common fixture has exactly one approved source annotation/builder and accountable use; reproduce reconciliation with zero duplicate, invalid, orphan, unaccounted-test, unaccounted-builder, missing, or unselected results.
+  Semantic reconciliation and all duplicate/invalid/orphan/unaccounted/missing/unselected mutation controls pass at `ae2a19e8`.
+- DONE: Verify no standalone common-journey top-level wrapper, host-specific common runner map, Pi coverage substitute, Pi quarantine, or Pi-only common-suite substitute remains. Allow only the exact owner-linked product TODOs named by the latest entity; reject any other skip.
+  Listing/reconciliation find one suite/map and exactly the three `TODO(9adv48yhye5s2vkhwd7ge52d)` gaps; all three cheap runtime selectors emit only those skips.
+- DONE: Trace the changed identity, fixture ID, journey ID, runtime selection, artifacts, metrics, costs, and durable workflow evidence through every representation and lifecycle phase.
+  Local parity is complete; hosted artifacts `8927141210` Sonnet, `8926705099` Codex, and `8926752230` Pi preserve exact-head execution and first-failure evidence.
+- DONE: Perform a semantic adversarial matrix covering unknown/empty runtime, all three adapters, missing runner/builder/selector, duplicate/orphan binding, failure cleanup, deadlines, and first-failure stop behavior.
+  All local matrix controls pass; detached `return`→`continue` fails with `[first second]`, and hosted Codex/Pi/Sonnet each stop immediately after their first common-journey failure.
+- DONE: Inspect hot paths for multiplicative work, blocking I/O, unbounded reads/allocation, implicit size limits, and accidental model retries; add or run one scaling/over-limit control where risk exists.
+  Full/race plus streamwatch large-line, quiet-timeout, cleanup, and single-run controls pass; hosted first-failure stopping bounds subsequent model work with no retry.
+- FAILED: Verify Claude and Codex transport launch, liveness, artifact, and metrics contracts remain stable, and common fixtures/assertions contain no host-specific branch outside the adapter factory.
+  Sonnet launches but duplicates gate preparation; Codex launches and mutates correctly but its shared-driver shim loses `command.log`; common static host-neutrality remains green.
+- FAILED: Verify Pi shallow-boot was attempted first, the local OpenRouter 402 caused no retry/full local lane, and hosted direct-OpenAI Pi proves adapter launch. Complete Pi evidence must enumerate all 16 identities, run implemented journeys for real, expose only the exact owner-linked TODO skips as missing evidence, and record runtime/model/duration/tokens/cost/artifacts.
+  Direct OpenAI `openai/gpt-5.4` launched and full-ensign-cycle passed, then gate-guardrail failed at 102.18s on missing `command.log`; the suite stopped, smoke skipped, and only two identities ran.
+- DONE: Classify every local-first Claude/Codex/Sonnet/Pi lane as pass, fail, blocked, or irrelevant; keep Opus irrelevant unless changed surface or a concrete failure escalation implicates it.
+  Offline PASS; Sonnet FAIL; Codex FAIL; direct-OpenAI Pi FAIL; prior local OpenRouter Pi BLOCKED 402; Opus IRRELEVANT and rejected before spend; no lane is misreported as pass.
+- DONE: Reproduce the stale reconciliation SHA failure and current candidate SHA success; verify the SHA-recording commit is documentation-only and names every changed watched path when stale.
+  A real full clone resolves `5bb44e7b^` and passes; a real depth-one clone fails `Invalid revision range`; stale diagnostics name all six watched paths, current passes, and `ae2a19e8` changes only `docs/runtime-live-ci.md`.
+- DONE: Run gofmt -w ./cmd ./internal, go test ./..., go test ./... -race, plus the focused offline commands from the entity, and leave the candidate worktree clean.
+  Formatting changed nothing; focused/full (`ensigncycle` 200.996s)/race (`ensigncycle` 207.931s) all pass; worktree status and `git diff --check` are empty.
+- DONE: Measure exact changed files and added lines against the 42-file/+2750-insertion ceiling; flag any new product package, registry ID, authority command, grammar, stored-format, or product-runtime change.
+  Exact origin/main surface is 41 files, +1661/-655, within ceiling; Cycle 2 adds no package, ID, authority, grammar, stored format, or product-runtime behavior.
+- DONE: Record each finding before candidate mutation with exact evidence and both defect-kind and release-scope axes; do not edit implementation code or authorize fixes.
+  Finding 1 — evidence defect, Material/candidate-owned: normal Codex/Pi common lanes lose command attribution; harm is failed implemented journeys/incomplete 16; `value-ac[AC-4]` requires stable attributable artifacts; jobs `92276320245`/`92276320256` show successful commands followed by absent `command.log` because shared drivers preserve direct `SPACEDOCK_BIN`.
+  Finding 2 — outcome defect, Material/product-owned and Needs decision: normal Sonnet default-headless drive creates duplicate durable gate attempts; harm is two preparations and failed journey; `value-ac[AC-4]` requires implemented journeys run for real; job `92276320289` shows a rejected three-reference prepare, successful `briefing-1`, explicit withdrawal, then successful `briefing-2` before `prepared fixture request count = 2, want 1`.
+  Adjacent finding — outcome defect, Material/pre-existing runtime-product scope: normal Sonnet break-glass substrate used unnamed foreground Agent and failed its stable proof; `value-ac[AC-4]` requires unchanged launch behavior; job `92276320289` reports the mismatched Agent shape, while the candidate diff does not touch that substrate.
+  Adjacent evidence limitation — evidence defect, Needs decision/pre-existing external-schema scope: normal Codex records have empty parsed model and no verified token/cost fields; harm is incomplete single-record attribution; `none:` AC-4 requires unchanged metrics and only Pi explicitly requires per-journey model/tokens/cost; current `thread.started`/nested-item schema triggers it while the emitter/parser candidate diff is empty.
+- DONE: Recommend PASSED only if all four latest ACs have reproducible evidence, all 16 desired identities and fixtures remain represented/reachable, implemented behavior has relevant passing evidence, and every product-owned gap is an exact repair-linked TODO reported as missing evidence rather than an exception/pass.
+  Recommendation: REJECTED. All three Cycle-1 fixes are proven, but AC-1/4 lack complete live proof, one candidate-owned Material evidence defect remains, and Sonnet exposes a non-9a product-owned Material gap.
+- DONE: Write and push a path-scoped validation stage report with exact commands, results, evidence locations, candidate SHA, and PASSED/REJECTED recommendation.
+  This cycle-2 report records exact SHAs, local commands, hosted run/jobs/artifacts, classifications, and REJECTED recommendation; publication commit follows path-scoped.
+
+### Summary
+
+Cycle 2 independently proves all three prior fixes in both directions and keeps AC-2/3, formatting, full, and race evidence green. Validation remains REJECTED: exact-head hosted evidence stops early on one candidate-owned Codex/Pi recording-shim defect and a separate Sonnet duplicate-preparation product failure, so the required complete 16-identity AC-1/4 proof does not exist.
