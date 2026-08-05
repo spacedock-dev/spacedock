@@ -1274,3 +1274,36 @@ Cycle 13 makes common auto-continue grading follow the durable active entity in 
 ### Summary
 
 Cycle 13 PASSED independently at exact candidate `0aa74035cc96d672c71480466ed4e1b1a3169213`. The narrow common-runner resolver fixes the archive-proven single-root grading false negative, rejects unsafe stamped paths, retains split-root and archive authority, and preserves every product, fixture, prompt, registry, owner, execution, and surface boundary.
+
+## Stage Report: implementation (cycle 14)
+
+- DONE: Start from the exact clean and pushed Cycle-13 candidate.
+  Baseline and origin were `0aa74035cc96d672c71480466ed4e1b1a3169213`; watched core was `7ef1636c5ff751ff2e04716e39eb075cdd8aaf42`.
+- DONE: Represent the exact deterministic hosted product failure.
+  Runtime Live E2E run `31045591048`, Codex job `92440554439`, artifact `8946459512` failed `full-ensign-cycle` because fresh workers lacked the executable ensign contract bootstrap.
+- DONE: Bind only the newly filed repair owner.
+  Codex `full-ensign-cycle` now returns `TODO(nvz2ym82ydfn07jp04yfxg9r)` for backlog owner `restore-codex-ensign-contract-bootstrap`.
+- DONE: Add the smallest exact controls before implementation.
+  The TODO table expected the exact Codex owner and reconciliation expected the exact target/journey pair; both REDs failed on the missing binding before the switch case existed.
+- DONE: Prove exact cardinality and wrong-target behavior.
+  `TestSharedLiveTODOEvidenceSet` passes Sonnet, Opus, Codex, and Pi subtests at exactly Sonnet=3, Codex=5, Pi=1, Opus=0; moving the binding to any non-Codex target would make that target non-runnable and the Codex count short.
+- DONE: Preserve all prior evidence bindings and mutation controls.
+  Reconciliation logs exactly nine bindings, while owner, target, global, duplicate, proven-pass, and all pre-existing wrong-target mutation controls still fail their injected candidates.
+- DONE: Preserve the normative desired registry.
+  The 16 journeys × four required targets remain the pure 64-cell desired matrix; only observed target-scoped missing evidence changed.
+- DONE: Update the operator evidence inventory in watched history.
+  The inventory states nine bindings and cites run `31045591048`; no desired-registry, fixture, workflow, or runtime selector text changed.
+- DONE: Preserve the core-plus-binder history boundary.
+  Watched core `84693a0f4feb02512bdb7994663c406dd32a0929` is followed only by SHA binder `d7cdd4e91f6fcfdc7308138434908b37fa6e54a5`.
+- DONE: Reprove current and stale SHA discrimination.
+  Before binding, the guard named both changed watched paths; after binding, `TestRuntimeLiveRegistryReconciliationSHA` passes its current-base and stale-parent assertions.
+- DONE: Run required formatting and repository-wide suites.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; full exits 0 (`ensigncycle` 105.770s) and race exits 0 (`ensigncycle` 116.979s).
+- DONE: Preserve exact surface and remote equality.
+  Candidate/origin are `d7cdd4e91f6fcfdc7308138434908b37fa6e54a5` at exactly 42 files/+2742/-681, eight insertions below the +2750 ceiling.
+- DONE: Preserve every prohibited product and execution boundary.
+  No product skill/binary, dispatch builder, fixture, prompt, adapter, launcher, oracle, Pi evidence/metric, workflow, other TODO, file, member, controller, or retry changed; no live/hosted/model/substrate/smoke command ran and no state transition was made.
+
+### Summary
+
+Cycle 14 records the archive-proven Codex `full-ensign-cycle` product failure as the ninth target-scoped missing-evidence binding and leaves the pure 64-cell desired registry intact. Exact RED/GREEN controls, mutation and SHA discrimination, full/race suites, remote equality, scope audit, and the fixed surface ceiling are green at `d7cdd4e91f6fcfdc7308138434908b37fa6e54a5`.
