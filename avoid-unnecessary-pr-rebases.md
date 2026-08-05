@@ -443,3 +443,18 @@ owned by the later refit path.
 The final shipped-only policy preserves the approved SHA through semantic
 mergeability judgment and exact zsh delivery. The dev customization is unchanged,
 all reproducible suites pass, and the live-state red remains unrelated fixture drift.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Remove all sprint-local G3/D8 references from the shipped mod and express portable self-contained content-conflict behavior.
+  Commit `f9fc3dbd4` replaces the sole leaked owner reference; the shipped mod now leaves reconciliation owner selection to each consuming workflow.
+- DONE: On actual conflict, stop PR/local-merge delivery, surface evidence, preserve pending authority, and forbid rebase, automatic resolution, and force operations; leave owner selection to the consuming workflow.
+  The portable conflict rule states every required stop, evidence, authority, and prohibition while retaining the validated semantic output inspection.
+- DONE: Keep only mods/pr-merge.md changed at version 0.27.0 and rerun the real-Git matrix plus focused, full, and race suites.
+  Final diff remains one file at +13/-4; `/tmp/spacedock-ep2-portable-zsh.G8D7fC` would fail on mutation or wrong delivery, and all named suites exited 0 with state snapshot `73f41e2a2`.
+
+### Summary
+
+The shipped `pr-merge` conflict path is now portable and self-contained, with no
+sprint-local owner IDs. Exact-SHA delivery, unknown-error handling, version, and
+the customized development mod remain unchanged.
