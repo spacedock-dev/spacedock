@@ -685,3 +685,36 @@ Cycle 4 confirms the structural four-owner accounting but rejects its runtime-gl
 ### Summary
 
 Cycle 5 replaces target-blind journey quarantines with five durable-evidence bindings while preserving the pure 16-journey/four-target desired registry. Proven passes and all unverified required targets remain runnable; only exact Sonnet/Codex owner failures skip. Source-derived reconciliation, adversarial purity/scope controls, full/race checks, and the two-commit SHA binding are green and pushed, with no product repair or model spend.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Confirm exact candidate identity: branch and origin head e023619ed1f6a00a85f6ad88741c8b8ebad2d3b1, watched core 386fd7a8bfa6f7c1597fe0171cee6cb5857a542a, docs-only binder, clean worktree, and current/stale SHA guard.
+  Exact head/origin and merge base `507a4bc12e48a3e4a813219602c488f09c81a5d8` match; binder changes one docs line, current/stale guards pass, and the worktree is clean.
+- DONE: Independently audit the full 16-journey by 4-target desired matrix; keep every registry journey and Claude Sonnet, Claude Opus, Codex, and Pi target required.
+  Parity and target tests exercise 64 desired cells with one 16-entry map, three adapters, and four required evidence targets; no target is removed or excepted.
+- DONE: Prove docs/runtime-live-ci-registry.md is desired-state-only and contains no observed missing-evidence ledger; verify reconciliation/report/source TODOs carry observed gaps instead.
+  Registry has no ledger; detached reintroduction fails `IMPURE desired registry`, while reconciliation emits source-derived target/owner diagnostics.
+- DONE: Reproduce the exact five target-scoped owner bindings: Sonnet default-headless-gate-stop to 26n; Sonnet and Codex smallest-sufficient-mechanism and keep-moving-posture to 9a; no other target/journey binding.
+  `TestSharedLiveTODOEvidenceSet` and reconciliation report exactly Sonnet=3, Codex=2, Opus=0, Pi=0 with the exact owners.
+- DONE: Verify auto-continue-after-implementation remains runnable for every target; Codex default-headless remains runnable as a proven pass; Pi and Opus affected cells remain runnable and are classified unverified/missing when not run.
+  Enumeration finds no auto-continue binding and no Codex/Pi/Opus default-headless binding; unexecuted cells remain unverified/missing, never pass or exception.
+- DONE: Run independent target-aware adversarial controls for global skip, wrong target, wrong owner, duplicate, cardinality/removal, registry impurity, and suppression of the proven Codex default-headless pass.
+  All 28 mutations pass; detached Pi suppression fails enumeration plus `UNOWNED-EVIDENCE`, and detached registry ledger fails `IMPURE desired registry`.
+- DONE: Verify all four zero-model enumeration selectors (claude-sonnet, claude-opus, codex, pi) and exact skip counts/reasons.
+  Four `TestSharedLiveTODOEvidenceSet/<target>` selectors pass without model execution and retain exact 3/0/2/0 skip cardinality.
+- DONE: Recheck the prior logger-shim propagation, ordered-suite first-failure stop, shallow/full-history reconciliation, and gate start-state overlap fixes.
+  Focused shim removals, false-first sequence, depth-one checkout mutation/current history, and crossed gate starts all fail at their intended boundary.
+- DONE: Audit target-aware Outcome, AC-2, AC-4, test plan, and Cycle 5 16-cell evidence report against exact durable run artifacts 30706782428 and 30996911834 plus archived wm auto-continue evidence.
+  Durable evidence supports the five target cells, Codex default-headless pass, historical Claude auto-continue pass, and leaves Pi/Opus gaps runnable rather than inferred.
+- DONE: Run gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race independently; record exact results and surface/ceiling accounting.
+  Formatting/diff are clean; normal passes (`ensigncycle` 195.947s), race passes (`ensigncycle` 206.792s), and 40 files/+1870/-664 remain below 42/+2750.
+- DONE: Before any paid/model-backed/hosted action, send the FO a concise local checkpoint with candidate identity, all control outcomes, and any blocker; do not dispatch or approve CI yourself.
+  Sent the all-green checkpoint before run `31015945064`; this validator launched, approved, rejected, canceled, and reran no CI job.
+- FAILED: After the FO supplies exact hosted run IDs, independently inspect only those exact-head common-selector jobs, steps, logs, and artifacts. Classify each target/journey as PASS, owner-linked MISSING-EVIDENCE, unverified/missing, or genuine candidate failure; never classify Opus irrelevant/excepted.
+  Codex run `31015945064`/job `92340224745`/step 16/artifact `8934638444` passed 2 then external-capacity INCONCLUSIVE; Pi run `31016570689`/job `92342373497`/step 13/artifact `8935708302` passed 5 then hit the false-negative oracle below; smoke skipped, Sonnet stopped before run, Opus required/unverified.
+- DONE: Append a durable Cycle 5 validation report with explicit PASSED or REJECTED verdict and findings; do not mutate candidate code.
+  REJECTED with one Material ys-owned evidence-adapter defect: Pi session proves successful `gate record --round validation/1`, but stdout-only Claude observation falsely says never invoked; the same boundary labels Pi metrics `runtime/host: claude` and omits token/cost attribution. Normal Pi evidence is stopped at 6/16; `value-ac[AC-4]` requires truthful artifact/metric attribution; candidate stayed untouched.
+
+### Summary
+
+Checklist: 12 DONE, 0 SKIPPED, 1 FAILED. Cycle 5 local representation proof is green, but exact-head hosted evidence exposes one Material ys-owned Pi observation-boundary defect, so validation is REJECTED; Codex capacity, unrun Sonnet, and required Opus are recorded as inconclusive or unverified rather than product failures or exceptions.
