@@ -35,208 +35,296 @@ gates:
                 state: consumed
 ---
 
-Prevent the `pr-merge` workflow from rewriting a validated candidate when the
-candidate still merges cleanly with the integration trunk.
+Prevent the `pr-merge` workflow from rewriting a validated candidate when Git can
+merge that candidate cleanly with the integration trunk.
 
 ## Problem
 
 The shipped mod rebases every branch before PR creation. The development mod
-requires the First Officer to do the same work before the merge hook runs. The
-Claude reconcile adapter also treats every owned `stale-branch` row as a rebase
-instruction. These rules use ancestry drift as proof of a conflict.
+requires the First Officer to do the same work before the hook runs. The shared
+reconcile result also tells an owner to `pull --rebase` for ancestry drift.
 
-A rebase changes the candidate commit even when Git can merge both tips. This
-change makes exact-head checks stale without correcting a conflict. Issue #616
-records the smallest case: the candidate is one commit behind and one commit
-ahead of `origin/main`, and Git can merge it without a conflict.
+These rules use behind/ahead counts as proof of a conflict. A clean rebase changes
+the candidate SHA and makes candidate-specific evidence stale. It can also race
+another trunk change before a PR exists.
+
+A clean merge tree is necessary, but it is not sufficient integration proof. A
+candidate can remove an API while the new base adds a caller in another file. Git
+merges those paths cleanly, but the merged program does not build.
 
 ## Observed delivery cases
 
 The following observations use `origin/main` from 2026-08-05. They are examples,
 not dependencies for this task.
 
-| Case | Candidate | Behind/ahead | `git merge-tree` | Delivery fact |
+| Case | Candidate | Behind/ahead | Merge result | Delivery fact |
 |---|---|---:|---|---|
-| SK | `cd76f52ab` | `5 1` | exit 0 | PR #617 is mergeable at the same head. An earlier clean rebase withdrew validation attempt 1. |
-| 26n | `2cebb23b8` | `66 11` | exit 1 | The original branch conflicts. PR #583 now uses rewritten head `aeb3009b0`. |
-| KD | `58888fddb` | `66 10` | exit 1 | The held candidate conflicts and has no PR. The owning branch must reconcile it. |
-| Z5 | `37abaa8b3` | `5 5` | exit 0 | The held candidate is cleanly mergeable. Base drift alone does not require a rewrite. |
+| SK | `cd76f52ab` | `5 1` | clean | PR #617 is mergeable at the same head. An earlier rebase withdrew validation attempt 1. |
+| 26n | `2cebb23b8` | `66 11` | conflict | PR #583 now uses reconciled head `aeb3009b0`. |
+| KD | `58888fddb` | `66 10` | conflict | The held candidate requires owning-branch reconciliation. |
+| Z5 | `37abaa8b3` | `5 5` | clean | Base drift alone does not require a candidate rewrite. |
 
-SK and Z5 prove that ahead/behind counts do not decide mergeability. The 26n and
-KD results prove that the clean path cannot replace owner reconciliation.
+SK and Z5 show that ancestry counts do not decide mergeability. The 26n and KD
+results show that the clean path cannot replace owner reconciliation.
 
-## Spike result
+## Spike results
 
-A real Git fixture at `/tmp/spacedock-616-mergeability.tntUm9` created two
-independent graphs. The clean graph was exactly `1 1`. This command exited 0 and
-left the candidate SHA unchanged:
+Four real Git spikes established the revised mechanism:
 
-```sh
-git -C "$WORKTREE" merge-tree --write-tree --quiet "origin/$BASE" "$CANDIDATE"
-```
+1. A clean `1 1` graph produced a merge tree and left the candidate SHA unchanged.
+2. A textual-clean graph produced tree `0e813e0329`. `go test ./...` on that tree
+   failed because the base added a caller for an API that the candidate removed.
+3. `-z --name-only --no-messages` preserved a filename with a tab and newline.
+   A directory/file conflict returned exit 1 and a synthetic conflict path.
+4. A branch moved after its SHA was recorded. An explicit SHA refspec still pushed
+   the recorded SHA, not the new local branch tip.
 
-The conflict graph changed `shared.txt` on both sides. The probe exited 1 and left
-the candidate SHA unchanged. A diagnostic run with `--name-only` named
-`shared.txt`. These operations write temporary Git objects. They do not change
-refs, the index, or the worktree. No new helper needs a spike.
+Git 2.38 supplies `--write-tree`, NUL output, name-only conflict data, and the
+0/1/error exit contract. This task does not use `--quiet` and does not require Git
+2.50. An older or incompatible Git version fails closed with an upgrade diagnostic.
+
+## Captain decisions
+
+- **Git floor:** retain Git 2.38 compatibility. Remove `--quiet`. Do not add a Git
+  2.50 floor or a rebase fallback.
+- **Ownership:** EP2 owns mergeability detection, evidence keys, and pinned-head
+  delivery. EP2 depends on G3 and D8 for generic recorded-owner handoff. It must
+  not duplicate or replace that mechanism.
 
 ## Proposed approach
 
-### 1. Make mergeability the delivery decision
+### 1. Add one production mergeability seam
 
-At the merge boundary, fetch the configured trunk. Record its tip as `BASE_SHA`.
-Record the worktree tip as `CANDIDATE_SHA`. Then run this read-only probe:
+Add this read-only command:
 
-```sh
-git -C "$WORKTREE" merge-tree --write-tree --quiet "$BASE_SHA" "$CANDIDATE_SHA"
+```text
+spacedock dispatch mergeability --workflow-dir DIR ENTITY --json
 ```
 
-The exit status has one meaning at this boundary:
+The binary resolves the entity worktree, configured trunk, `origin/{trunk}` tip,
+and candidate `HEAD`. It records both SHAs before it runs Git. The merge hook
+fetches the trunk before each command call.
 
-- Exit 0 means that Git produced a clean merge tree. Keep `CANDIDATE_SHA` and
-  continue PR preparation if the candidate still has commits outside the base.
-- Exit 1 means that Git found a conflict. Run the same command with `--name-only`
-  to collect conflict paths. Then enter the owner route in section 2.
-- Any other exit means that the decision is unknown. Stop PR creation and report
-  the command error. Do not rebase as a fallback.
+The command runs Git 2.38-compatible plumbing without `--quiet`:
 
-If the candidate is already an ancestor of the base, report that it is already
-integrated. Do not create an empty PR.
+```text
+git merge-tree --write-tree -z --name-only --no-messages BASE_SHA CANDIDATE_SHA
+```
 
-After captain approval, fetch the trunk again. If `BASE_SHA` changed, run the
-probe again. If `CANDIDATE_SHA` changed, use the evidence rule in section 3.
-Push and open the PR only after the final probe exits 0.
+The binary parses bytes, not lines. The first NUL field is the merge-tree OID.
+The remaining fields are exact conflict paths. An exit status of 1 means conflict,
+even when the path list is empty. Other statuses are command errors.
 
-This mechanism serves AC-1. The simpler `behind == 0` rule rejects SK and Z5.
-GitHub mergeability is insufficient because no PR exists before this decision.
-A new Spacedock command is unnecessary because Git already gives one exit-status
-decision without worktree mutation.
+The stable JSON result contains:
 
-### 2. Route conflicts to the recorded owner
+```json
+{
+  "command": "mergeability",
+  "base_sha": "...",
+  "candidate_sha": "...",
+  "merge_tree_oid": "...",
+  "mergeable": true,
+  "conflict_paths": [],
+  "pathless_conflict": false
+}
+```
 
-An ancestry-only `stale-branch` row becomes report-only. The reconcile sweep must
-not rebase a branch. The merge hook owns the delivery-time probe.
+This mechanism serves AC-1 and AC-2. A prose command recipe is insufficient
+because it has no production parser or stable output. A GitHub query is
+insufficient because no PR exists at the first decision.
 
-If the probe exits 1, preserve the entity stage, `pr`, merge `mod-block`, and
-pending terminal application. The detection path must not consume, clear, or
-supersede authority. It must not run `merge guard --rework`.
+### 2. Make ancestry drift report-only
 
-Identify the owner from the workflow dispatch identity, current entity stage,
-branch, and `worktree` field. Do not use the GitHub author or Git credential as
-the owner. Send the conflict package to the live owner. If that handle is absent,
-dispatch a fresh worker for the same recorded stage and worktree.
+The shared reconcile result continues to report `stale-branch`, `behind`, `trunk`,
+`worktree`, and `owned`. Its `reason` must not prescribe rebase. The Claude action
+must report this row and defer the decision to the merge boundary.
 
-The package contains the entity, PR reference, branch, worktree, old and new base
-SHAs, candidate SHA, and conflict paths. The owner changes only its branch after
-captain authorization. The First Officer guards state and transport. It does not
-resolve conflicts, select `ours` or `theirs`, or force-push.
+The merge hook runs `dispatch mergeability` before it presents the PR draft. It
+runs the command again after captain approval and a fresh trunk fetch. A clean
+result permits PR preparation without a candidate rewrite. If the candidate is
+already an ancestor of the base, the hook reports it as integrated and does not
+create an empty PR.
 
-This mechanism serves AC-2. A generic resolver is insufficient because it has no
-semantic ownership. `merge guard --rework` is insufficient because it burns the
-pending terminal application and clears truthful delivery state.
+This mechanism serves AC-1. Changing only the Claude instruction is insufficient
+because the shared JSON would still prescribe `pull --rebase (owned)`.
 
-### 3. Refresh evidence by candidate SHA
+### 3. Delegate conflicts without changing authority
 
-The candidate SHA is the invalidation key. A base-only change makes only the
-mergeability result stale. Run the probe again, but keep validation, CI, gate,
-and PR-draft evidence when `CANDIDATE_SHA` is unchanged.
+If `mergeable` is false, EP2 passes the structured result to the generic G3/D8
+owner-handoff path. The package includes the entity, PR, branch, worktree,
+`base_sha`, `candidate_sha`, `merge_tree_oid`, exact conflict paths, and the
+`pathless_conflict` flag.
 
-If owner reconciliation changes `CANDIDATE_SHA`, refresh these items:
+The EP2 detection path preserves status, `pr`, merge `mod-block`, and the pending
+terminal application. It does not consume, clear, supersede, or rework authority.
+It does not identify an owner from Git credentials. G3/D8 owns live-owner reuse,
+fresh-owner dispatch, and the no-resolver boundary.
 
-1. Deterministic validation and required live checks that ran on the old SHA.
-2. CI results whose recorded head is the old SHA.
-3. Validation report claims, Briefing content, and terminal approval that cite or
-   authorize the old SHA.
-4. PR draft evidence that was derived from those stale results.
-5. The mergeability probe against the current trunk tip.
+This mechanism serves AC-2. EP2 depends on G3 and D8 before implementation can
+claim the owner route. Duplicating their dispatch mechanism would create two
+generic handoff contracts.
 
-Keep the ideation baseline, accepted scope, entity identity, issue, branch owner,
-and evidence that is not head-specific. Conflict detection makes no authority
-write. If the owner returns a new head, replace old-head gate authority through
-the normal recorded-gate path. Never consume it as delivery proof.
+### 4. Key evidence to what can make it stale
 
-This mechanism serves AC-3. Refreshing all evidence on every trunk change repeats
-the defect. Reusing old exact-head evidence after a candidate change weakens the
-existing validation contract.
+Use two evidence keys:
+
+- **Candidate key:** `candidate_sha`. Unit, behavior, and live checks that inspect
+  only candidate bytes use this key.
+- **Integration key:** `(base_sha, candidate_sha, merge_tree_oid)`. Build,
+  integration, and merge-result checks use this key.
+
+If only `base_sha` changes, rerun mergeability and integration-keyed proof. Keep
+candidate-keyed proof. The pending terminal application cannot finalize delivery
+until the new integration proof is green.
+
+If `candidate_sha` changes, rerun candidate-keyed proof and integration-keyed
+proof. Refresh report, Briefing, approval, and PR-draft claims that cite the old
+candidate. Keep the ideation baseline, accepted scope, entity identity, issue,
+owner, and proof that does not use either changed key.
+
+This mechanism serves AC-3. Candidate-only invalidation is insufficient because a
+clean merge can fail integration. Full refresh on every base change repeats the
+original churn.
+
+### 5. Push the approved SHA, not a moving branch name
+
+After the final clean decision, push the recorded candidate to an explicit ref:
+
+```text
+git push origin CANDIDATE_SHA:refs/heads/BRANCH
+```
+
+Do not use force. Before PR creation, `git ls-remote` must report that exact SHA
+for the remote branch. After PR creation, `gh pr view --json headRefOid` must
+report the same SHA before EP2 records `pr:`. A mismatch stops delivery and leaves
+state authority unchanged.
+
+This mechanism serves AC-4. Rechecking local `HEAD` is insufficient because the
+current mod pushes a branch name after the check.
 
 ## Out of scope
 
+- Generic owner discovery, live-handle reuse, or fresh owner dispatch. G3/D8 owns
+  these mechanisms.
 - Automatic conflict resolution, force-push, or a generic resolver worker.
-- A new command, stored field, state schema, PR provider, or merge strategy.
-- A requirement that every PR branch is current with the trunk.
+- A new stored field, state schema, PR provider, or merge strategy.
 - Changes to state-checkout rebase safety. A same-entity state conflict remains a
   global state-safety halt.
-- Changes to GitHub branch protection or CI merge-queue policy.
+- Changes to GitHub branch protection or merge-queue policy.
 
 ## Acceptance criteria
 
 **AC-1 (VALUE) - A clean `1 1` candidate reaches PR preparation with zero candidate-head rewrites.**
 
-Verified by: a real Git fixture runs the exact mod probe on a clean branch that is
-one commit behind and one ahead. The fixture records zero rebase commands, exit 0,
-the same candidate SHA, and an eligible PR-preparation result.
+Verified by: a real Git fixture invokes production `dispatch mergeability`. It
+records a clean result, zero rebase commands, the same candidate SHA, and eligible
+PR preparation. Shared reconcile and a focused Claude run leave the head unchanged.
 
-**AC-2 - A conflicting candidate reaches its recorded owner with delivery authority unchanged.**
+**AC-2 - Every conflict result is NUL-safe and reaches the generic owner route without changing delivery authority.**
 
-Verified by: a conflict fixture records exit 1 and exact conflict paths. It routes
-the package to the recorded stage, branch, and worktree owner. Entity status, `pr`,
-`mod-block`, and the pending terminal application remain byte-identical. The
-command log contains no consume, clear, supersede, auto-resolution, or force action.
+Verified by: production command fixtures cover ordinary paths, tabs, newlines,
+directory/file conflicts, and a conflict with no path rows. G3/D8 receives the
+structured package. Status, `pr`, `mod-block`, and pending authority stay
+byte-identical. No resolver, consume, clear, supersede, rework, or force action runs.
 
-**AC-3 - Evidence refresh follows candidate-head changes, not base ancestry changes.**
+**AC-3 - Integration evidence changes when any integration-key component changes.**
 
-Verified by: a table-driven fixture first changes only the base and requires only
-a new mergeability probe. It then changes the candidate and requires the five-item
-refresh set from section 3. A mutation that refreshes exact-head checks for the
-base-only case, or reuses old-head evidence, must fail.
+Verified by: a clean textual merge removes an API while its new base adds a caller.
+The fixture requires new integration proof and observes the merged tree fail to
+build. A matrix keeps candidate-only proof for a base-only change, but rejects old
+integration proof. A candidate change invalidates both evidence classes.
+
+**AC-4 - PR delivery publishes the approved candidate SHA even if the local branch moves.**
+
+Verified by: an adversarial real-remote fixture changes the local branch after the
+decision. The explicit refspec publishes only `candidate_sha`. Remote verification
+and `headRefOid` match it before `pr:` can change. Branch-name push or any mismatch
+must fail.
 
 ## Expected surface and semantic boundaries
 
-Expected changes are 6-8 files and approximately +300/-20 lines:
+The next Captain gate can approve this proposal: 11-14 files, approximately
+`+450/-40` lines, with a 1.5x tolerance. This estimate is not pre-approved
+implementation scope.
 
-- `mods/pr-merge.md`: replace the mandatory rebase with the probe and routes.
-- `docs/dev/_mods/pr-merge.md`: apply the same rule to the split-root variant.
-- `skills/first-officer/references/claude-fo-dispatch.md`: make ancestry-only
-  `stale-branch` rows report-only.
-- `skills/integration/pr_merge_policy_test.go`: add real Git and state fixtures.
-- `internal/ensigncycle/` shared fixture and Claude runner files: prove that the
-  live adapter reports ancestry drift without rebasing the clean candidate.
+- `internal/dispatch/mergeability.go` and focused real-Git tests: command,
+  Git-version error, byte parser, stable JSON, and evidence keys.
+- `internal/dispatch/dispatch.go`: route and help for `dispatch mergeability`.
+- `internal/dispatch/reconcile.go`, `reconcile_test.go`, and trunk tests: retain
+  drift data but remove the shared rebase prescription.
+- `mods/pr-merge.md` and `docs/dev/_mods/pr-merge.md`: call the production seam,
+  delegate conflicts, refresh evidence by key, and push the pinned SHA.
+- `skills/first-officer/references/claude-fo-dispatch.md`: make ancestry drift
+  report-only.
+- `internal/contractlint/`: check structural references and forbidden rebase
+  prescriptions. It must not extract or execute instruction prose.
+- `internal/ensigncycle/` shared fixture and Claude runner files: prove the live
+  no-rebase result and G3/D8 handoff boundary.
 - `docs/site/advanced/mods-and-standing-teammates.md`: document the user-visible
-  no-rewrite policy.
+  mergeability, evidence-key, and pinned-head policy.
 
-Tolerance is 2x for files and insertions. Command grammar and stored formats do
-not change. Authority remains with the recorded gate and owning branch. Runtime
-behavior changes only at stale-branch handling and PR delivery.
+Allowed command grammar change: add `dispatch mergeability`. Allowed JSON change:
+add its new stable result only. Stored formats do not change. Authority remains
+with recorded gates and G3/D8 owner handoff. Runtime changes are limited to
+ancestry-drift reporting, mergeability decisions, evidence refresh, and pinned
+delivery.
 
 The proposed documentation change is:
 
 ```diff
  The canonical example is the `pr-merge` mod: it opens the code-branch PR at merge,
  records the PR on the entity, and holds the terminal transition until the PR merges.
-+It keeps a validated branch head when Git can merge it cleanly. A real conflict
-+returns to the recorded branch owner without consuming pending merge authority.
++It keeps a validated branch head when Git can merge it cleanly. Integration proof
++tracks the base, candidate, and merge tree. Conflicts return through the generic
++owner handoff, and PR delivery pushes the approved candidate SHA.
 ```
 
 ## Test plan
 
-Add the focused smoke test before the instruction changes. The test extracts the
-declared probe from both mod files and runs it in temporary real Git repositories.
+Add production tests before instruction changes. Do not extract or execute commands
+from mod or skill prose.
 
-The clean fixture creates exactly one trunk commit and one candidate commit after
-their merge base. It checks exit 0, a stable candidate SHA, clean index/worktree,
-and no rebase command. The conflict fixture changes one path on both sides. It
-checks exit 1, the named path, unchanged refs and state bytes, and owner routing.
+1. Build real Git graphs for clean `1 1`, ordinary conflict, unusual filename,
+   directory/file conflict, and pathless logical conflict cases. Invoke production
+   `dispatch mergeability`. Check all JSON bytes, exit behavior, OID handling, and
+   unchanged refs, index, and worktree.
+2. Build the clean-merge/build-red API fixture. Materialize the returned merge tree
+   and run `go test ./...`. Check that a base-only change invalidates integration
+   proof while candidate-only proof remains valid.
+3. Update shared reconcile fixtures. Check that `stale-branch` keeps ownership and
+   drift facts but contains no rebase action or prescription.
+4. Run the G3/D8 handoff fixture with ordinary and pathless conflicts. Check
+   byte-identical delivery authority and no EP2-owned dispatch mechanism.
+5. Move a local branch after the final decision. Push the recorded SHA to a real
+   bare remote. Check the remote ref and a stubbed `headRefOid` before any `pr:`
+   write. Reject a branch-name push and both mismatch mutations.
+6. Run one isolated Claude fixture with a clean `1 1` branch. Check that reconcile
+   does not change the head and that the merge boundary uses production JSON.
+7. Run focused packages, `go test ./...`, `go test ./... -race`,
+   `gofmt -w ./cmd ./internal`, `git diff --check`, and contract lints.
 
-Add a table for base-only and candidate-head changes. The table checks the exact
-refresh set and rejects both over-refresh and stale-head reuse. Add a contract test
-that both mod variants use the same decision and that the Claude adapter does not
-rebase an ancestry-only `stale-branch` row.
+## Science Officer findings and authorized disposition
 
-Run the focused integration package, `go test ./...`, `go test ./... -race`,
-`gofmt -w ./cmd ./internal`, `git diff --check`, and the existing contract lints.
-Run one isolated Claude fixture with a clean `1 1` branch. The fixture must show
-that the reconcile pass does not change its head. It must then reach the clean
-merge-boundary decision. Other host lanes are unchanged and do not need a run.
+The five findings below are preserved unchanged from the Science Officer review.
+
+1. **AC-3 is unsound:** base-only changes can merge textually but break integration (for example candidate removes an API while new base adds another-file caller). Candidate-only checks may key by candidate SHA, but integration/build proof must key by (base SHA,candidate SHA) or merge-tree OID; add a clean-merge/base-only integration-failure fixture.
+2. **Conflict path command is invalid:** reusing `--quiet` with `--name-only` suppresses output; non-quiet output includes tree OID/messages. Specify distinct structured diagnostic parsing, ideally `-z`, `--no-messages`, explicit tree-OID handling; test unusual filenames/logical conflicts.
+3. **Proof plan violates instruction-file quarantine** by extracting/comparing commands from mod prose. Use structural contractlint only for references and prove the decision through a production seam or runnable shared/live behavior.
+4. **Expected surface omits shared reconcile behavior** at `internal/dispatch/reconcile.go` and its tests, which still prescribe `pull --rebase (owned)`. Include shared production/tests or justify why that reason remains.
+5. **Exact-head authority has a probe-to-push race** because current delivery pushes a branch name. Push pinned SHA to explicit ref or verify remote head equals candidate before PR open/update; add adversarial branch-movement proof.
+
+Authorized evidence ledger:
+
+| Finding | Released user and normal workflow | Observable harm | Affected authority | Trigger evidence | Materiality | Owner | Disposition |
+|---|---|---|---|---|---|---|---|
+| 1 | Candidate delivery after trunk movement | Textual merge passes while merged program fails | AC-3 and terminal integration proof | Clean tree `0e813e0329`; build fails with `undefined: Old` | Material | EP2 | Fix with candidate and integration keys |
+| 2 | Conflicting delivery with any valid Git path | Quiet output loses paths; line parsing corrupts names | AC-2 owner package | Tab/newline and directory/file spikes | Material | EP2 production seam | Remove quiet; parse NUL fields and tree OID |
+| 3 | Merge-policy implementation and validation | Prose becomes its own behavioral oracle | AC-1 through AC-4 proof policy | Prior plan extracted mod commands | Material evidence defect | EP2 implementation/validation | Use production tests plus structural lint only |
+| 4 | Shared and Claude stale-branch reconcile | Automatic rebase still rewrites clean candidates | AC-1 zero-rewrite value | `reconcile.go` reason and Claude action prescribe rebase | Material | EP2 shared reconcile surface | Make ancestry drift report-only in both layers |
+| 5 | Captain-approved PR creation | Moving branch name can publish an unapproved head | AC-4 exact-head delivery | Explicit-SHA push retained the recorded head after local movement | Material | EP2 delivery surface | Pin SHA and verify remote plus `headRefOid` |
+
+Captain decision A selects Git 2.38 compatibility without `--quiet`. Captain
+decision B makes G3/D8 a dependency and forbids an EP2 owner-handoff duplicate.
 
 ## Stage Report: ideation
 
@@ -252,3 +340,34 @@ merge-boundary decision. Other host lanes are unchanged and do not need a run.
 The design replaces mandatory rebase with one read-only Git mergeability decision.
 Clean candidates keep their validated SHA. Conflicting candidates return to their
 recorded owner while the First Officer preserves state and pending authority.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Correct AC-3 with separate candidate and integration evidence keys.
+  The integration key contains the base SHA, candidate SHA, and merge-tree OID.
+  A clean-merge/build-red spike proves that base-only drift can require new
+  integration proof even when Git finds no text conflict.
+- DONE: Replace the invalid quiet diagnostic with one production command.
+  The command keeps Git 2.38 support and parses NUL-separated tree and conflict
+  fields. Its tests include unusual filenames, directory/file conflicts, and a
+  pathless conflict result.
+- DONE: Keep behavioral proof outside instruction prose.
+  Production command tests and shared live fixtures prove behavior. Contract lint
+  checks only structural references and forbidden rebase prescriptions.
+- DONE: Include shared reconcile and Claude stale-branch behavior in the surface.
+  Both layers report ancestry drift without prescribing or running a rebase.
+- DONE: Close the probe-to-push race with exact-head delivery.
+  The merge hook pushes the recorded candidate SHA. It checks the remote ref and
+  PR head before it records `pr:`. An adversarial fixture moves the local branch.
+- DONE: Preserve generic owner-handoff authority.
+  EP2 delegates conflict packages to G3/D8. It does not duplicate owner discovery,
+  dispatch, rework, or authority mutation.
+- DONE: Record both Captain decisions in the contract.
+  The design retains Git 2.38 compatibility and makes G3/D8 a dependency for the
+  generic owner route.
+
+### Summary
+
+The revised design keeps clean candidate heads without treating textual mergeability
+as complete integration proof. It also preserves exact-head authority from the
+decision through PR creation and delegates real conflicts to the existing owner path.
