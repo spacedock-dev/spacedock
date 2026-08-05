@@ -64,11 +64,9 @@ func walkStreamBlocks(stream string, fn func(block streamContentBlock)) {
 	}
 }
 
-// inputHasKey reports whether the tool_use input carried the named key AT ALL,
-// distinct from carrying it with a false/empty value.
-func inputHasKey(input map[string]json.RawMessage, key string) bool {
-	_, ok := input[key]
-	return ok
+// inputBoolField treats an omitted JSON boolean as false.
+func inputBoolField(input map[string]json.RawMessage, key string) bool {
+	return string(input[key]) == "true"
 }
 
 func inputStringField(input map[string]json.RawMessage, key string) string {
@@ -120,7 +118,7 @@ func assertBoundedRetryObservables(stream string) error {
 
 // assertBareReachableObservables is the AC-2 behavioral oracle, rewritten for the
 // post-retirement expectation: over the captured stream it asserts (i) at least one
-// bare-shaped Agent() call (neither `name` nor `run_in_background`) — bare dispatch is
+// bare-shaped Agent() call (no name and false-or-omitted `run_in_background`) — bare dispatch is
 // reached — AND, as the wrong-way check the retirement preserves, (ii) NO retired
 // Degraded Mode captain report in any text block, and (iii) NO
 // Skill(skill="spacedock:fo-dispatch-recovery") load. A drive that still emits the
@@ -143,7 +141,7 @@ func assertBareReachableObservables(stream string) error {
 					sawRecoverySkill = true
 				}
 			case "Agent":
-				if !inputHasKey(block.Input, "name") && !inputHasKey(block.Input, "run_in_background") {
+				if inputStringField(block.Input, "name") == "" && !inputBoolField(block.Input, "run_in_background") {
 					sawBareAgent = true
 				}
 			}
@@ -151,7 +149,7 @@ func assertBareReachableObservables(stream string) error {
 	})
 
 	if !sawBareAgent {
-		return fmt.Errorf("no bare-shaped Agent() call (neither `name` nor `run_in_background`) observed — bare dispatch was not reached")
+		return fmt.Errorf("no bare-shaped Agent() call (no name and false-or-omitted `run_in_background`) observed — bare dispatch was not reached")
 	}
 	if sawRetiredReport {
 		return fmt.Errorf("the retired Degraded Mode captain report (%q) still appeared — it was retired with Degraded Mode and must not fire on a bare drive", retiredDegradedModeReportPrefix)

@@ -2,7 +2,19 @@
 // ABOUTME: oracles — synthetic stream-json, no model spend, no live credential.
 package ensigncycle
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
+
+func TestDispatchRecoveryPromptsSelectIntendedDispatchModes(t *testing.T) {
+	if !strings.Contains(bareReachablePrompt(), "`widget-task`") {
+		t.Fatal("bare prompt must name its single entity to select blocking bare dispatch")
+	}
+	if strings.Contains(breakGlassShimPrompt(), "`widget-task`") {
+		t.Fatal("break-glass prompt must not name one entity and accidentally select blocking bare dispatch")
+	}
+}
 
 // boundedRetryGoodStream is a hand-authored representative stream shaped like the
 // real multi-delta runner output: a text delta acknowledging an Agent() error, the
@@ -42,10 +54,10 @@ func TestAssertBoundedRetryObservablesCatchesThirdAttempt(t *testing.T) {
 }
 
 // bareReachableGoodStream is a hand-authored representative post-retirement bare
-// drive: a bare-shaped Agent() call (neither `name` nor `run_in_background`), with NO
+// drive: a bare-shaped Agent() call (no name and explicit `run_in_background:false`), with NO
 // retired Degraded Mode captain report and NO recovery-skill load.
 const bareReachableGoodStream = `{"type":"assistant","message":{"id":"m1","content":[{"type":"text","text":"The captain asked for bare dispatch; dispatching one worker at a time, blocking on each."}]}}
-{"type":"assistant","message":{"id":"m2","content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch","prompt":"..."}}]}}`
+{"type":"assistant","message":{"id":"m2","content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch","prompt":"...","run_in_background":false}}]}}`
 
 func TestAssertBareReachableObservablesOffline(t *testing.T) {
 	if err := assertBareReachableObservables(bareReachableGoodStream); err != nil {

@@ -31,7 +31,6 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	for _, want := range []string{
 		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/claude/${{ matrix.model }}`,
 		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/codex`,
-		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi`,
 	} {
 		if !hasExecutableYAMLLine(workflow, want) {
 			return fmt.Errorf("runtime-live-e2e.yml missing active metrics env line %q", want)
@@ -51,7 +50,7 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	if piCoverageRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi shared scenario coverage guard")
 	}
-	piSmokeRun := findExecutableStep(steps, "Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle")
+	piSmokeRun := findExecutableStep(steps, "Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke")
 	if piSmokeRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi front-door smoke")
 	}
@@ -70,8 +69,8 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	if !hasJourneyMetricsUploadAfter(steps, codexRun, piCoverageRun) {
 		return fmt.Errorf("runtime-live-e2e.yml Codex shared scenario job does not upload raw journey metrics")
 	}
-	if !hasJourneyMetricsUploadAfter(steps, piSmokeRun, len(steps)) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not upload raw journey metrics")
+	if hasExecutableYAMLLine(workflow, `SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi`) {
+		return fmt.Errorf("runtime-live-e2e.yml retains a Pi journey-metrics path without a producer")
 	}
 	return nil
 }

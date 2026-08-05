@@ -7,46 +7,10 @@ package ensigncycle
 import (
 	"context"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/livescenario"
 )
-
-func assertRecordedGateHoldLog(log string) error {
-	const prepareToken = "exit=0\tgate prepare recorded-gate-task "
-	prepare, commit, head := strings.Index(log, prepareToken), strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task"), strings.LastIndex(log, "state-head\t")
-	if prepare < 0 || commit < prepare || head < commit || strings.Count(log, prepareToken) != 1 ||
-		strings.Contains(log[prepare:], " --decision ") || strings.Contains(log[prepare:], "gate consume recorded-gate-task") || strings.Contains(log[prepare:], "dispatch build ") {
-		return errGraded("gate hold crossed its committed no-authority boundary")
-	}
-	return nil
-}
-
-func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
-	const prepared = "exit=1\tgate prepare recorded-gate-task validation\n" +
-		"exit=0\tgate prepare recorded-gate-task validation\n" +
-		"exit=0\tstate commit recorded-gate-task\n" +
-		"state-head\tabc123\n"
-	if err := assertRecordedGateHoldLog(prepared); err != nil {
-		t.Fatalf("prepare-first hold log rejected: %v", err)
-	}
-
-	for name, mutation := range map[string]string{
-		"retired bind":      strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation", "exit=0\tgate record recorded-gate-task --briefing briefing.md", 1),
-		"missing commit":    strings.Replace(prepared, "exit=0\tstate commit recorded-gate-task\n", "", 1),
-		"decision":          prepared + "exit=0\tgate record recorded-gate-task --decision approve\n",
-		"consume":           prepared + "exit=0\tgate consume recorded-gate-task\n",
-		"successor build":   prepared + "exit=0\tdispatch build successor\n",
-		"duplicate prepare": prepared + "exit=0\tgate prepare recorded-gate-task validation\n",
-	} {
-		t.Run(name, func(t *testing.T) {
-			if err := assertRecordedGateHoldLog(mutation); err == nil {
-				t.Fatal("mutated hold log unexpectedly accepted")
-			}
-		})
-	}
-}
 
 // claudeRunnerAdapter wraps the existing package-private claudeLiveRunner (the
 // launch + observed-extract adapter 8y built) as a livescenario.Runner. This is
@@ -110,9 +74,3 @@ func TestLivePrimitiveRunsAgainstClaudeAdapter(t *testing.T) {
 		t.Fatalf("live primitive scenario graded FAIL: %v", err)
 	}
 }
-
-func errGraded(msg string) error { return &gradedErr{msg} }
-
-type gradedErr struct{ msg string }
-
-func (e *gradedErr) Error() string { return e.msg }

@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os/exec"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -65,6 +67,62 @@ type lineSource interface {
 type procPoller interface {
 	poll() (code int, exited bool)
 	kill()
+}
+
+// cmdPoller adapts an exec.Cmd to procPoller. It waits in the background, keeps
+// the exit result available to non-blocking watcher polls, and closes the
+// supplied stream writer so the line source reaches EOF after process exit.
+type cmdPoller struct {
+	cmd *exec.Cmd
+
+	mu     sync.Mutex
+	exited bool
+	code   int
+	err    error
+	done   chan struct{}
+}
+
+func newCmdPoller(cmd *exec.Cmd, streamWriter io.Closer) *cmdPoller {
+	p := &cmdPoller{cmd: cmd, done: make(chan struct{})}
+	go func() {
+		err := cmd.Wait()
+		code := 0
+		if exit, ok := err.(*exec.ExitError); ok {
+			code = exit.ExitCode()
+		} else if err != nil {
+			code = -1
+		}
+		_ = streamWriter.Close()
+		p.mu.Lock()
+		p.exited = true
+		p.code = code
+		p.err = err
+		p.mu.Unlock()
+		close(p.done)
+	}()
+	return p
+}
+
+func (p *cmdPoller) poll() (int, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.code, p.exited
+}
+
+func (p *cmdPoller) kill() {
+	if p.cmd.Process != nil {
+		_ = p.cmd.Process.Kill()
+	}
+}
+
+// wait blocks until the background exec.Cmd Wait completes. Process-boundary
+// callers use it after a watcher-triggered kill so artifact files are complete
+// before they are closed and read.
+func (p *cmdPoller) wait() (int, error) {
+	<-p.done
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.code, p.err
 }
 
 // stepTimeout: no progress within the quiet budget (or no exit within the exit
