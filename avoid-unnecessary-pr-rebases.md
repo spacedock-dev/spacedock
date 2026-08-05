@@ -1,7 +1,7 @@
 ---
 id: ep2cz3zsb2qpyyh889nyeqpr
 title: Avoid unnecessary rebases before opening mergeable PRs
-status: implementation
+status: validation
 source: GitHub issue #616; Captain intake 2026-08-05
 started: 2026-08-04T17:00:42Z
 completed:
