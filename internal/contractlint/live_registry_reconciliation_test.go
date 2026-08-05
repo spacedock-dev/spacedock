@@ -46,6 +46,7 @@ type missingEvidenceKey struct {
 }
 
 var auditedMissingEvidence = map[missingEvidenceKey]string{
+	{target: "codex", journey: "full-ensign-cycle"}:                     "nvz2ym82ydfn07jp04yfxg9r",
 	{target: "claude-sonnet", journey: "default-headless-gate-stop"}:    "26nk8qd48zknqnn4kc123sez",
 	{target: "claude-sonnet", journey: "smallest-sufficient-mechanism"}: "9adv48yhye5s2vkhwd7ge52d",
 	{target: "claude-sonnet", journey: "keep-moving-posture"}:           "9adv48yhye5s2vkhwd7ge52d",

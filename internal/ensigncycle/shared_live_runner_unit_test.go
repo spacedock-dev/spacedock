@@ -196,6 +196,7 @@ func TestSharedLiveTODOEvidenceSet(t *testing.T) {
 		liveEvidenceTargetPi,
 	}
 	want := map[liveEvidenceKey]string{
+		{target: liveEvidenceTargetCodex, journey: "full-ensign-cycle"}:                    codexEnsignContractDefectID,
 		{target: liveEvidenceTargetClaudeSonnet, journey: "default-headless-gate-stop"}:    defaultHeadlessGateStopDefectID,
 		{target: liveEvidenceTargetClaudeSonnet, journey: "smallest-sufficient-mechanism"}: liveDurableJourneyDefectID,
 		{target: liveEvidenceTargetClaudeSonnet, journey: "keep-moving-posture"}:           liveDurableJourneyDefectID,
