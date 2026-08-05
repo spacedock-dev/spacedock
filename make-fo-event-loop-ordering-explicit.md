@@ -160,3 +160,16 @@ Recommendation for implementation-gate entry: **APPROVE ideation**. Land a contr
 - DONE — replayed the false-stop trace and recorded the ordered mod/PR, gate, dispatch, idle/reconcile, and wait decisions.
 - DONE — reconciled ACs, test plan, and Codex wait predicate against existing state/transport boundaries and named unresolved risks.
 - DONE — committed the ideation report with falsifying evidence and the implementation-gate recommendation.
+
+## Stage Report: implementation
+
+- DONE: Land the contract-first ordered event-loop trace and a falsifying host-neutral command-log fixture proving mod/PR and ready-gate actions precede status --next while unrelated ready work still dispatches.
+  Commit `e2d947287` adds the ordered contract and `TestFirstOfficerEventLoopCommandLog`; moving mod/gate events after `next`, dropping either independent dispatch, or accepting the legacy false-stop trace makes it fail.
+- DONE: Implement the one-shot idle/reconcile/retry and unresolved-worker wait predicate across the declared host boundaries without adding state fields, command grammar, gate authority, or a shipped scheduler command.
+  The shared, Claude, Codex, and Pi bindings now agree; retry action reordering/repetition and active/completed/errored/absent wait-matrix mutations fail focused tests, while Codex, Claude shallow-boot, and Pi front-door live retries passed.
+- DONE: Pass focused event-loop/gate/wait tests, go test ./..., go test ./... -race, gofmt for Go changes, and the required live lanes for any runtime-adapter contract changes.
+  Focused suites, contractlint, gofmt, both full suites with immutable `SPACEDOCK_STATE_ROOT` commit `73f41e2a2232ebb561710bce568641ec976d5f3d`, Codex isolated live, Claude isolated shallow-boot, and Pi front-door passed; mutable live state still fails the pilot manifest after eight concurrent moves under `_archive`, and the broad Claude run had four transient 60s no-progress exits before the isolated pass.
+
+### Summary
+
+Committed a seven-file, +200/-10 implementation that makes the FO loop drain and route mod/PR and gate work before dispatch projection, retries an empty projection once, and chooses explicit stop or guarded unresolved-worker wait. The fixture is contract-prose-independent and preserves stored state, command grammar, gate authority, transport APIs, and the unshipped scheduler boundary; immutable verification is green and the distinct mutable-state/live-host drift is recorded above without false-greening it.
