@@ -252,3 +252,16 @@ Validation cycle 2 recommends REJECTED for a narrow Material AC-3 evidence defec
 ### Summary
 
 Cycle 3 fixes only rollout attribution by carrying the actual isolated Codex home through the existing runner. AC-3 now runs and grades the real adapter in both supported default and external artifact layouts, while the unchanged negative control still rejects both inverted decisions.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Re-review exact candidate 5fa79d480 and prove the shipped Codex adapter matrix passes active/completed/errored/absent under both default local/CI and external artifact layouts using the runner's actual codexHome.
+  AC-3 passes twice at exact HEAD: default cache-backed and external artifact-root runs each observe active `1/1` exact `wait_agent(timeout_ms: 300000)` and zero waits for completed, errored, and absent; reverting the codexHome handoff would make rollout discovery empty.
+- DONE: Require detached adapter inversion to fail the active and completed cases; regress AC-1, AC-2, AC-4, and AC-5 ordered-loop evidence.
+  Detached `/tmp/spacedock-ej5fa-audit.f5Peg0` inversion fails active with `0/0` wanted `1/1` and completed with one forbidden wait; AC-1/AC-4 retain mod plus all three gate routes before next with no gate spawn, AC-2 retains one idle/reconcile/retry and truthful stop, and AC-5 dispatches both independent tasks.
+- DONE: Confirm the nine-file +242/-11 candidate stays within approved tolerance and passes focused, contractlint, formatting, immutable full/race, and relevant exact-head live evidence.
+  Exact `5fa79d480`, `git diff --check`, `gofmt -d`, focused event-loop/status/dispatch/contractlint suites, and immutable `SPACEDOCK_STATE_ROOT=73f41e2a` full and race pass. One unrelated empty-body dispatch parity result passed five isolated reruns and the full rerun; mutable pilot drift and Pi account limits remain separate prior evidence.
+
+### Summary
+
+Validation cycle 3 recommends PASSED with no material, deferred-risk, or polish findings. AC-1 through AC-5 have falsifiable command, state, or exact-head live evidence; the candidate stays within approved scope and adds no scheduler, controller, command, state field, or completion ledger.
