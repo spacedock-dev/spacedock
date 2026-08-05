@@ -78,6 +78,17 @@ gates:
                 digest: sha256:a08a4971ba483ac6128e650baa268bb2cc3dd3bcae035dd80461ef5563fbb7f6
                 request-digest: sha256:e5e0e15301749b7356232f2d2188be9beb90175f3c8e56a0a98bbc87ef5fbf34
                 room-ref: ./make-fo-event-loop-ordering-explicit/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ej9kwkvw94w6rh6n5ek7qrbf:validation:2
+                briefing: briefing:ej9kwkvw94w6rh6n5ek7qrbf:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-05T17:00:48.821361Z"
+                decision: approve
+                reason: Captain accepted exact candidate c7f3bc0d8 after clean current-main reconciliation and fresh cycle-4 validation.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make the First Officer event loop mechanically explicit so a dispatch-only empty result cannot hide merge recovery, ready gates, or a required idle/reconcile pass. The task preserves the existing state and runtime boundaries; it makes the ordering observable and testable.
