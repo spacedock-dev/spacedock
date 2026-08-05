@@ -76,6 +76,14 @@ gates:
                 digest: sha256:87e9609b5ee1131cbce5daa1485b628a4b23b31f9de457f8146b0d11e39d4229
                 request-digest: sha256:73e6b483241bdd8ea0d9d6a82e4ebc6a82121a90e4494ae76d2d047f777f8e1d
                 room-ref: ./avoid-unnecessary-pr-rebases/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ep2cz3zsb2qpyyh889nyeqpr:validation:2
+                briefing: briefing:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-05T07:05:36.914037Z"
+                decision: revise
+                reason: 'Stamp the shipped pr-merge mod version 0.27.0. Apply issue #616 behavior only to mods/pr-merge.md. Restore docs/dev/_mods/pr-merge.md to its pre-EP2 customized bytes; the dev copy is reconciled later by refit, preserving its split-root customization.'
 ---
 
 Remove the mandatory rebase from the `pr-merge` policy. Keep the approved
