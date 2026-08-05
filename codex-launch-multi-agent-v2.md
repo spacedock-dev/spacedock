@@ -159,6 +159,17 @@ gates:
                 digest: sha256:e8c42654a807685b362fa11ddc1046cd3617d04b9ca36703d2bcf25b72912e6c
                 request-digest: sha256:e5afd026e9f26d4f83cbf7dcf5ff3151d327a4e8c5da8ddaab134ac4e00f8149
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-8
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:z5gwwz2748sg6vxr0g3kdsar:validation:8
+                briefing: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-8:revision-1
+                by: agent:first-officer
+                at: "2026-08-05T17:38:32.838873Z"
+                decision: approve
+                reason: 'Sprint conn: fresh validation passed all Z5 ACs at exact head b0b9ef319. Current main is incorporated, immutable full/race and the mandatory local-auth Codex live suite are green, and no finding remains.'
+              application:
+                target-stage: done
+                state: pending
 mod-block:
 ---
 
