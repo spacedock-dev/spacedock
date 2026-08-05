@@ -1502,3 +1502,34 @@ Cycle 16 PASSED independently at exact candidate `37c7e2660caa6148a590b21671c2d5
 ### Summary
 
 Cycle 17 records the archive-proven Pi default-headless product failure against its existing owner while preserving the pure 64-cell desired matrix and all prior evidence truth. Exact RED/GREEN target and owner controls, current/stale SHA discrimination, full/race suites, pushed two-commit history, and the hard surface ceiling are green at `23e0dbd02b3c4aa8753776596eadf9980698a0b5`.
+
+## Stage Report: validation (cycle 17)
+
+- DONE: Verify exact provenance, history, binder, cleanliness, and remote equality.
+  Candidate/origin are clean at `23e0dbd02b3c4aa8753776596eadf9980698a0b5`; baseline is `37c7e2660caa6148a590b21671c2d5f3693b0c74`, watched core is `59338039470002bb8dd1e6583edd2050ec625db1`, and the binder changes only the documented reconciliation SHA.
+- DONE: Independently classify the archived hosted evidence without rerunning it.
+  Run `31054684260`, Pi job `92469677841`, artifact `8949983771` passed offline, full-ensign, and gate-guardrail before default-headless failed at 228.61s with `gate hold crossed its committed no-authority boundary`.
+- DONE: Prove the failure matches the existing owner rather than capacity or harness drift.
+  Root-session evidence advances to validation and dispatches a child; the child prepares one valid open gate/report, then raw-Git commits state instead of using `spacedock state commit`; root validation leaves the gate open, unconsumed, and without successor advance, exactly matching owner `26nk8qd48zknqnn4kc123sez`.
+- DONE: Verify the exact representation-only source change.
+  The core adds only Pi/default-headless to the existing 26n switch and expectations, compacts existing mutation tables, and updates operator evidence; all prior nine target/owner bindings are byte-preserved.
+- DONE: Prove pure desired registry and exact observed evidence.
+  Focused runner/reconciliation controls retain 16 journeys × four targets = 64 desired cells and log exactly ten bindings at Sonnet=3, Codex=5, Pi=2, Opus=0.
+- DONE: Prove target and owner discrimination causally.
+  Detached source mutations make removal and retag of both Sonnet and Pi fail their exact owner checks; adding the same skip to proven Codex or runnable Opus fails those targets, while restored candidate tests pass all four targets.
+- DONE: Preserve every compacted registry mutation control.
+  The verbose mutation suite executes all prior structural, desired-registry, target/owner, global, duplicate, and proven-pass cases plus Pi and Opus additions; direct delete/set helpers cannot mask a no-op because unchanged evidence makes reconciliation return nil and the subtest fail.
+- DONE: Verify operator text and scope boundaries.
+  Inventory text names the exact run/job/artifact, child raw-Git seam, open/unconsumed gate, existing owner, Codex pass, and Opus runnable truth; no product, fixture, prompt, adapter, launcher, front-door, observer, metric, workflow, owner, or unrelated TODO behavior changed.
+- DONE: Verify fixed surface and retained tests.
+  Cycle 17 modifies four existing files, adds no file, removes no test function, and keeps the cumulative surface exactly 42 files/+2749/-708.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` is idempotent and `git diff --check` passes; full exits 0 in 154.48s and race exits 0 in 159.30s.
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; hosted metadata inspection was read-only and all causal proof used archived sessions or deterministic tests.
+- DONE: Render the independent verdict.
+  PASSED with no Material, Deferred-risk, or Polish findings; validation changed no candidate and made no workflow state transition.
+
+### Summary
+
+Cycle 17 PASSED independently at exact candidate `23e0dbd02b3c4aa8753776596eadf9980698a0b5`. The archive-proven Pi default-headless failure is accurately attached to the existing 26n owner, while target discrimination, pure registry truth, prior evidence, operator documentation, and the fixed surface remain intact.
