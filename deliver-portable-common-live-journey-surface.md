@@ -988,3 +988,46 @@ Cycle 9 truthfully adds the supplied Codex withdrawn-gate failure as the seventh
 ### Summary
 
 Cycle 9 independently confirms that the prior hosted Codex failure is represented by exactly one new target-scoped 47gn TODO, raising the truthful source set to seven without changing product behavior. Artifact, detached mutation, focused, full, race, history, and ceiling proof is green, so validation recommends PASSED with no live spend or candidate mutation.
+
+## Stage Report: implementation (cycle 10)
+
+- DONE: Start from the clean pushed Cycle-9 candidate and preserve its watched core.
+  Baseline candidate is `88488379684801f02949544f54e2248b5be4488d`; watched core is `af214fc4f3452241205f170ec21676bae49f66c8`.
+- DONE: Represent the supplied Codex rejection-flow failure as binding eight.
+  `Codex + rejection-flow` now maps to existing cross-runtime repair `zbcj98qfwtax61vxdzrf615e`; no owner was filed.
+- DONE: Ground the binding in the exact durable hosted evidence.
+  Run `31032033236`, job `92395174900`, artifact `8941373026` passed full-ensign, gate-guardrail, default-headless, and recorded-gate-lifecycle, skipped owned withdrawn, then failed rejection-flow.
+- DONE: Preserve the durable failure distinction.
+  The artifact has one implementation report and one REJECTED validation; the transcript prepared an ordinary gate and stopped instead of routing rework and running cycle-2 validation.
+- DONE: Add the expected Codex binding red-first.
+  Baseline `TestSharedLiveTODOEvidenceSet` exited 1 because Codex rejection-flow returned no reason instead of exact `TODO(zbcj98qfwtax61vxdzrf615e)`.
+- DONE: Add reconciliation and mutation coverage red-first.
+  Baseline `TestRuntimeLiveRegistryReconciliation` exited 1 with exact missing journey=rejection-flow, target=codex, owner=zbc diagnostic.
+- DONE: Implement the smallest source representation.
+  One Codex rejection-flow switch case reuses the existing rejection owner and leaves the desired journey selected.
+- DONE: Preserve the Pi rejection-flow binding distinctly.
+  The exact audited map contains separate Pi and Codex rejection-flow keys with the same zbc owner; neither replaces the other.
+- DONE: Prove exact count, owner, target, and target-move behavior.
+  TODO/reconciliation controls require eight bindings and move the new Codex cell to Pi, Sonnet, or Opus; each owner/target/cardinality mutation fails.
+- DONE: Reprove prior source-boundary mutations.
+  Removal, retag, wrong target, global scope, duplicate, desired-ledger, unowned, and proven-pass suppression controls remain discriminating.
+- DONE: Preserve the pure 64-cell desired state and exact distribution.
+  Final bindings are Sonnet=3, Codex=4, Pi=1, Opus=0; all prior seven mappings remain exact and unverified cells remain runnable.
+- DONE: Update the operator inventory in watched core.
+  Docs now state eight bindings and name run `31032033236`, prior passes/skip, ordinary-gate stop, missing rejection routing, and cycle-2 validation outcome.
+- DONE: Reprove prior Pi rejection evidence and native metric boundaries.
+  Focused round-recording/invocation and Pi identity/cost/large-row controls exit 0; incomplete or partially attributed forms remain rejected.
+- DONE: Run required formatting and focused final-byte checks.
+  `gofmt -w ./cmd ./internal`, `git diff --check`, live TODO, reconciliation/mutations/SHA, Pi rejection, and Pi metric commands exit 0.
+- DONE: Run both repository-wide suites on exact candidate bytes.
+  `go test ./...` exits 0 (`ensigncycle` 104.890s); `go test ./... -race` exits 0 (`ensigncycle` 116.595s).
+- DONE: Preserve the exact watched-core/SHA-binder history and remote equality.
+  Core `79d4055e8fae70c4e2f74c9edabc3f5f1ab45544` is followed by SHA-only docs binder `f390bf5d3ac37882db6fb1af9edb34a9c991c9ff`; origin equals clean head.
+- DONE: Stay inside the fixed review ceiling without product/runtime expansion.
+  Surface is exactly 42 files/+2325/-666; Cycle 10 core changes only four existing representation/test/docs files and adds no file, member, controller, retry, or product repair.
+- DONE: Preserve the execution and state-transition holds.
+  No local-live/model/hosted/substrate/smoke/Sonnet/Codex/Pi/Opus action or evidence spend occurred, and implementation did not transition entity state.
+
+### Summary
+
+Cycle 10 adds the supplied Codex rejection-flow failure as the eighth exact target-scoped TODO while preserving the distinct Pi binding to the same owner. The pushed representation-only pair is green under focused, mutation, SHA, full, race, history, origin, and ceiling proof with no live spend or product/runtime change.
