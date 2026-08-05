@@ -356,6 +356,52 @@ func TestAutoContinueCommonRunnerLaunchesBothVariantsSerially(t *testing.T) {
 	}
 }
 
+func TestResolveAutoContinueEndState(t *testing.T) {
+	validated := func(body string) string {
+		return body + "\n## Stage Report: validation\n\n- DONE: Validate the fixture\n  Validation passed.\n"
+	}
+
+	t.Run("single-root active worktree", func(t *testing.T) {
+		root := t.TempDir()
+		worktree := ".worktrees/spacedock-ensign-auto-continue-task"
+		pipeline := strings.Replace(autoContinueEntity(), "status: implementation", "status: validation", 1)
+		pipeline = strings.Replace(pipeline, "worktree:\n", "worktree: "+worktree+"\n", 1)
+		active := validated(pipeline)
+		writeFile(t, filepath.Join(root, worktree, "auto-continue-task.md"), active)
+
+		if got := resolveAutoContinueEndState(root, false, pipeline); got != active {
+			t.Fatalf("resolved single-root body stayed on the stale pipeline copy\n--- got ---\n%s\n--- want active worktree ---\n%s", got, active)
+		}
+	})
+
+	t.Run("split-root remains in state checkout", func(t *testing.T) {
+		workflowRoot := t.TempDir()
+		stateRoot := filepath.Join(workflowRoot, ".spacedock-state")
+		worktree := ".worktrees/spacedock-ensign-auto-continue-task"
+		stateBody := validated(strings.Replace(autoContinueEntity(), "status: implementation", "status: validation", 1))
+		stateBody = strings.Replace(stateBody, "worktree:\n", "worktree: "+worktree+"\n", 1)
+		writeFile(t, filepath.Join(stateRoot, worktree, "auto-continue-task.md"), "WRONG CODE WORKTREE COPY")
+
+		if got := resolveAutoContinueEndState(stateRoot, true, stateBody); got != stateBody {
+			t.Fatalf("split-root resolver left the state checkout: got %q", got)
+		}
+	})
+
+	for _, archive := range []string{
+		filepath.Join("_archive", "auto-continue-task.md"),
+		filepath.Join("_archive", "auto-continue-task", "index.md"),
+	} {
+		t.Run("archive "+archive, func(t *testing.T) {
+			stateRoot := t.TempDir()
+			want := validated(strings.Replace(autoContinueEntity(), "status: implementation", "status: done", 1))
+			writeFile(t, filepath.Join(stateRoot, archive), want)
+			if got := resolveAutoContinueEndState(stateRoot, false, ""); got != want {
+				t.Fatalf("archive fallback = %q, want %q", got, want)
+			}
+		})
+	}
+}
+
 func assertAutoContinueGitBaseline(t *testing.T, root, stateRoot, entityPath string, split bool) {
 	t.Helper()
 	if err := autoContinueGitBaselineError(root, stateRoot, entityPath, split); err != nil {

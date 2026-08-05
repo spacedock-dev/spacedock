@@ -113,16 +113,18 @@ func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRunt
 	for _, fixture := range autoContinueFixtureVariants() {
 		fixture := fixture
 		var stateRoot string
+		var splitRoot bool
 		sc := livescenario.Scenario{
 			Name:    scenario.name,
 			Runbook: autoContinuePrompt(),
 			Setup: func(dir string) (string, error) {
 				var entityPath string
 				stateRoot, entityPath = stageAutoContinueFixture(t, dir, fixture)
+				splitRoot = stateRoot != dir
 				return entityPath, nil
 			},
 			Assert: func(before, after livescenario.EntityState, observed string) error {
-				return assertAutoContinue(before.Body, resolveAutoContinueEndState(stateRoot, after.Body), observed)
+				return assertAutoContinue(before.Body, resolveAutoContinueEndState(stateRoot, splitRoot, after.Body), observed)
 			},
 		}
 		adapter := sharedLiveScenarioAdapter{
@@ -137,7 +139,13 @@ func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRunt
 	}
 }
 
-func resolveAutoContinueEndState(stateRoot, afterBody string) string {
+func resolveAutoContinueEndState(stateRoot string, splitRoot bool, afterBody string) string {
+	if worktree := autoContinueWorktreeDir(afterBody); !splitRoot && worktree != "" {
+		active := filepath.Join(stateRoot, worktree, "auto-continue-task.md")
+		if data, err := os.ReadFile(active); err == nil {
+			return string(data)
+		}
+	}
 	if afterBody != "" {
 		return afterBody
 	}
@@ -150,6 +158,21 @@ func resolveAutoContinueEndState(stateRoot, afterBody string) string {
 		}
 	}
 	return afterBody
+}
+
+func autoContinueWorktreeDir(body string) string {
+	for _, line := range strings.Split(body, "\n") {
+		value, found := strings.CutPrefix(line, "worktree:")
+		if !found {
+			continue
+		}
+		value = filepath.Clean(strings.TrimSpace(value))
+		if value == "." || value == ".." || filepath.IsAbs(value) || strings.HasPrefix(value, ".."+string(filepath.Separator)) {
+			return ""
+		}
+		return value
+	}
+	return ""
 }
 
 func runACValueReanchorJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario) {
