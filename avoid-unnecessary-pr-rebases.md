@@ -70,6 +70,12 @@ gates:
                 at: "2026-08-05T06:41:48.81045Z"
                 decision: revise
                 reason: Fix the zsh exact-SHA refspec with braces in both approved mod files. Replace rigid exit-code semantics with First Officer inspection of merge-tree stdout, stderr, and context; actual conflict routes to G3/D8, command failure or uncertainty reports unknown and preserves authority. Add no machinery or preflight.
+            - id: gate-attempt:ep2cz3zsb2qpyyh889nyeqpr-validation-2
+              briefing:
+                id: briefing:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-2:revision-1
+                digest: sha256:87e9609b5ee1131cbce5daa1485b628a4b23b31f9de457f8146b0d11e39d4229
+                request-digest: sha256:73e6b483241bdd8ea0d9d6a82e4ebc6a82121a90e4494ae76d2d047f777f8e1d
+                room-ref: ./avoid-unnecessary-pr-rebases/review/validation/briefing-2
 ---
 
 Remove the mandatory rebase from the `pr-merge` policy. Keep the approved

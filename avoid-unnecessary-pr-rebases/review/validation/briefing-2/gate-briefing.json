@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-2:revision-1",
+  "question": "Approve corrected issue #616 policy for delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/1b75e94b22993e625bab809f38b6e562eb31ba59/avoid-unnecessary-pr-rebases.md",
+      "rev": "sha256:09a4023cd8b389e6d19f2a4781fc23379254b8029bf9dcbfcda398efa9eb9f8a",
+      "mediaType": "text/markdown",
+      "summary": "Corrected candidate a20331ef0 remains a two-mod +25/-9 change. The original validator reran the real-Git zsh matrix: exact approved SHA delivery, actual conflict routing, unknown command failure, no rebase, and authority preservation all pass; full and race suites pass with the immutable state fixture."
+    }
+  ]
+}
