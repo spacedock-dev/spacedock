@@ -565,3 +565,50 @@ Cycle 2 independently proves all three prior fixes in both directions and keeps 
 ### Summary
 
 Codex and Pi now preserve the scenario-local logging shim across their real front-door launcher pin while Claude and every launch shape remain unchanged. The focused removal controls, full/race suites, reconciliation, and two-commit SHA binding are green and published for independent revalidation.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Independently inspect the implementation report, candidate diff, commit history, and exact merge base; do not trust the implementer's summary alone.
+  Candidate `37920950356b43fcc2f5426ab5ae9f9605a2ac03`, watched core `1e64b514eedf0f252be01c767ab28fd0e75dfcbc`, merge base `507a4bc12e48a3e4a813219602c488f09c81a5d8`; the head changes only `docs/runtime-live-ci.md`.
+- DONE: Extract AC-1 through AC-4 from the entity and reproduce every cited code, command, or durable-state proof; reject self-referential or static prose-only evidence.
+  Exercised parity, selector, reconciliation, workflow, stale-SHA, shim, and lifecycle controls; AC-2/AC-4 remain blocked by the missing 26n representation described below.
+- DONE: Verify one authoritative TestLiveSharedScenarios entry point, exactly 16 registry-ordered common journey subtests, one common runner map, and exactly three runtime adapters.
+  `TestSharedScenarioRunnerCoverageFinal`, `TestSharedRuntimeScenarioDefinitions`, and `TestSharedLiveRuntimeSelection` pass in both directions for 16 journeys and Claude/Codex/Pi.
+- SKIPPED: Prove the same shallow-boot selector works with only SPACEDOCK_LIVE_RUNTIME changing across Claude, Codex, and Pi; accept the recorded local Pi OpenRouter 402 only as externally blocked evidence and require hosted direct-OpenAI Pi proof.
+  Captain required the fourth owner-linked TODO before paid evidence, so no Cycle-3 model-backed selector was launched.
+- DONE: Verify all three workflow lanes select TestLiveSharedScenarios and that restoring an old top-level suite name makes the independent workflow guard fail.
+  `TestRuntimeLiveWorkflowUsesExactCommonSelectors` and `TestRuntimeLiveWorkflowGuardRejectsMissingSharedScenarioRun` pass; three executable selectors and no retired selector remain.
+- DONE: Reproduce bidirectional registry/scenario/runner/adapter parity and all adversarial removals: missing runner, orphan fixture, wrong gate start, stopped auto-continue, wrong AC re-anchor branch, and Codex/Pi front-door shim propagation.
+  Focused controls pass; detached removals expose `/real/spacedock` for each host, `continue` runs `[first second]`, and swapped gate starts fail `TestGateJourneyOverlap`.
+- DONE: Verify every common fixture has exactly one approved source annotation/builder and accountable use; reproduce reconciliation with zero duplicate, invalid, orphan, unaccounted-test, unaccounted-builder, missing, or unselected results.
+  `TestRuntimeLiveRegistryReconciliation` plus all 24 mutation subtests pass, including duplicate, invalid, orphan, missing, TODO-owner, target, and suite mutations.
+- FAILED: Verify no standalone common-journey top-level wrapper, host-specific common runner map, Pi coverage substitute, Pi quarantine, or Pi-only common-suite substitute remains. Allow only the exact owner-linked product TODOs named by the latest entity; reject any other skip.
+  Structural exclusions pass, but `default-headless-gate-stop` must join the three 9a gaps as `TODO(26nk8qd48zknqnn4kc123sez)`/MISSING-EVIDENCE before another paid run.
+- DONE: Trace the changed identity, fixture ID, journey ID, runtime selection, artifacts, metrics, costs, and durable workflow evidence through every representation and lifecycle phase.
+  Registry annotations, the sole runner map, adapter factory, three workflow jobs, artifact uploads, and cost guards preserve stable IDs; the 26n outcome is not truthfully represented yet.
+- DONE: Perform a semantic adversarial matrix covering unknown/empty runtime, all three adapters, missing runner/builder/selector, duplicate/orphan binding, failure cleanup, deadlines, first-failure stop behavior, and removal of either host's shim propagation.
+  Empty/unknown runtime, parity/reconciliation mutations, cleanup, quiet/deadline controls, first-failure mutation, and both independent shim removals all fail or pass at their intended boundaries.
+- DONE: Inspect hot paths for multiplicative work, blocking I/O, unbounded reads/allocation, implicit size limits, and accidental model retries; add or run one scaling/over-limit control where risk exists.
+  `TestNoTimeoutLiteralExceeds60s`, process-deadline, streamwatch activity/quiet-timeout, cleanup, and Pi evidence-grade controls pass; the common sequence remains linear and stops on first failure.
+- DONE: Verify Claude and Codex transport launch, liveness, artifact, and metrics contracts remain stable, and common fixtures/assertions contain no host-specific branch outside the adapter factory.
+  Diff inspection shows only the existing Codex wrapper delegation and Pi shell override; transport/cost controls pass and runtime selection remains solely in `selectSharedLiveRuntime`.
+- SKIPPED: Verify Pi shallow-boot was attempted first, the local OpenRouter 402 caused no retry/full local lane, and hosted direct-OpenAI Pi proves adapter launch. Complete Pi evidence must enumerate all 16 identities, run implemented journeys for real, expose only the exact owner-linked TODO skips as missing evidence, and record runtime/model/duration/tokens/cost/artifacts.
+  Prior local 402 evidence was not retried; Captain barred paid evidence until the fourth TODO is represented, so no direct-OpenAI Cycle-3 run exists.
+- DONE: Classify every local-first Claude/Codex/Sonnet/Pi lane as pass, fail, blocked, or irrelevant; keep Opus irrelevant unless changed surface or a concrete failure escalation implicates it.
+  Deterministic Codex/Pi shim controls pass; Sonnet/Codex/Pi paid lanes are blocked pre-run by the 26n representation gate; Claude and Opus are irrelevant to the authorized Cycle-3 hosted scope.
+- DONE: Reproduce the stale reconciliation SHA failure and current candidate SHA success; verify the SHA-recording commit is documentation-only and names every changed watched path when stale.
+  Full-history clone resolves `1e64b514^` and passes; depth-one fails the revision range; current/stale guard passes and binder `379209503` changes one documentation line.
+- DONE: Run gofmt -w ./cmd ./internal, go test ./..., go test ./... -race, plus the focused offline commands from the entity, and leave the candidate worktree clean.
+  Formatting/diff are clean; normal passes (`ensigncycle` 218.690s), race passes (`ensigncycle` 251.682s), and all focused commands pass at exact head/origin.
+- DONE: Measure exact changed files and added lines against the 42-file/+2750-insertion ceiling; flag any new product package, registry ID, authority command, grammar, stored-format, or product-runtime change.
+  Exact merge-base surface is 41 files, +1724/-662; no new product package, registry ID, authority command, grammar, stored format, or product-runtime change appears.
+- DONE: Record each finding before candidate mutation with exact evidence and both defect-kind and release-scope axes; do not edit implementation code or authorize fixes.
+  Material evidence defect/Needs decision: normal `default-headless-gate-stop` duplicated durable prepare in run `30996911834`; `value-ac[AC-2]` requires truthful missing evidence, Captain matched owner 26n, and candidate stayed untouched.
+- FAILED: Recommend PASSED only if all four latest ACs have reproducible evidence, all 16 desired identities and fixtures remain represented/reachable, implemented behavior has relevant passing evidence, and every product-owned gap is an exact repair-linked TODO reported as missing evidence rather than an exception/pass.
+  Recommend REJECTED: add the single fourth registry/common-runner TODO for 26n before paid evidence; Cycle-3 escalation goes to the Captain, not an automatic implementation bounce.
+- DONE: Write and push a path-scoped validation cycle-3 report with exact commands, results, evidence locations, candidate SHA, and PASSED/REJECTED recommendation.
+  This report records exact SHAs, reproducible commands and mutation outcomes, prior hosted run ID, classifications, and the REJECTED recommendation; publication commit follows path-scoped.
+
+### Summary
+
+Cycle 3 independently closes the ys-owned Codex/Pi shim defect in both directions and keeps all deterministic, full, race, reconciliation, and ceiling evidence green. Validation is REJECTED before paid evidence because the known default-headless duplicate-prepare outcome must be represented as owner-linked `TODO(26nk8qd48zknqnn4kc123sez)`/MISSING-EVIDENCE; the candidate was not mutated.
