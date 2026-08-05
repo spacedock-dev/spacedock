@@ -854,3 +854,34 @@ The candidate is ready for fresh independent validation without any evidence spe
 ### Summary
 
 Cycle 7 closes the rejected duplicate-invocation and repeated-success defects while preserving native metrics, six exact bindings, and the archived product TODO. Validation remains REJECTED because mixed incomplete/complete summaries within one result are accepted as exact evidence; candidate bytes stayed untouched and no live spend occurred.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Reproduce Cycle-7 false positives at exact candidate `e952ed65c` for mixed canonical summaries.
+  RED exit 1: `entries=2` then `entries=4` and the reverse qualified in one block; split-block `entries=2`/`entries=4` also qualified because only the success regex was counted.
+- DONE: Add red-first canonical-summary content controls.
+  Mixed `2/4` orders, `4+3`, `4+5`, split blocks, and repeated `2` fail; deleting the summary-count rule makes five mixed-complete cases pass, while one `4` plus unrelated diagnostic text remains true.
+- DONE: Implement the smallest Pi-only canonical-summary cardinality correction.
+  A new exact canonical-summary regex counts validation/1 summaries independent of entry count; the sole correlated result qualifies only when summary count and exact `entries=4` count are both one.
+- DONE: Preserve every Cycle-7 invocation/result/order/reuse boundary.
+  Two invocations, mixed call results, resultless duplicate, reused ID, repeated results, result-before-call, repeated success, wrong tool/error, and unrelated tool traffic controls all remain green.
+- DONE: Reprove the exact archived run and representative complete session.
+  A temporary path-local test read the 734,304-byte run `31016570689` root session and rejected its sole correlated `entries=2`; the committed singleton `entries=4` representative passes.
+- DONE: Reprove Pi metrics, exact six bindings, registry purity, and prior parity unchanged.
+  Native identity/usage/cost/provenance/large-row tests, all 16 metric routes, target TODO enumeration, registry mutations, runner coverage, runtime selection, and promoted entrypoints exit 0.
+- DONE: Run focused rejection/Pi/TODO/reconciliation/current-stale controls in both directions.
+  Three final-byte focused commands exit 0; incomplete/mixed summaries and all prior false positives fail, while singleton complete evidence and unrelated diagnostics pass.
+- DONE: Run formatting, full, race, diff, origin/head, and ceiling checks with explicit results.
+  `gofmt -w ./cmd ./internal` and diff are clean; full exits 0 (`ensigncycle` 255.055s), race exits 0 (`ensigncycle` 295.355s), origin equals head, and surface is 42 files/+2286/-666.
+- DONE: Commit watched core first, bind its exact SHA, push, and leave the worktree clean.
+  Core `ce6992d36cb3d84972d44049a4a45c9557c80bb2` is bound by docs-only head `2b0177dfe13da63dfd7cf30ceb6162a889e51890`; both are pushed and the binder changes only `docs/runtime-live-ci.md`.
+- DONE: Keep the mechanism scoped to AC-4 result evidence and preserve product/runtime bytes.
+  No durable oracle, Pi metric, target binding, registry, host launch, product skill/binary, fixture, scenario, lifecycle, controller, retry, or new file changed.
+- DONE: Preserve the execution hold.
+  No local-live, hosted, model-backed, substrate, smoke, Sonnet, Codex, Pi, or Opus lane was run or controlled during implementation.
+
+### Summary
+
+Cycle 8 makes Pi result evidence fail closed unless the sole correlated result contains exactly one canonical validation/1 summary and that summary is exactly `entries=4`. All Cycle-7 correlation boundaries, native metrics, six target bindings, product behavior, and the 42-file ceiling remain unchanged.
+
+The pushed two-commit candidate is ready for fresh independent validation without evidence spend during implementation.
