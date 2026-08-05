@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-8:revision-1",
+  "question": "Approve Z5 exact candidate b0b9ef319 for delivery after current-main reconciliation and fresh validation?",
+  "artifacts": [
+    {
+      "id": "artifact:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-8:revision-1:item-1",
+      "uri": "git-root://state/2e640fe2941dd172e113dc2d534feebe248496a6/codex-launch-multi-agent-v2.md",
+      "rev": "sha256:db5beb4229348ada8f752e0fdcc3f2cb72ad6cb36c59a507f69922f670fd8072",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: exact head b0b9ef319 is current-main clean, all four ACs pass, immutable full/race and mandatory local-auth Codex live evidence are green, and no finding remains."
+    }
+  ]
+}
