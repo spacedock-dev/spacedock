@@ -90,6 +90,14 @@ gates:
                 digest: sha256:3bb3239634acf1ec1c4bea7b6d5747ba534454b7be761c47d4415c6a7cdbbc4d
                 request-digest: sha256:4cf8868950d4cbcb57960d64d58dc7fd2df13b0f584f4207a260a80a0f0081d0
                 room-ref: ./avoid-unnecessary-pr-rebases/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ep2cz3zsb2qpyyh889nyeqpr:validation:3
+                briefing: briefing:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-05T08:11:35.664091Z"
+                decision: revise
+                reason: Remove sprint-local G3/D8 references from the shipped mod. On actual content conflict, the self-contained mod must stop PR and local-merge delivery, surface conflict evidence, preserve pending authority, and forbid rebase/automatic resolution/force operations. Reconciliation ownership belongs to the consuming workflow.
 ---
 
 Remove the mandatory rebase from the `pr-merge` policy. Keep the approved
