@@ -1,10 +1,10 @@
 ---
 title: Make FO event-loop ordering and idle wait explicit
-status: validation
+status: done
 source: "Captain follow-up after the 2026-08-03 durable-decisions execution-gap diagnosis."
 started: 2026-08-03T16:00:51Z
-completed:
-verdict:
+completed: 2026-08-05T23:47:35Z
+verdict: passed
 score: 0.98
 worktree: .worktrees/spacedock-ensign-make-fo-event-loop-ordering-explicit
 issue:
@@ -88,9 +88,10 @@ gates:
                 reason: Captain accepted exact candidate c7f3bc0d8 after clean current-main reconciliation and fresh cycle-4 validation.
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:628
+archived: 2026-08-05T23:47:36Z
 ---
 
 Make the First Officer event loop mechanically explicit so a dispatch-only empty result cannot hide merge recovery, ready gates, or a required idle/reconcile pass. The task preserves the existing state and runtime boundaries; it makes the ordering observable and testable.
