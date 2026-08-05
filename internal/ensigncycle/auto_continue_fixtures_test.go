@@ -25,6 +25,7 @@ var validationStatusOrBeyond = regexp.MustCompile(`(?im)^status:\s*(validation|d
 // failure mode this regression guards against.
 var implementationStatusAC5 = regexp.MustCompile(`(?im)^status:\s*implementation\s*$`)
 
+//spacedock:live-fixture id=auto-continue/single-root
 func writeAutoContinueWorkflowNoGit(dir string) (string, error) {
 	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte(autoContinueReadme()), 0o644); err != nil {
 		return "", err

@@ -207,18 +207,18 @@ func TestDetectClaudeLiveFailureDiagnosticCleanStream(t *testing.T) {
 	}
 }
 
-func TestLiveGateStopRoutesDetectorEvidenceThroughFailureOnlyReporter(t *testing.T) {
-	sourcePath := "live_gate_stop_test.go"
+func TestClaudeSharedRunnerRoutesDetectorEvidenceThroughFailureOnlyReporter(t *testing.T) {
+	sourcePath := "claude_live_runner_test.go"
 	source, err := os.ReadFile(sourcePath)
 	if err != nil {
 		t.Fatalf("read %s: %v", sourcePath, err)
 	}
 	body := string(source)
-	want := "registerClaudeLiveFailureDiagnostic(t, detectClaudeLiveFailureDiagnostic(stream, rootResolved))"
+	want := "registerClaudeLiveFailureDiagnostic(t, detectClaudeLiveFailureDiagnostic(stream, workflowRoot))"
 	if !strings.Contains(body, want) {
 		t.Fatalf("live gate-stop does not route its captured stream through the failure-only reporter: missing %q", want)
 	}
-	for _, direct := range []string{"detectWrongRootBoot(stream, rootResolved)", "detectBroadSearchAtBoot(stream, rootResolved)"} {
+	for _, direct := range []string{"detectWrongRootBoot(stream, workflowRoot)", "detectBroadSearchAtBoot(stream, workflowRoot)"} {
 		if strings.Contains(body, direct) {
 			t.Errorf("live gate-stop directly invokes fatal detector path %q outside the failure-only reporter", direct)
 		}

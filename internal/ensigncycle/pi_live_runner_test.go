@@ -17,6 +17,7 @@ import (
 
 const defaultPiLiveModel = "openrouter/openai/gpt-5.4"
 
+//spacedock:live-proof id=pi-front-door-subagent-dispatch lane=pi-live
 func TestLivePiFrontDoorSmoke(t *testing.T) {
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
@@ -168,6 +169,7 @@ func runPiSmokeDispatchBuild(t *testing.T, binary, workflowRoot, entityPath stri
 	return envelope
 }
 
+//spacedock:live-fixture id=pi/split-root-smoke
 func writePiSplitRootSmokeWorkflow(t *testing.T) (workflowRoot, stateRoot, entityPath string) {
 	t.Helper()
 	workflowRoot = t.TempDir()

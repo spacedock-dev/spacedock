@@ -70,7 +70,7 @@ jobs:
         run: go test ./...
 
       - name: Run deterministic live-harness controls offline
-        run: go test ./internal/ensigncycle -count=1 -run 'TestClaudeTODOModelScope|TestClaudeRejectionFlowTODOModelScope|TestClaudeSonnetGateGuardrailTODOModelScope|TestCleanupKeepMovingRootRetainsOnlyFailures|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs|TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle|TestShallowBootFixtureContainsOnlyHeldGate|TestPiLiveSmokePromptRequiresExactStageReportHeading|TestPiLiveEnvDropsForeignRuntimeMarkers|TestPiLiveEnvScrubsAmbientPiSubagentMarkers|TestPiIntercomPackageRootDefaultsBesideSubagents'
+        run: go test ./internal/ensigncycle -count=1 -run 'TestClaudeModelFamily|TestCleanupKeepMovingRootRetainsOnlyFailures|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs|TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle|TestShallowBootFixtureContainsOnlyHeldGate|TestPiLiveSmokePromptRequiresExactStageReportHeading|TestPiLiveEnvDropsForeignRuntimeMarkers|TestPiLiveEnvScrubsAmbientPiSubagentMarkers|TestPiIntercomPackageRootDefaultsBesideSubagents'
 
   # Live job: a matrix over two separately-approved variants. sonnet is the
   # Python-land floor (CI-E2E); claude-opus-4-8 is the upper tier (CI-E2E-OPUS).
@@ -266,14 +266,6 @@ jobs:
       # full `-json` event stream to the `--jsonfile` archive for root-cause
       # retrieval. gotestsum preserves the underlying `go test` exit code, so the
       # step stays red on failure.
-      - name: Run live Claude E2E
-        env:
-          SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
-        run: |
-          set -o pipefail
-          mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run 'TestLiveEnsignCycle|TestLiveDefaultHeadlessStopsAtGate|TestLiveZeroDiscoverReportsAndStops' ./internal/ensigncycle/
-
       # The shared scenario suite: the Claude lane runs the SAME host-neutral
       # gate/rejection/merge-hook scenarios the codex-live lane runs, through the
       # spacedock claude front door. This is the AC-4 proof that both runtime lanes
@@ -293,9 +285,11 @@ jobs:
         if: ${{ !cancelled() }}
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
+          SPACEDOCK_LIVE_RUNTIME: claude
         run: |
           set -o pipefail
-          gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/
+          mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
+          gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveSharedScenarios$' ./internal/ensigncycle/
 
       # Current Claude substrate proofs. Each exact test name owns one claim:
       # merged named-Agent dispatch, explicit bare dispatch, or break-glass recovery
@@ -562,9 +556,11 @@ jobs:
       # Clean step log + archived `-json` detail from one run (see the claude-live
       # job for the rationale).
       - name: Run live Codex shared scenarios
+        env:
+          SPACEDOCK_LIVE_RUNTIME: codex
         run: |
           set -o pipefail
-          gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle
+          gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveSharedScenarios$' ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()
@@ -588,6 +584,8 @@ jobs:
       SPACEDOCK_PI_LIVE_REQUIRED: "1"
       SPACEDOCK_PI_LIVE_CHILD_MODEL: openai/gpt-5.4
       SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/pi
+      SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi
+      SPACEDOCK_LIVE_RUNTIME: pi
       PI_OFFLINE: "1"
     steps:
       - name: Check required secret
@@ -772,10 +770,10 @@ jobs:
 
       # Clean step log + archived `-json` detail from one run per step (see the
       # claude-live job for the rationale).
-      - name: Run Pi shared scenario coverage guard
+      - name: Run live Pi shared scenarios
         run: |
           set -o pipefail
-          gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -run 'TestSharedScenarioRunnerCoverage|TestPiSharedScenarioCoverage' ./internal/ensigncycle
+          gotestsum --jsonfile pi-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveSharedScenarios$' ./internal/ensigncycle
 
       - name: Run live Pi front-door smoke
         run: |
@@ -789,9 +787,10 @@ jobs:
           name: runtime-live-e2e-pi-live
           path: |
             ./spacedock
-            ./pi-coverage-detail.jsonl
+            ./pi-shared-scenarios-detail.jsonl
             ./pi-front-door-smoke-detail.jsonl
             live-artifacts/pi/**
+            live-artifacts/journey-metrics/**
           if-no-files-found: warn
 
   # AC-3: posts a per-PR delta of this run's journey-cost observations against
@@ -805,7 +804,7 @@ jobs:
   # replaces (not merges with) the workflow default, so contents/actions read
   # are restated here for checkout and cross-job artifact download.
   journey-delta-comment:
-    needs: [claude-live, codex-live]
+    needs: [claude-live, codex-live, pi-live]
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -830,6 +829,12 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: runtime-live-e2e-codex-live
+          path: ${{ runner.temp }}/current-run-artifacts
+
+      - name: Download this run's Pi journey metrics
+        uses: actions/download-artifact@v5
+        with:
+          name: runtime-live-e2e-pi-live
           path: ${{ runner.temp }}/current-run-artifacts
 
       # Best-effort: no previously published release (or one with no

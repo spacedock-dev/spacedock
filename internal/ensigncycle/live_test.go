@@ -48,7 +48,7 @@ import (
 // CI runner via ANTHROPIC_API_KEY, and a machine with neither SKIPS (never
 // fatals). The chosen credential runs against a fresh empty HOME so parallel
 // `spacedock claude` invocations never collide in ~/.claude.
-func TestLiveEnsignCycle(t *testing.T) {
+func runRetiredClaudeEnsignCycleWrapper(t *testing.T) {
 	// The conn-cue drive prompt: the FO is given the conn to resolve gates from
 	// each stage report's verdict (auto-approve) so the gateless realistic-lifecycle
 	// fixture drives all the way to terminal `done`. The team-vs-bare mode is left

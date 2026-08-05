@@ -245,6 +245,17 @@ deterministic coverage to the default suite, or delete it.
   - `ac-reanchor/means-pass-value-regressed` — a gated candidate whose mechanism
     criterion passes while its paired value criterion regresses.
 
+## Missing live evidence
+
+These desired journeys remain selected on every supported runtime. They emit an
+owner-linked TODO and count as missing evidence, never as an exception or pass.
+
+| Common journey | Repair owner |
+|---|---|
+| `auto-continue-after-implementation` | `9adv48yhye5s2vkhwd7ge52d` |
+| `smallest-sufficient-mechanism` | `9adv48yhye5s2vkhwd7ge52d` |
+| `keep-moving-posture` | `9adv48yhye5s2vkhwd7ge52d` |
+
 ## Runtime-specific live proofs
 
 These proofs are intentionally separate from common journeys. Each must remain

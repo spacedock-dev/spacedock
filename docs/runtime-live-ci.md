@@ -2,7 +2,7 @@
 
 The live lanes prove runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for launching the real host front door, observing its output, and checking the resulting workflow state.
 
-A runtime regression should be caught once per user journey and then exercised by EACH supported host. The shared runtime scenarios make that real: one host-neutral scenario table, per-host runner adapters (Claude and Codex today, with Pi tracked through an explicit live/codified/gap coverage map until its shared runners are live-safe) implementing or accounting for the same scenario IDs, and a parity guard that fails if a scenario exists for one host only.
+A runtime regression should be caught once per user journey and then exercised by EACH supported host. The shared runtime scenarios make that real: one host-neutral scenario table, one common runner map, and Claude, Codex, and Pi transport adapters implementing or accounting for the same scenario IDs. A parity guard fails if a desired scenario is absent from any shared surface.
 
 ### Shared runtime scenarios
 
@@ -13,7 +13,7 @@ The scenario surface lives in `internal/ensigncycle` and splits into four host-n
 | Scenario table | `shared_scenarios_test.go` (`sharedRuntimeScenarios()`) | Yes |
 | Fixtures + prompts | `shared_fixtures_test.go` | Yes |
 | Assertions | `gate_assert_impl_test.go`, `shared_assertions_impl_test.go` | Yes |
-| Runner adapter | `codex_live_runner_test.go`, `claude_live_runner_test.go`, `pi_shared_coverage_test.go` | No — one per host; Pi currently records explicit live/codified/gap status for each shared scenario |
+| Runner adapter | `codex_live_runner_test.go`, `claude_live_runner_test.go`, `pi_shared_live_runner_test.go` | No — one transport adapter per host |
 
 Each runner adapter turns a shared scenario into a real launch and returns `(before, after, observed)` for the shared assertions:
 
@@ -68,12 +68,13 @@ that pin.
 
 **To add a shared runtime scenario:**
 
-1. Add a `sharedRuntimeScenario` entry to `sharedRuntimeScenarios()` with a unique `name`, its old Python provenance, the behavior `intent`, and a live `timeout`. Keep it host-neutral — no launch/auth/plugin field.
-2. Add a fixture writer (README + entity + any `_mods/`) and a prompt to `shared_fixtures_test.go`. The prompt must say `Use $spacedock:first-officer`; both hosts honor it. Reuse the existing fixtures verbatim where the journey is the same.
-3. Add a host-neutral assertion over `(before, after, observed)` strings (or reuse an existing one) and at least one offline negative case in `shared_scenarios_negative_test.go` that builds the broken end-state and proves the assertion goes red.
-4. Add a runner entry for the new `name` to BOTH `codexScenarioRunners()` and `claudeScenarioRunners()`. `TestSharedScenarioRunnerCoverage` fails until both hosts cover it.
+1. Add the desired journey and fixture IDs to [`runtime-live-ci-registry.md`](runtime-live-ci-registry.md), the normative desired-state registry.
+2. Add a `sharedRuntimeScenario` entry to `sharedRuntimeScenarios()` with a unique `name`, its old Python provenance, and behavior `intent`. Keep it host-neutral.
+3. Add a fixture writer (README + entity + any `_mods/`) and a prompt. Bind the record and builder with `//spacedock:live-journey` and `//spacedock:live-fixture`.
+4. Add a host-neutral assertion over `(before, after, observed)` strings (or reuse an existing one) and at least one offline negative case that builds the broken end-state and proves the assertion goes red.
+4. Add one entry to `sharedScenarioRunners()`. Runtime launch, authentication, output parsing, artifacts, and liveness remain behind the Claude, Codex, and Pi adapters.
 
-The shared coverage meta-test enforces parity in both directions: every shared scenario must have a Claude and Codex runner plus a Pi live/codified/gap coverage entry, and every runner or Pi coverage entry must map to a defined scenario.
+The shared coverage test enforces parity in both directions across exactly 16 registry records and the sole common runner map.
 
 ### Local live execution
 
@@ -85,11 +86,15 @@ export SPACEDOCK_BIN="$PWD/spacedock"
 export SPACEDOCK_REPO_ROOT="$PWD"
 ```
 
-Run the Claude shared suite locally (skips when no Claude auth is available — set `~/.claude/benchmark-token` for the OAuth path or `ANTHROPIC_API_KEY` for the API-key path; runs against a fresh isolated `HOME`). The `-timeout 40m` is a LOOSE BACKSTOP only — sized above the full 4-scenario serial-suite wall-time (~27m opus). The REAL liveness guard is the per-stage no-progress quiet budget (the shared `streamWatcher`, 60s) in the runners: it resets on every stream line and kills a hang at 60s of stream silence. The 40m ceiling never fires in a healthy run, it only bounds a pathological progressing-but-runaway loop and keeps the suite off Go's too-short default 10m binary timeout:
+Run the same 16-journey selector on each runtime. Only `SPACEDOCK_LIVE_RUNTIME` changes:
 
 ```bash
-go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 40m -run '^TestLiveSharedScenarios$' ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveSharedScenarios$' ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=pi SPACEDOCK_PI_LIVE_REQUIRED=1 go test -tags live -count=1 -timeout 40m -run '^TestLiveSharedScenarios$' ./internal/ensigncycle -v
 ```
+
+`TestLiveSharedScenarios` owns one subtest identity for each common journey. Each lane selects a runtime adapter through `SPACEDOCK_LIVE_RUNTIME`. Every adapter preserves its existing launch, liveness, artifact, and metric contract. Pi gives each journey a 12-minute process deadline, stops after the first failure, and never retries automatically.
 
 Run all three current Claude substrate proofs with one 20-minute backstop:
 
@@ -102,10 +107,6 @@ Run the Codex shared suite locally (`npm install -g @openai/codex` then `codex l
 Each Codex shared scenario launches one `spacedock codex` front-door process, which launches one `codex exec`. The shared stream watcher applies a 60-second quiet budget to each Codex scenario. Each complete JSONL line resets the budget.
 
 On stream silence, the runner kills the process and reports the last event and artifact directory. It preserves JSONL, stderr, the process result, and post-run durable entity/Git evidence, and it does not retry. A failed keep-moving run prints and retains its native Git root; a passing run removes it. The suite-wide `-timeout 40m` remains the runaway backstop.
-
-```bash
-go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
-```
 
 Run the Pi live proofs locally with the same package versions pinned in CI:
 
@@ -124,7 +125,7 @@ export SPACEDOCK_PI_LIVE_CHILD_MODEL=openrouter/openai/gpt-5.4 # OpenRouter logi
 export SPACEDOCK_PI_LIVE_CHILD_MODEL=openai/gpt-5.4 # direct OpenAI provider
 ```
 
-`TestLivePiFrontDoorSmoke` is the only Pi substrate smoke. It checks the front door, child dispatch, durable output, and the boot contract. The grade artifact records both models, durations, and available costs.
+`TestLivePiFrontDoorSmoke` remains the Pi-specific substrate smoke. The common Pi lane is the complete 16-journey selector above, not a coverage row or Pi-only substitute. Its artifacts retain root output, session JSONL, model, process status, duration, and durable workflow state. The planning estimate is $2.46, with a $3.08 approval ceiling; recorded actual cost is evidence, not a pass criterion.
 
 ```bash
 go test -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
@@ -133,7 +134,7 @@ go test -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./interna
 The parity and definition guards run with no model spend — useful before paying for a live run:
 
 ```bash
-go test -tags live -run 'TestSharedScenarioRunnerCoverage|TestSharedRuntimeScenarioDefinitions|TestPiSharedScenarioCoverage' ./internal/ensigncycle -v
+go test -tags live -run 'TestSharedScenarioRunnerCoverageFinal|TestSharedRuntimeScenarioDefinitions|TestSharedLiveRuntimeSelection|TestPromotedCommonJourneyEntrypoints' ./internal/ensigncycle -v
 ```
 
 Without auth, the respective live suite skips locally (Claude/Codex/Pi), except in CI where the lane requires it.
@@ -142,20 +143,28 @@ Without auth, the respective live suite skips locally (Claude/Codex/Pi), except 
 
 | Selected command | Unique evidence | Measured sample or cost |
 |---|---|---|
-| Claude core: `TestLiveEnsignCycle`, `TestLiveDefaultHeadlessStopsAtGate`, `TestLiveZeroDiscoverReportsAndStops` | Full cycle, two gate-stop cases, and zero discovery | The detail artifact records each duration. |
-| Claude `TestLiveClaudeSharedScenarios` | The registered shared journey IDs | Journey metrics record duration, tokens, model, and available cost. |
+| Claude `TestLiveSharedScenarios` | All 16 common journeys through the Claude adapter | Journey metrics record duration, tokens, model, and available cost. |
 | Claude substrate: `TestLiveMergedTeamModeDispatch`, `TestLiveBareReachable`, `TestLiveBreakGlassShimRecovery` | Merged, bare, and break-glass dispatch | Merged baseline: 127s Sonnet and 144s Opus. Cost was not available. |
-| Codex resolver and `TestLiveCodexSharedScenarios` | Current-checkout resolution and shared journeys | Both PR and release jobs consume Codex metrics. |
-| Pi coverage guards and `TestLivePiFrontDoorSmoke` | Coverage parity plus one four-part substrate proof | Retained local run: 104.808s and $0.277493 for root plus child. |
+| Codex resolver and `TestLiveSharedScenarios` | Current-checkout resolution and all 16 common journeys | PR and release jobs consume Codex metrics. |
+| Pi `TestLiveSharedScenarios` and `TestLivePiFrontDoorSmoke` | All 16 common journeys plus the four-part Pi substrate proof | The lane uploads per-journey and root/child evidence. |
 
 The deletion removes 17 seconds of tmux setup and avoids a 172.5-second duplicate Pi smoke per run.
 
 Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before either live lane burns its environment approval.
 
-- `claude-live` runs the core, shared, merged, bare, and break-glass proofs. Its matrix uses `sonnet` and `claude-opus-4-8`.
-  For local Spacedock task `sonnet-gate-guardrail-no-authority` (`3zzpdw704df1g8pg1x9thzmw`), only the Claude Sonnet `gate-guardrail` case is temporarily non-evidence, based on run `30708727845`, job `91392375253`, artifact `8821429777` (resolved model `claude-sonnet-5`, head `57489d491`). Its narrow runner-boundary `TODO(3zzpdw704df1g8pg1x9thzmw)` skip does not disable the other Sonnet scenarios or add a skip to any Opus, Codex, or Pi case. Promote it back to evidence only after the defect is fixed and a fresh approved Sonnet live run passes the unchanged strict gate oracle; then remove the skip.
+- `claude-live` runs the common suite plus merged, bare, and break-glass substrate proofs. Its matrix uses `sonnet` and `claude-opus-4-8`.
 - `codex-live` runs the resolver and shared proofs. The PR delta and release ledger consume its metrics.
-- `pi-live` runs the coverage guards and one front-door smoke. It uploads the grade, root session, child session, and diagnostics.
+- `pi-live` runs the complete common suite and one front-door smoke. It uploads the grade, root session, child session, per-journey metrics, and diagnostics.
+
+### Registry reconciliation
+
+Run reconciliation whenever `internal/ensigncycle/`, `internal/livescenario/`, or `.github/workflows/runtime-live-e2e.yml` changes. Compare the desired registry with adjacent source annotations, the 16-record scenario table, the sole 16-entry runner map, and the three exact workflow selectors.
+
+The current reconciled inventory is: 16 bound journeys, 21 bound fixtures (17 common, three runtime-proof fixtures beyond the shared lifecycle fixture, and one experiment), four runtime proofs, one suite, three adapters, and three selected lanes. Structural diagnostics are `MISSING=0`, `UNSELECTED=0`, `DUPLICATE=0`, `INVALID=0`, `ORPHAN=0`, `UNACCOUNTED-TEST=0`, and `UNACCOUNTED-BUILDER=0`. Live-evidence diagnostics are separately `MISSING-EVIDENCE=3`: `auto-continue-after-implementation`, `smallest-sufficient-mechanism`, and `keep-moving-posture`, each owned by repair `9adv48yhye5s2vkhwd7ge52d`. These TODO journeys remain selected and do not count as exceptions or passing evidence. Any other nonzero result lists exact IDs or paths and fails reconciliation.
+
+Registry reconciliation SHA: `PENDING-CANDIDATE-SHA`
+
+The SHA guard compares the recorded commit with the watched paths. A stale base must fail and name every changed watched path; the recorded base must pass. Source bindings are the semantic inventory, while the path guard only proves that inventory has not gone stale.
 
 All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
 

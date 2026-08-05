@@ -29,7 +29,7 @@ import (
 // before→after body — the SAME assertion the Claude leg and the offline negative
 // use. A run that verifies the implementation report and STOPS (the bug) leaves
 // the entity at status: implementation with no validation report and REDS the grade.
-func TestLivePiAutoContinueAfterImplementation(t *testing.T) {
+func runRetiredPiAutoContinueWrapper(t *testing.T) {
 	piBin := piBinaryOrSkip(t)
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
@@ -124,6 +124,8 @@ func piLiveObservedOutput(t *testing.T, artifactDir string) string {
 // validation stage is non-worktree (like the proven Pi split-root smoke); the
 // behavior under test is the parent advancing + dispatching the fresh validator,
 // not worktree mechanics.
+//
+//spacedock:live-fixture id=auto-continue/split-root
 func writePiAutoContinueWorkflow(t *testing.T) (workflowRoot, stateRoot, entityPath string) {
 	t.Helper()
 	workflowRoot = t.TempDir()

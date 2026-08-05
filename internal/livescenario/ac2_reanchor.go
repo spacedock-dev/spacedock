@@ -62,6 +62,8 @@ func AuthorACReanchorScenario() Scenario {
 
 // writeACReanchorFixture creates and commits a standalone workflow. Gate record
 // and consume therefore have a real Git root in which to persist their writes.
+//
+//spacedock:live-fixture id=ac-reanchor/means-pass-value-regressed
 func writeACReanchorFixture(dir string) (string, error) {
 	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte(acReanchorReadme), 0o644); err != nil {
 		return "", err

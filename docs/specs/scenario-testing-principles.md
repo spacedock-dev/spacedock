@@ -55,16 +55,22 @@ The `(scenario, mode, runtime)` tuple is the primary variant row that is **run, 
 The first foundation is the host-neutral runtime scenarios already shipped and held in host parity by the shared coverage tests. They are the named seed instances:
 
 <!-- seed-scenarios -->
+- `full-ensign-cycle` — a normal member is dispatched, completed, validated, terminalized, and retained with durable state evidence.
 - `gate-guardrail` — the FO binds and commits the retained package, presents exactly one semantic root review, then stops open without Resolution, consume, advance, dispatch, or archival.
+- `default-headless-gate-stop` — a headless launch advances to the first human gate, presents it, and stops without exercising decision authority.
+- `withdrawn-gate-recovery` — the FO preserves a withdrawn attempt, prepares and presents its successor, then stops without decision or dispatch.
 - `recorded-gate-lifecycle` — from a goal-only prompt, the FO binds, reviews, records delegated approval, consumes exactly once, commits every barrier, then performs one successor dispatch with one durable effect.
 - `rejection-flow` — the FO drives a two-cycle rejection trajectory: route the finding back through implementation, re-implement, and re-validate a second cycle, reusing the kept-alive reviewer only when the host exposes an addressable-worker route.
 - `feedback-3-cycle-escalation` — on the third consecutive REJECTED validation the FO escalates to the human instead of auto-bouncing a fourth time.
 - `merge-hook-guardrail` — the FO cannot bypass a registered merge hook by terminalizing without pr, mod-block, or force.
 - `filing` — the FO files a new seed entity via the atomic `spacedock new <slug>` path, not the drift-prone `--next-id` + hand-write pair.
 - `shallow-boot` — a freshly-booted FO performs local identify, greets with accurate held-gate state, creates no team, dispatches no worker, mutates no entity, and stops for engage/input; merged-PR discovery and terminal ceremony are engage work, not greet work.
+- `zero-discovery` — startup reports no managed workflow and stops without broad filesystem discovery or team creation.
+- `auto-continue-after-implementation` — implementation completion advances to validation and dispatches a fresh validator instead of stopping.
 - `self-evidence-merge-triage` — the FO holds its own merge/triage decision to the evidence bar: it does not terminalize while a required live lane is unapproved, and it diagnoses a live-CI red from this run's failing test, not an inherited "known flake" label.
 - `smallest-sufficient-mechanism` — the FO chooses the smallest sufficient mechanism: it applies deterministic edits it already holds in-house and commits a convention-direct doc directly (no worker/PR climb), while engaging a commissioned stage's ready entities via the standing dispatch loop without a per-entity justification (the gate stays silent through engage).
 - `keep-moving-posture` — the FO keeps moving: after a gate approval it advances + dispatches the next stage with no permission question, dispatches independent ready entities in parallel, re-shapes a questioned entity and pauses only its dispatch while the independent ones keep moving, and does not end its turn on an async wait while independent work remains.
+- `ac-value-reanchor` — a gate rejects mechanism-only success when the value criterion that mechanism serves has regressed.
 <!-- /seed-scenarios -->
 
 These IDs are the code-backed source of truth. They mirror the `sharedRuntimeScenarios()` table in `internal/ensigncycle`; the seed IDs declared above must equal that table. This block is machine-readable so a lock test can bind the doc to the code and red on drift in either direction — adding, dropping, or renaming a scenario on one side without the other. This is what makes the doc the human-readable face of a code-backed truth rather than prose bound to nothing.

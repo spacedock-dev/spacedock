@@ -103,74 +103,52 @@ type liveResult struct {
 	cwd       string
 }
 
-type claudeLiveScenario struct {
-	sharedRuntimeScenario
-	run func(*testing.T, liveDriver, sharedRuntimeScenario)
-}
+type claudeSharedLiveAdapter struct{}
 
-func TestLiveClaudeSharedScenarios(t *testing.T) {
+func (claudeSharedLiveAdapter) runtimeName() string { return "claude" }
+
+func (claudeSharedLiveAdapter) runSharedScenario(t *testing.T, scenario sharedRuntimeScenario) {
 	runner := newClaudeLiveRunner(t)
-
-	// The scenarios fan out in parallel: each is an independent multi-minute live
-	// claude journey, so running them serially makes the lane wall-time the SUM of
-	// the four (~27m on opus). t.Parallel collapses it toward the slowest single
-	// scenario. The cheap canary (TestLiveEnsignCycle) runs as an earlier step, so a
-	// systemic failure (auth/install) still fails fast before this fan-out. Each
-	// scenario gets its own workflowRoot (t.TempDir) and its own CLAUDE_CONFIG_DIR
-	// (run(), keyed by scenario name) so the concurrent sessions never share claude
-	// config/session state.
-	for _, scenario := range claudeLiveScenarios(t) {
-		t.Run(scenario.name, func(t *testing.T) {
-			t.Parallel()
-			if reason := liveDurableJourneyTODO(scenario.name); reason != "" {
-				t.Skip(reason)
-			}
-			scenario.run(t, runner, scenario.sharedRuntimeScenario)
-		})
-	}
-}
-
-func claudeLiveScenarios(t *testing.T) []claudeLiveScenario {
-	t.Helper()
-	runners := claudeScenarioRunners()
-
-	var scenarios []claudeLiveScenario
-	for _, scenario := range sharedRuntimeScenarios() {
-		run := runners[scenario.name]
-		if run == nil {
-			t.Fatalf("shared scenario %q has no Claude live runner", scenario.name)
-		}
-		scenarios = append(scenarios, claudeLiveScenario{
-			sharedRuntimeScenario: scenario,
-			run:                   run,
-		})
-	}
-	return scenarios
-}
-
-// claudeScenarioRunners maps each shared scenario ID to its runner. The runners
-// take the liveDriver seam, not a concrete runner. It is the parity guard: the
-// shared coverage meta-test fails if this map lacks a runner for any scenario ID.
-func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRuntimeScenario) {
-	return map[string]func(*testing.T, liveDriver, sharedRuntimeScenario){
-		"gate-guardrail":                runClaudeGateGuardrailScenario,
-		"recorded-gate-lifecycle":       runClaudeRecordedGateLifecycleScenario,
-		"rejection-flow":                runClaudeRejectionFlowScenario,
-		"feedback-3-cycle-escalation":   runClaudeFeedback3CycleEscalationScenario,
-		"merge-hook-guardrail":          runClaudeMergeHookGuardrailScenario,
-		"filing":                        runClaudeFilingScenario,
-		"shallow-boot":                  runClaudeShallowBootScenario,
-		"self-evidence-merge-triage":    runClaudeSelfEvidenceMergeTriageScenario,
-		"smallest-sufficient-mechanism": runClaudeSmallestSufficientMechanismScenario,
-		"keep-moving-posture":           runClaudeKeepMovingScenario,
+	switch scenario.name {
+	case "full-ensign-cycle":
+		runFullEnsignCycleJourney(t, runner, scenario)
+	case "gate-guardrail":
+		runClaudeGateGuardrailScenario(t, runner, scenario)
+	case "default-headless-gate-stop":
+		runClaudeGateGuardrailScenario(t, runner, scenario)
+	case "withdrawn-gate-recovery":
+		runClaudeWithdrawnGateRecoveryScenario(t, runner, scenario)
+	case "recorded-gate-lifecycle":
+		runClaudeRecordedGateLifecycleScenario(t, runner, scenario)
+	case "rejection-flow":
+		runClaudeRejectionFlowScenario(t, runner, scenario)
+	case "feedback-3-cycle-escalation":
+		runClaudeFeedback3CycleEscalationScenario(t, runner, scenario)
+	case "merge-hook-guardrail":
+		runClaudeMergeHookGuardrailScenario(t, runner, scenario)
+	case "filing":
+		runClaudeFilingScenario(t, runner, scenario)
+	case "shallow-boot":
+		runClaudeShallowBootScenario(t, runner, scenario)
+	case "zero-discovery":
+		runZeroDiscoveryJourney(t, runner, scenario)
+	case "auto-continue-after-implementation":
+		runAutoContinueJourney(t, runner, scenario)
+	case "self-evidence-merge-triage":
+		runClaudeSelfEvidenceMergeTriageScenario(t, runner, scenario)
+	case "smallest-sufficient-mechanism":
+		runClaudeSmallestSufficientMechanismScenario(t, runner, scenario)
+	case "keep-moving-posture":
+		runClaudeKeepMovingScenario(t, runner, scenario)
+	case "ac-value-reanchor":
+		runACValueReanchorJourney(t, runner, scenario)
+	default:
+		t.Fatalf("unknown shared journey %q", scenario.name)
 	}
 }
 
 func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
-	if claudeModelFamily(runner.model(), "sonnet") {
-		t.Skip("TODO(w5bfnrvpcphw857nzz93340c): Sonnet must reliably render the exact selected Briefing digest before re-enabling this journey")
-	}
 	if copied, ok := runner.(claudeLiveRunner); ok {
 		copied.pluginDir = t.TempDir()
 		if err := copyTree(runner.(claudeLiveRunner).pluginDir, copied.pluginDir); err != nil {
@@ -256,18 +234,12 @@ func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 
 func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
-	if reason := claudeSonnetGateGuardrailTODO(runner.model()); reason != "" {
-		t.Skip(reason)
-	}
-	if claudeModelFamily(runner.model(), "opus") {
-		t.Skip("TODO(w5bfnrvpcphw857nzz93340c): Opus must reliably render the exact selected Briefing digest before re-enabling this journey")
-	}
 	workflowRoot := t.TempDir()
-	fixture := writeGateWorkflow(t, workflowRoot)
-	if scenario.name == "default-headless-recorded-gate-stop" {
-		writeFile(t, filepath.Join(fixture.root, "README.md"), strings.Replace(recordedGateReadme(), "### validation", "### implementation\n\nAppend an implementation stage report, then return completion.\n\n### validation", 1))
-		writeFile(t, fixture.entity, strings.Replace(recordedGateEntity(), "status: validation", "status: implementation", 1))
-		gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "start before gate")
+	var fixture recordedGateFixture
+	if scenario.name == "default-headless-gate-stop" {
+		fixture = writePreGateWorkflow(t, workflowRoot)
+	} else {
+		fixture = writeGateWorkflow(t, workflowRoot)
 	}
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
@@ -299,26 +271,7 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	fixture := writePreparedRecordedGateFixtureAt(t, workflowRoot)
-	binary := buildRecordedGateBinary(t)
-	commitRecordedGateState(t, binary, fixture, "commit selected gate inputs")
-	prepared := mustRecordedGate(t, binary, fixture.root,
-		"gate", "prepare", "recorded-gate-task",
-		"--question", "Should the stale candidate advance?",
-		"--artifact", fixture.gateReview,
-		"--summary", "Stale candidate.",
-		"--reference", fixture.references[0],
-		"--reference", fixture.references[1],
-		"--workflow-dir", fixture.root)
-	firstRoom := outputValue(prepared.stdout, "room")
-	firstBriefing := readFile(t, filepath.Join(firstRoom, "gate-briefing.json"))
-	firstRequest := readFile(t, filepath.Join(firstRoom, "request.json"))
-	commitRecordedGateState(t, binary, fixture, "prepare stale attempt")
-	mustRecordedGate(t, binary, fixture.root,
-		"gate", "withdraw", "recorded-gate-task",
-		"--reason", "Sprint re-scope replaced the reviewed candidate.",
-		"--workflow-dir", fixture.root)
-	commitRecordedGateState(t, binary, fixture, "withdraw stale attempt")
+	fixture, binary, firstRoom, firstBriefing, firstRequest := writeWithdrawnGateFixture(t, workflowRoot)
 
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, binary, commandLog)
@@ -368,11 +321,34 @@ func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, sce
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
+//spacedock:live-fixture id=recorded-gate/withdrawn
+func writeWithdrawnGateFixture(t *testing.T, root string) (recordedGateFixture, string, string, string, string) {
+	t.Helper()
+	fixture := writePreparedRecordedGateFixtureAt(t, root)
+	binary := buildRecordedGateBinary(t)
+	commitRecordedGateState(t, binary, fixture, "commit selected gate inputs")
+	prepared := mustRecordedGate(t, binary, fixture.root,
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the stale candidate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Stale candidate.",
+		"--reference", fixture.references[0],
+		"--reference", fixture.references[1],
+		"--workflow-dir", fixture.root)
+	firstRoom := outputValue(prepared.stdout, "room")
+	firstBriefing := readFile(t, filepath.Join(firstRoom, "gate-briefing.json"))
+	firstRequest := readFile(t, filepath.Join(firstRoom, "request.json"))
+	commitRecordedGateState(t, binary, fixture, "prepare stale attempt")
+	mustRecordedGate(t, binary, fixture.root,
+		"gate", "withdraw", "recorded-gate-task",
+		"--reason", "Sprint re-scope replaced the reviewed candidate.",
+		"--workflow-dir", fixture.root)
+	commitRecordedGateState(t, binary, fixture, "withdraw stale attempt")
+	return fixture, binary, firstRoom, firstBriefing, firstRequest
+}
+
 func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
-	if claudeRejectionFlowTODOModel(runner.model()) {
-		t.Skip("TODO(zbcj98qfwtax61vxdzrf615e): Claude Opus and Sonnet must reliably bind a distinct post-rework Briefing before re-enabling this journey")
-	}
 	workflowRoot := t.TempDir()
 	entityPath := writeRejectionWorkflow(t, workflowRoot)
 

@@ -14,10 +14,10 @@ import (
 // invocation — one run producing the clean step log AND the archived -json detail,
 // with the exit code preserved.
 var transformedLiveSteps = []string{
-	"Run live Claude E2E",
 	"Run live Claude shared scenarios",
+	"Run live Claude substrate proofs",
 	"Run live Codex shared scenarios",
-	"Run Pi shared scenario coverage guard",
+	"Run live Pi shared scenarios",
 	"Run live Pi front-door smoke",
 }
 

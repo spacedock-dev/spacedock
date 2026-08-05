@@ -5,7 +5,7 @@ _archive/collapse-gate-approval-ceremony/index.md
 _archive/cut-workflow-specific-round-recorder-from-v1/index.md
 durable-decisions-release-walking-skeleton/index.md
 entity-session-claim-lease.md
-gate-agent-ergonomics.md
+_archive/gate-agent-ergonomics.md
 git-root-review-v1-materialization/index.md
 _archive/minimize-v1-gate-application-schema/index.md
 respect-gate-application-authority/index.md

@@ -54,8 +54,8 @@ func TestRuntimeLiveWorkflowGuardRejectsMissingCodexJourneyMetricUpload(t *testi
 func TestRuntimeLiveWorkflowGuardRejectsMissingSharedScenarioRun(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 	adversarial := strings.Replace(live,
-		`gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/`,
-		`# gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/`,
+		`gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveSharedScenarios$' ./internal/ensigncycle/`,
+		`# gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveSharedScenarios$' ./internal/ensigncycle/`,
 		1)
 	if adversarial == live {
 		t.Fatal("fixture workflow missing Claude shared scenario run command")
@@ -63,6 +63,23 @@ func TestRuntimeLiveWorkflowGuardRejectsMissingSharedScenarioRun(t *testing.T) {
 
 	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
 		t.Fatal("runtime live workflow guard accepted a workflow without an executable Claude shared scenario run")
+	}
+}
+
+func TestRuntimeLiveWorkflowUsesExactCommonSelectors(t *testing.T) {
+	live := readWorkflow(t, "runtime-live-e2e.yml")
+	for _, runtime := range []string{"claude", "codex", "pi"} {
+		if !strings.Contains(live, "SPACEDOCK_LIVE_RUNTIME: "+runtime) {
+			t.Errorf("workflow has no %s runtime adapter selection", runtime)
+		}
+	}
+	if got := strings.Count(live, "-run '^TestLiveSharedScenarios$' ./internal/ensigncycle"); got != 3 {
+		t.Fatalf("common live selector count = %d, want exactly 3", got)
+	}
+	for _, retired := range []string{"TestLiveClaudeSharedScenarios", "TestLiveCodexSharedScenarios", "TestPiSharedScenarioCoverage"} {
+		if strings.Contains(live, retired) {
+			t.Errorf("workflow retains retired selector %s", retired)
+		}
 	}
 }
 

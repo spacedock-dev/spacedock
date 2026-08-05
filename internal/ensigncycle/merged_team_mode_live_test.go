@@ -50,6 +50,8 @@ import (
 //     identical to TestLiveEnsignCycle.
 //
 // Skips (never fatals) without auth (isolatedClaudeEnv, the same AC-6 gate).
+//
+//spacedock:live-proof id=claude-merged-agent-dispatch lane=claude-live
 func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	// Merged lane: this asserts the in-process named-background shape. On a LEGACY
 	// host (claude <2.1.178, native TeamCreate present) the FO drives the native team

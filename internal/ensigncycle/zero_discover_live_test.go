@@ -31,7 +31,7 @@ import (
 // The proof is the captured transcript driven through the AC-1 detector — a real
 // model boot, observed behavior, not prose. The `//go:build live` tag keeps it out
 // of the offline suite; it runs only under `-tags live` with auth present.
-func TestLiveZeroDiscoverReportsAndStops(t *testing.T) {
+func runRetiredClaudeZeroDiscoveryWrapper(t *testing.T) {
 	binary := spacedockBinary(t)
 	pluginDir := livePluginDir(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")

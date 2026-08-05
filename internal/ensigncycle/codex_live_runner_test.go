@@ -28,58 +28,68 @@ type codexLiveRunner struct {
 	artifactRoot string
 }
 
-type codexLiveScenario struct {
-	sharedRuntimeScenario
-	run func(*testing.T, codexLiveRunner, sharedRuntimeScenario)
-}
+type codexSharedLiveAdapter struct{}
 
-func TestLiveCodexSharedScenarios(t *testing.T) {
+func (codexSharedLiveAdapter) runtimeName() string { return "codex" }
+
+func (codexSharedLiveAdapter) runSharedScenario(t *testing.T, scenario sharedRuntimeScenario) {
 	runner := newCodexLiveRunner(t)
-
-	for _, scenario := range codexLiveScenarios(t) {
-		t.Run(scenario.name, func(t *testing.T) {
-			if reason := liveDurableJourneyTODO(scenario.name); reason != "" {
-				t.Skip(reason)
-			}
-			scenario.run(t, runner, scenario.sharedRuntimeScenario)
-		})
+	driver := codexAsLiveDriver{runner: runner}
+	switch scenario.name {
+	case "full-ensign-cycle":
+		runFullEnsignCycleJourney(t, driver, scenario)
+	case "gate-guardrail", "default-headless-gate-stop":
+		runCodexGateGuardrailScenario(t, runner, scenario)
+	case "withdrawn-gate-recovery":
+		runClaudeWithdrawnGateRecoveryScenario(t, driver, scenario)
+	case "recorded-gate-lifecycle":
+		runCodexRecordedGateLifecycleScenario(t, runner, scenario)
+	case "rejection-flow":
+		runCodexRejectionFlowScenario(t, runner, scenario)
+	case "feedback-3-cycle-escalation":
+		runCodexFeedback3CycleEscalationScenario(t, runner, scenario)
+	case "merge-hook-guardrail":
+		runCodexMergeHookGuardrailScenario(t, runner, scenario)
+	case "filing":
+		runCodexFilingScenario(t, runner, scenario)
+	case "shallow-boot":
+		runCodexShallowBootScenario(t, runner, scenario)
+	case "zero-discovery":
+		runZeroDiscoveryJourney(t, driver, scenario)
+	case "auto-continue-after-implementation":
+		runAutoContinueJourney(t, driver, scenario)
+	case "self-evidence-merge-triage":
+		runCodexSelfEvidenceMergeTriageScenario(t, runner, scenario)
+	case "smallest-sufficient-mechanism":
+		runCodexSmallestSufficientMechanismScenario(t, runner, scenario)
+	case "keep-moving-posture":
+		runCodexKeepMovingScenario(t, runner, scenario)
+	case "ac-value-reanchor":
+		runACValueReanchorJourney(t, driver, scenario)
+	default:
+		t.Fatalf("unknown shared journey %q", scenario.name)
 	}
 }
 
-func codexLiveScenarios(t *testing.T) []codexLiveScenario {
-	t.Helper()
-	runners := codexScenarioRunners()
+type codexAsLiveDriver struct{ runner codexLiveRunner }
 
-	var scenarios []codexLiveScenario
-	for _, scenario := range sharedRuntimeScenarios() {
-		run := runners[scenario.name]
-		if run == nil {
-			t.Fatalf("shared scenario %q has no Codex live runner", scenario.name)
-		}
-		scenarios = append(scenarios, codexLiveScenario{
-			sharedRuntimeScenario: scenario,
-			run:                   run,
-		})
+func (d codexAsLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, root, prompt string) liveResult {
+	result, err := d.runner.run(t, scenario, root, prompt)
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	return scenarios
+	return liveResult{finalMessage: result.finalMessage, stream: result.jsonl, artifactDir: result.artifactDir, duration: result.duration}
+}
+func (d codexAsLiveDriver) model() string { return envOr("SPACEDOCK_CODEX_LIVE_MODEL", "gpt-5.4") }
+func (d codexAsLiveDriver) home() string  { return "" }
+func (d codexAsLiveDriver) withStubPATH(dir string) liveDriver {
+	d.runner = d.runner.withStubPATHForDriver(dir)
+	return d
 }
 
-// codexScenarioRunners maps each shared scenario ID to its Codex runner. It is the
-// Codex side of the parity guard: the shared coverage meta-test fails if this map
-// lacks a runner for any sharedRuntimeScenarios() ID.
-func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedRuntimeScenario) {
-	return map[string]func(*testing.T, codexLiveRunner, sharedRuntimeScenario){
-		"gate-guardrail":                runCodexGateGuardrailScenario,
-		"recorded-gate-lifecycle":       runCodexRecordedGateLifecycleScenario,
-		"rejection-flow":                runCodexRejectionFlowScenario,
-		"feedback-3-cycle-escalation":   runCodexFeedback3CycleEscalationScenario,
-		"merge-hook-guardrail":          runCodexMergeHookGuardrailScenario,
-		"filing":                        runCodexFilingScenario,
-		"shallow-boot":                  runCodexShallowBootScenario,
-		"self-evidence-merge-triage":    runCodexSelfEvidenceMergeTriageScenario,
-		"smallest-sufficient-mechanism": runCodexSmallestSufficientMechanismScenario,
-		"keep-moving-posture":           runCodexKeepMovingScenario,
-	}
+func (r codexLiveRunner) withStubPATHForDriver(dir string) codexLiveRunner {
+	r.env = withPATHPrefix(r.env, dir)
+	return r
 }
 
 func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner {
@@ -202,7 +212,12 @@ func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
 func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	fixture := writeGateWorkflow(t, workflowRoot)
+	var fixture recordedGateFixture
+	if scenario.name == "default-headless-gate-stop" {
+		fixture = writePreGateWorkflow(t, workflowRoot)
+	} else {
+		fixture = writeGateWorkflow(t, workflowRoot)
+	}
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
@@ -230,8 +245,6 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 
 func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
-	t.Skip("TODO(zbcj98qfwtax61vxdzrf615e): Codex must reliably bind a distinct post-rework Briefing before re-enabling this journey")
-
 	workflowRoot := t.TempDir()
 	entityPath := writeRejectionWorkflow(t, workflowRoot)
 	result, runErr := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot))

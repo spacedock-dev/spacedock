@@ -6,19 +6,6 @@ import (
 	"testing"
 )
 
-func TestLiveDurableJourneyTODOExactScope(t *testing.T) {
-	want := map[string]bool{
-		"smallest-sufficient-mechanism": true,
-		"keep-moving-posture":           true,
-	}
-	for _, scenario := range sharedRuntimeScenarios() {
-		got := liveDurableJourneyTODO(scenario.name) != ""
-		if got != want[scenario.name] {
-			t.Errorf("liveDurableJourneyTODO(%q) present = %t, want %t", scenario.name, got, want[scenario.name])
-		}
-	}
-}
-
 // TestSharedRuntimeScenarioDefinitions is the AC-1 guard: the shared runtime
 // scenarios are defined once, in host-neutral code. It pins the scenario ID set,
 // requires every scenario to carry its runtime-neutral facts (provenance, intent),
@@ -42,16 +29,22 @@ func TestSharedRuntimeScenarioDefinitions(t *testing.T) {
 	}
 
 	want := []string{
+		"full-ensign-cycle",
 		"gate-guardrail",
+		"default-headless-gate-stop",
+		"withdrawn-gate-recovery",
 		"recorded-gate-lifecycle",
 		"rejection-flow",
 		"feedback-3-cycle-escalation",
 		"merge-hook-guardrail",
 		"filing",
 		"shallow-boot",
+		"zero-discovery",
+		"auto-continue-after-implementation",
 		"self-evidence-merge-triage",
 		"smallest-sufficient-mechanism",
 		"keep-moving-posture",
+		"ac-value-reanchor",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("shared runtime scenarios = %v, want %v", got, want)

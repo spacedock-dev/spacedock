@@ -11,23 +11,18 @@ import (
 type liveClaim struct{ step, selector, claim string }
 
 var liveClaims = []liveClaim{
-	{"Run live Claude E2E", "TestLiveEnsignCycle", "full-ensign-cycle"},
-	{"Run live Claude E2E", "TestLiveDefaultHeadlessStopsAtGate", "default-headless-gate-stop-and-withdrawn-recovery"},
-	{"Run live Claude E2E", "TestLiveZeroDiscoverReportsAndStops", "zero-discovery"},
-	{"Run live Claude shared scenarios", "TestLiveClaudeSharedScenarios", "claude-common-journeys"},
+	{"Run live Claude shared scenarios", "TestLiveSharedScenarios", "claude-common-journeys"},
 	{"Run live Claude substrate proofs", "TestLiveMergedTeamModeDispatch", "claude-merged-agent-dispatch"},
 	{"Run live Claude substrate proofs", "TestLiveBareReachable", "claude-bare-dispatch"},
 	{"Run live Claude substrate proofs", "TestLiveBreakGlassShimRecovery", "claude-break-glass-recovery"},
 	{"Verify Codex resolver against installed plugin", "TestCodexResolveManifestAgainstInstalledHost", "codex-current-checkout-manifest-resolution"},
-	{"Run live Codex shared scenarios", "TestLiveCodexSharedScenarios", "codex-common-journeys"},
-	{"Run Pi shared scenario coverage guard", "TestSharedScenarioRunnerCoverage", "shared-runner-map-parity"},
-	{"Run Pi shared scenario coverage guard", "TestPiSharedScenarioCoverage", "pi-common-journey-classification"},
+	{"Run live Codex shared scenarios", "TestLiveSharedScenarios", "codex-common-journeys"},
+	{"Run live Pi shared scenarios", "TestLiveSharedScenarios", "pi-common-journeys"},
 	{"Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke", "pi-front-door-child-durable-boot-contract"},
 }
 
 var offlineControls = []string{
-	"TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle", "TestClaudeRejectionFlowTODOModelScope",
-	"TestClaudeSonnetGateGuardrailTODOModelScope", "TestClaudeTODOModelScope",
+	"TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle", "TestClaudeModelFamily",
 	"TestCleanupKeepMovingRootRetainsOnlyFailures", "TestCodexLiveRunnerExecArgvEnablesMultiAgentV2",
 	"TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs", "TestPiIntercomPackageRootDefaultsBesideSubagents",
 	"TestPiLiveEnvDropsForeignRuntimeMarkers", "TestPiLiveEnvScrubsAmbientPiSubagentMarkers",
@@ -98,13 +93,13 @@ func assertNamedLiveEvidence(workflow string) error {
 	if len(expected) != 0 {
 		return fmt.Errorf("workflow lacks owned selector steps %v", expected)
 	}
-	for _, dead := range []string{"TestLivePty", "TestLivePiRecordedGateLifecycle", "TestLivePiSubagentEnsignSmoke", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "pty-team-mode", "Install tmux", "journey-metrics/pi", "inputs.effort"} {
+	for _, dead := range []string{"TestLivePty", "TestLivePiRecordedGateLifecycle", "TestLivePiSubagentEnsignSmoke", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "pty-team-mode", "Install tmux", "inputs.effort"} {
 		if activeYAMLText(workflow, dead) {
 			return fmt.Errorf("workflow retains dead surface %q", dead)
 		}
 	}
 	for _, job := range parseWorkflowJobs(workflow) {
-		if job.name == "journey-delta-comment" && strings.Join(sorted(job.needs), ",") == "claude-live,codex-live" && strings.Count(workflow, "runtime-live-e2e-codex-live") >= 2 {
+		if job.name == "journey-delta-comment" && strings.Join(sorted(job.needs), ",") == "claude-live,codex-live,pi-live" && strings.Count(workflow, "runtime-live-e2e-codex-live") >= 2 && strings.Count(workflow, "runtime-live-e2e-pi-live") >= 2 {
 			return nil
 		}
 	}
@@ -119,7 +114,7 @@ func assertOfflineControls(workflow string) error {
 	return nil
 }
 
-var runSelector = regexp.MustCompile(`(?:^|\s)-run\s+['"]?([A-Za-z0-9_|]+)`)
+var runSelector = regexp.MustCompile(`(?:^|\s)-run\s+['"]?\^?([A-Za-z0-9_|]+)\$?['"]?`)
 
 func selectedTests(script string) []string {
 	seen := map[string]bool{}

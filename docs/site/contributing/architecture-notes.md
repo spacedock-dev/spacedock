@@ -27,13 +27,13 @@ The division is deliberate: a behavior that can be guarded by the binary or a fa
 
 The live lanes prove runtime behavior by launching a real headless host, observing its output, and checking the resulting workflow state. A static grep over workflow YAML or skill prose is not a substitute. This is the LLM-executor side of the scenario contract above.
 
-One host-neutral scenario table drives every supported host. The scenario surface lives in `internal/ensigncycle`: a host-neutral `sharedRuntimeScenarios()` table carries only runtime-neutral facts (scenario ID, old Python provenance, behavior intent) and encodes no launch, auth, plugin, or timeout field. Liveness is the runners' per-stage no-progress quiet budget (the shared streamWatcher's `quietBudgetDefault`, 60s), and a per-scenario basket timeout is banned. A per-host runner adapter (Claude and Codex today, with Pi tracked through a live/codified/gap coverage map) turns each scenario into a real launch. A parity meta-test (`TestSharedScenarioRunnerCoverage`) fails if a scenario has a runner for one host but not the other, and `TestSharedRuntimeScenarioDefinitions` reflects over the scenario type, pins the exact field set, and fails if any field names a single host.
+One host-neutral 16-journey table and one runner map drive every supported host through `TestLiveSharedScenarios`. `SPACEDOCK_LIVE_RUNTIME` selects the Claude, Codex, or Pi adapter; only adapters own launch, authentication, output parsing, liveness, and host artifacts. Registry annotations bind stable journey and fixture IDs to current declarations, and parity tests fail when the registry, scenario table, runner map, adapters, or workflow selectors drift.
 
 CI runs these in `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before either live lane spends its environment approval:
 
-- **`claude-live`** (matrix `sonnet` and `claude-opus-4-8`): secret `ANTHROPIC_API_KEY`. Runs the full-cycle smoke and the shared suite, loading the current checkout via `spacedock claude --plugin-dir "$GITHUB_WORKSPACE"`.
+- **`claude-live`** (matrix `sonnet` and `claude-opus-4-8`): secret `ANTHROPIC_API_KEY`. Runs the common suite through the Claude adapter, loading the current checkout via `spacedock claude --plugin-dir "$GITHUB_WORKSPACE"`.
 - **`codex-live`**: secret `OPENAI_API_KEY`. Builds a local marketplace under `$RUNNER_TEMP` and fails if the listing names a remote `github.com`/`ref next` install instead of the local path.
-- **`pi-live`**: installs `pi-coding-agent` and runs the Pi coverage guard plus the front-door smoke.
+- **`pi-live`**: installs `pi-coding-agent`, runs all 16 common journeys through the Pi adapter, and retains the front-door substrate smoke.
 
 Every live lane tests the current checkout, never a remote `--ref next` install. For the local invocation commands and the full layer-by-layer breakdown of the scenario surface, see [the development workflow](development-workflow.md).
 

@@ -31,6 +31,7 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	for _, want := range []string{
 		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/claude/${{ matrix.model }}`,
 		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/codex`,
+		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi`,
 	} {
 		if !hasExecutableYAMLLine(workflow, want) {
 			return fmt.Errorf("runtime-live-e2e.yml missing active metrics env line %q", want)
@@ -38,17 +39,17 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	}
 
 	steps := parseWorkflowSteps(workflow)
-	claudeRun := findExecutableStep(steps, "Run live Claude shared scenarios", "TestLiveClaudeSharedScenarios")
+	claudeRun := findExecutableStep(steps, "Run live Claude shared scenarios", "TestLiveSharedScenarios")
 	if claudeRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Claude shared scenario run")
 	}
-	codexRun := findExecutableStep(steps, "Run live Codex shared scenarios", "TestLiveCodexSharedScenarios")
+	codexRun := findExecutableStep(steps, "Run live Codex shared scenarios", "TestLiveSharedScenarios")
 	if codexRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Codex shared scenario run")
 	}
-	piCoverageRun := findExecutableStep(steps, "Run Pi shared scenario coverage guard", "TestPiSharedScenarioCoverage")
-	if piCoverageRun < 0 {
-		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi shared scenario coverage guard")
+	piRun := findExecutableStep(steps, "Run live Pi shared scenarios", "TestLiveSharedScenarios")
+	if piRun < 0 {
+		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi shared scenario run")
 	}
 	piSmokeRun := findExecutableStep(steps, "Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke")
 	if piSmokeRun < 0 {
@@ -66,11 +67,11 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	if !hasJourneyMetricsUploadAfter(steps, claudeRun, codexRun) {
 		return fmt.Errorf("runtime-live-e2e.yml Claude shared scenario job does not upload raw journey metrics")
 	}
-	if !hasJourneyMetricsUploadAfter(steps, codexRun, piCoverageRun) {
+	if !hasJourneyMetricsUploadAfter(steps, codexRun, piRun) {
 		return fmt.Errorf("runtime-live-e2e.yml Codex shared scenario job does not upload raw journey metrics")
 	}
-	if hasExecutableYAMLLine(workflow, `SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi`) {
-		return fmt.Errorf("runtime-live-e2e.yml retains a Pi journey-metrics path without a producer")
+	if !hasJourneyMetricsUploadAfter(steps, piRun, len(steps)) {
+		return fmt.Errorf("runtime-live-e2e.yml Pi shared scenario job does not upload raw journey metrics")
 	}
 	return nil
 }

@@ -69,6 +69,8 @@ const haikuBuiltMarker = "WIDGET-BUILT"
 // (implementation), a DISTINCT mechanical advance (->integration), and a DISTINCT
 // terminalize+archive step (->done). A one-stage implementation->done fixture would
 // collapse advance and terminalize and lose the integration-transition observation.
+//
+//spacedock:live-fixture id=haiku-loop/experimental
 func writeHaikuLoopFixture(t *testing.T, root string) haikuLoopFixture {
 	t.Helper()
 	stateDir := filepath.Join(root, ".spacedock-state")

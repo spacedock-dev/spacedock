@@ -13,6 +13,8 @@ import (
 
 // writeDispatchRecoveryWorkflow seeds the shared one-entity fixture both
 // dispatch-recovery scenarios drive.
+//
+//spacedock:live-fixture id=dispatch-recovery/base
 func writeDispatchRecoveryWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), dispatchRecoveryReadme())
@@ -30,6 +32,8 @@ func writeDispatchRecoveryWorkflow(t *testing.T, root string) string {
 // shim's dir ahead of the real binary's dir on PATH (via withStubPATH) cannot
 // recurse into itself. Other live scenarios use the same withStubPATH seam for
 // their scenario-local executable shims.
+//
+//spacedock:live-fixture id=dispatch-recovery/failing-build
 func writeStubBreakGlassSpacedock(t *testing.T, realBinary string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -54,6 +58,8 @@ func writeStubBreakGlassSpacedock(t *testing.T, realBinary string) string {
 // now a FAILURE.
 // Run it against a real credential:
 // `go test -tags live -run TestLiveBareReachable ./internal/ensigncycle -v -count=1`.
+//
+//spacedock:live-proof id=claude-bare-dispatch lane=claude-live
 func TestLiveBareReachable(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 	workflowRoot := t.TempDir()
@@ -80,6 +86,8 @@ func TestLiveBareReachable(t *testing.T) {
 // definition).
 // Run it against a real credential:
 // `go test -tags live -run TestLiveBreakGlassShimRecovery ./internal/ensigncycle -v -count=1`.
+//
+//spacedock:live-proof id=claude-dispatch-build-break-glass lane=claude-live
 func TestLiveBreakGlassShimRecovery(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 	workflowRoot := t.TempDir()
