@@ -793,3 +793,34 @@ Cycle 6 replaces the false Claude observation boundary with strict Pi root-sessi
 ### Summary
 
 Cycle 6 correctly moves Pi evidence and metrics to the archived native root session, preserves the historical two-entry product failure, and adds the sixth exact target binding. Validation is nevertheless REJECTED because the observer accepts ambiguous duplicate recorder executions; a narrow ys-owned correction must require exactly one matching invocation/result pair before the same detached controls are rerun. No candidate mutation or live spend occurred.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Reproduce the independent Cycle-6 false positives at exact candidate `35143a55a`.
+  RED exit 1: two successful `entries=4` calls and `entries=4` followed by a second `entries=2` call both qualified because the extractor returned on the first success.
+- DONE: Add red-first Pi extractor controls for every required ambiguous cardinality and ordering form.
+  Two complete calls, both mixed orders, a resultless second invocation, reused ID, repeated results, result-before-invocation, and a duplicated success line all fail; removing the cardinality/order checks makes them pass.
+- DONE: Implement the smallest fail-closed Pi-only correlation/cardinality correction.
+  The extractor scans the whole session and requires one exact invocation, one globally unique call ID, one later correlated non-error Bash result, and one exact `entries=4` success-line occurrence.
+- DONE: Preserve all prior negative boundaries and unrelated-tool behavior.
+  Missing, uncorrelated, errored, wrong command/round/task, stdout lookalike, and `entries=2` remain false; unrelated tool calls/results around one exact pair remain irrelevant and the representative complete pair stays true.
+- DONE: Reprove the exact archived root session remains rejected and the durable oracle remains strict.
+  A temporary path-local control read the 734,304-byte audited root session and returned false for its correlated `entries=2`; committed durable-state tests still require the retained four-entry round.
+- DONE: Reprove Cycle-6 native Pi metrics and all 16 route coverage unchanged.
+  Live-tagged metric identity/usage/cost/provenance, 105 KiB row, partial-attribution, shared-runner coverage, runtime selection, scenario definitions, and promoted-entrypoint controls exit 0.
+- DONE: Reprove the pure desired state and exact six target bindings.
+  TODO enumeration and reconciliation/current-stale mutation suites exit 0; only Pi rejection-flow binds zbc, while removal, wrong target/owner, global/duplicate, and other-target suppression remain rejected.
+- DONE: Run formatting, focused, full, race, diff, origin/head, and ceiling checks on final bytes.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; full exits 0 (`ensigncycle` 265.267s), race exits 0 (`ensigncycle` 172.545s), and origin equals head.
+- DONE: Commit the watched-path fix first and bind its exact SHA in one documentation-only commit.
+  Core `6e5fd1ac07f042fedc645d71c3a2af3afc0e7ab1` is bound by docs-only head `e952ed65ccafda13d54631195f52fdcd32fbfe46`; both are pushed and the surface remains 42 files/+2256/-666.
+- DONE: Preserve Cycle-6 metrics/bindings/product bytes and avoid unauthorized evidence execution.
+  No Pi metrics, registry, source binding, durable oracle, host launch, scenario order, product skill/binary, member/controller/retry, local-live, hosted, model-backed, substrate, smoke, or Opus behavior changed or ran.
+- DONE: Keep the correction at the simplest evidence boundary serving AC-4.
+  One existing Pi-only extractor changed; no new protocol, parser package, lifecycle state, process control, fixture, or product mechanism was introduced.
+
+### Summary
+
+Cycle 7 closes the sole Pi recorder-evidence ambiguity by requiring exactly one ordered invocation/result pair and one complete success occurrence. All Cycle-6 metrics and six target bindings remain intact, the audited two-entry product failure remains rejected, and focused/full/race evidence is green at the pushed two-commit candidate.
+
+The candidate is ready for fresh independent validation without any evidence spend during implementation.
