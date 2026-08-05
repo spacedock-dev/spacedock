@@ -1,6 +1,6 @@
 ---
 title: Make recorded gate operation self-guiding for First Officers
-status: validation
+status: done
 source: "Durable-decisions sprint dogfood: manual 0c and xb gate/round operation, 2026-07-24."
 score: 1.0
 id: skwchfe30ac6ntr63j1g0txj
@@ -95,10 +95,13 @@ gates:
                 reason: 'Captain explicitly directed immediate merge of PR #617 at exact green head a29401884513619aac8f3920e772adc18e357a9d.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 worktree: .worktrees/spacedock-ensign-gate-agent-ergonomics
 mod-block:
 pr: pr-merge:617
+verdict: passed
+completed: 2026-08-05T02:20:18Z
+archived: 2026-08-05T02:20:18Z
 ---
 
 ## Problem
