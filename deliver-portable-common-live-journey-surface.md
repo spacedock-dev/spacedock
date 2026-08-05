@@ -1,6 +1,6 @@
 ---
 title: Deliver one portable common live-journey surface
-status: ideation
+status: implementation
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 3w, h3, tj, and r4 as design inputs."
 score: 1.0
 sprint: live-test-truth
@@ -69,7 +69,7 @@ gates:
                 reason: Approved after staff review. Land the portable common journey surface after 3d and 15e.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-03T12:19:31Z
 ---
 
