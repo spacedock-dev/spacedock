@@ -958,3 +958,32 @@ Cycle 8 closes the final Pi result-content ambiguity while preserving native met
 ### Summary
 
 Cycle 9 truthfully adds the supplied Codex withdrawn-gate failure as the seventh exact TODO source binding. The pushed representation-only pair preserves all product/runtime behavior and prior evidence, while focused, full, race, history, origin, and 42-file ceiling checks are green.
+
+## Stage Report: validation (cycle 9)
+
+- DONE: Independently audit exact candidate, core, merge base, history, origin, cleanliness, and surface before trusting the implementation report.
+  Candidate/origin are `88488379684801f02949544f54e2248b5be4488d`, core is `af214fc4f3452241205f170ec21676bae49f66c8`, merge base is `507a4bc12e48a3e4a813219602c488f09c81a5d8`; the binder is SHA-only and surface is 42 files/+2306/-666.
+- DONE: Independently verify hosted run `31029501075`, job `92386614637`, artifact `8940307070`, and owner fit.
+  Downloaded baseline-head artifacts prove passes for full-ensign-cycle (100.81s), gate-guardrail (35.26s), and default-headless (167.14s), then withdrawn recovery fails at 86.35s with withdrawn attempts 1/2 and open attempt 3; existing owner `47gnqfm1ft6f2hcahz98m2jv` describes that exact CAS-rejection/withdraw-redo signature.
+- DONE: Replay red/green binding logic at baseline and candidate.
+  A detached `2b0177dfe` control exits 1 because Codex withdrawn recovery has no TODO; the same exact-owner assertion and source extraction pass at current head.
+- DONE: Prove the desired registry stays pure at 64 cells and source evidence contains exactly seven bindings.
+  Enumeration/reconciliation report Sonnet=3, Codex=3, Pi=1, Opus=0, with only Codex withdrawn-gate-recovery→47gn added and no desired-state evidence ledger.
+- DONE: Attack the new cell and all prior evidence mappings in both directions.
+  Detached new-cell removal, exact wrong owner, Pi/Sonnet/Opus moves, and global scope fail; built-in duplicate/cardinality, ledger, unowned, prior-owner, other-target, and Codex proven-pass suppression mutations all remain discriminating.
+- DONE: Verify operator documentation and watched-core/binder partitioning.
+  Operator docs state seven bindings and accurately name run `31029501075`, the three prior passes, three-attempt outcome, Codex target, journey, and 47gn owner; core contains every narrative/source/test change and the second commit changes only the bound SHA.
+- DONE: Prove no product/runtime surface or new owner was introduced.
+  The Cycle-9 core touches only four existing docs/reconciliation/TODO-test files; no product, fixture, prompt, adapter, launcher, Pi metric/evidence, runtime behavior, new file, or owner entity changes.
+- DONE: Recheck prior Pi strict evidence, native metrics, six bindings, parity, fixtures, shim, workflow, artifact, and SHA controls proportionately.
+  Focused live-tagged offline, ensigncycle, release, reconciliation/mutation, and current/stale SHA commands exit 0; Pi incomplete/mixed evidence and partial metrics still fail while exact native forms pass.
+- DONE: Run formatting, diff, full, race, origin, history, cleanliness, and ceiling checks on exact bytes.
+  `gofmt -l ./cmd ./internal` is empty and `git diff --check` passes; `go test ./...` exits 0 (`ensigncycle` 132.741s), race exits 0 (`ensigncycle` 136.020s), candidate/origin match, and 42/+2306 stays below +2750.
+- DONE: Classify findings before mutation and preserve execution/ownership holds.
+  No Material, deferred, or polish finding remains; no candidate/product repair or local-live, model, hosted, substrate, smoke, Sonnet, Codex, Pi, or Opus action was launched or controlled.
+- DONE: Record explicit verdict without transitioning state.
+  Recommend PASSED. AC-1 through AC-4 remain reproducible, the seventh binding is exact and artifact-grounded, all mutations and repository checks are green, and the entity remains in validation for First Officer handling.
+
+### Summary
+
+Cycle 9 independently confirms that the prior hosted Codex failure is represented by exactly one new target-scoped 47gn TODO, raising the truthful source set to seven without changing product behavior. Artifact, detached mutation, focused, full, race, history, and ceiling proof is green, so validation recommends PASSED with no live spend or candidate mutation.
