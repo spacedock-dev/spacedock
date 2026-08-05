@@ -46,6 +46,8 @@ func liveDurableJourneyTODO(target liveEvidenceTarget, name string) string {
 		return "TODO(" + codexEnsignContractDefectID + "): Codex must bootstrap the executable ensign contract for fresh workers"
 	case liveEvidenceKey{target: liveEvidenceTargetClaudeSonnet, journey: "default-headless-gate-stop"}:
 		return "TODO(" + defaultHeadlessGateStopDefectID + "): headless drive must stop after exactly one durable gate preparation"
+	case liveEvidenceKey{target: liveEvidenceTargetPi, journey: "default-headless-gate-stop"}:
+		return "TODO(" + defaultHeadlessGateStopDefectID + "): Pi headless drive must stop after exactly one durable gate preparation"
 	case liveEvidenceKey{target: liveEvidenceTargetPi, journey: "rejection-flow"}:
 		return "TODO(" + liveRejectionFlowDefectID + "): Pi must record the complete four-entry rejection round before rework"
 	case liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "rejection-flow"}:

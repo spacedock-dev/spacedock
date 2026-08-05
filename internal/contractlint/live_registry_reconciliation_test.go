@@ -48,6 +48,7 @@ type missingEvidenceKey struct {
 var auditedMissingEvidence = map[missingEvidenceKey]string{
 	{target: "codex", journey: "full-ensign-cycle"}:                     "nvz2ym82ydfn07jp04yfxg9r",
 	{target: "claude-sonnet", journey: "default-headless-gate-stop"}:    "26nk8qd48zknqnn4kc123sez",
+	{target: "pi", journey: "default-headless-gate-stop"}:               "26nk8qd48zknqnn4kc123sez",
 	{target: "claude-sonnet", journey: "smallest-sufficient-mechanism"}: "9adv48yhye5s2vkhwd7ge52d",
 	{target: "claude-sonnet", journey: "keep-moving-posture"}:           "9adv48yhye5s2vkhwd7ge52d",
 	{target: "codex", journey: "smallest-sufficient-mechanism"}:         "9adv48yhye5s2vkhwd7ge52d",
@@ -55,6 +56,14 @@ var auditedMissingEvidence = map[missingEvidenceKey]string{
 	{target: "pi", journey: "rejection-flow"}:                           "zbcj98qfwtax61vxdzrf615e",
 	{target: "codex", journey: "withdrawn-gate-recovery"}:               "47gnqfm1ft6f2hcahz98m2jv",
 	{target: "codex", journey: "rejection-flow"}:                        "zbcj98qfwtax61vxdzrf615e",
+}
+
+func removeMissingEvidenceMutation(key missingEvidenceKey) func(map[missingEvidenceKey]string) {
+	return func(m map[missingEvidenceKey]string) { delete(m, key) }
+}
+
+func addMissingEvidenceMutation(key missingEvidenceKey, owner string) func(map[missingEvidenceKey]string) {
+	return func(m map[missingEvidenceKey]string) { m[key] = owner }
 }
 
 func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
@@ -91,19 +100,12 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 	scenarios := readContractFile(t, filepath.Join(repo, "internal", "ensigncycle", "shared_scenarios_test.go"))
 	runner := readContractFile(t, filepath.Join(repo, "internal", "ensigncycle", "shared_live_runner_test.go"))
 
-	actualMutations := map[string]func(*liveInventory){
-		"deleted journey binding":         func(i *liveInventory) { i.journeys = i.journeys[1:] },
-		"duplicate journey binding":       func(i *liveInventory) { i.journeys = append(i.journeys, i.journeys[0]) },
-		"desired fixture without builder": func(i *liveInventory) { i.fixtures = i.fixtures[1:] },
-		"missing live test":               func(i *liveInventory) { i.topLevelTests = i.topLevelTests[1:] },
-		"orphan live test":                func(i *liveInventory) { i.topLevelTests = append(i.topLevelTests, "TestLiveOrphanControl") },
-		"changed proof lane": func(i *liveInventory) {
-			for id := range i.proofs {
-				i.proofs[id] = "other-live"
-				break
-			}
-		},
-		"competing suite": func(i *liveInventory) { i.suites = append(i.suites, i.suites[0]) },
+	actualMutations := map[string]func(*liveInventory){"deleted journey binding": func(i *liveInventory) { i.journeys = i.journeys[1:] }, "duplicate journey binding": func(i *liveInventory) { i.journeys = append(i.journeys, i.journeys[0]) }, "desired fixture without builder": func(i *liveInventory) { i.fixtures = i.fixtures[1:] }, "missing live test": func(i *liveInventory) { i.topLevelTests = i.topLevelTests[1:] }, "orphan live test": func(i *liveInventory) { i.topLevelTests = append(i.topLevelTests, "TestLiveOrphanControl") }, "competing suite": func(i *liveInventory) { i.suites = append(i.suites, i.suites[0]) }}
+	actualMutations["changed proof lane"] = func(i *liveInventory) {
+		for id := range i.proofs {
+			i.proofs[id] = "other-live"
+			break
+		}
 	}
 	for name, mutate := range actualMutations {
 		t.Run(name, func(t *testing.T) {
@@ -188,12 +190,10 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 		t.Fatal(err)
 	}
 	evidenceMutations := map[string]func(map[missingEvidenceKey]string){
-		"removed default-headless TODO": func(m map[missingEvidenceKey]string) {
-			delete(m, missingEvidenceKey{target: "claude-sonnet", journey: "default-headless-gate-stop"})
-		},
-		"retagged default-headless TODO": func(m map[missingEvidenceKey]string) {
-			m[missingEvidenceKey{target: "claude-sonnet", journey: "default-headless-gate-stop"}] = "other-owner"
-		},
+		"removed Sonnet default-headless TODO": removeMissingEvidenceMutation(missingEvidenceKey{target: "claude-sonnet", journey: "default-headless-gate-stop"}),
+		"removed Pi default-headless TODO":     removeMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "default-headless-gate-stop"}),
+		"retagged default-headless TODO":       addMissingEvidenceMutation(missingEvidenceKey{target: "claude-sonnet", journey: "default-headless-gate-stop"}, "other-owner"),
+		"retagged Pi default-headless TODO":    addMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "default-headless-gate-stop"}, "other-owner"),
 		"removed TODO": func(m map[missingEvidenceKey]string) {
 			for id := range m {
 				delete(m, id)
@@ -217,9 +217,8 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 		"global TODO": func(m map[missingEvidenceKey]string) {
 			m[missingEvidenceKey{journey: "keep-moving-posture"}] = "9adv48yhye5s2vkhwd7ge52d"
 		},
-		"suppressed proven pass": func(m map[missingEvidenceKey]string) {
-			m[missingEvidenceKey{target: "codex", journey: "default-headless-gate-stop"}] = "26nk8qd48zknqnn4kc123sez"
-		},
+		"suppressed proven pass":            addMissingEvidenceMutation(missingEvidenceKey{target: "codex", journey: "default-headless-gate-stop"}, "26nk8qd48zknqnn4kc123sez"),
+		"suppressed unverified Opus target": addMissingEvidenceMutation(missingEvidenceKey{target: "claude-opus", journey: "default-headless-gate-stop"}, "26nk8qd48zknqnn4kc123sez"),
 		"moved Pi rejection TODO to Sonnet": func(m map[missingEvidenceKey]string) {
 			owner := m[missingEvidenceKey{target: "pi", journey: "rejection-flow"}]
 			delete(m, missingEvidenceKey{target: "pi", journey: "rejection-flow"})
