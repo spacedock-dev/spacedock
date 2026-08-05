@@ -1116,3 +1116,39 @@ or gate mutation was made; the next authority is the registered exact-head CI la
 ### Summary
 
 The correction makes delegated recorded-gate operation self-guiding on Codex while preserving the existing lifecycle and runtime owners. Exact committed-head live evidence now reaches prepare, decision, consume, and one named successor dispatch in one pass.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Verify the exact two-file +5/-5 correction fixes both recorded-gate failure traces without changing lifecycle ownership or approved scope.
+  Exact HEAD `a29401884513619aac8f3920e772adc18e357a9d` is clean and remote-equal; its only delta from `cd76f52a` is `fo-dispatch-core.md` +1/-1 and `fo-gate-lifecycle/SKILL.md` +4/-4. Codex live passed in 228.63s: the oracle rejects any prepare-only trace and any successor build count other than exactly 1/1. Opus passed the same oracle in 386.17s.
+- DONE: Run focused gate/dispatch controls, full and race suites, detached audit, and every required registered live host lane for the host-neutral skill changes.
+  Focused status/gates/recorded-lifecycle/contract controls passed; `go test ./...` and `go test ./... -race` passed; a detached checkout at the exact HEAD passed recorded-lifecycle and contractlint controls. All four live commands ran: Codex PASS, Opus PASS, Sonnet SKIP, Pi coverage PASS plus lifecycle SKIP.
+- FAILED: Cross-check AC-1 through AC-4 on the corrected exact head and recommend PASSED only if every required current-head lane is green.
+  AC-1 through AC-4 are deterministically green and the correction is live-green on Codex/Opus, but the required Sonnet and Pi lifecycle scenarios explicitly skip. Per the acceptance test plan, a skip is not green; recommendation is REJECTED/HOLD for incomplete release evidence.
+
+### Acceptance evidence
+
+- DONE: AC-1 — mechanically complete cold-gate behavior and the exact correction trace.
+  Status/gates fixtures preserve exactly-one preparation discovery and semantic-veto zero-side-effect controls. The Codex and Opus live oracles observe prepare, record/consume, consumed durable state, and one committed successor dispatch; they fail on either archived failure trace.
+- DONE: AC-2 — one scheduler envelope and ready-gate-first priority remain unchanged.
+  Focused status controls and full/race suites pass; the correction changes no status, JSON, scheduler, or human-output bytes.
+- DONE: AC-3 — authorized recovery shapes and lifecycle ownership remain intact.
+  Gate prepare/withdraw/replay/refusal and recorded-lifecycle controls pass; s4, gqs, and 0m6 tips remain ancestors. The correction adds instructions only and changes no gate reducer, recorder, consume rule, provider, or state owner.
+- DONE: AC-4 — no second owner or execution surface was added.
+  Exact diff audit finds only the two existing First Officer instruction surfaces and no parser, store, command, schema, adapter, runner, harness, retry, or lifecycle implementation.
+
+### Semantic adversarial pass
+
+- DONE: Adjacent route matrix and exact terminal invariants.
+  No-conn remains present-and-open; conn continues through delegated decision; nonzero/mismatch remains stop/no-retry; revise/hold retain no-consume routes; terminal approval retains no dispatch; nonterminal approval requires one bound-shape build. Codex live proves named dispatch without a bare/team probe and complete post-presentation lifecycle.
+- DONE: Performance and boundary audit.
+  No executable hot path, I/O, allocation, or size boundary changed. Detached exact-head controls passed; the initial audit invocation-directory error was corrected and rerun from the detached checkout, with no candidate mutation.
+
+### Review-finding disposition
+
+- FAILED: Required supported-host live evidence is incomplete.
+  Released workflow: registered host-neutral First Officer gate operation. Observable harm: validation cannot establish the promised lifecycle on Sonnet or Pi. Authority: `value-ac[AC-1]` requires the existing recorded-gate live scenario. Trigger: exact-head Sonnet emits quarantine `TODO(w5bfnrvpcphw857nzz93340c)` and Pi emits quarantine `TODO(9w59t6m1qc46hccd54p04z2j)`. Defect kind: Evidence defect. Release scope: Material under the explicit no-skip test plan. Proposed disposition: HOLD until both registered scenarios execute green; candidate bytes need no correction from this finding.
+
+### Summary
+
+The two-file correction fixes both observed Codex traces at the exact committed head and preserves all approved owners and scope. Offline, race, detached, Codex, and Opus evidence is green, but Sonnet and Pi explicitly skip the required scenario; validation therefore recommends REJECTED/HOLD rather than PASSED.
