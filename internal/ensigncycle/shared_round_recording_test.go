@@ -127,8 +127,28 @@ func codexRecordedRejectionRound(jsonl string) bool {
 }
 
 func piRecordedRejectionRound(jsonl string) bool {
-	invocations := map[string]bool{}
-	for _, line := range strings.Split(jsonl, "\n") {
+	type invocation struct {
+		id       string
+		position int
+	}
+	var invocations []invocation
+	toolCallIDs := map[string]int{}
+	type toolResult struct {
+		toolName string
+		isError  *bool
+		position int
+		content  []struct {
+			Type      string `json:"type"`
+			Text      string `json:"text"`
+			ID        string `json:"id"`
+			Name      string `json:"name"`
+			Arguments struct {
+				Command string `json:"command"`
+			} `json:"arguments"`
+		}
+	}
+	results := map[string][]toolResult{}
+	for position, line := range strings.Split(jsonl, "\n") {
 		var entry struct {
 			Type    string `json:"type"`
 			Message struct {
@@ -152,20 +172,38 @@ func piRecordedRejectionRound(jsonl string) bool {
 		}
 		if entry.Message.Role == "assistant" {
 			for _, block := range entry.Message.Content {
-				if block.Type == "toolCall" && block.Name == "bash" && block.ID != "" && commandRecordsRejectionRound(block.Arguments.Command) {
-					invocations[block.ID] = true
+				if block.Type != "toolCall" || block.ID == "" {
+					continue
+				}
+				toolCallIDs[block.ID]++
+				if block.Name == "bash" && commandRecordsRejectionRound(block.Arguments.Command) {
+					invocations = append(invocations, invocation{id: block.ID, position: position})
 				}
 			}
 		}
-		if entry.Message.Role == "toolResult" && entry.Message.ToolName == "bash" && invocations[entry.Message.ToolCallID] && entry.Message.IsError != nil && !*entry.Message.IsError {
-			for _, block := range entry.Message.Content {
-				if block.Type == "text" && rejectionRoundSuccess.MatchString(block.Text) {
-					return true
-				}
-			}
+		if entry.Message.Role == "toolResult" && entry.Message.ToolCallID != "" {
+			results[entry.Message.ToolCallID] = append(results[entry.Message.ToolCallID], toolResult{
+				toolName: entry.Message.ToolName,
+				isError:  entry.Message.IsError,
+				position: position,
+				content:  entry.Message.Content,
+			})
 		}
 	}
-	return false
+	if len(invocations) != 1 || toolCallIDs[invocations[0].id] != 1 {
+		return false
+	}
+	correlated := results[invocations[0].id]
+	if len(correlated) != 1 || correlated[0].position <= invocations[0].position || correlated[0].toolName != "bash" || correlated[0].isError == nil || *correlated[0].isError {
+		return false
+	}
+	matches := 0
+	for _, block := range correlated[0].content {
+		if block.Type == "text" {
+			matches += len(rejectionRoundSuccess.FindAllString(block.Text, -1))
+		}
+	}
+	return matches == 1
 }
 
 func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
@@ -377,6 +415,13 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 	if !piRecordedRejectionRound(piInvocation + "\n" + piResult) {
 		t.Fatal("Pi extractor missed correlated successful four-entry round recording")
 	}
+	unrelatedInvocation := fmt.Sprintf(`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":"call_status","name":"bash","arguments":{"command":%q}}]}}`, "spacedock status rejection-task --workflow-dir .")
+	unrelatedResult := strings.Replace(strings.Replace(piResult, "call_round", "call_status", 1), result, "status: validation", 1)
+	if !piRecordedRejectionRound(strings.Join([]string{
+		result, unrelatedInvocation, unrelatedResult, piInvocation, piResult,
+	}, "\n")) {
+		t.Fatal("Pi extractor let unrelated tools or a stdout lookalike obscure the single exact recorder call")
+	}
 	for name, transcript := range map[string]string{
 		"missing result":      piInvocation,
 		"uncorrelated result": piInvocation + "\n" + strings.Replace(piResult, "call_round", "call_other", 1),
@@ -388,6 +433,44 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 		t.Run("pi_"+name, func(t *testing.T) {
 			if piRecordedRejectionRound(transcript) {
 				t.Fatal("Pi extractor accepted non-durable or uncorrelated recording evidence")
+			}
+		})
+	}
+	piInvocationFor := func(id string) string { return strings.ReplaceAll(piInvocation, "call_round", id) }
+	piResultFor := func(id, entries string) string {
+		return strings.Replace(strings.ReplaceAll(piResult, "call_round", id), "entries=4", "entries="+entries, 1)
+	}
+	for name, transcript := range map[string]string{
+		"two complete calls": strings.Join([]string{
+			piInvocationFor("call_one"), piResultFor("call_one", "4"),
+			piInvocationFor("call_two"), piResultFor("call_two", "4"),
+		}, "\n"),
+		"complete then incomplete": strings.Join([]string{
+			piInvocationFor("call_one"), piResultFor("call_one", "4"),
+			piInvocationFor("call_two"), piResultFor("call_two", "2"),
+		}, "\n"),
+		"incomplete then complete": strings.Join([]string{
+			piInvocationFor("call_one"), piResultFor("call_one", "2"),
+			piInvocationFor("call_two"), piResultFor("call_two", "4"),
+		}, "\n"),
+		"second invocation missing result": strings.Join([]string{
+			piInvocationFor("call_one"), piResultFor("call_one", "4"), piInvocationFor("call_two"),
+		}, "\n"),
+		"reused tool call ID": strings.Join([]string{
+			piInvocationFor("call_same"), piResultFor("call_same", "4"), piInvocationFor("call_same"),
+		}, "\n"),
+		"repeated correlated results": strings.Join([]string{
+			piInvocationFor("call_one"), piResultFor("call_one", "4"), piResultFor("call_one", "4"),
+		}, "\n"),
+		"result before invocation": strings.Join([]string{
+			piResultFor("call_one", "4"), piInvocationFor("call_one"),
+		}, "\n"),
+		"success line repeated in result": piInvocationFor("call_one") + "\n" +
+			fmt.Sprintf(`{"type":"message","message":{"role":"toolResult","toolCallId":"call_one","toolName":"bash","isError":false,"content":[{"type":"text","text":%q}]}}`, result+"\n"+result),
+	} {
+		t.Run("pi_ambiguous_"+name, func(t *testing.T) {
+			if piRecordedRejectionRound(transcript) {
+				t.Fatal("Pi extractor accepted ambiguous repeated recorder evidence")
 			}
 		})
 	}
