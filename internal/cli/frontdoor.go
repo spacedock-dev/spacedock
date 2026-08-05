@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -544,6 +545,70 @@ func containsResume(args []string) bool {
 // `spacedock:first-officer` skill explicitly.
 const codexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Assume $spacedock:first-officer for the entire session."
 
+var codexCollaborationLayer = []string{
+	"-c", "agents.enabled=true",
+	"-c", "features.multi_agent=true",
+	"-c", `features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}`,
+}
+
+func hasCodexCollaborationOverride(args []string) bool {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch arg {
+		case "-c", "--config":
+			if i+1 < len(args) && reservedCodexConfig(args[i+1]) {
+				return true
+			}
+			i++
+		case "--enable", "--disable":
+			if i+1 < len(args) && reservedCodexFeature(args[i+1]) {
+				return true
+			}
+			i++
+		default:
+			for _, prefix := range []string{"-c", "--config="} {
+				if strings.HasPrefix(arg, prefix) && reservedCodexConfig(strings.TrimPrefix(arg, prefix)) {
+					return true
+				}
+			}
+			for _, prefix := range []string{"--enable=", "--disable="} {
+				if strings.HasPrefix(arg, prefix) && reservedCodexFeature(strings.TrimPrefix(arg, prefix)) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func reservedCodexConfig(assignment string) bool {
+	assignment = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(assignment), "="))
+	key, _, ok := strings.Cut(assignment, "=")
+	if !ok {
+		return false
+	}
+	parts := strings.Split(key, ".")
+	for i, part := range parts {
+		part = strings.TrimSpace(part)
+		if len(part) >= 2 && part[0] == part[len(part)-1] && (part[0] == '\'' || part[0] == '"') {
+			if part[0] == '\'' {
+				part = part[1 : len(part)-1]
+			} else if unquoted, err := strconv.Unquote(part); err == nil {
+				part = unquoted
+			}
+		}
+		parts[i] = part
+	}
+	key = strings.Join(parts, ".")
+	return key == "agents.enabled" || key == "features.multi_agent" ||
+		key == "features.multi_agent_v2" || strings.HasPrefix(key, "features.multi_agent_v2.")
+}
+
+func reservedCodexFeature(feature string) bool {
+	feature = strings.TrimSpace(feature)
+	return feature == "multi_agent" || feature == "multi_agent_v2"
+}
+
 // runCodex is the `spacedock codex` front door: version-gate, then launch the
 // first officer. The gate fails fast on a too-old-binary mismatch, but the two
 // healable verdicts (NoPluginFound, TooOldPlugin) auto-install the plugin and
@@ -581,6 +646,10 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	// checkout beside the resolved launcher. Explicit selection always wins.
 	pluginDir, rest, explicitPluginDir := takeCodexPluginDir(fd.passthrough, fd.pluginDirPairs)
 	fd.passthrough = rest
+	if hasCodexCollaborationOverride(fd.passthrough) {
+		fmt.Fprintln(stderr, "spacedock codex: collaboration settings are managed by Spacedock; remove the forwarded override")
+		return 1
+	}
 	if hasPluginDir(fd.passthrough) {
 		fmt.Fprintln(stderr, "spacedock codex: Codex does not accept forwarded --plugin-dir; place the Spacedock checkout flag before `--`, or install additional Codex plugins with `codex plugin add`")
 		return 1
@@ -616,7 +685,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	if !resume {
 		launchBanner("codex", dir, wrap, os.Getenv, lookPath, stderr)
 	}
-	inner := []string{"codex"}
+	inner := append([]string{"codex"}, codexCollaborationLayer...)
 	if wrap {
 		inner = append(inner, "--dangerously-bypass-approvals-and-sandbox")
 	}

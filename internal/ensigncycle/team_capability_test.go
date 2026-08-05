@@ -69,7 +69,6 @@ func codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt string) [
 		"--",
 		"exec",
 		"--json",
-		"--enable", "multi_agent_v2",
 		"--dangerously-bypass-approvals-and-sandbox",
 		"--cd", workflowRoot,
 		"--output-last-message", finalPath,
@@ -85,10 +84,10 @@ func argvHasAdjacent(args []string, left, right string) bool {
 	return false
 }
 
-func TestCodexLiveRunnerExecArgvEnablesMultiAgentV2(t *testing.T) {
+func TestCodexLiveRunnerLeavesCollaborationConfigToSpacedockLauncher(t *testing.T) {
 	args := codexLiveFrontDoorArgv("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
-	if !argvHasAdjacent(args, "--enable", "multi_agent_v2") {
-		t.Fatalf("codex live exec argv must explicitly enable multi_agent_v2 because CODEX_HOME is isolated; args=%v", args)
+	if argvHasAdjacent(args, "--enable", "multi_agent_v2") || argvHasAdjacent(args, "--disable", "multi_agent_v2") {
+		t.Fatalf("Codex live argv must leave collaboration configuration to the Spacedock launcher; args=%v", args)
 	}
 }
 
