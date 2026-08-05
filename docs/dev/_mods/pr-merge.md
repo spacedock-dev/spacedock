@@ -1,8 +1,8 @@
 ---
 name: pr-merge
 description: Open a code-branch PR to the configured trunk at the merge boundary and track it to merge, state-root-aware
-version: 0.12.6
-reconciled-from-shipped: 0.12.5
+version: 0.12.7
+reconciled-from-shipped: 0.12.6
 fo-realm: "FO realm — the FO maintains this file directly; changes do NOT go through the dev workflow (process the FO operates, not product built under test)."
 local-customization: "Split-root variant of the shipped template: entity state lives in .spacedock-state (pr:/mod-block: via status --set, path-scoped); the hook never touches .spacedock-state from the code worktree; the PR carries only the code-branch range."
 ---
@@ -63,13 +63,13 @@ Wait for the captain's explicit approval before pushing. Do NOT infer approval f
 
 **On approval:** This is a split-root workflow: the entity state lives in the separate `.spacedock-state` checkout, so this hook does not push any state branch. Refresh the code remote's integration tip with `git -C {worktree} fetch origin "$BASE"`; if that fails, report to the captain and fall back to the local `--no-ff` merge.
 
-Resolve the current integration tip as `BASE_SHA=$(git -C {worktree} rev-parse "origin/$BASE")`, then exercise the approved commit against it without changing the candidate ref, index, or worktree: `git -C {worktree} merge-tree --write-tree "$BASE_SHA" "$CANDIDATE_SHA" >/dev/null`.
+Resolve the current integration tip as `BASE_SHA=$(git -C {worktree} rev-parse "origin/$BASE")`, then exercise the approved commit against it without changing the candidate ref, index, or worktree: `git -C {worktree} merge-tree --write-tree "$BASE_SHA" "$CANDIDATE_SHA"`. Inspect its stdout, stderr, exit status, and repository context; the exit status is one signal, not the semantic verdict.
 
-- Exit 0 is clean: continue without rebasing.
-- Exit 1 is a conflict: stop PR and local-merge delivery, refer reconciliation to the G3/D8 owner path, and preserve the pending delivery authority.
-- Any other exit leaves mergeability unknown: stop delivery and report the command error; do not rebase or use local merge as a fallback.
+- If the evidence indicates a clean merge, continue without rebasing.
+- If the evidence indicates an actual content conflict, stop PR and local-merge delivery, refer reconciliation to the G3/D8 owner path, and preserve the pending delivery authority.
+- If the command fails or the evidence is incomplete or ambiguous, mergeability is unknown: report the error, preserve the pending authority, and stop delivery; do not rebase or use local merge as a fallback.
 
-1. For a clean result, `git -C {worktree} push origin "$CANDIDATE_SHA:refs/heads/{branch}"` — push the approved commit to the code remote (`origin` = the main repo, base branch `$BASE`). Do NOT push the trunk or any `.spacedock-state` branch from here; the FO coordinates state-remote pushes separately.
+1. For a clean result, `git -C {worktree} push origin "${CANDIDATE_SHA}:refs/heads/{branch}"` — push the approved commit to the code remote (`origin` = the main repo, base branch `$BASE`). Do NOT push the trunk or any `.spacedock-state` branch from here; the FO coordinates state-remote pushes separately.
 
 If the push fails (no remote, auth error), report to the captain and fall back to the local `--no-ff` merge (see fallback below).
 
