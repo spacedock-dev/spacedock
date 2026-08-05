@@ -589,3 +589,16 @@ PASSED. AC-1 through AC-4 and the mandatory shared-live lane are current and gre
 ### Summary
 
 Z5 is reconciled onto current main with its launcher-owned multi-agent-v2 semantics intact and no product-scope expansion. The candidate is clean and mergeable at `b0b9ef319f2d267c7da3a7df70dee83b6446ba86`; only the pre-existing shared-state manifest drift prevents repository-wide full/race commands from being entirely green.
+
+## Stage Report: implementation (cycle 6 verification)
+
+- DONE: Commit a minimal current-main reconciliation that preserves Z5 Codex multi-agent launch behavior.
+  Candidate HEAD remained byte-for-byte unchanged at `b0b9ef319f2d267c7da3a7df70dee83b6446ba86`, with `origin/main` `be0e8453e6075960075e3a34d033d822f2009f4c` as an ancestor and the approved 9-file/+380/-42 delta intact.
+- DONE: Resolve only the proven codex_live_runner_test.go content conflict without expanding runtime, scheduler, or authority semantics.
+  The committed resolution still retains current main's quiet-budget runner while the relocated offline argv oracle rejects forwarded `--enable`/`--disable multi_agent_v2`; no candidate bytes or semantics changed during verification.
+- DONE: Run focused checks plus gofmt, full, and race suites; record the exact new candidate head and residual merge status.
+  Prior same-head focused CLI/offline/live-tag runner checks and gofmt/diff checks remain green. `SPACEDOCK_STATE_ROOT` was pinned to a detached worktree at immutable state commit `a0169cc2d8a5e4912ed33f75ca8422a767e71c9e`, which contains all 31 embedded manifest paths; both `go test ./...` and `go test ./... -race` then passed every package. Exact candidate head remains `b0b9ef319f2d267c7da3a7df70dee83b6446ba86`, the code worktree is clean, and `git merge-tree --write-tree HEAD origin/main` exits 0.
+
+### Summary
+
+Immutable state isolation replaces the earlier concurrent-state failure with complete green full and race evidence at the unchanged candidate. Z5 remains narrowly reconciled, clean, and conflict-free against current main, with no new finding or product change introduced.
