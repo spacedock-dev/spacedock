@@ -1,6 +1,6 @@
 ---
 title: Make ensign dispatch self-contained across launcher drift
-status: validation
+status: implementation
 sprint: durable-decisions
 source: "Real source-build sprint dogfood, 2026-07-26"
 score: "1.0"
@@ -634,6 +634,7 @@ Validation recommends REJECTED at exact tip `9148e557255529ecdca74cb7a988b0c7b22
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — fresh validation / quoted-space Codex observer; surface 35 hand files/1282 LOC + 26 goldens/401 LOC vs estimate 27 hand files/650-900 LOC + 26 goldens/450-750 LOC (142%); AC unchanged
+- Cycle 2: REJECTED — FO recovery after external EJ blocker; surface 32 hand files/1144 LOC + 26 goldens/401 LOC vs estimate 27 hand files/650-900 LOC + 26 goldens/450-750 LOC; AC unchanged
 
 ## Stage Report: implementation (cycle 4)
 
