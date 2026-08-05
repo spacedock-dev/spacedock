@@ -93,6 +93,7 @@ gates:
 started: 2026-08-03T12:19:37Z
 worktree: .worktrees/spacedock-ensign-make-live-lanes-buy-named-evidence
 mod-block: merge:pr-merge
+pr: "#626"
 ---
 
 ## Outcome
