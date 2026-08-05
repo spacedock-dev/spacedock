@@ -15,24 +15,7 @@ import (
 )
 
 func TestSharedScenarioRunnerCoverageFinal(t *testing.T) {
-	want := []string{
-		"full-ensign-cycle",
-		"gate-guardrail",
-		"default-headless-gate-stop",
-		"withdrawn-gate-recovery",
-		"recorded-gate-lifecycle",
-		"rejection-flow",
-		"feedback-3-cycle-escalation",
-		"merge-hook-guardrail",
-		"filing",
-		"shallow-boot",
-		"zero-discovery",
-		"auto-continue-after-implementation",
-		"self-evidence-merge-triage",
-		"smallest-sufficient-mechanism",
-		"keep-moving-posture",
-		"ac-value-reanchor",
-	}
+	want := []string{"full-ensign-cycle", "gate-guardrail", "default-headless-gate-stop", "withdrawn-gate-recovery", "recorded-gate-lifecycle", "rejection-flow", "feedback-3-cycle-escalation", "merge-hook-guardrail", "filing", "shallow-boot", "zero-discovery", "auto-continue-after-implementation", "self-evidence-merge-triage", "smallest-sufficient-mechanism", "keep-moving-posture", "ac-value-reanchor"}
 
 	var scenarios []string
 	for _, scenario := range sharedRuntimeScenarios() {
@@ -189,23 +172,8 @@ func TestSharedCodexAndPiDriversPreserveSpacedockShimAfterFrontDoorPin(t *testin
 }
 
 func TestSharedLiveTODOEvidenceSet(t *testing.T) {
-	targets := []liveEvidenceTarget{
-		liveEvidenceTargetClaudeSonnet,
-		liveEvidenceTargetClaudeOpus,
-		liveEvidenceTargetCodex,
-		liveEvidenceTargetPi,
-	}
-	want := map[liveEvidenceKey]string{
-		{target: liveEvidenceTargetCodex, journey: "full-ensign-cycle"}:                    codexEnsignContractDefectID,
-		{target: liveEvidenceTargetClaudeSonnet, journey: "default-headless-gate-stop"}:    defaultHeadlessGateStopDefectID,
-		{target: liveEvidenceTargetClaudeSonnet, journey: "smallest-sufficient-mechanism"}: liveDurableJourneyDefectID,
-		{target: liveEvidenceTargetClaudeSonnet, journey: "keep-moving-posture"}:           liveDurableJourneyDefectID,
-		{target: liveEvidenceTargetCodex, journey: "smallest-sufficient-mechanism"}:        liveDurableJourneyDefectID,
-		{target: liveEvidenceTargetCodex, journey: "keep-moving-posture"}:                  liveDurableJourneyDefectID,
-		{target: liveEvidenceTargetPi, journey: "rejection-flow"}:                          liveRejectionFlowDefectID,
-		{target: liveEvidenceTargetCodex, journey: "withdrawn-gate-recovery"}:              liveWithdrawnGateDefectID,
-		{target: liveEvidenceTargetCodex, journey: "rejection-flow"}:                       liveRejectionFlowDefectID,
-	}
+	targets := []liveEvidenceTarget{liveEvidenceTargetClaudeSonnet, liveEvidenceTargetClaudeOpus, liveEvidenceTargetCodex, liveEvidenceTargetPi}
+	want := map[liveEvidenceKey]string{{target: liveEvidenceTargetCodex, journey: "full-ensign-cycle"}: codexEnsignContractDefectID, {target: liveEvidenceTargetClaudeSonnet, journey: "default-headless-gate-stop"}: defaultHeadlessGateStopDefectID, {target: liveEvidenceTargetClaudeSonnet, journey: "smallest-sufficient-mechanism"}: liveDurableJourneyDefectID, {target: liveEvidenceTargetClaudeSonnet, journey: "keep-moving-posture"}: liveDurableJourneyDefectID, {target: liveEvidenceTargetCodex, journey: "smallest-sufficient-mechanism"}: liveDurableJourneyDefectID, {target: liveEvidenceTargetCodex, journey: "keep-moving-posture"}: liveDurableJourneyDefectID, {target: liveEvidenceTargetPi, journey: "rejection-flow"}: liveRejectionFlowDefectID, {target: liveEvidenceTargetCodex, journey: "withdrawn-gate-recovery"}: liveWithdrawnGateDefectID, {target: liveEvidenceTargetCodex, journey: "rejection-flow"}: liveRejectionFlowDefectID}
 	for _, target := range targets {
 		t.Run(string(target), func(t *testing.T) {
 			found := 0
@@ -238,10 +206,7 @@ func TestSharedLiveTODOEvidenceSet(t *testing.T) {
 }
 
 func TestAutoContinueReadmesAreDiscoverable(t *testing.T) {
-	readmes := map[string]func() string{
-		"auto-continue/single-root": autoContinueReadme,
-		"auto-continue/split-root":  piAutoContinueReadme,
-	}
+	readmes := map[string]func() string{"auto-continue/single-root": autoContinueReadme, "auto-continue/split-root": piAutoContinueReadme}
 	for id, readme := range readmes {
 		t.Run(id, func(t *testing.T) {
 			root := t.TempDir()
@@ -303,10 +268,16 @@ type autoContinueLaunch struct {
 
 type recordingAutoContinueDriver struct {
 	launches []autoContinueLaunch
+	result   *liveResult
+	homeDir  string
 }
 
 func (d *recordingAutoContinueDriver) run(t *testing.T, scenario sharedRuntimeScenario, root, _ string) liveResult {
 	t.Helper()
+	if d.result != nil {
+		d.result.artifactDir = t.TempDir()
+		return *d.result
+	}
 	readme := readFile(t, filepath.Join(root, "README.md"))
 	fixtureID := "auto-continue/single-root"
 	stateRoot := root
@@ -317,12 +288,7 @@ func (d *recordingAutoContinueDriver) run(t *testing.T, scenario sharedRuntimeSc
 		entityPath = filepath.Join(stateRoot, "auto-continue-task", "index.md")
 	}
 	_, discoverable := status.DiscoverWorkflowDir(root)
-	d.launches = append(d.launches, autoContinueLaunch{
-		fixtureID:     fixtureID,
-		artifactLabel: scenario.name,
-		discoverable:  discoverable,
-		gitClean:      autoContinueGitBaselineError(root, stateRoot, entityPath, stateRoot != root) == nil,
-	})
+	d.launches = append(d.launches, autoContinueLaunch{fixtureID: fixtureID, artifactLabel: scenario.name, discoverable: discoverable, gitClean: autoContinueGitBaselineError(root, stateRoot, entityPath, stateRoot != root) == nil})
 	after := strings.Replace(readFile(t, entityPath), "status: implementation", "status: validation", 1) +
 		"\n## Stage Report: validation\n\n- DONE: Validate the fixture\n  Validation passed.\n"
 	writeFile(t, entityPath, after)
@@ -330,7 +296,7 @@ func (d *recordingAutoContinueDriver) run(t *testing.T, scenario sharedRuntimeSc
 }
 
 func (d *recordingAutoContinueDriver) model() string { return "fake" }
-func (d *recordingAutoContinueDriver) home() string  { return "" }
+func (d *recordingAutoContinueDriver) home() string  { return d.homeDir }
 func (d *recordingAutoContinueDriver) withStubPATH(*testing.T, string) liveDriver {
 	return d
 }
@@ -354,6 +320,17 @@ func TestAutoContinueCommonRunnerLaunchesBothVariantsSerially(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("auto-continue fixture launches = %v, want exactly %v in serial order", got, want)
+	}
+}
+
+func TestShallowBootRuntimeRouting(t *testing.T) {
+	greet := shallowBootHeldGateLine + "\n" + shallowBootEngageHintLine
+	piGreet := fmt.Sprintf(`{"type":"message","message":{"role":"assistant","content":[{"type":"text","text":%q}]}}`, greet)
+	for name, result := range map[string]liveResult{"pi native session": {runtime: "pi", stream: "non-Claude Pi diagnostics", sessionJSONL: piFilingCall("call_boot", "spacedock status") + "\n" + piGreet, finalMessage: greet}, "claude stream": {runtime: "claude", stream: readMeasureFixture(t, "shallow-boot-greet.stream.jsonl"), sessionJSONL: "not Pi evidence", finalMessage: greet}} {
+		t.Run(name, func(t *testing.T) {
+			driver := &recordingAutoContinueDriver{result: &result, homeDir: t.TempDir()}
+			runClaudeShallowBootScenario(t, driver, sharedRuntimeScenario{name: "shallow-boot"})
+		})
 	}
 }
 

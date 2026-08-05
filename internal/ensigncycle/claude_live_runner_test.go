@@ -527,15 +527,21 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	if err := assertShallowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	// AC-2: no TeamCreate before the greet (behavioral, over the tool-call sequence).
-	if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	// The boot-window oracle: a greet turn was produced (structural only — the
-	// former ~60k ceiling/spike thresholds no longer gate CI, see
-	// assertShallowBootMeasuredTurns).
-	if err := assertShallowBootMeasured(result.stream); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	if result.runtime == "pi" {
+		if err := assertPiShallowBootSession(result.sessionJSONL); err != nil {
+			t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+		}
+	} else {
+		// AC-2: no TeamCreate before the greet (behavioral, over the tool-call sequence).
+		if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {
+			t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+		}
+		// The boot-window oracle: a greet turn was produced (structural only — the
+		// former ~60k ceiling/spike thresholds no longer gate CI, see
+		// assertShallowBootMeasuredTurns).
+		if err := assertShallowBootMeasured(result.stream); err != nil {
+			t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+		}
 	}
 	// Record (don't gate on) the greet turn's full token usage as a distinct
 	// shallow-boot-window observation, riding the same journeymetrics ledger pipe

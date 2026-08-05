@@ -217,6 +217,34 @@ func assertPiFilingViaNew(jsonl, slug string) error {
 	return fmt.Errorf("Pi did not record exactly one successful atomic `spacedock new %s` call without manual `--next-id` evidence", slug)
 }
 
+func assertPiShallowBootSession(jsonl string) error {
+	greeted := false
+	for _, line := range strings.Split(jsonl, "\n") {
+		var entry struct {
+			Type    string `json:"type"`
+			Message struct {
+				Role    string            `json:"role"`
+				Content []json.RawMessage `json:"content"`
+			} `json:"message"`
+		}
+		if json.Unmarshal([]byte(line), &entry) != nil || entry.Type != "message" || entry.Message.Role != "assistant" {
+			continue
+		}
+		for _, raw := range entry.Message.Content {
+			var block struct{ Type, Name, Text string }
+			_ = json.Unmarshal(raw, &block)
+			if block.Type == "toolCall" && (block.Name == "subagent" || block.Name == "member_spawn" || block.Name == "delegate") {
+				return fmt.Errorf("Pi shallow boot dispatched %s before its greet", block.Name)
+			}
+			greeted = greeted || block.Type == "text" && strings.Contains(block.Text, shallowBootHeldGateLine) && strings.Contains(block.Text, shallowBootEngageHintLine)
+		}
+	}
+	if greeted {
+		return nil
+	}
+	return fmt.Errorf("Pi root session carried no held-review assistant greet")
+}
+
 func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
 	doc, _, err := gates.Read(entityPath)
 	if err != nil && strings.Contains(err.Error(), "entity has no gates record") {
@@ -414,10 +442,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 	command := `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir "$WD" --round validation/1 --briefing "$WD/rejection-task/inputs/briefing.json" --log "$WD/rejection-task/inputs/briefing.review.jsonl"`
 	result := "round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4"
-	claudeStream := strings.Join([]string{
-		bashToolLine("toolu_round", command),
-		toolResultLine("toolu_round", false, result),
-	}, "\n")
+	claudeStream := bashToolLine("toolu_round", command) + "\n" + toolResultLine("toolu_round", false, result)
 	if !claudeRecordedRejectionRound(claudeStream) {
 		t.Fatal("Claude extractor missed correlated round invocation with prefixed artifact paths")
 	}
@@ -428,19 +453,10 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 	}
 	unrelatedInvocation := fmt.Sprintf(`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":"call_status","name":"bash","arguments":{"command":%q}}]}}`, "spacedock status rejection-task --workflow-dir .")
 	unrelatedResult := strings.Replace(strings.Replace(piResult, "call_round", "call_status", 1), result, "status: validation", 1)
-	if !piRecordedRejectionRound(strings.Join([]string{
-		result, unrelatedInvocation, unrelatedResult, piInvocation, piResult,
-	}, "\n")) {
+	if !piRecordedRejectionRound(strings.Join([]string{result, unrelatedInvocation, unrelatedResult, piInvocation, piResult}, "\n")) {
 		t.Fatal("Pi extractor let unrelated tools or a stdout lookalike obscure the single exact recorder call")
 	}
-	for name, transcript := range map[string]string{
-		"missing result":      piInvocation,
-		"uncorrelated result": piInvocation + "\n" + strings.Replace(piResult, "call_round", "call_other", 1),
-		"errored result":      piInvocation + "\n" + strings.Replace(piResult, `"isError":false`, `"isError":true`, 1),
-		"wrong command":       strings.Replace(piInvocation, "gate record rejection-task", "gate record other-task", 1) + "\n" + piResult,
-		"wrong round":         strings.Replace(piInvocation, "validation/1", "validation/2", 1) + "\n" + piResult,
-		"two entries":         piInvocation + "\n" + strings.Replace(piResult, "entries=4", "entries=2", 1),
-	} {
+	for name, transcript := range map[string]string{"missing result": piInvocation, "uncorrelated result": piInvocation + "\n" + strings.Replace(piResult, "call_round", "call_other", 1), "errored result": piInvocation + "\n" + strings.Replace(piResult, `"isError":false`, `"isError":true`, 1), "wrong command": strings.Replace(piInvocation, "gate record rejection-task", "gate record other-task", 1) + "\n" + piResult, "wrong round": strings.Replace(piInvocation, "validation/1", "validation/2", 1) + "\n" + piResult, "two entries": piInvocation + "\n" + strings.Replace(piResult, "entries=4", "entries=2", 1)} {
 		t.Run("pi_"+name, func(t *testing.T) {
 			if piRecordedRejectionRound(transcript) {
 				t.Fatal("Pi extractor accepted non-durable or uncorrelated recording evidence")
@@ -465,71 +481,28 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 		"diagnostic: entries=2 is not a canonical round summary", result, "diagnostic: validation complete")) {
 		t.Fatal("Pi extractor rejected one canonical entries=4 summary surrounded by unrelated diagnostic text")
 	}
-	for name, texts := range map[string][]string{
-		"two then four same block":  {canonicalSummary("2") + "\n" + result},
-		"four then two same block":  {result + "\n" + canonicalSummary("2")},
-		"four plus three":           {result + "\n" + canonicalSummary("3")},
-		"four plus five":            {result + "\n" + canonicalSummary("5")},
-		"two and four split blocks": {canonicalSummary("2"), result},
-		"repeated two":              {canonicalSummary("2"), canonicalSummary("2")},
-	} {
+	for name, texts := range map[string][]string{"two then four same block": {canonicalSummary("2") + "\n" + result}, "four then two same block": {result + "\n" + canonicalSummary("2")}, "four plus three": {result + "\n" + canonicalSummary("3")}, "four plus five": {result + "\n" + canonicalSummary("5")}, "two and four split blocks": {canonicalSummary("2"), result}, "repeated two": {canonicalSummary("2"), canonicalSummary("2")}} {
 		t.Run("pi_summary_"+name, func(t *testing.T) {
 			if piRecordedRejectionRound(piInvocationFor("call_summary") + "\n" + piResultTextsFor("call_summary", texts...)) {
 				t.Fatal("Pi extractor accepted an ambiguous or incomplete canonical summary set")
 			}
 		})
 	}
-	for name, transcript := range map[string]string{
-		"two complete calls": strings.Join([]string{
-			piInvocationFor("call_one"), piResultFor("call_one", "4"),
-			piInvocationFor("call_two"), piResultFor("call_two", "4"),
-		}, "\n"),
-		"complete then incomplete": strings.Join([]string{
-			piInvocationFor("call_one"), piResultFor("call_one", "4"),
-			piInvocationFor("call_two"), piResultFor("call_two", "2"),
-		}, "\n"),
-		"incomplete then complete": strings.Join([]string{
-			piInvocationFor("call_one"), piResultFor("call_one", "2"),
-			piInvocationFor("call_two"), piResultFor("call_two", "4"),
-		}, "\n"),
-		"second invocation missing result": strings.Join([]string{
-			piInvocationFor("call_one"), piResultFor("call_one", "4"), piInvocationFor("call_two"),
-		}, "\n"),
-		"reused tool call ID": strings.Join([]string{
-			piInvocationFor("call_same"), piResultFor("call_same", "4"), piInvocationFor("call_same"),
-		}, "\n"),
-		"repeated correlated results": strings.Join([]string{
-			piInvocationFor("call_one"), piResultFor("call_one", "4"), piResultFor("call_one", "4"),
-		}, "\n"),
-		"result before invocation": strings.Join([]string{
-			piResultFor("call_one", "4"), piInvocationFor("call_one"),
-		}, "\n"),
-		"success line repeated in result": piInvocationFor("call_one") + "\n" +
-			fmt.Sprintf(`{"type":"message","message":{"role":"toolResult","toolCallId":"call_one","toolName":"bash","isError":false,"content":[{"type":"text","text":%q}]}}`, result+"\n"+result),
-	} {
+	for name, transcript := range map[string]string{"two complete calls": strings.Join([]string{piInvocationFor("call_one"), piResultFor("call_one", "4"), piInvocationFor("call_two"), piResultFor("call_two", "4")}, "\n"), "complete then incomplete": strings.Join([]string{piInvocationFor("call_one"), piResultFor("call_one", "4"), piInvocationFor("call_two"), piResultFor("call_two", "2")}, "\n"), "incomplete then complete": strings.Join([]string{piInvocationFor("call_one"), piResultFor("call_one", "2"), piInvocationFor("call_two"), piResultFor("call_two", "4")}, "\n"), "second invocation missing result": strings.Join([]string{piInvocationFor("call_one"), piResultFor("call_one", "4"), piInvocationFor("call_two")}, "\n"), "reused tool call ID": strings.Join([]string{piInvocationFor("call_same"), piResultFor("call_same", "4"), piInvocationFor("call_same")}, "\n"), "repeated correlated results": strings.Join([]string{piInvocationFor("call_one"), piResultFor("call_one", "4"), piResultFor("call_one", "4")}, "\n"), "result before invocation": strings.Join([]string{piResultFor("call_one", "4"), piInvocationFor("call_one")}, "\n"), "success line repeated in result": piInvocationFor("call_one") + "\n" + fmt.Sprintf(`{"type":"message","message":{"role":"toolResult","toolCallId":"call_one","toolName":"bash","isError":false,"content":[{"type":"text","text":%q}]}}`, result+"\n"+result)} {
 		t.Run("pi_ambiguous_"+name, func(t *testing.T) {
 			if piRecordedRejectionRound(transcript) {
 				t.Fatal("Pi extractor accepted ambiguous repeated recorder evidence")
 			}
 		})
 	}
-	for name, invalid := range map[string]string{
-		"wrong_suffix": strings.Replace(command, "briefing.json\"", "briefing.json.bak\"", 1),
-		"wrong_file":   strings.Replace(command, "briefing.review.jsonl", "other.review.jsonl", 1),
-		"wrong_entity": strings.Replace(command, "gate record rejection-task", "gate record other-task", 1),
-		"wrong_round":  strings.Replace(command, "validation/1", "validation/2", 1),
-	} {
+	for name, invalid := range map[string]string{"wrong_suffix": strings.Replace(command, "briefing.json\"", "briefing.json.bak\"", 1), "wrong_file": strings.Replace(command, "briefing.review.jsonl", "other.review.jsonl", 1), "wrong_entity": strings.Replace(command, "gate record rejection-task", "gate record other-task", 1), "wrong_round": strings.Replace(command, "validation/1", "validation/2", 1)} {
 		t.Run(name, func(t *testing.T) {
 			if commandRecordsRejectionRound(invalid) {
 				t.Fatal("command recognizer accepted invalid rejection-round arguments")
 			}
 		})
 	}
-	if claudeRecordedRejectionRound(bashToolLine("toolu_round", command)) ||
-		claudeRecordedRejectionRound(strings.Join([]string{
-			bashToolLine("toolu_round", command),
-			toolResultLine("toolu_round", true, result),
-		}, "\n")) {
+	if claudeRecordedRejectionRound(bashToolLine("toolu_round", command)) || claudeRecordedRejectionRound(bashToolLine("toolu_round", command)+"\n"+toolResultLine("toolu_round", true, result)) {
 		t.Fatal("Claude extractor accepted a missing or failed correlated result")
 	}
 	captured := "B=${SPACEDOCK_BIN:-spacedock}\n$B gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl"
@@ -570,6 +543,24 @@ func TestAssertPiFilingViaNew(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if assertPiFilingViaNew(transcript, filingSlug) == nil {
 				t.Fatal("ambiguous or manual Pi filing evidence passed")
+			}
+		})
+	}
+}
+
+func TestAssertPiShallowBootSession(t *testing.T) {
+	greet := fmt.Sprintf(`{"type":"message","message":{"role":"assistant","content":[{"type":"text","text":%q}]}}`, shallowBootHeldGateLine+"\n"+shallowBootEngageHintLine)
+	sameTurn := fmt.Sprintf(`{"type":"message","message":{"role":"assistant","content":[{"type":"text","text":%q},{"type":"toolCall","id":"call_2","name":"subagent","arguments":{}}]}}`, shallowBootHeldGateLine+"\n"+shallowBootEngageHintLine)
+	call := func(name string) string {
+		return fmt.Sprintf(`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":"call_1","name":%q,"arguments":{"command":"spacedock status"}}]}}`, name)
+	}
+	if err := assertPiShallowBootSession(call("bash") + "\n" + greet); err != nil {
+		t.Fatalf("exact Pi read/bash then greet session failed: %v", err)
+	}
+	for name, session := range map[string]string{"missing greet": call("bash"), "subagent": call("subagent") + "\n" + greet, "member_spawn": call("member_spawn") + "\n" + greet, "delegate": call("delegate") + "\n" + greet, "text then dispatch same turn": sameTurn, "dispatch after greet": greet + "\n" + call("delegate")} {
+		t.Run(name, func(t *testing.T) {
+			if assertPiShallowBootSession(session) == nil {
+				t.Fatal("missing greet or pre-greet Pi dispatch passed")
 			}
 		})
 	}
