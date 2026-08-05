@@ -68,7 +68,10 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	env = withBinaryOnPath(env, binary)
 	configDir, _ := envValue(env, "CLAUDE_CONFIG_DIR")
 	homeDir, _ := envValue(env, "HOME")
-	effectiveConfigDir := configDirOrDefault(configDir, homeDir)
+	effectiveConfigDir := configDir
+	if effectiveConfigDir == "" {
+		effectiveConfigDir = filepath.Join(homeDir, ".claude")
+	}
 
 	// The realistic ≥3-stage lifecycle fixture (backlog → implementation → done), a
 	// flat entity at backlog — the SAME fixture the bare cycle and the pty lane use.
@@ -183,7 +186,7 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	poller.kill()
 	stream := watcher.fullTranscript()
 	duration := time.Since(started)
-	t.Logf("merged-lane drive reached terminal state in %s, %d transcript lines", duration.Round(time.Second), len(splitStreamLines(stream)))
+	t.Logf("merged-lane drive reached terminal state in %s, %d transcript lines", duration.Round(time.Second), len(strings.Split(stream, "\n")))
 	_ = os.WriteFile(filepath.Join(artifactDir, "merged-stream.jsonl"), []byte(stream), 0o644)
 
 	// A 401/is_error result is a LOUD launch failure, never fed into an assertion.
@@ -194,7 +197,7 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 			extractErr, artifactDir, tail(stream, 4000))
 	}
 
-	lines := splitStreamLines(stream)
+	lines := strings.Split(stream, "\n")
 
 	// Assertion #1 — NO TeamCreate. Two independent signals, both verified live:
 	//   (a) the init-event tool surface carries SendMessage but NOT TeamCreate/
