@@ -296,3 +296,16 @@ Validation cycle 3 recommends PASSED with no material, deferred-risk, or polish 
 ### Summary
 
 Reconciled EJ onto current main with one manual conflict resolution that composes main's ready-gate scheduler envelope with EJ's explicit event-loop ordering and unresolved-worker wait semantics. The exact candidate remains nine files at +242/-11 and is ready for fresh validation; an initial full-suite run against obsolete state snapshot `73f41e2a` exposed only expected pilot-manifest drift and was replaced by the compatible immutable snapshot cited above.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Re-review exact candidate c7f3bc0d890c6fc380ea710d133b6ac0505c278b and prove it merges cleanly with current origin/main while preserving ordered event-loop and unresolved-worker wait semantics.
+  Fresh fetch leaves `origin/main=be0e8453e`, which is an ancestor of exact HEAD; `git merge-tree --write-tree origin/main HEAD` exits 0. The mixed trace retains reconcile/drain, mod and all three gate routes before next, both independent dispatches, one retry, and truthful stop.
+- DONE: Verify every EJ acceptance criterion with independent evidence, including active, completed, errored, and absent Codex worker states across supported artifact layouts.
+  AC-1/4/5 pass exact ordered/spawn and real status/CLI gate-route checks; AC-2 passes exact retry/released and unchanged-empty traces; AC-3 passes default and external-root live runs, with active waiting exactly once at 300000 ms and completed/errored/absent waiting zero times.
+- DONE: Confirm the candidate remains nine files at +242/-11 and run focused, contractlint, formatting, full, race, and applicable exact-head live checks.
+  Exact HEAD remains clean at nine files +242/-11 with unchanged SHA-256 hashes; focused ensigncycle/status/CLI/contractlint, `git diff --check`, `gofmt -d`, immutable-state full/race, and both Codex live layouts pass.
+
+### Summary
+
+Validation cycle 4 recommends PASSED with no material, deferred-risk, or polish findings. The current-main reconciliation is conflict-free, preserves all AC-1 through AC-5 behavior, and leaves the exact candidate bytes unchanged.
