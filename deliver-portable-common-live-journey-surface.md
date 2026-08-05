@@ -1339,3 +1339,36 @@ Cycle 14 records the archive-proven Codex `full-ensign-cycle` product failure as
 ### Summary
 
 Cycle 14 PASSED independently at exact candidate `d7cdd4e91f6fcfdc7308138434908b37fa6e54a5`. The ninth binding accurately withholds only the archive-disproved Codex full-cycle evidence, preserves the pure 64-cell desired matrix and all prior evidence semantics, and remains causally guarded within the exact surface and authority limits.
+
+## Stage Report: implementation (cycle 15)
+
+- DONE: Start from the exact clean and pushed Cycle-14 candidate.
+  Baseline and origin were `d7cdd4e91f6fcfdc7308138434908b37fa6e54a5`; no root-main update or unrelated state write occurred.
+- DONE: Classify the exact Pi evidence without rerunning it.
+  Run `31048506420`, job `92450151141`, artifact `8947855457` passed offline and seven runnable journeys, skipped owned Pi rejection-flow, then false-negatived on filing despite the correct durable file.
+- DONE: Identify the observer root cause.
+  Pi archived a native assistant `bash` toolCall and correlated successful `role:toolResult` in `sessionJSONL`, while `runClaudeFilingScenario` graded Pi stdout/stderr with Claude's `tool_use` parser.
+- DONE: Add the focused Pi-native RED before implementation.
+  `TestAssertPiFilingViaNew` initially failed to compile because the Pi correlator did not exist; its distilled exact archived-success call/result shape is now the positive control.
+- DONE: Route only Pi through native root-session evidence.
+  `runtime == "pi"` selects `sessionJSONL` plus `assertPiFilingViaNew`; Claude retains `result.stream` plus its original parser and Codex retains its separate filing runner.
+- DONE: Require exact successful atomic-create evidence.
+  The correlator accepts exactly one requested-slug `bash` atomic-create call, exactly one later same-ID `toolResult`, exact `toolName: bash`, and explicit `isError: false`; the durable entity `os.Stat` assertion remains separate.
+- DONE: Add causal ambiguity and manual-flow negatives.
+  Missing/failed result, duplicate invocation, duplicate result, unrelated call reusing the filing ID, and a distinct non-atomic `--next-id` call each fail closed; all six named subtests pass.
+- DONE: Preserve existing host-specific filing and Pi correlation behavior.
+  Claude synthetic/PR399 negatives, Codex launcher/manual-flow negatives, and the full Pi rejection-round ambiguity matrix pass after extracting the shared native correlator.
+- DONE: Preserve registry and evidence boundaries.
+  Reconciliation, mutation, current/stale SHA, pure 64-cell desired state, and all nine TODO bindings remain green at Sonnet=3, Codex=5, Pi=1, Opus=0; no owner or TODO was added.
+- DONE: Stay within the fixed surface ceiling without losing executable proof.
+  Branch-added explanatory comments were compacted from already-changed harness/helper files; every affected executable control remains and the final surface is exactly 42 files/+2750/-684.
+- DONE: Preserve watched-core plus SHA-only binder history.
+  Watched core `9c38ebca94ad23d65cc8648e67d0bce6cea4fe94` is followed only by binder `6408e2ad658f05d9c990b88a46cc8d002203c729` changing the recorded SHA.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; full exits 0 (`ensigncycle` 107.390s) and race exits 0 (`ensigncycle` 119.521s).
+- DONE: Preserve scope, execution, and authority boundaries.
+  No product/fixture/prompt/launcher/front-door, native Pi metric/evidence beyond this observer, file/member/controller/retry, or other entity changed; no hosted/live/model/substrate/smoke command ran and no workflow transition was made.
+
+### Summary
+
+Cycle 15 grades Pi filing from its durable root-session tool evidence instead of stdout/stderr, while leaving Claude and Codex filing paths intact. The exact archived success, fail-closed mutation set, prior correlation suites, registry/TODO boundaries, full/race verification, pushed two-commit history, and hard 42-file/+2750 ceiling are green at `6408e2ad658f05d9c990b88a46cc8d002203c729`.
