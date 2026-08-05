@@ -62,6 +62,14 @@ gates:
                 digest: sha256:9d87e4f7f77c656e68e0c65c530fd86932902f3794af4eb5c81e7dbd363f4b4d
                 request-digest: sha256:d7f9a328933b859a4e4cc44eac897ac3f276165cfffbfdbdb861061afe259ead
                 room-ref: ./avoid-unnecessary-pr-rebases/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ep2cz3zsb2qpyyh889nyeqpr:validation:1
+                briefing: briefing:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-05T06:41:48.81045Z"
+                decision: revise
+                reason: Fix the zsh exact-SHA refspec with braces in both approved mod files. Replace rigid exit-code semantics with First Officer inspection of merge-tree stdout, stderr, and context; actual conflict routes to G3/D8, command failure or uncertainty reports unknown and preserves authority. Add no machinery or preflight.
 ---
 
 Remove the mandatory rebase from the `pr-merge` policy. Keep the approved
