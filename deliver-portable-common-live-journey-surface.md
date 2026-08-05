@@ -1207,3 +1207,38 @@ Cycle 12 hardens every throwaway repository through the shared `InitRepo` helper
 ### Summary
 
 Cycle 12 PASSED independently at exact candidate `99f27c41c88bdd414240344495013e0c393a4c41`. The shared throwaway-repository fix is causally discriminating and eliminates both observed Git cleanup signatures while preserving every fixture, registry, runtime, product, and execution boundary.
+
+## Stage Report: implementation (cycle 13)
+
+- DONE: Start from the exact clean and pushed Cycle-12 candidate.
+  Baseline was `99f27c41c88bdd414240344495013e0c393a4c41`; no prior candidate bytes were rewritten.
+- DONE: Inspect the exact hosted Codex evidence without rerunning it.
+  Run `31042421641`, job `92430021762`, artifact `8945373289` was read from `/tmp/ys-cycle12-codex-retry-31042421641`.
+- DONE: Preserve the hosted result's evidence classification.
+  Nine runnable journeys passed and exact owned gaps skipped; only `auto-continue-after-implementation` failed, so this cycle changes harness truth only and creates no product or owner binding.
+- DONE: Identify the stale single-root grading source.
+  The root entity was nonempty at validation with `worktree: .worktrees/spacedock-ensign-auto-continue-task` but lacked a validation report; the active worktree entity contained the committed report and PASSED recommendation.
+- DONE: Add the focused single-root RED before implementation.
+  `TestResolveAutoContinueEndState/single-root_active_worktree` returned the stale pipeline body instead of the active worktree report on the Cycle-12 baseline.
+- DONE: Correct the split-root control after review and capture a second RED.
+  The adversarial file now occupies the exact probed path, `stateRoot/.worktrees/spacedock-ensign-auto-continue-task/auto-continue-task.md`; the unguarded resolver returned `WRONG CODE WORKTREE COPY`.
+- DONE: Encode root authority explicitly in the common runner.
+  Setup records whether the fixture's state root differs from its workflow root; only single-root grading follows a safe relative stamped worktree path.
+- DONE: Preserve split-root and archive semantics.
+  Split-root grading always trusts the separate state checkout, while empty post-state still falls back to both flat and folder archive shapes.
+- DONE: Reprove the focused harness contracts.
+  Resolver, common-runner, discovery, Git baseline, negative, parity, rejection, TODO, deterministic Pi metrics, reconciliation, mutation, and current/stale SHA controls exit 0.
+- DONE: Keep the registry binder isolated from the watched core.
+  Core `7ef1636c5ff751ff2e04716e39eb075cdd8aaf42` is followed only by docs binder `0aa74035cc96d672c71480466ed4e1b1a3169213`.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; full exits 0 (`ensigncycle` 103.072s) and race exits 0 (`ensigncycle` 115.215s).
+- DONE: Preserve the fixed surface and remote equality.
+  Candidate/origin are `0aa74035cc96d672c71480466ed4e1b1a3169213` at exactly 42 files/+2737/-681, below the +2750 ceiling.
+- DONE: Preserve fixtures, prompts, adapters, registry, product, and workflow authority.
+  No file was added, no runtime fixture/prompt/adapter/workflow/TODO/product byte changed, no owner was filed, and no state transition was made.
+- DONE: Record the one verification execution anomaly exactly.
+  An overbroad local name filter selected the opt-in Pi front-door smoke; the provider rejected it at its pre-execution 402 credit check, after which all filters were narrowed to deterministic tests and no hosted rerun was launched.
+
+### Summary
+
+Cycle 13 makes common auto-continue grading follow the durable active entity in single-root workflows while explicitly retaining state-checkout authority for split-root workflows. Both causal REDs, focused contracts, full/race suites, SHA binding, remote equality, and the 42-file ceiling are proved at candidate `0aa74035cc96d672c71480466ed4e1b1a3169213` without a product repair or workflow transition.
