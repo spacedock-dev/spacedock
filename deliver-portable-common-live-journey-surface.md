@@ -763,3 +763,32 @@ Checklist: 12 DONE, 0 SKIPPED, 1 FAILED. Cycle 5 local representation proof is g
 ### Summary
 
 Cycle 6 replaces the false Claude observation boundary with strict Pi root-session evidence and native Pi metrics across all common journeys. The incomplete `entries=2` rejection remains truthfully blocked by the exact Pi-only zbc TODO, while the pure desired registry and all 64 required target/journey cells remain intact.
+
+## Stage Report: validation (cycle 6)
+
+- DONE: Independently verify exact candidate provenance and scope before trusting the implementation report.
+  Candidate and origin are `35143a55a3fd1259295664df71602c116f6b3fd3`; watched core is `8cca2533723678f62cd0eff02c6442a95c49715e`; rejected baseline is `e023619ed1f6a00a85f6ad88741c8b8ebad2d3b1`; merge base is `507a4bc12e48a3e4a813219602c488f09c81a5d8`. The binder changes only `docs/runtime-live-ci.md`; the code worktree is clean and head/origin match.
+- DONE: Reproduce the exact Cycle-5 Pi artifact boundary without launching a model.
+  The archived root session from run `31016570689`, job `92342373497`, artifact `8935708302` contains the exact recorder call and correlated successful result with `entries=2`. The new Pi observer reads that root-session JSONL and correctly rejects it as incomplete rather than repeating the prior stdout/stderr false negative.
+- FAILED: Prove the Pi observer rejects every detached false-positive/false-negative variant and accepts only one exact correlated successful `entries=4` recording.
+  Built-in controls reject missing, uncorrelated, errored, wrong-task, wrong-round, wrong-file, and `entries=2` evidence, and accept the exact single `entries=4` pair. A detached audit adds two required ambiguity controls: two exact successful calls, and one successful `entries=4` call followed by a second exact `entries=2` call. Both fail because `piRecordedRejectionRound` returns at the first qualifying result and never detects another matching invocation.
+- DONE: Verify the pure desired registry, all 64 journey/target cells, and exactly six source-derived owner bindings.
+  Reconciliation and cheap target enumeration preserve 16 journeys on four targets with Sonnet=3, Codex=2, Pi=1, and Opus=0 bindings. Pi `rejection-flow` maps only to `zbcj98qfwtax61vxdzrf615e`; no observed-gap ledger enters the desired registry.
+- DONE: Exercise binding removal, target, owner, global, duplicate, cardinality, accidental suppression, ledger, and proven-pass mutations.
+  `TestRuntimeLiveRegistryReconciliationMutationControls`, source-duplicate controls, all-target TODO enumeration, and the Codex proven-pass guard pass, including the three wrong-target Pi mutations.
+- DONE: Verify native Pi metric identity, usage, cost, duration, and provenance controls.
+  The emitter produces `runtime=pi`, `host=pi`, `model=openai/gpt-5.4`, measured input/output/cache/total tokens, total cost, duration, run ID/URL, and a Pi-attributed filename. Claude attribution, missing usage/cost/provider, mixed model, oversized-row, and explicit-zero controls behave as specified. The exact archived Pi session independently parses as OpenAI GPT-5.4 with nonzero tokens and cost.
+- DONE: Recheck prior parity, adapter selection, exact selectors, first-failure, gate starts, launch/shim, artifact, SHA, and Claude/Codex metric boundaries proportionate to this evidence-only diff.
+  Focused ensigncycle, release, contractlint, TODO-set, registry, current/stale SHA, and workflow tests pass; no product/runtime launch behavior changed in Cycle 6.
+- DONE: Run required repository checks and final provenance checks on exact candidate bytes.
+  `go test ./...` exits 0 (`internal/ensigncycle` 242.462s); `go test ./... -race` exits 0 (`internal/ensigncycle` 245.590s); focused live-tagged offline tests exit 0; `gofmt -l ./cmd ./internal` is empty; `git diff --check` passes. Final surface is exactly 42 files/+2173/-666, at the 42-file ceiling and below +2750 insertions.
+- DONE: Classify the new finding before any candidate mutation or rerun and report the local checkpoint to the First Officer.
+  Finding — evidence defect, Material/ys-owned narrow fix: the normal Pi model path can issue a repeated recorder command; observable harm is that ambiguous execution, including a later incomplete recorder result, is certified as exact successful evidence; `value-ac[AC-4]` requires attributable exact Pi evidence; the detached two-call controls reproduce the false positive. Candidate bytes remain unchanged.
+- DONE: Avoid unauthorized live spend and adjacent product repair.
+  No hosted, local-live, model-backed, smoke, substrate, Sonnet, Codex, Pi, or Opus run was launched. The zbc product outcome remains represented by the Pi-only TODO and was not repaired or reclassified.
+- FAILED: Recommend PASSED only if every required observer mutation is green and no Material finding remains.
+  Recommend REJECTED. AC-1 through AC-3 and the remaining AC-4 representation/metric boundaries are green, but the Pi recorder observer does not reject duplicate or ambiguous exact calls, leaving one Material AC-4 evidence defect.
+
+### Summary
+
+Cycle 6 correctly moves Pi evidence and metrics to the archived native root session, preserves the historical two-entry product failure, and adds the sixth exact target binding. Validation is nevertheless REJECTED because the observer accepts ambiguous duplicate recorder executions; a narrow ys-owned correction must require exactly one matching invocation/result pair before the same detached controls are rerun. No candidate mutation or live spend occurred.
