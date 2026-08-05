@@ -692,3 +692,21 @@ remain intact, and the final test-only diff is smaller than the prior candidate.
 PASSED. The corrected oracle now grades AC-2's supported direct gated-stage path,
 retains every transition and no-authority guard, and regrades the preserved live
 workflow successfully without a redundant provider run.
+
+## Stage Report: implementation (cycle 12)
+
+- DONE: Commit a minimal reconciliation with current origin/main that preserves 26N gate-stop coherence semantics.
+  Merge commit `8d07b1a58749a5feed99d8dfa294c5e1b5a6bb14` reconciles exact local candidate `2cebb23b837423fec5a63b9afd9a85acf0463ad2` with `origin/main` `be0e8453e6075960075e3a34d033d822f2009f4c`; the direct-gate oracle follows main's move into `claude_runtime_helpers_test.go`.
+- DONE: Resolve only the two proven content conflicts and retain the approved task surface without authority or behavior expansion.
+  Only `claude_live_runner_test.go` and `livescenario_adapter_live_test.go` conflicted; resolution retains main's withdrawn-gate/live-helper refactor plus 26N's queued fixture, direct-gate ordering, no-authority mutants, and failure-safe evidence retention, with no production change beyond merged main.
+- FAILED: Run focused checks plus gofmt, full, and race suites; record the exact new candidate head and residual merge status.
+  Focused offline/live-tag fixture, oracle-mutant, and retention tests passed; `gofmt -w ./cmd ./internal` and `git diff --check` passed. Both `go test ./...` and `go test ./... -race` passed every package except `internal/gates`, where main's pilot manifest names absent shared-state path `gate-agent-ergonomics.md` while the state checkout contains `_archive/gate-agent-ergonomics.md`; the task-owned `internal/ensigncycle` package passed in both runs.
+- DONE: Record the exact new candidate head and residual merge status.
+  Candidate head is `8d07b1a58749a5feed99d8dfa294c5e1b5a6bb14`; `git merge-tree --write-tree HEAD origin/main` exits clean with tree `408b4dc2629b5a4afeb36bebf6ce4fa5f64c59be`, and the code worktree is clean.
+
+### Summary
+
+Cycle 12 merges current main into the exact clean local 26N candidate and resolves
+the two reported conflicts without changing approved behavior. The new head is
+merge-clean; focused and task-owned checks pass, while full and race retain one
+unrelated shared-state manifest failure caused by an already archived pilot entity.
