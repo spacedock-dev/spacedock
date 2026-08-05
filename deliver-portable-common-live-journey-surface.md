@@ -1031,3 +1031,34 @@ Cycle 9 independently confirms that the prior hosted Codex failure is represente
 ### Summary
 
 Cycle 10 adds the supplied Codex rejection-flow failure as the eighth exact target-scoped TODO while preserving the distinct Pi binding to the same owner. The pushed representation-only pair is green under focused, mutation, SHA, full, race, history, origin, and ceiling proof with no live spend or product/runtime change.
+
+## Stage Report: validation (cycle 10)
+
+- DONE: Verify exact candidate provenance and immutable remote equality.
+  Candidate/origin are clean at `f390bf5d3ac37882db6fb1af9edb34a9c991c9ff`; watched core is `79d4055e8fae70c4e2f74c9edabc3f5f1ab45544` and merge base is `507a4bc12e48a3e4a813219602c488f09c81a5d8`.
+- DONE: Independently verify the supplied hosted Codex evidence without launching a run.
+  Run `31032033236`, job `92395174900`, artifact `8941373026`, and artifact `source-head.txt` bind baseline `88488379684801f02949544f54e2248b5be4488d`.
+- DONE: Verify the exact hosted journey outcome and durable failure state.
+  Full-ensign, gate-guardrail, default-headless, and recorded-gate-lifecycle passed; owned withdrawn recovery skipped; rejection-flow retained one implementation and one REJECTED validation, prepared an ordinary gate, and never ran rework or cycle-2 validation.
+- DONE: Verify the existing repair owner fits the observed Codex failure.
+  Archived owner `zbcj98qfwtax61vxdzrf615e` explicitly owns rejection-flow rework/revalidation and the post-rework gate boundary; no owner was created or filed.
+- DONE: Reproduce the Cycle-10 red baseline and green candidate independently.
+  A detached baseline test exits 1 because Codex rejection-flow is empty at `884883796`; the identical exact-owner assertion passes on `f390bf5d3` while the separate Pi binding remains present.
+- DONE: Prove pure desired state and the exact observed evidence representation.
+  Independent parsing proves 16 journeys × four targets = 64 pure cells and exactly eight bindings: Sonnet=3, Codex=4, Pi=1, Opus=0; only the new Codex rejection-flow cell maps to `zbcj98qfwtax61vxdzrf615e`.
+- DONE: Perform the semantic adversarial and mutation pass.
+  New-cell removal, wrong owner, global scope, extra cardinality, and moves to Pi/Sonnet/Opus all fail; repository controls also reject duplicate source, desired ledger, unowned/wrong target, and proven-pass suppression mutations.
+- DONE: Reproduce focused AC, reconciliation, SHA, release, and prior Pi controls.
+  Parity/runtime selection, promoted entrypoints, gate/auto-continue/zero-discovery/re-anchor, workflow/cost, exact four-entry Pi rejection recording, native metric identity/completeness/large-row, observer, and negative single-cycle controls all exit 0.
+- DONE: Verify documentation, history, surface, and semantic boundaries.
+  Docs state eight and accurately cite run `31032033236`; Cycle 10 changes only four existing representation/test/docs files, the binder changes only the SHA, and total surface is 42 files/+2325/-666.
+- DONE: Verify formatting and exact-byte repository suites.
+  Read-only `gofmt -l ./cmd ./internal` is empty and `git diff --check` passes; `go test ./...` exits 0 (`ensigncycle` 103.286s, wall 115.22s) and `go test ./... -race` exits 0 (`ensigncycle` 116.375s, wall 129.29s).
+- DONE: Preserve candidate, runtime, and workflow authority boundaries.
+  Validation changed no candidate/product/runtime/fixture/prompt/adapter/launcher/Pi metric/observer file, launched no local-live/model/hosted/substrate/smoke action, filed no owner, and did not transition entity state.
+- DONE: Recommend an explicit validation verdict.
+  PASSED — all latest Cycle-10 truth requirements have independent evidence, with no material findings, deferred risks, or polish findings.
+
+### Summary
+
+Cycle 10 PASSED independently at exact candidate `f390bf5d3ac37882db6fb1af9edb34a9c991c9ff`. The supplied hosted failure validly adds only Codex rejection-flow to the existing `zbcj98qfwtax61vxdzrf615e` owner while preserving Pi's distinct binding, pure 64-cell desired state, and every no-product/no-live boundary.
