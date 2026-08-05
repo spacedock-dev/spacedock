@@ -1402,3 +1402,38 @@ Cycle 15 grades Pi filing from its durable root-session tool evidence instead of
 ### Summary
 
 Cycle 15 PASSED independently at exact candidate `6408e2ad658f05d9c990b88a46cc8d002203c729`. Pi filing is now graded from one unique, later, successful native bash call/result pair while durable state remains separately required; causal negatives, prior host paths, pure registry truth, the fixed surface ceiling, and full/race suites all remain green.
+
+## Stage Report: implementation (cycle 16)
+
+- DONE: Start from the exact clean and pushed Cycle-15 candidate.
+  Baseline and origin were `6408e2ad658f05d9c990b88a46cc8d002203c729`; no root-main update or unrelated state write occurred.
+- DONE: Classify the exact Pi evidence without rerunning it.
+  Run `31052117603`, job `92461666431`, artifact `8949169013`, extracted at `/tmp/ys-cycle15-pi-31052117603`, passed offline and all eight runnable journeys, including filing, and skipped only the owned Pi rejection-flow journey.
+- DONE: Identify the shallow-boot observer false negative.
+  The run failed shallow boot at 38.51s with `stream carried no assistant turns — nothing to check`; the durable `assertShallowBoot` check passed, Pi stdout held the exact greeting, and the native root session showed that greeting after only read/bash activity with no `subagent`, `member_spawn`, or `delegate` call.
+- DONE: Isolate the runtime mismatch.
+  `runClaudeShallowBootScenario` passed Pi stdout/stderr to Claude-only `assertNoTeamCreateBeforeGreet` and `assertShallowBootMeasured`, even though the structural evidence lives in Pi `sessionJSONL`.
+- DONE: Add focused RED evidence before routing the fix.
+  The native-session test first failed to compile with `undefined: assertPiShallowBootSession`; the fake-routing test then failed Pi with the exact non-Claude-stream error before the runtime route changed.
+- DONE: Grade Pi shallow boot from the whole native root session.
+  `assertPiShallowBootSession` requires assistant text containing both exact held-gate and engagement-hint lines and scans the entire session for forbidden `subagent`, `member_spawn`, or `delegate` tool calls.
+- DONE: Close ordering and short-circuit gaps causally.
+  Missing greeting, each forbidden pre-greeting call, a same-turn greeting followed by dispatch, and dispatch after greeting all fail; the last two were added after adversarial review exposed the initial early-return weakness.
+- DONE: Prove runtime-specific routing with the full scenario runner.
+  A fake Pi result succeeds from valid `sessionJSONL` despite `non-Claude Pi diagnostics` in its stream, while a fake Claude result succeeds from its original fixture stream despite deliberately invalid Pi-session data.
+- DONE: Preserve durable and host-specific boundaries.
+  The durable entity assertion remains separate and first; Claude keeps its original stream assertions and boot-window metrics, Codex keeps its separate runner, and Pi keeps its existing whole-run metrics.
+- DONE: Preserve registry and evidence truth.
+  The desired registry remains exactly 16 common journeys × four required targets = 64 cells, with exactly nine missing-evidence TODO bindings and no owner change.
+- DONE: Stay within the fixed surface ceiling without deleting executable controls.
+  Existing branch-added test registries and mutation maps were compacted; every affected control still runs, and the cumulative surface is exactly 42 files/+2748/-708.
+- DONE: Preserve watched-core plus SHA-only binder history.
+  Watched core `b01171a2bf50b05750a85edac65125f9cbc49416` is followed only by binder `37c7e2660caa6148a590b21671c2d5f3693b0c74`, which changes the recorded reconciliation SHA.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; full exits 0 (`ensigncycle` 104.219s) and race exits 0 (`ensigncycle` 119.608s).
+- DONE: Preserve scope, execution, and authority boundaries.
+  No product, fixture, prompt, adapter, launcher, workflow, owner, TODO, file/member/controller/retry behavior, or other entity changed; no hosted/live/model/substrate/smoke command ran and no workflow transition was made.
+
+### Summary
+
+Cycle 16 grades Pi shallow boot from complete native root-session structure while leaving durable state and the Claude, Codex, and Pi metric paths intact. Exact archived evidence, causal ordering negatives, fake-driver runtime routing, pure 64-cell registry truth, full/race suites, remote equality, and the fixed surface ceiling are green at `37c7e2660caa6148a590b21671c2d5f3693b0c74`.
