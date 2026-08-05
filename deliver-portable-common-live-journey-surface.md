@@ -71,6 +71,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-03T12:19:31Z
+worktree: .worktrees/spacedock-ensign-deliver-portable-common-live-journey-surface
 ---
 
 ## Outcome
