@@ -710,3 +710,18 @@ Cycle 12 merges current main into the exact clean local 26N candidate and resolv
 the two reported conflicts without changing approved behavior. The new head is
 merge-clean; focused and task-owned checks pass, while full and race retain one
 unrelated shared-state manifest failure caused by an already archived pilot entity.
+
+## Stage Report: implementation (cycle 12 verification)
+
+- DONE: Commit a minimal reconciliation with current origin/main that preserves 26N gate-stop coherence semantics.
+  Candidate HEAD remains byte-for-byte unchanged at `8d07b1a58749a5feed99d8dfa294c5e1b5a6bb14`; current `origin/main` remains its ancestor and `git merge-tree --write-tree HEAD origin/main` succeeds with tree `408b4dc2629b5a4afeb36bebf6ce4fa5f64c59be`.
+- DONE: Resolve only the two proven content conflicts and retain the approved task surface without authority or behavior expansion.
+  The clean candidate still contains only the approved 26N reconciliation over current main: queued implementation fixture, direct gated-stage ordering/no-authority oracle, and failure-safe retained evidence, with no new candidate mutation during verification.
+- DONE: Run focused checks plus gofmt, full, and race suites; record the exact new candidate head and residual merge status.
+  With `SPACEDOCK_STATE_ROOT` pinned to read-only `git archive` state commit `a0169cc2d8a5e4912ed33f75ca8422a767e71c9e` (tree `bbc4562235729e22d9736ed38a155534b1f27595`), the pilot-manifest preflight, `go test ./...`, and `go test ./... -race` passed; the one transient dispatch-host case passed ten focused repetitions before the confirming full green run.
+
+### Summary
+
+Cycle 12 verification replaces the mutable shared-state evidence with an immutable,
+read-only state snapshot and confirms both required suites green. Candidate HEAD
+remains exact and clean, with no residual merge conflict or candidate change.
