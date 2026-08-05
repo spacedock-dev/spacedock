@@ -142,6 +142,17 @@ gates:
                 digest: sha256:5c953491e929a08ac6809fa37921aeed7a557fbb5e792e33bbdcc492f6e058bf
                 request-digest: sha256:0dbcaa3fee210617a69ab6291111df55886a6130fb616562adf28ce42ac70315
                 room-ref: ./codex-launch-multi-agent-v2/review/validation/briefing-7
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:z5gwwz2748sg6vxr0g3kdsar:validation:7
+                briefing: briefing:z5gwwz2748sg6vxr0g3kdsar:validation:attempt-7:revision-1
+                by: person:captain
+                at: "2026-08-05T00:18:50.95193Z"
+                decision: approve
+                reason: Captain approved the exact-head validation after reviewing the 9-file +380/-42 scope and current green evidence.
+              application:
+                target-stage: done
+                state: pending
 mod-block:
 ---
 
