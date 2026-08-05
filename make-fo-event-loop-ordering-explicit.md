@@ -6,7 +6,7 @@ started: 2026-08-03T16:00:51Z
 completed:
 verdict:
 score: 0.98
-worktree:
+worktree: .worktrees/spacedock-ensign-make-fo-event-loop-ordering-explicit
 issue:
 sprint: durable-decisions
 group: fo-contract
