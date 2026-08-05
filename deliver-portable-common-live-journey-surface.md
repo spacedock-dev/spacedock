@@ -1307,3 +1307,34 @@ Cycle 13 PASSED independently at exact candidate `0aa74035cc96d672c71480466ed4e1
 ### Summary
 
 Cycle 14 records the archive-proven Codex `full-ensign-cycle` product failure as the ninth target-scoped missing-evidence binding and leaves the pure 64-cell desired registry intact. Exact RED/GREEN controls, mutation and SHA discrimination, full/race suites, remote equality, scope audit, and the fixed surface ceiling are green at `d7cdd4e91f6fcfdc7308138434908b37fa6e54a5`.
+
+## Stage Report: validation (cycle 14)
+
+- DONE: Verify exact immutable provenance, history, binder, and remote equality.
+  Candidate/origin are clean at `d7cdd4e91f6fcfdc7308138434908b37fa6e54a5`; core `84693a0f4feb02512bdb7994663c406dd32a0929` changes four existing representation/test/inventory files, and the binder changes only the reconciliation SHA to that core.
+- DONE: Independently verify the archived hosted product failure.
+  Run `31045591048`, Codex job `92440554439`, artifact `8946459512` has baseline head `0aa74035cc96d672c71480466ed4e1b1a3169213`; first runnable `full-ensign-cycle` failed at 166.28s after the FO archived two generic no-colon checkbox reports and the anchored-report oracle correctly rejected them.
+- DONE: Verify the missing executable bootstrap seam.
+  The generated fresh-child file only claimed to contain shared ensign discipline and carried stage/entity/checklist/fetch/completion content; it contained no executable `ensign-shared-core` bootstrap, matching the observed generic worker output.
+- DONE: Verify the exact repair owner and sprint boundary.
+  Active `restore-codex-ensign-contract-bootstrap.md` is `status: backlog`, ID `nvz2ym82ydfn07jp04yfxg9r`, and `sprint:` is empty, so it exactly owns the product seam without being a sprint member.
+- DONE: Prove the pure desired matrix and exact target-scoped evidence set.
+  Registry source has exactly 16 common journeys and four required targets (64 cells); reconciliation logs exactly nine missing-evidence bindings with Sonnet=3, Codex=5, Pi=1, Opus=0, and only Codex/full-ensign-cycle maps to `nvz2ym82ydfn07jp04yfxg9r`.
+- DONE: Preserve other targets and all prior evidence bindings.
+  Sonnet, Pi, and Opus full-ensign-cycle remain runnable; the Cycle-14 core diff only inserts the new constant/case/expectation/map row, leaving all prior eight target/owner bindings byte-preserved and every TODO classified as missing evidence rather than pass or exception.
+- DONE: Exercise removal, target, owner, global, duplicate, and proven-pass mutations causally.
+  Detached removal left Codex short; Sonnet relocation suppressed its pass and left Codex short; wrong owner reported exact expected/got IDs; global form left the Codex cell missing; duplicate form emitted `DUPLICATE MISSING-EVIDENCE`; suppressing Sonnet/Pi/Opus full-cycle passes failed all three runnable-target assertions.
+- DONE: Reproduce focused registry, TODO, mutation, and SHA controls.
+  `TestSharedLiveTODOEvidenceSet` and the three contractlint reconciliation/mutation/SHA tests exit 0; current core-to-head watched diff is empty, while stale `84693a0f4^` names both changed ensigncycle paths.
+- DONE: Verify the operator inventory.
+  `docs/runtime-live-ci.md` states nine rows, cites run `31045591048` for Codex full-ensign-cycle, preserves the prior eight descriptions, and explicitly retains unverified Pi/Opus plus missing-evidence-not-pass semantics.
+- DONE: Verify required formatting, exact surface, and repository-wide suites.
+  `gofmt -w ./cmd ./internal` preserved exact bytes; `git diff --check` passes; full exits 0 (`ensigncycle` 102.953s, wall 115.46s) and race exits 0 (`ensigncycle` 114.538s, wall 127.97s); surface is exactly 42 files/+2742/-681, eight insertions below +2750.
+- DONE: Preserve prohibited scope and execution boundaries.
+  No skill/binary/dispatch/fixture/prompt/adapter/launcher/oracle/Pi metric/workflow/new-file/member/controller/retry byte changed; validation mutated no candidate, transitioned no state, and ran no hosted/live/model/substrate/smoke command.
+- DONE: Render the independent verdict.
+  PASSED with no Material, Deferred-risk, or Polish findings.
+
+### Summary
+
+Cycle 14 PASSED independently at exact candidate `d7cdd4e91f6fcfdc7308138434908b37fa6e54a5`. The ninth binding accurately withholds only the archive-disproved Codex full-cycle evidence, preserves the pure 64-cell desired matrix and all prior evidence semantics, and remains causally guarded within the exact surface and authority limits.
