@@ -52,6 +52,7 @@ var auditedMissingEvidence = map[missingEvidenceKey]string{
 	{target: "codex", journey: "smallest-sufficient-mechanism"}:         "9adv48yhye5s2vkhwd7ge52d",
 	{target: "codex", journey: "keep-moving-posture"}:                   "9adv48yhye5s2vkhwd7ge52d",
 	{target: "pi", journey: "rejection-flow"}:                           "zbcj98qfwtax61vxdzrf615e",
+	{target: "codex", journey: "withdrawn-gate-recovery"}:               "47gnqfm1ft6f2hcahz98m2jv",
 }
 
 func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
@@ -231,6 +232,21 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 			owner := m[missingEvidenceKey{target: "pi", journey: "rejection-flow"}]
 			delete(m, missingEvidenceKey{target: "pi", journey: "rejection-flow"})
 			m[missingEvidenceKey{target: "claude-opus", journey: "rejection-flow"}] = owner
+		},
+		"moved Codex withdrawn TODO to Pi": func(m map[missingEvidenceKey]string) {
+			owner := m[missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"}]
+			delete(m, missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"})
+			m[missingEvidenceKey{target: "pi", journey: "withdrawn-gate-recovery"}] = owner
+		},
+		"moved Codex withdrawn TODO to Sonnet": func(m map[missingEvidenceKey]string) {
+			owner := m[missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"}]
+			delete(m, missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"})
+			m[missingEvidenceKey{target: "claude-sonnet", journey: "withdrawn-gate-recovery"}] = owner
+		},
+		"moved Codex withdrawn TODO to Opus": func(m map[missingEvidenceKey]string) {
+			owner := m[missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"}]
+			delete(m, missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"})
+			m[missingEvidenceKey{target: "claude-opus", journey: "withdrawn-gate-recovery"}] = owner
 		},
 	}
 	for name, mutate := range evidenceMutations {

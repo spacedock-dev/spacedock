@@ -22,6 +22,7 @@ const (
 	liveDurableJourneyDefectID      = "9adv48yhye5s2vkhwd7ge52d"
 	defaultHeadlessGateStopDefectID = "26nk8qd48zknqnn4kc123sez"
 	liveRejectionFlowDefectID       = "zbcj98qfwtax61vxdzrf615e"
+	liveWithdrawnGateDefectID       = "47gnqfm1ft6f2hcahz98m2jv"
 )
 
 type liveEvidenceTarget string
@@ -47,6 +48,8 @@ func liveDurableJourneyTODO(target liveEvidenceTarget, name string) string {
 		return "TODO(" + defaultHeadlessGateStopDefectID + "): headless drive must stop after exactly one durable gate preparation"
 	case liveEvidenceKey{target: liveEvidenceTargetPi, journey: "rejection-flow"}:
 		return "TODO(" + liveRejectionFlowDefectID + "): Pi must record the complete four-entry rejection round before rework"
+	case liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "withdrawn-gate-recovery"}:
+		return "TODO(" + liveWithdrawnGateDefectID + "): withdrawn gate recovery must prepare exactly one successor attempt"
 	case liveEvidenceKey{target: liveEvidenceTargetClaudeSonnet, journey: "smallest-sufficient-mechanism"},
 		liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "smallest-sufficient-mechanism"}:
 		return "TODO(" + liveDurableJourneyDefectID + "): initial-stage successor dispatch must durably enter and run the current stage"

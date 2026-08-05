@@ -199,6 +199,7 @@ func TestSharedLiveTODOEvidenceSet(t *testing.T) {
 		{target: liveEvidenceTargetCodex, journey: "smallest-sufficient-mechanism"}:        liveDurableJourneyDefectID,
 		{target: liveEvidenceTargetCodex, journey: "keep-moving-posture"}:                  liveDurableJourneyDefectID,
 		{target: liveEvidenceTargetPi, journey: "rejection-flow"}:                          liveRejectionFlowDefectID,
+		{target: liveEvidenceTargetCodex, journey: "withdrawn-gate-recovery"}:              liveWithdrawnGateDefectID,
 	}
 	for _, target := range targets {
 		t.Run(string(target), func(t *testing.T) {
