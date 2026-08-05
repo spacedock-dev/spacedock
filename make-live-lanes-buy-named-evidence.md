@@ -70,6 +70,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:15ec08nz1ypn0dzs8b8xznr7:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:15ec08nz1ypn0dzs8b8xznr7-validation-1
+              briefing:
+                id: briefing:15ec08nz1ypn0dzs8b8xznr7:validation:attempt-1:revision-1
+                digest: sha256:cde85ae8f6d952ad9c3821c303166ad8c4cf257078130f070b9f7368b7caf861
+                request-digest: sha256:f382afa3f0487ac4965de75c325505f3d746c823f610b53d78b0be869ed075f5
+                room-ref: ./make-live-lanes-buy-named-evidence/review/validation/briefing-1
 started: 2026-08-03T12:19:37Z
 worktree: .worktrees/spacedock-ensign-make-live-lanes-buy-named-evidence
 ---

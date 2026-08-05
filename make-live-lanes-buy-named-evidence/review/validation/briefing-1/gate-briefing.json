@@ -1,0 +1,52 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:15ec08nz1ypn0dzs8b8xznr7:validation:attempt-1:revision-1",
+  "question": "Does the validated 15e candidate make each selected live-lane minute buy one named, non-duplicate evidence claim, with the required paid proofs and no authority or product-surface expansion?",
+  "artifacts": [
+    {
+      "id": "artifact:15ec08nz1ypn0dzs8b8xznr7:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/faad016fcefd1deb90ffd56526b4be9489b4f784/make-live-lanes-buy-named-evidence.md",
+      "rev": "sha256:30a9014075108feb5707320154c07a975e846462f893d62a0ce1e64a1df9725f",
+      "mediaType": "text/markdown",
+      "summary": "Fresh Sol/medium validation passed all five acceptance criteria with no findings. Candidate 4cc0d890 preserves product behavior while consolidating Pi proof, wiring current Claude recovery evidence, exposing 12 deterministic tests, connecting Codex PR metrics, and deleting dead PTY/duplicate surfaces."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/4cc0d890df7067ebcffd6c265c2553b38b267940/.github/workflows/runtime-live-e2e.yml",
+      "mediaType": "application/yaml",
+      "rev": "sha256:a6dff3033c9f64932f6a7483b749bc9612ea5b2805058bf010751b87d603624f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/4cc0d890df7067ebcffd6c265c2553b38b267940/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:578418e5a3d716a72083a7f97dac1e59b14d50da8407c866dd567ee160a9e7f5"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:validation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/4cc0d890df7067ebcffd6c265c2553b38b267940/internal/ensigncycle/pi_live_runner_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:9c0a7f2dff17a3f1b290fdb0d7bd9873430923f1dc304b88e9b76926d146f96f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:validation:attempt-1:revision-1:item-5",
+      "uri": "git-root://main/4cc0d890df7067ebcffd6c265c2553b38b267940/internal/ensigncycle/claude_runtime_helpers_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:5957c389fb31b433c66059944eebf152e9995339f8553276d0d6511303d9c7ad"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:15ec08nz1ypn0dzs8b8xznr7:validation:attempt-1:revision-1:item-6",
+      "uri": "git-root://main/4cc0d890df7067ebcffd6c265c2553b38b267940/internal/release/runtime_live_evidence_workflow_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:d1191a0a00a09881184f41c1284ff999be3d9183c4b458a82be04a3727a55f14"
+    }
+  ]
+}
