@@ -1437,3 +1437,32 @@ Cycle 15 PASSED independently at exact candidate `6408e2ad658f05d9c990b88a46cc8d
 ### Summary
 
 Cycle 16 grades Pi shallow boot from complete native root-session structure while leaving durable state and the Claude, Codex, and Pi metric paths intact. Exact archived evidence, causal ordering negatives, fake-driver runtime routing, pure 64-cell registry truth, full/race suites, remote equality, and the fixed surface ceiling are green at `37c7e2660caa6148a590b21671c2d5f3693b0c74`.
+
+## Stage Report: validation (cycle 16)
+
+- DONE: Verify exact provenance, history, binder, cleanliness, and remote equality.
+  Candidate/origin are clean at `37c7e2660caa6148a590b21671c2d5f3693b0c74`; baseline is `6408e2ad658f05d9c990b88a46cc8d002203c729`, watched core is `b01171a2bf50b05750a85edac65125f9cbc49416`, and the binder changes only the documented reconciliation SHA.
+- DONE: Independently classify the archived hosted result without rerunning it.
+  Run `31052117603`, Pi job `92461666431`, artifact `8949169013` passed offline and eight runnable common journeys, skipped only owned Pi rejection-flow, then shallow-boot false-negatived because Pi stdout/stderr reached Claude-only stream parsers.
+- DONE: Prove the exact native root-session evidence over the whole session.
+  The assigned session has 23 records, nine assistant messages, one assistant text block containing both exact held-review and engage lines, only `read`/`bash` assistant tool calls, and zero `subagent`, `member_spawn`, or `delegate` calls.
+- DONE: Prove strict native evidence and ordering behavior.
+  Focused controls accept read/bash then greet and reject missing greet plus every forbidden pre-greet, same-turn, and post-greet call; detached additions also reject malformed, non-assistant, stdout, wrong-record-type, and split-text lookalikes.
+- DONE: Prove runtime-specific routing causally.
+  Valid Pi session with invalid Claude stream and valid Claude stream with invalid Pi session both pass; disabling the Pi branch reproduces `stream carried no assistant turns`, while an early return at greeting makes the post-greet dispatch negative fail.
+- DONE: Preserve durable state, metrics, and host boundaries.
+  `assertShallowBoot` remains first and its broken-end-state controls pass; Claude retains its original no-TeamCreate, measured-stream, and boot-window metric controls, Pi retains whole-run metrics, and Codex remains separate.
+- DONE: Preserve prior observers and registry truth.
+  Pi filing and rejection ambiguity suites pass; the desired inventory remains 16 journeys × four targets = 64 cells with exactly nine bindings at Sonnet=3, Codex=5, Pi=1, Opus=0 and no owner or TODO change.
+- DONE: Verify scope, compacted controls, and fixed surface.
+  Cycle 16 modifies three existing observer/test files plus the SHA binder, adds no file, and removes no test function; no product, fixture, prompt, adapter, launcher, workflow, owner, or TODO behavior changed. Surface is exactly 42 files/+2748/-708.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` is idempotent and `git diff --check` passes; full exits 0 in 153.46s and race exits 0 in 157.87s.
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; hosted inspection was read-only and all causal runtime checks used deterministic fake drivers or archived evidence.
+- DONE: Render the independent verdict.
+  PASSED with no Material, Deferred-risk, or Polish findings; validation changed no candidate and made no workflow state transition.
+
+### Summary
+
+Cycle 16 PASSED independently at exact candidate `37c7e2660caa6148a590b21671c2d5f3693b0c74`. The Pi shallow-boot observer now requires the complete native assistant greeting and rejects forbidden dispatch anywhere in the root session, while durable state, host-specific metrics, prior observers, registry truth, and the fixed surface remain intact.
