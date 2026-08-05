@@ -1063,3 +1063,44 @@ Cycle 10 adds the supplied Codex rejection-flow failure as the eighth exact targ
 ### Summary
 
 Cycle 10 PASSED independently at exact candidate `f390bf5d3ac37882db6fb1af9edb34a9c991c9ff`. The supplied hosted failure validly adds only Codex rejection-flow to the existing `zbcj98qfwtax61vxdzrf615e` owner while preserving Pi's distinct binding, pure 64-cell desired state, and every no-product/no-live boundary.
+
+## Stage Report: implementation (cycle 11)
+
+- DONE: Start from the exact clean Cycle-10 candidate and preserve its evidence registry.
+  Baseline candidate is `f390bf5d3ac37882db6fb1af9edb34a9c991c9ff`; watched core is `79d4055e8fae70c4e2f74c9edabc3f5f1ab45544`.
+- DONE: Classify the supplied Codex evidence before changing any product ownership.
+  Run `31034783581`, job `92404363889`, artifact `8942417379`, source `f390bf5d3` is harness-invalid, not a product failure.
+- DONE: Record the exact hosted outcome without overstating its staged surface.
+  The run passed the prior unowned journeys, skipped owned withdrawn/rejection, then auto-continue stopped in 12.58s because its staged single-root README was not commissioned.
+- DONE: Confirm the static reachability defects independently.
+  Both exact README definitions lacked `commissioned-by`, while the common runner called one non-Git single-root setup and never staged split-root.
+- DONE: Add discovery controls red-first against real status discovery.
+  Baseline focused run exited 1 because `status.DiscoverWorkflowDir` rejected both exact READMEs; deleting either added marker makes its control fail again.
+- DONE: Add Git/state-root baseline controls with removal cases.
+  Single-root and split-root checks require exact roots, existing entity, one seed commit, and clean status; raw no-Git staging for either variant is rejected.
+- DONE: Add the exact common-runner reachability control red-first.
+  Baseline fake-driver run observed one single-root launch, no Git, no discovery, and artifact label `auto-continue-after-implementation` without the fixture ID.
+- DONE: Make both exact workflow READMEs discoverable.
+  Single-root and split-root definitions now carry `commissioned-by: spacedock@1`; marker-removal controls prove the discovery predicate is causal.
+- DONE: Stage both variants with proven Git ordering.
+  Single-root initializes its definition root; split-root initializes state checkout first and definition root second, leaving both committed and clean.
+- DONE: Run exactly both variants under one canonical journey.
+  One top-level auto-continue runner invokes single-root then split-root serially; canonical scenario/assertion identity remains unchanged.
+- DONE: Keep artifact evidence distinct without adapter or metric changes.
+  Launch-only labels contain each exact fixture ID, so host artifact directories differ while Pi still aggregates results into the canonical journey metric.
+- DONE: Preserve the durable oracle and prompt semantics.
+  The unchanged neutral runbook and `assertAutoContinue` pass for both fake-driver durable transitions; stopped-after-implementation negatives remain red.
+- DONE: Preserve pure desired state and exact observed bindings.
+  Reconciliation/mutations prove 64 cells and eight TODOs remain Sonnet=3, Codex=4, Pi=1, Opus=0; auto-continue gains no owner binding.
+- DONE: Reprove prior fixture parity, SHA, Pi rejection, and metric boundaries.
+  Final focused live-tagged/offline, reconciliation/mutation/current-stale SHA, Pi round, identity/cost, and large-row commands exit 0 (`ensigncycle` 0.903s).
+- DONE: Run required formatting and repository-wide suites on final replacement bytes.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; full exits 0 (`ensigncycle` 99.422s) and race exits 0 (`ensigncycle` 117.785s).
+- DONE: Preserve exact watched-core/SHA-binder history after documentation correction.
+  Initial `1dc8a19e2`/`b025eb033` was replaced by core `1fa6d52254cf7acb009e474b688e4861bb6fbc20` and SHA-only binder `37d91f673bda7ccdf9b7e63f6dc0134407895173`.
+- DONE: Stay within surface, authority, and execution holds.
+  Origin equals clean head; surface is 42 files/+2558/-671 with five existing Cycle-11 files, no product/adapter/launcher/runtime/new file, no state transition, and no live/model/hosted/substrate/smoke action or spend.
+
+### Summary
+
+Cycle 11 repairs only auto-continue fixture reachability: both commissioned Git-backed shapes now run serially through one canonical journey with distinct artifacts and the same durable oracle. The harness-invalid run creates no product evidence or owner, and focused/full/race/history/origin/ceiling proof is green on the pushed replacement pair.
