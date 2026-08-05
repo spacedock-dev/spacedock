@@ -76,9 +76,9 @@ worktree: .worktrees/spacedock-ensign-deliver-portable-common-live-journey-surfa
 
 ## Outcome
 
-A test operator can select one common journey by one stable identity on Claude, Codex, or Pi. The registry makes missing journeys and orphan fixtures visible.
+A test operator can select one common journey by one stable identity on Claude, Codex, or Pi. The registry makes missing journeys, missing live evidence, and orphan fixtures visible.
 
-The task delivers the complete operator journey. Registry annotations, fixture bindings, runtime adapters, selectors, and reconciliation are implementation steps.
+The task delivers a complete and accurate representation of the desired journey table. Registry annotations, fixture bindings, runtime adapters, selectors, owner-linked product TODOs, and reconciliation are implementation steps. Product behavior repair remains owned by the named repair members; this task neither hides those gaps nor absorbs their fixes.
 
 ## Problem
 
@@ -120,7 +120,7 @@ Common runners own fixture selection, prompts, normalized evidence, and host-neu
 
 Each source declaration carries its stable registry annotation. Reconciliation reports desired gaps and fails ambiguous or orphaned bindings.
 
-The Pi lane runs all 16 journeys. A coverage row, quarantine, skip, or Pi-only top-level test does not count as evidence.
+Every lane selects all 16 journeys. A product-owned gap stays present and reachable but emits an explicit `TODO(<repair-id>)` skip, and reconciliation reports it as missing evidence. A TODO is not passing evidence or a runtime exception. A coverage row, unowned skip, quarantine, or Pi-only top-level test does not count as evidence.
 
 ## Complete approach
 
@@ -136,7 +136,7 @@ The Pi lane runs all 16 journeys. A coverage row, quarantine, skip, or Pi-only t
 10. Update workflow selectors, workflow guards, metrics, documentation, and source annotations once against the final shape.
 11. Run semantic reconciliation and record the candidate commit SHA.
 12. Commit the SHA as a documentation-only change and run its path guard.
-13. Run focused offline tests, three representative live runs, complete live lanes, full tests, race tests, and formatting.
+13. Run focused offline tests, three representative live runs, complete live lanes with exact TODO accounting, full tests, race tests, and formatting.
 
 The adapter registry serves AC-1 and AC-4. Compatibility wrappers are insufficient because they preserve multiple authoritative identities.
 
@@ -144,9 +144,9 @@ The common runner map serves AC-2 and AC-4. Three runtime maps are insufficient 
 
 Stable source annotations serve AC-2 and AC-3. Builder names in the registry are insufficient because source moves can change desired state.
 
-The manual inventory and SHA guard serve AC-2 and AC-3. A permanent parser adds scope without proving runtime behavior.
+The reconciled inventory, exact owner-linked TODO set, and SHA guard serve AC-2 and AC-3. Semantic checks must live on the repository's contractlint boundary and prove values that can diverge from the documentation.
 
-The Pi trace reader serves AC-4. Durable state alone cannot prove Pi child identity or required tool selection.
+The Pi trace reader serves AC-4. Durable state alone cannot prove Pi child identity or required tool selection. A product-owned TODO records missing evidence; it does not prove the journey.
 
 ## Collision map
 
@@ -239,17 +239,17 @@ Do not enable the SHA guard before watched source changes are complete. Otherwis
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — One journey identity works on every supported runtime.**
+**AC-1 (VALUE) — One desired journey identity is selectable on every supported runtime.**
 
 The same `^TestLiveSharedScenarios$/^shallow-boot$` selector passes on Claude, Codex, and Pi. Only runtime configuration changes.
 
 The workflow guard proves that every live lane uses this top-level identity. A restored old suite name makes the guard fail.
 
-**AC-2 — All desired common journeys have canonical executable identities.**
+**AC-2 (VALUE) — The complete desired table and its evidence gaps are represented truthfully.**
 
 Registry, scenario-table, and runner-map parity is 16 of 16. The count of standalone common-journey top-level tests is zero.
 
-Reconciliation reports 16 bound journey IDs and no missing suite lane. Removing one runner or selector makes the proof fail.
+Reconciliation reports 16 bound journey IDs and no missing suite lane. Every product-owned gap remains in the table and common runner, carries an exact `TODO(<repair-id>)`, and is reported as missing evidence rather than an exception or pass. Removing one runner or selector, hiding a TODO journey, or adding an unowned skip makes the proof fail.
 
 **AC-3 — Fixtures have accountable use.**
 
@@ -257,11 +257,11 @@ Each common fixture ID resolves to one annotated builder and at least one journe
 
 Reconciliation reports zero duplicate, invalid, orphan, unaccounted-test, and unaccounted-builder results. A temporary orphan fixture makes the proof fail.
 
-**AC-4 — Runtime differences stay behind adapters.**
+**AC-4 — Runtime differences stay behind adapters and evidence remains attributable.**
 
 Common fixtures and assertions contain no host-specific branch. The adapter factory contains the only runtime-selection branch.
 
-Fake-adapter tests prove the boundary. The complete live lanes prove unchanged launch, liveness, metrics, and artifact behavior.
+Fake-adapter tests prove the boundary. Complete live lanes enumerate the same 16 identities, prove unchanged launch, liveness, metrics, and artifact behavior for implemented journeys, and expose the exact owner-linked missing-evidence set for product-owned gaps. A TODO or externally blocked run does not count as passing evidence.
 
 ## Test plan
 
@@ -287,7 +287,7 @@ SPACEDOCK_LIVE_RUNTIME=pi SPACEDOCK_PI_LIVE_REQUIRED=1 go test -tags live -count
 
 Run the six promoted selectors on Claude and Codex. Then run those same selectors on Pi.
 
-Run each complete live lane through `TestLiveSharedScenarios`. The Pi log must contain 16 real passes and no skip.
+Run each complete live lane through `TestLiveSharedScenarios`. Every lane must enumerate all 16 journeys. Implemented journeys must run for real. Skips are permitted only for the exact product-owned `TODO(<repair-id>)` set and must appear as missing evidence in reconciliation; an unowned skip, quarantine, runtime exception, coverage-only row, or hidden selector fails the proof.
 
 Run the required repository checks:
 
@@ -330,7 +330,7 @@ Adjacent fixture or parser test files can enter the tolerance. New product packa
 - Product runtime behavior does not change.
 - Live-test identity changes from host-specific names to one common name.
 - The scenario count changes from 10 implemented records to all 16 desired records.
-- Pi changes from coverage metadata to required executable evidence.
+- Pi changes from coverage metadata to the common executable selector, with real passes and owner-linked missing evidence distinguished.
 - CI gains exact runtime configuration and a path-scoped stale-reconciliation guard.
 - Artifact and metrics records keep stable journey and fixture IDs.
 
@@ -359,6 +359,8 @@ Registry reconciliation SHA: `<40-character candidate SHA>`
 ```
 
 The procedure states that source or selector changes require reconciliation in the same pull request.
+
+The procedure also states that an owner-linked product TODO remains a desired common journey, does not create a runtime exception, and must be reported as missing evidence until its repair owner lands and the live assertion passes.
 
 ## Stage Report: ideation
 
