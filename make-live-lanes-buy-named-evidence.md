@@ -79,6 +79,17 @@ gates:
                 digest: sha256:cde85ae8f6d952ad9c3821c303166ad8c4cf257078130f070b9f7368b7caf861
                 request-digest: sha256:f382afa3f0487ac4965de75c325505f3d746c823f610b53d78b0be869ed075f5
                 room-ref: ./make-live-lanes-buy-named-evidence/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:15ec08nz1ypn0dzs8b8xznr7:validation:1
+                briefing: briefing:15ec08nz1ypn0dzs8b8xznr7:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-05T01:31:48.620857Z"
+                decision: approve
+                reason: 'Delegated Captain connection: fresh independent Sol/medium validation passed AC-1 through AC-5 with no findings; candidate 4cc0d890 is clean and within the approved 27-file/+1000/-2400 ceiling; required local Pi and Sonnet paid proofs passed; ordinary, Pi, Sonnet, and Codex hosted lanes are required before merge, while Opus is irrelevant absent escalation.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-03T12:19:37Z
 worktree: .worktrees/spacedock-ensign-make-live-lanes-buy-named-evidence
 ---
