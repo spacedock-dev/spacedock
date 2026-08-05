@@ -2,7 +2,7 @@
 title: "Command reference"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-05 23:47:08"
+last_updated: "2026-08-05 23:51:41"
 ---
 
 # Command reference
@@ -65,6 +65,10 @@ spacedock claude [task] [spacedock-flags] [-- host-flags]
 The task comes first and becomes the launch prompt. Supported host arguments after `--` forward verbatim (`--model`, `resume`, and the like). For Codex, Spacedock keeps its normal launch banner, default approval posture, and bootstrap prompt unless the forwarded token slice contains an exact token equal to `resume`. It does not parse Codex option grammar: `spacedock codex -- --model gpt-5.6-sol` remains a fresh first-officer launch, while `spacedock codex -- --model gpt-5.6-sol resume <id>` stays prompt-free. Use bare `spacedock codex` to start the first officer. When no plugin is installed, the launcher auto-installs it and launches, so the single command yields a working session; a contract mismatch fails fast. The sandbox flags (`--safehouse` and its knobs) and the contract-gate flags are listed by `spacedock claude --help`.
 
 For Claude and Codex, a valid Spacedock plugin checkout beside the resolved launcher is selected automatically. `--plugin-dir <checkout>` before `--` is an explicit Spacedock override and takes precedence. Claude treats a post-`--` `--plugin-dir` as an additional native session plugin, so the installed or adjacent Spacedock provider is still gated normally. Codex has no native session-local flag: a post-`--` `--plugin-dir` is rejected, and additional Codex plugins must be installed persistently with `codex plugin add`.
+
+Every Codex launch, including local-plugin, Safehouse, and `resume`, puts one Spacedock-owned collaboration layer immediately after the inner `codex` token: `-c agents.enabled=true`, `-c features.multi_agent=true`, and `-c 'features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}'`. The first two settings are Codex's supported enablement controls; the exact v2 table pins the requested thread limit, tool namespace, and visible spawn metadata. A `multi_agent_v2=false` feature-list label does not disprove that table or replace an observed spawn/follow-up/list/wait lifecycle proof.
+
+Spacedock reserves `agents.enabled`, `features.multi_agent`, and the complete `features.multi_agent_v2` path. Forwarding any of them with `-c`, `--config`, `--enable`, or `--disable` fails before plugin installation or host launch. Hosts that do not accept the owned settings exit nonzero from their native config parser before a first-officer session opens; Spacedock does not fall back to a prompt-only or downgraded collaboration mode.
 
 An unsandboxed bootstrap launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: `spacedock claude` starts in `--permission-mode auto` and Codex starts in `--ask-for-approval on-request` unless you supply an approval mode. A sandboxed bootstrap launch instead skips/bypasses approvals (`--dangerously-skip-permissions` for claude, `--dangerously-bypass-approvals-and-sandbox` for codex) since the sandbox is the gate. Claude suppresses its defaults when you pass your own mode or a resume. Codex suppresses its banner and bootstrap prompt only when its forwarded argv contains the exact `resume` token; an explicit approval mode prevents only a duplicate automatic approval flag.
 

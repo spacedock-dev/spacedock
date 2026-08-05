@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-08-05 23:47:08",
+        "dateModified": "2026-08-05 23:51:41",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1362,6 +1362,8 @@ explicit Spacedock override and takes precedence. Claude treats a post-<code>--<
 adjacent Spacedock provider is still gated normally. Codex has no native
 session-local flag: a post-<code>--</code> <code>--plugin-dir</code> is rejected, and additional Codex
 plugins must be installed persistently with <code>codex plugin add</code>.</p>
+<p>Every Codex launch, including local-plugin, Safehouse, and <code>resume</code>, puts one Spacedock-owned collaboration layer immediately after the inner <code>codex</code> token: <code>-c agents.enabled=true</code>, <code>-c features.multi_agent=true</code>, and <code>-c 'features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}'</code>. The first two settings are Codex's supported enablement controls; the exact v2 table pins the requested thread limit, tool namespace, and visible spawn metadata. A <code>multi_agent_v2=false</code> feature-list label does not disprove that table or replace an observed spawn/follow-up/list/wait lifecycle proof.</p>
+<p>Spacedock reserves <code>agents.enabled</code>, <code>features.multi_agent</code>, and the complete <code>features.multi_agent_v2</code> path. Forwarding any of them with <code>-c</code>, <code>--config</code>, <code>--enable</code>, or <code>--disable</code> fails before plugin installation or host launch. Hosts that do not accept the owned settings exit nonzero from their native config parser before a first-officer session opens; Spacedock does not fall back to a prompt-only or downgraded collaboration mode.</p>
 <p>An unsandboxed bootstrap launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: <code>spacedock claude</code> starts in <code>--permission-mode auto</code> and Codex starts in <code>--ask-for-approval on-request</code> unless you supply an approval mode. A sandboxed bootstrap launch instead skips/bypasses approvals (<code>--dangerously-skip-permissions</code> for claude, <code>--dangerously-bypass-approvals-and-sandbox</code> for codex) since the sandbox is the gate. Claude suppresses its defaults when you pass your own mode or a resume. Codex suppresses its banner and bootstrap prompt only when its forwarded argv contains the exact <code>resume</code> token; an explicit approval mode prevents only a duplicate automatic approval flag.</p>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
 <table>
@@ -1509,7 +1511,7 @@ locally but could not push, regardless of which command wrote it.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 5, 2026 23:47:08 UTC">2026-08-05 23:47:08</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 5, 2026 23:51:41 UTC">2026-08-05 23:51:41</span>
   </span>
 
     
