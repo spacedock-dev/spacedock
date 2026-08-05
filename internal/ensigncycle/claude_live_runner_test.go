@@ -101,6 +101,10 @@ type liveResult struct {
 	// projects path.
 	configDir string
 	cwd       string
+	runtime   string
+	// sessionJSONL is the runtime-native archived root session. Pi uses it for
+	// correlated tool evidence and measured usage; stdout/stderr is not a session.
+	sessionJSONL string
 }
 
 type claudeSharedLiveAdapter struct{}
@@ -363,7 +367,11 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	if err := assertRejectionFlow(after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation", claudeRecordedRejectionRound(result.stream)); err != nil {
+	invoked := claudeRecordedRejectionRound(result.stream)
+	if result.runtime == "pi" {
+		invoked = piRecordedRejectionRound(result.sessionJSONL)
+	}
+	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation", invoked); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	// Single-entity (`-p`) reviewer producer-signal. The Claude runner launches
@@ -530,7 +538,9 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	// Record (don't gate on) the greet turn's full token usage as a distinct
 	// shallow-boot-window observation, riding the same journeymetrics ledger pipe
 	// emitClaudeScenarioMetrics below already uses.
-	emitShallowBootWindowMetrics(t, result.stream, runner.model())
+	if result.runtime != "pi" {
+		emitShallowBootWindowMetrics(t, result.stream, runner.model())
+	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 

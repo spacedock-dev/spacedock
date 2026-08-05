@@ -126,6 +126,48 @@ func codexRecordedRejectionRound(jsonl string) bool {
 	return false
 }
 
+func piRecordedRejectionRound(jsonl string) bool {
+	invocations := map[string]bool{}
+	for _, line := range strings.Split(jsonl, "\n") {
+		var entry struct {
+			Type    string `json:"type"`
+			Message struct {
+				Role       string `json:"role"`
+				ToolCallID string `json:"toolCallId"`
+				ToolName   string `json:"toolName"`
+				IsError    *bool  `json:"isError"`
+				Content    []struct {
+					Type      string `json:"type"`
+					Text      string `json:"text"`
+					ID        string `json:"id"`
+					Name      string `json:"name"`
+					Arguments struct {
+						Command string `json:"command"`
+					} `json:"arguments"`
+				} `json:"content"`
+			} `json:"message"`
+		}
+		if json.Unmarshal([]byte(line), &entry) != nil || entry.Type != "message" {
+			continue
+		}
+		if entry.Message.Role == "assistant" {
+			for _, block := range entry.Message.Content {
+				if block.Type == "toolCall" && block.Name == "bash" && block.ID != "" && commandRecordsRejectionRound(block.Arguments.Command) {
+					invocations[block.ID] = true
+				}
+			}
+		}
+		if entry.Message.Role == "toolResult" && entry.Message.ToolName == "bash" && invocations[entry.Message.ToolCallID] && entry.Message.IsError != nil && !*entry.Message.IsError {
+			for _, block := range entry.Message.Content {
+				if block.Type == "text" && rejectionRoundSuccess.MatchString(block.Text) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
 	doc, _, err := gates.Read(entityPath)
 	if err != nil && strings.Contains(err.Error(), "entity has no gates record") {
@@ -329,6 +371,25 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 	}, "\n")
 	if !claudeRecordedRejectionRound(claudeStream) {
 		t.Fatal("Claude extractor missed correlated round invocation with prefixed artifact paths")
+	}
+	piInvocation := fmt.Sprintf(`{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":"call_round","name":"bash","arguments":{"command":%q}}]}}`, command)
+	piResult := fmt.Sprintf(`{"type":"message","message":{"role":"toolResult","toolCallId":"call_round","toolName":"bash","isError":false,"content":[{"type":"text","text":%q}]}}`, result)
+	if !piRecordedRejectionRound(piInvocation + "\n" + piResult) {
+		t.Fatal("Pi extractor missed correlated successful four-entry round recording")
+	}
+	for name, transcript := range map[string]string{
+		"missing result":      piInvocation,
+		"uncorrelated result": piInvocation + "\n" + strings.Replace(piResult, "call_round", "call_other", 1),
+		"errored result":      piInvocation + "\n" + strings.Replace(piResult, `"isError":false`, `"isError":true`, 1),
+		"wrong command":       strings.Replace(piInvocation, "gate record rejection-task", "gate record other-task", 1) + "\n" + piResult,
+		"wrong round":         strings.Replace(piInvocation, "validation/1", "validation/2", 1) + "\n" + piResult,
+		"two entries":         piInvocation + "\n" + strings.Replace(piResult, "entries=4", "entries=2", 1),
+	} {
+		t.Run("pi_"+name, func(t *testing.T) {
+			if piRecordedRejectionRound(transcript) {
+				t.Fatal("Pi extractor accepted non-durable or uncorrelated recording evidence")
+			}
+		})
 	}
 	for name, invalid := range map[string]string{
 		"wrong_suffix": strings.Replace(command, "briefing.json\"", "briefing.json.bak\"", 1),

@@ -55,6 +55,7 @@ func (piSharedLiveAdapter) runSharedScenario(t *testing.T, scenario sharedRuntim
 	default:
 		t.Fatalf("unknown shared journey %q", scenario.name)
 	}
+	emitPiScenarioMetrics(t, scenario, *driver.results)
 }
 
 type piSharedLiveDriver struct {
@@ -64,6 +65,7 @@ type piSharedLiveDriver struct {
 	modelName    string
 	artifactRoot string
 	piHome       string
+	results      *[]liveResult
 }
 
 func newPiSharedLiveDriver(t *testing.T) piSharedLiveDriver {
@@ -81,6 +83,7 @@ func newPiSharedLiveDriver(t *testing.T) piSharedLiveDriver {
 		modelName:    piLiveModelName(),
 		artifactRoot: piLiveArtifactDir(t, "pi-shared-scenarios"),
 		piHome:       piHome,
+		results:      &[]liveResult{},
 	}
 }
 
@@ -130,12 +133,24 @@ func (d piSharedLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, wo
 	if err != nil {
 		t.Fatalf("Pi journey %q failed: %v; artifacts: %s\nstderr tail:\n%s", scenario.name, err, artifactDir, tail(stderr.String(), 4000))
 	}
-	return liveResult{
+	matches, globErr := filepath.Glob(filepath.Join(sessionDir, "*.jsonl"))
+	if globErr != nil || len(matches) != 1 {
+		t.Fatalf("Pi journey %q root session files = %v (glob error %v), want exactly one; artifacts: %s", scenario.name, matches, globErr, artifactDir)
+	}
+	session, readErr := os.ReadFile(matches[0])
+	if readErr != nil {
+		t.Fatalf("read Pi root session for %q: %v", scenario.name, readErr)
+	}
+	result := liveResult{
 		finalMessage: stdout.String(),
 		stream:       stdout.String() + "\n" + stderr.String(),
 		artifactDir:  artifactDir,
 		duration:     duration,
 		configDir:    sessionDir,
 		cwd:          workflowRoot,
+		runtime:      "pi",
+		sessionJSONL: string(session),
 	}
+	*d.results = append(*d.results, result)
+	return result
 }

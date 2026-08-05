@@ -51,6 +51,7 @@ var auditedMissingEvidence = map[missingEvidenceKey]string{
 	{target: "claude-sonnet", journey: "keep-moving-posture"}:           "9adv48yhye5s2vkhwd7ge52d",
 	{target: "codex", journey: "smallest-sufficient-mechanism"}:         "9adv48yhye5s2vkhwd7ge52d",
 	{target: "codex", journey: "keep-moving-posture"}:                   "9adv48yhye5s2vkhwd7ge52d",
+	{target: "pi", journey: "rejection-flow"}:                           "zbcj98qfwtax61vxdzrf615e",
 }
 
 func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
@@ -215,6 +216,21 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 		},
 		"suppressed proven pass": func(m map[missingEvidenceKey]string) {
 			m[missingEvidenceKey{target: "codex", journey: "default-headless-gate-stop"}] = "26nk8qd48zknqnn4kc123sez"
+		},
+		"moved Pi rejection TODO to Sonnet": func(m map[missingEvidenceKey]string) {
+			owner := m[missingEvidenceKey{target: "pi", journey: "rejection-flow"}]
+			delete(m, missingEvidenceKey{target: "pi", journey: "rejection-flow"})
+			m[missingEvidenceKey{target: "claude-sonnet", journey: "rejection-flow"}] = owner
+		},
+		"moved Pi rejection TODO to Codex": func(m map[missingEvidenceKey]string) {
+			owner := m[missingEvidenceKey{target: "pi", journey: "rejection-flow"}]
+			delete(m, missingEvidenceKey{target: "pi", journey: "rejection-flow"})
+			m[missingEvidenceKey{target: "codex", journey: "rejection-flow"}] = owner
+		},
+		"moved Pi rejection TODO to Opus": func(m map[missingEvidenceKey]string) {
+			owner := m[missingEvidenceKey{target: "pi", journey: "rejection-flow"}]
+			delete(m, missingEvidenceKey{target: "pi", journey: "rejection-flow"})
+			m[missingEvidenceKey{target: "claude-opus", journey: "rejection-flow"}] = owner
 		},
 	}
 	for name, mutate := range evidenceMutations {
