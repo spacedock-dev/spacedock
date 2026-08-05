@@ -1,6 +1,6 @@
 ---
 title: Make every live-lane minute buy named evidence
-status: implementation
+status: validation
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 5p5, b91, v5w, b8, dv, and supersedes 36."
 score: 1.0
 sprint: live-test-truth
