@@ -205,6 +205,7 @@ Committed a seven-file, +200/-10 implementation that makes the FO loop drain and
 
 - Cycle 1: REJECTED — validation adapter-mutation audit; surface 7 files/210 LOC vs estimate 140 (150%); AC unchanged
 - Cycle 2: REJECTED — validation rollout-path audit; surface 8 files/250 LOC vs estimate 140 (179%); AC unchanged
+- Cycle 3: REJECTED — Captain current-main reconciliation; surface 9 files/253 LOC vs estimate 140 (181%); AC unchanged
 
 ## Stage Report: validation
 
