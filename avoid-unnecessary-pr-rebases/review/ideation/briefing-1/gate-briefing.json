@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ep2cz3zsb2qpyyh889nyeqpr:ideation:attempt-1:revision-1",
+  "question": "Approve the two-mod issue #616 correction for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:ep2cz3zsb2qpyyh889nyeqpr:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/49f6ec1e9905c4be6e3a7c84054ca09a77b3c3d3/avoid-unnecessary-pr-rebases.md",
+      "rev": "sha256:493f1247e04e598e843dfaae82d961527cb0ed6d3ae0566547ae704d34894c69",
+      "mediaType": "text/markdown",
+      "summary": "Replace mandatory pre-PR rebase in the two pr-merge mods with a read-only merge-tree decision and exact approved-SHA push; keep conflicts fail-closed in G3/D8. Expected scope: 2 files, about +30/-10."
+    }
+  ]
+}

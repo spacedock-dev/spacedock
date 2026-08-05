@@ -33,6 +33,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:ep2cz3zsb2qpyyh889nyeqpr:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:ep2cz3zsb2qpyyh889nyeqpr-ideation-1
+              briefing:
+                id: briefing:ep2cz3zsb2qpyyh889nyeqpr:ideation:attempt-1:revision-1
+                digest: sha256:5eefe3110c01a7a0675dfd03064a976d21683bdf80759e8002a6c20a9ebc3c8a
+                request-digest: sha256:805c007f16d43aa151e85f77c044d41c23da74ae4df3925ee49c9b3928b2e65f
+                room-ref: ./avoid-unnecessary-pr-rebases/review/ideation/briefing-1
 ---
 
 Remove the mandatory rebase from the `pr-merge` policy. Keep the approved
