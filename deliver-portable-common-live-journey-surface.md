@@ -885,3 +885,32 @@ Cycle 7 closes the rejected duplicate-invocation and repeated-success defects wh
 Cycle 8 makes Pi result evidence fail closed unless the sole correlated result contains exactly one canonical validation/1 summary and that summary is exactly `entries=4`. All Cycle-7 correlation boundaries, native metrics, six target bindings, product behavior, and the 42-file ceiling remain unchanged.
 
 The pushed two-commit candidate is ready for fresh independent validation without evidence spend during implementation.
+
+## Stage Report: validation (cycle 8)
+
+- DONE: Independently inspect exact candidate 2b0177dfe/core ce6992d36, implementation report, merge base, clean origin, docs-only binder, and exact 42-file/+2750 ceiling.
+  Candidate/origin are `2b0177dfe13da63dfd7cf30ceb6162a889e51890`, core is `ce6992d36cb3d84972d44049a4a45c9557c80bb2`, merge base is `507a4bc12e48a3e4a813219602c488f09c81a5d8`; binder is docs-only and exact surface is 42 files/+2286/-666.
+- DONE: Reproduce Cycle-7 mixed entries=2/entries=4 false positives on e952ed65c, then prove 2b0177dfe rejects same-block and split-block forms in both orders.
+  Detached rejected-head tests observe all four false positives; the identical transcripts return false at Cycle 8 because canonical summary cardinality is two.
+- DONE: Attack one-result content with entries=4 plus entries=2/3/5, repeated entries=2, repeated entries=4, duplicate text blocks, unrelated diagnostic text containing entry-like prose, malformed/noncanonical summaries, and one exact canonical entries=4 line; require exactly one canonical summary and exact complete success.
+  Detached controls reject canonical counts 0/2/3/5/999999, mixed/repeated summaries, and split canonical text; one exact `entries=4` with unrelated or noncanonical diagnostics passes.
+- DONE: Reprove every Cycle-7 invocation/result/order/reuse/tool-name/error/duplicate-call/duplicate-result/stdout/unrelated-tool adversary and the exact archived run 31016570689 entries=2 rejection.
+  All prior correlation mutants fail closed, unrelated traffic remains irrelevant, and the exact 734,304-byte run `31016570689` root session remains false for its sole `entries=2` result.
+- DONE: Reprove all Pi-native metric routes and runtime/host/provider/model/token/cost/duration/provenance/large-row/partial-attribution controls, with Claude/Codex isolation.
+  Focused metric and 16-route controls pass; the archived session independently parses as `openai/gpt-5.4` with nonzero tokens/cost, while partial/mixed/Claude-attributed forms fail.
+- DONE: Reprove pure 64-cell desired state and exactly six source bindings (Sonnet3/Codex2/Pi1/Opus0) plus every owner/target/global/duplicate/suppression/ledger mutation.
+  TODO enumeration and reconciliation emit only the exact six cells, including Pi rejection-flow→zbc; all removal, retag, move, duplicate, ledger, and proven-pass suppression controls are discriminating.
+- DONE: Reprove parity, first-failure, gate fixtures, launcher shim, workflow selectors, artifacts, current/stale SHA, formatting, diff, origin, history shape, and ceiling.
+  Focused ensigncycle/release/contractlint, SHA, parity, fixture, selector, and shim tests pass; `gofmt -l`, `git diff --check`, two-commit history, exact origin, and 42/+2286 ceiling checks are clean.
+- DONE: Run gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race independently with explicit exit results; never mutate candidate.
+  Read-only formatting verification is empty under the no-mutation hold; normal exits 0 (`ensigncycle` 221.329s), race exits 0 (`ensigncycle` 225.588s), and candidate bytes remain clean.
+- DONE: Classify any finding before mutation and keep all product/containment repairs outside ys.
+  No finding remains. The zbc/26n/9a product outcomes stay represented only by their six exact source bindings; no candidate or containment repair was authorized or performed.
+- DONE: Send the First Officer a complete local checkpoint before any live/model/hosted action; do not launch or control CI.
+  The checkpoint reported exact SHAs, full detached matrix, archived evidence, metrics, bindings, and no finding before full/race; no live, hosted, model, smoke, substrate, or runtime lane was launched or controlled.
+- DONE: Recommend PASSED only when all result-content and prior ambiguity matrices, archived rejection, metrics, bindings, full/race/history/ceiling proof are green; append/push explicit Cycle-8 validation verdict.
+  Recommend PASSED. AC-1 through AC-4 have reproducible local evidence, the complete adversarial matrix is green, the archived product failure remains truthful, and no Material or deferred finding remains.
+
+### Summary
+
+Cycle 8 closes the final Pi result-content ambiguity while preserving native metrics, the pure 64-cell desired table, and all six exact product bindings. Independent focused, detached, full, race, history, and ceiling proof is green, so validation recommends PASSED without any live spend or candidate mutation.
