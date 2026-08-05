@@ -184,6 +184,10 @@ Committed a seven-file, +200/-10 implementation that makes the FO loop drain and
 - Proposal: Material evidence defect owned by EJ validation; preserve candidate bytes and correct only the proof. Replace the local predicate oracle with an exact-head, real-adapter-driven Codex matrix that observes exact `wait_agent(timeout_ms: 300000)` emission for active unresolved and absence for completed, errored, and absent workers; do not add another scheduler/controller.
 - Recommendation: REJECTED until AC-3 has valid adapter-bound evidence. Mutable pilot-manifest drift and the Pi account failure below are separate and are not candidate findings.
 
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation adapter-mutation audit; surface 7 files/210 LOC vs estimate 140 (150%); AC unchanged
+
 ## Stage Report: validation
 
 - DONE: Reproduce the mixed mod/PR, ready-gate, and independent-dispatch command-log behavior and verify AC-1, AC-4, and AC-5 with exact order and spawn evidence.
