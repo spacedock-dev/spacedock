@@ -546,3 +546,22 @@ The three authorized evidence defects are corrected and locally verified: offlin
 ### Summary
 
 Cycle 2 independently proves all three prior fixes in both directions and keeps AC-2/3, formatting, full, and race evidence green. Validation remains REJECTED: exact-head hosted evidence stops early on one candidate-owned Codex/Pi recording-shim defect and a separate Sonnet duplicate-preparation product failure, so the required complete 16-identity AC-1/4 proof does not exist.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Add a focused failing offline live-tag control that simulates the real front door re-pinning SPACEDOCK_BIN and proves both Codex and Pi shared drivers still resolve the scenario-local spacedock logging shim.
+  RED: `go test -tags live ./internal/ensigncycle -run '^TestSharedCodexAndPiDriversPreserveSpacedockShimAfterFrontDoorPin$' -count=1` failed because the shared seam accepted no test context and only prefixed PATH; GREEN: both host subtests now resolve the scenario shim after a simulated `/real/spacedock` pin.
+- DONE: Correct only the Codex and Pi shared-driver shim propagation through the smallest existing host-specific mechanisms; preserve Claude behavior and every host launch shape.
+  Codex delegates to its existing host wrapper, and Pi adds the existing shell-startup override after PATH prefixing. Claude retains its prior PATH plus caller-owned shell propagation, with only the seam signature carrying `*testing.T`.
+- DONE: Prove both host cases fail when their propagation is removed and pass with the correction; do not add a controller, retry, runtime lane, or product behavior.
+  The focused control removes the Codex wrapper and Pi `BASH_ENV`/`ZDOTDIR` propagation independently and observes the real front-door pin in both cases; no production package or orchestration behavior changed.
+- DONE: Run the focused live-tag controls, adapter/parity/TODO/reconciliation/SHA controls, gofmt -w ./cmd ./internal, go test ./..., go test ./... -race, and git diff --check.
+  Focused host and parity controls pass; semantic reconciliation passes; normal passed (`ensigncycle` 194.089s), race passed (`ensigncycle` 279.265s), and formatting/diff checks are clean.
+- DONE: Commit watched-path code first, then bind that exact reconciliation SHA in one documentation-only commit and prove current success plus stale diagnostics from full history.
+  Watched-path commit `1e64b514eedf0f252be01c767ab28fd0e75dfcbc` is recorded by docs-only commit `37920950356b43fcc2f5426ab5ae9f9605a2ac03`; current passes and stale diagnostics name all five changed watched paths.
+- DONE: Keep one suite, one 16-entry runner map, three adapters, exactly three 9a-owned TODOs, and the approved 42-file/+2750 ceiling; push the code branch and append/push a path-scoped implementation cycle-3 report without running hosted/model-backed CI.
+  Parity/TODO controls remain green; final origin/main surface is 41 files at +1724/-662. The branch is pushed, no paid or hosted run occurred, and the adjacent Sonnet/metrics findings were not changed.
+
+### Summary
+
+Codex and Pi now preserve the scenario-local logging shim across their real front-door launcher pin while Claude and every launch shape remain unchanged. The focused removal controls, full/race suites, reconciliation, and two-commit SHA binding are green and published for independent revalidation.
