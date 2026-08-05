@@ -602,3 +602,26 @@ Z5 is reconciled onto current main with its launcher-owned multi-agent-v2 semant
 ### Summary
 
 Immutable state isolation replaces the earlier concurrent-state failure with complete green full and race evidence at the unchanged candidate. Z5 remains narrowly reconciled, clean, and conflict-free against current main, with no new finding or product change introduced.
+
+## Stage Report: validation (cycle 9, current-main reconciliation)
+
+- DONE: Re-review exact candidate b0b9ef319f2d267c7da3a7df70dee83b6446ba86 and prove it merges cleanly with current origin/main while preserving launcher-owned Codex multi-agent-v2 behavior.
+  A fresh `git fetch origin main` left `origin/main` at `be0e8453e6075960075e3a34d033d822f2009f4c`; it is an ancestor of exact HEAD, `git merge-tree --write-tree HEAD origin/main` exited 0, the worktree stayed clean, and the delta remains exactly 9 files/+380/-42.
+- DONE: Verify every Z5 acceptance criterion independently, including no forwarded enable/disable flags and the relocated offline argv boundary.
+  AC-1/AC-4 passed a fresh 44.60s built-front-door isolated-home lifecycle with typed ordered spawn/wait/follow-up/list/wait, stable child identity, child/parent terminal outputs, v2 context, and a disabled zero-collaboration control; vocabulary-only and typed misbound-child mutants remained rejected.
+  AC-2 passed exact owned-layer, all reserved config/enable/disable spellings, unrelated-config control, zero-side-effect rejection, and unsupported-host propagation; removing a reserved spelling or allowing install/launch would fail the matrix.
+  AC-3 passed byte-exact adjacency, order, uniqueness, and exact table contents across plain, local-plugin, Safehouse-inner, and resume argv; moving an owned token outside the inner Codex argv or changing any table field would fail.
+  The relocated `TestCodexLiveRunnerLeavesCollaborationConfigToSpacedockLauncher` and front-door boundary test passed in both ordinary and live-tag builds; the actual offline argv contains no forwarded enable/disable pair while current main's quiet-budget reset/timeout tests also pass.
+- DONE: Run focused, formatting, immutable-state full/race, and applicable live checks; report exact surface and any material or deferred findings.
+  Focused CLI/ensigncycle and detached exact-head adversarial tests passed; `gofmt -d ./cmd ./internal` was empty, both diff checks passed, and `SPACEDOCK_STATE_ROOT=/tmp/spacedock-z5-state.UqgYGB` at immutable state commit `a0169cc2d8a5e4912ed33f75ca8422a767e71c9e` made `go test ./...` and `go test ./... -race` pass.
+  The local-auth `TestLiveCodexSharedScenarios` passed in 558.20s with all seven enabled journeys green, including `recorded-gate-lifecycle`; the three existing named TODO journeys skipped and remain non-evidence. Artifacts are retained under `/tmp/spacedock-z5-live-cycle6`.
+- SKIPPED: Treat the approval-gated API-key invocation as live evidence.
+  `SPACEDOCK_CODEX_LIVE_REQUIRED=1` stopped before scenarios because `OPENAI_API_KEY` is absent; the documented local-auth invocation then ran the identical suite to completion, so the prerequisite miss is neither a candidate failure nor evidence.
+
+### Summary
+
+Exact-head validation recommends PASSED at `b0b9ef319f2d267c7da3a7df70dee83b6446ba86`. Current `origin/main` is incorporated, the approved 9-file/+380/-42 surface and candidate bytes are unchanged, AC-1 through AC-4 and the mandatory live lane are green, and no material, deferred-risk, or polish finding remains.
+
+### Recommendation
+
+PASSED. Preserve the three named TODO skips as non-evidence and merge only the exact validated head.
