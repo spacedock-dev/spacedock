@@ -63,6 +63,12 @@ gates:
                 at: "2026-07-30T23:38:52.744855Z"
                 decision: hold
                 reason: 'Captain conn holds KD without rework: exact candidate b60d1c8 is deterministically green and has zero classified defects, but required live proof is red on the external Material Codex worker-spawn breach routed to f02j6dbnd4jakwczahv1tg2h; canonical Claude/Pi evidence is also infrastructure-blocked.'
+            - id: gate-attempt:kd7877nnbd19d528xnpwwaj4-validation-2
+              briefing:
+                id: briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-2:revision-1
+                digest: sha256:02c1007bcb5c8ebcfbebac1269defd035a4554d107cf2e4ab7afa7bc9660521a
+                request-digest: sha256:81c78198f45934e4954d26eea9a418196f8eb61f508f1b57b09da627664aaeac
+                room-ref: ./review/validation/briefing-2
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 ---

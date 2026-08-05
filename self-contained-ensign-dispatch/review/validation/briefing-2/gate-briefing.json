@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-2:revision-1",
+  "question": "Should KD return to implementation for exact-candidate recovery and current-main reconciliation?",
+  "artifacts": [
+    {
+      "id": "artifact:kd7877nnbd19d528xnpwwaj4:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/4436dae2ba51ab51ef2790527e84e115d93372fc/self-contained-ensign-dispatch/index.md",
+      "rev": "sha256:a27af28dbb04a095d17a2b282a44b111c271f8e6f8f6ff060acad0a0713fb0a0",
+      "mediaType": "text/markdown",
+      "summary": "Return KD to its owner to recover the validated candidate, reconcile landed EJ/main safely, and produce fresh exact-head evidence."
+    }
+  ]
+}
