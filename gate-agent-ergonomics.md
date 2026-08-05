@@ -1,6 +1,6 @@
 ---
 title: Make recorded gate operation self-guiding for First Officers
-status: validation
+status: implementation
 source: "Durable-decisions sprint dogfood: manual 0c and xb gate/round operation, 2026-07-24."
 score: 1.0
 id: skwchfe30ac6ntr63j1g0txj
@@ -78,10 +78,10 @@ gates:
                 reason: Captain explicitly directed opening the PR. Deterministic exact-head validation and all AC evidence pass; required live lanes are deferred to exact-head CI and remain a merge prerequisite.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 worktree: .worktrees/spacedock-ensign-gate-agent-ergonomics
-mod-block: merge:pr-merge
-pr: "#617"
+mod-block:
+pr:
 ---
 
 ## Problem
