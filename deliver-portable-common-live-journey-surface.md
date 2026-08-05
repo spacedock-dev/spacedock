@@ -1372,3 +1372,32 @@ Cycle 14 PASSED independently at exact candidate `d7cdd4e91f6fcfdc7308138434908b
 ### Summary
 
 Cycle 15 grades Pi filing from its durable root-session tool evidence instead of stdout/stderr, while leaving Claude and Codex filing paths intact. The exact archived success, fail-closed mutation set, prior correlation suites, registry/TODO boundaries, full/race verification, pushed two-commit history, and hard 42-file/+2750 ceiling are green at `6408e2ad658f05d9c990b88a46cc8d002203c729`.
+
+## Stage Report: validation (cycle 15)
+
+- DONE: Verify exact provenance, history, binder, cleanliness, and remote equality.
+  Candidate/origin are clean at `6408e2ad658f05d9c990b88a46cc8d002203c729`; baseline is `d7cdd4e91f6fcfdc7308138434908b37fa6e54a5`, watched core is `9c38ebca94ad23d65cc8648e67d0bce6cea4fe94`, and the following commit changes only the documented reconciliation SHA.
+- DONE: Independently classify the archived hosted result without rerunning it.
+  Run `31048506420`, Pi job `92450151141`, artifact `8947855457` passed offline and seven runnable common journeys, skipped only owned Pi rejection-flow, then produced a filing harness false negative despite the correct durable entity.
+- DONE: Prove the exact archived native filing evidence.
+  Root session `2026-08-05T21-39-49-697Z_019fd3de-4f41-70f8-8900-0e1c1ed84a17.jsonl` contains exactly one assistant `bash` call of `${SPACEDOCK_BIN:-spacedock} new wire-the-thing` and exactly one later same-ID `bash` result with `isError:false` and `created: .../wire-the-thing.md id=001`; no bash `--next-id` call exists.
+- DONE: Verify runtime-specific evidence routing independently.
+  A detached live-tagged fake-driver audit accepts valid Pi `sessionJSONL` despite invalid Claude stream, accepts valid Claude stream despite invalid Pi session, and rejects a Pi result with the wrong tool name; Codex retains its separate runner.
+- DONE: Attack every correlator invariant causally.
+  Removing call-ID uniqueness makes `reused_call_ID` pass incorrectly; removing the manual-flow rejection makes `manual_next-id` pass incorrectly; loosening result cardinality makes `duplicate_result` pass incorrectly; removing explicit error checking makes `failed_result` pass incorrectly; each restored candidate control passes.
+- DONE: Reprove the complete host-specific evidence suites.
+  The Pi filing positive and missing/failed/duplicate/reused-ID/manual negatives, Pi rejection-round ambiguity matrix, Claude synthetic and PR399 controls, and Codex filing/manual-flow controls all pass.
+- DONE: Reprove registry truth, ownership, and SHA discrimination.
+  The desired inventory remains exactly 16 journeys × four required targets = 64 cells; exactly nine missing-evidence bindings remain Sonnet=3, Codex=5, Pi=1, Opus=0; current SHA and stale-parent checks plus all reconciliation mutations pass.
+- DONE: Verify scope, comment reclamation, and fixed surface.
+  Cycle 15 changes only existing observer/test/helper files plus the SHA binder; reclaimed text is comment-only outside the filing observer route, and no product, fixture, prompt, launcher, front-door, metric, workflow, owner, or TODO changed. The cumulative surface is exactly 42 files/+2750/-684.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` is idempotent and `git diff --check` passes; full exits 0 in 153.60s and race exits 0 in 158.94s.
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; hosted inspection was read-only and all new runtime-routing evidence came from deterministic fake-driver or archived-session controls.
+- DONE: Render the independent verdict.
+  PASSED with no Material, Deferred-risk, or Polish findings; validation changed no candidate and made no workflow state transition.
+
+### Summary
+
+Cycle 15 PASSED independently at exact candidate `6408e2ad658f05d9c990b88a46cc8d002203c729`. Pi filing is now graded from one unique, later, successful native bash call/result pair while durable state remains separately required; causal negatives, prior host paths, pure registry truth, the fixed surface ceiling, and full/race suites all remain green.
