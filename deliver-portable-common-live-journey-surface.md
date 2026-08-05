@@ -1242,3 +1242,34 @@ Cycle 12 PASSED independently at exact candidate `99f27c41c88bdd414240344495013e
 ### Summary
 
 Cycle 13 makes common auto-continue grading follow the durable active entity in single-root workflows while explicitly retaining state-checkout authority for split-root workflows. Both causal REDs, focused contracts, full/race suites, SHA binding, remote equality, and the 42-file ceiling are proved at candidate `0aa74035cc96d672c71480466ed4e1b1a3169213` without a product repair or workflow transition.
+
+## Stage Report: validation (cycle 13)
+
+- DONE: Verify exact immutable provenance, history, binder, and remote equality.
+  Candidate and origin are clean at `0aa74035cc96d672c71480466ed4e1b1a3169213`; watched core is `7ef1636c5ff751ff2e04716e39eb075cdd8aaf42`, baseline is `99f27c41c88bdd414240344495013e0c393a4c41`, and the binder changes only `docs/runtime-live-ci.md` from the prior core SHA to the watched SHA.
+- DONE: Independently inspect the hosted result without executing a runtime.
+  Run `31042421641`, Codex job `92430021762`, and artifact `8945373289` have the assigned baseline head; nine runnable journeys passed and exact owned Codex gaps `withdrawn-gate-recovery`/`47gnqfm1ft6f2hcahz98m2jv` and `rejection-flow`/`zbcj98qfwtax61vxdzrf615e` skipped before the single-root auto-continue false negative.
+- DONE: Prove the durable single-root lifecycle outcome from the archive.
+  At validation the root entity was nonempty but had no validation report; the stamped active worktree entity had `started`, a complete committed validation report, and `Recommendation: PASSED`; the FO read that exact copy, prepared an open validation briefing, and presented the gate.
+- DONE: Reproduce baseline RED and restored candidate GREEN independently.
+  A detached Cycle-12 baseline resolver test stayed on the stale pipeline body and failed; the exact candidate passes the resolver, common-runner, discovery, and Git-baseline focused controls.
+- DONE: Attack both root-authority branches causally.
+  Removing the single-root overlay makes `single-root_active_worktree` fail on the missing report; bypassing `splitRoot` makes `split-root_remains_in_state_checkout` return the exact adversarial `WRONG CODE WORKTREE COPY`; restored bytes pass both.
+- DONE: Verify resolver safety and terminal layouts.
+  Absolute and parent-relative worktree values fall back to the pipeline body; split-root remains state-checkout authoritative, and both flat and folder archive layouts pass.
+- DONE: Preserve fixture, prompt, oracle, and launch semantics.
+  Both fixture IDs remain discoverable with clean committed Git/state-root baselines and run serially through the common runner; `auto_continue_fixtures_test.go` and `shared_scenarios_test.go` hashes are identical to baseline.
+- DONE: Reprove reconciliation, mutations, SHA, Pi, and evidence cardinality.
+  Focused ensigncycle/release/contractlint controls pass, including current/stale SHA, registry mutations, deterministic Pi evidence/metrics, the pure 64-cell desired matrix, and exactly eight target-scoped bindings (Sonnet 3, Codex 4, Pi 1, Opus 0).
+- DONE: Verify formatting, exact surface, and repository-wide suites.
+  Required `gofmt -w ./cmd ./internal` preserved identical bytes; `git diff --check` passes; full exits 0 (`ensigncycle` 103.771s, wall 116.14s) and race exits 0 (`ensigncycle` 115.010s, wall 128.43s); surface is exactly 42 files/+2737/-681, below +2750.
+- DONE: Preserve scope and authority boundaries.
+  Cycle 13 changes only two existing harness test files plus the docs-only SHA binder; no product, fixture, prompt, adapter, launcher, workflow, TODO, owner, or new-file change exists, and validation made no candidate or state transition.
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; the reported overbroad local filter reached only Pi's provider pre-execution 402 credit rejection, so no claim is made beyond that evidence and no hosted retry occurred.
+- DONE: Render the independent verdict.
+  PASSED with no Material, Deferred-risk, or Polish findings.
+
+### Summary
+
+Cycle 13 PASSED independently at exact candidate `0aa74035cc96d672c71480466ed4e1b1a3169213`. The narrow common-runner resolver fixes the archive-proven single-root grading false negative, rejects unsafe stamped paths, retains split-root and archive authority, and preserves every product, fixture, prompt, registry, owner, execution, and surface boundary.
