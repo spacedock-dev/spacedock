@@ -22,9 +22,9 @@ ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact R
 
 Preflight one lifecycle surface: `prepare`, `withdraw`, `record`, `validate`, `eligibility`, `consume`, and withdrawal's `--reason`. A nonzero command halts; surface its exact error and refresh or rebuild the version-gated bundle when unavailable. Never hand-edit `gates:` or replace binary-owned entity/room authority.
 
-Require emitted `room`, `briefing`, `digest`, `state=open`; never reconstruct the absolute room. `«state.commit»(slug)` commits the entity and two-file room. Load `spacedock:present-gate`, cross-check ACs, assemble the verdict, and present entity/stage, bound Briefing, recommendation, and ask after commit.
+Require emitted `room`, `briefing`, `digest`, `state=open`; never reconstruct the room. `«state.commit»(slug)` commits the binding. Load `spacedock:present-gate`, cross-check ACs, and present once after commit. No conn: ask and stop open. Explicit conn: presentation is notification; immediately record the delegated decision below.
 
-**Cold report candidate.** For one `needs-preparation` row, load this lifecycle and re-read the entity, latest exact-stage report/checklist, and report-bearing commit. It is structural evidence only. If any obligation, evidence, Summary, or scope claim is insufficient, stop once with `report-incomplete: <concrete defect>`; do not prepare, record, commit, present, idle, or repeat `status --next`. Otherwise choose the question, one committed Markdown Artifact, summary, and References, and invoke `gate prepare` exactly once. Require `room`, `briefing`, `digest`, `state=open`; commit, re-read the envelope, and present only one same-slug `awaiting-captain`. On nonzero/mismatch, stop; never retry or use `gate record --briefing`.
+**Cold report candidate.** For one `needs-preparation` row, re-read the entity, latest exact-stage report/checklist, and its commit; this is structural only. An insufficient obligation, claim, Summary, or scope stops once with `report-incomplete: <concrete defect>` and zero prepare, mutation, presentation, idle, or repeat-next. Otherwise choose question, committed Markdown Artifact, summary, and References; invoke `gate prepare` once. Require `room`, `briefing`, `digest`, `state=open`; commit, re-read, and present the same-slug `awaiting-captain`. With a conn, immediately record and consume; never final after presentation. Nonzero/mismatch stops; no retry or `gate record --briefing`.
 
 **Withdraw stale open authority.** If a prepared room is stale before provider output or Captain decision, run:
 
@@ -50,7 +50,7 @@ ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --room ROOM --workflow-dir WORKFLOW_DIR
 ```
 
-No explicit Captain grant in active conversation: bind/present; leave gate open. A grant issued later in that conversation permits delegation. Record an FO-rendered decision as `agent:first-officer` with a nonblank reason, never `person:captain`; reserve it for the Captain's own decision. Recorder authenticates/retains no grant. `revise`/`hold` need reasons; room-backed mappings must be complete.
+No Captain grant: bind/present and leave open; a later grant permits delegation. An existing conn requires present once, immediate record, then the route below. Record an FO-rendered decision as `agent:first-officer` with a nonblank reason, never `person:captain`; reserve it for the Captain. Recorder retains no grant. `revise`/`hold` need reasons; room mappings must be complete.
 
 Map Captain calls before recording: `approve` maps to `approve` with an accepts-direction evidence reason; `redo with feedback` maps to `revise` with an accepts-direction reason; `reject` with `feedback-to` maps to `revise` with a rejects-direction reason; `reject` without `feedback-to` maps to `hold` with a pause reason; `hold` maps to `hold` with a pause reason; `not yet` maps to `hold` with a pause reason naming what remains. Routed redo/reject reasons include concrete asks and invoke `«feedback.route»` after the close commit; hold decisions commit and stop at the gate.
 
@@ -62,7 +62,7 @@ Require exit 0, bound attempt/Briefing, `state=closed`, and decision; record val
 ${SPACEDOCK_BIN:-spacedock} gate consume ENTITY --workflow-dir WORKFLOW_DIR
 ```
 
-Consume rechecks currency, successor, blockers, and one-use state under lock. Nonterminal: require exit 0, `consumed=true`, expected successor; it writes successor status plus consumed state, commits, and syncs itself, then dispatch via `dispatch build --stamp` (fo-dispatch-core.md). Terminal: require `consumed=false`, `route=approved-awaiting-merge` — consume writes nothing; drive `«merge.guard»(slug)`, no successor dispatch. Never use `status --set` to advance a gate.
+Consume rechecks currency, successor, blockers, and one-use state under lock. Nonterminal: require exit 0, `consumed=true`, expected successor; it writes successor/consumed state, commits, and syncs. Then call `dispatch build --stamp` exactly once in the bound adapter shape (Codex named: no `--bare-mode`/`--team-name`); never probe another shape. Terminal: require `consumed=false`, `route=approved-awaiting-merge`; drive `«merge.guard»(slug)` with no dispatch. Never use `status --set` to advance a gate.
 
 - `revise`: never consume after close commit; invoke `«feedback.route»`.
 - `hold`: after close commit, remain at the gate and surface the reason.
