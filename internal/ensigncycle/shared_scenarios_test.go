@@ -48,6 +48,8 @@ func liveDurableJourneyTODO(target liveEvidenceTarget, name string) string {
 		return "TODO(" + defaultHeadlessGateStopDefectID + "): headless drive must stop after exactly one durable gate preparation"
 	case liveEvidenceKey{target: liveEvidenceTargetPi, journey: "rejection-flow"}:
 		return "TODO(" + liveRejectionFlowDefectID + "): Pi must record the complete four-entry rejection round before rework"
+	case liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "rejection-flow"}:
+		return "TODO(" + liveRejectionFlowDefectID + "): Codex must route rejected feedback through rework and cycle-2 validation"
 	case liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "withdrawn-gate-recovery"}:
 		return "TODO(" + liveWithdrawnGateDefectID + "): withdrawn gate recovery must prepare exactly one successor attempt"
 	case liveEvidenceKey{target: liveEvidenceTargetClaudeSonnet, journey: "smallest-sufficient-mechanism"},
