@@ -101,6 +101,14 @@ The first officer runs these against workflow state as it moves entities; you op
 | `spacedock state` | Manage a [split-root workflow](../advanced/split-root-state.md)'s state checkout (`state init` resumes one on a fresh clone, `state new` births one) |
 | `spacedock completion` | Print a bash or zsh completion script |
 
+Machine `status --next --json` returns one envelope with the unchanged
+`dispatchable` array and canonical ordered `ready_gates` array. Ready rows include
+the mechanical `needs-preparation` candidate and
+`withdrawn-awaiting-prepare`; they retain the four keys `id`, `slug`, `current`,
+and `readiness`. The First Officer applies ready-gate-first priority on every
+read, including the post-idle read. Preparation uses the existing `gate prepare`
+command; `gate record --briefing` is not a recovery route.
+
 ### `state commit`
 
 `spacedock state commit <slug>` commits and synchronizes one active or clean

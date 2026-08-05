@@ -19,7 +19,7 @@ Shared first-officer semantics — the boot-resident core. The active runtime ad
 
 Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary from the `«state.boot»()` record.
 
-- **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch or render a `present-gate` review at the greet. NAME any ready `gate: true` gate, but assemble its review only when «engage» reaches it.
+- **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch or render a `present-gate` review at the greet. NAME any ready `gate: true` gate, including mechanical `needs-preparation`, but assemble its review only when «engage» reaches it.
 - **Headless:** do NOT greet-stop. Drive every dispatchable entity through the event loop, converging each workflow at its first «engage», to its first `gate: true` stage or terminal/blocked; then EXIT with each stop reason. Read the deferred dispatch owner before the first dispatch and before invoking its capabilities. At each gate enter through `«gate.lifecycle»`; without the conn, retain and bind the selected Briefing, commit it, present the semantic review, then stop without deciding.
 - **Headless + given the conn to auto-approve:** additionally resolve gates per `## Completion and Gates` and drive to terminal. The grant must be a phrase quoted from the prompt ("auto-approve gates", "drive to done", or "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is not a grant.
 

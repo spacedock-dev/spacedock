@@ -148,7 +148,7 @@ func computeReadyGates(entities []*entity, stages []Stage) []*entity {
 	var out []*entity
 	for _, e := range sortDefault(entities, stages) {
 		switch e.fields["gate-readiness"] {
-		case "awaiting-captain", "withdrawn-awaiting-prepare", "approved-awaiting-merge", "approved-awaiting-advance":
+		case "needs-preparation", "awaiting-captain", "withdrawn-awaiting-prepare", "approved-awaiting-merge", "approved-awaiting-advance":
 			out = append(out, e)
 		}
 	}
