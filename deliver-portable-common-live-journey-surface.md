@@ -1175,3 +1175,34 @@ Cycle 11 PASSED independently at exact candidate `37d91f673bda7ccdf9b7e63f6dc013
 ### Summary
 
 Cycle 12 hardens every throwaway repository through the shared `InitRepo` helper, preventing modern detached maintenance and legacy auto-GC during test cleanup. Config, synchronous TRACE2, exact-failure stress, reconciliation, full/race, history, origin, and 42-file ceiling proof are green with no product or live execution change.
+
+## Stage Report: validation (cycle 12)
+
+- DONE: Verify exact candidate provenance, history, and remote equality.
+  Candidate/origin are clean at `99f27c41c88bdd414240344495013e0c393a4c41`; core is `ba0fa02f233cfc3efec4e3bac87af9e61aadc275`, baseline is `37d91f673bda7ccdf9b7e63f6dc0134407895173`, and merge base is `507a4bc12e48a3e4a813219602c488f09c81a5d8`.
+- DONE: Independently verify both hosted offline failures and execution holds.
+  Run `31038408585`/job `92416384344` lost reachable parent `8354e03b…`; run `31038934635`/job `92418150514` hit `.git/objects: directory not empty`; all live jobs were explicitly skipped in both runs.
+- DONE: Verify the Git automatic-maintenance causal classification.
+  Git docs establish `maintenance.auto=true`, detached `maintenance.autoDetach=true`, and 100-object auto thresholds by default; both archived failures are consistent with background writes in Git-heavy throwaway repositories.
+- DONE: Reproduce the focused red baseline and exact green configuration.
+  A detached baseline test fails because both local keys are absent; exact candidate `InitRepo` persists `maintenance.auto=false` and `gc.auto=0`, while a plain-init control persists neither.
+- DONE: Perform independent per-line mutation attacks.
+  Removing `maintenance.auto=false` or `gc.auto=0` separately in a detached candidate makes `TestInitRepoDisablesAutomaticMaintenanceLocally` fail on that exact missing key; restored bytes pass.
+- DONE: Prove the maintenance boundary behaviorally without cleanup races.
+  Ten runs of the synchronous TRACE2 control (`strategy=gc`, auto=true, autoDetach=false, gc.auto=1) launch maintenance, while default `InitRepo` emits neither maintenance nor gc.
+- SKIPPED: Launch an `autoDetach=true` background control.
+  Deliberately spawning detached maintenance would recreate the prohibited cleanup race and risks leaving work; the synchronous child-launch control proves the same causal seam safely without sleeps.
+- DONE: Stress both prior failures and the shared helper serially.
+  The exact two failure sites pass 25× combined with `-parallel=1` (`ensigncycle` 45.904s, wall 46.10s); `internal/testgit` passes 25× (`9.024s`, wall 9.14s) with no object loss or cleanup race.
+- DONE: Verify annotation relocation is behavior- and byte-neutral.
+  Restored recorded-gate and shallow-boot files hash exactly to merge base and are absent from final diff; each ID occurs once on a common wrapper used by Claude/Codex, with Pi routing through Claude.
+- DONE: Reprove fixture, registry, SHA, mutation, and Pi evidence boundaries.
+  Fixture parity/use, current+stale SHA, exact binding mutations, Pi four-entry rejection recording, native identity/cost/complete-large-row metrics, pure 64 desired cells, and eight bindings (Sonnet=3, Codex=4, Pi=1, Opus=0) all pass.
+- DONE: Verify formatting, binder shape, surface ceiling, and exact-byte suites.
+  Read-only `gofmt -l ./cmd ./internal` is empty and `git diff --check` passes; binder changes only the SHA; surface is 42 files/+2668/-681; full passes (`ensigncycle` 104.090s, wall 116.46s) and race passes (`ensigncycle` 114.547s, wall 127.99s).
+- DONE: Preserve candidate, product, runtime, owner, and workflow authority boundaries.
+  Validation changed no candidate, transitioned no state, launched/approved/rejected/cancelled no hosted/live/model/substrate/smoke action, filed no owner, and repaired no product; PASSED with no material, deferred-risk, or polish findings.
+
+### Summary
+
+Cycle 12 PASSED independently at exact candidate `99f27c41c88bdd414240344495013e0c393a4c41`. The shared throwaway-repository fix is causally discriminating and eliminates both observed Git cleanup signatures while preserving every fixture, registry, runtime, product, and execution boundary.
