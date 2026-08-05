@@ -468,3 +468,30 @@ Candidate structure, reconciliation, focused controls, formatting, full tests, a
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — fresh Sol/medium validation plus hosted run `30991534368`; surface 41 files/+1564/-654 vs estimate 34 files/+2060/-1650 and ceiling 42 files/+2750 (57% of the insertion ceiling); AC unchanged. FO disposition: FIX three Material, ys-owned findings only. Route to implementation: require full history for the offline reconciliation guard; stop the common ordered suite when `t.Run` returns false; and centralize the host-neutral gate fixture choice with a negative `TestGateJourneyOverlap` proving `default-headless-gate-stop` starts at implementation while `gate-guardrail` starts at validation. Do not change product behavior, add a controller, absorb `9a`, or rerun hosted/live lanes before focused and full/race checks are green.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Add a focused failing workflow mutation test proving the offline Runtime Live E2E checkout provides the recorded reconciliation commit and its parent.
+  RED: `go test ./internal/release -run '^TestRuntimeLiveOfflineCheckoutFetchesRecordedCommitHistory$'` failed before the guard existed; GREEN: the same command passed and its depth-one mutation was rejected.
+- DONE: Set only the offline job's actions/checkout step to fetch-depth 0; keep the SHA guard algorithm and live-job checkouts unchanged.
+  `.github/workflows/runtime-live-e2e.yml` changes only the offline checkout; the existing SHA algorithm and four later checkout steps are unchanged.
+- DONE: Add a focused failing ordered-sequence test proving a false first journey prevents every later journey from running.
+  RED: `go test -tags live ./internal/ensigncycle -run '^TestSharedScenarioSequenceStopsAfterFirstFailure$'` failed before the seam existed; GREEN: it passed with only `first` observed.
+- DONE: Route TestLiveSharedScenarios through the smallest host-neutral sequence seam that consumes t.Run's boolean and stops on false; add no controller or retry loop.
+  `runSharedScenarioSequence` returns immediately on false and owns no runtime, retry, or orchestration state.
+- DONE: Add TestGateJourneyOverlap as a focused failing negative proving default-headless-gate-stop starts at implementation and gate-guardrail starts at validation, and that swapping either start fails.
+  RED: `go test ./internal/ensigncycle -run '^TestGateJourneyOverlap$'` failed before its assertion existed; GREEN: it passed against both real selected fixtures and rejects both crossed states.
+- DONE: Centralize only the gate fixture choice in one host-neutral seam and make Claude/Codex use it; preserve Pi's existing reuse and all launch/assertion behavior.
+  Claude and Codex now call `writeGateJourneyFixture`; Pi and every post-selection launch/assertion path are unchanged.
+- DONE: Run the exact focused tests red-before/green-after, then gofmt -w ./cmd ./internal, go test ./..., go test ./... -race, SHA current/stale controls, and git diff --check.
+  All focused groups passed; post-commit normal passed (`ensigncycle` 207.136s), race passed (`ensigncycle` 222.664s), SHA and diff controls passed.
+- DONE: Update the reconciliation SHA correctly: commit watched-path fixes first, then bind that exact commit in one documentation-only commit, proving current success and stale diagnostics from full history.
+  Watched-path commit is `5bb44e7b4d7bf3092b738a74d6ede04f4b0a5aed`; docs-only commit `ae2a19e8cfdedace6b4d20e32821490666016e63` records it. Current succeeds; stale names all six changed watched paths.
+- DONE: Keep all 16 journeys, exact three 9a-owned TODOs, one runner map, three adapters, and 41-file/+1564 baseline semantics unchanged except for these three authorized fixes.
+  Focused parity/TODO controls pass; final origin/main surface remains 41 files at +1661/-655, within the 42-file/+2750 ceiling and differing from baseline only by this correction.
+- DONE: Push the code branch and append/push a path-scoped implementation cycle-2 report with exact commands/results and final surface; do not run hosted/live CI in implementation.
+  Branch head `ae2a19e8cfdedace6b4d20e32821490666016e63` is published; no paid model-backed, hosted, or live command ran in this correction cycle.
+
+### Summary
+
+The three authorized evidence defects are corrected and locally verified: offline reconciliation has full Git history, the common suite stops after its first failed journey, and gate journeys select and prove distinct start states. The pushed two-commit shape preserves a watched-path reconciliation commit followed by a documentation-only SHA binding.
