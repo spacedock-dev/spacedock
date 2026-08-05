@@ -407,3 +407,24 @@ remaining live-state test red is independently proven fixture drift.
 The final candidate applies issue #616 only to the shipped `pr-merge` mod and
 stamps it `0.27.0`. The customized development mod is restored exactly and remains
 owned by the later refit path.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Validate exact candidate `2acb3630b` and prove the final branch changes only `mods/pr-merge.md` with version `0.27.0` while `docs/dev/_mods/pr-merge.md` matches its pre-EP2 customized baseline byte-for-byte.
+  `2acb3630b1c436a6747bd0ff5f0ed03b84151248` is one file at `+13/-4`; candidate and pre-EP2 dev-mod SHA-256 are both `44e7b345eee634b35780efe3106ad827b424661b45dd75aaeaec9fd90f38c4f2`.
+- DONE: Reproduce **AC-1 (VALUE)** with the real-Git zsh clean and moved-branch cases: exact recorded SHA delivery and no rebase.
+  `/tmp/spacedock-validation-616-final.kPG1Jp` observed clean `1 1`, unchanged merge-tree state, and remote `b6bc88a7` equal to the approved SHA while local HEAD had moved to `1d38e201`; command log contained no rebase.
+- DONE: Reproduce **AC-2** with real conflict and unknown-error evidence: semantic output inspection and preserved authority.
+  Actual `CONFLICT (content)` routed to G3/D8 while equal-exit-1 unavailable-object stderr routed unknown; refs/index/worktree/authority/actions remained byte-for-byte unchanged.
+- DONE: Run focused, full, and race suites with reproducible state evidence.
+  Contract/integration and immutable-state pilot checks passed; `go test ./...` and `go test ./... -race` exited 0 with state `73f41e2a2`; live state alone lacks eight archived manifest paths.
+- DONE: Preserve candidate bytes through formatting and final checks.
+  `gofmt -w ./cmd ./internal` changed no status, `git diff --check` passed, and final HEAD stayed `2acb3630b` with only the shipped mod in its branch diff.
+- DONE: Recommend PASSED only if no material finding remains.
+  Recommend PASSED: the captain-narrowed candidate satisfies AC-1 and AC-2; no material, deferred-risk, or polish finding remains.
+
+### Summary
+
+The final shipped-only policy preserves the approved SHA through semantic
+mergeability judgment and exact zsh delivery. The dev customization is unchanged,
+all reproducible suites pass, and the live-state red remains unrelated fixture drift.
