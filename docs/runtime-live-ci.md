@@ -162,7 +162,7 @@ Run reconciliation whenever `internal/ensigncycle/`, `internal/livescenario/`, o
 
 The current reconciled inventory is: 16 bound journeys, 21 bound fixtures (17 common, three runtime-proof fixtures beyond the shared lifecycle fixture, and one experiment), four runtime proofs, one suite, three adapters, and three selected lanes. Structural diagnostics are `MISSING=0`, `UNSELECTED=0`, `DUPLICATE=0`, `INVALID=0`, `ORPHAN=0`, `UNACCOUNTED-TEST=0`, and `UNACCOUNTED-BUILDER=0`. Live-evidence diagnostics are separately `MISSING-EVIDENCE=3`: `auto-continue-after-implementation`, `smallest-sufficient-mechanism`, and `keep-moving-posture`, each owned by repair `9adv48yhye5s2vkhwd7ge52d`. These TODO journeys remain selected and do not count as exceptions or passing evidence. Any other nonzero result lists exact IDs or paths and fails reconciliation.
 
-Registry reconciliation SHA: `PENDING-CANDIDATE-SHA`
+Registry reconciliation SHA: `fc397422a3807573ea66a86eec30d376cf0b64d5`
 
 The SHA guard compares the recorded commit with the watched paths. A stale base must fail and name every changed watched path; the recorded base must pass. Source bindings are the semantic inventory, while the path guard only proves that inventory has not gone stale.
 
