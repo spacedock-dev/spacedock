@@ -160,6 +160,7 @@ func TestSharedCodexAndPiDriversPreserveSpacedockShimAfterFrontDoorPin(t *testin
 
 func TestSharedLiveTODOEvidenceSet(t *testing.T) {
 	want := map[string]string{
+		"default-headless-gate-stop":         defaultHeadlessGateStopDefectID,
 		"auto-continue-after-implementation": liveDurableJourneyDefectID,
 		"smallest-sufficient-mechanism":      liveDurableJourneyDefectID,
 		"keep-moving-posture":                liveDurableJourneyDefectID,

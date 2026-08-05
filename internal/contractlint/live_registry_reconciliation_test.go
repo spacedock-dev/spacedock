@@ -152,6 +152,13 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 		"retagged TODO owner": func(s string) string {
 			return strings.Replace(s, "| `keep-moving-posture` | `9adv48yhye5s2vkhwd7ge52d` |", "| `keep-moving-posture` | `otherowner` |", 1)
 		},
+		"retagged default-headless TODO owner": func(s string) string {
+			return strings.Replace(s, "| `default-headless-gate-stop` | `26nk8qd48zknqnn4kc123sez` |", "| `default-headless-gate-stop` | `otherowner` |", 1)
+		},
+		"duplicate default-headless TODO row": func(s string) string {
+			row := "| `default-headless-gate-stop` | `26nk8qd48zknqnn4kc123sez` |"
+			return strings.Replace(s, row, row+"\n"+row, 1)
+		},
 	}
 	for name, mutate := range registryMutations {
 		t.Run(name, func(t *testing.T) {
@@ -171,6 +178,12 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 		t.Fatal(err)
 	}
 	evidenceMutations := map[string]func(map[string]string){
+		"removed default-headless TODO": func(m map[string]string) {
+			delete(m, "default-headless-gate-stop")
+		},
+		"retagged default-headless TODO": func(m map[string]string) {
+			m["default-headless-gate-stop"] = "other-owner"
+		},
 		"removed TODO": func(m map[string]string) {
 			for id := range m {
 				delete(m, id)
@@ -488,8 +501,12 @@ func reconcileLiveRegistry(desired desiredLiveRegistry, actual liveInventory, wo
 }
 
 func extractMissingEvidence(source string) (map[string]string, error) {
-	ownerMatch := regexp.MustCompile(`const liveDurableJourneyDefectID = "([a-z0-9]+)"`).FindStringSubmatch(source)
-	if len(ownerMatch) != 2 {
+	ownerMatches := regexp.MustCompile(`([A-Za-z][A-Za-z0-9]*)\s*=\s*"([a-z0-9]+)"`).FindAllStringSubmatch(source, -1)
+	owners := map[string]string{}
+	for _, match := range ownerMatches {
+		owners[match[1]] = match[2]
+	}
+	if len(owners) == 0 {
 		return nil, fmt.Errorf("MISSING-EVIDENCE repair owner")
 	}
 	start := strings.Index(source, "func liveDurableJourneyTODO")
@@ -501,8 +518,16 @@ func extractMissingEvidence(source string) (map[string]string, error) {
 		rest = rest[:end+1]
 	}
 	out := map[string]string{}
-	for _, match := range regexp.MustCompile(`case "([a-z0-9-]+)"`).FindAllStringSubmatch(rest, -1) {
-		out[match[1]] = ownerMatch[1]
+	caseOwner := regexp.MustCompile(`case "([a-z0-9-]+)":\s*return "TODO\(" \+ ([A-Za-z][A-Za-z0-9]*) \+`)
+	for _, match := range caseOwner.FindAllStringSubmatch(rest, -1) {
+		owner, ok := owners[match[2]]
+		if !ok {
+			return nil, fmt.Errorf("MISSING-EVIDENCE repair owner %s", match[2])
+		}
+		out[match[1]] = owner
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("MISSING-EVIDENCE TODO cases")
 	}
 	return out, nil
 }

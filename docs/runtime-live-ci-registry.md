@@ -252,6 +252,7 @@ owner-linked TODO and count as missing evidence, never as an exception or pass.
 
 | Common journey | Repair owner |
 |---|---|
+| `default-headless-gate-stop` | `26nk8qd48zknqnn4kc123sez` |
 | `auto-continue-after-implementation` | `9adv48yhye5s2vkhwd7ge52d` |
 | `smallest-sufficient-mechanism` | `9adv48yhye5s2vkhwd7ge52d` |
 | `keep-moving-posture` | `9adv48yhye5s2vkhwd7ge52d` |

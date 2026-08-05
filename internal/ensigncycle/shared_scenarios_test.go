@@ -18,13 +18,18 @@ type sharedRuntimeScenario struct {
 	intent        string
 }
 
-const liveDurableJourneyDefectID = "9adv48yhye5s2vkhwd7ge52d"
+const (
+	liveDurableJourneyDefectID      = "9adv48yhye5s2vkhwd7ge52d"
+	defaultHeadlessGateStopDefectID = "26nk8qd48zknqnn4kc123sez"
+)
 
 // liveDurableJourneyTODO keeps desired journeys selectable while truthfully
 // withholding live evidence for product behavior owned by the repair member.
 // Their fixtures and offline durable oracles remain enabled.
 func liveDurableJourneyTODO(name string) string {
 	switch name {
+	case "default-headless-gate-stop":
+		return "TODO(" + defaultHeadlessGateStopDefectID + "): headless drive must stop after exactly one durable gate preparation"
 	case "auto-continue-after-implementation":
 		return "TODO(" + liveDurableJourneyDefectID + "): implementation completion must dispatch a fresh validator without stopping"
 	case "smallest-sufficient-mechanism":
