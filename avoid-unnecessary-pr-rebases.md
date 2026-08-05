@@ -490,3 +490,18 @@ the customized development mod remain unchanged.
 The shipped conflict rule is now portable, preserves pending authority, and
 leaves reconciliation ownership to consuming workflows. Candidate evidence passes;
 the six exact-artifact audit findings remain visible without expanding EP2 scope.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Make lookup/state/audit/Git/candidate portable across qualified PRs/split-root/cwd.
+  Commit `f6be38b8f` preserves qualified repositories, resolves entity state through `status --workflow-dir {dir} --resolve`, derives state audit coordinates there, and runs code Git against `{worktree}` and the recorded candidate SHA; foreign-cwd fixture `/tmp/spacedock-ep2-correction-30272` proved both repositories and exact moved-HEAD delivery.
+- DONE: Make extraction/runtime/submission generic/safe: entity vocabulary, declared report roles, no host class, exact body-file.
+  The shipped mod selects reports by declared outputs/content, removes obsolete markers and host-specific reconciliation, and submits separate arguments plus the exact mode-0600 reviewed body file; the fixture preserved body SHA `816c81a7`, and detached audit `/tmp/spacedock-ep2-audit-f6be38b8f` caught an injected inline-body regression.
+- DONE: Keep one shipped file at 0.27.0 and preserve issue #616; run adversarial qualified-PR/split-root/cwd-SHA/report-role/shell-safety/real-Git/focused/full/race evidence.
+  Final branch diff is only `mods/pr-merge.md` at `0.27.0`; the dev mod remains baseline hash `44e7b345`, the real-Git matrix observed clean=0/conflict=1/unknown=1 and exact recorded-SHA push, focused suites passed, and full/race suites passed with immutable state `73f41e2a2`.
+
+### Summary
+
+The shipped PR hook is now repository-, checkout-, workflow-, and runtime-neutral
+without weakening issue #616's mergeability-first exact-SHA delivery. Reviewed PR
+content crosses the shell boundary only as separate arguments and exact body-file bytes.
