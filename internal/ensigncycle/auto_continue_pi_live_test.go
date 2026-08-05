@@ -129,13 +129,28 @@ func piLiveObservedOutput(t *testing.T, artifactDir string) string {
 func writePiAutoContinueWorkflow(t *testing.T) (workflowRoot, stateRoot, entityPath string) {
 	t.Helper()
 	workflowRoot = t.TempDir()
-	stateRoot = filepath.Join(workflowRoot, ".spacedock-state")
-	writeFile(t, filepath.Join(workflowRoot, "README.md"), piAutoContinueReadme())
-	entityPath = filepath.Join(stateRoot, "auto-continue-task", "index.md")
-	writeFile(t, entityPath, autoContinueEntity())
-	gitInit(t, workflowRoot)
+	stateRoot, entityPath, err := writePiAutoContinueWorkflowNoGit(workflowRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
 	gitInit(t, stateRoot)
+	gitInit(t, workflowRoot)
 	return workflowRoot, stateRoot, entityPath
+}
+
+func writePiAutoContinueWorkflowNoGit(workflowRoot string) (stateRoot, entityPath string, err error) {
+	stateRoot = filepath.Join(workflowRoot, ".spacedock-state")
+	if err := os.WriteFile(filepath.Join(workflowRoot, "README.md"), []byte(piAutoContinueReadme()), 0o644); err != nil {
+		return "", "", err
+	}
+	entityPath = filepath.Join(stateRoot, "auto-continue-task", "index.md")
+	if err := os.MkdirAll(filepath.Dir(entityPath), 0o755); err != nil {
+		return "", "", err
+	}
+	if err := os.WriteFile(entityPath, []byte(autoContinueEntity()), 0o644); err != nil {
+		return "", "", err
+	}
+	return stateRoot, entityPath, nil
 }
 
 // piAutoContinueReadme is the split-root variant of autoContinueReadme(): same
@@ -144,6 +159,7 @@ func writePiAutoContinueWorkflow(t *testing.T) (workflowRoot, stateRoot, entityP
 // origin entity used).
 func piAutoContinueReadme() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"id-style: slug\n" +
 		"state: .spacedock-state\n" +

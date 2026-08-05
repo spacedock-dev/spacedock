@@ -55,6 +55,7 @@ func writeAutoContinueWorkflow(t *testing.T, root string) string {
 // dispatched validator has real work that leaves a durable validation report.
 func autoContinueReadme() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"id-style: slug\n" +
 		"stages:\n" +

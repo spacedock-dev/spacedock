@@ -62,42 +62,92 @@ func writeZeroDiscoveryFixture(t *testing.T) string {
 }
 
 type sharedLiveScenarioAdapter struct {
-	t        *testing.T
-	driver   liveDriver
-	scenario sharedRuntimeScenario
+	t             *testing.T
+	driver        liveDriver
+	scenario      sharedRuntimeScenario
+	artifactLabel string
 }
 
 func (a sharedLiveScenarioAdapter) Launch(_ context.Context, dir, _ string, runbook string) (string, error) {
-	result := a.driver.run(a.t, a.scenario, dir, runbook)
+	launchScenario := a.scenario
+	if a.artifactLabel != "" {
+		launchScenario.name = a.artifactLabel
+	}
+	result := a.driver.run(a.t, launchScenario, dir, runbook)
 	return result.finalMessage + "\n" + result.stream, nil
+}
+
+type autoContinueFixtureVariant struct {
+	id              string
+	stageWithoutGit func(root string) (stateRoot, entityPath string, err error)
+}
+
+func autoContinueFixtureVariants() []autoContinueFixtureVariant {
+	return []autoContinueFixtureVariant{
+		{
+			id: "auto-continue/single-root",
+			stageWithoutGit: func(root string) (string, string, error) {
+				entityPath, err := writeAutoContinueWorkflowNoGit(root)
+				return root, entityPath, err
+			},
+		},
+		{id: "auto-continue/split-root", stageWithoutGit: writePiAutoContinueWorkflowNoGit},
+	}
+}
+
+func stageAutoContinueFixture(t *testing.T, root string, fixture autoContinueFixtureVariant) (stateRoot, entityPath string) {
+	t.Helper()
+	stateRoot, entityPath, err := fixture.stageWithoutGit(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stateRoot != root {
+		gitInit(t, stateRoot)
+	}
+	gitInit(t, root)
+	return stateRoot, entityPath
 }
 
 func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
-	var workflowDir string
-	sc := livescenario.Scenario{
-		Name:    scenario.name,
-		Runbook: autoContinuePrompt(),
-		Setup: func(dir string) (string, error) {
-			workflowDir = dir
-			return writeAutoContinueWorkflowNoGit(dir)
-		},
-		Assert: func(before, after livescenario.EntityState, observed string) error {
-			return assertAutoContinue(before.Body, resolveAutoContinueEndState(workflowDir, after.Body), observed)
-		},
-	}
-	if err := livescenario.Run(context.Background(), t.TempDir(), sc, sharedLiveScenarioAdapter{t: t, driver: driver, scenario: scenario}); err != nil {
-		t.Fatalf("auto-continue journey graded FAIL: %v", err)
+	for _, fixture := range autoContinueFixtureVariants() {
+		fixture := fixture
+		var stateRoot string
+		sc := livescenario.Scenario{
+			Name:    scenario.name,
+			Runbook: autoContinuePrompt(),
+			Setup: func(dir string) (string, error) {
+				var entityPath string
+				stateRoot, entityPath = stageAutoContinueFixture(t, dir, fixture)
+				return entityPath, nil
+			},
+			Assert: func(before, after livescenario.EntityState, observed string) error {
+				return assertAutoContinue(before.Body, resolveAutoContinueEndState(stateRoot, after.Body), observed)
+			},
+		}
+		adapter := sharedLiveScenarioAdapter{
+			t:             t,
+			driver:        driver,
+			scenario:      scenario,
+			artifactLabel: scenario.name + "--" + fixture.id,
+		}
+		if err := livescenario.Run(context.Background(), t.TempDir(), sc, adapter); err != nil {
+			t.Fatalf("auto-continue fixture %s graded FAIL: %v", fixture.id, err)
+		}
 	}
 }
 
-func resolveAutoContinueEndState(workflowDir, afterBody string) string {
+func resolveAutoContinueEndState(stateRoot, afterBody string) string {
 	if afterBody != "" {
 		return afterBody
 	}
-	archived := filepath.Join(workflowDir, "_archive", "auto-continue-task.md")
-	if data, err := os.ReadFile(archived); err == nil {
-		return string(data)
+	for _, archived := range []string{
+		filepath.Join(stateRoot, "_archive", "auto-continue-task.md"),
+		filepath.Join(stateRoot, "_archive", "auto-continue-task", "index.md"),
+	} {
+		if data, err := os.ReadFile(archived); err == nil {
+			return string(data)
+		}
 	}
 	return afterBody
 }

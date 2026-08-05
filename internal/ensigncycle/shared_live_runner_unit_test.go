@@ -3,12 +3,15 @@
 package ensigncycle
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
 func TestSharedScenarioRunnerCoverageFinal(t *testing.T) {
@@ -231,6 +234,164 @@ func TestSharedLiveTODOEvidenceSet(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAutoContinueReadmesAreDiscoverable(t *testing.T) {
+	readmes := map[string]func() string{
+		"auto-continue/single-root": autoContinueReadme,
+		"auto-continue/split-root":  piAutoContinueReadme,
+	}
+	for id, readme := range readmes {
+		t.Run(id, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "README.md"), readme())
+			if discovered, found := status.DiscoverWorkflowDir(root); !found || discovered != root {
+				t.Fatalf("DiscoverWorkflowDir(%s) = %q, %t; want exact fixture root", id, discovered, found)
+			}
+
+			withoutMarker := strings.Replace(readme(), "commissioned-by: spacedock@1\n", "", 1)
+			if withoutMarker == readme() {
+				t.Fatal("commissioned-by marker removal control did not apply")
+			}
+			control := t.TempDir()
+			writeFile(t, filepath.Join(control, "README.md"), withoutMarker)
+			if discovered, found := status.DiscoverWorkflowDir(control); found {
+				t.Fatalf("markerless %s unexpectedly discovered at %q", id, discovered)
+			}
+		})
+	}
+}
+
+func TestAutoContinueFixtureGitBaselines(t *testing.T) {
+	t.Run("single-root", func(t *testing.T) {
+		root := t.TempDir()
+		entityPath := writeAutoContinueWorkflow(t, root)
+		assertAutoContinueGitBaseline(t, root, root, entityPath, false)
+	})
+	t.Run("split-root", func(t *testing.T) {
+		root, stateRoot, entityPath := writePiAutoContinueWorkflow(t)
+		assertAutoContinueGitBaseline(t, root, stateRoot, entityPath, true)
+	})
+	t.Run("no-git-removal-controls", func(t *testing.T) {
+		single := t.TempDir()
+		entityPath, err := writeAutoContinueWorkflowNoGit(single)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if autoContinueGitBaselineError(single, single, entityPath, false) == nil {
+			t.Fatal("single-root fixture without Git passed the baseline check")
+		}
+
+		split := t.TempDir()
+		stateRoot, entityPath, err := writePiAutoContinueWorkflowNoGit(split)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if autoContinueGitBaselineError(split, stateRoot, entityPath, true) == nil {
+			t.Fatal("split-root fixture without Git passed the baseline check")
+		}
+	})
+}
+
+type autoContinueLaunch struct {
+	fixtureID     string
+	artifactLabel string
+	discoverable  bool
+	gitClean      bool
+}
+
+type recordingAutoContinueDriver struct {
+	launches []autoContinueLaunch
+}
+
+func (d *recordingAutoContinueDriver) run(t *testing.T, scenario sharedRuntimeScenario, root, _ string) liveResult {
+	t.Helper()
+	readme := readFile(t, filepath.Join(root, "README.md"))
+	fixtureID := "auto-continue/single-root"
+	stateRoot := root
+	entityPath := filepath.Join(root, "auto-continue-task.md")
+	if strings.Contains(readme, "state: .spacedock-state") {
+		fixtureID = "auto-continue/split-root"
+		stateRoot = filepath.Join(root, ".spacedock-state")
+		entityPath = filepath.Join(stateRoot, "auto-continue-task", "index.md")
+	}
+	_, discoverable := status.DiscoverWorkflowDir(root)
+	d.launches = append(d.launches, autoContinueLaunch{
+		fixtureID:     fixtureID,
+		artifactLabel: scenario.name,
+		discoverable:  discoverable,
+		gitClean:      autoContinueGitBaselineError(root, stateRoot, entityPath, stateRoot != root) == nil,
+	})
+	after := strings.Replace(readFile(t, entityPath), "status: implementation", "status: validation", 1) +
+		"\n## Stage Report: validation\n\n- DONE: Validate the fixture\n  Validation passed.\n"
+	writeFile(t, entityPath, after)
+	return liveResult{artifactDir: scenario.name}
+}
+
+func (d *recordingAutoContinueDriver) model() string { return "fake" }
+func (d *recordingAutoContinueDriver) home() string  { return "" }
+func (d *recordingAutoContinueDriver) withStubPATH(*testing.T, string) liveDriver {
+	return d
+}
+
+func TestAutoContinueCommonRunnerLaunchesBothVariantsSerially(t *testing.T) {
+	driver := &recordingAutoContinueDriver{}
+	runAutoContinueJourney(t, driver, sharedRuntimeScenario{name: "auto-continue-after-implementation"})
+	want := []string{"auto-continue/single-root", "auto-continue/split-root"}
+	got := make([]string, 0, len(driver.launches))
+	for _, launch := range driver.launches {
+		got = append(got, launch.fixtureID)
+		if !launch.discoverable {
+			t.Errorf("%s launch was not discoverable", launch.fixtureID)
+		}
+		if !launch.gitClean {
+			t.Errorf("%s launch lacked its committed clean Git/state-root baseline", launch.fixtureID)
+		}
+		if !strings.Contains(launch.artifactLabel, launch.fixtureID) {
+			t.Errorf("%s artifact label %q does not contain its fixture ID", launch.fixtureID, launch.artifactLabel)
+		}
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("auto-continue fixture launches = %v, want exactly %v in serial order", got, want)
+	}
+}
+
+func assertAutoContinueGitBaseline(t *testing.T, root, stateRoot, entityPath string, split bool) {
+	t.Helper()
+	if err := autoContinueGitBaselineError(root, stateRoot, entityPath, split); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func autoContinueGitBaselineError(root, stateRoot, entityPath string, split bool) error {
+	wantStateRoot := root
+	if split {
+		wantStateRoot = filepath.Join(root, ".spacedock-state")
+	}
+	if stateRoot != wantStateRoot {
+		return fmt.Errorf("state root = %q, want %q", stateRoot, wantStateRoot)
+	}
+	if _, err := os.Stat(entityPath); err != nil {
+		return fmt.Errorf("entity path: %w", err)
+	}
+	for _, repo := range []string{root, stateRoot} {
+		cmd := exec.Command("git", "-C", repo, "rev-parse", "--verify", "HEAD")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("Git baseline missing at %s: %v: %s", repo, err, out)
+		}
+		cmd = exec.Command("git", "-C", repo, "rev-list", "--count", "HEAD")
+		if out, err := cmd.CombinedOutput(); err != nil || strings.TrimSpace(string(out)) != "1" {
+			return fmt.Errorf("Git baseline at %s has wrong commit count: err=%v count=%q", repo, err, out)
+		}
+		cmd = exec.Command("git", "-C", repo, "status", "--short")
+		if out, err := cmd.CombinedOutput(); err != nil || strings.TrimSpace(string(out)) != "" {
+			return fmt.Errorf("Git baseline at %s is not clean: err=%v status=%q", repo, err, out)
+		}
+		if repo == stateRoot {
+			break
+		}
+	}
+	return nil
 }
 
 func containsString(values []string, want string) bool {
