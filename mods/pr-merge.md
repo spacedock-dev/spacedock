@@ -1,7 +1,7 @@
 ---
 name: pr-merge
 description: Push branches and create/track GitHub PRs for workflow entities
-version: 0.12.4
+version: 0.12.5
 ---
 
 # PR Merge
@@ -28,11 +28,11 @@ Check PR-pending entities using the same logic as the startup hook: a terminal r
 
 ## Hook: merge
 
-Resolve the PR base once: `BASE=$(spacedock dispatch trunk --workflow-dir {dir})` — the workflow's configured integration trunk (default `main` when no `trunk:` key is set). `dispatch trunk` emits exactly a **bare branch name** (e.g. `main`), so `$( )` yields `$BASE` clean (command substitution strips the single trailing newline). Always quote `"$BASE"` at use sites — the push, the rebase, the draft, and the `gh pr create --base` below.
+Resolve the PR base once: `BASE=$(spacedock dispatch trunk --workflow-dir {dir})` — the workflow's configured integration trunk (default `main` when no `trunk:` key is set). `dispatch trunk` emits exactly a **bare branch name** (e.g. `main`), so `$( )` yields `$BASE` clean (command substitution strips the single trailing newline). Always quote `"$BASE"` at use sites — the push, the draft, and the `gh pr create --base` below.
 
 **PR APPROVAL GUARDRAIL — Do NOT push or create a PR without explicit captain approval.** Before presenting the draft, construct the full PR body so the captain reviews the actual prose that will land on GitHub.
 
-Compute the audit-link inputs first: short SHA via `git rev-parse --short HEAD` in the worktree directory (if it exits non-zero — no commits, detached HEAD — substitute the literal string `main` and report the fallback to the captain); owner/repo via `gh repo view --json nameWithOwner --jq '.nameWithOwner'`; short entity-id slot via `spacedock status --short-id {entity ref}` from the workflow directory (shortest-unique-prefix for sd-b32 workflows, literal stored ID for sequential and slug, matching the status table's ID column).
+Record the exact commit being submitted before constructing the draft: `CANDIDATE_SHA=$(git rev-parse HEAD)` in the worktree directory. Compute the remaining audit-link inputs: short SHA via `git rev-parse --short "$CANDIDATE_SHA"` (if it exits non-zero, report the error and stop); owner/repo via `gh repo view --json nameWithOwner --jq '.nameWithOwner'`; short entity-id slot via `spacedock status --short-id {entity ref}` from the workflow directory (shortest-unique-prefix for sd-b32 workflows, literal stored ID for sequential and slug, matching the status table's ID column).
 
 Build the full PR body using the template below — motivation lead, `## What changed`, `## Evidence`, `---` separator, `[{short-id}](...)` audit link, and `Closes {issue}` line if frontmatter `issue` is set. This is the body that will be passed to `gh pr create` verbatim; do not reconstruct it after approval.
 
@@ -40,6 +40,7 @@ Then present the draft to the captain:
 
 - **Title:** {entity title}
 - **Branch:** {branch} -> $BASE
+- **Candidate:** $CANDIDATE_SHA
 - **Changes:** {N} file(s) changed across {N} commit(s)
 - **Files:** {list of changed files}
 - **Body:**
@@ -50,7 +51,15 @@ Then present the draft to the captain:
 
 Wait for the captain's explicit approval before pushing. Do NOT infer approval from silence, acknowledgment of the summary, or the gate approval that preceded this step — only an explicit "push it", "go ahead", "yes", or equivalent counts.
 
-**On approval:** First, push the trunk to ensure the remote is up to date with local state commits: `git push origin "$BASE"`. Then rebase the worktree branch onto the trunk: `git rebase "$BASE"` (from the worktree directory). Then push the worktree branch: `git push origin {branch}`. If any step fails (no remote, auth error, rebase conflict), report to the captain and fall back to local merge.
+**On approval:** First, push the trunk to ensure the remote is up to date with local state commits: `git push origin "$BASE"`. If that push fails (no remote, auth error), report to the captain and fall back to local merge.
+
+Resolve the current integration tip as `BASE_SHA=$(git rev-parse "$BASE")`, then exercise the approved commit against it without changing the candidate ref, index, or worktree: `git merge-tree --write-tree "$BASE_SHA" "$CANDIDATE_SHA" >/dev/null`.
+
+- Exit 0 is clean: continue without rebasing.
+- Exit 1 is a conflict: stop PR and local-merge delivery, refer reconciliation to the G3/D8 owner path, and preserve the pending delivery authority.
+- Any other exit leaves mergeability unknown: stop delivery and report the command error; do not rebase or use local merge as a fallback.
+
+For a clean result, push the approved commit with the exact-SHA refspec: `git push origin "$CANDIDATE_SHA:refs/heads/{branch}"`. If that push fails, report to the captain and fall back to local merge.
 
 Then create the PR by running `gh pr create --base "$BASE" --head {branch} --title "{entity title}" --body "{constructed body}"` against the body already constructed above — do not rebuild it. If `gh` is not available, warn the captain and fall back to local merge.
 
