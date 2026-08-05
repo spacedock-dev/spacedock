@@ -90,7 +90,7 @@ gates:
                 target-stage: done
                 state: pending
 mod-block: merge:pr-merge
-pr: "#628"
+pr: pr-merge:628
 ---
 
 Make the First Officer event loop mechanically explicit so a dispatch-only empty result cannot hide merge recovery, ready gates, or a required idle/reconcile pass. The task preserves the existing state and runtime boundaries; it makes the ordering observable and testable.
