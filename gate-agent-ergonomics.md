@@ -1093,3 +1093,26 @@ Claude Opus also passes the recorded-gate lifecycle. The gate remains on HOLD be
 the supported live matrix is intentionally incomplete: Sonnet is quarantined,
 Codex was stopped when scope moved to CI, and Pi is deferred to CI. No implementation
 or gate mutation was made; the next authority is the registered exact-head CI lanes.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Reproduce both exact-head Codex lifecycle failures and submit the required four-field finding proposal before changing candidate bytes.
+  Archived run `30930766742` attempt 1/job `92064915737` reproduced successor dispatch builds `2/1`; attempt 2/job `92071656858` reproduced trace `[prepare]`; candidate HEAD stayed `cd76f52a` until the First Officer authorized `fix`.
+- DONE: After explicit First Officer disposition, make only the authorized correction that restores one-attempt gate and successor-dispatch behavior.
+  Commit `a29401884513619aac8f3920e772adc18e357a9d` changes only the existing FO gate/dispatch prose: conn presentation continues immediately to record/consume, and successor build uses the bound adapter shape once.
+- DONE: Run focused lifecycle controls and preserve the validated head scope; report any required scope expansion as Needs decision.
+  Recorded-gate/contract controls, `go test ./...`, `go test ./... -race`, and the exact Codex live lifecycle all pass; the live oracle would fail on either a second build attempt or a prepare-only trace, and no scope expansion occurred.
+
+### Authorized finding disposition
+
+- Released user and normal workflow: Codex First Officer headless single-entity recorded-gate operation under an explicit delegated conn.
+- Observable harm: one trace probed forbidden Codex bare mode before named dispatch; the retry stopped after presentation without recording, consuming, or dispatching.
+- Affected value: `value-ac[AC-1]` requires the operation-coaching-free recorded-gate scenario to proceed exactly once without manufacturing semantic completion.
+- Trigger evidence: exact candidate `cd76f52a`, run `30930766742`, attempt 1/job `92064915737` and attempt 2/job `92071656858`, with archived JSONL command traces.
+- Materiality: Material.
+- Ownership: this task's existing First Officer SK surface.
+- Disposition: First Officer authorized `fix`; no binary, runner, parser, adapter, retry loop, lifecycle owner, accepted value, AC, or scope changed.
+
+### Summary
+
+The correction makes delegated recorded-gate operation self-guiding on Codex while preserving the existing lifecycle and runtime owners. Exact committed-head live evidence now reaches prepare, decision, consume, and one named successor dispatch in one pass.
