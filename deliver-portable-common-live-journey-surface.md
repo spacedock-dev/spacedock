@@ -376,3 +376,42 @@ The procedure also states that an owner-linked product TODO remains a desired co
 The plan delivers one 16-journey suite through Claude, Codex, and Pi adapters. It binds registry IDs to source and makes drift visible through one operator-facing test surface.
 
 The combined Pi estimate is $2.46, with a $3.08 approval ceiling for one complete run.
+
+## Stage Report: implementation
+
+- DONE: Start with focused failing tests for one TestLiveSharedScenarios identity, exactly 16 registry journeys, three runtime adapters, and exact workflow selectors.
+  Focused parity, adapter-selection, TODO, and anchored-selector controls fail on an absent identity, adapter, runner, or lane.
+- DONE: Bind existing source declarations with the four approved annotation forms and add reconciliation diagnostics with adversarial mutation controls.
+  Registry-derived contractlint rejects structural gaps, missing evidence, duplicates, invalid/detached bindings, orphan tests, and unaccounted builders.
+- DONE: Implement one TestLiveSharedScenarios entry point and one 16-journey runner map; do not add host-specific common-journey maps.
+  Commit fc397422a contains the sole suite and sole executable common map in registry order.
+- DONE: Refactor Claude and Codex common behavior behind transport adapters without changing their launch, liveness, artifact, or metrics contracts.
+  Shared runner tests bind unchanged host transports to one common assertion/fixture surface.
+- DONE: Promote the six standalone common journeys and remove their wrappers only after common-runner parity tests pass.
+  Full cycle, gate stop, withdrawn recovery, zero discovery, auto-continue, and AC re-anchor now have no competing top-level wrappers.
+- DONE: Implement the Pi adapter against the exact shallow-boot selector first; preserve the already-observed OpenRouter 402 as externally blocked evidence and do not retry the local Pi run.
+  Pi failed pre-model in 2.714s on openrouter/openai/gpt-5.4 with HTTP 402 for a 128000-token request; no retry or full local lane ran.
+- DONE: Make every runtime enumerate all 16 desired journeys. Implemented journeys run for real; product-owned gaps use only the exact owner-linked TODO set and remain missing evidence, never exceptions or passing evidence.
+  Claude, Codex, and Pi cheaply enumerated the exact three TODOs; reconciliation reports MISSING=0 and MISSING-EVIDENCE=3.
+- DONE: Restore the existing TODOs for smallest-sufficient-mechanism and keep-moving-posture and add TODO(9adv48yhye5s2vkhwd7ge52d) for auto-continue-after-implementation; keep all three in the registry, scenario table, runner map, and every adapter.
+  All three selectors emit exact owner-linked skips; Claude shallow passed 40.095s, Codex shallow passed 37.541s, and prior Claude promoted evidence was 5 pass/auto-continue fail.
+- DONE: Delete old top-level suite names, host-specific common maps, retired standalone wrappers, Pi coverage substitutes, and orphaned fixtures.
+  AST/source reconciliation accounts for one suite, four proofs, two experiments, 16 journeys, and 21 adjacent fixture builders.
+- DONE: Update all three workflow lanes to select TestLiveSharedScenarios through SPACEDOCK_LIVE_RUNTIME; update guards, metrics, docs, and architecture notes once.
+  Every lane uses the anchored selector and retains its named metrics/artifact upload contract.
+- DONE: Make reconciliation distinguish complete desired-state bindings from missing live evidence, list every exact TODO journey and repair owner, and reject hidden journeys, unowned skips, exceptions, duplicates, or orphans.
+  Normative registry parsing reports the three exact 9adv48yhye5s2vkhwd7ge52d gaps and mutation controls red on each forbidden drift class.
+- DONE: Fix the contractlint boundary: instruction/document semantic reads belong under internal/contractlint, not internal/release; retain the independent SHA/path guard without violating TestNoInstructionReadsOutsideQuarantine.
+  Boundary guard and semantic reconciliation pass under internal/contractlint; the independent path guard remains separate.
+- DONE: Run reconciliation, record the exact candidate SHA in a documentation-only commit, and prove both stale-SHA failure and current-SHA success.
+  Core fc397422a3807573ea66a86eec30d376cf0b64d5 is recorded by docs-only 14f0e4147; the unskipped current/stale guard passes.
+- DONE: Run focused offline controls and cheap exact selectors needed to prove TODO accounting. Preserve existing named Claude/Codex/Pi evidence; do not rerun product-owned failures or the locally blocked Pi lane. Leave complete paid lanes to relevant hosted CI.
+  Focused controls and all adapter TODO selectors passed; no paid product-gap or blocked-Pi rerun occurred, and prior live results remain named above.
+- DONE: Run gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race, and keep the final worktree clean.
+  Unskipped normal and race suites pass; the authorized origin/main baseline manifest rename e3aa5b753 was reconciled by exact FO-authorized path/count fixture updates.
+- DONE: Report exact files and line counts within 42 files and +2750 insertions; do not change commands, stored formats, product runtime behavior, or FO/ensign authority.
+  Final surface is 41 files, +1564/-654; changes are test, workflow, registry, documentation, and the authorized evidence-fixture reconciliation only.
+
+### Summary
+
+One portable 16-journey selector now runs through Claude, Codex, and Pi adapters while three product-owned gaps remain visible as exact missing evidence. Code commits fc397422a and 14f0e4147 are pushed; full normal/race checks and reconciliation are green, with paid completion left to hosted CI.
