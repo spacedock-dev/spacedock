@@ -28,7 +28,7 @@ func TestLiveCodexWaitMatrixFromShippedAdapter(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 			}
-			calls, exact := observedCodexWaitCalls(t, result.jsonl, runner.artifactRoot)
+			calls, exact := observedCodexWaitCalls(t, result.jsonl, runner.codexHome)
 			if tc.wantWait && (calls != 1 || exact != 1) {
 				t.Fatalf("%s: wait calls/exact-300000 = %d/%d, want 1/1; artifacts: %s", tc.state, calls, exact, result.artifactDir)
 			}
@@ -50,7 +50,7 @@ func codexWaitMatrixPrompt(root, state string) string {
 	return fmt.Sprintf(`Use $spacedock:first-officer and the current-checkout Codex runtime adapter. This is a bounded conformance exercise in %s. The loop has completed its first empty status query, one idle hook, roster reconcile, and second empty status query, with no dispatchable, gate, mod/PR, or other state work. %s Treat this harness observation as authoritative: worker set is %s. Apply the shipped adapter's wait decision once. If it requires an async wait, make the one adapter-prescribed call and exit after it returns. Otherwise do not call wait_agent and exit. Do not mutate or replace the supplied observation with another roster query.`, root, setup, state)
 }
 
-func observedCodexWaitCalls(t *testing.T, execJSONL, artifactRoot string) (calls, exact int) {
+func observedCodexWaitCalls(t *testing.T, execJSONL, codexHome string) (calls, exact int) {
 	t.Helper()
 	marker := `"thread_id":"`
 	start := strings.Index(execJSONL, marker)
@@ -59,7 +59,7 @@ func observedCodexWaitCalls(t *testing.T, execJSONL, artifactRoot string) (calls
 	}
 	rest := execJSONL[start+len(marker):]
 	threadID := rest[:strings.Index(rest, `"`)]
-	paths, _ := filepath.Glob(filepath.Join(artifactRoot, "_codex-home", "*", "sessions", "*", "*", "*", "rollout-*"+threadID+".jsonl"))
+	paths, _ := filepath.Glob(filepath.Join(codexHome, "sessions", "*", "*", "*", "rollout-*"+threadID+".jsonl"))
 	if len(paths) != 1 {
 		t.Fatalf("session rollout for thread %q = %v, want one", threadID, paths)
 	}

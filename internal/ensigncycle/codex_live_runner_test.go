@@ -24,6 +24,7 @@ type codexLiveRunner struct {
 	binary       string
 	pluginDir    string
 	codexBin     string
+	codexHome    string
 	env          []string
 	artifactRoot string
 }
@@ -170,7 +171,7 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 		t.Fatal("current-checkout source HEAD is empty")
 	}
 
-	return codexLiveRunner{binary: binary, pluginDir: repo, codexBin: codexBin, env: env, artifactRoot: artifactRoot}
+	return codexLiveRunner{binary: binary, pluginDir: repo, codexBin: codexBin, codexHome: codexHome, env: env, artifactRoot: artifactRoot}
 }
 
 func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
