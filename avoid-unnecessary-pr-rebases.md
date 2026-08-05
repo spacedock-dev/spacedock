@@ -268,3 +268,26 @@ mod keeps the approved SHA on a clean result and fails closed on conflict or err
 The two pr-merge policies now record and display the approved candidate, decide
 mergeability without mutation, fail closed on conflict or error, and push the
 recorded SHA. No command, shared reconciliation, host, or evidence machinery changed.
+
+## Stage Report: implementation
+
+- DONE: Change only the two approved pr-merge mod files to remove mandatory ancestry rebase and preserve the Captain-approved candidate SHA.
+  Candidate `af64ffb01` remains unchanged and differs from `main` only in `mods/pr-merge.md` and `docs/dev/_mods/pr-merge.md` at +25/-9.
+- DONE: Implement the read-only clean/conflict/unknown merge-tree decision and exact-SHA refspec push while delegating conflicts to G3/D8.
+  Fixture `/tmp/spacedock-pr-merge-cycle3.QOqi7m` falsifies wrong exit classification, candidate mutation, or a remote head different from the approved SHA.
+- DONE: Stay within about +30/-10 and prove the clean 1 1, conflict, unknown, and moved-local-branch cases without committed prose-grep tests.
+  The direct real-Git fixture observed clean=0, conflict=1, unknown=128, unchanged clean state, and remote `527936e` after the local branch moved to `5fe8104`.
+- DONE: Re-run `go test ./...` and `go test ./... -race` from the current exact candidate after current state convergence and diagnose failures from this run.
+  Auto-discovered live state reproduced one failing manifest test because eight fixed pilot paths had archived; every other package passed in both fresh runs.
+- DONE: Use a supported fixture setup to make both suites genuinely pass and record exact evidence with no false green.
+  With `SPACEDOCK_STATE_ROOT` set to a snapshot of state commit `73f41e2a2232ebb561710bce568641ec976d5f3d`, the focused 31-path test and both full suites exited 0.
+- DONE: Keep the code surface exactly `mods/pr-merge.md` and `docs/dev/_mods/pr-merge.md`; do not expand it.
+  Candidate inspection after all reruns still reports exactly those two files and no worktree changes.
+- DONE: Commit/push the state report and candidate branch before completion.
+  Exact candidate `af64ffb018a88679aac1972c5af157ce64a43502` is published at `origin/spacedock-ensign/avoid-unnecessary-pr-rebases`; this report is published path-scoped on `spacedock-state/dev`.
+
+### Summary
+
+The prior red was live-state drift in a fixed release-pilot manifest test, not a
+candidate regression. The supported immutable state fixture makes both complete
+suites green while the approved two-file candidate remains byte-for-byte unchanged.
