@@ -116,7 +116,7 @@ gates:
                 target-stage: done
                 state: pending
 mod-block: merge:pr-merge
-pr: "#627"
+pr: pr-merge:627
 ---
 
 Remove the mandatory rebase from the `pr-merge` policy. Keep the approved
