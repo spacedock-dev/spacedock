@@ -1467,3 +1467,38 @@ Cycle 16 grades Pi shallow boot from complete native root-session structure whil
 ### Summary
 
 Cycle 16 PASSED independently at exact candidate `37c7e2660caa6148a590b21671c2d5f3693b0c74`. The Pi shallow-boot observer now requires the complete native assistant greeting and rejects forbidden dispatch anywhere in the root session, while durable state, host-specific metrics, prior observers, registry truth, and the fixed surface remain intact.
+
+## Stage Report: implementation (cycle 17)
+
+- DONE: Start from the exact clean and pushed Cycle-16 candidate.
+  Baseline and origin were `37c7e2660caa6148a590b21671c2d5f3693b0c74`; no root-main update or unrelated state write occurred.
+- DONE: Classify the exact hosted evidence without rerunning it.
+  Isolated Pi run `31054684260`, job `92469677841`, artifact `8949983771` at `/tmp/ys-cycle16-pi.wa29wg` passed offline, full-ensign-cycle in 121.89s, and gate-guardrail in 94.80s before default-headless-gate-stop failed at 228.61s; smoke was skipped and upload passed.
+- DONE: Bind the failure to the existing product owner.
+  The root advanced implementation to validation and dispatched a validator; the child prepared one correct open gate and report but used raw Git commit instead of `spacedock state commit`, crossing the no-authority boundary without decision, consume, or advance, which matches owner `26nk8qd48zknqnn4kc123sez`.
+- DONE: Preserve product ownership and behavior.
+  No new defect was filed and existing `headless-recorded-gate-stop-stage-coherence` remained unchanged; only target-scoped representation changed.
+- DONE: Add exact failing controls before the source binding.
+  The contract reconciliation first failed with `MISSING-EVIDENCE journey=default-headless-gate-stop target=pi owner=26nk8qd48zknqnn4kc123sez`, and the live runner test first reported an empty Pi reason for that exact target/journey.
+- DONE: Add only the Pi default-headless source binding.
+  `liveEvidenceTargetPi` plus `default-headless-gate-stop` now returns owner `26nk8qd48zknqnn4kc123sez`; every prior source binding is preserved.
+- DONE: Preserve the pure desired matrix and exact observed counts.
+  Controls prove 16 common journeys × four required targets = 64 cells and exactly ten missing-evidence bindings: Sonnet=3, Codex=5, Pi=2, Opus=0.
+- DONE: Prove target and owner discrimination causally.
+  Removal and retagging of either Sonnet or Pi default-headless fail; adding Codex fails its proven-pass control, adding Opus fails its unverified-target control, and the runner expectation independently keeps Codex/Opus runnable while retaining Sonnet.
+- DONE: Update the watched operator inventory.
+  `docs/runtime-live-ci.md` records the run, job, artifact, exact Pi route, existing owner, ten-result count, Codex passing evidence, and Opus runnable truth while retaining all prior nine descriptions.
+- DONE: Stay inside the fixed surface without deleting executable proof.
+  Repeated branch-added mutation registry bodies were factored/compacted; all controls still execute, no file was added, and cumulative surface is exactly 42 files/+2749/-708.
+- DONE: Preserve watched-core plus SHA-only binder history.
+  Core `59338039470002bb8dd1e6583edd2050ec625db1` is followed only by binder `23e0dbd02b3c4aa8753776596eadf9980698a0b5`, which changes the reconciliation SHA; the stale guard names both watched ensigncycle paths and the current guard passes.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; full exits 0 (`ensigncycle` 105.103s) and race exits 0 (`ensigncycle` 117.086s).
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; all new proof used deterministic source, mutation, registry, and archived-evidence controls.
+- DONE: Preserve scope and authority boundaries.
+  No runtime, product, fixture, prompt, adapter, launcher, front-door, observer, metric, workflow, owner, other TODO, file/member/controller/retry behavior, or other entity changed, and no workflow transition was made.
+
+### Summary
+
+Cycle 17 records the archive-proven Pi default-headless product failure against its existing owner while preserving the pure 64-cell desired matrix and all prior evidence truth. Exact RED/GREEN target and owner controls, current/stale SHA discrimination, full/race suites, pushed two-commit history, and the hard surface ceiling are green at `23e0dbd02b3c4aa8753776596eadf9980698a0b5`.
