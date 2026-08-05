@@ -576,3 +576,16 @@ Fresh validation recommends PASSED at exact HEAD `37abaa8b35e7044d24dc06e009c047
 ### Recommendation
 
 PASSED. AC-1 through AC-4 and the mandatory shared-live lane are current and green; the three named TODO skips remain non-evidence.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Commit a minimal current-main reconciliation that preserves Z5 Codex multi-agent launch behavior.
+  Merge commit `b0b9ef319f2d267c7da3a7df70dee83b6446ba86` incorporates `origin/main` `be0e8453e6075960075e3a34d033d822f2009f4c`; the clean candidate remains exactly 9 files/+380/-42 against that main head.
+- DONE: Resolve only the proven codex_live_runner_test.go content conflict without expanding runtime, scheduler, or authority semantics.
+  Current main relocated the argv helper into `team_capability_test.go`; the resolution retains main's quiet-budget runner and migrates Z5's removal/rejection assertion there, so reintroducing forwarded `--enable` or `--disable multi_agent_v2` fails the offline boundary test.
+- FAILED: Run focused checks plus gofmt, full, and race suites; record the exact new candidate head and residual merge status.
+  Focused CLI, offline runner, and live-tag runner checks passed; `gofmt -w ./cmd ./internal`, zero-byte `gofmt -d`, and diff checks passed. Both `go test ./...` and `go test ./... -race` passed every package except unrelated `internal/gates/TestV1PilotManifestReadsAndValidates`, whose current-main manifest names active `gate-agent-ergonomics.md` while the shared state checkout contains `_archive/gate-agent-ergonomics.md`; no Z5 or unrelated state bytes were changed. Exact head is `b0b9ef319f2d267c7da3a7df70dee83b6446ba86`; `origin/main` is its ancestor, `git merge-tree --write-tree HEAD origin/main` exits 0, and the code worktree is clean.
+
+### Summary
+
+Z5 is reconciled onto current main with its launcher-owned multi-agent-v2 semantics intact and no product-scope expansion. The candidate is clean and mergeable at `b0b9ef319f2d267c7da3a7df70dee83b6446ba86`; only the pre-existing shared-state manifest drift prevents repository-wide full/race commands from being entirely green.
