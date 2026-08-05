@@ -613,3 +613,24 @@ Codex and Pi now preserve the scenario-local logging shim across their real fron
 ### Summary
 
 Cycle 3 independently closes the ys-owned Codex/Pi shim defect in both directions and keeps all deterministic, full, race, reconciliation, and ceiling evidence green. Validation is REJECTED before paid evidence because the known default-headless duplicate-prepare outcome must be represented as owner-linked `TODO(26nk8qd48zknqnn4kc123sez)`/MISSING-EVIDENCE; the candidate was not mutated.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Add a focused failing control that requires default-headless-gate-stop to map to exact owner TODO(26nk8qd48zknqnn4kc123sez), keeps the three existing TODO(9adv48yhye5s2vkhwd7ge52d) mappings, and reports exactly four missing-evidence journeys.
+  RED: `TestSharedLiveTODOEvidenceSet` reported an empty reason for `default-headless-gate-stop`; GREEN: it verifies the exact 26n owner plus the unchanged three 9a mappings and rejects every extra TODO.
+- DONE: Implement only the representation change: map default-headless-gate-stop to TODO(26nk8qd48zknqnn4kc123sez) through the existing common TODO seam, preserving all 16 identities, one runner map, three adapters, and every fixture/launch/assertion path.
+  Only `liveDurableJourneyTODO` gains the 26n mapping; parity remains green and no fixture, launcher, adapter, or assertion implementation changed.
+- DONE: Update the normative registry, operating guide, reconciliation expectations, and focused TODO controls so the exact four journey-to-owner pairs are machine checked; do not repair or alter 26n product behavior.
+  The registry adds one row, the guide reports `MISSING-EVIDENCE=4`, and reconciliation now resolves each TODO case to its declared owner constant.
+- DONE: Prove every runtime cheaply enumerates the same exact four TODO skips and that wrong owner/count/removal mutations fail; do not run any model-backed or hosted lane during implementation.
+  Claude, Codex, and Pi exact selectors each emitted four zero-cost skips; dedicated default-headless wrong-owner, duplicate-row, removal, plus generic TODO mutations all passed by rejecting their adversary.
+- DONE: Run gofmt -w ./cmd ./internal, focused parity/TODO/reconciliation/workflow controls, go test ./..., go test ./... -race, current/stale SHA controls, git diff --check, and leave the worktree clean.
+  Formatting/focused/diff checks pass; normal passed (`ensigncycle` 265.958s), race passed (`ensigncycle` 273.636s), and current/stale reconciliation is green.
+- DONE: Commit all watched-path representation changes first, then bind that exact core SHA in one documentation-only commit; push the branch and report both SHAs plus exact diff size against the 42-file/+2750 ceiling.
+  Representation commit `0c66a7babe175f005d24d1b936d7e64fcd4f350a` is bound by docs-only `70a61f9e36b86ad260aaf28eba506b5b3ac81a30`; final surface is 41 files at +1757/-663 and the branch is pushed.
+- DONE: Append and push a path-scoped implementation cycle-4 report; do not change substrate/smoke/Opus, add a controller/retry/member, absorb 26n/9a/rm, or expand product/runtime behavior.
+  This report records the representation-only result; no substrate, smoke, Opus, product repair, controller, retry, member, or model-backed/hosted execution entered the correction.
+
+### Summary
+
+All 16 common journeys remain selected while every runtime now truthfully exposes the exact four owner-linked evidence gaps: one 26n default-headless gap and three 9a gaps. Machine reconciliation, mutation controls, full/race suites, and the two-commit SHA binding are green and published for independent validation.
