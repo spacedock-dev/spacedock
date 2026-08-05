@@ -6,7 +6,7 @@ started: 2026-08-03T16:01:22Z
 completed:
 verdict:
 score: 0.95
-worktree:
+worktree: .worktrees/spacedock-ensign-define-fo-moving-target-conflict-ownership
 issue:
 sprint: durable-decisions
 group: fo-contract
