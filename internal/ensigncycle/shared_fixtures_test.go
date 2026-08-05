@@ -32,6 +32,57 @@ func writePreGateWorkflow(t *testing.T, root string) recordedGateFixture {
 	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "start before gate")
 	return fixture
 }
+
+func writeGateJourneyFixture(t *testing.T, root, journey string) recordedGateFixture {
+	t.Helper()
+	var fixture recordedGateFixture
+	switch journey {
+	case "gate-guardrail":
+		fixture = writeGateWorkflow(t, root)
+	case "default-headless-gate-stop":
+		fixture = writePreGateWorkflow(t, root)
+	default:
+		t.Fatalf("journey %q has no gate fixture", journey)
+	}
+	if err := assertGateJourneyStart(journey, readFile(t, fixture.entity)); err != nil {
+		t.Fatal(err)
+	}
+	return fixture
+}
+
+func assertGateJourneyStart(journey, entity string) error {
+	want := ""
+	switch journey {
+	case "gate-guardrail":
+		want = "status: validation"
+	case "default-headless-gate-stop":
+		want = "status: implementation"
+	default:
+		return fmt.Errorf("journey %q has no gate start state", journey)
+	}
+	if !strings.Contains(entity, "\n"+want+"\n") {
+		return fmt.Errorf("journey %q fixture does not start with %s", journey, want)
+	}
+	return nil
+}
+
+func TestGateJourneyOverlap(t *testing.T) {
+	held := readFile(t, writeGateJourneyFixture(t, t.TempDir(), "gate-guardrail").entity)
+	preGate := readFile(t, writeGateJourneyFixture(t, t.TempDir(), "default-headless-gate-stop").entity)
+
+	if err := assertGateJourneyStart("gate-guardrail", held); err != nil {
+		t.Fatalf("gate-guardrail baseline: %v", err)
+	}
+	if err := assertGateJourneyStart("default-headless-gate-stop", preGate); err != nil {
+		t.Fatalf("default-headless baseline: %v", err)
+	}
+	if err := assertGateJourneyStart("gate-guardrail", preGate); err == nil {
+		t.Fatal("gate-guardrail accepted the default-headless pre-gate fixture")
+	}
+	if err := assertGateJourneyStart("default-headless-gate-stop", held); err == nil {
+		t.Fatal("default-headless journey accepted the already-held gate fixture")
+	}
+}
 func gateReadme() string { return recordedGateReadme() }
 func gateEntity() string { return recordedGateEntity() }
 

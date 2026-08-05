@@ -87,6 +87,18 @@ func TestPromotedCommonJourneyEntrypoints(t *testing.T) {
 	}
 }
 
+func TestSharedScenarioSequenceStopsAfterFirstFailure(t *testing.T) {
+	scenarios := []sharedRuntimeScenario{{name: "first"}, {name: "second"}}
+	var ran []string
+	runSharedScenarioSequence(scenarios, func(scenario sharedRuntimeScenario) bool {
+		ran = append(ran, scenario.name)
+		return false
+	})
+	if want := []string{"first"}; !reflect.DeepEqual(ran, want) {
+		t.Fatalf("ran scenarios = %v, want %v", ran, want)
+	}
+}
+
 func TestSharedLiveTODOEvidenceSet(t *testing.T) {
 	want := map[string]string{
 		"auto-continue-after-implementation": liveDurableJourneyDefectID,

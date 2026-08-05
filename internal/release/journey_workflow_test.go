@@ -83,6 +83,21 @@ func TestRuntimeLiveWorkflowUsesExactCommonSelectors(t *testing.T) {
 	}
 }
 
+func TestRuntimeLiveOfflineCheckoutFetchesRecordedCommitHistory(t *testing.T) {
+	live := readWorkflow(t, "runtime-live-e2e.yml")
+	if err := assertOfflineCheckoutFetchesRecordedCommitHistory(live); err != nil {
+		t.Fatal(err)
+	}
+
+	adversarial := strings.Replace(live, "          fetch-depth: 0", "          fetch-depth: 1", 1)
+	if adversarial == live {
+		t.Fatal("fixture workflow missing offline full-history checkout to mutate")
+	}
+	if err := assertOfflineCheckoutFetchesRecordedCommitHistory(adversarial); err == nil {
+		t.Fatal("offline checkout guard accepted a depth-one checkout that cannot resolve the recorded commit and its parent")
+	}
+}
+
 func TestRuntimeLiveWorkflowGuardRejectsObsoletePiMinReleaseAgeProbe(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 	adversarial := strings.Replace(live,

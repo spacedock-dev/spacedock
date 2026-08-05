@@ -15,9 +15,8 @@ func TestLiveSharedScenarios(t *testing.T) {
 		t.Fatal(err)
 	}
 	runners := sharedScenarioRunners()
-	for _, scenario := range sharedRuntimeScenarios() {
-		scenario := scenario
-		t.Run(scenario.name, func(t *testing.T) {
+	runSharedScenarioSequence(sharedRuntimeScenarios(), func(scenario sharedRuntimeScenario) bool {
+		return t.Run(scenario.name, func(t *testing.T) {
 			run := runners[scenario.name]
 			if run == nil {
 				t.Fatalf("shared scenario %q has no common runner", scenario.name)
@@ -27,6 +26,14 @@ func TestLiveSharedScenarios(t *testing.T) {
 			}
 			run(t, adapter, scenario)
 		})
+	})
+}
+
+func runSharedScenarioSequence(scenarios []sharedRuntimeScenario, run func(sharedRuntimeScenario) bool) {
+	for _, scenario := range scenarios {
+		if !run(scenario) {
+			return
+		}
 	}
 }
 

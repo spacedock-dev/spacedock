@@ -212,12 +212,7 @@ func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
 func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	var fixture recordedGateFixture
-	if scenario.name == "default-headless-gate-stop" {
-		fixture = writePreGateWorkflow(t, workflowRoot)
-	} else {
-		fixture = writeGateWorkflow(t, workflowRoot)
-	}
+	fixture := writeGateJourneyFixture(t, workflowRoot, scenario.name)
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)

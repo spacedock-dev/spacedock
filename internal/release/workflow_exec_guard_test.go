@@ -27,6 +27,25 @@ type workflowJob struct {
 	steps []workflowStep
 }
 
+func assertOfflineCheckoutFetchesRecordedCommitHistory(workflow string) error {
+	const offlineStart = "\n  offline:\n"
+	const nextJob = "\n  claude-live:\n"
+	start := strings.Index(workflow, offlineStart)
+	if start < 0 {
+		return fmt.Errorf("runtime-live-e2e.yml has no offline job")
+	}
+	job := workflow[start+len(offlineStart):]
+	end := strings.Index(job, nextJob)
+	if end < 0 {
+		return fmt.Errorf("runtime-live-e2e.yml has no job after offline")
+	}
+	job = job[:end]
+	if !strings.Contains(job, "      - uses: actions/checkout@v5\n        with:\n          fetch-depth: 0") {
+		return fmt.Errorf("runtime-live-e2e.yml offline checkout must fetch full history so the recorded commit and its parent resolve")
+	}
+	return nil
+}
+
 func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	for _, want := range []string{
 		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/claude/${{ matrix.model }}`,
