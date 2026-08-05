@@ -204,6 +204,10 @@ The index and worktree stayed clean. No ref changed and no rebase ran.
 - Remote-head and PR-head verification after the exact-SHA push.
 - A new minimum Git version or compatibility fallback.
 
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation real-Git/zsh matrix; surface 2 files/34 LOC vs estimate 40 (85%); AC unchanged
+
 ## Stage Report: ideation
 
 - DONE: Define the smallest falsifiable mergeability decision that prevents clean-head rewrites and serves AC-1.
