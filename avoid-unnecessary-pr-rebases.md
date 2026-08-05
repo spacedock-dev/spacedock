@@ -392,3 +392,18 @@ failure or ambiguity stops as unknown without changing pending authority.
 The corrected two-file policy preserves the approved SHA through mergeability
 judgment and zsh delivery. AC-1 and AC-2 pass the full adversarial matrix, and the
 remaining live-state test red is independently proven fixture drift.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Change only mods/pr-merge.md: preserve the validated mergeability-first exact-SHA behavior and stamp version 0.27.0.
+  Commit `2acb3630b` leaves the final branch diff at one shipped mod, +13/-4, with semantic behavior unchanged from validated `a20331ef0` and version `0.27.0`.
+- DONE: Restore docs/dev/_mods/pr-merge.md byte-for-byte to its pre-EP2 customized baseline; leave reconciliation to a later refit.
+  Working and `main` baseline blobs both hash to `44e7b345eee634b35780efe3106ad827b424661b45dd75aaeaec9fd90f38c4f2`; the dev mod is absent from the final diff.
+- DONE: Prove the final branch changes exactly one shipped mod and rerun the real-Git zsh matrix plus focused, full, and race suites.
+  Fixture `/tmp/spacedock-ep2-zsh-final.ZA50IQ` would fail on mutation, wrong conflict/unknown judgment, or moved-head delivery; focused, full, and race suites all exited 0 with state snapshot `73f41e2a2`.
+
+### Summary
+
+The final candidate applies issue #616 only to the shipped `pr-merge` mod and
+stamps it `0.27.0`. The customized development mod is restored exactly and remains
+owned by the later refit path.
