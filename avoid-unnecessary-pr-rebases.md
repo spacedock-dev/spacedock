@@ -104,6 +104,17 @@ gates:
                 digest: sha256:e9e287fba820ea64ae63c07ba7ed895443d41c9b4ac5a2a784be56a07ffd7404
                 request-digest: sha256:3fe2c81a4e71ed1f070519593668126b633ed35990f9e0a2cc036c844ced37a2
                 room-ref: ./avoid-unnecessary-pr-rebases/review/validation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ep2cz3zsb2qpyyh889nyeqpr:validation:4
+                briefing: briefing:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-4:revision-1
+                by: person:captain
+                at: "2026-08-05T09:42:47.560498Z"
+                decision: approve
+                reason: All six shipped-mod containment corrections passed exact-head validation; both acceptance criteria have executable evidence.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Remove the mandatory rebase from the `pr-merge` policy. Keep the approved
