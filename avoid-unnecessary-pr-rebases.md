@@ -7,7 +7,7 @@ started: 2026-08-04T17:00:42Z
 completed:
 verdict:
 score: 1.0
-worktree:
+worktree: .worktrees/spacedock-ensign-avoid-unnecessary-pr-rebases
 issue: "#616"
 sprint: durable-decisions
 gates:
