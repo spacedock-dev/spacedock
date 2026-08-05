@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-1:revision-1",
+  "question": "Revise the two-mod issue #616 candidate to satisfy AC-1 and AC-2?",
+  "artifacts": [
+    {
+      "id": "artifact:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/8948bd700450b80abd9501305a21e9b6ea6f2c08/avoid-unnecessary-pr-rebases.md",
+      "rev": "sha256:d2877df7577d90a8a18ba3b4b627d6d79135d9cce0176cecddfd022361b1b12f",
+      "mediaType": "text/markdown",
+      "summary": "Validation reproduced two material defects: zsh breaks the unbraced exact-SHA refspec, and exit status alone cannot distinguish content conflict from command failure. Captain directed evidence-based LLM interpretation of merge-tree output and uncertainty, with no new machinery."
+    }
+  ]
+}
