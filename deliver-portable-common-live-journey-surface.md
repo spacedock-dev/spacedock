@@ -824,3 +824,32 @@ Cycle 6 correctly moves Pi evidence and metrics to the archived native root sess
 Cycle 7 closes the sole Pi recorder-evidence ambiguity by requiring exactly one ordered invocation/result pair and one complete success occurrence. All Cycle-6 metrics and six target bindings remain intact, the audited two-entry product failure remains rejected, and focused/full/race evidence is green at the pushed two-commit candidate.
 
 The candidate is ready for fresh independent validation without any evidence spend during implementation.
+
+## Stage Report: validation (cycle 7)
+
+- DONE: Independently inspect the Cycle-7 implementation report, exact candidate e952ed65c/core 6e5fd1ac0, merge base, changed paths, clean origin head, and docs-only binder; do not trust the implementer's summary.
+  Candidate/origin are `e952ed65ccafda13d54631195f52fdcd32fbfe46`, core is `6e5fd1ac07f042fedc645d71c3a2af3afc0e7ab1`, merge base is `507a4bc12e48a3e4a813219602c488f09c81a5d8`; core changes only the Pi observer/tests and the binder changes only `docs/runtime-live-ci.md`.
+- DONE: Reproduce both Cycle-6 false positives on rejected head 35143a55a, then prove the exact Cycle-7 head rejects two entries=4 calls and entries=4 followed by entries=2.
+  A detached old-head test observes both false positives; the same two transcripts return false on Cycle 7, as do the inverse mixed call order and a resultless second invocation.
+- FAILED: Attack Pi correlation/cardinality with entries=2 then entries=4, second invocation without result, reused call ID, repeated correlated result messages, result-before-invocation, duplicate success lines within one text block, duplicate success text blocks, missing/error/wrong command/round/task, stdout lookalike, and unrelated tool traffic; only one later exact correlated entries=4 result may pass.
+  All named call/result/order/reuse and duplicate-success controls behave correctly. Detached controls expose one remaining output ambiguity: one exact invocation plus one correlated result containing exact `entries=2` and `entries=4` summaries returns true, both when the summaries share one text block and when they occupy separate blocks.
+- DONE: Reproduce the archived run 31016570689 root session and prove its single correlated entries=2 result remains rejected without weakening the complete four-entry durable-state oracle.
+  The exact 734,304-byte root session from run `31016570689`/job `92342373497`/artifact `8935708302` returns false; the independent durable-state oracle still requires exactly four retained entries and exact canonical room bytes.
+- DONE: Reprove Pi-native metrics for all 16 common paths, runtime/host/provider/model/tokens/cost/duration/run provenance, large rows, partial attribution rejection, and Claude/Codex metric isolation.
+  Focused metric and 16-route tests pass; the archived session parses as `openai/gpt-5.4` with nonzero tokens/cost, while missing fields, mixed models, Claude attribution, and oversized-row controls remain discriminating.
+- DONE: Reprove pure desired state with all 64 cells and exactly six bindings: Sonnet=3, Codex=2, Pi rejection-flow=zbc, Opus=0; run all removal/owner/target/global/duplicate/other-target/proven-pass mutations.
+  TODO enumeration and reconciliation report the exact six source bindings; all registry, owner, target, duplicate, ledger, and proven-Codex-pass mutation controls exit 0.
+- DONE: Reprove prior parity, first-failure, gate fixture, launcher shim, workflow selectors, artifact contract, current/stale SHA, formatting, diff, origin/head, and exact 42-file/+2750 ceiling.
+  Focused ensigncycle/release/contractlint controls, current/stale SHA, `gofmt -l`, and `git diff --check` are green; exact surface is 42 files/+2256/-666, at the file ceiling and below +2750 insertions.
+- DONE: Run gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race independently on exact candidate bytes with explicit exit results; leave candidate untouched and clean.
+  Read-only formatting verification is empty to preserve the no-mutation hold; normal exits 0 (`ensigncycle` 464.296s) and race exits 0 (`ensigncycle` 469.855s). Candidate and origin remain exact and clean.
+- DONE: Classify every finding before any candidate mutation; do not authorize or implement zbc/26n/9a or broader containment behavior.
+  Finding — evidence defect, Material/ys-owned narrow boundary: normal Pi root sessions represent result output as one or more text blocks; harm is that contradictory incomplete/complete recorder output is certified as exact evidence; `value-ac[AC-4]` requires attributable exact Pi evidence; detached mixed-output controls reproduce the false positive. No fix is authorized here.
+- DONE: Before any live/model/hosted action, send the First Officer an exact local checkpoint and wait. Do not launch, approve, reject, cancel, or rerun CI yourself.
+  Checkpoint sent before full/race with exact SHAs, green controls, and the possible finding; no local-live, model, hosted, substrate, smoke, Sonnet, Codex, Pi, or Opus action occurred.
+- FAILED: Recommend PASSED only if all ambiguity mutants, strict historical rejection, Pi metrics, six bindings, full/race, history, and ceiling checks are green; append/push a path-scoped Cycle-7 validation report with explicit verdict.
+  Recommend REJECTED. Historical rejection, metrics, bindings, repository checks, and all committed ambiguity controls are green, but contradictory `entries=2`/`entries=4` output inside one correlated result still passes the fail-closed Pi observer.
+
+### Summary
+
+Cycle 7 closes the rejected duplicate-invocation and repeated-success defects while preserving native metrics, six exact bindings, and the archived product TODO. Validation remains REJECTED because mixed incomplete/complete summaries within one result are accepted as exact evidence; candidate bytes stayed untouched and no live spend occurred.
