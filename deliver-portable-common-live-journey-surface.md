@@ -1136,3 +1136,42 @@ Cycle 11 repairs only auto-continue fixture reachability: both commissioned Git-
 ### Summary
 
 Cycle 11 PASSED independently at exact candidate `37d91f673bda7ccdf9b7e63f6dc0134407895173`. The correction repairs only fixture reachability and two-shape coverage, while the frozen hosted failure remains correctly classified as harness-invalid and all product/evidence boundaries stay unchanged.
+
+## Stage Report: implementation (cycle 12)
+
+- DONE: Start from the exact clean Cycle-11 candidate and inspect durable failure evidence.
+  Baseline is `37d91f673bda7ccdf9b7e63f6dc0134407895173`; run `31038408585` lost reachable parent `8354e03b…` in `TestDurableQuestionedRejectsUnrelatedEdit`.
+- DONE: Identify the exact rerun cleanup failure.
+  Read-only log for run `31038934635` names `TestRecordedGateLifecycleEnteredStageRecoveryMatrix/committed_heading_only` and writes continuing under `.spacedock-state/.git/objects` during TempDir removal.
+- DONE: Confirm the shared root cause and supported Git behavior.
+  Git-heavy throwaway repositories cross automatic-maintenance thresholds; Git 2.54 enables detached geometric maintenance, while local Git 2.50.1 exposes the same child-launch seam in TRACE2.
+- DONE: Inspect reconciliation watch scope before changing history.
+  `internal/testgit` alone is not watched; the ceiling-preserving annotation relocation changes watched `internal/ensigncycle`, so an exact core plus SHA-only binder remains required.
+- DONE: Add a focused version-neutral RED test first.
+  Baseline `TestInitRepoDisablesAutomaticMaintenanceLocally` exited 1 at missing local `maintenance.auto`; the paired plain-init repo proves the assertion is not ambient config.
+- DONE: Implement the smallest repo-local maintenance disablement.
+  `InitRepo` stores `maintenance.auto=false` to block modern automatic maintenance and `gc.auto=0` as the older-Git fallback, alongside the existing local identity.
+- DONE: Add causal behavioral discrimination without sleeps or detached work.
+  A synchronous positive control sets strategy=gc, auto=true, autoDetach=false, gc.auto=1 and emits maintenance in TRACE2; default `InitRepo` emits neither maintenance nor gc.
+- DONE: Prove the TRACE2 supplement executes rather than skips.
+  `TestInitRepoSuppressesTraceableAutomaticMaintenance` passes ten consecutive runs on Git 2.50.1 with its positive child observed each time.
+- DONE: Preserve the fixed 42-file ceiling while applying the shared fix.
+  Restored annotation-only `recorded_gate_lifecycle_test.go` and `shallow_boot_fixture_live_test.go` to merge-base bytes, freeing exactly two paths for `testgit.go` and `testgit_test.go`.
+- DONE: Preserve fixture bytes and improve common annotation ownership.
+  Exact IDs `recorded-gate/prepared` and `boot/held-gate` moved to common wrappers in already-changed `shared_fixtures_test.go`; Claude/Codex call them and Pi retains the Claude path.
+- DONE: Reprove fixture inventory and SHA discrimination.
+  Reconciliation, mutation, current/stale SHA, shallow-boot shape, gate overlap, and Git scaffold controls exit 0; fixture count and desired/evidence registries are unchanged.
+- DONE: Stress both previously failing tests serially.
+  Exact tests pass once and 50× before commit, then 25× on final bytes with `-parallel=1` (`46.068s`) and no lost object or cleanup race.
+- DONE: Run the complete shared-helper and focused regression fanout.
+  `go test ./internal/testgit` and focused fixture/Pi rejection/native metric/large-row controls exit 0 on the final candidate.
+- DONE: Run required formatting and repository-wide suites.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; full exits 0 (`ensigncycle` 109.100s, `testgit` 2.327s) and race exits 0 (`ensigncycle` 121.338s, `testgit` 2.234s).
+- DONE: Preserve exact history, remote equality, and surface limits.
+  Core `ba0fa02f233cfc3efec4e3bac87af9e61aadc275` is bound by docs-only `99f27c41c88bdd414240344495013e0c393a4c41`; origin equals clean head at exactly 42 files/+2668/-681.
+- DONE: Preserve product, runtime, registry, owner, and execution boundaries.
+  No product/live fixture bytes/prompt/adapter/workflow/TODO/owner changed, no file was added, no state transition occurred, and no hosted/live/model/substrate/smoke action ran.
+
+### Summary
+
+Cycle 12 hardens every throwaway repository through the shared `InitRepo` helper, preventing modern detached maintenance and legacy auto-GC during test cleanup. Config, synchronous TRACE2, exact-failure stress, reconciliation, full/race, history, origin, and 42-file ceiling proof are green with no product or live execution change.
