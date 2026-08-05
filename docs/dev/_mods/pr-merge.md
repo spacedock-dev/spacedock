@@ -1,8 +1,8 @@
 ---
 name: pr-merge
 description: Open a code-branch PR to the configured trunk at the merge boundary and track it to merge, state-root-aware
-version: 0.12.7
-reconciled-from-shipped: 0.12.6
+version: 0.12.5
+reconciled-from-shipped: 0.12.4
 fo-realm: "FO realm — the FO maintains this file directly; changes do NOT go through the dev workflow (process the FO operates, not product built under test)."
 local-customization: "Split-root variant of the shipped template: entity state lives in .spacedock-state (pr:/mod-block: via status --set, path-scoped); the hook never touches .spacedock-state from the code worktree; the PR carries only the code-branch range."
 ---
@@ -42,7 +42,7 @@ Resolve the PR base once: `BASE=$(spacedock dispatch trunk --workflow-dir docs/d
 
 **PR APPROVAL GUARDRAIL — Do NOT push or create a PR without explicit captain approval.** Opening a PR and pushing the branch are outward-facing. Before presenting the draft, construct the full PR body so the captain reviews the actual prose that will land on GitHub.
 
-Record the exact commit being submitted before constructing the draft: `CANDIDATE_SHA=$(git -C {worktree} rev-parse HEAD)`. Compute the audit-link inputs: state SHA via `git -C docs/dev/.spacedock-state rev-parse HEAD` (the full SHA of the **state** checkout's HEAD — the entity's `mod-block=merge:pr-merge` commit, which the FO committed before invoking this hook, so HEAD already contains the active entity file); owner/repo via `gh repo view --json nameWithOwner --jq '.nameWithOwner'`; short entity-id slot via `spacedock status --workflow-dir docs/dev --short-id {slug}` (shortest-unique-prefix for sd-b32 workflows, matching the status table's ID column).
+Compute the audit-link inputs first: state SHA via `git -C docs/dev/.spacedock-state rev-parse HEAD` (the full SHA of the **state** checkout's HEAD — the entity's `mod-block=merge:pr-merge` commit, which the FO committed before invoking this hook, so HEAD already contains the active entity file); owner/repo via `gh repo view --json nameWithOwner --jq '.nameWithOwner'`; short entity-id slot via `spacedock status --workflow-dir docs/dev --short-id {slug}` (shortest-unique-prefix for sd-b32 workflows, matching the status table's ID column).
 
 Build the full PR body using the template below — motivation lead, `## What changed`, `## Evidence`, `---` separator, `[{short-id}](...)` audit link, and `Closes {issue}` line if the entity frontmatter `issue` is set. This is the body that will be passed to `gh pr create` verbatim; do not reconstruct it after approval. The entity body and stage reports are read from the **state checkout** (`docs/dev/.spacedock-state/{slug}/index.md`), not the worktree.
 
@@ -50,7 +50,6 @@ Then present the draft to the captain:
 
 - **Title:** {entity title}
 - **Branch:** {branch} -> $BASE
-- **Candidate:** $CANDIDATE_SHA
 - **Changes:** {N} file(s) changed across {N} commit(s) (`git -C {worktree} diff --stat origin/$BASE...{branch}`)
 - **Files:** {list of changed files}
 - **Body:**
@@ -61,15 +60,9 @@ Then present the draft to the captain:
 
 Wait for the captain's explicit approval before pushing. Do NOT infer approval from silence, acknowledgment of the summary, or the gate approval that preceded this step — only an explicit "push it", "go ahead", "yes", or equivalent counts.
 
-**On approval:** This is a split-root workflow: the entity state lives in the separate `.spacedock-state` checkout, so this hook does not push any state branch. Refresh the code remote's integration tip with `git -C {worktree} fetch origin "$BASE"`; if that fails, report to the captain and fall back to the local `--no-ff` merge.
+**On approval:** This is a split-root workflow — the FO rebases the code branch onto `origin/$BASE` BEFORE invoking this hook, and the entity state lives in the separate `.spacedock-state` checkout, so this hook does NOT rebase or push any state branch. Push only the code branch:
 
-Resolve the current integration tip as `BASE_SHA=$(git -C {worktree} rev-parse "origin/$BASE")`, then exercise the approved commit against it without changing the candidate ref, index, or worktree: `git -C {worktree} merge-tree --write-tree "$BASE_SHA" "$CANDIDATE_SHA"`. Inspect its stdout, stderr, exit status, and repository context; the exit status is one signal, not the semantic verdict.
-
-- If the evidence indicates a clean merge, continue without rebasing.
-- If the evidence indicates an actual content conflict, stop PR and local-merge delivery, refer reconciliation to the G3/D8 owner path, and preserve the pending delivery authority.
-- If the command fails or the evidence is incomplete or ambiguous, mergeability is unknown: report the error, preserve the pending authority, and stop delivery; do not rebase or use local merge as a fallback.
-
-1. For a clean result, `git -C {worktree} push origin "${CANDIDATE_SHA}:refs/heads/{branch}"` — push the approved commit to the code remote (`origin` = the main repo, base branch `$BASE`). Do NOT push the trunk or any `.spacedock-state` branch from here; the FO coordinates state-remote pushes separately.
+1. `git -C {worktree} push -u origin {branch}` — push the entity's code branch to the code remote (`origin` = the main repo, base branch `$BASE`). Do NOT push the trunk or any `.spacedock-state` branch from here; the FO coordinates state-remote pushes separately.
 
 If the push fails (no remote, auth error), report to the captain and fall back to the local `--no-ff` merge (see fallback below).
 
