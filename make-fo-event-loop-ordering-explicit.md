@@ -64,6 +64,14 @@ gates:
                 digest: sha256:3596fec21319ec0d39fc21bdf1b95eb824ac4e2420eebe2a32a6a55601341469
                 request-digest: sha256:fbd48aae4643c6411a54eac46ce31f59d5aabd650bedf3de739a748bba1c1682
                 room-ref: ./make-fo-event-loop-ordering-explicit/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ej9kwkvw94w6rh6n5ek7qrbf:validation:1
+                briefing: briefing:ej9kwkvw94w6rh6n5ek7qrbf:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-05T16:16:17.040889Z"
+                decision: revise
+                reason: Reconcile candidate 5fa79d480 with current origin/main in skills/first-officer/references/fo-dispatch-core.md. Preserve EJ event-loop and wait semantics. Produce a new exact head, then run fresh validation and gate evidence.
 ---
 
 Make the First Officer event loop mechanically explicit so a dispatch-only empty result cannot hide merge recovery, ready gates, or a required idle/reconcile pass. The task preserves the existing state and runtime boundaries; it makes the ordering observable and testable.
