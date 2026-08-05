@@ -725,3 +725,29 @@ unrelated shared-state manifest failure caused by an already archived pilot enti
 Cycle 12 verification replaces the mutable shared-state evidence with an immutable,
 read-only state snapshot and confirms both required suites green. Candidate HEAD
 remains exact and clean, with no residual merge conflict or candidate change.
+
+## Stage Report: validation (cycle 12)
+
+- DONE: Re-review exact candidate 8d07b1a58749a5feed99d8dfa294c5e1b5a6bb14 and prove it merges cleanly with current origin/main while preserving 26N gate-stop coherence.
+  Current `origin/main` is exact second parent `be0e8453e6075960075e3a34d033d822f2009f4c` and an ancestor; `git merge-tree --write-tree HEAD origin/main` succeeds at tree `408b4dc2629b5a4afeb36bebf6ce4fa5f64c59be`, with candidate HEAD exact and clean.
+- DONE: Verify every 26N acceptance criterion independently, including queued implementation dispatch, direct gated-stage ordering, no-authority controls, and retained failure evidence.
+  AC-1 passes the booted queued projection; the strict 17-mutant oracle and success/failure retention tests pass. AC-2 fails the fresh supported journey because Sonnet dispatches validation after implementation instead of entering the gate directly; AC-3's product-semantics boundary remains test-only.
+- DONE: Run focused, formatting, immutable-state full/race, and applicable live checks; report exact surface and any material or deferred findings.
+  Focused live-tag fixture/oracle/retention tests pass; `gofmt -d ./cmd ./internal`, `git diff --check`, immutable-state `go test ./...`, and `go test ./... -race` pass against read-only state commit `a0169cc2d8a5e4912ed33f75ca8422a767e71c9e`.
+- FAILED: Reproduce AC-2's supported Sonnet direct-gate journey at the exact reconciled candidate.
+  The ordinary command is registry-skipped by `TODO(3zzpdw704df1g8pg1x9thzmw)`; the one FO-authorized detached promotion probe failed after 381.75s because its log has successful implementation and validation dispatches, with validation Stage Report commit `3268178`, before the single open gate prepare/commit `dd3dbf8`.
+- DONE: Preserve and atomically regrade the failed live outcome without weakening the oracle or mutating the candidate.
+  Complete 920K artifacts at `/tmp/spacedock-26n-promotion-artifacts.3P6nx9/claude-shared-scenarios/default-headless-recorded-gate-stop` retain the state Git repository, entity, gate room, and command log; `git fsck --full` passes, and no decision, consume, withdrawal, post-prepare status set, Resolution, Application, or successor dispatch exists.
+- DONE: Record the authorized review-finding disposition and release recommendation.
+  Released workflow: supported default Sonnet gate stop; harm: a validation worker/report crosses the promised direct gated-stage boundary; authority: `value-ac[AC-2]:` implementation dispatch/report must lead directly to one committed open validation gate; trigger: fresh log lines 34-40 and state commit `3268178`. Material outcome defect; not candidate-owned; HOLD mutation and route to `3zzpdw704df1g8pg1x9thzmw`. Recommendation: REJECTED.
+- DONE: Report the reconciled task surface accurately.
+  Against current main the diff is four test files at `+90/-11`, because the merge carries the oracle in main's new `claude_runtime_helpers_test.go`; no production, skill, schema, command grammar, stored-format, or product-runtime bytes differ. This is a non-material scope-accounting discrepancy from AC-3's literal three-file declaration.
+- SKIPPED: Run a second Sonnet journey or repair the candidate.
+  FO authorization allowed exactly one detached promotion probe and required candidate HOLD on failure; candidate remains unchanged at `8d07b1a58749a5feed99d8dfa294c5e1b5a6bb14`.
+
+### Summary
+
+REJECTED/HOLD. The reconciled candidate is clean, merge-ready, and green under
+focused/full/race checks, but a fresh supported Sonnet run reproduces the separate
+`3zzpdw704df1g8pg1x9thzmw` direct-gate blocker by dispatching a validation worker.
+Candidate bytes remain frozen while that blocker is routed to its owning task.
