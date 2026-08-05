@@ -479,3 +479,36 @@ The plan gives every retained live minute a named claim and a visible artifact. 
 ### Summary
 
 The live workflow now buys one named claim, reachable artifact, and honest consumer for every selected minute. Duplicate Pi, quarantined Pi, and legacy PTY spend are gone; the surviving Claude, Codex, and Pi evidence is guarded against silent drift.
+
+## Stage Report: validation
+
+- DONE: Verify candidate identity, scope, and authority boundary.
+  Validated only `4cc0d890df7067ebcffd6c265c2553b38b267940` in the assigned clean worktree. Its merge base with current `origin/main` is `655aa679f588523388b808d8686809522ab6e8ec`; the diff is exactly 27 files, +988/-2391, within 27/+1000/-2400. The worktree's stale local `main` (`a97a2b4c`) misleadingly includes later mainline work and was not used as the candidate base. All changed paths are workflow, documentation, or tests; no product command, stored format, or authority rule changed. `git diff --check` passed.
+- DONE: Reproduce AC-1 named selector ownership and adversarial controls.
+  `go test ./internal/release -run 'TestRuntimeLiveWorkflow|TestWorkflowsPreserveAndPublishJourneyCosts' -count=1 -v` passed the exact selector inventory and mutations for a removed required selector, restored second Pi smoke, restored legacy Claude flag, restored live tag, and lost Codex PR consumer. The workflow selects 12 uniquely owned live surfaces and rejects active PTY, quarantined Pi, dead metrics, and decorative effort surfaces.
+- DONE: Reproduce AC-2 Pi consolidation and grade the retained live proof independently.
+  `go test ./internal/ensigncycle -run 'Test.*Pi.*Grade|Test.*BootContract|TestDispatchRecovery|TestBare|TestBreakGlass' -count=1 -v` passed the positive Pi fixture and all missing durable-output, child-dispatch, skill-read, read-order, and isolation controls. Retained grade `/tmp/spacedock-live-evidence.Lg2JSH/pi-rerun/pi-frontdoor-smoke/run/pi-ensign-boot-grade.json` reports proof `pi-front-door-child-durable-boot-contract`, all four claims true, one root and one child session, and zero first-officer reads. Raw retained sessions under `/tmp/spacedock-live-evidence.Lg2JSH/pi-rerun/pi-frontdoor-smoke/run/sessions` show `openai-codex/gpt-5.6-luna` for both root and child; the child reads the dispatch, ensign skill, Pi adapter, and entity in order. Durable stdout names worker `3d36373c`, the exact stage report marker, and commit `ensign: pi live smoke`.
+- DONE: Reproduce AC-3 Claude selector and strict retained live oracles.
+  The workflow runs exactly `TestLiveMergedTeamModeDispatch|TestLiveBareReachable|TestLiveBreakGlassShimRecovery` once through one `gotestsum` invocation and `claude-substrate-detail.jsonl`. Raw bare stream `/tmp/spacedock-live-evidence.Lg2JSH/claude-sonnet-rerun/claude-shared-scenarios/bare-reachable/claude-stream.jsonl` contains one Agent with no name and `run_in_background:false`, and no recovery-skill load. Raw merged stream `/tmp/spacedock-live-evidence.Lg2JSH/claude-sonnet-rerun/merged-team-mode/dispatch/merged-stream.jsonl` contains one named background Agent with no `team_name` and durable worker output. Final strict raw break-glass stream `/tmp/spacedock-live-evidence.Lg2JSH/claude-sonnet-breakglass-final/claude-shared-scenarios/break-glass-shim/claude-stream.jsonl` orders the named helper-failure report before `Skill(skill="spacedock:fo-dispatch-recovery")`, then one shaped named/background Agent whose prompt contains the ensign invocation and stage definition. The workflow and candidate contain no selected PTY tests, tmux setup, legacy teams flag, or PTY artifact. Earlier red streams were inspected only as diagnostics; acceptance uses `claude-sonnet-breakglass-final`.
+- DONE: Reproduce AC-4 offline controls and producer-consumer truth.
+  The exact 12-test command without `-tags live` passed in 1.237s. `go test -tags live ./internal/ensigncycle -run '^$' -count=1` passed compile-only. Claude and Codex retain real `SPACEDOCK_JOURNEY_METRICS_DIR` producers and uploads; `journey-delta-comment` needs both jobs and downloads both artifacts before comparison. Pi has no producerless journey-metrics environment or upload. The lane guard and workflow execution guards passed.
+- DONE: Verify AC-5 models, durations, costs, removed spend, and operator documentation.
+  Pi retained grade records root 179744ms/$0.147308 and child 39271ms/$0.0232442, total $0.1705522, on the required Luna model. Final Sonnet-5 break-glass metric `/tmp/spacedock-live-evidence.Lg2JSH/journey-metrics/claude-sonnet-breakglass-final/shared-scenarios/break-glass-shim--claude--llm--llm-live--claude-sonnet-5--measured.json` records passed, 187449ms, and $1.0088629; the retained bare metric records passed, 126704ms, and $0.87640815. Merged cost remains unavailable by harness design. `docs/runtime-live-ci.md` exposes selectors, unique evidence, artifacts/consumers, measured samples, and the comparison with run `30378538074`: 17 seconds of tmux setup removed and a 172.5-second duplicate Pi smoke avoided.
+- DONE: Run the independent formatting, full, and race gates.
+  `test -z "$(gofmt -d ./cmd ./internal)"` passed. `go test ./...` passed in 8m52.82s (`internal/ensigncycle` 386.883s). A deliberately concurrent first `go test ./... -race` attempt hit only `TestCodexProcessActivityResetsQuietBudget` when a 250ms process-activity deadline was starved by the simultaneous full suite; its exact tail contained the expected `wait_agent` event. After the full suite exited, the required serial `go test ./... -race` passed in 3m46.66s (`internal/ensigncycle` 201.353s), so the contention-only attempt is not a candidate defect.
+- DONE: Perform the semantic adversarial pass and classify findings.
+  Selector identity/cardinality, false-or-omitted bare shape, break-glass report/skill/Agent ordering and shape, Pi read ordering/session isolation, metric producer-consumer wiring, retired-surface absence, and one-run `gotestsum` shape all passed. Findings: none. Defect kind: none; release scope: no blocker; task ownership: no correction required; trigger evidence: all named controls and retained artifacts above passed; affected AC: none.
+
+### Deferred risks
+
+- The merged Claude proof cannot report model cost because its expect-then-kill harness stops after durable terminal evidence before a result event. This is visible in the documentation and does not weaken the named dispatch claim.
+- `TestCodexProcessActivityResetsQuietBudget` has a deliberately tight 250ms unit-test deadline and can fail under severe concurrent-suite CPU contention. It passed in the required serial race suite and is not caused by this candidate.
+- Opus was not rerun because the model/selector surface did not change and the contract marks it irrelevant absent model/selector change or failure escalation.
+
+### Recommendation
+
+PASSED. Candidate `4cc0d890df7067ebcffd6c265c2553b38b267940` satisfies AC-1 through AC-5 with independent offline, full, race, compile-only, semantic, and retained paid-artifact evidence.
+
+### Summary
+
+Independent validation confirms every selected live lane owns reachable named evidence, one Pi smoke buys all four Pi substrate claims, Claude proves merged/bare/break-glass without legacy PTY spend, and every retained metric has a real consumer. No blocking or corrective finding remains.
