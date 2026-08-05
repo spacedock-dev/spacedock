@@ -14,6 +14,7 @@ import (
 )
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
+var rejectionRoundSummary = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=[0-9]+$`)
 var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4$`)
 
 const rejectionPreparedBriefingID = "briefing:rejection-task:validation:attempt-1:revision-1"
@@ -197,13 +198,14 @@ func piRecordedRejectionRound(jsonl string) bool {
 	if len(correlated) != 1 || correlated[0].position <= invocations[0].position || correlated[0].toolName != "bash" || correlated[0].isError == nil || *correlated[0].isError {
 		return false
 	}
-	matches := 0
+	summaries, complete := 0, 0
 	for _, block := range correlated[0].content {
 		if block.Type == "text" {
-			matches += len(rejectionRoundSuccess.FindAllString(block.Text, -1))
+			summaries += len(rejectionRoundSummary.FindAllString(block.Text, -1))
+			complete += len(rejectionRoundSuccess.FindAllString(block.Text, -1))
 		}
 	}
-	return matches == 1
+	return summaries == 1 && complete == 1
 }
 
 func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
@@ -439,6 +441,34 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 	piInvocationFor := func(id string) string { return strings.ReplaceAll(piInvocation, "call_round", id) }
 	piResultFor := func(id, entries string) string {
 		return strings.Replace(strings.ReplaceAll(piResult, "call_round", id), "entries=4", "entries="+entries, 1)
+	}
+	piResultTextsFor := func(id string, texts ...string) string {
+		blocks := make([]string, 0, len(texts))
+		for _, text := range texts {
+			blocks = append(blocks, fmt.Sprintf(`{"type":"text","text":%q}`, text))
+		}
+		return fmt.Sprintf(`{"type":"message","message":{"role":"toolResult","toolCallId":%q,"toolName":"bash","isError":false,"content":[%s]}}`, id, strings.Join(blocks, ","))
+	}
+	canonicalSummary := func(entries string) string {
+		return strings.Replace(result, "entries=4", "entries="+entries, 1)
+	}
+	if !piRecordedRejectionRound(piInvocationFor("call_diag") + "\n" + piResultTextsFor("call_diag",
+		"diagnostic: entries=2 is not a canonical round summary", result, "diagnostic: validation complete")) {
+		t.Fatal("Pi extractor rejected one canonical entries=4 summary surrounded by unrelated diagnostic text")
+	}
+	for name, texts := range map[string][]string{
+		"two then four same block":  {canonicalSummary("2") + "\n" + result},
+		"four then two same block":  {result + "\n" + canonicalSummary("2")},
+		"four plus three":           {result + "\n" + canonicalSummary("3")},
+		"four plus five":            {result + "\n" + canonicalSummary("5")},
+		"two and four split blocks": {canonicalSummary("2"), result},
+		"repeated two":              {canonicalSummary("2"), canonicalSummary("2")},
+	} {
+		t.Run("pi_summary_"+name, func(t *testing.T) {
+			if piRecordedRejectionRound(piInvocationFor("call_summary") + "\n" + piResultTextsFor("call_summary", texts...)) {
+				t.Fatal("Pi extractor accepted an ambiguous or incomplete canonical summary set")
+			}
+		})
 	}
 	for name, transcript := range map[string]string{
 		"two complete calls": strings.Join([]string{
