@@ -1,6 +1,6 @@
 ---
 title: Deliver one portable common live-journey surface
-status: validation
+status: implementation
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 3w, h3, tj, and r4 as design inputs."
 score: 1.0
 sprint: live-test-truth
@@ -464,3 +464,7 @@ One portable 16-journey selector now runs through Claude, Codex, and Pi adapters
 ### Summary
 
 Candidate structure, reconciliation, focused controls, formatting, full tests, and race tests are locally green at `14f0e4147`. Validation recommends REJECTED because shallow hosted checkout breaks the SHA guard and suppresses every live lane, the common loop continues after first failure, and the required wrong-gate-start adversary is not guarded.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — fresh Sol/medium validation plus hosted run `30991534368`; surface 41 files/+1564/-654 vs estimate 34 files/+2060/-1650 and ceiling 42 files/+2750 (57% of the insertion ceiling); AC unchanged. FO disposition: FIX three Material, ys-owned findings only. Route to implementation: require full history for the offline reconciliation guard; stop the common ordered suite when `t.Run` returns false; and centralize the host-neutral gate fixture choice with a negative `TestGateJourneyOverlap` proving `default-headless-gate-stop` starts at implementation while `gate-guardrail` starts at validation. Do not change product behavior, add a controller, absorb `9a`, or rerun hosted/live lanes before focused and full/race checks are green.
