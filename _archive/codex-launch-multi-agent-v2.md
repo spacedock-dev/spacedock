@@ -1,11 +1,11 @@
 ---
 id: z5gwwz2748sg6vxr0g3kdsar
 title: "Codex launcher guarantees multi-agent v2 surface"
-status: validation
+status: done
 source: "Captain feedback, 2026-07-02: ordinary Codex config currently enables multi_agent_v2; make Spacedock-launched Codex enable or prove the same surface instead of relying on ambient session setup."
 started: 2026-08-01T14:29:25Z
-completed:
-verdict:
+completed: 2026-08-05T23:52:05Z
+verdict: passed
 score: 1.0
 worktree: .worktrees/spacedock-ensign-codex-launch-multi-agent-v2
 issue:
@@ -169,9 +169,10 @@ gates:
                 reason: 'Sprint conn: fresh validation passed all Z5 ACs at exact head b0b9ef319. Current main is incorporated, immutable full/race and the mandatory local-auth Codex live suite are green, and no finding remains.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:629
+archived: 2026-08-05T23:52:05Z
 ---
 
 Spacedock's Codex front door should reproduce the captain's isolated-home multi-agent v2 configuration while also pinning Codex's documented stable multi-agent controls. The resulting first officer must observably spawn a worker, follow up with the same worker, inspect/list and wait for workers, and receive completion. The guarantee belongs to launch configuration plus behavioral proof, not bootstrap prose or ambient user config.
