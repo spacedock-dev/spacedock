@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ej9kwkvw94w6rh6n5ek7qrbf:validation:attempt-1:revision-1",
+  "question": "Approve EJ event-loop ordering and guarded wait behavior for delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:ej9kwkvw94w6rh6n5ek7qrbf:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e498887016f9c67a814ccff523db64ae32157c65/make-fo-event-loop-ordering-explicit.md",
+      "rev": "sha256:ec819f9bfe119d651eb539de00f74b8e52c5dba30998278c28410ba9ca830674",
+      "mediaType": "text/markdown",
+      "summary": "Final candidate 5fa79d480 is nine files at +242/-11 within approved tolerance. Original validator reproduced AC-1 through AC-5; default and external Codex layouts pass 4/4, inverted adapter fails, and focused, contractlint, format, immutable full/race evidence is green."
+    }
+  ]
+}

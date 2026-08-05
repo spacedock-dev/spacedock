@@ -55,6 +55,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:ej9kwkvw94w6rh6n5ek7qrbf:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:ej9kwkvw94w6rh6n5ek7qrbf-validation-1
+              briefing:
+                id: briefing:ej9kwkvw94w6rh6n5ek7qrbf:validation:attempt-1:revision-1
+                digest: sha256:3596fec21319ec0d39fc21bdf1b95eb824ac4e2420eebe2a32a6a55601341469
+                request-digest: sha256:fbd48aae4643c6411a54eac46ce31f59d5aabd650bedf3de739a748bba1c1682
+                room-ref: ./make-fo-event-loop-ordering-explicit/review/validation/briefing-1
 ---
 
 Make the First Officer event loop mechanically explicit so a dispatch-only empty result cannot hide merge recovery, ready gates, or a required idle/reconcile pass. The task preserves the existing state and runtime boundaries; it makes the ordering observable and testable.
