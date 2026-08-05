@@ -80,6 +80,8 @@ A test operator can select one common journey by one stable identity on Claude S
 
 The task delivers a complete and accurate representation of the desired journey table and the observed evidence state. Registry annotations, fixture bindings, runtime adapters, selectors, target-scoped owner TODOs, and reconciliation are implementation steps. A proven pass stays runnable; an unverified required target stays runnable and is reported as missing run evidence. Product behavior repair remains owned by the named repair members; this task neither hides those gaps nor absorbs their fixes.
 
+Pi evidence is read from its archived root session JSONL. Correlated Pi tool calls and results, native runtime/model/token/cost metrics, process duration, and run provenance remain attributable to the Pi artifact; stdout and stderr remain diagnostics only.
+
 ## Problem
 
 The desired registry contains 16 common journeys. The current shared scenario table contains 10 journeys.
@@ -116,7 +118,7 @@ Every lane sets `SPACEDOCK_LIVE_RUNTIME` to `claude`, `codex`, or `pi`. Every la
 
 One common runner map owns every journey. One adapter registry owns runtime selection.
 
-Common runners own fixture selection, prompts, normalized evidence, and host-neutral assertions. Adapters own authentication, launch, output parsing, liveness, and host artifacts.
+Common runners own fixture selection, prompts, normalized evidence, and host-neutral assertions. Adapters own authentication, launch, runtime-native session parsing, liveness, metrics, and host artifacts.
 
 Each source declaration carries its stable registry annotation. Reconciliation compares the pure desired registry with source, derives observed target-scoped gaps from TODO bindings, and fails ambiguous, orphaned, global, or wrongly owned bindings.
 
@@ -251,6 +253,8 @@ Registry, scenario-table, and runner-map parity is 16 of 16. The count of standa
 
 The desired registry requires all 16 journeys on Claude Sonnet, Claude Opus, Codex, and Pi and contains no observed-gap ledger. Reconciliation reports 16 bound journey IDs and no missing suite lane, then derives each proven product gap from source as an exact journey+target+`TODO(<repair-id>)` result. Proven passes and unverified required targets remain runnable; reports distinguish them instead of inferring a failure or exception. Removing one runner or selector, hiding a target TODO, adding a global/unowned skip, suppressing a proven pass, changing target/owner/cardinality, or reintroducing an observed-gap registry section makes the proof fail.
 
+The current source-derived set contains exactly six cells: the prior five Sonnet/Codex cells plus Pi `rejection-flow` → `TODO(zbcj98qfwtax61vxdzrf615e)`. The Pi binding records the audited incomplete two-entry round; it does not repair or pass the four-entry product contract.
+
 **AC-3 — Fixtures have accountable use.**
 
 Each common fixture ID resolves to one annotated builder and at least one journey. Proof-only and experiment fixtures resolve to their allowed registry class.
@@ -263,6 +267,8 @@ Common fixtures and assertions contain no host-specific branch. The adapter fact
 
 Fake-adapter tests prove the boundary. Cheap controls enumerate the same 16 identities for Claude Sonnet, Claude Opus, Codex, and Pi and expose the exact target-scoped owner set without launching a model. Complete live lanes prove unchanged launch, liveness, metrics, and artifact behavior for runnable journeys. A TODO, an unverified target, or an externally blocked run does not count as passing evidence; each retains its distinct classification.
 
+For Pi, rejection evidence requires an exact recorder command and a correlated successful `toolResult` reporting `entries=4` in the archived root session. Pi metrics require present provider/model, input/output/cache/total-token fields, total cost, duration, and run provenance; Claude attribution or partial usage fails the proof.
+
 ## Test plan
 
 Run these focused offline tests before any model-backed run:
@@ -271,6 +277,8 @@ Run these focused offline tests before any model-backed run:
 go test -tags live ./internal/ensigncycle -run 'TestSharedScenarioRunnerCoverage|TestSharedRuntimeScenarioDefinitions|TestSharedLiveRuntimeSelection|TestPromotedCommonJourneyEntrypoints' -count=1
 go test ./internal/ensigncycle -run 'TestGateJourneyOverlap|TestAutoContinue|TestZeroDiscover|TestEnsignCycleGoesRed|TestACReanchor' -count=1
 go test ./internal/release -run 'TestRuntimeLiveWorkflow|TestWorkflowsPreserveAndPublishJourneyCosts' -count=1
+go test -tags live ./internal/ensigncycle -run '^(TestRejectionFlowRoundInvocationExtractors|TestEmitPiScenarioMetricsUsesNativeSessionForAttributionAndUsage|TestParsePiSessionMetricsRequiresCompleteAttributedLargeRow|TestSharedLiveTODOEvidenceSet)$' -count=1
+go test ./internal/contractlint -run '^(TestRuntimeLiveRegistryReconciliation|TestRuntimeLiveRegistryReconciliationMutationControls|TestRuntimeLiveRegistryReconciliationSHA)$' -count=1
 ```
 
 The parity tests compare the registry IDs, scenario table, runner map, and adapter registry in both directions. Target enumeration separately exercises Claude Sonnet, Claude Opus, Codex, and Pi without a host launch and requires only exact durable owner failures to skip.
@@ -720,3 +728,38 @@ Cycle 5 replaces target-blind journey quarantines with five durable-evidence bin
 ### Summary
 
 Checklist: 12 DONE, 0 SKIPPED, 1 FAILED. Cycle 5 local representation proof is green, but exact-head Pi evidence exposes a Material ys-owned observation/metrics defect and a separate Material product-owned rejection-flow timing defect requiring Captain ownership, so validation is REJECTED; Codex capacity, unrun Sonnet, and required Opus remain inconclusive or unverified.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Reproduce both Cycle-5 findings from exact run `31016570689`, job `92342373497`, artifact `8935708302` before editing.
+  Pi root-session lines 108/109 correlate the exact rejection recorder call with a successful `entries=2` result; the prior metric files identify runtime/host as Claude and omit usage/cost.
+- DONE: Add red-first strict Pi rejection-session controls without weakening the durable oracle.
+  Missing, uncorrelated, errored, wrong-command, wrong-round, and `entries=2` transcripts fail; only the exact command plus correlated success with `entries=4` passes.
+- DONE: Retain the archived Pi root session at the adapter/result boundary and use it for rejection evidence.
+  Pi no longer reuses Claude stdout/stderr tool observations; final durable state still requires the complete retained four-entry round.
+- DONE: Emit one native Pi shared-scenario metric for every one of the 16 common paths.
+  The adapter-level collector covers full-cycle, zero-discovery, auto-continue, and AC-reanchor; embedded Claude emitters and the Claude-only shallow-window sibling are suppressed only for Pi.
+- DONE: Prove Pi metric identity, measured usage, and artifact provenance from representative native session JSONL.
+  Records carry `runtime=pi`, `host=pi`, `model=openai/gpt-5.4`, duration, input/output/cache/total tokens, total cost, GitHub run ID/URL, and a Pi filename; the prior Claude/no-usage shape fails.
+- DONE: Harden the native parser against the exact artifact shape and partial attribution.
+  A bounded 4 MiB scanner accepts the audited 105,396-byte row shape; missing cost, total tokens, cache write, or provider and mixed models fail, while explicit zero cache-write/cost remains valid.
+- DONE: Add exactly one target-scoped product binding for Pi rejection-flow.
+  Source reconciliation now reports six cells total and binds only Pi `rejection-flow` to `zbcj98qfwtax61vxdzrf615e`; Sonnet, Codex, and Opus suppression mutations fail.
+
+  | Journey | Claude Sonnet | Claude Opus | Codex | Pi |
+  |---|---|---|---|---|
+  | `default-headless-gate-stop` | `26nk8qd48zknqnn4kc123sez` | runnable | runnable | runnable |
+  | `smallest-sufficient-mechanism` | `9adv48yhye5s2vkhwd7ge52d` | runnable | `9adv48yhye5s2vkhwd7ge52d` | runnable |
+  | `keep-moving-posture` | `9adv48yhye5s2vkhwd7ge52d` | runnable | `9adv48yhye5s2vkhwd7ge52d` | runnable |
+  | `rejection-flow` | runnable | runnable | runnable | `zbcj98qfwtax61vxdzrf615e` |
+
+- DONE: Run focused, formatting, reconciliation, full, race, current/stale, origin/head, diff, and ceiling checks on exact final bytes.
+  Focused Pi/TODO/reconciliation tests exit 0; `go test ./...` exits 0 (`ensigncycle` 120.012s); race exits 0 (`ensigncycle` 208.740s); final surface is exactly 42 files/+2173/-666.
+- DONE: Preserve the exact two-commit watched-core then docs-only binder shape and push both commits.
+  Core `8cca2533723678f62cd0eff02c6442a95c49715e` is bound by docs-only head `35143a55a3fd1259295664df71602c116f6b3fd3`; origin/head match and the code worktree is clean.
+- DONE: Preserve product bytes and avoid all unauthorized spend or scope expansion.
+  No zbc/26n/9a repair, skill/binary behavior, member/controller/retry, local-live, hosted, model-backed, substrate, smoke, or Opus execution occurred.
+
+### Summary
+
+Cycle 6 replaces the false Claude observation boundary with strict Pi root-session evidence and native Pi metrics across all common journeys. The incomplete `entries=2` rejection remains truthfully blocked by the exact Pi-only zbc TODO, while the pure desired registry and all 64 required target/journey cells remain intact.
