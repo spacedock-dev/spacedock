@@ -1,6 +1,6 @@
 ---
 title: Make every live-lane minute buy named evidence
-status: validation
+status: done
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 5p5, b91, v5w, b8, dv, and supersedes 36."
 score: 1.0
 sprint: live-test-truth
@@ -89,11 +89,14 @@ gates:
                 reason: 'Delegated Captain connection: fresh independent Sol/medium validation passed AC-1 through AC-5 with no findings; candidate 4cc0d890 is clean and within the approved 27-file/+1000/-2400 ceiling; required local Pi and Sonnet paid proofs passed; ordinary, Pi, Sonnet, and Codex hosted lanes are required before merge, while Opus is irrelevant absent escalation.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-03T12:19:37Z
 worktree: .worktrees/spacedock-ensign-make-live-lanes-buy-named-evidence
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:626
+verdict: passed
+completed: 2026-08-05T04:49:18Z
+archived: 2026-08-05T04:49:24Z
 ---
 
 ## Outcome
