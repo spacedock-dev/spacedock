@@ -505,3 +505,26 @@ the six exact-artifact audit findings remain visible without expanding EP2 scope
 The shipped PR hook is now repository-, checkout-, workflow-, and runtime-neutral
 without weakening issue #616's mergeability-first exact-SHA delivery. Reviewed PR
 content crosses the shell boundary only as separate arguments and exact body-file bytes.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Make sure exact candidate `f6be38b8f` changes only `mods/pr-merge.md` at version `0.27.0`, leaves the dev mod unchanged, and corrects all six inherited PR-mod containment defects.
+  `f6be38b8f66c0a5fd86a76dedb45f38219eae6aa` is one file at `+33/-19`; dev SHA-256 remains `44e7b345`, and the exact-artifact audit found no obsolete containment leak.
+- DONE: Run qualified-PR, split-root state, arbitrary-working-directory, and recorded-SHA identity consumers.
+  `/tmp/spacedock-pr-consumer-matrix.aX0W14` retained `other-owner/other-repo#42`, built the audit link from the distinct state repo/path/SHA, resolved code from `/tmp`, and ignored moved ambient HEAD.
+- DONE: Run custom-report-role, portable-runtime-wording, and shell-sensitive transport consumers.
+  Nonstandard `forge`/`prove` roles were selected by outputs; Claude/Codex routes matched; `/tmp/spacedock-pr-shell-matrix.1VvVTX` preserved body hash `cc985aef`, mode 0600, 12 separate arguments, and executed no payload.
+- DONE: Reproduce **AC-1 (VALUE)** and **AC-2** through the real-Git zsh clean/conflict/unknown/moved-branch matrix.
+  `/tmp/spacedock-validation-616-containment.1YceO5` preserved clean/non-clean state, pushed recorded `28def7c0` after local HEAD moved, surfaced content conflict, and stopped unavailable-object failure distinctly as unknown.
+- DONE: Run focused, full, and race suites with reproducible state evidence.
+  Contract/integration and immutable pilot checks passed; full and race suites exited 0 with state `73f41e2a2`; live state alone lacks the unchanged eight archived manifest paths.
+- DONE: Repeat the exact-artifact containment audit and record other repository findings as separate work only.
+  Live `gh repo view` resolved explicit code/state origin URLs from `/tmp`; formatting/diff checks passed, all code Git operations exercised `{worktree}`, and no additional candidate or repository-containment finding emerged.
+- DONE: Recommend PASSED only with no material finding.
+  Recommend PASSED: all eight consumer boundaries and both value ACs have executable evidence; no material, deferred-risk, polish, or separate repository finding remains.
+
+### Summary
+
+The shipped PR hook now preserves repository, checkout, candidate, report-role,
+runtime, and reviewed-byte identity across its lifecycle. All consumer matrices and
+reproducible suites pass with the one-file candidate unchanged.
