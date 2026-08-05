@@ -1,6 +1,6 @@
 ---
 title: Deliver one portable common live-journey surface
-status: validation
+status: implementation
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 3w, h3, tj, and r4 as design inputs."
 score: 1.0
 sprint: live-test-truth
@@ -468,6 +468,7 @@ Candidate structure, reconciliation, focused controls, formatting, full tests, a
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — fresh Sol/medium validation plus hosted run `30991534368`; surface 41 files/+1564/-654 vs estimate 34 files/+2060/-1650 and ceiling 42 files/+2750 (57% of the insertion ceiling); AC unchanged. FO disposition: FIX three Material, ys-owned findings only. Route to implementation: require full history for the offline reconciliation guard; stop the common ordered suite when `t.Run` returns false; and centralize the host-neutral gate fixture choice with a negative `TestGateJourneyOverlap` proving `default-headless-gate-stop` starts at implementation while `gate-guardrail` starts at validation. Do not change product behavior, add a controller, absorb `9a`, or rerun hosted/live lanes before focused and full/race checks are green.
+- Cycle 2: REJECTED — fresh Sol/medium validation at `ae2a19e8cfdedace6b4d20e32821490666016e63` plus exact-head hosted run `30996911834`; surface 41 files/+1661/-655 remains within the 42-file/+2750 ceiling; AC unchanged; all three Cycle-1 findings are closed. FO disposition: FIX exactly one Material, ys-owned evidence defect. Route to implementation: add a focused failing control proving the Codex and Pi shared drivers keep the scenario-local `spacedock` logger after the real front door re-pins `SPACEDOCK_BIN`, then propagate that override through the smallest existing host-specific driver seam. Preserve Claude behavior, launch shapes, first-failure stopping, the 16 journeys, and the exact three `9adv48yhye5s2vkhwd7ge52d` TODOs. The Sonnet duplicate-preparation failure is Material/product-owned and Needs decision; the Sonnet break-glass failure and Codex characterized-metrics limitation are adjacent/pre-existing. No ys product fix, new member, controller, retry, or extra lane is authorized. Commit watched-path code first, bind its SHA in one documentation-only commit, run focused/full/race checks, then return to the same independent validator. This is correction round 2; any next rejection is Cycle 3 and escalates to the Captain rather than auto-bouncing again.
 
 ## Stage Report: implementation (cycle 2)
 
