@@ -215,3 +215,26 @@ Validation recommends REJECTED for one Material evidence defect: AC-3's test dup
 ### Summary
 
 Cycle 2 closes the validation finding without changing the event-loop contract: AC-3 now observes the real installed adapter and exact Codex rollout call, rejects the inverted adapter, and retains the active-only wait rule. The implementation and its adapter-bound evidence are ready for validation re-entry.
+
+## Review-finding disposition (validation cycle 2)
+
+- Finding: the AC-3 live observer assumes the isolated Codex home is under `artifactRoot/_codex-home`, but the shared runner deliberately uses the user-cache or repo-adjacent fallback when artifacts are temporary or inside the checkout. The supported default local and CI layouts therefore cannot find any rollout file.
+- Released user and normal workflow: maintainers running the required exact-head Codex lane locally with no artifact override, and CI storing artifacts inside the checkout.
+- Observable harm: all four AC-3 cases fail before their wait cardinality is graded, so the required evidence cannot gate the shipped adapter in supported validation environments.
+- Authority: `contract[docs/dev/README.md#validation]` requires runnable proof at the delivered observation boundary; an environment-specific pass that fails in the normal local and CI layouts leaves AC-3 unproved.
+- Trigger evidence: exact candidate `51eb5da25` fails active, completed, errored, and absent 4/4 with `session rollout ... = [], want one` under the default layout. With an external artifact root the same candidate passes 4/4, proving path selection—not adapter behavior—is the boundary failure.
+- Proposal: Material evidence defect owned by EJ. Plumb `newCodexLiveIsolatedHome`'s actual `codexHome` onto `codexLiveRunner` and pass that path to `observedCodexWaitCalls`; do not add a scheduler, controller, command, state field, or completion ledger.
+- Recommendation: REJECTED until the adapter-bound matrix passes in the supported default layout. The immutable suite, mutable pilot drift, and Pi account limitation remain separate and unchanged.
+
+## Stage Report: validation (cycle 2)
+
+- FAILED: Re-review exact candidate 51eb5da25 and prove AC-3 with the real shipped Codex adapter: active unresolved emits exact wait_agent(timeout_ms: 300000), while completed, errored, and absent emit none.
+  The external-root run proves the adapter result exactly (active `1/1` exact-300000; completed/errored/absent zero), but the required default-layout run fails all four before observation because its rollout glob uses the wrong Codex-home root.
+- DONE: Invert the shipped adapter in a detached checkout and require the adapter-bound matrix to fail; regress AC-1, AC-2, AC-4, and AC-5 ordered-loop evidence.
+  Detached `/tmp/spacedock-ej51-audit.XuxXAd` inversion fails active with `0/0` wanted `1/1` and completed with one forbidden wait; AC-1/AC-4 mod+three-gate-before-next and spawn separation, AC-2 single retry/truthful stop, and AC-5 independent-a/b dispatch all remain green.
+- DONE: Confirm the eight-file +240/-10 candidate stays within approved tolerance and passes focused, contractlint, formatting, immutable full/race, and relevant exact-head live evidence.
+  Exact HEAD and surface match; `git diff --check`, `gofmt -d`, focused suites, contractlint, and immutable `SPACEDOCK_STATE_ROOT=73f41e2a` full/race pass. Exact-head Codex live is behavior-green only with the external-root workaround and fails in the supported default layout.
+
+### Summary
+
+Validation cycle 2 recommends REJECTED for a narrow Material AC-3 evidence defect in rollout-path attribution. The shipped adapter behaves correctly and the live oracle detects inversion, but the candidate must carry the runner's actual isolated Codex-home path into the observer so the same proof works by default and in CI.
