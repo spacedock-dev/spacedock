@@ -79,6 +79,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:skwchfe30ac6ntr63j1g0txj-validation-3
+              briefing:
+                id: briefing:skwchfe30ac6ntr63j1g0txj:validation:attempt-3:revision-1
+                digest: sha256:b2486fe8420828feb51a9d0d72f548682f516895a64013805b1931ff10c3f47c
+                request-digest: sha256:0d96dfdc5d9c565dea2d91a2e332305a67fb455e32fa79d6b72e64c932110023
+                room-ref: ./gate-agent-ergonomics/review/validation/briefing-3
 worktree: .worktrees/spacedock-ensign-gate-agent-ergonomics
 mod-block:
 pr:

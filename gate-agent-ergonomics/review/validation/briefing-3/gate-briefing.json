@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:skwchfe30ac6ntr63j1g0txj:validation:attempt-3:revision-1",
+  "question": "Finalize the already-merged exact green PR #617?",
+  "artifacts": [
+    {
+      "id": "artifact:skwchfe30ac6ntr63j1g0txj:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/dcf3d46402125328d0b7bb3a098ff5d23710107a/gate-agent-ergonomics.md",
+      "rev": "sha256:3d5dfbbdb28e5071b8bf679b4616901de6cca42e8114b93bab7c38ad7242c390",
+      "mediaType": "text/markdown",
+      "summary": "Captain explicitly directed immediate merge of exact head a2940188 after all required GitHub checks passed; PR #617 is now merged as d05d5429."
+    }
+  ]
+}
