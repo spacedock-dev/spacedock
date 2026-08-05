@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-3:revision-1",
+  "question": "Approve the final one-file issue #616 policy for delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/702cfb99f231291744928f134eb7a04d809423e2/avoid-unnecessary-pr-rebases.md",
+      "rev": "sha256:e8be81f42e017bad0a177d42cc3c42bd4037d312b11ed9523a97a0c7d60e275d",
+      "mediaType": "text/markdown",
+      "summary": "Final candidate 2acb3630b changes only shipped mods/pr-merge.md at +13/-4, stamps version 0.27.0, and leaves the customized dev mod byte-identical to its baseline. The original validator reran AC-1/AC-2 real-Git zsh evidence plus focused, full, and race suites and recommends PASSED."
+    }
+  ]
+}

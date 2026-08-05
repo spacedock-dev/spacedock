@@ -84,6 +84,12 @@ gates:
                 at: "2026-08-05T07:05:36.914037Z"
                 decision: revise
                 reason: 'Stamp the shipped pr-merge mod version 0.27.0. Apply issue #616 behavior only to mods/pr-merge.md. Restore docs/dev/_mods/pr-merge.md to its pre-EP2 customized bytes; the dev copy is reconciled later by refit, preserving its split-root customization.'
+            - id: gate-attempt:ep2cz3zsb2qpyyh889nyeqpr-validation-3
+              briefing:
+                id: briefing:ep2cz3zsb2qpyyh889nyeqpr:validation:attempt-3:revision-1
+                digest: sha256:3bb3239634acf1ec1c4bea7b6d5747ba534454b7be761c47d4415c6a7cdbbc4d
+                request-digest: sha256:4cf8868950d4cbcb57960d64d58dc7fd2df13b0f584f4207a260a80a0f0081d0
+                room-ref: ./avoid-unnecessary-pr-rebases/review/validation/briefing-3
 ---
 
 Remove the mandatory rebase from the `pr-merge` policy. Keep the approved
