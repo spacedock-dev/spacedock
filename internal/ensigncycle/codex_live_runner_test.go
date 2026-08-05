@@ -82,14 +82,9 @@ func (d codexAsLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, roo
 }
 func (d codexAsLiveDriver) model() string { return envOr("SPACEDOCK_CODEX_LIVE_MODEL", "gpt-5.4") }
 func (d codexAsLiveDriver) home() string  { return "" }
-func (d codexAsLiveDriver) withStubPATH(dir string) liveDriver {
-	d.runner = d.runner.withStubPATHForDriver(dir)
+func (d codexAsLiveDriver) withStubPATH(t *testing.T, dir string) liveDriver {
+	d.runner = d.runner.withStubPATH(t, dir)
 	return d
-}
-
-func (r codexLiveRunner) withStubPATHForDriver(dir string) codexLiveRunner {
-	r.env = withPATHPrefix(r.env, dir)
-	return r
 }
 
 func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner {

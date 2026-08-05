@@ -85,8 +85,10 @@ func newPiSharedLiveDriver(t *testing.T) piSharedLiveDriver {
 func (d piSharedLiveDriver) runtimeName() string { return "pi" }
 func (d piSharedLiveDriver) model() string       { return d.modelName }
 func (d piSharedLiveDriver) home() string        { return d.piHome }
-func (d piSharedLiveDriver) withStubPATH(dir string) liveDriver {
+func (d piSharedLiveDriver) withStubPATH(t *testing.T, dir string) liveDriver {
+	t.Helper()
 	d.env = withPATHPrefix(d.env, dir)
+	d.env = withSpacedockShimShellEnv(t, d.env, dir)
 	return d
 }
 

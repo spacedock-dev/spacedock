@@ -95,7 +95,7 @@ func TestLiveBreakGlassShimRecovery(t *testing.T) {
 
 	shimDir := writeStubBreakGlassSpacedock(t, runner.binary)
 	runner.env = withSpacedockShimShellEnv(t, runner.env, shimDir)
-	scenarioRunner := runner.withStubPATH(shimDir)
+	scenarioRunner := runner.withStubPATH(t, shimDir)
 
 	scenario := sharedRuntimeScenario{
 		name:          "break-glass-shim",

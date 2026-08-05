@@ -83,7 +83,7 @@ type liveDriver interface {
 	run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) liveResult
 	model() string
 	home() string
-	withStubPATH(dir string) liveDriver
+	withStubPATH(t *testing.T, dir string) liveDriver
 }
 
 // liveResult is the host-neutral observed state the shared assertions consume.
@@ -164,7 +164,7 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 	bashEnv := filepath.Join(shellEnvDir, "recorded-gate-env.sh")
 	writeFile(t, bashEnv, "export SPACEDOCK_BIN="+filepath.Join(shimDir, "spacedock")+"\n")
 	writeFile(t, filepath.Join(shellEnvDir, ".zshenv"), readFile(t, bashEnv))
-	runner = runner.withStubPATH(shimDir)
+	runner = runner.withStubPATH(t, shimDir)
 	if copied, ok := runner.(claudeLiveRunner); ok {
 		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
 		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
@@ -227,7 +227,7 @@ func (r claudeLiveRunner) home() string  { return r.homeDir }
 // binary in dir first (the shallow-boot scenario's stub `gh` reporting MERGED). It
 // never mutates the receiver's env, so parallel scenarios sharing the runner stay
 // race-free.
-func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
+func (r claudeLiveRunner) withStubPATH(_ *testing.T, dir string) liveDriver {
 	r.env = withPATHPrefix(r.env, dir)
 	return r
 }
@@ -239,7 +239,7 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
-	runner = runner.withStubPATH(shimDir)
+	runner = runner.withStubPATH(t, shimDir)
 	if copied, ok := runner.(claudeLiveRunner); ok {
 		copied.env = withSpacedockShimShellEnv(t, copied.env, shimDir)
 		runner = copied
@@ -270,7 +270,7 @@ func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, sce
 
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, binary, commandLog)
-	runner = runner.withStubPATH(shimDir)
+	runner = runner.withStubPATH(t, shimDir)
 	if copied, ok := runner.(claudeLiveRunner); ok {
 		copied.env = withSpacedockShimShellEnv(t, copied.env, shimDir)
 		runner = copied

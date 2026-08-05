@@ -3,6 +3,9 @@
 package ensigncycle
 
 import (
+	"os"
+	"os/exec"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -97,6 +100,62 @@ func TestSharedScenarioSequenceStopsAfterFirstFailure(t *testing.T) {
 	if want := []string{"first"}; !reflect.DeepEqual(ran, want) {
 		t.Fatalf("ran scenarios = %v, want %v", ran, want)
 	}
+}
+
+func TestSharedCodexAndPiDriversPreserveSpacedockShimAfterFrontDoorPin(t *testing.T) {
+	shimDir := t.TempDir()
+	want := filepath.Join(shimDir, "spacedock")
+
+	t.Run("codex", func(t *testing.T) {
+		realHostDir := t.TempDir()
+		realHost := filepath.Join(realHostDir, "codex")
+		writeFile(t, realHost, "#!/bin/sh\nprintf %s \"$SPACEDOCK_BIN\"\n")
+		if err := os.Chmod(realHost, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		driver := codexAsLiveDriver{runner: codexLiveRunner{
+			codexBin: realHost,
+			env:      []string{"PATH=" + realHostDir + ":/usr/bin:/bin"},
+		}}
+		configured := driver.withStubPATH(t, shimDir).(codexAsLiveDriver)
+		cmd := exec.Command("/bin/sh", "-c", "codex")
+		cmd.Env = withRecordedGateEnv(configured.runner.env, "SPACEDOCK_BIN", "/real/spacedock")
+		got, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("launch Codex after front-door pin: %v\n%s", err, got)
+		}
+		if string(got) != want {
+			t.Fatalf("Codex child SPACEDOCK_BIN = %q, want scenario shim %q", got, want)
+		}
+		if err := os.Remove(filepath.Join(shimDir, "codex")); err != nil {
+			t.Fatal(err)
+		}
+		cmd = exec.Command("/bin/sh", "-c", "codex")
+		cmd.Env = withRecordedGateEnv(configured.runner.env, "SPACEDOCK_BIN", "/real/spacedock")
+		if output, err := cmd.CombinedOutput(); err != nil || string(output) != "/real/spacedock" {
+			t.Fatalf("Codex removal control did not expose the front-door pin: output=%q err=%v", output, err)
+		}
+	})
+
+	t.Run("pi", func(t *testing.T) {
+		driver := piSharedLiveDriver{env: []string{"PATH=/usr/bin:/bin"}}
+		configured := driver.withStubPATH(t, shimDir).(piSharedLiveDriver)
+		cmd := exec.Command("/bin/bash", "-c", `printf %s "$SPACEDOCK_BIN"`)
+		cmd.Env = withRecordedGateEnv(configured.env, "SPACEDOCK_BIN", "/real/spacedock")
+		got, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("launch Pi shell after front-door pin: %v\n%s", err, got)
+		}
+		if string(got) != want {
+			t.Fatalf("Pi child SPACEDOCK_BIN = %q, want scenario shim %q", got, want)
+		}
+		cmd = exec.Command("/bin/bash", "-c", `printf %s "$SPACEDOCK_BIN"`)
+		withoutPropagation := withoutEnvKey(withoutEnvKey(configured.env, "BASH_ENV"), "ZDOTDIR")
+		cmd.Env = withRecordedGateEnv(withoutPropagation, "SPACEDOCK_BIN", "/real/spacedock")
+		if output, err := cmd.CombinedOutput(); err != nil || string(output) != "/real/spacedock" {
+			t.Fatalf("Pi removal control did not expose the front-door pin: output=%q err=%v", output, err)
+		}
+	})
 }
 
 func TestSharedLiveTODOEvidenceSet(t *testing.T) {
