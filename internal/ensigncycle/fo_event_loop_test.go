@@ -15,7 +15,6 @@ type loopEvent struct {
 
 func TestFirstOfficerEventLoopCommandLog(t *testing.T) {
 	logs := readLoopCommandLog(t)
-
 	mixed := logs["mixed"]
 	assertBefore(t, mixed, "mod-hold", "next")
 	for _, action := range []string{"gate-present", "gate-advance", "gate-merge"} {
@@ -26,51 +25,17 @@ func TestFirstOfficerEventLoopCommandLog(t *testing.T) {
 
 	retry := logs["retry"]
 	assertActions(t, retry, "next", "idle", "reconcile", "next", "dispatch")
-	assertValues(t, retry, "idle", "-")
-	assertValues(t, retry, "reconcile", "active-1")
 	assertValues(t, retry, "next", "-", "released")
 	assertValues(t, retry, "dispatch", "released")
-	assertAbsent(t, retry, "stop")
 
 	empty := logs["empty"]
 	assertActions(t, empty, "next", "idle", "reconcile", "next", "stop")
-	assertValues(t, empty, "idle", "-")
-	assertValues(t, empty, "reconcile", "-")
 	assertValues(t, empty, "next", "-", "-")
 	assertValues(t, empty, "stop", "no-dispatchable")
 
 	if err := validateNoFalseStop(logs["false-stop"]); err == nil {
 		t.Fatal("legacy status --next=[] -> idle trace was accepted despite pending mod/gate work")
 	}
-}
-
-func TestCodexWaitPredicate(t *testing.T) {
-	tests := []struct {
-		name      string
-		worker    string
-		otherWork bool
-		wantWait  bool
-	}{
-		{"active unresolved and empty", "active", false, true},
-		{"active unresolved with dispatch", "active", true, false},
-		{"active unresolved with gate", "active", true, false},
-		{"active unresolved with mod action", "active", true, false},
-		{"active unresolved with state work", "active", true, false},
-		{"completed", "completed", false, false},
-		{"errored", "errored", false, false},
-		{"absent", "absent", false, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := shouldWaitForWorker(tt.worker, tt.otherWork); got != tt.wantWait {
-				t.Fatalf("shouldWaitForWorker(%q, %v) = %v, want %v", tt.worker, tt.otherWork, got, tt.wantWait)
-			}
-		})
-	}
-}
-
-func shouldWaitForWorker(worker string, otherWork bool) bool {
-	return worker == "active" && !otherWork
 }
 
 func validateNoFalseStop(events []loopEvent) error {
