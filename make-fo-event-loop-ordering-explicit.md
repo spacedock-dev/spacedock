@@ -1,6 +1,6 @@
 ---
 title: Make FO event-loop ordering and idle wait explicit
-status: implementation
+status: validation
 source: "Captain follow-up after the 2026-08-03 durable-decisions execution-gap diagnosis."
 started: 2026-08-03T16:00:51Z
 completed:
