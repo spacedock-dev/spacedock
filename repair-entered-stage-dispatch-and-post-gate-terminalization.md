@@ -10,6 +10,7 @@ worktree:
 issue:
 milestone: 0.27.0
 id: 9adv48yhye5s2vkhwd7ge52d
+sprint: test-behavior-completeness
 ---
 
 PR #585's runtime-neutral durable live oracle exposed three shipped behavior defects outside the PR's Codex configuration and launcher-shim scope.
