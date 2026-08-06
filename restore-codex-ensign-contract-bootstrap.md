@@ -8,7 +8,7 @@ verdict:
 score: 0.95
 worktree:
 issue:
-sprint:
+sprint: test-behavior-completeness
 id: nvz2ym82ydfn07jp04yfxg9r
 ---
 
