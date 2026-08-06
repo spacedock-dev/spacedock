@@ -715,3 +715,29 @@ Validation recommends **REJECTED with gate HOLD**, solely because required live 
 ### Summary
 
 Rebuilt the narrow launcher-drift value on current `origin/main` without transplanting the old candidate: dispatch files are self-contained, outer transport remains pointer-only, and worker-time workflow resolution cannot drift to ambient B. The reset preserves current-main First Officer ownership of feedback-cycle recording and removes obsolete ensign fetch/advisory machinery; the only full-suite reds are documented shared-state manifest drift outside this branch.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Reproduce the self-contained dispatch and pinned-launcher A-versus-B value at exact head 7fce0bb1, with First Officer round ownership and no transcript, provider, or observer grammar.
+  Exact `7fce0bb19157bcacf9814a3855f7e04a72f4898e` passes focused dispatch/CLI/integration/ensign-cycle proofs: fresh and advance payloads stay file-only, generated helpers retain shell-safe A under ambient B, fetches remain empty, product C stays explicit, and the changed surface adds no round publisher or transcript/provider/observer mechanism.
+- DONE: Audit the 44-file surface for necessity: distinguish mechanically required goldens from redundant churn, and reject if the same value can ship with fewer generated fixtures or changed semantics.
+  The surface is exactly 44 files, +665/-467: 18 hand-authored files (+395/-336) and exactly 26 existing build goldens (+270/-131); every golden is harness-owned output for a preserved host/topology/model cross-product, and no redundant generated fixture or changed FO authority was found.
+- FAILED: Run focused, detached, formatting, full, race, and required host-live evidence on the exact head; classify current failures and recommend PASSED or REJECTED without mutating the candidate.
+  Focused, formatting, detached perturbations, and every candidate-owned full/race package pass, but no required live lane observed an actual worker spawn; validation therefore recommends REJECTED with gate HOLD and zero candidate rework.
+
+### Review-finding disposition
+
+- No candidate finding: the reset preserves current-main First Officer ownership of `### Feedback Cycles` and `gate record --round`; ensign-owned workflow control is limited to the pinned read helper, and the exact diff contains no new state, compatibility layer, event/parser dialect, shell/JavaScript observer grammar, or advisory publication path.
+- External evidence defect / Material to the validation gate / not task-owned / HOLD: the exact Codex `recorded-gate-lifecycle` live run completed boot, emitted no `worker.spawn`, then hit the 60-second no-progress guard; the quarantined `keep-moving-posture` selector was correctly treated as skipped, not evidence.
+  Released workflow: current Codex first-officer live path; observable harm: the candidate's generated assignment and pinned A helper never execute in a real worker; authority: `contract[skills/first-officer/references/first-officer-shared-core.md#engage]` requires an observed spawn for every ready member; trigger evidence: exact live run failed after 519.11s before dispatch.
+- Infrastructure-only corroboration: canonical Claude failed before FO work with HTTP 401 revoked OAuth, and canonical Pi failed before FO work with HTTP 402 credit capacity (128,000 requested versus 114,285 affordable).
+
+### Adversarial and suite evidence
+
+- Detached exact-head mutations reintroducing a worker fetch, ambient launcher fallback, dropped standing render, universal 300-byte prompt rejection, and filename shortening each made its owning behavioral test red; observer/parser perturbations are inapplicable because that mechanism is absent.
+- `go test ./...` and `go test ./... -race` fail only `internal/gates.TestV1PilotManifestReadsAndValidates` for two archived shared-state paths, `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md`; neither path nor `internal/gates` is candidate-owned.
+- `gofmt -l ./cmd ./internal` is empty, `git diff --check origin/main..HEAD` passes, and the code worktree remains clean at the exact head.
+
+### Summary
+
+The 44-file KD reset is proportionate and deterministic evidence supports its narrow value: self-contained dispatch, pointer-only outer transport, pinned A with ambient B unused, and current-main First Officer round authority without observer grammar. Validation recommends **REJECTED with gate HOLD**, solely because required live proof never observed a worker spawn; rerun an active canonical host lane after the external Codex dispatch/runtime or Claude/Pi capacity blocks clear, with no candidate mutation unless that run exposes a candidate-owned defect.
