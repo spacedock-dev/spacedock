@@ -2,7 +2,7 @@
 title: Make FO dispatch of moving-target conflict owners explicit
 status: ideation
 source: "Captain follow-up after the 2026-08-04 conflict-owner and shared-credential diagnosis."
-started:
+started: 2026-08-06T15:54:14Z
 completed:
 verdict:
 score: 0.93
