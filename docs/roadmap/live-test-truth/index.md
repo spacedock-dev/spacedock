@@ -88,10 +88,11 @@ front-door smoke. This direction avoids a duplicate live run.
 1. `docs/runtime-live-ci.md` is the single normative entry point. It incorporates
    `docs/runtime-live-ci-registry.md` as its desired-state component and carries a
    current reconciliation SHA.
-2. Every common journey has one canonical executable identity and runs as real,
-   non-skipped evidence on every supported runtime target. Upstream-dependent
-   quarantines can defer early sprint execution but must be restored before the
-   `v0.27.0` release cut.
+2. Every common journey has one canonical executable identity. Each target is
+   either passing live evidence or an exact target-scoped `TODO(owner)` backed by
+   a reproduced product defect. An unverified runnable cell, an unowned gap, or
+   a broad quarantine blocks this sprint. The product repairs and later evidence
+   restoration belong to `test-behavior-completeness` before the release cut.
 3. Every registered fixture ID resolves through a source annotation to one
    concrete builder. Every annotated live fixture is consumed by a registered
    journey or runtime-specific proof. No orphan fixture or unclassified live
@@ -105,9 +106,10 @@ front-door smoke. This direction avoids a duplicate live run.
 6. Retained live-lane inputs affect a real runtime setting, and retained metrics
    paths have a producer and consumer. Codex liveness resets on meaningful
    progress while the suite-wide deadline remains a loose runaway backstop.
-7. Every drivable sprint task reaches `done` with `PASSED`. Deferred dependency
-   work is promoted and completed before the release cut. Unavailable required
-   evidence blocks sprint completion and does not count as green.
+7. Every drivable sprint task reaches `done` with `PASSED`. A reproduced,
+   target-scoped product gap with an exact owner does not block this sprint and
+   does not count as green. The owner moves to `test-behavior-completeness`.
+   Missing ownership or missing evidence for a runnable cell blocks completion.
 8. `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` pass.
    Changed live surfaces also pass their exact required runtime lanes.
 
@@ -131,8 +133,9 @@ front-door smoke. This direction avoids a duplicate live run.
    lane evidence on the current selectors.
 3. Land `ys` last. It consumes the final behavior from `3d` and `15e`, then owns
    the canonical selector, workflow guard, live CI guide, and registry migration.
-4. Restore `rm` only after its upstream product repairs land. Preserve its strict
-   oracles and deferred sprint membership until then.
+4. Restore `rm` only after its upstream product repairs land in
+   `test-behavior-completeness`. Preserve its strict oracles and deferred
+   live-test-truth membership until then.
 5. Reconcile the assembled registry against source and CI. Record the SHA, then
    run the sprint-wide live and offline proof. Land the SSOT link, first SHA, and
    guard together.
