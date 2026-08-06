@@ -140,3 +140,27 @@ The First Officer now holds only the conflicted PR entity, preserves its pending
 Verification pinned `SPACEDOCK_STATE_ROOT` to clean detached state snapshot `fa0804a6a8a5f98858992c6b2f1b49bf609aa5c5`. At unchanged clean candidate head `686ebd8e88b5e8a49a6f05f15bfc5a6dd4d0816d`, both `go test ./...` and `go test ./... -race` exercised all packages; every package except `internal/gates` passed and no race was reported.
 
 The exact remaining failure in both commands is `TestV1PilotManifestReadsAndValidates`: its manifest names nine paths absent from the immutable snapshot — `bind-post-rework-briefing-at-rejection-regate.md`, `codex-launch-multi-agent-v2.md`, `collapse-gate-approval-ceremony/index.md`, `cut-workflow-specific-round-recorder-from-v1/index.md`, `gate-agent-ergonomics.md`, `minimize-v1-gate-application-schema/index.md`, `shared-git-scaffold-helper.md`, `status-pagination-and-default-sorting.md`, and `status-where-robust-and-discoverable.md`. The identical stable result rules out concurrent archival during either run; candidate bytes and HEAD remained unchanged and clean.
+
+## Review-finding disposition
+
+- Reviewer observation: detached audit `/tmp/spacedock-g3-audit.fiwXP6` at exact candidate `686ebd8e88b5e8a49a6f05f15bfc5a6dd4d0816d` added only a throwaway test; `gradeMovingTargetTrace` accepted `git rebase -X theirs main`, `git checkout --ours contract.txt`, and `git push -f origin HEAD`.
+- Released user and normal workflow: a First Officer handling the supported moving-target PR conflict can express auto-resolution, side discard, or force with these ordinary Git spellings.
+- Observable harm: the adversarial oracle remains green despite prohibited conflict actions, so AC-5 can appear proven while the accepted trace violates the shipped safety contract.
+- Authority: `contract[skills/first-officer/references/first-officer-shared-core.md#haltrebase-conflictpaths-abort-surface-stop]` requires never force, auto-resolve, discard either side, or dispatch a resolver.
+- Trigger evidence: `go test ./internal/ensigncycle -run '^TestDetachedAuditRejectsEquivalentForbiddenSpellings$' -count=1` failed with all three commands reported as accepted forbidden actions.
+- Worker proposal: Material / evidence defect / G3-owned; narrowly extend the existing behavior oracle and mutation matrix to reject semantically equivalent auto-resolution, side-discard, and force spellings.
+- First Officer authorization: `FIX`, narrowly limited to that oracle/matrix correction; validator must not mutate the candidate.
+- Validator recommendation: `REJECTED`; candidate stayed clean and unchanged at `686ebd8e88b5e8a49a6f05f15bfc5a6dd4d0816d`.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 through AC-5 at exact candidate 686ebd8e88b5e8a49a6f05f15bfc5a6dd4d0816d, including byte-preserved pending authority, exact conflict tuple and abort, ownership split, stale-evidence rejection, and unrelated-work continuation.
+  AC-1 through AC-4 reproduce in the real-Git fixture: abort restores the old head and byte-identical pending state, the trace carries old/new base, old head, conflict path, distinct Captain/branch-owner and FO roles, rejects stale exact-head evidence, and continues task B dispatch plus task C gate presentation. AC-5 is not validly established because the detached audit found equivalent forbidden spellings the oracle accepts.
+- DONE: Run focused, formatting, full, and race evidence; compare the stable internal/gates pilot-manifest failure with current origin/main and classify its candidate ownership without editing either G3 or the unrelated manifest.
+  Focused and focused-race pass; `gofmt -d ./cmd ./internal`, `git diff --check`, detached contract lint, and skill integration pass. Full and race runs against state `fa0804a6a8a5f98858992c6b2f1b49bf609aa5c5` fail only the nine-path pilot-manifest test with no race report; current `origin/main` `8b5af99baa5c37fe7c969a904819041688420e22` fails the same test for only two absent paths, so the output is not identical but the failure is unrelated and not G3-owned.
+- FAILED: Perform the required detached adversarial audit on the shipped First Officer contract and fixtures, verify no resolver/force/provider/state-schema escape hatch, and recommend PASSED or REJECTED with exact evidence.
+  The shipped prose and six-file surface add no resolver, provider, or state-schema route, and named mutations pass, but the throwaway exact-head audit proves the oracle accepts `-X theirs`, `checkout --ours`, and `push -f`; recommend REJECTED for the authorized narrow evidence fix.
+
+### Summary
+
+The exact candidate preserves pending authority, conflict identity, ownership separation, fresh-head gating, and unrelated-work continuation, while the unrelated pilot-manifest failure remains outside G3. Validation rejects because the adversarial observation boundary accepts semantically equivalent forbidden Git actions; revise only that existing oracle and mutation matrix, then rerun focused, detached, full, and race evidence.
