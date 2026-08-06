@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d8qmey415fsb5q9h6q639ngf:backlog:attempt-1:revision-1",
+  "question": "Approve D8 ideation for a mechanical, self-contained owner handoff?",
+  "artifacts": [
+    {
+      "id": "artifact:d8qmey415fsb5q9h6q639ngf:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/70210849b3851c894bd54c2b91923c570fe78c38/codify-conflict-owner-dispatch-handoff.md",
+      "rev": "sha256:67e103c6654d2bb2bbc363a1a8446c0e207efaaed6e95dcdbdf8538d45e05b21",
+      "mediaType": "text/markdown",
+      "summary": "Enter ideation. Find the smallest mechanical owner-dispatch path. Use workflow identity, branch, and worktree. Add no resolver, parser, state field, or credential inference."
+    }
+  ]
+}

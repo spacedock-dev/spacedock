@@ -12,6 +12,18 @@ sprint: durable-decisions
 group: fo-contract
 milestone: 0.27.0
 id: d8qmey415fsb5q9h6q639ngf
+gates:
+    version: 1
+    records:
+        - id: gate:d8qmey415fsb5q9h6q639ngf:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:d8qmey415fsb5q9h6q639ngf-backlog-1
+              briefing:
+                id: briefing:d8qmey415fsb5q9h6q639ngf:backlog:attempt-1:revision-1
+                digest: sha256:e94e3a3c61d1947a0a06e071414b7cb175f4b297cf6a87f0f0c09c092d8a98e6
+                request-digest: sha256:0ce185eaddb7133c17ad91e086e0d59db9adcf0ca9bc9cb64d9ffb201ef69731
+                room-ref: ./codify-conflict-owner-dispatch-handoff/review/backlog/briefing-1
 ---
 
 The First Officer contract names semantic ownership for an open-PR moving-target
