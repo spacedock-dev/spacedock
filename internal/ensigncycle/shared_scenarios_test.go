@@ -20,6 +20,7 @@ type sharedRuntimeScenario struct {
 
 const (
 	liveDurableJourneyDefectID      = "9adv48yhye5s2vkhwd7ge52d"
+	gateGuardrailDefectID           = "3zzpdw704df1g8pg1x9thzmw"
 	codexEnsignContractDefectID     = "nvz2ym82ydfn07jp04yfxg9r"
 	defaultHeadlessGateStopDefectID = "26nk8qd48zknqnn4kc123sez"
 	liveRejectionFlowDefectID       = "zbcj98qfwtax61vxdzrf615e"
@@ -44,6 +45,8 @@ func liveDurableJourneyTODO(target liveEvidenceTarget, name string) string {
 	switch (liveEvidenceKey{target: target, journey: name}) {
 	case liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "full-ensign-cycle"}:
 		return "TODO(" + codexEnsignContractDefectID + "): Codex must bootstrap the executable ensign contract for fresh workers"
+	case liveEvidenceKey{target: liveEvidenceTargetPi, journey: "gate-guardrail"}:
+		return "TODO(" + gateGuardrailDefectID + "): Pi must select an exact committed review source before gate preparation"
 	case liveEvidenceKey{target: liveEvidenceTargetClaudeSonnet, journey: "default-headless-gate-stop"}:
 		return "TODO(" + defaultHeadlessGateStopDefectID + "): headless drive must stop after exactly one durable gate preparation"
 	case liveEvidenceKey{target: liveEvidenceTargetPi, journey: "default-headless-gate-stop"}:
