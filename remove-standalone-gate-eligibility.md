@@ -60,6 +60,17 @@ gates:
                 digest: sha256:7fff755c501e0addc8182fe50c6756d1fbde859b21d233ca0a280b20c51839bd
                 request-digest: sha256:19a6903b1b25bc0536c0881a37ae88a7ee87d77e5a5cfb45b2dbb4bdfa65eef0
                 room-ref: ./remove-standalone-gate-eligibility/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:bv3hhbqr5spt1wn4557qyp8c:validation:1
+                briefing: briefing:bv3hhbqr5spt1wn4557qyp8c:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-06T15:41:00.260459Z"
+                decision: approve
+                reason: Captain sprint conn authorizes gate approval. All four value criteria and both detached guard mutations pass. Exact candidate 013c8729e removes the public ceremony and retains locked authority checks. PR CI remains required because the local full and race suites are not green.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-03T23:33:06Z
 worktree: .worktrees/spacedock-ensign-remove-standalone-gate-eligibility
 ---
