@@ -1,6 +1,6 @@
 ---
 title: Remove the standalone gate eligibility ceremony
-status: validation
+status: implementation
 source: "Captain simplification review, 2026-08-03: eligibility is a necessary atomic safety predicate but an unnecessary operator preflight and readiness vocabulary."
 score: 0.9
 sprint: durable-decisions
@@ -70,9 +70,10 @@ gates:
                 reason: Captain sprint conn authorizes gate approval. All four value criteria and both detached guard mutations pass. Exact candidate 013c8729e removes the public ceremony and retains locked authority checks. PR CI remains required because the local full and race suites are not green.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-08-03T23:33:06Z
 worktree: .worktrees/spacedock-ensign-remove-standalone-gate-eligibility
+mod-block:
 ---
 
 ## Outcome
@@ -311,6 +312,10 @@ operators now read durable readiness from status and receive refusal reasons
 from the acting command. Commit `013c8729e` preserves all private locked
 authority-spending code and adds lifecycle, absence, and mutation-sensitive
 evidence for the clean cut.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — merge-tree / moving-target conflicts in `internal/status/handlers.go` and `skills/fo-gate-lifecycle/SKILL.md`; surface 19 files/+100/-102 vs estimate not declared; AC unchanged
 
 ## Stage Report: validation
 
