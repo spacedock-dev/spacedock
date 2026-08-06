@@ -114,6 +114,12 @@ gates:
                 at: "2026-08-06T15:28:01.440444Z"
                 decision: revise
                 reason: Delete the literal ownership and continuation proof. Keep the real Git conflict, abort, clean-state, and exact-head evidence. Add no parser, tokenizer, mutation matrix, synthetic command language, or replacement interpreter.
+            - id: gate-attempt:g3912c6f6jkgd0yjmyg6h7yn-validation-5
+              briefing:
+                id: briefing:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-5:revision-1
+                digest: sha256:0348f8acafb0b6f098529dc9bf4fc40b4ed3c2644060931a8085fe6bdde8212e
+                request-digest: sha256:2f48edf70755ff8b06cecb3e63fe82cfad62b2028e4ed2a8af6076b87f7d5856
+                room-ref: ./define-fo-moving-target-conflict-ownership/review/validation/briefing-5
 ---
 
 Define the ownership, durable hold, evidence, and keep-moving behavior when a pending PR meets a moving merge target. The task closes the contract ambiguity without adding a resolver worker or changing the workflow definition.

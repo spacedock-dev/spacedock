@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-5:revision-1",
+  "question": "Cut G3 from this release because its lifecycle acceptance criteria remain unproven?",
+  "artifacts": [
+    {
+      "id": "artifact:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-5:revision-1:item-1",
+      "uri": "git-root://state/6a72f825ef121295381c8063e67c47383156c272/define-fo-moving-target-conflict-ownership.md",
+      "rev": "sha256:e1bf8e0e51dfe70fe70156f751c199985abf92848bc5242794bd0a0afe855c29",
+      "mediaType": "text/markdown",
+      "summary": "Cut G3 from this release. The reduced candidate is honest, but it proves only Git mechanics and none of the five promised First Officer lifecycle outcomes. Do not build another interpreter."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-5:revision-1:item-2",
+      "uri": "git-root://main/efe87a7c34ad3703bfc30d490f801539b0cb4e29/internal/ensigncycle/moving_target_conflict_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:5ef293251bf0686a04ae2b32c1873c82379f67a483351bf97f37911cfb64b12e"
+    }
+  ]
+}
