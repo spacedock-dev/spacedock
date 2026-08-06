@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-3:revision-1",
+  "question": "Cut KD and its dependent D8 live proof from this release because canonical worker-spawn evidence is unavailable?",
+  "artifacts": [
+    {
+      "id": "artifact:kd7877nnbd19d528xnpwwaj4:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/8d7fa68f47f4d98a8eac571f690b359aa01d10d2/self-contained-ensign-dispatch/index.md",
+      "rev": "sha256:c3bdbad31ebcbcfcf47920b5acb20e5c47e939f9a00fc53e62362bdcb16a74f4",
+      "mediaType": "text/markdown",
+      "summary": "Cut KD from this release without candidate rework. Deterministic evidence passes at 7fce0bb1, but required live worker-spawn proof is red on Codex and blocked before work on Claude and Pi. D8 needs the same live boundary."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/7fce0bb19157bcacf9814a3855f7e04a72f4898e/internal/dispatch/self_contained_assignment_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:d596f99136ad48e91b67ef21f625dbf768294b8d14588cea0f4af730afdf8ea7"
+    }
+  ]
+}

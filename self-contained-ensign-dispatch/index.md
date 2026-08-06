@@ -77,6 +77,12 @@ gates:
                 at: "2026-08-05T23:49:43.74369Z"
                 decision: revise
                 reason: EJ is merged, but KD validated candidate b60d1c8a is no longer on its assigned worktree or any branch. Return to implementation so the owner recovers that candidate, reconciles current main without force, and produces a fresh exact head for validation.
+            - id: gate-attempt:kd7877nnbd19d528xnpwwaj4-validation-3
+              briefing:
+                id: briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-3:revision-1
+                digest: sha256:17f5b82f515cba1b62da254d53093b156c983ed2fec95ebc4aeea3211d5d746b
+                request-digest: sha256:ad803dc1af7814c423ce93858b09058210cf7e54b89a65f4c8a73868a05718a4
+                room-ref: ./review/validation/briefing-3
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 ---
