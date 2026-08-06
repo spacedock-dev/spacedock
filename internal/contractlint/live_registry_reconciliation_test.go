@@ -53,6 +53,7 @@ var auditedMissingEvidence = map[missingEvidenceKey]string{
 	{target: "claude-sonnet", journey: "smallest-sufficient-mechanism"}: "9adv48yhye5s2vkhwd7ge52d",
 	{target: "pi", journey: "smallest-sufficient-mechanism"}:            "9adv48yhye5s2vkhwd7ge52d",
 	{target: "claude-sonnet", journey: "keep-moving-posture"}:           "9adv48yhye5s2vkhwd7ge52d",
+	{target: "pi", journey: "keep-moving-posture"}:                      "9adv48yhye5s2vkhwd7ge52d",
 	{target: "codex", journey: "smallest-sufficient-mechanism"}:         "9adv48yhye5s2vkhwd7ge52d",
 	{target: "codex", journey: "keep-moving-posture"}:                   "9adv48yhye5s2vkhwd7ge52d",
 	{target: "pi", journey: "rejection-flow"}:                           "zbcj98qfwtax61vxdzrf615e",
@@ -66,6 +67,10 @@ func removeMissingEvidenceMutation(key missingEvidenceKey) func(map[missingEvide
 
 func addMissingEvidenceMutation(key missingEvidenceKey, owner string) func(map[missingEvidenceKey]string) {
 	return func(m map[missingEvidenceKey]string) { m[key] = owner }
+}
+
+func moveMissingEvidenceMutation(from, to missingEvidenceKey) func(map[missingEvidenceKey]string) {
+	return func(m map[missingEvidenceKey]string) { owner := m[from]; delete(m, from); m[to] = owner }
 }
 
 func replaceRegistryMutation(old, new string, count int) func(string) string {
@@ -91,6 +96,20 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	}
 	for _, diagnostic := range missingEvidenceDiagnostics(evidence) {
 		t.Log(diagnostic)
+	}
+}
+
+func TestRuntimeLiveRegistryGuideStateCurrent(t *testing.T) {
+	repo := repoRoot(t)
+	registry := readContractFile(t, filepath.Join(repo, "docs", "runtime-live-ci-registry.md"))
+	guide := readContractFile(t, filepath.Join(repo, "docs", "runtime-live-ci.md"))
+	for _, stale := range []string{"does not incorporate this registry yet", "bind task must add"} {
+		if strings.Contains(registry, stale) {
+			t.Errorf("registry retains future-state claim %q", stale)
+		}
+	}
+	if !strings.Contains(guide, "### Registry reconciliation") || !reconciliationSHA.MatchString(guide) {
+		t.Fatal("operating guide lacks the shipped reconciliation procedure or SHA")
 	}
 }
 
@@ -194,6 +213,9 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 		"removed Pi gate-guardrail TODO":       removeMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "gate-guardrail"}),
 		"retagged Pi gate-guardrail TODO":      addMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "gate-guardrail"}, "other-owner"),
 		"suppressed unverified Opus guardrail": addMissingEvidenceMutation(missingEvidenceKey{target: "claude-opus", journey: "gate-guardrail"}, "3zzpdw704df1g8pg1x9thzmw"),
+		"removed Pi keep-moving TODO":          removeMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "keep-moving-posture"}),
+		"retagged Pi keep-moving TODO":         addMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "keep-moving-posture"}, "other-owner"),
+		"suppressed unverified Opus moving":    addMissingEvidenceMutation(missingEvidenceKey{target: "claude-opus", journey: "keep-moving-posture"}, "9adv48yhye5s2vkhwd7ge52d"),
 		"removed TODO": func(m map[missingEvidenceKey]string) {
 			for id := range m {
 				delete(m, id)
@@ -212,54 +234,18 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 			delete(m, missingEvidenceKey{target: "codex", journey: "keep-moving-posture"})
 			m[missingEvidenceKey{target: "pi", journey: "keep-moving-posture"}] = owner
 		},
-		"global TODO":                       addMissingEvidenceMutation(missingEvidenceKey{journey: "keep-moving-posture"}, "9adv48yhye5s2vkhwd7ge52d"),
-		"suppressed proven pass":            addMissingEvidenceMutation(missingEvidenceKey{target: "codex", journey: "default-headless-gate-stop"}, "26nk8qd48zknqnn4kc123sez"),
-		"suppressed unverified Opus target": addMissingEvidenceMutation(missingEvidenceKey{target: "claude-opus", journey: "default-headless-gate-stop"}, "26nk8qd48zknqnn4kc123sez"),
-		"moved Pi rejection TODO to Sonnet": func(m map[missingEvidenceKey]string) {
-			owner := m[missingEvidenceKey{target: "pi", journey: "rejection-flow"}]
-			delete(m, missingEvidenceKey{target: "pi", journey: "rejection-flow"})
-			m[missingEvidenceKey{target: "claude-sonnet", journey: "rejection-flow"}] = owner
-		},
-		"moved Pi rejection TODO to Codex": func(m map[missingEvidenceKey]string) {
-			owner := m[missingEvidenceKey{target: "pi", journey: "rejection-flow"}]
-			delete(m, missingEvidenceKey{target: "pi", journey: "rejection-flow"})
-			m[missingEvidenceKey{target: "codex", journey: "rejection-flow"}] = owner
-		},
-		"moved Pi rejection TODO to Opus": func(m map[missingEvidenceKey]string) {
-			owner := m[missingEvidenceKey{target: "pi", journey: "rejection-flow"}]
-			delete(m, missingEvidenceKey{target: "pi", journey: "rejection-flow"})
-			m[missingEvidenceKey{target: "claude-opus", journey: "rejection-flow"}] = owner
-		},
-		"moved Codex withdrawn TODO to Pi": func(m map[missingEvidenceKey]string) {
-			owner := m[missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"}]
-			delete(m, missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"})
-			m[missingEvidenceKey{target: "pi", journey: "withdrawn-gate-recovery"}] = owner
-		},
-		"moved Codex withdrawn TODO to Sonnet": func(m map[missingEvidenceKey]string) {
-			owner := m[missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"}]
-			delete(m, missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"})
-			m[missingEvidenceKey{target: "claude-sonnet", journey: "withdrawn-gate-recovery"}] = owner
-		},
-		"moved Codex withdrawn TODO to Opus": func(m map[missingEvidenceKey]string) {
-			owner := m[missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"}]
-			delete(m, missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"})
-			m[missingEvidenceKey{target: "claude-opus", journey: "withdrawn-gate-recovery"}] = owner
-		},
-		"moved Codex rejection TODO to Pi": func(m map[missingEvidenceKey]string) {
-			owner := m[missingEvidenceKey{target: "codex", journey: "rejection-flow"}]
-			delete(m, missingEvidenceKey{target: "codex", journey: "rejection-flow"})
-			m[missingEvidenceKey{target: "pi", journey: "rejection-flow"}] = owner
-		},
-		"moved Codex rejection TODO to Sonnet": func(m map[missingEvidenceKey]string) {
-			owner := m[missingEvidenceKey{target: "codex", journey: "rejection-flow"}]
-			delete(m, missingEvidenceKey{target: "codex", journey: "rejection-flow"})
-			m[missingEvidenceKey{target: "claude-sonnet", journey: "rejection-flow"}] = owner
-		},
-		"moved Codex rejection TODO to Opus": func(m map[missingEvidenceKey]string) {
-			owner := m[missingEvidenceKey{target: "codex", journey: "rejection-flow"}]
-			delete(m, missingEvidenceKey{target: "codex", journey: "rejection-flow"})
-			m[missingEvidenceKey{target: "claude-opus", journey: "rejection-flow"}] = owner
-		},
+		"global TODO":                          addMissingEvidenceMutation(missingEvidenceKey{journey: "keep-moving-posture"}, "9adv48yhye5s2vkhwd7ge52d"),
+		"suppressed proven pass":               addMissingEvidenceMutation(missingEvidenceKey{target: "codex", journey: "default-headless-gate-stop"}, "26nk8qd48zknqnn4kc123sez"),
+		"suppressed unverified Opus target":    addMissingEvidenceMutation(missingEvidenceKey{target: "claude-opus", journey: "default-headless-gate-stop"}, "26nk8qd48zknqnn4kc123sez"),
+		"moved Pi rejection TODO to Sonnet":    moveMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "rejection-flow"}, missingEvidenceKey{target: "claude-sonnet", journey: "rejection-flow"}),
+		"moved Pi rejection TODO to Codex":     moveMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "rejection-flow"}, missingEvidenceKey{target: "codex", journey: "rejection-flow"}),
+		"moved Pi rejection TODO to Opus":      moveMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "rejection-flow"}, missingEvidenceKey{target: "claude-opus", journey: "rejection-flow"}),
+		"moved Codex withdrawn TODO to Pi":     moveMissingEvidenceMutation(missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"}, missingEvidenceKey{target: "pi", journey: "withdrawn-gate-recovery"}),
+		"moved Codex withdrawn TODO to Sonnet": moveMissingEvidenceMutation(missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"}, missingEvidenceKey{target: "claude-sonnet", journey: "withdrawn-gate-recovery"}),
+		"moved Codex withdrawn TODO to Opus":   moveMissingEvidenceMutation(missingEvidenceKey{target: "codex", journey: "withdrawn-gate-recovery"}, missingEvidenceKey{target: "claude-opus", journey: "withdrawn-gate-recovery"}),
+		"moved Codex rejection TODO to Pi":     moveMissingEvidenceMutation(missingEvidenceKey{target: "codex", journey: "rejection-flow"}, missingEvidenceKey{target: "pi", journey: "rejection-flow"}),
+		"moved Codex rejection TODO to Sonnet": moveMissingEvidenceMutation(missingEvidenceKey{target: "codex", journey: "rejection-flow"}, missingEvidenceKey{target: "claude-sonnet", journey: "rejection-flow"}),
+		"moved Codex rejection TODO to Opus":   moveMissingEvidenceMutation(missingEvidenceKey{target: "codex", journey: "rejection-flow"}, missingEvidenceKey{target: "claude-opus", journey: "rejection-flow"}),
 	}
 	for name, mutate := range evidenceMutations {
 		t.Run(name, func(t *testing.T) {

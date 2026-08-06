@@ -62,7 +62,8 @@ func liveDurableJourneyTODO(target liveEvidenceTarget, name string) string {
 		liveEvidenceKey{target: liveEvidenceTargetPi, journey: "smallest-sufficient-mechanism"}:
 		return "TODO(" + liveDurableJourneyDefectID + "): initial-stage successor dispatch must durably enter and run the current stage"
 	case liveEvidenceKey{target: liveEvidenceTargetClaudeSonnet, journey: "keep-moving-posture"},
-		liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "keep-moving-posture"}:
+		liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "keep-moving-posture"},
+		liveEvidenceKey{target: liveEvidenceTargetPi, journey: "keep-moving-posture"}:
 		return "TODO(" + liveDurableJourneyDefectID + "): gate-consume dispatch evidence and consumed-authority terminalization need product fixes"
 	default:
 		return ""

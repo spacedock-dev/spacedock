@@ -4,8 +4,8 @@ This registry defines the runtime behavior that live CI must prove. It is the
 desired-state component for `docs/runtime-live-ci.md`. That operating guide
 remains the single normative entry point for runtime live CI.
 
-The operating guide does not incorporate this registry yet. The bind task must
-add the link, the first reconciliation SHA, and the guard together.
+The operating guide incorporates this registry through its **Registry
+reconciliation** procedure, recorded reconciliation SHA, and watched-path guard.
 
 A journey can be registered before its test, runner, or fixture exists. Missing
 implementation is a reconciliation result. It does not weaken the desired state
@@ -346,10 +346,10 @@ actually invoked. Selector text is not copied into this registry.
 
 ## Reconciliation boundary
 
-The bind task must add a **Registry reconciliation** procedure to
-`docs/runtime-live-ci.md`. That procedure owns the semantic join, orphan check,
-and first reconciliation SHA. This registry does not claim that the procedure or
-SHA exists today.
+The **Registry reconciliation** procedure in `docs/runtime-live-ci.md` owns the
+semantic join, orphan check, recorded reconciliation SHA, and watched-path guard.
+This registry and the operating guide describe that current shipped contract
+together.
 
 The approved guard fails when a later commit changes a watched path after the
 recorded SHA. The watched paths are:
