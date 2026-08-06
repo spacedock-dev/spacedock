@@ -185,3 +185,16 @@ The exact candidate preserves pending authority, conflict identity, ownership se
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — detached validation / equivalent forbidden Git spellings; surface 6 files/+212/-4 vs estimate 4-9 files/+150/-30; AC unchanged
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Make the existing behavior oracle and mutation matrix reject the demonstrated equivalent force, auto-resolution, and side-discard spellings, including `git rebase -X theirs main`, `git checkout --ours contract.txt`, and `git push -f origin HEAD`.
+  Commit `d4a3590dd` replaces the incomplete substring list with action/token checks; the matrix independently reds the three exact findings plus attached/separate strategy options, checkout/restore sides, force/lease, bundled `-fu`, and forced `+refspec` variants.
+- DONE: Keep the supported Captain-owned reconciliation and clean abort/new-head trace green without expanding product contract, provider, schema, resolver, or workflow surfaces.
+  `TestMovingTargetConflictOwnershipAndRecovery` remains green on the real conflict/abort, byte-preserved authority, Captain handoff, and exact-new-head evidence; correction changes only the two pre-existing oracle/matrix test files.
+- DONE: Run focused and focused-race tests, reproduce the detached adversarial mutations, run formatting/full/race evidence, and report exact head and surface; do not repair the unrelated pilot manifest.
+  Focused and focused-race pass; detached exact head `d4a3590ddd7ad7e8b3aec022e462e5ecfda6b9fb` passes supported/adversarial tests; `gofmt` and `git diff --check` pass. Candidate surface is 6 files/+263/-4 total (cycle correction 2 files/+60/-9). Full and race on immutable state `8d31ebd4e` pass every package except the unchanged nine-path `internal/gates` pilot-manifest failure; no race is reported.
+
+### Summary
+
+The corrected oracle now rejects the validator's exact escape spellings and adjacent Git equivalents without changing the First Officer contract or supported reconciliation trace. The candidate is clean at `d4a3590dd`; only the explicitly out-of-scope pilot manifest remains red in aggregate suites.
