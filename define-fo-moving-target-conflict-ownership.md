@@ -8,7 +8,7 @@ verdict:
 score: 0.95
 worktree: .worktrees/spacedock-ensign-define-fo-moving-target-conflict-ownership
 issue:
-sprint: durable-decisions
+sprint: test-behavior-completeness
 group: fo-contract
 milestone: 0.27.0
 id: g3912c6f6jkgd0yjmyg6h7yn
