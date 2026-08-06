@@ -250,3 +250,28 @@ Cycle 2 closes the original three escape spellings without false-rejecting the s
 ### Summary
 
 The oracle now rejects every authorized `ours` merge-strategy spelling while retaining the supported trace and all earlier adversarial coverage. The candidate is clean at `c1409bff4`; this cycle required no contract or authority change.
+
+## Review-finding disposition (cycle 3)
+
+- Reviewer observation: detached audit `/tmp/spacedock-g3-audit-cycle3.eamjJ9` at exact candidate `c1409bff47a1313deb07ce93b62b2f61e965a651` added only a throwaway test; every cycle-1/cycle-2 unquoted form rejects and the supported matrix remains accepted, but `git rebase -X 'theirs' main`, `git checkout '--ours' contract.txt`, and `git push origin '+HEAD:refs/heads/main'` pass the whitespace-token oracle.
+- Released user and normal workflow: ordinary shell quoting of Git option and refspec arguments is valid on the supported conflict path.
+- Observable harm: the oracle stays green for auto-resolution, side discard, and forced-update commands solely because quote bytes remain in the trace string, so AC-5 can appear proven while observable behavior is unsafe.
+- Authority: `contract[skills/first-officer/references/first-officer-shared-core.md#haltrebase-conflictpaths-abort-surface-stop]` requires never force, auto-resolve, or discard either side.
+- Trigger evidence: `go test ./internal/ensigncycle -run '^TestCycle3Detached(ForbiddenMatrix|SupportedMatrix)$' -count=1` failed exactly the three quoted forbidden commands; supported `rebase --abort`, non-force push, and non-resolving merge were not false-rejected.
+- Worker proposal: Material / evidence defect / G3-owned; the repeated lexical escapes show the free-form string mechanism needs a Captain-owned design decision rather than another automatic spelling patch.
+- First Officer disposition: `ROUTE FOR DECISION`; no automatic fix, candidate mutation, or aggregate rerun at the cycle-3 escalation boundary.
+- Decision boundary: either preserve semantic AC-5 by replacing/normalizing the free-form command string at a structured argv or canonical shell-token observation boundary, or have the Captain explicitly narrow accepted AC-5 coverage to literal spellings; validation recommends the structured observation reset.
+- Validator recommendation: `REJECTED`; candidate stayed clean and unchanged at `c1409bff47a1313deb07ce93b62b2f61e965a651`.
+
+## Stage Report: validation (cycle 3)
+
+- FAILED: Re-review AC-1 through AC-5 at exact corrected head c1409bff47a1313deb07ce93b62b2f61e965a651 and confirm the supported conflict/abort/authority/new-head/unrelated-work trace remains green.
+  The supported detached matrix remains accepted and cycle 3 changes no AC-1 through AC-4 contract surface, but AC-5 remains invalid because quoted shell equivalents bypass the oracle.
+- FAILED: Re-run the complete detached forbidden-action matrix, including all cycle-1 and cycle-2 spellings and supported-trace false-positive checks; report any remaining semantic escape before candidate mutation.
+  All prior unquoted force, refspec, side-selection, strategy-option, and `ours` strategy variants reject, and three supported commands remain accepted; quoted `theirs`, `--ours`, and forced `+refspec` arguments are the exact remaining semantic escapes.
+- SKIPPED: Run focused, formatting, full, and race evidence, classify current-head results, and recommend PASSED or REJECTED; keep the unrelated pilot manifest out of G3 scope.
+  The material finding entered the checkpoint before aggregate reruns; `ROUTE FOR DECISION` forbids further rerun or mutation. Recommend REJECTED, with the unrelated pilot manifest unchanged and excluded from G3 classification.
+
+### Summary
+
+Cycle 3 preserves the supported trace and closes every previously named unquoted spelling, but free-form whitespace tokenization cannot establish semantic command safety across normal shell quoting. Escalate for a Captain decision between a structured/canonical command observation reset and an explicit AC scope change; do not continue automatic lexical patches.
