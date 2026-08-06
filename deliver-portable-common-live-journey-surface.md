@@ -1801,3 +1801,22 @@ Cycle 21 binds only Sonnet rejection-flow to existing `zbc…`, reconciles the e
 ### Summary
 
 Cycle 21 PASSED independently at exact pushed candidate `3ee17e6f3f324c9e973d217fb1f38cf0dcdf235b`. The retained Sonnet failure is accurately bound to the existing cross-runtime `zbc…` owner, while runnable Opus, the pure 16x4 matrix, all prior evidence, strict pilot-state validation, fixed surface, and scope boundaries remain intact.
+
+## Stage Report: validation (cycle 22 — surface recarve)
+
+- FAILED: Prove that source reconciliation derives evidence truth rather than restating it.
+  Material finding 1: `internal/contractlint/live_registry_reconciliation_test.go` is 795 lines and copies all fourteen source gaps into `auditedMissingEvidence`, then tests the extracted source against that copy. The duplicated current-gap oracle makes the result tautological: source and expectation can drift together while the proof remains green.
+- FAILED: Hold the approved operator surface near the original estimate and remove competing identities.
+  Material finding 2: candidate `3ee17e6f3f324c9e973d217fb1f38cf0dcdf235b`, core `702d2b13ba1f9ac794e09435f4520bd20c3a015c`, is exactly +2750/-714, net +2036. That is +1626 net over the original +410 estimate. Three standalone journeys remain as unreachable `runRetired…` wrappers, while one synthetic runner map forwards every identity to the same trampoline and three runtime-specific 16-case switches redispatch by journey name.
+- DONE: Record the Captain's replacement disposition.
+  REJECTED. Replace the evidence-only candidate from `origin/main`. Implement sixteen real `TestLiveCommon…` Go functions with adjacent stable-ID and fixture-binding metadata; each test must call an executable `liveJourney` directly. Runtime selection belongs inside the shared helper or fixture parameter, never in a central journey map, runner registry, or journey-name switch.
+- DONE: Define the replacement operator surface.
+  Correct the exact registry entrypoints, delete the competing Pi auto-continue surface, and select the same real tests in every runtime lane with common prefix `^TestLiveCommon` plus `-failfast`. Do not add a map, switch, copied oracle, mutation lab, reconciliation SHA self-guard, or speculative Pi observer/metrics layer.
+- DONE: Preserve earned evidence during replacement.
+  Banked live artifacts and the fourteen target-scoped gap facts remain evidence inputs. Recarving representation and routing must not erase passing runs, infer a pass from TODO, change repair ownership, or broaden a target gap.
+- DONE: Preserve authority and mutation boundaries.
+  This report changes only the entity record. It does not transition status, modify candidate/code, run a model lane, or supersede any product repair owner.
+
+### Summary
+
+Cycle 22 REJECTED `3ee17e6f3` as an evidence-only implementation whose reconciliation is tautological and whose net surface is 1,626 lines over the original estimate. The Captain approved a replacement from `origin/main`: sixteen directly executable `TestLiveCommon…` tests, adjacent source metadata, one fail-fast prefix selector across runtimes, and source-derived reconciliation without parallel maps, switches, copied gap oracles, mutation laboratories, SHA self-guards, or speculative Pi observation/metrics machinery.
