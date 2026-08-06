@@ -1567,3 +1567,30 @@ Cycle 17 PASSED independently at exact candidate `23e0dbd02b3c4aa8753776596eadf9
 ### Summary
 
 Cycle 18 records the archive-proven Pi smallest-sufficient-mechanism failure against its existing `9adv…` owner while preserving the pure 64-cell desired matrix and all prior evidence truth. Exact RED/GREEN owner and target controls, runnable Opus, SHA discrimination, full/race suites, pushed two-commit history, and the hard surface ceiling are green at `00fcde8a5121fe937a75d152cb7b498f1d16a10a`.
+
+## Stage Report: validation (cycle 18)
+
+- DONE: Verify exact provenance, history, binder, cleanliness, and remote equality.
+  Candidate/origin are clean at `00fcde8a5121fe937a75d152cb7b498f1d16a10a`; baseline is `23e0dbd02b3c4aa8753776596eadf9980698a0b5`, watched core is `0e7f2379f9d63896f003a0f10d3a5beac1c31670`, and the binder changes only the documented reconciliation SHA.
+- DONE: Independently classify the archived hosted evidence without rerunning it.
+  Run `31056949526`, Pi job `92476577900`, artifact `8951115959` passed offline and 11 runnable journeys, skipped only the two prior owned Pi cases, then failed smallest-sufficient at 186.96s with a completed process and no timeout; smoke remained skipped.
+- DONE: Prove the failure matches the existing owner rather than capacity or harness drift.
+  Native root-session commands changed both `ready-one` and `ready-two` directly from ready to done, built and dispatched stage done, and left no dispatchable entities; child sessions wrote ready reports, confirming the missing path-scoped ready-stage dispatch entry exactly matches owner `9adv48yhye5s2vkhwd7ge52d`.
+- DONE: Verify the representation-only source change and prior observers.
+  The core adds only Pi/smallest-sufficient to the existing 9a source case and exact expectation, compacts equivalent registry mutations, and updates operator evidence; Pi rejection ambiguity and metric-attribution controls remain green.
+- DONE: Prove pure desired registry and exact observed evidence.
+  Focused runner/reconciliation controls retain 16 journeys × four targets = 64 desired cells and log exactly 11 bindings at Sonnet=3, Codex=5, Pi=3, Opus=0; current and stale SHA guards pass opposite expectations.
+- DONE: Prove target and owner discrimination causally.
+  Detached source mutations make Pi removal, wrong owner, wrong target, and Opus suppression fail their exact checks; restoring the exact candidate returns all four target subtests to green with a clean worktree.
+- DONE: Verify operator text, scope, and fixed surface.
+  Text names the exact run/job/artifact and two ready-to-done transitions; Cycle 18 changes four existing files, adds no file, removes no test function, changes no runtime/product/fixture/prompt/adapter/workflow/owner behavior, and retains exactly 42 files/+2748/-708 cumulatively.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` is idempotent and `git diff --check` passes; full exits 0 in 611.04s and race exits 0 in 618.97s.
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; hosted inspection was read-only and causal proof used archived native sessions or deterministic tests.
+- DONE: Render the independent verdict.
+  PASSED. Material: none. Deferred-risk: none. Polish: none. Validation changed no candidate and made no workflow state transition.
+
+### Summary
+
+Cycle 18 PASSED independently at exact candidate `00fcde8a5121fe937a75d152cb7b498f1d16a10a`. Pi's archive-proven smallest-sufficient failure is accurately attached to the existing `9adv…` owner, while target discrimination, runnable Opus, pure registry truth, prior observers, operator documentation, and the fixed surface remain intact.
