@@ -290,3 +290,16 @@ The oracle now rejects every authorized `ours` merge-strategy spelling while ret
 ### Summary
 
 Cycle 3 preserves the supported trace and closes every previously named unquoted spelling, but free-form whitespace tokenization cannot establish semantic command safety across normal shell quoting. Escalate for a Captain decision between a structured/canonical command observation reset and an explicit AC scope change; do not continue automatic lexical patches.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Delete the test command parser, synthetic command-language field, and command-spelling mutation matrix; add no replacement shell parser or tokenizer.
+  Commit `cece8ae9d` removes `forbiddenMovingTargetAction`, `movingTargetTrace`, free-form actions, clone/grader support, and the entire spelling matrix; detached `rg` verifies those parser/matrix surfaces and representative spelling tokens are absent.
+- DONE: Use direct assertions on values from the real Git fixture and its actual argument boundary, while retaining conflict abort, clean worktree, preserved state, exact-head, ownership, and unrelated-work evidence.
+  The fixture returns the exact argv slices it passes to the real failed rebase and successful abort, plus observed conflict paths, old/new/head identities, clean porcelain, byte-identical pending state, ownership values, per-entity hold/continuation values, and fresh exact-head handoff; the test compares each value directly.
+- DONE: Make the correction reduce test-harness LOC, run focused, focused-race, detached audit, formatting, full, and race evidence, and return a clean exact head.
+  Harness size falls from 269 to 149 lines; focused and focused-race pass; detached exact head `cece8ae9d4e07cfd9a0302bbe217bdfbdf686b3c` passes and contains no parser/matrix surface; `gofmt` and `git diff --check` pass. Candidate surface is 6 files/+157/-4. Full and race on immutable state `e31ce0c1c` pass every package except the unchanged nine-path `internal/gates` manifest failure; no race is reported.
+
+### Summary
+
+The evidence now observes one supported real-Git conflict directly instead of interpreting a synthetic command language. The candidate is clean at `cece8ae9d`, substantially smaller, and changes no shipped contract or authority semantics.
