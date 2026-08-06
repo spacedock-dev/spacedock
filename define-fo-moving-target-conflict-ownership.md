@@ -1,6 +1,6 @@
 ---
 title: Define FO ownership and recovery for moving-target PR conflicts
-status: implementation
+status: validation
 source: "Captain follow-up after the 2026-08-03 durable-decisions conflict diagnosis."
 started: 2026-08-03T16:01:22Z
 completed:
@@ -303,3 +303,27 @@ Cycle 3 preserves the supported trace and closes every previously named unquoted
 ### Summary
 
 The evidence now observes one supported real-Git conflict directly instead of interpreting a synthetic command language. The candidate is clean at `cece8ae9d`, substantially smaller, and changes no shipped contract or authority semantics.
+
+## Review-finding disposition (cycle 4)
+
+- Reviewer observation: detached audit `/tmp/spacedock-g3-cycle4-audit.YJkqa4` at exact candidate `cece8ae9d4e07cfd9a0302bbe217bdfbdf686b3c` captured Git's canonical Trace2 argv and then changed only the throwaway shipped halt contract to consume pending authority, dispatch a resolver, give the FO semantic ownership, and permit force-push; `TestMovingTargetConflictOwnershipAndRecovery` still passed.
+- Released user and normal workflow: a First Officer handling the supported moving-target PR conflict relies on the shipped contract to preserve pending authority, hold only the affected entity, and leave semantic reconciliation to the Captain/branch owner.
+- Observable harm: the focused test can remain green while the shipped contract authorizes the exact terminalization, resolver, ownership, and force behavior it claims to forbid, so a release can present AC-1 as proven while a pending decision is lost.
+- Authority: `value-ac[AC-1]` requires that a moving-target conflict cannot finalize or lose a pending decision.
+- Trigger evidence: in the detached checkout, replacing the two `«halt.rebase-conflict»` outcome lines with the contradictory behavior left `go test ./internal/ensigncycle -run '^TestMovingTargetConflictOwnershipAndRecovery$' -count=1` green; `semanticOwner`, `safetyOwner`, `heldAffected`, `dispatchedReady`, and `presentedReady` are returned literals, and the pending state file is only byte-compared rather than driven through FO behavior.
+- Worker proposal: Material / evidence defect / G3-owned; the current fixture does not independently observe AC-1 contract behavior. Validation proposes rejection without designing or implementing a replacement mechanism.
+- First Officer authorization: `HOLD CANDIDATE UNCHANGED`; complete required evidence, record all four fields, recommend `REJECTED`, and do not design or implement a replacement in validation.
+- Validator recommendation: `REJECTED`; candidate stayed clean and unchanged at `cece8ae9d4e07cfd9a0302bbe217bdfbdf686b3c`.
+
+## Stage Report: validation (cycle 4)
+
+- FAILED: Reproduce AC-1 through AC-5 at exact head cece8ae9d, using the real Git fixture and direct argv observations; confirm the supported conflict, abort, authority handoff, new-head, and unrelated-work trace.
+  Focused and focused-race runs plus detached Trace2 prove the real conflict, `rebase main`, exact `contract.txt` path, `rebase --abort`, clean old head, and exact-head mismatch/match behavior; AC-1/AC-2/AC-4 authority and continuation values are literals disconnected from the shipped contract, so the complete trace is not validly proven.
+- FAILED: Run the required detached adversarial audit without adding a parser, tokenizer, mutation matrix, or synthetic command-language field; report any material escape before candidate mutation.
+  The audit added no harness mechanism and demonstrated the material AC-1 escape by making the throwaway contract explicitly unsafe while the focused test stayed green; the real candidate was reported before and remained unchanged.
+- DONE: Run focused, formatting, full, and race evidence; classify failures from current evidence, keep the unrelated pilot manifest outside G3, and recommend PASSED or REJECTED.
+  Focused/focused-race, `gofmt -d`, and `git diff --check` pass; full and race pass all packages except the unchanged nine missing-path `internal/gates` pilot manifest, with no race reported. That external failure is excluded from G3; recommend REJECTED for the material AC-1 evidence defect.
+
+### Summary
+
+Cycle 4 validates the real Git observation boundary and confirms the parser/matrix removal, but the fixture does not connect its modeled authority, hold, or continuation values to the shipped FO contract. The detached contradiction probe proves the test can pass while AC-1 behavior is wrong, so the exact clean candidate is rejected without mutation or replacement design.
