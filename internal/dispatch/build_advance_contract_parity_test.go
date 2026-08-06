@@ -46,12 +46,18 @@ var advanceContractRows = []contractRow{
 		},
 	},
 	{
-		element: "`### Stage definition:` — full README subsection verbatim (via show-stage-def fetch line)",
+		element: "Full resolved README stage/context package in the dispatch file",
 		check: func(t *testing.T, prompt, body string, f advanceParityFixture) {
 			t.Helper()
-			want := fmt.Sprintf("dispatch show-stage-def --workflow-dir %s --stage %s", shlexQuote(f.workflowDir), shlexQuote(f.stage))
+			want, err := extractStageSubsection(filepath.Join(f.workflowDir, "README.md"), f.stage)
+			if err != nil {
+				t.Fatalf("extract stage subsection: %v", err)
+			}
 			if !strings.Contains(body, want) {
-				t.Errorf("fetch commands missing show-stage-def line %q: body=%q", want, body)
+				t.Errorf("dispatch file missing resolved stage subsection %q: body=%q", want, body)
+			}
+			if strings.Contains(body, "### Fetch commands") {
+				t.Errorf("dispatch file retained fetch bootstrap: body=%q", body)
 			}
 		},
 	},

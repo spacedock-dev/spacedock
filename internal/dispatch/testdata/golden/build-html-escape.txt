@@ -5,9 +5,7 @@
   "schema_version": 2,
   "subagent_type": "spacedock:ensign",
   "description": "Compare a < b && c > d in <Tag>: validation",
-  "fetch_commands": [
-    "spacedock_launcher() { if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then \"$SPACEDOCK_BIN\" \"$@\"; else spacedock \"$@\"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage validation"
-  ],
+  "fetch_commands": [],
   "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation.md",
   "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation.md and treat its content as your assignment.",
   "model": null,
@@ -31,6 +29,20 @@ You are working on: Compare a < b && c > d in <Tag>
 
 Stage: validation
 
+### Workflow launcher
+
+Begin every ensign-owned Spacedock workflow-helper command, including `status --read`, with this literal command prefix:
+
+    /opt/spacedock/bin/spacedock
+
+Do not substitute inherited `SPACEDOCK_BIN` or `spacedock` from PATH. An explicitly named worktree Spacedock binary is the product under test, not the workflow launcher.
+
+### validation
+
+verify.
+
+- **Outputs:** z.
+
 Your working directory is <ROOT>/.worktrees/spacedock-ensign-thing
 All file reads and writes MUST use paths under <ROOT>/.worktrees/spacedock-ensign-thing.
 Your git branch is spacedock-ensign/thing. All commits MUST be on this branch. Do NOT switch branches or commit to main.
@@ -49,9 +61,6 @@ compare a < b && c > d in <Tag> & raw &amp; ampersand
 ### Summary
 {brief description of what was accomplished}
 
-### Fetch commands
-
-    spacedock_launcher() { if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN:-}" ]; then "$SPACEDOCK_BIN" "$@"; else spacedock "$@"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage validation
 
 
 ### Completion Signal

@@ -44,7 +44,7 @@ func runBuild(t *testing.T, root, workflowDir string, input map[string]any) buil
 	// in team mode (team_name supplied), but pin it for hermeticity.
 	t.Setenv("HOME", t.TempDir())
 	var stdout, stderr bytes.Buffer
-	if exit := dispatch.Run(claudeteam.Probe, []string{"build", "--workflow-dir", workflowDir}, strings.NewReader(string(raw)), &stdout, &stderr); exit != 0 {
+	if exit := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", workflowDir}, strings.NewReader(string(raw)), &stdout, &stderr); exit != 0 {
 		t.Fatalf("dispatch build exited %d\nstdout: %s\nstderr: %s", exit, stdout.String(), stderr.String())
 	}
 	var res buildResult

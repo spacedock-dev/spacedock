@@ -1,5 +1,5 @@
-// ABOUTME: Behavior-loss control — proves dev stage discipline rides the dev-shape
-// ABOUTME: show-stage-def fetch, not the universal ensign core, so neutralizing the core loses none.
+// ABOUTME: Behavior-loss control — proves dev stage discipline is snapshotted from
+// ABOUTME: the workflow README while show-stage-def remains a public inspection surface.
 package dispatch
 
 import (
@@ -13,10 +13,8 @@ import (
 
 // devDisciplineSentinel is a freshly-minted token written ONLY into the fixture
 // README's ### ideation / ### implementation subsections. Because the test invents
-// it, it cannot appear in the shipped universal ensign core — so its absence from the
-// dispatch body (which delivers the core by reference, via the Skill first-action)
-// proves the stage prose is not inlined into the assignment, and its presence in
-// show-stage-def output proves the fetch delivers it.
+// it, it cannot appear in the shipped universal ensign core; its presence in both
+// the built file and direct show-stage-def output proves they use the same selection.
 const devDisciplineSentinel = "DEV-DISCIPLINE-SENTINEL"
 
 // readmeDevDiscipline is a dev-shape workflow README that plants the sentinel in the
@@ -73,14 +71,10 @@ Independently verify.
 term.
 `
 
-// TestBuildStageDisciplineRidesFetchNotInlineAssignment is the behavior-loss control
-// for neutralizing the universal ensign core. It proves a dev-workflow ensign still
-// receives dev stage discipline through the dev-shape scaffolding — the README
-// ### {stage} subsection delivered via the assignment's show-stage-def fetch line —
-// and NOT through the universal core. So removing the core's illustrative dev
-// stage-name parentheticals loses no discipline: the core never carried the discipline
-// to begin with; the fetch does.
-func TestBuildStageDisciplineRidesFetchNotInlineAssignment(t *testing.T) {
+// TestBuildStageDisciplineIsSnapshottedIntoAssignment proves the selected README
+// stage prose is carried in the self-contained file, not the universal ensign core
+// or the outer pointer prompt.
+func TestBuildStageDisciplineIsSnapshottedIntoAssignment(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	root := t.TempDir()
@@ -111,22 +105,24 @@ func TestBuildStageDisciplineRidesFetchNotInlineAssignment(t *testing.T) {
 		t.Errorf("dispatch body missing the universal-core load directive (Skill first-action):\n%s", body)
 	}
 
-	// Stage discipline rides the show-stage-def fetch line, fetched on demand.
-	wantFetch := LauncherCommand() + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage ideation"
-	if !strings.Contains(body, wantFetch) {
-		t.Errorf("dispatch body missing the show-stage-def fetch line\nwant contains: %s\n---body---\n%s", wantFetch, body)
+	if !strings.Contains(body, devDisciplineSentinel) {
+		t.Errorf("dispatch body omitted the selected stage-discipline sentinel:\n%s", body)
+	}
+	var envelope struct {
+		Prompt string   `json:"prompt"`
+		Fetch  []string `json:"fetch_commands"`
+	}
+	if err := json.Unmarshal([]byte(native.stdout), &envelope); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(envelope.Prompt, devDisciplineSentinel) {
+		t.Errorf("outer pointer prompt transported stage payload: %q", envelope.Prompt)
+	}
+	if len(envelope.Fetch) != 0 || strings.Contains(body, "### Fetch commands") {
+		t.Errorf("assignment retained worker fetch bootstrap: envelope=%#v\n%s", envelope.Fetch, body)
 	}
 
-	// The stage prose is NOT inlined into the assignment: the sentinel that lives in
-	// the README's ### ideation subsection must not appear in the dispatch body. The
-	// universal ensign core that the Skill directive loads never carries this
-	// test-minted sentinel either — it exists only in the fixture README.
-	if strings.Contains(body, devDisciplineSentinel) {
-		t.Errorf("dispatch body INLINED the stage prose — the %s sentinel leaked into the assignment instead of riding the fetch:\n%s", devDisciplineSentinel, body)
-	}
-
-	// Running the fetch line returns the ### ideation subsection carrying the sentinel:
-	// the dev discipline reaches the ensign through the show-stage-def fetch.
+	// The public inspection command remains available and returns the same selection.
 	fetched := runNative("", "show-stage-def", "--workflow-dir", root, "--stage", "ideation")
 	if fetched.exit != 0 {
 		t.Fatalf("show-stage-def ideation exit %d, stderr:\n%s", fetched.exit, fetched.stderr)
@@ -147,7 +143,7 @@ func TestBuildStageDisciplineRidesFetchNotInlineAssignment(t *testing.T) {
 	}
 }
 
-func TestDeclaredContextBuildAndHostNeutralFetch(t *testing.T) {
+func TestDeclaredContextBuildIsHostNeutralAndSelfContained(t *testing.T) {
 	root := t.TempDir()
 	readme := "---\nentity-type: task\nid-style: slug\nstages:\n  defaults:\n" +
 		"    context-sections: [Pølicy]\n  states:\n    - name: ideation\n      initial: true\n---\n" +
@@ -168,16 +164,21 @@ func TestDeclaredContextBuildAndHostNeutralFetch(t *testing.T) {
 				t.Fatalf("build exit=%d stderr=%q", built.exit, built.stderr)
 			}
 			var envelope struct {
-				Fetch []string `json:"fetch_commands"`
+				Fetch        []string `json:"fetch_commands"`
+				DispatchFile string   `json:"dispatch_file_path"`
 			}
 			if err := json.Unmarshal([]byte(built.stdout), &envelope); err != nil {
 				t.Fatal(err)
 			}
-			if len(envelope.Fetch) != 1 || !strings.Contains(envelope.Fetch[0], "show-stage-def") {
-				t.Fatalf("fetch commands = %#v, want one show-stage-def pointer", envelope.Fetch)
+			if len(envelope.Fetch) != 0 {
+				t.Fatalf("fetch commands = %#v, want empty self-contained assignment", envelope.Fetch)
+			}
+			want := "### ideation\nstage β\n\n## Pølicy\nα\nβ\nγ\n"
+			body := readDispatchBody(t, envelope.DispatchFile)
+			if !strings.Contains(body, want) {
+				t.Fatalf("dispatch file omitted resolved stage/context package\nwant=%q\nbody=%q", want, body)
 			}
 			got := runNative("", "show-stage-def", "--workflow-dir", root, "--stage", "ideation")
-			want := "### ideation\nstage β\n\n## Pølicy\nα\nβ\nγ\n"
 			if got.exit != 0 || got.stdout != want {
 				t.Fatalf("show-stage-def exit=%d stderr=%q\n got=%q\nwant=%q", got.exit, got.stderr, got.stdout, want)
 			}

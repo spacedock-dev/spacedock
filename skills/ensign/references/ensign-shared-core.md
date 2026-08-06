@@ -4,7 +4,7 @@ Shared ensign semantics. Keep aligned with `agents/ensign.md` and the runtime ad
 
 ## Assignment
 
-**Launcher command invariant:** Generated fetch commands and any Spacedock helper calls should prefer `${SPACEDOCK_BIN:-spacedock}` so sessions launched by an explicit binary keep using that binary, while unset environments fall back to `spacedock` on `$PATH`.
+**Launcher command invariant:** The dispatch file pins one absolute workflow launcher. Begin every ensign-owned Spacedock workflow-helper command, including `status --read`, with that literal path. Do not re-resolve `SPACEDOCK_BIN` or PATH. An explicitly named worktree binary is the product under test, not the workflow launcher.
 
 Read the assignment context provided by the first officer. It defines:
 - the entity
@@ -15,7 +15,7 @@ Read the assignment context provided by the first officer. It defines:
 
 ## Working
 
-1. Read the entity file before making changes — for a specific section (the relevant stage-def section, your prior report), locate its heading with `grep -nE '^#{1,4} '` and scoped-`Read(offset, limit)` the span to the next heading. `status --read <entity-path> --json` is the fence-safe fallback when the body carries fenced markdown-like content that bare grep over-counts.
+1. Read the entity file before making changes — for a specific section (the relevant stage-def section, your prior report), locate its heading with `grep -nE '^#{1,4} '` and scoped-`Read(offset, limit)` the span to the next heading. The dispatch-pinned launcher's `status --read <entity-path> --json` is the fence-safe fallback when the body carries fenced markdown-like content that bare grep over-counts.
 2. If you were given a worktree path, keep all reads, writes, and commits under that worktree.
 3. Perform the work described in the stage definition.
 4. Update the entity file body, not the frontmatter.
@@ -89,7 +89,7 @@ Rules:
 - Every checklist item must appear.
 - Use the checklist item text verbatim for `{item text}` when possible (copy/paste).
 - Do not use markdown checkbox markers.
-- Append the report at the end of the entity file — get the file's `total_lines` from `status --read <entity-path> --json` and append after it; do not read the entire entity body to find an insertion point.
+- Append the report at the end of the entity file — get the file's `total_lines` from the dispatch-pinned launcher's `status --read <entity-path> --json` and append after it; do not read the entire entity body to find an insertion point.
 - If redoing a stage after rejection, append a new `## Stage Report: {stage_name} (cycle N)` section at the end rather than locating and overwriting the prior report.
 
 ## Completion
@@ -106,17 +106,4 @@ When your initial prompt matches this pattern (the `Skill(...)` invocation follo
 
 If the Read fails (missing, unreadable, empty), do NOT proceed with empty context. Send `DISPATCH_FILE_MISSING: {path} - {error}` to the first officer through your runtime adapter's completion-signal channel and stop.
 
-**Advance bootstrap.** This covers the initial prompt only. When a mid-session message instead matches `Advancing to next stage: {stage}.` followed by `Read /tmp/spacedock-dispatch/{name}.md and treat its content as your next-stage assignment.`, Read that file and treat its content as your next-stage assignment (the fetch-commands bootstrap above applies to it identically). On Read failure, send `DISPATCH_FILE_MISSING: {path} - {error}` through the same completion-signal channel and stop — the same failure shape as the initial bootstrap.
-
-## Fetch-on-Demand Bootstrap
-
-The FO's dispatch may carry a `### Fetch commands` section near the top of your prompt. If present:
-
-1. Read each command (one per line, four-space-indented per markdown code-block convention).
-2. Run each command via Bash in order.
-3. Concatenate stdouts; treat the result as inlined into your prompt at the `### Fetch commands` position.
-4. Proceed with the rest of your assignment.
-
-If a fetch command exits non-zero, report the failure to the FO via your runtime adapter's completion-signal channel. Include command, exit code, and stderr — do not silently proceed. A missing or unreadable stage definition is a dispatch-shape failure the FO must surface to the captain.
-
-If the prompt has no `### Fetch commands` block, skip this step; the rest of the prompt is self-contained.
+**Advance bootstrap.** This covers the initial prompt only. When a mid-session message instead matches `Advancing to next stage: {stage}.` followed by `Read /tmp/spacedock-dispatch/{name}.md and treat its content as your next-stage assignment.`, Read that file and treat its content as your complete next-stage assignment. On Read failure, send `DISPATCH_FILE_MISSING: {path} - {error}` through the same completion-signal channel and stop — the same failure shape as the initial bootstrap.
