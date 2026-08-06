@@ -37,89 +37,150 @@ gates:
                 state: consumed
 ---
 
-The First Officer contract names semantic ownership for an open-PR moving-target
-conflict, but it does not make the owner dispatch mechanical. It also leaves
-GitHub author data looking like worker identity even though all workers commit
-with the Captain's shared credential. When the original worker handle is gone,
-the contract gives no fresh-dispatch route to the same code/worktree owner.
+The First Officer contract names safety behavior for an open-PR moving-target
+conflict, but it does not make the next owner dispatch mechanical. Git author
+data is unusable as worker identity because workers share the Captain's Git
+credential. This task is deliberately narrower than G3: it proves only the
+owner-handoff transaction after the conflicted rebase has been aborted.
 
 ## Problem
 
-`halt.rebase-conflict` says to abort and surface paths, while the merge and
-dispatch cores do not require a concrete owner-handoff package or recipient.
-The FO can therefore report "the owner must reconcile" without dispatching the
-owner, or send the work to the Captain because the PR author is the Captain's
-credential. This is a generic First-Officer/runtime contract defect, not a
-durable-decisions-only behavior and not a reason to add a resolver worker.
+`halt.rebase-conflict` says to abort and surface paths, but stops before a
+dispatchable package and recipient are produced. The FO can therefore report
+"the owner must reconcile" without contacting anyone, or can confuse the
+Captain-authored PR with a Captain-owned worktree. The existing stage `agent:`,
+entity status, registered branch/worktree, live worker identity, and fresh
+dispatch builder already contain all identity needed; the missing piece is a
+same-stage handoff mode that binds them without inventing ownership state.
 
 ## Proposed approach
 
-- Define the owner as the workflow dispatch identity plus its entity stage,
-  branch, and worktree—not the GitHub author or commit credential.
-- For a code-worktree moving-target conflict in an open PR, preserve the entity
-  stage, `pr:#N`, merge mod-block, and pending approval; abort the local rebase;
-  classify the conflict as a per-entity hold; and assemble an owner-handoff
-  package containing the entity, stage, PR, branch, worktree, old/new base and
-  head, exact paths, and the next owner action.
-- Dispatch that package to the live owner handle when addressable. If the old
-  handle is gone, fresh-dispatch the same stage's owner identity against the
-  existing branch/worktree. Do not route to the Captain merely because the PR
-  uses the Captain's credential, and do not spawn a generic resolver.
-- Keep unrelated entities moving. A split-root state-sync conflict remains a
-  global state-safety halt and is distinct from this code-worktree hold.
-- When the owner produces a new exact head, invalidate old CI and gate evidence,
-  rerun fresh validation/CI, and resume merge guard only from that evidence.
+Add a narrow `spacedock dispatch build --handoff` mode. It reuses the ordinary
+dispatch builder and requires a scope-notes file containing the entity, current
+stage, PR, registered branch/worktree, old base/head, moved base, exact conflict
+paths, and the next owner action. It validates that the entity is still at the
+named stage and that its recorded worktree is the registered checkout of the
+stage agent's derived branch. The package is opaque Markdown; the helper does
+not parse, classify, or resolve conflicts.
+
+The FO selects transport from identity it already holds:
+
+- If the live worker identity matches entity, stage, branch, and worktree and
+  `«addressable-worker»` is present, build `--handoff --advance` and send the
+  emitted prompt through the existing live follow-up route.
+- Otherwise build `--handoff` and forward the emitted ordinary spawn envelope
+  through the existing fresh-dispatch route. Handoff mode validates the already
+  stamped stage/worktree itself and performs no state publication.
+
+Both modes preserve entity bytes and Git refs. The PR author and commit
+credential are never inputs. This is a code-worktree per-entity hold; the FO
+may continue its event loop after dispatch. A split-root state publication
+conflict still invokes the existing workflow-wide state-safety halt and never
+enters `--handoff`.
+
+This mechanism serves AC-1. The simpler alternative was raw `--advance` or
+`--stamp` plus scope notes, but those envelopes describe a next-stage advance
+or ordinary entry and do not validate a same-stage registered owner checkout.
+No new owner resolver is justified: stage metadata plus registered Git state
+already determines the fresh recipient, while live identity determines reuse.
+
+## Spike result
+
+The existing seams are sufficient. On 2026-08-06,
+`TestStampIdempotentReRunSkipsAlreadyStamped` proved an already-stamped stage
+and registered worktree can emit another fresh envelope without a new state
+commit; `TestBuildAdvanceGoldens/codex-host` proved the same-stage live-route
+pointer envelope; and `TestCodexMultiAgentV2SpawnInputAlwaysIsolatesFreshDispatch`
+proved the fresh Codex mapping forces isolated context. All passed. The missing
+semantic is only the explicit handoff mode and its owner/worktree validation;
+no new stored state or resolver is required, so D8 should remain in the release.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — An open-PR moving-target conflict reaches the correct worker.**
-Verified by a fixture that advances the merge target after terminal approval is
-pending and asserts a concrete owner-handoff dispatch to the recorded workflow
-identity/branch/worktree, while `status`, `pr:#N`, merge mod-block, and pending
-authority remain unchanged.
+**AC-1 (VALUE) — Every accepted moving-target handoff produces one dispatch to
+the workflow owner of the existing branch/worktree.** A direct fixture starts
+from a real aborted Git conflict and a Captain-authored commit, then exercises
+both transports. With a matching addressable handle it observes one live
+same-stage follow-up; with that handle absent it observes one fresh spawn whose
+stage `agent:`, branch, and worktree equal the fixture's registered values.
+Changing the stage agent or registered branch makes the assertion fail.
 
-**AC-2 — Shared Git credentials cannot misidentify the owner.**
-Verified by a fixture whose PR author is the Captain but whose dispatched
-implementation identity is an ensign; the handoff targets the ensign identity,
-not the Git author, and the fresh-dispatch fallback works after the old handle
-is absent.
+**AC-2 — Handoff is byte-clean outside its dispatch artifact.** The same fixture
+snapshots entity bytes (including `status`, `pr`, `mod-block`, and gate record),
+state HEAD, code branch, worktree HEAD, and porcelain before both transports and
+asserts equality afterward. Any mutation, new state field, rebase, resolution,
+commit, or force update makes the test fail.
 
-**AC-3 — Rewritten heads cannot reuse evidence.**
-Verified by changing the PR head after a green validation result and asserting
-that the old CI/Briefing is held until exact-head validation and required lanes
-run again.
-
-**AC-4 — The conflict hold is per entity.**
-Verified by an event-loop fixture with one dirty PR and two independent ready
-entities; the owner handoff is dispatched while the other two continue to their
-next dispatch or gate action.
-
-**AC-5 — No resolver escape hatch is created.**
-Verified by detached adversarial attempts to auto-resolve, force-push, use
-`ours`/`theirs`, clear authority, or spawn a generic resolver; each is rejected
-while the owner-handoff path remains executable.
+**AC-3 — Credential identity cannot select the recipient.** A typed build-output
+test configures the Captain as Git author and a distinct stage `agent:` owner,
+then asserts the live/fresh targets derive from worker identity/stage metadata
+and registered Git state. The implementation contains no Git-author lookup,
+generic resolver route, parser, tokenizer, or simulated command language.
 
 ## Expected surface and semantic boundaries
 
-Expected changes are limited to the generic First-Officer shared, dispatch,
-merge, and runtime-adapter contract plus focused behavior fixtures. No workflow
-README, stored-state schema, PR-provider policy, generic resolver worker, or
-shared Git credential behavior changes.
+Expected files are `internal/dispatch/{dispatch.go,build.go,build_handoff_test.go}`,
+`skills/first-officer/references/{first-officer-shared-core.md,fo-dispatch-core.md}`,
+one shared live-scenario fixture/runner registration, and
+`docs/site/reference/command-reference.md`: 6–8 files and about +140/-10 lines.
+Tolerance is two extra files and +100 insertions for host-neutral fixture wiring;
+crossing either bound requires a new gate review.
+
+Allowed semantic changes are one additive CLI grammar flag (`dispatch build
+--handoff`) and runtime behavior that routes an aborted code-worktree conflict
+to a matching live owner or fresh same-stage owner. Stored formats, authority,
+stage selection, PR policy, Git credentials, split-root halt behavior, and
+conflict-resolution behavior may not change.
+
+Concrete documentation diff for `docs/site/reference/command-reference.md`:
+
+- Before: the `spacedock dispatch` row ends after describing `--stamp` failure
+  discrimination.
+- After: append: "`dispatch build --handoff` builds a byte-clean same-stage
+  conflict-owner package: pair it with `--advance` for a matching live handle or
+  omit `--advance` for a fresh dispatch against the registered worktree."
 
 ## Test plan
 
-Use a throwaway two-branch fixture with a Captain-authored PR and a distinct
-ensign dispatch identity. Advance the base, capture the conflict, abort without
-state mutation, exercise live-handle and fresh-owner dispatch paths, then
-change the head and prove stale evidence rejection. Run focused dispatch/merge
-tests, detached adversarial checks, `go test ./...`, `go test ./... -race`, and
-format checks.
+Add one direct Go fixture around the existing builder and typed runtime adapter
+output, not a prose oracle. It creates a real conflicting rebase, aborts it,
+then supplies the observed argv-independent Git values as opaque scope notes.
+It invokes `--handoff --advance` and fresh `--handoff`, captures the emitted
+typed envelopes, and compares recipient/worktree plus the before/after bytes and
+refs. A tagged live Codex or Claude scenario must exercise one emitted handoff
+through the actual addressable or spawn tool and leave a worker-written marker
+in the existing worktree; the offline test must red if that marker is attributed
+to a Captain/Git-author identity.
+
+The live scenario is required because G3 proved that literal ownership values
+inside a fixture do not establish FO lifecycle behavior. The simplest
+alternative—only inspecting the envelope—is insufficient to prove the runtime
+call occurred. No shell parser, command log interpreter, or mutation matrix is
+permitted. Run focused dispatch and live-scenario unit tests, the selected live
+host lane, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`,
+and `git diff --check`.
 
 ## Stage-specific test gates
 
-- Ideation must replay the conflict and prove the credential/worker identity
-  distinction before selecting contract wording.
-- Implementation must preserve pending authority and emit a concrete owner
-  handoff without adding a resolver or state field.
-- Validation must reproduce live-owner and fresh-owner dispatch, exact-head
-  freshness, per-entity keep-moving, and no-auto-resolution behavior.
+- Ideation must prove the existing live/fresh dispatch seams can reuse the
+  recorded stage/worktree identity and must cut D8 if they cannot.
+- Implementation must ship the typed handoff mode and direct fixture before
+  changing the FO contract; no lifecycle model or interpreter may substitute.
+- Validation must run the direct fixture and one actual runtime handoff, and
+  must reject if either recipient or registered worktree is only a literal.
+
+## Stage Report: ideation
+
+- DONE: Prove whether a self-contained mechanical owner handoff can use existing dispatch identity, branch, worktree, and live-or-fresh routing; recommend cut if it requires new state or a resolver.
+  Focused spikes passed for reuse of an already-stamped worktree, the Codex-host `--advance` artifact, and isolated fresh-spawn mapping; only an additive handoff mode is missing, so retain D8 with no state or resolver.
+- DONE: Define the smallest end-value contract, acceptance evidence, expected files and insertions, tolerance, and allowed semantics; separate code-worktree holds from split-root state halts.
+  The design is one byte-clean same-stage dispatch transaction, 6–8 files/+140/-10 with +2 files/+100 tolerance; code holds may dispatch and continue, while split-root conflicts retain the global halt.
+- DONE: Exercise the riskiest live-owner or fresh-owner handoff path once without a parser or simulated command language, and provide a concrete implementation and test boundary.
+  Direct existing tests exercised both build routes and the Codex fresh mapping; implementation adds typed `--handoff` fixture coverage plus one actual tagged live runtime handoff, with no command interpreter.
+
+### Summary
+
+D8 is viable only after removing G3's unprovable lifecycle claims. The approved
+shape is a small explicit builder mode that binds existing stage identity and
+registered Git state to the existing live-or-fresh runtime routes, proved at a
+typed artifact boundary and once through a real runtime tool call.
