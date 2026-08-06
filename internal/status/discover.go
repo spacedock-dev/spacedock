@@ -246,7 +246,9 @@ func newEntity(fields map[string]string, slug, path, scope string) *entity {
 
 func materializeGateReadiness(entities []*entity, stages []Stage) {
 	taxonomy := make([]gates.ReadinessStage, 0, len(stages))
+	stageByName := make(map[string]Stage, len(stages))
 	for _, stage := range stages {
+		stageByName[stage.Name] = stage
 		taxonomy = append(taxonomy, gates.ReadinessStage{
 			Name: stage.Name, Gate: stage.gate, Terminal: stage.terminal,
 		})
@@ -255,7 +257,16 @@ func materializeGateReadiness(entities []*entity, stages []Stage) {
 		if entity.scope != "active" {
 			continue
 		}
-		readiness := gates.CurrentStageReadiness(entity.gateDoc, entity.fields["status"], taxonomy)
+		status := entity.fields["status"]
+		readiness := gates.CurrentStageReadiness(entity.gateDoc, status, taxonomy)
+		// gqs owns the structural/durability proof. Only a gated stage with no
+		// current authority may be promoted by that proof; all existing authority
+		// states remain owned by the canonical reducer above.
+		if readiness == "validating" && !entity.gateInvalid {
+			if stage, ok := stageByName[status]; ok && stage.gate && hasCompleteCommittedStageReport(entity.path, status) {
+				readiness = gates.CurrentStageReadinessWithReport(entity.gateDoc, status, taxonomy, true)
+			}
+		}
 		if entity.gateInvalid && readiness == "validating" {
 			readiness = "invalid"
 		}

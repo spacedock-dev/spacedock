@@ -82,9 +82,9 @@ func paginationJSONObj(w paginationWindow) *jsonObj {
 // computed dispatch columns. --fields adds frontmatter keys after these.
 var nextFixedFields = []string{"id", "slug", "current", "next", "worktree"}
 
-// nextJSON builds the {"command":"next","dispatchable":[...]} envelope. The
-// fixed five are always present; explicit/--all-fields frontmatter keys are
-// additive after them (the computed columns are not projectable, per spike).
+// nextJSON builds the machine scheduler envelope. dispatchable keeps its fixed
+// row shape and ready_gates is the canonical ordered gate projection shared by
+// boot --identify and every scheduler read.
 func nextJSON(entities []*entity, stages []Stage, explicitFields []string, allFields bool) *jsonObj {
 	disp := computeDispatchable(entities, stages)
 	extras := resolveNextExtras(entities, explicitFields, allFields)
@@ -94,7 +94,9 @@ func nextJSON(entities []*entity, stages []Stage, explicitFields []string, allFi
 			arr[i].set(f, d.e.fields[f])
 		}
 	}
-	return newJSONObj().set("command", "next").setValue("dispatchable", arr)
+	return newJSONObj().set("command", "next").
+		setValue("dispatchable", arr).
+		setValue("ready_gates", readyGatesJSONArr(computeReadyGates(entities, stages)))
 }
 
 // resolveNextExtras returns the additive frontmatter keys for --next JSON:

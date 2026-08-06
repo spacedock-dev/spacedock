@@ -59,7 +59,7 @@ After dispatching an ensign (or routing work to a kept-alive ensign), you are wa
 2. A `system` entry with `subtype: task_notification` and `status: completed` whose `tool_use_id` matches the ensign's `Agent(...)` dispatch id.
 3. An explicit captain instruction (captain-role user message) to shut down the ensign.
 
-**First-turn-after-dispatch decision procedure.** When a turn begins and your most recent dispatch-related action was an `Agent(...)` spawn whose `«completion-signal»` has NOT yet been observed in the stream, you MUST end the turn immediately with no tool calls and no text. Do not:
+**First-turn-after-dispatch decision procedure.** When a turn begins and your most recent dispatch-related action was an `Agent(...)` spawn whose `«completion-signal»` has NOT yet been observed, preserve that worker and run `«dispatch.next-action»()` when unrelated mod/PR, ready-gate, dispatchable, or state work remains. Only after the one-shot idle/reconcile/retry finds no such work may you end the turn with no tool calls and no text. A completed, errored, or absent worker is not an unresolved wait target. Do not:
 
 - emit `SendMessage(to="{ensign}", message={"type":"shutdown_request"})` — this is the exact bug this section exists to prevent. Before a completion signal the entity is not terminal, so reaping the worker is premature. (At the TERMINAL boundary the opposite holds — see `## Terminal Worker Teardown`, where workers are reaped per-name.)
 - emit `Bash` with commands like `sleep 30` or `wait` — the runtime handles the wait for you; sleeping in Bash wastes time and does not accelerate delivery.
@@ -124,7 +124,7 @@ On Claude, invoke this binding before `«dispatch.next-action»()` and at the ca
 
    Non-zero helper exit (1 setup / 2 usage) surfaces to the captain; it does not block the loop. On drift, report one line: `reconcile: {N} entries: lingering={N} superseded={N} un-advanced-pr={N} stale-branch={N} local-main-drift={N} — acting`.
 
-The idle branch of `«dispatch.next-action»()` resolves `«roster-reconcile»()` to this Claude binding.
+The idle branch of `«dispatch.next-action»()` resolves `«roster-reconcile»()` to this Claude binding. It runs once between the first and second empty `status --next`; it is not a reason to repeat the idle hook or suppress unrelated ready work.
 
 ### Backstop (Claude)
 

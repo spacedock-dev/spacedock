@@ -21,7 +21,7 @@ Each runner adapter turns a shared scenario into a real launch and returns `(bef
 |---------|--------------|---------------|
 | Auth / HOME isolation | isolated `CODEX_HOME` + minimal `config.toml` plus copied `auth.json` / `OPENAI_API_KEY` | clean `HOME` + OAuth benchmark-token / `ANTHROPIC_API_KEY` (`isolatedClaudeEnv`) |
 | Plugin install | `spacedock codex --plugin-dir <checkout>` consumes the checkout before `--` | `spacedock claude --plugin-dir <checkout> --skip-compat-check` |
-| Launch | `spacedock codex <task> -- exec --json --enable multi_agent_v2 --output-last-message <file>` | `spacedock claude -- -p <prompt> --output-format stream-json` |
+| Launch | `spacedock codex <task> -- exec --json --output-last-message <file>`; the launcher injects `agents.enabled=true`, stable `features.multi_agent=true`, and exact `features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}`, rejects forwarded overrides, and fails if the host cannot accept them | `spacedock claude -- -p <prompt> --output-format stream-json` |
 | `observed` extract | durable workflow state; final message only where the scenario promises user-facing text | durable workflow state; final message only where the scenario promises user-facing text |
 | Artifacts | jsonl / final-message / stderr | stream jsonl / final-message |
 
@@ -54,17 +54,7 @@ every expected start, and every expected start strictly predates the earliest co
 Same-slug sidecars are allowed only there or at a corrected-held boundary; foreign slugs reject.
 Transcript JSONL, command text, provider events, and model narration remain diagnostic only; the commissioned-task fallback uses the same durable oracle.
 
-Codex deliberately follows the Spacedock front door before handing off host arguments. The
-runner passes `--plugin-dir` and `--skip-compat-check` before `--`; the front door installs the
-current checkout and appends the fixed first-officer bootstrap to the task. After `--`, the
-runner passes Codex's `exec` command, explicitly enables `multi_agent_v2`, and uses
-`--dangerously-bypass-approvals-and-sandbox` to match Claude's live `bypassPermissions` posture.
-The isolated home receives only the three-key `features.multi_agent_v2` fragment and, for local
-OAuth, `auth.json`; it never copies the operator's full config, plugin cache, or other
-credentials. Codex has no Claude `--agent` flag or equivalent stream result event, so its
-bootstrap is positional and its final message comes from `--output-last-message`. CI pins the
-Codex model through the existing non-recursive `codex exec` shim; the runner does not duplicate
-that pin.
+Codex follows the Spacedock front door: `--plugin-dir` and `--skip-compat-check` stay before the `--` fence, while `exec` and `--dangerously-bypass-approvals-and-sandbox` stay after it. The isolated home copies only the three-key v2 fixture and authentication, never the operator's full config or plugin cache; Codex final output comes from `--output-last-message`, and CI retains its non-recursive model-pinning shim. The separately opt-in launcher proof (`SPACEDOCK_LIVE_CODEX_MULTI_AGENT=1 go test -count=1 -run TestCodexIsolatedHomeCollaborationLifecycle ./internal/cli -v`) grades typed records for ordered same-worker spawn/follow-up/list/wait, terminal outputs, and `multi_agent_version: v2`, plus a disabled zero-event control; `codex features list` is not a substitute because its v2 label can remain false while the exact table completes the lifecycle.
 
 **To add a shared runtime scenario:**
 
@@ -91,9 +81,17 @@ Run the Claude shared suite locally (skips when no Claude auth is available — 
 go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v
 ```
 
+Run all three current Claude substrate proofs with one 20-minute backstop:
+
+```bash
+go test -tags live -count=1 -timeout 20m -run 'TestLiveMergedTeamModeDispatch|TestLiveBareReachable|TestLiveBreakGlassShimRecovery' ./internal/ensigncycle -v
+```
+
 Run the Codex shared suite locally (`npm install -g @openai/codex` then `codex login`, or set `OPENAI_API_KEY`). Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test seeds only the minimal `features.multi_agent_v2` fragment and copies only `auth.json` for the local subscription path; it does not copy local plugin state, other credentials, or the rest of the operator's Codex config. CI does not use local subscription auth.
 
-Each Codex shared scenario launches one `spacedock codex` front-door process, which launches one `codex exec`. A fixed 15-minute wall-clock process limit is its only scenario-level liveness guard; JSONL activity, `wait_agent` events, and durable writes do not extend the deadline, and the runner does not retry. The runner preserves JSONL, stderr, the process result, and post-run durable entity/Git evidence, then requires exit 0 and grades the existing workflow assertions. A failed keep-moving run prints and retains its native Git root; a passing run removes it. The suite-wide `-timeout 40m` remains a loose outer backstop.
+Each Codex shared scenario launches one `spacedock codex` front-door process, which launches one `codex exec`. The shared stream watcher applies a 60-second quiet budget to each Codex scenario. Each complete JSONL line resets the budget.
+
+On stream silence, the runner kills the process and reports the last event and artifact directory. It preserves JSONL, stderr, the process result, and post-run durable entity/Git evidence, and it does not retry. A failed keep-moving run prints and retains its native Git root; a passing run removes it. The suite-wide `-timeout 40m` remains the runaway backstop.
 
 ```bash
 go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
@@ -116,10 +114,10 @@ export SPACEDOCK_PI_LIVE_CHILD_MODEL=openrouter/openai/gpt-5.4 # OpenRouter logi
 export SPACEDOCK_PI_LIVE_CHILD_MODEL=openai/gpt-5.4 # direct OpenAI provider
 ```
 
-`TestLivePiFrontDoorSmoke` remains active: it loads the current checkout's Spacedock first-officer and ensign skills plus the local pi-subagents extension/skill and verifies durable split-root worker state. `TestLivePiRecordedGateLifecycle` remains selected but emits `TODO(9w59t6m1qc46hccd54p04z2j)` while delegated gate presentation-to-application/dispatch is quarantined; a green command does not prove that capability.
+`TestLivePiFrontDoorSmoke` is the only Pi substrate smoke. It checks the front door, child dispatch, durable output, and the boot contract. The grade artifact records both models, durations, and available costs.
 
 ```bash
-go test -tags live -count=1 -timeout 15m -run '^(TestLivePiFrontDoorSmoke|TestLivePiRecordedGateLifecycle)$' ./internal/ensigncycle -v
+go test -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
 ```
 
 The parity and definition guards run with no model spend — useful before paying for a live run:
@@ -132,12 +130,22 @@ Without auth, the respective live suite skips locally (Claude/Codex/Pi), except 
 
 ### GitHub setup
 
+| Selected command | Unique evidence | Measured sample or cost |
+|---|---|---|
+| Claude core: `TestLiveEnsignCycle`, `TestLiveDefaultHeadlessStopsAtGate`, `TestLiveZeroDiscoverReportsAndStops` | Full cycle, two gate-stop cases, and zero discovery | The detail artifact records each duration. |
+| Claude `TestLiveClaudeSharedScenarios` | The registered shared journey IDs | Journey metrics record duration, tokens, model, and available cost. |
+| Claude substrate: `TestLiveMergedTeamModeDispatch`, `TestLiveBareReachable`, `TestLiveBreakGlassShimRecovery` | Merged, bare, and break-glass dispatch | Merged baseline: 127s Sonnet and 144s Opus. Cost was not available. |
+| Codex resolver and `TestLiveCodexSharedScenarios` | Current-checkout resolution and shared journeys | Both PR and release jobs consume Codex metrics. |
+| Pi coverage guards and `TestLivePiFrontDoorSmoke` | Coverage parity plus one four-part substrate proof | Retained local run: 104.808s and $0.277493 for root plus child. |
+
+The deletion removes 17 seconds of tmux setup and avoids a 172.5-second duplicate Pi smoke per run.
+
 Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before either live lane burns its environment approval.
 
-- `claude-live` (matrix: `sonnet` on `CI-E2E`, `claude-opus-4-8` on `CI-E2E-OPUS`): secret `ANTHROPIC_API_KEY`. Runs `TestLiveEnsignCycle` (the full-cycle smoke), `TestLiveClaudeSharedScenarios` (the shared suite over the headless `-p` transport), and the pty/tmux team-mode harness (`TestLivePtyStandingResidencyInjectsCommOfficer` + `TestLivePtyEnsignCycleTeamTeardown`) — which drives a real interactive session where team mode is exposed (tmux is installed for this). Artifacts under `live-artifacts/claude/<model>/` plus the session jsonl under `$CLAUDE_CONFIG_DIR`.
+- `claude-live` runs the core, shared, merged, bare, and break-glass proofs. Its matrix uses `sonnet` and `claude-opus-4-8`.
   For local Spacedock task `sonnet-gate-guardrail-no-authority` (`3zzpdw704df1g8pg1x9thzmw`), only the Claude Sonnet `gate-guardrail` case is temporarily non-evidence, based on run `30708727845`, job `91392375253`, artifact `8821429777` (resolved model `claude-sonnet-5`, head `57489d491`). Its narrow runner-boundary `TODO(3zzpdw704df1g8pg1x9thzmw)` skip does not disable the other Sonnet scenarios or add a skip to any Opus, Codex, or Pi case. Promote it back to evidence only after the defect is fixed and a fresh approved Sonnet live run passes the unchanged strict gate oracle; then remove the skip.
-- `codex-live` (environment `CI-E2E-CODEX`): secret `OPENAI_API_KEY`, `SPACEDOCK_CODEX_LIVE_REQUIRED=1` so a missing key fails clearly after approval. Runs `TestLiveCodexSharedScenarios`. Artifacts under `live-artifacts/codex/`.
-- `pi-live` (environment `CI-E2E-PI`): secret `OPENAI_API_KEY`, `SPACEDOCK_PI_LIVE_REQUIRED=1` so missing Pi/OpenAI prerequisites fail clearly after approval. Installs `pi-coding-agent`, `pi-subagents`, and `pi-intercom`, runs the Pi shared coverage guard and active `TestLivePiFrontDoorSmoke`, and keeps `TestLivePiRecordedGateLifecycle` selected so its `TODO(9w59t6m1qc46hccd54p04z2j)` quarantine is visible. A green job does not prove delegated gate continuation while that skip remains. Artifacts upload under `live-artifacts/pi/`.
+- `codex-live` runs the resolver and shared proofs. The PR delta and release ledger consume its metrics.
+- `pi-live` runs the coverage guards and one front-door smoke. It uploads the grade, root session, child session, and diagnostics.
 
 All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
 

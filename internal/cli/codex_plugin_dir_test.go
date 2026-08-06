@@ -86,7 +86,7 @@ func TestRunCodexPluginDirPostFenceResumeStaysPromptFree(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"codex", "--model", "gpt-5.6-sol", "resume", "abc123"}
+	want := wantCodexArgv("--model", "gpt-5.6-sol", "resume", "abc123")
 	if !equalArgv(host.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
 	}
@@ -110,7 +110,7 @@ func TestRunCodexPluginDirModelOnlyRetainsBootstrapPosture(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"codex", "--ask-for-approval", "on-request", "--model", "gpt-5.6-sol", wantCodexBootstrapPrompt}
+	want := wantCodexArgv("--ask-for-approval", "on-request", "--model", "gpt-5.6-sol", wantCodexBootstrapPrompt)
 	if !equalArgv(host.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
 	}

@@ -817,8 +817,8 @@ func TestCodexFrontDoorLaunchesOnCompatible(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
-		"codex", "--dangerously-bypass-approvals-and-sandbox", "-m", "gpt-x", wantCodexBootstrapPrompt}
+	want := append([]string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--"},
+		wantCodexArgv("--dangerously-bypass-approvals-and-sandbox", "-m", "gpt-x", wantCodexBootstrapPrompt)...)
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
@@ -840,8 +840,8 @@ func TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	wantArgv := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
-		"codex", "--dangerously-bypass-approvals-and-sandbox", "resume", "abc123"}
+	wantArgv := append([]string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--"},
+		wantCodexArgv("--dangerously-bypass-approvals-and-sandbox", "resume", "abc123")...)
 	if !equalArgv(fake.launchedArg, wantArgv) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
 	}
@@ -864,8 +864,8 @@ func TestCodexFrontDoorForwardsPostFenceExampleThroughSafehouse(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	wantArgv := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
-		"codex", "--dangerously-bypass-approvals-and-sandbox", "--model", "gpt-x", "resume", "abc123"}
+	wantArgv := append([]string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--"},
+		wantCodexArgv("--dangerously-bypass-approvals-and-sandbox", "--model", "gpt-x", "resume", "abc123")...)
 	if !equalArgv(fake.launchedArg, wantArgv) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
 	}
@@ -888,8 +888,8 @@ func TestCodexFrontDoorBootstrapsPostFenceWithoutResumeThroughSafehouse(t *testi
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	wantArgv := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
-		"codex", "--dangerously-bypass-approvals-and-sandbox", "--future-codex-flag=handoff", "opaque-argument", wantCodexBootstrapPrompt}
+	wantArgv := append([]string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--"},
+		wantCodexArgv("--dangerously-bypass-approvals-and-sandbox", "--future-codex-flag=handoff", "opaque-argument", wantCodexBootstrapPrompt)...)
 	if !equalArgv(fake.launchedArg, wantArgv) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
 	}

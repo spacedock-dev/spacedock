@@ -1,0 +1,4 @@
+{"type":"session","id":"child-run","timestamp":"2026-07-10T06:00:05.000Z"}
+{"type":"model_change","timestamp":"2026-07-10T06:00:05.050Z","provider":"openai","modelId":"gpt-5.4"}
+{"type":"message","timestamp":"2026-07-10T06:00:55.000Z","message":{"role":"assistant","model":"gpt-5.4","usage":{"cost":{"input":0.042000,"output":0.025000,"cacheRead":0.010000,"cacheWrite":0,"total":0.077000}}}}
+{"type":"message","timestamp":"2026-07-10T06:01:43.500Z","message":{"role":"assistant","model":"gpt-5.4","usage":{"cost":{"input":0.025493,"output":0.015000,"cacheRead":0.010000,"cacheWrite":0,"total":0.050493}}}}

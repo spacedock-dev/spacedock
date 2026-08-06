@@ -492,6 +492,12 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 	applyEffectiveIDs(allEntities, idStyle, allEntities)
 	applyEffectiveIDs(entities, idStyle, allEntities)
 	materializeGateReadinessWhenReferenced(entities, roots.definitionDir, explicitFields, allFieldsFlag, whereFilters)
+	// Machine scheduler reads consume the same readiness reducer as boot
+	// identify. Materialize it before filtering so --next can expose ready gates
+	// even when no gate-readiness field was explicitly requested.
+	if showNext {
+		materializeGateReadiness(entities, stages)
+	}
 	materializeSuppressedBy(entities, stages, explicitFields, whereFilters)
 	if err := validateWhereFields(entities, whereFilters); err != nil {
 		return errExit(stderr, err.Error())

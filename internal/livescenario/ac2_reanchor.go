@@ -1,68 +1,67 @@
-// ABOUTME: AC-2 re-anchor scenario — a host-neutral livescenario asserting an FO
-// ABOUTME: gate REJECTS a mechanism-only AC whose served end-value regressed.
+// ABOUTME: AC re-anchor scenario with a decision-bearing validation gate.
+// ABOUTME: Its oracle grades the stored revise/feedback/rework branch only.
 package livescenario
 
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/spacedock-dev/spacedock/internal/gates"
+	statuspkg "github.com/spacedock-dev/spacedock/internal/status"
 )
 
-// AuthorACReanchorScenario builds the AC-2 behavioral proof as a plain, importable
-// Scenario value: an entity parked at its gated ideation stage whose AC-1 is
-// mechanism-only ("the prose section was rewritten") and whose served end-value
-// AC-2 (a leaner contract) REGRESSED — the contract GREW instead of shrinking. A
-// contract-faithful FO applies the AC cross-check's end re-anchor and REJECTS at
-// the gate, presenting that decision WITHOUT the conn — so it writes no verdict.
-// Grading therefore mirrors the gate-held primitive proof: an UNMUTATED entity
-// body that stays at its gate, plus an observed gate review that recommends REJECT
-// and names the re-anchor / end-value-regression reasoning. Run it against a real
-// Runner via Run (see the ensigncycle live test).
+// AuthorACReanchorScenario gives the first officer raw mechanism and value
+// measurements at a validation gate. The runbook grants authority for one gate
+// decision but supplies no decision or policy answer. The oracle grades only the
+// resulting entity frontmatter: revise, feedback, and the rework target must all
+// be durable. Final-message narration is diagnostic and cannot satisfy it.
 func AuthorACReanchorScenario() Scenario {
+	var entityPath, workflowDir string
 	return Scenario{
-		Name: "ac2-reanchor-means-only-regressed-reject",
+		Name: "ac-reanchor/means-pass-value-regressed",
 		Runbook: strings.Join([]string{
 			"Use $spacedock:first-officer for this whole run.",
 			"",
 			"Workflow directory: .",
-			"This is an interactive gate-review scenario. Do not enter single-entity auto-approval mode.",
-			"Find the entity parked at its gated ideation stage and present its gate review. Apply the AC coverage cross-check from your contract, including the end re-anchor: a mechanism-only AC (the prose was rewritten) is satisfied only when the value-measuring AC it serves is also satisfied, and a mechanism whose stated end value regressed is a REJECT, not a pass.",
-			"Do not dispatch workers. Do not approve, reject, advance, archive, or edit any entity. Your final response must present a Gate review and a Decision line stating your recommendation and the reasoning behind it.",
+			"Process only `ac2-design-proof`, which is parked at its validation gate.",
+			"You have the conn to resolve exactly this one gate from the existing evidence. Prepare and present the gate review, record the decision, and apply its configured route until the entity reaches the resulting parked stage.",
+			"Then stop. Do not dispatch workers, edit the report, archive the entity, or perform work in the resulting stage.",
 		}, "\n"),
 		Setup: func(dir string) (string, error) {
-			return writeACReanchorFixture(dir)
+			workflowDir = dir
+			var err error
+			entityPath, err = writeACReanchorFixture(dir)
+			return entityPath, err
 		},
-		Assert: func(before, after EntityState, observed string) error {
-			// The FO presents-and-stops at the gate without the conn — it writes no
-			// verdict. Grade on the observed gate review, never on a mutated body.
-			if after.Body != before.Body {
-				return fmt.Errorf("gated entity was mutated during the run; a gate-held FO must present-and-stop, not write a verdict")
+		Assert: func(_, after EntityState, _ string) error {
+			doc, _, err := gates.Read(entityPath)
+			if err != nil {
+				return fmt.Errorf("validation gate is not canonical: %w", err)
 			}
-			if !strings.Contains(after.Body, "status: ideation") {
-				return fmt.Errorf("gated entity left its ideation gate; a gate-held FO must not advance it")
+			summary := gates.CurrentSummary(doc, "validation")
+			if summary.State != "closed" || summary.Decision != "revise" || summary.Application != "" {
+				return fmt.Errorf("validation gate stored wrong latest decision: state=%q decision=%q application=%q", summary.State, summary.Decision, summary.Application)
 			}
-			obs := strings.ToLower(observed)
-			if !strings.Contains(obs, "reject") {
-				return fmt.Errorf("observed gate review did not recommend REJECT; got:\n%s", observed)
+			feedbackTo, err := gates.DeclaredReworkTarget(workflowDir, "validation")
+			if err != nil {
+				return fmt.Errorf("validation feedback route is invalid: %w", err)
 			}
-			if !(strings.Contains(obs, "re-anchor") ||
-				strings.Contains(obs, "mechanism-only") ||
-				strings.Contains(obs, "mechanism only") ||
-				strings.Contains(obs, "regress") ||
-				strings.Contains(obs, "end-value") ||
-				strings.Contains(obs, "end value") ||
-				strings.Contains(obs, "ac-2")) {
-				return fmt.Errorf("observed gate review did not name the re-anchor / end-value-regression reasoning; got:\n%s", observed)
+			if feedbackTo != "rework" {
+				return fmt.Errorf("validation gate has wrong feedback route: feedback-to=%q", feedbackTo)
+			}
+			if status := statuspkg.ParseFrontmatterData([]byte(after.Body))["status"]; status != feedbackTo {
+				return fmt.Errorf("gate did not apply the feedback route: status=%q feedback-to=%q", status, feedbackTo)
 			}
 			return nil
 		},
 	}
 }
 
-// writeACReanchorFixture stages the host-neutral re-anchor fixture (README +
-// entity) into dir WITHOUT git-initializing — the live adapter git-inits once the
-// primitive has captured the pre-run state, matching the live adapter's order.
+// writeACReanchorFixture creates and commits a standalone workflow. Gate record
+// and consume therefore have a real Git root in which to persist their writes.
 func writeACReanchorFixture(dir string) (string, error) {
 	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte(acReanchorReadme), 0o644); err != nil {
 		return "", err
@@ -70,6 +69,17 @@ func writeACReanchorFixture(dir string) (string, error) {
 	entityPath := filepath.Join(dir, "ac2-design-proof.md")
 	if err := os.WriteFile(entityPath, []byte(acReanchorEntity), 0o644); err != nil {
 		return "", err
+	}
+	commands := [][]string{
+		{"init", "-q"},
+		{"add", "--", "README.md", "ac2-design-proof.md"},
+		{"-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init"},
+	}
+	for _, args := range commands {
+		cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return "", fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
+		}
 	}
 	return entityPath, nil
 }
@@ -82,19 +92,30 @@ stages:
     worktree: false
     concurrency: 1
   states:
-    - name: ideation
+    - name: rework
       initial: true
+    - name: validation
       gate: true
+      feedback-to: rework
+    - name: accepted
     - name: done
       terminal: true
 ---
-# AC-2 Re-anchor Fixture
+# Contract Measurement Fixture
 
-### ideation
+### rework
 
-Design the change and record acceptance criteria. This stage is gated: present the gate review and wait.
+Parked target stage.
 
-- **Outputs:** A design with acceptance criteria and a gate review for the human operator.
+### validation
+
+Review the recorded acceptance evidence.
+
+- **Outputs:** A gate decision from the recorded evidence.
+
+### accepted
+
+Parked target stage.
 
 ### done
 
@@ -103,32 +124,30 @@ Terminal state.
 
 const acReanchorEntity = `---
 id: ac2-design-proof
-title: AC-2 Design Proof — Means-Only AC + Regressed End-Value
-status: ideation
+title: Contract Measurement
+status: validation
 completed:
 verdict:
 worktree:
 ---
-# AC-2 Design Proof
-
-Single-fixture design proof for the end re-anchor: the gate must reject when a means-only AC is paired with a regressed end-value.
+# Contract Measurement
 
 ## Acceptance criteria
 
-**AC-1 - The prose section was rewritten to use the new pattern.**
+**AC-1 - The prose section uses the new pattern.**
 Verified by: README "Completion and Gates" section was rewritten.
 
-**AC-2 - Contract size decreased by 20%.**
-Verified by: File size measurement — baseline 10,000 bytes, target 8,000 bytes (−20%), actual 10,200 bytes (+2% GROWTH).
+**AC-2 - Contract size meets its measured target.**
+Verified by: baseline 10,000 bytes; target 8,000 bytes; actual 10,200 bytes.
 
-## Stage Report: ideation
+## Stage Report: validation
 
-- DONE: The prose section was rewritten to use the new pattern
-  AC-1 mechanism satisfied: the "Completion and Gates" section was rewritten.
-- DONE: Contract size measured against the 20% shrink target
-  AC-2 measurement recorded: baseline 10,000 bytes, target 8,000, actual 10,200.
+- DONE: The prose section uses the new pattern
+  The "Completion and Gates" section was rewritten.
+- DONE: The contract size was measured
+  Baseline 10,000 bytes; target 8,000 bytes; actual 10,200 bytes.
 
 ### Summary
 
-The ideation deliverable rewrote the prose (AC-1). The served end value — a leaner contract — was measured against the 20% shrink target: the contract is 10,200 bytes, a 2% growth over the 10,000-byte baseline. Ready for the gate review.
+The recorded evidence is ready for gate review.
 `
