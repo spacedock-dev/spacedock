@@ -1691,3 +1691,30 @@ Cycle 19 PASSED independently at exact candidate `2240fabe5d975a1ba724848ac2fc91
 ### Summary
 
 Cycle 20 binds Pi keep-moving to existing `9adv…`, fixes the Material registry/guide time-state contradiction, and preserves the Captain completion contract. The authorized 43/+2744/-714 candidate, exact RED/GREEN controls, full/race suites, and pushed two-commit history are green at `0f9e096e7f534f702c31fdcaa43aa1f416c2784f`.
+
+## Stage Report: validation (cycle 20)
+
+- DONE: Verify exact provenance, history, binder, cleanliness, and remote equality.
+  Candidate/origin are clean at `0f9e096e7f534f702c31fdcaa43aa1f416c2784f`; baseline is `2240fabe5d975a1ba724848ac2fc91ef11eb2cc7`, watched core is `b42835481c6944e239129a78bbef0eca240a8473`, and the binder changes only the documented reconciliation SHA.
+- DONE: Independently classify the archived hosted evidence without rerunning it.
+  Run `31062662883`, Pi job `92493828626`, artifact `8953098453` passed offline and ten runnable journeys, skipped four owned Pi gaps, then failed keep-moving at 377.86s; the process completed without timeout, smoke was skipped, and upload passed.
+- DONE: Prove the exact existing 9a product seam rather than harness or capacity.
+  Native root-session state ends with `questioned` at `status=review`, empty completion/archive, and stale `verdict=revise`; the durable oracle treats any verdict as terminal and rejects that history, matching existing owner `9adv48yhye5s2vkhwd7ge52d`'s post-gate terminalization repair.
+- DONE: Verify the single source binding and durable completion semantics.
+  The core adds only Pi/keep-moving to the existing 9a case and exact expectation; all prior twelve bindings remain unchanged, the 16×4 desired matrix yields exactly thirteen bindings at Sonnet=3, Codex=5, Pi=5, Opus=0, and target-scoped TODO(owner) remains explicitly non-green evidence while unbound targets remain runnable.
+- DONE: Verify the authorized documentation correction.
+  Registry future-state claims are replaced by present-state reconciliation, SHA, and watched-guard truth without changing normative-guide ownership or mechanism scope; the coherence test is green and a detached restoration of the stale claim fails it exactly.
+- DONE: Prove target, owner, Opus, and SHA discrimination causally.
+  Detached source mutations make Pi removal, wrong owner, wrong target, and Opus suppression fail their exact checks; restoration returns all target tests green. Current watched paths are clean after core, while stale baseline names the registry and both ensigncycle paths.
+- DONE: Audit the Captain-authorized surface exception and retained documentation.
+  The principles seed remains 16/16 with code, architecture retains the shared adapter truth, and the operating guide remains normative; Cycle 20 adds no file or removes any test, stays below +2750, and lands exactly 43 files/+2744/-714 cumulatively.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` is idempotent and `git diff --check` passes; full exits 0 in 240.94s and race exits 0 in 245.48s.
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; hosted inspection was read-only and causal proof used archived native evidence or deterministic tests.
+- DONE: Render the independent verdict.
+  PASSED. Material: none. Deferred-risk: none. Polish: none. Validation changed no candidate and made no workflow state transition.
+
+### Summary
+
+Cycle 20 PASSED independently at exact candidate `0f9e096e7f534f702c31fdcaa43aa1f416c2784f`. Pi keep-moving is accurately attached to the existing `9adv…` owner, the Material registry time-state defect is closed with causal proof, and the Captain-authorized 43-file surface preserves completion semantics, runnable Opus, documentation roles, and all prior evidence.
