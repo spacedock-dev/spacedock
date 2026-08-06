@@ -1776,3 +1776,28 @@ Cycle 21 confirms the Cycle-20 Pi correction locally, then reproduces a Sonnet r
 ### Summary
 
 Cycle 21 binds only Sonnet rejection-flow to existing `zbc…`, reconciles the externally archived PR #629 pilot path with the corrected 24-path oracle, and preserves the 692ae completion rule. The exact 43/+2750/-714 two-commit candidate is fully green and pushed at `3ee17e6f3f324c9e973d217fb1f38cf0dcdf235b` without a workflow transition.
+
+## Stage Report: validation (cycle 21, independent)
+
+- DONE: Verify exact immutable provenance and surface.
+  Candidate and upstream are clean and equal at `3ee17e6f3f324c9e973d217fb1f38cf0dcdf235b`; baseline is `0f9e096e7f534f702c31fdcaa43aa1f416c2784f`, watched core is `702d2b13ba1f9ac794e09435f4520bd20c3a015c`, and binder `3ee17e6f3` changes only the guide's reconciliation SHA. The merge-base surface is exactly 43 existing files/+2750/-714 with no added file.
+- DONE: Independently classify the retained local Sonnet artifact.
+  `/tmp/spacedock-cycle20-sonnet-local.fkxGfs/artifacts/claude-shared-scenarios/rejection-flow` records `claude-sonnet-4-6`: launch, dispatch, durable REJECTED report/JSONL mutation, and commit all succeeded before `SendMessage(to:"team-lead")` returned no addressable agent and the 60-second quiet guard stopped the run at 419.27s. This is continuation/addressability product conduct, not authentication, capacity, fixture, or oracle failure.
+- DONE: Verify the existing cross-runtime owner and exact one-cell binding.
+  Archived owner `zbcj98qfwtax61vxdzrf615e` explicitly owns rejection-flow rework/revalidation and retains prior Sonnet and Opus triggers. The core adds only Sonnet/rejection-flow to that owner; all thirteen prior bindings remain intact, Opus remains runnable, and TODO remains non-green evidence.
+- DONE: Verify pure desired and observed truth.
+  The desired matrix remains 16 journeys x four targets = 64 cells. Reconciliation reports exactly fourteen target-scoped gaps: Sonnet=4, Codex=5, Pi=5, Opus=0.
+- DONE: Prove causal discrimination.
+  Reconciliation mutation controls pass for Sonnet removal, owner retag, wrong target, duplicate source binding, global TODO, missing/unowned TODO, and unverified Opus suppression, while the restored candidate is green. SHA controls reject stale watched state and accept the exact core.
+- DONE: Verify current state integration without relaxing the oracle.
+  State has `_archive/codex-launch-multi-agent-v2.md` and no active counterpart. Baseline already counted 23 archives because `gate-agent-ergonomics.md` was archived; the candidate changes only this manifest path and 23→24, retains the strict 31-path count, and the state-aware pilot test passes all 31 entries. No override, restore, schema relaxation, or unrelated state path is present.
+- DONE: Audit scope and separate probe evidence.
+  The six-file cycle diff changes only operator evidence, reconciliation/TODO tests and source binding, plus the pilot manifest/count. It changes no product, prompt, fixture, adapter, launcher, observer, metric, owner, retry, controller, or workflow mechanism. The Claude Code 2.1.220 Sonnet-5/high no-tools probe is correctly excluded from journey evidence.
+- DONE: Run formatting, focused, and repository-wide verification at the exact candidate.
+  `gofmt -l ./cmd ./internal` emitted nothing and `git diff --check` passed without changing bytes. Focused runner/reconciliation/mutation/SHA/pilot tests passed; full exited 0 in 242.95s and race exited 0 in 247.05s.
+- DONE: Render the independent verdict.
+  PASSED. Material: none. Deferred-risk: none. Polish: none. Validation changed no candidate bytes and made no workflow state transition.
+
+### Summary
+
+Cycle 21 PASSED independently at exact pushed candidate `3ee17e6f3f324c9e973d217fb1f38cf0dcdf235b`. The retained Sonnet failure is accurately bound to the existing cross-runtime `zbc…` owner, while runnable Opus, the pure 16x4 matrix, all prior evidence, strict pilot-state validation, fixed surface, and scope boundaries remain intact.
