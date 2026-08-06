@@ -90,7 +90,7 @@ gates:
                 state: pending
 started: 2026-08-03T23:33:06Z
 worktree: .worktrees/spacedock-ensign-remove-standalone-gate-eligibility
-mod-block:
+mod-block: merge:pr-merge
 ---
 
 ## Outcome
