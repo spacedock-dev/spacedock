@@ -1847,3 +1847,26 @@ Cycle 22 REJECTED `3ee17e6f3` as an evidence-only implementation whose reconcili
 ### Summary
 
 Cycle 23 replaces the rejected evidence-only surface with sixteen directly executable, runtime-portable common journeys and a compact source-derived reconciler. The exact 34/+1083/-1947 candidate is focused-green, full/race-green in a clean clone, and pushed at `b1f49a395ccccf296b294617ed0f8b762c7c5e9d` without a workflow transition.
+
+## Stage Report: validation (cycle 23 — independent surface recarve)
+
+- DONE: Verify immutable provenance, remote equality, base, and hard surface bounds.
+  The isolated clone's candidate and upstream are exactly `b1f49a395ccccf296b294617ed0f8b762c7c5e9d`; merge base is exactly `8b5af99baa5c37fe7c969a904819041688420e22`. The change is 34 files/+1083/-1947, `shared_live_runner_unit_test.go` is absent, and the rejected `3ee17e6f` worktree/branch was not touched.
+- DONE: Verify real declarations, adjacent metadata, selectors, and source-derived gap truth.
+  Source has exactly sixteen exported top-level `TestLiveCommon…` declarations and sixteen adjacent stable journey/fixture annotations. Registry entrypoints match. All three workflow lanes use exact `-run '^TestLiveCommon' -failfast`. Reconciliation derives and logs Sonnet=4, Opus=0, Codex=5, Pi=5; TODO remains target-scoped and non-green, with ownership unchanged.
+- DONE: Prove representative drift controls in disposable detached checkouts.
+  Removing one declaration failed at 16/15; adding an orphan fixture failed with its exact ID; changing only the Pi selector failed the exact three-lane check. None was committed or applied to the candidate.
+- FAILED: Prove that each declared builder/assertion binding is executable rather than nominal.
+  Material finding 1: `liveJourney` receives builder and assertion function values but only reflects their names; it executes only `exercise`. The reconciler's recursive `functionReaches` treats any identifier reference as reachability. In a detached control, replacing the required `someCommitNamesOnly(...)` durable assertion call with `_ = someCommitNamesOnly` still made `TestRuntimeLiveRegistryReconciliation` pass with all expected gap totals. The declared assertion can therefore become non-executable while the authoritative proof remains green, contrary to the Captain's direct executable binding boundary.
+- FAILED: Confine runtime selection and behavior to the one approved selector/helper seam.
+  Material finding 2: shared journey exercises retain four `runner.(claudeLiveRunner)` branches across recorded-gate, gate-stop, and withdrawn-recovery paths. The recorded-gate branch also copies and grades a Claude-only plugin body. Wrapping the same driver changes those exercise semantics, so runtime-specific selection remains outside `liveDriverForRuntime`; names and interface conformance do not make the exercise runtime-portable.
+- DONE: Classify the retained scenario fields and scope.
+  `sharedRuntimeScenario.oldPythonTest` and `.intent` survive only as substrate-test initialization baggage; common declarations populate only `name`. This is polish, not a central common table or independent Material defect. No central journey list/map/runner registry, per-runtime journey-name switch, copied gap oracle, committed mutation lab, SHA guard, speculative Pi observer/metrics layer, competing Pi auto-continue/shared wrapper, product behavior change, fixture-semantic deletion, or PR #629 value deletion was found.
+- DONE: Run required verification in the isolated clone.
+  `gofmt -l ./cmd ./internal` emitted nothing; `git diff --check`, focused reconciliation, live-tag compile, focused ensign checks, and release workflow suites passed. Exact `go test ./...` exited 0 in 156.11s; exact `go test ./... -race` exited 0 in 161.04s. No live/model lane ran.
+- DONE: Render the independent verdict and preserve authority.
+  REJECTED. Fix the two representation/mechanism findings without changing banked live evidence, target-gap facts, repair ownership, product behavior, or the approved bounds. Validation changed no candidate/code and made no workflow status transition.
+
+### Summary
+
+Cycle 23 is scope-, budget-, selector-, registry-, focused-, full-, and race-green at exact pushed candidate `b1f49a395ccccf296b294617ed0f8b762c7c5e9d`, but is independently REJECTED on two Material Captain-boundary failures: nominal builder/assertion bindings can pass without execution, and shared exercises still branch on the concrete Claude driver outside the sole runtime selector helper.
