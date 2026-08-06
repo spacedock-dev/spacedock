@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-3:revision-1",
+  "question": "At cycle 3, should G3 receive one Captain-authorized quoted-argument oracle correction, or remain held/cut?",
+  "artifacts": [
+    {
+      "id": "artifact:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/37e686a21dd9acd6b18c1e01899e39bf37f1d60d/define-fo-moving-target-conflict-ownership.md",
+      "rev": "sha256:d33093fa7adc658233a51ac0519e82c4cd2e586dda29fb59efc9fb38327137bc",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-3 validation rejects because shell-equivalent quoted option and refspec arguments evade the otherwise-correct oracle; human escalation is required before any further fix."
+    }
+  ]
+}
