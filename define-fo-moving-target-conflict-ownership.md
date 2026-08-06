@@ -134,3 +134,9 @@ The real moving-target replay shows that a dirty PR must remain truthful and pen
 ### Summary
 
 The First Officer now holds only the conflicted PR entity, preserves its pending authority and exact conflict evidence, and keeps unrelated work moving. Captain-authorized branch ownership and exact-new-head revalidation are explicit, with no resolver, force path, provider change, state field, or workflow edit.
+
+### Verification Addendum
+
+Verification pinned `SPACEDOCK_STATE_ROOT` to clean detached state snapshot `fa0804a6a8a5f98858992c6b2f1b49bf609aa5c5`. At unchanged clean candidate head `686ebd8e88b5e8a49a6f05f15bfc5a6dd4d0816d`, both `go test ./...` and `go test ./... -race` exercised all packages; every package except `internal/gates` passed and no race was reported.
+
+The exact remaining failure in both commands is `TestV1PilotManifestReadsAndValidates`: its manifest names nine paths absent from the immutable snapshot — `bind-post-rework-briefing-at-rejection-regate.md`, `codex-launch-multi-agent-v2.md`, `collapse-gate-approval-ceremony/index.md`, `cut-workflow-specific-round-recorder-from-v1/index.md`, `gate-agent-ergonomics.md`, `minimize-v1-gate-application-schema/index.md`, `shared-git-scaffold-helper.md`, `status-pagination-and-default-sorting.md`, and `status-where-robust-and-discoverable.md`. The identical stable result rules out concurrent archival during either run; candidate bytes and HEAD remained unchanged and clean.
