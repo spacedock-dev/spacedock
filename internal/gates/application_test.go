@@ -122,8 +122,8 @@ func TestV1PilotManifestReadsAndValidates(t *testing.T) {
 			archives++
 		}
 	}
-	if archives != 23 {
-		t.Fatalf("pilot manifest has %d archived paths, want 23", archives)
+	if archives != 24 {
+		t.Fatalf("pilot manifest has %d archived paths, want 24", archives)
 	}
 	stateRoot := v1PilotStateRoot()
 	if stateRoot == "" {

@@ -57,6 +57,7 @@ var auditedMissingEvidence = map[missingEvidenceKey]string{
 	{target: "codex", journey: "smallest-sufficient-mechanism"}:         "9adv48yhye5s2vkhwd7ge52d",
 	{target: "codex", journey: "keep-moving-posture"}:                   "9adv48yhye5s2vkhwd7ge52d",
 	{target: "pi", journey: "rejection-flow"}:                           "zbcj98qfwtax61vxdzrf615e",
+	{target: "claude-sonnet", journey: "rejection-flow"}:                "zbcj98qfwtax61vxdzrf615e",
 	{target: "codex", journey: "withdrawn-gate-recovery"}:               "47gnqfm1ft6f2hcahz98m2jv",
 	{target: "codex", journey: "rejection-flow"}:                        "zbcj98qfwtax61vxdzrf615e",
 }
@@ -101,8 +102,7 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 
 func TestRuntimeLiveRegistryGuideStateCurrent(t *testing.T) {
 	repo := repoRoot(t)
-	registry := readContractFile(t, filepath.Join(repo, "docs", "runtime-live-ci-registry.md"))
-	guide := readContractFile(t, filepath.Join(repo, "docs", "runtime-live-ci.md"))
+	registry, guide := readContractFile(t, filepath.Join(repo, "docs", "runtime-live-ci-registry.md")), readContractFile(t, filepath.Join(repo, "docs", "runtime-live-ci.md"))
 	for _, stale := range []string{"does not incorporate this registry yet", "bind task must add"} {
 		if strings.Contains(registry, stale) {
 			t.Errorf("registry retains future-state claim %q", stale)
@@ -216,6 +216,9 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 		"removed Pi keep-moving TODO":          removeMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "keep-moving-posture"}),
 		"retagged Pi keep-moving TODO":         addMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "keep-moving-posture"}, "other-owner"),
 		"suppressed unverified Opus moving":    addMissingEvidenceMutation(missingEvidenceKey{target: "claude-opus", journey: "keep-moving-posture"}, "9adv48yhye5s2vkhwd7ge52d"),
+		"removed Sonnet rejection TODO":        removeMissingEvidenceMutation(missingEvidenceKey{target: "claude-sonnet", journey: "rejection-flow"}),
+		"retagged Sonnet rejection TODO":       addMissingEvidenceMutation(missingEvidenceKey{target: "claude-sonnet", journey: "rejection-flow"}, "other-owner"),
+		"suppressed unverified Opus rejection": addMissingEvidenceMutation(missingEvidenceKey{target: "claude-opus", journey: "rejection-flow"}, "zbcj98qfwtax61vxdzrf615e"),
 		"removed TODO": func(m map[missingEvidenceKey]string) {
 			for id := range m {
 				delete(m, id)

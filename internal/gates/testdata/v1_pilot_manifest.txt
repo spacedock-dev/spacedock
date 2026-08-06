@@ -1,6 +1,6 @@
 _debriefs/2026-07-30-v0.27.0-pre2-release-pilot/source-task-record.md
 _archive/bind-post-rework-briefing-at-rejection-regate.md
-codex-launch-multi-agent-v2.md
+_archive/codex-launch-multi-agent-v2.md
 _archive/collapse-gate-approval-ceremony/index.md
 _archive/cut-workflow-specific-round-recorder-from-v1/index.md
 durable-decisions-release-walking-skeleton/index.md
