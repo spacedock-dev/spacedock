@@ -1595,3 +1595,36 @@ Cycle 18 records the archive-proven Pi smallest-sufficient-mechanism failure aga
 ### Summary
 
 Cycle 18 PASSED independently at exact candidate `00fcde8a5121fe937a75d152cb7b498f1d16a10a`. Pi's archive-proven smallest-sufficient failure is accurately attached to the existing `9adv…` owner, while target discrimination, runnable Opus, pure registry truth, prior observers, operator documentation, and the fixed surface remain intact.
+
+## Stage Report: implementation (cycle 19)
+
+- DONE: Start from the exact clean and pushed Cycle-18 candidate.
+  Baseline and origin were `00fcde8a5121fe937a75d152cb7b498f1d16a10a`; no root-main update or unrelated state write occurred.
+- DONE: Classify the exact hosted evidence without rerunning it.
+  Pi run `31060796822`, job `92488310460`, artifact `8952141495` passed full-ensign-cycle, then gate-guardrail selected untracked `evidence/command.log` with committed review sources and halted.
+- DONE: Bind the failure to the existing product owner.
+  Generic exact-committed-file rejection was pathless and left no prepared room, matching existing owner `3zzpdw704df1g8pg1x9thzmw`; no owner was changed or filed.
+- DONE: Add exact failing controls before the source binding.
+  The runner first reported an empty Pi/gate-guardrail TODO reason, and reconciliation emitted exact missing evidence for target Pi and owner `3zzpdw704df1g8pg1x9thzmw`.
+- DONE: Add only the Pi gate-guardrail source binding.
+  `liveEvidenceTargetPi` plus `gate-guardrail` now returns owner `3zzpdw704df1g8pg1x9thzmw`; every prior eleven binding remains intact.
+- DONE: Preserve the pure desired matrix and exact observed counts.
+  Controls prove 16 journeys × four required targets = 64 cells and exactly twelve bindings: Sonnet=3, Codex=5, Pi=4, Opus=0.
+- DONE: Prove target, owner, and runnable-Opus discrimination.
+  Removal and owner retag of Pi/gate-guardrail fail directly; adding the binding to Opus fails its unverified-target control, while the four-target expectation preserves all prior bindings.
+- DONE: Update the watched operator inventory.
+  The inventory names run/job/artifact, untracked `command.log`, committed companions, pathless rejection, no-room result, existing owner, twelve-result count, and runnable Opus.
+- DONE: Stay inside the fixed surface without deleting executable proof.
+  Existing branch-added mutation constructors now cover counted and replace-all variants and repeated map bodies; every control executes, no file was added, and surface is exactly 42 files/+2749/-708.
+- DONE: Preserve watched-core plus SHA-only binder history.
+  Core `1cb4585ceb5ec77b29b113d87b95eedbfcb82dc2` is followed only by binder `2240fabe5d975a1ba724848ac2fc91ef11eb2cc7`, which changes the reconciliation SHA; stale and current controls pass their opposite expectations.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; full exits 0 (`ensigncycle` 180.994s) and race exits 0 (`ensigncycle` 206.493s).
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; proof used archived evidence and deterministic registry, mutation, runner, and SHA controls.
+- DONE: Preserve scope and authority boundaries.
+  No product, fixture, prompt, adapter, launcher, observer/metric, workflow, owner, unrelated TODO, file/member/controller/retry behavior, or other entity changed, and no transition was made.
+
+### Summary
+
+Cycle 19 records the archive-proven Pi gate-guardrail failure against its existing `3zz…` owner while preserving pure registry truth and runnable Opus. Exact RED/GREEN controls, SHA discrimination, full/race suites, pushed two-commit history, and the surface ceiling are green at `2240fabe5d975a1ba724848ac2fc91ef11eb2cc7`.
