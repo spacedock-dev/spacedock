@@ -1656,3 +1656,38 @@ Cycle 19 records the archive-proven Pi gate-guardrail failure against its existi
 ### Summary
 
 Cycle 19 PASSED independently at exact candidate `2240fabe5d975a1ba724848ac2fc91ef11eb2cc7`. Pi's archived gate-guardrail failure is accurately attached to the existing `3zz…` path-attribution owner, while target discrimination, runnable Opus, pure registry truth, prior evidence, operator documentation, and the fixed surface remain intact.
+
+## Stage Report: implementation (cycle 20)
+
+- DONE: Start from the exact clean pushed Cycle-19 candidate.
+  Baseline and origin were `2240fabe5d975a1ba724848ac2fc91ef11eb2cc7`; only two unpublished commits were rebuilt after explicit authorization.
+- DONE: Classify the exact hosted evidence without rerunning it.
+  Pi run `31062662883`, job `92493828626`, artifact `8953098453` passed ten runnable journeys, skipped four owned Pi gaps, then failed keep-moving-posture.
+- DONE: Bind only Pi keep-moving to the existing owner.
+  Pi set questioned `verdict=revise`, later set `status=review` without clearing the verdict, and left durable state terminal; this matches existing owner `9adv48yhye5s2vkhwd7ge52d`.
+- DONE: Add RED-first exact controls.
+  Runner and reconciliation first failed only Pi/keep-moving with exact owner `9adv…`; removal, retag, and runnable-Opus wrong-target controls pass after the single source binding.
+- DONE: Preserve pure desired and observed truth.
+  The desired matrix remains 16×4=64; exactly thirteen target-scoped bindings remain Sonnet=3, Codex=5, Pi=5, Opus=0, and TODO remains explicitly non-passing evidence.
+- DONE: Preserve the durable Captain completion contract.
+  The 692ae776f audit confirms every nonpassing desired cell has exact target-scoped TODO(owner), unbound targets remain runnable, and owners 26n/9a/nv/47g/zbc/3z remain unchanged; rm stays deferred.
+- DONE: Resolve the registry/guide documentation finding.
+  Captain status audit found `docs/runtime-live-ci-registry.md` still claimed reconciliation and SHA were future work although the guide ships both; classification was Material, ys-owned, disposition fix.
+- DONE: Prove the documentation correction RED/GREEN.
+  `TestRuntimeLiveRegistryGuideStateCurrent` first failed both stale phrases, then passed after only lines 7-8 and 349-352 were rewritten to present-state reconciliation/SHA/guard truth.
+- DONE: Record the Captain-visible surface exception.
+  No prior doc could be sacrificed: the principles file supplies six IDs required for the exact 16-journey seed, architecture notes preserve adapter truth, and the guide is normative. Captain authorized 43 files while retaining +2750 and no-new-file boundaries.
+- DONE: Stay inside the authorized surface.
+  Existing move mutations were factored through one helper with every case retained; final cumulative surface is exactly 43 files/+2744/-714 and adds no file.
+- DONE: Preserve core plus SHA-only binder history.
+  Core `b42835481c6944e239129a78bbef0eca240a8473` is followed only by binder `0f9e096e7f534f702c31fdcaa43aa1f416c2784f`, changing the guide SHA; stale/current controls pass opposite expectations.
+- DONE: Run required verification.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; focused coherence/registry/mutation/runner/SHA controls pass; full exits 0 (`ensigncycle` 303.903s) and race exits 0 (`ensigncycle` 282.025s).
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; proof used archived evidence and deterministic tests.
+- DONE: Preserve scope and authority boundaries.
+  No product, fixture, prompt, adapter, launcher, observer/metric, workflow, owner, unrelated TODO, member/controller/retry behavior, or transition changed.
+
+### Summary
+
+Cycle 20 binds Pi keep-moving to existing `9adv…`, fixes the Material registry/guide time-state contradiction, and preserves the Captain completion contract. The authorized 43/+2744/-714 candidate, exact RED/GREEN controls, full/race suites, and pushed two-commit history are green at `0f9e096e7f534f702c31fdcaa43aa1f416c2784f`.
