@@ -355,3 +355,27 @@ Cycle 4 validates the real Git observation boundary and confirms the parser/matr
 ### Summary
 
 The fixture now reports only independently observed real-Git and file-state facts, with the false behavioral proof deleted rather than replaced. The candidate is clean at `efe87a7c3` and makes no unsupported ownership or continuation claim.
+
+## Review-finding disposition (cycle 5)
+
+- Reviewer observation: detached audit `/tmp/spacedock-g3-cycle5-audit.bPJbXn` at exact candidate `efe87a7c34ad3703bfc30d490f801539b0cb4e29` confirms the five literal behavior fields, parser, tokenizer, mutation matrix, synthetic command language, and replacement interpreter are absent; Git Trace2 records the real conflict/abort path, but reversing the throwaway shipped halt contract still leaves `TestMovingTargetConflictGitEvidence` green.
+- Released user and normal workflow: a First Officer handling a supported moving-target PR conflict relies on the shipped contract for pending-authority preservation, ownership handoff, exact-head evidence re-entry, unrelated-work continuation, and resolver exclusion.
+- Observable harm: the reduced test honestly avoids claiming these outcomes, but all five promised lifecycle ACs can be wrong in the shipped contract while the suite stays green; in particular, AC-1 can lose a pending decision without failing this fixture.
+- Authority: `value-ac[AC-1]` requires that a moving-target conflict cannot finalize or lose a pending decision.
+- Trigger evidence: the exact-head detached checkout changed the halt outcome to consume pending authority, dispatch a resolver, give the FO semantic ownership, and allow force-push; `go test ./internal/ensigncycle -run '^TestMovingTargetConflictGitEvidence$' -count=1` still passed because the fixture observes Git and an unrelated state file, not FO lifecycle behavior.
+- Worker proposal: Material / evidence defect / G3-owned; the correction removes false proof but leaves AC-1 through AC-5 unproven at their required lifecycle boundaries. Reject without designing or implementing a replacement mechanism in validation.
+- First Officer authorization: `HOLD` candidate unchanged and recommend `REJECTED`; record the honest reduction and the unproven ACs, with no replacement design.
+- Validator recommendation: `REJECTED`; candidate stayed clean and unchanged at `efe87a7c34ad3703bfc30d490f801539b0cb4e29`.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Re-review exact head efe87a7c3 and prove that the candidate removed every literal ownership, hold, dispatch, and presentation claim without adding another interpreter.
+  Commit `efe87a7c3` deletes all five fields/assertions; exact-head source and detached audits find no former parser/trace names, literal behavior fields, tokenizer, mutation matrix, synthetic command language, or replacement interpreter.
+- FAILED: Confirm that the remaining fixture reports only independently observed real Git conflict, abort, clean-state, preserved-byte, and exact-head facts; identify every AC that this evidence does and does not prove.
+  The fixture validly proves the failed `rebase main`, exact `contract.txt` path, `rebase --abort`, restored clean old head, unchanged fixture bytes, distinct real heads, and test-local exact-head equality. It does not prove AC-1 FO authority/state lifecycle, AC-2 ownership/handoff, AC-3 real CI/gate rejection and re-entry, AC-4 multi-entity continuation, or AC-5 adversarial contract enforcement.
+- DONE: Run the detached audit, focused, formatting, full, and race evidence; classify current failures and recommend PASSED or REJECTED without mutating the candidate.
+  Detached Trace2 and contradiction probes complete; focused/focused-race, `gofmt -d`, and `git diff --check` pass. Full and race pass every package except the unchanged nine-path `internal/gates` pilot manifest, with no race reported; that external failure remains outside G3. Recommend REJECTED for the material AC-1 evidence gap and unproven AC-2 through AC-5.
+
+### Summary
+
+Cycle 5 confirms the Captain-approved correction removed the self-referential behavior claims instead of replacing them with another interpreter. The remaining evidence is honest and useful for real Git mechanics, but it does not satisfy any AC's complete required lifecycle proof, so validation rejects the clean unchanged candidate without proposing a new mechanism.
