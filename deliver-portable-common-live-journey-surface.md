@@ -1628,3 +1628,30 @@ Cycle 18 PASSED independently at exact candidate `00fcde8a5121fe937a75d152cb7b49
 ### Summary
 
 Cycle 19 records the archive-proven Pi gate-guardrail failure against its existing `3zz…` owner while preserving pure registry truth and runnable Opus. Exact RED/GREEN controls, SHA discrimination, full/race suites, pushed two-commit history, and the surface ceiling are green at `2240fabe5d975a1ba724848ac2fc91ef11eb2cc7`.
+
+## Stage Report: validation (cycle 19)
+
+- DONE: Verify exact provenance, history, binder, cleanliness, and remote equality.
+  Candidate/origin are clean at `2240fabe5d975a1ba724848ac2fc91ef11eb2cc7`; baseline is `00fcde8a5121fe937a75d152cb7b498f1d16a10a`, watched core is `1cb4585ceb5ec77b29b113d87b95eedbfcb82dc2`, and the binder changes only the documented reconciliation SHA.
+- DONE: Independently classify the archived hosted evidence without rerunning it.
+  Run `31060796822`, Pi job `92488310460`, artifact `8952141495` passed offline and full-ensign-cycle, then gate-guardrail failed at 101.98s; the process completed without timeout, smoke was skipped, and artifact upload passed.
+- DONE: Prove the exact existing 3z product seam rather than harness or capacity.
+  Native root-session evidence selects three committed review sources plus untracked `evidence/command.log`; the real prepare call returns the generic pathless exact-committed-file rejection, creates no room, leaves readiness at needs-preparation, and halts, matching owner `3zzpdw704df1g8pg1x9thzmw`'s attributed-source repair.
+- DONE: Verify the representation-only change and all prior bindings.
+  The core adds only Pi/gate-guardrail to the source case and exact expectation, compacts equivalent mutation helpers, and updates operator evidence; prior observer/metric suites and all eleven prior target-owner bindings remain green.
+- DONE: Prove pure desired registry and exact observed evidence.
+  Focused runner/reconciliation controls retain 16 journeys × four targets = 64 desired cells and log exactly 12 bindings at Sonnet=3, Codex=5, Pi=4, Opus=0.
+- DONE: Prove target, owner, and SHA discrimination causally.
+  Detached source mutations make Pi removal, wrong owner, wrong target, and Opus suppression fail their exact checks; restoring the candidate returns all targets green. The current core has no watched delta, while the stale baseline names both changed ensigncycle paths.
+- DONE: Verify scope, retained controls, and fixed surface.
+  Cycle 19 changes four existing files, adds no file, removes no test function, changes no product/fixture/prompt/adapter/workflow/owner behavior, and retains exactly 42 files/+2749/-708 cumulatively.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` is idempotent and `git diff --check` passes; full exits 0 in 276.71s and race exits 0 in 281.56s.
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; hosted inspection was read-only and causal proof used archived native evidence or deterministic tests.
+- DONE: Render the independent verdict.
+  PASSED. Material: none. Deferred-risk: none. Polish: none. Validation changed no candidate and made no workflow state transition.
+
+### Summary
+
+Cycle 19 PASSED independently at exact candidate `2240fabe5d975a1ba724848ac2fc91ef11eb2cc7`. Pi's archived gate-guardrail failure is accurately attached to the existing `3zz…` path-attribution owner, while target discrimination, runnable Opus, pure registry truth, prior evidence, operator documentation, and the fixed surface remain intact.
