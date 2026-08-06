@@ -97,7 +97,7 @@ review-round:
         room-ref: ./review/implementation/round-11
 mod-block:
 pr:
-sprint: durable-decisions
+sprint: test-behavior-completeness
 ---
 
 ## Problem statement
