@@ -1,6 +1,6 @@
 ---
 title: Remove the standalone gate eligibility ceremony
-status: ideation
+status: implementation
 source: "Captain simplification review, 2026-08-03: eligibility is a necessary atomic safety predicate but an unnecessary operator preflight and readiness vocabulary."
 score: 0.9
 sprint: durable-decisions
@@ -50,7 +50,7 @@ gates:
                 reason: 'Science Officer concurs: approve the ideation design now; keep its implementation advance held until G3 completes. The Captain directed the next ideation dispatch.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-03T23:33:06Z
 ---
 
