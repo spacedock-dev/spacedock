@@ -291,3 +291,36 @@ operators now read durable readiness from status and receive refusal reasons
 from the acting command. Commit `013c8729e` preserves all private locked
 authority-spending code and adds lifecycle, absence, and mutation-sensitive
 evidence for the clean cut.
+
+## Stage Report: validation
+
+- DONE: Prove that the public gate eligibility command, readiness projection, help, completion, documentation, and First Officer ceremony are absent, with no alias or replacement readiness class.
+  Candidate `013c8729e`: behavioral unknown-verb/filter, help, four-shell completion, and status tests pass; scoped public-surface search returns no `gate eligibility`, `gate-eligible`, or `gate-condition` occurrence.
+- DONE: Prove that private locked authority checks still refuse stale, wrong-stage, wrong-target, consumed, superseded, and malformed inputs without unsafe writes.
+  Focused CLI/status/gates/terminal suites pass their exact-state and byte-clean refusal matrices; the private predicate remains called under acting-command locks.
+- DONE: Run the real status-to-record-to-consume or merge journey, detached guard mutants, focused, formatting, full, and race evidence; classify current failures and recommend PASSED or REJECTED.
+  The real journey and focused suites pass; two detached mutants are killed; formatting is clean; full/race fixture failures are classified below; recommendation: PASSED.
+- DONE: **AC-1 (VALUE) — The normal gate journey has no eligibility preflight.**
+  `TestGateJourneyUsesStatusAndActingCommandsWithoutEligibilityPreflight` observes `status --boot --identify`, record-and-consume, and successor dispatch, and fails if the command trace contains an eligibility preflight.
+- DONE: **AC-2 — Authority spending remains fail-closed and atomic.**
+  `TestEligibilityFailClosedTable`, consume once/stale/repeat/removed-target tests, and terminal refusal tests assert exact authority state, status, cardinality, and unchanged bytes across the required variants.
+- DONE: **AC-3 — The operator receives an actionable refusal from the acting command.**
+  `TestGatePreparedBriefingLocatorLifecycleAndRefusals` requires concrete missing/tampered locator and digest reasons from `gate consume`; terminal controls require their applicable pending/stale/route reason.
+- DONE: **AC-4 — The public surface contains no standalone eligibility ceremony.**
+  `TestRemovedGateVerbsAreAbsentAndSideEffectFree`, help/completion tests, and removed-field filter/status tests reject the old surface while source inspection retains only private mutation-boundary checks.
+- DONE: Detached consume successor-target mutant.
+  Disabling `applicationTargetMatches` made `TestConsumeRefusesTargetRemovedFromCurrentWorkflow` fail after an unauthorized status/application write; this kills weakening of the locked consume guard.
+- DONE: Detached terminal retained-authority/digest mutant.
+  Bypassing retained-request validation and reviewed-input currency made `TestMergeGuardRefusesDigestStaleAuthorityByteClean` fail after delivery state changed; this kills stale-authority acceptance.
+- DONE: Focused and formatting evidence.
+  Focused CLI/status/gates/ensigncycle behavior passes; `gofmt -w ./cmd ./internal`, `git diff --check`, and candidate worktree cleanliness pass.
+- FAILED: Repository-wide suites complete without fixture failures.
+  Both `go test ./...` and `go test ./... -race` fail only `TestV1PilotManifestReadsAndValidates`: nine unchanged manifest paths are absent from the external shared state checkout; all other packages pass.
+- DONE: Classify the repository-wide failure and verify the unaffected package boundary.
+  Evidence defect/deferred infrastructure risk, not an outcome defect: candidate changes neither manifest nor test; `internal/gates` passes normal and race runs with that environment-coupled test skipped; promote if a candidate-touched durable fixture fails.
+- DONE: Semantic adversarial pass and recommendation.
+  Empty/malformed, stale, wrong-stage, wrong-target, consumed, superseded, repeat, terminal, and removed-public-input variants preserve one invariant: only current binding authority at the acting boundary can write; recommend PASSED with no material finding.
+
+### Summary
+
+Validated exact candidate `013c8729ee8ae6e792fd421b40304008f79e3c93` as a smaller public gate surface with the private locked predicate intact. All value ACs have behavioral evidence and both required detached guard weakenings are caught; the sole full/race failure is pre-existing shared-state fixture drift, classified as a non-material evidence defect, so validation recommends PASSED.
