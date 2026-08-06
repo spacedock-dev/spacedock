@@ -255,3 +255,39 @@ command-log lifecycle first, then the detached guard mutants, followed by the
 documentation/help sweep. The intended semantic change is only removal of the
 operator ceremony and its redundant diagnostic projection; all authority and
 atomicity branches remain.
+
+## Stage Report: implementation
+
+- DONE: Remove the public `gate eligibility` CLI, status projection, help,
+  completion, documentation, and First Officer ceremony without adding an
+  alias, replacement command, or readiness class.
+  Commit `013c8729e` deletes the CLI route/help and both derived status fields;
+  unknown-command, unknown-filter, help, and completion tests fail if any public
+  surface returns.
+- DONE: Preserve the private fail-closed predicate and every locked authority
+  check in `gate consume`, terminal finalize, and rework; prove stale,
+  wrong-stage, wrong-target, consumed, superseded, and malformed inputs refuse
+  safely.
+  No production file under `internal/gates/` or `internal/status/merge.go`
+  changed; focused gate/CLI suites exercise the refusal matrix and byte-clean
+  state, while detached guard mutants made the removed-target consume and
+  digest-stale terminal tests fail.
+- DONE: Run the real status-to-record-to-consume or merge journey without an
+  eligibility preflight, plus focused, formatting, full, race, and required
+  detached evidence.
+  `TestGateJourneyUsesStatusAndActingCommandsWithoutEligibilityPreflight`
+  exercises `status --boot --identify`, `gate record --consume`, and stamped
+  dispatch, and fails if its command log contains the removed preflight.
+  Focused gates, CLI, status, and ensign-cycle suites pass; `gofmt -w ./cmd
+  ./internal` and `git diff --check` pass. Both `go test ./...` and `go test
+  ./... -race` ran: all packages except `internal/gates` pass, where the
+  pre-existing `TestV1PilotManifestReadsAndValidates` fixture fails because nine
+  manifest paths are absent from the shared state checkout.
+
+### Summary
+
+The public eligibility ceremony and its redundant status projection are gone;
+operators now read durable readiness from status and receive refusal reasons
+from the acting command. Commit `013c8729e` preserves all private locked
+authority-spending code and adds lifecycle, absence, and mutation-sensitive
+evidence for the clean cut.
