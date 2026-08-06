@@ -52,6 +52,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-03T23:33:06Z
+worktree: .worktrees/spacedock-ensign-remove-standalone-gate-eligibility
 ---
 
 ## Outcome
