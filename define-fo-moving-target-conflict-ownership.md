@@ -100,6 +100,12 @@ gates:
                 at: "2026-08-06T03:08:28.159189Z"
                 decision: revise
                 reason: Remove the test command parser and command-spelling matrix. A parser in a test is a red flag. Capture actual Git arguments at the fixture boundary and compare those values directly.
+            - id: gate-attempt:g3912c6f6jkgd0yjmyg6h7yn-validation-4
+              briefing:
+                id: briefing:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-4:revision-1
+                digest: sha256:cff9bb44de3b19a8a611c843c781890040f7453334b47e8e282bc329b568d424
+                request-digest: sha256:fe41e171cf7e9b70941716ab13828aa62c60bf3e9541122084148a72a9684b94
+                room-ref: ./define-fo-moving-target-conflict-ownership/review/validation/briefing-4
 ---
 
 Define the ownership, durable hold, evidence, and keep-moving behavior when a pending PR meets a moving merge target. The task closes the contract ambiguity without adding a resolver worker or changing the workflow definition.

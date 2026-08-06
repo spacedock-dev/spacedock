@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-4:revision-1",
+  "question": "Approve a smaller G3 proof shape that deletes the false contract-behavior test and adds no replacement interpreter?",
+  "artifacts": [
+    {
+      "id": "artifact:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/4dd6939f4b2ffd5fd2c80a7a1348d8e6569a9524/define-fo-moving-target-conflict-ownership.md",
+      "rev": "sha256:a2e974b7d36b59c0d6ed5bc67c889609b9d3b99762b3302bf3f32ba742391d13",
+      "mediaType": "text/markdown",
+      "summary": "Revise G3: delete literal contract-behavior proof; retain real Git conflict evidence; add no parser or interpreter."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-4:revision-1:item-2",
+      "uri": "git-root://main/cece8ae9d4e07cfd9a0302bbe217bdfbdf686b3c/internal/ensigncycle/moving_target_conflict_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:944b5fcb4c714e20a995508c2074967cfec9da4312d59438d3511b030d652935"
+    }
+  ]
+}
