@@ -695,3 +695,23 @@ The captain-reset correction is complete at exact code tip `b60d1c8adcf67135c819
 ### Summary
 
 Validation recommends **REJECTED with gate HOLD**, solely because required live proof is red. The candidate has zero classified defects and requires zero implementation rework: deterministic AC evidence and the captain-reset proof are green, while one external Material Codex FO runtime defect must be routed and canonical Claude/Pi capacity must be restored before the exact live rerun.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Rebuild only the self-contained dispatch artifact and pinned-launcher value on current origin/main, with ambient launcher B performing zero worker-time workflow resolution.
+  Commit `7fce0bb19` snapshots stage/context and standing bytes into fresh/advance files, keeps `fetch_commands: []`, pins the resolved absolute builder path, and fails closed before artifact creation when it is unavailable.
+- DONE: Keep First Officer ownership of Feedback Cycles and gate record --round; remove ensign-owned round publication, transcript observers, provider dialects, and old correction-round machinery.
+  The current-main First Officer workflow text is unchanged; the ensign contract now owns only pinned `status --read` helpers and has no fetch bootstrap or advisory-round publication instruction.
+- DONE: Return a clean owned branch with a substantially smaller current-main diff, direct A-versus-B behavior evidence, formatting, full, and race results; stop on semantic conflict.
+  The branch is 44 files/`665+ 467-` versus the prior 58-file candidate; `TestGeneratedAssignmentRoutesWorkflowReadToPinnedA` fails on B routing or product-C conflation, formatting and focused suites pass, while full and race runs are red only in `internal/gates` because two manifest paths were concurrently archived from the shared state checkout.
+
+### Evidence
+
+- `go test ./internal/dispatch ./internal/cli ./skills/integration` passes; the dispatch package would fail if assignment payload leaked into either outer prompt, any bootstrap fetch returned, a max-legal filename shortened/collided, or a missing launcher wrote an artifact.
+- `go test ./internal/ensigncycle ./internal/dispatch ./internal/cli ./skills/integration` passes; this would fail if legacy cycle fixtures used an unpinned build path or emitted fetch-based stage delivery.
+- `gofmt -w ./cmd ./internal` and `git diff --check` pass.
+- `go test ./...` and `go test ./... -race` reach all owned packages green, then fail `internal/gates.TestV1PilotManifestReadsAndValidates` because `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` now live under `.spacedock-state/_archive/` while that unrelated test still requires their former active paths.
+
+### Summary
+
+Rebuilt the narrow launcher-drift value on current `origin/main` without transplanting the old candidate: dispatch files are self-contained, outer transport remains pointer-only, and worker-time workflow resolution cannot drift to ambient B. The reset preserves current-main First Officer ownership of feedback-cycle recording and removes obsolete ensign fetch/advisory machinery; the only full-suite reds are documented shared-state manifest drift outside this branch.
