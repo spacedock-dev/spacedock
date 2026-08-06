@@ -164,7 +164,7 @@ The current desired inventory is: 16 bound journeys, 21 bound fixtures (17 commo
 
 Cycle-20 evidence update: the current observed total is thirteen target-scoped `MISSING-EVIDENCE` results (superseding the preceding twelve-result narrative), with Sonnet=3, Codex=5, Pi=5, and Opus=0. Pi now owns `keep-moving-posture` through existing repair `9adv48yhye5s2vkhwd7ge52d`: hosted run `31062662883`, job `92493828626`, artifact `8953098453` passed ten runnable journeys and skipped four owned Pi gaps before setting questioned `verdict=revise` and later `status=review` without clearing that verdict, leaving durable state terminal. Claude Opus remains required and runnable for this journey.
 
-Registry reconciliation SHA: `1cb4585ceb5ec77b29b113d87b95eedbfcb82dc2`
+Registry reconciliation SHA: `b42835481c6944e239129a78bbef0eca240a8473`
 
 The SHA guard compares the recorded commit with the watched paths. A stale base must fail and name every changed watched path; the recorded base must pass. Source bindings are the semantic inventory, while the path guard only proves that inventory has not gone stale.
 
