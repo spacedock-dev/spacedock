@@ -55,6 +55,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:g3912c6f6jkgd0yjmyg6h7yn:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:g3912c6f6jkgd0yjmyg6h7yn-validation-1
+              briefing:
+                id: briefing:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-1:revision-1
+                digest: sha256:dcbf98f0298e3d33367275130829e79d68bd5abde0570b3f4c04ac76a268f85d
+                request-digest: sha256:1824eb5c77179ac9e3e053c6146ff87fcfbdb564bd19ef4a193105178dc2ae0b
+                room-ref: ./define-fo-moving-target-conflict-ownership/review/validation/briefing-1
 ---
 
 Define the ownership, durable hold, evidence, and keep-moving behavior when a pending PR meets a moving merge target. The task closes the contract ambiguity without adding a resolver worker or changing the workflow definition.
