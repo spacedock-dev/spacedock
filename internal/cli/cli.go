@@ -763,7 +763,8 @@ func newDispatchCommand(probe claudeteam.TeamStateProbe, stdin io.Reader, stdout
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if code := dispatch.Run(probe, args, stdin, stdout, stderr); code != 0 {
+			workflowLauncher, _ := resolvedLauncherBin()
+			if code := dispatch.RunWithLauncher(probe, workflowLauncher, args, stdin, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
 			return nil

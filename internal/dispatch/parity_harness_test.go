@@ -14,6 +14,8 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
+const testWorkflowLauncher = "/opt/spacedock/bin/spacedock"
+
 // runResult is one run's three channels.
 type runResult struct {
 	stdout string
@@ -36,8 +38,12 @@ func runNative(stdin string, args ...string) runResult {
 // normalizing host-marker environment. Host-resolution tests use this helper to
 // assert CODEX_THREAD_ID / CLAUDECODE behavior directly.
 func runNativePreservingHostEnv(stdin string, args ...string) runResult {
+	return runNativeWithLauncher(stdin, testWorkflowLauncher, args...)
+}
+
+func runNativeWithLauncher(stdin, workflowLauncher string, args ...string) runResult {
 	var stdout, stderr bytes.Buffer
-	exit := Run(claudeteam.Probe, args, strings.NewReader(stdin), &stdout, &stderr)
+	exit := RunWithLauncher(claudeteam.Probe, workflowLauncher, args, strings.NewReader(stdin), &stdout, &stderr)
 	return runResult{stdout.String(), stderr.String(), exit}
 }
 

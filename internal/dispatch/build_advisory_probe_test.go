@@ -41,7 +41,7 @@ func bareBuildFixture(t *testing.T) (root, stdin string) {
 func runBareBuild(t *testing.T, root, stdin string, probe claudeteam.TeamStateProbe) (stdout, stderr string) {
 	t.Helper()
 	var out, errBuf bytes.Buffer
-	if code := Run(probe, []string{"build", "--workflow-dir", root}, strings.NewReader(stdin), &out, &errBuf); code != 0 {
+	if code := RunWithLauncher(probe, testWorkflowLauncher, []string{"build", "--workflow-dir", root}, strings.NewReader(stdin), &out, &errBuf); code != 0 {
 		t.Fatalf("bare build exit=%d stderr=%q", code, errBuf.String())
 	}
 	return out.String(), errBuf.String()

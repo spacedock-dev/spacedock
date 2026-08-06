@@ -222,9 +222,8 @@ func TestBuildNoHTMLEscape(t *testing.T) {
 	}
 }
 
-// TestBuildSpaceBearingPath locks the shlex quoting rule: a workflow dir with a
-// space gets single-quoted in the emitted fetch line. Native and oracle (with
-// the fetch prefix rewritten) must match byte-for-byte.
+// TestBuildSpaceBearingPath locks shell-safe launcher quoting while retaining a
+// workflow and launcher path that both contain spaces.
 func TestBuildSpaceBearingPath(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -246,14 +245,15 @@ func TestBuildSpaceBearingPath(t *testing.T) {
 		"bare_mode":      false,
 	}, nil)
 
-	native := runNative(stdin, "build", "--workflow-dir", workflowDir)
+	workflowLauncher := filepath.Join(root, "launcher dir", "spacedock")
+	native := runNativeWithLauncher(stdin, workflowLauncher, "build", "--workflow-dir", workflowDir, "--host", "claude")
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
 	assertGolden(t, "build-space-path", env)
-	// Explicit: the space-bearing dir is single-quoted in the native fetch line.
-	wantQuoted := LauncherCommand() + " dispatch show-stage-def --workflow-dir '" + workflowDir + "' --stage backlog"
+	// Explicit: the space-bearing absolute launcher is a literal shell-safe prefix.
+	wantQuoted := "    " + shlexQuote(workflowLauncher)
 	if !strings.Contains(nativeBody, wantQuoted) {
-		t.Errorf("native fetch line not shlex-quoted for space path:\nwant contains: %s\ngot:\n%s", wantQuoted, nativeBody)
+		t.Errorf("workflow launcher is not shell-quoted:\nwant contains: %s\ngot:\n%s", wantQuoted, nativeBody)
 	}
 }

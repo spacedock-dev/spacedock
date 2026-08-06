@@ -185,7 +185,7 @@ func TestBuildPiHostArtifactCarriesCanonicalStageFactsThroughPiWrapper(t *testin
 			t.Fatalf("Pi dispatch artifact missing builder-derived fact %q:\n%s", want, body)
 		}
 	}
-	assertRenderedStageDefCommand(t, body, root, "implementation")
+	assertRenderedStagePackage(t, body, root, "implementation")
 	if !strings.Contains(wrapped.Task, out.DispatchFile) {
 		t.Fatalf("Pi wrapper does not forward dispatch file path %s in task %q", out.DispatchFile, wrapped.Task)
 	}
@@ -322,7 +322,7 @@ func TestPiStageDispatchSmokeFixtureWorker(t *testing.T) {
 			t.Fatalf("dispatch artifact missing %q:\n%s", want, dispatchBody)
 		}
 	}
-	assertRenderedStageDefCommand(t, dispatchText, workflowDir, "implementation")
+	assertRenderedStagePackage(t, dispatchText, workflowDir, "implementation")
 
 	report := fmt.Sprintf(`
 ## Stage Report: implementation fixback smoke
@@ -358,16 +358,21 @@ func TestPiStageDispatchSmokeFixtureWorker(t *testing.T) {
 	}
 }
 
-func assertRenderedStageDefCommand(t *testing.T, body, workflowDir, stage string) {
+func assertRenderedStagePackage(t *testing.T, body, workflowDir, stage string) {
 	t.Helper()
-	semantic := "dispatch show-stage-def --workflow-dir " + shlexQuote(workflowDir) + " --stage " + stage
-	for _, want := range []string{
-		"spacedock_launcher() {",
-		"spacedock_launcher " + semantic,
-	} {
-		if !strings.Contains(body, want) {
-			t.Fatalf("dispatch artifact missing rendered stage-definition command %q:\n%s", want, body)
-		}
+	readme, err := os.ReadFile(filepath.Join(workflowDir, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := resolveStageContext(readme, stage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(body, want) {
+		t.Fatalf("dispatch artifact missing resolved stage/context package %q:\n%s", want, body)
+	}
+	if strings.Contains(body, "### Fetch commands") || !strings.Contains(body, "### Workflow launcher") {
+		t.Fatalf("dispatch artifact retained fetch bootstrap or omitted launcher binding:\n%s", body)
 	}
 }
 

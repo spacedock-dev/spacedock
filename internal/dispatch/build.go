@@ -123,11 +123,9 @@ func buildError(stderr io.Writer, code int, format string, a ...any) int {
 }
 
 // runBuild reads a dispatch request from stdin JSON or the flag/file input mode
-// and assembles the dispatch envelope on stdout plus the dispatch-file body
-// written to a deterministic path. It always emits the show-stage-def fetch line
-// and appends the show-standing fetch line when the workflow declares at least
-// one standing teammate.
-func runBuild(probe claudeteam.TeamStateProbe, opts buildOptions, stdin io.Reader, stdout, stderr io.Writer) int {
+// and assembles the dispatch envelope on stdout plus the self-contained
+// dispatch-file body written to a deterministic path.
+func runBuild(probe claudeteam.TeamStateProbe, workflowLauncher string, opts buildOptions, stdin io.Reader, stdout, stderr io.Writer) int {
 	if opts.PrintSchema {
 		return emitBuildSchema(stdout)
 	}
@@ -143,7 +141,7 @@ func runBuild(probe claudeteam.TeamStateProbe, opts buildOptions, stdin io.Reade
 		}
 	}
 
-	return runBuildFields(probe, opts, fields, stdout, stderr)
+	return runBuildFields(probe, workflowLauncher, opts, fields, stdout, stderr)
 }
 
 func loadBuildFields(opts buildOptions, stdin io.Reader, stderr io.Writer) (map[string]json.RawMessage, int) {
@@ -289,7 +287,7 @@ func validBuildHost(host string) bool {
 	return host == "claude" || host == "codex" || host == "pi"
 }
 
-func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields map[string]json.RawMessage, stdout, stderr io.Writer) int {
+func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, opts buildOptions, fields map[string]json.RawMessage, stdout, stderr io.Writer) int {
 	// Rule 1: Required fields present and non-null.
 	for _, field := range buildRequiredFields {
 		v, ok := fields[field]
@@ -590,6 +588,9 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	if stageSubsection == "" {
 		return buildError(stderr, 1, "stage '%s' heading not found in %s", stage, readmePath)
 	}
+	if opts.ValidateOnly == "" && (workflowLauncher == "" || !filepath.IsAbs(workflowLauncher)) {
+		return buildError(stderr, 1, "cannot resolve the running spacedock executable; refusing to write a dispatch artifact")
+	}
 
 	// --- Prompt assembly ---
 	var parts []string
@@ -605,13 +606,25 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		parts = append(parts, fmt.Sprintf("You are working on: %s\n\nStage: %s\n", entityTitle, stage))
 	}
 
-	// 2. Stage definition — replaced by the show-stage-def fetch line. The native
-	// fetch line targets `spacedock dispatch show-stage-def` so the dispatch path
-	// stays Python-free (the one intentional divergence from the oracle).
-	fetchCommands := []string{
-		fmt.Sprintf("%s dispatch show-stage-def --workflow-dir %s --stage %s",
-			LauncherCommand(), shlexQuote(workflowDir), shlexQuote(stage)),
+	// Every successful artifact binds ensign-owned workflow helpers to the exact
+	// resolved launcher that built it. Ambient SPACEDOCK_BIN/PATH and an explicit
+	// product-test binary are not alternate workflow-control launchers.
+	if opts.ValidateOnly == "" {
+		parts = append(parts, fmt.Sprintf(
+			"### Workflow launcher\n\n"+
+				"Begin every ensign-owned Spacedock workflow-helper command, including `status --read`, "+
+				"with this literal command prefix:\n\n"+
+				"    %s\n\n"+
+				"Do not substitute inherited `SPACEDOCK_BIN` or `spacedock` from PATH. "+
+				"An explicitly named worktree Spacedock binary is the product under test, not the workflow launcher.\n",
+			shlexQuote(workflowLauncher)))
 	}
+
+	// The builder already resolved the exact stage subsection plus ordered
+	// declared context sections from this validated README snapshot. Keep those
+	// bytes in the file; the outer prompt remains pointer-only.
+	parts = append(parts, stageSubsection+"\n")
+	fetchCommands := make([]string, 0)
 
 	// 3. Worktree instructions (conditional). Under split root the state-commit
 	// guidance applies to every stage, worktree or not: the worktree branch
@@ -685,23 +698,13 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		"### Completion checklist\n\n%s\n\n### Summary\n{brief description of what was accomplished}\n",
 		checklistText))
 
-	// 9. Standing-teammate fetch line — appended only when at least one declared
-	// standing teammate exists for this workflow. Bare-mode (empty team_name) and
-	// zero-standing dispatches omit the line, so show-standing never runs where it
-	// would render nothing. The enumeration is runtime-neutral; the native fetch
-	// line targets `spacedock dispatch show-standing` (the same documented
-	// claude-team→spacedock dispatch rewrite as the show-stage-def line).
-	if len(EnumerateDeclaredStandingTeammates(workflowDir, teamName)) > 0 {
-		fetchCommands = append(fetchCommands,
-			fmt.Sprintf("%s dispatch show-standing --workflow-dir %s", LauncherCommand(), shlexQuote(workflowDir)))
+	// 9. Standing-teammate routing is selected by the builder and inlined only for
+	// the same legacy-team/non-empty condition as before. Bare, merged/no-team, and
+	// empty-standing assignments omit the section.
+	if standing := claudeteam.RenderStandingTeammatesSection(
+		EnumerateDeclaredStandingTeammates(workflowDir, teamName)); standing != "" {
+		parts = append(parts, standing)
 	}
-
-	// Emit the `### Fetch commands` block.
-	fetchLines := []string{"### Fetch commands", ""}
-	for _, cmd := range fetchCommands {
-		fetchLines = append(fetchLines, "    "+cmd)
-	}
-	parts = append(parts, strings.Join(fetchLines, "\n"))
 
 	// 10. Completion signal (Claude legacy team mode, Claude merged mode, or
 	// Codex named dispatch). The merged shape (mergedMode: claude, no team_name)
@@ -778,6 +781,9 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		return 1
 	}
 
+	// Self-contained artifact; pointer-only transport. Assignment payload stays in
+	// dispatchBody. These renderers carry only the file locator and fixed host or
+	// stage routing metadata; advance deliberately retains its stage label.
 	var prompt string
 	if advance {
 		prompt = dispatchAdvancePointerPrompt(stage, dispatchFilePath)
