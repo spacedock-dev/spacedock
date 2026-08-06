@@ -198,3 +198,27 @@ The exact candidate preserves pending authority, conflict identity, ownership se
 ### Summary
 
 The corrected oracle now rejects the validator's exact escape spellings and adjacent Git equivalents without changing the First Officer contract or supported reconciliation trace. The candidate is clean at `d4a3590dd`; only the explicitly out-of-scope pilot manifest remains red in aggregate suites.
+
+## Review-finding disposition (cycle 2)
+
+- Reviewer observation: detached audit `/tmp/spacedock-g3-audit-cycle2.GR01pk` at exact corrected candidate `d4a3590ddd7ad7e8b3aec022e462e5ecfda6b9fb` added only a throwaway test; the corrected oracle rejected the original three commands, attached/separate `-X` and `--strategy-option` forms, force-with-lease, and forced `+refspec`, but accepted `git merge -s ours main` and `git rebase --strategy=ours main`.
+- Released user and normal workflow: a First Officer handling the supported conflict can invoke these standard Git merge/rebase strategy options.
+- Observable harm: the oracle remains green when the `ours` strategy auto-resolves or discards peer/rebased changes, so AC-5 can appear proven while observable conflict safety is wrong.
+- Authority: `contract[skills/first-officer/references/first-officer-shared-core.md#haltrebase-conflictpaths-abort-surface-stop]` requires never auto-resolve or discard either side.
+- Trigger evidence: `go test ./internal/ensigncycle -run '^TestCycle2Detached(ForbiddenVariantMatrix|SupportedTraceHasNoFalsePositive)$' -count=1` failed only because those two forbidden strategy commands were accepted; the supported trace was not false-rejected.
+- Worker proposal: Material / evidence defect / G3-owned; extend only the existing oracle/matrix to reject merge/rebase strategy forms selecting `ours` while preserving the supported trace.
+- First Officer authorization: `FIX`, narrowly limited to the existing oracle/matrix; validator must not mutate the candidate.
+- Validator recommendation: `REJECTED`; candidate stayed clean and unchanged at `d4a3590ddd7ad7e8b3aec022e462e5ecfda6b9fb`.
+
+## Stage Report: validation (cycle 2)
+
+- FAILED: Re-review AC-1 through AC-5 at exact corrected head d4a3590ddd7ad7e8b3aec022e462e5ecfda6b9fb and confirm the supported conflict/abort/authority/new-head/unrelated-work trace remains green.
+  The detached package proves the supported trace remains accepted and the correction does not touch AC-1 through AC-4 contract surfaces, but AC-5 remains unproven because two valid `ours` strategy forms pass the oracle.
+- FAILED: Re-run the detached adversarial audit for the three original escape spellings and adjacent option/refspec variants; prove the corrected oracle rejects them without false-rejecting the supported trace.
+  The three originals and tested `-X`, `--strategy-option`, force-with-lease, and `+refspec` variants reject correctly, and `git push origin HEAD` plus the supported trace remain green; `git merge -s ours` and `git rebase --strategy=ours` are accepted, so the adjacent-option matrix fails.
+- SKIPPED: Run focused, formatting, full, and race evidence, classify only current-head findings, and recommend PASSED or REJECTED without repairing the unrelated pilot manifest.
+  The current-head material finding entered the checkpoint before expensive reruns; under the authorized `FIX` disposition the validator kept candidate bytes unchanged and stopped. Recommend REJECTED; the unrelated pilot manifest was not edited or used to classify G3.
+
+### Summary
+
+Cycle 2 closes the original three escape spellings without false-rejecting the supported trace, but its token oracle still misses valid `ours` strategy selection through `-s` and `--strategy`. Revise only those existing oracle/matrix paths, then rerun the exact supported, adversarial, focused, formatting, full, and race evidence.
