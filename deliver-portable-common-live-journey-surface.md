@@ -1,6 +1,6 @@
 ---
 title: Deliver one portable common live-journey surface
-status: validation
+status: implementation
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 3w, h3, tj, and r4 as design inputs."
 score: 1.0
 sprint: live-test-truth
@@ -1718,3 +1718,24 @@ Cycle 20 binds Pi keep-moving to existing `9adv…`, fixes the Material registry
 ### Summary
 
 Cycle 20 PASSED independently at exact candidate `0f9e096e7f534f702c31fdcaa43aa1f416c2784f`. Pi keep-moving is accurately attached to the existing `9adv…` owner, the Material registry time-state defect is closed with causal proof, and the Captain-authorized 43-file surface preserves completion semantics, runnable Opus, documentation roles, and all prior evidence.
+
+## Stage Report: validation (cycle 21)
+
+- DONE: Revalidate the complete Pi target locally before any hosted execution.
+  Exact candidate `0f9e096e7f534f702c31fdcaa43aa1f416c2784f` ran the shared 16-journey selector with isolated Pi 0.80.10, pinned `pi-subagents` 0.35.1 and `pi-intercom` 0.6.0, and subscription model `openai-codex/gpt-5.4`. The run exited 0 in 1531.85s: all 11 runnable journeys passed, five cells skipped under four exact owners, and final `ac-value-reanchor` passed after the new keep-moving binding.
+- DONE: Run the Claude Sonnet target locally through the supported subscription path.
+  The first package launch stopped before model execution because npm had left its documented native placeholder; running the package installer produced Claude Code 2.1.161. The exact selector then used `SPACEDOCK_LIVE_MODEL=sonnet`, resolved `claude-sonnet-4-6`, and retained artifacts under `/tmp/spacedock-cycle20-sonnet-local.fkxGfs`.
+- DONE: Classify the runnable Sonnet evidence before changing candidate bytes.
+  `full-ensign-cycle`, `gate-guardrail`, `withdrawn-gate-recovery`, and `recorded-gate-lifecycle` passed; `default-headless-gate-stop` skipped under exact owner `26nk8qd48zknqnn4kc123sez`. In `rejection-flow`, the validation ensign committed the REJECTED report and JSONL package, then `SendMessage(to="team-lead")` returned `No agent named 'team-lead' is currently addressable`; no further stream progress occurred for 60 seconds and the runner killed the process at 419.27s.
+- DONE: Prove the Sonnet failure is product conduct with an existing owner, not auth, capacity, fixture, or oracle drift.
+  The retained stream shows successful launch, delegation, durable validation mutation, and commit before the addressability failure. The FO never received completion, never recorded the complete correction round, never routed rework, and never ran cycle-2 validation. Archived owner `zbcj98qfwtax61vxdzrf615e` explicitly owns cross-runtime rejection-flow rework/revalidation and already records Sonnet and Opus triggers; it remains in `test-behavior-completeness`.
+- DONE: Preserve the durable completion rule and route only representation truth.
+  Sonnet `rejection-flow` is currently runnable without passing evidence, so completion is blocked. The correction is exactly one target-scoped `TODO(zbcj98qfwtax61vxdzrf615e)` binding plus count/target/owner/runnable-Opus mutation proof and operator inventory; TODO remains non-green. No product, prompt, fixture, adapter, retry, controller, owner, or other target binding may change.
+- DONE: Preserve candidate and sprint boundaries during classification.
+  Candidate and origin remain clean and equal at `0f9e096e7f534f702c31fdcaa43aa1f416c2784f`; no product repair, hosted CI, Opus run, Codex run, new owner, new member, or rm work occurred.
+- FAILED: Recommend PASSED only if every runnable target cell has passing evidence or an exact reproduced owner binding.
+  REJECTED. Sonnet `rejection-flow` has reproduced product-owned nonpassing evidence but no current target-scoped binding, so the ys representation is incomplete until the one-cell zbc correction is independently validated.
+
+### Summary
+
+Cycle 21 confirms the Cycle-20 Pi correction locally, then reproduces a Sonnet rejection-flow addressability/continuation failure after durable validation work. The failure matches existing cross-runtime owner `zbc…`; validation is REJECTED for one representation-only Sonnet binding, with product behavior and all unrelated cells held fixed.
