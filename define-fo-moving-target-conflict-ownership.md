@@ -120,6 +120,14 @@ gates:
                 digest: sha256:0348f8acafb0b6f098529dc9bf4fc40b4ed3c2644060931a8085fe6bdde8212e
                 request-digest: sha256:2f48edf70755ff8b06cecb3e63fe82cfad62b2028e4ed2a8af6076b87f7d5856
                 room-ref: ./define-fo-moving-target-conflict-ownership/review/validation/briefing-5
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:g3912c6f6jkgd0yjmyg6h7yn:validation:5
+                briefing: briefing:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-5:revision-1
+                by: person:captain
+                at: "2026-08-06T15:52:46.334695Z"
+                decision: hold
+                reason: Cut G3 from the durable-decisions release. Its reduced Git evidence is honest, but the five promised First Officer lifecycle outcomes remain unproven. Move it to test-behavior-completeness and add no replacement interpreter.
 ---
 
 Define the ownership, durable hold, evidence, and keep-moving behavior when a pending PR meets a moving merge target. The task closes the contract ambiguity without adding a resolver worker or changing the workflow definition.
