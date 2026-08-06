@@ -1820,3 +1820,30 @@ Cycle 21 PASSED independently at exact pushed candidate `3ee17e6f3f324c9e973d217
 ### Summary
 
 Cycle 22 REJECTED `3ee17e6f3` as an evidence-only implementation whose reconciliation is tautological and whose net surface is 1,626 lines over the original estimate. The Captain approved a replacement from `origin/main`: sixteen directly executable `TestLiveCommon…` tests, adjacent source metadata, one fail-fast prefix selector across runtimes, and source-derived reconciliation without parallel maps, switches, copied gap oracles, mutation laboratories, SHA self-guards, or speculative Pi observation/metrics machinery.
+
+## Stage Report: implementation (cycle 23 — portable common live journey recarve)
+
+- DONE: Rebuild from the exact approved main baseline.
+  Baseline was `8b5af99baa5c37fe7c969a904819041688420e22`; the replacement is the single clean pushed commit `b1f49a395ccccf296b294617ed0f8b762c7c5e9d` on `spacedock-ensign/deliver-portable-common-live-journey-surface-recarve`.
+- DONE: Replace competing journey identities with sixteen real common tests.
+  Exactly sixteen top-level exported `TestLiveCommon…` functions carry adjacent stable journey/fixture annotations and call `liveJourney` directly. Runtime selection occurs only inside the shared helper; no journey registry, runner map, or journey-name switch remains.
+- DONE: Put every supported runtime on the same executable surface.
+  Claude, Codex, and Pi transports normalize their real command evidence behind one driver seam. The workflow contains exactly three `-run '^TestLiveCommon' -failfast` lanes, and the retired Pi auto-continue and runtime-specific shared-coverage surfaces are removed.
+- DONE: Preserve earned gaps without copying an expected-gap ledger.
+  Compact AST reconciliation derives desired journeys and targets from the registry and observed bindings from source, checks exact builder ownership and builder/assertion reachability, rejects malformed or duplicate target-scoped TODO metadata, checks orphan fixtures and workflow selectors, and emits stable sorted derived totals: Sonnet=4, Opus=0, Codex=5, Pi=5.
+- DONE: Preserve real host evidence and operator rationale.
+  Claude keeps anti-shutdown timing, stream-watcher liveness, shallow-boot stream grading, and merged-host ground-truth rationale. Codex and Pi command extraction use native transcript shapes; filing and zero-discovery assertions consume normalized commands without a speculative Pi observer or metrics layer.
+- DONE: Meet the Captain's exact replacement surface.
+  The final baseline-relative change is exactly 34 files, +1083/-1947. It removes obsolete tables, maps, wrappers, duplicate orchestration, and superseded meta-tests; `shared_live_runner_unit_test.go` is absent and `codex_wait_matrix_live_test.go` is unchanged.
+- DONE: Run focused formatting and contract verification.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean. `TestRuntimeLiveRegistryReconciliation` passes with the source-derived sorted totals, and `go test -tags=live ./internal/ensigncycle -run '^$'` compiles the live surface.
+- DONE: Run the required repository-wide suites against uncontaminated state.
+  In clean clone `/tmp/spacedock-live-final.wdbRyb/repo` at the exact candidate, `go test -p 1 ./...` exited 0 and `go test -p 1 ./... -race` exited 0. The shared development checkout's independently archived pilot files were therefore excluded from repository discovery rather than altering product or state truth.
+- SKIPPED: Run hosted/model live journeys.
+  Cycle 23 changes representation and routing only; it preserves the banked live evidence and exact owner bindings without claiming TODO as passing evidence or spending new model/substrate capacity.
+- DONE: Preserve authority boundaries and publish the immutable candidate.
+  No product behavior, fixture semantics, repair owner, status transition, or unrelated state changed. HTTPS push lacked workflow scope, so the already-authenticated SSH transport published the identical candidate; the remote branch resolves exactly to `b1f49a395ccccf296b294617ed0f8b762c7c5e9d`.
+
+### Summary
+
+Cycle 23 replaces the rejected evidence-only surface with sixteen directly executable, runtime-portable common journeys and a compact source-derived reconciler. The exact 34/+1083/-1947 candidate is focused-green, full/race-green in a clean clone, and pushed at `b1f49a395ccccf296b294617ed0f8b762c7c5e9d` without a workflow transition.
