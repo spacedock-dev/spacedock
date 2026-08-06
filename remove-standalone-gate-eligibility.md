@@ -349,3 +349,36 @@ evidence for the clean cut.
 ### Summary
 
 Validated exact candidate `013c8729ee8ae6e792fd421b40304008f79e3c93` as a smaller public gate surface with the private locked predicate intact. All value ACs have behavioral evidence and both required detached guard weakenings are caught; the sole full/race failure is pre-existing shared-state fixture drift, classified as a non-material evidence defect, so validation recommends PASSED.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Reconcile only the two reported moving-target conflicts against current
+  origin/main: internal/status/handlers.go and skills/fo-gate-lifecycle/SKILL.md;
+  preserve both current-main behavior and BV's public-surface deletion.
+  Merge commit `698867babe7d57eb309dca476ae91187e92a3a57` retains
+  current-main's unconditional `--next` readiness materialization and
+  `needs-preparation` First Officer flow while omitting the removed eligibility
+  projection and preflight.
+- DONE: Keep the shipped change limited to public gate eligibility removal;
+  preserve private locked authority checks and add no alias, readiness class,
+  or replacement ceremony.
+  The reconciliation changes no private gate/terminal authority file; scoped
+  source search finds no public eligibility command or derived status field,
+  and focused unknown-verb/filter, status, lifecycle, completion, and skill
+  integration tests pass.
+- DONE: Return a clean fresh head with a clean merge-tree against current
+  origin/main, focused evidence, formatting, full, and race results; report the
+  new exact surface and head.
+  Exact head is `698867babe7d57eb309dca476ae91187e92a3a57` with
+  `origin/main` `8b5af99baa5c37fe7c969a904819041688420e22` as an ancestor;
+  `git merge-tree --write-tree origin/main HEAD` exits 0 with tree
+  `ed8b3948d858f4d7d5e374976b90c2c8b02fba53`. Formatting and focused
+  suites pass. Full and race runs pass every package except the pre-existing
+  manifest fixture: two shared-state paths remain absent
+  (`codex-launch-multi-agent-v2.md`, `gate-agent-ergonomics.md`).
+
+### Summary
+
+The two moving-target conflicts are semantically reconciled on current main.
+The fresh candidate keeps current scheduler/First Officer behavior, removes the
+public eligibility ceremony, and leaves private atomic authority checks intact.
