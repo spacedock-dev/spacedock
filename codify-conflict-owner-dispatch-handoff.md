@@ -24,6 +24,17 @@ gates:
                 digest: sha256:e94e3a3c61d1947a0a06e071414b7cb175f4b297cf6a87f0f0c09c092d8a98e6
                 request-digest: sha256:0ce185eaddb7133c17ad91e086e0d59db9adcf0ca9bc9cb64d9ffb201ef69731
                 room-ref: ./codify-conflict-owner-dispatch-handoff/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:d8qmey415fsb5q9h6q639ngf:backlog:1
+                briefing: briefing:d8qmey415fsb5q9h6q639ngf:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-06T15:53:42.057665Z"
+                decision: approve
+                reason: 'Captain sprint conn authorizes gate approval. D8 has a distinct mechanical end value after G3 was cut: dispatch the recorded workflow owner without credential inference, a resolver, a parser, or new state.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 The First Officer contract names semantic ownership for an open-PR moving-target
