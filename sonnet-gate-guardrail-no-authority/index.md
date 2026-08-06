@@ -52,6 +52,7 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+sprint: test-behavior-completeness
 ---
 
 Restore the Sonnet gate-guardrail live proof by making `gate prepare` name which selected source it rejected, so the FO stops bisecting for the offending path by binding throwaway content and destroying binary-owned room state. The task removes the bounded Sonnet TODO quarantine only after an exact-tip live run proves exactly one successful `gate prepare`.
