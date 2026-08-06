@@ -237,3 +237,16 @@ The corrected oracle now rejects the validator's exact escape spellings and adja
 ### Summary
 
 Cycle 2 closes the original three escape spellings without false-rejecting the supported trace, but its token oracle still misses valid `ours` strategy selection through `-s` and `--strategy`. Revise only those existing oracle/matrix paths, then rerun the exact supported, adversarial, focused, formatting, full, and race evidence.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Make the existing oracle and matrix reject merge/rebase strategy selection of `ours`, including `git merge -s ours main` and `git rebase --strategy=ours main`, without false-rejecting the supported trace.
+  Commit `c1409bff4` adds independent short/long and separate/attached matrix cases for `-s ours`, `-sours`, `--strategy ours`, and `--strategy=ours`; all four now red while `TestMovingTargetConflictOwnershipAndRecovery` remains green.
+- DONE: Preserve the cycle-1 coverage for force, side checkout/restore, strategy-option, and forced refspec variants; do not change contract or authority semantics.
+  The complete prior mutation matrix stays green, and the cycle correction changes only the existing oracle/matrix test files by +14/-0; no contract, provider, schema, resolver, or workflow bytes changed.
+- DONE: Run focused, focused-race, detached adversarial, formatting, full, and race evidence and report the clean exact head and surface; leave the unrelated pilot manifest untouched.
+  Focused and focused-race pass; detached exact head `c1409bff47a1313deb07ce93b62b2f61e965a651` passes supported/adversarial tests; `gofmt` and `git diff --check` pass. Candidate surface is 6 files/+277/-4 total. Full and race on immutable state `461605d09` pass every package except the unchanged nine-path `internal/gates` pilot-manifest failure; no race is reported.
+
+### Summary
+
+The oracle now rejects every authorized `ours` merge-strategy spelling while retaining the supported trace and all earlier adversarial coverage. The candidate is clean at `c1409bff4`; this cycle required no contract or authority change.
