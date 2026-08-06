@@ -1,6 +1,6 @@
 ---
 title: Define FO ownership and recovery for moving-target PR conflicts
-status: validation
+status: implementation
 source: "Captain follow-up after the 2026-08-03 durable-decisions conflict diagnosis."
 started: 2026-08-03T16:01:22Z
 completed:
@@ -229,6 +229,7 @@ The exact candidate preserves pending authority, conflict identity, ownership se
 - Cycle 1: REJECTED — detached validation / equivalent forbidden Git spellings; surface 6 files/+212/-4 vs estimate 4-9 files/+150/-30; AC unchanged
 - Cycle 2: REJECTED — detached re-review / ours strategy forms; surface 6 files/+263/-4 vs estimate 4-9 files/+150/-30; AC unchanged
 - Cycle 3: REJECTED — Captain review / test parser is a red flag; surface 6 files/+277/-4 vs estimate 4-9 files/+150/-30; AC unchanged
+- Cycle 4: REJECTED — detached validation / literal ownership and continuation proof; surface 6 files/+157/-4 vs estimate 4-9 files/+150/-30; AC unchanged
 
 ## Stage Report: implementation (cycle 2)
 
