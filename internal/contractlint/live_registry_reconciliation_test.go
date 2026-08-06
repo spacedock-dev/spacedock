@@ -50,6 +50,7 @@ var auditedMissingEvidence = map[missingEvidenceKey]string{
 	{target: "claude-sonnet", journey: "default-headless-gate-stop"}:    "26nk8qd48zknqnn4kc123sez",
 	{target: "pi", journey: "default-headless-gate-stop"}:               "26nk8qd48zknqnn4kc123sez",
 	{target: "claude-sonnet", journey: "smallest-sufficient-mechanism"}: "9adv48yhye5s2vkhwd7ge52d",
+	{target: "pi", journey: "smallest-sufficient-mechanism"}:            "9adv48yhye5s2vkhwd7ge52d",
 	{target: "claude-sonnet", journey: "keep-moving-posture"}:           "9adv48yhye5s2vkhwd7ge52d",
 	{target: "codex", journey: "smallest-sufficient-mechanism"}:         "9adv48yhye5s2vkhwd7ge52d",
 	{target: "codex", journey: "keep-moving-posture"}:                   "9adv48yhye5s2vkhwd7ge52d",
@@ -64,6 +65,10 @@ func removeMissingEvidenceMutation(key missingEvidenceKey) func(map[missingEvide
 
 func addMissingEvidenceMutation(key missingEvidenceKey, owner string) func(map[missingEvidenceKey]string) {
 	return func(m map[missingEvidenceKey]string) { m[key] = owner }
+}
+
+func replaceRegistryMutation(old, new string) func(string) string {
+	return func(s string) string { return strings.Replace(s, old, new, 1) }
 }
 
 func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
@@ -145,25 +150,15 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 			s = strings.Replace(s, "### `full-ensign-cycle`", "### `renamed-ensign-cycle`", 1)
 			return strings.Replace(s, "`TestLiveSharedScenarios/full-ensign-cycle`", "`TestLiveSharedScenarios/renamed-ensign-cycle`", 1)
 		},
-		"changed desired fixture": func(s string) string {
-			return strings.Replace(s, "`realistic-lifecycle` —", "`renamed-lifecycle` —", 1)
-		},
-		"changed desired proof": func(s string) string {
-			return strings.Replace(s, "### `claude-bare-dispatch`", "### `claude-other-dispatch`", 1)
-		},
+		"changed desired fixture": replaceRegistryMutation("`realistic-lifecycle` —", "`renamed-lifecycle` —"),
+		"changed desired proof":   replaceRegistryMutation("### `claude-bare-dispatch`", "### `claude-other-dispatch`"),
 		"duplicate desired proof": func(s string) string {
 			block := "### `claude-bare-dispatch`\n\n- **Entry point:** `TestLiveBareReachable`\n- **Lane:** `claude-live`\n- **Fixture:** `dispatch-recovery/base` — duplicate control.\n\n"
 			return strings.Replace(s, "## Non-gating live experiments", block+"## Non-gating live experiments", 1)
 		},
-		"changed proof lane": func(s string) string {
-			return strings.Replace(s, "- **Lane:** `pi-live`", "- **Lane:** `other-live`", 1)
-		},
-		"changed target lane": func(s string) string {
-			return strings.Replace(s, "| Codex | `codex-live` |", "| Codex | `other-live` |", 1)
-		},
-		"duplicate target row": func(s string) string {
-			return strings.Replace(s, "| Codex | `codex-live` |", "| Codex | `codex-live` |\n| Codex | `codex-live` |", 1)
-		},
+		"changed proof lane":   replaceRegistryMutation("- **Lane:** `pi-live`", "- **Lane:** `other-live`"),
+		"changed target lane":  replaceRegistryMutation("| Codex | `codex-live` |", "| Codex | `other-live` |"),
+		"duplicate target row": replaceRegistryMutation("| Codex | `codex-live` |", "| Codex | `codex-live` |\n| Codex | `codex-live` |"),
 		"changed suite entry": func(s string) string {
 			return strings.ReplaceAll(s, "`TestLiveSharedScenarios/", "`TestLiveOtherScenarios/")
 		},
@@ -194,6 +189,9 @@ func TestRuntimeLiveRegistryReconciliationMutationControls(t *testing.T) {
 		"removed Pi default-headless TODO":     removeMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "default-headless-gate-stop"}),
 		"retagged default-headless TODO":       addMissingEvidenceMutation(missingEvidenceKey{target: "claude-sonnet", journey: "default-headless-gate-stop"}, "other-owner"),
 		"retagged Pi default-headless TODO":    addMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "default-headless-gate-stop"}, "other-owner"),
+		"removed Pi smallest TODO":             removeMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "smallest-sufficient-mechanism"}),
+		"retagged Pi smallest TODO":            addMissingEvidenceMutation(missingEvidenceKey{target: "pi", journey: "smallest-sufficient-mechanism"}, "other-owner"),
+		"suppressed unverified Opus smallest":  addMissingEvidenceMutation(missingEvidenceKey{target: "claude-opus", journey: "smallest-sufficient-mechanism"}, "9adv48yhye5s2vkhwd7ge52d"),
 		"removed TODO": func(m map[missingEvidenceKey]string) {
 			for id := range m {
 				delete(m, id)

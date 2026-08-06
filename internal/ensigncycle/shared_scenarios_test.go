@@ -55,7 +55,8 @@ func liveDurableJourneyTODO(target liveEvidenceTarget, name string) string {
 	case liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "withdrawn-gate-recovery"}:
 		return "TODO(" + liveWithdrawnGateDefectID + "): withdrawn gate recovery must prepare exactly one successor attempt"
 	case liveEvidenceKey{target: liveEvidenceTargetClaudeSonnet, journey: "smallest-sufficient-mechanism"},
-		liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "smallest-sufficient-mechanism"}:
+		liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "smallest-sufficient-mechanism"},
+		liveEvidenceKey{target: liveEvidenceTargetPi, journey: "smallest-sufficient-mechanism"}:
 		return "TODO(" + liveDurableJourneyDefectID + "): initial-stage successor dispatch must durably enter and run the current stage"
 	case liveEvidenceKey{target: liveEvidenceTargetClaudeSonnet, journey: "keep-moving-posture"},
 		liveEvidenceKey{target: liveEvidenceTargetCodex, journey: "keep-moving-posture"}:
