@@ -382,3 +382,40 @@ Validated exact candidate `013c8729ee8ae6e792fd421b40304008f79e3c93` as a smalle
 The two moving-target conflicts are semantically reconciled on current main.
 The fresh candidate keeps current scheduler/First Officer behavior, removes the
 public eligibility ceremony, and leaves private atomic authority checks intact.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Re-review exact head 698867ba and confirm that the two conflict resolutions preserve current-main scheduler and First Officer behavior while removing the public eligibility ceremony.
+  Exact head `698867babe7d57eb309dca476ae91187e92a3a57` keeps unconditional `--next` readiness materialization and the FO `needs-preparation` cold-report flow, with no eligibility route, projection, or preflight.
+- DONE: Re-run the four acceptance criteria, both detached authority mutants, focused and formatting evidence, and confirm a clean merge-tree against current origin/main.
+  All AC-focused suites and both mutants pass their falsification requirement; read-only `gofmt -l`, `git diff --check`, candidate cleanliness, ancestor check, and merge-tree exit 0 pass.
+- DONE: Run full and race evidence, classify only current-head failures, and recommend PASSED or REJECTED without mutating the candidate.
+  Both commands ran on the exact clean head; only two shared-state manifest paths fail as classified below; recommendation: PASSED.
+- DONE: **AC-1 (VALUE) — The normal gate journey has no eligibility preflight.**
+  `TestGateJourneyUsesStatusAndActingCommandsWithoutEligibilityPreflight` observes status, record-and-consume, and successor dispatch, and fails if the command trace contains the removed ceremony.
+- DONE: **AC-2 — Authority spending remains fail-closed and atomic.**
+  Consume and terminal matrices pass stale, wrong-stage, wrong-target, consumed, superseded, repeat, malformed, terminal, exact-state, cardinality, and byte-clean controls.
+- DONE: **AC-3 — The operator receives an actionable refusal from the acting command.**
+  Acting-command tests require concrete locator, digest, pending-authority, stale-authority, and route reasons rather than a collapsed readiness diagnostic.
+- DONE: **AC-4 — The public surface contains no standalone eligibility ceremony.**
+  Unknown-verb/filter, help, four-shell completion, status, lifecycle, and skill integration tests pass; scoped public-surface search returns no old command or derived fields.
+- DONE: Preserve current-main scheduler semantics in the conflict resolution.
+  `TestGateReadinessPromotesMechanicallyCompleteColdReports` proves both boot and unconditional `--next` emit one `needs-preparation` row; dirty/malformed reports remain excluded.
+- DONE: Preserve current-main First Officer semantics in the conflict resolution.
+  The reconciled lifecycle routes `needs-preparation` through one cold-report review/prepare flow while retaining the five acting verbs and omitting eligibility preflight.
+- DONE: Detached consume successor-target mutant.
+  Disabling locked `applicationTargetMatches` makes `TestConsumeRefusesTargetRemovedFromCurrentWorkflow` fail after unauthorized status/application movement.
+- DONE: Detached terminal retained-authority/digest mutant.
+  Bypassing retained-request validation and reviewed-input currency makes `TestMergeGuardRefusesDigestStaleAuthorityByteClean` fail after delivery state changes.
+- DONE: Clean current-main ancestry and merge-tree.
+  `origin/main` `8b5af99baa5c37fe7c969a904819041688420e22` is an ancestor; `git merge-tree --write-tree HEAD origin/main` exits 0 with tree `ed8b3948d858f4d7d5e374976b90c2c8b02fba53`.
+- FAILED: Repository-wide suites complete without fixture failures.
+  `go test ./...` and `go test ./... -race` fail only two manifest entries now archived in shared state: `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md`; every other package passes.
+- DONE: Classify current-head failures and unaffected boundary.
+  Evidence defect/deferred infrastructure risk, not an outcome defect: active-root manifest paths lag archive moves; `internal/gates` passes normal/race with that environment-coupled test skipped; promote if a candidate-owned gate behavior or durable fixture fails.
+- DONE: Semantic adversarial recommendation.
+  The reconciled scheduler and FO paths retain current-main semantics, and only current binding authority at an acting boundary can write; no material finding remains, so recommend PASSED.
+
+### Summary
+
+Re-validated exact merged head `698867babe7d57eb309dca476ae91187e92a3a57` without candidate mutation. The two conflict resolutions preserve current-main `--next`/`needs-preparation` behavior, the four gate-removal ACs and both detached authority mutants hold, and the clean merge-tree plus non-material shared-state fixture classification support PASSED.
