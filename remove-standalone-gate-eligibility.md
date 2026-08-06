@@ -77,6 +77,17 @@ gates:
                 digest: sha256:e99ac168d6cd8eccfb3e63dfa7efa03a95190334eacb9d9aa66beb2bcd815dcc
                 request-digest: sha256:95c2238a79bedf0475363e3625e3ce0465a55650cdbc0d62adf6631892cfe6fa
                 room-ref: ./remove-standalone-gate-eligibility/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:bv3hhbqr5spt1wn4557qyp8c:validation:2
+                briefing: briefing:bv3hhbqr5spt1wn4557qyp8c:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-06T16:10:34.903116Z"
+                decision: approve
+                reason: Captain sprint conn authorizes approval. Exact head 698867ba preserves current-main scheduler and First Officer behavior, removes the public eligibility ceremony, passes all four acceptance criteria and both detached authority mutants, and has a clean merge-tree. PR CI remains required.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-03T23:33:06Z
 worktree: .worktrees/spacedock-ensign-remove-standalone-gate-eligibility
 mod-block:
