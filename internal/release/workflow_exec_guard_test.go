@@ -38,15 +38,15 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	}
 
 	steps := parseWorkflowSteps(workflow)
-	claudeRun := findExecutableStep(steps, "Run live Claude shared scenarios", "TestLiveClaudeSharedScenarios")
+	claudeRun := findExecutableStep(steps, "Run live Claude E2E", "TestLiveCommon")
 	if claudeRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Claude shared scenario run")
 	}
-	codexRun := findExecutableStep(steps, "Run live Codex shared scenarios", "TestLiveCodexSharedScenarios")
+	codexRun := findExecutableStep(steps, "Run live Codex shared scenarios", "TestLiveCommon")
 	if codexRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Codex shared scenario run")
 	}
-	piCoverageRun := findExecutableStep(steps, "Run Pi shared scenario coverage guard", "TestPiSharedScenarioCoverage")
+	piCoverageRun := findExecutableStep(steps, "Run live Pi common journeys", "TestLiveCommon")
 	if piCoverageRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi shared scenario coverage guard")
 	}

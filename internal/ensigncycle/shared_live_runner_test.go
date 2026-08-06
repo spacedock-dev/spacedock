@@ -1,0 +1,145 @@
+//go:build live
+
+package ensigncycle
+
+import (
+	"os"
+	"reflect"
+	"runtime"
+	"testing"
+)
+
+type liveJourneyTODO struct{ target, owner string }
+type sharedRuntimeScenario struct {
+	name, oldPythonTest, intent string
+}
+type liveJourneyExercise func(*testing.T, liveDriver, sharedRuntimeScenario)
+
+func liveTODO(target, owner string) liveJourneyTODO {
+	return liveJourneyTODO{target: target, owner: owner}
+}
+
+func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, builder Builder, todos []liveJourneyTODO, exercise liveJourneyExercise, assertion Assertion) {
+	t.Helper()
+	if id == "" || fixtureID == "" || exercise == nil || liveFunctionName(builder) == "" || liveFunctionName(assertion) == "" {
+		t.Fatal("live journey metadata is incomplete")
+	}
+	driver, target := liveDriverForRuntime(t)
+	for _, todo := range todos {
+		if todo.target == target {
+			t.Skipf("TODO(%s): %s/%s lacks passing live evidence", todo.owner, target, id)
+		}
+	}
+	exercise(t, driver, sharedRuntimeScenario{name: id})
+}
+
+func liveFunctionName(value any) string {
+	rv := reflect.ValueOf(value)
+	if !rv.IsValid() || rv.Kind() != reflect.Func || rv.IsNil() {
+		return ""
+	}
+	fn := runtime.FuncForPC(rv.Pointer())
+	if fn == nil {
+		return ""
+	}
+	return fn.Name()
+}
+
+func liveDriverForRuntime(t *testing.T) (liveDriver, string) {
+	t.Helper()
+	switch runtime := os.Getenv("SPACEDOCK_LIVE_RUNTIME"); runtime {
+	case "claude":
+		runner := newClaudeLiveRunner(t)
+		if runner.model() == "sonnet" {
+			return runner, "claude-sonnet"
+		}
+		return runner, "claude-opus"
+	case "codex":
+		return codexAsLiveDriver{t: t, runner: newCodexLiveRunner(t)}, "codex"
+	case "pi":
+		return newPiSharedLiveDriver(t), "pi"
+	default:
+		t.Fatalf("SPACEDOCK_LIVE_RUNTIME=%q, want claude, codex, or pi", runtime)
+		return nil, ""
+	}
+}
+
+//spacedock:live-journey id=full-ensign-cycle fixture=realistic-lifecycle
+func TestLiveCommonFullEnsignCycle(t *testing.T) {
+	liveJourney(t, "full-ensign-cycle", "realistic-lifecycle", writeRealisticLifecycleFixture, []liveJourneyTODO{liveTODO("codex", "nvz2ym82ydfn07jp04yfxg9r")}, runFullEnsignCycleJourney, someCommitNamesOnly)
+}
+
+//spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held
+func TestLiveCommonGateGuardrail(t *testing.T) {
+	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, []liveJourneyTODO{liveTODO("pi", "3zzpdw704df1g8pg1x9thzmw")}, runClaudeGateGuardrailScenario, assertGateHeld)
+}
+
+//spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
+func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "26nk8qd48zknqnn4kc123sez"), liveTODO("pi", "26nk8qd48zknqnn4kc123sez")}, runDefaultHeadlessGateScenario, assertGateHeld)
+}
+
+//spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
+func TestLiveCommonWithdrawnGateRecovery(t *testing.T) {
+	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, []liveJourneyTODO{liveTODO("codex", "47gnqfm1ft6f2hcahz98m2jv")}, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
+}
+
+//spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
+func TestLiveCommonRecordedGateLifecycle(t *testing.T) {
+	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, nil, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
+}
+
+//spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
+func TestLiveCommonRejectionFlow(t *testing.T) {
+	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "zbcj98qfwtax61vxdzrf615e"), liveTODO("codex", "zbcj98qfwtax61vxdzrf615e"), liveTODO("pi", "zbcj98qfwtax61vxdzrf615e")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
+}
+
+//spacedock:live-journey id=feedback-3-cycle-escalation fixture=rejection/before-validation-3
+func TestLiveCommonFeedbackThreeCycleEscalation(t *testing.T) {
+	liveJourney(t, "feedback-3-cycle-escalation", "rejection/before-validation-3", writeEscalationWorkflow, nil, runClaudeFeedback3CycleEscalationScenario, assertThirdCycleEscalation)
+}
+
+//spacedock:live-journey id=merge-hook-guardrail fixture=merge-hook/blocked
+func TestLiveCommonMergeHookGuardrail(t *testing.T) {
+	liveJourney(t, "merge-hook-guardrail", "merge-hook/blocked", writeMergeHookGuardWorkflow, nil, runClaudeMergeHookGuardrailScenario, assertMergeHookGuardHeld)
+}
+
+//spacedock:live-journey id=filing fixture=filing/empty-workflow
+func TestLiveCommonFiling(t *testing.T) {
+	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, nil, runClaudeFilingScenario, assertFilingCommands)
+}
+
+//spacedock:live-journey id=shallow-boot fixture=boot/held-gate
+func TestLiveCommonShallowBoot(t *testing.T) {
+	liveJourney(t, "shallow-boot", "boot/held-gate", writeShallowBootWorkflow, nil, runClaudeShallowBootScenario, assertShallowBoot)
+}
+
+//spacedock:live-journey id=zero-discovery fixture=boot/no-workflow
+func TestLiveCommonZeroDiscovery(t *testing.T) {
+	liveJourney(t, "zero-discovery", "boot/no-workflow", writeZeroDiscoveryFixture, nil, runZeroDiscoveryJourney, detectBroadSearchCommands)
+}
+
+//spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
+func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
+	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, nil, runAutoContinueJourney, assertAutoContinue)
+}
+
+//spacedock:live-journey id=self-evidence-merge-triage fixture=merge-triage/unapproved-live-evidence
+func TestLiveCommonSelfEvidenceMergeTriage(t *testing.T) {
+	liveJourney(t, "self-evidence-merge-triage", "merge-triage/unapproved-live-evidence", writeMergeTriageWorkflow, nil, runClaudeSelfEvidenceMergeTriageScenario, assertSelfEvidenceMergeTriage)
+}
+
+//spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
+func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
+	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "9adv48yhye5s2vkhwd7ge52d"), liveTODO("codex", "9adv48yhye5s2vkhwd7ge52d"), liveTODO("pi", "9adv48yhye5s2vkhwd7ge52d")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
+}
+
+//spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
+func TestLiveCommonKeepMovingPosture(t *testing.T) {
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "9adv48yhye5s2vkhwd7ge52d"), liveTODO("codex", "9adv48yhye5s2vkhwd7ge52d"), liveTODO("pi", "9adv48yhye5s2vkhwd7ge52d")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+}
+
+//spacedock:live-journey id=ac-value-reanchor fixture=ac-reanchor/means-pass-value-regressed
+func TestLiveCommonACValueReanchor(t *testing.T) {
+	liveJourney(t, "ac-value-reanchor", "ac-reanchor/means-pass-value-regressed", authorACReanchorScenario, nil, runACValueReanchorJourney, assertACReanchorScenario)
+}
