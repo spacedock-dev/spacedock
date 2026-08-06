@@ -1534,3 +1534,36 @@ Cycle 17 records the archive-proven Pi default-headless product failure against 
 ### Summary
 
 Cycle 17 PASSED independently at exact candidate `23e0dbd02b3c4aa8753776596eadf9980698a0b5`. The archive-proven Pi default-headless failure is accurately attached to the existing 26n owner, while target discrimination, pure registry truth, prior evidence, operator documentation, and the fixed surface remain intact.
+
+## Stage Report: implementation (cycle 18)
+
+- DONE: Start from the exact clean and pushed Cycle-17 candidate.
+  Baseline and origin were `23e0dbd02b3c4aa8753776596eadf9980698a0b5`; no root-main update or unrelated state write occurred.
+- DONE: Classify the exact hosted evidence without rerunning it.
+  Pi run `31056949526`, job `92476577900`, artifact `8951115959` passed 11 runnable journeys before `smallest-sufficient-mechanism` failed; the archived run alone supplied product evidence.
+- DONE: Bind the failure to the existing product owner.
+  The run changed `ready-one` and `ready-two` directly from ready to done, committed entry into done, and built stage done, exactly matching existing owner `9adv48yhye5s2vkhwd7ge52d`; no owner was changed or filed.
+- DONE: Add exact failing controls before the source binding.
+  The live runner first reported an empty TODO reason for Pi/smallest-sufficient-mechanism, and reconciliation first emitted exact `MISSING-EVIDENCE` for target Pi and owner `9adv48yhye5s2vkhwd7ge52d`.
+- DONE: Add only the Pi smallest-sufficient source binding.
+  The existing multi-target smallest-sufficient case now includes `liveEvidenceTargetPi`; every prior ten target/owner binding remains intact.
+- DONE: Preserve the pure desired matrix and exact observed counts.
+  Controls prove 16 common journeys × four required targets = 64 cells and exactly eleven missing-evidence bindings: Sonnet=3, Codex=5, Pi=3, Opus=0.
+- DONE: Prove target, owner, and runnable-Opus discrimination.
+  Removing or retagging the Pi binding fails its exact check, adding the same owner to Opus fails the unverified-target control, and the four-target runner expectation preserves existing Sonnet/Codex bindings plus runnable Opus.
+- DONE: Update the watched operator inventory.
+  `docs/runtime-live-ci.md` records run `31056949526`, job `92476577900`, artifact `8951115959`, the exact two-entity ready-to-done behavior, existing repair owner, eleven-result count, and runnable Opus truth.
+- DONE: Stay inside the fixed surface without deleting executable proof.
+  Repeated branch-added registry string mutations now use one shared constructor; all mutation cases still execute, no file was added, and cumulative surface is exactly 42 files/+2748/-708.
+- DONE: Preserve watched-core plus SHA-only binder history.
+  Core `0e7f2379f9d63896f003a0f10d3a5beac1c31670` is followed only by binder `00fcde8a5121fe937a75d152cb7b498f1d16a10a`, which changes the reconciliation SHA; stale and current SHA controls pass their opposite expectations.
+- DONE: Run required formatting and repository-wide verification.
+  `gofmt -w ./cmd ./internal` and `git diff --check` are clean; under heavy host contention full exits 0 (`ensigncycle` 373.660s) and race exits 0 (`ensigncycle` 430.431s).
+- SKIPPED: Run hosted/live/model/substrate/smoke execution.
+  Execution was prohibited; all new proof used archived evidence and deterministic source, mutation, registry, and SHA controls.
+- DONE: Preserve scope and authority boundaries.
+  No product, fixture, prompt, adapter, launcher, front-door, runtime observer/metric, workflow, owner, unrelated TODO, file/member/controller/retry behavior, or other entity changed, and no workflow transition was made.
+
+### Summary
+
+Cycle 18 records the archive-proven Pi smallest-sufficient-mechanism failure against its existing `9adv…` owner while preserving the pure 64-cell desired matrix and all prior evidence truth. Exact RED/GREEN owner and target controls, runnable Opus, SHA discrimination, full/race suites, pushed two-commit history, and the hard surface ceiling are green at `00fcde8a5121fe937a75d152cb7b498f1d16a10a`.
