@@ -71,6 +71,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:bv3hhbqr5spt1wn4557qyp8c-validation-2
+              briefing:
+                id: briefing:bv3hhbqr5spt1wn4557qyp8c:validation:attempt-2:revision-1
+                digest: sha256:e99ac168d6cd8eccfb3e63dfa7efa03a95190334eacb9d9aa66beb2bcd815dcc
+                request-digest: sha256:95c2238a79bedf0475363e3625e3ce0465a55650cdbc0d62adf6631892cfe6fa
+                room-ref: ./remove-standalone-gate-eligibility/review/validation/briefing-2
 started: 2026-08-03T23:33:06Z
 worktree: .worktrees/spacedock-ensign-remove-standalone-gate-eligibility
 mod-block:

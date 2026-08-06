@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:bv3hhbqr5spt1wn4557qyp8c:validation:attempt-2:revision-1",
+  "question": "Approve reconciled BV head 698867ba for PR delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:bv3hhbqr5spt1wn4557qyp8c:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/eae413d74847507aba6bae920eef7254cd82a5ea/remove-standalone-gate-eligibility.md",
+      "rev": "sha256:ea43af07d485821cd1e6bd5bee605b9eddd7329c29aa2dca8bef1cc18c79c3ec",
+      "mediaType": "text/markdown",
+      "summary": "Approve exact head 698867ba. It preserves current-main scheduler and First Officer behavior, removes the public eligibility ceremony, passes all four value criteria and both authority mutants, and has a clean merge-tree."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:bv3hhbqr5spt1wn4557qyp8c:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/698867babe7d57eb309dca476ae91187e92a3a57/internal/status/handlers.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:c9e4ce4806bdd17a9427c61d286b61847c76218c89c766714f69d37636f5ef8e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:bv3hhbqr5spt1wn4557qyp8c:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/698867babe7d57eb309dca476ae91187e92a3a57/skills/fo-gate-lifecycle/SKILL.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c44d9ed38b3baba44c1d10464ff41e14ac367eddd6b4765a00f66c6521d8f2b0"
+    }
+  ]
+}
