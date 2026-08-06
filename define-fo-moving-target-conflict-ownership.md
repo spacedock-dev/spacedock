@@ -1,6 +1,6 @@
 ---
 title: Define FO ownership and recovery for moving-target PR conflicts
-status: validation
+status: implementation
 source: "Captain follow-up after the 2026-08-03 durable-decisions conflict diagnosis."
 started: 2026-08-03T16:01:22Z
 completed:
@@ -181,3 +181,7 @@ The exact remaining failure in both commands is `TestV1PilotManifestReadsAndVali
 ### Summary
 
 The exact candidate preserves pending authority, conflict identity, ownership separation, fresh-head gating, and unrelated-work continuation, while the unrelated pilot-manifest failure remains outside G3. Validation rejects because the adversarial observation boundary accepts semantically equivalent forbidden Git actions; revise only that existing oracle and mutation matrix, then rerun focused, detached, full, and race evidence.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — detached validation / equivalent forbidden Git spellings; surface 6 files/+212/-4 vs estimate 4-9 files/+150/-30; AC unchanged
