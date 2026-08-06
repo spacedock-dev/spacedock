@@ -72,6 +72,12 @@ gates:
                 at: "2026-08-06T00:44:23.012474Z"
                 decision: revise
                 reason: Detached validation proved AC-5 can pass while equivalent force, auto-resolution, and side-discard spellings are accepted. Return to implementation for the authorized narrow oracle and mutation-matrix fix only.
+            - id: gate-attempt:g3912c6f6jkgd0yjmyg6h7yn-validation-2
+              briefing:
+                id: briefing:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-2:revision-1
+                digest: sha256:a0f74c17ae324e559cecb54f62d476c8882279d06a8aadff5be1bc3d5374b392
+                request-digest: sha256:deb11ba04282cf83df6132218841c75ea64380ccf513dc12bebcd670a91834c9
+                room-ref: ./define-fo-moving-target-conflict-ownership/review/validation/briefing-2
 ---
 
 Define the ownership, durable hold, evidence, and keep-moving behavior when a pending PR meets a moving merge target. The task closes the contract ambiguity without adding a resolver worker or changing the workflow definition.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-2:revision-1",
+  "question": "Should G3 return to implementation for the authorized cycle-2 ours-strategy oracle fix?",
+  "artifacts": [
+    {
+      "id": "artifact:g3912c6f6jkgd0yjmyg6h7yn:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/bae82773bf6001e39ad8f7c81fbfe485b4e98193/define-fo-moving-target-conflict-ownership.md",
+      "rev": "sha256:4187f5e3e6fee10bf63a90d8cdfeb698516eac4094758930baabf369e665a343",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 validation rejects because merge/rebase strategy forms selecting ours still evade the oracle; revise only those existing oracle and matrix paths."
+    }
+  ]
+}
