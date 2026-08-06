@@ -342,3 +342,16 @@ The evidence now observes one supported real-Git conflict directly instead of in
 ### Summary
 
 Cycle 4 validates the real Git observation boundary and confirms the parser/matrix removal, but the fixture does not connect its modeled authority, hold, or continuation values to the shipped FO contract. The detached contradiction probe proves the test can pass while AC-1 behavior is wrong, so the exact clean candidate is rejected without mutation or replacement design.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Delete the literal ownership, safety-owner, hold, dispatch, and presentation proof that stays green when the shipped contract is reversed.
+  Commit `efe87a7c3` removes all five fields and their assertions, renames the test to describe Git evidence only, and updates its ABOUTME claim; detached `rg` confirms the literals and former parser/trace names are absent.
+- DONE: Retain only direct evidence from the real Git fixture for conflict paths, failed rebase, abort, clean state, preserved bytes, and exact-head freshness; make no unsupported contract-behavior claim.
+  `TestMovingTargetConflictGitEvidence` directly checks actual rebase/abort argv, `contract.txt`, restored old head, clean porcelain, byte-identical pending fixture state, changed base identity, and stale/fresh exact-head values. It makes no ownership, hold, dispatch, presentation, or shipped-contract behavior assertion.
+- DONE: Add no parser, tokenizer, mutation matrix, synthetic command language, or replacement interpreter; reduce the candidate and return a clean exact head with focused, formatting, full, and race evidence.
+  Harness size falls from 149 to 137 lines; focused and focused-race pass; detached exact head `efe87a7c34ad3703bfc30d490f801539b0cb4e29` passes and contains none of the forbidden surfaces; `gofmt` and `git diff --check` pass. Candidate surface is 6 files/+145/-4. Full and race on immutable state `1d9d40a2f` pass every package except the unchanged nine-path `internal/gates` manifest failure; no race is reported.
+
+### Summary
+
+The fixture now reports only independently observed real-Git and file-state facts, with the false behavioral proof deleted rather than replaced. The candidate is clean at `efe87a7c3` and makes no unsupported ownership or continuation claim.
