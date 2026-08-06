@@ -121,3 +121,16 @@ Start with a throwaway two-branch fixture whose base advances after an approved 
 ### Summary
 
 The real moving-target replay shows that a dirty PR must remain truthful and pending while the FO aborts and reports the conflict. Semantic reconciliation belongs to the Captain and owning branch; the FO owns transport/state safety and fresh exact-head evidence. Unrelated ready work may continue, but a rewritten head cannot reuse old validation. Proceed to implementation with the existing contract surfaces and no resolver escape hatch.
+
+## Stage Report: implementation
+
+- DONE: Commit the minimal First Officer contract and fixtures that preserve pending authority and exact conflict evidence during a moving-target PR conflict.
+  Code commit `686ebd8e8` changes six files: the shared/merge/dispatch/Claude contracts plus a real-Git fixture; removing the abort, byte equality, exact tuple, or pending-state behavior makes `TestMovingTargetConflictOwnershipAndRecovery` fail.
+- DONE: Prove Captain/branch-owner/First-Officer responsibility, conflicted-rebase abort, fresh exact-head evidence, and unrelated-work continuation without any resolver path.
+  The fixture conflicts on `contract.txt`, aborts to the old head, distinguishes semantic owner from transport guard, rejects old-head CI/gate evidence, and requires both unrelated dispatch and gate actions; isolated adversarial mutations red on terminalization, consume, ours/theirs, force, resolver dispatch, state mutation, or whole-loop hold.
+- DONE: Stay within the approved 4-9 file surface and tolerance; run focused, formatting, full, race, and required detached or live checks.
+  Surface is 6 files and +212/-4 lines; focused and focused-race pass, `gofmt -w ./cmd ./internal` and `git diff --check` pass, and detached commit `686ebd8e8` passes both behavior/adversarial tests. Full and race runs exercised all packages; their sole failure is `internal/gates` reading the same nine absent manifest paths from the shared `.spacedock-state`, while every code/worktree package passes.
+
+### Summary
+
+The First Officer now holds only the conflicted PR entity, preserves its pending authority and exact conflict evidence, and keeps unrelated work moving. Captain-authorized branch ownership and exact-new-head revalidation are explicit, with no resolver, force path, provider change, state field, or workflow edit.
