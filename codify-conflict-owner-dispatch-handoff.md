@@ -1,6 +1,6 @@
 ---
 title: Make FO dispatch of moving-target conflict owners explicit
-status: backlog
+status: ideation
 source: "Captain follow-up after the 2026-08-04 conflict-owner and shared-credential diagnosis."
 started:
 completed:
@@ -34,7 +34,7 @@ gates:
                 reason: 'Captain sprint conn authorizes gate approval. D8 has a distinct mechanical end value after G3 was cut: dispatch the recorded workflow owner without credential inference, a resolver, a parser, or new state.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 The First Officer contract names semantic ownership for an open-PR moving-target
