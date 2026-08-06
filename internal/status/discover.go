@@ -224,8 +224,6 @@ func newEntity(fields map[string]string, slug, path, scope string) *entity {
 		fields["gate-decision"] = summary.Decision
 		fields["gate-application"] = summary.Application
 		fields["gate-application-state"] = summary.ApplicationState
-		fields["gate-condition"] = summary.Condition
-		fields["gate-eligible"] = fmt.Sprintf("%t", summary.Eligible)
 		fields["gate-target-stage"] = summary.TargetStage
 	}
 	fields["slug"] = slug
@@ -265,7 +263,7 @@ func materializeGateReadiness(entities []*entity, stages []Stage) {
 	}
 }
 
-func materializeGateEligibility(entities []*entity, definitionDir string, explicitFields []string, allFields bool, filters []whereFilter) {
+func materializeGateReadinessWhenReferenced(entities []*entity, definitionDir string, explicitFields []string, allFields bool, filters []whereFilter) {
 	readinessReferenced := allFields
 	for _, field := range explicitFields {
 		if field == "gate-readiness" {
@@ -279,29 +277,6 @@ func materializeGateEligibility(entities []*entity, definitionDir string, explic
 	}
 	if readinessReferenced {
 		materializeGateReadiness(entities, parseStagesBlock(filepath.Join(definitionDir, "README.md")))
-	}
-
-	referenced := allFields
-	for _, field := range explicitFields {
-		if field == "gate-condition" || field == "gate-eligible" {
-			referenced = true
-		}
-	}
-	for _, filter := range filters {
-		if filter.field == "gate-condition" || filter.field == "gate-eligible" {
-			referenced = true
-		}
-	}
-	if !referenced {
-		return
-	}
-	for _, entity := range entities {
-		eligibility, err := gates.EligibilityFileAt(entity.path, definitionDir)
-		if err != nil {
-			continue
-		}
-		entity.fields["gate-condition"] = eligibility.Condition
-		entity.fields["gate-eligible"] = fmt.Sprintf("%t", eligibility.Eligible)
 	}
 }
 

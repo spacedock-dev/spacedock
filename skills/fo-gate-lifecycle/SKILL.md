@@ -25,7 +25,7 @@ Load before engaged gate action. It grants no writes; read `fo-write-core.md` be
 ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
 ```
 
-Preflight one lifecycle surface: `prepare`, `withdraw`, `record`, `validate`, `eligibility`, `consume`, and withdrawal's `--reason`. A nonzero command halts; surface its exact error and refresh or rebuild the version-gated bundle when unavailable. Never hand-edit `gates:` or replace binary-owned entity/room authority.
+Preflight one lifecycle surface: `prepare`, `withdraw`, `record`, `validate`, `consume`, and withdrawal's `--reason`. A nonzero command halts; surface its exact error and refresh or rebuild the version-gated bundle when unavailable. Never hand-edit `gates:` or replace binary-owned entity/room authority.
 
 Require emitted `room`, `briefing`, `digest`, `state=open`; never reconstruct the absolute room. `«state.commit»(slug)` commits the entity and two-file room. Load `spacedock:present-gate`, cross-check ACs, assemble the verdict, and present entity/stage, bound Briefing, recommendation, and ask after commit.
 
@@ -74,4 +74,4 @@ Consume rechecks currency, successor, blockers, and one-use state under lock. No
 - pending terminal approval: unspent — drive `«merge.guard»`.
 - already `consumed`: authorization is spent. Nonterminal status resumes ordinary dispatch/recovery; terminal status resumes the existing merge ceremony. Never re-record, consume, or dispatch a terminal successor. Diagnostic repeat consume must be nonzero and byte-clean.
 
-**Resume.** A durable-but-unsynced landing recovers per fo-dispatch-core.md, then resumes below; never re-run the failed gate verb or `--consume` (both refuse byte-clean). Use boot/entity state and prior result; validate/eligibility are optional diagnostics. Exact open prepare replay is idempotent; divergent binding refuses. Require Resolution commit before routing closed state. Withdrawn open attempt → prepare its successor; pending approval → consume; revise/hold → route/stop; consumed → dispatch if nonterminal, else merge; stale → supersede then replace. Surface nonzero command, exit, and remedy; never repair frontmatter.
+**Resume.** A durable-but-unsynced landing recovers per fo-dispatch-core.md, then resumes below; never re-run the failed gate verb or `--consume` (both refuse byte-clean). Use boot/entity state and prior result; `gate validate` is an optional structural diagnostic. Exact open prepare replay is idempotent; divergent binding refuses. Require Resolution commit before routing closed state. Withdrawn open attempt → prepare its successor; pending approval → consume; revise/hold → route/stop; consumed → dispatch if nonterminal, else merge; stale → supersede then replace. Surface nonzero command, exit, and remedy; never repair frontmatter.

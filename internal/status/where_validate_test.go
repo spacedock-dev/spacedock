@@ -104,9 +104,8 @@ func TestWhereNoOverRejection(t *testing.T) {
 	}
 }
 
-// TestWhereDerivedNamesAccepted locks that the four computed field names
-// (gate-condition, gate-eligible, gate-readiness, next-suppressed-by) are
-// accepted even though materializeGateEligibility/materializeSuppressedBy only
+// TestWhereDerivedNamesAccepted locks that the two computed field names
+// (gate-readiness, next-suppressed-by) are accepted even though their materializers only
 // populate them in e.fields when something in the same invocation already
 // references them — the static derived list must not depend on that ordering.
 func TestWhereDerivedNamesAccepted(t *testing.T) {
@@ -116,7 +115,7 @@ func TestWhereDerivedNamesAccepted(t *testing.T) {
 	}
 	env := pinnedEnv(t)
 
-	cases := []string{"next-suppressed-by = concurrency-full", "gate-eligible=true"}
+	cases := []string{"next-suppressed-by = concurrency-full", "gate-readiness=validating"}
 	for _, arg := range cases {
 		arg := arg
 		t.Run(arg, func(t *testing.T) {
@@ -125,6 +124,17 @@ func TestWhereDerivedNamesAccepted(t *testing.T) {
 				t.Fatalf("--where %q exit=%d (err=%q), want 0", arg, code, errOut)
 			}
 		})
+	}
+}
+
+func TestWhereRejectsRemovedEligibilityProjection(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("testdata", "suppress-workflow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, errOut, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--where", "gate-eligible=true")
+	if code != 1 || !strings.Contains(errOut, "unknown field \"gate-eligible\"") {
+		t.Fatalf("removed gate-eligible filter exit=%d stderr=%q", code, errOut)
 	}
 }
 

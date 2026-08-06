@@ -622,15 +622,14 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			}
 		})
 	}
-	t.Run("validate-and-eligibility-reads", func(t *testing.T) {
+	t.Run("validate-read", func(t *testing.T) {
 		fixture := writeRecordedGateFixture(t)
 		bindRecordedGate(t, binary, fixture)
 		closeRecordedGate(t, binary, fixture, "approve")
 		before := treeDigest(t, fixture.stateRoot)
 		mustRecordedGate(t, binary, fixture.root, "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
-		mustRecordedGate(t, binary, fixture.root, "gate", "eligibility", "recorded-gate-task", "--workflow-dir", fixture.root)
 		if after := treeDigest(t, fixture.stateRoot); after != before {
-			t.Fatal("validate/eligibility read changed workflow bytes")
+			t.Fatal("validate read changed workflow bytes")
 		}
 	})
 	t.Run("forced-close-validation-mismatch", func(t *testing.T) {
@@ -716,8 +715,8 @@ func TestRecordedGateLifecycleAC7ResumeMatrix(t *testing.T) {
 			closeRecordedGate(t, binary, fixture, decision)
 			before := recordedGateTreeSnapshot(t, fixture.stateRoot)
 			for pass := 0; pass < 3; pass++ {
-				eligibility := mustRecordedGate(t, binary, fixture.root, "gate", "eligibility", "recorded-gate-task", "--workflow-dir", fixture.root)
-				assertCommandOutput(t, eligibility.stdout, "eligible=false")
+				result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
+				assertRecordedGateByteCleanFailure(t, fixture, result, "condition")
 			}
 			after := readFile(t, fixture.entity)
 			assertRecordedGateTreeSnapshot(t, fixture.stateRoot, before)

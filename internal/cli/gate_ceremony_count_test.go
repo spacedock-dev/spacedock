@@ -225,3 +225,27 @@ func TestGateCeremonyCollapseAC1(t *testing.T) {
 		assertGateCeremonyEndState(t, "after", hostClone, workflowDir, entityPath, envelope)
 	})
 }
+
+func TestGateJourneyUsesStatusAndActingCommandsWithoutEligibilityPreflight(t *testing.T) {
+	hostClone, workflowDir, entityPath, checklistFile := gateCeremonyFixture(t)
+	commands := []string{}
+	run := func(args ...string) string {
+		commands = append(commands, strings.Join(args, " "))
+		return mustSpacedock(t, hostClone, args...)
+	}
+
+	statusOut := run("status", "--boot", "--identify", "--json", "--workflow-dir", workflowDir)
+	if !strings.Contains(statusOut, `"readiness":"awaiting-captain"`) {
+		t.Fatalf("status did not project the gate's next action: %s", statusOut)
+	}
+	run("gate", "record", "task", "--decision", "approve", "--actor", "person:captain", "--consume", "--workflow-dir", workflowDir)
+	envelope := run("dispatch", "build", "--stamp", "--host", "claude", "--team-name", "fixture-team",
+		"--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", checklistFile)
+	assertGateCeremonyEndState(t, "status-to-acting-command", hostClone, workflowDir, entityPath, envelope)
+
+	for _, command := range commands {
+		if strings.Contains(command, "eligibility") {
+			t.Fatalf("operator journey invoked removed eligibility preflight: %v", commands)
+		}
+	}
+}
