@@ -1,6 +1,6 @@
 ---
 title: Remove the standalone gate eligibility ceremony
-status: implementation
+status: validation
 source: "Captain simplification review, 2026-08-03: eligibility is a necessary atomic safety predicate but an unnecessary operator preflight and readiness vocabulary."
 score: 0.9
 sprint: durable-decisions
