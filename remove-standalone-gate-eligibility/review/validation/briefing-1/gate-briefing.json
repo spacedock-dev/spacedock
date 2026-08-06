@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:bv3hhbqr5spt1wn4557qyp8c:validation:attempt-1:revision-1",
+  "question": "Approve BV validation and route the exact candidate to PR CI?",
+  "artifacts": [
+    {
+      "id": "artifact:bv3hhbqr5spt1wn4557qyp8c:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2da008a0c8768ac81c7c23bd08254ccd02d9ae9d/remove-standalone-gate-eligibility.md",
+      "rev": "sha256:22d04f4117ec7ca9f46aef31c387f0266ec0629a5397256493789753c3338720",
+      "mediaType": "text/markdown",
+      "summary": "Approve the smaller public gate surface. Private locked authority checks and detached guard mutants pass. Full and race remain red only on unchanged pilot-manifest fixture drift; PR CI remains required."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:bv3hhbqr5spt1wn4557qyp8c:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/013c8729ee8ae6e792fd421b40304008f79e3c93/internal/cli/cli.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:1d6d2aa165204d9dd7c1562f532ecd959053e309b6e7a95faa3589afdba247bd"
+    }
+  ]
+}
