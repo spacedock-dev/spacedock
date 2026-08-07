@@ -44,6 +44,17 @@ gates:
                 digest: sha256:a1fbe668fa324ddfc943f744fbddb639dec7038ba135b65c326f05e7152b0e74
                 request-digest: sha256:d1a591247f18d01459a76fc3ed4824c4f0f80234f070f268b4878516f3a7e33e
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:824ecawn5jttbykcgx82nbf4:ideation:1
+                briefing: briefing:824ecawn5jttbykcgx82nbf4:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-07T04:42:25.670697Z"
+                decision: approve
+                reason: The reconciled design preserves dispatch mode, retains strict durable completion proof, fits the approved surface, and isolates landed A7 changes.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Stable CI must evaluate the supported Claude break-glass behavior instead of rejecting a successful worker because two contracts disagree.
