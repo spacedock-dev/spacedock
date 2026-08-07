@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:824ecawn5jttbykcgx82nbf4:ideation:attempt-1:revision-1",
+  "question": "Approve the reconciled task 824 design for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:824ecawn5jttbykcgx82nbf4:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2c65bd2d840dd2073dd24c5410a45f24c761ef02/align-claude-break-glass-dispatch-oracle/index.md",
+      "rev": "sha256:45f3d634122e152fb33e03cdf57a25f3e68dd34ccda00567e5a5382393a0cee6",
+      "mediaType": "text/markdown",
+      "summary": "Preserve selected bare or team recovery, correct two narrow Claude oracle assumptions, and retain strict durable completion proof."
+    }
+  ]
+}

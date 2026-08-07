@@ -35,6 +35,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:824ecawn5jttbykcgx82nbf4:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:824ecawn5jttbykcgx82nbf4-ideation-1
+              briefing:
+                id: briefing:824ecawn5jttbykcgx82nbf4:ideation:attempt-1:revision-1
+                digest: sha256:a1fbe668fa324ddfc943f744fbddb639dec7038ba135b65c326f05e7152b0e74
+                request-digest: sha256:d1a591247f18d01459a76fc3ed4824c4f0f80234f070f268b4878516f3a7e33e
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Stable CI must evaluate the supported Claude break-glass behavior instead of rejecting a successful worker because two contracts disagree.
