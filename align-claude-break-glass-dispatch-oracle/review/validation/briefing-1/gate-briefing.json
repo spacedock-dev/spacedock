@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:824ecawn5jttbykcgx82nbf4:validation:attempt-1:revision-1",
+  "question": "Approve the 824 design correction: treat run_in_background absent or false as the same blocking bare mode, then repair the two narrow oracle false positives?",
+  "artifacts": [
+    {
+      "id": "artifact:824ecawn5jttbykcgx82nbf4:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/18c2877c80d902d72e690e34462cfadf2e2ab396/align-claude-break-glass-dispatch-oracle/index.md",
+      "rev": "sha256:67590ece8e4a5130aef5d4f0e06f51913d406db7a7de5a26ac10389111618b01",
+      "mediaType": "text/markdown",
+      "summary": "Recommend REVISE after Captain design approval. Both live models normalize blocking recovery as run_in_background:false; accept absent or false while preserving all other bare-mode and durable-result checks."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:824ecawn5jttbykcgx82nbf4:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/bbe3d7a05e452c3b82f60c32b01a2a5ae3c8f1dc/internal/ensigncycle/dispatch_recovery_assert_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:4cfcb6c605d26eadc2981a804caeee74f680060ae05f83bf3e4f60860386bf2d"
+    }
+  ]
+}

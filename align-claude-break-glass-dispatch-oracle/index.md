@@ -55,6 +55,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:824ecawn5jttbykcgx82nbf4:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:824ecawn5jttbykcgx82nbf4-validation-1
+              briefing:
+                id: briefing:824ecawn5jttbykcgx82nbf4:validation:attempt-1:revision-1
+                digest: sha256:2b385a727780caeacc6ff9d7afd35e3110b85dd36589385a2157bd008efed8b5
+                request-digest: sha256:3a57e6b4c069fb81bcbe977eff1cf9cb91ffe482a57beeaa7a409b322595d1a2
+                room-ref: ./review/validation/briefing-1
 ---
 
 Stable CI must evaluate the supported Claude break-glass behavior instead of rejecting a successful worker because two contracts disagree.
