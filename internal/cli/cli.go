@@ -178,7 +178,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve (or a room-backed close) and is\nrejected as a usage error with --decision revise|hold. In a split-root workflow, a\nsuccessful close or consume ends with a machine-parseable `sync=.../phase=...` line;\nbranch on that final line plus the exit code, never on which prose lines printed.")
+				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve and is rejected as a usage error\nwith --decision revise|hold. In a split-root workflow, a successful close or consume\nends with a machine-parseable `sync=.../phase=...` line; branch on that final line plus\nthe exit code, never on which prose lines printed.")
 				return nil
 			}
 			if len(args) < 2 || (args[0] != "prepare" && args[0] != "withdraw" && args[0] != "record" && args[0] != "validate" && args[0] != "consume") {
@@ -204,8 +204,6 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					workflowDir = args[i+1]
 				case "--briefing":
 					input.BriefingPath = args[i+1]
-				case "--room":
-					input.RoomPath = args[i+1]
 				case "--actor":
 					input.Actor = args[i+1]
 				case "--decision":
@@ -375,37 +373,19 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintln(stderr, "Error: gate record --briefing requires --round")
 				return exitCodeError{2}
 			}
-			sources := 0
-			for _, source := range []string{input.RoomPath, input.Decision} {
-				if source != "" {
-					sources++
-				}
-			}
-			if sources != 1 {
-				fmt.Fprintln(stderr, "Error: gate record requires exactly one of --room or --decision")
+			if input.Decision == "" {
+				fmt.Fprintln(stderr, "Error: gate record requires --decision")
 				return exitCodeError{2}
 			}
-			if input.Decision != "" && input.Actor == "" {
+			if input.Actor == "" {
 				fmt.Fprintln(stderr, "Error: --decision requires --actor ID")
 				return exitCodeError{2}
 			}
-			if input.RoomPath != "" && (input.Actor != "" || input.Reason != "") {
-				fmt.Fprintln(stderr, "Error: gate record flags do not match the selected semantic source")
-				return exitCodeError{2}
-			}
-			// Mechanism 2: --consume never softens a non-approve chat decision. This
-			// is a usage error (exit 2, before any write) — the room-backed source
-			// cannot be checked here because its decision lives inside the room,
-			// unresolved until after the close; that case reports the close and
-			// skips consume below instead (`consume=skipped`, exit 0).
-			if consumeFlag && input.Decision != "" && input.Decision != "approve" {
+			// --consume never softens a non-approve chat decision. This is a usage
+			// error (exit 2) before any write.
+			if consumeFlag && input.Decision != "approve" {
 				fmt.Fprintln(stderr, "Error: --consume with --decision revise or hold is a usage error; the flag never softens a non-approve decision")
 				return exitCodeError{2}
-			}
-			for _, retainedPath := range []*string{&input.RoomPath} {
-				if *retainedPath != "" && !filepath.IsAbs(*retainedPath) {
-					*retainedPath = filepath.Join(dir, *retainedPath)
-				}
 			}
 			input.WorkflowDir = definitionDir
 			s, err := gates.RecordSemanticSummary(path, input)
@@ -425,14 +405,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 			if !consumeFlag {
 				return nil
 			}
-			// Mechanism 2: sequence the existing consume handler in the same
-			// invocation. Room source: the decision lives inside the room: on a
-			// revise/hold close, report the close and skip consume rather than
-			// erroring (the usage-error guard above only covers the chat source).
-			if s.Decision != "approve" {
-				fmt.Fprintln(stdout, "consume=skipped")
-				return nil
-			}
+			// Sequence the existing consume handler in the same invocation.
 			if code := runGateConsumeAndSync(path, definitionDir, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}

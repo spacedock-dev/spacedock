@@ -26,7 +26,7 @@ Require emitted `room`, `briefing`, `digest`, `state=open`; never reconstruct th
 
 **Cold report candidate.** For one `needs-preparation` row, re-read the entity, latest exact-stage report/checklist, and its commit; this is structural only. An insufficient obligation, claim, Summary, or scope stops once with `report-incomplete: <concrete defect>` and zero prepare, mutation, presentation, idle, or repeat-next. Otherwise choose question, committed Markdown Artifact, summary, and References; invoke `gate prepare` once. Require `room`, `briefing`, `digest`, `state=open`; commit, re-read, and present the same-slug `awaiting-captain`. With a conn, immediately record and consume; never final after presentation. Nonzero/mismatch stops; no retry or `gate record --briefing`.
 
-**Withdraw stale open authority.** If a prepared room is stale before provider output or Captain decision, run:
+**Withdraw stale open authority.** If a prepared room is stale before the Captain decision, run:
 
 ```text
 ${SPACEDOCK_BIN:-spacedock} gate withdraw ENTITY --reason REASON --workflow-dir WORKFLOW_DIR
@@ -46,11 +46,9 @@ ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --
 # FO decision under explicit Captain conn
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor agent:first-officer --reason EVIDENCE_JUDGMENT --workflow-dir WORKFLOW_DIR
 
-# Recorder-ready prepared room
-${SPACEDOCK_BIN:-spacedock} gate record ENTITY --room ROOM --workflow-dir WORKFLOW_DIR
 ```
 
-No Captain grant: bind/present and leave open; a later grant permits delegation. An existing conn requires present once, immediate record, then the route below. Record an FO-rendered decision as `agent:first-officer` with a nonblank reason, never `person:captain`; reserve it for the Captain. Recorder retains no grant. `revise`/`hold` need reasons; room mappings must be complete.
+No Captain grant: bind/present and leave open; a later grant permits delegation. An existing conn requires present once, immediate record, then the route below. Record an FO-rendered decision as `agent:first-officer` with a nonblank reason, never `person:captain`; reserve it for the Captain. Recorder retains no grant. `revise`/`hold` need reasons.
 
 Map Captain calls before recording: `approve` maps to `approve` with an accepts-direction evidence reason; `redo with feedback` maps to `revise` with an accepts-direction reason; `reject` with `feedback-to` maps to `revise` with a rejects-direction reason; `reject` without `feedback-to` maps to `hold` with a pause reason; `hold` maps to `hold` with a pause reason; `not yet` maps to `hold` with a pause reason naming what remains. Routed redo/reject reasons include concrete asks and invoke `«feedback.route»` after the close commit; hold decisions commit and stop at the gate.
 
