@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d8qmey415fsb5q9h6q639ngf:validation:attempt-1:revision-1",
+  "question": "Does D8 prove that both owner-handoff routes use the tuple produced by the initial stamped dispatch?",
+  "artifacts": [
+    {
+      "id": "artifact:d8qmey415fsb5q9h6q639ngf:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/db0fa8551ae4bcde7af806d8ace60955190dfc40/codify-conflict-owner-dispatch-handoff.md",
+      "rev": "sha256:8543e31c4d7048f9c1f05c0943f48df4c1b8b6cc00a572fa01cc757ea352b590",
+      "mediaType": "text/markdown",
+      "summary": "Recommend REVISE. The runtime handoff passes, but fixture-authored owner literals do not prove provenance from the initial stamped dispatch."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:d8qmey415fsb5q9h6q639ngf:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/9b0d30f13d7c39964b7a1630937107008d109d2c/internal/ensigncycle/conflict_owner_handoff_live_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:ceafe09dc6561da413355e2954f7a6c25e1afe3c194b54bc7c87de8f96806c49"
+    }
+  ]
+}
