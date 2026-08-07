@@ -251,10 +251,14 @@ parser, or state.
   `TestLiveCodexOwnedConflictReturnsToRegisteredWorker` passed in 145.51s; it fails on a missing worker marker, wrong registered branch, non-Captain Git author, changed entity bytes, or un-aborted rebase.
 - DONE: Stay within the approved surface and add no parser, simulator, resolver, or conflict-resolution action.
   The 3-file `+164/-3` diff changes only the two approved FO references and one standalone live fixture; `git diff --check` and contract lint passed, with no exact overlap with task 824's disclosed `internal/ensigncycle/live_test.go`/registration surface.
-- DONE: Run focused dispatch and live-scenario unit tests, the selected live host lane, and formatting checks.
-  `go test ./internal/contractlint ./internal/ensigncycle` passed; the live test also grades the ordinary fresh envelope's recorded stage, branch, worktree, and opaque conflict notes; `gofmt -w ./cmd ./internal` passed.
-- FAILED: Run `go test ./...` and `go test ./... -race` without unrelated repository-state failures.
-  Both runs reached and passed D8's packages but `internal/gates.TestV1PilotManifestReadsAndValidates` failed because shared-state files `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` are absent; race reported the identical two missing manifests.
+
+### Evidence
+
+- `go test ./internal/contractlint ./internal/ensigncycle` passed; the live test also grades the ordinary fresh envelope's recorded stage, branch, worktree, and opaque conflict notes.
+- `TestLiveCodexOwnedConflictReturnsToRegisteredWorker` passed in 145.51s through the selected live Codex host lane.
+- `gofmt -w ./cmd ./internal` and `git diff --check` passed.
+- `go test ./...` failed only in `internal/gates.TestV1PilotManifestReadsAndValidates`: `manifest path is not present: stat /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/codex-launch-multi-agent-v2.md: no such file or directory` and `manifest path is not present: stat /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/gate-agent-ergonomics.md: no such file or directory`.
+- `go test ./... -race` failed in the same two `internal/gates.TestV1PilotManifestReadsAndValidates` subtests with the same two `manifest path is not present` errors above; all D8 packages passed.
 
 ### Summary
 
