@@ -752,3 +752,38 @@ Rebuilt the narrow launcher-drift value on current `origin/main` without transpl
 ### Summary
 
 The 44-file KD reset is proportionate and deterministic evidence supports its narrow value: self-contained dispatch, pointer-only outer transport, pinned A with ambient B unused, and current-main First Officer round authority without observer grammar. Validation recommends **REJECTED with gate HOLD**, solely because required live proof never observed a worker spawn; rerun an active canonical host lane after the external Codex dispatch/runtime or Claude/Pi capacity blocks clear, with no candidate mutation unless that run exposes a candidate-owned defect.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Obtain one real canonical-host worker spawn that executes the exact 7fce0bb1 candidate assignment and its pinned launcher helper.
+  A canonical Codex child consumed the exact pointer `Read /tmp/spacedock-dispatch/spacedock-ensign-live-proof-validation.md...`; temp commit `30cca7d` records its pinned-A `status --read` result as `PINNED-A-TOTAL-LINES-8`, and ambient B's invocation log remained absent.
+- DONE: Reconfirm the deterministic self-contained artifact, pointer-only transport, A-versus-B isolation, authority, full, race, formatting, and diff evidence at the unchanged exact head.
+  Exact `7fce0bb19157bcacf9814a3855f7e04a72f4898e` generated artifact SHA-256 `11532404412674bdff8507a0ab82f4980df6abaccd1e9c4408734c37153bfd07` with `fetch_commands: []`; focused suites, formatting, and candidate-owned full/race packages pass at the clean head.
+- DONE: Reject only a candidate-owned defect; classify host authentication, capacity, or pre-worker runtime failures separately without mutating the candidate.
+  The prior no-spawn evidence gap is closed by the canonical Codex child; no candidate-owned defect was found, candidate bytes and HEAD stayed unchanged, and validation recommends PASSED.
+
+### Live evidence
+
+- The exact-head binary built a Codex assignment whose outer prompt was only the dispatch-file pointer; the file independently carried the complete stage, checklist, completion signal, and shell-quoted space-bearing launcher A.
+- The child ran the literal A `status --read --json` while `SPACEDOCK_BIN` and PATH selected failing logger B. A returned the pre-append `total_lines` value 8; changing the helper to ambient resolution would exit 91 and create `ambient-b.log`.
+- Git commit `30cca7dbae96a34fffeea33d2bab7da65a3dc283` modifies only `live-proof.md`; the marker derived from helper output, exact Stage Report shape, and absent B log were independently re-read after completion.
+
+### Deterministic and authority evidence
+
+- `go test ./internal/dispatch ./internal/cli ./skills/integration ./internal/ensigncycle` passes. The relational fixtures fail if fresh/advance payload leaks into any Claude/Codex/Pi outer prompt, fetch bootstrap returns, max-legal names shorten/collide, or the pinned helper reaches B instead of A.
+- The pinned-launcher behavior test distinguishes workflow A from explicit product-test C and fails on conflation; the unchanged 44-file surface adds no ensign gate application, round publisher, transcript/provider parser, observer grammar, or lifecycle controller.
+- Against merge base `8b5af99b`, the exact candidate remains 44 files, +665/-467: exactly 26 harness-owned build goldens and 18 hand-authored files. `gofmt -l ./cmd ./internal` is empty and `git diff --check` passes.
+
+### Suite classification
+
+- `go test ./...` reaches every candidate-owned package green, then fails only `internal/gates.TestV1PilotManifestReadsAndValidates` because shared-state paths `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` were archived outside this candidate.
+- An isolated `go test ./... -race -timeout 20m` also reaches every candidate-owned package green and fails only those same two external manifest paths. The first parallel full/race attempt caused unrelated Git-heavy package timeouts; the isolated rerun disproved a candidate race failure.
+
+### Review-finding disposition
+
+- No candidate finding. The live run closes the prior external evidence defect without product mutation, and the supported path now has both deterministic A/B proof and an observed canonical-host worker execution.
+- Deferred risk unchanged: a pinned executable path can later disappear or be replaced in place; promote only if an ephemeral or mutable launcher path becomes supported or is observed changing during an assignment.
+
+### Summary
+
+Validation now has the missing real-worker evidence: a canonical Codex child executed the exact `7fce0bb1` self-contained assignment and used its literal pinned launcher under a hostile ambient-B environment. With focused, formatting, full/race candidate-package, authority, and proportional-diff evidence reconfirmed and no material candidate finding, validation recommends **PASSED**.
