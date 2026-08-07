@@ -277,26 +277,21 @@ func TestRecordRequiresCanonicalBriefingAtActionableCurrentStage(t *testing.T) {
 		{"non-gated", "implementation", "briefing:task:implementation:attempt-1:revision-1", "", "current workflow stage implementation is not an actionable gate:true stage"},
 		{"terminal", "done", "briefing:task:done:attempt-1:revision-1", "      gate: true\n      terminal: true\n", "current workflow stage done is not an actionable gate:true stage"},
 	} {
-		for _, source := range []string{"chat", "room"} {
-			t.Run(tc.name+"/"+source, func(t *testing.T) {
-				root, entity := recordStageFixture(t, tc.status, tc.briefingID, tc.stageFlags)
-				before := readFile(t, entity)
-				input := RecordInput{Decision: "hold", Actor: "person:captain", Reason: "wait", WorkflowDir: root}
-				if source == "room" {
-					input = RecordInput{RoomPath: filepath.Join(root, "missing-room"), WorkflowDir: root}
-				}
-				err := RecordSemantic(entity, input)
-				if err == nil || err.Error() != tc.want {
-					t.Fatalf("record error = %v, want %q", err, tc.want)
-				}
-				if after := readFile(t, entity); after != before {
-					t.Fatal("refused record changed entity bytes")
-				}
-				if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
-					t.Fatalf("refused record left lock residue: %v", err)
-				}
-			})
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			root, entity := recordStageFixture(t, tc.status, tc.briefingID, tc.stageFlags)
+			before := readFile(t, entity)
+			input := RecordInput{Decision: "hold", Actor: "person:captain", Reason: "wait", WorkflowDir: root}
+			err := RecordSemantic(entity, input)
+			if err == nil || err.Error() != tc.want {
+				t.Fatalf("record error = %v, want %q", err, tc.want)
+			}
+			if after := readFile(t, entity); after != before {
+				t.Fatal("refused record changed entity bytes")
+			}
+			if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
+				t.Fatalf("refused record left lock residue: %v", err)
+			}
+		})
 	}
 }
 

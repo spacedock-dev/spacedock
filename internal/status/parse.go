@@ -235,14 +235,14 @@ func parseWhereFilters(args []string) ([]whereFilter, error) {
 
 // derivedWhereFields are the field names --where/--fields can reference that
 // are computed by a materialize* pass rather than read from frontmatter or the
-// entity schema: materializeGateEligibility and materializeSuppressedBy only
+// entity schema: the gate-readiness and suppressed-by materializers only
 // write these keys into e.fields when a filter or explicit field already names
 // them (discover.go's referenced guard, format.go's materializeSuppressedBy),
 // so collecting known field names off scanned entities after materialization
 // would silently drop a name whenever nothing else in the same invocation
 // referenced it first. Listed statically instead so validation never depends on
 // that ordering.
-var derivedWhereFields = []string{"gate-condition", "gate-eligible", "gate-readiness", suppressedByField}
+var derivedWhereFields = []string{"gate-readiness", suppressedByField}
 
 // knownWhereFields returns the field names a --where clause may reference: the
 // union of every scanned entity's frontmatter keys (covers workflow-specific

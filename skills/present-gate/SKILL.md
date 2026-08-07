@@ -10,20 +10,12 @@ This skill carries the first-officer's captain-facing gate-presentation renderin
 
 ## Presentation channels
 
-Chat is the default channel. After the prepared room and binding commit, render the gate template as exactly one root-assistant message before the next decision-mutation tool call. The message must name the entity and stage, a compact bound Briefing snapshot, one recommendation, and the decision ask; exact headings are not required. A short digest prefix may identify the snapshot in prose; `request.json`, the canonical Briefing, and recorder validation retain the exact full digest authority. Prior narration, child/tool output, or a later summary does not complete presentation. Delegated authority does not waive presentation. Only then hand the captain's semantic decision to `${SPACEDOCK_BIN:-spacedock} gate record ... --decision`. An override changes only where the captain sees the review; gate policy and recorder ownership stay unchanged.
+Stable v1 permits chat or Subspace to present the committed gate. Both channels return semantic decision and reason input to the First Officer. After the prepared room and binding commit, render the gate template exactly once in the selected channel before the next decision-mutation tool call. The presentation must name the entity and stage, a compact bound Briefing snapshot, one recommendation, and the decision ask; exact headings are not required. A short digest prefix may identify the snapshot in prose; `request.json`, the canonical Briefing, and recorder validation retain the exact full digest authority. Prior narration, child/tool output, or a later summary does not complete presentation. Delegated authority does not waive presentation. Only then hand the semantic decision and reason to `${SPACEDOCK_BIN:-spacedock} gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT]`.
 
-A qualifying chat review is semantic: wording may vary while those five facts remain explicit.
+A qualifying review is semantic: wording may vary while those five facts remain explicit.
 The presenter emits once; the lifecycle, prompt, and host adapter do not duplicate its review.
 
-A workflow or session may declare one presentation override. Apply this contract:
-
-1. **Pass only the emitted room after its bind commit.** Wait for `gate prepare` to succeed and `«state.commit»` to durably bind its exact emitted `room=` value. Give the selected override exactly that room through its declared interface as an opaque handoff.
-2. **Reconstruct no authority.** Do not pass or reconstruct entity, workflow directory, Briefing path/id/digest, actor, approver, destination, or any implementation coordinate beyond the room. Do not read `request.json` to build another caller surface.
-3. **Record only prepared-room authority.** When the selected channel returns a recorder-ready room, run `${SPACEDOCK_BIN:-spacedock} gate record <entity> --room <room>`. The recorder re-reads the frozen request and arbitrary canonical Briefing locator, recomputes request/Briefing/Result/inventory pins, derives the complete association in memory, and writes no `association.json`. Once the override receives the room, a failed handoff or missing, advisory, or invalid Result leaves that attempt open; do not fall back to chat or another channel, and never write entity frontmatter directly.
-
-The generic Spacedock contract ends at the opaque handoff: it names no override
-executable, transport, presentation implementation, or evidence-production mechanics.
-Spacedock's binary owns provider-neutral room verification and recording.
+Subspace is a presentation interface, not a second recorder. It returns no Result or inventory for Spacedock to ingest and supplies no recorder authority or output paths. Provider-specific room-backed Result recording is explicitly outside v1; a failed or partial presentation never becomes an approval.
 
 ## Gate Presentation
 

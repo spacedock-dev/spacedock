@@ -35,13 +35,13 @@ func TestStatusTextAndJSONProjectApprovedPendingApplication(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "task.md"), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	args := []string{"--workflow-dir", root, "--fields", "gate-decision,gate-application,gate-condition,gate-eligible"}
+	args := []string{"--workflow-dir", root, "--fields", "gate-decision,gate-application,gate-target-stage"}
 	text, stderr, code := runNative(t, root, nil, args...)
-	if code != 0 || !strings.Contains(text, "approve") || !strings.Contains(text, "advance/pending") || !strings.Contains(text, "approved-pending") {
+	if code != 0 || !strings.Contains(text, "approve") || !strings.Contains(text, "advance/pending") || !strings.Contains(text, "implementation") {
 		t.Fatalf("text status exit=%d stderr=%q output=%q", code, stderr, text)
 	}
 	jsonOut, stderr, code := runNative(t, root, nil, append(args, "--json")...)
-	if code != 0 || !strings.Contains(jsonOut, `"gate-application":"advance/pending"`) || !strings.Contains(jsonOut, `"gate-condition":"approved-pending"`) || !strings.Contains(jsonOut, `"gate-eligible":"true"`) {
+	if code != 0 || !strings.Contains(jsonOut, `"gate-application":"advance/pending"`) || !strings.Contains(jsonOut, `"gate-target-stage":"implementation"`) || strings.Contains(jsonOut, "gate-eligible") || strings.Contains(jsonOut, "gate-condition") {
 		t.Fatalf("json status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
 	}
 	changed := strings.Replace(readme, "name: implementation", "name: validation", 1)
@@ -49,8 +49,8 @@ func TestStatusTextAndJSONProjectApprovedPendingApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 	jsonOut, stderr, code = runNative(t, root, nil, append(args, "--json")...)
-	if code != 0 || !strings.Contains(jsonOut, `"gate-condition":"ineligible"`) || !strings.Contains(jsonOut, `"gate-eligible":"false"`) {
-		t.Fatalf("changed-taxonomy status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
+	if code != 0 || !strings.Contains(jsonOut, `"gate-target-stage":"implementation"`) || strings.Contains(jsonOut, "gate-eligible") || strings.Contains(jsonOut, "gate-condition") {
+		t.Fatalf("changed-taxonomy canonical status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
 	}
 }
 

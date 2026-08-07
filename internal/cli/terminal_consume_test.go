@@ -495,11 +495,10 @@ func TestRoutedTerminalApprovalSurfacesExistingDisplay(t *testing.T) {
 	if code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); code != 0 {
 		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
-	code, out, errOut := terminalInvoke(t, root, "gate", "eligibility", "task", "--workflow-dir", root)
-	if code != 0 || !strings.Contains(out, "application=advance/pending") || !strings.Contains(out, "condition=approved-pending") ||
-		!strings.Contains(out, "eligible=true") {
-		t.Fatalf("routed entity must surface through the existing pending-application display: exit=%d stdout=%q stderr=%q",
-			code, out, errOut)
+	code, out, errOut := terminalInvoke(t, root, "status", "--fields", "id,gate-readiness,gate-application", "--json", "--workflow-dir", root)
+	if code != 0 || !strings.Contains(out, `"gate-application":"advance/pending"`) ||
+		!strings.Contains(out, `"gate-readiness":"approved-awaiting-merge"`) {
+		t.Fatalf("routed entity must surface through status readiness: exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	if fields := entityFields(t, entity); strings.TrimSpace(fields["status"]) != "validation" {
 		t.Fatalf("routed entity status moved: %q", fields["status"])

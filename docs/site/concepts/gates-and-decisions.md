@@ -34,25 +34,29 @@ host's own audit system.
 
 ## How the review reaches you
 
-Gate reviews appear in chat by default. Before presenting one, the first officer commits
+Stable v1 gate reviews may appear in chat or Subspace. Before presenting one, the first officer commits
 newly authored selected sources and calls `gate prepare` with its question, primary
 Markdown review, exact concise summary, and References. Spacedock authors and binds a
 two-file recorder-ready room; the first officer commits that entity-owned room. The
 selected source payloads remain singular local Git objects rather than room copies.
 
-A workflow or session may select a presentation override. Only after the prepare and
-bind commit, the selected channel receives exactly the emitted room through its
-declared interface as an opaque handoff. The generic Spacedock contract neither
-defines channel execution nor reconstructs authority outside that room. When the room
-is recorder-ready, the first officer passes that same room to `gate record --room`;
-the recorder recomputes request, Briefing, Result, inventory, and Git pins, derives the
-complete association in memory, and writes no `association.json`.
+Both presentation interfaces return semantic decision and reason input to the first
+officer. The first officer records that input through the same `gate record --decision`
+command; Subspace is not a second recorder and does not return Result or inventory
+files for Spacedock to ingest.
 
-If a prepared room becomes stale before any provider decision, the first officer runs
+If a prepared room becomes stale before any Captain decision, the first officer runs
 `gate withdraw` with a reason. Withdrawal is not approve, revise, or hold: it preserves
 the old room without a Resolution, provider evidence, application, or stage change.
 Cold boot reports `withdrawn-awaiting-prepare`; ordinary `gate prepare` then appends
 attempt N+1, which alone can receive the later Captain decision.
+
+### Explicitly outside v1
+
+Provider-specific room-backed recording, `gate record --room`, Result or inventory
+ingestion, retained provider evidence, and provider package selection are not
+stable-v1 surfaces. Chat and Subspace presentation remain supported through the one
+semantic decision recorder.
 
 ## The three calls
 
@@ -93,15 +97,15 @@ stops with that attempt open: it writes no Resolution, consumes nothing, advance
 nothing, and dispatches nothing. After an authorized decision, the recorder itself
 commits and syncs the Resolution before every route (`--consume` folds the approve's
 consume into the same call). Approval then uses `gate consume`, which rechecks
-the retained request, Briefing, Git sources, and eligibility before atomically writing
+the retained request, Briefing, Git sources, and authority before atomically writing
 the successor stage and consumed mark. Until that first-entered working stage has
 a durable, complete Stage Report, `status --next` and boot name it as both
 `current` and `next`. Once the same-stage dispatch sets its worktree, every
 away-status `status --set`—backward or forward, even with `--force`—is refused
 until the report is durable. The consumed descendant commit therefore lands
 before one recoverable successor dispatch. Revise routes feedback after its close
-commit, and hold stays at the gate. `gate validate` and `gate eligibility` remain
-optional diagnostics, not positive-path lifecycle steps.
+commit, and hold stays at the gate. `status` projects the next action from durable
+facts; the acting command reports any authoritative refusal.
 
 The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.
 

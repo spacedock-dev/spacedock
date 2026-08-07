@@ -55,53 +55,6 @@ func TestGateConsumeFlagRejectsNonApproveDecisionBeforeWrite(t *testing.T) {
 // room-source path: the decision lives inside the room, unresolved until the
 // close succeeds, so a revise/hold room close reports the close and skips
 // consume (`consume=skipped`, exit 0) rather than erroring.
-func TestGateConsumeFlagSkipsConsumeOnRoomSourceReviseHoldClose(t *testing.T) {
-	root, entity, room := unboundGateRoomFixture(t)
-	before, err := os.ReadFile(entity)
-	if err != nil {
-		t.Fatal(err)
-	}
-	resultPath := filepath.Join(room, "provider", "result.json")
-	resultBytes, err := os.ReadFile(resultPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	revised := strings.Replace(string(resultBytes), `"decision":"approve"`, `"decision":"revise","reason":"needs rework"`, 1)
-	if revised == string(resultBytes) {
-		t.Fatal("decision fixture field not found")
-	}
-	writeFile(t, resultPath, revised)
-
-	var out, errOut bytes.Buffer
-	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--room", room, "--consume"},
-		nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-	if code != 0 {
-		t.Fatalf("room-source revise + --consume exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
-	}
-	if !strings.Contains(out.String(), "decision=revise") {
-		t.Fatalf("close line missing decision=revise: %s", out.String())
-	}
-	if !strings.Contains(out.String(), "consume=skipped") {
-		t.Fatalf("expected consume=skipped after a revise room close, got: %s", out.String())
-	}
-	after, err := os.ReadFile(entity)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if bytes.Equal(after, before) {
-		t.Fatal("the revise close itself did not write a Resolution")
-	}
-	if strings.Contains(string(after), "state: consumed") {
-		t.Fatal("revise close must never be consumed")
-	}
-}
-
-// TestGateConsumeOnTerminalRouteEmitsNoSyncLine pins the design reading of the
-// mechanism-2 landing-position table's terminal row: a terminal-target approval
-// spends nothing (gates.ConsumeAt's own "not spent here" contract), so mechanism
-// 1's "only when the verb wrote" rule means no sync runs and no `sync=...
-// phase=consume` line prints — the terminal route stays exactly as byte-shaped
-// as before mechanism 1, split-root or not.
 func TestGateConsumeOnTerminalRouteEmitsNoSyncLine(t *testing.T) {
 	hostClone, workflowDir := gatedTerminalSplitRootFixture(t)
 	mustSpacedock(t, hostClone, "gate", "record", "task", "--decision", "approve", "--actor", "person:captain", "--consume", "--workflow-dir", workflowDir)
