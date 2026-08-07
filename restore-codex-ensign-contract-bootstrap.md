@@ -32,6 +32,17 @@ gates:
                 digest: sha256:49b8a62bfcc38e9230f9f7a2db34680e1e586d551cf98acacd2882dddf2bc0a0
                 request-digest: sha256:8820b1554093e427ca253fbff880ebe4d7a02158d808943f1597fc375887bf57
                 room-ref: ./restore-codex-ensign-contract-bootstrap/review/backlog/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nvz2ym82ydfn07jp04yfxg9r:backlog:2
+                briefing: briefing:nvz2ym82ydfn07jp04yfxg9r:backlog:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-07T13:15:04.753368Z"
+                decision: approve
+                reason: Captain accepts the task direction and approves transition to ideation.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Outcome
