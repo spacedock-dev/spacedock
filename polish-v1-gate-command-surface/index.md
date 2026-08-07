@@ -1,6 +1,6 @@
 ---
 title: Polish the v1 gate command and documentation surface
-status: backlog
+status: ideation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: top-level help omits gate prepare and the prose still describes prototype lifecycle details that the semantic cuts will remove."
 started:
 completed:
@@ -33,7 +33,7 @@ gates:
                 reason: Captain directs F6C to kill prose-grep assertions introduced by durable-decisions PRs, including KD, 824, and D8, while retaining exact text checks only for published human output.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Make the stable help, command reference, specification, and First Officer instructions describe the final minimal gate lifecycle after the semantic cuts land. This ticket bundles only small text, usage, and golden-output corrections.
