@@ -1926,3 +1926,11 @@ Cycle 24 closes both independent Material findings: all sixteen declarations now
 ### Summary
 
 Cycle 24 PASSED independently at exact pushed candidate `5db8cec3e17b128fa07d3fca4909022d80a98324`. Both prior Material findings are closed causally: nominal dead references fail static reconciliation, missing runtime invocation is count-detectable, and shared exercises are portable through capabilities with runtime selection confined to one helper. Scope, evidence ownership, fixture behavior, exact selectors, hard bounds, full, and race remain green.
+
+## Exact-Head Local Live Evidence: cycle 24 (checkpoint 1)
+
+- Candidate and remote branch are clean, equal, and upstream-tracked at `5db8cec3e17b128fa07d3fca4909022d80a98324`; no PR or hosted CI exists.
+- Mandatory Opus attempt 1 used Claude Code 2.1.220, `SPACEDOCK_LIVE_MODEL=claude-opus-4-8`, and exact `-run '^TestLiveCommon' -failfast`. `full-ensign-cycle`, `gate-guardrail`, and `default-headless-gate-stop` passed. `withdrawn-gate-recovery` then exhausted API retries with DNS `ENOTFOUND` before usable FO work. The lane stopped after 1119.88s; retained artifacts: `/tmp/spacedock-cycle24-opus-local.vnbAhx`.
+- Immediate DNS/HTTPS checks resolved `api.anthropic.com` and connected normally, so attempt 2 reran the complete exact selector. `full-ensign-cycle`, `gate-guardrail`, `default-headless-gate-stop`, and `withdrawn-gate-recovery` passed. `recorded-gate-lifecycle` then ended after 479.17s with `API Error: Connection closed mid-response`; the complete selector stopped after 2001.86s. Retained artifacts: `/tmp/spacedock-cycle24-opus-rerun.myD6Xq`.
+- The second failure's diagnostic also preserved one FO command that broadly searched `.spacedock-state`; because transport terminated before the journey's post-run copied-skill and durable-state grades, this is an ancillary observation, not a passing result or a final product verdict. A clean targeted rerun must disposition it before Opus completion.
+- Neither stopped selector is exact-head lane completion. Pi `openai-codex/gpt-5.4`, Sonnet 5/high, and Codex `gpt-5.6-luna`/max have not started. All fourteen source TODO bindings remain unchanged and non-green.
