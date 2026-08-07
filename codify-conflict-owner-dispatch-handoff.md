@@ -6,7 +6,7 @@ started: 2026-08-06T15:54:14Z
 completed:
 verdict:
 score: 0.93
-worktree:
+worktree: .worktrees/spacedock-ensign-codify-conflict-owner-dispatch-handoff
 issue:
 sprint: durable-decisions
 group: fo-contract
