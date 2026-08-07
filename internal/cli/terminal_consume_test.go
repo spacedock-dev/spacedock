@@ -228,7 +228,11 @@ func TestTerminalDeliveryFailureReworkRoundTrip(t *testing.T) {
 	}
 	archived := filepath.Join(root, "_archive", "task.md")
 	fields = entityFields(t, archived)
-	if strings.TrimSpace(fields["status"]) != "done" || strings.TrimSpace(fields["verdict"]) != "passed" ||
+	// The stored verdict carries the schema's case (PASSED) while the signal line
+	// asserted above stays lowercase — the CLI surface and the stored surface
+	// differ by design, and the gates-owned locked write normalises like the
+	// legacy path does.
+	if strings.TrimSpace(fields["status"]) != "done" || strings.TrimSpace(fields["verdict"]) != "PASSED" ||
 		strings.TrimSpace(fields["completed"]) == "" {
 		t.Fatalf("finalized fields = status:%q verdict:%q completed:%q", fields["status"], fields["verdict"], fields["completed"])
 	}
