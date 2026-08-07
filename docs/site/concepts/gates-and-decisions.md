@@ -34,25 +34,23 @@ host's own audit system.
 
 ## How the review reaches you
 
-Gate reviews appear in chat by default. Before presenting one, the first officer commits
+Stable v1 gate reviews appear in chat only. Before presenting one, the first officer commits
 newly authored selected sources and calls `gate prepare` with its question, primary
 Markdown review, exact concise summary, and References. Spacedock authors and binds a
 two-file recorder-ready room; the first officer commits that entity-owned room. The
 selected source payloads remain singular local Git objects rather than room copies.
 
-A workflow or session may select a presentation override. Only after the prepare and
-bind commit, the selected channel receives exactly the emitted room through its
-declared interface as an opaque handoff. The generic Spacedock contract neither
-defines channel execution nor reconstructs authority outside that room. When the room
-is recorder-ready, the first officer passes that same room to `gate record --room`;
-the recorder recomputes request, Briefing, Result, inventory, and Git pins, derives the
-complete association in memory, and writes no `association.json`.
-
-If a prepared room becomes stale before any provider decision, the first officer runs
+If a prepared room becomes stale before any Captain decision, the first officer runs
 `gate withdraw` with a reason. Withdrawal is not approve, revise, or hold: it preserves
 the old room without a Resolution, provider evidence, application, or stage change.
 Cold boot reports `withdrawn-awaiting-prepare`; ordinary `gate prepare` then appends
 attempt N+1, which alone can receive the later Captain decision.
+
+### Explicitly outside v1
+
+Provider-backed presentation, `gate record --room`, retained provider evidence, and
+provider package selection are not stable-v1 surfaces; the chat transaction remains
+supported.
 
 ## The three calls
 

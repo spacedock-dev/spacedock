@@ -78,9 +78,11 @@ At an ungated or terminal current stage, `gate prepare` exits nonzero before all
 
 A hold records the Resolution and stops. A revise records the Resolution and routes through the workflow's declared feedback behavior. Neither case carries application metadata unless a demonstrated consumer actually applies it.
 
-### Provider override, if retained
+### Provider closure cut
 
-The First Officer prepares and commits the same room, then passes only the room locator to `/subspace:r gate <room>`. The provider owns presentation and its retained evidence package; Spacedock validates and records it with `gate record --room <room>`. Consumption is then identical to chat. The First Officer never parses `request.json`, reconstructs authority, or supplies provider output paths. If the pinned candidate cannot prove this transaction, stable v1 keeps chat and cuts the provider-only surface.
+Stable v1 keeps the proved chat transaction and does not ship provider-backed
+presentation or room-backed Result recording. The prepared room continues to bind the
+canonical Briefing used by chat validation and one-use consumption.
 
 ## Constraints
 

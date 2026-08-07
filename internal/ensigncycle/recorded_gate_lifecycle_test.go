@@ -369,9 +369,8 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 		"status", "--workflow-dir", fixture.root, "--boot", "--identify", "--json").stdout,
 		`"readiness":"awaiting-captain"`)
 
-	writeRecordedGateProviderDecision(t, secondRoom)
 	close := mustRecordedGate(t, binary, fixture.root,
-		"gate", "record", "recorded-gate-task", "--room", secondRoom, "--workflow-dir", fixture.root)
+		"gate", "record", "recorded-gate-task", "--decision", "approve", "--actor", "agent:first-officer", "--reason", recordedGateReason, "--workflow-dir", fixture.root)
 	assertCommandOutput(t, close.stdout, "state=closed", "attempt=gate-attempt:recorded-gate-task-validation-2", "decision=approve")
 	commitRecordedGateState(t, binary, fixture, "record replacement provider decision")
 	consume := mustRecordedGate(t, binary, fixture.root,
@@ -391,7 +390,7 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 		stale.Resolution != nil || stale.ProviderEvidence != nil || stale.Application != nil {
 		t.Fatalf("withdrawn authority was not retained cleanly: %#v", stale)
 	}
-	if current.Withdrawal != nil || current.Resolution == nil || current.ProviderEvidence == nil ||
+	if current.Withdrawal != nil || current.Resolution == nil || current.ProviderEvidence != nil ||
 		current.Application == nil || current.Application.State != "consumed" {
 		t.Fatalf("replacement did not exclusively own consumed authority: %#v", current)
 	}
@@ -418,67 +417,6 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 	}
 	writeFile(t, firstRequestPath, firstRequest)
 
-	resultPath := filepath.Join(secondRoom, "provider", "result.json")
-	resultBytes := readFile(t, resultPath)
-	writeFile(t, resultPath, strings.Replace(resultBytes, `"decision": "approve"`, `"decision": "hold"`, 1))
-	refused = runRecordedGateCommand(binary, fixture.root, "", "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
-	if refused.exit == 0 || !strings.Contains(refused.stderr, "provider/result.json") {
-		t.Fatalf("closed provider drift validated: exit=%d stderr=%q", refused.exit, refused.stderr)
-	}
-	if readFile(t, fixture.entity) != entityBeforeRefusal {
-		t.Fatal("closed provider refusal changed entity")
-	}
-	writeFile(t, resultPath, resultBytes)
-}
-
-func writeRecordedGateProviderDecision(t *testing.T, room string) {
-	t.Helper()
-	var briefing struct {
-		ID        string `json:"id"`
-		Artifacts []struct {
-			ID, URI, Rev string
-		} `json:"artifacts"`
-		Context []struct {
-			ID, URI, Rev string
-		} `json:"context"`
-	}
-	if err := json.Unmarshal([]byte(readFile(t, filepath.Join(room, "gate-briefing.json"))), &briefing); err != nil {
-		t.Fatal(err)
-	}
-	items := make([]map[string]string, 0, len(briefing.Artifacts)+len(briefing.Context))
-	for _, item := range briefing.Artifacts {
-		items = append(items, map[string]string{"type": "Artifact", "id": item.ID, "uri": item.URI, "rev": item.Rev})
-	}
-	for _, item := range briefing.Context {
-		items = append(items, map[string]string{"type": "Reference", "id": item.ID, "uri": item.URI, "rev": item.Rev})
-	}
-	if len(items) == 0 {
-		t.Fatal("prepared Briefing has no presented items")
-	}
-	provider := filepath.Join(room, "provider")
-	if err := os.Mkdir(provider, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	inventory, err := json.MarshalIndent(map[string]any{"items": items}, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	writeFile(t, filepath.Join(provider, "presented-inventory.json"), string(inventory)+"\n")
-	result, err := json.MarshalIndent(map[string]any{
-		"type":        "review-v1-result",
-		"briefing":    briefing.ID,
-		"artifact":    map[string]string{"id": items[0]["id"], "uri": items[0]["uri"], "rev": items[0]["rev"]},
-		"annotations": []any{},
-		"resolution": map[string]string{
-			"type": "Resolution", "id": "resolution:captain-replacement-2",
-			"briefing": briefing.ID, "by": "person:captain",
-			"at": "2026-07-26T12:00:00Z", "decision": "approve",
-		},
-	}, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	writeFile(t, filepath.Join(provider, "result.json"), string(result)+"\n")
 }
 
 func assertRecordedGateDispatchRow(t *testing.T, binary string, fixture recordedGateFixture, current, next string) {
@@ -919,7 +857,7 @@ func recordedGateEventsFromCommandLog(log string) []string {
 		if !strings.HasPrefix(line, "exit=0\tgate ") || strings.Contains(line, " --help") {
 			continue
 		}
-		isDecisionRecord := started && strings.Contains(line, "gate record ") && (strings.Contains(line, " --decision ") || strings.Contains(line, " --room "))
+		isDecisionRecord := started && strings.Contains(line, "gate record ") && strings.Contains(line, " --decision ")
 		switch {
 		case strings.Contains(line, "gate prepare "):
 			started = true
@@ -1024,11 +962,6 @@ func TestRecordedGateExpectedActorFromSuccessfulClose(t *testing.T) {
 			want: "person:captain",
 		},
 		{
-			name: "room actor with consume",
-			log:  "exit=0\tgate record recorded-gate-task --room /tmp/review-room --consume",
-			want: "person:captain",
-		},
-		{
 			name: "actor equals form",
 			log:  "exit=0\tgate record recorded-gate-task --decision approve --actor=agent:first-officer",
 			want: "agent:first-officer",
@@ -1054,89 +987,50 @@ func TestRecordedGateExpectedActorFromSuccessfulClose(t *testing.T) {
 
 func TestRecordedGateCommittedBeforeDispatchResolutionPaths(t *testing.T) {
 	binary := buildRecordedGateBinary(t)
-	for _, tc := range []struct {
-		name string
-		room bool
-	}{
-		{name: "classic-chat", room: false},
-		{name: "room-backed", room: true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			fixture := writeRecordedGateFixture(t)
-			before := readFile(t, fixture.entity)
-			bind := mustRecordedGate(t, binary, fixture.root,
-				"gate", "prepare", "recorded-gate-task",
-				"--question", "Should the recorded validation gate advance?",
-				"--artifact", fixture.gateReview,
-				"--summary", "Exact recorded gate validation summary.",
-				"--reference", fixture.references[0],
-				"--reference", fixture.references[1],
-				"--workflow-dir", fixture.root)
-			commitRecordedGateState(t, binary, fixture, "bind retained gate package")
+	fixture := writeRecordedGateFixture(t)
+	before := readFile(t, fixture.entity)
+	mustRecordedGate(t, binary, fixture.root,
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the recorded validation gate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Exact recorded gate validation summary.",
+		"--reference", fixture.references[0],
+		"--reference", fixture.references[1],
+		"--workflow-dir", fixture.root)
+	commitRecordedGateState(t, binary, fixture, "bind retained gate package")
 
-			var close recordedGateCommand
-			if tc.room {
-				room := outputValue(bind.stdout, "room")
-				if room == "" {
-					t.Fatal("prepare output omitted room")
-				}
-				writeRecordedGateProviderDecision(t, room)
-				close = mustRecordedGate(t, binary, fixture.root,
-					"gate", "record", "recorded-gate-task", "--room", room, "--consume",
-					"--workflow-dir", fixture.root)
-				assertCommandOutput(t, close.stdout, "state=closed", "decision=approve", "consumed=true", "target-stage=handoff")
-			} else {
-				close = mustRecordedGate(t, binary, fixture.root,
-					"gate", "record", "recorded-gate-task",
-					"--decision", "approve", "--actor", "agent:first-officer",
-					"--reason", recordedGateReason,
-					"--workflow-dir", fixture.root)
-				assertCommandOutput(t, close.stdout, "state=closed", "decision=approve")
-			}
-			if !tc.room {
-				commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
-				consume := mustRecordedGate(t, binary, fixture.root,
-					"gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
-				assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
-			}
-			consumedCommit := commitRecordedGateState(t, binary, fixture, "consume gate authorization")
+	close := mustRecordedGate(t, binary, fixture.root,
+		"gate", "record", "recorded-gate-task",
+		"--decision", "approve", "--actor", "agent:first-officer",
+		"--reason", recordedGateReason,
+		"--workflow-dir", fixture.root)
+	assertCommandOutput(t, close.stdout, "state=closed", "decision=approve")
+	commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
+	consume := mustRecordedGate(t, binary, fixture.root,
+		"gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
+	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
+	consumedCommit := commitRecordedGateState(t, binary, fixture, "consume gate authorization")
 
-			writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The consumed approval entered handoff.\n\n### Summary\n\nThe handoff completed after the consumed approval.\n")
-			gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record successor effect")
-			commandLog := filepath.Join(fixture.root, "command.log")
-			recordLine := "exit=0\tgate record recorded-gate-task --decision approve --actor agent:first-officer"
-			if tc.room {
-				recordLine = "exit=0\tgate record recorded-gate-task --room " + outputValue(bind.stdout, "room") + " --consume"
-			}
-			logLines := []string{
-				"exit=0\tgate prepare recorded-gate-task --question Advance?",
-				"exit=0\tstate commit recorded-gate-task --workflow-dir /wf",
-				recordLine,
-				"dispatch-head\t" + consumedCommit,
-				"begin\tdispatch build --workflow-dir /wf",
-				"exit=0\tdispatch build --workflow-dir /wf",
-			}
-			if !tc.room {
-				logLines = append(logLines[:3], append([]string{"exit=0\tgate consume recorded-gate-task --workflow-dir /wf"}, logLines[3:]...)...)
-			}
-			writeFile(t, commandLog, strings.Join(logLines, "\n"))
-			observation := recordedGateLiveObservation(t, fixture, before, commandLog)
-			if !observation.dispatch.ordered || !observation.dispatch.committed {
-				t.Fatalf("%s close was not recognized as ordered and committed before dispatch: %+v", tc.name, observation.dispatch)
-			}
-			if err := assertRecordedGateLifecycle(observation); err != nil {
-				t.Fatalf("%s consumed lifecycle graded FAIL: %v", tc.name, err)
-			}
-			if tc.room {
-				durable, _, err := gates.Read(fixture.entity)
-				if err != nil || durable.Records[0].Attempts[0].Resolution.By != "person:captain" {
-					t.Fatalf("room-backed close actor = %q (err=%v), want person:captain", durable.Records[0].Attempts[0].Resolution.By, err)
-				}
-			}
-		})
+	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The consumed approval entered handoff.\n\n### Summary\n\nThe handoff completed after the consumed approval.\n")
+	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record successor effect")
+	commandLog := filepath.Join(fixture.root, "command.log")
+	writeFile(t, commandLog, strings.Join([]string{
+		"exit=0\tgate prepare recorded-gate-task --question Advance?",
+		"exit=0\tstate commit recorded-gate-task --workflow-dir /wf",
+		"exit=0\tgate record recorded-gate-task --decision approve --actor agent:first-officer",
+		"exit=0\tgate consume recorded-gate-task --workflow-dir /wf",
+		"dispatch-head\t" + consumedCommit,
+		"begin\tdispatch build --workflow-dir /wf",
+		"exit=0\tdispatch build --workflow-dir /wf",
+	}, "\n"))
+	observation := recordedGateLiveObservation(t, fixture, before, commandLog)
+	if !observation.dispatch.ordered || !observation.dispatch.committed {
+		t.Fatalf("chat close was not recognized as ordered and committed before dispatch: %+v", observation.dispatch)
+	}
+	if err := assertRecordedGateLifecycle(observation); err != nil {
+		t.Fatalf("chat consumed lifecycle graded FAIL: %v", err)
 	}
 }
-
 func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
 	binary := buildRecordedGateBinary(t)
 	for skip, omitted := range recordedGateRequiredEvents {
@@ -1248,8 +1142,7 @@ func recordedGateHelpProbe(line string) bool {
 }
 
 // recordedGateExpectedActor derives the authority a successful close command
-// is expected to persist. Room-backed Results are captain-authored by contract;
-// chat closes carry their explicit --actor value. An empty result lets
+// is expected to persist. Chat closes carry their explicit --actor value. An empty result lets
 // synthetic observations use assertRecordedGateLifecycle's stable
 // agent:first-officer default without accepting arbitrary entity by: values.
 func recordedGateExpectedActor(log string) string {
@@ -1260,8 +1153,6 @@ func recordedGateExpectedActor(log string) string {
 		fields := strings.Fields(line)
 		for i, field := range fields {
 			switch {
-			case field == "--room" || strings.HasPrefix(field, "--room="):
-				return "person:captain"
 			case field == "--actor" && i+1 < len(fields):
 				if actor := fields[i+1]; actor == "person:captain" || actor == "agent:first-officer" {
 					return actor
