@@ -104,7 +104,7 @@ locator, id, and digest. No reader infers a canonical basename.
 A prepared provider-neutral room binds `request-digest`, the JCS digest of its
 `request.json`. Request-less and chat-only attempts may omit it. Changing the request,
 located Briefing, or a selected Git object after the attempt binds therefore fails
-before Result validation or entity mutation.
+before semantic decision recording or entity mutation.
 
 ## Provider-neutral preparation
 
@@ -278,6 +278,5 @@ The release tests must fail if any of these outcomes regress:
 3. A prototype field or arbitrary unknown binary-owned field becomes readable or writable.
 4. A stale, invalid, or lock-contended write changes the entity.
 5. A canonical write changes bytes outside `gates` or alters opaque application data.
-6. Removing canonical artifacts and matching presentation entries together is accepted.
-7. A room Result closes before exact bytes, request authority, bound Briefing digest,
-   complete Artifact/Reference inventory, and full presentation mapping are verified.
+6. A presentation interface bypasses `gate record --decision` or changes the committed
+   gate it presents.
