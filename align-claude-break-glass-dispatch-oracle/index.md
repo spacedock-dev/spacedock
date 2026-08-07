@@ -148,3 +148,20 @@ The two reported oracle assumptions both belong in 824, narrowly. Opus proves th
 ### Summary
 
 Ideation aligns manual recovery with the mode selected before helper failure and keeps both required Claude substrate checks load-bearing. It adds durable Git-backed completion evidence, admits Claude's observed omission of defaulted `subagent_type` only where independent identity proof remains, and reconciles cleanly against landed A7.
+
+## Stage Report: implementation
+
+- DONE: Implement explicit bare and team recovery arms without changing the selected dispatch mode.
+  Commit `bbe3d7a05` gives bare recovery a blocking field-omitting arm and team recovery the named-background, no-`team_name`, `team-lead` arm; crossed-mode and multiple-worker mutations fail.
+- DONE: Correct only the two proven Claude oracle assumptions while retaining independent identity and durable completion checks.
+  Mode-aware stream tests require one exact transport, while Git-backed mutations reject missing marker/report parts, non-path-scoped or uncommitted results, and dirty entity state; merged transport tolerates omitted `subagent_type` only alongside ensign artifact and member-meta proof.
+- DONE: Stay within the approved 9-file and 290-insertion limit and keep every required Claude check enabled.
+  The A7-reconciled diff is 9 files and 285 insertions; selectors remain required, with both break-glass modes in `TestLiveBreakGlassShimRecovery` and no A7-owned or unrelated roadmap files changed.
+- DONE: Run focused offline recovery and merged-oracle proof.
+  Focused tests pass and fail if selected modes cross, worker count changes, prompt/report evidence is removed, durable commit evidence is weakened, or merged identity/completion evidence disappears.
+- FAILED: Run the complete repository and required Claude live matrix cleanly.
+  `go test ./...` and `go test ./... -race` pass all packages except `internal/gates`, whose fixture expects two absent shared-state manifests; Sonnet bare/team recovery passed, Opus team passed, Opus bare first exposed explicit false and its strict rerun reached a committed blocking result before a harness quiet-timeout, while subsequent merged launches failed pre-FO with revoked OAuth 401.
+
+### Summary
+
+Implemented mode-preserving Claude break-glass recovery, strict selected-mode and one-worker stream grading, durable Git-backed worker-result grading, and the narrowly tolerant merged-team transport parser without weakening independent ensign identity or completion checks. The candidate is committed directly atop A7 at `bbe3d7a05`; remaining red observations are recorded above without disabling or relaxing any required check.
