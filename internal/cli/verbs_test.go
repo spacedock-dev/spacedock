@@ -79,6 +79,9 @@ func TestCompletionShells(t *testing.T) {
 				t.Fatalf("completion %s script missing status flag %q:\n%s", shell, flag, stdout.String())
 			}
 		}
+		if strings.Contains(stdout.String(), "eligibility") {
+			t.Fatalf("completion %s retained the standalone eligibility ceremony:\n%s", shell, stdout.String())
+		}
 	}
 
 	// Missing shell and unknown shell both exit 2 with the named usage error.

@@ -37,7 +37,7 @@ func TestStatusValidateReportsGateApplicationExtensionsAsWarnings(t *testing.T) 
 		t.Fatalf("--validate warning count = %d, stderr=%q", strings.Count(stderr, "Warning: unknown gate application field "), stderr)
 	}
 
-	ordinary, ordinaryErr, ordinaryCode := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--fields", "id,gate-application,gate-condition")
+	ordinary, ordinaryErr, ordinaryCode := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--fields", "id,gate-application,gate-target-stage")
 	if ordinaryCode != 0 || !strings.Contains(ordinary, "advance/pending") || strings.Contains(ordinaryErr, "unknown gate application field") {
 		t.Fatalf("ordinary status changed warning surface: exit=%d stdout=%q stderr=%q", ordinaryCode, ordinary, ordinaryErr)
 	}
