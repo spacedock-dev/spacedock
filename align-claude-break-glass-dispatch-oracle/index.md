@@ -157,10 +157,17 @@ Ideation aligns manual recovery with the mode selected before helper failure and
   Mode-aware stream tests require one exact transport, while Git-backed mutations reject missing marker/report parts, non-path-scoped or uncommitted results, and dirty entity state; merged transport tolerates omitted `subagent_type` only alongside ensign artifact and member-meta proof.
 - DONE: Stay within the approved 9-file and 290-insertion limit and keep every required Claude check enabled.
   The A7-reconciled diff is 9 files and 285 insertions; selectors remain required, with both break-glass modes in `TestLiveBreakGlassShimRecovery` and no A7-owned or unrelated roadmap files changed.
-- DONE: Run focused offline recovery and merged-oracle proof.
-  Focused tests pass and fail if selected modes cross, worker count changes, prompt/report evidence is removed, durable commit evidence is weakened, or merged identity/completion evidence disappears.
-- FAILED: Run the complete repository and required Claude live matrix cleanly.
-  `go test ./...` and `go test ./... -race` pass all packages except `internal/gates`, whose fixture expects two absent shared-state manifests; Sonnet bare/team recovery passed, Opus team passed, Opus bare first exposed explicit false and its strict rerun reached a committed blocking result before a harness quiet-timeout, while subsequent merged launches failed pre-FO with revoked OAuth 401.
+
+### Evidence
+
+- Focused offline recovery and merged-oracle tests passed; their mutations reject crossed modes, zero/multiple workers, malformed prompts, missing durable report parts, uncommitted or dirty entity results, and missing merged identity/completion evidence.
+- `go test ./...` failed only in `internal/gates/TestV1PilotManifestReadsAndValidates`: `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` were absent from the shared state checkout. All other packages passed.
+- `go test ./... -race` failed on the same two absent shared-state manifests in `internal/gates/TestV1PilotManifestReadsAndValidates`. All other packages, including `internal/ensigncycle`, passed under race.
+- Sonnet `TestLiveBreakGlassShimRecovery` passed both `selected-bare` and `selected-team`, including strict stream shape and durable committed-result grading.
+- Sonnet `TestLiveMergedTeamModeDispatch` failed before FO work with HTTP 401: `OAuth access token has been revoked.`
+- Opus `TestLiveBreakGlassShimRecovery/selected-team` passed. Its first `selected-bare` run committed the complete durable result but failed the strict stream oracle because the call serialized `run_in_background:false` instead of omitting the key.
+- After the manual contract was clarified to prohibit passing false, the isolated Opus `selected-bare` rerun reached a committed blocking worker result, then failed the harness's one-minute no-progress quiet bound before the stream/durable oracle ran.
+- Opus `TestLiveMergedTeamModeDispatch` failed before FO work with HTTP 401: `OAuth access token has been revoked.`
 
 ### Summary
 
