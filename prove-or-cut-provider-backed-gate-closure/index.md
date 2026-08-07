@@ -105,6 +105,17 @@ gates:
                 digest: sha256:b443692bd31448b369bfd0eb9e4246d5cf03d977eba157742bd9367a3de4505a
                 request-digest: sha256:d1b84c51278f95eaf91a17da4fef7e597a02b51b97aa886f1311e58ae8165cc0
                 room-ref: ./review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:a732sahay8wzgqrd2yr0xxr7:validation:3
+                briefing: briefing:a732sahay8wzgqrd2yr0xxr7:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-07T04:08:40.464434Z"
+                decision: approve
+                reason: Final validation at a2286c249 passes A7 acceptance criteria. Chat and Subspace presentation converge on one semantic recorder, provider-room ingestion is absent, and detached mutants prove the protected boundary.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if one exact Spacedock
