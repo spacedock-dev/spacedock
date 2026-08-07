@@ -172,3 +172,37 @@ Ideation aligns manual recovery with the mode selected before helper failure and
 ### Summary
 
 Implemented mode-preserving Claude break-glass recovery, strict selected-mode and one-worker stream grading, durable Git-backed worker-result grading, and the narrowly tolerant merged-team transport parser without weakening independent ensign identity or completion checks. The candidate is committed directly atop A7 at `bbe3d7a05`; remaining red observations are recorded above without disabling or relaxing any required check.
+
+## Stage Report: validation
+
+- FAILED: Verify all four acceptance criteria at exact head, including crossed-mode and durable-result negative controls.
+  AC-1/AC-2 fail live on Sonnet and Opus because successful blocking recovery serializes `run_in_background:false`; AC-3/AC-4 fail the adversarial identity and report-structure controls below.
+- FAILED: Audit the 9-file and 285-insertion surface for A7 isolation and no weakened identity or completion evidence.
+  Surface and A7 isolation are exact and clean, but `mergedEnsignDispatches` accepts an explicit non-ensign type and `assertCompleteRecoveryReport` accepts report tokens outside the report section.
+- DONE: Run focused, full, race, and required live evidence; classify every failure from this candidate.
+  Focused tests pass; full/race fail only on two absent shared-state manifests; both-model live results and merged-lane auth failures are classified below.
+
+### Findings
+
+- Material evidence defect / Needs decision: the bare live oracle cannot distinguish an omitted field from Claude's normalized `run_in_background:false`.
+  Released user/normal workflow: required Sonnet and Opus `TestLiveBreakGlassShimRecovery/selected-bare`; harm: false-red CI after exactly one blocking worker leaves a complete path-scoped committed result; authority: value-ac[AC-1] requires one correct live result; trigger: both 2026-08-07 runs emitted no name/team/completion signal but `run-present=true, run_in_background=false`. Proposed ownership: this task; disposition: design reset because accepting normalized false conflicts AC-2's specified absence boundary.
+- Material evidence defect / narrow task-owned fix: explicit wrong worker identity passes the merged parser.
+  Released user/normal workflow: required merged Claude oracle; harm: an `Agent(subagent_type="general-purpose", name=..., run_in_background=true)` can be graded as ensign; authority: value-ac[AC-4] requires independent ensign identity without weakening; trigger: overlay adversarial test returned one dispatch for that exact stream at `merged_team_mode_test.go:57-60`. Proposed disposition: fix after FO authorization.
+- Material evidence defect / narrow task-owned fix: durable report parts are not atomically scoped.
+  Released user/normal workflow: required break-glass durable grading; harm: unrelated prior `- DONE:` and `### Summary` text satisfies an empty implementation report; authority: value-ac[AC-4] requires the exact implementation report shape; trigger: overlay adversarial test passed scattered tokens through `assertCompleteRecoveryReport` at `dispatch_recovery_assert_test.go:289-295`. Proposed disposition: fix after FO authorization.
+
+### Evidence
+
+- Focused offline tests passed crossed bare/team pairs, zero/multiple workers, malformed prompt, durability mutations, and merged identity fixtures; the two added overlay counterexamples failed as described and were removed without changing HEAD.
+- `go test ./...` and `go test ./... -race` passed `internal/ensigncycle` and failed only `internal/gates/TestV1PilotManifestReadsAndValidates` because `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` are absent from the shared state checkout; external-state failures, not candidate failures.
+- Sonnet and Opus each passed `selected-team`; each `selected-bare` produced the marker, complete report, path-scoped commit, clean entity, and blocking completion, then failed only the strict false-vs-absent stream check.
+- Sonnet and Opus `TestLiveMergedTeamModeDispatch` each failed before FO work with HTTP 401 `OAuth access token has been revoked`; harness/auth evidence failure, not candidate behavior evidence.
+- `gofmt -d ./cmd ./internal`, `git diff --check`, and worktree status were clean; exact diff is 9 files/285 insertions, directly atop A7 `e24e8234`, with no A7-owned file touched.
+
+### Recommendation
+
+REJECTED. The supported live bare path false-reds on both required models, and the new merged identity and durable-report oracles admit concrete false positives; no candidate mutation was authorized or made.
+
+### Summary
+
+Validation confirms the mode-preserving worker behavior and team recovery, but the observable omission requirement is incompatible with current Claude stream normalization. Two additional adversarial controls show weakened identity and completion evidence, so all four ACs lack valid end-to-end proof at this head.
