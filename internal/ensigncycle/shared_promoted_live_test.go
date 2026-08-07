@@ -159,11 +159,12 @@ func autoContinueWorktreeDir(body string) string {
 	return value
 }
 
-func runACValueReanchorJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func() livescenario.Scenario, assert func(livescenario.EntityState, livescenario.EntityState, string) error) {
+func runACValueReanchorJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func() livescenario.Scenario, assert func(livescenario.Scenario, livescenario.EntityState, livescenario.EntityState, string) error) {
 	t.Helper()
 	spec := build()
+	authored := spec
 	spec.Assert = func(before, after livescenario.EntityState, observed string) error {
-		return assert(before, after, observed)
+		return assert(authored, before, after, observed)
 	}
 	if err := livescenario.Run(context.Background(), t.TempDir(), spec, sharedLiveScenarioAdapter{t: t, driver: driver, scenario: scenario}); err != nil {
 		t.Fatalf("AC value re-anchor durable branch graded FAIL: %v", err)
@@ -175,8 +176,27 @@ func authorACReanchorScenario() livescenario.Scenario {
 	return livescenario.AuthorACReanchorScenario()
 }
 
-func assertACReanchorScenario(before, after livescenario.EntityState, observed string) error {
-	return livescenario.AuthorACReanchorScenario().Assert(before, after, observed)
+func assertACReanchorScenario(spec livescenario.Scenario, before, after livescenario.EntityState, observed string) error {
+	return spec.Assert(before, after, observed)
+}
+
+func TestACReanchorCommonAssertionUsesBuiltScenario(t *testing.T) {
+	spec := authorACReanchorScenario()
+	entityPath, err := spec.Setup(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(entityPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = assertACReanchorScenario(spec, livescenario.EntityState{Body: string(body)}, livescenario.EntityState{Body: string(body)}, "")
+	if err == nil {
+		t.Fatal("unchanged AC re-anchor state unexpectedly passed")
+	}
+	if strings.Contains(err.Error(), "no such file or directory") {
+		t.Fatalf("assertion lost the built scenario's entity path: %v", err)
+	}
 }
 
 func writePiAutoContinueWorkflowNoGit(root string) (stateRoot, entityPath string, err error) {
