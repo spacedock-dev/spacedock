@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:a732sahay8wzgqrd2yr0xxr7:ideation:attempt-2:revision-1",
+  "question": "Approve the chat-only clean cut and dispatch implementation from the BV candidate tip?",
+  "artifacts": [
+    {
+      "id": "artifact:a732sahay8wzgqrd2yr0xxr7:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/aaa079a2c1b7063ce93ee87d3f8b50be0accce3a/prove-or-cut-provider-backed-gate-closure/index.md",
+      "rev": "sha256:eb0a0a4cc4ab661a0c111cc8cbe026df6e3b0c02badcd036f0249772c68dc1b0",
+      "mediaType": "text/markdown",
+      "summary": "Three ideation items are done. The provider path lacks exact-candidate closure proof. Remove provider-only room recording and preserve the chat transaction."
+    }
+  ]
+}

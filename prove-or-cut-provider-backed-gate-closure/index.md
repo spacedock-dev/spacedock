@@ -51,6 +51,12 @@ gates:
                 at: "2026-08-04T00:13:19.389451Z"
                 decision: hold
                 reason: 'Science Officer advises hold: the design is coherent and q0 passed, but the retained-delivery fixture ended at noninteractive EOF and is not evidence. Obtain an interactive retained proof or the permitted chat-only clean-cut evidence with required full/race/live proof, then re-present; do not dispatch implementation or add fallback machinery.'
+            - id: gate-attempt:a732sahay8wzgqrd2yr0xxr7-ideation-2
+              briefing:
+                id: briefing:a732sahay8wzgqrd2yr0xxr7:ideation:attempt-2:revision-1
+                digest: sha256:a68f79a61ebc60a3e12631e2d68c4780c492362009b129a35f2c2fdedb56ba56
+                request-digest: sha256:7f9fbea50c61cdd31f64e8a5b4f5007891590723f7606a977e67cb5cc02fa6ec
+                room-ref: ./review/ideation/briefing-2
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if one exact Spacedock
