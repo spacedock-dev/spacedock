@@ -7,7 +7,7 @@ sprint: durable-decisions
 started: 2026-08-07T04:35:54Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-align-claude-break-glass-dispatch-oracle
 pr:
 issue:
 mod-block:
