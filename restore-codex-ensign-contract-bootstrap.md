@@ -26,6 +26,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-07T05:03:19.891718Z"
                 reason: Captain will dispatch NV separately outside the durable-decisions sprint.
+            - id: gate-attempt:nvz2ym82ydfn07jp04yfxg9r-backlog-2
+              briefing:
+                id: briefing:nvz2ym82ydfn07jp04yfxg9r:backlog:attempt-2:revision-1
+                digest: sha256:49b8a62bfcc38e9230f9f7a2db34680e1e586d551cf98acacd2882dddf2bc0a0
+                request-digest: sha256:8820b1554093e427ca253fbff880ebe4d7a02158d808943f1597fc375887bf57
+                room-ref: ./restore-codex-ensign-contract-bootstrap/review/backlog/briefing-2
 ---
 
 ## Outcome
