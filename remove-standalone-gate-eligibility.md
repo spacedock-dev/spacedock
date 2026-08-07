@@ -91,7 +91,7 @@ gates:
 started: 2026-08-03T23:33:06Z
 worktree: .worktrees/spacedock-ensign-remove-standalone-gate-eligibility
 mod-block: merge:pr-merge
-pr: "#631"
+pr: pr-merge:631
 ---
 
 ## Outcome
