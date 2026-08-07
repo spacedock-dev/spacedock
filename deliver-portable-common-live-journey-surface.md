@@ -1901,3 +1901,28 @@ Cycle 23 is scope-, budget-, selector-, registry-, focused-, full-, and race-gre
 ### Summary
 
 Cycle 24 closes both independent Material findings: all sixteen declarations now execute their exact typed builder/assertion bindings, and shared exercises contain no concrete Claude-driver selection. The exact 34/+1083/-2018 candidate is focused-, full-, and race-green in uncontaminated state and pushed at `5db8cec3e17b128fa07d3fca4909022d80a98324`, with live/model execution held for fresh independent validation.
+
+## Stage Report: validation (cycle 24 — independent correction rerun)
+
+- DONE: Verify immutable provenance, clean isolation, and the exact approved envelope.
+  Remote, local branch, HEAD, and upstream are exactly `5db8cec3e17b128fa07d3fca4909022d80a98324`; merge base is exactly `8b5af99baa5c37fe7c969a904819041688420e22`. The clean isolated clone `/tmp/spacedock-cycle24-independent.LOm7ei` had an empty status and no `docs/dev/.spacedock-state`. Surface is exactly 34 files/+1083/-2018, `shared_live_runner_unit_test.go` is absent, and rejected evidence candidate `3ee17e6f` was untouched.
+- DONE: Revalidate declarations, metadata, executable calls, selectors, and gap truth.
+  Source contains exactly sixteen exported top-level `TestLiveCommon…` declarations with sixteen adjacent stable journey/fixture annotations and direct seven-argument `liveJourney` calls. The registry names those exact entrypoints. All three workflow lanes use `-run '^TestLiveCommon' -failfast`. Source reconciliation derives sorted Sonnet=4, Opus=0, Codex=5, Pi=5; TODO remains target-scoped and non-green with byte-identical owner bindings from Cycle 23.
+- DONE: Reproduce and close the Cycle-23 nominal-binding finding adversarially.
+  In a detached disposable checkout, replacing the required full-cycle assertion call with `_ = assert` while retaining its nominal binding failed reconciliation: `runFullEnsignCycleJourney` no longer directly called its bound builder and assertion. Restored immutable source passed. The reconciler now requires direct `ast.CallExpr` use of exercise parameters four and five.
+- DONE: Prove runtime execution enforcement independently of AST spelling.
+  A disposable live-tag control wrapped an exact function with `countedLiveFunction`: pre-call wrapper/underlying counts were 0/0, one wrapped invocation produced 1/1, and a separate non-invocation control remained observably zero. This proves `liveJourney` can reject a bound builder or assertion that is not executed at runtime.
+- DONE: Reproduce and close the Cycle-23 concrete-driver portability finding.
+  Static inspection finds zero `runner.(claudeLiveRunner)` branches or other concrete Claude assertions. Recorded-gate copied-skill preparation/grade is behind `liveDriver.prepareRecordedGate`; Claude implements the copy/grade and Codex/Pi return the same driver with `noLiveGrade`. A disposable interface-wrapper control invoked that capability through `liveDriver`, incremented the underlying preparation count exactly once, and returned a usable driver/grade without journey-name redispatch. `liveDriverForRuntime` remains the only Claude/Codex/Pi selector.
+- DONE: Verify fixture and parser equivalence rather than accepting refactor names.
+  A disposable control proved the derived split-root Pi README byte-for-byte equal to the prior `b1f49a3` `piAutoContinueReadme`. The `durableField` resolver matched the prior worktree parser for missing, valid, dot, parent, absolute, and first-duplicate-wins inputs. Generalized transcript parsing preserved read path plus nonempty bash/shell command extraction and rejected empty tool names and empty commands.
+- DONE: Revalidate architecture, scope, and retained value.
+  `sharedRuntimeScenario` now contains only `name`. No central journey table/list/map/runner registry, per-runtime journey-name switch, copied gap oracle, committed mutation lab, reconciliation SHA guard, speculative Pi observer/metrics, competing Pi auto-continue/shared wrapper, product behavior change, fixture-semantic drift, TODO-owner drift, or PR #629 manifest-value deletion was found.
+- DONE: Run formatting, focused, and repository-wide verification.
+  `gofmt -l ./cmd ./internal` emitted nothing and `git diff --check` passed. Focused reconciliation, live-tag compile, ensign durable/rejection checks, release workflow checks, and all disposable controls passed. Exact `go test ./...` exited 0 in 242.82s; exact `go test ./... -race` exited 0 in 247.64s. No live/model lane ran.
+- DONE: Render the independent verdict and preserve authority.
+  PASSED. Material: none. Deferred-risk: none. Polish: none. Validation changed no candidate/code and made no workflow status transition.
+
+### Summary
+
+Cycle 24 PASSED independently at exact pushed candidate `5db8cec3e17b128fa07d3fca4909022d80a98324`. Both prior Material findings are closed causally: nominal dead references fail static reconciliation, missing runtime invocation is count-detectable, and shared exercises are portable through capabilities with runtime selection confined to one helper. Scope, evidence ownership, fixture behavior, exact selectors, hard bounds, full, and race remain green.
