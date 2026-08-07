@@ -1,10 +1,10 @@
 ---
 title: Prove or cut provider-backed gate closure before stable v1
-status: validation
+status: done
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: provider evidence exists in pilot state, but the stable surface lacks one pinned exact-candidate end-to-end proof while the chat journey is the primary value path."
 started: 2026-08-03T23:54:07Z
-completed:
-verdict:
+completed: 2026-08-07T04:38:41Z
+verdict: passed
 score: "0.85"
 worktree: .worktrees/spacedock-ensign-prove-or-cut-provider-backed-gate-closure
 issue:
@@ -115,8 +115,9 @@ gates:
                 reason: Final validation at a2286c249 passes A7 acceptance criteria. Chat and Subspace presentation converge on one semantic recorder, provider-room ingestion is absent, and detached mutants prove the protected boundary.
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
+archived: 2026-08-07T04:38:41Z
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if one exact Spacedock
