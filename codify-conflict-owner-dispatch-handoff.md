@@ -242,3 +242,20 @@ Cycle 2 removes the unnecessary handoff grammar and reuses the routes already
 shipped. D8 remains viable as two small contract edits plus one actual live
 owner dispatch and an offline fresh fallback check; it adds no helper, resolver,
 parser, or state.
+
+## Stage Report: implementation
+
+- DONE: Route one owned code-worktree conflict through existing live or fresh dispatch without new grammar or state.
+  Commit `9b0d30f13` adds the same-stage FO contract and a live Codex fixture; removing the `followup_task` runtime call or fresh ordinary build makes the fixture fail.
+- DONE: Prove the real worker writes on the pre-existing registered branch and worktree while authority bytes stay unchanged.
+  `TestLiveCodexOwnedConflictReturnsToRegisteredWorker` passed in 145.51s; it fails on a missing worker marker, wrong registered branch, non-Captain Git author, changed entity bytes, or un-aborted rebase.
+- DONE: Stay within the approved surface and add no parser, simulator, resolver, or conflict-resolution action.
+  The 3-file `+164/-3` diff changes only the two approved FO references and one standalone live fixture; `git diff --check` and contract lint passed, with no exact overlap with task 824's disclosed `internal/ensigncycle/live_test.go`/registration surface.
+- DONE: Run focused dispatch and live-scenario unit tests, the selected live host lane, and formatting checks.
+  `go test ./internal/contractlint ./internal/ensigncycle` passed; the live test also grades the ordinary fresh envelope's recorded stage, branch, worktree, and opaque conflict notes; `gofmt -w ./cmd ./internal` passed.
+- FAILED: Run `go test ./...` and `go test ./... -race` without unrelated repository-state failures.
+  Both runs reached and passed D8's packages but `internal/gates.TestV1PilotManifestReadsAndValidates` failed because shared-state files `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` are absent; race reported the identical two missing manifests.
+
+### Summary
+
+The FO now aborts an owned code-worktree rebase conflict and mechanically returns an opaque same-stage package to the recorded live worker or the existing fresh-dispatch path, never to a Git author. A real Codex worker wrote and committed the marker on the pre-existing registered branch while all authority bytes remained unchanged, and the offline arm proved the fresh envelope preserves the same tuple.
