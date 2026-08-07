@@ -438,3 +438,43 @@ The correction preserves Subspace as a presentation interface while keeping
 deletion. Required focused, live, full, race, and detached evidence was rerun; the
 remaining exact failures are the previously classified archived pilot paths and one
 non-reproducing quiet-budget race timing failure.
+
+### A7-V2 — Canonical spec still requires the removed room-Result mechanism
+
+- Observation: corrected candidate `a2ed9d654` declares room-backed Result/inventory
+  ingestion outside v1 at spec lines 260-266, but its current Behavioral proof item 7
+  still requires release tests to verify a room Result, request authority, inventory,
+  and presentation mapping before close; line 107 also promises Result validation.
+- Released user and normal workflow: stable-v1 implementers and release validators use
+  `docs/specs/gate-resolution-frontmatter-contract.md` as the canonical shipped contract.
+- Observable harm: the contract simultaneously cuts and requires the same recorder
+  mechanism, leaving release proof impossible without restoring forbidden ingestion.
+- Authority: value-ac[AC-1] requires either a retained complete provider transaction or
+  no provider closure surface; the clean cut cannot retain a room-Result proof promise.
+- Trigger evidence: exact `a2ed9d654`, spec lines 104-107 and 260-283; the CLI refusal
+  test proves `--room` is absent, so this is a live contradiction rather than history.
+- Defect kind: outcome and evidence defect at AC-1's shipped-contract/proof boundary.
+- Release scope: material; the contradiction is on the normal stable release checklist.
+- Proposed ownership/disposition: current task, narrow correction. Remove the obsolete
+  Result-validation clause and Behavioral proof item 7; reconcile remaining current
+  command/roadmap references to semantic decisions without restoring any machinery.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Prove that the exact candidate exposes one complete chat closure and rejects provider-room recording before mutation.
+  At corrected head `a2ed9d654`, the focused CLI and real-binary lifecycle tests pass; `--room` remains an exact exit-2 refusal before lock creation with entity and room bytes unchanged.
+- DONE: Prove that the removal adds no parser, fallback, multiplexer, compatibility path, alternate authority, or provider dependency.
+  The five-file correction from `4ff999250` changes only skill/docs/contract-test prose; full diff inspection and dependency listings show no CLI, recorder, authority, envelope, or provider dependency addition.
+- DONE: Run focused, full, race, and detached adversarial checks; classify the pilot-manifest failures against current durable state.
+  Focused tests passed and the detached chat-only presentation mutant made `TestStableV1GateSkillsUseOneRecorderAcrossPresentationChannels` fail. Full and race runs failed only the unchanged two manifest paths, which current state and rename commits prove now live under `_archive/`; the prior quiet-budget race failure did not recur.
+- FAILED: Recommend PASSED with no material findings.
+  Recommend REJECTED: A7-V1 is fixed, but A7-V2 leaves the canonical stable contract requiring the provider-specific room Result/inventory proof that this candidate intentionally removed.
+
+### Summary
+
+The authorized cycle-1 correction works: chat and Subspace presentation now converge
+on one `gate record --decision` recorder, the chat transaction remains green, and the
+detached regression control is falsifiable. The candidate still cannot pass because
+its canonical Behavioral proof section promises the removed room-backed mechanism.
+Delete that stale normative proof and reconcile the few remaining current references;
+do not change the already-correct CLI or recorder cut.
