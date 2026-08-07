@@ -1872,3 +1872,32 @@ Cycle 23 replaces the rejected evidence-only surface with sixteen directly execu
 ### Summary
 
 Cycle 23 is scope-, budget-, selector-, registry-, focused-, full-, and race-green at exact pushed candidate `b1f49a395ccccf296b294617ed0f8b762c7c5e9d`, but is independently REJECTED on two Material Captain-boundary failures: nominal builder/assertion bindings can pass without execution, and shared exercises still branch on the concrete Claude driver outside the sole runtime selector helper.
+
+## Stage Report: implementation (cycle 24 — executable-binding correction)
+
+- DONE: Correct only the two independently rejected Cycle-23 findings on the immutable recarve.
+  The exact starting candidate was `b1f49a395ccccf296b294617ed0f8b762c7c5e9d`; the correction is the clean pushed successor `5db8cec3e17b128fa07d3fca4909022d80a98324` on the same recarve branch. The rejected `3ee17e6f` branch and worktree remain untouched.
+- DONE: Make every declared builder and assertion an executed value.
+  `liveJourney` now passes typed builder/assertion wrappers into the bound exercise, counts their real runtime invocations with `reflect.MakeFunc`, and fails when either count is zero. All sixteen exercises directly call the received builder and assertion parameters.
+- DONE: Replace nominal identifier reachability with direct executable-binding reconciliation.
+  The reconciler retains its original registry parsing, ensigncycle+livescenario scan, fixture ownership, TODO-owner validation, diagnostics, and derived-gap logic; only `functionReaches` is replaced by an AST check requiring direct `ast.CallExpr` uses of exercise parameters four and five. The disposable dead-reference control that stayed green in Cycle 23 is therefore rejected.
+- DONE: Remove concrete Claude selection from shared exercises.
+  All four `runner.(claudeLiveRunner)` branches are gone. Recorded-gate preparation and its Claude-only copied-skill grade live behind the `liveDriver.prepareRecordedGate` capability; Codex and Pi provide host-neutral no-op preparation. `liveDriverForRuntime` remains the sole Claude/Codex/Pi selector, with no journey-name dispatch.
+- DONE: Preserve fixture and transcript behavior while staying inside the approved surface.
+  The reused durable-field reader has the same first-unindented-field and path-rejection behavior as the deleted local loop. The derived split-root Pi README is byte-equivalent to the prior fixture, and generalized Pi transcript parsing retains exact read and nonempty bash/shell-command semantics, including rejection of empty tool names.
+- DONE: Preserve banked evidence, ownership, and architecture boundaries.
+  Exactly sixteen exported top-level `TestLiveCommon…` declarations retain adjacent stable annotations and direct seven-argument `liveJourney` calls. The workflow retains exactly three `-run '^TestLiveCommon' -failfast` selectors. Reconciliation derives Sonnet=4, Opus=0, Codex=5, and Pi=5; no product repair, behavior, fixture semantics, TODO owner, PR-629 manifest value, central table/map/list, runtime journey switch, mutation lab, SHA guard, speculative Pi observer/metrics, or competing wrapper was added.
+- DONE: Meet the exact Captain-approved envelope.
+  The cumulative base-relative surface at `5db8cec3e` is exactly 34 files, +1083/-2018; `shared_live_runner_unit_test.go` remains absent. `gofmt -w ./cmd ./internal` is idempotent and `git diff --check` is clean.
+- DONE: Run focused and repository-wide verification.
+  Reconciliation passes with the four exact sorted gap totals; live-tag package compilation passes; focused `internal/ensigncycle` and `internal/release` pass (`ensigncycle` 296.236s). In clean clone `/tmp/spacedock-cycle24-verify.i0zrRM/repo`, exact HEAD, blank status, and absent development state checkout were logged before each command: `go test ./...` passed in 377.75s and `go test ./... -race` passed in 188.09s.
+- DONE: Classify discarded operator-precondition attempts without attributing them to the candidate.
+  One command checked out the clean clone but omitted `cd`, so it ran in the contaminated source checkout and hit the known external state-root manifests; a second just-started run was interrupted because its preconditions were asserted silently rather than logged. Neither is candidate evidence; the two separately logged clean-clone suites above are authoritative.
+- SKIPPED: Run hosted or local model/live lanes.
+  Implementation spent no model or substrate capacity. Those lanes remain after independent validation of this representation correction.
+- DONE: Publish the immutable correction without changing workflow state.
+  SSH push succeeded and the remote recarve branch resolves exactly to `5db8cec3e17b128fa07d3fca4909022d80a98324`. Implementation made no status transition.
+
+### Summary
+
+Cycle 24 closes both independent Material findings: all sixteen declarations now execute their exact typed builder/assertion bindings, and shared exercises contain no concrete Claude-driver selection. The exact 34/+1083/-2018 candidate is focused-, full-, and race-green in uncontaminated state and pushed at `5db8cec3e17b128fa07d3fca4909022d80a98324`, with live/model execution held for fresh independent validation.
