@@ -64,6 +64,14 @@ gates:
                 digest: sha256:2b385a727780caeacc6ff9d7afd35e3110b85dd36589385a2157bd008efed8b5
                 request-digest: sha256:3a57e6b4c069fb81bcbe977eff1cf9cb91ffe482a57beeaa7a409b322595d1a2
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:824ecawn5jttbykcgx82nbf4:validation:1
+                briefing: briefing:824ecawn5jttbykcgx82nbf4:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-07T23:51:09.763957Z"
+                decision: revise
+                reason: 'Captain approves the design correction: blocking bare mode accepts absent or explicit false run_in_background while still rejecting true, names, teams, wrong identity, extra workers, and incomplete durable reports. Fix the two narrow oracle false positives too.'
 ---
 
 Stable CI must evaluate the supported Claude break-glass behavior instead of rejecting a successful worker because two contracts disagree.
