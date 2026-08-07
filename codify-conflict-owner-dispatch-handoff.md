@@ -1,6 +1,6 @@
 ---
 title: Make FO dispatch of moving-target conflict owners explicit
-status: ideation
+status: implementation
 source: "Captain follow-up after the 2026-08-04 conflict-owner and shared-credential diagnosis."
 started: 2026-08-06T15:54:14Z
 completed:
@@ -54,7 +54,7 @@ gates:
                 reason: The cycle-2 design removes new grammar and state, uses existing owner identity and dispatch routes, and requires one real live owner handoff.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 The First Officer contract names safety behavior for an open-PR moving-target
