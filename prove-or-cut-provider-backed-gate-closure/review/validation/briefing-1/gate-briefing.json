@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:a732sahay8wzgqrd2yr0xxr7:validation:attempt-1:revision-1",
+  "question": "Revise A7 so it removes only provider-specific recording while preserving channel-neutral Subspace presentation?",
+  "artifacts": [
+    {
+      "id": "artifact:a732sahay8wzgqrd2yr0xxr7:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/905941795bd9f79d764f0784784380c8fd6990d0/prove-or-cut-provider-backed-gate-closure/index.md",
+      "rev": "sha256:c48b13a072b671fce9a452efa39337f2f1c2a6504f6b11e0d7cb629919b2304c",
+      "mediaType": "text/markdown",
+      "summary": "Validation rejects candidate 4ff999250 because it removes permitted Subspace presentation. Keep the recorder deletion and correct only wording and its contract test."
+    }
+  ]
+}

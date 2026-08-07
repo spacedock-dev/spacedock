@@ -68,6 +68,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:a732sahay8wzgqrd2yr0xxr7:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:a732sahay8wzgqrd2yr0xxr7-validation-1
+              briefing:
+                id: briefing:a732sahay8wzgqrd2yr0xxr7:validation:attempt-1:revision-1
+                digest: sha256:6f17ce9e13d86077f5c1b0bc3924abe855adac0d453320ce4539116c2f72581e
+                request-digest: sha256:89844d44acfb1f60f457715cc97916884770b242e360ae81109d0a719c35705d
+                room-ref: ./review/validation/briefing-1
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if one exact Spacedock
