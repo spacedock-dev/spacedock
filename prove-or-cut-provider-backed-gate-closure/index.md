@@ -1,6 +1,6 @@
 ---
 title: Prove or cut provider-backed gate closure before stable v1
-status: validation
+status: implementation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: provider evidence exists in pilot state, but the stable surface lacks one pinned exact-candidate end-to-end proof while the chat journey is the primary value path."
 started: 2026-08-03T23:54:07Z
 completed:
@@ -415,6 +415,7 @@ passed, where only `TestV1PilotManifestReadsAndValidates` failed because
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation feedback; surface 16 files/1498 LOC vs estimate 10 files/295 LOC (508%); AC unchanged
+- Cycle 2: REJECTED — validation feedback; surface 16 files/1521 LOC vs estimate 10 files/295 LOC (516%); AC unchanged
 
 ## Stage Report: validation
 
