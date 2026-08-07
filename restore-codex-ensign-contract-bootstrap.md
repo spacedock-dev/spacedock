@@ -2,7 +2,7 @@
 title: Restore the shared ensign contract at the Codex fresh-dispatch boundary
 status: ideation
 source: "Runtime Live E2E run 31045591048, Codex job 92440554439: the first full-ensign-cycle worker received only a Read pointer, never loaded the shared ensign contract, and wrote two generic checkbox Stage Reports that the FO accepted before archive."
-started:
+started: 2026-08-07T13:16:17Z
 completed:
 verdict:
 score: 0.95
