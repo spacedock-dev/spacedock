@@ -139,6 +139,28 @@ func TestCurrentStageReadinessFailClosedTable(t *testing.T) {
 	}
 }
 
+func TestCurrentStageReadinessWithReportPromotesOnlyAbsentAuthority(t *testing.T) {
+	stages := []ReadinessStage{{Name: "ideation", Gate: true}, {Name: "validation", Gate: true}}
+	if got := CurrentStageReadinessWithReport(nil, "validation", stages, true); got != RouteNeedsPreparation {
+		t.Fatalf("absent authority readiness = %q, want %q", got, RouteNeedsPreparation)
+	}
+	prior := eligibleDocument()
+	prior.Records[0].Stage = "ideation"
+	if got := CurrentStageReadinessWithReport(prior, "validation", stages, true); got != RouteNeedsPreparation {
+		t.Fatalf("prior authority readiness = %q, want %q", got, RouteNeedsPreparation)
+	}
+	open := cloneDocument(t, eligibleDocument())
+	open.Records[0].Attempts[0].Resolution = nil
+	open.Records[0].Attempts[0].Application = nil
+	if got := CurrentStageReadinessWithReport(open, "ideation", stages, true); got != "awaiting-captain" {
+		t.Fatalf("selected open readiness = %q, want awaiting-captain", got)
+	}
+	empty := &Document{Version: 1}
+	if got := CurrentStageReadinessWithReport(empty, "validation", stages, true); got != "invalid" {
+		t.Fatalf("empty gate document readiness = %q, want invalid", got)
+	}
+}
+
 func TestDuplicateStageRecordsFailClosedAndPreserveBytes(t *testing.T) {
 	doc := eligibleDocument()
 	duplicate := cloneDocument(t, doc).Records[0]

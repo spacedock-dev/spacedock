@@ -24,6 +24,7 @@ type codexLiveRunner struct {
 	binary       string
 	pluginDir    string
 	codexBin     string
+	codexHome    string
 	env          []string
 	artifactRoot string
 }
@@ -170,7 +171,7 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 		t.Fatal("current-checkout source HEAD is empty")
 	}
 
-	return codexLiveRunner{binary: binary, pluginDir: repo, codexBin: codexBin, env: env, artifactRoot: artifactRoot}
+	return codexLiveRunner{binary: binary, pluginDir: repo, codexBin: codexBin, codexHome: codexHome, env: env, artifactRoot: artifactRoot}
 }
 
 func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
@@ -369,29 +370,6 @@ func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario s
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
-func cleanupKeepMovingRoot(t *testing.T, root string, failed bool) {
-	t.Helper()
-	if failed {
-		t.Logf("retained failing keep-moving Git root: %s", root)
-		return
-	}
-	if err := os.RemoveAll(root); err != nil {
-		t.Errorf("remove successful keep-moving Git root: %v", err)
-	}
-}
-
-func TestCleanupKeepMovingRootRetainsOnlyFailures(t *testing.T) {
-	root := t.TempDir()
-	cleanupKeepMovingRoot(t, root, true)
-	if _, err := os.Stat(root); err != nil {
-		t.Fatalf("failed workflow was not retained: %v", err)
-	}
-	cleanupKeepMovingRoot(t, root, false)
-	if _, err := os.Stat(root); !os.IsNotExist(err) {
-		t.Fatalf("successful workflow still exists: %v", err)
-	}
-}
-
 // runCodexFilingScenario drives the real FO against an EMPTY workflow and asks it
 // to file one seed entity. Like the Claude runner it grades the FO's recorded
 // command stream — the FO filed via `spacedock … new <slug>`, not a `--next-id`
@@ -442,25 +420,9 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
-func codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt string) []string {
-	return []string{
-		"codex",
-		"--plugin-dir", pluginDir,
-		"--skip-compat-check",
-		prompt,
-		"--",
-		"exec",
-		"--json",
-		"--enable", "multi_agent_v2",
-		"--dangerously-bypass-approvals-and-sandbox",
-		"--cd", workflowRoot,
-		"--output-last-message", finalPath,
-	}
-}
-
-// run launches one `codex exec --json` for one shared scenario. Its only
-// scenario-level liveness guard is a fixed wall-clock deadline; JSONL activity,
-// wait events, and durable writes cannot reset it or trigger another launch.
+// run launches one `codex exec --json` for one shared scenario. Each complete
+// JSONL line resets the shared quiet budget. Stream silence kills that sole
+// process; activity and durable writes never trigger another launch.
 func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) (codexScenarioResult, error) {
 	t.Helper()
 	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
@@ -471,7 +433,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 		env:         r.env,
 		artifactDir: artifactDir,
 		finalPath:   finalPath,
-		timeout:     codexScenarioTimeout,
+		quietBudget: quietBudgetDefault,
 	})
 }
 
@@ -503,48 +465,4 @@ func runCodexLiveCommand(t *testing.T, artifactDir, artifactName, stdin string, 
 		t.Fatalf("%s failed: %v\n%s", strings.Join(argv, " "), err, out)
 	}
 	return string(out)
-}
-
-func argvHasAdjacent(args []string, left, right string) bool {
-	for i := 0; i+1 < len(args); i++ {
-		if args[i] == left && args[i+1] == right {
-			return true
-		}
-	}
-	return false
-}
-
-func TestCodexLiveRunnerExecArgvEnablesMultiAgentV2(t *testing.T) {
-	args := codexLiveFrontDoorArgv("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
-	if !argvHasAdjacent(args, "--enable", "multi_agent_v2") {
-		t.Fatalf("codex live exec argv must explicitly enable multi_agent_v2 because CODEX_HOME is isolated; args=%v", args)
-	}
-}
-
-func TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs(t *testing.T) {
-	args := codexLiveFrontDoorArgv("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
-	fence := -1
-	for i, arg := range args {
-		if arg == "--" {
-			fence = i
-			break
-		}
-	}
-	if fence < 0 {
-		t.Fatalf("Codex live argv has no host-argument fence: %v", args)
-	}
-	if args[0] != "codex" || !argvHasAdjacent(args[:fence], "--plugin-dir", "/tmp/plugin") {
-		t.Fatalf("Spacedock-owned Codex setup is not before host args: %v", args)
-	}
-	for _, arg := range args[fence+1:] {
-		if arg == "--plugin-dir" || arg == "/tmp/plugin" || arg == "--skip-compat-check" {
-			t.Fatalf("Spacedock-owned argument leaked after host fence: %v", args)
-		}
-	}
-	if args[fence+1] != "exec" {
-		t.Fatalf("Codex host argv does not start with exec: %v", args)
-	}
-	if !argvHasAdjacent(args, "--dangerously-bypass-approvals-and-sandbox", "--cd") {
-		t.Fatalf("Codex live argv does not preserve bypass-permission posture before workflow root: %v", args)
-	}
 }

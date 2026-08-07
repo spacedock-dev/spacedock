@@ -75,7 +75,7 @@ func breakGlassShimPrompt() string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: .",
-		"Dispatch one worker to process the entity `widget-task` at its implementation stage per the workflow README, then stop once that worker completes. Do not advance the entity to done.",
+		"Dispatch one worker to process the next dispatchable entity at its implementation stage per the workflow README, then stop once that worker completes. Do not advance the entity to done.",
 		"Your final response must confirm the worker's implementation stage report landed.",
 		"If the dispatch helper fails, follow your contract's break-glass recovery path rather than giving up.",
 	)

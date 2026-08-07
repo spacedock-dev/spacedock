@@ -19,7 +19,7 @@ Shared first-officer semantics — the boot-resident core. The active runtime ad
 
 Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary from the `«state.boot»()` record.
 
-- **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch or render a `present-gate` review at the greet. NAME any ready `gate: true` gate, but assemble its review only when «engage» reaches it.
+- **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch or render a `present-gate` review at the greet. NAME any ready `gate: true` gate, including mechanical `needs-preparation`, but assemble its review only when «engage» reaches it.
 - **Headless:** do NOT greet-stop. Drive every dispatchable entity through the event loop, converging each workflow at its first «engage», to its first `gate: true` stage or terminal/blocked; then EXIT with each stop reason. Read the deferred dispatch owner before the first dispatch and before invoking its capabilities. At each gate enter through `«gate.lifecycle»`; without the conn, retain and bind the selected Briefing, commit it, present the semantic review, then stop without deciding.
 - **Headless + given the conn to auto-approve:** additionally resolve gates per `## Completion and Gates` and drive to terminal. The grant must be a phrase quoted from the prompt ("auto-approve gates", "drive to done", or "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is not a grant.
 
@@ -33,7 +33,7 @@ Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Comp
 - **effect — converge, then drive:** for the named `workflow` (default: the current / only managed workflow), FIRST run `state ready` (the split-root pull/resume; single-root a no-op; on exit 3 → `«halt.rebase-conflict»(paths)`), then the separate read-only `state sweep`, then `«hooks.run»("startup")` exactly once. The registered startup mod owns live PR advancement; the sweep's exit-0 `gh: "unavailable"` distinguishes real-empty from UNKNOWN. THEN run `«dispatch.next-action»()` to its stopping condition.
 - **dispatch boundary:** the ready set includes every status-ready entity, including one made ready by gate approval during this invocation. Every member needs an observed `«worker.spawn»` before waiting for completion or reading a stage report; state mutation and `«dispatch.build»` alone are not dispatch or completion evidence.
 - **scope:** ONE workflow per invocation; the `workflow` argument is present so a future multi-workflow form extends this signature rather than replacing it.
-- **done-when:** `«dispatch.next-action»()` reaches its stopping condition for the named workflow (a gate presented and awaiting the captain, terminal reached, or nothing dispatchable).
+- **done-when:** after ordered mod/PR, gate, and dispatch handling, the loop reaches a captain/terminal stop, guarded unresolved-worker wait, or explicit post-retry `no-dispatchable` stop.
 - → **shipped** (converge): `` `spacedock state ready` `` then `` `spacedock state sweep` `` — two calls, each guard on its own.
 - → **prose** (drive): no binary backs the drive; it wraps the existing `«dispatch.next-action»()` skeleton (driver binary descoped to roadmap 0222).
 

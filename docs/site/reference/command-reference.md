@@ -65,6 +65,10 @@ adjacent Spacedock provider is still gated normally. Codex has no native
 session-local flag: a post-`--` `--plugin-dir` is rejected, and additional Codex
 plugins must be installed persistently with `codex plugin add`.
 
+Every Codex launch, including local-plugin, Safehouse, and `resume`, puts one Spacedock-owned collaboration layer immediately after the inner `codex` token: `-c agents.enabled=true`, `-c features.multi_agent=true`, and `-c 'features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}'`. The first two settings are Codex's supported enablement controls; the exact v2 table pins the requested thread limit, tool namespace, and visible spawn metadata. A `multi_agent_v2=false` feature-list label does not disprove that table or replace an observed spawn/follow-up/list/wait lifecycle proof.
+
+Spacedock reserves `agents.enabled`, `features.multi_agent`, and the complete `features.multi_agent_v2` path. Forwarding any of them with `-c`, `--config`, `--enable`, or `--disable` fails before plugin installation or host launch. Hosts that do not accept the owned settings exit nonzero from their native config parser before a first-officer session opens; Spacedock does not fall back to a prompt-only or downgraded collaboration mode.
+
 An unsandboxed bootstrap launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: `spacedock claude` starts in `--permission-mode auto` and Codex starts in `--ask-for-approval on-request` unless you supply an approval mode. A sandboxed bootstrap launch instead skips/bypasses approvals (`--dangerously-skip-permissions` for claude, `--dangerously-bypass-approvals-and-sandbox` for codex) since the sandbox is the gate. Claude suppresses its defaults when you pass your own mode or a resume. Codex suppresses its banner and bootstrap prompt only when its forwarded argv contains the exact `resume` token; an explicit approval mode prevents only a duplicate automatic approval flag.
 
 ## Setup
@@ -100,6 +104,14 @@ The first officer runs these against workflow state as it moves entities; you op
 | `spacedock dispatch` | Build the worker dispatch artifacts (`dispatch build`, `dispatch show-stage-def`). `dispatch build --stamp` folds the ordinary post-gate dispatch steps — `started`/`worktree=` frontmatter stamps, a state commit+sync, and worktree creation — into the build call itself, before assembling the envelope. It refuses (no mutation) unless the entity's status already equals `--stage`, and is incompatible with `--advance`. A stamp/sync failure writes a `dispatch build --stamp:`-prefixed stderr diagnostic and emits no envelope, distinct from an ordinary assembly failure. |
 | `spacedock state` | Manage a [split-root workflow](../advanced/split-root-state.md)'s state checkout (`state init` resumes one on a fresh clone, `state new` births one) |
 | `spacedock completion` | Print a bash or zsh completion script |
+
+Machine `status --next --json` returns one envelope with the unchanged
+`dispatchable` array and canonical ordered `ready_gates` array. Ready rows include
+the mechanical `needs-preparation` candidate and
+`withdrawn-awaiting-prepare`; they retain the four keys `id`, `slug`, `current`,
+and `readiness`. The First Officer applies ready-gate-first priority on every
+read, including the post-idle read. Preparation uses the existing `gate prepare`
+command; `gate record --briefing` is not a recovery route.
 
 ### `state commit`
 

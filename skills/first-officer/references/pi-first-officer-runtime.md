@@ -15,6 +15,10 @@ This file defines how the shared first-officer core executes on Pi. The shared c
 
 The build artifact carries the entity slug/name, entity path, workflow directory, target stage, stage definition fetch command, worktree path when applicable, completion checklist, and completion-signal wording. It must not be replaced by a locally composed assignment. The model stamped through `«worker-identity»` is a Pi-native value used by `«reuse.model-match»`.
 
+## Idle wait binding
+
+After the host-neutral loop's first empty `status --next`, Pi runs the idle hook once, omits unavailable `«roster-reconcile»`, and runs the second query once. Only an active unresolved worker with no dispatchable, gate, mod/PR, or other state work qualifies for asynchronous status polling. Completed, errored, and absent workers do not qualify; emit the loop's explicit `no-dispatchable` stop instead. A poll is observation only and never completion evidence.
+
 ## Live Harness Isolation
 
 Live Pi tests should run with an isolated Pi config directory and an isolated session directory. The harness may copy the operator's existing Pi auth file into the isolated config directory so OAuth/subscription credentials are reused without sharing global sessions, packages, or settings.

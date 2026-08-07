@@ -47,4 +47,3 @@ Archived members do not resolve through `status --resolve`. The package must cit
 `rm` remains deferred and release-blocking. If its upstream product repairs miss `v0.27.0`, the Captain must move the train or change the release bar.
 
 The planned SSOT link, reconciliation SHA, and path guard are not current evidence. `ys` must land them together before sprint completion.
-
