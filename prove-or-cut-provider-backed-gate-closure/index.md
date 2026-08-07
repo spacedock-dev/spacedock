@@ -77,6 +77,14 @@ gates:
                 digest: sha256:6f17ce9e13d86077f5c1b0bc3924abe855adac0d453320ce4539116c2f72581e
                 request-digest: sha256:89844d44acfb1f60f457715cc97916884770b242e360ae81109d0a719c35705d
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:a732sahay8wzgqrd2yr0xxr7:validation:1
+                briefing: briefing:a732sahay8wzgqrd2yr0xxr7:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-07T03:04:23.824737Z"
+                decision: revise
+                reason: Captain clarified that A7 owns one semantic recorder, not one presentation interface. Preserve Subspace presentation and semantic decision return through the existing --decision recorder. Remove only --room Result and inventory ingestion.
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if one exact Spacedock
