@@ -3,6 +3,8 @@
 package ensigncycle
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -102,13 +104,34 @@ func TestAssertBareReachableObservablesCatchesNoBareAgent(t *testing.T) {
 // Skill(spacedock:fo-dispatch-recovery) load, then a break-glass-shaped Agent()
 // call (run_in_background=true, a {worker_key}-{slug}-{stage} name, and a prompt
 // carrying the ensign skill invocation plus an inline stage definition).
-const breakGlassGoodStream = `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero (exit 1); reporting the helper failure before proceeding."}]}}
+const breakGlassBareGoodStream = `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero (exit 1); reporting the helper failure before proceeding."}]}}
 {"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
-{"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"description":"break-glass dispatch","prompt":"## First action\n\nSkill(skill=\"spacedock:ensign\")\n\n### Stage definition:\n\ncopy the stage body here"}}]}}`
+{"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"Widget Task: implementation","prompt":"## First action\n\nSkill(skill=\"spacedock:ensign\")\n\n### Stage definition:\n\nAppend a one-line marker to ` + "`widget-task.md`" + ` proving the worker ran.\n\n- **Outputs:** An implementation stage report.\n\n### Stage report"}}]}}`
+
+const breakGlassTeamGoodStream = `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero (exit 1); reporting the helper failure before proceeding."}]}}
+{"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
+{"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"description":"Widget Task: implementation","prompt":"## First action\n\nSkill(skill=\"spacedock:ensign\")\n\n### Stage definition:\n\nAppend a one-line marker to ` + "`widget-task.md`" + ` proving the worker ran.\n\n- **Outputs:** An implementation stage report.\n\n### Stage report\n\nAppend the report.\n\n### Completion Signal\n\nSendMessage(to=\"team-lead\", message=\"Done\")"}}]}}`
 
 func TestAssertBreakGlassObservablesOffline(t *testing.T) {
-	if err := assertBreakGlassObservables(breakGlassGoodStream); err != nil {
-		t.Fatalf("the positive fixture (report before Agent, recovery skill loaded, break-glass-shaped Agent call) must pass: %v", err)
+	for _, tc := range []struct {
+		name   string
+		mode   dispatchMode
+		stream string
+	}{{"selected bare uses bare call", dispatchModeBare, breakGlassBareGoodStream}, {"selected team uses team call", dispatchModeTeam, breakGlassTeamGoodStream}} {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := assertBreakGlassObservables(tc.stream, tc.mode); err != nil {
+				t.Fatalf("mode-preserving fixture must pass: %v", err)
+			}
+		})
+	}
+	if err := assertBreakGlassObservables(breakGlassBareGoodStream, dispatchModeTeam); err == nil {
+		t.Fatal("selected team with a bare call must fail")
+	}
+	if err := assertBreakGlassObservables(breakGlassTeamGoodStream, dispatchModeBare); err == nil {
+		t.Fatal("selected bare with a team call must fail")
+	}
+	if err := assertBreakGlassObservables(breakGlassBareGoodStream+"\n"+breakGlassBareGoodStream, dispatchModeBare); err == nil {
+		t.Fatal("multiple workers must fail")
 	}
 }
 
@@ -120,7 +143,7 @@ func TestAssertBreakGlassObservablesCatchesReportAfterAgent(t *testing.T) {
 	stream := `{"type":"assistant","message":{"id":"msg1","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
 {"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"prompt":"Skill(skill=\"spacedock:ensign\")\n### Stage definition:\nbody"}}]}}
 {"type":"assistant","message":{"id":"msg3","content":[{"type":"text","text":"spacedock dispatch build exited non-zero; reporting now."}]}}`
-	if err := assertBreakGlassObservables(stream); err == nil {
+	if err := assertBreakGlassObservables(stream, dispatchModeTeam); err == nil {
 		t.Fatal("a helper-failure report observed only AFTER the Agent() call must fail — the first action is reporting, not dispatching")
 	}
 }
@@ -130,7 +153,7 @@ func TestAssertBreakGlassObservablesCatchesReportAfterAgent(t *testing.T) {
 func TestAssertBreakGlassObservablesCatchesMissingSkillLoad(t *testing.T) {
 	stream := `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero; reporting now."}]}}
 {"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"prompt":"Skill(skill=\"spacedock:ensign\")\n### Stage definition:\nbody"}}]}}`
-	if err := assertBreakGlassObservables(stream); err == nil {
+	if err := assertBreakGlassObservables(stream, dispatchModeTeam); err == nil {
 		t.Fatal("a stream with no Skill(skill=\"spacedock:fo-dispatch-recovery\") tool_use must fail")
 	}
 }
@@ -142,7 +165,7 @@ func TestAssertBreakGlassObservablesCatchesWrongAgentShape(t *testing.T) {
 	stream := `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero; reporting now."}]}}
 {"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
 {"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","prompt":"Skill(skill=\"spacedock:ensign\")\n### Stage definition:\nbody"}}]}}`
-	if err := assertBreakGlassObservables(stream); err == nil {
+	if err := assertBreakGlassObservables(stream, dispatchModeTeam); err == nil {
 		t.Fatal("an Agent() call missing run_in_background=true must fail the break-glass shape check")
 	}
 }
@@ -155,7 +178,49 @@ func TestAssertBreakGlassObservablesCatchesMissingStageDefInPrompt(t *testing.T)
 	stream := `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero; reporting now."}]}}
 {"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
 {"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"prompt":"Skill(skill=\"spacedock:ensign\")\ngo do the task"}}]}}`
-	if err := assertBreakGlassObservables(stream); err == nil {
+	if err := assertBreakGlassObservables(stream, dispatchModeTeam); err == nil {
 		t.Fatal("an Agent() prompt missing the inline ### Stage definition must fail the break-glass shape check")
+	}
+}
+
+func TestAssertBreakGlassDurableResultMutations(t *testing.T) {
+	complete := dispatchRecoveryEntity() + "\n" + dispatchRecoveryMarker + "\n\n## Stage Report: implementation\n\n- DONE: worker ran\n  Marker and report committed.\n\n### Summary\n\nRecovery completed.\n"
+	for _, tc := range []struct {
+		name   string
+		mutate func(string) string
+		dirty  bool
+		wantOK bool
+	}{
+		{"complete", func(s string) string { return s }, false, true},
+		{"missing marker", func(s string) string { return strings.ReplaceAll(s, dispatchRecoveryMarker, "marker-removed") }, false, false},
+		{"missing heading", func(s string) string { return strings.Replace(s, "## Stage Report: implementation", "## Notes", 1) }, false, false},
+		{"missing done", func(s string) string { return strings.Replace(s, "- DONE:", "- SKIPPED:", 1) }, false, false},
+		{"missing summary", func(s string) string { return strings.Replace(s, "### Summary", "### Notes", 1) }, false, false},
+		{"uncommitted result", func(s string) string { return dispatchRecoveryEntity() }, true, false},
+		{"dirty entity", func(s string) string { return s }, true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			entityPath := filepath.Join(root, "widget-task.md")
+			writeFile(t, filepath.Join(root, "README.md"), dispatchRecoveryReadme())
+			writeFile(t, entityPath, dispatchRecoveryEntity())
+			gitInit(t, root)
+			if tc.name != "uncommitted result" {
+				writeFile(t, entityPath, tc.mutate(complete))
+				git(t, root, "add", "widget-task.md")
+				git(t, root, "commit", "-m", "worker result", "--", "widget-task.md")
+			} else {
+				writeFile(t, entityPath, complete)
+			}
+			if tc.dirty && tc.name == "dirty entity" {
+				if err := os.WriteFile(entityPath, []byte(readFile(t, entityPath)+"dirty\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			err := assertBreakGlassDurableResult(root, entityPath)
+			if (err == nil) != tc.wantOK {
+				t.Fatalf("assertBreakGlassDurableResult error = %v, wantOK %v", err, tc.wantOK)
+			}
+		})
 	}
 }

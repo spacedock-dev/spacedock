@@ -22,12 +22,10 @@ type mergedAgentDispatch struct {
 	hasTeamName     bool
 }
 
-// mergedEnsignDispatches scans a stream-json transcript and returns every
-// Agent(subagent_type="spacedock:ensign") tool_use as a mergedAgentDispatch. It
-// parses the raw line directly (not via streamToolInput, which does not model
-// run_in_background / the Agent name / team_name) so the merged-lane assertion can
-// check the full merged shape. team_name PRESENCE is what hasTeamName reports —
-// a merged dispatch must NOT carry it.
+// mergedEnsignDispatches scans a stream-json transcript for explicit ensign Agent
+// calls and for the merged transport shape when Claude omits its defaulted
+// subagent_type. Identity is proven independently from the dispatch artifact and
+// on-disk member meta. team_name PRESENCE is what hasTeamName reports.
 func mergedEnsignDispatches(lines []string) []mergedAgentDispatch {
 	type rawInput struct {
 		SubagentType    string          `json:"subagent_type"`
@@ -53,7 +51,11 @@ func mergedEnsignDispatches(lines []string) []mergedAgentDispatch {
 			continue
 		}
 		for _, b := range e.Message.Content {
-			if b.Type != "tool_use" || b.Name != "Agent" || b.Input.SubagentType != "spacedock:ensign" {
+			if b.Type != "tool_use" || b.Name != "Agent" {
+				continue
+			}
+			mergedTransport := b.Input.Name != "" && b.Input.RunInBackground && (len(b.Input.TeamName) == 0 || string(b.Input.TeamName) == "null")
+			if b.Input.SubagentType != "spacedock:ensign" && !mergedTransport {
 				continue
 			}
 			out = append(out, mergedAgentDispatch{
@@ -168,6 +170,20 @@ type mergedMemberMeta struct {
 	TeamName    string `json:"team_name"`
 }
 
+func hasMergedEnsignMember(metas []mergedMemberMeta) bool {
+	for _, m := range metas {
+		if m.AgentType == "spacedock:ensign" && m.Name != "" && m.TeamName == "" {
+			return true
+		}
+	}
+	return false
+}
+
+func mergedDispatchArtifactHasEnsignContract(artifact string) bool {
+	return strings.Contains(artifact, `Skill(skill="spacedock:ensign")`) &&
+		strings.Contains(artifact, `SendMessage(to="team-lead"`)
+}
+
 // readMergedMemberMetas reads every subagents/agent-*.meta.json under the FO's
 // session dir and returns the decoded records. The session dir is
 // {configDir}/projects/{encodeProjectDir(resolvedCwd)}/{sessionID}/subagents. A
@@ -209,6 +225,7 @@ func mergedMemberMetasPath(configDir, resolvedCwd, sessionID string) string {
 // assertions rest on a verified parser.
 func TestMergedEnsignDispatchShape(t *testing.T) {
 	const mergedAgentLine = `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_1","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"spacedock-ensign-make-it-work-implementation","description":"Make It Work: implementation","run_in_background":true}}]}}`
+	const omittedSubagentTypeLine = `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_1b","name":"Agent","input":{"name":"spacedock-ensign-make-it-work-implementation","description":"Make It Work: implementation","run_in_background":true}}]}}`
 	const legacyAgentLine = `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"spacedock-ensign-make-it-work-implementation","team_name":"proj-dir-20260618-spacedock","description":"x"}}]}}`
 	const teamCreateLine = `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_3","name":"TeamCreate","input":{}}]}}`
 	const initLine = `{"type":"system","subtype":"init","session_id":"9e9ec0b0-b998-4c86-b9c7-c3e70f78108c","tools":["Bash","Read","SendMessage","Skill"]}`
@@ -234,6 +251,13 @@ func TestMergedEnsignDispatchShape(t *testing.T) {
 		ds := mergedEnsignDispatches([]string{legacyAgentLine})
 		if len(ds) != 1 || !ds[0].hasTeamName {
 			t.Fatalf("a team_name-bearing dispatch must report hasTeamName=true; got %+v", ds)
+		}
+	})
+
+	t.Run("defaulted subagent_type may be omitted from merged transport", func(t *testing.T) {
+		ds := mergedEnsignDispatches([]string{omittedSubagentTypeLine})
+		if len(ds) != 1 || ds[0].name == "" || !ds[0].runInBackground || ds[0].hasTeamName {
+			t.Fatalf("omitted subagent_type merged dispatch was not recognized: %+v", ds)
 		}
 	})
 
@@ -290,6 +314,25 @@ func TestMergedEnsignDispatchShape(t *testing.T) {
 		}
 		if !strings.HasPrefix(metas[0].Name, "spacedock-ensign-") {
 			t.Errorf("member name %q does not look like a derived ensign name", metas[0].Name)
+		}
+		if !hasMergedEnsignMember(metas) {
+			t.Fatal("complete member meta must independently prove ensign identity")
+		}
+		metas[0].AgentType = "general-purpose"
+		if hasMergedEnsignMember(metas) {
+			t.Fatal("member meta without agentType=spacedock:ensign must fail identity proof")
+		}
+	})
+
+	t.Run("dispatch artifact requires ensign skill and team-lead completion", func(t *testing.T) {
+		complete := `Skill(skill="spacedock:ensign") SendMessage(to="team-lead", message="Done")`
+		if !mergedDispatchArtifactHasEnsignContract(complete) {
+			t.Fatal("complete merged dispatch artifact must pass")
+		}
+		for _, missing := range []string{`Skill(skill="spacedock:ensign")`, `SendMessage(to="team-lead"`} {
+			if mergedDispatchArtifactHasEnsignContract(strings.Replace(complete, missing, "removed", 1)) {
+				t.Fatalf("artifact missing %q must fail", missing)
+			}
 		}
 	})
 }

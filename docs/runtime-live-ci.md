@@ -134,7 +134,7 @@ Without auth, the respective live suite skips locally (Claude/Codex/Pi), except 
 |---|---|---|
 | Claude core: `TestLiveEnsignCycle`, `TestLiveDefaultHeadlessStopsAtGate`, `TestLiveZeroDiscoverReportsAndStops` | Full cycle, two gate-stop cases, and zero discovery | The detail artifact records each duration. |
 | Claude `TestLiveClaudeSharedScenarios` | The registered shared journey IDs | Journey metrics record duration, tokens, model, and available cost. |
-| Claude substrate: `TestLiveMergedTeamModeDispatch`, `TestLiveBareReachable`, `TestLiveBreakGlassShimRecovery` | Merged, bare, and break-glass dispatch | Merged baseline: 127s Sonnet and 144s Opus. Cost was not available. |
+| Claude substrate: `TestLiveMergedTeamModeDispatch`, `TestLiveBareReachable`, `TestLiveBreakGlassShimRecovery` | Merged and bare dispatch, plus break-glass recovery that preserves the selected bare/team mode and commits the worker report | Merged baseline: 127s Sonnet and 144s Opus. Cost was not available. |
 | Codex resolver and `TestLiveCodexSharedScenarios` | Current-checkout resolution and shared journeys | Both PR and release jobs consume Codex metrics. |
 | Pi coverage guards and `TestLivePiFrontDoorSmoke` | Coverage parity plus one four-part substrate proof | Retained local run: 104.808s and $0.277493 for root plus child. |
 

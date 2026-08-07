@@ -82,21 +82,34 @@ func TestLiveBareReachable(t *testing.T) {
 // `go test -tags live -run TestLiveBreakGlassShimRecovery ./internal/ensigncycle -v -count=1`.
 func TestLiveBreakGlassShimRecovery(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
-	workflowRoot := t.TempDir()
-	writeDispatchRecoveryWorkflow(t, workflowRoot)
-
 	shimDir := writeStubBreakGlassSpacedock(t, runner.binary)
 	runner.env = withSpacedockShimShellEnv(t, runner.env, shimDir)
 	scenarioRunner := runner.withStubPATH(shimDir)
 
-	scenario := sharedRuntimeScenario{
-		name:          "break-glass-shim",
-		oldPythonTest: "n/a (net-new; dispatch-exception-paths-deferred-module)",
-		intent:        "A failing `spacedock dispatch build` produces a captain-facing report before any Agent() call, loads spacedock:fo-dispatch-recovery, and manually assembles a break-glass-shaped Agent() dispatch.",
+	for _, tc := range []struct {
+		name   string
+		mode   dispatchMode
+		prompt string
+	}{
+		{"selected-bare", dispatchModeBare, breakGlassShimPrompt()},
+		{"selected-team", dispatchModeTeam, breakGlassShimTeamPrompt()},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			workflowRoot := t.TempDir()
+			entityPath := writeDispatchRecoveryWorkflow(t, workflowRoot)
+			scenario := sharedRuntimeScenario{
+				name:          "break-glass-shim-" + tc.name,
+				oldPythonTest: "n/a (net-new; dispatch-exception-paths-deferred-module)",
+				intent:        "A failing `spacedock dispatch build` preserves the selected dispatch mode and commits one complete worker report.",
+			}
+			result := scenarioRunner.run(t, scenario, workflowRoot, tc.prompt)
+			if err := assertBreakGlassObservables(result.stream, tc.mode); err != nil {
+				t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+			}
+			if err := assertBreakGlassDurableResult(workflowRoot, entityPath); err != nil {
+				t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+			}
+			emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+		})
 	}
-	result := scenarioRunner.run(t, scenario, workflowRoot, breakGlassShimPrompt())
-	if err := assertBreakGlassObservables(result.stream); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
