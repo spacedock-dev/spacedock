@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-08-07 02:17:32",
+        "dateModified": "2026-08-07 04:38:13",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1409,10 +1409,6 @@ plugins must be installed persistently with <code>codex plugin add</code>.</p>
 <td>Retire the selected current-stage open prepared attempt without a Resolution, provider evidence, application, room write, or status change. Attribution is always <code>agent:first-officer</code>; the next <code>gate prepare</code> appends a successor.</td>
 </tr>
 <tr>
-<td><code>spacedock gate record &lt;entity&gt; --room PATH [--consume]</code></td>
-<td>Verify a prepared gate room and record its direct binding Result. The recorder checks the frozen request digest, derives the fixed room evidence paths and complete Artifact/Reference association, and leaves advisory output as retained evidence. The current workflow stage must be an actionable gate, and the bound Briefing must use the canonical v1 stage-qualified identity and name that stage; malformed or mismatched identity fails without mutation. With <code>--consume</code>, a successful close runs <code>gate consume</code> in the same call when the room's decision is <code>approve</code> (<code>consume=skipped</code> on a revise/hold close); each half's split-root sync appends its own machine-parseable <code>sync=... phase=record\|consume</code> line.</td>
-</tr>
-<tr>
 <td><code>spacedock gate record &lt;entity&gt; --decision approve\|revise\|hold --actor ID [--reason TEXT] [--consume]</code></td>
 <td>Record a chat decision and, for approve only, its derived one-use application. Supported chat actor IDs are <code>person:captain</code> and <code>agent:first-officer</code>. Delegated First Officer decisions require an evidence reason; the recorder does not accept or authenticate Captain-message text. Recording never advances status or dispatches. The current workflow stage must be an actionable gate, and the bound Briefing must use the canonical v1 stage-qualified identity and name that stage; malformed or mismatched identity fails without mutation. <code>--consume</code> is the captain-approve fast path: it sequences the existing record and consume handlers in one call (usage error with <code>--decision revise\|hold</code>), each with its own split-root sync appending a <code>sync=... phase=record\|consume</code> line.</td>
 </tr>
@@ -1475,8 +1471,8 @@ reports and artifacts. Dirty sibling entities and unrelated top-level state path
 remain untouched. Archived scope is publish-only: dirt or identity/shape collisions refuse before movement; clean unpublished history is pushed, and fully published state is a no-op.
 Because archived recovery never creates or amends a commit, <code>-m MSG</code> applies only
 to active entities and has no effect for an archived slug.</p>
-<p>The gate <code>record</code>/<code>consume</code> verbs (their close/consume forms — chat-decision,
-room-backed, and standalone <code>consume</code>; NOT the <code>--round</code> advisory-publication
+<p>The gate <code>record</code>/<code>consume</code> verbs (their close/consume forms — chat-decision and
+standalone <code>consume</code>; NOT the <code>--round</code> advisory-publication
 form, which is out of mechanism 1's scope and still needs an explicit <code>state
 commit</code> afterward, same as before) and <code>dispatch build --stamp</code> run this same
 commit+publish sequence themselves whenever they write in a split-root workflow
@@ -1507,7 +1503,7 @@ locally but could not push, regardless of which command wrote it.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 7, 2026 02:17:32 UTC">2026-08-07 02:17:32</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 7, 2026 04:38:13 UTC">2026-08-07 04:38:13</span>
   </span>
 
     

@@ -71,7 +71,7 @@
         "headline": "Gates \u0026 decisions",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/concepts/gates-and-decisions/",
-        "dateModified": "2026-08-07 02:17:32",
+        "dateModified": "2026-08-07 04:38:13",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -728,6 +728,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="How the review reaches you">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#explicitly-outside-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Explicitly outside v1
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1267,6 +1282,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="How the review reaches you">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#explicitly-outside-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Explicitly outside v1
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1345,23 +1375,25 @@ first officer as the decision renderer and its evidence reason; it does not quot
 authenticate the grant's wording or scope. Keep any required chat provenance in the
 host's own audit system.</p>
 <h2 id="how-the-review-reaches-you">How the review reaches you<a class="headerlink" href="#how-the-review-reaches-you" title="Permanent link">&para;</a></h2>
-<p>Gate reviews appear in chat by default. Before presenting one, the first officer commits
+<p>Stable v1 gate reviews may appear in chat or Subspace. Before presenting one, the first officer commits
 newly authored selected sources and calls <code>gate prepare</code> with its question, primary
 Markdown review, exact concise summary, and References. Spacedock authors and binds a
 two-file recorder-ready room; the first officer commits that entity-owned room. The
 selected source payloads remain singular local Git objects rather than room copies.</p>
-<p>A workflow or session may select a presentation override. Only after the prepare and
-bind commit, the selected channel receives exactly the emitted room through its
-declared interface as an opaque handoff. The generic Spacedock contract neither
-defines channel execution nor reconstructs authority outside that room. When the room
-is recorder-ready, the first officer passes that same room to <code>gate record --room</code>;
-the recorder recomputes request, Briefing, Result, inventory, and Git pins, derives the
-complete association in memory, and writes no <code>association.json</code>.</p>
-<p>If a prepared room becomes stale before any provider decision, the first officer runs
+<p>Both presentation interfaces return semantic decision and reason input to the first
+officer. The first officer records that input through the same <code>gate record --decision</code>
+command; Subspace is not a second recorder and does not return Result or inventory
+files for Spacedock to ingest.</p>
+<p>If a prepared room becomes stale before any Captain decision, the first officer runs
 <code>gate withdraw</code> with a reason. Withdrawal is not approve, revise, or hold: it preserves
 the old room without a Resolution, provider evidence, application, or stage change.
 Cold boot reports <code>withdrawn-awaiting-prepare</code>; ordinary <code>gate prepare</code> then appends
 attempt N+1, which alone can receive the later Captain decision.</p>
+<h3 id="explicitly-outside-v1">Explicitly outside v1<a class="headerlink" href="#explicitly-outside-v1" title="Permanent link">&para;</a></h3>
+<p>Provider-specific room-backed recording, <code>gate record --room</code>, Result or inventory
+ingestion, retained provider evidence, and provider package selection are not
+stable-v1 surfaces. Chat and Subspace presentation remain supported through the one
+semantic decision recorder.</p>
 <h2 id="the-three-calls">The three calls<a class="headerlink" href="#the-three-calls" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Approve.</strong> The decision is recorded first. A separate application step may then advance eligible work exactly once.</li>
@@ -1438,7 +1470,7 @@ facts; the acting command reports any authoritative refusal.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 7, 2026 02:17:32 UTC">2026-08-07 02:17:32</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 7, 2026 04:38:13 UTC">2026-08-07 04:38:13</span>
   </span>
 
     

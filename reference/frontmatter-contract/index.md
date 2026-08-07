@@ -2,7 +2,7 @@
 title: "Frontmatter contract"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-07 02:17:32"
+last_updated: "2026-08-07 04:38:13"
 ---
 
 # Frontmatter contract
