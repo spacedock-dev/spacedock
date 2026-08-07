@@ -20,7 +20,7 @@ The binary owns preparation, withdrawal, recording, and one-use consume; this sk
 ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
 ```
 
-Preflight one lifecycle surface: `prepare`, `withdraw`, `record`, `validate`, `eligibility`, `consume`, and withdrawal's `--reason`. A nonzero command halts; surface its exact error and refresh or rebuild the version-gated bundle when unavailable. Never hand-edit `gates:` or replace binary-owned entity/room authority.
+Preflight one lifecycle surface: `prepare`, `withdraw`, `record`, `validate`, `consume`, and withdrawal's `--reason`. A nonzero command halts; surface its exact error and refresh or rebuild the version-gated bundle when unavailable. Never hand-edit `gates:` or replace binary-owned entity/room authority.
 
 Require emitted `room`, `briefing`, `digest`, `state=open`; never reconstruct the room. `«state.commit»(slug)` commits the binding. Load `spacedock:present-gate`, cross-check ACs, and present once after commit. No conn: ask and stop open. Explicit conn: presentation is notification; immediately record the delegated decision below.
 

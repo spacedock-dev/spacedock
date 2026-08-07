@@ -225,7 +225,7 @@ Request, located Briefing, Result, and presented inventory all pass through one
 recursive token-stream duplicate-member check before typed decoding or
 canonicalization. Conflicting members at any object depth fail closed; Go's
 last-member-wins JSON behavior is never authority. Binding, room recording,
-validation, eligibility, and consumption all resolve and recheck the same frozen
+validation and authority-spending commands all resolve and recheck the same frozen
 request/Briefing/source authority. Room-backed evidence is valid only on a prepared,
 request-digest-bound attempt.
 
@@ -300,7 +300,6 @@ spacedock gate withdraw ENTITY --reason TEXT [--workflow-dir DIR]
 spacedock gate record ENTITY --room PATH [--workflow-dir DIR]
 spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]
 spacedock gate validate ENTITY [--workflow-dir DIR]
-spacedock gate eligibility ENTITY [--workflow-dir DIR]
 spacedock gate consume ENTITY [--workflow-dir DIR]
 ```
 

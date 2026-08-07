@@ -103,10 +103,13 @@ func TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface(t *testing.
 	if code != 0 {
 		t.Fatalf("help exit=%d stderr=%q", code, errOut.String())
 	}
-	for _, token := range []string{"gate prepare", "gate withdraw", "--reason", "--question", "--artifact", "--summary", "--reference", "--workflow-dir", "record", "validate", "eligibility", "consume"} {
+	for _, token := range []string{"gate prepare", "gate withdraw", "--reason", "--question", "--artifact", "--summary", "--reference", "--workflow-dir", "record", "validate", "consume"} {
 		if !strings.Contains(out.String(), token) {
 			t.Fatalf("gate help missing %q:\n%s", token, out.String())
 		}
+	}
+	if strings.Contains(out.String(), "eligibility") {
+		t.Fatalf("gate help retained the standalone eligibility ceremony:\n%s", out.String())
 	}
 	if !strings.Contains(out.String(), "gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json") {
 		t.Fatalf("gate help lost the intentional advisory-round Briefing input:\n%s", out.String())
@@ -303,24 +306,28 @@ func TestGateRoundRejectsConsumeFlagWithoutMutation(t *testing.T) {
 	}
 }
 
-func TestGateReviewVerbIsAbsentAndSideEffectFree(t *testing.T) {
-	root := t.TempDir()
-	before, err := os.ReadDir(root)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestRemovedGateVerbsAreAbsentAndSideEffectFree(t *testing.T) {
+	for _, verb := range []string{"review", "eligibility"} {
+		t.Run(verb, func(t *testing.T) {
+			root := t.TempDir()
+			before, err := os.ReadDir(root)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	var out, errOut bytes.Buffer
-	code := run(context.Background(), []string{"gate", "review", "task"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-	if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: prepare|withdraw|record|validate|eligibility|consume)") {
-		t.Fatalf("gate review exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
-	}
-	after, err := os.ReadDir(root)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(before) != len(after) {
-		t.Fatalf("rejected presentation verb changed working directory: before=%v after=%v", before, after)
+			var out, errOut bytes.Buffer
+			code := run(context.Background(), []string{"gate", verb, "task"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+			if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: prepare|withdraw|record|validate|consume)") {
+				t.Fatalf("gate %s exit=%d stdout=%q stderr=%q", verb, code, out.String(), errOut.String())
+			}
+			after, err := os.ReadDir(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(before) != len(after) {
+				t.Fatalf("rejected %s verb changed working directory: before=%v after=%v", verb, before, after)
+			}
+		})
 	}
 }
 
@@ -1027,9 +1034,6 @@ func TestGateRequestLocatorCarriesArbitraryBriefingNameThroughRecordValidateAndE
 	if code := invoke("gate", "validate", "task", "--workflow-dir", root); code != 0 || !strings.Contains(out.String(), "state=closed") {
 		t.Fatalf("validate arbitrary locator exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
-	if code := invoke("gate", "eligibility", "task", "--workflow-dir", root); code != 0 || !strings.Contains(out.String(), "eligible=true") {
-		t.Fatalf("eligibility arbitrary locator exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
-	}
 	if code := invoke("gate", "consume", "task", "--workflow-dir", root); code != 0 ||
 		!strings.Contains(out.String(), "consumed=false") || !strings.Contains(out.String(), "target-stage=done") ||
 		!strings.Contains(out.String(), "route=approved-awaiting-merge") {
@@ -1089,11 +1093,6 @@ func TestGatePreparedBriefingLocatorLifecycleAndRefusals(t *testing.T) {
 			"gate", "validate", "task", "--workflow-dir", fixture.workflow,
 		); code != 0 || !strings.Contains(out, "state=closed") {
 			t.Fatalf("validate prepared gate exit=%d stdout=%q stderr=%q", code, out, errOut)
-		}
-		if code, out, errOut := invoke(t, fixture.workflow,
-			"gate", "eligibility", "task", "--workflow-dir", fixture.workflow,
-		); code != 0 || !strings.Contains(out, "condition=approved-pending") || !strings.Contains(out, "eligible=true") {
-			t.Fatalf("eligibility prepared gate exit=%d stdout=%q stderr=%q", code, out, errOut)
 		}
 		if code, out, errOut := invoke(t, fixture.workflow,
 			"gate", "consume", "task", "--workflow-dir", fixture.workflow,
@@ -1176,7 +1175,7 @@ func TestGatePreparedBriefingLocatorLifecycleAndRefusals(t *testing.T) {
 				t.Fatal(err)
 			}
 			tc.mutate(t, fixture)
-			for _, command := range []string{"eligibility", "consume"} {
+			for _, command := range []string{"consume"} {
 				code, out, errOut := invoke(t, fixture.workflow,
 					"gate", command, "task", "--workflow-dir", fixture.workflow)
 				output := out + errOut
