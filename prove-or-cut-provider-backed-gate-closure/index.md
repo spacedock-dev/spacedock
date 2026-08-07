@@ -1,6 +1,6 @@
 ---
 title: Prove or cut provider-backed gate closure before stable v1
-status: ideation
+status: implementation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: provider evidence exists in pilot state, but the stable surface lacks one pinned exact-candidate end-to-end proof while the chat journey is the primary value path."
 started: 2026-08-03T23:54:07Z
 completed:
@@ -67,7 +67,7 @@ gates:
                 reason: The clean-cut branch delivers one stable closure path. Three ideation items are done, the provider path lacks exact-candidate proof, and the design preserves the chat transaction without new machinery.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if one exact Spacedock
