@@ -263,3 +263,26 @@ parser, or state.
 ### Summary
 
 The FO now aborts an owned code-worktree rebase conflict and mechanically returns an opaque same-stage package to the recorded live worker or the existing fresh-dispatch path, never to a Git author. A real Codex worker wrote and committed the marker on the pre-existing registered branch while all authority bytes remained unchanged, and the offline arm proved the fresh envelope preserves the same tuple.
+
+## Review-finding disposition
+
+- Finding: the live and fresh fixture arms seed the expected owner tuple with literals instead of deriving it from an initial stamped dispatch.
+- Released user and normal workflow: an FO handling a supported owned moving-target code-worktree conflict must route reconciliation to the workflow owner of the existing registered checkout.
+- Observable harm: the tests pass when the FO never establishes that owner; a wrong, newly invented, or absent owner tuple can therefore ship behind green live evidence.
+- Authority: `value-ac[AC-1]` requires the conflict to reach the workflow owner of the existing registered checkout, and AC-2 requires both routes to preserve the tuple produced by the initial stamped dispatch.
+- Trigger evidence: `TestLiveCodexOwnedConflictReturnsToRegisteredWorker` manually creates the checkout and tells Codex the literal entity/stage/branch/worktree tuple; `assertConflictOwnerFreshEnvelope` writes the same literals into scope notes and checks that they reappear.
+- Proposed classification: Material evidence defect, task-owned. The exact failing boundary is tuple provenance in AC-1 and AC-2; the existing runtime marker, branch, author, authority-byte, and rebase-abort checks remain useful after that boundary is repaired.
+- Proposed disposition: fix by producing and recording the tuple through the initial stamped dispatch, then drive both the addressable follow-up and no-handle fresh fallback from that recorded result; rerun focused, full, race, and live evidence at the new exact head.
+
+## Stage Report: validation
+
+- FAILED: Verify the real same-stage owner handoff and ordinary fresh fallback at exact head.
+  Exact-head live Codex passed in 188.32s, but both arms use fixture-authored tuple literals; removing stamped-owner derivation does not make them fail, so AC-1 and AC-2 lack valid provenance evidence.
+- DONE: Audit that the 3-file surface adds no grammar, state, parser, resolver, or conflict-resolution action.
+  Commit `9b0d30f13` changes only two FO reference files and one live test (+164/-3); no command, stored state, parser, resolver, or Git conflict-resolution implementation changed, and `git diff --check` passed.
+- DONE: Run focused, full, race, and applicable live evidence; classify every failure and any 824 overlap.
+  Focused suites passed; full and race failed only on two pre-existing absent shared-state manifests; the live Codex lane passed; task 824 has no exact file or semantic overlap, only package adjacency in `internal/ensigncycle`.
+
+### Summary
+
+Validation recommends REJECTED at exact head `9b0d30f13`. The contract surface is narrow and authority-clean, and all candidate behavior exercised successfully, but the sole required owner-provenance proof is self-seeded and can pass without an initial stamped dispatch; this Material evidence defect blocks AC-1 and AC-2 while AC-3 remains satisfied.
