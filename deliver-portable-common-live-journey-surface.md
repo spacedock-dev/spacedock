@@ -1999,3 +1999,24 @@ Cycle 24 PASSED independently at exact pushed candidate `5db8cec3e17b128fa07d3fc
 ### Summary
 
 Cycle 25 REJECTED exact candidate `546bc5220a3ddac07e14f28d820de538575abbdc`. The correction mechanics, justified envelope variance, offline full suite, and race suite are green, but fresh exact-head Codex evidence proves the target-scoped TODO surface is materially incomplete until `gate-guardrail` also binds Codex to existing owner `3zzpdw704df1g8pg1x9thzmw`.
+
+## Stage Report: implementation (cycle 25 — Codex gate truth correction)
+
+- DONE: Bind the reproduced Codex gate-guardrail product gap to its active owner.
+  `TestLiveCommonGateGuardrail` now declares Codex and Pi TODO rows for owner `3zzpdw704df1g8pg1x9thzmw`; no product, fixture, prompt, adapter, launch, desired-registry, workflow, or other journey binding changed.
+- DONE: Add a focused exact target, owner, and count guard before implementation.
+  The new reconciliation assertion requires exactly `[codex/3zzpdw704df1g8pg1x9thzmw, pi/3zzpdw704df1g8pg1x9thzmw]`; before the source edit it failed on the Pi-only row.
+- DONE: Prove the focused guard is falsifiable.
+  Disposable wrong-target, wrong-owner, and duplicate-row mutations each failed with the mismatched actual rows; restoring the exact two rows passed and derived Opus=1, Sonnet=4, Codex=6, Pi=5.
+- DONE: Preserve the correction's exact authorized surface.
+  Candidate `9b20a47ff9960f2c5bd65529183749b9c93e370b` changes only `internal/contractlint/live_registry_reconciliation_test.go` and `internal/ensigncycle/shared_live_runner_test.go` by +5/-1; cumulative base-relative surface is 35 files/+1120/-2018.
+- DONE: Run formatting, focused verification, and repository-wide offline tests.
+  `gofmt -w ./cmd ./internal`, diff checks, focused reconciliation, and live-tag package compilation passed. In clean clone `/tmp/spacedock-cycle25-verify.wu425D/repo`, exact `go test ./...` passed in 208.85s and exact `go test ./... -race` passed in 247.55s.
+- SKIPPED: Run a live/model lane or repair the underlying product behavior.
+  This representation-only correction retains the failing Codex artifact at `/tmp/spacedock-ys-live-546.i0obAd/codex-artifacts/codex-shared-scenarios/gate-guardrail` and spends no additional model capacity.
+- DONE: Publish the immutable candidate without changing workflow state.
+  SSH push succeeded and the remote recarve branch resolves exactly to `9b20a47ff9960f2c5bd65529183749b9c93e370b`; entity frontmatter remains unchanged and no transition was performed.
+
+### Summary
+
+Cycle 25 truthfully represents the reproduced Codex `gate-guardrail` gap beside the existing Pi gap under the same active owner. The two-file candidate is focused-, full-, and race-green in clean isolation, is remote-equal at `9b20a47ff9960f2c5bd65529183749b9c93e370b`, and makes no product or workflow-state change.
