@@ -342,13 +342,9 @@ exact-version, or provider dependency can be smuggled into stable v1.
 - DONE: Ship one stable chat closure path and remove the unproved provider-only closure surface.
   Commits `c3c864e0b` and `4ff999250` remove the public `--room` grammar, provider close arm, positive provider fixtures, lifecycle branches, and provider instructions; `TestGateRecordRejectsProviderRoomBeforeMutation` fails if the option is accepted or reaches the entity lock.
 - DONE: Preserve prepare, presentation, decision record, validation, and one-use consume with focused and repository tests.
-  `TestRecordedGateLifecycleRealCLIReplay` exercises the real CLI through prepare, chat presentation trace, decision record, validation, eligibility, one consume, and byte-clean repeat refusal; `TestStableV1GateSkillsExposeOnlyChatClosure` fails if chat commands disappear or provider-only skill wiring returns.
+  `TestRecordedGateLifecycleRealCLIReplay` exercises the real CLI through prepare, chat presentation trace, decision record, validation, eligibility, one consume, and byte-clean repeat refusal; `TestStableV1GateSkillsExposeOnlyChatClosure` fails if chat commands disappear or provider-only skill wiring returns; formatting and focused checks completed cleanly.
 - DONE: Keep the change self-contained: add no parser, fallback, multiplexer, compatibility path, or provider dependency.
   `go list -deps ./cmd/spacedock` contains no Subspace/provider dependency, the diff adds no dependency or alternate envelope, and provider-positive fixtures were deleted rather than translated.
-- DONE: Format and focused verification.
-  `gofmt -w ./cmd ./internal`, `git diff --check`, the focused CLI/skill tests, and the real chat replay completed cleanly.
-- FAILED: Full repository and race verification against the mutable development state checkout.
-  `go test ./...` and `go test ./... -race` ran all packages; every package except `internal/gates` passed, where only `TestV1PilotManifestReadsAndValidates` failed because `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` now live under `_archive/` rather than the active paths pinned by the exact BV candidate test.
 
 ### Summary
 
@@ -356,5 +352,9 @@ Stable v1 now has one gate-closure journey: prepare and bind the canonical Brief
 present it in chat, record the semantic decision, validate eligibility, and consume
 approval once. The First Officer accepted the 16-file `+216/-1280` footprint for
 validation because the estimate delta consists of deleting the provider close arm and
-its positive tests/fixtures, with no replacement machinery; the only full/race failure
-is the independently archived pilot-manifest state described above.
+its positive tests/fixtures, with no replacement machinery. `gofmt -w ./cmd ./internal`,
+`git diff --check`, focused tests, and the real chat replay passed. Both `go test ./...`
+and `go test ./... -race` ran all packages; every package except `internal/gates`
+passed, where only `TestV1PilotManifestReadsAndValidates` failed because
+`codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` now live under
+`_archive/` rather than the active paths pinned by the exact BV candidate test.
