@@ -8,7 +8,7 @@ verdict:
 score: "0.85"
 worktree: .worktrees/spacedock-ensign-prove-or-cut-provider-backed-gate-closure
 issue:
-pr:
+pr: "#632"
 sprint: durable-decisions
 id: a732sahay8wzgqrd2yr0xxr7
 gates:
@@ -116,6 +116,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
+mod-block: merge:pr-merge
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if one exact Spacedock
