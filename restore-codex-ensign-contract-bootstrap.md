@@ -8,8 +8,24 @@ verdict:
 score: 0.95
 worktree:
 issue:
-sprint: durable-decisions
+sprint: test-behavior-completeness
 id: nvz2ym82ydfn07jp04yfxg9r
+gates:
+    version: 1
+    records:
+        - id: gate:nvz2ym82ydfn07jp04yfxg9r:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:nvz2ym82ydfn07jp04yfxg9r-backlog-1
+              briefing:
+                id: briefing:nvz2ym82ydfn07jp04yfxg9r:backlog:attempt-1:revision-1
+                digest: sha256:1bd6b055d6ff099786e2ed9dda6a9e4d74215a7e819a7994db71632af9f3db9e
+                request-digest: sha256:2cb0362a63ad80bad420e625983ce003db17ec09ecfd5f0026590587b5be25d8
+                room-ref: ./restore-codex-ensign-contract-bootstrap/review/backlog/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-07T05:03:19.891718Z"
+                reason: Captain will dispatch NV separately outside the durable-decisions sprint.
 ---
 
 ## Outcome

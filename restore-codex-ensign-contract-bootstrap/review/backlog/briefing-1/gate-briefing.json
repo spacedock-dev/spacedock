@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nvz2ym82ydfn07jp04yfxg9r:backlog:attempt-1:revision-1",
+  "question": "Approve NV for ideation now?",
+  "artifacts": [
+    {
+      "id": "artifact:nvz2ym82ydfn07jp04yfxg9r:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/93fa64a890d3bacfc9b6ab64b9bdac7e8ace6818/restore-codex-ensign-contract-bootstrap.md",
+      "rev": "sha256:1d59d9c4eeb29c9424a8cdf405af80d329193d37e1783af0cd8e62bfdd7f3154",
+      "mediaType": "text/markdown",
+      "summary": "Guarantee that every fresh Codex ensign loads the shared contract before assignment work, without changing fresh-context or pointer-only transport."
+    }
+  ]
+}
