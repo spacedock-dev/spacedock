@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:a732sahay8wzgqrd2yr0xxr7:validation:attempt-3:revision-1",
+  "question": "Approve A7 at a2286c249 for delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:a732sahay8wzgqrd2yr0xxr7:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/71e4f919c38bbacbfc282a0bdca50ab20ddb9997/prove-or-cut-provider-backed-gate-closure/index.md",
+      "rev": "sha256:6c73b8edf73033e902c759e37de6035587056acd0147b07ac84f318054b588f8",
+      "mediaType": "text/markdown",
+      "summary": "Final validation passes all A7 criteria. Stable v1 keeps chat and Subspace presentation, uses one semantic recorder, and removes room-backed Result and inventory ingestion."
+    }
+  ]
+}
