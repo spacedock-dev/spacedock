@@ -1,6 +1,6 @@
 ---
 title: Remove the standalone gate eligibility ceremony
-status: validation
+status: done
 source: "Captain simplification review, 2026-08-03: eligibility is a necessary atomic safety predicate but an unnecessary operator preflight and readiness vocabulary."
 score: 0.9
 sprint: durable-decisions
@@ -87,11 +87,14 @@ gates:
                 reason: Captain sprint conn authorizes approval. Exact head 698867ba preserves current-main scheduler and First Officer behavior, removes the public eligibility ceremony, passes all four acceptance criteria and both detached authority mutants, and has a clean merge-tree. PR CI remains required.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-03T23:33:06Z
 worktree: .worktrees/spacedock-ensign-remove-standalone-gate-eligibility
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:631
+verdict: passed
+completed: 2026-08-07T02:18:17Z
+archived: 2026-08-07T02:18:17Z
 ---
 
 ## Outcome
