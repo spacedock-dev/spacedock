@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:824ecawn5jttbykcgx82nbf4:backlog:attempt-1:revision-1",
+  "question": "Approve task 824 for ideation now?",
+  "artifacts": [
+    {
+      "id": "artifact:824ecawn5jttbykcgx82nbf4:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5ea0d4f211f957de2329c4df72c28dcc973a4683/align-claude-break-glass-dispatch-oracle/index.md",
+      "rev": "sha256:6654d7b498774c7d7f9dee5df558741a7c83ba265658db330ed4da300beb8a2e",
+      "mediaType": "text/markdown",
+      "summary": "Correct the Claude break-glass contract and live oracle without weakening worker-completion evidence."
+    }
+  ]
+}
