@@ -493,3 +493,19 @@ detached regression control is falsifiable. The candidate still cannot pass beca
 its canonical Behavioral proof section promises the removed room-backed mechanism.
 Delete that stale normative proof and reconcile the few remaining current references;
 do not change the already-correct CLI or recorder cut.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Remove the obsolete room Result and inventory proof requirement from the canonical stable specification.
+  Commits `f3e7d9953` and `a2286c249` remove the Result-validation clause and Behavioral proof item 7, replace the stale presentation-mapping proof, and make `TestStableV1CanonicalContractDoesNotRequireRoomResultProof` fail if those requirements return.
+- DONE: Reconcile remaining normative references with one semantic recorder across chat and Subspace presentation.
+  The roadmap now removes Result association, exact-Result persistence, provider mapping, and pinned provider-closure requirements while preserving chat or Subspace presentation converging on `gate record --decision`.
+- DONE: Run focused, full, race, and detached evidence without changing CLI or recorder code.
+  Focused contract/skill/CLI tests and the real chat transaction pass; the detached chat-only mutant fails at channel convergence. Full and race runs fail only `TestV1PilotManifestReadsAndValidates` because `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` now live under `_archive/`; the cycle diff contains only specification, roadmap, and contract-test files.
+
+### Summary
+
+The canonical stable contract no longer requires the provider-specific mechanism that
+the candidate removed. Chat and Subspace remain presentation interfaces over one
+semantic recorder, with the unchanged stale pilot-manifest paths as the only full/race
+failure and no CLI, recorder, authority, skill, or provider-code change in this cycle.
