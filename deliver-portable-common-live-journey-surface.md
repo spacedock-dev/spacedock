@@ -70,6 +70,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:ys7ncwh9kr8w5h9hdkz5apat:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:ys7ncwh9kr8w5h9hdkz5apat-validation-1
+              briefing:
+                id: briefing:ys7ncwh9kr8w5h9hdkz5apat:validation:attempt-1:revision-1
+                digest: sha256:79b0e2cc700dd1afe3e6b836409db4f74abd3839a88bb22aa6c7090e19d65544
+                request-digest: sha256:4a89506a755a5416c2bbc0bcbc73552da76f0c5d2e4c4762d9cb9a07e4072b86
+                room-ref: ./deliver-portable-common-live-journey-surface/review/validation/briefing-1
 started: 2026-08-03T12:19:31Z
 worktree: .worktrees/spacedock-ensign-deliver-portable-common-live-journey-surface-recarve
 ---

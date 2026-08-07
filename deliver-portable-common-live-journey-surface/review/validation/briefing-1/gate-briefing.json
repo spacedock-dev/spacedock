@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ys7ncwh9kr8w5h9hdkz5apat:validation:attempt-1:revision-1",
+  "question": "Approve the independently PASSED portable common live-journey surface for PR delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:ys7ncwh9kr8w5h9hdkz5apat:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/923954081dfac04944112c56654954cbd6c684a3/deliver-portable-common-live-journey-surface.md",
+      "rev": "sha256:68295039eb3339b3ffa92966057927e0e63901619f495293f9bf9effa0319ca2",
+      "mediaType": "text/markdown",
+      "summary": "Candidate 8dfc87c7d is clean, remote-equal, current-main reconciled, structurally green, full/race green on the immutable pilot snapshot, and has no Material or deferred validation risk."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/8dfc87c7d588540e2e656d557237fba7c99477c7/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8425137e444ce104aed51fa4e79df897551d3f374b650207b9d4f191c7613329"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/8dfc87c7d588540e2e656d557237fba7c99477c7/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8907d2b86b8f303ac9cbbc00dcab5d424f4f7d7f5a93ead967daed4aef8b92a0"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ys7ncwh9kr8w5h9hdkz5apat:validation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/8dfc87c7d588540e2e656d557237fba7c99477c7/internal/contractlint/live_registry_reconciliation_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:10a9f8bf9eca926e67873b8f0b0700d1403fec130d2c37e638d1ba19e093f2a7"
+    }
+  ]
+}
