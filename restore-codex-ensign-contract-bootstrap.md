@@ -47,7 +47,7 @@ gates:
 
 ## Outcome
 
-Every fresh Codex stage worker receives the shared ensign operating contract before it executes the dispatch assignment. The worker therefore follows the exact Stage Report protocol and the First Officer never treats a generic `## Stage Report` checkbox section as contract-complete.
+Every fresh Codex stage worker receives the shared ensign operating contract before it executes the dispatch assignment. The worker therefore follows the exact Stage Report protocol, and the First Officer never treats a generic `## Stage Report` checkbox section as contract-complete.
 
 ## Problem
 
@@ -57,28 +57,131 @@ Exact-head run `31045591048` reached this supported path on the first `full-ensi
 
 The archived Codex runtime adapter task (`r09jrf0k6qjv6c1sddhe1sh6`) deliberately removed `Skill(skill="spacedock:ensign")` in June 2026 because that Codex skill surface was then unavailable. That historical choice is not proof that the current host cannot load the skill. The current dispatch file's claim that it already carries the shared discipline is false.
 
+## Spike results
+
+The riskiest question was whether the current fresh Codex child can explicitly load the installed Spacedock ensign skill at the dispatch boundary. The spike used the current Codex CLI (`codex-cli 0.146.0`) and the installed Spacedock plugin checkout. The decisive supported-host-shaped probe was:
+
+```text
+codex exec --ephemeral --skip-git-repo-check \
+  --dangerously-bypass-approvals-and-sandbox \
+  -C /Users/clkao/git/spacedock-research/spacedock-v1 --json \
+  '$spacedock:ensign; then Read /tmp/spacedock-dispatch/codex-bootstrap-spike-spacedock-ensign-nvz2ym82yd-ideation.md and treat its content as your assignment. Bootstrap probe only: do not execute the assignment; after reading, report whether the shared Stage Report protocol was loaded.'
+```
+
+The child recognized `$spacedock:ensign`, read `skills/ensign/SKILL.md`, `ensign-shared-core.md`, and `codex-ensign-runtime.md`, then read the dispatch pointer. Its final answer confirmed that the shared Stage Report protocol was loaded, including the anchored `## Stage Report: {stage_name}` form. The child actually issued `sed` reads against those contract files; this was not only a marker assertion.
+
+The control probe used the current generated pointer-only prompt. It produced no contract load and could not establish the Stage Report protocol. A separate read-only probe also exposed an environment boundary: a child whose workspace did not include `/tmp` could not follow the pointer. The supported live Codex lane already launches with the Spacedock plugin checkout and the required workspace shape, so that sandbox control is a harness concern, not a reason to inline the contract into the dispatch artifact.
+
+The spike selects explicit skill invocation over self-contained contract bytes. The `$spacedock:ensign` marker must be in the outer fresh-child prompt, before the dispatch pointer; putting it inside the file would be too late because the child must load the skill before it reads the assignment. The current host can load the skill, so duplicating the shared core into every dispatch file would add drift and prompt size without solving a demonstrated problem.
+
 ## Boundary
 
 This task owns Codex fresh-worker contract bootstrap across the dispatch builder, Codex runtime binding, ensign entry point, and their behavioral tests. It does not change ys's live oracle, weaken Stage Report validation, restore parent-turn inheritance, reconstruct assignment payload in the First Officer, or absorb `self-contained-ensign-dispatch` (`kd7877nnbd19d528xnpwwaj4`), whose boundary explicitly excludes prompt/bootstrap changes. Preserve `fork_turns: "none"`, helper-prompt forwarding, pointer-only assignment transport, and Claude/Pi behavior.
 
+The sibling `self-contained-ensign-dispatch` work may change how stage/context bytes are represented in the generated artifact. This task must re-anchor its small Codex prompt change on that resulting builder rather than cherry-pick stale hunks or take ownership of the sibling's artifact-payload, launcher-pinning, or assignment-transport work. The Codex bootstrap remains a fresh-worker contract concern even if the sibling later makes the assignment file more self-contained.
+
 ## Acceptance criteria
 
-**AC-1 (VALUE) — A fresh Codex ensign follows the shared Stage Report protocol.** A real fresh Codex stage worker emits an anchored `## Stage Report: {stage}` with DONE/SKIPPED/FAILED accounting, `### Summary`, and no checkbox bullets.
+**AC-1 (VALUE) — A fresh Codex ensign follows the shared Stage Report protocol.** A real fresh Codex stage worker emits an anchored `## Stage Report: {stage}` with DONE/SKIPPED/FAILED accounting, `### Summary`, and no checkbox bullets. The independent baseline is the exact-head run `31045591048`, which produced zero contract-compliant fresh Codex reports in the first `full-ensign-cycle` attempt and was archived only after generic checkbox reports were accepted. The target fixed result is one passing clean candidate in that common journey, while its generic no-colon checkbox negative remains rejected.
 
-Verified by: the Codex `full-ensign-cycle` common live journey passes from a clean exact candidate; a negative fixture with the generic no-colon checkbox shape still fails.
+Verified by: the Codex `full-ensign-cycle` common live journey from a clean exact candidate; an offline report parser/fixture that presents the generic `## Stage Report` checkbox shape; and the existing oracle assertion that requires the anchored stage heading, accounting, and summary.
 
-**AC-2 — The bootstrap is executable, not a false prose claim.** The emitted Codex prompt/file has one current-host mechanism that actually loads or carries `ensign-shared-core.md` before assignment execution. A first implementation spike must exercise the current fresh-child skill surface before choosing skill invocation versus self-contained contract bytes.
+**AC-2 — The bootstrap is executable, not a false prose claim.** The emitted Codex fresh prompt begins exactly with the explicit current-host skill invocation `$spacedock:ensign; then Read ` followed by the generated pointer. The generated file says that the outer prompt supplies the shared contract instead of claiming that the file itself contains it. The skill load happens before assignment execution, and the implementation does not inline a second copy of `ensign-shared-core.md`.
 
-Verified by: a fixture-backed dispatch-to-child probe fails when the bootstrap edge is removed even if the generated file retains the sentence that it "contains the shared ensign discipline."
+Verified by: a fixture-backed dispatch-to-child probe that reads the real ensign contract only when the fixed prompt edge is present; a removal mutation that deletes `$spacedock:ensign` while retaining the old false prose and must fail; and the completed current-host fresh-child spike recorded above.
 
-**AC-3 — Fresh-context and prompt ownership remain intact.** Codex spawn still uses `fork_turns: "none"`; the First Officer forwards the helper-emitted prompt byte-for-byte; stage/entity/checklist payload remains in the dispatch artifact rather than being reconstructed by the runtime adapter.
+**AC-3 — Fresh-context and prompt ownership remain intact.** Codex spawn still uses `fork_turns: "none"`; the First Officer forwards the helper-emitted prompt byte-for-byte; and stage/entity/checklist payload remains in the dispatch artifact rather than being reconstructed by the runtime adapter. The fixed bootstrap applies only to a fresh worker. A reuse/advance pointer remains the existing short prompt and does not invoke the skill again.
 
-Verified by: the existing exact spawn-map and pointer-only relational tests plus a removal mutation for the new fixed bootstrap.
+Verified by: the existing exact spawn-map, Codex adapter, pointer-identity, and advance-prompt-size tests; a new assertion that the fresh prompt has the fixed prefix while the advance prompt does not; and a removal mutation for the bootstrap edge.
 
-**AC-4 — Other hosts do not regress.** Claude and Pi retain their supported bootstrap and completion-signal behavior.
+**AC-4 — Other hosts do not regress.** Claude retains `Skill(skill="spacedock:ensign"); then Read ...`, Pi retains its supported pointer behavior, and all hosts retain their existing completion-signal and worktree rules. No First Officer validation rule or live oracle is weakened.
 
-Verified by: focused cross-host dispatch tests, full/race gates, and the live lanes required by the final changed-path set.
+Verified by: focused cross-host dispatch tests, the full and race gates, and the live lanes required by the final changed-path set. The Codex live lane uses the existing `spacedock codex --plugin-dir <checkout>` setup so the skill invocation is exercised in the same plugin boundary that production dispatch uses.
+
+## Proposed approach
+
+1. Change only the Codex branch of the fresh pointer prompt in `internal/dispatch/build.go` to emit:
+
+   ```text
+   $spacedock:ensign; then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.
+   ```
+
+   Keep the helper-emitted prompt as the value forwarded by `codex_v2_adapter.go`, keep `fork_turns: "none"`, and do not add assignment fields to the runtime adapter. The fixed prefix is bootstrap metadata, not a reconstruction of the assignment.
+
+2. Replace the Codex artifact's false first-action prose with a truthful boundary statement: the outer prompt invokes `$spacedock:ensign`; the skill supplies the shared operating contract; this file supplies the stage-specific assignment. Continue to prohibit Claude `Skill(...)` and `SendMessage` syntax in the Codex artifact.
+
+3. Make the shared contract and Codex runtime reference describe both fresh and reuse paths. The dispatch bootstrap section should show Claude's `Skill(skill="spacedock:ensign"); then Read ...` and Codex's `$spacedock:ensign; then Read ...` forms, and should state that the Codex marker belongs in the outer prompt. The Codex runtime reference should state that fresh prompts load the skill before the pointer and later stage advances use the already-bound worker.
+
+4. Add a small dispatch-boundary fixture. Build a real Codex dispatch from a fixture request, pass the resulting prompt and artifact to a child probe, load the real shared core only across the explicit bootstrap edge, and require a compliant stage report. Include two negative mutations: remove the bootstrap edge while retaining the old false sentence, and replace the anchored report with the generic checkbox shape. Keep the existing exact prompt, isolation, and cross-host fixtures as controls.
+
+5. On the branch that owns the common live journey, remove only the Codex `full-ensign-cycle` durable-journey TODO/defect quarantine once the clean live run passes. Do not create a second journey or alter the shared oracle. Capture the child transcript/report, entity transition, and terminal archive evidence required by the runtime registry.
+
+## Mechanism choices and alternatives
+
+**Explicit Codex skill invocation — selected.** Value: it uses the current host's progressive-disclosure skill surface to load one authoritative shared core before the fresh child reads the pointer. Simple alternative: keep the pointer-only prompt and rely on the artifact's prose claim. That alternative is the exact failing incident and cannot execute a contract. More elaborate alternative: inline the shared core into every dispatch file. The spike showed the installed skill loads, so inline bytes would duplicate a versioned contract, increase artifact size, and create drift between Claude/Pi/Codex surfaces.
+
+**Truthful artifact boundary — selected.** Value: it makes a missing bootstrap visible and prevents a future reader or model from treating assignment context as the shared protocol. Simple alternative: leave the existing sentence unchanged while fixing only the outer prompt. That would preserve a false diagnostic surface and would let a bootstrap-removal mutation pass if it inspected only the file. The first-action text must therefore identify the outer prompt as the contract edge.
+
+**Fresh-only bootstrap prefix — selected.** Value: it preserves the fresh-context guarantee while keeping reuse prompts small and stable. Simple alternative: prepend `$spacedock:ensign` to every stage advance. That would reload a skill unnecessarily, alter the measured advance prompt, and blur the distinction between fresh worker initialization and same-worker stage transition. The existing advance prompt remains unchanged.
+
+**Dispatch-boundary behavioral fixture plus live journey — selected.** Value: the fixture catches prompt/artifact wiring regressions deterministically, and the live journey proves that a real fresh Codex child follows the loaded contract through First Officer validation and terminalization. Simple alternative: assert that the generated string contains `$spacedock:ensign`. That would not prove skill loading or report behavior, so it is insufficient as the only test.
+
+## Semantic scope
+
+- Command surface: no new CLI command, flag, state field, or entity schema. `dispatch build` changes only the Codex fresh prompt prefix.
+- Prompt grammar: Codex fresh output gains the fixed `$spacedock:ensign; then Read ` prefix. Claude's prompt, Pi's prompt, and the existing advance prompt remain stable.
+- Transport and ownership: the helper still owns the generated prompt; the First Officer still forwards it; the dispatch artifact still owns stage/entity/checklist payload; the Codex runtime adapter still maps it to a named spawn with `fork_turns: "none"`.
+- Runtime behavior: a fresh Codex child loads `skills/ensign/references/ensign-shared-core.md` through the installed Spacedock plugin before reading the assignment. A reused worker continues from the already-loaded contract.
+- Validation: the Stage Report parser, live oracle, report-repair gate, and archive rules are unchanged. Generic checkbox reports remain invalid.
+- Host parity: Claude and Pi receive no new Codex marker and keep their current bootstrap/completion behavior.
+
+## Expected surface and estimate
+
+The expected implementation is approximately 6–9 files and 120–220 changed lines, excluding generated dispatch artifacts and live transcript output. A two-times increase requires rechecking scope before proceeding.
+
+Expected production/contract surface:
+
+- `internal/dispatch/build.go`: one host-specific fresh-pointer branch and truthful Codex first-action text, approximately 15–30 lines.
+- `internal/dispatch/build_codex_host_test.go` and `internal/dispatch/build_json_ergonomics_test.go`: replace the old no-`Skill(...)` expectation with the exact Codex `$spacedock:ensign` prefix while retaining Claude-syntax and completion-signal negatives.
+- `internal/dispatch/codex_bootstrap_test.go` (or the equivalent existing dispatch-boundary test file): the fixture-backed child probe and bootstrap/report removal mutations, approximately 80–150 test lines.
+- `skills/ensign/references/ensign-shared-core.md`: document the host-specific fresh bootstrap forms, approximately 10–20 lines.
+- `skills/ensign/references/codex-ensign-runtime.md`: document the fresh-versus-advance boundary, approximately 5–10 lines.
+- The existing common-journey files on the live-journey branch, likely `internal/ensigncycle/shared_scenarios_test.go` and its focused unit test: clear only the Codex `full-ensign-cycle` TODO after evidence is available. Update the runtime registry only if that branch's existing entry requires an evidence pointer; do not expand the registry for this task.
+
+No changes are expected in `cmd/spacedock/`, `internal/dispatch/codex_v2_adapter.go`, the First Officer's assignment reconstruction, the Stage Report oracle, or the sibling task's launcher/artifact payload work. If the sibling lands first and moves a helper, preserve these semantics and re-anchor the test at its new call site.
+
+## Required documentation diff
+
+This is a user-visible host integration behavior, so the implementation must update the runtime support documentation. The intended `docs/runtime-support.md` change is:
+
+```diff
+- Codex fresh dispatch is always named, so `host=codex` rejects `bare_mode`.
++ Codex fresh dispatch is always named, so `host=codex` rejects `bare_mode`. Its
++ fresh prompt begins `$spacedock:ensign; then Read ...`, which loads the
++ installed Spacedock ensign skill before the child reads the dispatch pointer.
++ Reuse/advance prompts do not repeat this prefix because they target the worker
++ that already loaded the shared contract.
+```
+
+The same boundary should be reflected in `docs/site/contributing/adding-a-runtime.md` or the currently canonical runtime-host guide if that guide owns the duplicated statement. If the live-run instructions are changed, `docs/runtime-live-ci.md` should say that `spacedock codex --plugin-dir <checkout>` supplies the plugin surface used by the fresh prompt. The documentation change must not promise that `/tmp` is readable in arbitrary sandboxed sessions; it describes the supported launcher/live-lane boundary.
 
 ## Test plan
 
-Start with the current-host spike required by AC-2. Add the smallest failing offline behavioral fixture at the dispatch/bootstrap boundary, including false-claim and generic-report negatives. Preserve the existing Codex isolation and prompt-identity controls. Then run focused dispatch/contract/ensigncycle tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and the changed-path-required live lanes.
+1. Re-run the focused dispatch tests after the prompt change, including exact Codex prefix, no Claude syntax in Codex artifacts, prompt identity, named spawn, `fork_turns: "none"`, and unchanged advance size.
+2. Run the new fixture with the fixed bootstrap, then run both removal mutations. The first must produce a compliant anchored report; each negative must fail independently.
+3. Run the shared `codex/full-ensign-cycle` live lane from a clean exact candidate with the supported plugin checkout. Preserve durable evidence for skill load, compliant report, validation, state transition, and archive.
+4. Run focused ensign-contract and cross-host tests, then `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
+5. Review the final diff for unchanged frontmatter, unchanged First Officer/oracle semantics, no sibling-task absorption, and the required runtime documentation diff. Commit only this entity path in the state checkout and push `origin spacedock-state/dev`.
+
+## Stage Report: ideation
+
+- DONE: Define an executable Codex bootstrap approach and exercise its riskiest fresh-child path.
+  Evidence: the supported Codex fresh-child probe loaded `ensign-shared-core.md` after receiving `$spacedock:ensign; then Read ...`, and the spike result selects that executable edge over duplicated contract bytes.
+- DONE: Make every acceptance criterion independently checkable while preserving host and transport boundaries.
+  Evidence: AC-1 through AC-4 each name an independent live, fixture, mutation, or relational check; the scope preserves `fork_turns: "none"`, byte-for-byte prompt forwarding, pointer-owned assignment payload, Claude/Pi behavior, and the existing oracle.
+- DONE: Declare expected surface, estimate, semantic scope, and any required documentation diff.
+  Evidence: the expected files, 6–9-file/120–220-line estimate, command/prompt/runtime/validation scope, sibling-task boundary, and before/after runtime-support documentation diff are recorded above.
+
+### Summary
+
+The current Codex host can load the installed Spacedock ensign skill at the fresh-dispatch boundary. Implement the small outer-prompt prefix, make the artifact wording truthful, add the dispatch-to-child negative fixture, and prove the result with the existing common live journey; do not inline the shared contract or change First Officer validation.
