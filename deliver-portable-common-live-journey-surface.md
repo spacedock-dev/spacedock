@@ -1973,3 +1973,28 @@ Cycle 24 PASSED independently at exact pushed candidate `5db8cec3e17b128fa07d3fc
 - Mandatory Opus `recorded-gate-lifecycle` remains a reproduced product nonpass owned by active task `prove-or-cut-provider-backed-gate-closure` (`a732sahay8wzgqrd2yr0xxr7`). Its PR #632 is not landed or integrated. Per the Commander completion rule, only target `claude-opus` on `recorded-gate-lifecycle` is now bound to `TODO(a732sahay8wzgqrd2yr0xxr7)`; the prior fourteen bindings are byte-unchanged and remain non-green. Reconciliation derives Sonnet=4, Opus=1, Codex=5, Pi=5, and an exact Opus selector proves the new cell skips rather than passes.
 - The clean pushed and remote-equal final validation candidate is `546bc5220a3ddac07e14f28d820de538575abbdc`, cumulatively 35 files/+1116/-2018 (net -902) from exact base `8b5af99baa5c37fe7c969a904819041688420e22`. It adds no product behavior. Focused discoverability, auto-continue assertions, reconciliation, live-tag compilation, formatting, and diff checks pass.
 - All model evidence before `546bc5220` is retained diagnostic evidence only. One independent validation of this combined final head must pass before restarting exact-head Pi, Sonnet 5/high, and Codex Luna/max. Hosted CI and this task's PR remain prohibited until those local dispositions exist.
+
+## Stage Report: validation (cycle 25 — final combined head)
+
+- DONE: Verify immutable candidate provenance and the cumulative surface.
+  Clean isolated HEAD and remote branch are exactly `546bc5220a3ddac07e14f28d820de538575abbdc`; merge base is exactly `8b5af99baa5c37fe7c969a904819041688420e22`, and the rejected `3ee17e6f` branch was untouched.
+- DONE: Reconcile source, registry, fixtures, workflow selectors, and architecture.
+  Source has exactly sixteen annotated `TestLiveCommon…` declarations and the workflow has exactly three `'^TestLiveCommon' -failfast` selectors; no product behavior or rejected table/switch/oracle architecture was reintroduced.
+- DONE: Revalidate the authored-scenario and commissioned-fixture corrections causally.
+  The AC assertion uses the exact built, setup-populated `Scenario`, and single-root auto-continue is behaviorally discoverable; disposable controls reverting either correction failed for the intended empty-path and undiscoverable-workflow reasons.
+- DONE: Reconcile declared target gaps against source.
+  Offline reconciliation derives Sonnet=4, Opus=1, Codex=5, Pi=5; Opus recorded-gate lifecycle is target-bound to `a732sahay8wzgqrd2yr0xxr7`, and its predecessor bindings otherwise remain unchanged.
+- DONE: Classify the approved-envelope variance rather than inheriting it silently.
+  Actual surface is 35 files/+1116/-2018, net -902, versus approved 34/+1083/-1883: +1 touched file, +33 additions, and 135 further deletions. The +33 is +20 for the AC closure/regression and +13 in existing `auto_continue_fixtures_test.go`, the 35th path, for the commissioning marker plus behavioral `DiscoverWorkflowDir` regression; this test-only variance is justified.
+- DONE: Run required offline verification in an uncontaminated checkout.
+  Formatting, diff checks, focused regressions, live-tag compilation, and release guards passed; exact `go test ./...` passed in 141.79s and exact `go test ./... -race` passed in 169.32s.
+- FAILED: Establish truthful final runtime dispositions for every runnable common cell.
+  Fresh exact-head Codex evidence failed runnable `TestLiveCommonGateGuardrail` after 68.22s: `gate prepare` rejected the uncommitted harness sink, leaving zero prepared requests, while source marks this journey TODO only for Pi.
+- FAILED: Approve the final combined head.
+  Material: Codex `gate-guardrail` is known non-green but represented runnable. REJECTED pending a narrow `liveTODO("codex", "3zzpdw704df1g8pg1x9thzmw")` correction; owner `3zzpdw704df1g8pg1x9thzmw` is active in validation.
+- DONE: Preserve artifacts and validation authority.
+  Clean clone: `/tmp/spacedock-final-combined.X9OjbE`; causal controls: `/tmp/spacedock-final-controls.YoIbTk`; Codex failure: `/tmp/spacedock-ys-live-546.i0obAd/codex-artifacts/codex-shared-scenarios/gate-guardrail`. Validation did not mutate candidate code or frontmatter, transition workflow state, open a PR, run hosted CI, or launch another live/model lane; this append is report persistence only.
+
+### Summary
+
+Cycle 25 REJECTED exact candidate `546bc5220a3ddac07e14f28d820de538575abbdc`. The correction mechanics, justified envelope variance, offline full suite, and race suite are green, but fresh exact-head Codex evidence proves the target-scoped TODO surface is materially incomplete until `gate-guardrail` also binds Codex to existing owner `3zzpdw704df1g8pg1x9thzmw`.
