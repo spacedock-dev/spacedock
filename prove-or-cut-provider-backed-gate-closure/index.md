@@ -85,6 +85,12 @@ gates:
                 at: "2026-08-07T03:04:23.824737Z"
                 decision: revise
                 reason: Captain clarified that A7 owns one semantic recorder, not one presentation interface. Preserve Subspace presentation and semantic decision return through the existing --decision recorder. Remove only --room Result and inventory ingestion.
+            - id: gate-attempt:a732sahay8wzgqrd2yr0xxr7-validation-2
+              briefing:
+                id: briefing:a732sahay8wzgqrd2yr0xxr7:validation:attempt-2:revision-1
+                digest: sha256:7ed4480dfb984b8b79f1131e72ecb19c90348ec5e6de5e3854be7a606cc00555
+                request-digest: sha256:3d0bf891b8233ef222cacbe31099d54d2208ae4b378f6f1649ce527fcb50ec63
+                room-ref: ./review/validation/briefing-2
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if one exact Spacedock

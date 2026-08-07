@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:a732sahay8wzgqrd2yr0xxr7:validation:attempt-2:revision-1",
+  "question": "Revise A7 to remove the obsolete room-Result proof requirement from the canonical specification?",
+  "artifacts": [
+    {
+      "id": "artifact:a732sahay8wzgqrd2yr0xxr7:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/e18dcb6a34cb37a737f796a8779efa001042c0f4/prove-or-cut-provider-backed-gate-closure/index.md",
+      "rev": "sha256:555b6ed70ce2ee7565da412c8f5d373cc09856c90a2aa235cc089bfb9191bc6b",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 1 fixed the presentation boundary. Validation cycle 2 rejects one stale specification clause that still requires the removed room Result and inventory mechanism."
+    }
+  ]
+}
