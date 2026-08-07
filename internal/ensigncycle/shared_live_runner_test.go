@@ -73,7 +73,7 @@ func TestLiveCommonFullEnsignCycle(t *testing.T) {
 
 //spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held
 func TestLiveCommonGateGuardrail(t *testing.T) {
-	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, []liveJourneyTODO{liveTODO("pi", "3zzpdw704df1g8pg1x9thzmw")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, []liveJourneyTODO{liveTODO("codex", "3zzpdw704df1g8pg1x9thzmw"), liveTODO("pi", "3zzpdw704df1g8pg1x9thzmw")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate

@@ -44,6 +44,10 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	if len(desired) != 16 || len(actual) != 16 {
 		t.Fatalf("common live registry/source counts = %d/%d, want 16/16", len(desired), len(actual))
 	}
+	gateTODOs := actual["gate-guardrail"].todos
+	if want := []liveTODORow{{target: "codex", owner: "3zzpdw704df1g8pg1x9thzmw"}, {target: "pi", owner: "3zzpdw704df1g8pg1x9thzmw"}}; len(gateTODOs) != len(want) || gateTODOs[0] != want[0] || gateTODOs[1] != want[1] {
+		t.Fatalf("gate-guardrail TODOs = %#v, want %#v", gateTODOs, want)
+	}
 
 	gapCounts := map[string]int{}
 	for id, want := range desired {
