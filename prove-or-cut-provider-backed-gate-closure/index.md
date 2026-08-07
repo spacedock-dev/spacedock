@@ -91,6 +91,14 @@ gates:
                 digest: sha256:7ed4480dfb984b8b79f1131e72ecb19c90348ec5e6de5e3854be7a606cc00555
                 request-digest: sha256:3d0bf891b8233ef222cacbe31099d54d2208ae4b378f6f1649ce527fcb50ec63
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:a732sahay8wzgqrd2yr0xxr7:validation:2
+                briefing: briefing:a732sahay8wzgqrd2yr0xxr7:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-07T03:42:13.553459Z"
+                decision: revise
+                reason: A7-V2 is material and owned by A7. Remove the obsolete room Result and inventory proof clauses from the canonical stable specification. Keep the one-recorder, multiple-presentation-interface boundary and change no CLI or recorder code.
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if one exact Spacedock
