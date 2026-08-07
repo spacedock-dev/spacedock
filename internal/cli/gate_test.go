@@ -1306,6 +1306,45 @@ func TestGateRecordChatDecisionAndRejectsProvenanceAndOperationInterfaces(t *tes
 	}
 }
 
+func TestGateRecordRejectsProviderRoomBeforeMutation(t *testing.T) {
+	root, entity := semanticDecisionFixture(t)
+	room := filepath.Join(root, "task", "review", "validation", "briefing-1")
+	if err := os.MkdirAll(filepath.Join(room, "provider"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(room, "provider", "result.json"), `{"decision":"approve"}`)
+	beforeEntity, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeRoom, err := os.ReadFile(filepath.Join(room, "provider", "result.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{
+		"gate", "record", "task", "--room", room, "--workflow-dir", root,
+	}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 2 || errOut.String() != "Error: unknown gate flag: --room\n" {
+		t.Fatalf("provider room refusal exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	afterEntity, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterRoom, err := os.ReadFile(filepath.Join(room, "provider", "result.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(beforeEntity, afterEntity) || !bytes.Equal(beforeRoom, afterRoom) {
+		t.Fatal("provider-only option refusal changed entity or room bytes")
+	}
+	if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
+		t.Fatalf("provider-only option refusal reached the entity lock: %v", err)
+	}
+}
+
 func TestGateRecordCLIRejectsIncoherentBriefingAndStageWithoutMutation(t *testing.T) {
 	for _, tc := range []struct {
 		name, currentStage, briefingID, stageFlags, want string
