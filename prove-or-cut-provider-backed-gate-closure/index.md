@@ -57,6 +57,17 @@ gates:
                 digest: sha256:a68f79a61ebc60a3e12631e2d68c4780c492362009b129a35f2c2fdedb56ba56
                 request-digest: sha256:7f9fbea50c61cdd31f64e8a5b4f5007891590723f7606a977e67cb5cc02fa6ec
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:a732sahay8wzgqrd2yr0xxr7:ideation:2
+                briefing: briefing:a732sahay8wzgqrd2yr0xxr7:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-07T01:19:00.836649Z"
+                decision: approve
+                reason: The clean-cut branch delivers one stable closure path. Three ideation items are done, the provider path lacks exact-candidate proof, and the design preserves the chat transaction without new machinery.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Provider-backed closure is conditional v1 scope. Keep it only if one exact Spacedock
