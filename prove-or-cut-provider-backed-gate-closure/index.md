@@ -421,3 +421,20 @@ The candidate is nevertheless not releasable because its skill, specification,
 concepts, roadmap, and test prohibit Subspace presentation rather than only removing
 provider-specific recording. Apply the narrow wording/test correction above and rerun
 focused, full, race, and detached checks; do not restore `--room` or provider evidence.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Preserve Subspace as a permitted gate-presentation channel that returns semantic decision and reason input.
+  Commits `bff542ae7` and `a2ed9d654` require and document chat or Subspace presentation converging on semantic decision/reason input; a detached chat-only skill mutant makes `TestStableV1GateSkillsUseOneRecorderAcrossPresentationChannels` fail.
+- DONE: Keep one standard semantic recorder and keep provider-specific room, Result, and inventory ingestion removed.
+  The focused `TestGateRecordRejectsProviderRoomBeforeMutation` passes, `go list -deps ./cmd/spacedock` names no Subspace/provider dependency, and the correction changes no CLI, recorder, Result, inventory, authority, or dependency code.
+- DONE: Replace the chat-only contract assertion with a channel-neutral test and rerun the required evidence.
+  The channel-neutral contract test and real chat transaction pass; `gofmt -w ./cmd ./internal` and `git diff --check` are clean. Full/race runs still fail the two stale active paths in `TestV1PilotManifestReadsAndValidates`; race also hit `TestCodexProcessActivityResetsQuietBudget` once, whose immediate focused race rerun passed.
+
+### Summary
+
+The correction preserves Subspace as a presentation interface while keeping
+`gate record --decision` as the sole recorder and retaining every provider-ingestion
+deletion. Required focused, live, full, race, and detached evidence was rerun; the
+remaining exact failures are the previously classified archived pilot paths and one
+non-reproducing quiet-budget race timing failure.
