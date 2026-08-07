@@ -2020,3 +2020,22 @@ Cycle 25 REJECTED exact candidate `546bc5220a3ddac07e14f28d820de538575abbdc`. Th
 ### Summary
 
 Cycle 25 truthfully represents the reproduced Codex `gate-guardrail` gap beside the existing Pi gap under the same active owner. The two-file candidate is focused-, full-, and race-green in clean isolation, is remote-equal at `9b20a47ff9960f2c5bd65529183749b9c93e370b`, and makes no product or workflow-state change.
+
+## Stage Report: validation (cycle 26 — merged candidate)
+
+- DONE: independently verify exact candidate 8dfc87c7d588540e2e656d557237fba7c99477c7 against current origin/main and the approved 35-file +1120/-2018 semantic envelope
+  Clean HEAD and remote recarve branch are exactly `8dfc87c7d588540e2e656d557237fba7c99477c7`; current `origin/main` and merge second parent are exactly `e24e8234a0eff20fe1d5efa3bb600eb51811a532`, with an exact 35-file/+1120/-2018 (net -898) semantic diff.
+- DONE: reproduce registry reconciliation, live-tag compile, formatting, full, and race evidence; use SPACEDOCK_STATE_ROOT=/tmp/spacedock-ys-pilot-state.60QPGN for the immutable 31-path pilot manifest and classify the unpinned two-path archival drift separately
+  Reconciliation and live-tag compile passed; `gofmt -l ./cmd ./internal` emitted nothing and `git diff --check` passed. With the pinned state root, all 31 manifest paths validated, exact `go test ./...` passed in 380.58s, and exact `go test ./... -race` passed in 276.06s.
+- DONE: classify the unpinned pilot-state result without contaminating candidate evidence
+  The mutable shared checkout misses only active `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md`; both now exist under `_archive`. This is two-path external archival-location drift from the immutable manifest, not a candidate format or behavior failure.
+- DONE: adversarially check acceptance criteria, current main #631/#632 preservation, the narrow Codex gate-guardrail binding, and that TODO-attribution gaps remain nonblocking follow-up notes under Captain disposition
+  Source/registry/fixture/workflow reconciliation derives Opus=1, Sonnet=4, Codex=6, Pi=5 and requires exact Codex+Pi `gate-guardrail` rows for owner `3zzpdw704df1g8pg1x9thzmw`; sixteen annotated declarations and three exact fail-fast selectors remain. AC authored-scenario and commissioned-fixture regressions pass, and the direct exact-row guard rejects wrong target, owner, order, or cardinality.
+- DONE: preserve merged `origin/main` #631/#632 behavior
+  Main's ceremony collapse, no-eligibility preflight, channel-neutral recorder, no-room-Result contract, recorded lifecycle replay, and collapsed consume trace focused tests pass. Of main's 28 changed paths, only the obsolete `shared_scenarios_test.go` table overlaps the recarve and is intentionally removed; the other 27 remain main-identical.
+- DONE: append an exact neutral validation Stage Report with PASSED or REJECTED recommendation, commit only the entity path, and push spacedock-state/dev; do not mutate candidate code or run paid live lanes
+  PASSED. Material: none. Deferred risk: none. Polish/follow-up under Captain disposition: refresh stale TODO-owner prose and the two archived pilot paths. Candidate code remained clean; no paid live lane, PR mutation, or workflow status transition ran, and this entity path is the sole state-report write.
+
+### Summary
+
+Cycle 26 PASSED exact merged candidate `8dfc87c7d588540e2e656d557237fba7c99477c7`. The merged tree preserves current-main #631/#632 behavior, implements the exact narrow Codex truth binding, matches the approved semantic envelope, and is focused-, full-, race-, and immutable-pilot-green; only explicitly nonblocking documentation attribution and mutable archive-location maintenance remain.
