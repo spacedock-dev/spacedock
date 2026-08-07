@@ -307,3 +307,16 @@ Validation recommends REJECTED at exact head `9b0d30f13`. The contract surface i
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — detached validation / owner tuple provenance; surface 3 files/+164/-3 vs estimate 3–5 files/about +90/-10; AC unchanged
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: Derive the owner tuple from the initial stamped dispatch and drive both the addressable and fresh fallback routes from that recorded result.
+  Commit `7057ad6f7` replaces fixture-authored checkout and identity values with the `--stamp` envelope identity plus its stamped worktree and actual branch; both live reuse and ordinary fresh build consume that tuple.
+- DONE: Prove the repaired test fails if stamped-owner derivation is removed, then rerun focused, full, race, and live evidence at the exact head.
+  Removing `--stamp` made the live test fail in 0.22s because implementation had no registered worktree; restored exact head `7057ad6f7` passed focused packages, `go test ./...`, `go test ./... -race`, and the real Codex handoff in 235.71s.
+- DONE: Keep the repair within D8's approved test boundary with no new grammar, state, parser, resolver, or conflict-resolution action.
+  The cycle changes only `internal/ensigncycle/conflict_owner_handoff_live_test.go` (+83/-19); `gofmt -w ./cmd ./internal` and `git diff --check` passed, and production/contract surfaces remain unchanged.
+
+### Summary
+
+The repaired fixture now establishes ownership through the same initial stamped dispatch that creates the registered checkout, then carries that recorded owner tuple through both supported runtime routes. The exact-head live run proved the existing worker receives the follow-up and writes on the stamped checkout, while the fresh arm preserves the same identity without adding product behavior.
