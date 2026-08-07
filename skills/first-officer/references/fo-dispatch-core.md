@@ -50,6 +50,14 @@ Advancing a completed worker. The gate-presentation spine is in the boot-residen
 
 **Supersede-shutdown.** On fresh dispatch from a `-cycleN` increment or a feedback-rework re-entering the prior stage, invoke `«worker.shutdown»` for the prior cohort BEFORE the new dispatch in a SEPARATE message. The prior cohort is every roster member whose handle decomposes to the same `(slug, stage)` pair as the new dispatch. Issue the adapter's cooperative-shutdown call and drop them from session memory. **Mandatory at the boundary; backstops, if any, are the adapter's.**
 
+## Same-Stage Conflict Owner Handoff
+
+After `«halt.rebase-conflict»` aborts an owned code-worktree rebase, keep the entity in its current stage and route one opaque reconciliation assignment to the recorded owner. Write a scope-notes file that names the entity, current stage, PR, registered branch/worktree, old base/head, moved base, exact conflict paths, and next owner action. The package is transport only: do not parse, classify, or resolve the conflict, and do not mutate entity frontmatter or Git refs while routing it.
+
+If `«addressable-worker»` exposes a matching live worker, require its entity, stage, branch, and worktree to equal the tuple proven by the original stamped dispatch, then run ordinary `«dispatch.build» --advance` for that same stage with the scope-notes file and forward its emitted prompt through the existing reuse-advance handle. Otherwise run an ordinary fresh dispatch for the same recorded stage with the same scope-notes file and send its emitted spawn envelope through `«worker.spawn»`; do not add `--stamp`, because the registered branch/worktree already exists.
+
+The worker identity, stage agent, branch, and worktree are the only routing inputs. The PR author, Git author, and shared Git credential are never owner signals. A missing proven tuple, a cold or unowned checkout, or a split-root state-sync conflict is report-only and does not enter this route. This is a per-entity hold, so unrelated entities may continue after the dispatch.
+
 ## «reuse.model-match»: stamped model matches the next stage's declared model
 
 - **guard:** skip when `next_stage.effective_model` is null; `«worker-identity»` stamps the null case and null-declared stages accept any reused worker.
