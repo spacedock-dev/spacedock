@@ -24,6 +24,17 @@ gates:
                 digest: sha256:57468f2b244c40ece6ed7b5b8ff8ff84e6ad9407b392af8728d373bc078f419c
                 request-digest: sha256:cdfd50d2fd911a26787373b9b3a66a43ec80afc9220a94a9f6ea48c55007b3c7
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:824ecawn5jttbykcgx82nbf4:backlog:1
+                briefing: briefing:824ecawn5jttbykcgx82nbf4:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-07T04:35:21.493364Z"
+                decision: approve
+                reason: The task corrects a proven contract-oracle contradiction, preserves strict worker-completion evidence, and removes repeated unrelated release waivers.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Stable CI must evaluate the supported Claude break-glass behavior instead of rejecting a successful worker because two contracts disagree.
