@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d8qmey415fsb5q9h6q639ngf:ideation:attempt-1:revision-1",
+  "question": "Approve D8 for independent implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:d8qmey415fsb5q9h6q639ngf:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5584fb890f1320e45ba75f48853f223191d914fb/codify-conflict-owner-dispatch-handoff.md",
+      "rev": "sha256:c4a0bb1e9742a4065a6656dd5168d97665d7241a5c63752816770ac9ede9f321",
+      "mediaType": "text/markdown",
+      "summary": "Reuse existing dispatch routes to return an owned code-worktree conflict to its recorded worker without new grammar, state, parser, or resolver."
+    }
+  ]
+}

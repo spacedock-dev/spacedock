@@ -35,6 +35,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:d8qmey415fsb5q9h6q639ngf:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:d8qmey415fsb5q9h6q639ngf-ideation-1
+              briefing:
+                id: briefing:d8qmey415fsb5q9h6q639ngf:ideation:attempt-1:revision-1
+                digest: sha256:6b8aeea5d2d00e05f555a20fe84882387d18c285eed8bdc4a05f531968ee17fa
+                request-digest: sha256:5762bfcf622c60cb58f298da590997df8744593937322a2ca2971a5e6aa2d7cb
+                room-ref: ./codify-conflict-owner-dispatch-handoff/review/ideation/briefing-1
 ---
 
 The First Officer contract names safety behavior for an open-PR moving-target
