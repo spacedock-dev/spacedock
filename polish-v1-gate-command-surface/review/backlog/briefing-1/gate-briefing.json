@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f6cvn0s87ywbs158yy0b5q7k:backlog:attempt-1:revision-1",
+  "question": "Should F6C enter ideation to remove prose-grep assertions introduced by durable-decisions PRs and finish the stable v1 gate surface?",
+  "artifacts": [
+    {
+      "id": "artifact:f6cvn0s87ywbs158yy0b5q7k:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2b71a34b5abe1a40d403fa60a63978cde4eb3402/polish-v1-gate-command-surface/index.md",
+      "rev": "sha256:1e2ccccea8041b344b9efefad620e0ba59ff45bb0b24d5f7ffc8959fc1a2e49b",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE. F6C is the final no-new-behavior cleanup: audit sprint-added command-output tests, replace semantic prose greps with structured or behavioral checks, and retain exact-text assertions only for published human output."
+    }
+  ]
+}

@@ -11,6 +11,18 @@ issue:
 pr:
 sprint: durable-decisions
 id: f6cvn0s87ywbs158yy0b5q7k
+gates:
+    version: 1
+    records:
+        - id: gate:f6cvn0s87ywbs158yy0b5q7k:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:f6cvn0s87ywbs158yy0b5q7k-backlog-1
+              briefing:
+                id: briefing:f6cvn0s87ywbs158yy0b5q7k:backlog:attempt-1:revision-1
+                digest: sha256:2372b3af80ff6dcfbc792369d495bde4f3beb4b74238a334109cb1c72a2e46c9
+                request-digest: sha256:557bd043331c2db7efd24534289d48d21a537bd6cae11efe2db628b7e3f738f6
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Make the stable help, command reference, specification, and First Officer instructions describe the final minimal gate lifecycle after the semantic cuts land. This ticket bundles only small text, usage, and golden-output corrections.
