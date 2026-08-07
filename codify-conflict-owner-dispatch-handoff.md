@@ -303,3 +303,7 @@ The FO now aborts an owned code-worktree rebase conflict and mechanically return
 ### Summary
 
 Validation recommends REJECTED at exact head `9b0d30f13`. The contract surface is narrow and authority-clean, and all candidate behavior exercised successfully, but the sole required owner-provenance proof is self-seeded and can pass without an initial stamped dispatch; this Material evidence defect blocks AC-1 and AC-2 while AC-3 remains satisfied.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — detached validation / owner tuple provenance; surface 3 files/+164/-3 vs estimate 3–5 files/about +90/-10; AC unchanged
