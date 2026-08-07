@@ -197,39 +197,27 @@ func readActualLiveJourneys(t *testing.T, repo string, targets map[string]bool) 
 				t.Fatalf("journey %q builder %q does not own annotated fixture %q (owner %q)", id, journey.builder, fixture, fixtures[fixture])
 			}
 		}
-		assertion := journey.assertion[strings.LastIndex(journey.assertion, ".")+1:]
-		if !functionReaches(journey.exercise, journey.builder, functions, map[string]bool{}) {
-			t.Fatalf("journey %q exercise %q does not reach bound builder %q", id, journey.exercise, journey.builder)
-		}
-		if !functionReaches(journey.exercise, assertion, functions, map[string]bool{}) {
-			t.Fatalf("journey %q exercise %q does not reach bound assertion %q", id, journey.exercise, journey.assertion)
+		if !callsLiveBindings(functions[journey.exercise]) {
+			t.Fatalf("journey %q exercise %q does not directly call its bound builder and assertion", id, journey.exercise)
 		}
 	}
 	return actual, fixtures
 }
 
-func functionReaches(name, target string, functions map[string]*ast.FuncDecl, visiting map[string]bool) bool {
-	if name == target {
-		return true
-	}
-	if visiting[name] || functions[name] == nil {
+func callsLiveBindings(fn *ast.FuncDecl) bool {
+	if fn == nil || len(fn.Type.Params.List) != 5 || len(fn.Type.Params.List[3].Names) != 1 || len(fn.Type.Params.List[4].Names) != 1 {
 		return false
 	}
-	visiting[name] = true
-	found := false
-	ast.Inspect(functions[name].Body, func(node ast.Node) bool {
-		if found {
-			return false
-		}
-		ident, ok := node.(*ast.Ident)
-		if ok && (ident.Name == target || functionReaches(ident.Name, target, functions, visiting)) {
-			found = true
-			return false
+	called := map[string]bool{}
+	ast.Inspect(fn.Body, func(node ast.Node) bool {
+		if call, ok := node.(*ast.CallExpr); ok {
+			if callee, direct := call.Fun.(*ast.Ident); direct {
+				called[callee.Name] = true
+			}
 		}
 		return true
 	})
-	delete(visiting, name)
-	return found
+	return called[fn.Type.Params.List[3].Names[0].Name] && called[fn.Type.Params.List[4].Names[0].Name]
 }
 
 func parseLiveJourneyCall(t *testing.T, fn *ast.FuncDecl, targets map[string]bool) actualLiveJourney {

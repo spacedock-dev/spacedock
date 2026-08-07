@@ -5,45 +5,47 @@ package ensigncycle
 import (
 	"os"
 	"reflect"
-	"runtime"
 	"testing"
 )
 
 type liveJourneyTODO struct{ target, owner string }
-type sharedRuntimeScenario struct {
-	name, oldPythonTest, intent string
-}
-type liveJourneyExercise func(*testing.T, liveDriver, sharedRuntimeScenario)
+type sharedRuntimeScenario struct{ name string }
 
 func liveTODO(target, owner string) liveJourneyTODO {
 	return liveJourneyTODO{target: target, owner: owner}
 }
 
-func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, builder Builder, todos []liveJourneyTODO, exercise liveJourneyExercise, assertion Assertion) {
+func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, builder Builder, todos []liveJourneyTODO, exercise func(*testing.T, liveDriver, sharedRuntimeScenario, Builder, Assertion), assertion Assertion) {
 	t.Helper()
-	if id == "" || fixtureID == "" || exercise == nil || liveFunctionName(builder) == "" || liveFunctionName(assertion) == "" {
+	if id == "" || fixtureID == "" || exercise == nil {
 		t.Fatal("live journey metadata is incomplete")
 	}
+	build, buildCalls := countedLiveFunction(t, builder)
+	assert, assertionCalls := countedLiveFunction(t, assertion)
 	driver, target := liveDriverForRuntime(t)
 	for _, todo := range todos {
 		if todo.target == target {
 			t.Skipf("TODO(%s): %s/%s lacks passing live evidence", todo.owner, target, id)
 		}
 	}
-	exercise(t, driver, sharedRuntimeScenario{name: id})
+	exercise(t, driver, sharedRuntimeScenario{name: id}, build, assert)
+	if *buildCalls == 0 || *assertionCalls == 0 {
+		t.Fatalf("live journey %s executed builder/assertion %d/%d times", id, *buildCalls, *assertionCalls)
+	}
 }
 
-func liveFunctionName(value any) string {
-	rv := reflect.ValueOf(value)
+func countedLiveFunction[Function any](t *testing.T, function Function) (Function, *int) {
+	calls, rv := 0, reflect.ValueOf(function)
 	if !rv.IsValid() || rv.Kind() != reflect.Func || rv.IsNil() {
-		return ""
+		t.Fatal("live journey builder/assertion is not a function")
 	}
-	fn := runtime.FuncForPC(rv.Pointer())
-	if fn == nil {
-		return ""
-	}
-	return fn.Name()
+	return reflect.MakeFunc(rv.Type(), func(args []reflect.Value) []reflect.Value {
+		calls++
+		return rv.Call(args)
+	}).Interface().(Function), &calls
 }
+
+func noLiveGrade(liveResult) {}
 
 func liveDriverForRuntime(t *testing.T) (liveDriver, string) {
 	t.Helper()
@@ -71,12 +73,12 @@ func TestLiveCommonFullEnsignCycle(t *testing.T) {
 
 //spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held
 func TestLiveCommonGateGuardrail(t *testing.T) {
-	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, []liveJourneyTODO{liveTODO("pi", "3zzpdw704df1g8pg1x9thzmw")}, runClaudeGateGuardrailScenario, assertGateHeld)
+	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, []liveJourneyTODO{liveTODO("pi", "3zzpdw704df1g8pg1x9thzmw")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "26nk8qd48zknqnn4kc123sez"), liveTODO("pi", "26nk8qd48zknqnn4kc123sez")}, runDefaultHeadlessGateScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "26nk8qd48zknqnn4kc123sez"), liveTODO("pi", "26nk8qd48zknqnn4kc123sez")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn

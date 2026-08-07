@@ -5,12 +5,10 @@ package ensigncycle
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 )
@@ -45,6 +43,9 @@ func (d piSharedLiveDriver) withStubPATH(dir string) liveDriver {
 }
 func (d piSharedLiveDriver) emitMetrics(*testing.T, sharedRuntimeScenario, liveResult) {}
 func (d piSharedLiveDriver) gradeShallowBootObservation(*testing.T, liveResult)        {}
+func (d piSharedLiveDriver) prepareRecordedGate(*testing.T) (liveDriver, func(liveResult)) {
+	return d, noLiveGrade
+}
 
 func (d piSharedLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, root, prompt string) liveResult {
 	t.Helper()
@@ -78,35 +79,5 @@ func (d piSharedLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, ro
 }
 
 func piObservedCommands(t *testing.T, sessionPath string) []string {
-	t.Helper()
-	var commands []string
-	for lineNo, line := range strings.Split(readFile(t, sessionPath), "\n") {
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		var record struct {
-			Message struct {
-				Content json.RawMessage `json:"content"`
-			} `json:"message"`
-		}
-		if err := json.Unmarshal([]byte(line), &record); err != nil {
-			t.Fatalf("Pi root session %s line %d is not JSON: %v", sessionPath, lineNo+1, err)
-		}
-		var blocks []struct {
-			Type      string `json:"type"`
-			Name      string `json:"name"`
-			Arguments struct {
-				Command string `json:"command"`
-			} `json:"arguments"`
-		}
-		if json.Unmarshal(record.Message.Content, &blocks) != nil {
-			continue
-		}
-		for _, block := range blocks {
-			if block.Type == "toolCall" && (block.Name == "bash" || block.Name == "shell") && block.Arguments.Command != "" {
-				commands = append(commands, block.Arguments.Command)
-			}
-		}
-	}
-	return commands
+	return piTranscriptToolValues(t, sessionPath, "bash", "shell")
 }

@@ -13,9 +13,9 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/livescenario"
 )
 
-func runFullEnsignCycleJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario) {
+func runFullEnsignCycleJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func(*testing.T) string, assert func(*testing.T, string, string) bool) {
 	t.Helper()
-	root := writeRealisticLifecycleFixture(t)
+	root := build(t)
 	result := driver.run(t, scenario, root, "Use $spacedock:first-officer for this whole run. Drive the workflow to completion; you have the conn to resolve gates from each stage report's verdict (auto-approve).")
 	entity, _, found := locateEntity(root, "make-it-work")
 	if !found {
@@ -26,7 +26,7 @@ func runFullEnsignCycleJourney(t *testing.T, driver liveDriver, scenario sharedR
 			t.Fatalf("full ensign cycle entity missing %q; artifacts: %s\n%s", want, result.artifactDir, entity)
 		}
 	}
-	if !someCommitNamesOnly(t, root, "make-it-work") {
+	if !assert(t, root, "make-it-work") {
 		t.Fatalf("full ensign cycle has no path-scoped entity commit; artifacts: %s", result.artifactDir)
 	}
 	driver.emitMetrics(t, scenario, result)
@@ -42,11 +42,11 @@ func writeRealisticLifecycleFixture(t *testing.T) string {
 	return root
 }
 
-func runZeroDiscoveryJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario) {
+func runZeroDiscoveryJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func(*testing.T) string, assert func([]string, string) error) {
 	t.Helper()
-	root := writeZeroDiscoveryFixture(t)
+	root := build(t)
 	result := driver.run(t, scenario, root, "Use $spacedock:first-officer for this whole run.")
-	if sweep := detectBroadSearchCommands(result.commands, root); sweep != nil {
+	if sweep := assert(result.commands, root); sweep != nil {
 		t.Fatalf("zero-discovery broad-searched instead of stopping: %v\nArtifacts: %s", sweep, result.artifactDir)
 	}
 	if got := strings.TrimSpace(git(t, root, "status", "--short")); got != "" {
@@ -77,16 +77,11 @@ type sharedLiveScenarioAdapter struct {
 	t        *testing.T
 	driver   liveDriver
 	scenario sharedRuntimeScenario
-	label    string
 }
 
 func (a sharedLiveScenarioAdapter) Launch(_ context.Context, dir, _ string, runbook string) (string, error) {
-	scenario := a.scenario
-	if a.label != "" {
-		scenario.name = a.label
-	}
-	result := a.driver.run(a.t, scenario, dir, runbook)
-	a.driver.emitMetrics(a.t, scenario, result)
+	result := a.driver.run(a.t, a.scenario, dir, runbook)
+	a.driver.emitMetrics(a.t, a.scenario, result)
 	return result.finalMessage + "\n" + result.stream, nil
 }
 
@@ -106,9 +101,9 @@ func autoContinueFixtureVariants() []autoContinueFixtureVariant {
 	}
 }
 
-func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario) {
+func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func() []autoContinueFixtureVariant, assert func(string, string, string) error) {
 	t.Helper()
-	for _, fixture := range autoContinueFixtureVariants() {
+	for _, fixture := range build() {
 		var stateRoot string
 		var splitRoot bool
 		sc := livescenario.Scenario{
@@ -127,10 +122,12 @@ func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRunt
 				return entity, err
 			},
 			Assert: func(before, after livescenario.EntityState, observed string) error {
-				return assertAutoContinue(before.Body, resolveAutoContinueEndState(stateRoot, splitRoot, after.Body), observed)
+				return assert(before.Body, resolveAutoContinueEndState(stateRoot, splitRoot, after.Body), observed)
 			},
 		}
-		adapter := sharedLiveScenarioAdapter{t: t, driver: driver, scenario: scenario, label: scenario.name + "--" + fixture.id}
+		fixtureScenario := scenario
+		fixtureScenario.name += "--" + fixture.id
+		adapter := sharedLiveScenarioAdapter{t: t, driver: driver, scenario: fixtureScenario}
 		if err := livescenario.Run(context.Background(), t.TempDir(), sc, adapter); err != nil {
 			t.Fatalf("auto-continue fixture %s graded FAIL: %v", fixture.id, err)
 		}
@@ -155,24 +152,19 @@ func resolveAutoContinueEndState(stateRoot string, splitRoot bool, after string)
 }
 
 func autoContinueWorktreeDir(body string) string {
-	for _, line := range strings.Split(body, "\n") {
-		value, found := strings.CutPrefix(line, "worktree:")
-		if !found {
-			continue
-		}
-		value = filepath.Clean(strings.TrimSpace(value))
-		if value == "." || value == ".." || filepath.IsAbs(value) || strings.HasPrefix(value, ".."+string(filepath.Separator)) {
-			return ""
-		}
-		return value
+	value := filepath.Clean(durableField(body, "worktree"))
+	if value == "." || value == ".." || filepath.IsAbs(value) || strings.HasPrefix(value, ".."+string(filepath.Separator)) {
+		return ""
 	}
-	return ""
+	return value
 }
 
-func runACValueReanchorJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario) {
+func runACValueReanchorJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func() livescenario.Scenario, assert func(livescenario.EntityState, livescenario.EntityState, string) error) {
 	t.Helper()
-	spec := authorACReanchorScenario()
-	spec.Assert = assertACReanchorScenario
+	spec := build()
+	spec.Assert = func(before, after livescenario.EntityState, observed string) error {
+		return assert(before, after, observed)
+	}
 	if err := livescenario.Run(context.Background(), t.TempDir(), spec, sharedLiveScenarioAdapter{t: t, driver: driver, scenario: scenario}); err != nil {
 		t.Fatalf("AC value re-anchor durable branch graded FAIL: %v", err)
 	}
@@ -189,7 +181,10 @@ func assertACReanchorScenario(before, after livescenario.EntityState, observed s
 
 func writePiAutoContinueWorkflowNoGit(root string) (stateRoot, entityPath string, err error) {
 	stateRoot = filepath.Join(root, ".spacedock-state")
-	if err := os.WriteFile(filepath.Join(root, "README.md"), []byte(piAutoContinueReadme()), 0o644); err != nil {
+	readme := strings.NewReplacer("---\nentity-type:", "---\ncommissioned-by: spacedock@1\nentity-type:", "id-style: slug\nstages:", "id-style: slug\nstate: .spacedock-state\nstages:").Replace(autoContinueReadme())
+	readme = strings.ReplaceAll(readme, "      worktree: true\n", "")
+	readme = strings.Replace(readme, "# Auto-Continue Fixture", "# Pi Auto-Continue Fixture", 1)
+	if err := os.WriteFile(filepath.Join(root, "README.md"), []byte(readme), 0o644); err != nil {
 		return "", "", err
 	}
 	entityPath = filepath.Join(stateRoot, "auto-continue-task", "index.md")
@@ -200,15 +195,4 @@ func writePiAutoContinueWorkflowNoGit(root string) (stateRoot, entityPath string
 		return "", "", err
 	}
 	return stateRoot, entityPath, nil
-}
-
-func piAutoContinueReadme() string {
-	return "---\ncommissioned-by: spacedock@1\nentity-type: task\nid-style: slug\nstate: .spacedock-state\nstages:\n" +
-		"  defaults:\n    worktree: false\n    concurrency: 1\n  states:\n    - name: backlog\n      initial: true\n" +
-		"    - name: implementation\n    - name: validation\n      fresh: true\n      feedback-to: implementation\n      gate: true\n" +
-		"    - name: done\n      terminal: true\n---\n# Pi Auto-Continue Fixture\n\n" +
-		"### backlog\n\nSeed the task.\n\n- **Outputs:** A seed task.\n\n### implementation\n\nProduce the deliverable.\n\n" +
-		"- **Outputs:** The deliverable plus an implementation stage report.\n\n### validation\n\n" +
-		"Verify the implementation against the acceptance criteria. Append a `## Stage Report: validation` section to the entity with one `- DONE:` item and a PASSED or REJECTED recommendation.\n\n" +
-		"- **Outputs:** A PASSED or REJECTED validation stage report.\n\n### done\n\nTerminal state.\n"
 }

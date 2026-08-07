@@ -55,8 +55,11 @@ func (d codexAsLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScena
 	emitCodexScenarioMetrics(t, scenario, codexScenarioResult{finalMessage: result.finalMessage, jsonl: result.stream, artifactDir: result.artifactDir, duration: result.duration})
 }
 func (d codexAsLiveDriver) gradeShallowBootObservation(*testing.T, liveResult) {}
-func (d codexAsLiveDriver) model() string                                      { return envOr("SPACEDOCK_CODEX_LIVE_MODEL", "codex") }
-func (d codexAsLiveDriver) home() string                                       { return d.runner.codexHome }
+func (d codexAsLiveDriver) prepareRecordedGate(*testing.T) (liveDriver, func(liveResult)) {
+	return d, noLiveGrade
+}
+func (d codexAsLiveDriver) model() string { return envOr("SPACEDOCK_CODEX_LIVE_MODEL", "codex") }
+func (d codexAsLiveDriver) home() string  { return d.runner.codexHome }
 func (d codexAsLiveDriver) withStubPATH(dir string) liveDriver {
 	d.runner = d.runner.withStubPATH(d.t, dir)
 	return d

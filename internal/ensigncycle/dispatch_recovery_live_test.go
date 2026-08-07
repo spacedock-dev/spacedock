@@ -65,11 +65,7 @@ func TestLiveBareReachable(t *testing.T) {
 	workflowRoot := t.TempDir()
 	writeDispatchRecoveryWorkflow(t, workflowRoot)
 
-	scenario := sharedRuntimeScenario{
-		name:          "bare-reachable",
-		oldPythonTest: "n/a (net-new; dispatch-exception-paths-deferred-module)",
-		intent:        "A plain `/spacedock bare` instruction produces bare-shaped Agent() dispatch for the run, without the retired Degraded Mode captain report and without loading spacedock:fo-dispatch-recovery.",
-	}
+	scenario := sharedRuntimeScenario{name: "bare-reachable"}
 	result := runner.run(t, scenario, workflowRoot, bareReachablePrompt())
 	if err := assertBareReachableObservables(result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
@@ -97,11 +93,7 @@ func TestLiveBreakGlassShimRecovery(t *testing.T) {
 	runner.env = withSpacedockShimShellEnv(t, runner.env, shimDir)
 	scenarioRunner := runner.withStubPATH(shimDir)
 
-	scenario := sharedRuntimeScenario{
-		name:          "break-glass-shim",
-		oldPythonTest: "n/a (net-new; dispatch-exception-paths-deferred-module)",
-		intent:        "A failing `spacedock dispatch build` produces a captain-facing report before any Agent() call, loads spacedock:fo-dispatch-recovery, and manually assembles a break-glass-shaped Agent() dispatch.",
-	}
+	scenario := sharedRuntimeScenario{name: "break-glass-shim"}
 	result := scenarioRunner.run(t, scenario, workflowRoot, breakGlassShimPrompt())
 	if err := assertBreakGlassObservables(result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
