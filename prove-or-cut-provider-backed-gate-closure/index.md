@@ -8,7 +8,7 @@ verdict:
 score: "0.85"
 worktree: .worktrees/spacedock-ensign-prove-or-cut-provider-backed-gate-closure
 issue:
-pr: "#632"
+pr: pr-merge:632
 sprint: durable-decisions
 id: a732sahay8wzgqrd2yr0xxr7
 gates:
