@@ -85,6 +85,7 @@ gates:
                 room-ref: ./review/validation/briefing-3
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
+sprint-readiness: required
 ---
 
 ## Outcome
