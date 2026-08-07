@@ -42,3 +42,40 @@ func TestStableV1GateSkillsUseOneRecorderAcrossPresentationChannels(t *testing.T
 		t.Fatal("gate lifecycle no longer exposes the ordinary chat decision sequence")
 	}
 }
+
+func TestStableV1CanonicalContractDoesNotRequireRoomResultProof(t *testing.T) {
+	paths := []string{
+		filepath.Join(repoRoot(t), "docs", "specs", "gate-resolution-frontmatter-contract.md"),
+		filepath.Join(repoRoot(t), "docs", "roadmap", "durable-decisions", "index.md"),
+	}
+	for _, path := range paths {
+		body, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, obsolete := range []string{
+			"before Result validation",
+			"matching presentation entries",
+			"A room Result closes",
+			"Briefing-derived Result association",
+			"provider-backed closure remains",
+			"pinned exact-candidate transaction",
+			"minimal room-only provider proof",
+			"exact Results, and associations",
+			"provider id-mapping",
+		} {
+			if strings.Contains(string(body), obsolete) {
+				t.Errorf("%s still requires removed room-Result proof wording %q", path, obsolete)
+			}
+		}
+	}
+
+	spec, err := os.ReadFile(paths[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(spec), "chat or Subspace") ||
+		!strings.Contains(string(spec), "gate record --decision") {
+		t.Fatal("canonical specification does not preserve multiple presentation interfaces converging on one semantic recorder")
+	}
+}
