@@ -23,6 +23,17 @@ gates:
                 digest: sha256:2372b3af80ff6dcfbc792369d495bde4f3beb4b74238a334109cb1c72a2e46c9
                 request-digest: sha256:557bd043331c2db7efd24534289d48d21a537bd6cae11efe2db628b7e3f738f6
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f6cvn0s87ywbs158yy0b5q7k:backlog:1
+                briefing: briefing:f6cvn0s87ywbs158yy0b5q7k:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-07T23:59:41.992257Z"
+                decision: approve
+                reason: Captain directs F6C to kill prose-grep assertions introduced by durable-decisions PRs, including KD, 824, and D8, while retaining exact text checks only for published human output.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Make the stable help, command reference, specification, and First Officer instructions describe the final minimal gate lifecycle after the semantic cuts land. This ticket bundles only small text, usage, and golden-output corrections.
