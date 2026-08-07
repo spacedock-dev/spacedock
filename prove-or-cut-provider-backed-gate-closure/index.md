@@ -358,3 +358,45 @@ and `go test ./... -race` ran all packages; every package except `internal/gates
 passed, where only `TestV1PilotManifestReadsAndValidates` failed because
 `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` now live under
 `_archive/` rather than the active paths pinned by the exact BV candidate test.
+
+## Review-finding disposition
+
+### A7-V1 — Candidate cuts the permitted Subspace presentation channel
+
+- Observation: candidate `4ff999250` says stable v1 presentation is chat-only and
+  places provider-backed presentation outside v1 in `present-gate`, the gate spec,
+  concepts documentation, and roadmap; `TestStableV1GateSkillsExposeOnlyChatClosure`
+  requires that over-cut wording.
+- Evidence: the Captain clarified that the stable boundary is one semantic recorder:
+  Subspace may present the committed gate and return semantic decision/reason input,
+  after which the FO uses existing `gate record --decision`; only `gate record --room`
+  and Result/inventory ingestion must be absent.
+- Defect kind: outcome defect plus evidence defect, affecting AC-1/AC-2 at the exact
+  presentation-to-recorder boundary. The shipped contract prohibits intended value,
+  and its contract test rejects corrected channel-neutral wording.
+- Release scope: material. The trigger is the supported Subspace presentation path,
+  and the candidate explicitly declares it unsupported across shipped surfaces.
+- Proposed ownership/disposition: current task, narrow correction. Keep all CLI and
+  recorder deletions; revise only affected skill/docs wording and the contract test to
+  permit Subspace presentation feeding semantic decision/reason into `--decision`,
+  without adding a parser, authority reconstruction, Result envelope, or room close.
+
+## Stage Report: validation
+
+- DONE: Prove that the exact candidate exposes one complete chat closure and rejects provider-room recording before mutation.
+  At exact `4ff999250`, focused CLI/real-binary tests passed; `--room` exits 2 with exact unknown-flag output before lock creation and preserves entity/room bytes, while chat prepare/record/consume is exercised. A detached accepted-`--room` mutant and no-op-consume mutant made their relevant tests fail.
+- DONE: Prove that the removal adds no parser, fallback, multiplexer, compatibility path, alternate authority, or provider dependency.
+  Diff inspection from `698867babe7d57eb309dca476ae91187e92a3a57`, `go list -deps ./cmd/spacedock`, and module inspection found deletion rather than replacement machinery and no Subspace/provider dependency.
+- DONE: Run focused, full, race, and detached adversarial checks; classify the pilot-manifest failures against current durable state.
+  Focused checks passed; full and race runs failed only `TestV1PilotManifestReadsAndValidates` because two unchanged manifest paths were renamed 99%-similar into `_archive/` by durable-state commits `e3aa5de` and `3f85cb0`, so they are stale cross-state evidence, not A7 regressions. `gofmt` and `git diff --check` were clean.
+- FAILED: Recommend PASSED with no material findings.
+  Recommend REJECTED: A7-V1 materially over-cuts the supported presentation channel, and the detached channel-neutral skill mutant proves the new contract test pins that obsolete target.
+
+### Summary
+
+The recorder cut itself is sound: stable v1 rejects provider-room ingestion before
+mutation, preserves the semantic chat closure, and adds no replacement machinery.
+The candidate is nevertheless not releasable because its skill, specification,
+concepts, roadmap, and test prohibit Subspace presentation rather than only removing
+provider-specific recording. Apply the narrow wording/test correction above and rerun
+focused, full, race, and detached checks; do not restore `--room` or provider evidence.
