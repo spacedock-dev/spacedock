@@ -78,11 +78,13 @@ At an ungated or terminal current stage, `gate prepare` exits nonzero before all
 
 A hold records the Resolution and stops. A revise records the Resolution and routes through the workflow's declared feedback behavior. Neither case carries application metadata unless a demonstrated consumer actually applies it.
 
-### Provider closure cut
+### Provider recording cut
 
-Stable v1 keeps the proved chat transaction and does not ship provider-backed
-presentation or room-backed Result recording. The prepared room continues to bind the
-canonical Briefing used by chat validation and one-use consumption.
+Stable v1 permits chat or Subspace to present the committed gate. Both return semantic
+decision and reason input to the First Officer, who records it through the same
+`gate record --decision` path. Stable v1 does not ship `gate record --room`, Result or
+inventory ingestion, or another recorder. The prepared room continues to bind the
+canonical Briefing used by validation and one-use consumption.
 
 ## Constraints
 

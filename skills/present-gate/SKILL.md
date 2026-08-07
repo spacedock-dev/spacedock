@@ -10,12 +10,12 @@ This skill carries the first-officer's captain-facing gate-presentation renderin
 
 ## Presentation channels
 
-Stable v1 presents gates in chat only. After the prepared room and binding commit, render the gate template as exactly one root-assistant message before the next decision-mutation tool call. The message must name the entity and stage, a compact bound Briefing snapshot, one recommendation, and the decision ask; exact headings are not required. A short digest prefix may identify the snapshot in prose; `request.json`, the canonical Briefing, and recorder validation retain the exact full digest authority. Prior narration, child/tool output, or a later summary does not complete presentation. Delegated authority does not waive presentation. Only then hand the captain's semantic decision to `${SPACEDOCK_BIN:-spacedock} gate record <entity> --decision approve|revise|hold --actor ID`.
+Stable v1 permits chat or Subspace to present the committed gate. Both channels return semantic decision and reason input to the First Officer. After the prepared room and binding commit, render the gate template exactly once in the selected channel before the next decision-mutation tool call. The presentation must name the entity and stage, a compact bound Briefing snapshot, one recommendation, and the decision ask; exact headings are not required. A short digest prefix may identify the snapshot in prose; `request.json`, the canonical Briefing, and recorder validation retain the exact full digest authority. Prior narration, child/tool output, or a later summary does not complete presentation. Delegated authority does not waive presentation. Only then hand the semantic decision and reason to `${SPACEDOCK_BIN:-spacedock} gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT]`.
 
-A qualifying chat review is semantic: wording may vary while those five facts remain explicit.
+A qualifying review is semantic: wording may vary while those five facts remain explicit.
 The presenter emits once; the lifecycle, prompt, and host adapter do not duplicate its review.
 
-Provider presentation and room-backed Result recording are explicitly outside v1; a failed or partial external experiment never becomes a chat approval.
+Subspace is a presentation interface, not a second recorder. It returns no Result or inventory for Spacedock to ingest and supplies no recorder authority or output paths. Provider-specific room-backed Result recording is explicitly outside v1; a failed or partial presentation never becomes an approval.
 
 ## Gate Presentation
 

@@ -11,14 +11,15 @@ portable Resolution. A closed approval carries the typed one-use `application`
 subtree; revise and hold are complete Resolutions with no application. The same
 recorder binary owns its guarded writes.
 
-Stable v1 presentation is chat-only and is not a recorder verb. Chat decisions use
-`gate record --decision` after the prepared room is committed and presented.
+Stable v1 permits chat or Subspace to present the committed gate; presentation is not
+a recorder verb. Both channels return semantic decision and reason input to the First
+Officer, who uses `gate record --decision` after presentation.
 
 ## End-to-end gate lifecycle
 
-The chat lifecycle begins with a prepared, durably committed gate room and ends with
-the same recorder-owned closed attempt. The First Officer chooses and presents review
-content; Spacedock prepares and records authority.
+The lifecycle begins with a prepared, durably committed gate room and ends with one
+recorder-owned closed attempt. The First Officer chooses review content and selects
+chat or Subspace for presentation; Spacedock prepares and records authority.
 
 ```mermaid
 flowchart TD
@@ -27,16 +28,20 @@ flowchart TD
     ROOM[("Frozen gate room<br/>request.json and canonical Briefing")]
     COMMIT_PREP["spacedock state commit<br/>publishes the prepared binding"]
 
-    FO --> PREP --> ROOM --> COMMIT_PREP --> CHAT_REVIEW
+    CHANNEL{"Presentation interface"}
 
-    subgraph CHAT["Stable v1 chat presentation"]
-        CHAT_REVIEW["First Officer presents<br/>the canonical Briefing"]
-        CHAT_DECISION["Captain decides"]
-        CHAT_RECORD["spacedock gate record --decision<br/>--actor person:captain"]
-        CHAT_REVIEW --> CHAT_DECISION --> CHAT_RECORD
-    end
+    FO --> PREP --> ROOM --> COMMIT_PREP --> CHANNEL
 
-    CHAT_RECORD --> CLOSED["Recorder closes the gate attempt"]
+    CHAT["Chat presents<br/>the committed gate"]
+    SUBSPACE["Subspace presents<br/>the committed gate"]
+    SEMANTIC["Semantic decision and reason<br/>return to First Officer"]
+    RECORD["spacedock gate record --decision<br/>records through one standard path"]
+
+    CHANNEL --> CHAT --> SEMANTIC
+    CHANNEL --> SUBSPACE --> SEMANTIC
+    SEMANTIC --> RECORD
+
+    RECORD --> CLOSED["Recorder closes the gate attempt"]
     CLOSED --> COMMIT_CLOSE["spacedock state commit<br/>publishes the Resolution"]
     COMMIT_CLOSE --> CONSUME["spacedock gate consume"]
     CONSUME --> COMMIT_CONSUME["spacedock state commit<br/>publishes application"]
@@ -256,8 +261,9 @@ decision; it does not authenticate chat or apply the result.
 
 - Prototype-format compatibility, migration, and arbitrary
   unknown-field preservation inside `gates`.
-- Provider-backed presentation, `gate record --room`, retained provider evidence, and
-  provider package selection; the chat transaction remains supported.
+- Provider-specific room-backed recording, `gate record --room`, Result or inventory
+  ingestion, retained provider evidence, and provider package selection. Subspace may
+  present the committed gate, but its semantic decision and reason use `--decision`.
 - Remote Git-object acquisition, retention refs, copied selected-source payloads, or
   generic URI/root registries.
 - Blocker-satisfaction evaluation, execution-hold authoring, dispatch identities, or effect receipts.
