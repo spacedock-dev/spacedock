@@ -509,3 +509,30 @@ The canonical stable contract no longer requires the provider-specific mechanism
 the candidate removed. Chat and Subspace remain presentation interfaces over one
 semantic recorder, with the unchanged stale pilot-manifest paths as the only full/race
 failure and no CLI, recorder, authority, skill, or provider-code change in this cycle.
+
+### A7-V2 validation disposition
+
+Corrected at `f3e7d9953` and `a2286c249`: the canonical spec no longer promises
+Result validation or a room-Result release proof, and the current roadmap no longer
+requires Result association, exact-Result persistence, provider mapping, or pinned
+provider closure. No material A7 finding remains.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Prove that the exact candidate exposes one complete chat closure and rejects provider-room recording before mutation.
+  At corrected head `a2286c249`, `TestRecordedGateLifecycleRealCLIReplay` passes the real prepare/chat-record/consume journey and `TestGateRecordRejectsProviderRoomBeforeMutation` proves exact exit 2 before lock creation with unchanged entity/room bytes. This satisfies AC-1's clean-cut branch; AC-2 preserves chat and Subspace presentation converging on semantic input, and AC-3 is not applicable because no provider request is shipped.
+- DONE: Prove that the removal adds no parser, fallback, multiplexer, compatibility path, alternate authority, or provider dependency.
+  Cycle 3 changes only the spec, roadmap, and contract test; the full BV-to-head diff adds no alternate recorder or envelope, while `go list -deps ./cmd/spacedock` and `go list -m all` contain no Subspace/provider dependency. This reproduces AC-4.
+- DONE: Run focused, full, race, and detached adversarial checks; classify the pilot-manifest failures against current durable state.
+  Focused tests, formatting, and diff checks pass. Detached chat-only and restored-Result-validation mutants make the two contract tests fail. Full and race runs fail only `TestV1PilotManifestReadsAndValidates`: A7 leaves its manifest byte-unchanged, while state commits `3f85cb081` and `e3aa5b753` prove the two missing active paths were moved to `_archive/` by merge guard.
+- DONE: Recommend PASSED with no material A7 findings.
+  A7-V1 and A7-V2 are corrected and no new material or deferred A7 risk remains. The stale pilot manifest is an observed external release-check failure and must be refreshed before the stable tag; it is not evidence against this candidate's ACs.
+
+### Summary
+
+Recommend PASSED for A7 at exact corrected candidate `a2286c249`. Stable v1 now has
+one semantic recorder, permits chat or Subspace presentation, rejects `--room` before
+mutation, and carries no Result/inventory ingestion or replacement machinery. The
+repository-wide full and race commands are not green solely because an unchanged
+pilot fixture points at two entities that current durable state has archived; that
+separate release prerequisite remains visible rather than being treated as a pass.
