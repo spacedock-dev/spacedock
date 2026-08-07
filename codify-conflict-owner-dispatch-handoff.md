@@ -44,6 +44,17 @@ gates:
                 digest: sha256:6b8aeea5d2d00e05f555a20fe84882387d18c285eed8bdc4a05f531968ee17fa
                 request-digest: sha256:5762bfcf622c60cb58f298da590997df8744593937322a2ca2971a5e6aa2d7cb
                 room-ref: ./codify-conflict-owner-dispatch-handoff/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:d8qmey415fsb5q9h6q639ngf:ideation:1
+                briefing: briefing:d8qmey415fsb5q9h6q639ngf:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-07T04:43:57.873275Z"
+                decision: approve
+                reason: The cycle-2 design removes new grammar and state, uses existing owner identity and dispatch routes, and requires one real live owner handoff.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 The First Officer contract names safety behavior for an open-PR moving-target
