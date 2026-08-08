@@ -89,6 +89,8 @@ gates:
               application:
                 target-stage: done
                 state: pending
+mod-block: merge:pr-merge
+pr: "#636"
 ---
 
 The First Officer contract names safety behavior for an open-PR moving-target
