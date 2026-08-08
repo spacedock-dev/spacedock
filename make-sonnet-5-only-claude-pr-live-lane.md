@@ -404,3 +404,40 @@ The two-file candidate YAML itself is a clean one-row correction, and all focuse
 ### Summary
 
 The structural proof now observes every matrix key instead of enumerating known axes, so any new Cartesian axis invalidates the test. The one-row workflow is unchanged, PR #639 remains untouched, and the local candidate is ready for fresh independent validation.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Re-run the arbitrary unknown-axis mutation and verify the raw matrix key set must be exactly `include`.
+  In a detached audit checkout, adding `os: [ubuntu-latest, macos-latest]` made the focused test exit 1 with `Claude matrix keys = [include os], want only include`.
+- DONE: Verify the workflow remains one explicit row and the correction adds no simulator, controller, or semantic scope.
+  The unchanged workflow has only one `include` row; commit `113738b20` replaces the typed matrix fields with a raw key map and adds no expansion logic or runtime component.
+- DONE: Verify the one-file correction.
+  `8e2d67f76..113738b20` changes only `internal/release/runtime_live_evidence_workflow_test.go`, by +20/-12; `git diff --check` and `gofmt -d ./cmd ./internal` are clean.
+- DONE: Verify the unchanged workflow and registry.
+  Exact-range `git diff --exit-code` checks for `.github/workflows/runtime-live-e2e.yml` and `docs/runtime-live-ci-registry.md` both exited 0.
+- DONE: Verify focused checks.
+  Release, ensigncycle, and contractlint packages pass; the cadence test now fails for every extra matrix key, any second include row, wrong identity or effort, and changed cadence/environment mappings.
+- DONE: Verify the full suite and race suite.
+  Sequential isolated runs of `go test ./...` and `go test ./... -race` both exited 0.
+- DONE: AC-1 - Each pull request queues exactly two live approval jobs.
+  The raw-key test requires one Claude include row and the unchanged Codex approval lane; direct GitHub job-graph observation remains the post-push proof.
+- DONE: AC-2 - Ordinary pull requests run exactly one Claude live lane.
+  The structural guard requires the entire matrix key set to equal `[include]` and that include to contain exactly one Sonnet 5/max/CI-E2E row for pull requests.
+- DONE: AC-3 - Ordinary pull requests run Codex Luna at maximum effort.
+  The correction leaves the Codex workflow and exact-argv tests unchanged, and the focused ensigncycle package passes.
+- DONE: AC-4 - Opus and Pi evidence remain available without pull-request approval waits.
+  The unchanged single row selects Opus only for `opus-pre-release`, no Pi job exists, and offline/local Pi evidence remains intact.
+- DONE: AC-5 - The desired journey and target registry remains byte-identical.
+  The correction-range registry diff exited 0.
+- DONE: AC-6 - Operators can identify all cadences without reading workflow YAML.
+  No operator documentation changed, preserving the previously validated cadence descriptions.
+- DONE: AC-7 - The change uses the existing workflow and test surface.
+  The correction modifies one existing test file and adds no workflow, package, registry row, simulator, controller, or reconciliation command.
+- DONE: Recommend whether exact SHA 113738b20 is safe to push to PR #639 for direct job-graph proof.
+  Safe to push exactly `113738b20`; PR #639 currently remains at `8728da3a0`, and no paid lane should be approved while the replacement graph is inspected.
+- DONE: Recommend PASSED or REJECTED.
+  Recommend PASSED for the local correction with no material findings, deferred risks, or polish findings; GitHub behavior has not been claimed or observed for `113738b20`.
+
+### Summary
+
+Validation reproduced the former false-green mutation and observed the corrected raw-key guard reject it. The one-file test correction is clean, every requested suite passes, and exact SHA `113738b20` is safe for the first officer to push to PR #639 for direct job-graph proof without approving paid lanes.
