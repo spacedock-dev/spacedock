@@ -87,10 +87,17 @@ func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, resu
 	if _, err := os.Stat(rebaseDir); !os.IsNotExist(err) {
 		t.Fatalf("rebase was not cleanly aborted: %v", err)
 	}
-	for _, event := range []string{"spawn_agent", "followup_task"} {
-		if !strings.Contains(result.stream, event) {
-			t.Errorf("Codex stream lacks actual %s runtime call; artifacts: %s", event, result.artifactDir)
-		}
+	want := conflictOwnerHandoffExpectation{
+		DispatchFile: fixture.owner.DispatchFile,
+		WorkerName:   fixture.owner.WorkerName,
+		Entity:       fixture.owner.Entity,
+		Stage:        fixture.owner.Stage,
+		Branch:       fixture.owner.Branch,
+		Worktree:     fixture.owner.Worktree,
+		Marker:       "runtime-worker-owner",
+	}
+	if err := assertCodexConflictOwnerHandoff(result.stream, want); err != nil {
+		t.Errorf("Codex stream lacks one exact stamped-owner handoff: %v; artifacts: %s", err, result.artifactDir)
 	}
 	assertConflictOwnerFreshEnvelope(t, spacedockBinary(t), fixture.root, fixture.entity, fixture.owner)
 }
