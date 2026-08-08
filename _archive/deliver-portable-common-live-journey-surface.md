@@ -1,6 +1,6 @@
 ---
 title: Deliver one portable common live-journey surface
-status: validation
+status: done
 source: "Captain recarve of live-test-truth, 2026-08-03. Absorbs 3w, h3, tj, and r4 as design inputs."
 score: 1.0
 sprint: live-test-truth
@@ -89,10 +89,13 @@ gates:
                 reason: Captain retained the conn for workflow gates and PR delivery; independent cycle-26 validation PASSED exact merged candidate 8dfc87c7d with no Material or deferred risk.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-03T12:19:31Z
 worktree: .worktrees/spacedock-ensign-deliver-portable-common-live-journey-surface-recarve
 pr: pr-merge:633
+verdict: passed
+completed: 2026-08-08T08:23:22Z
+archived: 2026-08-08T08:23:23Z
 ---
 
 ## Outcome
