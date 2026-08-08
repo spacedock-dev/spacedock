@@ -2193,3 +2193,28 @@ Cycle 28 independently PASSED exact LOCAL-ONLY merged candidate `347cc5734951967
 ### Summary
 
 Cycle 29 repairs only the AC re-anchor fixture's commissioned-workflow identity, the exact missing precondition proven by final-head Codex artifacts and the new offline behavioral regression. The local two-file candidate is focused-, full-, and race-green under immutable state and remains deliberately unpublished pending independent validation.
+
+## Stage Report: validation (cycle 29 — independent fixture commissioning audit)
+
+- DONE: Verify exact local-candidate, state, remote-head, and main provenance.
+  Clean LOCAL-ONLY candidate is `97603585ff4120559315d29764c04d603827035d`, exactly one commit after pushed PR head `347cc5734951967c5d7f5ac6969c6833947a236a`; implementation state commit `b6da22b4e694e357c84fd09d66ca291e973cbf8e` is remote-equal. Read-only remote resolution confirms PR head remains `347cc5734` and main remains `94acb270a5c475d190f6b7bef56488aaf78cc7d5`.
+- DONE: Independently classify the Codex CI failure at its observable boundary.
+  Run `31246422432`, job `93075787158`, on `347cc5734` had eight tests pass, seven TODO-skip, and only `TestLiveCommonACValueReanchor` fail in 14.31s. Its sole agent command booted once, received `no commissioned Spacedock workflow found`, and stopped with no state search, dispatch, edit, gate record, or mutation; the downstream oracle consequently found no gates record.
+- DONE: Verify the exact representation-only correction and semantic envelope.
+  Cycle 29 is exactly two files/+15: one canonical `commissioned-by: spacedock@1` line in the existing `acReanchorReadme` real fixture and one 14-line test that calls the real fixture builder then requires `status.DiscoverWorkflowDir(root)` to return that exact root. Product, runbook prompt, adapter, oracle/assertion, TODO, owner, registry, CI workflow, stage list, routes, entities, and post-discovery workflow semantics are unchanged.
+- DONE: Exercise the regression and an adversarial marker-removal control.
+  Fresh AC re-anchor tests passed with `-count=1` in 1.10s wall. In a disposable detached checkout, removing only the commissioning marker made `TestACReanchorFixtureIsDiscoverable` fail in 1.05s wall with `fixture is not discoverable`; the audit checkout was then removed, proving the control is behavioral and can go red.
+- DONE: Reproduce adjacent assertion and reconciliation evidence.
+  The live-tagged built-scenario assertion passed with `-count=1` in 0.59s wall, and runtime-live reconciliation passed with `-count=1` in 0.40s wall. Removing or changing the marker breaks discovery before any agent action, while decision branches, fixture identity, target ownership, and registry cardinality remain independently guarded.
+- DONE: Assess banked and current-running Sonnet evidence without conflation.
+  Banked job `93030653539` PASSED common live and substrate on `37bc5e437`; the AC re-anchor source blob is identical at `37bc5e437` and `347cc5734`. Cycle 29 changes only pre-boot commissioned identity, so the already-proven post-discovery Sonnet workflow stages, route, prompt, and oracle remain byte-unchanged and that pass is bankable for final-head semantics; the new offline control proves the added discovery path. Job `93075787170` on `347cc5734` remains in progress and is not counted as a pass.
+- DONE: Run formatting, diff, compile, and repository verification.
+  `gofmt -l ./cmd ./internal` emitted nothing, `git diff --check` passed, and live-tag compile-only passed with `-run '^$' -count=1` in 0.52s wall. With `SPACEDOCK_STATE_ROOT=/tmp/spacedock-ys-pilot-state.60QPGN`, exact `go test ./...` passed in 120.81s and exact `go test ./... -race` passed in 135.61s; each broad run executed seven packages, reported thirteen cached, and reported two with no test files.
+- SKIPPED: Run a model, hosted live lane, candidate push, PR/CI approval, gate/frontmatter/status mutation, merge, or code correction.
+  The assignment reserves publication and hosted exact-head CI for the first officer; validation used archived evidence, read-only job metadata, deterministic offline execution, and a disposable audit only.
+- DONE: Return an explicit independent recommendation with zero failed checklist items.
+  PASSED. Material: none. Deferred risk: none. Polish: none. Checklist: 0 failed; candidate code, external workflow state, and unrelated state paths remained untouched.
+
+### Summary
+
+Cycle 29 independently PASSED exact LOCAL-ONLY candidate `97603585ff4120559315d29764c04d603827035d`. The reproduced Codex nonpass is solely missing fixture commissioning, the two-file correction makes the real workflow discoverable without altering its semantics, all fresh offline checks are green, and prior Sonnet semantic evidence remains valid without misreporting the still-running newer job.
