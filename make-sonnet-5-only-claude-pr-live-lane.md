@@ -266,3 +266,18 @@ Pi evidence moves to the local subscription path.
 ### Summary
 
 Pull requests now queue Sonnet 5 at maximum effort and Codex Luna at maximum effort. Opus is available only through the pre-release dispatch, while Pi live evidence stays local and its free coverage guards run offline.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Make pull-request event expansion queue exactly Sonnet 5/max and Codex Luna/max, while Opus remains pre-release and Pi remains local/manual.
+  Merge commit `8728da3a0` keeps upstream's `^TestLiveCommon` selectors for Claude and Codex, requires Pi's selector in the local guide, and rejects any Pi workflow job.
+- DONE: Implement the cadence through the existing workflow and shims within the approved 10-file, +240/-330 ceiling, with the desired journey registry unchanged.
+  The current-main delta is 11 files and +226/-438; the captain authorized the added manifest-coupling removal and reconciliation file after the original ceiling. The registry diff against `origin/main` is empty.
+- DONE: Add falsifiable event and command-argument coverage, then run focused checks, gofmt, the full suite, and the race suite.
+  Event mutations fail on Opus, aliases, duplicate legs, or lower effort. Claude and Codex shim tests require each model and maximum-effort argument exactly once; focused tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` pass.
+- DONE: Remove the mutable real-state dependency from the pilot manifest test while preserving synthetic gate format coverage.
+  The deleted test failed when normal archival moved two tasks. `TestRecordClosureShapesApplication` still exercises application parsing and exact canonical keys with a synthetic workflow.
+
+### Summary
+
+The integrated branch now carries the approved two-lane pull-request cadence on current `origin/main`. It also removes the invalid test dependency on the mutable shared state checkout and keeps upstream's common-journey reconciliation aligned with local Pi evidence.
