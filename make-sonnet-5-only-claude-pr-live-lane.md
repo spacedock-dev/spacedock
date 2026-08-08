@@ -455,3 +455,40 @@ Validation reproduced the former false-green mutation and observed the corrected
 ### Summary
 
 PR #639 run `31281195654` proved the two-job graph at exact head `113738b20` but exposed the model-role mismatch when `TestLiveCommonRejectionFlow` ran instead of applying its Sonnet TODO. The local correction is one existing file and +37/-4 from that head; PR delivery and CI approval remain with the first officer.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Verify known concrete Claude model IDs normalize to stable Sonnet/Opus TODO roles and unknown IDs fail before runner construction.
+  The tagged mapping table observed `claude-sonnet-5` -> `claude-sonnet` and `claude-opus-4-8` -> `claude-opus`; an unknown-model live entry run failed in 0.00s at role selection before credentials, build, or runner setup.
+- DONE: Verify every existing Sonnet TODO now matches `claude-sonnet` without journey, fixture, registry, workflow, or product-gap changes.
+  A tagged `claude-sonnet-5` run skipped exactly default-headless-gate-stop, rejection-flow, smallest-sufficient-mechanism, and keep-moving-posture under their unchanged owners; registry reconciliation passed.
+- DONE: Verify the one-file correction.
+  `113738b20..a606ae5f3` changes only `internal/ensigncycle/shared_live_runner_test.go`, by +37/-4; no journey, fixture, TODO declaration, registry, workflow, or product-gap bytes changed.
+- DONE: Verify focused controls and formatting.
+  Tagged model-role controls, the unknown live-entry negative, four Sonnet TODO skips, registry reconciliation, release/ensigncycle/contractlint packages, `git diff --check`, and `gofmt -d ./cmd ./internal` are clean.
+- DONE: Verify the full suite and race suite.
+  Sequential isolated runs of `go test ./...` and `go test ./... -race` both exited 0.
+- DONE: Keep the separate 824 substrate failure outside 0y.
+  Run `31281195654` separately failed its Claude substrate-proofs step; task 824 (`align-claude-break-glass-dispatch-oracle`) owns that surface, and this correction changes none of its recovery semantics or files.
+- DONE: AC-1 - Each pull request queues exactly two live approval jobs.
+  Run `31281195654` observed exactly one Sonnet and one Codex job at `113738b20`; the workflow is byte-identical in `a606ae5f3`.
+- DONE: AC-2 - Ordinary pull requests run exactly one Claude live lane.
+  The unchanged workflow keeps one Sonnet 5/max Claude row, while the correction maps that concrete ID to its stable Sonnet TODO role.
+- DONE: AC-3 - Ordinary pull requests run Codex Luna at maximum effort.
+  The correction changes no Codex code, workflow byte, or exact-argv test, and the affected/full suites pass.
+- DONE: AC-4 - Opus and Pi evidence remain available without pull-request approval waits.
+  Opus 4.8 maps to `claude-opus`; the unchanged workflow and registry retain pre-release Opus and offline/local Pi paths.
+- DONE: AC-5 - The desired journey and target registry remains byte-identical.
+  The exact correction-range registry diff exited 0, and reconciliation preserved every TODO owner and target.
+- DONE: AC-6 - Operators can identify all cadences without reading workflow YAML.
+  No operator documentation changed.
+- DONE: AC-7 - The change uses the existing workflow and test surface.
+  The correction modifies one existing tagged live-runner test file and adds no workflow, fixture, registry row, controller, simulator, or product behavior.
+- DONE: Recommend whether exact SHA a606ae5f3 is safe to push.
+  Safe to push exactly `a606ae5f3`; PR #639 currently remains at `113738b20`, and CI approvals and the separate 824 substrate disposition remain with the first officer.
+- DONE: Recommend PASSED or REJECTED.
+  Recommend PASSED with no material findings, deferred risks, or polish findings in 0y's correction scope.
+
+### Summary
+
+Validation observed the concrete Sonnet and Opus IDs select their stable TODO roles, the unknown-ID path fail before runner construction, and all four existing Sonnet TODOs skip correctly. The one-file correction is clean, all requested suites pass, task 824 remains separate, and exact SHA `a606ae5f3` is safe for the first officer to push.
