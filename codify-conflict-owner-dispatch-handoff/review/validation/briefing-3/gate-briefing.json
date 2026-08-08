@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d8qmey415fsb5q9h6q639ngf:validation:attempt-3:revision-1",
+  "question": "Should D8 return to implementation to replace self-referential live recipient evidence with exact typed-event correlation?",
+  "artifacts": [
+    {
+      "id": "artifact:d8qmey415fsb5q9h6q639ngf:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/1a23a23c50c823bec1e55940893ed7f5a80e424f/codify-conflict-owner-dispatch-handoff.md",
+      "rev": "sha256:3c40a972bda0d62d4b13c395138be0edf82ccfafc5be1cd2a286bc520797aeed",
+      "mediaType": "text/markdown",
+      "summary": "Post-YS validation rejects D8 because contract text can satisfy its spawn and follow-up checks; the owner proposes an exact one-spawn, one-follow-up correlation to the stamped handle."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:d8qmey415fsb5q9h6q639ngf:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/84f9830ec5a1f9bade11f00b47adbeca5269e394/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:ed5a13376062a2a6f10ec4a57ca71c9751c859ec34ae79189a16244f121b7029"
+    }
+  ]
+}
