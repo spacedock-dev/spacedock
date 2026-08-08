@@ -86,23 +86,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cadence:
-          - ${{ github.event_name == 'pull_request' && 'pull-request' || inputs.live_cadence }}
-        model: [claude-sonnet-5, claude-opus-4-8]
         include:
-          - model: claude-sonnet-5
+          - cadence: ${{ github.event_name == 'pull_request' && 'pull-request' || inputs.live_cadence }}
+            model: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'claude-sonnet-5' || 'claude-opus-4-8' }}
             effort: max
-            environment: CI-E2E
-          - model: claude-opus-4-8
-            effort: max
-            environment: CI-E2E-OPUS
-        exclude:
-          - cadence: pull-request
-            model: claude-opus-4-8
-          - cadence: sonnet
-            model: claude-opus-4-8
-          - cadence: opus-pre-release
-            model: claude-sonnet-5
+            environment: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'CI-E2E' || 'CI-E2E-OPUS' }}
     environment:
       name: ${{ matrix.environment }}
     env:

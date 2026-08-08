@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type liveCadenceLeg struct {
+type liveCadenceRow struct {
 	Cadence     string `yaml:"cadence"`
 	Model       string `yaml:"model"`
 	Effort      string `yaml:"effort"`
@@ -32,82 +32,72 @@ type liveCadenceWorkflow struct {
 		} `yaml:"environment"`
 		Strategy struct {
 			Matrix struct {
-				Cadence []string         `yaml:"cadence"`
-				Model   []string         `yaml:"model"`
-				Include []liveCadenceLeg `yaml:"include"`
-				Exclude []liveCadenceLeg `yaml:"exclude"`
+				Cadence     []string         `yaml:"cadence"`
+				Model       []string         `yaml:"model"`
+				Effort      []string         `yaml:"effort"`
+				Environment []string         `yaml:"environment"`
+				Include     []liveCadenceRow `yaml:"include"`
+				Exclude     []liveCadenceRow `yaml:"exclude"`
 			} `yaml:"matrix"`
 		} `yaml:"strategy"`
 	} `yaml:"jobs"`
 }
 
-func TestRuntimeLiveWorkflowExpandsApprovedCadences(t *testing.T) {
-	want := map[string][]liveCadenceLeg{
-		"pull-request":     {{Cadence: "pull-request", Model: "claude-sonnet-5", Effort: "max", Environment: "CI-E2E"}},
-		"sonnet":           {{Cadence: "sonnet", Model: "claude-sonnet-5", Effort: "max", Environment: "CI-E2E"}},
-		"opus-pre-release": {{Cadence: "opus-pre-release", Model: "claude-opus-4-8", Effort: "max", Environment: "CI-E2E-OPUS"}},
-	}
+const (
+	pullRequestCadence = `${{ github.event_name == 'pull_request' && 'pull-request' || inputs.live_cadence }}`
+	claudeCadenceModel = `${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'claude-sonnet-5' || 'claude-opus-4-8' }}`
+	claudeCadenceEnv   = `${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'CI-E2E' || 'CI-E2E-OPUS' }}`
+)
+
+func TestRuntimeLiveWorkflowHasOneExplicitClaudeCadence(t *testing.T) {
 	workflow := readWorkflow(t, "runtime-live-e2e.yml")
-	for cadence, expected := range want {
-		got, approvals, err := expandClaudeCadence(workflow, cadence)
-		if err != nil || fmt.Sprint(got) != fmt.Sprint(expected) || approvals != 2 {
-			t.Fatalf("%s: legs=%#v approvals=%d err=%v, want %#v and two approvals", cadence, got, approvals, err, expected)
-		}
+	if err := assertOneClaudeCadence(workflow); err != nil {
+		t.Fatal(err)
 	}
 	mutations := [][2]string{
-		{"cadence: pull-request\n            model: claude-opus-4-8", "cadence: never\n            model: claude-opus-4-8"},
-		{"model: [claude-sonnet-5, claude-opus-4-8]", "model: [claude-sonnet-5, claude-sonnet-5, claude-opus-4-8]"},
-		{"claude-sonnet-5", "sonnet"}, {"effort: max", "effort: high"},
+		{"include:\n", "model: [claude-opus-4-8]\n        include:\n"},
+		{"include:\n", "exclude:\n          - model: claude-sonnet-5\n        include:\n"},
+		{"environment: " + claudeCadenceEnv, "environment: " + claudeCadenceEnv + "\n          - model: claude-opus-4-8\n            effort: max\n            environment: CI-E2E-OPUS"},
+		{"claude-sonnet-5", "sonnet"},
+		{"effort: max", "effort: high"},
+		{claudeCadenceEnv, "CI-E2E"},
+		{"'pull-request'", "'sonnet'"},
 	}
 	for _, mutation := range mutations {
-		legs, approvals, err := expandClaudeCadence(strings.ReplaceAll(workflow, mutation[0], mutation[1]), "pull-request")
-		want := []liveCadenceLeg{{Cadence: "pull-request", Model: "claude-sonnet-5", Effort: "max", Environment: "CI-E2E"}}
-		if err == nil && fmt.Sprint(legs) == fmt.Sprint(want) && approvals == 2 {
-			t.Fatalf("mutation %q escaped the pull-request cadence guard", mutation[0])
+		if err := assertOneClaudeCadence(strings.Replace(workflow, mutation[0], mutation[1], 1)); err == nil {
+			t.Fatalf("mutation %q escaped the one-row cadence guard", mutation[0])
 		}
 	}
 }
 
-func expandClaudeCadence(workflow, cadence string) ([]liveCadenceLeg, int, error) {
+func assertOneClaudeCadence(workflow string) error {
 	var parsed liveCadenceWorkflow
 	if err := yaml.Unmarshal([]byte(workflow), &parsed); err != nil {
-		return nil, 0, err
+		return err
 	}
 	input, ok := parsed.On.WorkflowDispatch.Inputs["live_cadence"]
 	if !ok || input.Default != "sonnet" || fmt.Sprint(input.Options) != fmt.Sprint([]string{"sonnet", "opus-pre-release"}) {
-		return nil, 0, fmt.Errorf("workflow_dispatch live_cadence choice is not the approved two-value surface")
+		return fmt.Errorf("workflow_dispatch live_cadence choice is not the approved two-value surface")
 	}
 	job, ok := parsed.Jobs["claude-live"]
-	if !ok || fmt.Sprint(job.Strategy.Matrix.Cadence) != fmt.Sprint([]string{"${{ github.event_name == 'pull_request' && 'pull-request' || inputs.live_cadence }}"}) {
-		return nil, 0, fmt.Errorf("Claude matrix does not normalize the event to one cadence")
+	if !ok {
+		return fmt.Errorf("workflow lacks claude-live")
 	}
-	var legs []liveCadenceLeg
-	for _, model := range job.Strategy.Matrix.Model {
-		leg := liveCadenceLeg{Cadence: cadence, Model: model}
-		for _, properties := range job.Strategy.Matrix.Include {
-			if properties.Model == model {
-				leg.Effort = properties.Effort
-				leg.Environment = properties.Environment
-			}
-		}
-		excluded := false
-		for _, exclusion := range job.Strategy.Matrix.Exclude {
-			if exclusion.Cadence == cadence && exclusion.Model == model {
-				excluded = true
-			}
-		}
-		if !excluded {
-			legs = append(legs, leg)
-		}
+	matrix := job.Strategy.Matrix
+	if len(matrix.Cadence)+len(matrix.Model)+len(matrix.Effort)+len(matrix.Environment)+len(matrix.Exclude) != 0 {
+		return fmt.Errorf("Claude cadence must use no base axes or exclude entries")
 	}
-	approvals := len(legs)
-	if codex, ok := parsed.Jobs["codex-live"]; ok && codex.Environment.Name == "CI-E2E-CODEX" {
-		approvals++
+	want := liveCadenceRow{Cadence: pullRequestCadence, Model: claudeCadenceModel, Effort: "max", Environment: claudeCadenceEnv}
+	if len(matrix.Include) != 1 || matrix.Include[0] != want {
+		return fmt.Errorf("Claude matrix include = %#v, want one explicit row %#v", matrix.Include, want)
+	}
+	if codex, ok := parsed.Jobs["codex-live"]; !ok || codex.Environment.Name != "CI-E2E-CODEX" {
+		return fmt.Errorf("workflow lacks the Codex approval lane")
 	}
 	if _, ok := parsed.Jobs["pi-live"]; ok {
-		approvals++
+		return fmt.Errorf("workflow retains a Pi approval lane")
 	}
-	return legs, approvals, nil
+	return nil
 }
 
 type liveClaim struct{ step, selector, claim string }
