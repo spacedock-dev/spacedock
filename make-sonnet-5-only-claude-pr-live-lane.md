@@ -162,13 +162,9 @@ Apply this replacement in `docs/site/contributing/architecture-notes.md`:
 
 ## Out of scope
 
-- Do not change common journeys, fixtures, assertions, or target-specific TODO bindings.
-- Do not change the Codex or Pi journey coverage.
-- Do not repair the Opus product gap owned by `a7`.
-- Do not remove Opus from the desired-state registry.
-- Do not change `docs/runtime-live-ci-registry.md`.
-- Do not add a new workflow.
-- Do not add a cadence package or a reconciliation layer.
+- Keep the desired journey registry and `docs/runtime-live-ci-registry.md` unchanged.
+- Keep all journey, fixture, assertion, coverage, and target-specific TODO ownership unchanged. This includes the Opus gap owned by `a7`.
+- Use only `.github/workflows/runtime-live-e2e.yml`. Do not add a workflow, cadence package, or reconciliation layer.
 - Do not require a paid Opus run for this change.
 
 ## Acceptance criteria
