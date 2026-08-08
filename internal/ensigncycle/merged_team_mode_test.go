@@ -28,7 +28,7 @@ type mergedAgentDispatch struct {
 // on-disk member meta. team_name PRESENCE is what hasTeamName reports.
 func mergedEnsignDispatches(lines []string) []mergedAgentDispatch {
 	type rawInput struct {
-		SubagentType    string          `json:"subagent_type"`
+		SubagentType    json.RawMessage `json:"subagent_type"`
 		Name            string          `json:"name"`
 		RunInBackground bool            `json:"run_in_background"`
 		TeamName        json.RawMessage `json:"team_name"`
@@ -55,7 +55,12 @@ func mergedEnsignDispatches(lines []string) []mergedAgentDispatch {
 				continue
 			}
 			mergedTransport := b.Input.Name != "" && b.Input.RunInBackground && (len(b.Input.TeamName) == 0 || string(b.Input.TeamName) == "null")
-			if b.Input.SubagentType != "spacedock:ensign" && !mergedTransport {
+			subagentType := ""
+			subagentTypeOmitted := len(b.Input.SubagentType) == 0
+			if !subagentTypeOmitted {
+				_ = json.Unmarshal(b.Input.SubagentType, &subagentType)
+			}
+			if subagentType != "spacedock:ensign" && !(subagentTypeOmitted && mergedTransport) {
 				continue
 			}
 			out = append(out, mergedAgentDispatch{
@@ -226,6 +231,7 @@ func mergedMemberMetasPath(configDir, resolvedCwd, sessionID string) string {
 func TestMergedEnsignDispatchShape(t *testing.T) {
 	const mergedAgentLine = `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_1","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"spacedock-ensign-make-it-work-implementation","description":"Make It Work: implementation","run_in_background":true}}]}}`
 	const omittedSubagentTypeLine = `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_1b","name":"Agent","input":{"name":"spacedock-ensign-make-it-work-implementation","description":"Make It Work: implementation","run_in_background":true}}]}}`
+	const wrongSubagentTypeLine = `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_1c","name":"Agent","input":{"subagent_type":"general-purpose","name":"spacedock-ensign-make-it-work-implementation","description":"Make It Work: implementation","run_in_background":true}}]}}`
 	const legacyAgentLine = `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"spacedock-ensign-make-it-work-implementation","team_name":"proj-dir-20260618-spacedock","description":"x"}}]}}`
 	const teamCreateLine = `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_3","name":"TeamCreate","input":{}}]}}`
 	const initLine = `{"type":"system","subtype":"init","session_id":"9e9ec0b0-b998-4c86-b9c7-c3e70f78108c","tools":["Bash","Read","SendMessage","Skill"]}`
@@ -258,6 +264,12 @@ func TestMergedEnsignDispatchShape(t *testing.T) {
 		ds := mergedEnsignDispatches([]string{omittedSubagentTypeLine})
 		if len(ds) != 1 || ds[0].name == "" || !ds[0].runInBackground || ds[0].hasTeamName {
 			t.Fatalf("omitted subagent_type merged dispatch was not recognized: %+v", ds)
+		}
+	})
+
+	t.Run("explicit non-ensign subagent_type is rejected", func(t *testing.T) {
+		if ds := mergedEnsignDispatches([]string{wrongSubagentTypeLine}); len(ds) != 0 {
+			t.Fatalf("explicit non-ensign dispatch must not be recognized: %+v", ds)
 		}
 	})
 

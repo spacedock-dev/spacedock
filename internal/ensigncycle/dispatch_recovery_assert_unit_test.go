@@ -113,11 +113,21 @@ const breakGlassTeamGoodStream = `{"type":"assistant","message":{"id":"msg1","co
 {"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"description":"Widget Task: implementation","prompt":"## First action\n\nSkill(skill=\"spacedock:ensign\")\n\n### Stage definition:\n\nAppend a one-line marker to ` + "`widget-task.md`" + ` proving the worker ran.\n\n- **Outputs:** An implementation stage report.\n\n### Stage report\n\nAppend the report.\n\n### Completion Signal\n\nSendMessage(to=\"team-lead\", message=\"Done\")"}}]}}`
 
 func TestAssertBreakGlassObservablesOffline(t *testing.T) {
+	explicitFalseBareStream := strings.Replace(
+		breakGlassBareGoodStream,
+		`"description":"Widget Task: implementation"`,
+		`"description":"Widget Task: implementation","run_in_background":false`,
+		1,
+	)
 	for _, tc := range []struct {
 		name   string
 		mode   dispatchMode
 		stream string
-	}{{"selected bare uses bare call", dispatchModeBare, breakGlassBareGoodStream}, {"selected team uses team call", dispatchModeTeam, breakGlassTeamGoodStream}} {
+	}{
+		{"selected bare omits run_in_background", dispatchModeBare, breakGlassBareGoodStream},
+		{"selected bare serializes run_in_background false", dispatchModeBare, explicitFalseBareStream},
+		{"selected team uses team call", dispatchModeTeam, breakGlassTeamGoodStream},
+	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if err := assertBreakGlassObservables(tc.stream, tc.mode); err != nil {
 				t.Fatalf("mode-preserving fixture must pass: %v", err)
@@ -132,6 +142,22 @@ func TestAssertBreakGlassObservablesOffline(t *testing.T) {
 	}
 	if err := assertBreakGlassObservables(breakGlassBareGoodStream+"\n"+breakGlassBareGoodStream, dispatchModeBare); err == nil {
 		t.Fatal("multiple workers must fail")
+	}
+	for _, mutation := range []struct {
+		name string
+		old  string
+		new  string
+	}{
+		{"background true", `"description":"Widget Task: implementation"`, `"description":"Widget Task: implementation","run_in_background":true`},
+		{"name present", `"description":"Widget Task: implementation"`, `"description":"Widget Task: implementation","name":"ensign-widget-implementation"`},
+		{"team_name present", `"description":"Widget Task: implementation"`, `"description":"Widget Task: implementation","team_name":"legacy"`},
+	} {
+		t.Run("selected bare rejects "+mutation.name, func(t *testing.T) {
+			stream := strings.Replace(breakGlassBareGoodStream, mutation.old, mutation.new, 1)
+			if err := assertBreakGlassObservables(stream, dispatchModeBare); err == nil {
+				t.Fatalf("selected bare must reject %s", mutation.name)
+			}
+		})
 	}
 }
 
@@ -222,5 +248,12 @@ func TestAssertBreakGlassDurableResultMutations(t *testing.T) {
 				t.Fatalf("assertBreakGlassDurableResult error = %v, wantOK %v", err, tc.wantOK)
 			}
 		})
+	}
+}
+
+func TestAssertCompleteRecoveryReportRejectsScatteredTokens(t *testing.T) {
+	content := dispatchRecoveryMarker + "\n\n- DONE: unrelated prior work\n\n### Summary\n\nPrior summary.\n\n## Stage Report: implementation\n\nNo completion entries here.\n"
+	if err := assertCompleteRecoveryReport(content); err == nil {
+		t.Fatal("DONE and Summary outside the exact implementation Stage Report must not satisfy durable recovery grading")
 	}
 }

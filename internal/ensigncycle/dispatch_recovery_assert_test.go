@@ -29,9 +29,9 @@ const recoverySkillArg = "spacedock:fo-dispatch-recovery"
 
 // streamContentBlock is one tool_use/text content block of one assistant message
 // delta, decoded generically: Input as a raw key-set (not a typed struct) so an
-// oracle can test field PRESENCE (e.g. "was run_in_background emitted at all")
-// rather than only its value — a bare-mode Agent() omits the key entirely, it does
-// not emit `run_in_background: false`.
+// oracle can test field PRESENCE as well as value. Claude may serialize a blocking
+// bare-mode Agent() with an omitted key or with `run_in_background: false`; true is
+// still a different transport and must be rejected.
 type streamContentBlock struct {
 	Type  string                     `json:"type"`
 	Name  string                     `json:"name"`
@@ -220,7 +220,7 @@ func assertBreakGlassObservables(stream string, selectedMode dispatchMode) error
 				modeShape := false
 				switch selectedMode {
 				case dispatchModeBare:
-					modeShape = !hasName && !hasTeamName && !hasRunInBackground && !hasCompletionSignal
+					modeShape = !hasName && !hasTeamName && (!hasRunInBackground || !runInBackground) && !hasCompletionSignal
 				case dispatchModeTeam:
 					modeShape = nameShaped && runInBackground && hasRunInBackground && !hasTeamName && hasCompletionSignal
 				}
@@ -287,12 +287,28 @@ func assertBreakGlassDurableResult(root, entityPath string) error {
 }
 
 func assertCompleteRecoveryReport(content string) error {
-	for _, want := range []string{dispatchRecoveryMarker, "## Stage Report: implementation", "- DONE:", "### Summary"} {
-		if !strings.Contains(content, want) {
-			return fmt.Errorf("recovery entity missing %q", want)
+	if !strings.Contains(content, dispatchRecoveryMarker) {
+		return fmt.Errorf("recovery entity missing %q", dispatchRecoveryMarker)
+	}
+	lines := strings.Split(content, "\n")
+	for i, line := range lines {
+		if line != "## Stage Report: implementation" {
+			continue
+		}
+		hasDone := false
+		hasSummary := false
+		for _, sectionLine := range lines[i+1:] {
+			if strings.HasPrefix(sectionLine, "## ") {
+				break
+			}
+			hasDone = hasDone || strings.HasPrefix(sectionLine, "- DONE:")
+			hasSummary = hasSummary || sectionLine == "### Summary"
+		}
+		if hasDone && hasSummary {
+			return nil
 		}
 	}
-	return nil
+	return fmt.Errorf("recovery entity missing DONE and Summary inside exact %q section", "## Stage Report: implementation")
 }
 
 func gitOutput(root string, args ...string) (string, error) {

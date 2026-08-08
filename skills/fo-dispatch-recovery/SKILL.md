@@ -12,7 +12,7 @@ The two Claude dispatch exception bodies, each read only at its own failure trig
 
 The resident trigger line already covers the first action (report the helper failure — command, exit code, stderr — to the captain before proceeding). The dispatch mode selected before `dispatch build` remains authoritative: do not probe another transport, retry in the other mode, or turn a selected bare dispatch into a named worker. Populate `{numbered checklist}` with the output of `«dispatch.checklist»(entity, stage)`; do not rebuild its rules here. In either arm, include `model="{effective_model}"` only when an effective model is set.
 
-For selected bare mode, use this blocking call. Omit `name`, `team_name`, and `run_in_background` entirely (do not pass `run_in_background=false`); omit the completion-message block because the blocking return is the completion signal:
+For selected bare mode, use this blocking call. Omit `name`, `team_name`, and `run_in_background` entirely; Claude's observable tool stream may preserve that omission or normalize it to `run_in_background=false`, and both mean blocking bare dispatch. Never pass or accept `run_in_background=true`. Omit the completion-message block because the blocking return is the completion signal:
 ```
 Agent(
     subagent_type="{dispatch_agent_id}",
