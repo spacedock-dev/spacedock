@@ -329,8 +329,10 @@ The repaired fixture now establishes ownership through the same initial stamped 
   Relative to `e24e8234a`, only two FO reference files and the standalone live test change (`+228/-3`); cycle 1 changes only that test, entity bytes remain graded unchanged, and no command, stored field, parser, resolver, state publisher, credential lookup, or conflict resolver was added.
 - DONE: Run focused, full, race, formatting, diff, adversarial provenance, and applicable live evidence; classify every failure and any 824 overlap.
   Focused packages passed; full/race failed only on the same two absent shared-state manifests; `gofmt -l`, `git diff --check`, and clean-head checks passed; removing stamp provenance is falsified by the blank initial entity and required stamped checkout; task 824 has no exact file/semantic overlap, only `internal/ensigncycle` adjacency.
-- FAILED: Reproduce a second completed live Codex handoff during validation.
-  Two exact-head attempts failed at the host boundary: one was killed after 520.09s of stream silence after a completed turn, and the retained retry hit Go's 10-minute timeout amid repeated model-manager child-process timeouts after deriving the stamped tuple and aborting the rebase but before `followup_task`; neither reached a candidate assertion or contradicts the completed implementation live proof.
+
+### Infrastructure
+
+Two exact-head attempts to reproduce a second completed live Codex handoff failed at the host boundary: one was killed after 520.09s of stream silence after a completed turn, and the retained retry hit Go's 10-minute timeout amid repeated model-manager child-process timeouts after deriving the stamped tuple and aborting the rebase but before `followup_task`; neither reached a candidate assertion or contradicts the completed implementation live proof.
 
 ### Summary
 
