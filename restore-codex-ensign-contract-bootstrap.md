@@ -72,6 +72,14 @@ gates:
                 digest: sha256:00fb2e683244426ca982349673632d6b32496be8162271816bd413bdab355403
                 request-digest: sha256:287ebb52f72b308ad69c0b2aafd939640aea73d46a5467d6db68a8d4180ca6a4
                 room-ref: ./restore-codex-ensign-contract-bootstrap/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nvz2ym82ydfn07jp04yfxg9r:validation:1
+                briefing: briefing:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-08T18:50:56.901368Z"
+                decision: revise
+                reason: 'Captain directs implementation rework: adopt the 0y branch spacedock-ensign/make-sonnet-5-only-claude-pr-live-lane; preserve its current gate and live-test layout; remove the nv pilot-manifest repair entirely; do not edit or recreate the manifest.'
 ---
 
 ## Outcome
