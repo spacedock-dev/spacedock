@@ -245,3 +245,16 @@ The executable Codex bootstrap, truthful artifact boundary, deterministic suppli
 ### Summary
 
 The supported current-checkout rerun proves the new Codex prefix reaches a real handoff dispatch and that the durable worker/report path completes; two previously red live cases pass on rerun. The remaining checklist failure is isolated to external API transport and Codex front-door process termination after a completed turn, with artifacts at `/tmp/spacedock-codex-live-proof.Ue12pW`; no legitimate in-scope candidate repair was identified or made.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Rebase the nv candidate onto the latest post-YS origin/main tree and produce a clean, exact candidate while preserving kd's self-contained-assignment and pointer-only transport semantics.
+  Evidence: merge-base is `d3e70e958`; clean branch HEAD `892acbdb7` is based on that post-YS tree, and the diff contains no kd state, launcher-pinning, artifact-payload, or assignment-transport changes.
+- DONE: Update and prove the canonical Codex common live lane for full-ensign-cycle; remove only nv's Codex TODO after a real current-checkout run passes, and run the required registry reconciliation in the same change.
+  Evidence: current-checkout `TestLiveCommonFullEnsignCycle` passed in 261.37s; retained artifacts at `/tmp/spacedock-codex-live-proof.nvz-Gx10ZCEg` show the fresh `$spacedock:ensign` handoff, anchored implementation/terminal reports, archive commit `3e14055`, and final completion; registry reconciliation passed with only nv's Codex TODO removed.
+- FAILED: Run the focused, full, race, and required live checks; record concrete evidence, update the implementation-cycle report, and commit the complete rework without weakening the live oracle or absorbing kd's separate scope.
+  Focused dispatch/fixture, registry, live, gofmt, and diff checks passed; both `go test ./...` and `go test ./... -race` fail only at `internal/gates/TestV1PilotManifestReadsAndValidates` because the shared state checkout archived two manifest paths in `e3aa5b753`/`3f85cb081` while the unchanged manifest still names their flat paths.
+
+### Summary
+
+The Codex fresh boundary now loads the installed ensign skill before the pointer, with truthful artifact wording, deterministic mutation coverage, and runtime documentation. The real current-checkout common journey proves compliant fresh and advance behavior through terminal archive; the aggregate gates remain blocked by unrelated shared-state pilot-manifest drift, which was investigated and left unchanged. Candidate commits are `9fcccabf0` and `892acbdb7`.
