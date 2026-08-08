@@ -6,7 +6,7 @@ sprint:
 id: mr9k7c0g35jhrrdv4zqyjctw
 started: 2026-08-08T00:16:07Z
 worktree: .worktrees/spacedock-ensign-legacy-verdict-warning-flood
-pr: "#638"
+pr: pr-merge:638
 gates:
     version: 1
     records:
