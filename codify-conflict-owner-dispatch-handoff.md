@@ -369,3 +369,26 @@ Validation recommends PASSED at exact head `7057ad6f7`: the prior Material prove
 ### Summary
 
 D8 now participates in YS's canonical portable live inventory instead of restoring its retired standalone test entry point. The existing Codex proof remains self-contained and green, current workflow selectors and artifact paths collect it automatically, and no product grammar, state, parser, resolver, authority, or conflict-resolution behavior changed.
+
+## Review-finding disposition
+
+- Finding: the canonical live grader does not observe the recipient or cardinality of the owner handoff; its `spawn_agent` / `followup_task` check is satisfied by literals in the FO contract text read into the stream.
+- Released user and normal workflow: an FO handling a supported owned moving-target code-worktree conflict must route exactly one same-stage follow-up to the workflow owner of the existing registered checkout.
+- Observable harm: a fresh or additional worker can write the marker on the registered branch while the stamped live owner receives no follow-up, and every current live assertion can still pass.
+- Authority: `value-ac[AC-1]` requires exactly one same-stage live follow-up to the workflow owner of the existing registered checkout.
+- Trigger evidence: exact-head `codex-exec.jsonl` contains all `spawn_agent` / `followup_task` matches only in `item_1`, the command output that reads the runtime contract; emitted collaboration events expose only `wait`, while `assertConflictOwnerHandoff` uses unscoped `strings.Contains` and grades no target handle or call count.
+- Proposed classification: Material evidence defect, task-owned; AC-1 and the live half of AC-2 remain unproved, although the stamped tuple, checkout marker, fresh envelope, authority bytes, and abort behavior are independently valid.
+- Proposed disposition: design reset for the live observation boundary, because valid repair requires runtime/harness evidence that identifies and counts the actual addressed worker call rather than another source-text assertion.
+
+## Stage Report: validation (cycle 3)
+
+- FAILED: Verify the exact reconciled head preserves D8 owner-handoff behavior and all acceptance criteria.
+  Exact head `84f9830ec` passed the Codex journey in 149.26s, but AC-1 and live AC-2 fail provenance: the only tool-name matches come from read contract text, so a wrong or additional worker would not fail the grade.
+- DONE: Verify the YS registry, common runner, selectors, counts, and artifact collection include D8 consistently.
+  `TestRuntimeLiveRegistryReconciliation` and `TestRuntimeLiveCommonSuiteTimeouts` passed: registry/source are 17/17, D8 annotation and fixture agree, all three unchanged `^TestLiveCommon` selectors include it, and exact-head Codex detail/host/metric artifacts were emitted.
+- DONE: Run focused, full, race, and the applicable canonical live scenario; report unsupported runtime cells as explicit TODOs.
+  Focused suites and formatting/diff/clean-head checks passed; full/race failed only on the two absent shared-state manifests; canonical Codex passed, while Claude Sonnet, Claude Opus, and Pi are explicit D8-owned TODO cells.
+
+### Summary
+
+Validation recommends REJECTED at exact head `84f9830ec`. Reconciliation preserved the stamped tuple and YS inventory, the fresh envelope and registered checkout remain correct, and the supported Codex run completed, but the live recipient/cardinality assertion is self-referential and cannot establish that the stamped owner received exactly one handoff; this Material evidence defect requires a harness observation-boundary reset rather than candidate repair in validation.
