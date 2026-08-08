@@ -63,6 +63,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:nvz2ym82ydfn07jp04yfxg9r:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:nvz2ym82ydfn07jp04yfxg9r-validation-1
+              briefing:
+                id: briefing:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-1:revision-1
+                digest: sha256:00fb2e683244426ca982349673632d6b32496be8162271816bd413bdab355403
+                request-digest: sha256:287ebb52f72b308ad69c0b2aafd939640aea73d46a5467d6db68a8d4180ca6a4
+                room-ref: ./restore-codex-ensign-contract-bootstrap/review/validation/briefing-1
 ---
 
 ## Outcome

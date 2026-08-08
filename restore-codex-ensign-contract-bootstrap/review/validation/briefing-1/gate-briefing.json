@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-1:revision-1",
+  "question": "Should Captain approve nv for terminal delivery despite the missing live terminal evidence, or hold for a runtime-lane decision?",
+  "artifacts": [
+    {
+      "id": "artifact:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/217e5d103865d47c28e5b22a882417c21506558b/restore-codex-ensign-contract-bootstrap/review/validation/fo-gate-review.md",
+      "rev": "sha256:edb71cb4ef2af4d368342dcec4f83ea0dff63fd2e1d9a7b5ebee3d7f9618d3f1",
+      "mediaType": "text/markdown",
+      "summary": "Offline candidate validation is green; exact-head Codex live evidence stops after turn.completed before durable terminal state. Recommend hold for a runtime-lane decision, with no implementation rework."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/217e5d103865d47c28e5b22a882417c21506558b/restore-codex-ensign-contract-bootstrap.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d93ff44201d6ac10ee157e2662249ea9c0ea9ffb298fbbf1aabc298283bf9448"
+    }
+  ]
+}
