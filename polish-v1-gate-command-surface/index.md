@@ -43,6 +43,17 @@ gates:
                 digest: sha256:a492a2061dd788377b7965037691eede103a410b69809755b50e5b8ccec5b42d
                 request-digest: sha256:bbbaeddc4aa35f27528128af45f77b5b4713711ad1b420b55d34f0c06c667818
                 room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f6cvn0s87ywbs158yy0b5q7k:ideation:1
+                briefing: briefing:f6cvn0s87ywbs158yy0b5q7k:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-08T00:29:17.546204Z"
+                decision: approve
+                reason: Captain directed F6C to kill sprint-added prose greps. The ideation report accounts for all three dispatched items, inventories 16 coupling groups, targets zero semantic prose-search dependencies, and preserves exact text only for published help.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Make the stable help, command reference, specification, and First Officer instructions describe the final minimal gate lifecycle after the semantic cuts land. Remove sprint-added tests that infer behavior by searching free-form command, prompt, document, or transcript prose. Exact text remains asserted only for deliberately published human-facing help.
