@@ -219,3 +219,16 @@ This applies to `docs/site/contributing/adding-a-runtime.md`; no live-CI wording
 ### Summary
 
 The current Codex host can load the installed Spacedock ensign skill at the fresh-dispatch boundary, as confirmed by the fresh-child probe. Implement the small outer-prompt prefix, make the artifact wording truthful, add the supplied-root dispatch-to-child negative fixture, and prove the result with the existing Codex live journey; do not inline the shared contract, remove unrelated product-defect quarantines, or change First Officer validation.
+
+## Stage Report: implementation
+
+- DONE: Implement the executable Codex fresh-prompt bootstrap and truthful artifact boundary.
+  Evidence: commit `04a775987` emits the exact `$spacedock:ensign; then Read ...` fresh prefix, makes the artifact identify the outer contract boundary, and keeps advance prompts unchanged; `TestBuildCodexHostPromptShape` and `TestBuildAdvanceGoldens` fail on either edge drift.
+- FAILED: Ship fixture and live-journey proof plus required documentation while preserving host and transport semantics.
+  Evidence: `TestCodexFreshDispatchBoundaryFixture` passed the positive probe and independent bootstrap/report mutations, and both runtime docs are shipped; the current Codex live lane passed four cases but had transport-related failures, and this checkout has no literal `full-ensign-cycle` Codex subcase to run.
+- DONE: Commit a complete implementation with focused evidence for the declared acceptance criteria.
+  Evidence: `04a775987` is the complete code commit; `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` passed, with Codex adapter, First Officer, oracle, and unrelated host behavior unchanged.
+
+### Summary
+
+The executable Codex bootstrap, truthful artifact boundary, deterministic supplied-plugin fixture, contract documentation, and focused tests are complete in `04a775987`. The default and race gates pass, and the current-checkout Codex live suite produced four passing cases; its remaining red cases were stream-transport failures, while the named `full-ensign-cycle` Codex journey is absent from this checkout, so that live proof remains unresolved rather than fabricated.
