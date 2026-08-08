@@ -93,6 +93,17 @@ gates:
                 digest: sha256:9a27043c5b9266fbe9a789b2de1231696e796a444ec93def1c619fd2eda9ddbc
                 request-digest: sha256:d85291f88b7d231a95163d291da5d8304b87dcbc74ef7cc8392ec3385a3fbaed
                 room-ref: ./review/validation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kd7877nnbd19d528xnpwwaj4:validation:4
+                briefing: briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-4:revision-1
+                by: agent:first-officer
+                at: "2026-08-08T01:05:42.992014Z"
+                decision: approve
+                reason: 'Validation cycle 4 closes the only missing evidence: a real candidate-generated Codex child executed exact 7fce0bb1 through pinned launcher A under hostile ambient B. All three validation checklist items and all five AC values are satisfied with no candidate finding.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 sprint-readiness: required
