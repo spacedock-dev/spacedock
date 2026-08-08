@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	statuspkg "github.com/spacedock-dev/spacedock/internal/status"
 )
 
 func acReanchorDecisionBody(status, decision string) string {
@@ -101,5 +103,17 @@ func TestACReanchorRejectsUnchangedNarratedResult(t *testing.T) {
 func TestACReanchorFixtureIdentity(t *testing.T) {
 	if got, want := AuthorACReanchorScenario().Name, "ac-reanchor/means-pass-value-regressed"; got != want {
 		t.Fatalf("scenario identity = %q, want %q", got, want)
+	}
+}
+
+func TestACReanchorFixtureIsDiscoverable(t *testing.T) {
+	root := t.TempDir()
+	if _, err := writeACReanchorFixture(root); err != nil {
+		t.Fatal(err)
+	}
+	if got, found := statuspkg.DiscoverWorkflowDir(root); !found {
+		t.Fatal("AC re-anchor fixture is not discoverable from its workflow root")
+	} else if got != root {
+		t.Fatalf("DiscoverWorkflowDir(%q) = %q, want %q", root, got, root)
 	}
 }

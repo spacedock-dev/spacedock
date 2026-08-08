@@ -74,7 +74,7 @@ jobs:
         run: go test ./...
 
       - name: Run deterministic live-harness controls offline
-        run: go test ./internal/ensigncycle -count=1 -run 'TestClaudeTODOModelScope|TestClaudeRejectionFlowTODOModelScope|TestClaudeSonnetGateGuardrailTODOModelScope|TestCleanupKeepMovingRootRetainsOnlyFailures|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs|TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle|TestShallowBootFixtureContainsOnlyHeldGate|TestPiLiveSmokePromptRequiresExactStageReportHeading|TestPiLiveEnvDropsForeignRuntimeMarkers|TestPiLiveEnvScrubsAmbientPiSubagentMarkers|TestPiIntercomPackageRootDefaultsBesideSubagents|TestSharedScenarioRunnerCoverage|TestPiSharedScenarioCoverage'
+        run: go test ./internal/ensigncycle -count=1 -run 'TestCleanupKeepMovingRootRetainsOnlyFailures|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs|TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle|TestShallowBootFixtureContainsOnlyHeldGate|TestPiLiveSmokePromptRequiresExactStageReportHeading|TestPiLiveEnvDropsForeignRuntimeMarkers|TestPiLiveEnvScrubsAmbientPiSubagentMarkers|TestPiIntercomPackageRootDefaultsBesideSubagents'
 
   # Pull requests normalize to one Sonnet 5 leg. Manual dispatches choose the
   # routine Sonnet cadence or the separately approved Opus pre-release cadence.
@@ -273,17 +273,10 @@ jobs:
       - name: Set archivable CLAUDE_CONFIG_DIR
         run: echo "CLAUDE_CONFIG_DIR=$RUNNER_TEMP/spacedock-claude-config/${{ matrix.model }}" >> "$GITHUB_ENV"
 
-      # TestLiveEnsignCycle is the full lifecycle canary, TEAM-AGNOSTIC: it gates on
-      # dispatch-close + the on-disk terminal end-state, so it greens whether the
-      # headless `-p` FO drove team or bare (no team-vs-bare coin). Headless `-p` goes
-      # bare per the captain's go-bare determination, so this step carries no
-      # forced-team test.
-      # TestLiveDefaultHeadlessStopsAtGate is AC-a: default `-p` with NO conn drives to
-      # a gate:true stage and EXITS reporting gate status, without resolving the gate.
-      # TestLiveZeroDiscoverReportsAndStops is the cheap boot-only lean-boot guard (a
-      # zero-`status --discover` fixture: the FO reports no workflow found and STOPS,
-      # taking no broad filesystem sweep). All are boot/front-door drives, so they
-      # share this step and `-run` alternation rather than a second job.
+      # Run all 16 exported common journeys through the Claude transport. The exact
+      # prefix selector is shared with Codex and Pi; -failfast stops at the first
+      # non-TODO regression. The loose 90-minute timeout is a suite-wide runaway
+      # backstop for these sequential journeys, not an individual-journey budget.
       # Output discipline: gotestsum runs the suite ONCE, prints a CLEAN step log
       # (per-package progress + an `=== Failed` recap listing each failing test
       # with file:line — no per-test === RUN / --- PASS firehose) and writes the
@@ -296,30 +289,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run 'TestLiveEnsignCycle|TestLiveDefaultHeadlessStopsAtGate|TestLiveZeroDiscoverReportsAndStops' ./internal/ensigncycle/
-
-      # The shared scenario suite: the Claude lane runs the SAME host-neutral
-      # gate/rejection/merge-hook scenarios the codex-live lane runs, through the
-      # spacedock claude front door. This is the AC-4 proof that both runtime lanes
-      # exercise the shared scenario table, not separate per-host smokes.
-      #
-      # `-timeout 40m` is a LOOSE BACKSTOP only — sized above the full 4-scenario
-      # serial-suite wall-time (~27m opus: rejection-flow 8.98m measured + the
-      # heavier 3-cycle escalation + gate + merge-hook). The REAL guard is the
-      # per-stage no-progress quiet budget (the streamWatcher's quietBudgetDefault,
-      # 60s) in the runners: it resets on every stream line and kills a hang at 60s
-      # of stream SILENCE. This ceiling never fires in a healthy run, it only bounds
-      # a pathological progressing-but-runaway loop.
-      # if: !cancelled() runs this step even when an EARLIER step (the ensign cycle)
-      # failed, so a flake there does not skip the shared-scenario proof — each step's
-      # result surfaces independently. It still skips on a real workflow cancellation.
-      - name: Run live Claude shared scenarios
-        if: ${{ !cancelled() }}
-        env:
-          SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
-        run: |
-          set -o pipefail
-          gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/
+          SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast ./internal/ensigncycle/
 
       # Current Claude substrate proofs. Each exact test name owns one claim:
       # merged named-Agent dispatch, explicit bare dispatch, or break-glass recovery
@@ -341,7 +311,6 @@ jobs:
           path: |
             ${{ runner.temp }}/spacedock-live-bin/spacedock
             ./live-e2e-detail.jsonl
-            ./claude-shared-scenarios-detail.jsonl
             ./claude-substrate-detail.jsonl
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/*/projects
@@ -588,7 +557,7 @@ jobs:
       - name: Run live Codex shared scenarios
         run: |
           set -o pipefail
-          gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle
+          SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()

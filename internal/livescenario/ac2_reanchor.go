@@ -85,6 +85,7 @@ func writeACReanchorFixture(dir string) (string, error) {
 }
 
 const acReanchorReadme = `---
+commissioned-by: spacedock@1
 entity-type: task
 id-style: slug
 stages:

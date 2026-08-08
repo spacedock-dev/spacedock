@@ -84,67 +84,6 @@ func TestUnsetNestedSessionArgs(t *testing.T) {
 	}
 }
 
-func TestClaudeTODOModelScope(t *testing.T) {
-	for _, tc := range []struct {
-		model, family string
-		want          bool
-	}{
-		{"sonnet", "sonnet", true},
-		{"claude-sonnet-5", "sonnet", true},
-		{"claude-opus-4-8", "sonnet", false},
-		{"opus", "opus", true},
-		{"claude-opus-4-8", "opus", true},
-		{"openrouter/opossum", "opus", false},
-	} {
-		if got := claudeModelFamily(tc.model, tc.family); got != tc.want {
-			t.Errorf("claudeModelFamily(%q, %q) = %t, want %t", tc.model, tc.family, got, tc.want)
-		}
-	}
-}
-
-func TestClaudeRejectionFlowTODOModelScope(t *testing.T) {
-	for model, want := range map[string]bool{
-		"sonnet": true, "claude-sonnet-5": true,
-		"opus": true, "claude-opus-4-8": true,
-		"haiku": false, "openrouter/opossum": false,
-	} {
-		if got := claudeRejectionFlowTODOModel(model); got != want {
-			t.Errorf("claudeRejectionFlowTODOModel(%q) = %t, want %t", model, got, want)
-		}
-	}
-}
-
-func claudeModelFamily(model, family string) bool {
-	model = strings.ToLower(strings.TrimSpace(model))
-	return model == family || strings.Contains(model, "claude-"+family+"-")
-}
-
-func claudeRejectionFlowTODOModel(model string) bool {
-	return claudeModelFamily(model, "opus") || claudeModelFamily(model, "sonnet")
-}
-
-func claudeSonnetGateGuardrailTODO(model string) string {
-	if !claudeModelFamily(model, "sonnet") {
-		return ""
-	}
-	return "TODO(3zzpdw704df1g8pg1x9thzmw): Claude Sonnet gate-guardrail is temporarily non-evidence for local task sonnet-gate-guardrail-no-authority pending a fresh passing promotion run"
-}
-
-func TestClaudeSonnetGateGuardrailTODOModelScope(t *testing.T) {
-	for model, wantSkip := range map[string]bool{
-		"sonnet":          true,
-		"claude-sonnet-5": true,
-		"opus":            false,
-		"claude-opus-4-8": false,
-		"haiku":           false,
-	} {
-		got := claudeSonnetGateGuardrailTODO(model)
-		if (got != "") != wantSkip {
-			t.Errorf("claudeSonnetGateGuardrailTODO(%q) = %q, wantSkip %t", model, got, wantSkip)
-		}
-	}
-}
-
 func assertRecordedGateHoldLog(log string) error {
 	const prepareToken = "exit=0\tgate prepare recorded-gate-task "
 	prepare, commit, head := strings.Index(log, prepareToken), strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task"), strings.LastIndex(log, "state-head\t")

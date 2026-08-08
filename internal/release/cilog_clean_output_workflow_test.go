@@ -15,7 +15,6 @@ import (
 // with the exit code preserved.
 var transformedLiveSteps = []string{
 	"Run live Claude E2E",
-	"Run live Claude shared scenarios",
 	"Run live Codex shared scenarios",
 }
 

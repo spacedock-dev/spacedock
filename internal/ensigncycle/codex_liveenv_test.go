@@ -265,6 +265,42 @@ func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
 	}
 }
 
+func TestRuntimeLiveClaudeShimSetsMaximumEffort(t *testing.T) {
+	workflow, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "runtime-live-e2e.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const start = `cat > "$shim_dir/claude" <<'SH'`
+	bodyStart := strings.Index(string(workflow), start) + len(start) + 1
+	endAt := strings.Index(string(workflow[bodyStart:]), "\n          SH\n")
+	lines := strings.Split(string(workflow[bodyStart:bodyStart+endAt]), "\n")
+	for i := range lines {
+		lines[i] = strings.TrimPrefix(lines[i], "          ")
+	}
+	root := t.TempDir()
+	realClaude := filepath.Join(root, "real-claude")
+	shimPath := filepath.Join(root, "claude")
+	files := map[string]string{realClaude: "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\"\n", shimPath: strings.Join(lines, "\n") + "\n"}
+	for path, content := range files {
+		if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var got []byte
+	for _, args := range [][]string{{"--version"}, {"--model", "claude-sonnet-5", "--help"}} {
+		cmd := exec.Command(shimPath, args...)
+		cmd.Env = append(os.Environ(), "SPACEDOCK_CLAUDE_REAL_BIN="+realClaude)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("Claude shim %v failed: %v\n%s", args, err, out)
+		} else {
+			got = append(got, out...)
+		}
+	}
+	if want := "--effort max --version\n--effort max --model claude-sonnet-5 --help\n"; string(got) != want {
+		t.Fatalf("Claude shim argv = %q, want %q", got, want)
+	}
+}
+
 func codexLiveWorkflowExecShim(t *testing.T) string {
 	t.Helper()
 	_, source, _, ok := runtime.Caller(0)

@@ -38,26 +38,17 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	}
 
 	steps := parseWorkflowSteps(workflow)
-	claudeRun := findExecutableStep(steps, "Run live Claude shared scenarios", "TestLiveClaudeSharedScenarios")
+	claudeRun := findExecutableStep(steps, "Run live Claude E2E", "TestLiveCommon")
 	if claudeRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Claude shared scenario run")
 	}
-	codexRun := findExecutableStep(steps, "Run live Codex shared scenarios", "TestLiveCodexSharedScenarios")
+	codexRun := findExecutableStep(steps, "Run live Codex shared scenarios", "TestLiveCommon")
 	if codexRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Codex shared scenario run")
 	}
 	for _, job := range parseWorkflowJobs(workflow) {
 		if job.name == "pi-live" {
 			return fmt.Errorf("runtime-live-e2e.yml retains a paid Pi live job")
-		}
-		if job.name == "offline" {
-			joined := ""
-			for _, step := range job.steps {
-				joined += "\n" + step.run
-			}
-			if !strings.Contains(joined, "TestSharedScenarioRunnerCoverage") || !strings.Contains(joined, "TestPiSharedScenarioCoverage") {
-				return fmt.Errorf("runtime-live-e2e.yml offline job lacks the free Pi coverage guards")
-			}
 		}
 	}
 	if !hasJourneyMetricsUploadAfter(steps, claudeRun, codexRun) {

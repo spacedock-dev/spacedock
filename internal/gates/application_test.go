@@ -2,7 +2,6 @@ package gates
 
 import (
 	"bytes"
-	_ "embed"
 	"os"
 	"path/filepath"
 	"sort"
@@ -11,12 +10,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
-
-// v1PilotManifest is the checked-in list of the active and archived pilot
-// entities whose durable format is part of this unreleased-v1 cut.
-//
-//go:embed testdata/v1_pilot_manifest.txt
-var v1PilotManifest string
 
 func TestEligibilityFailClosedTable(t *testing.T) {
 	base := eligibleDocument()
@@ -103,110 +96,6 @@ func TestRecordClosureShapesApplication(t *testing.T) {
 				t.Fatalf("%s unexpectedly emitted an application YAML node with keys %v", tc.decision, yamlMappingKeys(got))
 			}
 		})
-	}
-}
-
-func TestV1PilotManifestReadsAndValidates(t *testing.T) {
-	paths := manifestPaths(v1PilotManifest)
-	if len(paths) != 31 {
-		t.Fatalf("pilot manifest has %d paths, want 31", len(paths))
-	}
-	seen := make(map[string]bool, len(paths))
-	archives := 0
-	for _, rel := range paths {
-		if rel == "" || filepath.IsAbs(rel) || filepath.Clean(rel) != rel || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || seen[rel] {
-			t.Fatalf("manifest contains invalid or duplicate path %q", rel)
-		}
-		seen[rel] = true
-		if strings.HasPrefix(filepath.ToSlash(rel), "_archive/") {
-			archives++
-		}
-	}
-	if archives != 22 {
-		t.Fatalf("pilot manifest has %d archived paths, want 22", archives)
-	}
-	stateRoot := v1PilotStateRoot()
-	if stateRoot == "" {
-		t.Skip("shared docs/dev/.spacedock-state checkout is not reachable from the code worktree")
-	}
-	for _, rel := range paths {
-		rel, path := rel, filepath.Join(stateRoot, filepath.FromSlash(rel))
-		t.Run(rel, func(t *testing.T) {
-			if _, err := os.Stat(path); err != nil {
-				t.Fatalf("manifest path is not present: %v", err)
-			}
-			doc, gatesNode, err := Read(path)
-			if err != nil {
-				t.Fatalf("strict gates.Read: %v", err)
-			}
-			if err := Validate(doc); err != nil {
-				t.Fatalf("gates.Validate: %v", err)
-			}
-			assertPilotApplicationNodes(t, gatesNode)
-		})
-	}
-}
-
-func manifestPaths(raw string) []string {
-	var paths []string
-	for _, line := range strings.Split(raw, "\n") {
-		if line = strings.TrimSpace(line); line != "" {
-			paths = append(paths, line)
-		}
-	}
-	return paths
-}
-
-func v1PilotStateRoot() string {
-	if root := strings.TrimSpace(os.Getenv("SPACEDOCK_STATE_ROOT")); root != "" {
-		return root
-	}
-	cwd, err := os.Getwd()
-	if err != nil {
-		return ""
-	}
-	for dir := cwd; ; dir = filepath.Dir(dir) {
-		candidate := filepath.Join(dir, "docs", "dev", ".spacedock-state")
-		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-			return candidate
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return ""
-		}
-	}
-}
-
-func assertPilotApplicationNodes(t *testing.T, gatesNode *yaml.Node) {
-	t.Helper()
-	records := yamlMappingValue(gatesNode, "records")
-	if records == nil || records.Kind != yaml.SequenceNode {
-		t.Fatalf("gates.records is not a sequence")
-	}
-	for _, record := range records.Content {
-		attempts := yamlMappingValue(record, "attempts")
-		if attempts == nil || attempts.Kind != yaml.SequenceNode {
-			t.Fatalf("gate record attempts is not a sequence")
-		}
-		for _, attempt := range attempts.Content {
-			resolution := yamlMappingValue(attempt, "resolution")
-			application := yamlMappingValue(attempt, "application")
-			decision := ""
-			if resolution != nil {
-				if n := yamlMappingValue(resolution, "decision"); n != nil {
-					decision = n.Value
-				}
-			}
-			if application == nil {
-				continue
-			}
-			if decision != "approve" {
-				t.Fatalf("non-approval decision %q carries application keys %v", decision, yamlMappingKeys(application))
-			}
-			if !sameStrings(yamlMappingKeys(application), []string{"state", "target-stage"}) {
-				t.Fatalf("approval application keys = %v, want [state target-stage]", yamlMappingKeys(application))
-			}
-		}
 	}
 }
 

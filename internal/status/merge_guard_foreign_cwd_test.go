@@ -110,8 +110,8 @@ func TestMergeGuardForeignCwdRefusalNamesWorkingFix(t *testing.T) {
 	if got := frontmatterField(t, archived, "status"); got != "done" {
 		t.Fatalf("archived entity status = %q, want done", got)
 	}
-	if got := frontmatterField(t, archived, "verdict"); got != "passed" {
-		t.Fatalf("archived entity verdict = %q, want passed", got)
+	if got := frontmatterField(t, archived, "verdict"); got != "PASSED" {
+		t.Fatalf("archived entity verdict = %q, want PASSED (the schema-cased stored value)", got)
 	}
 }
 
